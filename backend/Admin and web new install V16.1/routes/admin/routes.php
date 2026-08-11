@@ -412,6 +412,7 @@ Route::group(['prefix' => 'admin', 'as' => 'admin.', 'middleware' => ['admin', '
             Route::get('withdraw-list-export-excel', 'exportWithdrawList')->name('withdraw-list-export-excel');
             Route::get('withdraw-view/{withdrawId}/{vendorId}', 'getWithdrawView')->name('withdraw_view');
             Route::post('withdraw-status/{id}', 'withdrawStatus')->name('withdraw_status');
+            Route::post('kyc-status/{id}', 'updateKycStatus')->name('kyc-status');
 
             Route::post('load-more-stores', 'loadMoreStores')->name('load-more-stores');
         });

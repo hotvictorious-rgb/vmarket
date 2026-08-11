@@ -7,20 +7,18 @@ Always append your completed tasks here in chronological order. Include the date
 
 ---
 
-### [2026-08-11] Paystack Real-Time NUBAN Resolution, 48-Hour Cooldown & Nigerian KYC [Backend & Vendor App]
-* **Component:** Laravel Backend (`app/Services/PaystackBankService.php`, `SellerController.php`, `database/migrations/`) & Vendor App (`lib/features/bank_info/`)
-* **Action:** Implemented real-time Paystack NUBAN bank verification, 48-hour cooldown on account changes, and email OTP security verification for bank account updates. Added Nigerian KYC support (NIN, CAC, KYC Status).
+### [2026-08-11] Full Nigerian KYC Engine, Corporate Bank Matching & Admin Verification Hub [Backend & Vendor App]
+* **Component:** Laravel Backend (`app/Services/NigerianKycService.php`, `SellerController.php`, `VendorController.php`, `resources/views/admin-views/vendor/view.blade.php`), Vendor App (`lib/features/profile/screens/kyc_verification_screen.dart`, `lib/features/bank_info/screens/bank_info_screen.dart`)
+* **Action:** Completed end-to-end 100% Free Nigerian Vendor Identity Verification (KYC) system with Paystack CBN NUBAN Name Cross-Matching, Dual Personal/Corporate Shop Matching, 48-Hour Cooldown, and Admin 1-Click Approval Hub.
 * **Changes Made:**
-  - **Backend Services & API:**
-    - Created `PaystackBankService` supporting `getNigerianBanks()`, `resolveAccount()`, `sendBankUpdateOtp()`, and `verifyBankUpdateOtp()`.
-    - Added database migration `2026_08_11_120000_add_nigerian_kyc_and_bank_cooldown_to_sellers_table` with `bank_updated_at`, `nin`, `nin_document`, `cac_number`, `cac_document`, and `kyc_status`.
-    - Updated `SellerController.php` to enforce a strict **48-hour cooldown** on modifying bank account details (`Carbon::parse($currentSeller->bank_updated_at)->gt(now()->subHours(48))`).
-    - Added routes `paystack/banks`, `paystack/resolve-account`, and `bank-info/send-otp` in `routes/rest_api/v3/seller.php`.
-  - **Vendor App (Flutter):**
-    - Created `BankModel` in `lib/features/bank_info/domain/models/bank_model.dart`.
-    - Created `BankSelectionBottomSheet` for searchable Nigerian bank list.
-    - Created `VerifyBankOtpSheet` to prompt for 6-digit email OTP before changing bank details.
-    - Upgraded `BankEditingScreen` and `BankInfoController` with real-time 10-digit NUBAN auto-resolution, security notice, and 48-hour cooldown compliance.
+  - **Backend Services & Admin Hub:**
+    - Created `NigerianKycService` with phonetic/Levenshtein matching against both Personal and Corporate Shop names.
+    - Updated `SellerController.php` with `get_kyc_status` and `submit_kyc` endpoints.
+    - Added `updateKycStatus` in `VendorController.php` and route `admin.vendors.kyc-status`.
+    - Integrated KYC review card into Admin vendor view blade (`admin-views/vendor/view.blade.php`) showing NIN, CAC, Bank Name Match Score %, and 1-click **"Approve KYC & Grant Verified Badge 🛡️"** / **"Reject KYC"** buttons.
+  - **Vendor Mobile App (Flutter):**
+    - Created `KycModel` and `KycVerificationScreen` with live status card, NIN/CAC inputs, and camera/gallery document uploaders.
+    - Added Identity & KYC navigation tile into `BankInfoScreen`.
 
 ---
 

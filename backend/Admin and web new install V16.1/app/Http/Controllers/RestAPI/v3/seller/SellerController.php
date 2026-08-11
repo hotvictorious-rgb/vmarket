@@ -433,6 +433,48 @@ class SellerController extends Controller
         return response()->json($result, 200);
     }
 
+    public function get_kyc_status(Request $request): JsonResponse
+    {
+        $seller = Seller::find($request->seller['id']);
+        if (!$seller) {
+            return response()->json(['status' => false, 'message' => translate('Vendor not found')], 404);
+        }
+
+        $kycService = app(\App\Services\NigerianKycService::class);
+        $summary = $kycService->getKycSummary($seller);
+
+        return response()->json($summary, 200);
+    }
+
+    public function submit_kyc(Request $request): JsonResponse
+    {
+        $seller = Seller::find($request->seller['id']);
+        if (!$seller) {
+            return response()->json(['status' => false, 'message' => translate('Vendor not found')], 404);
+        }
+
+        $validator = Validator::make($request->all(), [
+            'nin' => 'nullable|string|min:11|max:11',
+            'cac_number' => 'nullable|string|max:50',
+            'nin_document' => 'nullable|image|mimes:jpeg,png,jpg,webp|max:5120',
+            'cac_document' => 'nullable|image|mimes:jpeg,png,jpg,webp|max:5120',
+        ]);
+
+        if ($validator->fails()) {
+            return response()->json(['status' => false, 'message' => $validator->errors()->first()], 422);
+        }
+
+        $kycService = app(\App\Services\NigerianKycService::class);
+        $result = $kycService->submitKyc(
+            seller: $seller,
+            data: $request->only(['nin', 'cac_number']),
+            ninFile: $request->file('nin_document'),
+            cacFile: $request->file('cac_document')
+        );
+
+        return response()->json($result, 200);
+    }
+
     public function withdraw_method_list(Request $request): JsonResponse
     {
         $methods = WithdrawalMethod::ofStatus(1)->get();
