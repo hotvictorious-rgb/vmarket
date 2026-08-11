@@ -15,6 +15,9 @@ class AppConstants {
   static const String configUri = '/api/v1/config';
   static const String sellerUri = '/api/v3/seller/seller-info';
   static const String sellerAndBankUpdate = '/api/v3/seller/seller-update';
+  static const String getNigerianBanksUri = '/api/v3/seller/paystack/banks';
+  static const String resolveAccountUri = '/api/v3/seller/paystack/resolve-account';
+  static const String sendBankOtpUri = '/api/v3/seller/bank-info/send-otp';
   static const String shopUri = '/api/v3/seller/shop-info';
 
   static const String shopUpdate = '/api/v3/seller/shop-update';

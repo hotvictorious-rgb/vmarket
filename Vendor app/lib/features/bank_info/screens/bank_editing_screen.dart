@@ -1,33 +1,34 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:sixvalley_vendor_app/common/basewidgets/custom_app_bar_widget.dart';
 import 'package:sixvalley_vendor_app/common/basewidgets/custom_button_widget.dart';
+import 'package:sixvalley_vendor_app/common/basewidgets/custom_snackbar_widget.dart';
 import 'package:sixvalley_vendor_app/common/basewidgets/textfeild/custom_text_feild_widget.dart';
+import 'package:sixvalley_vendor_app/features/auth/controllers/auth_controller.dart';
+import 'package:sixvalley_vendor_app/features/bank_info/controllers/bank_info_controller.dart';
+import 'package:sixvalley_vendor_app/features/bank_info/widgets/bank_selection_bottom_sheet.dart';
+import 'package:sixvalley_vendor_app/features/bank_info/widgets/verify_bank_otp_sheet.dart';
+import 'package:sixvalley_vendor_app/features/profile/controllers/profile_controller.dart';
 import 'package:sixvalley_vendor_app/features/profile/domain/models/profile_body.dart';
 import 'package:sixvalley_vendor_app/features/profile/domain/models/profile_info.dart';
 import 'package:sixvalley_vendor_app/localization/language_constrants.dart';
-import 'package:sixvalley_vendor_app/features/auth/controllers/auth_controller.dart';
-import 'package:sixvalley_vendor_app/features/bank_info/controllers/bank_info_controller.dart';
-import 'package:sixvalley_vendor_app/features/profile/controllers/profile_controller.dart';
-import 'package:sixvalley_vendor_app/main.dart';
+import 'package:sixvalley_vendor_app/utill/color_resources.dart';
 import 'package:sixvalley_vendor_app/utill/dimensions.dart';
 import 'package:sixvalley_vendor_app/utill/styles.dart';
-import 'package:sixvalley_vendor_app/common/basewidgets/custom_app_bar_widget.dart';
-import 'package:sixvalley_vendor_app/common/basewidgets/custom_snackbar_widget.dart';
 
 class BankEditingScreen extends StatefulWidget {
-
   final ProfileInfoModel? sellerModel;
   const BankEditingScreen({super.key, required this.sellerModel});
+
   @override
   BankEditingScreenState createState() => BankEditingScreenState();
 }
 
 class BankEditingScreenState extends State<BankEditingScreen> {
-
-  TextEditingController? _bankNameController ;
-  TextEditingController? _branchController ;
-  TextEditingController? _holderNameController ;
-  TextEditingController? _accountController ;
+  TextEditingController? _bankNameController;
+  TextEditingController? _branchController;
+  TextEditingController? _holderNameController;
+  TextEditingController? _accountController;
   final FocusNode _bankNameNode = FocusNode();
   final FocusNode _branchNode = FocusNode();
   final FocusNode _holderNameNode = FocusNode();
@@ -35,57 +36,6 @@ class BankEditingScreenState extends State<BankEditingScreen> {
   GlobalKey<FormState>? _formKeyLogin;
 
   final GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
-
-
-  Future<void> _updateUserAccount() async {
-    String bankName = _bankNameController!.text.trim();
-    String branchName = _branchController!.text.trim();
-    String holderName = _holderNameController!.text.trim();
-    String account = _accountController!.text.trim();
-
-    if(Provider.of<BankInfoController>(context, listen: false).bankInfo!.bankName == _bankNameController!.text
-        && Provider.of<BankInfoController>(context, listen: false).bankInfo!.branch == _branchController!.text
-        && Provider.of<BankInfoController>(context, listen: false).bankInfo!.holderName == _holderNameController!.text
-        && Provider.of<BankInfoController>(context, listen: false).bankInfo!.accountNo == _accountController!.text
-    ) {
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(getTranslated('change_something', context)!),
-          backgroundColor:  Theme.of(context).colorScheme.error));
-    }else if (bankName.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(getTranslated('enter_bank_name', context)!),
-          backgroundColor: Theme.of(context).colorScheme.error));
-    }else if (branchName.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(getTranslated('enter_branch_name', context)!),
-          backgroundColor: Theme.of(context).colorScheme.error));
-    }else if (holderName.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(getTranslated('enter_holder_name', context)!),
-          backgroundColor: Theme.of(context).colorScheme.error));
-    }else if (account.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(getTranslated('enter_account_no', context)!),
-          backgroundColor: Theme.of(context).colorScheme.error));
-    }else {
-      ProfileInfoModel updateUserInfoModel = Provider.of<BankInfoController>(context, listen: false).bankInfo!;
-      updateUserInfoModel.bankName = _bankNameController?.text ?? "";
-      updateUserInfoModel.branch = _branchController?.text ?? "";
-      updateUserInfoModel.holderName = _holderNameController?.text ?? '';
-      updateUserInfoModel.accountNo = _accountController?.text ?? '';
-      ProfileInfoModel userInfo = Provider.of<ProfileController>(context, listen: false).userInfoModel!;
-      ProfileBody sellerBody = ProfileBody(
-        sMethod: '_put', fName: userInfo.fName, lName: userInfo.lName, image: userInfo.image,
-        bankName: _bankNameController?.text ?? "", branch: _branchController?.text ?? "", accountNo: _accountController?.text ?? '',
-        holderName: _holderNameController?.text ?? '',
-      );
-
-      await Provider.of<BankInfoController>(context, listen: false).updateBankInfo(context,
-        updateUserInfoModel, sellerBody, Provider.of<AuthController>(context, listen: false).getUserToken(),
-      ).then((response) {
-        if(response!.isSuccess) {
-          Navigator.pop(Get.context!);
-        }else {
-          showCustomSnackBarWidget(response.message, Get.context!);
-        }
-      });
-    }
-  }
 
   @override
   void initState() {
@@ -95,11 +45,16 @@ class BankEditingScreenState extends State<BankEditingScreen> {
     _branchController = TextEditingController();
     _holderNameController = TextEditingController();
     _accountController = TextEditingController();
-    _bankNameController!.text = widget.sellerModel!.bankName ?? '';
-    _branchController!.text = widget.sellerModel!.branch ?? '';
-    _holderNameController!.text = widget.sellerModel!.holderName ?? '';
-    _accountController!.text = widget.sellerModel!.accountNo ?? '';
 
+    _bankNameController!.text = widget.sellerModel?.bankName ?? '';
+    _branchController!.text = widget.sellerModel?.branch ?? 'Head Office';
+    _holderNameController!.text = widget.sellerModel?.holderName ?? '';
+    _accountController!.text = widget.sellerModel?.accountNo ?? '';
+
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      final bankController = Provider.of<BankInfoController>(context, listen: false);
+      bankController.fetchNigerianBanks();
+    });
   }
 
   @override
@@ -111,92 +66,345 @@ class BankEditingScreenState extends State<BankEditingScreen> {
     super.dispose();
   }
 
+  void _onAccountChanged(String value) {
+    if (value.length == 10) {
+      final bankController = Provider.of<BankInfoController>(context, listen: false);
+      bankController.resolveAccountNumber(value).then((_) {
+        if (bankController.isAccountResolved && bankController.resolvedAccountName != null) {
+          setState(() {
+            _holderNameController!.text = bankController.resolvedAccountName!;
+          });
+        }
+      });
+    }
+  }
+
+  Future<void> _submitBankDetails({String? otp}) async {
+    final bankController = Provider.of<BankInfoController>(context, listen: false);
+    final profileController = Provider.of<ProfileController>(context, listen: false);
+    final authController = Provider.of<AuthController>(context, listen: false);
+
+    ProfileInfoModel updateUserInfoModel = bankController.bankInfo ?? widget.sellerModel!;
+    updateUserInfoModel.bankName = _bankNameController?.text ?? "";
+    updateUserInfoModel.branch = _branchController?.text ?? "Head Office";
+    updateUserInfoModel.holderName = _holderNameController?.text ?? '';
+    updateUserInfoModel.accountNo = _accountController?.text ?? '';
+
+    ProfileInfoModel userInfo = profileController.userInfoModel!;
+    ProfileBody sellerBody = ProfileBody(
+      sMethod: '_put',
+      fName: userInfo.fName,
+      lName: userInfo.lName,
+      image: userInfo.image,
+      bankName: _bankNameController?.text ?? "",
+      branch: _branchController?.text ?? "Head Office",
+      accountNo: _accountController?.text ?? '',
+      holderName: _holderNameController?.text ?? '',
+    );
+
+    final response = await bankController.updateBankInfo(
+      context,
+      updateUserInfoModel,
+      sellerBody,
+      authController.getUserToken(),
+      otp: otp,
+    );
+
+    if (!response.isSuccess) {
+      showCustomSnackBarWidget(response.message, context, isError: true);
+    } else {
+      profileController.getSellerInfo();
+    }
+  }
+
+  Future<void> _handleSave() async {
+    String bankName = _bankNameController!.text.trim();
+    String branchName = _branchController!.text.trim();
+    String holderName = _holderNameController!.text.trim();
+    String account = _accountController!.text.trim();
+
+    final bankController = Provider.of<BankInfoController>(context, listen: false);
+    final existingBank = bankController.bankInfo ?? widget.sellerModel;
+
+    if (existingBank != null &&
+        existingBank.bankName == bankName &&
+        existingBank.accountNo == account &&
+        existingBank.holderName == holderName) {
+      showCustomSnackBarWidget(
+        getTranslated('change_something', context) ?? 'No changes made to bank info.',
+        context,
+      );
+      return;
+    }
+
+    if (bankName.isEmpty) {
+      showCustomSnackBarWidget(
+        getTranslated('enter_bank_name', context) ?? 'Please select a bank',
+        context,
+      );
+      return;
+    }
+
+    if (account.length != 10) {
+      showCustomSnackBarWidget(
+        getTranslated('enter_valid_account_no', context) ?? 'Please enter a valid 10-digit NUBAN account number',
+        context,
+      );
+      return;
+    }
+
+    if (holderName.isEmpty) {
+      showCustomSnackBarWidget(
+        getTranslated('enter_holder_name', context) ?? 'Please verify account name',
+        context,
+      );
+      return;
+    }
+
+    // If seller already has an account number saved, trigger Email OTP
+    bool isModifyingExisting = existingBank?.accountNo != null && existingBank!.accountNo!.isNotEmpty;
+    if (isModifyingExisting) {
+      final otpResponse = await bankController.sendBankOtp(bankName, account, holderName);
+      if (otpResponse.isSuccess) {
+        showModalBottomSheet(
+          context: context,
+          isScrollControlled: true,
+          backgroundColor: Colors.transparent,
+          builder: (ctx) => VerifyBankOtpSheet(
+            bankName: bankName,
+            accountNo: account,
+            holderName: holderName,
+            onOtpVerified: (otp) {
+              _submitBankDetails(otp: otp);
+            },
+          ),
+        );
+      } else {
+        showCustomSnackBarWidget(otpResponse.message, context, isError: true);
+      }
+    } else {
+      // First time adding bank details
+      _submitBankDetails();
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       key: _scaffoldKey,
-      appBar: CustomAppBarWidget(title: getTranslated('bank_info', context),),
-      body: Padding(
-        padding: const EdgeInsets.all(Dimensions.paddingSizeLarge),
-        child: Consumer<AuthController>(
-          builder: (context, authProvider, child) => Form(
-            key: _formKeyLogin,
-            child: ListView(physics: const BouncingScrollPhysics(), children: [
+      appBar: CustomAppBarWidget(title: getTranslated('bank_info', context) ?? 'Bank Information'),
+      body: Consumer<BankInfoController>(
+        builder: (context, bankController, child) {
+          return Padding(
+            padding: const EdgeInsets.all(Dimensions.paddingSizeLarge),
+            child: Form(
+              key: _formKeyLogin,
+              child: ListView(
+                physics: const BouncingScrollPhysics(),
+                children: [
+                  // Security Notice Banner
+                  Container(
+                    padding: const EdgeInsets.all(Dimensions.paddingSizeDefault),
+                    decoration: BoxDecoration(
+                      color: Theme.of(context).primaryColor.withValues(alpha: 0.08),
+                      borderRadius: BorderRadius.circular(Dimensions.paddingSizeSmall),
+                      border: Border.all(color: Theme.of(context).primaryColor.withValues(alpha: 0.3)),
+                    ),
+                    child: Row(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Icon(Icons.shield_outlined, color: Theme.of(context).primaryColor, size: 22),
+                        const SizedBox(width: Dimensions.paddingSizeSmall),
+                        Expanded(
+                          child: Text(
+                            getTranslated('bank_security_notice', context) ??
+                                'For security against unauthorized changes, bank details require Email OTP authorization and can only be modified once every 7 days.',
+                            style: robotoRegular.copyWith(
+                              fontSize: Dimensions.fontSizeSmall,
+                              color: Theme.of(context).textTheme.bodyLarge?.color,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(height: Dimensions.paddingSizeLarge),
 
-                Text(getTranslated('holder_name', context)!,
-                    style: titilliumRegular.copyWith(fontSize: Dimensions.fontSizeDefault,
-                      color: Theme.of(context).hintColor)),
-                const SizedBox(height: Dimensions.paddingSizeSmall),
+                  // Bank Selector
+                  Text(
+                    getTranslated('bank_name', context) ?? 'Select Bank',
+                    style: titilliumRegular.copyWith(
+                      fontSize: Dimensions.fontSizeDefault,
+                      color: Theme.of(context).hintColor,
+                    ),
+                  ),
+                  const SizedBox(height: Dimensions.paddingSizeSmall),
+                  InkWell(
+                    onTap: () {
+                      showModalBottomSheet(
+                        context: context,
+                        isScrollControlled: true,
+                        backgroundColor: Colors.transparent,
+                        builder: (ctx) => BankSelectionBottomSheet(
+                          onBankSelected: (bank) {
+                            bankController.selectBank(bank);
+                            setState(() {
+                              _bankNameController!.text = bank.name ?? '';
+                            });
+                            if (_accountController!.text.length == 10) {
+                              _onAccountChanged(_accountController!.text);
+                            }
+                          },
+                        ),
+                      );
+                    },
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 14),
+                      decoration: BoxDecoration(
+                        border: Border.all(color: Theme.of(context).hintColor.withValues(alpha: 0.5)),
+                        borderRadius: BorderRadius.circular(Dimensions.paddingSizeSmall),
+                      ),
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          Expanded(
+                            child: Text(
+                              _bankNameController!.text.isNotEmpty
+                                  ? _bankNameController!.text
+                                  : (getTranslated('select_bank', context) ?? 'Select Nigerian Bank'),
+                              style: robotoRegular.copyWith(
+                                color: _bankNameController!.text.isNotEmpty
+                                    ? Theme.of(context).textTheme.bodyLarge?.color
+                                    : Theme.of(context).hintColor,
+                              ),
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                          ),
+                          const Icon(Icons.arrow_drop_down, color: Colors.grey),
+                        ],
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: Dimensions.paddingSizeLarge),
 
-                CustomTextFieldWidget(
-                  border: true,
-                  hintText: 'Ex: mr.john',
-                  controller: _holderNameController,
-                  focusNode: _holderNameNode,
-                  nextNode: _bankNameNode,
-                  textInputAction: TextInputAction.next,
-                  textInputType: TextInputType.text,
-                ),
-                const SizedBox(height: Dimensions.paddingSizeDefault),
+                  // Account Number
+                  Text(
+                    getTranslated('account_no', context) ?? '10-Digit NUBAN Account Number',
+                    style: titilliumRegular.copyWith(
+                      fontSize: Dimensions.fontSizeDefault,
+                      color: Theme.of(context).hintColor,
+                    ),
+                  ),
+                  const SizedBox(height: Dimensions.paddingSizeSmall),
+                  CustomTextFieldWidget(
+                    border: true,
+                    hintText: '0123456789',
+                    controller: _accountController,
+                    focusNode: _accountNode,
+                    textInputAction: TextInputAction.next,
+                    textInputType: TextInputType.number,
+                    onChanged: _onAccountChanged,
+                  ),
+                  const SizedBox(height: Dimensions.paddingSizeSmall),
 
-                Text(getTranslated('bank_name', context)!,
-                    style: titilliumRegular.copyWith(fontSize: Dimensions.fontSizeDefault,
-                      color: Theme.of(context).hintColor)),
-                const SizedBox(height: Dimensions.paddingSizeSmall),
+                  // Resolution Indicator
+                  if (bankController.isResolvingAccount)
+                    Padding(
+                      padding: const EdgeInsets.symmetric(vertical: 6),
+                      child: Row(
+                        children: [
+                          const SizedBox(
+                            width: 16,
+                            height: 16,
+                            child: CircularProgressIndicator(strokeWidth: 2),
+                          ),
+                          const SizedBox(width: 8),
+                          Text(
+                            getTranslated('verifying_account_with_bank', context) ?? 'Verifying account with bank...',
+                            style: robotoRegular.copyWith(fontSize: Dimensions.fontSizeSmall, color: Theme.of(context).hintColor),
+                          ),
+                        ],
+                      ),
+                    )
+                  else if (bankController.isAccountResolved && bankController.resolvedAccountName != null)
+                    Padding(
+                      padding: const EdgeInsets.symmetric(vertical: 6),
+                      child: Row(
+                        children: [
+                          const Icon(Icons.check_circle, color: Colors.green, size: 18),
+                          const SizedBox(width: 6),
+                          Expanded(
+                            child: Text(
+                              'Verified: ${bankController.resolvedAccountName}',
+                              style: robotoBold.copyWith(fontSize: Dimensions.fontSizeSmall, color: Colors.green),
+                            ),
+                          ),
+                        ],
+                      ),
+                    )
+                  else if (bankController.accountResolutionError != null)
+                    Padding(
+                      padding: const EdgeInsets.symmetric(vertical: 6),
+                      child: Row(
+                        children: [
+                          Icon(Icons.error_outline, color: Theme.of(context).colorScheme.error, size: 18),
+                          const SizedBox(width: 6),
+                          Expanded(
+                            child: Text(
+                              bankController.accountResolutionError!,
+                              style: robotoRegular.copyWith(
+                                fontSize: Dimensions.fontSizeSmall,
+                                color: Theme.of(context).colorScheme.error,
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
 
-                CustomTextFieldWidget(
-                  border: true,
-                  hintText: getTranslated('bank_name_hint', context),
-                  focusNode: _bankNameNode,
-                  nextNode: _branchNode,
-                  controller: _bankNameController,
-                  textInputType: TextInputType.text,
-                  textInputAction: TextInputAction.next,
-                ),
-                const SizedBox(height: Dimensions.paddingSizeLarge),
+                  const SizedBox(height: Dimensions.paddingSizeSmall),
 
-                Text(getTranslated('branch_name', context)!,
-                    style: titilliumRegular.copyWith(fontSize: Dimensions.fontSizeDefault, color: Theme.of(context).hintColor,)),
-                const SizedBox(height: Dimensions.paddingSizeSmall),
+                  // Account Holder Name
+                  Text(
+                    getTranslated('holder_name', context) ?? 'Account Holder Name',
+                    style: titilliumRegular.copyWith(
+                      fontSize: Dimensions.fontSizeDefault,
+                      color: Theme.of(context).hintColor,
+                    ),
+                  ),
+                  const SizedBox(height: Dimensions.paddingSizeSmall),
+                  CustomTextFieldWidget(
+                    border: true,
+                    hintText: 'Auto-resolved from bank',
+                    controller: _holderNameController,
+                    focusNode: _holderNameNode,
+                    textInputAction: TextInputAction.done,
+                    textInputType: TextInputType.text,
+                  ),
 
-                CustomTextFieldWidget(
-                  border: true,
-                  hintText: getTranslated('branch_name_hint', context),
-                  focusNode: _branchNode,
-                  controller: _branchController,
-                  textInputType: TextInputType.text,
-                  textInputAction: TextInputAction.next,
-                ),
-                const SizedBox(height: Dimensions.paddingSizeDefault),
+                  const SizedBox(height: Dimensions.paddingSizeLarge),
 
-                Text(getTranslated('account_no', context)!,
-                    style: titilliumRegular.copyWith(fontSize: Dimensions.fontSizeDefault,
-                      color: Theme.of(context).hintColor,)),
-                const SizedBox(height: Dimensions.paddingSizeSmall),
-
-                CustomTextFieldWidget(
-                  border: true,
-                  hintText:  getTranslated('account_no_hint', context),
-                  controller: _accountController,
-                  focusNode: _accountNode,
-                  textInputAction: TextInputAction.done,
-                  textInputType: TextInputType.number,
-                ),
-                // for save button
-                const SizedBox(height: Dimensions.paddingSizeButton),
-
-                Container(
-                  margin: const EdgeInsets.symmetric(vertical: Dimensions.paddingSizeSmall),
-                  child: !Provider.of<BankInfoController>(context).isLoading ?
-                  CustomButtonWidget(onTap: _updateUserAccount,
-                      btnTxt: getTranslated('save', context)) :
-                  Center(child: CircularProgressIndicator(valueColor: AlwaysStoppedAnimation<Color>(Theme.of(context).primaryColor))),
-                ),
-              ],
+                  // Save Button
+                  Container(
+                    margin: const EdgeInsets.symmetric(vertical: Dimensions.paddingSizeSmall),
+                    child: !bankController.isLoading
+                        ? CustomButtonWidget(
+                            onTap: _handleSave,
+                            btnTxt: getTranslated('save_bank_info', context) ?? 'Save Bank Information',
+                          )
+                        : Center(
+                            child: CircularProgressIndicator(
+                              valueColor: AlwaysStoppedAnimation<Color>(Theme.of(context).primaryColor),
+                            ),
+                          ),
+                  ),
+                ],
+              ),
             ),
-          ),
-        ),
+          );
+        },
       ),
     );
   }
 }
+

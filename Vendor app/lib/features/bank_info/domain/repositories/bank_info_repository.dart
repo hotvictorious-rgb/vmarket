@@ -35,19 +35,59 @@ class BankInfoRepository implements BankInfoRepositoryInterface{
   }
 
   @override
-  Future<http.StreamedResponse> updateBank(ProfileInfoModel userInfoModel, ProfileBody seller, String token) async {
+  Future<http.StreamedResponse> updateBank(ProfileInfoModel userInfoModel, ProfileBody seller, String token, {String? otp}) async {
     http.MultipartRequest request = http.MultipartRequest('POST', Uri.parse('${AppConstants.baseUrl}${AppConstants.sellerAndBankUpdate}'));
     request.headers.addAll(<String,String>{'Authorization': 'Bearer $token'});
 
     Map<String, String> fields = {};
     fields.addAll(<String, String>{
-      '_method': 'put', 'bank_name': userInfoModel.bankName!, 'branch': userInfoModel.branch!,
-      'holder_name': userInfoModel.holderName!, 'account_no': userInfoModel.accountNo!,
-      'f_name': seller.fName!, 'l_name': seller.lName!, 'phone': userInfoModel.phone!
+      '_method': 'put', 'bank_name': userInfoModel.bankName ?? '', 'branch': userInfoModel.branch ?? '',
+      'holder_name': userInfoModel.holderName ?? '', 'account_no': userInfoModel.accountNo ?? '',
+      'f_name': seller.fName ?? '', 'l_name': seller.lName ?? '', 'phone': userInfoModel.phone ?? ''
     });
+    if (otp != null && otp.isNotEmpty) {
+      fields['otp'] = otp;
+    }
     request.fields.addAll(fields);
     http.StreamedResponse response = await request.send();
     return response;
+  }
+
+  @override
+  Future<ApiResponse> getNigerianBanks() async {
+    try {
+      final response = await dioClient!.get(AppConstants.getNigerianBanksUri);
+      return ApiResponse.withSuccess(response);
+    } catch (e) {
+      return ApiResponse.withError(ApiErrorHandler.getMessage(e));
+    }
+  }
+
+  @override
+  Future<ApiResponse> resolveAccount(String accountNumber, String bankCode) async {
+    try {
+      final response = await dioClient!.post(AppConstants.resolveAccountUri, data: {
+        'account_number': accountNumber,
+        'bank_code': bankCode,
+      });
+      return ApiResponse.withSuccess(response);
+    } catch (e) {
+      return ApiResponse.withError(ApiErrorHandler.getMessage(e));
+    }
+  }
+
+  @override
+  Future<ApiResponse> sendBankOtp(String bankName, String accountNo, String holderName) async {
+    try {
+      final response = await dioClient!.post(AppConstants.sendBankOtpUri, data: {
+        'bank_name': bankName,
+        'account_no': accountNo,
+        'holder_name': holderName,
+      });
+      return ApiResponse.withSuccess(response);
+    } catch (e) {
+      return ApiResponse.withError(ApiErrorHandler.getMessage(e));
+    }
   }
 
   @override

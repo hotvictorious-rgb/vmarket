@@ -1,4 +1,6 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'package:sixvalley_vendor_app/features/bank_info/domain/models/bank_model.dart';
 import 'package:sixvalley_vendor_app/features/order/domain/models/business_analytics_filter_data.dart';
 import 'package:sixvalley_vendor_app/features/profile/domain/models/profile_body.dart';
 import 'package:sixvalley_vendor_app/data/model/response/base/api_response.dart';
@@ -131,6 +133,118 @@ class BankInfoController extends ChangeNotifier {
     return bankInfoServiceInterface.getBankToken();
   }
 
+  // Paystack Bank State
+  List<BankModel> _nigerianBanks = [];
+  List<BankModel> get nigerianBanks => _nigerianBanks;
+  BankModel? _selectedBank;
+  BankModel? get selectedBank => _selectedBank;
+
+  String? _resolvedAccountName;
+  String? get resolvedAccountName => _resolvedAccountName;
+
+  bool _isResolvingAccount = false;
+  bool get isResolvingAccount => _isResolvingAccount;
+
+  bool _isAccountResolved = false;
+  bool get isAccountResolved => _isAccountResolved;
+
+  String? _accountResolutionError;
+  String? get accountResolutionError => _accountResolutionError;
+
+  bool _isLoadingBanks = false;
+  bool get isLoadingBanks => _isLoadingBanks;
+
+  Future<void> fetchNigerianBanks() async {
+    if (_nigerianBanks.isNotEmpty) return;
+    _isLoadingBanks = true;
+    notifyListeners();
+
+    try {
+      ApiResponse response = await bankInfoServiceInterface.getNigerianBanks();
+      if (response.response != null && response.response!.statusCode == 200) {
+        _nigerianBanks = [];
+        if (response.response!.data['banks'] != null) {
+          response.response!.data['banks'].forEach((b) {
+            _nigerianBanks.add(BankModel.fromJson(b));
+          });
+        }
+      }
+    } catch (e) {
+      if (kDebugMode) print("Error fetching banks: $e");
+    }
+
+    _isLoadingBanks = false;
+    notifyListeners();
+  }
+
+  void selectBank(BankModel? bank, {bool notify = true}) {
+    _selectedBank = bank;
+    _isAccountResolved = false;
+    _resolvedAccountName = null;
+    _accountResolutionError = null;
+    if (notify) notifyListeners();
+  }
+
+  Future<void> resolveAccountNumber(String accountNumber) async {
+    if (_selectedBank == null || accountNumber.length != 10) {
+      return;
+    }
+
+    _isResolvingAccount = true;
+    _accountResolutionError = null;
+    _isAccountResolved = false;
+    _resolvedAccountName = null;
+    notifyListeners();
+
+    try {
+      ApiResponse response = await bankInfoServiceInterface.resolveAccount(accountNumber, _selectedBank!.code!);
+      if (response.response != null && response.response!.statusCode == 200 && response.response!.data['status'] == true) {
+        _resolvedAccountName = response.response!.data['account_name'];
+        _isAccountResolved = true;
+        _accountResolutionError = null;
+      } else {
+        _isAccountResolved = false;
+        _accountResolutionError = response.response?.data?['message'] ?? 'Could not resolve account with selected bank.';
+      }
+    } catch (e) {
+      _isAccountResolved = false;
+      _accountResolutionError = 'Verification failed. Please check network.';
+    }
+
+    _isResolvingAccount = false;
+    notifyListeners();
+  }
+
+  Future<ResponseModel> sendBankOtp(String bankName, String accountNo, String holderName) async {
+    _isLoading = true;
+    notifyListeners();
+
+    try {
+      ApiResponse response = await bankInfoServiceInterface.sendBankOtp(bankName, accountNo, holderName);
+      _isLoading = false;
+      notifyListeners();
+
+      if (response.response != null && response.response!.statusCode == 200) {
+        return ResponseModel(true, response.response!.data['message'] ?? 'OTP sent to your email.');
+      } else {
+        String msg = response.error is String ? response.error : (response.response?.data?['message'] ?? 'Failed to send OTP.');
+        return ResponseModel(false, msg);
+      }
+    } catch (e) {
+      _isLoading = false;
+      notifyListeners();
+      return ResponseModel(false, e.toString());
+    }
+  }
+
+  Future<ResponseModel> updateBankInfo(BuildContext context, ProfileInfoModel userInfoModel, ProfileBody seller, String token, {String? otp}) async {
+    _isLoading = true;
+    notifyListeners();
+    ResponseModel responseModel = await bankInfoServiceInterface.updateBank(userInfoModel, seller, token, otp: otp);
+    _isLoading = false;
+    notifyListeners();
+    return responseModel;
+  }
 
   void setAnalyticsFilterName(BuildContext context, String? filterName, bool notify) {
     _analyticsName = filterName;

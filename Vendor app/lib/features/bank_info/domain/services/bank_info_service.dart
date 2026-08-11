@@ -39,18 +39,34 @@ class BankInfoService implements BankInfoServiceInterface{
   }
 
   @override
-  Future updateBank(ProfileInfoModel userInfoModel, ProfileBody seller, String token) async{
-    http.StreamedResponse response = await bankInfoRepoInterface.updateBank(userInfoModel, seller, token);
+  Future updateBank(ProfileInfoModel userInfoModel, ProfileBody seller, String token, {String? otp}) async{
+    http.StreamedResponse response = await bankInfoRepoInterface.updateBank(userInfoModel, seller, token, otp: otp);
     if (response.statusCode == 200) {
       Navigator.pop(Get.context!);
       showCustomSnackBarWidget(getTranslated('bank_info_updated_successfully', Get.context!), Get.context!, isToaster: true, isError: false);
       return ResponseModel(true, '');
     } else {
+      String responseBody = await response.stream.bytesToString();
       if (kDebugMode) {
-        print('${response.statusCode} ${response.reasonPhrase}');
+        print('${response.statusCode} $responseBody');
       }
-      return ResponseModel(false, '${response.statusCode} ${response.reasonPhrase}');
+      return ResponseModel(false, responseBody.isNotEmpty ? responseBody : '${response.statusCode} ${response.reasonPhrase}');
     }
+  }
+
+  @override
+  Future getNigerianBanks() async {
+    return await bankInfoRepoInterface.getNigerianBanks();
+  }
+
+  @override
+  Future resolveAccount(String accountNumber, String bankCode) async {
+    return await bankInfoRepoInterface.resolveAccount(accountNumber, bankCode);
+  }
+
+  @override
+  Future sendBankOtp(String bankName, String accountNo, String holderName) async {
+    return await bankInfoRepoInterface.sendBankOtp(bankName, accountNo, holderName);
   }
 
   @override
