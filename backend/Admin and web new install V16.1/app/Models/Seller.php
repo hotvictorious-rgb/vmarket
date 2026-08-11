@@ -62,6 +62,12 @@ class Seller extends Authenticatable
         'stock_limit',
         'free_delivery_status',
         'app_language',
+        'bank_updated_at',
+        'nin',
+        'nin_document',
+        'cac_number',
+        'cac_document',
+        'kyc_status',
     ];
 
     protected $casts = [
