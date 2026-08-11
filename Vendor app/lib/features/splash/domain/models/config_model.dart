@@ -354,6 +354,7 @@ class BaseUrls {
   String? _notificationImageUrl;
   String? _digitalProductUrl;
   String? _deliveryManImageUrl;
+  String? _chatImageUrl;
 
   BaseUrls({String? productImageUrl,
     String? productThumbnailUrl,
@@ -396,6 +397,7 @@ class BaseUrls {
   String? get notificationImageUrl => _notificationImageUrl;
   String? get digitalProductUrl => _digitalProductUrl;
   String? get deliveryManImageUrl => _deliveryManImageUrl;
+  String? get chatImageUrl => _chatImageUrl;
 
   BaseUrls.fromJson(Map<String, dynamic> json) {
     _productImageUrl = json['product_image_url'];
@@ -410,6 +412,7 @@ class BaseUrls {
     _notificationImageUrl = json['notification_image_url'];
     _digitalProductUrl = json['digital_product_url'];
     _deliveryManImageUrl = json['delivery_man_image_url'];
+    _chatImageUrl = json['chat_image_url'];
   }
 
   Map<String, dynamic> toJson() {
@@ -426,6 +429,7 @@ class BaseUrls {
     data['notification_image_url'] = _notificationImageUrl;
     data['digital_product_url'] = _digitalProductUrl;
     data['delivery_man_image_url'] = _deliveryManImageUrl;
+    data['chat_image_url'] = _chatImageUrl;
     return data;
   }
 }

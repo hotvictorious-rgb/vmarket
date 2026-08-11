@@ -1,4 +1,5 @@
 import 'package:sixvalley_delivery_boy/data/api/api_client.dart';
+import 'package:get/get_connect/http/src/response/response.dart';
 
 abstract class OrderDetailsServiceInterface {
   Future<dynamic> getOrderDetails({String? orderID});
@@ -7,7 +8,8 @@ abstract class OrderDetailsServiceInterface {
   Future<dynamic> pauseAndResumeOrder({int? orderId, int? isPos, String? cause});
   Future<dynamic> cancelOrderStatus({int? orderId, String? cause});
   Future<dynamic> updatePaymentStatus({int? orderId, String? status});
-  Future<dynamic> uploadOrderVerificationImage( String orderId, List<MultipartBody>? verificationImage);
+  Future<Response?> uploadOrderVerificationImage( String orderId, List<MultipartBody>? verificationImage);
   Future<dynamic> verifyOrderDeliveryOtp({int? orderId, String? verificationCode});
   Future<dynamic> resendOtpForOrderVerification({int? orderId});
+  Future<dynamic> generatePaystackLink({int? orderId});
 }

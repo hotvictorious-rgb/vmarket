@@ -121,8 +121,7 @@ class ShopInfoWidget extends StatelessWidget {
                         Row(children: [
                           Expanded(child: Text(sellerName, style: textMedium.copyWith(fontSize: Dimensions.fontSizeLarge, color: Theme.of(context).textTheme.bodyLarge?.color),
                             maxLines: 2, overflow: TextOverflow.ellipsis,),),
-
-                          )]),
+                          ]),
 
 
                         ((sellerProvider.sellerInfoModel != null) || (rating != null && totalProduct != null && totalReview != null)) ?
@@ -160,7 +159,7 @@ class ShopInfoWidget extends StatelessWidget {
 
                             Text('${totalProduct ?? sellerProvider.sellerInfoModel!.totalProduct} ${getTranslated('products', context)}',
                               style: titleRegular.copyWith(fontSize: Dimensions.fontSizeSmall,
-                                  color: Theme.of(context).primaryColor), maxLines: 1, overflow: TextOverflow.ellipsis)]),
+                                  color: Theme.of(context).primaryColor), maxLines: 1, overflow: TextOverflow.ellipsis]),
                         ]):const SizedBox(),
                       ],
                       );
