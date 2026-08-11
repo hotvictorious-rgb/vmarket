@@ -7,6 +7,16 @@ Always append your completed tasks here in chronological order. Include the date
 
 ---
 
+### [2026-08-11] Customer App Web/Windows Support & Gradle Heap Optimization [User App / Vendor / Delivery]
+* **Component:** All Flutter Mobile Apps (`User app`, `Vendor app`, `Delivery Man App`)
+* **Action:** Added web and Windows platform support to Customer App, fixed cross-platform media rendering, and optimized Gradle JVM heap args across all mobile apps to fit within physical RAM limits.
+* **Changes Made:**
+  - **Platform Support:** Generated web and desktop runners (`web/`, `windows/`) enabling browser and desktop testing.
+  - **Chat Widget:** Refactored `chat_screen.dart` media preview widget with `kIsWeb` guards to ensure cross-platform safety.
+  - **Memory Optimization:** Replaced hardcoded `-Xmx4096m` with `-Xmx1536m -XX:MaxMetaspaceSize=512m` across `gradle.properties` in User, Vendor, and Delivery Man apps to prevent JVM heap exhaustion on standard development machines.
+
+---
+
 ### [2026-08-11] Environment Upgrade: Laravel Herd & DBngin Migration [Backend]
 * **Component:** Local Environment & Backend Infrastructure (`backend/Admin and web new install V16.1`)
 * **Action:** Successfully migrated local environment from legacy Laragon to Laravel Herd (PHP 8.4 + Nginx) and DBngin (MySQL 8 / MariaDB on port 3306), reclaiming ~8GB disk space and securing native zero-latency performance.

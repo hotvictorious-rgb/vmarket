@@ -239,8 +239,8 @@ class _ChatScreenState extends State<ChatScreen> {
                                       child: SizedBox(
                                         height: 80,
                                         width: chatController.pickedMediaStored?[index].isVideo ?? false ? 120 : 80,
-                                        child: chatController.pickedMediaStored?[index].isSvg ?? false
-                                            ? SvgPicture.file(File(chatController.pickedMediaStored![index].thumbnailPath ?? ''), fit: BoxFit.cover)
+                                        child: kIsWeb
+                                            ? Image.network(chatController.pickedMediaStored![index].thumbnailPath ?? '', fit: BoxFit.cover, errorBuilder: (_, __, ___) => const SizedBox())
                                             : Image.file(File(chatController.pickedMediaStored![index].thumbnailPath ?? ''), fit: BoxFit.cover),
                                       ),
                                     ),
