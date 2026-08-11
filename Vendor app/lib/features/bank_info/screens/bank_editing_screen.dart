@@ -110,9 +110,9 @@ class BankEditingScreenState extends State<BankEditingScreen> {
       otp: otp,
     );
 
-    if (!response.isSuccess) {
+    if (response != null && !response.isSuccess) {
       showCustomSnackBarWidget(response.message, context, isError: true);
-    } else {
+    } else if (response != null && response.isSuccess) {
       profileController.getSellerInfo();
     }
   }

@@ -120,10 +120,10 @@ class BankInfoController extends ChangeNotifier {
     notifyListeners();
   }
 
-  Future<ResponseModel?> updateBankInfo(BuildContext context,ProfileInfoModel updateUserModel, ProfileBody seller, String token) async {
+  Future<ResponseModel?> updateBankInfo(BuildContext context, ProfileInfoModel updateUserModel, ProfileBody seller, String token, {String? otp}) async {
     _isLoading = true;
     notifyListeners();
-    ResponseModel responseModel = await bankInfoServiceInterface.updateBank(updateUserModel, seller, token);
+    ResponseModel responseModel = await bankInfoServiceInterface.updateBank(updateUserModel, seller, token, otp: otp);
     _isLoading = false;
     notifyListeners();
     return responseModel;
@@ -235,15 +235,6 @@ class BankInfoController extends ChangeNotifier {
       notifyListeners();
       return ResponseModel(false, e.toString());
     }
-  }
-
-  Future<ResponseModel> updateBankInfo(BuildContext context, ProfileInfoModel userInfoModel, ProfileBody seller, String token, {String? otp}) async {
-    _isLoading = true;
-    notifyListeners();
-    ResponseModel responseModel = await bankInfoServiceInterface.updateBank(userInfoModel, seller, token, otp: otp);
-    _isLoading = false;
-    notifyListeners();
-    return responseModel;
   }
 
   void setAnalyticsFilterName(BuildContext context, String? filterName, bool notify) {
