@@ -248,10 +248,10 @@ class _ShopInfoWidgetState extends State<ShopInfoWidget> {
                   )),
                 ),
               ),
-            )
+            ),
             ],
           ),
-        ):const SizedBox();
+        ) : const SizedBox();
       },
     );
   }
