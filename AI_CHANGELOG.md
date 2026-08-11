@@ -7,6 +7,16 @@ Always append your completed tasks here in chronological order. Include the date
 
 ---
 
+### [2026-08-11] Strict Mandatory Payment Proof Screenshots for Vendor & Delivery Man Payouts [Backend]
+* **Component:** Laravel Backend (`VendorController.php`, `DeliverymanWithdrawController.php`, `WithdrawRequest.php`, `admin-views/vendor/withdraw-view.blade.php`, `admin-views/delivery-man/withdraw/_details.blade.php`)
+* **Action:** Verified and strictly enforced mandatory screenshot/receipt uploads for both Vendor and Delivery Man payout approvals.
+* **Changes Made:**
+  - Enforced strict backend validation: Admin CANNOT approve a vendor or delivery man payout without attaching a valid payment proof screenshot.
+  - Added `proof_of_payment_url` accessor on `WithdrawRequest` model for direct CDN/storage image resolution.
+  - Verified Admin approval modals for both Vendor and Deliveryman withdrawal requests include dynamic client-side `required` enforcement and preview capability.
+
+---
+
 ### [2026-08-11] Full Nigerian KYC Engine, Corporate Bank Matching & Admin Verification Hub [Backend & Vendor App]
 * **Component:** Laravel Backend (`app/Services/NigerianKycService.php`, `SellerController.php`, `VendorController.php`, `resources/views/admin-views/vendor/view.blade.php`), Vendor App (`lib/features/profile/screens/kyc_verification_screen.dart`, `lib/features/bank_info/screens/bank_info_screen.dart`)
 * **Action:** Completed end-to-end 100% Free Nigerian Vendor Identity Verification (KYC) system with Paystack CBN NUBAN Name Cross-Matching, Dual Personal/Corporate Shop Matching, 48-Hour Cooldown, and Admin 1-Click Approval Hub.

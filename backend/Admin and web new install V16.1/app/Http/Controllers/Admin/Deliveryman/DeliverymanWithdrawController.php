@@ -89,7 +89,10 @@ class DeliverymanWithdrawController extends Controller
         $formatData = $deliveryManWithdrawService->getUpdateData(request: $request, wallet: $wallet, withdraw: $withdraw);
         $walletData = $formatData['wallet'];
         $withdrawData = $formatData['withdraw'];
-        if ($request['approved'] == 1 && $request->has('proof_of_payment')) {
+        if ($request['approved'] == 1) {
+            if (!$request->hasFile('proof_of_payment')) {
+                return response()->json(['error' => translate('Proof_of_payment_screenshot_is_required_when_approving_delivery_man_payout')]);
+            }
             $withdrawData['proof_of_payment'] = \App\Utils\ImageManager::upload('withdraw_requests/', 'png', $request->file('proof_of_payment'));
         }
         $this->deliveryManWalletRepo->update(id: $wallet->id, data: $walletData);

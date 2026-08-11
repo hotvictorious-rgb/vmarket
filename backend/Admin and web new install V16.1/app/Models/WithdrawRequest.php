@@ -58,6 +58,16 @@ class WithdrawRequest extends Model
         return $this->belongsTo(Seller::class,'seller_id');
     }
 
+    protected $appends = ['proof_of_payment_url'];
+
+    public function getProofOfPaymentUrlAttribute(): ?string
+    {
+        if (!empty($this->proof_of_payment)) {
+            return asset('storage/app/public/withdraw_requests/' . $this->proof_of_payment);
+        }
+        return null;
+    }
+
     /*  delivery_men->deliveryMan*/
     public function deliveryMan(): BelongsTo
     {
