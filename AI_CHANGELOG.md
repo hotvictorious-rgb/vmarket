@@ -7,6 +7,20 @@ Always append your completed tasks here in chronological order. Include the date
 
 ---
 
+### [2026-08-11] Environment Upgrade: Laravel Herd & DBngin Migration [Backend]
+* **Component:** Local Environment & Backend Infrastructure (`backend/Admin and web new install V16.1`)
+* **Action:** Successfully migrated local environment from legacy Laragon to Laravel Herd (PHP 8.4 + Nginx) and DBngin (MySQL 8 / MariaDB on port 3306), reclaiming ~8GB disk space and securing native zero-latency performance.
+* **Verification & Results:**
+  - **Local Domain:** Linked project as `http://vmarket.test` with automatic Nginx fastcgi proxying to PHP 8.4.
+  - **Database:** Initialized MySQL/MariaDB service on `127.0.0.1:3306`, completed full schema import, ran all pending database migrations, and generated Passport OAuth encryption keys.
+  - **Panels & Endpoints Verified:**
+    - Storefront: `http://vmarket.test/` (200 OK)
+    - Admin Panel: `http://vmarket.test/login/admin` (200 OK)
+    - Vendor Panel: `http://vmarket.test/vendor/auth/login` (200 OK)
+    - Mobile REST API: `http://vmarket.test/api/v1/config` (200 OK JSON)
+
+---
+
 ### [2026-08-11] Fix Final Customer App Widget & Chat Compilation Errors [AI]
 * **Component:** User App (`lib/features/shop/widgets/shop_info_widget.dart`, `lib/features/chat/controllers/chat_controller.dart`, `lib/features/chat/screens/chat_screen.dart`)
 * **Action:** Resolved all remaining syntax and missing import issues in the Customer App.
