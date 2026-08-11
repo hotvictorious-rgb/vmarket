@@ -140,11 +140,11 @@ class _VoiceNoteBottomSheetState extends State<VoiceNoteBottomSheet> {
   Widget build(BuildContext context) {
     return Container(
       width: MediaQuery.sizeOf(context).width,
-      padding: const EdgeInsets.all(Dimensions.paddingSizeDefault),
+      padding: EdgeInsets.all(Dimensions.paddingSizeDefault),
       decoration: BoxDecoration(
         borderRadius: const BorderRadius.only(
-          topLeft: Radius.circular(Dimensions.paddingSizeExtraLarge),
-          topRight: Radius.circular(Dimensions.paddingSizeExtraLarge),
+          topLeft: Radius.circular(30),
+          topRight: Radius.circular(30),
         ),
         color: Get.isDarkMode
             ? Theme.of(context).textTheme.bodyLarge?.color
@@ -161,7 +161,7 @@ class _VoiceNoteBottomSheetState extends State<VoiceNoteBottomSheet> {
                 borderRadius: BorderRadius.circular(2),
               ),
             ),
-            const SizedBox(height: Dimensions.paddingSizeLarge),
+            const SizedBox(height: 20),
             if (!_hasRecorded) ...[
               Text(
                 _isRecording ? _formatDuration(_recordDuration) : 'record_voice_note'.tr,
@@ -170,7 +170,7 @@ class _VoiceNoteBottomSheetState extends State<VoiceNoteBottomSheet> {
                   color: _isRecording ? Colors.red : null,
                 ),
               ),
-              const SizedBox(height: Dimensions.paddingSizeExtraLarge),
+              const SizedBox(height: 30),
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                 children: [
@@ -219,7 +219,7 @@ class _VoiceNoteBottomSheetState extends State<VoiceNoteBottomSheet> {
                   ),
                 ],
               ),
-              const SizedBox(height: Dimensions.paddingSizeLarge),
+              const SizedBox(height: 20),
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
@@ -238,7 +238,7 @@ class _VoiceNoteBottomSheetState extends State<VoiceNoteBottomSheet> {
                 ],
               ),
             ],
-            const SizedBox(height: Dimensions.paddingSizeDefault),
+            const SizedBox(height: 15),
           ],
         ),
       ),

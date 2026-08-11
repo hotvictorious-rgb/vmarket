@@ -9,6 +9,7 @@ import 'package:sixvalley_delivery_boy/features/auth/domain/repositories/auth_re
 import 'package:sixvalley_delivery_boy/utill/app_constants.dart';
 
 
+class AuthRepository implements AuthRepositoryInterface {
   final ApiClient apiClient;
   final SharedPreferences sharedPreferences;
   final FlutterSecureStorage secureStorage;
