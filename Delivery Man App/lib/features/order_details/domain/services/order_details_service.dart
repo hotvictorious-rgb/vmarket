@@ -100,4 +100,9 @@ class OrderDetailsService implements OrderDetailsServiceInterface{
   Future<Response> verifyOrderDeliveryOtp({int? orderId, String? verificationCode}) {
      return orderDetailsRepositoryInterface.verifyOrderDeliveryOtp(orderId: orderId, verificationCode: verificationCode);
   }
+
+  @override
+  Future<Response> generatePaystackLink({int? orderId}) async {
+    return await orderDetailsRepositoryInterface.generatePaystackLink(orderId: orderId);
+  }
 }
