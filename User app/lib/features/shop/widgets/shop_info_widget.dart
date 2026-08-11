@@ -159,7 +159,8 @@ class ShopInfoWidget extends StatelessWidget {
 
                             Text('${totalProduct ?? sellerProvider.sellerInfoModel!.totalProduct} ${getTranslated('products', context)}',
                               style: titleRegular.copyWith(fontSize: Dimensions.fontSizeSmall,
-                                  color: Theme.of(context).primaryColor), maxLines: 1, overflow: TextOverflow.ellipsis]),
+                                  color: Theme.of(context).primaryColor), maxLines: 1, overflow: TextOverflow.ellipsis),
+                          ]),
                         ]):const SizedBox(),
                       ],
                       );

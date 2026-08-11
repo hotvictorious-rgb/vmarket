@@ -90,6 +90,9 @@ class ChatController extends ChangeNotifier {
   bool _isSending = false;
   bool get isSending => _isSending;
 
+  bool _isSendButtonActive = false;
+  bool get isSendButtonActive => _isSendButtonActive;
+
 
 
 
