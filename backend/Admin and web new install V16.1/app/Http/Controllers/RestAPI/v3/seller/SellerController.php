@@ -325,12 +325,12 @@ class SellerController extends Controller
             || ($request->filled('bank_name') && $request['bank_name'] !== $currentSeller->bank_name);
 
         if ($isBankChange && !empty($currentSeller->account_no)) {
-            // 7-day cooldown check
-            if ($currentSeller->bank_updated_at && Carbon::parse($currentSeller->bank_updated_at)->gt(now()->subDays(7))) {
-                $nextDate = Carbon::parse($currentSeller->bank_updated_at)->addDays(7)->toFormattedDateString();
+            // 48-hour cooldown check
+            if ($currentSeller->bank_updated_at && Carbon::parse($currentSeller->bank_updated_at)->gt(now()->subHours(48))) {
+                $nextDate = Carbon::parse($currentSeller->bank_updated_at)->addHours(48)->toDayDateTimeString();
                 return response()->json([
                     'status' => false,
-                    'message' => translate('Bank account details can only be changed once every 7 days for security. Next update available on ') . $nextDate
+                    'message' => translate('Bank account details can only be changed once every 48 hours for security. Next update available on ') . $nextDate
                 ], 403);
             }
 

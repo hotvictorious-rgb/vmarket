@@ -218,7 +218,7 @@ class BankEditingScreenState extends State<BankEditingScreen> {
                         Expanded(
                           child: Text(
                             getTranslated('bank_security_notice', context) ??
-                                'For security against unauthorized changes, bank details require Email OTP authorization and can only be modified once every 7 days.',
+                                'For security against unauthorized changes, bank details require Email OTP authorization and can only be modified once every 48 hours.',
                             style: robotoRegular.copyWith(
                               fontSize: Dimensions.fontSizeSmall,
                               color: Theme.of(context).textTheme.bodyLarge?.color,
