@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:sixvalley_vendor_app/features/bank_info/screens/bank_editing_screen.dart';
+import 'package:sixvalley_vendor_app/features/profile/screens/kyc_verification_screen.dart';
 import 'package:sixvalley_vendor_app/localization/language_constrants.dart';
 import 'package:sixvalley_vendor_app/features/bank_info/controllers/bank_info_controller.dart';
 import 'package:sixvalley_vendor_app/theme/controllers/theme_controller.dart';
@@ -74,11 +75,44 @@ class BankInfoScreen extends StatelessWidget {
                       ),
                       padding:  const EdgeInsets.symmetric(horizontal: Dimensions.paddingSizeDefault, vertical: Dimensions.paddingSizeSmall),
                       child: Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
-                        Text(getTranslated('edit_info', context)!, style: robotoRegular.copyWith(fontSize: Dimensions.fontSizeLarge,
+                        Text(getTranslated('edit_info', context) ?? 'Edit Bank Account', style: robotoRegular.copyWith(fontSize: Dimensions.fontSizeLarge,
                             color: Provider.of<ThemeController>(context, listen: false).darkTheme?
                             Theme.of(context).hintColor: Theme.of(context).primaryColor)),
                         
                         SizedBox(height: 16, width: 16, child: Image.asset(Images.editIcon))
+                      ],),
+                    ),
+                  ),
+                ),
+                const SizedBox(height: Dimensions.paddingSizeSmall),
+
+                GestureDetector(
+                  onTap: () => Navigator.push(context,
+                      MaterialPageRoute(builder: (_) => const KycVerificationScreen())),
+                  child: Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: Dimensions.paddingSizeDefault),
+                    child: Container(
+                      decoration: BoxDecoration(
+                        color: Theme.of(context).primaryColor.withValues(alpha: 0.06),
+                        borderRadius: BorderRadius.circular(Dimensions.paddingSizeSmall),
+                        border: Border.all(width: 0.5, color: Theme.of(context).primaryColor.withValues(alpha: 0.3)),
+                      ),
+                      padding: const EdgeInsets.symmetric(horizontal: Dimensions.paddingSizeDefault, vertical: Dimensions.paddingSizeSmall),
+                      child: Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
+                        Row(
+                          children: [
+                            Icon(Icons.verified_user_outlined, color: Theme.of(context).primaryColor, size: 20),
+                            const SizedBox(width: 8),
+                            Text(
+                              getTranslated('vendor_verification', context) ?? 'Identity & KYC Verification',
+                              style: robotoMedium.copyWith(
+                                fontSize: Dimensions.fontSizeDefault,
+                                color: Theme.of(context).primaryColor,
+                              ),
+                            ),
+                          ],
+                        ),
+                        Icon(Icons.arrow_forward_ios, size: 14, color: Theme.of(context).primaryColor),
                       ],),
                     ),
                   ),

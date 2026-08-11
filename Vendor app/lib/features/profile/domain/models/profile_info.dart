@@ -27,6 +27,9 @@ class ProfileInfoModel {
   double? minimumOrderAmount;
   double? freeOverDeliveryAmount;
   int? freeOverDeliveryAmountStatus;
+  String? nin;
+  String? cacNumber;
+  String? kycStatus;
 
   ProfileInfoModel(
       {this.id,
@@ -73,6 +76,9 @@ class ProfileInfoModel {
     branch = json['branch'];
     accountNo = json['account_no'];
     holderName = json['holder_name'];
+    nin = json['nin'];
+    cacNumber = json['cac_number'];
+    kycStatus = json['kyc_status'];
     authToken = json['auth_token'];
     if(json['sales_commission_percentage']!=null){
       try{
