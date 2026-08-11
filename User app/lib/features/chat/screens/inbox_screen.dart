@@ -45,8 +45,8 @@ class _InboxScreenState extends State<InboxScreen> with SingleTickerProviderStat
     if(!isGuestMode) {
       _tabController = TabController(length: 2, initialIndex: widget.initIndex, vsync: this);
       _tabController?.addListener((){
-        if(chatController.searchController.text.isNotEmpty){
-          chatController.searchController.clear();
+        if(searchController.text.isNotEmpty){
+          searchController.clear();
           chatController.resetIsSearchComplete(isUpdate: false);
         }
       });
