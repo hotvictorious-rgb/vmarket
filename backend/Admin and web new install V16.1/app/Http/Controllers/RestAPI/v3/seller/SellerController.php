@@ -318,8 +318,34 @@ class SellerController extends Controller
     public function seller_info_update(SellerUpdateRequest $request): JsonResponse
     {
         $seller = $request->seller;
+        $currentSeller = Seller::where(['id' => $seller['id']])->first();
 
-        $old_image = Seller::where(['id' => $seller['id']])->first()->image;
+        // Check if bank account details are being changed
+        $isBankChange = ($request->filled('account_no') && $request['account_no'] !== $currentSeller->account_no)
+            || ($request->filled('bank_name') && $request['bank_name'] !== $currentSeller->bank_name);
+
+        if ($isBankChange && !empty($currentSeller->account_no)) {
+            // 7-day cooldown check
+            if ($currentSeller->bank_updated_at && Carbon::parse($currentSeller->bank_updated_at)->gt(now()->subDays(7))) {
+                $nextDate = Carbon::parse($currentSeller->bank_updated_at)->addDays(7)->toFormattedDateString();
+                return response()->json([
+                    'status' => false,
+                    'message' => translate('Bank account details can only be changed once every 7 days for security. Next update available on ') . $nextDate
+                ], 403);
+            }
+
+            // Require OTP for modifying existing bank details
+            if (!$request->filled('otp')) {
+                return response()->json(['message' => translate('Security OTP is required to update bank account details.')], 422);
+            }
+
+            $paystackService = app(\App\Services\PaystackBankService::class);
+            if (!$paystackService->verifyBankUpdateOtp($seller['id'], $request['otp'])) {
+                return response()->json(['message' => translate('Invalid or expired security OTP code.')], 403);
+            }
+        }
+
+        $old_image = $currentSeller->image;
         $image = $request->file('image');
         if ($image != null) {
             $imageName = ImageManager::update('seller/', $old_image, 'webp', $request->file('image'));
@@ -327,18 +353,26 @@ class SellerController extends Controller
             $imageName = $old_image;
         }
 
-        Seller::where(['id' => $seller['id']])->update([
-            'f_name' => $request['f_name'],
-            'l_name' => $request['l_name'],
-            'bank_name' => $request['bank_name'],
-            'branch' => $request['branch'],
-            'account_no' => $request['account_no'],
-            'holder_name' => $request['holder_name'],
-            'phone' => $request['phone'],
-            'password' => $request['password'] != null ? bcrypt($request['password']) : Seller::where(['id' => $seller['id']])->first()->password,
+        $updateData = [
+            'f_name' => $request['f_name'] ?? $currentSeller->f_name,
+            'l_name' => $request['l_name'] ?? $currentSeller->l_name,
+            'bank_name' => $request['bank_name'] ?? $currentSeller->bank_name,
+            'branch' => $request['branch'] ?? $currentSeller->branch,
+            'account_no' => $request['account_no'] ?? $currentSeller->account_no,
+            'holder_name' => $request['holder_name'] ?? $currentSeller->holder_name,
+            'phone' => $request['phone'] ?? $currentSeller->phone,
+            'password' => $request['password'] != null ? bcrypt($request['password']) : $currentSeller->password,
             'image' => $imageName,
+            'nin' => $request['nin'] ?? $currentSeller->nin,
+            'cac_number' => $request['cac_number'] ?? $currentSeller->cac_number,
             'updated_at' => now()
-        ]);
+        ];
+
+        if ($isBankChange) {
+            $updateData['bank_updated_at'] = now();
+        }
+
+        Seller::where(['id' => $seller['id']])->update($updateData);
 
         if ($request['password'] != null) {
             Seller::where(['id' => $seller['id']])->update([
@@ -347,6 +381,56 @@ class SellerController extends Controller
         }
 
         return response()->json(translate('Info updated successfully!'), 200);
+    }
+
+    public function get_nigerian_banks(Request $request): JsonResponse
+    {
+        $paystackService = app(\App\Services\PaystackBankService::class);
+        $result = $paystackService->getNigerianBanks();
+        return response()->json($result, 200);
+    }
+
+    public function resolve_bank_account(Request $request): JsonResponse
+    {
+        $validator = Validator::make($request->all(), [
+            'account_number' => 'required|string|size:10',
+            'bank_code' => 'required|string',
+        ]);
+
+        if ($validator->fails()) {
+            return response()->json(['status' => false, 'message' => $validator->errors()->first()], 422);
+        }
+
+        $paystackService = app(\App\Services\PaystackBankService::class);
+        $result = $paystackService->resolveAccount($request->account_number, $request->bank_code);
+
+        return response()->json($result, $result['status'] ? 200 : 400);
+    }
+
+    public function send_bank_update_otp(Request $request): JsonResponse
+    {
+        $seller = Seller::find($request->seller['id']);
+        if (!$seller) {
+            return response()->json(['status' => false, 'message' => translate('Vendor not found')], 404);
+        }
+
+        $validator = Validator::make($request->all(), [
+            'account_no' => 'required|string|size:10',
+            'bank_name' => 'required|string',
+        ]);
+
+        if ($validator->fails()) {
+            return response()->json(['status' => false, 'message' => $validator->errors()->first()], 422);
+        }
+
+        $paystackService = app(\App\Services\PaystackBankService::class);
+        $result = $paystackService->sendBankUpdateOtp($seller, [
+            'bank_name' => $request->bank_name,
+            'account_no' => $request->account_no,
+            'holder_name' => $request->holder_name ?? '',
+        ]);
+
+        return response()->json($result, 200);
     }
 
     public function withdraw_method_list(Request $request): JsonResponse

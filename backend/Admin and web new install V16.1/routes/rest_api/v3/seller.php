@@ -64,6 +64,9 @@ Route::group(['namespace' => 'RestAPI\v3\seller', 'prefix' => 'v3/seller', 'midd
             Route::post('shop-product-reviews-reply', 'shopProductReviewReply');
             Route::get('shop-product-reviews-status', 'shop_product_reviews_status');
             Route::put('seller-update', 'seller_info_update');
+            Route::get('paystack/banks', 'get_nigerian_banks');
+            Route::post('paystack/resolve-account', 'resolve_bank_account');
+            Route::post('bank-info/send-otp', 'send_bank_update_otp');
             Route::get('monthly-earning', 'monthly_earning');
             Route::get('monthly-commission-given', 'monthly_commission_given');
             Route::put('cm-firebase-token', 'update_cm_firebase_token');

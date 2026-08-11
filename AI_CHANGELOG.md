@@ -7,6 +7,23 @@ Always append your completed tasks here in chronological order. Include the date
 
 ---
 
+### [2026-08-11] Paystack Real-Time NUBAN Resolution, 7-Day Cooldown & Nigerian KYC [Backend & Vendor App]
+* **Component:** Laravel Backend (`app/Services/PaystackBankService.php`, `SellerController.php`, `database/migrations/`) & Vendor App (`lib/features/bank_info/`)
+* **Action:** Implemented real-time Paystack NUBAN bank verification, 7-day cooldown on account changes, and email OTP security verification for bank account updates. Added Nigerian KYC support (NIN, CAC, KYC Status).
+* **Changes Made:**
+  - **Backend Services & API:**
+    - Created `PaystackBankService` supporting `getNigerianBanks()`, `resolveAccount()`, `sendBankUpdateOtp()`, and `verifyBankUpdateOtp()`.
+    - Added database migration `2026_08_11_120000_add_nigerian_kyc_and_bank_cooldown_to_sellers_table` with `bank_updated_at`, `nin`, `nin_document`, `cac_number`, `cac_document`, and `kyc_status`.
+    - Updated `SellerController.php` to enforce a strict **7-day cooldown** on modifying bank account details (`Carbon::parse($currentSeller->bank_updated_at)->gt(now()->subDays(7))`).
+    - Added routes `paystack/banks`, `paystack/resolve-account`, and `bank-info/send-otp` in `routes/rest_api/v3/seller.php`.
+  - **Vendor App (Flutter):**
+    - Created `BankModel` in `lib/features/bank_info/domain/models/bank_model.dart`.
+    - Created `BankSelectionBottomSheet` for searchable Nigerian bank list.
+    - Created `VerifyBankOtpSheet` to prompt for 6-digit email OTP before changing bank details.
+    - Upgraded `BankEditingScreen` and `BankInfoController` with real-time 10-digit NUBAN auto-resolution, security notice, and 7-day cooldown compliance.
+
+---
+
 ### [2026-08-11] Fix Syntax and Interface Typings for Customer & Delivery Apps [AI]
 * **Component:** User App (`lib/features/product_details/widgets/shop_info_widget.dart`), Delivery Man App (`lib/features/order_details/domain/repositories/order_details_repository_interface.dart`)
 * **Action:** Fixed the remaining CI build blockers for Customer and Delivery Apps on GitHub Actions.
