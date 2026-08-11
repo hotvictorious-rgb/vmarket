@@ -7,6 +7,15 @@ Always append your completed tasks here in chronological order. Include the date
 
 ---
 
+### [2026-08-11] Fix CI Compile & Syntax Errors in Customer App and Delivery Man App [AI]
+* **Component:** User App (`product_details/widgets/shop_info_widget.dart`), Delivery Man App (`order_details_service.dart`, `order_details_service_interface.dart`, `order_details_repository_interface.dart`)
+* **Action:** Resolved syntax error in Customer App and missing method implementations in Delivery Man App that were blocking CI Android builds.
+* **Changes Made:**
+  - **Customer App:** Fixed unmatched brackets and closing tags in `lib/features/product_details/widgets/shop_info_widget.dart` that caused Dart parser failure.
+  - **Delivery Man App:** Implemented `generatePaystackLink` in `OrderDetailsService` and aligned its return type (`Future<Response>`) across `OrderDetailsServiceInterface` and `OrderDetailsRepositoryInterface`.
+
+---
+
 ### [2026-08-11] Strict Mandatory Payment Proof Screenshots for Vendor & Delivery Man Payouts [Backend]
 * **Component:** Laravel Backend (`VendorController.php`, `DeliverymanWithdrawController.php`, `WithdrawRequest.php`, `admin-views/vendor/withdraw-view.blade.php`, `admin-views/delivery-man/withdraw/_details.blade.php`)
 * **Action:** Verified and strictly enforced mandatory screenshot/receipt uploads for both Vendor and Delivery Man payout approvals.

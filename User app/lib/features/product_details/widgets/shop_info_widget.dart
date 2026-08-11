@@ -142,16 +142,14 @@ class _ShopInfoWidgetState extends State<ShopInfoWidget> {
                         )
                       )),
 
-                      SizedBox(width: Dimensions.paddingSizeExtraSmall),
-                      ]),
+                      const SizedBox(width: Dimensions.paddingSizeExtraSmall),
                     ]),
 
                     const SizedBox(height: Dimensions.paddingSizeExtraSmall),
                   ]),
                 ),
 
-                ],
-              ),
+              ]),
 
             seller.sellerInfoModelProductDetails != null?
             Padding(padding: const EdgeInsets.only(top: Dimensions.paddingSizeSmall),
