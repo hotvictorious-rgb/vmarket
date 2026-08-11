@@ -7,7 +7,7 @@ class AppConstants {
   static const String appVersion = '4.2'; ///flutter SDK : 3.29.3
   static const String polylineMapKey = 'YOUR_MAP_KEY_HERE';
 
-  static const String baseUri = 'http://127.0.0.1:8000';
+  static const String baseUri = 'https://shop.victoriousmarket.com.ng';
 
   static const String profileUri = '/api/v2/delivery-man/info';
   static const String configUri = '/api/v1/config';

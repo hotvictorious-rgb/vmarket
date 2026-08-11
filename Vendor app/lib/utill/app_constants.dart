@@ -9,7 +9,7 @@ class AppConstants {
   static const bool demo = false;
   static const int imageQuality = 100;
 
-  static const String baseUrl = 'http://127.0.0.1:8000';
+  static const String baseUrl = 'https://shop.victoriousmarket.com.ng';
 
   static const String loginUri = '/api/v3/seller/auth/login';
   static const String configUri = '/api/v1/config';

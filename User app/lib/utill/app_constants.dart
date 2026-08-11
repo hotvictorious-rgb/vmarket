@@ -10,7 +10,7 @@ import 'package:flutter_sixvalley_ecommerce/common/enums/local_caches_type_enum.
   static const int imageQuality = 100;
   static const LocalCachesTypeEnum cachesType = LocalCachesTypeEnum.all;
 
-  static const String baseUrl = 'http://127.0.0.1:8000';
+  static const String baseUrl = 'https://shop.victoriousmarket.com.ng';
 
   static const String googleServerClientId = '979105513696-spdsjbb5gdoc0p4cn56sj6nfropuslcp.apps.googleusercontent.com';
   static const String userId = 'userId';
