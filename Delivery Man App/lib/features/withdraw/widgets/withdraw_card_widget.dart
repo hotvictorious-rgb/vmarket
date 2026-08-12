@@ -1,10 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:sixvalley_delivery_boy/common/basewidgets/custom_divider_widget.dart';
+import 'package:sixvalley_delivery_boy/common/basewidgets/custom_image_widget.dart';
 import 'package:sixvalley_delivery_boy/features/wallet/controllers/wallet_controller.dart';
 import 'package:sixvalley_delivery_boy/features/withdraw/domain/models/withdraw_model.dart';
 import 'package:get/get.dart';
 import 'package:sixvalley_delivery_boy/helper/date_converter.dart';
 import 'package:sixvalley_delivery_boy/helper/price_converter.dart';
+import 'package:sixvalley_delivery_boy/utill/app_constants.dart';
 import 'package:sixvalley_delivery_boy/utill/dimensions.dart';
 import 'package:sixvalley_delivery_boy/utill/images.dart';
 import 'package:sixvalley_delivery_boy/utill/styles.dart';
@@ -49,10 +51,9 @@ class WithdrawCardWidget extends StatelessWidget {
                         padding: EdgeInsets.all(Dimensions.paddingSizeSmall),
                         child: Text('Proof of Payment', style: rubikMedium),
                       ),
-                      Image.network(
-                        'http://127.0.0.1:8000/storage/app/public/withdraw_requests/${withdraws!.proofOfPayment}',
+                      CustomImageWidget(
+                        image: '${AppConstants.baseUri}/storage/app/public/withdraw_requests/${withdraws!.proofOfPayment}',
                         fit: BoxFit.contain,
-                        errorBuilder: (c, o, s) => const Icon(Icons.error),
                       ),
                       TextButton(
                         onPressed: () => Navigator.pop(context),
