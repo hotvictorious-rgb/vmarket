@@ -32,7 +32,8 @@ if (keystorePropertiesFile.exists()) {
 
 android {
     namespace "com.victoriousmarket.delivery"
-    compileSdk 35
+    compileSdk 36
+    ndkVersion = "28.2.13676358"
 
     compileOptions {
         coreLibraryDesugaringEnabled true
@@ -54,7 +55,7 @@ android {
         minSdkVersion flutter.minSdkVersion
         versionCode flutterVersionCode.toInteger()
         versionName flutterVersionName
-        targetSdkVersion 35
+        targetSdkVersion 36
         multiDexEnabled true
     }
 
