@@ -12,7 +12,12 @@ class CustomImageWidget extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return CachedNetworkImage(
-      imageUrl: image, height: height, width: width, fit: BoxFit.cover,
+      imageUrl: image,
+      height: height,
+      width: width,
+      fit: fit,
+      memCacheHeight: height != null && height!.isFinite && height! > 0 ? (height! * 2.5).toInt() : null,
+      memCacheWidth: width != null && width!.isFinite && width! > 0 ? (width! * 2.5).toInt() : null,
       placeholder: (context, url) => Image.asset(Images.placeholder, height: height, width: width, fit: fit),
       errorWidget: (context, url, error) => Image.asset(Images.placeholder, height: height, width: width, fit: fit),
     );
