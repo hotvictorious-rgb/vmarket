@@ -7,6 +7,14 @@ Always append your completed tasks here in chronological order. Include the time
 
 ---
 
+### [2026-08-12] Automated GitHub Releases Publishing for Mobile APKs & AABs [DevOps / CI/CD]
+* **Component:** GitHub Actions Workflow (`.github/workflows/build_android.yml`)
+* **Action:** Added automated `publish-release` job using `softprops/action-gh-release@v2`.
+* **Changes Made:**
+  - Configured automated collection, renaming (`VictoriousMarket-CustomerApp.apk`, `VictoriousMarket-VendorApp.apk`, `VictoriousMarket-DeliveryApp.apk`), and upload of built APKs and AAB bundles directly to the GitHub Releases page under the `latest-release` tag.
+
+---
+
 ### [2026-08-12] Permanent AI Engineering Governance & Architecture Layer [AI Governance]
 * **Component:** Root Governance (`AI_ENGINEERING_RULES.md`, `ARCHITECTURE.md`, `CHANGE_IMPACT_PROTOCOL.md`, `API_CONTRACT.md`, `BUSINESS_RULES.md`, `DATABASE_ARCHITECTURE.md`, `DEVELOPMENT_WORKFLOW.md`, `docs/`, `.agents/AGENTS.md`)
 * **Action:** Established permanent, authoritative engineering governance and architecture documents across the entire Vmarket multi-client ecosystem.

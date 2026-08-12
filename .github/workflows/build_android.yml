@@ -228,3 +228,92 @@ jobs:
         with:
           name: Delivery-App-AAB
           path: Delivery Man App/build/app/outputs/bundle/release/app-release.aab
+
+  publish-release:
+    name: Publish GitHub Release
+    needs: [build-customer, build-vendor, build-delivery]
+    if: always() && (needs.build-customer.result == 'success' || needs.build-vendor.result == 'success' || needs.build-delivery.result == 'success')
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - name: Download Customer APK
+        uses: actions/download-artifact@v4
+        continue-on-error: true
+        with:
+          name: Customer-App-APK
+          path: release-assets/customer-apk
+
+      - name: Download Customer AAB
+        uses: actions/download-artifact@v4
+        continue-on-error: true
+        with:
+          name: Customer-App-AAB
+          path: release-assets/customer-aab
+
+      - name: Download Vendor APK
+        uses: actions/download-artifact@v4
+        continue-on-error: true
+        with:
+          name: Vendor-App-APK
+          path: release-assets/vendor-apk
+
+      - name: Download Vendor AAB
+        uses: actions/download-artifact@v4
+        continue-on-error: true
+        with:
+          name: Vendor-App-AAB
+          path: release-assets/vendor-aab
+
+      - name: Download Delivery APK
+        uses: actions/download-artifact@v4
+        continue-on-error: true
+        with:
+          name: Delivery-App-APK
+          path: release-assets/delivery-apk
+
+      - name: Download Delivery AAB
+        uses: actions/download-artifact@v4
+        continue-on-error: true
+        with:
+          name: Delivery-App-AAB
+          path: release-assets/delivery-aab
+
+      - name: Organize and Rename Binaries
+        run: |
+          mkdir -p final-release-binaries
+          [ -f release-assets/customer-apk/app-release.apk ] && cp release-assets/customer-apk/app-release.apk final-release-binaries/VictoriousMarket-CustomerApp.apk || true
+          [ -f release-assets/customer-aab/app-release.aab ] && cp release-assets/customer-aab/app-release.aab final-release-binaries/VictoriousMarket-CustomerApp.aab || true
+          [ -f release-assets/vendor-apk/app-release.apk ] && cp release-assets/vendor-apk/app-release.apk final-release-binaries/VictoriousMarket-VendorApp.apk || true
+          [ -f release-assets/vendor-aab/app-release.aab ] && cp release-assets/vendor-aab/app-release.aab final-release-binaries/VictoriousMarket-VendorApp.aab || true
+          [ -f release-assets/delivery-apk/app-release.apk ] && cp release-assets/delivery-apk/app-release.apk final-release-binaries/VictoriousMarket-DeliveryApp.apk || true
+          [ -f release-assets/delivery-aab/app-release.aab ] && cp release-assets/delivery-aab/app-release.aab final-release-binaries/VictoriousMarket-DeliveryApp.aab || true
+          ls -la final-release-binaries/
+
+      - name: Create or Update GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: latest-release
+          name: "Victorious MARKET — Latest Android Builds (APKs & AABs)"
+          body: |
+            ## 🛒 Victorious MARKET — Latest Android Releases
+            
+            Download the latest release binaries directly below:
+            
+            ### 📱 Direct Download APKs:
+            * **Customer App:** `VictoriousMarket-CustomerApp.apk`
+            * **Vendor App:** `VictoriousMarket-VendorApp.apk`
+            * **Delivery Rider App:** `VictoriousMarket-DeliveryApp.apk`
+            
+            ### 📦 Google Play Store Bundles:
+            * `VictoriousMarket-CustomerApp.aab`
+            * `VictoriousMarket-VendorApp.aab`
+            * `VictoriousMarket-DeliveryApp.aab`
+            
+            *Compiled automatically by Victorious MARKET GitHub Actions CI/CD.*
+          draft: false
+          prerelease: false
+          files: final-release-binaries/*
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
