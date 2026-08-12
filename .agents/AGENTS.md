@@ -17,7 +17,7 @@ Before making ANY changes to this codebase, you MUST:
 - You must always read `AI_CHANGELOG.md` in the root directory to understand recent modifications made by other AIs.
 
 ## 2. Mandatory Change Logging
-Any time you make a functional change, fix a bug, or complete a feature, you **MUST** document it in `AI_CHANGELOG.md` located in the root of the workspace. This ensures all AIs remain synchronized on the project's state.
+Any time you make a functional change, fix a bug, or complete a feature, you **MUST** document it in `AI_CHANGELOG.md` located in the root of the workspace. Always include the exact timestamp in the header: `### [YYYY-MM-DD HH:MM UTC] <Title> [<Scope>]`. This ensures all AIs remain synchronized on the project's state.
 
 ## 3. Strict Architectural Patterns
 

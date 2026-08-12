@@ -3,11 +3,13 @@
 This document tracks all modifications, bug fixes, and feature additions made to the Victorious MARKET ecosystem by AI agents. 
 
 **Instructions for AIs:** 
-Always append your completed tasks here in chronological order. Include the time and date, the specific app/component modified, and a brief description of the changes.
+Always append your completed tasks here in chronological order at the top. Format the header as:
+`### [YYYY-MM-DD HH:MM UTC] <Feature / Fix Title> [<Component Scope>]`
+Include the specific app/component modified and bullet points detailing the exact technical changes.
 
 ---
 
-### [2026-08-12] Paystack Webhook HMAC-SHA512 Cryptographic Verification [Backend]
+### [2026-08-12 03:12 UTC] Paystack Webhook HMAC-SHA512 Cryptographic Verification [Backend]
 * **Component:** Laravel Backend (`app/Http/Controllers/Payment_Methods/PaystackController.php`, `routes/web/routes.php`, `app/Http/Middleware/VerifyCsrfToken.php`, `docs/decisions/ADR-005-paystack-webhook-cryptographic-verification.md`)
 * **Action:** Implemented secure, spoof-proof asynchronous webhook handling with HMAC-SHA512 cryptographic signature validation for all Paystack payments.
 * **Changes Made:**
