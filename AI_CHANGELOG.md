@@ -9,6 +9,16 @@ Include the specific app/component modified and bullet points detailing the exac
 
 ---
 
+### [2026-08-12 19:25 UTC] Android SDK 36 & Gradle CI Cache Optimization [DevOps / CI/CD]
+* **Component:** Delivery Man App (`android/app/build.gradle`, `android/gradle.properties`), Vendor App (`android/gradle.properties`), User App (`android/gradle.properties`), GitHub Actions (`.github/workflows/build_android.yml`)
+* **Action:** Upgraded Android compilation configuration and fixed Gradle wrapper download network timeouts on CI runners.
+* **Changes Made:**
+  - **Delivery Man App:** Updated `compileSdk` to `36`, `targetSdkVersion` to `36`, and set `ndkVersion = "28.2.13676358"` to satisfy Flutter 3.41+ and Google Play Android 16 plugin requirements.
+  - **Gradle Properties:** Added `systemProp.org.gradle.internal.http.connectionTimeout=120000` and `systemProp.org.gradle.internal.http.socketTimeout=120000` with 3GB heap to eliminate `SocketException: Unexpected end of file from server` network glitches.
+  - **GitHub Actions Workflow:** Integrated `gradle/actions/setup-gradle@v4` across all 3 build jobs for automated wrapper and artifact caching.
+
+---
+
 ### [2026-08-12 07:18 UTC] Full System Rule Compliance Hardening [Ecosystem]
 * **Component:** Vendor App, Delivery Man App, Laravel Backend
 * **Action:** Resolved all remaining rule discrepancies identified during deep system scan.
