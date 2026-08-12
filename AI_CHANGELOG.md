@@ -7,6 +7,17 @@ Always append your completed tasks here in chronological order. Include the time
 
 ---
 
+### [2026-08-12] Paystack Webhook HMAC-SHA512 Cryptographic Verification [Backend]
+* **Component:** Laravel Backend (`app/Http/Controllers/Payment_Methods/PaystackController.php`, `routes/web/routes.php`, `app/Http/Middleware/VerifyCsrfToken.php`, `docs/decisions/ADR-005-paystack-webhook-cryptographic-verification.md`)
+* **Action:** Implemented secure, spoof-proof asynchronous webhook handling with HMAC-SHA512 cryptographic signature validation for all Paystack payments.
+* **Changes Made:**
+  - Added `POST /paystack/webhook` route and exempted it from CSRF verification.
+  - Implemented strict `hash_equals(hash_hmac('sha512', $payload, $secretKey), $signature)` verification against the `X-Paystack-Signature` header to eliminate timing and spoofing attacks.
+  - Added automated background fulfillment for both customer `PaymentRequest` and delivery rider dynamic payment links upon `charge.success` events.
+  - Created `ADR-005` in `/docs/decisions/`.
+
+---
+
 ### [2026-08-12] Automated GitHub Releases Publishing for Mobile APKs & AABs [DevOps / CI/CD]
 * **Component:** GitHub Actions Workflow (`.github/workflows/build_android.yml`)
 * **Action:** Added automated `publish-release` job using `softprops/action-gh-release@v2`.

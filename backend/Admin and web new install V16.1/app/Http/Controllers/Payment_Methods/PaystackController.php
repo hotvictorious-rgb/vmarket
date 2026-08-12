@@ -2,8 +2,11 @@
 
 namespace App\Http\Controllers\Payment_Methods;
 
+use App\Models\Order;
+use App\Models\OrderEditHistory;
 use App\Models\PaymentRequest;
 use App\Models\User;
+use App\Services\PaystackBankService;
 use App\Traits\Processor;
 use Illuminate\Foundation\Application;
 use Illuminate\Http\JsonResponse;
@@ -12,6 +15,7 @@ use Illuminate\Http\Request;
 use Illuminate\Routing\Controller;
 use Illuminate\Routing\Redirector;
 use Illuminate\Support\Facades\Config;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Validator;
 
 class PaystackController extends Controller
@@ -161,5 +165,101 @@ class PaystackController extends Controller
 
         curl_close($curl);
         return json_decode($response, true);
+    }
+
+    /**
+     * Handle Paystack Asynchronous Webhooks with Strict HMAC-SHA512 Cryptographic Signature Verification
+     *
+     * @param Request $request
+     * @return JsonResponse
+     */
+    public function webhook(Request $request): JsonResponse
+    {
+        $secretKey = Config::get('paystack.secretKey');
+        if (empty($secretKey)) {
+            $paystackBankService = app(PaystackBankService::class);
+            $secretKey = $paystackBankService->getSecretKey();
+        }
+
+        $paystackSignature = $request->header('x-paystack-signature');
+        $payload = $request->getContent();
+
+        // 1. Strict Cryptographic Verification
+        if (empty($paystackSignature) || empty($secretKey) || !hash_equals(hash_hmac('sha512', $payload, $secretKey), $paystackSignature)) {
+            Log::warning('Paystack Webhook: Signature verification failed or invalid signature header.', [
+                'has_signature' => !empty($paystackSignature),
+                'ip' => $request->ip(),
+            ]);
+            return response()->json(['status' => false, 'message' => 'Invalid signature'], 401);
+        }
+
+        $event = json_decode($payload, true);
+        if (!$event || !isset($event['event'])) {
+            return response()->json(['status' => false, 'message' => 'Invalid event payload'], 400);
+        }
+
+        Log::info('Paystack Webhook received event: ' . $event['event']);
+
+        // 2. Process Successful Charge
+        if ($event['event'] === 'charge.success') {
+            $data = $event['data'] ?? [];
+            $reference = $data['reference'] ?? null;
+            $amountPaid = $data['amount'] ?? 0; // in kobo
+            $metadata = $data['metadata'] ?? [];
+
+            // A. Check standard e-commerce PaymentRequest
+            $paymentId = $metadata['payment_id'] ?? null;
+            if ($paymentId) {
+                $paymentRequest = $this->payment::where('id', $paymentId)->first();
+                if ($paymentRequest && $paymentRequest->is_paid == 0) {
+                    $expectedAmount = round(($paymentRequest->payment_amount ?? 0) * 100);
+                    if ($amountPaid >= $expectedAmount) {
+                        $paymentRequest->update([
+                            'payment_method' => 'paystack',
+                            'is_paid' => 1,
+                            'transaction_id' => $reference,
+                        ]);
+
+                        $updatedPayment = $this->payment::where('id', $paymentId)->first();
+                        if (!empty($updatedPayment->success_hook) && function_exists($updatedPayment->success_hook)) {
+                            call_user_func($updatedPayment->success_hook, $updatedPayment);
+                        }
+                        Log::info("Paystack Webhook: Successfully processed PaymentRequest #{$paymentId} with ref {$reference}.");
+                    }
+                }
+            }
+
+            // B. Check Delivery Rider Cash-on-Delivery Order Payment Link
+            $orderId = $metadata['order_id'] ?? null;
+            $type = $metadata['type'] ?? null;
+            if ($orderId && $type === 'delivery_payment') {
+                $order = Order::with(['customer', 'deliveryMan', 'latestEditHistory'])->find($orderId);
+                if ($order && $order->order_status != 'delivered') {
+                    $expectedAmount = round(($order['order_amount'] + $order['edit_due_amount']) * 100);
+                    if ($amountPaid >= $expectedAmount) {
+                        $order->update([
+                            'order_status' => 'delivered',
+                            'order_amount' => $order['order_amount'] + $order['edit_due_amount'],
+                            'payment_status' => 'paid',
+                            'edit_due_amount' => 0,
+                            'payment_method' => 'paystack',
+                            'transaction_ref' => $reference,
+                        ]);
+
+                        if ($order->latestEditHistory) {
+                            OrderEditHistory::where('id', $order->latestEditHistory->id)->update([
+                                'order_due_payment_status' => 'paid',
+                                'order_due_payment_note' => 'Marked as paid by Paystack Webhook',
+                            ]);
+                        }
+
+                        Log::info("Paystack Webhook: Successfully processed Delivery Order #{$orderId} with ref {$reference}.");
+                    }
+                }
+            }
+        }
+
+        // Paystack requires a 200 OK HTTP response
+        return response()->json(['status' => true, 'message' => 'Webhook received and processed'], 200);
     }
 }

@@ -456,6 +456,7 @@ if (!$isGatewayPublished) {
             Route::get('pay', [PaystackController::class, 'index'])->name('pay');
             Route::get('callback', [PaystackController::class, 'handleGatewayCallback'])->name('callback');
             Route::get('cancel', [PaystackController::class, 'cancel'])->name('cancel');
+            Route::post('webhook', [PaystackController::class, 'webhook'])->name('webhook');
         });
 
         //PAYSTACK DELIVERY CALLBACK
