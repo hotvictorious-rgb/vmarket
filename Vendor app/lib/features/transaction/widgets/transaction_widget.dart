@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:sixvalley_vendor_app/common/basewidgets/confirmation_dialog_widget.dart';
 import 'package:sixvalley_vendor_app/common/basewidgets/custom_snackbar_widget.dart';
+import 'package:sixvalley_vendor_app/common/basewidgets/custom_image_widget.dart';
 import 'package:sixvalley_vendor_app/features/transaction/controllers/transaction_controller.dart';
 import 'package:sixvalley_vendor_app/features/transaction/domain/models/transaction_model.dart';
 import 'package:sixvalley_vendor_app/features/wallet/controllers/wallet_controller.dart';
@@ -124,10 +125,9 @@ class TransactionWidget extends StatelessWidget {
                           padding: const EdgeInsets.all(Dimensions.paddingSizeSmall),
                           child: Text(getTranslated('proof_of_payment', context) ?? 'Proof of Payment', style: robotoBold),
                         ),
-                        Image.network(
-                          '${AppConstants.baseUrl}/storage/app/public/withdraw_requests/${transactionModel.proofOfPayment}',
+                        CustomImageWidget(
+                          image: '${AppConstants.baseUrl}/storage/app/public/withdraw_requests/${transactionModel.proofOfPayment}',
                           fit: BoxFit.contain,
-                          errorBuilder: (c, o, s) => const Icon(Icons.error),
                         ),
                         TextButton(
                           onPressed: () => Navigator.pop(context),
