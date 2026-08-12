@@ -91,87 +91,17 @@ class UserInfoModel {
     }
     createdAt = json['created_at'];
     updatedAt = json['updated_at'];
-    if(json['withdrawable_balance'] != null){
-      try{
-        withdrawableBalance = json['withdrawable_balance'].toDouble();
-      }catch(e){
-        withdrawableBalance = double.parse(json['withdrawable_balance']);
-      }
-
-    }else{
-      withdrawableBalance = 0;
-    }
-    if(json['current_balance'] != null){
-      try{
-        currentBalance = json['current_balance'].toDouble();
-      }catch(e){
-        currentBalance = double.parse(json['current_balance']);
-      }
-    }else{
-      currentBalance = 0;
-    }
-    if(json['cash_in_hand'] != null){
-      try{
-        cashInHand = json['cash_in_hand'].toDouble();
-      }catch(e){
-        cashInHand = double.parse(json['cash_in_hand']);
-      }
-    }else{
-      cashInHand = 0;
-    }
-    if(json['pending_withdraw'] != null){
-      try{
-        pendingWithdraw = json['pending_withdraw'].toDouble();
-      }catch(e){
-        pendingWithdraw = double.parse(json['pending_withdraw']);
-      }
-    }else{
-      pendingWithdraw = 0;
-    }
-    if(json['total_withdraw'] != null){
-      try{
-        totalWithdraw = json['total_withdraw'].toDouble();
-      }catch(e){
-        totalWithdraw = double.parse(json['total_withdraw']);
-      }
-    }else{
-      totalWithdraw = 0;
-    }
-
-    if(json['total_earn'] != null){
-      totalEarn = json['total_earn'].toDouble();
-    }else{
-      totalEarn = 0;
-    }
-    if(json['completed_delivery'] != null){
-      completedDelivery = json['completed_delivery'];
-    }else{
-      completedDelivery = 0;
-    }
-    if(json['total_delivery'] != null){
-      totalDelivery = json['total_delivery'];
-    }else{
-      totalDelivery = 0;
-    }
-    if(json['pause_delivery'] != null){
-      pauseDelivery = json['pause_delivery'];
-    }else{
-      pauseDelivery = 0;
-    }
-    if(json['pending_delivery'] != null){
-      pendingDelivery = json['pending_delivery'];
-    }else{
-      pendingDelivery = 0;
-    }
-    if(json['total_deposit'] != null){
-      try{
-        totalDeposit = json['total_deposit'].toDouble();
-      }catch(e){
-        totalDeposit = double.parse(json['total_deposit']);
-      }
-    }else{
-      totalDeposit = 0;
-    }
+    withdrawableBalance = json['withdrawable_balance'] != null ? double.tryParse(json['withdrawable_balance'].toString()) ?? 0.0 : 0.0;
+    currentBalance = json['current_balance'] != null ? double.tryParse(json['current_balance'].toString()) ?? 0.0 : 0.0;
+    cashInHand = json['cash_in_hand'] != null ? double.tryParse(json['cash_in_hand'].toString()) ?? 0.0 : 0.0;
+    pendingWithdraw = json['pending_withdraw'] != null ? double.tryParse(json['pending_withdraw'].toString()) ?? 0.0 : 0.0;
+    totalWithdraw = json['total_withdraw'] != null ? double.tryParse(json['total_withdraw'].toString()) ?? 0.0 : 0.0;
+    totalEarn = json['total_earn'] != null ? double.tryParse(json['total_earn'].toString()) ?? 0.0 : 0.0;
+    completedDelivery = json['completed_delivery'] != null ? int.tryParse(json['completed_delivery'].toString()) ?? 0 : 0;
+    totalDelivery = json['total_delivery'] != null ? int.tryParse(json['total_delivery'].toString()) ?? 0 : 0;
+    pauseDelivery = json['pause_delivery'] != null ? int.tryParse(json['pause_delivery'].toString()) ?? 0 : 0;
+    pendingDelivery = json['pending_delivery'] != null ? int.tryParse(json['pending_delivery'].toString()) ?? 0 : 0;
+    totalDeposit = json['total_deposit'] != null ? double.tryParse(json['total_deposit'].toString()) ?? 0.0 : 0.0;
     countryCode = json['country_code'];
     if(json['address'] != null){
       address = json['address'];

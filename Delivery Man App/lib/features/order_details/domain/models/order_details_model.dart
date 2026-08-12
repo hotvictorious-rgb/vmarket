@@ -81,10 +81,10 @@ class OrderDetailsModel {
     if(json['product_details'] != null) {
       _productDetails = Product.fromJson(json['product_details']);
     }
-    _qty = json['qty'];
-    _price = json['price'].toDouble();
-    _tax = json['tax'].toDouble();
-    _discount = json['discount'].toDouble();
+    _qty = json['qty'] != null ? int.tryParse(json['qty'].toString()) : null;
+    _price = json['price'] != null ? double.tryParse(json['price'].toString()) ?? 0.0 : 0.0;
+    _tax = json['tax'] != null ? double.tryParse(json['tax'].toString()) ?? 0.0 : 0.0;
+    _discount = json['discount'] != null ? double.tryParse(json['discount'].toString()) ?? 0.0 : 0.0;
     _deliveryStatus = json['delivery_status'];
     _paymentStatus = json['payment_status'];
     _createdAt = json['created_at'];

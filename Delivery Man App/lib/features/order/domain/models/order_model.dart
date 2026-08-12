@@ -79,14 +79,14 @@ class OrderModel {
     orderStatus = json['order_status'];
     paymentMethod = json['payment_method'];
     transactionRef = json['transaction_ref'];
-    orderAmount = json['order_amount'].toDouble();
+    orderAmount = json['order_amount'] != null ? double.tryParse(json['order_amount'].toString()) : null;
     createdAt = json['created_at'];
     updatedAt = json['updated_at'];
-    discountAmount = json['discount_amount'].toDouble();
+    discountAmount = json['discount_amount'] != null ? double.tryParse(json['discount_amount'].toString()) : null;
     discountType = json['discount_type'];
     couponCode = json['coupon_code'];
     shippingMethodId = json['shipping_method_id'];
-    shippingCost = json['shipping_cost'].toDouble();
+    shippingCost = json['shipping_cost'] != null ? double.tryParse(json['shipping_cost'].toString()) : null;
     orderGroupId = json['order_group_id'];
     verificationCode = json['verification_code'];
     sellerId = json['seller_id'];
@@ -105,12 +105,7 @@ class OrderModel {
     }
 
     if(json['deliveryman_charge'] != null){
-      try{
-        deliveryManCharge = json['deliveryman_charge'].toDouble();
-      }catch(e){
-        deliveryManCharge = double.parse(json['deliveryman_charge'].toString());
-      }
-
+      deliveryManCharge = double.tryParse(json['deliveryman_charge'].toString());
     }
     if(json['is_pause'] != null){
       isPause = json['is_pause'];

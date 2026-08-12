@@ -182,21 +182,21 @@ class Product {
       });
     }
     if(json['unit_price'] != null){
-      _unitPrice = json['unit_price'].toDouble();
+      _unitPrice = double.tryParse(json['unit_price'].toString()) ?? 0.0;
     }
     if(json['purchase_price']!=null){
-      _purchasePrice = json['purchase_price'].toDouble();
+      _purchasePrice = double.tryParse(json['purchase_price'].toString()) ?? 0.0;
     }
 
     if(json['tax'] != null){
-      _tax = json['tax'].toDouble();
+      _tax = double.tryParse(json['tax'].toString()) ?? 0.0;
     }
     _taxType = json['tax_type'];
     if(json['discount'] != null ){
-      _discount = json['discount'].toDouble();
+      _discount = double.tryParse(json['discount'].toString()) ?? 0.0;
     }
     _discountType = json['discount_type'];
-    _currentStock = json['current_stock'];
+    _currentStock = json['current_stock'] != null ? int.tryParse(json['current_stock'].toString()) : null;
     _details = json['details'];
     _createdAt = json['created_at'];
     _updatedAt = json['updated_at'];
@@ -344,9 +344,9 @@ class Variation {
 
   Variation.fromJson(Map<String, dynamic> json) {
     _type = json['type'];
-    _price = json['price'].toDouble();
+    _price = json['price'] != null ? double.tryParse(json['price'].toString()) ?? 0.0 : 0.0;
     _sku = json['sku'];
-    _qty = json['qty'];
+    _qty = json['qty'] != null ? int.tryParse(json['qty'].toString()) : null;
   }
 
   Map<String, dynamic> toJson() {
