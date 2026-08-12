@@ -9,6 +9,15 @@ Include the specific app/component modified and bullet points detailing the exac
 
 ---
 
+### [2026-08-12 20:18 UTC] Chattings Table Migration Foreign Key Fix [Backend]
+* **Component:** Laravel Migration (`database/migrations/2024_01_01_000001_create_chat_tables.php`)
+* **Action:** Corrected table reference from singular `chatting` to plural `chattings` and added defensive schema guards.
+* **Changes Made:**
+  - Updated foreign key constraint to reference the standard 6valley `chattings` table.
+  - Added defensive `Schema::hasTable` and `Schema::hasColumn` checks so migrations run cleanly on live databases with pre-existing chat tables.
+
+---
+
 ### [2026-08-12 19:25 UTC] Android SDK 36 & Gradle CI Cache Optimization [DevOps / CI/CD]
 * **Component:** Delivery Man App (`android/app/build.gradle`, `android/gradle.properties`), Vendor App (`android/gradle.properties`), User App (`android/gradle.properties`), GitHub Actions (`.github/workflows/build_android.yml`)
 * **Action:** Upgraded Android compilation configuration and fixed Gradle wrapper download network timeouts on CI runners.
