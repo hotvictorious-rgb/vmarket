@@ -9,6 +9,16 @@ Include the specific app/component modified and bullet points detailing the exac
 
 ---
 
+### [2026-08-12 07:18 UTC] Full System Rule Compliance Hardening [Ecosystem]
+* **Component:** Vendor App, Delivery Man App, Laravel Backend
+* **Action:** Resolved all remaining rule discrepancies identified during deep system scan.
+* **Changes Made:**
+  - **Vendor App:** Replaced raw `Image.network` with `CustomImageWidget` for payout proof image rendering in `lib/features/transaction/widgets/transaction_widget.dart`.
+  - **Delivery Man App:** Replaced raw `Image.network` with `CustomImageWidget` and fixed host URL reference in `lib/features/withdraw/widgets/withdraw_card_widget.dart`.
+  - **Backend:** Added explicit `$guarded = ['id']` arrays to legacy Eloquent models (`DeliveryHistory.php`, `FeatureDeal.php`, `ProductStock.php`, `ProductTag.php`, `ReferrlaCustomer.php`) ensuring 100% Mass Assignment protection compliance.
+
+---
+
 ### [2026-08-12 03:12 UTC] Paystack Webhook HMAC-SHA512 Cryptographic Verification [Backend]
 * **Component:** Laravel Backend (`app/Http/Controllers/Payment_Methods/PaystackController.php`, `routes/web/routes.php`, `app/Http/Middleware/VerifyCsrfToken.php`, `docs/decisions/ADR-005-paystack-webhook-cryptographic-verification.md`)
 * **Action:** Implemented secure, spoof-proof asynchronous webhook handling with HMAC-SHA512 cryptographic signature validation for all Paystack payments.
