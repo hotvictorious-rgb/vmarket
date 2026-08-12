@@ -473,10 +473,10 @@ class Details {
 
   Details.fromJson(Map<String, dynamic> json) {
     product = json['product'] != null ? Product.fromJson(json['product']) : null;
-    qty = json['qty'];
-    price = json['price'].toDouble();
-    tax = json['tax'].toDouble();
-    discount = json['discount'].toDouble();
+    qty = json['qty'] != null ? int.tryParse(json['qty'].toString()) : 0;
+    price = json['price'] != null ? double.tryParse(json['price'].toString()) ?? 0.0 : 0.0;
+    tax = json['tax'] != null ? double.tryParse(json['tax'].toString()) ?? 0.0 : 0.0;
+    discount = json['discount'] != null ? double.tryParse(json['discount'].toString()) ?? 0.0 : 0.0;
   }
 
 }

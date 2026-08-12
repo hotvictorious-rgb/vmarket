@@ -9,6 +9,15 @@ Include the specific app/component modified and bullet points detailing the exac
 
 ---
 
+### [2026-08-12 20:59 UTC] Customer App Data Accuracy & 60fps Image Caching Optimization [User App / Ecosystem]
+* **Component:** User App (`ProductModel`, `ProductDetailsModel`, `CartModel`, `OrderModel`, `WishlistModel`, `CustomImageWidget`), Vendor App (`CustomImageWidget`), Delivery Man App (`CustomImageWidget`)
+* **Action:** Hardened numeric deserialization to eliminate type casting crashes and added memory cache downsampling for fluid 60fps scrolling.
+* **Changes Made:**
+  - **Data Deserialization Hardening:** Upgraded `unitPrice`, `purchasePrice`, `tax`, `discount`, and `shippingCost` parsing across `ProductModel`, `ProductDetailsModel`, `CartModel`, `OrderModel`, and `WishlistModel` to use defensive `double.tryParse` / `int.tryParse`, preventing runtime type errors when backend serializes floats as strings.
+  - **Fluid 60fps Image Performance:** Added `memCacheHeight` and `memCacheWidth` downsampling to `CustomImageWidget` across all 3 Flutter apps to prevent full-resolution image decoding spikes in device RAM.
+
+---
+
 ### [2026-08-12 20:29 UTC] Live Deployment & Safe Update Runbook [Documentation]
 * **Component:** Root Governance (`DEPLOYMENT_RUNBOOK.md`)
 * **Action:** Authored permanent, production-grade deployment runbook and automated 1-click update script for Whogohost/cPanel live server environments.

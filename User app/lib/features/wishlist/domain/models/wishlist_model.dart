@@ -147,16 +147,16 @@ class ProductFullInfo {
     choiceOptions = json['choice_options'];
     variation = json['variation'];
     published = json['published'];
-    unitPrice = json['unit_price'].toDouble();
-    purchasePrice = double.parse(json['purchase_price'].toString());
+    unitPrice = json['unit_price'] != null ? double.tryParse(json['unit_price'].toString()) : null;
+    purchasePrice = json['purchase_price'] != null ? double.tryParse(json['purchase_price'].toString()) : null;
     tax = json['tax'] != null ?
-      double.parse(json['tax'].toString()) : null;
+      double.tryParse(json['tax'].toString()) : null;
     taxType = json['tax_type'];
     taxModel = json['tax_model'];
-    discount = json['discount'].toDouble();
+    discount = json['discount'] != null ? double.tryParse(json['discount'].toString()) : null;
     discountType = json['discount_type'];
-    currentStock = json['current_stock'];
-    minimumOrderQty = int.parse(json['minimum_order_qty'].toString());
+    currentStock = json['current_stock'] != null ? int.tryParse(json['current_stock'].toString()) : null;
+    minimumOrderQty = json['minimum_order_qty'] != null ? int.tryParse(json['minimum_order_qty'].toString()) : 1;
     details = json['details'];
     freeShipping = json['free_shipping'];
     createdAt = json['created_at'];
@@ -166,8 +166,8 @@ class ProductFullInfo {
     metaTitle = json['meta_title'];
     metaDescription = json['meta_description'];
     metaImage = json['meta_image'];
-    requestStatus = int.parse(json['request_status'].toString());
-    shippingCost = double.parse(json['shipping_cost'].toString());
+    requestStatus = json['request_status'] != null ? int.tryParse(json['request_status'].toString()) : null;
+    shippingCost = json['shipping_cost'] != null ? double.tryParse(json['shipping_cost'].toString()) : null;
     multiplyQty = json['multiply_qty'];
     code = json['code'];
     if(json['reviews_count'] != null){

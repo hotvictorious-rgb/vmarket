@@ -485,16 +485,16 @@ class ProductDetailsModel {
     }
 
     _published = json['published'];
-    _unitPrice = json['unit_price'].toDouble();
-    _purchasePrice = json['purchase_price'].toDouble();
+    _unitPrice = json['unit_price'] != null ? double.tryParse(json['unit_price'].toString()) ?? 0.0 : 0.0;
+    _purchasePrice = json['purchase_price'] != null ? double.tryParse(json['purchase_price'].toString()) ?? 0.0 : 0.0;
     // _tax = json['tax'].toDouble();
     _taxModel = json['tax_model'];
     _taxType = json['tax_type'];
-    _discount = json['discount'].toDouble();
+    _discount = json['discount'] != null ? double.tryParse(json['discount'].toString()) ?? 0.0 : 0.0;
     _discountType = json['discount_type'];
-    _currentStock = json['current_stock'];
+    _currentStock = json['current_stock'] != null ? int.tryParse(json['current_stock'].toString()) ?? 0 : 0;
     if(json['minimum_order_qty'] != null){
-      _minimumOrderQty = int.parse(json['minimum_order_qty'].toString());
+      _minimumOrderQty = int.tryParse(json['minimum_order_qty'].toString()) ?? 1;
     }else{
       _minimumOrderQty = 1;
     }
@@ -508,9 +508,9 @@ class ProductDetailsModel {
     _metaTitle = json['meta_title'];
     _metaDescription = json['meta_description'];
     _metaImage = json['meta_image'];
-    _requestStatus = int.parse(json['request_status'].toString());
+    _requestStatus = json['request_status'] != null ? int.tryParse(json['request_status'].toString()) : null;
     _deniedNote = json['denied_note'];
-    _shippingCost = json['shipping_cost'].toDouble();
+    _shippingCost = json['shipping_cost'] != null ? double.tryParse(json['shipping_cost'].toString()) ?? 0.0 : 0.0;
     _multiplyQty = json['multiply_qty'];
     _code = json['code'];
     if(json['reviews_count'] != null){
