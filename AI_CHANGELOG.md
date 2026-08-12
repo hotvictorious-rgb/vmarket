@@ -3,7 +3,21 @@
 This document tracks all modifications, bug fixes, and feature additions made to the Victorious MARKET ecosystem by AI agents. 
 
 **Instructions for AIs:** 
-Always append your completed tasks here in chronological order. Include the date, the specific app/component modified, and a brief description of the changes.
+Always append your completed tasks here in chronological order. Include the time and date, the specific app/component modified, and a brief description of the changes.
+
+---
+
+### [2026-08-12] Permanent AI Engineering Governance & Architecture Layer [AI Governance]
+* **Component:** Root Governance (`AI_ENGINEERING_RULES.md`, `ARCHITECTURE.md`, `CHANGE_IMPACT_PROTOCOL.md`, `API_CONTRACT.md`, `BUSINESS_RULES.md`, `DATABASE_ARCHITECTURE.md`, `DEVELOPMENT_WORKFLOW.md`, `docs/`, `.agents/AGENTS.md`)
+* **Action:** Established permanent, authoritative engineering governance and architecture documents across the entire Vmarket multi-client ecosystem.
+* **Deliverables Created:**
+  - `AI_ENGINEERING_RULES.md`: Core mandate establishing Vmarket as ONE unified platform with Laravel as single source of truth.
+  - `CHANGE_IMPACT_PROTOCOL.md`: Mandatory 6-point pre-change impact checklist and reporting templates.
+  - `ARCHITECTURE.md` & `docs/architecture/`: System topology, client boundaries, and service layer mapping.
+  - `API_CONTRACT.md` & `docs/api/`: REST API schemas for Nigerian banking, KYC, payouts, and pickup OTP.
+  - `BUSINESS_RULES.md` & `DATABASE_ARCHITECTURE.md`: Authoritative domain and database rules.
+  - `DEVELOPMENT_WORKFLOW.md`: Feature-first development lifecycle and verification commands.
+  - `docs/decisions/`: ADR-001 through ADR-004 documenting architectural decisions.
 
 ---
 
@@ -164,7 +178,8 @@ Always append your completed tasks here in chronological order. Include the date
 * **Component:** Global (Backend, User App, Vendor App, Delivery Man App)
 * **Action:** Implemented order-gating for delivery man chats and cross-party admin chat support.
 * **Details:**
-  - **Voice Notes (Delivery App):** Added udioplayers and ecord packages, created VoiceNoteBottomSheet and AudioPlayerWidget, and integrated into MessageBubbleWidget and ChatController.
+  - **Voice Notes (Delivery App):** Added udioplayers and 
+ecord packages, created VoiceNoteBottomSheet and AudioPlayerWidget, and integrated into MessageBubbleWidget and ChatController.
   - **Order Gating (Backend):** Modified 1/ChatController.php (Customer) and 2/delivery_man/ChatController.php (Delivery Man) to prevent direct messaging unless an active order links the Customer and Delivery Man.
   - **Admin Chat (Backend & Apps):** Separated dmin from seller in 1 backend endpoints. Added dmin routing to 3/seller endpoints. Re-instated TabController in User App and added Admin tabs to both Vendor and User app chat headers to enable direct messaging with Admin.
 

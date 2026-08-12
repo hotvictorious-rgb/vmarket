@@ -1,6 +1,13 @@
 # Victorious MARKET AI Development Rules
 
-Welcome to the Victorious MARKET ecosystem! This file enforces strict rules and patterns that **ALL AIs** must adhere to when working on this repository.
+Welcome to the Victorious MARKET (Vmarket) ecosystem! This file enforces strict rules and patterns that **ALL AIs** must adhere to when working on this repository.
+
+## 0. Prime Directive: Read Governance Documents First
+Before taking ANY action, every AI **MUST** read:
+1. `AI_ENGINEERING_RULES.md` — The foundational engineering principles of Vmarket as ONE unified platform.
+2. `CHANGE_IMPACT_PROTOCOL.md` — The mandatory 6-point pre-change impact analysis checklist.
+3. `ARCHITECTURE.md` — The system topology, service layers, and state boundaries.
+4. `AI_CHANGELOG.md` — The chronological log of recent AI modifications.
 
 ## 1. Golden Rule: Read Before Writing
 Before making ANY changes to this codebase, you MUST:
