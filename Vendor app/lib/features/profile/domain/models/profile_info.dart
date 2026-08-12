@@ -160,15 +160,15 @@ class Wallet {
 
   Wallet.fromJson(Map<String, dynamic> json) {
     id = json['id'];
-    totalEarning = json['total_earning'].toDouble();
-    withdrawn = json['withdrawn'].toDouble();
+    totalEarning = json['total_earning'] != null ? double.tryParse(json['total_earning'].toString()) : 0.0;
+    withdrawn = json['withdrawn'] != null ? double.tryParse(json['withdrawn'].toString()) : 0.0;
     createdAt = json['created_at'];
     updatedAt = json['updated_at'];
-    commissionGiven = json['commission_given'].toDouble();
-    pendingWithdraw = json['pending_withdraw'].toDouble();
-    deliveryChargeEarned = json['delivery_charge_earned'].toDouble();
-    collectedCash = json['collected_cash'].toDouble();
-    totalTaxCollected = json['total_tax_collected'].toDouble();
+    commissionGiven = json['commission_given'] != null ? double.tryParse(json['commission_given'].toString()) : 0.0;
+    pendingWithdraw = json['pending_withdraw'] != null ? double.tryParse(json['pending_withdraw'].toString()) : 0.0;
+    deliveryChargeEarned = json['delivery_charge_earned'] != null ? double.tryParse(json['delivery_charge_earned'].toString()) : 0.0;
+    collectedCash = json['collected_cash'] != null ? double.tryParse(json['collected_cash'].toString()) : 0.0;
+    totalTaxCollected = json['total_tax_collected'] != null ? double.tryParse(json['total_tax_collected'].toString()) : 0.0;
   }
 
   Map<String, dynamic> toJson() {

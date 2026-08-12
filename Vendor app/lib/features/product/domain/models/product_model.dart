@@ -363,14 +363,14 @@ class Product {
             (key, value) => MapEntry(key, List<String>.from(value)),
       );
     }
-    unitPrice = json['unit_price'].toDouble();
-    purchasePrice = json['purchase_price'].toDouble();
-    tax =  json['tax']?.toDouble();
+    unitPrice = json['unit_price'] != null ? double.tryParse(json['unit_price'].toString()) : null;
+    purchasePrice = json['purchase_price'] != null ? double.tryParse(json['purchase_price'].toString()) : null;
+    tax = json['tax'] != null ? double.tryParse(json['tax'].toString()) : null;
     taxModel = json['tax_model'];
     taxType = json['tax_type'];
-    discount = json['discount'].toDouble();
+    discount = json['discount'] != null ? double.tryParse(json['discount'].toString()) : null;
     discountType = json['discount_type'];
-    currentStock = json['current_stock'];
+    currentStock = json['current_stock'] != null ? int.tryParse(json['current_stock'].toString()) : null;
     details = json['details'];
     createdAt = json['created_at'];
     updatedAt = json['updated_at'];
@@ -379,7 +379,7 @@ class Product {
       try{
         requestStatus = json['request_status'];
       }catch(e){
-        requestStatus = int.parse(json['request_status']);
+        requestStatus = int.tryParse(json['request_status'].toString());
       }
     }
     deniedNote = json['denied_note'];
@@ -395,7 +395,7 @@ class Product {
     metaDescription = json['meta_description'];
     metaImage = json['meta_image'];
     if(json['shipping_cost']!=null){
-      shippingCost = json['shipping_cost'].toDouble();
+      shippingCost = double.tryParse(json['shipping_cost'].toString());
     }
     if(json['multiply_qty']!=null){
       multiplyWithQuantity = json['multiply_qty'];
@@ -748,9 +748,9 @@ class Variation {
 
   Variation.fromJson(Map<String, dynamic> json) {
     _type = json['type'];
-    _price = json['price'].toDouble();
+    _price = json['price'] != null ? double.tryParse(json['price'].toString()) ?? 0.0 : 0.0;
     _sku = json['sku'];
-    _qty = json['qty'];
+    _qty = json['qty'] != null ? int.tryParse(json['qty'].toString()) : 0;
   }
 
   Map<String, dynamic> toJson() {
