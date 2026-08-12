@@ -9,6 +9,14 @@ Include the specific app/component modified and bullet points detailing the exac
 
 ---
 
+### [2026-08-12 20:29 UTC] Live Deployment & Safe Update Runbook [Documentation]
+* **Component:** Root Governance (`DEPLOYMENT_RUNBOOK.md`)
+* **Action:** Authored permanent, production-grade deployment runbook and automated 1-click update script for Whogohost/cPanel live server environments.
+* **Deliverables Created:**
+  - `DEPLOYMENT_RUNBOOK.md`: Detailed SOP covering protected server entities (`.env`, `storage/`, `vendor/`, `public/assets/`), safe overlay sync commands, automated `update_shop.sh` script, and emergency rollback procedures.
+
+---
+
 ### [2026-08-12 20:18 UTC] Chattings Table Migration Foreign Key Fix [Backend]
 * **Component:** Laravel Migration (`database/migrations/2024_01_01_000001_create_chat_tables.php`)
 * **Action:** Corrected table reference from singular `chatting` to plural `chattings` and added defensive schema guards.
