@@ -9,6 +9,15 @@ Include the specific app/component modified and bullet points detailing the exac
 
 ---
 
+### [2026-08-13 05:21 UTC] Inbox Chat Streamlined to Delivery Riders [User App]
+* **Component:** User App (`InboxScreen`)
+* **Action:** Removed the Admin chat tab from the customer Inbox, locking conversations directly and exclusively to Delivery Riders.
+* **Changes Made:**
+  - **Single-Stream Inbox:** Removed the dual `TabBar` / `ConversationListTabview` and locked the active conversation stream to `userType: 0` (`delivery_man`).
+  - **Clean Layout:** The Inbox now displays the search field followed immediately by the delivery rider conversation thread list.
+
+---
+
 ### [2026-08-13 05:00 UTC] Victorious MARKET UI Modernization [User App]
 * **Component:** User App (`home_screens.dart`, `search_home_page_widget.dart`, `category_widget.dart`)
 * **Action:** Modernized the customer mobile app visual layout matching the Royal Purple & Gold high-fidelity mockup with strict preservation of existing navigation, routes, and all home sections.
