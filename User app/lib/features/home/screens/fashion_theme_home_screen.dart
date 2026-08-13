@@ -43,8 +43,9 @@ import 'package:flutter_sixvalley_ecommerce/main.dart';
 import 'package:flutter_sixvalley_ecommerce/theme/controllers/theme_controller.dart';
 import 'package:flutter_sixvalley_ecommerce/utill/custom_themes.dart';
 import 'package:flutter_sixvalley_ecommerce/utill/dimensions.dart';
-import 'package:flutter_sixvalley_ecommerce/utill/images.dart';
+
 import 'package:provider/provider.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 
 class FashionThemeHomePage extends StatefulWidget {
@@ -96,10 +97,12 @@ class FashionThemeHomePage extends StatefulWidget {
     // Background Utilities
     await Future.delayed(const Duration(milliseconds: 100));
     try {
+      if (!context.mounted) return;
       await cartController.getCartData(context);
       if (notificationController.notificationModel == null || reload) {
         await notificationController.getNotificationList(1);
       }
+      if (!context.mounted) return;
       if (Provider.of<AuthController>(context, listen: false).isLoggedIn()) {
         if (profileController.userInfoModel == null) {
           await profileController.getUserInfo(context);
@@ -145,15 +148,122 @@ class _FashionThemeHomePageState extends State<FashionThemeHomePage> {
           controller: _scrollController,
           slivers: [
             SliverAppBar(
-                floating: true,
-                elevation: 0,
-                centerTitle: false,
-                automaticallyImplyLeading: false,
-                backgroundColor: Theme.of(context).primaryColor,
-                title: Text(
-                  'CALL TO ORDER: ${Provider.of<SplashController>(context, listen: false).configModel?.companyPhone ?? ''}',
-                  style: textBold.copyWith(color: Colors.white, fontSize: Dimensions.fontSizeLarge),
-                )),
+              floating: true,
+              elevation: 0,
+              centerTitle: false,
+              automaticallyImplyLeading: false,
+              backgroundColor: Theme.of(context).primaryColor,
+              title: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                crossAxisAlignment: CrossAxisAlignment.center,
+                children: [
+                  // Premium Two-Tone Brand Wordmark
+                  Expanded(
+                    flex: 5,
+                    child: Align(
+                      alignment: Alignment.centerLeft,
+                      child: ShaderMask(
+                        blendMode: BlendMode.srcIn,
+                        shaderCallback: (bounds) => const LinearGradient(
+                          colors: [Color(0xFFFFD700), Color(0xFFFFB300)],
+                          begin: Alignment.topLeft,
+                          end: Alignment.bottomRight,
+                        ).createShader(bounds),
+                        child: RichText(
+                          text: TextSpan(
+                            children: [
+                              TextSpan(
+                                text: 'Victorious',
+                                style: TextStyle(
+                                  fontFamily: 'Titillium',
+                                  fontWeight: FontWeight.w900,
+                                  fontSize: 20,
+                                  letterSpacing: 0.5,
+                                  height: 1.1,
+                                  color: Colors.white,
+                                  shadows: [Shadow(color: Colors.black.withValues(alpha: 0.35), offset: const Offset(0, 2), blurRadius: 6)],
+                                ),
+                              ),
+                              const TextSpan(text: '\n'),
+                              WidgetSpan(
+                                child: ShaderMask(
+                                  blendMode: BlendMode.srcIn,
+                                  shaderCallback: (_) => const LinearGradient(colors: [Colors.white, Color(0xFFF0F0F0)]).createShader(const Rect.fromLTWH(0, 0, 120, 20)),
+                                  child: Text(
+                                    'MARKET',
+                                    style: TextStyle(
+                                      fontFamily: 'Titillium',
+                                      fontWeight: FontWeight.w900,
+                                      fontSize: 18,
+                                      letterSpacing: 4.5,
+                                      height: 1.0,
+                                      color: Colors.white,
+                                      shadows: [Shadow(color: Colors.black.withValues(alpha: 0.3), offset: const Offset(0, 2), blurRadius: 5)],
+                                    ),
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
+                    ),
+                  ),
+                  // Call to Order + Notification Bell
+                  Expanded(
+                    flex: 6,
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.end,
+                      crossAxisAlignment: CrossAxisAlignment.center,
+                      children: [
+                        if (Provider.of<SplashController>(context, listen: false).configModel?.companyPhone != null &&
+                            Provider.of<SplashController>(context, listen: false).configModel!.companyPhone!.isNotEmpty)
+                          InkWell(
+                            onTap: () async {
+                              final Uri launchUri = Uri(scheme: 'tel', path: Provider.of<SplashController>(context, listen: false).configModel!.companyPhone);
+                              if (await canLaunchUrl(launchUri)) await launchUrl(launchUri);
+                            },
+                            child: Column(
+                              mainAxisSize: MainAxisSize.min,
+                              crossAxisAlignment: CrossAxisAlignment.end,
+                              children: [
+                                Text('CALL TO ORDER:', style: textBold.copyWith(color: const Color(0xFFFFD700), fontSize: 9, letterSpacing: 0.5)),
+                                const SizedBox(height: 1),
+                                Text(Provider.of<SplashController>(context, listen: false).configModel!.companyPhone!, style: textBold.copyWith(color: Colors.white, fontSize: 11, letterSpacing: 0.3)),
+                              ],
+                            ),
+                          ),
+                        const SizedBox(width: 10),
+                        Consumer<NotificationController>(
+                          builder: (context, notificationProvider, _) {
+                            final int unreadCount = notificationProvider.getUnreadNotificationCount();
+                            return InkWell(
+                              onTap: () => RouterHelper.getNotificationRoute(action: RouteAction.push),
+                              child: Stack(
+                                clipBehavior: Clip.none,
+                                alignment: Alignment.center,
+                                children: [
+                                  const Icon(Icons.notifications_none_rounded, color: Colors.white, size: 24),
+                                  if (unreadCount > 0)
+                                    Positioned(
+                                      top: -3, right: -4,
+                                      child: Container(
+                                        padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 2),
+                                        decoration: const BoxDecoration(color: Color(0xFFFFD700), shape: BoxShape.circle),
+                                        constraints: const BoxConstraints(minWidth: 14, minHeight: 14),
+                                        child: Center(child: Text(unreadCount > 99 ? '99+' : '$unreadCount', style: textBold.copyWith(color: const Color(0xFF4A148C), fontSize: 8, height: 1.0))),
+                                      ),
+                                    ),
+                                ],
+                              ),
+                            );
+                          },
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              )),
 
             SliverToBoxAdapter(child: Provider.of<SplashController>(context, listen: false).configModel!.announcement!.status == '1'?
             Consumer<SplashController>(

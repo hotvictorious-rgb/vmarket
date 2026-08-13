@@ -9,6 +9,19 @@ Include the specific app/component modified and bullet points detailing the exac
 
 ---
 
+### [2026-08-13 22:47 UTC] Brand Wordmark — Full Theme Consistency (Aster & Fashion) [User App]
+* **Component:** User App (`aster_theme_home_screen.dart`, `fashion_theme_home_screen.dart`)
+* **Action:** Extended the premium "Victorious" Gold / "MARKET" White two-tone wordmark to the Aster and Fashion theme home screens, ensuring 100% brand consistency regardless of which backend theme is active.
+* **Changes Made:**
+  - Replaced legacy plain-text `'CALL TO ORDER: ...'` `SliverAppBar` title in **Aster** and **Fashion** themes with the identical `ShaderMask` + `RichText` wordmark used in the default `home_screens.dart`.
+  - Added full **Call to Order** tap-to-dial pill and **Notification Bell** with unread badge to both theme headers (they were missing entirely before).
+  - Added missing `url_launcher` import to both theme files.
+  - Removed unused `images.dart` import from both theme files.
+  - Applied `context.mounted` guards after async gaps in `loadData()` of both themes (same fix applied to default theme previously).
+* **Verify:** `flutter analyze lib/features/home/screens/` → No issues found (all 3 screens).
+
+---
+
 ### [2026-08-13 22:32 UTC] Premium Two-Tone Brand Wordmark Header — Remove Logo, Add "Victorious" Gold / "MARKET" White [User App]
 * **Component:** User App (`home_screens.dart`)
 * **Action:** Replaced the image logo in the top `SliverAppBar` with a premium two-tone typographic wordmark matching the Royal Purple & Gold design system.
