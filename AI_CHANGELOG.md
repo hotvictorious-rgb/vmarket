@@ -9,6 +9,19 @@ Include the specific app/component modified and bullet points detailing the exac
 
 ---
 
+### [2026-08-13 22:22 UTC] Fix Delivered Orders Infinite Spinner — Per-Tab Loading Flags & Scroll Controllers [User App]
+* **Component:** User App (`OrderController`, `OrderScreen`)
+* **Root Causes Fixed:**
+  1. **`setIndex()` stale-model guard:** The delivered tab only fetched if `deliveredOrderModel == null`. If a prior failed fetch had stored `orders: []`, the model was non-null so no fetch fired — resulting in a permanent shimmer with no data. Fixed: guard now also checks `orders == null`, ensuring a re-fetch whenever the list itself is absent.
+  2. **Per-tab `_isLoading` bleed:** A single global `_isLoading` flag was shared across all three tabs. If the Running tab triggered a network call and the user quickly switched to Delivered, the Delivered tab inherited `isLoading = true` and showed a shimmer that never cleared. Fixed: added `_isRunningLoading`, `_isDeliveredLoading`, `_isCanceledLoading` flags with a `isCurrentTabLoading` getter that returns only the active tab's state.
+  3. **Shared `ScrollController` listener bleed:** One `ScrollController` was shared across all 3 tabs. On tab switch, the new `PaginatedListView` re-registered scroll listeners on the same object, causing double-fired `_paginate()` calls and `_isLoading` getting stuck `true`. Fixed: replaced with `List<ScrollController>` — one per tab — properly disposed in `dispose()`.
+  4. **Shimmer condition corrected:** Previously the shimmer showed when `orderModel == null`. Now it shows when `isCurrentTabLoading && orderModel == null`, preventing a blank shimmer flash on tab switch to already-loaded data.
+* **Files Modified:**
+  - `lib/features/order/controllers/order_controller.dart`
+  - `lib/features/order/screens/order_screen.dart`
+
+---
+
 ### [2026-08-13 15:03 UTC] Code Quality & Widget Immutability Hardening [User App]
 * **Component:** User App (`ShopProductViewList`)
 * **Action:** Hardened widget immutability and cleaned up analyzer warnings across the shop and storefront components.
