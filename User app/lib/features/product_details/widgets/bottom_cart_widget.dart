@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter_sixvalley_ecommerce/features/product_details/domain/models/product_details_model.dart';
 import 'package:flutter_sixvalley_ecommerce/features/product_details/widgets/cart_bottom_sheet_widget.dart';
 import 'package:flutter_sixvalley_ecommerce/features/splash/controllers/splash_controller.dart';
-import 'package:flutter_sixvalley_ecommerce/helper/responsive_helper.dart';
 import 'package:flutter_sixvalley_ecommerce/helper/route_healper.dart';
 import 'package:flutter_sixvalley_ecommerce/helper/shop_helper.dart';
 import 'package:flutter_sixvalley_ecommerce/localization/language_constrants.dart';
@@ -10,7 +9,6 @@ import 'package:flutter_sixvalley_ecommerce/features/cart/controllers/cart_contr
 import 'package:flutter_sixvalley_ecommerce/theme/controllers/theme_controller.dart';
 import 'package:flutter_sixvalley_ecommerce/utill/custom_themes.dart';
 import 'package:flutter_sixvalley_ecommerce/utill/dimensions.dart';
-import 'package:flutter_sixvalley_ecommerce/utill/images.dart';
 import 'package:flutter_sixvalley_ecommerce/common/basewidget/show_custom_snakbar_widget.dart';
 import 'package:provider/provider.dart';
 
@@ -174,13 +172,7 @@ class _BottomCartWidgetState extends State<BottomCartWidget> {
                   builder: (con) => CartBottomSheetWidget(
                     product: widget.product,
                     callback: () {
-                      RouterHelper.getCheckoutScreenRoute(
-                        action: RouteAction.push,
-                        totalPrice: 0,
-                        discount: 0,
-                        shippingFee: 0,
-                        couponCode: '',
-                      );
+                      RouterHelper.getCartScreenRoute(action: RouteAction.push);
                     },
                   ),
                 );
