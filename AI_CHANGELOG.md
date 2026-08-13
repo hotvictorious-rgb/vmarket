@@ -9,6 +9,17 @@ Include the specific app/component modified and bullet points detailing the exac
 
 ---
 
+### [2026-08-13 11:10 UTC] Recently Viewed Products System, 40% Width Brand Header, & Luxury Empty Cart with Start Shopping [User App]
+* **Component:** User App (`ProductController`, `ProductDetailsScreen`, `RecentlyViewedProductsWidget`, `CartScreen`, `HomePage`)
+* **Action:** Introduced high-speed persistent Recently Viewed Products system across Product Details and Empty Cart pages, expanded brand logo to 40% header width without text, and enriched the empty cart experience with a "Start Shopping" button.
+* **Changes Made:**
+  - **Recently Viewed Products Engine:** Implemented local `SharedPreferences` persistent storage in `ProductController` with auto-deduplication (max 15 items) and horizontal carousel `RecentlyViewedProductsWidget`.
+  - **Product Details Integration:** Automatically records viewed products upon visiting details screens and displays the "Recently Viewed" horizontal slider above the bottom product list (excluding current product).
+  - **Luxury Empty Cart Screen:** Upgraded empty cart view with high-resolution imagery, descriptive typography, a primary-themed "Start Shopping" pill button redirecting to all products, and the Recently Viewed carousel below.
+  - **40% Brand Logo Header:** Expanded the official brand logo to occupy 40% flex width on the top header, removed text beside it for a clean modern aesthetic, and preserved the glassmorphic Call to Order phone dialer pill and notification bell.
+
+---
+
 ### [2026-08-13 10:18 UTC] New Arrival & Filterable Section Performance Pre-Fetching & Luxury Spinner [User App]
 * **Component:** User App (`home_screens.dart`, `product_list_widget.dart`)
 * **Action:** Diagnosed and resolved the excessive loading delay / spinning on the bottom "New Arrival / Filterable Products" section by integrating early background pre-fetching and upgrading the loading UI.

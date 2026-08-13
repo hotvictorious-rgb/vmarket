@@ -1,3 +1,4 @@
+import 'dart:convert';
 import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_sixvalley_ecommerce/common/enums/data_source_enum.dart';
@@ -11,6 +12,8 @@ import 'package:flutter_sixvalley_ecommerce/helper/api_checker.dart';
 import 'package:flutter_sixvalley_ecommerce/features/product/enums/product_type.dart';
 import 'package:flutter_sixvalley_ecommerce/helper/data_sync_helper.dart';
 import 'package:flutter_sixvalley_ecommerce/main.dart';
+import 'package:flutter_sixvalley_ecommerce/features/product_details/domain/models/product_details_model.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 class ProductController extends ChangeNotifier {
   final ProductServiceInterface? productServiceInterface;
@@ -41,6 +44,9 @@ class ProductController extends ChangeNotifier {
 
   ProductModel? _featuredProductModel;
   ProductModel? get featuredProductModel => _featuredProductModel;
+
+  List<Product> _recentlyViewedProducts = [];
+  List<Product> get recentlyViewedProducts => _recentlyViewedProducts;
 
   final List<HomeCategoryProduct> _homeCategoryProductList = [];
   List<HomeCategoryProduct> get homeCategoryProductList => _homeCategoryProductList;
@@ -663,6 +669,51 @@ class ProductController extends ChangeNotifier {
     }
   }
 
+  Future<void> addRecentlyViewedProduct(ProductDetailsModel? details) async {
+    if (details == null || details.id == null) return;
+    try {
+      final product = Product(
+        id: details.id,
+        name: details.name,
+        slug: details.slug,
+        thumbnail: details.thumbnail,
+        thumbnailFullUrl: details.thumbnailFullUrl,
+        unitPrice: details.unitPrice,
+        purchasePrice: details.purchasePrice,
+        discount: details.discount,
+        discountType: details.discountType,
+        currentStock: details.currentStock,
+        minimumOrderQty: details.minimumOrderQty,
+        productType: details.productType,
+      );
+
+      _recentlyViewedProducts.removeWhere((p) => p.id == product.id);
+      _recentlyViewedProducts.insert(0, product);
+      if (_recentlyViewedProducts.length > 15) {
+        _recentlyViewedProducts = _recentlyViewedProducts.sublist(0, 15);
+      }
+      notifyListeners();
+
+      final sp = await SharedPreferences.getInstance();
+      final listJson = _recentlyViewedProducts.map((p) => jsonEncode(p.toJson())).toList();
+      await sp.setStringList('recently_viewed_products', listJson);
+    } catch (e) {
+      debugPrint('Error saving recently viewed product: $e');
+    }
+  }
+
+  Future<void> loadRecentlyViewedProducts() async {
+    try {
+      final sp = await SharedPreferences.getInstance();
+      final listJson = sp.getStringList('recently_viewed_products');
+      if (listJson != null && listJson.isNotEmpty) {
+        _recentlyViewedProducts = listJson.map((item) => Product.fromJson(jsonDecode(item))).toList();
+        notifyListeners();
+      }
+    } catch (e) {
+      debugPrint('Error loading recently viewed products: $e');
+    }
+  }
 
 }
 

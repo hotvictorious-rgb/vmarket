@@ -84,6 +84,7 @@ class HomePage extends StatefulWidget {
       featuredDealController.getFeaturedDealList().catchError((e) => debugPrint('Error loading featured deals: $e')),
       productController.getRecommendedProduct().catchError((e) => debugPrint('Error loading recommended products: $e')),
       productController.getClearanceAllProductList(1, isUpdate: reload).catchError((e) => debugPrint('Error loading clearance products: $e')),
+      productController.loadRecentlyViewedProducts().catchError((e) => debugPrint('Error loading recently viewed: $e')),
     ]);
 
     // Background Utilities & User Data
@@ -143,54 +144,33 @@ class _HomePageState extends State<HomePage> {
               title: Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  // Logo + Victorious MARKET
-                  Row(
-                    children: [
-                      Container(
-                        padding: const EdgeInsets.all(2),
-                        decoration: BoxDecoration(
-                          shape: BoxShape.circle,
-                          border: Border.all(color: const Color(0xFFFFD700), width: 1.5),
-                        ),
-                        child: ClipOval(
-                          child: Image.asset(Images.logo, height: 26, width: 26, fit: BoxFit.cover, errorBuilder: (_, __, ___) => const Icon(Icons.shopping_bag, color: Color(0xFFFFD700), size: 20)),
+                  // Prominent Brand Logo (taking ~40% of header width)
+                  Expanded(
+                    flex: 4,
+                    child: Align(
+                      alignment: Alignment.centerLeft,
+                      child: Image.asset(
+                        Images.logo,
+                        height: 38,
+                        fit: BoxFit.contain,
+                        errorBuilder: (_, __, ___) => Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            const Icon(Icons.shopping_bag, color: Color(0xFFFFD700), size: 26),
+                            const SizedBox(width: 6),
+                            Text('Victorious', style: textBold.copyWith(color: Colors.white, fontSize: 16)),
+                          ],
                         ),
                       ),
-                      const SizedBox(width: 8),
-                      Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          RichText(
-                            text: TextSpan(
-                              children: [
-                                TextSpan(
-                                  text: 'Victorious ',
-                                  style: textBold.copyWith(
-                                    color: Colors.white,
-                                    fontSize: 15,
-                                    letterSpacing: 0.3,
-                                  ),
-                                ),
-                                TextSpan(
-                                  text: 'MARKET',
-                                  style: textBold.copyWith(
-                                    color: const Color(0xFFFFD700),
-                                    fontSize: 15,
-                                    letterSpacing: 0.5,
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ),
-                        ],
-                      ),
-                    ],
+                    ),
                   ),
 
                   // Actions: Call to Order + Notification Bell
-                  Row(
-                    mainAxisSize: MainAxisSize.min,
+                  Expanded(
+                    flex: 6,
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.end,
+                      mainAxisSize: MainAxisSize.min,
                     children: [
                       // Call to Order Pill
                       if (configModel?.companyPhone != null && configModel!.companyPhone!.isNotEmpty)
@@ -215,7 +195,7 @@ class _HomePageState extends State<HomePage> {
                                 const Icon(Icons.phone_in_talk, color: Color(0xFFFFD700), size: 13),
                                 const SizedBox(width: 4),
                                 Text(
-                                  configModel!.companyPhone!,
+                                  configModel.companyPhone!,
                                   style: textBold.copyWith(color: Colors.white, fontSize: 11),
                                 ),
                               ],
@@ -267,9 +247,10 @@ class _HomePageState extends State<HomePage> {
                       ),
                     ],
                   ),
-                ],
-              ),
+                ),
+              ],
             ),
+          ),
               
             SliverToBoxAdapter(child: Provider.of<SplashController>(context, listen: false).configModel!.announcement!.status == '1'?
             Consumer<SplashController>(

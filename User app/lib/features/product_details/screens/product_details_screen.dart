@@ -3,6 +3,7 @@ import 'package:flutter_sixvalley_ecommerce/common/basewidget/no_internet_screen
 import 'package:flutter_sixvalley_ecommerce/features/deal/controllers/flash_deal_controller.dart';
 import 'package:flutter_sixvalley_ecommerce/features/product/controllers/product_controller.dart';
 import 'package:flutter_sixvalley_ecommerce/features/product/controllers/seller_product_controller.dart';
+import 'package:flutter_sixvalley_ecommerce/features/product/widgets/recently_viewed_products_widget.dart';
 import 'package:flutter_sixvalley_ecommerce/features/product_details/controllers/product_details_controller.dart';
 import 'package:flutter_sixvalley_ecommerce/features/product_details/widgets/bottom_cart_widget.dart';
 import 'package:flutter_sixvalley_ecommerce/features/product_details/widgets/product_image_widget.dart';
@@ -57,6 +58,13 @@ class _ProductDetailsState extends State<ProductDetails> {
 
     // Await critical UI data first
     await Provider.of<ProductDetailsController>(context, listen: false).getProductDetails(context, widget.slug.toString(), widget.slug.toString());
+
+    if(context.mounted) {
+      final detailsModel = Provider.of<ProductDetailsController>(context, listen: false).productDetailsModel;
+      if (detailsModel != null) {
+        Provider.of<ProductController>(context, listen: false).addRecentlyViewedProduct(detailsModel);
+      }
+    }
 
     // Lazy load secondary data to prevent 5-second UI freeze
     Future.delayed(const Duration(milliseconds: 100), () {
@@ -276,6 +284,8 @@ class _ProductDetailsState extends State<ProductDetails> {
                         decoration: BoxDecoration(color: Theme.of(context).cardColor),
                         child: const PromiseWidget()
                       ),
+
+                      RecentlyViewedProductsWidget(currentProductId: details.productDetailsModel?.id),
 
                       _ProductDetailsProductListWidget(scrollController: scrollController),
 

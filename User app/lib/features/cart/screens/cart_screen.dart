@@ -23,6 +23,8 @@ import 'package:flutter_sixvalley_ecommerce/common/basewidget/custom_app_bar_wid
 import 'package:flutter_sixvalley_ecommerce/common/basewidget/no_internet_screen_widget.dart';
 import 'package:flutter_sixvalley_ecommerce/common/basewidget/not_logged_in_bottom_sheet_widget.dart';
 import 'package:flutter_sixvalley_ecommerce/common/basewidget/show_custom_snakbar_widget.dart';
+import 'package:flutter_sixvalley_ecommerce/features/product/widgets/recently_viewed_products_widget.dart';
+import 'package:flutter_sixvalley_ecommerce/common/basewidget/custom_button_widget.dart';
 import 'package:flutter_sixvalley_ecommerce/features/cart/widgets/cart_page_shimmer_widget.dart';
 import 'package:flutter_sixvalley_ecommerce/features/cart/widgets/cart_widget.dart';
 import 'package:flutter_sixvalley_ecommerce/features/shipping/widgets/shipping_method_bottom_sheet_widget.dart';
@@ -961,9 +963,53 @@ class CartScreenState extends State<CartScreen> {
                     )
 
                   ) :
-                  const Expanded(child: NoInternetOrDataScreenWidget(icon: Images.emptyCart, icCart: true,
-                    isNoInternet: false, message: 'no_product_in_cart',
-                  )),
+                  Expanded(
+                    child: SingleChildScrollView(
+                      child: Column(
+                        children: [
+                          const SizedBox(height: 30),
+                          CustomAssetImageWidget(Images.emptyCart, height: 110, width: 110, fit: BoxFit.contain),
+                          const SizedBox(height: Dimensions.paddingSizeDefault),
+                          Text(
+                            getTranslated('no_product_in_cart', context) ?? 'Your Cart is Empty',
+                            style: textBold.copyWith(
+                              fontSize: Dimensions.fontSizeLarge,
+                              color: Theme.of(context).textTheme.bodyLarge?.color,
+                            ),
+                          ),
+                          const SizedBox(height: Dimensions.paddingSizeSmall),
+                          Text(
+                            'Looks like you haven\'t added anything to your cart yet',
+                            style: textRegular.copyWith(
+                              fontSize: Dimensions.fontSizeDefault,
+                              color: Theme.of(context).hintColor,
+                            ),
+                            textAlign: TextAlign.center,
+                          ),
+                          const SizedBox(height: 25),
+                          SizedBox(
+                            width: 200,
+                            height: 46,
+                            child: CustomButton(
+                              buttonText: 'Start Shopping',
+                              onTap: () {
+                                RouterHelper.getViewAllProductScreenRoute(
+                                  action: RouteAction.push,
+                                  productType: ProductType.latestProduct,
+                                );
+                              },
+                              backgroundColor: Theme.of(context).primaryColor,
+                              textColor: Colors.white,
+                              radius: 25,
+                            ),
+                          ),
+                          const SizedBox(height: 35),
+                          const RecentlyViewedProductsWidget(),
+                          const SizedBox(height: 20),
+                        ],
+                      ),
+                    ),
+                  ),
                 ]),
               );
             });
