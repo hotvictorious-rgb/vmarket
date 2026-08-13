@@ -168,11 +168,12 @@ class Helpers
 
     public static function setDataFormatForJsonData($data): mixed
     {
-        $colors = [0];
+        $colors = [];
         if (isset($data['colors'])) {
-            $colors = is_array($data['colors']) ? $data['colors'] : json_decode($data['colors']);
+            $colors = is_array($data['colors']) ? $data['colors'] : (json_decode($data['colors'], true) ?? []);
         }
-        $queryData = Color::whereIn('code', $colors)->pluck('name', 'code')->toArray();
+        $colors = is_array($colors) ? $colors : [];
+        $queryData = !empty($colors) ? Color::whereIn('code', $colors)->pluck('name', 'code')->toArray() : [];
         $colorProcess = [];
         foreach ($queryData as $key => $color) {
             $colorProcess[] = [

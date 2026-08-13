@@ -2670,7 +2670,7 @@ class ProductManager
 
                 $optionCombinations = self::getInitialProductCombineOptions($allOptions);
                 foreach ($productColors as $color) {
-                    $colorName = $getColors->firstWhere('code', $color)->name;
+                    $colorName = $getColors->firstWhere('code', $color)?->name ?? $color;
 
                     foreach ($optionCombinations as $combination) {
                         $possibleVariant[] = $colorName . '-' . implode('-', $combination);
