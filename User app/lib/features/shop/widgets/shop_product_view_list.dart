@@ -12,8 +12,8 @@ import 'package:provider/provider.dart';
 class ShopProductViewList extends StatefulWidget {
   final ScrollController scrollController;
   final int sellerId;
-  SellerNavigationModel? sellerNavigationModel;
-  ShopProductViewList({super.key, required this.scrollController, required this.sellerId, this.sellerNavigationModel});
+  final SellerNavigationModel? sellerNavigationModel;
+  const ShopProductViewList({super.key, required this.scrollController, required this.sellerId, this.sellerNavigationModel});
 
   @override
   State<ShopProductViewList> createState() => _ShopProductViewListState();
