@@ -160,10 +160,18 @@ class _SliverPaginatedMasonryGridState extends State<SliverPaginatedMasonryGrid>
               (widget.totalSize != null &&
                   _offset! < (widget.totalSize! / widget.limit!).ceil() &&
                   !_offsetList.contains(_offset! + 1)))
-            const SliverToBoxAdapter(
+            SliverToBoxAdapter(
               child: Padding(
-                padding: EdgeInsets.all(Dimensions.paddingSizeSmall),
-                child: Center(child: CircularProgressIndicator()),
+                padding: const EdgeInsets.symmetric(vertical: Dimensions.paddingSizeDefault),
+                child: Center(
+                  child: SizedBox(
+                    width: 24, height: 24,
+                    child: CircularProgressIndicator(
+                      color: Theme.of(context).primaryColor,
+                      strokeWidth: 2.5,
+                    ),
+                  ),
+                ),
               ),
             ),
         ],

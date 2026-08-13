@@ -77,6 +77,7 @@ class HomePage extends StatefulWidget {
     // Secondary UI Fold: Staggered background load
     await Future.delayed(const Duration(milliseconds: 100));
     await Future.wait([
+      productController.getSelectedProductModel(1, isUpdate: reload).catchError((e) => debugPrint('Error loading filterable products: $e')),
       productController.getHomeCategoryProductList(reload).catchError((e) => debugPrint('Error loading home categories: $e')),
       shopController.getTopSellerList(offset: 1, isUpdate: reload).catchError((e) => debugPrint('Error loading top sellers: $e')),
       brandController.getBrandList(offset: 1, isUpdate: reload).catchError((e) => debugPrint('Error loading brands: $e')),

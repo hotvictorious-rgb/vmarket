@@ -9,6 +9,15 @@ Include the specific app/component modified and bullet points detailing the exac
 
 ---
 
+### [2026-08-13 10:18 UTC] New Arrival & Filterable Section Performance Pre-Fetching & Luxury Spinner [User App]
+* **Component:** User App (`home_screens.dart`, `product_list_widget.dart`)
+* **Action:** Diagnosed and resolved the excessive loading delay / spinning on the bottom "New Arrival / Filterable Products" section by integrating early background pre-fetching and upgrading the loading UI.
+* **Changes Made:**
+  - **Eager Pre-Fetching:** Added `productController.getSelectedProductModel(1)` to `HomePage.loadData` Secondary UI Fold so products start loading immediately when the app opens rather than waiting until the user scrolls to the bottom.
+  - **Smooth Shimmer & Loader:** Replaced the generic circular indicator with a brand-tailored Royal Purple micro-spinner with proper vertical padding to eliminate UI layout jumps.
+
+---
+
 ### [2026-08-13 09:50 UTC] Universal Multi-Theme Support, Modern Executive Header & Luxury Cart/Checkout Overhaul [User App & Backend]
 * **Component:** Laravel Backend (`BannerController.php`), User App (`DashboardScreen`, `HomePage`, `CartWidget`, `CartScreen`, `CustomCheckBoxWidget`)
 * **Action:** Implemented multi-theme stability, brand new executive top header, and high-fidelity luxury Cart & Checkout overhaul matching design mockups while preserving 100% of existing checkout/payment logic.
