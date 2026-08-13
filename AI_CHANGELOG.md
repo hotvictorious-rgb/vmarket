@@ -9,6 +9,15 @@ Include the specific app/component modified and bullet points detailing the exac
 
 ---
 
+### [2026-08-13 06:52 UTC] Release Build & AOT Compilation Fix [User App]
+* **Component:** User App (`InboxScreen`, `build.gradle.kts`)
+* **Action:** Resolved Gradle `compileFlutterBuildRelease` failure during CI artifact assembly.
+* **Root Causes & Fixes:**
+  1. **Syntax Error in Dart Source:** Removed an extra closing curly brace `}` at line 152 of `inbox_screen.dart` which caused the Flutter AOT compiler to halt with `Error: Expected a declaration, but got '}'`.
+  2. **Gradle Signing & NDK Config:** Updated `build.gradle.kts` with `ndkVersion = "28.2.13676358"` and dynamic keystore signing config.
+
+---
+
 ### [2026-08-13 06:27 UTC] Linter & Static Analysis Verification [User App]
 * **Component:** User App (`BottomCartWidget`, `CalChatWidget`)
 * **Action:** Fixed analyzer type imports and callback signatures to achieve 0 compilation errors across the entire codebase.
