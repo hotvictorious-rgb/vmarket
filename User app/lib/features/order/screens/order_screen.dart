@@ -80,27 +80,32 @@ class _OrderScreenState extends State<OrderScreen> {
 
 
 
-                  Expanded(child: orderController.orderModel != null ? (orderController.orderModel!.orders != null &&
-                      orderController.orderModel!.orders!.isNotEmpty)?
-                    SingleChildScrollView(
-                      controller: scrollController,
-                      child: PaginatedListView(scrollController: scrollController,
-                        onPaginate: (int? offset) async{
-                          await orderController.getOrderList(offset!, orderController.selectedType);
-                        },
-                        totalSize: orderController.orderModel?.totalSize,
-                        offset: orderController.orderModel?.offset != null ? int.parse(orderController.orderModel!.offset!):1,
-                        itemView: ListView.builder(
-                          shrinkWrap: true,
-                          physics: const NeverScrollableScrollPhysics(),
-                          itemCount: orderController.orderModel?.orders!.length,
-                          padding: const EdgeInsets.all(0),
-                          itemBuilder: (context, index) => OrderWidget(orderModel: orderController.orderModel?.orders![index]),
-                        ),
-                      ),
-                    ) : const NoInternetOrDataScreenWidget(isNoInternet: false, icon: Images.noOrder, message: 'no_order_found') :
-                      const OrderShimmerWidget()
-                  )
+                  Expanded(
+                    child: orderController.orderModel != null
+                        ? (orderController.orderModel!.orders != null && orderController.orderModel!.orders!.isNotEmpty)
+                            ? SingleChildScrollView(
+                                key: ValueKey('order_scroll_${orderController.selectedType}'),
+                                controller: scrollController,
+                                child: PaginatedListView(
+                                  key: ValueKey('paginated_orders_${orderController.selectedType}'),
+                                  scrollController: scrollController,
+                                  onPaginate: (int? offset) async {
+                                    await orderController.getOrderList(offset!, orderController.selectedType);
+                                  },
+                                  totalSize: orderController.orderModel?.totalSize,
+                                  offset: orderController.orderModel?.offset != null ? int.parse(orderController.orderModel!.offset!) : 1,
+                                  itemView: ListView.builder(
+                                    shrinkWrap: true,
+                                    physics: const NeverScrollableScrollPhysics(),
+                                    itemCount: orderController.orderModel?.orders!.length,
+                                    padding: const EdgeInsets.all(0),
+                                    itemBuilder: (context, index) => OrderWidget(orderModel: orderController.orderModel?.orders![index]),
+                                  ),
+                                ),
+                              )
+                            : const NoInternetOrDataScreenWidget(isNoInternet: false, icon: Images.noOrder, message: 'no_order_found')
+                        : const OrderShimmerWidget(),
+                  ),
 
                 ],
               );

@@ -1,15 +1,8 @@
-import 'dart:convert';
-
-import 'package:drift/drift.dart';
-import 'package:flutter_sixvalley_ecommerce/data/local/cache_response.dart';
+import 'package:flutter/material.dart';
 import 'package:flutter_sixvalley_ecommerce/data/model/api_response.dart';
 import 'package:flutter_sixvalley_ecommerce/features/order/domain/models/order_model.dart';
 import 'package:flutter_sixvalley_ecommerce/features/order/domain/services/order_service_interface.dart';
 import 'package:flutter_sixvalley_ecommerce/helper/api_checker.dart';
-import 'dart:async';
-import 'package:flutter/material.dart';
-import 'package:flutter_sixvalley_ecommerce/main.dart';
-import 'package:flutter_sixvalley_ecommerce/utill/app_constants.dart';
 
 
 
@@ -20,58 +13,80 @@ class OrderController with ChangeNotifier {
   bool _isLoading = false;
   bool get isLoading => _isLoading;
 
-
-  OrderModel? orderModel;
+  OrderModel? runningOrderModel;
   OrderModel? deliveredOrderModel;
+  OrderModel? canceledOrderModel;
+
+  OrderModel? get orderModel {
+    if (_orderTypeIndex == 0) return runningOrderModel;
+    if (_orderTypeIndex == 1) return deliveredOrderModel;
+    return canceledOrderModel;
+  }
+
+  set orderModel(OrderModel? model) {
+    if (_orderTypeIndex == 0) {
+      runningOrderModel = model;
+    } else if (_orderTypeIndex == 1) {
+      deliveredOrderModel = model;
+    } else {
+      canceledOrderModel = model;
+    }
+  }
+
   Future<void> getOrderList(int offset, String status, {String? type, bool refresh = false}) async {
-
-    var localData =  await database.getCacheResponseById(AppConstants.orderUri);
-
-    if(type == 'reorder') {
-      if(localData != null) {
-        deliveredOrderModel = OrderModel.fromJson(jsonDecode(localData.response));
+    // Check if we already have data for this tab on offset 1 to provide instant UI
+    if (offset == 1 && !refresh) {
+      if (status == 'ongoing' && runningOrderModel != null && runningOrderModel!.orders!.isNotEmpty) {
+        notifyListeners();
+      } else if (status == 'delivered' && deliveredOrderModel != null && deliveredOrderModel!.orders!.isNotEmpty) {
+        notifyListeners();
+      } else if (status == 'canceled' && canceledOrderModel != null && canceledOrderModel!.orders!.isNotEmpty) {
         notifyListeners();
       }
     }
 
-    if(offset == 1) {
-      orderModel = null;
-      if(refresh) {
-        notifyListeners();
-      }
+    if (offset == 1 && refresh) {
+      if (status == 'ongoing') runningOrderModel = null;
+      if (status == 'delivered') deliveredOrderModel = null;
+      if (status == 'canceled') canceledOrderModel = null;
+      notifyListeners();
     }
 
     ApiResponseModel apiResponse = await orderServiceInterface.getOrderList(offset, status, type: type);
     if (apiResponse.response != null && apiResponse.response!.statusCode == 200) {
-      if(offset == 1){
-        orderModel = OrderModel.fromJson(apiResponse.response?.data);
-        if(type == 'reorder'){
-          deliveredOrderModel = OrderModel.fromJson(apiResponse.response?.data);
+      OrderModel fetchedModel = OrderModel.fromJson(apiResponse.response?.data);
 
-          if(localData != null) {
-            await database.updateCacheResponse(AppConstants.orderUri, CacheResponseCompanion(
-              endPoint: const Value(AppConstants.orderUri),
-              header: Value(jsonEncode(apiResponse.response!.headers.map)),
-              response: Value(jsonEncode(apiResponse.response!.data)),
-            ));
-          } else {
-            await database.insertCacheResponse(
-              CacheResponseCompanion(
-                endPoint: const Value(AppConstants.orderUri),
-                header: Value(jsonEncode(apiResponse.response!.headers.map)),
-                response: Value(jsonEncode(apiResponse.response!.data)),
-              ),
-            );
-          }
+      if (status == 'ongoing') {
+        if (offset == 1) {
+          runningOrderModel = fetchedModel;
+        } else if (runningOrderModel != null && runningOrderModel!.orders != null) {
+          runningOrderModel!.orders!.addAll(fetchedModel.orders ?? []);
+          runningOrderModel!.offset = fetchedModel.offset;
+          runningOrderModel!.totalSize = fetchedModel.totalSize;
         }
-      }else {
-        orderModel!.orders!.addAll(OrderModel.fromJson(apiResponse.response?.data).orders!);
-        orderModel!.offset = OrderModel.fromJson(apiResponse.response?.data).offset;
-        orderModel!.totalSize = OrderModel.fromJson(apiResponse.response?.data).totalSize;
+      } else if (status == 'delivered') {
+        if (offset == 1) {
+          deliveredOrderModel = fetchedModel;
+        } else if (deliveredOrderModel != null && deliveredOrderModel!.orders != null) {
+          deliveredOrderModel!.orders!.addAll(fetchedModel.orders ?? []);
+          deliveredOrderModel!.offset = fetchedModel.offset;
+          deliveredOrderModel!.totalSize = fetchedModel.totalSize;
+        }
+      } else if (status == 'canceled') {
+        if (offset == 1) {
+          canceledOrderModel = fetchedModel;
+        } else if (canceledOrderModel != null && canceledOrderModel!.orders != null) {
+          canceledOrderModel!.orders!.addAll(fetchedModel.orders ?? []);
+          canceledOrderModel!.offset = fetchedModel.offset;
+          canceledOrderModel!.totalSize = fetchedModel.totalSize;
+        }
       }
-    }else{
-      if(offset == 1) {
-        orderModel = OrderModel(orders: [], totalSize: 0, offset: '1', limit: '10');
+    } else {
+      if (offset == 1) {
+        OrderModel emptyModel = OrderModel(orders: [], totalSize: 0, offset: '1', limit: '10');
+        if (status == 'ongoing') runningOrderModel = emptyModel;
+        if (status == 'delivered') deliveredOrderModel = emptyModel;
+        if (status == 'canceled') canceledOrderModel = emptyModel;
       }
       ApiChecker.checkApi(apiResponse);
     }
@@ -84,60 +99,58 @@ class OrderController with ChangeNotifier {
   String selectedType = 'ongoing';
   void setIndex(int index, {bool notify = true}) {
     _orderTypeIndex = index;
-    if(notify) {
-      notifyListeners();
-    }
-    if(_orderTypeIndex == 0){
+    if (_orderTypeIndex == 0) {
       selectedType = 'ongoing';
-      getOrderList(1, 'ongoing');
-    }else if(_orderTypeIndex == 1){
+      if (runningOrderModel == null || runningOrderModel!.orders == null) {
+        getOrderList(1, 'ongoing');
+      }
+    } else if (_orderTypeIndex == 1) {
       selectedType = 'delivered';
-      getOrderList(1, 'delivered');
-    }else if(_orderTypeIndex == 2){
+      if (deliveredOrderModel == null || deliveredOrderModel!.orders == null) {
+        getOrderList(1, 'delivered');
+      }
+    } else if (_orderTypeIndex == 2) {
       selectedType = 'canceled';
-      getOrderList(1, 'canceled');
+      if (canceledOrderModel == null || canceledOrderModel!.orders == null) {
+        getOrderList(1, 'canceled');
+      }
     }
-    if(notify) {
+    if (notify) {
       notifyListeners();
     }
   }
-
 
   Orders? trackingModel;
   Future<void> initTrackingInfo(String orderID) async {
-      ApiResponseModel apiResponse = await orderServiceInterface.getTrackingInfo(orderID);
-      if (apiResponse.response != null && apiResponse.response!.statusCode == 200) {
-        trackingModel = Orders.fromJson(apiResponse.response!.data);
-      }
-      notifyListeners();
+    ApiResponseModel apiResponse = await orderServiceInterface.getTrackingInfo(orderID);
+    if (apiResponse.response != null && apiResponse.response!.statusCode == 200) {
+      trackingModel = Orders.fromJson(apiResponse.response!.data);
+    }
+    notifyListeners();
   }
-
 
   Future<ApiResponseModel> cancelOrder(BuildContext context, int? orderId) async {
     _isLoading = true;
     ApiResponseModel apiResponse = await orderServiceInterface.cancelOrder(orderId);
     if (apiResponse.response != null && apiResponse.response!.statusCode == 200) {
       _isLoading = false;
-
+      // Refresh current active orders list
+      getOrderList(1, selectedType, refresh: true);
     } else {
       _isLoading = false;
-      ApiChecker.checkApi( apiResponse);
+      ApiChecker.checkApi(apiResponse);
     }
     notifyListeners();
     return apiResponse;
   }
 
-
-
-
-
   void resetOrderList({bool isUpdate = true}) {
-    orderModel = null;
+    runningOrderModel = null;
     deliveredOrderModel = null;
+    canceledOrderModel = null;
 
-    if(isUpdate){
+    if (isUpdate) {
       notifyListeners();
     }
   }
-
 }

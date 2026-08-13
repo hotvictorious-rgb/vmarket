@@ -22,6 +22,7 @@ class ReviewController extends ChangeNotifier {
 
   List<ReviewModel>? _reviewList;
   List<ReviewModel>? get reviewList => _reviewList;
+  final Map<String, List<ReviewModel>> _productReviewCache = {};
   int _rating = 0;
   bool _isLoading = false;
   String? _errorText;
@@ -37,12 +38,22 @@ class ReviewController extends ChangeNotifier {
   ReviewModel? get deliveryManReview => _deliveryManReview;
 
 
-  Future<void> getReviewList(String? productSlug, BuildContext context) async {
+  Future<void> getReviewList(String? productSlug, BuildContext context, {bool reload = false}) async {
+    if (productSlug == null) return;
     _hasConnection = true;
+
+    // Check in-memory cache for instant UI rendering
+    if (!reload && _productReviewCache.containsKey(productSlug)) {
+      _reviewList = _productReviewCache[productSlug];
+      notifyListeners();
+      return;
+    }
+
     ApiResponseModel reviewResponse = await reviewServiceInterface.get(productSlug.toString());
     if (reviewResponse.response != null && reviewResponse.response!.statusCode == 200) {
       _reviewList = [];
       reviewResponse.response!.data.forEach((reviewModel) => _reviewList!.add(ReviewModel.fromJson(reviewModel)));
+      _productReviewCache[productSlug] = _reviewList!;
     } else {
       ApiChecker.checkApi( reviewResponse);
     }

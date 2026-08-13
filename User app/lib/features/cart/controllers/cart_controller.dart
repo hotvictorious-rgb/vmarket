@@ -41,8 +41,10 @@ class CartController extends ChangeNotifier {
   }
 
   Future<ApiResponseModel> getCartData(BuildContext context, {bool reload = true, String? couponCode}) async {
-    if(reload){
+    // If we already have items in memory, do not show full-page blocking shimmer unless list is empty
+    if (reload && _cartList.isEmpty) {
       _cartLoading = true;
+      notifyListeners();
     }
     ApiResponseModel apiResponse = await cartServiceInterface!.getCartList(couponCode: couponCode);
     if (apiResponse.response != null && apiResponse.response!.statusCode == 200) {
