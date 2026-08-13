@@ -9,6 +9,16 @@ Include the specific app/component modified and bullet points detailing the exac
 
 ---
 
+### [2026-08-13 14:55 UTC] Full App Speed & Safety Overhaul - Batch 4: Image Memory Governor, Optimistic Wishlist & Balance Store [User App]
+* **Component:** User App (`CustomImageWidget`, `WishListController`, `ProfileController`)
+* **Action:** Hardened device memory against OOM crashes, made wishlist actions instantaneous with rollback protection, and optimized user profile/wallet data retrieval.
+* **Changes Made:**
+  - **Global Image Memory Governor (Feature 13):** Enforced fallback `memCacheWidth`/`memCacheHeight` (600px) and disk cache constraints (1200px max) inside `CustomImageWidget` to prevent unbounded memory allocation and crashes during long scroll sessions.
+  - **Optimistic Wishlist Toggling (Feature 17):** Implemented instant UI heart badge toggle on `WishListController.addWishList()` and `removeWishList()` with automatic server failure rollback protection.
+  - **Unified Profile & Balance Store (Feature 19):** Added in-memory cached return to `ProfileController.getUserInfo()`, eliminating redundant profile fetch queries across tabs.
+
+---
+
 ### [2026-08-13 14:48 UTC] Full App Speed & Safety Overhaul - Batch 3: Parallelized Vendor Storefront Hydration [User App]
 * **Component:** User App (`ShopScreen`)
 * **Action:** Converted the sequential 9-request waterfall on Vendor and Shop storefronts into a staged concurrent execution pipeline.

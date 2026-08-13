@@ -19,26 +19,43 @@ class WishListController extends ChangeNotifier {
 
 
   void addWishList(int? productID) async {
-    addedIntoWish.add(productID!);
+    if (productID == null) return;
+    if (!addedIntoWish.contains(productID)) {
+      addedIntoWish.add(productID);
+      notifyListeners();
+    }
     ApiResponseModel apiResponse = await wishlistServiceInterface!.add(productID);
     if (apiResponse.response != null && apiResponse.response!.statusCode == 200) {
       showCustomSnackBarWidget(getTranslated("successfully_added_to_wishlist", Get.context!), Get.context!, snackBarType: SnackBarType.success);
     } else {
+      // Rollback on network failure
+      addedIntoWish.remove(productID);
+      notifyListeners();
       showCustomSnackBarWidget(apiResponse.error.toString(), Get.context!, snackBarType: SnackBarType.warning);
     }
-    notifyListeners();
   }
 
   void removeWishList(int? productID, {int? index}) async {
-    addedIntoWish.removeAt(addedIntoWish.indexOf(productID!));
+    if (productID == null) return;
+    if (addedIntoWish.contains(productID)) {
+      addedIntoWish.remove(productID);
+      notifyListeners();
+    }
     ApiResponseModel apiResponse = await wishlistServiceInterface!.delete(productID);
     if (apiResponse.response != null && apiResponse.response!.statusCode == 200) {
-      getWishList('');
+      if (index != null && _wishList != null && index < _wishList!.length) {
+        _wishList!.removeAt(index);
+        notifyListeners();
+      }
       showCustomSnackBarWidget(getTranslated("successfully_removed_from_wishlist", Get.context!), Get.context!, snackBarType: SnackBarType.success);
     } else {
+      // Rollback on network failure
+      if (!addedIntoWish.contains(productID)) {
+        addedIntoWish.add(productID);
+        notifyListeners();
+      }
       showCustomSnackBarWidget(apiResponse.error.toString(), Get.context!, snackBarType: SnackBarType.warning);
     }
-    notifyListeners();
   }
 
   Future<void> getWishList(String searchText, {bool clearSearch = false}) async {

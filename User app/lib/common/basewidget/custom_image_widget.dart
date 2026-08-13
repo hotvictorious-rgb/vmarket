@@ -19,8 +19,14 @@ class CustomImageWidget extends StatelessWidget {
       fit: fit ?? BoxFit.cover,
       height: height,
       width: width,
-      memCacheHeight: height != null && height!.isFinite && height! > 0 ? (height! * 2.5).toInt() : null,
-      memCacheWidth: width != null && width!.isFinite && width! > 0 ? (width! * 2.5).toInt() : null,
+      memCacheHeight: height != null && height!.isFinite && height! > 0 
+          ? (height! * 2.5).toInt() 
+          : 600,
+      memCacheWidth: width != null && width!.isFinite && width! > 0 
+          ? (width! * 2.5).toInt() 
+          : 600,
+      maxHeightDiskCache: 1200,
+      maxWidthDiskCache: 1200,
       errorWidget: (c, o, s) => Image.asset(placeholder ?? Images.placeholder, height: height, width: width, fit: fit ?? BoxFit.cover),
     );
   }

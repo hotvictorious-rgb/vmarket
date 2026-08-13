@@ -27,7 +27,10 @@ class ProfileController extends ChangeNotifier {
   double? loyaltyPoint = 0;
   String userID = '-1';
 
-  Future<String> getUserInfo(BuildContext context) async {
+  Future<String> getUserInfo(BuildContext context, {bool reload = false}) async {
+    if (!reload && _userInfoModel != null) {
+      return userID;
+    }
     ApiResponseModel apiResponse = await profileServiceInterface!.getProfileInfo();
     if (apiResponse.response != null && apiResponse.response!.statusCode == 200) {
       _userInfoModel = ProfileModel.fromJson(apiResponse.response!.data);
