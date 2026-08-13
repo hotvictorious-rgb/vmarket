@@ -276,81 +276,95 @@ class CheckoutScreenState extends State<CheckoutScreen> {
                         Container(
                           decoration: BoxDecoration(
                             color: Theme.of(context).cardColor,
-                            boxShadow: [BoxShadow(color: Theme.of(context).hintColor.withValues(alpha:0.2), spreadRadius:3, blurRadius: 3)],
-                          ),
-                          padding: const EdgeInsets.fromLTRB(
-                            Dimensions.paddingSizeDefault,
-                            Dimensions.paddingSizeDefault,
-                            Dimensions.paddingSizeDefault,
-                            Dimensions.paddingSizeSmall,
-                          ),
-                          child: Text(
-                            getTranslated('order_summary', context) ?? '',
-                            style: textMedium.copyWith(
-                              fontSize: Dimensions.fontSizeLarge,
-                              color: Theme.of(context).textTheme.bodyLarge?.color,
+                            borderRadius: BorderRadius.circular(16),
+                            boxShadow: [
+                              BoxShadow(
+                                color: Colors.black.withValues(alpha: 0.04),
+                                blurRadius: 10,
+                                offset: const Offset(0, 4),
+                              ),
+                            ],
+                            border: Border.all(
+                              color: Theme.of(context).primaryColor.withValues(alpha: 0.08),
                             ),
                           ),
-                        ),
-
-
-                        Container(
-                          color: Theme.of(context).cardColor,
-                          padding: const EdgeInsets.symmetric(horizontal: Dimensions.paddingSizeDefault),
-                          child: Consumer<CheckoutController>(
-                            builder: (context, checkoutController, child) {
-                              _couponDiscount = Provider.of<CouponController>(context).discount ?? 0;
-                              _referralDiscount = Provider.of<CheckoutController>(context).referralAmount?.amount ?? 0;
-                              return Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  widget.quantity > 1
-                                  ? AmountWidget(
-                                      title: '${getTranslated('sub_total', context)} ${' (${widget.quantity} ${getTranslated('items', context)}) '}',
-                                      amount: PriceConverter.convertPrice(context, _order),
-                                    )
-                                  : AmountWidget(
-                                      title: '${getTranslated('sub_total', context)} ${'(${widget.quantity} ${getTranslated('item', context)})'}',
-                                      amount: PriceConverter.convertPrice(context, _order),
-                                    ),
-                                  AmountWidget(
-                                    title: getTranslated('shipping_fee', context),
-                                    amount: PriceConverter.convertPrice(context, widget.shippingFee),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Padding(
+                                padding: const EdgeInsets.fromLTRB(
+                                  Dimensions.paddingSizeDefault,
+                                  Dimensions.paddingSizeDefault,
+                                  Dimensions.paddingSizeDefault,
+                                  Dimensions.paddingSizeSmall,
+                                ),
+                                child: Text(
+                                  getTranslated('order_summary', context) ?? 'Order Summary',
+                                  style: titilliumBold.copyWith(
+                                    fontSize: Dimensions.fontSizeLarge,
+                                    color: Theme.of(context).textTheme.bodyLarge?.color,
                                   ),
-                                  AmountWidget(
-                                    title: getTranslated('discount', context),
-                                    amount: PriceConverter.convertPrice(context, widget.discount),
-                                  ),
-                                  AmountWidget(
-                                    title: getTranslated('coupon_voucher', context),
-                                    amount: PriceConverter.convertPrice(context, _couponDiscount),
-                                  ),
+                                ),
+                              ),
+                              Padding(
+                                padding: const EdgeInsets.symmetric(horizontal: Dimensions.paddingSizeDefault),
+                                child: Consumer<CheckoutController>(
+                                  builder: (context, checkoutController, child) {
+                                    _couponDiscount = Provider.of<CouponController>(context).discount ?? 0;
+                                    _referralDiscount = Provider.of<CheckoutController>(context).referralAmount?.amount ?? 0;
+                                    return Column(
+                                      crossAxisAlignment: CrossAxisAlignment.start,
+                                      children: [
+                                        widget.quantity > 1
+                                        ? AmountWidget(
+                                            title: '${getTranslated('sub_total', context)} ${' (${widget.quantity} ${getTranslated('items', context)}) '}',
+                                            amount: PriceConverter.convertPrice(context, _order),
+                                          )
+                                        : AmountWidget(
+                                            title: '${getTranslated('sub_total', context)} ${'(${widget.quantity} ${getTranslated('item', context)})'}',
+                                            amount: PriceConverter.convertPrice(context, _order),
+                                          ),
+                                        AmountWidget(
+                                          title: getTranslated('shipping_fee', context),
+                                          amount: PriceConverter.convertPrice(context, widget.shippingFee),
+                                        ),
+                                        AmountWidget(
+                                          title: getTranslated('discount', context),
+                                          amount: PriceConverter.convertPrice(context, widget.discount),
+                                        ),
+                                        AmountWidget(
+                                          title: getTranslated('coupon_voucher', context),
+                                          amount: PriceConverter.convertPrice(context, _couponDiscount),
+                                        ),
 
-                                  if (splashController.configModel?.systemTaxIncludeStatus != 1)
-                                  AmountWidget(
-                                    title: getTranslated('tax', context),
-                                    amount: PriceConverter.convertPrice(context, _tax),
-                                  ),
+                                        if (splashController.configModel?.systemTaxIncludeStatus != 1)
+                                        AmountWidget(
+                                          title: getTranslated('tax', context),
+                                          amount: PriceConverter.convertPrice(context, _tax),
+                                        ),
 
-                                  if ((_referralDiscount ?? 0) > 0)
-                                  AmountWidget(
-                                    title: getTranslated('referral_discount', context),
-                                    amount: PriceConverter.convertPrice(context, _referralDiscount),
-                                  ),
+                                        if ((_referralDiscount ?? 0) > 0)
+                                        AmountWidget(
+                                          title: getTranslated('referral_discount', context),
+                                          amount: PriceConverter.convertPrice(context, _referralDiscount),
+                                        ),
 
-                                  Divider(height: 5, color: Theme.of(context).hintColor),
-                                  AmountWidget(
-                                    fontSize: Dimensions.fontSizeLarge, isTitleBlack: true,
-                                    title: '${getTranslated('total_payable', context)} ${Provider.of<SplashController>(Get.context!, listen: false).configModel?.systemTaxIncludeStatus == 1 ? getTranslated('inc_vat_tax', context) : ''} ',
-                                    amount: PriceConverter.convertPrice(context,
-                                      (_order + widget.shippingFee - (_referralDiscount ?? 0) - widget.discount - _couponDiscount! + _tax),
-                                    ),
-                                  ),
+                                        Divider(height: 16, color: Theme.of(context).hintColor.withValues(alpha: 0.2)),
+                                        AmountWidget(
+                                          fontSize: Dimensions.fontSizeLarge, isTitleBlack: true,
+                                          title: '${getTranslated('total_payable', context)} ${Provider.of<SplashController>(Get.context!, listen: false).configModel?.systemTaxIncludeStatus == 1 ? getTranslated('inc_vat_tax', context) : ''} ',
+                                          amount: PriceConverter.convertPrice(context,
+                                            (_order + widget.shippingFee - (_referralDiscount ?? 0) - widget.discount - _couponDiscount! + _tax),
+                                          ),
+                                        ),
 
-                                  SizedBox(height: Dimensions.paddingSizeSmall),
-                                ],
-                              );
-                            },
+                                        const SizedBox(height: Dimensions.paddingSizeDefault),
+                                      ],
+                                    );
+                                  },
+                                ),
+                              ),
+                            ],
                           ),
                         ),
 

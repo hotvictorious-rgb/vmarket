@@ -9,6 +9,17 @@ Include the specific app/component modified and bullet points detailing the exac
 
 ---
 
+### [2026-08-13 05:55 UTC] Cart & Checkout UI Modernization [User App]
+* **Component:** User App (`CartWidget`, `CheckoutScreen`, `ChoosePaymentWidget`, `ShippingDetailsWidget`)
+* **Action:** Modernized the Cart and Checkout experience matching the Royal Purple & Gold high-fidelity design mockup.
+* **Changes Made:**
+  - **Cart Cards:** Wrapped cart items in elevated `16px` rounded cards with subtle drop-shadow and smooth slide-to-delete.
+  - **Shipping Address:** Modernized delivery address container with clean borders and location pin badges.
+  - **Payment Selector:** Styled Paystack, Offline Bank Transfer, and Wallet options in elevated rounded cards with Gold/Purple active states.
+  - **Order Summary:** Unified the summary header and breakdown into a single elevated card container with Gold total payable highlights.
+
+---
+
 ### [2026-08-13 05:47 UTC] Product Details UI Modernization [User App]
 * **Component:** User App (`ProductDetails`, `ProductTitleWidget`, `ProductImageWidget`, `BottomCartWidget`, `ShopInfoWidget`)
 * **Action:** Modernized the Product Details screen matching the Royal Purple & Gold high-fidelity design mockup.

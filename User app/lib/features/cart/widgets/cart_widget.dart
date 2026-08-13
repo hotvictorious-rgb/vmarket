@@ -46,8 +46,15 @@ class CartWidget extends StatelessWidget {
         ),
         child: Container(
           decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(Dimensions.radiusDefault),
+            borderRadius: BorderRadius.circular(16),
             color: Theme.of(context).cardColor,
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withValues(alpha: 0.04),
+                blurRadius: 8,
+                offset: const Offset(0, 3),
+              ),
+            ],
           ),
           child: Slidable(
             key: const ValueKey(0),
@@ -59,21 +66,25 @@ class CartWidget extends StatelessWidget {
                   onPressed: (value) {
                     cartProvider.removeFromCartAPI(cartModel?.id, index);
                   },
-                  backgroundColor: Theme.of(context).colorScheme.error.withValues(alpha: 0.03),
+                  backgroundColor: Theme.of(context).colorScheme.error.withValues(alpha: 0.08),
                   foregroundColor: Theme.of(context).colorScheme.error,
                   icon: CupertinoIcons.delete_solid,
                   label: getTranslated('delete', context),
+                  borderRadius: const BorderRadius.horizontal(right: Radius.circular(16)),
                 ),
               ],
             ),
             child: AnimatedContainer(
               duration: const Duration(milliseconds: 500),
               decoration: BoxDecoration(
-                color: (highLightColor != Theme.of(context).cardColor && minOrderQty) ? highLightColor : Theme.of(context).colorScheme.tertiaryContainer.withValues(alpha: 0.12),
-                borderRadius: BorderRadius.circular(Dimensions.radiusDefault),
-                // cartModel?.isChecked
-
-                border: Border.all(color: (isValidate && (cartModel?.isChecked ?? false) && minOrderQty) ?  Theme.of(context).colorScheme.error : Colors.transparent, width: 1),
+                color: (highLightColor != Theme.of(context).cardColor && minOrderQty) ? highLightColor : Theme.of(context).cardColor,
+                borderRadius: BorderRadius.circular(16),
+                border: Border.all(
+                  color: (isValidate && (cartModel?.isChecked ?? false) && minOrderQty)
+                      ? Theme.of(context).colorScheme.error
+                      : const Color(0xFF6A1B9A).withValues(alpha: 0.08),
+                  width: 1,
+                ),
               ),
               child: Row(
                 crossAxisAlignment: CrossAxisAlignment.center,

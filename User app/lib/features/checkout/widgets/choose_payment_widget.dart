@@ -21,10 +21,20 @@ class ChoosePaymentWidget extends StatelessWidget {
         return Consumer<SplashController>(
           builder: (context, configProvider, _) {
             return Container(
-              padding: EdgeInsets.symmetric(horizontal: 0),
+              padding: const EdgeInsets.symmetric(horizontal: 0),
               decoration: BoxDecoration(
                 color: Theme.of(context).cardColor,
-                boxShadow: [BoxShadow(color: Theme.of(context).hintColor.withValues(alpha:0.2), spreadRadius:3, blurRadius: 3)],
+                borderRadius: BorderRadius.circular(16),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withValues(alpha: 0.04),
+                    blurRadius: 10,
+                    offset: const Offset(0, 4),
+                  ),
+                ],
+                border: Border.all(
+                  color: Theme.of(context).primaryColor.withValues(alpha: 0.08),
+                ),
               ),
               child: Column(crossAxisAlignment:CrossAxisAlignment.start, children: [
                 SizedBox(height: Dimensions.paddingSizeDefault),

@@ -39,11 +39,21 @@ class _ShippingDetailsWidgetState extends State<ShippingDetailsWidget> {
             builder: (context, locationProvider, _) {
               return Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
 
-                widget.hasPhysical?
+                widget.hasPhysical ?
                 Container(
                   decoration: BoxDecoration(
-                    boxShadow: [BoxShadow(color: Theme.of(context).hintColor.withValues(alpha:0.3), spreadRadius:2, blurRadius: 10)],
                     color: Theme.of(context).cardColor,
+                    borderRadius: BorderRadius.circular(16),
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.black.withValues(alpha: 0.04),
+                        blurRadius: 10,
+                        offset: const Offset(0, 4),
+                      ),
+                    ],
+                    border: Border.all(
+                      color: Theme.of(context).primaryColor.withValues(alpha: 0.08),
+                    ),
                   ),
                   child: Column(crossAxisAlignment:CrossAxisAlignment.start, children: [
 
@@ -194,7 +204,17 @@ class _ShippingDetailsWidgetState extends State<ShippingDetailsWidget> {
                   Container(
                     decoration: BoxDecoration(
                       color: Theme.of(context).cardColor,
-                      boxShadow: [BoxShadow(color: Theme.of(context).hintColor.withValues(alpha:0.2), spreadRadius:3, blurRadius: 3)],
+                      borderRadius: BorderRadius.circular(16),
+                      boxShadow: [
+                        BoxShadow(
+                          color: Colors.black.withValues(alpha: 0.04),
+                          blurRadius: 10,
+                          offset: const Offset(0, 4),
+                        ),
+                      ],
+                      border: Border.all(
+                        color: Theme.of(context).primaryColor.withValues(alpha: 0.08),
+                      ),
                     ),
                     child: Column(crossAxisAlignment:CrossAxisAlignment.start, children: [
 
