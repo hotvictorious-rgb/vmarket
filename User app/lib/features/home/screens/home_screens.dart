@@ -55,7 +55,6 @@ class HomePage extends StatefulWidget {
     final context = Get.context;
     if (context == null) return;
 
-    final flashDealController = Provider.of<FlashDealController>(context, listen: false);
     final shopController = Provider.of<ShopController>(context, listen: false);
     final categoryController = Provider.of<CategoryController>(context, listen: false);
     final bannerController = Provider.of<BannerController>(context, listen: false);
@@ -66,7 +65,6 @@ class HomePage extends StatefulWidget {
     final notificationController = Provider.of<NotificationController>(context, listen: false);
     final cartController = Provider.of<CartController>(context, listen: false);
     final profileController = Provider.of<ProfileController>(context, listen: false);
-    final splashController = Provider.of<SplashController>(context, listen: false);
 
     // Primary UI Fold: Load critical visual components concurrently
     await Future.wait([
