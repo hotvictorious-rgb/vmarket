@@ -9,6 +9,16 @@ Include the specific app/component modified and bullet points detailing the exac
 
 ---
 
+### [2026-08-13 03:30 UTC] Customer App Home Shimmer Fix & API Hardening [User App / Backend]
+* **Component:** User App (`HomePage.loadData`), Backend (`Helpers::set_data_format`, `CategoryController`, `BannerController`)
+* **Action:** Resolved infinite home shimmer loading by concurrently loading primary fold data and hardening backend API serializers against PHP 8.2 null type exceptions.
+* **Changes Made:**
+  - **Backend API Null Safety:** Hardened `Helpers::set_data_format` against null `colors`, `attributes`, and `variation` arrays that caused 500 errors on PHP 8.2 during banner/category serialization.
+  - **Shop Slug Query Logic:** Fixed inverse `empty()` check in `CategoryController::get_categories` to prevent empty string queries.
+  - **User App Concurrent Primary Fold:** Grouped categories, banners, latest products, and featured products into non-blocking parallel `Future.wait` promises with per-call error guards, ensuring visual cards appear immediately without waiting for background queues.
+
+---
+
 ### [2026-08-12 21:07 UTC] Ecosystem Data Hardening & Infinite Loading Prevention [Vendor App / Delivery Man App]
 * **Component:** Vendor App (`ProductModel`, `ProfileInfo`), Delivery Man App (`OrderModel`, `ProductModel`, `OrderDetailsModel`, `UserInfoModel`)
 * **Action:** Extended comprehensive numeric deserialization hardening across Vendor and Delivery Man apps to guarantee 100% crash-proof data loading.

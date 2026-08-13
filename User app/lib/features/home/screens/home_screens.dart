@@ -51,57 +51,54 @@ class HomePage extends StatefulWidget {
   State<HomePage> createState() => _HomePageState();
 
   static Future<void> loadData(bool reload) async {
-    final flashDealController = Provider.of<FlashDealController>(Get.context!, listen: false);
-    final shopController = Provider.of<ShopController>(Get.context!, listen: false);
-    final categoryController = Provider.of<CategoryController>(Get.context!, listen: false);
-    final bannerController = Provider.of<BannerController>(Get.context!, listen: false);
-    final addressController = Provider.of<AddressController>(Get.context!, listen: false);
-    final productController = Provider.of<ProductController>(Get.context!, listen: false);
-    final brandController = Provider.of<BrandController>(Get.context!, listen: false);
-    final featuredDealController = Provider.of<FeaturedDealController>(Get.context!, listen: false);
-    final notificationController = Provider.of<NotificationController>(Get.context!, listen: false);
-    final cartController = Provider.of<CartController>(Get.context!, listen: false);
-    final profileController = Provider.of<ProfileController>(Get.context!, listen: false);
-    final splashController = Provider.of<SplashController>(Get.context!, listen: false);
+    final context = Get.context;
+    if (context == null) return;
 
-    if(flashDealController.flashDealList.isEmpty || reload) {
-      // await flashDealController.getFlashDealList(reload, false);
-    }
+    final flashDealController = Provider.of<FlashDealController>(context, listen: false);
+    final shopController = Provider.of<ShopController>(context, listen: false);
+    final categoryController = Provider.of<CategoryController>(context, listen: false);
+    final bannerController = Provider.of<BannerController>(context, listen: false);
+    final addressController = Provider.of<AddressController>(context, listen: false);
+    final productController = Provider.of<ProductController>(context, listen: false);
+    final brandController = Provider.of<BrandController>(context, listen: false);
+    final featuredDealController = Provider.of<FeaturedDealController>(context, listen: false);
+    final notificationController = Provider.of<NotificationController>(context, listen: false);
+    final cartController = Provider.of<CartController>(context, listen: false);
+    final profileController = Provider.of<ProfileController>(context, listen: false);
+    final splashController = Provider.of<SplashController>(context, listen: false);
 
-    await splashController.initConfig(Get.context!, null, null);
-    await categoryController.getCategoryList(reload);
-    await bannerController.getBannerList();
+    // Primary UI Fold: Load critical visual components concurrently
+    await Future.wait([
+      categoryController.getCategoryList(reload).catchError((e) => debugPrint('Error loading categories: $e')),
+      bannerController.getBannerList().catchError((e) => debugPrint('Error loading banners: $e')),
+      productController.getLatestProductList(1, isUpdate: reload).catchError((e) => debugPrint('Error loading latest products: $e')),
+      productController.getFeaturedProductModel(1, isUpdate: reload).catchError((e) => debugPrint('Error loading featured products: $e')),
+    ]);
 
-    // Stagger secondary API calls to prevent HTTP 508 / 429 server crashes (Client-Side DDoS fix)
-    await Future.delayed(const Duration(milliseconds: 150));
-    await shopController.getAllSellerList(offset: 1, isUpdate: reload);
-    await shopController.getTopSellerList(offset: 1, isUpdate: reload);
-    await addressController.getAddressList();
-    
-    await Future.delayed(const Duration(milliseconds: 150));
-    await cartController.getCartData(Get.context!);
-    await productController.getHomeCategoryProductList(reload);
-    await brandController.getBrandList(offset: 1, isUpdate: reload);
-    await featuredDealController.getFeaturedDealList();
+    // Secondary UI Fold: Staggered background load
+    await Future.delayed(const Duration(milliseconds: 100));
+    await Future.wait([
+      productController.getHomeCategoryProductList(reload).catchError((e) => debugPrint('Error loading home categories: $e')),
+      shopController.getTopSellerList(offset: 1, isUpdate: reload).catchError((e) => debugPrint('Error loading top sellers: $e')),
+      brandController.getBrandList(offset: 1, isUpdate: reload).catchError((e) => debugPrint('Error loading brands: $e')),
+      featuredDealController.getFeaturedDealList().catchError((e) => debugPrint('Error loading featured deals: $e')),
+      productController.getRecommendedProduct().catchError((e) => debugPrint('Error loading recommended products: $e')),
+      productController.getClearanceAllProductList(1, isUpdate: reload).catchError((e) => debugPrint('Error loading clearance products: $e')),
+    ]);
 
-    await Future.delayed(const Duration(milliseconds: 150));
-    await productController.getLatestProductList(1, isUpdate: reload);
-    await productController.getSelectedProductModel(1, isUpdate: reload);
-    await productController.getFeaturedProductModel(1, isUpdate: reload);
-    
-    await Future.delayed(const Duration(milliseconds: 150));
-    await productController.getRecommendedProduct();
-    await productController.getClearanceAllProductList(1, isUpdate: reload);
-
-    await Future.delayed(const Duration(milliseconds: 150));
-    if(notificationController.notificationModel == null ||
-      (notificationController.notificationModel != null &&
-        notificationController.notificationModel!.notification!.isEmpty) || reload) {
-      await notificationController.getNotificationList(1);
-    }
-
-    if(Provider.of<AuthController>(Get.context!, listen: false).isLoggedIn() && profileController.userInfoModel == null) {
-      await profileController.getUserInfo(Get.context!);
+    // Background Utilities & User Data
+    await Future.delayed(const Duration(milliseconds: 100));
+    try {
+      await cartController.getCartData(context);
+      await addressController.getAddressList();
+      if (notificationController.notificationModel == null || reload) {
+        await notificationController.getNotificationList(1);
+      }
+      if (Provider.of<AuthController>(context, listen: false).isLoggedIn() && profileController.userInfoModel == null) {
+        await profileController.getUserInfo(context);
+      }
+    } catch (e) {
+      debugPrint('Background utility load error: $e');
     }
   }
 }
