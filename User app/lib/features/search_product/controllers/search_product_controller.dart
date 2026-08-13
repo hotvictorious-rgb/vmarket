@@ -200,13 +200,39 @@ class SearchProductController with ChangeNotifier {
   SuggestionModel? suggestionModel;
   List<String> nameList = [];
   List<int> idList = [];
+  final Map<String, SuggestionModel> _suggestionCache = {};
+
   Future<void> getSuggestionProductName(String name) async {
+    String trimmedQuery = name.trim().toLowerCase();
+    if (trimmedQuery.isEmpty) {
+      nameList = [];
+      idList = [];
+      suggestionModel = null;
+      notifyListeners();
+      return;
+    }
+
+    // Instant local memory response if already searched in this session
+    if (_suggestionCache.containsKey(trimmedQuery)) {
+      suggestionModel = _suggestionCache[trimmedQuery];
+      nameList = [];
+      idList = [];
+      if (suggestionModel?.products != null) {
+        for (int i = 0; i < suggestionModel!.products!.length; i++) {
+          nameList.add(suggestionModel!.products![i].name!);
+          idList.add(suggestionModel!.products![i].id!);
+        }
+      }
+      notifyListeners();
+      return;
+    }
 
     ApiResponseModel apiResponse = await searchProductServiceInterface!.getSearchProductName(name);
     if (apiResponse.response != null && apiResponse.response!.statusCode == 200) {
       nameList = [];
       idList = [];
       suggestionModel = SuggestionModel.fromJson(apiResponse.response?.data);
+      _suggestionCache[trimmedQuery] = suggestionModel!;
       for(int i=0; i< suggestionModel!.products!.length; i++){
         nameList.add(suggestionModel!.products![i].name!);
         idList.add(suggestionModel!.products![i].id!);

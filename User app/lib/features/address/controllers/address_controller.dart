@@ -83,8 +83,13 @@ class AddressController with ChangeNotifier {
 
 
 
-  Future<List<AddressModel>?> getAddressList({bool fromRemove = false, bool isShipping = false, bool isBilling = false, bool all = false }) async {
-    _addressList = null;
+  Future<List<AddressModel>?> getAddressList({bool fromRemove = false, bool isShipping = false, bool isBilling = false, bool all = false, bool reload = false }) async {
+    if (!reload && !fromRemove && _addressList != null && _addressList!.isNotEmpty) {
+      return _addressList;
+    }
+    if (fromRemove || reload) {
+      _addressList = null;
+    }
     _addressList = await addressServiceInterface.getList(isShipping: isShipping, isBilling: isBilling, fromRemove: fromRemove, all: all);
     notifyListeners();
     return _addressList;

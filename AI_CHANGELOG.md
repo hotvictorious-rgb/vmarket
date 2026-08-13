@@ -9,6 +9,15 @@ Include the specific app/component modified and bullet points detailing the exac
 
 ---
 
+### [2026-08-13 14:30 UTC] Full App Speed & Safety Overhaul - Batch 2: Address Memory Caching & Instant Search Suggestion Cache [User App]
+* **Component:** User App (`AddressController`, `SearchProductController`)
+* **Action:** Accelerated address lookups and live search suggestions by integrating session-level in-memory caching and skipping redundant socket roundtrips.
+* **Changes Made:**
+  - **Address Memory Caching (Feature 5):** Added instant in-memory cache return in `AddressController.getAddressList()`, eliminating screen blanking and repetitive network queries during checkout and profile navigation.
+  - **Debounced Suggestion Query Cache (Feature 7):** Integrated `_suggestionCache` map in `SearchProductController` that caches product search suggestions by query, delivering 0ms instantaneous auto-complete for repeated searches and preventing empty search API overhead.
+
+---
+
 ### [2026-08-13 13:58 UTC] Full App Speed & Safety Overhaul - Batch 1: Orders (Delivered Spinner Fix), Cart & Review Caching [User App]
 * **Component:** User App (`OrderController`, `OrderScreen`, `CartController`, `ReviewController`)
 * **Action:** Resolved the infinite spinning bug on the Delivered orders tab, eliminated cart blocking shimmer re-renders, and integrated high-speed in-memory review caching.
