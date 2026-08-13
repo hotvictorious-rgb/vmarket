@@ -9,6 +9,12 @@ Include the specific app/component modified and bullet points detailing the exac
 
 ---
 
+### [2026-08-13 22:51 UTC] Update AI Governance Rules for Multi-Theme Home Headers [AI Governance]
+* **Component:** AI Governance (`.agents/AGENTS.md`)
+* **Action:** Added a strict UI/UX standard rule mandating that any change to the Customer App home screen header must be applied identically across all three home screen files (`home_screens.dart`, `aster_theme_home_screen.dart`, and `fashion_theme_home_screen.dart`) to ensure full visual consistency across themes.
+
+---
+
 ### [2026-08-13 22:47 UTC] Brand Wordmark — Full Theme Consistency (Aster & Fashion) [User App]
 * **Component:** User App (`aster_theme_home_screen.dart`, `fashion_theme_home_screen.dart`)
 * **Action:** Extended the premium "Victorious" Gold / "MARKET" White two-tone wordmark to the Aster and Fashion theme home screens, ensuring 100% brand consistency regardless of which backend theme is active.

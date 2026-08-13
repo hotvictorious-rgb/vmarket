@@ -40,6 +40,7 @@ Any time you make a functional change, fix a bug, or complete a feature, you **M
 ## 4. UI / UX Standards
 - The platform uses a specific color scheme (Purple & Gold). Use the predefined theme colors.
 - Maintain smooth 60fps performance on mobile apps. Use `cached_network_image` for all network images.
+- **Multi-Theme Home Headers:** Any modification to the Customer App home screen header (app bar, brand logo, wordmark, call-to-order pill, or notifications badge) MUST be implemented identically across all 3 theme screens: `lib/features/home/screens/home_screens.dart` (Default), `lib/features/home/screens/aster_theme_home_screen.dart` (Aster), and `lib/features/home/screens/fashion_theme_home_screen.dart` (Fashion) to prevent visual discrepancies when the active theme is toggled from the admin panel.
 
 ## 5. Mandatory Git Commit Rule ⚠️
 **This is non-negotiable.** Every AI MUST commit all changes to Git upon completing any task, feature, fix, or audit. Leaving changes uncommitted is STRICTLY FORBIDDEN.
