@@ -62,12 +62,19 @@ class ProductImageWidget extends StatelessWidget {
                   right: Dimensions.homePagePadding,
                   bottom: Dimensions.paddingSizeEight,
                 ),
-                child: ClipRRect(borderRadius: BorderRadius.circular(Dimensions.paddingSizeSmall),
+                child: ClipRRect(borderRadius: BorderRadius.circular(16),
                   child: Container(decoration:  BoxDecoration(
                       color: Theme.of(context).cardColor,
                       border: Border.all(color: Provider.of<ThemeController>(context, listen: false).darkTheme?
-                      Theme.of(context).hintColor.withValues(alpha:.25) : Theme.of(context).primaryColor.withValues(alpha:.25)),
-                      borderRadius: BorderRadius.circular(Dimensions.paddingSizeSmall)),
+                      Theme.of(context).hintColor.withValues(alpha:.25) : const Color(0xFF6A1B9A).withValues(alpha:.12)),
+                      borderRadius: BorderRadius.circular(16),
+                      boxShadow: [
+                        BoxShadow(
+                          color: Colors.black.withValues(alpha: 0.04),
+                          blurRadius: 10,
+                          offset: const Offset(0, 4),
+                        ),
+                      ]),
                     child: Stack(children: [
                       SizedBox(
                           height: MediaQuery.of(context).size.width * 0.9,

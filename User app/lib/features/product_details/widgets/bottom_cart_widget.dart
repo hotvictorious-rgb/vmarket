@@ -58,60 +58,169 @@ class _BottomCartWidgetState extends State<BottomCartWidget> {
 
   @override
   Widget build(BuildContext context) {
-    return Container(height: 70,
-      padding: const EdgeInsets.all(Dimensions.paddingSizeDefault),
-      decoration: BoxDecoration(color: Theme.of(context).highlightColor,
-        borderRadius: const BorderRadius.only(topLeft: Radius.circular(10), topRight: Radius.circular(10)),
-        boxShadow: [BoxShadow(color: Theme.of(context).hintColor, blurRadius: .5, spreadRadius: .1)]),
-      child: Row(children: [
-        Padding(
-          padding: const EdgeInsets.all(Dimensions.paddingSizeExtraSmall),
-          child: Stack(children: [
-            InkWell(
-              onTap: () => RouterHelper.getCartScreenRoute(action: RouteAction.push),
-              child: Image.asset(Images.cartArrowDownImage, color: Theme.of(context).textTheme.bodyMedium?.color),
-            ),
-            Positioned.fill(
-              child: Container(
-                transform: Matrix4.translationValues(10, -3, 0),
-                child: Align(
-                  alignment: Alignment.topRight,
-                  child: Consumer<CartController>(builder: (context, cart, child) {
-                    return Container(height: ResponsiveHelper.isTab(context)? 25 : 20, width: ResponsiveHelper.isTab(context)? 25 : 20,
-                      alignment: Alignment.center,
-                      decoration: BoxDecoration(shape: BoxShape.circle, color: Theme.of(context).textTheme.bodyMedium?.color),
-                      child: Center(
-                        child: Text(cart.cartList.length.toString(),
-                          style: textRegular.copyWith(fontSize: Dimensions.fontSizeSmall,
-                              color:Theme.of(context).highlightColor)),
-                      ),
-                    );}),
-                ),
-              ))])),
-        const SizedBox(width: Dimensions.paddingSizeDefaultAddress),
+    final bool isDark = Provider.of<ThemeController>(context, listen: false).darkTheme;
+    final primaryColor = Theme.of(context).primaryColor;
 
-        Expanded(child: InkWell(onTap: () {
-            if(vacationIsOn || temporaryClose ) {
-              showCustomSnackBarWidget(getTranslated('this_shop_is_close_now', context), context, snackBarType: SnackBarType.error);
-            }else{
-              showModalBottomSheet(context: context, isScrollControlled: true,
-                backgroundColor: Theme.of(context).primaryColor.withValues(alpha:0),
-                builder: (con) => CartBottomSheetWidget(product: widget.product, callback: (){
-                  showCustomSnackBarWidget(getTranslated('added_to_cart', context), context, snackBarType: SnackBarType.success);
-                },)
-              );
-            }},
-          child: Container(
-            margin: const EdgeInsets.symmetric(horizontal: Dimensions.paddingSizeExtraSmall),
-            alignment: Alignment.center,
-            decoration: BoxDecoration(borderRadius: BorderRadius.circular(10),
-              color: Theme.of(context).primaryColor),
-            child: Text(getTranslated('add_to_cart', context)!,
-              style: titilliumSemiBold.copyWith(fontSize: Dimensions.fontSizeLarge,
-                  color: Provider.of<ThemeController>(context, listen: false).darkTheme?
-                  Theme.of(context).hintColor : Theme.of(context).highlightColor),),
+    return Container(
+      height: 75,
+      padding: const EdgeInsets.symmetric(horizontal: Dimensions.paddingSizeDefault, vertical: Dimensions.paddingSizeSmall),
+      decoration: BoxDecoration(
+        color: Theme.of(context).cardColor,
+        borderRadius: const BorderRadius.only(topLeft: Radius.circular(20), topRight: Radius.circular(20)),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.08),
+            blurRadius: 10,
+            offset: const Offset(0, -4),
           ),
-        )),
+        ],
+      ),
+      child: Row(children: [
+        // Left Cart Icon Pill
+        InkWell(
+          onTap: () => RouterHelper.getCartScreenRoute(action: RouteAction.push),
+          child: Container(
+            width: 48,
+            height: 48,
+            decoration: BoxDecoration(
+              color: primaryColor.withValues(alpha: 0.08),
+              borderRadius: BorderRadius.circular(14),
+              border: Border.all(color: primaryColor.withValues(alpha: 0.15)),
+            ),
+            child: Stack(
+              alignment: Alignment.center,
+              children: [
+                Icon(Icons.shopping_bag_outlined, color: primaryColor, size: 24),
+                Positioned(
+                  top: 6,
+                  right: 6,
+                  child: Consumer<CartController>(builder: (context, cart, child) {
+                    if (cart.cartList.isEmpty) return const SizedBox();
+                    return Container(
+                      padding: const EdgeInsets.all(3),
+                      decoration: const BoxDecoration(
+                        shape: BoxShape.circle,
+                        color: Color(0xFFFFD700), // Gold badge
+                      ),
+                      constraints: const BoxConstraints(minWidth: 16, minHeight: 16),
+                      child: Center(
+                        child: Text(
+                          cart.cartList.length.toString(),
+                          style: textBold.copyWith(fontSize: 10, color: const Color(0xFF4A148C)),
+                        ),
+                      ),
+                    );
+                  }),
+                ),
+              ],
+            ),
+          ),
+        ),
+        const SizedBox(width: Dimensions.paddingSizeSmall),
+
+        // Add to Cart Button (Outlined)
+        Expanded(
+          flex: 1,
+          child: InkWell(
+            onTap: () {
+              if (vacationIsOn || temporaryClose) {
+                showCustomSnackBarWidget(getTranslated('this_shop_is_close_now', context), context, snackBarType: SnackBarType.error);
+              } else {
+                showModalBottomSheet(
+                  context: context,
+                  isScrollControlled: true,
+                  backgroundColor: Colors.transparent,
+                  builder: (con) => CartBottomSheetWidget(
+                    product: widget.product,
+                    callback: () {
+                      showCustomSnackBarWidget(getTranslated('added_to_cart', context), context, snackBarType: SnackBarType.success);
+                    },
+                  ),
+                );
+              }
+            },
+            child: Container(
+              height: 48,
+              alignment: Alignment.center,
+              decoration: BoxDecoration(
+                borderRadius: BorderRadius.circular(14),
+                border: Border.all(color: primaryColor, width: 1.5),
+                color: isDark ? Colors.transparent : primaryColor.withValues(alpha: 0.05),
+              ),
+              child: Text(
+                getTranslated('add_to_cart', context) ?? 'Add to Cart',
+                style: titilliumSemiBold.copyWith(
+                  fontSize: Dimensions.fontSizeDefault,
+                  color: primaryColor,
+                ),
+              ),
+            ),
+          ),
+        ),
+        const SizedBox(width: Dimensions.paddingSizeSmall),
+
+        // Buy Now Button (Solid Royal Purple)
+        Expanded(
+          flex: 1,
+          child: InkWell(
+            onTap: () {
+              if (vacationIsOn || temporaryClose) {
+                showCustomSnackBarWidget(getTranslated('this_shop_is_close_now', context), context, snackBarType: SnackBarType.error);
+              } else {
+                showModalBottomSheet(
+                  context: context,
+                  isScrollControlled: true,
+                  backgroundColor: Colors.transparent,
+                  builder: (con) => CartBottomSheetWidget(
+                    product: widget.product,
+                    callback: () {
+                      RouterHelper.getCheckoutScreenRoute(
+                        action: RouteAction.push,
+                        totalPrice: 0,
+                        discount: 0,
+                        shippingFee: 0,
+                        couponCode: '',
+                      );
+                    },
+                  ),
+                );
+              }
+            },
+            child: Container(
+              height: 48,
+              alignment: Alignment.center,
+              decoration: BoxDecoration(
+                borderRadius: BorderRadius.circular(14),
+                gradient: const LinearGradient(
+                  colors: [Color(0xFF6A1B9A), Color(0xFF4A148C)],
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
+                ),
+                boxShadow: [
+                  BoxShadow(
+                    color: const Color(0xFF4A148C).withValues(alpha: 0.3),
+                    blurRadius: 6,
+                    offset: const Offset(0, 3),
+                  ),
+                ],
+              ),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  const Icon(Icons.flash_on_rounded, color: Color(0xFFFFD700), size: 18),
+                  const SizedBox(width: 4),
+                  Text(
+                    getTranslated('buy_now', context) ?? 'Buy Now',
+                    style: titilliumBold.copyWith(
+                      fontSize: Dimensions.fontSizeDefault,
+                      color: Colors.white,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ),
       ]),
     );
   }

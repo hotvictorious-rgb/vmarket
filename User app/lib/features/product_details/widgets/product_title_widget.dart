@@ -82,6 +82,21 @@ class ProductTitleWidget extends StatelessWidget {
                       style: titilliumRegular.copyWith(color: Theme.of(context).hintColor,
                           decoration: TextDecoration.lineThrough)),
                 ),
+                const SizedBox(width: Dimensions.paddingSizeSmall),
+
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFFFFD700),
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: Text(
+                    productModel!.clearanceSale != null
+                        ? PriceConverter.percentageCalculation(context, startingPrice, productModel!.clearanceSale?.discountAmount, productModel!.clearanceSale?.discountType)
+                        : PriceConverter.percentageCalculation(context, startingPrice, productModel!.discount, productModel!.discountType),
+                    style: textBold.copyWith(color: const Color(0xFF4A148C), fontSize: Dimensions.fontSizeExtraSmall),
+                  ),
+                ),
               ],
             ]),
             const SizedBox(height: Dimensions.paddingSizeSmall),
