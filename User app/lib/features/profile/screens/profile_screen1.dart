@@ -162,9 +162,10 @@ class _ProfileScreen1State extends State<ProfileScreen1> {
                       Container(
                         height: 140,
                         decoration: const BoxDecoration(
-                          image: DecorationImage(
-                            image: AssetImage(Images.profileBgImage,),
-                            fit: BoxFit.cover, // Can also use BoxFit.fill, BoxFit.contain, etc.
+                          gradient: LinearGradient(
+                            colors: [Color(0xFF6A1B9A), Color(0xFF4A148C)],
+                            begin: Alignment.topLeft,
+                            end: Alignment.bottomRight,
                           ),
                         ),
                       ),
@@ -176,7 +177,7 @@ class _ProfileScreen1State extends State<ProfileScreen1> {
                               alignment: Alignment.center,
                               decoration: BoxDecoration(
                                 color: Theme.of(context).cardColor,
-                                border: Border.all(color: Colors.white, width: 3),
+                                border: Border.all(color: const Color(0xFFFFD700), width: 2.5),
                                 shape: BoxShape.circle,),
                               child: Stack(clipBehavior: Clip.none, children: [
                                 ClipRRect(borderRadius: BorderRadius.circular(50),
@@ -196,12 +197,12 @@ class _ProfileScreen1State extends State<ProfileScreen1> {
                                         width: 2.0, // Border width
                                       ),
                                     ),
-                                    child: CircleAvatar(backgroundColor: Theme.of(context).primaryColor,
+                                    child: CircleAvatar(backgroundColor: const Color(0xFFFFD700),
                                         radius: 14,
                                         child: IconButton(onPressed: _choose,
                                             padding: const EdgeInsets.all(0),
-                                            icon: Icon(Icons.camera_alt_sharp,
-                                                color:  Theme.of(context).colorScheme.secondaryContainer, size: 18))),
+                                            icon: const Icon(Icons.camera_alt_sharp,
+                                                color: Color(0xFF4A148C), size: 16))),
                                   ))
                               ])),
                           )

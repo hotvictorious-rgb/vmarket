@@ -63,13 +63,21 @@ class _BrandListWidgetState extends State<BrandListWidget> {
                       );
                     },
                     child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
-                      Expanded(child: ClipRRect(
-                        borderRadius: BorderRadius.circular(Dimensions.paddingSizeSmall),
-                        child: Container(
-                          decoration: BoxDecoration(
-                            color: Theme.of(context).cardColor,
-                            borderRadius: BorderRadius.circular(Dimensions.paddingSizeSmall),
-                          ),
+                      Expanded(child: Container(
+                        decoration: BoxDecoration(
+                          color: Theme.of(context).cardColor,
+                          borderRadius: BorderRadius.circular(16),
+                          border: Border.all(color: Theme.of(context).primaryColor.withValues(alpha: 0.08)),
+                          boxShadow: [
+                            BoxShadow(
+                              color: Colors.black.withValues(alpha: 0.04),
+                              blurRadius: 6,
+                              offset: const Offset(0, 2),
+                            ),
+                          ],
+                        ),
+                        child: ClipRRect(
+                          borderRadius: BorderRadius.circular(16),
                           child: CustomImageWidget(image:'${brandProvider.brandListSorted?[index].imageFullUrl?.path!}'),
                         ),
                       )),

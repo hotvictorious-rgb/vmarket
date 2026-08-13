@@ -94,16 +94,27 @@ class _WalletScreenState extends State<WalletScreen> {
               return Padding(
                   padding: const EdgeInsets.only(top: Dimensions.paddingSizeSmall),
                   child: Container(
-                    height: MediaQuery.of(context).size.width / 3.0,
+                    height: MediaQuery.of(context).size.width / 2.7,
                     width: MediaQuery.of(context).size.width,
-                    padding: const EdgeInsets.symmetric(horizontal: Dimensions.paddingSizeLarge),
-                    margin: const EdgeInsets.symmetric(horizontal: Dimensions.paddingSizeSmall),
+                    padding: const EdgeInsets.symmetric(horizontal: Dimensions.paddingSizeLarge, vertical: Dimensions.paddingSizeDefault),
+                    margin: const EdgeInsets.symmetric(horizontal: Dimensions.paddingSizeDefault),
                     decoration: BoxDecoration(
-                      color: Provider.of<ThemeController>(context, listen: false).darkTheme
-                          ? Theme.of(context).cardColor
-                          : Theme.of(context).primaryColor,
-                      borderRadius: BorderRadius.circular(Dimensions.paddingSizeSmall),
-                      boxShadow: [BoxShadow(color: Colors.grey[darkMode ? 900 : 200]!, spreadRadius: 0.5, blurRadius: 0.3)],
+                      gradient: LinearGradient(
+                        colors: Provider.of<ThemeController>(context, listen: false).darkTheme
+                            ? [const Color(0xFF4A148C).withValues(alpha: 0.8), const Color(0xFF311B92).withValues(alpha: 0.8)]
+                            : const [Color(0xFF6A1B9A), Color(0xFF4A148C)],
+                        begin: Alignment.topLeft,
+                        end: Alignment.bottomRight,
+                      ),
+                      borderRadius: BorderRadius.circular(16),
+                      border: Border.all(color: const Color(0xFFFFD700).withValues(alpha: 0.3), width: 1),
+                      boxShadow: [
+                        BoxShadow(
+                          color: const Color(0xFF4A148C).withValues(alpha: 0.2),
+                          blurRadius: 10,
+                          offset: const Offset(0, 4),
+                        ),
+                      ],
                     ),
                     child: WalletCardWidget(
                       tooltipController: tooltipController, focusNode: focusNode,

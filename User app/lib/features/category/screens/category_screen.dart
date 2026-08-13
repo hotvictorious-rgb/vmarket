@@ -252,10 +252,25 @@ class CategoryItem extends StatelessWidget {
         return Container(
           height: boxConstraints.maxWidth,
           padding: const EdgeInsets.only(top: Dimensions.paddingSizeSmall),
-          margin: const EdgeInsets.symmetric(vertical: Dimensions.paddingSizeExtraSmall, horizontal: 2),
+          margin: const EdgeInsets.symmetric(vertical: 4, horizontal: 2),
           decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(Dimensions.paddingSizeExtraSmall),
-            color: isSelected ? Theme.of(context).primaryColor.withValues(alpha: 0.1) : Theme.of(context).hintColor.withValues(alpha: 0.07),
+            borderRadius: BorderRadius.circular(16),
+            color: isSelected
+                ? const Color(0xFF6A1B9A).withValues(alpha: 0.1)
+                : Theme.of(context).cardColor,
+            border: Border.all(
+              color: isSelected ? const Color(0xFF6A1B9A) : Colors.black.withValues(alpha: 0.05),
+              width: isSelected ? 1.5 : 1,
+            ),
+            boxShadow: isSelected
+                ? [
+                    BoxShadow(
+                      color: const Color(0xFF6A1B9A).withValues(alpha: 0.12),
+                      blurRadius: 6,
+                      offset: const Offset(0, 2),
+                    ),
+                  ]
+                : null,
           ),
           child: Center(child: Column(children: [
 
@@ -270,7 +285,7 @@ class CategoryItem extends StatelessWidget {
               child: Text(title!, maxLines: 2, style: textBold.copyWith(
                 fontSize: Dimensions.fontSizeSmall,
                 height: 1.0,
-                color: isSelected ? Theme.of(context).primaryColor : Theme.of(context).textTheme.bodyLarge?.color,
+                color: isSelected ? const Color(0xFF6A1B9A) : Theme.of(context).textTheme.bodyLarge?.color,
               ), overflow: TextOverflow.ellipsis, textAlign: TextAlign.center),
             ),
           ])),

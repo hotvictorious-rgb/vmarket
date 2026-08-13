@@ -165,10 +165,29 @@ class _MessageText extends StatelessWidget {
         ),
         decoration: BoxDecoration(
           borderRadius: _getBorderRadius(),
-          color: isMe ? isDarkTheme
-              ? Theme.of(context).cardColor
-              : Theme.of(context).primaryColor
-              : Theme.of(context).colorScheme.tertiaryContainer.withValues(alpha: 0.35),
+          gradient: isMe
+              ? LinearGradient(
+                  colors: isDarkTheme
+                      ? [const Color(0xFF4A148C).withValues(alpha: 0.7), const Color(0xFF311B92).withValues(alpha: 0.7)]
+                      : const [Color(0xFF6A1B9A), Color(0xFF4A148C)],
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
+                )
+              : null,
+          color: isMe
+              ? null
+              : isDarkTheme
+                  ? Colors.white.withValues(alpha: 0.08)
+                  : const Color(0xFFF3E5F5).withValues(alpha: 0.5),
+          boxShadow: [
+            BoxShadow(
+              color: isMe
+                  ? const Color(0xFF4A148C).withValues(alpha: 0.15)
+                  : Colors.black.withValues(alpha: 0.03),
+              blurRadius: 6,
+              offset: const Offset(0, 2),
+            ),
+          ],
         ),
         child: message.message!.endsWith('.m4a') 
         ? AudioPlayerWidget(url: message.message!, isMe: isMe) 

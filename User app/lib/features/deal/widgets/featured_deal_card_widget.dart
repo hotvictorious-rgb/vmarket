@@ -31,11 +31,16 @@ class FeaturedDealWidget extends StatelessWidget {
               AnimatedContainer(
                 margin: isCenterElement == null ? null :  EdgeInsets.symmetric(vertical : isCenterElement! ? 0 : 5),
                 decoration: BoxDecoration(
-                    borderRadius: BorderRadius.circular(Dimensions.radiusDefault),
+                    borderRadius: BorderRadius.circular(16),
                     color: Theme.of(context).cardColor,
-                    border: Border.all(color: Theme.of(context).colorScheme.onTertiary),
+                    border: Border.all(color: Theme.of(context).primaryColor.withValues(alpha: 0.08)),
                     boxShadow: [
-                      BoxShadow(color: Theme.of(context).primaryColor.withValues(alpha:0.05), spreadRadius: 0, blurRadius: 10, offset: const Offset(0, 5)),
+                      BoxShadow(
+                        color: Colors.black.withValues(alpha: 0.04),
+                        spreadRadius: 0,
+                        blurRadius: 10,
+                        offset: const Offset(0, 4),
+                      ),
                     ]
                 ),
 

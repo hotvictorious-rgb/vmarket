@@ -35,18 +35,20 @@ class WishListWidget extends StatelessWidget {
         children: [
           Container(
             padding: const EdgeInsets.all(Dimensions.paddingSizeDefault),
-            margin: const EdgeInsets.only(top: Dimensions.marginSizeSmall),
+            margin: const EdgeInsets.symmetric(horizontal: Dimensions.paddingSizeDefault, vertical: 6),
             decoration: BoxDecoration(
+              color: Theme.of(context).cardColor,
+              borderRadius: BorderRadius.circular(16),
               boxShadow: [
                 BoxShadow(
-                  color: Colors.black.withValues(alpha:0.05),
-                  spreadRadius: 0,
-                  blurRadius: 7,
-                  offset: const Offset(0, 1)
+                  color: Colors.black.withValues(alpha: 0.04),
+                  blurRadius: 10,
+                  offset: const Offset(0, 4),
                 ),
               ],
-              color: Theme.of(context).cardColor,
-              borderRadius: BorderRadius.circular(Dimensions.paddingSizeExtraSmall),
+              border: Border.all(
+                color: Theme.of(context).primaryColor.withValues(alpha: 0.08),
+              ),
             ),
 
             child: IntrinsicHeight(
@@ -64,12 +66,23 @@ class WishListWidget extends StatelessWidget {
                         );
                       },
                       child: Container(
-                        padding: const EdgeInsets.all(Dimensions.paddingSizeEight),
+                        padding: const EdgeInsets.all(8),
                         decoration: BoxDecoration(
-                          color: Theme.of(context).primaryColor.withValues(alpha: 0.05),
-                          borderRadius: BorderRadius.circular(Dimensions.paddingSizeExtraSmall)
+                          gradient: const LinearGradient(
+                            colors: [Color(0xFF6A1B9A), Color(0xFF4A148C)],
+                            begin: Alignment.topLeft,
+                            end: Alignment.bottomRight,
+                          ),
+                          borderRadius: BorderRadius.circular(10),
+                          boxShadow: [
+                            BoxShadow(
+                              color: const Color(0xFF4A148C).withValues(alpha: 0.2),
+                              blurRadius: 4,
+                              offset: const Offset(0, 2),
+                            ),
+                          ],
                         ),
-                        child: Icon(Icons.shopping_cart, color: Theme.of(context).primaryColor, size: Dimensions.paddingSizeLarge),
+                        child: const Icon(Icons.shopping_cart_outlined, color: Colors.white, size: 18),
                       ),
                     ),
                   ),

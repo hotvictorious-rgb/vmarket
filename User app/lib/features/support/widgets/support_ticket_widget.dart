@@ -69,17 +69,20 @@ class SupportTicketWidget extends StatelessWidget {
                 supportTicketModel: supportTicketModel,
               ),
               child: Container(
+                margin: const EdgeInsets.symmetric(horizontal: Dimensions.paddingSizeDefault, vertical: 4),
                 padding: const EdgeInsets.all(Dimensions.paddingSizeDefault),
                 decoration: BoxDecoration(
                   color: Theme.of(context).cardColor,
+                  borderRadius: BorderRadius.circular(16),
                   boxShadow: [
                     BoxShadow(
-                        color: Colors.black.withValues(alpha:0.05),
+                        color: Colors.black.withValues(alpha:0.04),
                         spreadRadius: 0,
-                        blurRadius: 7,
-                        offset: const Offset(0, 1)
+                        blurRadius: 10,
+                        offset: const Offset(0, 4)
                     ),
                   ],
+                  border: Border.all(color: Theme.of(context).primaryColor.withValues(alpha: 0.08)),
                 ),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,

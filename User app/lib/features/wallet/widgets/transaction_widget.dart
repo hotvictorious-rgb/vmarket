@@ -20,7 +20,22 @@ class TransactionWidget extends StatelessWidget {
     final bool isLtr = Provider.of<LocalizationController>(context, listen: false).isLtr;
 
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: Dimensions.homePagePadding, vertical: Dimensions.paddingSizeSmall),
+      margin: const EdgeInsets.symmetric(horizontal: Dimensions.homePagePadding, vertical: 4),
+      padding: const EdgeInsets.all(Dimensions.paddingSizeDefault),
+      decoration: BoxDecoration(
+        color: Theme.of(context).cardColor,
+        borderRadius: BorderRadius.circular(16),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.03),
+            blurRadius: 8,
+            offset: const Offset(0, 2),
+          ),
+        ],
+        border: Border.all(
+          color: Theme.of(context).primaryColor.withValues(alpha: 0.06),
+        ),
+      ),
       child: Column(crossAxisAlignment: CrossAxisAlignment.start,
         children: [
 
