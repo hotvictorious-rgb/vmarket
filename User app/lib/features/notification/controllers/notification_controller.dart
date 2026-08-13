@@ -30,9 +30,24 @@ class NotificationController extends ChangeNotifier {
 
 
 
+  int getUnreadNotificationCount() {
+    if (notificationModel?.notification == null || notificationModel!.notification!.isEmpty) {
+      return 0;
+    }
+    return notificationModel!.notification!.where((item) => item.seen == null).length;
+  }
+
   Future<void> seenNotification(int id) async {
     ApiResponseModel apiResponse = await notificationServiceInterface.seenNotification(id);
     if (apiResponse.response != null && apiResponse.response?.statusCode == 200) {
+      // Mark locally first for instantaneous UI update
+      if (notificationModel?.notification != null) {
+        for (var item in notificationModel!.notification!) {
+          if (item.id == id) {
+            item.seen = NotificationSeenBy(id: 0, userId: 0, notificationId: id);
+          }
+        }
+      }
       getNotificationList(1);
     }
     notifyListeners();

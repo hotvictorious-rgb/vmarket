@@ -144,10 +144,11 @@ class _HomePageState extends State<HomePage> {
               backgroundColor: Theme.of(context).primaryColor,
               title: Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                crossAxisAlignment: CrossAxisAlignment.center,
                 children: [
-                  // Prominent Brand Logo (taking ~40% of header width)
+                  // Prominent Brand Logo (Left ~40-45% width)
                   Expanded(
-                    flex: 4,
+                    flex: 5,
                     child: Align(
                       alignment: Alignment.centerLeft,
                       child: SizedBox(
@@ -169,91 +170,101 @@ class _HomePageState extends State<HomePage> {
                     ),
                   ),
 
-                  // Actions: Call to Order + Notification Bell
+                  // Actions: CALL TO ORDER (2-line) + Clean Notification Bell
                   Expanded(
                     flex: 6,
                     child: Row(
                       mainAxisAlignment: MainAxisAlignment.end,
-                      mainAxisSize: MainAxisSize.min,
-                    children: [
-                      // Call to Order Pill
-                      if (configModel?.companyPhone != null && configModel!.companyPhone!.isNotEmpty)
-                        InkWell(
-                          onTap: () async {
-                            final Uri launchUri = Uri(scheme: 'tel', path: configModel.companyPhone);
-                            if (await canLaunchUrl(launchUri)) {
-                              await launchUrl(launchUri);
-                            }
-                          },
-                          child: Container(
-                            padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 5),
-                            margin: const EdgeInsets.only(right: 6),
-                            decoration: BoxDecoration(
-                              color: Colors.white.withValues(alpha: 0.18),
-                              borderRadius: BorderRadius.circular(20),
-                              border: Border.all(color: const Color(0xFFFFD700).withValues(alpha: 0.6), width: 1),
-                            ),
-                            child: Row(
+                      crossAxisAlignment: CrossAxisAlignment.center,
+                      children: [
+                        // Call to Order 2-line Stack (CALL TO ORDER: \n +PHONE_NUMBER)
+                        if (configModel?.companyPhone != null && configModel!.companyPhone!.isNotEmpty)
+                          InkWell(
+                            onTap: () async {
+                              final Uri launchUri = Uri(scheme: 'tel', path: configModel.companyPhone);
+                              if (await canLaunchUrl(launchUri)) {
+                                await launchUrl(launchUri);
+                              }
+                            },
+                            child: Column(
                               mainAxisSize: MainAxisSize.min,
+                              crossAxisAlignment: CrossAxisAlignment.end,
                               children: [
-                                const Icon(Icons.phone_in_talk, color: Color(0xFFFFD700), size: 13),
-                                const SizedBox(width: 4),
+                                Text(
+                                  'CALL TO ORDER:',
+                                  style: textBold.copyWith(
+                                    color: const Color(0xFFFFD700),
+                                    fontSize: 9,
+                                    letterSpacing: 0.5,
+                                  ),
+                                ),
+                                const SizedBox(height: 1),
                                 Text(
                                   configModel.companyPhone!,
-                                  style: textBold.copyWith(color: Colors.white, fontSize: 11),
+                                  style: textBold.copyWith(
+                                    color: Colors.white,
+                                    fontSize: 11,
+                                    letterSpacing: 0.3,
+                                  ),
                                 ),
                               ],
                             ),
                           ),
-                        ),
 
-                      // Notification Bell with Badge
-                      Consumer<NotificationController>(
-                        builder: (context, notificationProvider, _) {
-                          int unreadCount = 0;
-                          if (notificationProvider.notificationModel?.notification != null && notificationProvider.notificationModel!.notification!.isNotEmpty) {
-                            unreadCount = notificationProvider.notificationModel!.notification!.length;
-                          }
-                          return InkWell(
-                            onTap: () => RouterHelper.getNotificationRoute(action: RouteAction.push),
-                            child: Container(
-                              padding: const EdgeInsets.all(7),
-                              decoration: BoxDecoration(
-                                color: Colors.white.withValues(alpha: 0.18),
-                                shape: BoxShape.circle,
-                                border: Border.all(color: Colors.white.withValues(alpha: 0.25)),
-                              ),
+                        const SizedBox(width: 10),
+
+                        // Notification Bell with Accurate Unread Count Badge
+                        Consumer<NotificationController>(
+                          builder: (context, notificationProvider, _) {
+                            final int unreadCount = notificationProvider.getUnreadNotificationCount();
+
+                            return InkWell(
+                              onTap: () => RouterHelper.getNotificationRoute(action: RouteAction.push),
                               child: Stack(
                                 clipBehavior: Clip.none,
+                                alignment: Alignment.center,
                                 children: [
-                                  const Icon(Icons.notifications_none_rounded, color: Colors.white, size: 20),
+                                  const Icon(
+                                    Icons.notifications_none_rounded,
+                                    color: Colors.white,
+                                    size: 24,
+                                  ),
                                   if (unreadCount > 0)
                                     Positioned(
-                                      top: -4,
+                                      top: -3,
                                       right: -4,
                                       child: Container(
-                                        padding: const EdgeInsets.all(3),
+                                        padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 2),
                                         decoration: const BoxDecoration(
                                           color: Color(0xFFFFD700),
                                           shape: BoxShape.circle,
                                         ),
-                                        child: Text(
-                                          unreadCount > 9 ? '9+' : '$unreadCount',
-                                          style: textBold.copyWith(color: const Color(0xFF4A148C), fontSize: 8),
+                                        constraints: const BoxConstraints(
+                                          minWidth: 14,
+                                          minHeight: 14,
+                                        ),
+                                        child: Center(
+                                          child: Text(
+                                            unreadCount > 99 ? '99+' : '$unreadCount',
+                                            style: textBold.copyWith(
+                                              color: const Color(0xFF4A148C),
+                                              fontSize: 8,
+                                              height: 1.0,
+                                            ),
+                                          ),
                                         ),
                                       ),
                                     ),
                                 ],
                               ),
-                            ),
-                          );
-                        },
-                      ),
-                    ],
+                            );
+                          },
+                        ),
+                      ],
+                    ),
                   ),
-                ),
-              ],
-            ),
+                ],
+              ),
           ),
               
             SliverToBoxAdapter(child: Provider.of<SplashController>(context, listen: false).configModel!.announcement!.status == '1'?

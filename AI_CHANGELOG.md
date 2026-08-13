@@ -9,6 +9,16 @@ Include the specific app/component modified and bullet points detailing the exac
 
 ---
 
+### [2026-08-13 13:03 UTC] Exact 2-Line Call to Order Pattern & Dynamic Unread Notification Badge [User App]
+* **Component:** User App (`home_screens.dart`, `NotificationController`)
+* **Action:** Overhauled top app bar to strictly match the requested screenshot mockup layout and implemented dynamic unread notification counting.
+* **Changes Made:**
+  - **Exact 2-Line Call to Order Stack:** Structured the phone pill into a clean two-line stack: `CALL TO ORDER:` in gold uppercase text on line 1 and the dynamic company phone number in white bold on line 2, with direct tap-to-dial `url_launcher` action.
+  - **Accurate Unread Notification Badge:** Added `getUnreadNotificationCount()` to `NotificationController` calculating actual unread notifications (`where item.seen == null`). The gold badge only displays when there are unread notifications and automatically disappears/resets to empty the moment notifications are read.
+  - **Instant Optimistic Read Update:** Enhanced `seenNotification` to locally mark items as seen immediately upon opening, delivering real-time badge updates.
+
+---
+
 ### [2026-08-13 12:51 UTC] Dynamic Backend Company Logo Integration with Asset Fallback [User App]
 * **Component:** User App (`home_screens.dart`)
 * **Action:** Upgraded the top app bar brand logo to dynamically load the company's uploaded brand logo from the Admin Panel (`configModel.companyLogo.path`) using `CustomImageWidget` (with cached network image), with seamless fallback to `assets/images/logo.png`.
