@@ -9,6 +9,16 @@ Include the specific app/component modified and bullet points detailing the exac
 
 ---
 
+### [2026-08-13 06:03 UTC] Order Tracking & Secret Handover OTP Modernization [User App]
+* **Component:** User App (`OrderPaymentInfoWidget`, `CallAndChatWidget`)
+* **Action:** Modernized the Order Tracking and Delivery screen matching the Royal Purple & Gold high-fidelity design mockup.
+* **Changes Made:**
+  - **Secret Handover OTP:** Redesigned into a prominent Gold security card (`#FFD700`) with clear customer instructions, eye visibility toggle, and high-contrast OTP typography.
+  - **Rider Actions:** Upgraded rider contact buttons with smooth rounded pills and a solid Royal Purple gradient *"Chat with Delivery Rider"* action (`userType: 0`).
+  - **Card Elevation:** Upgraded order detail containers with `16px` rounded corners and soft ambient shadows.
+
+---
+
 ### [2026-08-13 05:55 UTC] Cart & Checkout UI Modernization [User App]
 * **Component:** User App (`CartWidget`, `CheckoutScreen`, `ChoosePaymentWidget`, `ShippingDetailsWidget`)
 * **Action:** Modernized the Cart and Checkout experience matching the Royal Purple & Gold high-fidelity design mockup.

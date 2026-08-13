@@ -26,58 +26,63 @@ class CallAndChatWidget extends StatelessWidget {
     return Row(
       children: [
         InkWell(
-          onTap: ()=> _launchUrl("tel:$phone"),
-          child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: Dimensions.paddingSizeSmall),
-            child: Container(
-              width: 40,
-              height: 40,
-              decoration: BoxDecoration(
-                color: Theme.of(context).hintColor.withValues(alpha:.0525),
-                border: Border.all(color: Theme.of(context).hintColor),
-                borderRadius: BorderRadius.circular(50),
-              ),
-              padding: const EdgeInsets.all(Dimensions.paddingSizeSmall),
-              child: Image.asset(Images.callIcon, color: Theme.of(context).colorScheme.onTertiaryContainer),
+          onTap: () => _launchUrl("tel:$phone"),
+          child: Container(
+            width: 38,
+            height: 38,
+            margin: const EdgeInsets.symmetric(horizontal: 4),
+            decoration: BoxDecoration(
+              color: const Color(0xFF6A1B9A).withValues(alpha: 0.08),
+              border: Border.all(color: const Color(0xFF6A1B9A).withValues(alpha: 0.2)),
+              borderRadius: BorderRadius.circular(12),
             ),
+            padding: const EdgeInsets.all(8),
+            child: Image.asset(Images.callIcon, color: const Color(0xFF6A1B9A)),
           ),
         ),
 
         if (!isSeller)
           InkWell(
-            onTap: (){
-              Provider.of<ChatController>(context, listen: false).setUserTypeIndex(context, 1);
+            onTap: () {
+              Provider.of<ChatController>(context, listen: false).setUserTypeIndex(context, 0);
               RouterHelper.getChatScreenRoute(
                 action: RouteAction.push,
                 image: image,
                 id: id,
                 name: name ?? '',
-                userType: isSeller ? 1 : 0,
-                isShopTemporaryClosed: isSeller
-                    ? orderProvider!.orderDetails![0].seller?.shop?.temporaryClose ?? false
-                    : false,
-                isShopOnVacation: isSeller ?
-                  ShopHelper.isVacationActive(
-                    context,
-                    startDate: orderProvider?.orderDetails?[0].seller?.shop?.vacationStartDate,
-                    endDate: orderProvider?.orderDetails?[0].seller?.shop?.vacationEndDate,
-                    vacationDurationType: orderProvider?.orderDetails?[0].seller?.shop?.vacationDurationType,
-                    vacationStatus: orderProvider?.orderDetails?[0].seller?.shop?.vacationStatus,
-                    isInHouseSeller: false,
-                  ) : false,
+                userType: 0,
+                isShopTemporaryClosed: false,
+                isShopOnVacation: false,
               );
             },
-            child: Padding(
-              padding: const EdgeInsets.symmetric(horizontal: Dimensions.paddingSizeSmall),
-              child: Container(
-                width: 40,
-                decoration: BoxDecoration(
-                  color: Theme.of(context).hintColor.withValues(alpha:.0525),
-                  border: Border.all(color: Theme.of(context).hintColor),
-                  borderRadius: BorderRadius.circular(50),
+            child: Container(
+              height: 38,
+              padding: const EdgeInsets.symmetric(horizontal: 12),
+              margin: const EdgeInsets.symmetric(horizontal: 4),
+              decoration: BoxDecoration(
+                gradient: const LinearGradient(
+                  colors: [Color(0xFF6A1B9A), Color(0xFF4A148C)],
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
                 ),
-                padding: const EdgeInsets.all(Dimensions.paddingSizeSmall),
-                child: Image.asset(Images.smsIcon, color: Theme.of(context).primaryColor),
+                borderRadius: BorderRadius.circular(12),
+                boxShadow: [
+                  BoxShadow(
+                    color: const Color(0xFF4A148C).withValues(alpha: 0.2),
+                    blurRadius: 4,
+                    offset: const Offset(0, 2),
+                  ),
+                ],
+              ),
+              child: Row(
+                children: [
+                  const Icon(Icons.chat_bubble_outline_rounded, color: Colors.white, size: 16),
+                  const SizedBox(width: 4),
+                  Text(
+                    'Chat',
+                    style: titilliumBold.copyWith(color: Colors.white, fontSize: Dimensions.fontSizeSmall),
+                  ),
+                ],
               ),
             ),
           ),

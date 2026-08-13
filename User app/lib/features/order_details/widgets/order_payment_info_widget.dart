@@ -20,8 +20,18 @@ class OrderPaymentInfoWidget extends StatelessWidget {
 
         return Container(
           decoration: BoxDecoration(
-            boxShadow: [BoxShadow(color: Theme.of(context).hintColor.withValues(alpha:0.2), spreadRadius:1.5, blurRadius: 3)],
             color: Theme.of(context).cardColor,
+            borderRadius: BorderRadius.circular(16),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withValues(alpha: 0.04),
+                blurRadius: 10,
+                offset: const Offset(0, 4),
+              ),
+            ],
+            border: Border.all(
+              color: Theme.of(context).primaryColor.withValues(alpha: 0.08),
+            ),
           ),
 
           child: Padding(
@@ -32,56 +42,98 @@ class OrderPaymentInfoWidget extends StatelessWidget {
 
                 if(configModel?.orderVerification == 1 && orderProvider.orders!.orderType != 'POS')...[
                   (() {
-                    bool _isCodeHidden = true;
+                    bool isCodeHidden = true;
                     return StatefulBuilder(
                       builder: (context, setState) {
                         return Container(
-                          color: Theme.of(context).cardColor,
-                          child: Row(
-                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                            children: [
-                              Text(
-                                getTranslated('order_verification_code', context) ?? '',
-                                style: textRegular.copyWith(color: Theme.of(context).textTheme.titleMedium?.color)
+                          margin: const EdgeInsets.symmetric(vertical: Dimensions.paddingSizeExtraSmall),
+                          padding: const EdgeInsets.all(Dimensions.paddingSizeDefault),
+                          decoration: BoxDecoration(
+                            gradient: const LinearGradient(
+                              colors: [Color(0xFFFFF8E1), Color(0xFFFFECB3)],
+                              begin: Alignment.topLeft,
+                              end: Alignment.bottomRight,
+                            ),
+                            borderRadius: BorderRadius.circular(14),
+                            border: Border.all(color: const Color(0xFFFFD700), width: 1.5),
+                            boxShadow: [
+                              BoxShadow(
+                                color: const Color(0xFFFFD700).withValues(alpha: 0.15),
+                                blurRadius: 8,
+                                offset: const Offset(0, 3),
                               ),
-
+                            ],
+                          ),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
                               Row(
+                                mainAxisAlignment: MainAxisAlignment.spaceBetween,
                                 children: [
-                                  Text(
-                                    _isCodeHidden ? '******' : (orderProvider.orders?.verificationCode ?? ''),
-                                    style: robotoBold.copyWith(color: Theme.of(context).textTheme.bodyLarge?.color)
+                                  Row(
+                                    children: [
+                                      const Icon(Icons.shield_rounded, color: Color(0xFF6A1B9A), size: 20),
+                                      const SizedBox(width: 6),
+                                      Text(
+                                        getTranslated('order_verification_code', context) ?? 'Secret Handover OTP',
+                                        style: titilliumBold.copyWith(
+                                          color: const Color(0xFF4A148C),
+                                          fontSize: Dimensions.fontSizeDefault,
+                                        ),
+                                      ),
+                                    ],
                                   ),
-                                  const SizedBox(width: Dimensions.paddingSizeSmall),
-                                  InkWell(
-                                    onTap: () {
-                                      setState(() {
-                                        _isCodeHidden = !_isCodeHidden;
-                                      });
-                                    },
-                                    child: Icon(
-                                      _isCodeHidden ? Icons.visibility_off : Icons.visibility,
-                                      size: 20,
-                                      color: Theme.of(context).primaryColor,
-                                    ),
+                                  Row(
+                                    children: [
+                                      Container(
+                                        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                                        decoration: BoxDecoration(
+                                          color: Colors.white,
+                                          borderRadius: BorderRadius.circular(8),
+                                          border: Border.all(color: const Color(0xFFFFD700)),
+                                        ),
+                                        child: Text(
+                                          isCodeHidden ? '••••••' : (orderProvider.orders?.verificationCode ?? ''),
+                                          style: robotoBold.copyWith(
+                                            color: const Color(0xFF4A148C),
+                                            fontSize: Dimensions.fontSizeLarge,
+                                            letterSpacing: 2,
+                                          ),
+                                        ),
+                                      ),
+                                      const SizedBox(width: Dimensions.paddingSizeSmall),
+                                      InkWell(
+                                        onTap: () {
+                                          setState(() {
+                                            isCodeHidden = !isCodeHidden;
+                                          });
+                                        },
+                                        child: Icon(
+                                          isCodeHidden ? Icons.visibility_off : Icons.visibility,
+                                          size: 22,
+                                          color: const Color(0xFF6A1B9A),
+                                        ),
+                                      ),
+                                    ],
                                   ),
                                 ],
+                              ),
+                              const SizedBox(height: 6),
+                              Text(
+                                '⚠️ Give this code to rider ONLY when your package is received and inspected.',
+                                style: textRegular.copyWith(
+                                  fontSize: Dimensions.fontSizeExtraSmall,
+                                  color: const Color(0xFF5D4037),
+                                ),
                               ),
                             ],
                           ),
                         );
-                      }
+                      },
                     );
                   })(),
-
-                  if(configModel?.orderVerification == 1 && orderProvider.orders!.orderType != 'POS')
-                    const SizedBox(height: Dimensions.paddingSizeSmall),
-
-                  SizedBox(height: 1, child: Divider(thickness: .200, color: Theme.of(context).hintColor.withValues(alpha: 0.45))),
-                ],
-
-
-                if(configModel?.orderVerification == 1 && orderProvider.orders!.orderType != 'POS')
                   const SizedBox(height: Dimensions.paddingSizeSmall),
+                ],
 
 
                 Row(
