@@ -78,11 +78,20 @@ class _MoreScreenState extends State<MoreScreen> {
                         return Padding(padding:  const EdgeInsets.all(Dimensions.paddingSizeDefault),
                           child: Container(padding:  const EdgeInsets.all(Dimensions.paddingSizeSmall),
                             decoration: BoxDecoration(
-                                borderRadius: BorderRadius.circular(Dimensions.fontSizeExtraSmall),
-                                boxShadow: [BoxShadow(color: Theme.of(context).hintColor.withValues(alpha:.05),
-                                    blurRadius: 1, spreadRadius: 1, offset: const Offset(0,1))],
-                                color: Provider.of<ThemeController>(context).darkTheme ?
-                                Colors.white.withValues(alpha:.05) : Theme.of(context).cardColor),
+                              borderRadius: BorderRadius.circular(16),
+                              boxShadow: [
+                                BoxShadow(
+                                  color: Colors.black.withValues(alpha: 0.04),
+                                  blurRadius: 10,
+                                  offset: const Offset(0, 4),
+                                ),
+                              ],
+                              border: Border.all(
+                                color: Theme.of(context).primaryColor.withValues(alpha: 0.08),
+                              ),
+                              color: Provider.of<ThemeController>(context).darkTheme ?
+                              Colors.white.withValues(alpha:.05) : Theme.of(context).cardColor,
+                            ),
                             child: Column(children: [
 
 
@@ -181,11 +190,20 @@ class _MoreScreenState extends State<MoreScreen> {
                     child: Container(
                       padding: const EdgeInsets.all(Dimensions.paddingSizeSmall),
                       decoration: BoxDecoration(
-                          borderRadius: BorderRadius.circular(Dimensions.fontSizeExtraSmall),
-                          boxShadow: [BoxShadow(color: Theme.of(context).hintColor.withValues(alpha:.05),
-                              blurRadius: 1, spreadRadius: 1,offset: const Offset(0,1))],
-                          color: Provider.of<ThemeController>(context).darkTheme ?
-                          Colors.white.withValues(alpha:.05) : Theme.of(context).cardColor),
+                        borderRadius: BorderRadius.circular(16),
+                        boxShadow: [
+                          BoxShadow(
+                            color: Colors.black.withValues(alpha: 0.04),
+                            blurRadius: 10,
+                            offset: const Offset(0, 4),
+                          ),
+                        ],
+                        border: Border.all(
+                          color: Theme.of(context).primaryColor.withValues(alpha: 0.08),
+                        ),
+                        color: Provider.of<ThemeController>(context).darkTheme ?
+                        Colors.white.withValues(alpha:.05) : Theme.of(context).cardColor,
+                      ),
                       child: Consumer<SplashController>(
                         builder: (context, splashController, _){
                           return Column(children: [

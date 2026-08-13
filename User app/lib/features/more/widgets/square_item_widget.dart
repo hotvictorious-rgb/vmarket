@@ -33,9 +33,23 @@ class SquareButtonWidget extends StatelessWidget {
       child: Column(children: [
         Padding(padding: const EdgeInsets.all(8.0),
           child: Container(width: 120, height: 90,
-            decoration: BoxDecoration(borderRadius: BorderRadius.circular(10),
-                color: Provider.of<ThemeController>(context).darkTheme ?
-                Theme.of(context).primaryColor.withValues(alpha:.30) : Theme.of(context).primaryColor),
+            decoration: BoxDecoration(
+              borderRadius: BorderRadius.circular(16),
+              gradient: LinearGradient(
+                colors: Provider.of<ThemeController>(context).darkTheme
+                    ? [const Color(0xFF4A148C).withValues(alpha: 0.6), const Color(0xFF311B92).withValues(alpha: 0.6)]
+                    : const [Color(0xFF6A1B9A), Color(0xFF4A148C)],
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+              ),
+              boxShadow: [
+                BoxShadow(
+                  color: const Color(0xFF4A148C).withValues(alpha: 0.15),
+                  blurRadius: 8,
+                  offset: const Offset(0, 3),
+                ),
+              ],
+            ),
             child: Stack(children: [
               Positioned(top: -80,left: -10,right: -10,
                   child: Container(height: 120, decoration: BoxDecoration(

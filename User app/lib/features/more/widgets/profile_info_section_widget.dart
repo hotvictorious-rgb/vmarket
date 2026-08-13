@@ -18,9 +18,16 @@ class ProfileInfoSectionWidget extends StatelessWidget {
     return Consumer<ProfileController>(
       builder: (context,profile,_) {
           bool isGuestMode = !Provider.of<AuthController>(context, listen: false).isLoggedIn();
-          return Container(decoration: BoxDecoration(
-              color: Provider.of<ThemeController>(context).darkTheme ?
-              Theme.of(context).primaryColor.withValues(alpha:.30) : Theme.of(context).primaryColor),
+          return Container(
+            decoration: BoxDecoration(
+              gradient: LinearGradient(
+                colors: Provider.of<ThemeController>(context).darkTheme
+                    ? [const Color(0xFF4A148C).withValues(alpha: 0.6), const Color(0xFF311B92).withValues(alpha: 0.6)]
+                    : const [Color(0xFF6A1B9A), Color(0xFF4A148C)],
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+              ),
+            ),
             child: Stack(children: [
               Container(transform: Matrix4.translationValues(-10, 0, 0),
                 child: Padding(padding: const EdgeInsets.only(top: 20.0),
@@ -44,7 +51,7 @@ class ProfileInfoSectionWidget extends StatelessWidget {
                     child: ClipRRect(borderRadius: BorderRadius.circular(100),
                         child: Container(width: 70,height: 70,  decoration: BoxDecoration(
                           color: Theme.of(context).cardColor,
-                          border: Provider.of<AuthController>(context, listen: false).isLoggedIn() ? null : Border.all(color: Colors.white, width: 3),
+                          border: Border.all(color: const Color(0xFFFFD700), width: 2.5),
                           shape: BoxShape.circle,),
                           child: Provider.of<AuthController>(context, listen: false).isLoggedIn()?
                           CustomImageWidget(image: '${profile.userInfoModel?.imageFullUrl?.path}', width: 70,height: 70,fit: BoxFit.cover,placeholder: Images.guestProfile):
@@ -54,20 +61,34 @@ class ProfileInfoSectionWidget extends StatelessWidget {
 
                   Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start,mainAxisAlignment: MainAxisAlignment.center, children: [
                     Text(!isGuestMode?
-                    '${profile.userInfoModel?.fName??''} ${profile.userInfoModel?.lName??''}' : 'Guest',
-                        style: textMedium.copyWith(color:  Theme.of(context).colorScheme.secondaryContainer, fontSize: Dimensions.fontSizeExtraLarge)),
+                    '${profile.userInfoModel?.fName??''} ${profile.userInfoModel?.lName??''}' : 'Guest User',
+                        style: textBold.copyWith(color: Colors.white, fontSize: Dimensions.fontSizeExtraLarge)),
 
                     if(!isGuestMode && profile.userInfoModel?.phone != null && profile.userInfoModel!.phone!.isNotEmpty)
-                    const SizedBox(height: Dimensions.paddingSizeSmall),
+                    const SizedBox(height: Dimensions.paddingSizeExtraSmall),
                     if(!isGuestMode)
-                    Text(profile.userInfoModel?.phone??'', style: textRegular.copyWith(color:  Theme.of(context).colorScheme.secondaryContainer, fontSize: Dimensions.fontSizeLarge)),
+                    Text(profile.userInfoModel?.phone??'', style: textRegular.copyWith(color: Colors.white.withValues(alpha: 0.9), fontSize: Dimensions.fontSizeDefault)),
                   ],)),
 
                   InkWell(onTap: ()=> Provider.of<ThemeController>(context, listen: false).toggleTheme(),
-                    child: Padding(padding: const EdgeInsets.all(8.0),
-                      child: SizedBox(width: 40, child: Image.asset(Provider.of<ThemeController>(context).darkTheme ?
-                      Images.sunnyDay: Images.theme, color: Provider.of<ThemeController>(context).darkTheme ? Colors.white: null))),
-                  )])),
+                    child: Container(
+                      padding: const EdgeInsets.all(8),
+                      decoration: BoxDecoration(
+                        color: Colors.white.withValues(alpha: 0.15),
+                        borderRadius: BorderRadius.circular(12),
+                        border: Border.all(color: Colors.white.withValues(alpha: 0.2)),
+                      ),
+                      child: SizedBox(
+                        width: 24,
+                        height: 24,
+                        child: Image.asset(
+                          Provider.of<ThemeController>(context).darkTheme ? Images.sunnyDay : Images.theme,
+                          color: Colors.white,
+                        ),
+                      ),
+                    ),
+                  ),
+                  ])),
             ]));
         });
   }

@@ -9,6 +9,16 @@ Include the specific app/component modified and bullet points detailing the exac
 
 ---
 
+### [2026-08-13 06:10 UTC] More & Account Hub UI Modernization [User App]
+* **Component:** User App (`MoreScreen`, `ProfileInfoSectionWidget`, `SquareButtonWidget`)
+* **Action:** Modernized the 5th tab More & Account Hub screen matching the Royal Purple & Gold high-fidelity design mockup.
+* **Changes Made:**
+  - **Profile Header:** Upgraded with a rich Royal Purple gradient (`#6A1B9A` ➔ `#4A148C`), Gold border circular avatar, and clean theme toggle.
+  - **Floating Wallet Cards:** Styled wallet and loyalty shortcut cards with `16px` rounded corners, Royal Purple gradients, and Gold coin badges.
+  - **Menu List Containers:** Wrapped all general, support, and policy menu groups in elevated `16px` rounded cards with ambient drop-shadows.
+
+---
+
 ### [2026-08-13 06:03 UTC] Order Tracking & Secret Handover OTP Modernization [User App]
 * **Component:** User App (`OrderPaymentInfoWidget`, `CallAndChatWidget`)
 * **Action:** Modernized the Order Tracking and Delivery screen matching the Royal Purple & Gold high-fidelity design mockup.
