@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_sixvalley_ecommerce/common/basewidget/custom_image_widget.dart';
+
 import 'package:flutter_sixvalley_ecommerce/common/basewidget/title_row_widget.dart';
 import 'package:flutter_sixvalley_ecommerce/features/address/controllers/address_controller.dart';
 import 'package:flutter_sixvalley_ecommerce/features/auth/controllers/auth_controller.dart';
@@ -41,7 +41,6 @@ import 'package:flutter_sixvalley_ecommerce/main.dart';
 import 'package:flutter_sixvalley_ecommerce/theme/controllers/theme_controller.dart';
 import 'package:flutter_sixvalley_ecommerce/utill/custom_themes.dart';
 import 'package:flutter_sixvalley_ecommerce/utill/dimensions.dart';
-import 'package:flutter_sixvalley_ecommerce/utill/images.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:provider/provider.dart';
 
@@ -91,11 +90,13 @@ class HomePage extends StatefulWidget {
     // Background Utilities & User Data
     await Future.delayed(const Duration(milliseconds: 100));
     try {
+      if (!context.mounted) return;
       await cartController.getCartData(context);
       await addressController.getAddressList();
       if (notificationController.notificationModel == null || reload) {
         await notificationController.getNotificationList(1);
       }
+      if (!context.mounted) return;
       if (Provider.of<AuthController>(context, listen: false).isLoggedIn() && profileController.userInfoModel == null) {
         await profileController.getUserInfo(context);
       }
@@ -146,26 +147,69 @@ class _HomePageState extends State<HomePage> {
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 crossAxisAlignment: CrossAxisAlignment.center,
                 children: [
-                  // Prominent Brand Logo (Left ~40-45% width)
+                  // Premium Two-Tone Brand Wordmark — "Victorious" Gold + "MARKET" White
                   Expanded(
                     flex: 5,
                     child: Align(
                       alignment: Alignment.centerLeft,
-                      child: SizedBox(
-                        height: 38,
-                        child: (configModel?.companyLogo?.path != null && configModel!.companyLogo!.path!.isNotEmpty)
-                            ? CustomImageWidget(
-                                image: '${configModel.companyLogo?.path}',
-                                height: 38,
-                                fit: BoxFit.contain,
-                                placeholder: Images.logo,
-                              )
-                            : Image.asset(
-                                Images.logo,
-                                height: 38,
-                                fit: BoxFit.contain,
-                                errorBuilder: (_, __, ___) => const Icon(Icons.shopping_bag, color: Color(0xFFFFD700), size: 28),
+                      child: ShaderMask(
+                        blendMode: BlendMode.srcIn,
+                        shaderCallback: (bounds) => const LinearGradient(
+                          colors: [Color(0xFFFFD700), Color(0xFFFFB300)],
+                          begin: Alignment.topLeft,
+                          end: Alignment.bottomRight,
+                        ).createShader(bounds),
+                        child: RichText(
+                          text: TextSpan(
+                            children: [
+                              TextSpan(
+                                text: 'Victorious',
+                                style: TextStyle(
+                                  fontFamily: 'Titillium',
+                                  fontWeight: FontWeight.w900,
+                                  fontSize: 20,
+                                  letterSpacing: 0.5,
+                                  height: 1.1,
+                                  color: Colors.white, // ShaderMask overrides to gold gradient
+                                  shadows: [
+                                    Shadow(
+                                      color: Colors.black.withValues(alpha: 0.35),
+                                      offset: const Offset(0, 2),
+                                      blurRadius: 6,
+                                    ),
+                                  ],
+                                ),
                               ),
+                              const TextSpan(text: '\n'),
+                              WidgetSpan(
+                                child: ShaderMask(
+                                  blendMode: BlendMode.srcIn,
+                                  shaderCallback: (_) => const LinearGradient(
+                                    colors: [Colors.white, Color(0xFFF0F0F0)],
+                                  ).createShader(const Rect.fromLTWH(0, 0, 120, 20)),
+                                  child: Text(
+                                    'MARKET',
+                                    style: TextStyle(
+                                      fontFamily: 'Titillium',
+                                      fontWeight: FontWeight.w900,
+                                      fontSize: 18,
+                                      letterSpacing: 4.5,
+                                      height: 1.0,
+                                      color: Colors.white,
+                                      shadows: [
+                                        Shadow(
+                                          color: Colors.black.withValues(alpha: 0.3),
+                                          offset: const Offset(0, 2),
+                                          blurRadius: 5,
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
                       ),
                     ),
                   ),

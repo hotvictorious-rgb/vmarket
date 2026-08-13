@@ -9,6 +9,20 @@ Include the specific app/component modified and bullet points detailing the exac
 
 ---
 
+### [2026-08-13 22:32 UTC] Premium Two-Tone Brand Wordmark Header — Remove Logo, Add "Victorious" Gold / "MARKET" White [User App]
+* **Component:** User App (`home_screens.dart`)
+* **Action:** Replaced the image logo in the top `SliverAppBar` with a premium two-tone typographic wordmark matching the Royal Purple & Gold design system.
+* **Changes Made:**
+  - **Removed** `CustomImageWidget` backend-logo and `Image.asset` fallback from the header entirely.
+  - **Added** `ShaderMask` gold gradient (`#FFD700 → #FFB300`) wrapping a `RichText` with two spans:
+    - `"Victorious"` — `fontWeight: w900`, 20px, Titillium, gold gradient via `ShaderMask`, subtle drop shadow.
+    - `"MARKET"` — `fontWeight: w900`, 18px, Titillium, white, `letterSpacing: 4.5` for luxury wide-spaced all-caps feel, drop shadow.
+  - **Cleaned** unused imports: removed `custom_image_widget.dart` and `images.dart` from `home_screens.dart`.
+  - **Bonus fix:** Added `context.mounted` guards after async gaps in `loadData()` resolving 3 pre-existing `use_build_context_synchronously` linter warnings.
+* **Verify:** `flutter analyze` → No issues found.
+
+---
+
 ### [2026-08-13 22:22 UTC] Fix Delivered Orders Infinite Spinner — Per-Tab Loading Flags & Scroll Controllers [User App]
 * **Component:** User App (`OrderController`, `OrderScreen`)
 * **Root Causes Fixed:**
