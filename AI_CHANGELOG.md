@@ -9,6 +9,14 @@ Include the specific app/component modified and bullet points detailing the exac
 
 ---
 
+### [2026-08-13 14:48 UTC] Full App Speed & Safety Overhaul - Batch 3: Parallelized Vendor Storefront Hydration [User App]
+* **Component:** User App (`ShopScreen`)
+* **Action:** Converted the sequential 9-request waterfall on Vendor and Shop storefronts into a staged concurrent execution pipeline.
+* **Changes Made:**
+  - **Concurrent Vendor Storefront Hydration (Feature 10):** Replaced sequential `await` calls in `TopSellerProductScreen._load()` with a two-tier `Future.wait` strategy: essential products and shop metadata load in parallel on the primary UI fold, while secondary deals and coupons stream smoothly in the background, eliminating multi-second white-screen stalls on store pages.
+
+---
+
 ### [2026-08-13 14:30 UTC] Full App Speed & Safety Overhaul - Batch 2: Address Memory Caching & Instant Search Suggestion Cache [User App]
 * **Component:** User App (`AddressController`, `SearchProductController`)
 * **Action:** Accelerated address lookups and live search suggestions by integrating session-level in-memory caching and skipping redundant socket roundtrips.

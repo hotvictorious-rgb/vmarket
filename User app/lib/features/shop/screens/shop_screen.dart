@@ -63,16 +63,30 @@ class _TopSellerProductScreenState extends State<TopSellerProductScreen> with Ti
   TabController? _tabController;
   int selectedIndex = 0;
 
-  void _load() async{
-    await Provider.of<ShopController>(Get.context!, listen: false).getClearanceShopProductList('clearance_sale', '1', widget.slug.toString());
-    await Provider.of<SellerProductController>(Get.context!, listen: false).getSellerProductList(widget.slug.toString(), 1, "");
-    await Provider.of<ShopController>(Get.context!, listen: false).getSellerInfo(widget.slug.toString());
-    await Provider.of<SellerProductController>(Get.context!, listen: false).getSellerWiseBestSellingProductList(widget.slug.toString(), 1);
-    await Provider.of<SellerProductController>(Get.context!, listen: false).getSellerWiseFeaturedProductList(widget.slug.toString(), 1);
-    await Provider.of<SellerProductController>(Get.context!, listen: false).getSellerWiseRecommendedProductList(widget.slug.toString(), 1);
-    await Provider.of<CouponController>(Get.context!, listen: false).getSellerWiseCouponList(widget.slug!, 1);
-    await Provider.of<CategoryController>(Get.context!, listen: false).getSellerWiseCategoryList(widget.slug!);
-    await Provider.of<BrandController>(Get.context!, listen: false).getSellerWiseBrandList(widget.slug!);
+  void _load() async {
+    final slugStr = widget.slug.toString();
+    final shopCtrl = Provider.of<ShopController>(Get.context!, listen: false);
+    final sellerProdCtrl = Provider.of<SellerProductController>(Get.context!, listen: false);
+    final couponCtrl = Provider.of<CouponController>(Get.context!, listen: false);
+    final catCtrl = Provider.of<CategoryController>(Get.context!, listen: false);
+    final brandCtrl = Provider.of<BrandController>(Get.context!, listen: false);
+
+    // Primary UI fold: essential products & seller info in parallel
+    await Future.wait([
+      sellerProdCtrl.getSellerProductList(slugStr, 1, ""),
+      shopCtrl.getSellerInfo(slugStr),
+      shopCtrl.getClearanceShopProductList('clearance_sale', '1', slugStr),
+    ]);
+
+    // Secondary UI fold: categories, deals & coupons in background
+    Future.wait([
+      sellerProdCtrl.getSellerWiseBestSellingProductList(slugStr, 1),
+      sellerProdCtrl.getSellerWiseFeaturedProductList(slugStr, 1),
+      sellerProdCtrl.getSellerWiseRecommendedProductList(slugStr, 1),
+      couponCtrl.getSellerWiseCouponList(widget.slug!, 1),
+      catCtrl.getSellerWiseCategoryList(widget.slug!),
+      brandCtrl.getSellerWiseBrandList(widget.slug!),
+    ]);
   }
 
   @override
