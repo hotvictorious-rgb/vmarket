@@ -59,74 +59,63 @@ class AsterThemeHomeScreen extends StatefulWidget {
   State<AsterThemeHomeScreen> createState() => _AsterThemeHomeScreenState();
 
   static Future<void> loadData(bool reload) async {
-    final shopController = Provider.of<ShopController>(Get.context!, listen: false);
-    final categoryController = Provider.of<CategoryController>(Get.context!, listen: false);
-    final bannerController = Provider.of<BannerController>(Get.context!, listen: false);
-    final productController = Provider.of<ProductController>(Get.context!, listen: false);
-    final brandController = Provider.of<BrandController>(Get.context!, listen: false);
-    final featuredDealController = Provider.of<FeaturedDealController>(Get.context!, listen: false);
-    final notificationController = Provider.of<NotificationController>(Get.context!, listen: false);
-    final cartController = Provider.of<CartController>(Get.context!, listen: false);
-    final profileController = Provider.of<ProfileController>(Get.context!, listen: false);
-    final sellerProductController = Provider.of<SellerProductController>(Get.context!, listen: false);
-    final orderController = Provider.of<OrderController>(Get.context!, listen: false);
-    final splashController = Provider.of<SplashController>(Get.context!, listen: false);
+    final context = Get.context;
+    if (context == null) return;
 
-    splashController.initConfig(Get.context!, null, null);
+    final shopController = Provider.of<ShopController>(context, listen: false);
+    final categoryController = Provider.of<CategoryController>(context, listen: false);
+    final bannerController = Provider.of<BannerController>(context, listen: false);
+    final productController = Provider.of<ProductController>(context, listen: false);
+    final brandController = Provider.of<BrandController>(context, listen: false);
+    final featuredDealController = Provider.of<FeaturedDealController>(context, listen: false);
+    final notificationController = Provider.of<NotificationController>(context, listen: false);
+    final cartController = Provider.of<CartController>(context, listen: false);
+    final profileController = Provider.of<ProfileController>(context, listen: false);
+    final splashController = Provider.of<SplashController>(context, listen: false);
+    final sellerProductController = Provider.of<SellerProductController>(context, listen: false);
+    final orderController = Provider.of<OrderController>(context, listen: false);
 
-    shopController.getAllSellerList(offset: 1, isUpdate: reload);
+    splashController.initConfig(context, null, null);
 
-    cartController.getCartData(Get.context!);
+    // Primary Visual Fold
+    await Future.wait([
+      categoryController.getCategoryList(reload).catchError((e) => debugPrint('Error loading categories: $e')),
+      bannerController.getBannerList().catchError((e) => debugPrint('Error loading banners: $e')),
+      productController.getLatestProductList(1, isUpdate: false).catchError((e) => debugPrint('Error loading latest products: $e')),
+      productController.getFeaturedProductModel(1, isUpdate: reload).catchError((e) => debugPrint('Error loading featured products: $e')),
+    ]);
 
-    bannerController.getBannerList();
+    // Secondary Visual Fold
+    await Future.delayed(const Duration(milliseconds: 100));
+    await Future.wait([
+      productController.getHomeCategoryProductList(reload).catchError((e) => debugPrint('Error: $e')),
+      shopController.getTopSellerList(offset: 1, isUpdate: reload).catchError((e) => debugPrint('Error: $e')),
+      brandController.getBrandList(offset: 1, isUpdate: reload).catchError((e) => debugPrint('Error: $e')),
+      featuredDealController.getFeaturedDealList().catchError((e) => debugPrint('Error: $e')),
+      productController.getRecommendedProduct().catchError((e) => debugPrint('Error: $e')),
+      productController.getJustForYouProduct(1, isUpdate: reload).catchError((e) => debugPrint('Error: $e')),
+      productController.getClearanceAllProductList(1, isUpdate: reload).catchError((e) => debugPrint('Error: $e')),
+      shopController.getMoreStore().catchError((e) => debugPrint('Error: $e')),
+    ]);
 
-    categoryController.getCategoryList(reload);
-
-    productController.getHomeCategoryProductList(reload);
-
-    shopController.getTopSellerList(offset: 1, isUpdate: reload);
-
-    brandController.getBrandList(offset: 1, isUpdate: reload);
-
-    productController.getLatestProductList(1, isUpdate: false);
-    productController.getSelectedProductModel(1, isUpdate: false);
-
-
-    productController.getFeaturedProductModel(1, isUpdate: reload);
-
-    featuredDealController.getFeaturedDealList();
-
-    // productController.getLProductList('1', reload: reload);
-
-    productController.getRecommendedProduct();
-
-    productController.findWhatYouNeed();
-
-    productController.getJustForYouProduct(1, isUpdate: reload);
-
-    shopController.getMoreStore();
-
-    productController.getClearanceAllProductList(1, isUpdate: reload);
-
-    if(notificationController.notificationModel == null ||
-        (notificationController.notificationModel != null
-            && notificationController.notificationModel!.notification!.isEmpty)
-        || reload) {
-      notificationController.getNotificationList(1);
-    }
-
-    if(Provider.of<AuthController>(Get.context!, listen: false).isLoggedIn()){
-      if(profileController.userInfoModel == null) {
-        profileController.getUserInfo(Get.context!);
+    // Background Utilities
+    await Future.delayed(const Duration(milliseconds: 100));
+    try {
+      await cartController.getCartData(context);
+      if (notificationController.notificationModel == null || reload) {
+        await notificationController.getNotificationList(1);
       }
-
-
-      sellerProductController.getShopAgainFromRecentStore();
-
-
-      if(orderController.orderModel == null || (orderController.orderModel != null && orderController.orderModel!.orders!.isEmpty) || reload) {
-        orderController.getOrderList(1,'delivered', type: 'reorder' );
+      if (Provider.of<AuthController>(context, listen: false).isLoggedIn()) {
+        if(profileController.userInfoModel == null) {
+          await profileController.getUserInfo(context);
+        }
+        await sellerProductController.getShopAgainFromRecentStore();
+        if(orderController.orderModel == null || (orderController.orderModel != null && orderController.orderModel!.orders!.isEmpty) || reload) {
+          await orderController.getOrderList(1,'delivered', type: 'reorder' );
+        }
       }
+    } catch (e) {
+      debugPrint('Aster background error: $e');
     }
   }
 }
