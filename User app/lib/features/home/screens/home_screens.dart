@@ -41,6 +41,7 @@ import 'package:flutter_sixvalley_ecommerce/theme/controllers/theme_controller.d
 import 'package:flutter_sixvalley_ecommerce/utill/custom_themes.dart';
 import 'package:flutter_sixvalley_ecommerce/utill/dimensions.dart';
 import 'package:flutter_sixvalley_ecommerce/utill/images.dart';
+import 'package:url_launcher/url_launcher.dart';
 import 'package:provider/provider.dart';
 
 
@@ -140,10 +141,53 @@ class _HomePageState extends State<HomePage> {
               centerTitle: false,
               automaticallyImplyLeading: false,
               backgroundColor: Theme.of(context).primaryColor,
-              title: Text(
-                'CALL TO ORDER: ${configModel?.companyPhone ?? ''}',
-                style: textBold.copyWith(color: Colors.white, fontSize: Dimensions.fontSizeLarge),
-              )),
+              title: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Row(
+                    children: [
+                      Image.asset(Images.logoWithNameImageWhite, height: 32, errorBuilder: (_, __, ___) {
+                        return Row(
+                          children: [
+                            Image.asset(Images.logo, height: 28),
+                            const SizedBox(width: 6),
+                            Text('Victorious MARKET', style: textBold.copyWith(color: Colors.white, fontSize: 16)),
+                          ],
+                        );
+                      }),
+                    ],
+                  ),
+                  if (configModel?.companyPhone != null && configModel!.companyPhone!.isNotEmpty)
+                    InkWell(
+                      onTap: () async {
+                        final Uri launchUri = Uri(scheme: 'tel', path: configModel.companyPhone);
+                        if (await canLaunchUrl(launchUri)) {
+                          await launchUrl(launchUri);
+                        }
+                      },
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+                        decoration: BoxDecoration(
+                          color: Colors.white.withValues(alpha: 0.18),
+                          borderRadius: BorderRadius.circular(20),
+                          border: Border.all(color: Colors.white.withValues(alpha: 0.35)),
+                        ),
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            const Icon(Icons.phone_in_talk, color: Color(0xFFFFD700), size: 14),
+                            const SizedBox(width: 5),
+                            Text(
+                              configModel!.companyPhone!,
+                              style: textBold.copyWith(color: Colors.white, fontSize: Dimensions.fontSizeSmall),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                ],
+              ),
+            ),
               
             SliverToBoxAdapter(child: Provider.of<SplashController>(context, listen: false).configModel!.announcement!.status == '1'?
             Consumer<SplashController>(

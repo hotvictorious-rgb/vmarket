@@ -17,23 +17,35 @@ class SearchHomePageWidget extends StatelessWidget {
         padding: const EdgeInsets.symmetric(horizontal: Dimensions.homePagePadding, vertical: Dimensions.paddingSizeSmall),
         alignment: Alignment.center,
         child: Container(
-          padding: const EdgeInsets.symmetric(horizontal: Dimensions.paddingSizeDefault),
-          height: 50,
+          padding: const EdgeInsets.only(left: Dimensions.paddingSizeDefault, right: 6),
+          height: 48,
           alignment: Alignment.centerLeft,
           decoration: BoxDecoration(
             color: Colors.white,
-            borderRadius: BorderRadius.circular(25), // Pill shape like Jumia
+            borderRadius: BorderRadius.circular(24),
+            border: Border.all(color: const Color(0xFFE0E0E0), width: 1),
+            boxShadow: [
+              BoxShadow(color: Colors.black.withValues(alpha: 0.04), blurRadius: 8, offset: const Offset(0, 2)),
+            ],
           ),
           child: Row(
             children: [
-              const Icon(Icons.search, color: Colors.black, size: 24),
-              const SizedBox(width: Dimensions.paddingSizeSmall),
-              Text(
-                'Search on Victorious MARKET',
-                style: textRegular.copyWith(
-                  color: Colors.black,
-                  fontSize: Dimensions.fontSizeLarge,
+              Expanded(
+                child: Text(
+                  'Search on Victorious MARKET...',
+                  style: textRegular.copyWith(
+                    color: const Color(0xFF9E9E9E),
+                    fontSize: Dimensions.fontSizeDefault,
+                  ),
                 ),
+              ),
+              Container(
+                padding: const EdgeInsets.all(7),
+                decoration: BoxDecoration(
+                  color: Theme.of(context).primaryColor,
+                  shape: BoxShape.circle,
+                ),
+                child: const Icon(Icons.search, color: Colors.white, size: 18),
               ),
             ],
           ),

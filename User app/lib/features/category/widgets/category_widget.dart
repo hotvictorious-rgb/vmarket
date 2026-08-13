@@ -21,16 +21,34 @@ class CategoryWidget extends StatelessWidget {
         0 : Dimensions.homePagePadding),
 
       child: Column( children: [
-        Container(height: 70, width: 70, decoration: BoxDecoration(
-          border: Border.all(color: Theme.of(context).primaryColor.withValues(alpha:.125),width: .25),
-          borderRadius: BorderRadius.circular(Dimensions.paddingSizeSmall),
-          color: Theme.of(context).primaryColor.withValues(alpha:.125)),
-          child: ClipRRect(borderRadius: BorderRadius.circular(Dimensions.paddingSizeSmall),
-            child: CustomImageWidget(image: '${category.imageFullUrl?.path}'))
+        Container(
+          height: 66,
+          width: 66,
+          decoration: BoxDecoration(
+            shape: BoxShape.circle,
+            color: Colors.white,
+            border: Border.all(color: Theme.of(context).primaryColor.withValues(alpha: .18), width: 1.5),
+            boxShadow: [
+              BoxShadow(
+                color: Theme.of(context).primaryColor.withValues(alpha: .08),
+                blurRadius: 6,
+                offset: const Offset(0, 2),
+              ),
+            ],
+          ),
+          child: ClipOval(
+            child: Padding(
+              padding: const EdgeInsets.all(Dimensions.paddingSizeSmall),
+              child: CustomImageWidget(
+                image: '${category.imageFullUrl?.path}',
+                fit: BoxFit.contain,
+              ),
+            ),
+          ),
         ),
 
         const SizedBox(height: Dimensions.paddingSizeExtraSmall),
-        Center(child: SizedBox(width: 70,
+        Center(child: SizedBox(width: 72,
           child: Text(category.name??'', textAlign: TextAlign.center, maxLines: 2,
             overflow: TextOverflow.ellipsis,
             style: textRegular.copyWith(fontSize: Dimensions.fontSizeSmall,
