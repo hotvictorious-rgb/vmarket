@@ -19,6 +19,9 @@ class BannerController extends Controller
     public function getBannerList(Request $request): JsonResponse
     {
         $banners = $this->cacheBannerTable();
+        if (empty($banners) || count($banners) === 0) {
+            $banners = \App\Models\Banner::with(['storage'])->where(['published' => 1, 'theme' => 'default'])->orderBy('id', 'desc')->latest('created_at')->get();
+        }
         $productIds = [];
         $shopIds = [];
         $brandIds = [];
