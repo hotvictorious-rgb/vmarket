@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_sixvalley_ecommerce/common/basewidget/custom_image_widget.dart';
 import 'package:flutter_sixvalley_ecommerce/common/basewidget/title_row_widget.dart';
 import 'package:flutter_sixvalley_ecommerce/features/address/controllers/address_controller.dart';
 import 'package:flutter_sixvalley_ecommerce/features/auth/controllers/auth_controller.dart';
@@ -149,18 +150,21 @@ class _HomePageState extends State<HomePage> {
                     flex: 4,
                     child: Align(
                       alignment: Alignment.centerLeft,
-                      child: Image.asset(
-                        Images.logo,
+                      child: SizedBox(
                         height: 38,
-                        fit: BoxFit.contain,
-                        errorBuilder: (_, __, ___) => Row(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            const Icon(Icons.shopping_bag, color: Color(0xFFFFD700), size: 26),
-                            const SizedBox(width: 6),
-                            Text('Victorious', style: textBold.copyWith(color: Colors.white, fontSize: 16)),
-                          ],
-                        ),
+                        child: (configModel?.companyLogo?.path != null && configModel!.companyLogo!.path!.isNotEmpty)
+                            ? CustomImageWidget(
+                                image: '${configModel.companyLogo?.path}',
+                                height: 38,
+                                fit: BoxFit.contain,
+                                placeholder: Images.logo,
+                              )
+                            : Image.asset(
+                                Images.logo,
+                                height: 38,
+                                fit: BoxFit.contain,
+                                errorBuilder: (_, __, ___) => const Icon(Icons.shopping_bag, color: Color(0xFFFFD700), size: 28),
+                              ),
                       ),
                     ),
                   ),

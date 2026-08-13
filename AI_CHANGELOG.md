@@ -9,6 +9,15 @@ Include the specific app/component modified and bullet points detailing the exac
 
 ---
 
+### [2026-08-13 12:51 UTC] Dynamic Backend Company Logo Integration with Asset Fallback [User App]
+* **Component:** User App (`home_screens.dart`)
+* **Action:** Upgraded the top app bar brand logo to dynamically load the company's uploaded brand logo from the Admin Panel (`configModel.companyLogo.path`) using `CustomImageWidget` (with cached network image), with seamless fallback to `assets/images/logo.png`.
+* **Changes Made:**
+  - Integrated `CustomImageWidget` into `home_screens.dart` `SliverAppBar` logo container.
+  - Guaranteed exact ~40% header flex allocation whether rendering network uploaded logo or local asset image with zero text next to it.
+
+---
+
 ### [2026-08-13 12:40 UTC] Fix Missing ProductType Import in CartScreen for Release Build [User App]
 * **Component:** User App (`CartScreen`)
 * **Action:** Resolved release build compilation failure by explicitly importing `product_type.dart` for the "Start Shopping" button route in `CartScreen`.
