@@ -78,6 +78,11 @@ class CheckoutScreenState extends State<CheckoutScreen> {
     Provider.of<CouponController>(context, listen: false).removePrevCouponData();
     Provider.of<CartController>(context, listen: false).getCartData(context);
     Provider.of<CheckoutController>(context, listen: false).resetPaymentMethod();
+    Provider.of<CheckoutController>(context, listen: false).initDefaultPaymentMethod(
+      splashController,
+      onlyDigital: widget.onlyDigital,
+      isUpdate: false,
+    );
     Provider.of<ShippingController>(context, listen: false).getChosenShippingMethod(context);
     if(splashController.configModel != null &&
         splashController.configModel!.offlinePayment != null)

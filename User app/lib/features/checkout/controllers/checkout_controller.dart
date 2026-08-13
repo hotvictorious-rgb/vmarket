@@ -145,6 +145,38 @@ class CheckoutController with ChangeNotifier {
     isOfflineChecked = false;
   }
 
+  void initDefaultPaymentMethod(SplashController splashController, {bool onlyDigital = false, bool isUpdate = true}) {
+    final config = splashController.configModel;
+    if (config == null) return;
+
+    // 1. If Cash on Delivery is available and order contains physical items, default to COD
+    if ((config.cashOnDelivery ?? false) && !onlyDigital) {
+      isCODChecked = true;
+      isWalletChecked = false;
+      isOfflineChecked = false;
+      _paymentMethodIndex = -1;
+    }
+    // 2. Otherwise, if digital payment methods exist, select the first digital gateway
+    else if ((config.digitalPayment ?? false) && (config.paymentMethods != null && config.paymentMethods!.isNotEmpty)) {
+      _paymentMethodIndex = 0;
+      selectedDigitalPaymentMethodName = config.paymentMethods![0].keyName ?? '';
+      isCODChecked = false;
+      isWalletChecked = false;
+      isOfflineChecked = false;
+    }
+    // 3. Fallback to wallet if logged in and wallet enabled
+    else if (config.walletStatus == 1) {
+      isWalletChecked = true;
+      isCODChecked = false;
+      isOfflineChecked = false;
+      _paymentMethodIndex = -1;
+    }
+
+    if (isUpdate) {
+      notifyListeners();
+    }
+  }
+
 
   void shippingAddressNull(){
     _addressIndex = null;

@@ -272,9 +272,7 @@ class PaymentMethodBottomSheetWidgetState extends State<PaymentMethodBottomSheet
                   buttonText: '${getTranslated('save', context)}',
                   onTap: () {
                     Navigator.of(context).pop();
-                    if((configModel?.cashOnDelivery ?? false) && !widget.onlyDigital) {
-                      checkoutController.updatePaymentSelection();
-                    }
+                    checkoutController.updatePaymentSelection();
                   },
                 ),
 

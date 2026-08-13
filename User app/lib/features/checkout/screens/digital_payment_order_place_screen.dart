@@ -106,9 +106,25 @@ class DigitalPaymentScreenState extends State<DigitalPaymentScreen> {
                 children: [
                   WebViewWidget(controller: controller),
                   if (_isLoading)
-                    Center(
-                      child: CircularProgressIndicator(
+                    Positioned(
+                      top: 0,
+                      left: 0,
+                      right: 0,
+                      child: LinearProgressIndicator(
+                        minHeight: 3,
+                        backgroundColor: Colors.transparent,
                         valueColor: AlwaysStoppedAnimation<Color>(Theme.of(context).primaryColor),
+                      ),
+                    ),
+                  if (_isLoading)
+                    Center(
+                      child: SizedBox(
+                        width: 36,
+                        height: 36,
+                        child: CircularProgressIndicator(
+                          strokeWidth: 2.5,
+                          valueColor: AlwaysStoppedAnimation<Color>(Theme.of(context).primaryColor),
+                        ),
                       ),
                     ),
                 ],
