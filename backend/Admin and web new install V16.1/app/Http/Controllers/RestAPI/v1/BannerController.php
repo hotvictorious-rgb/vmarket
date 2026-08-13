@@ -28,7 +28,7 @@ class BannerController extends Controller
             if ($banner['resource_type'] == 'product' && !in_array($banner['resource_id'], $productIds)) {
                 $productIds[] = $banner['resource_id'];
                 $product = Product::find($banner['resource_id']);
-                $banner['product'] = Helpers::product_data_formatting($product);
+                $banner['product'] = $product ? Helpers::product_data_formatting($product) : null;
             }
             if ($banner['resource_type'] == 'shop' && !in_array($banner['resource_id'], $shopIds)) {
                 $shopIds[] = $banner['resource_id'];

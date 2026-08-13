@@ -107,8 +107,9 @@ class Helpers
 
     public static function set_data_format($data)
     {
-        $colors = is_array($data['colors']) ? $data['colors'] : json_decode($data['colors']);
-        $query_data = Color::whereIn('code', $colors)->pluck('name', 'code')->toArray();
+        $colors = isset($data['colors']) ? (is_array($data['colors']) ? $data['colors'] : (json_decode($data['colors'], true) ?? [])) : [];
+        $colors = is_array($colors) ? $colors : [];
+        $query_data = !empty($colors) ? Color::whereIn('code', $colors)->pluck('name', 'code')->toArray() : [];
         $color_process = [];
         foreach ($query_data as $key => $color) {
             $color_process[] = array(
@@ -119,10 +120,10 @@ class Helpers
         $colorsFormatted = [];
         foreach ($color_process as $color) {
             $colorImageName = null;
-            if (isset($data['color_images_full_url']) && $data['color_images_full_url']) {
+            if (isset($data['color_images_full_url']) && is_iterable($data['color_images_full_url'])) {
                 foreach ($data['color_images_full_url'] as $image) {
-                    if ($image['color'] && '#' . $image['color'] == $color['code']) {
-                        $colorImageName = $image['image_name']['key'];
+                    if (isset($image['color']) && '#' . $image['color'] == $color['code']) {
+                        $colorImageName = $image['image_name']['key'] ?? null;
                     }
                 }
             }
@@ -134,28 +135,30 @@ class Helpers
         }
 
         $variation = [];
-        $data['category_ids'] = is_array($data['category_ids']) ? $data['category_ids'] : json_decode($data['category_ids']);
-//        $data['images'] = is_array($data['images']) ? $data['images'] : json_decode($data['images']);
+        $data['category_ids'] = isset($data['category_ids']) ? (is_array($data['category_ids']) ? $data['category_ids'] : (json_decode($data['category_ids'], true) ?? [])) : [];
         $data['colors'] = $colors;
-//        $data['color_image'] = $colorImage;
         $data['colors_formatted'] = $colorsFormatted;
         $attributes = [];
-        if ((is_array($data['attributes']) ? $data['attributes'] : json_decode($data['attributes'])) != null) {
-            $attributes_arr = is_array($data['attributes']) ? $data['attributes'] : json_decode($data['attributes']);
-            foreach ($attributes_arr as $attribute) {
+        $rawAttributes = isset($data['attributes']) ? (is_array($data['attributes']) ? $data['attributes'] : (json_decode($data['attributes'], true) ?? [])) : [];
+        if (is_array($rawAttributes)) {
+            foreach ($rawAttributes as $attribute) {
                 $attributes[] = (integer)$attribute;
             }
         }
         $data['attributes'] = $attributes;
-        $data['choice_options'] = is_array($data['choice_options']) ? $data['choice_options'] : json_decode($data['choice_options']);
-        $variation_arr = is_array($data['variation']) ? $data['variation'] : json_decode($data['variation'], true);
-        foreach ($variation_arr as $var) {
-            $variation[] = [
-                'type' => $var['type'],
-                'price' => (double)$var['price'],
-                'sku' => $var['sku'],
-                'qty' => (integer)$var['qty'],
-            ];
+        $data['choice_options'] = isset($data['choice_options']) ? (is_array($data['choice_options']) ? $data['choice_options'] : (json_decode($data['choice_options'], true) ?? [])) : [];
+        $variation_arr = isset($data['variation']) ? (is_array($data['variation']) ? $data['variation'] : (json_decode($data['variation'], true) ?? [])) : [];
+        if (is_array($variation_arr)) {
+            foreach ($variation_arr as $var) {
+                if (is_array($var)) {
+                    $variation[] = [
+                        'type' => $var['type'] ?? '',
+                        'price' => isset($var['price']) ? (double)$var['price'] : 0.0,
+                        'sku' => $var['sku'] ?? '',
+                        'qty' => isset($var['qty']) ? (integer)$var['qty'] : 0,
+                    ];
+                }
+            }
         }
         $data['variation'] = $variation;
 
