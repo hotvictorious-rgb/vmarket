@@ -191,22 +191,20 @@ class _CartQuantityControlsWidget extends StatelessWidget {
   Widget build(BuildContext context) {
     return Container(
       decoration: BoxDecoration(
-        color: Theme.of(context).primaryColor.withValues(alpha: 0.04),
-        borderRadius: const BorderRadius.only(
-          bottomRight: Radius.circular(Dimensions.paddingSizeExtraSmall),
-          topRight: Radius.circular(Dimensions.paddingSizeExtraSmall),
-        ),
+        color: const Color(0xFF6A1B9A).withValues(alpha: 0.06),
+        borderRadius: BorderRadius.circular(14),
+        border: Border.all(color: const Color(0xFF6A1B9A).withValues(alpha: 0.12)),
       ),
-      //width: 40,
+      margin: const EdgeInsets.symmetric(vertical: Dimensions.paddingSizeSmall, horizontal: Dimensions.paddingSizeExtraSmall),
       child: Padding(
-        padding: const EdgeInsets.symmetric(vertical: Dimensions.paddingSizeSmall),
+        padding: const EdgeInsets.symmetric(vertical: 4, horizontal: 2),
         child: Column(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
             cartModel?.increment ?? false ? Padding(
-              padding: const EdgeInsets.all(2),
+              padding: const EdgeInsets.all(4),
               child: SizedBox(
-                width: 13, height: 13,
+                width: 14, height: 14,
                 child: CircularProgressIndicator(
                   color: Theme.of(context).primaryColor,
                   strokeWidth: 2,
@@ -223,28 +221,34 @@ class _CartQuantityControlsWidget extends StatelessWidget {
             ),
 
             Padding(
-              padding: EdgeInsets.symmetric(horizontal: Dimensions.paddingSizeExtraExtraSmall),
+              padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 2),
               child: Container(
-                padding: EdgeInsets.symmetric(
-                  horizontal: Dimensions.paddingSizeSmall,
-                  vertical: Dimensions.paddingSizeExtraSmall,
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 8,
+                  vertical: 3,
                 ),
                 decoration: BoxDecoration(
-                  color: Theme.of(context).cardColor.withValues(alpha: 0.50),
-                  borderRadius: const BorderRadius.all(Radius.circular(Dimensions.radiusSmall)),
+                  color: Theme.of(context).cardColor,
+                  borderRadius: BorderRadius.circular(8),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withValues(alpha: 0.04),
+                      blurRadius: 3,
+                    ),
+                  ],
                 ),
                 child: Text(
                   cartModel!.quantity.toString(),
-                  style: textBold.copyWith(color: Theme.of(context).textTheme.bodyLarge?.color)
-                )
+                  style: textBold.copyWith(color: const Color(0xFF4A148C), fontSize: 13),
+                ),
               ),
             ),
 
             cartModel?.decrement ?? false ? Padding(
-              padding: const EdgeInsets.all(2.0),
+              padding: const EdgeInsets.all(4.0),
               child: SizedBox(
-                width: 13,
-                height: 13,
+                width: 14,
+                height: 14,
                 child: CircularProgressIndicator(
                   color: Theme.of(context).primaryColor,
                   strokeWidth: 2,

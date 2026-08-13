@@ -19,33 +19,65 @@ class CustomCheckBoxWidget extends StatelessWidget {
   Widget build(BuildContext context) {
     return Consumer<CheckoutController>(
       builder: (context, order, child) {
-        return InkWell(onTap: () => order.setDigitalPaymentMethodName(index, name),
-          child: Padding(padding: EdgeInsets.all(padding ?? Dimensions.paddingSizeDefault),
-            child: Container(
-              //padding: const EdgeInsets.symmetric(horizontal: Dimensions.paddingSizeSmall),
-              decoration: BoxDecoration(borderRadius: BorderRadius.circular(Dimensions.paddingSizeExtraSmall)),
-              child: Row(mainAxisAlignment: MainAxisAlignment.start, children: [
-                SizedBox(height: 40, child: Padding(padding: const EdgeInsets.all(Dimensions.paddingSizeExtraSmall),
-                  child: CustomImageWidget(image : icon!))),
+        bool isSelected = order.paymentMethodIndex == index;
+        return InkWell(
+          onTap: () => order.setDigitalPaymentMethodName(index, name),
+          child: Container(
+            margin: const EdgeInsets.symmetric(vertical: 4),
+            padding: const EdgeInsets.symmetric(horizontal: Dimensions.paddingSizeDefault, vertical: Dimensions.paddingSizeSmall),
+            decoration: BoxDecoration(
+              color: isSelected ? const Color(0xFF6A1B9A).withValues(alpha: 0.05) : Theme.of(context).cardColor,
+              borderRadius: BorderRadius.circular(14),
+              border: Border.all(
+                color: isSelected ? const Color(0xFF6A1B9A) : Theme.of(context).primaryColor.withValues(alpha: 0.10),
+                width: isSelected ? 1.5 : 1,
+              ),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withValues(alpha: 0.03),
+                  blurRadius: 6,
+                  offset: const Offset(0, 2),
+                ),
+              ],
+            ),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.start,
+              children: [
+                Container(
+                  height: 38, width: 50,
+                  padding: const EdgeInsets.all(4),
+                  decoration: BoxDecoration(
+                    color: Theme.of(context).cardColor,
+                    borderRadius: BorderRadius.circular(8),
+                    border: Border.all(color: Colors.black.withValues(alpha: 0.06)),
+                  ),
+                  child: CustomImageWidget(image: icon!, fit: BoxFit.contain),
+                ),
+                const SizedBox(width: Dimensions.paddingSizeDefault),
 
-                Expanded(child: Text(title, style: textRegular.copyWith(fontSize: Dimensions.fontSizeLarge, color: Theme.of(context).textTheme.bodyLarge?.color))),
-
-
-                Theme(data: Theme.of(context).copyWith(
-                  unselectedWidgetColor: Provider.of<ThemeController>(context, listen: false).darkTheme?
-                  Theme.of(context).hintColor.withValues(alpha:.5) : Theme.of(context).primaryColor.withValues(alpha:.25),),
-                    child: Checkbox(visualDensity: VisualDensity.compact,
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(Dimensions.paddingSizeExtraLarge)),
-                    value: order.paymentMethodIndex == index,
-                    activeColor: Colors.green,
-                    checkColor: Theme.of(context).cardColor,
-                    onChanged: (bool? isChecked) => order.setDigitalPaymentMethodName(index, name)
-                  )
+                Expanded(
+                  child: Text(
+                    title,
+                    style: textBold.copyWith(
+                      fontSize: Dimensions.fontSizeDefault,
+                      color: isSelected ? const Color(0xFF4A148C) : Theme.of(context).textTheme.bodyLarge?.color,
+                    ),
+                  ),
                 ),
 
-
-
-              ]),
+                Container(
+                  height: 20, width: 20,
+                  decoration: BoxDecoration(
+                    shape: BoxShape.circle,
+                    color: isSelected ? const Color(0xFF6A1B9A) : Colors.transparent,
+                    border: Border.all(
+                      color: isSelected ? const Color(0xFF6A1B9A) : Theme.of(context).hintColor.withValues(alpha: 0.4),
+                      width: 2,
+                    ),
+                  ),
+                  child: isSelected ? const Icon(Icons.check, color: Colors.white, size: 13) : null,
+                ),
+              ],
             ),
           ),
         );

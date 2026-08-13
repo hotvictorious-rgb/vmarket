@@ -63,23 +63,13 @@ class DashBoardScreenState extends State<DashBoardScreen> {
       _pageIndex = widget.pageIndex!;
     }
 
-    if(splashController.configModel?.activeTheme == "default") {
-
-      HomePage.loadData(false);
-
-    }else if(splashController.configModel?.activeTheme == "theme_aster") {
-      AsterThemeHomeScreen.loadData(false);
-    }else{
-      FashionThemeHomePage.loadData(false);
-    }
+    HomePage.loadData(false);
 
       _screens = [
         NavigationModel(
           name: 'home',
           icon: Images.homeImage,
-          screen: (splashController.configModel?.activeTheme == "default")
-            ? const HomePage() : (splashController.configModel?.activeTheme == "theme_aster")
-            ? const AsterThemeHomeScreen(): const HomePage(),
+          screen: const HomePage(),
         ),
 
         NavigationModel(name: 'inbox', icon: Images.messageImage, screen: InboxScreen(fromDashboard: true)),

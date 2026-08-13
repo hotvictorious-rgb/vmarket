@@ -232,7 +232,14 @@ class CartScreenState extends State<CartScreen> {
 
                       decoration: BoxDecoration(
                         color: Theme.of(context).cardColor,
-                        borderRadius: BorderRadius.circular(10)
+                        borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
+                        boxShadow: [
+                          BoxShadow(
+                            color: Colors.black.withValues(alpha: 0.08),
+                            blurRadius: 15,
+                            offset: const Offset(0, -4),
+                          ),
+                        ],
                       ),
 
                       child: cartList.isNotEmpty ?
@@ -242,19 +249,19 @@ class CartScreenState extends State<CartScreen> {
                           child: Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
 
                             Row(children: [
-                              Text('${getTranslated('total_price', context)}  ', style: titilliumSemiBold.copyWith(
+                              Text('${getTranslated('total_price', context)}: ', style: textBold.copyWith(
                                 fontSize: Dimensions.fontSizeLarge,
-                                color: Provider.of<ThemeController>(context, listen: false).darkTheme? Theme.of(context).hintColor : Theme.of(context).primaryColor)
+                                color: Theme.of(context).textTheme.bodyLarge?.color)
                               ),
 
                              if(Provider.of<SplashController>(Get.context!, listen: false).configModel?.systemTaxIncludeStatus == 1)
-                              Text('${getTranslated('inc_vat_tax', context)}', style: titilliumSemiBold.copyWith(
+                              Text('(${getTranslated('inc_vat_tax', context)})', style: textRegular.copyWith(
                                   fontSize: Dimensions.fontSizeSmall, color: Theme.of(context).hintColor)),
                             ]),
 
-                            Text(PriceConverter.convertPrice(context, amount+tax+shippingAmount-freeDeliveryAmountDiscount), style: titilliumSemiBold.copyWith(
-                              color: Provider.of<ThemeController>(context, listen: false).darkTheme? Theme.of(context).hintColor : Theme.of(context).primaryColor,
-                              fontSize: Dimensions.fontSizeLarge)
+                            Text(PriceConverter.convertPrice(context, amount+tax+shippingAmount-freeDeliveryAmountDiscount), style: textBold.copyWith(
+                              color: const Color(0xFF6A1B9A),
+                              fontSize: Dimensions.fontSizeLarge + 2)
                             ),
                           ]),
                         ),
@@ -264,27 +271,30 @@ class CartScreenState extends State<CartScreen> {
                             Stack(
                               children: [
                                 Padding(
-                                  padding : EdgeInsetsGeometry.only(
+                                  padding : const EdgeInsets.only(
                                     right : Dimensions.paddingSizeSmall,
-                                    top : Dimensions.paddingSizeSmall,
-                                    bottom : Dimensions.paddingSizeSmall
+                                    top : Dimensions.paddingSizeExtraSmall,
+                                    bottom : Dimensions.paddingSizeExtraSmall
                                   ),
-                                  child: CustomAssetImageWidget(
-                                    Images.cartBox,
-                                    height: 35, width: 35,
+                                  child: Container(
+                                    padding: const EdgeInsets.all(8),
+                                    decoration: BoxDecoration(
+                                      color: const Color(0xFF6A1B9A).withValues(alpha: 0.08),
+                                      borderRadius: BorderRadius.circular(12),
+                                    ),
+                                    child: const Icon(Icons.shopping_bag_outlined, color: Color(0xFF6A1B9A), size: 22),
                                   ),
                                 ),
 
                                 Positioned(
-                                  top: 2, right: 5,
+                                  top: 0, right: 3,
                                   child: Container(
-                                    padding: EdgeInsetsGeometry.all(5),
-                                    decoration: BoxDecoration(
-                                      border: Border.all(width: 2, color: Theme.of(context).cardColor),
+                                    padding: const EdgeInsets.all(4),
+                                    decoration: const BoxDecoration(
                                       shape: BoxShape.circle,
-                                      color: Theme.of(context).colorScheme.error,
+                                      color: Color(0xFFFFD700),
                                     ),
-                                    child: Text(totalItemCheckedCount.toString(), style: titleRegular.copyWith(color: Theme.of(context).cardColor, fontSize: Dimensions.fontSizeSmall)),
+                                    child: Text(totalItemCheckedCount.toString(), style: textBold.copyWith(color: const Color(0xFF4A148C), fontSize: 10)),
                                   ),
                                 ),
                               ]
@@ -431,15 +441,31 @@ class CartScreenState extends State<CartScreen> {
                                     );
                                   }
                                 },
-                                child: Container(decoration: BoxDecoration(color: Theme.of(context).primaryColor,
-                                    borderRadius: BorderRadius.circular(Dimensions.paddingSizeSmall)),
-
-                                  child: Center(child: Padding(padding: EdgeInsets.symmetric(horizontal: Dimensions.paddingSizeSmall,
-                                      vertical: Dimensions.fontSizeSmall),
-                                    child: Text(getTranslated('checkout', context)!,
-                                        style: titilliumSemiBold.copyWith(fontSize: Dimensions.fontSizeDefault, color: Colors.white)
+                                child: Container(
+                                  height: 48,
+                                  decoration: BoxDecoration(
+                                    gradient: const LinearGradient(
+                                      colors: [Color(0xFF6A1B9A), Color(0xFF4A148C)],
+                                      begin: Alignment.topLeft,
+                                      end: Alignment.bottomRight,
                                     ),
+                                    borderRadius: BorderRadius.circular(14),
+                                    boxShadow: [
+                                      BoxShadow(
+                                        color: const Color(0xFF4A148C).withValues(alpha: 0.25),
+                                        blurRadius: 8,
+                                        offset: const Offset(0, 4),
+                                      ),
+                                    ],
                                   ),
+                                  child: Center(
+                                    child: Padding(
+                                      padding: const EdgeInsets.symmetric(horizontal: Dimensions.paddingSizeSmall),
+                                      child: Text(
+                                        getTranslated('checkout', context)!,
+                                        style: textBold.copyWith(fontSize: Dimensions.fontSizeLarge, color: Colors.white),
+                                      ),
+                                    ),
                                   ),
                                 ),
                               ),

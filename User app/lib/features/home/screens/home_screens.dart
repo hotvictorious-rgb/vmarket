@@ -142,47 +142,130 @@ class _HomePageState extends State<HomePage> {
               title: Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
+                  // Logo + Victorious MARKET
                   Row(
                     children: [
-                      Image.asset(Images.logoWithNameImageWhite, height: 32, errorBuilder: (_, __, ___) {
-                        return Row(
-                          children: [
-                            Image.asset(Images.logo, height: 28),
-                            const SizedBox(width: 6),
-                            Text('Victorious MARKET', style: textBold.copyWith(color: Colors.white, fontSize: 16)),
-                          ],
-                        );
-                      }),
-                    ],
-                  ),
-                  if (configModel?.companyPhone != null && configModel!.companyPhone!.isNotEmpty)
-                    InkWell(
-                      onTap: () async {
-                        final Uri launchUri = Uri(scheme: 'tel', path: configModel.companyPhone);
-                        if (await canLaunchUrl(launchUri)) {
-                          await launchUrl(launchUri);
-                        }
-                      },
-                      child: Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+                      Container(
+                        padding: const EdgeInsets.all(2),
                         decoration: BoxDecoration(
-                          color: Colors.white.withValues(alpha: 0.18),
-                          borderRadius: BorderRadius.circular(20),
-                          border: Border.all(color: Colors.white.withValues(alpha: 0.35)),
+                          shape: BoxShape.circle,
+                          border: Border.all(color: const Color(0xFFFFD700), width: 1.5),
                         ),
-                        child: Row(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            const Icon(Icons.phone_in_talk, color: Color(0xFFFFD700), size: 14),
-                            const SizedBox(width: 5),
-                            Text(
-                              configModel!.companyPhone!,
-                              style: textBold.copyWith(color: Colors.white, fontSize: Dimensions.fontSizeSmall),
-                            ),
-                          ],
+                        child: ClipOval(
+                          child: Image.asset(Images.logo, height: 26, width: 26, fit: BoxFit.cover, errorBuilder: (_, __, ___) => const Icon(Icons.shopping_bag, color: Color(0xFFFFD700), size: 20)),
                         ),
                       ),
-                    ),
+                      const SizedBox(width: 8),
+                      Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          RichText(
+                            text: TextSpan(
+                              children: [
+                                TextSpan(
+                                  text: 'Victorious ',
+                                  style: textBold.copyWith(
+                                    color: Colors.white,
+                                    fontSize: 15,
+                                    letterSpacing: 0.3,
+                                  ),
+                                ),
+                                TextSpan(
+                                  text: 'MARKET',
+                                  style: textBold.copyWith(
+                                    color: const Color(0xFFFFD700),
+                                    fontSize: 15,
+                                    letterSpacing: 0.5,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ],
+                      ),
+                    ],
+                  ),
+
+                  // Actions: Call to Order + Notification Bell
+                  Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      // Call to Order Pill
+                      if (configModel?.companyPhone != null && configModel!.companyPhone!.isNotEmpty)
+                        InkWell(
+                          onTap: () async {
+                            final Uri launchUri = Uri(scheme: 'tel', path: configModel.companyPhone);
+                            if (await canLaunchUrl(launchUri)) {
+                              await launchUrl(launchUri);
+                            }
+                          },
+                          child: Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 5),
+                            margin: const EdgeInsets.only(right: 6),
+                            decoration: BoxDecoration(
+                              color: Colors.white.withValues(alpha: 0.18),
+                              borderRadius: BorderRadius.circular(20),
+                              border: Border.all(color: const Color(0xFFFFD700).withValues(alpha: 0.6), width: 1),
+                            ),
+                            child: Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                const Icon(Icons.phone_in_talk, color: Color(0xFFFFD700), size: 13),
+                                const SizedBox(width: 4),
+                                Text(
+                                  configModel!.companyPhone!,
+                                  style: textBold.copyWith(color: Colors.white, fontSize: 11),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ),
+
+                      // Notification Bell with Badge
+                      Consumer<NotificationController>(
+                        builder: (context, notificationProvider, _) {
+                          int unreadCount = 0;
+                          if (notificationProvider.notificationModel?.notification != null && notificationProvider.notificationModel!.notification!.isNotEmpty) {
+                            unreadCount = notificationProvider.notificationModel!.notification!.length;
+                          }
+                          return InkWell(
+                            onTap: () => RouterHelper.getNotificationRoute(action: RouteAction.push),
+                            child: Container(
+                              padding: const EdgeInsets.all(7),
+                              decoration: BoxDecoration(
+                                color: Colors.white.withValues(alpha: 0.18),
+                                shape: BoxShape.circle,
+                                border: Border.all(color: Colors.white.withValues(alpha: 0.25)),
+                              ),
+                              child: Stack(
+                                clipBehavior: Clip.none,
+                                children: [
+                                  const Icon(Icons.notifications_none_rounded, color: Colors.white, size: 20),
+                                  if (unreadCount > 0)
+                                    Positioned(
+                                      top: -4,
+                                      right: -4,
+                                      child: Container(
+                                        padding: const EdgeInsets.all(3),
+                                        decoration: const BoxDecoration(
+                                          color: Color(0xFFFFD700),
+                                          shape: BoxShape.circle,
+                                        ),
+                                        child: Text(
+                                          unreadCount > 9 ? '9+' : '$unreadCount',
+                                          style: textBold.copyWith(color: const Color(0xFF4A148C), fontSize: 8),
+                                        ),
+                                      ),
+                                    ),
+                                ],
+                              ),
+                            ),
+                          );
+                        },
+                      ),
+                    ],
+                  ),
                 ],
               ),
             ),
