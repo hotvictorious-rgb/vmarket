@@ -114,11 +114,13 @@ flutter:
     - assets/svg/
 
   fonts:
-    - family: SF-Pro-Rounded-Regular
+    - family: Ubuntu
       fonts:
-        - asset: assets/fonts/ubuntu/SF-Pro-Rounded-Regular.ttf
+        - asset: assets/fonts/ubuntu/Ubuntu-Light.ttf
+          weight: 300
+        - asset: assets/fonts/ubuntu/Ubuntu-Regular.ttf
           weight: 400
-        - asset: assets/fonts/ubuntu/SF-Pro-Rounded-Regular.ttf
+        - asset: assets/fonts/ubuntu/Ubuntu-Medium.ttf
           weight: 500
-        - asset: assets/fonts/ubuntu/SF-Pro-Rounded-Regular.ttf
-          weight: 600
+        - asset: assets/fonts/ubuntu/Ubuntu-Bold.ttf
+          weight: 700

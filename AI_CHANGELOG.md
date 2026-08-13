@@ -9,6 +9,23 @@ Include the specific app/component modified and bullet points detailing the exac
 
 ---
 
+### [2026-08-13 23:07 UTC] Migrate App Typography to Ubuntu Font Family [User App]
+* **Component:** User App (`pubspec.yaml`, `custom_themes.dart`, `light_theme.dart`, `dark_theme.dart`, `home_screens.dart`, `aster_theme_home_screen.dart`, `fashion_theme_home_screen.dart`)
+* **Action:** Overhauled the Customer App's typography configuration to use the bundled **Ubuntu** font family, mapping true weight variations (Light, Regular, Medium, Bold) to eliminate synthetic font-weight rendering.
+* **Changes Made:**
+  - **`pubspec.yaml`**: Registered the `Ubuntu` font family mapping all weight assets:
+    - Light (`Ubuntu-Light.ttf`, weight 300)
+    - Regular (`Ubuntu-Regular.ttf`, weight 400)
+    - Medium (`Ubuntu-Medium.ttf`, weight 500)
+    - Bold (`Ubuntu-Bold.ttf`, weight 700)
+    - Removed unused `SF-Pro-Rounded-Regular` mapping.
+  - **`custom_themes.dart`**: Replaced all occurrences of `'SF-Pro-Rounded-Regular'` with `'Ubuntu'`.
+  - **`light_theme.dart` / `dark_theme.dart`**: Updated default `fontFamily` configurations from `'TitilliumWeb'` to `'Ubuntu'`.
+  - **Header Screen Files**: Replaced header wordmark font family declarations (`'Titillium'`) with `'Ubuntu'` across all three home screen files (`home_screens.dart`, `aster_theme_home_screen.dart`, `fashion_theme_home_screen.dart`).
+* **Verify:** `flutter analyze` → No issues found.
+
+---
+
 ### [2026-08-13 22:51 UTC] Update AI Governance Rules for Multi-Theme Home Headers [AI Governance]
 * **Component:** AI Governance (`.agents/AGENTS.md`)
 * **Action:** Added a strict UI/UX standard rule mandating that any change to the Customer App home screen header must be applied identically across all three home screen files (`home_screens.dart`, `aster_theme_home_screen.dart`, and `fashion_theme_home_screen.dart`) to ensure full visual consistency across themes.

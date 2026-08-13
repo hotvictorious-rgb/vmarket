@@ -5,7 +5,7 @@ Color _secondaryColor = const Color(0xFFD4AF37);
 
 
 ThemeData light({Color? primaryColor, Color? secondaryColor})=> ThemeData(
-  fontFamily: 'TitilliumWeb',
+  fontFamily: 'Ubuntu',
   primaryColor: _primaryColor,
   brightness: Brightness.light,
   highlightColor: Colors.white,

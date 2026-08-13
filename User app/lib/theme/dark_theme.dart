@@ -4,7 +4,7 @@ Color _primaryColor = const Color(0xFF6A1B9A);
 Color _secondaryColor = const Color(0xFFD4AF37);
 
 ThemeData dark = ThemeData(
-  fontFamily: 'TitilliumWeb',
+  fontFamily: 'Ubuntu',
   primaryColor: _primaryColor,
   brightness: Brightness.dark,
   highlightColor: const Color(0xFF252525),

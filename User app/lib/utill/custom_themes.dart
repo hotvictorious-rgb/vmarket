@@ -3,57 +3,55 @@ import 'package:flutter_sixvalley_ecommerce/theme/controllers/theme_controller.d
 import 'package:provider/provider.dart';
 
 const titilliumRegular = TextStyle(
-  fontFamily: 'SF-Pro-Rounded-Regular',
+  fontFamily: 'Ubuntu',
   fontSize: 12,
 );
 const titleRegular = TextStyle(
-  fontFamily: 'SF-Pro-Rounded-Regular',
+  fontFamily: 'Ubuntu',
   fontWeight: FontWeight.w500,
   fontSize: 14,
-
 );
 const titleHeader = TextStyle(
-  fontFamily: 'SF-Pro-Rounded-Regular',
+  fontFamily: 'Ubuntu',
   fontWeight: FontWeight.w600,
   fontSize: 16,
-
 );
 const titilliumSemiBold = TextStyle(
-  fontFamily: 'SF-Pro-Rounded-Regular',
+  fontFamily: 'Ubuntu',
   fontSize: 12,
   fontWeight: FontWeight.w600,
 );
 
 const titilliumBold = TextStyle(
-  fontFamily: 'SF-Pro-Rounded-Regular',
+  fontFamily: 'Ubuntu',
   fontSize: 14,
   fontWeight: FontWeight.w700,
 );
 const titilliumItalic = TextStyle(
-  fontFamily: 'SF-Pro-Rounded-Regular',
+  fontFamily: 'Ubuntu',
   fontSize: 14,
   fontStyle: FontStyle.italic,
 );
 
 const textRegular = TextStyle(
-  fontFamily: 'SF-Pro-Rounded-Regular',
+  fontFamily: 'Ubuntu',
   fontWeight: FontWeight.w300,
   fontSize: 14,
 );
 
 const textMedium = TextStyle(
-  fontFamily: 'SF-Pro-Rounded-Regular',
+  fontFamily: 'Ubuntu',
   fontSize: 14,
-  fontWeight: FontWeight.w500
+  fontWeight: FontWeight.w500,
 );
 const textBold = TextStyle(
-    fontFamily: 'SF-Pro-Rounded-Regular',
-    fontSize: 14,
-    fontWeight: FontWeight.w600
+  fontFamily: 'Ubuntu',
+  fontSize: 14,
+  fontWeight: FontWeight.w600,
 );
 
 const robotoBold = TextStyle(
-  fontFamily: 'SF-Pro-Rounded-Regular',
+  fontFamily: 'Ubuntu',
   fontSize: 14,
   fontWeight: FontWeight.w700,
 );

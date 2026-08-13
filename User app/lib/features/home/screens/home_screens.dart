@@ -165,7 +165,7 @@ class _HomePageState extends State<HomePage> {
                               TextSpan(
                                 text: 'Victorious',
                                 style: TextStyle(
-                                  fontFamily: 'Titillium',
+                                  fontFamily: 'Ubuntu',
                                   fontWeight: FontWeight.w900,
                                   fontSize: 20,
                                   letterSpacing: 0.5,
@@ -190,7 +190,7 @@ class _HomePageState extends State<HomePage> {
                                   child: Text(
                                     'MARKET',
                                     style: TextStyle(
-                                      fontFamily: 'Titillium',
+                                      fontFamily: 'Ubuntu',
                                       fontWeight: FontWeight.w900,
                                       fontSize: 18,
                                       letterSpacing: 4.5,

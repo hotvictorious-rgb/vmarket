@@ -175,7 +175,7 @@ class _FashionThemeHomePageState extends State<FashionThemeHomePage> {
                               TextSpan(
                                 text: 'Victorious',
                                 style: TextStyle(
-                                  fontFamily: 'Titillium',
+                                  fontFamily: 'Ubuntu',
                                   fontWeight: FontWeight.w900,
                                   fontSize: 20,
                                   letterSpacing: 0.5,
@@ -192,7 +192,7 @@ class _FashionThemeHomePageState extends State<FashionThemeHomePage> {
                                   child: Text(
                                     'MARKET',
                                     style: TextStyle(
-                                      fontFamily: 'Titillium',
+                                      fontFamily: 'Ubuntu',
                                       fontWeight: FontWeight.w900,
                                       fontSize: 18,
                                       letterSpacing: 4.5,
