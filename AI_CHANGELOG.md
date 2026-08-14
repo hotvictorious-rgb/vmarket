@@ -9,6 +9,15 @@ Include the specific app/component modified and bullet points detailing the exac
 
 ---
 
+### [2026-08-14 05:25 UTC] Safe Pagination Limits & Resilient Loading [Backend & Vendor App]
+* **Component:** Backend (`v3/seller/ProductController.php`) and Vendor App (`product_controller.dart`)
+* **Action:** Resolved Division-by-zero crashes on the backend and infinite loading spinner hangs in the Vendor App dashboard (Stock Out, Top Selling, and Most Popular sections).
+* **Changes Made:**
+  - **Backend:** Updated `stock_out_list`, `top_selling_products`, `most_popular_products`, and `top_delivery_man` in `ProductController.php` to validate and default pagination `limit` and `offset` parameters to standard values (10 and 1) instead of letting them cast to `0` when empty.
+  - **Vendor App:** Wrapped `getStockOutProductList`, `getMostPopularProductList`, and `getTopSellingProductList` in `try-catch-finally` blocks within `product_controller.dart` to guarantee that loading flags (`_isLoading`, `_isPaginationLoading`) reset to `false` even if network requests fail or return 500 errors.
+
+---
+
 ### [2026-08-14 05:07 UTC] Fix Dashboard Spinner Hang [Vendor App]
 * **Component:** Vendor App (`delivery_man_controller.dart`, `top_delivery_man_view_widget.dart`)
 * **Action:** Fixed an infinite loading spinner hang on the home dashboard screen under the completed orders section.

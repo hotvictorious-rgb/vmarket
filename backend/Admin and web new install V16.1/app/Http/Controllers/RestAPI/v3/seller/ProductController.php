@@ -688,7 +688,7 @@ class ProductController extends Controller
             ->when($stockLimit > 0, function ($query) use ($stockLimit) {
                 return $query->where('current_stock', '<', $stockLimit);
             })
-            ->paginate($request['limit'], ['*'], 'page', $request['offset']);
+            ->paginate($request['limit'] && $request['limit'] > 0 ? (int)$request['limit'] : 10, ['*'], 'page', $request['offset'] && $request['offset'] > 0 ? (int)$request['offset'] : 1);
 
         $products->map(function ($data) {
             return Helpers::product_data_formatting($data);
@@ -1800,8 +1800,8 @@ class ProductController extends Controller
             ],
             relations: ['rating', 'orderDetails', 'refundRequest'],
             withCount: ['reviews' => 'reviews'],
-            dataLimit: (int)$request['limit'],
-            offset: (int)$request['offset'],
+            dataLimit: $request['limit'] && $request['limit'] > 0 ? (int)$request['limit'] : 10,
+            offset: $request['offset'] && $request['offset'] > 0 ? (int)$request['offset'] : 1,
         );
 
         $collection = [];
@@ -1835,8 +1835,8 @@ class ProductController extends Controller
             relations: ['rating', 'tags', 'clearanceSale' => function ($query) {
                 return $query->active();
             }],
-            dataLimit: (int)($request['limit'] ?? getWebConfig(name: 'pagination_limit')),
-            offset: (int)$request['offset'] ?? 1,
+            dataLimit: $request['limit'] && $request['limit'] > 0 ? (int)$request['limit'] : 10,
+            offset: $request['offset'] && $request['offset'] > 0 ? (int)$request['offset'] : 1,
         );
 
         $productsFinal = Helpers::product_data_formatting($products, true);
@@ -1867,7 +1867,7 @@ class ProductController extends Controller
                         ->orWhere('l_name', 'like', "%{$value}%");
                 }
             })
-            ->paginate($request['limit'], ['*'], 'page', $request['offset']);
+            ->paginate($request['limit'] && $request['limit'] > 0 ? (int)$request['limit'] : 10, ['*'], 'page', $request['offset'] && $request['offset'] > 0 ? (int)$request['offset'] : 1);
 
         $data = array();
         $data['total_size'] = $delivery_men->total();
