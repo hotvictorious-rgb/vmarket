@@ -7,6 +7,14 @@ Always append your completed tasks here in chronological order at the top. Forma
 `### [YYYY-MM-DD HH:MM UTC] <Feature / Fix Title> [<Component Scope>]`
 Include the specific app/component modified and bullet points detailing the exact technical changes.
 
+### [2026-08-14 11:31 UTC] Fix Dependency Injection Initialization [Vendor App]
+* **Component:** Vendor App (`di_container.dart`)
+* **Action:** Restored the accidentally deleted `Future<void> init() async` function declaration.
+* **Changes Made:**
+  - **`di_container.dart`**: Fixed a compile-blocking bug by re-introducing the function signature for dependency injection initialization, restoring correct lexical scope and resolving multiple top-level definition conflicts.
+
+---
+
 ### [2026-08-14 10:20 UTC] Resolve Deprecations and Linter Warnings [Delivery Man App]
 * **Component:** Delivery Man App (`audio_player_widget.dart`, `voice_note_bottom_sheet.dart`, `verify_pickup_sheet_widget.dart`, `order_status_change_custom_button_widget.dart`, `verify_otp_sheet_widget.dart`, `get_di.dart`, `notification_helper.dart`)
 * **Action:** Resolved deprecated SDK members, unused imports, missing const qualifiers, and conditional assignment warnings, achieving 100% clean linter status for the Delivery Man App.
