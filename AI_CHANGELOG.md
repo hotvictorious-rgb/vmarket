@@ -7,6 +7,18 @@ Always append your completed tasks here in chronological order at the top. Forma
 `### [YYYY-MM-DD HH:MM UTC] <Feature / Fix Title> [<Component Scope>]`
 Include the specific app/component modified and bullet points detailing the exact technical changes.
 
+### [2026-08-14 08:25 UTC] Rule Compliance & Architectural Alignment [Laravel Backend, User App, Vendor App, Delivery Man App, AI Governance]
+* **Component:** Laravel Models (`Customer.php`, `SellerWalletHistory.php`, `SearchFunction.php`), Flutter Dependency Injection & API Client, and AI Governance (`AGENTS.md`)
+* **Action:** Patched the mass assignment security vulnerabilities on backend models, resolved boot-time secure token race conditions across the three mobile applications, and updated developer rules.
+* **Changes Made:**
+  - **Laravel Backend**: Added `$guarded = ['id'];` arrays to `Customer` and `SellerWalletHistory` models, and corrected the invalid `protected $guarded;` initialization to `protected $guarded = ['id'];` in `SearchFunction`.
+  - **User App**: Added optional `token` support to `DioClient` constructor, pre-loading it asynchronously on startup inside `di_container.dart` before instantiation.
+  - **Vendor App**: Added optional `token` support to `DioClient` constructor, pre-loading it asynchronously on startup inside `di_container.dart` before instantiation.
+  - **Delivery Man App**: Added optional `token` support to `ApiClient` constructor, pre-loading it asynchronously on startup inside `get_di.dart` before instantiation.
+  - **AI Governance**: Modified `AGENTS.md` to clarify database query eager-loading exceptions for legacy code, added cache invalidation rules when updating setting values, and upgraded the Delivery Rider token security rule to a mandatory standard.
+
+---
+
 ### [2026-08-14 05:44 UTC] Multi-Platform Order Details Safety Coverage [Web Storefront, Admin & Vendor Web]
 * **Component:** Web Controllers (`UserProfileController.php`, `WebController.php`, `Vendor/Order/OrderController.php`, `Admin/Order/OrderController.php`)
 * **Action:** Extended null safety validation checks for decoded order product details to prevent fatal type errors on admin/vendor status changes and customer digital product downloads.

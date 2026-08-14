@@ -22,8 +22,8 @@ Any time you make a functional change, fix a bug, or complete a feature, you **M
 ## 3. Strict Architectural Patterns
 
 ### A. The Laravel Backend (`backend/Admin and web new install V16.1`)
-- **Queries:** Avoid N+1 queries at all costs. You MUST use Eager Loading (`->with()`) inside the `app/Repositories` classes.
-- **Caching:** The storefront relies heavily on caching. If you add a new configuration or storefront setting, you must cache it using `Cache::remember()` in the `app/Utils/settings.php` file or equivalent utility.
+- **Queries:** Avoid N+1 queries at all costs. You MUST use Eager Loading (`->with()`) inside the `app/Repositories` classes. Note that the Repository pattern and eager loading rules apply to newly written or refactored features. Legacy direct queries inside controllers must be preserved to minimize regression risk, unless that specific endpoint is being overhauled.
+- **Caching & Invalidation:** The storefront relies heavily on caching. If you add a new configuration or storefront setting, you must cache it using `Cache::remember()` in the `app/Utils/settings.php` file or equivalent utility. Crucially, any settings creation/update logic in controllers or repositories must explicitly invalidate the corresponding cache key using `clearWebConfigCacheKeys()` or `cacheRemoveByType()`.
 - **Data Integrity:** All Eloquent Models must explicitly define a `$fillable` or `$guarded` array to prevent Mass Assignment.
 - **Cross-App & Multi-Platform Verification:** Whenever any AI wants to make functional modifications to the backend, they MUST first verify and prove feature-by-feature, one-by-one, that the changes do not break operations across:
   1. Admin Web Panel
@@ -42,7 +42,7 @@ Any time you make a functional change, fix a bug, or complete a feature, you **M
 
 ### C. Delivery Man App (Flutter)
 - **State Management:** This specific app uses **GetX** for state and routing. Do NOT use Provider here.
-- **Security Notice:** If modifying token storage, upgrade it from `shared_preferences` to `flutter_secure_storage` to match the enterprise standards of the other apps.
+- **Security Notice:** API tokens and credentials must ONLY be stored using `flutter_secure_storage`. Any legacy fallback in `shared_preferences` must be migrated.
 - **Performance:** When dealing with maps and geolocation, ensure UI repaints are minimized via GetX reactive variables (`.obs`).
 
 ## 4. UI / UX Standards
