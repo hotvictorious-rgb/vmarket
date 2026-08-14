@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:sixvalley_delivery_boy/common/basewidgets/custom_loader_widget.dart';
 import 'package:sixvalley_delivery_boy/common/controllers/localization_controller.dart';
 import 'package:sixvalley_delivery_boy/features/order_details/controllers/order_details_controller.dart';
 import 'package:sixvalley_delivery_boy/features/order_details/screens/order_delivered_screen.dart';
@@ -10,7 +9,6 @@ import 'package:sixvalley_delivery_boy/features/order_details/widgets/verify_pic
 import 'package:sixvalley_delivery_boy/features/splash/controllers/splash_controller.dart';
 import 'package:sixvalley_delivery_boy/features/order/domain/models/order_model.dart';
 import 'package:flutter/cupertino.dart';
-import 'package:sixvalley_delivery_boy/features/order/controllers/order_controller.dart';
 import 'package:sixvalley_delivery_boy/utill/dimensions.dart';
 import 'package:sixvalley_delivery_boy/utill/images.dart';
 import 'package:sixvalley_delivery_boy/utill/styles.dart';

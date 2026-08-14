@@ -65,7 +65,7 @@ class _AudioPlayerWidgetState extends State<AudioPlayerWidget> {
       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
       decoration: BoxDecoration(
         color: widget.isMe
-            ? Theme.of(context).primaryColor.withOpacity(0.1)
+            ? Theme.of(context).primaryColor.withValues(alpha: 0.1)
             : Theme.of(context).cardColor,
         borderRadius: BorderRadius.circular(Dimensions.paddingSizeSmall),
       ),
@@ -88,7 +88,7 @@ class _AudioPlayerWidgetState extends State<AudioPlayerWidget> {
               activeColor: widget.isMe
                   ? Theme.of(context).primaryColor
                   : Theme.of(context).hintColor,
-              inactiveColor: Theme.of(context).hintColor.withOpacity(0.3),
+              inactiveColor: Theme.of(context).hintColor.withValues(alpha: 0.3),
               min: 0.0,
               max: _duration.inMilliseconds > 0
                   ? _duration.inMilliseconds.toDouble()

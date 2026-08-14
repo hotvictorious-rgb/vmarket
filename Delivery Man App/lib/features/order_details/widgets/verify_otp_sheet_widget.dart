@@ -186,7 +186,7 @@ class _VerifyDeliverySheetWidgetState extends State<VerifyDeliverySheetWidget> {
                SizedBox(height: Dimensions.paddingSizeLarge),
                Container(
                  color: Colors.white,
-                 padding: EdgeInsets.all(10),
+                 padding: const EdgeInsets.all(10),
                  child: QrImageView(
                    data: authUrl,
                    version: QrVersions.auto,

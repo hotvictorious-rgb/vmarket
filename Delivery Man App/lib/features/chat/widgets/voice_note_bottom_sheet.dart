@@ -157,7 +157,7 @@ class _VoiceNoteBottomSheetState extends State<VoiceNoteBottomSheet> {
             Container(
               width: 40, height: 4,
               decoration: BoxDecoration(
-                color: Theme.of(context).hintColor.withOpacity(0.5),
+                color: Theme.of(context).hintColor.withValues(alpha: 0.5),
                 borderRadius: BorderRadius.circular(2),
               ),
             ),
@@ -207,7 +207,7 @@ class _VoiceNoteBottomSheetState extends State<VoiceNoteBottomSheet> {
                   Expanded(
                     child: Slider(
                       activeColor: Theme.of(context).primaryColor,
-                      inactiveColor: Theme.of(context).hintColor.withOpacity(0.3),
+                      inactiveColor: Theme.of(context).hintColor.withValues(alpha: 0.3),
                       value: _audioPosition.inMilliseconds.toDouble(),
                       max: _audioDuration.inMilliseconds > 0
                           ? _audioDuration.inMilliseconds.toDouble()

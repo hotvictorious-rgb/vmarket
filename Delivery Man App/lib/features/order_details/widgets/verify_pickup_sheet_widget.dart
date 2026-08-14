@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:pin_code_fields/pin_code_fields.dart';
 import 'package:sixvalley_delivery_boy/features/order/domain/models/order_model.dart';
-import 'package:sixvalley_delivery_boy/features/order/controllers/order_controller.dart';
 import 'package:sixvalley_delivery_boy/features/order_details/controllers/order_details_controller.dart';
 import 'package:sixvalley_delivery_boy/utill/dimensions.dart';
 import 'package:sixvalley_delivery_boy/utill/styles.dart';

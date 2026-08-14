@@ -102,13 +102,13 @@ class NotificationHelper {
                context: Get.context!, 
                barrierDismissible: false,
                builder: (ctx) => AlertDialog(
-                   title: Text('Payment Successful!'),
-                   content: Text('The customer paid via Paystack and the order has been automatically marked as delivered.'),
+                   title: const Text('Payment Successful!'),
+                   content: const Text('The customer paid via Paystack and the order has been automatically marked as delivered.'),
                    actions: [
                       TextButton(onPressed: () { 
                          Navigator.of(ctx).pop(); 
                          Navigator.of(Get.context!).pushAndRemoveUntil(MaterialPageRoute(builder: (_) => const DashboardScreen(pageIndex: 0)), (route) => false);
-                      }, child: Text('OK'))
+                      }, child: const Text('OK'))
                    ]
                )
             );
