@@ -7,6 +7,17 @@ Always append your completed tasks here in chronological order at the top. Forma
 `### [YYYY-MM-DD HH:MM UTC] <Feature / Fix Title> [<Component Scope>]`
 Include the specific app/component modified and bullet points detailing the exact technical changes.
 
+### [2026-08-14 10:20 UTC] Resolve Deprecations and Linter Warnings [Delivery Man App]
+* **Component:** Delivery Man App (`audio_player_widget.dart`, `voice_note_bottom_sheet.dart`, `verify_pickup_sheet_widget.dart`, `order_status_change_custom_button_widget.dart`, `verify_otp_sheet_widget.dart`, `get_di.dart`, `notification_helper.dart`)
+* **Action:** Resolved deprecated SDK members, unused imports, missing const qualifiers, and conditional assignment warnings, achieving 100% clean linter status for the Delivery Man App.
+* **Changes Made:**
+  - **Deprecations**: Replaced deprecated `withOpacity` calls with modern `.withValues()` to avoid precision loss on colors in audio player and voice note sheets.
+  - **Imports**: Removed unused controller and loader imports in order details widgets.
+  - **Const Qualifiers**: Applied missing `const` prefixes to improve performance on static text elements in dialogs and sheets.
+  - **Code Style**: Replaced manual null-check condition on startup token loading with clean null-aware assignment (`??=`) in dependency injection setup.
+
+---
+
 ### [2026-08-14 09:48 UTC] Robust Settings Cache Invalidation [Laravel Backend]
 * **Component:** Laravel Admin Controllers (`PaymentMethodController.php`, `SmsGatewayController.php`) and Utilities (`panel-helpers.php`)
 * **Action:** Replaced direct query builder database writes on the `business_settings` table with Eloquent model `updateOrCreate` calls.
