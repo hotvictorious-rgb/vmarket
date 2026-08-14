@@ -171,6 +171,8 @@ import 'common/controller/show_bottom_sheet_controller.dart';
 
 final sl = GetIt.instance;
 
+Future<void> init() async {
+
   // External
   final sharedPreferences = await SharedPreferences.getInstance();
   sl.registerLazySingleton(() => sharedPreferences);
