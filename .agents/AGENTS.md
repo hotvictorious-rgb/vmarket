@@ -25,7 +25,14 @@ Any time you make a functional change, fix a bug, or complete a feature, you **M
 - **Queries:** Avoid N+1 queries at all costs. You MUST use Eager Loading (`->with()`) inside the `app/Repositories` classes.
 - **Caching:** The storefront relies heavily on caching. If you add a new configuration or storefront setting, you must cache it using `Cache::remember()` in the `app/Utils/settings.php` file or equivalent utility.
 - **Data Integrity:** All Eloquent Models must explicitly define a `$fillable` or `$guarded` array to prevent Mass Assignment.
-- **Cross-App Verification:** Whenever any AI makes functional modifications to the backend, they MUST verify and prove that the changes do not break operations in *all* downstream client applications (Customer app, Vendor app, and Delivery Man app).
+- **Cross-App & Multi-Platform Verification:** Whenever any AI wants to make functional modifications to the backend, they MUST first verify and prove feature-by-feature, one-by-one, that the changes do not break operations across:
+  1. Admin Web Panel
+  2. Customer Web Storefront
+  3. Seller Web Panel
+  4. Customer Mobile App
+  5. Seller Mobile App
+  6. Delivery Man Mobile App
+  This verification and proof is mandatory before making any change to the backend.
 
 ### B. User App & Vendor App (Flutter)
 - **State Management:** These apps use **Provider**. Do NOT introduce GetX, BLoC, or Riverpod.
