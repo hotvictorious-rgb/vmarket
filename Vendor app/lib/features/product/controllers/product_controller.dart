@@ -271,23 +271,29 @@ class ProductController extends ChangeNotifier {
 
     if(!_offsetList.contains(offset)) {
       _offsetList.add(offset);
-      ApiResponse apiResponse = await productServiceInterface.getStockLimitedProductList(offset,languageCode);
-      if (apiResponse.response != null && apiResponse.response!.statusCode == 200) {
-        if(_offset == 1) {
-          _stockOutProductList = [];
+      try {
+        ApiResponse apiResponse = await productServiceInterface.getStockLimitedProductList(offset,languageCode);
+        if (apiResponse.response != null && apiResponse.response!.statusCode == 200) {
+          if(_offset == 1) {
+            _stockOutProductList = [];
+          }
+          _stockOutProductList!.addAll(ProductModel.fromJson(apiResponse.response!.data).products ?? []);
+          _stockOutProductPageSize = ProductModel.fromJson(apiResponse.response!.data).totalSize;
+        } else {
+          ApiChecker.checkApi(apiResponse);
         }
-        _stockOutProductList!.addAll(ProductModel.fromJson(apiResponse.response!.data).products!);
-        _stockOutProductPageSize = ProductModel.fromJson(apiResponse.response!.data).totalSize;
+      } catch (e) {
+        debugPrint('Error getting stock out product list: $e');
+      } finally {
         _isLoading = false;
         _isPaginationLoading = false;
-      } else {
-        ApiChecker.checkApi(apiResponse);
+        notifyListeners();
       }
-      notifyListeners();
     }else{
       if(_isLoading || _isPaginationLoading) {
         _isPaginationLoading = false;
         _isLoading = false;
+        notifyListeners();
       }
     }
   }
@@ -296,6 +302,7 @@ class ProductController extends ChangeNotifier {
     if(reload || offset == 1) {
       _offset = 1;
       _offsetList = [];
+      _isLoading = true;
     }
     if(reload){
       _mostPopularProductList = null;
@@ -303,33 +310,38 @@ class ProductController extends ChangeNotifier {
     }
     if(!_offsetList.contains(offset)){
       _offsetList.add(offset);
-      ApiResponse apiResponse = await productServiceInterface.getMostPopularProductList(offset,languageCode);
-      if (apiResponse.response != null && apiResponse.response!.statusCode == 200) {
-        if(reload || offset == 1){
-          _mostPopularProductList = [];
+      try {
+        ApiResponse apiResponse = await productServiceInterface.getMostPopularProductList(offset,languageCode);
+        if (apiResponse.response != null && apiResponse.response!.statusCode == 200) {
+          if(reload || offset == 1){
+            _mostPopularProductList = [];
+          }
+          _mostPopularProductList?.addAll(ProductModel.fromJson(apiResponse.response!.data).products ?? []);
+        } else {
+          ApiChecker.checkApi(apiResponse);
         }
-        _mostPopularProductList?.addAll(ProductModel.fromJson(apiResponse.response!.data).products!);
-        // _stockOutProductPageSize = ProductModel.fromJson(apiResponse.response!.data).totalSize;
+      } catch (e) {
+        debugPrint('Error getting most popular product list: $e');
+      } finally {
         _isLoading = false;
-      } else {
-        ApiChecker.checkApi(apiResponse);
+        notifyListeners();
       }
-      notifyListeners();
-
     }else{
       if(_isLoading) {
         _isLoading = false;
+        notifyListeners();
       }
     }
-
   }
 
   Future<void> getTopSellingProductList(int offset, BuildContext context, String languageCode, {bool reload = false}) async {
     if(reload) {
       _topSellingProductModel = null;
+      _isLoading = true;
       notifyListeners();
     }
 
+    try {
       ApiResponse apiResponse = await productServiceInterface.getTopSellingProductList(offset,languageCode);
       if (apiResponse.response != null && apiResponse.response!.statusCode == 200) {
         if(offset == 1 ){
@@ -337,13 +349,17 @@ class ProductController extends ChangeNotifier {
         }else{
           _topSellingProductModel!.totalSize =  TopSellingProductModel.fromJson(apiResponse.response!.data).totalSize;
           _topSellingProductModel!.offset =  TopSellingProductModel.fromJson(apiResponse.response!.data).offset;
-          _topSellingProductModel!.products!.addAll(TopSellingProductModel.fromJson(apiResponse.response!.data).products!)  ;
+          _topSellingProductModel!.products!.addAll(TopSellingProductModel.fromJson(apiResponse.response!.data).products ?? []);
         }
-        _isLoading = false;
       } else {
         ApiChecker.checkApi(apiResponse);
       }
+    } catch (e) {
+      debugPrint('Error getting top selling product list: $e');
+    } finally {
+      _isLoading = false;
       notifyListeners();
+    }
   }
 
   Future<void> deleteProduct(BuildContext context, int? productID) async {
