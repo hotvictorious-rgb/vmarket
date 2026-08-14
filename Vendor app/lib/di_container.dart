@@ -171,14 +171,20 @@ import 'common/controller/show_bottom_sheet_controller.dart';
 
 final sl = GetIt.instance;
 
-Future<void> init() async {
-  // Core
-  sl.registerLazySingleton(() => DioClient(AppConstants.baseUrl, sl(), loggingInterceptor: sl(), sharedPreferences: sl()));
-
   // External
   final sharedPreferences = await SharedPreferences.getInstance();
   sl.registerLazySingleton(() => sharedPreferences);
-  sl.registerLazySingleton(() => const FlutterSecureStorage());
+  const secureStorage = FlutterSecureStorage();
+  sl.registerLazySingleton(() => secureStorage);
+
+  // [AI] Pre-load secure token asynchronously on startup to prevent boot race condition
+  String? secureToken = await secureStorage.read(key: AppConstants.token);
+  if (secureToken == null) {
+    secureToken = sharedPreferences.getString(AppConstants.token);
+  }
+
+  // Core
+  sl.registerLazySingleton(() => DioClient(AppConstants.baseUrl, sl(), loggingInterceptor: sl(), sharedPreferences: sl(), token: secureToken));
   sl.registerLazySingleton(() => Dio());
   sl.registerLazySingleton(() => LoggingInterceptor());
 

@@ -17,10 +17,11 @@ class DioClient {
       Dio? dioC, {
         required this.loggingInterceptor,
         required this.sharedPreferences,
+        String? token, // [AI] Pre-loaded secure token to prevent race condition
       }) {
-    token = sharedPreferences.getString(AppConstants.token);
+    this.token = token ?? sharedPreferences.getString(AppConstants.token);
     if (kDebugMode) {
-      print(token);
+      print(this.token);
     }
     dio = dioC ?? Dio();
     dio!
@@ -30,7 +31,7 @@ class DioClient {
       ..httpClientAdapter
       ..options.headers = {
         'Content-Type': 'application/json; charset=UTF-8',
-        'Authorization': 'Bearer $token'
+        'Authorization': 'Bearer ${this.token}'
       };
     dio!.interceptors.add(loggingInterceptor);
   }
