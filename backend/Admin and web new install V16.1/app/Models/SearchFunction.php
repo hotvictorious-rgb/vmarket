@@ -6,5 +6,6 @@ use Illuminate\Database\Eloquent\Model;
 
 class SearchFunction extends Model
 {
-    protected $guarded;
+    // [AI] Guard fields against mass assignment
+    protected $guarded = ['id'];
 }

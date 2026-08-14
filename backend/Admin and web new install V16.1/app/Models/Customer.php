@@ -9,4 +9,7 @@ use Laravel\Passport\HasApiTokens;
 class Customer extends Authenticatable
 {
     use Notifiable, HasApiTokens;
+
+    // [AI] Guard fields against mass assignment
+    protected $guarded = ['id'];
 }
