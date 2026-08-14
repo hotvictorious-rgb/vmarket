@@ -7,6 +7,15 @@ Always append your completed tasks here in chronological order at the top. Forma
 `### [YYYY-MM-DD HH:MM UTC] <Feature / Fix Title> [<Component Scope>]`
 Include the specific app/component modified and bullet points detailing the exact technical changes.
 
+### [2026-08-14 17:25 UTC] System-Wide Payment Gateway Race Condition Hardening [Laravel Backend]
+* **Component:** Laravel Backend (`FlutterwaveV3Controller.php`, `StripePaymentController.php`, `RazorPayController.php`, `PaypalPaymentController.php`, `SslCommerzPaymentController.php`, `BkashPaymentController.php`, `PaytmController.php`, `PaytabsController.php`, `SenangPayController.php`, `LiqPayController.php`, `MercadoPagoController.php`, `PaymobController.php`, `NewPaystackController.php`)
+* **Action:** Extended atomic row-level database locks (`where('is_paid', 0)`) across all 13 remaining payment gateway controllers.
+* **Changes Made:**
+  - Enforced `where('is_paid', 0)` constraints and checked `$affected > 0` before triggering order generation hooks (`$data->success_hook`) across all 13 payment gateway controllers.
+  - Closed payment race condition loopholes system-wide, guaranteeing that concurrent callbacks/webhooks across all payment gateways will never generate duplicate orders or duplicate wallet credits.
+
+---
+
 ### [2026-08-14 17:10 UTC] Atomic Paystack Hook Locks to Prevent Duplicate Orders [Laravel Backend]
 * **Component:** Laravel Backend (`PaystackController.php`)
 * **Action:** Fixed duplicate order creation on Paystack checkout by enforcing atomic row-level database locks on `payment_requests`.

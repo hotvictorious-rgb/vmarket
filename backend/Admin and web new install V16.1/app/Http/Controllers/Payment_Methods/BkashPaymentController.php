@@ -160,19 +160,21 @@ class BkashPaymentController extends Controller
 
         if ($obj->statusCode == '0000') {
 
-            $this->payment::where(['id' => $request['payment_id']])->update([
-                'payment_method' => 'bkash',
-                'is_paid' => 1,
-                'transaction_id' => $obj->trxID ?? null,
-            ]);
+            $affected = $this->payment::where(['id' => $request['payment_id']])
+                ->where('is_paid', 0)
+                ->update([
+                    'payment_method' => 'bkash',
+                    'is_paid' => 1,
+                    'transaction_id' => $obj->trxID ?? null,
+                ]);
 
             $data = $this->payment::where(['id' => $request['payment_id']])->first();
 
-            if (isset($data) && function_exists($data->success_hook)) {
+            if ($affected > 0 && isset($data) && function_exists($data->success_hook)) {
                 call_user_func($data->success_hook, $data);
             }
 
-            return $this->payment_response($data,'success');
+            return $this->payment_response($data, 'success');
         } else {
             $payment_data = $this->payment::where(['id' => $request['payment_id']])->first();
             if (isset($payment_data) && function_exists($payment_data->failure_hook)) {

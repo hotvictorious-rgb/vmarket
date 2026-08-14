@@ -104,13 +104,15 @@ class NewPaystackController extends Controller
         $paymentDetails = self::getPaystackPaymentData(request: $request);
 
         if ($paymentDetails['status'] === true) {
-            $this->payment::where(['id' => $paymentDetails['data']['metadata']['payment_id']])->update([
-                'payment_method' => 'paystack',
-                'is_paid' => 1,
-                'transaction_id' => $request['trxref'],
-            ]);
+            $affected = $this->payment::where(['id' => $paymentDetails['data']['metadata']['payment_id']])
+                ->where('is_paid', 0)
+                ->update([
+                    'payment_method' => 'paystack',
+                    'is_paid' => 1,
+                    'transaction_id' => $request['trxref'],
+                ]);
             $data = $this->payment::where(['id' => $paymentDetails['data']['metadata']['payment_id']])->first();
-            if (isset($data) && function_exists($data->success_hook)) {
+            if ($affected > 0 && isset($data) && function_exists($data->success_hook)) {
                 call_user_func($data->success_hook, $data);
             }
             return $this->payment_response($data, 'success');

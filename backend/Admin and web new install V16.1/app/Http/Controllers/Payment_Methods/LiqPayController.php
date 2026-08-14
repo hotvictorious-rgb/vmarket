@@ -326,16 +326,18 @@ class LiqPayController extends Controller
     public function callback(Request $request): JsonResponse|Redirector|RedirectResponse|Application
     {
         if ($request['status'] == 'success') {
-            $this->payment::where(['id' => $request['payment_id']])->update([
-                'payment_method' => 'liqpay',
-                'is_paid' => 1,
-                'transaction_id' => $request['transaction_id'],
-            ]);
+            $affected = $this->payment::where(['id' => $request['payment_id']])
+                ->where('is_paid', 0)
+                ->update([
+                    'payment_method' => 'liqpay',
+                    'is_paid' => 1,
+                    'transaction_id' => $request['transaction_id'],
+                ]);
             $data = $this->payment::where(['id' => $request['payment_id']])->first();
-            if (isset($data) && function_exists($data->success_hook)) {
+            if ($affected > 0 && isset($data) && function_exists($data->success_hook)) {
                 call_user_func($data->success_hook, $data);
             }
-            return $this->payment_response($data,'success');
+            return $this->payment_response($data, 'success');
         }
         $payment_data = $this->payment::where(['id' => $request['payment_id']])->first();
         if (isset($payment_data) && function_exists($payment_data->failure_hook)) {

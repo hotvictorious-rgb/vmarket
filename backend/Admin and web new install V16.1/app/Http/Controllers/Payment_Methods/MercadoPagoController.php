@@ -102,13 +102,15 @@ class MercadoPagoController extends Controller
         }
 
         if ($payment->status == 'approved') {
-            $this->paymentRequest::where(['id' => $paymentRequest->id])->update([
-                'payment_method' => 'mercadopago',
-                'is_paid' => 1,
-                'transaction_id' => $payment->id,
-            ]);
+            $affected = $this->paymentRequest::where(['id' => $paymentRequest->id])
+                ->where('is_paid', 0)
+                ->update([
+                    'payment_method' => 'mercadopago',
+                    'is_paid' => 1,
+                    'transaction_id' => $payment->id,
+                ]);
             $data = $this->paymentRequest::where(['id' => $request['payment_id']])->first();
-            if (isset($data) && function_exists($data->success_hook)) {
+            if ($affected > 0 && isset($data) && function_exists($data->success_hook)) {
                 call_user_func($data->success_hook, $data);
             }
             return response()->json(['status' => 'success']);

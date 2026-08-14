@@ -59,16 +59,18 @@ class SenangPayController extends Controller
     public function return_senang_pay(Request $request): JsonResponse|Redirector|RedirectResponse|Application
     {
         if ($request['status_id'] == 1) {
-            $this->payment::where(['id' => session()->get('payment_id')])->update([
-                'payment_method' => 'senang_pay',
-                'is_paid' => 1,
-                'transaction_id' => $request['transaction_id'],
-            ]);
+            $affected = $this->payment::where(['id' => session()->get('payment_id')])
+                ->where('is_paid', 0)
+                ->update([
+                    'payment_method' => 'senang_pay',
+                    'is_paid' => 1,
+                    'transaction_id' => $request['transaction_id'],
+                ]);
             $data = $this->payment::where(['id' => session()->get('payment_id')])->first();
-            if (isset($data) && function_exists($data->success_hook)) {
+            if ($affected > 0 && isset($data) && function_exists($data->success_hook)) {
                 call_user_func($data->success_hook, $data);
             }
-            return $this->payment_response($data,'success');
+            return $this->payment_response($data, 'success');
         }
         $payment_data = $this->payment::where(['id' => session()->get('payment_id')])->first();
         if (isset($payment_data) && function_exists($payment_data->failure_hook)) {

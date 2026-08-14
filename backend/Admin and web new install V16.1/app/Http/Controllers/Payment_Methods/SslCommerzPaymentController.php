@@ -186,15 +186,17 @@ class SslCommerzPaymentController extends Controller
     {
         if ($request['status'] == 'VALID' && $this->SSLCOMMERZ_hash_verify($this->store_password, $request)) {
 
-            $this->payment::where(['id' => $request['payment_id']])->update([
-                'payment_method' => 'ssl_commerz',
-                'is_paid' => 1,
-                'transaction_id' => $request->input('tran_id')
-            ]);
+            $affected = $this->payment::where(['id' => $request['payment_id']])
+                ->where('is_paid', 0)
+                ->update([
+                    'payment_method' => 'ssl_commerz',
+                    'is_paid' => 1,
+                    'transaction_id' => $request->input('tran_id')
+                ]);
 
             $data = $this->payment::where(['id' => $request['payment_id']])->first();
 
-            if (isset($data) && function_exists($data->success_hook)) {
+            if ($affected > 0 && isset($data) && function_exists($data->success_hook)) {
                 call_user_func($data->success_hook, $data);
             }
             return $this->payment_response($data, 'success');

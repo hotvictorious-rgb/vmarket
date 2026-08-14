@@ -261,15 +261,17 @@ class PaymobController extends Controller
 
         if ($hased == $hmac && $data['success'] === "true") {
 
-            $this->payment::where(['id' => session('payment_id')])->update([
-                'payment_method' => 'paymob_accept',
-                'is_paid' => 1,
-                'transaction_id' => session('payment_id'),
-            ]);
+            $affected = $this->payment::where(['id' => session('payment_id')])
+                ->where('is_paid', 0)
+                ->update([
+                    'payment_method' => 'paymob_accept',
+                    'is_paid' => 1,
+                    'transaction_id' => session('payment_id'),
+                ]);
 
             $payment_data = $this->payment::where(['id' => session('payment_id')])->first();
 
-            if (isset($payment_data) && function_exists($payment_data->success_hook)) {
+            if ($affected > 0 && isset($payment_data) && function_exists($payment_data->success_hook)) {
                 call_user_func($payment_data->success_hook, $payment_data);
             }
             return $this->payment_response($payment_data, 'success');
