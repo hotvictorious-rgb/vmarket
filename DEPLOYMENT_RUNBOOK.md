@@ -8,8 +8,8 @@ This document defines the **standard operating procedure (SOP)** for safely depl
 
 Victorious MARKET is maintained as a unified monorepo:
 * **Root Directory:** Contains governance documentation, CI/CD workflows, and 3 Flutter mobile apps (`User app/`, `Vendor app/`, `Delivery Man App/`).
-* **Web Backend Root:** The Laravel 12 application lives inside `backend/Admin and web new install V16.1/`.
-* **Live Server Destination:** Only the contents of `backend/Admin and web new install V16.1/` map to `/home1/victori6/public_html/shop.victoriousmarket.com.ng/`.
+* **Web Backend Root:** The Laravel 12 application lives inside `backend/vmarket-web/`.
+* **Live Server Destination:** Only the contents of `backend/vmarket-web/` map to `/home1/victori6/public_html/shop.victoriousmarket.com.ng/`.
 
 ---
 

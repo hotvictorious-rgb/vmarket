@@ -48,7 +48,7 @@ graph TD
 
 ## 2. Component Specifications
 
-### A. Backend (`backend/Admin and web new install V16.1`)
+### A. Backend (`backend/vmarket-web`)
 * **Framework:** Laravel 10.x running on PHP 8.1+
 * **Pattern:** Service-Repository Pattern with Eloquent ORM.
 * **Database Access:** Eager loading (`with()`) enforced in Repositories to eliminate N+1 queries.

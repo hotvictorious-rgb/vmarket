@@ -49,7 +49,7 @@ graph TD
 
 | Component | Path | Stack | State Mgmt / Auth | Description |
 | :--- | :--- | :--- | :--- | :--- |
-| **Backend & Web** | [backend/](file:///c:/Users/USER/Downloads/vmarket/backend/Admin%20and%20web%20new%20install%20V16.1) | Laravel 10, PHP 8.1+, MySQL | Session-based / Cookies | Central REST API, Super Admin Web Dashboard, Vendor Web Portal, and Storefront views. |
+| **Backend & Web** | [backend/vmarket-web](file:///c:/Users/USER/Downloads/vmarket/backend/vmarket-web) | Laravel 10, PHP 8.1+, MySQL | Session-based / Cookies | Central REST API, Super Admin Web Dashboard, Vendor Web Portal, and Storefront views. |
 | **Customer App** | [User app/](file:///c:/Users/USER/Downloads/vmarket/User%20app) | Flutter 3.x, Dart | **Provider** / `flutter_secure_storage` | Shopping client for iOS & Android: product search, cart, Paystack checkout, and live tracking. |
 | **Vendor App** | [Vendor app/](file:///c:/Users/USER/Downloads/vmarket/Vendor%20app) | Flutter 3.x, Dart | **Provider** / `flutter_secure_storage` | Store management client: inventory, sales analytics, orders, bank info, and KYC uploads. |
 | **Delivery App** | [Delivery Man App/](file:///c:/Users/USER/Downloads/vmarket/Delivery%20Man%20App) | Flutter 3.x, Dart | **GetX** / `flutter_secure_storage` | Dispatch rider client: map navigation, order assignment, Pickup OTP validation, and voice note communications. |

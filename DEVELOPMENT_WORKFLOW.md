@@ -30,9 +30,10 @@
 
 ### Backend Verification:
 ```bash
-cd "backend/Admin and web new install V16.1"
-php -l app/Http/Controllers/...
-php artisan route:list
+cd "backend/vmarket-web"
+composer install
+php artisan migrate
+php artisan db:seed
 ```
 
 ### Mobile App Verification:

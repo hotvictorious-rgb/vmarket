@@ -7,6 +7,16 @@ Always append your completed tasks here in chronological order at the top. Forma
 `### [YYYY-MM-DD HH:MM UTC] <Feature / Fix Title> [<Component Scope>]`
 Include the specific app/component modified and bullet points detailing the exact technical changes.
 
+### [2026-08-14 19:26 UTC] Project Cleanup & Path Naming Standardization [Workspace Architecture]
+* **Component:** Workspace Architecture & Documentation
+* **Action:** Purged obsolete scratch files, zip dumps, and renamed Laravel backend path to `backend/vmarket-web` for clean shell compatibility.
+* **Changes Made:**
+  - **Directory Renaming**: Renamed `backend/Admin and web new install V16.1` to `backend/vmarket-web`, eliminating spaces and special characters.
+  - **Scratch Purge**: Removed temporary root analysis text files (`user_analyze.txt`, `delivery_analyze.txt`, `task.md`, `git`, `patch.py`) and obsolete backend archives/dumps (`victorious_market_backend_update_2026-08-10.zip`, `mySpecs.html`, `backup.json`, `models.json`, `routes.json`, `no.zip`, `nope.zip`, `vmarket.zip`).
+  - **Documentation Alignment**: Updated [.agents/AGENTS.md](file:///c:/Users/USER/Downloads/vmarket/.agents/AGENTS.md), [AI_ENGINEERING_RULES.md](file:///c:/Users/USER/Downloads/vmarket/AI_ENGINEERING_RULES.md), [ARCHITECTURE.md](file:///c:/Users/USER/Downloads/vmarket/ARCHITECTURE.md), [DEPLOYMENT_RUNBOOK.md](file:///c:/Users/USER/Downloads/vmarket/DEPLOYMENT_RUNBOOK.md), and [README.md](file:///c:/Users/USER/Downloads/vmarket/README.md) to reference `backend/vmarket-web`.
+
+---
+
 ### [2026-08-14 19:18 UTC] Governance & AI Project Intelligence Update [AI Governance]
 * **Component:** System Governance (`.agents/AGENTS.md`, `AI_ENGINEERING_RULES.md`)
 * **Action:** Added authoritative AI governance rules covering Atomic Payment Hooks, Production Safe Overlay SOP, Server Customizations Preservation, and Read-Only Baseline Guidelines.
