@@ -21,11 +21,12 @@ class DioClient {
       Dio? dioC, {
         required this.loggingInterceptor,
         required this.sharedPreferences,
+        String? token, // [AI] Pre-loaded secure token to prevent race condition
       }) {
-    token = sharedPreferences.getString(AppConstants.userLoginToken);
+    this.token = token ?? sharedPreferences.getString(AppConstants.userLoginToken);
     countryCode = sharedPreferences.getString(AppConstants.countryCode) ?? AppConstants.languages[0].countryCode;
     if (kDebugMode) {
-      print("NNNN $token");
+      print("NNNN ${this.token}");
     }
     dio = dioC ?? Dio();
     dio
@@ -35,7 +36,7 @@ class DioClient {
       ..httpClientAdapter
       ..options.headers = {
         'Content-Type': 'application/json; charset=UTF-8',
-        'Authorization': 'Bearer $token',
+        'Authorization': 'Bearer ${this.token}',
         'Accept': 'application/json',
         AppConstants.langKey : countryCode == 'US'? 'en': countryCode!.toLowerCase(),
       };

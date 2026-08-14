@@ -192,12 +192,20 @@ Future<void> init() async {
   // Core
   final sharedPreferences = await SharedPreferences.getInstance();
   sl.registerLazySingleton(() => sharedPreferences);
-  sl.registerLazySingleton(() => const FlutterSecureStorage());
+  const secureStorage = FlutterSecureStorage();
+  sl.registerLazySingleton(() => secureStorage);
+
+  // [AI] Pre-load secure token asynchronously on startup to prevent boot race condition
+  String? secureToken = await secureStorage.read(key: AppConstants.userLoginToken);
+  if (secureToken == null) {
+    secureToken = sharedPreferences.getString(AppConstants.userLoginToken);
+  }
+
   sl.registerLazySingleton(() => Dio());
   sl.registerLazySingleton(() => LoggingInterceptor());
   sl.registerLazySingleton(() => Connectivity());
   sl.registerLazySingleton(() => NetworkInfo(sl()));
-  sl.registerLazySingleton(() => DioClient(AppConstants.baseUrl, sl(), loggingInterceptor: sl(), sharedPreferences: sl()));
+  sl.registerLazySingleton(() => DioClient(AppConstants.baseUrl, sl(), loggingInterceptor: sl(), sharedPreferences: sl(), token: secureToken));
 
 
   DataSyncRepoInterface dataSyncRepoInterface = DataSyncRepo(dioClient: sl(), sharedPreferences: sl());
