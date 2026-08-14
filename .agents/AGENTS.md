@@ -45,6 +45,10 @@ Any time you make a functional change, fix a bug, or complete a feature, you **M
 - **Security Notice:** API tokens and credentials must ONLY be stored using `flutter_secure_storage`. Any legacy fallback in `shared_preferences` must be migrated.
 - **Performance:** When dealing with maps and geolocation, ensure UI repaints are minimized via GetX reactive variables (`.obs`).
 
+### D. Payment Gateways & Hook Security (Laravel Backend)
+- **Atomic Payment Row Lock Directive:** Every payment gateway controller (Paystack, Flutterwave, Stripe, PayPal, Razorpay, bKash, Paytm, etc.) MUST enforce an **Atomic Row-Level Lock** (`where('is_paid', 0)->update(...)`) on `payment_requests`.
+- **Double Execution Guard:** Before invoking `$data->success_hook` (`digital_payment_success`), the code MUST check `$affected > 0`. Never call `success_hook` without checking affected rows, to prevent concurrent browser callbacks and background IPN/webhooks from generating duplicate orders or duplicate wallet credits.
+
 ## 4. UI / UX Standards
 - The platform uses a specific color scheme (Purple & Gold). Use the predefined theme colors.
 - Maintain smooth 60fps performance on mobile apps. Use `cached_network_image` for all network images.
@@ -82,3 +86,18 @@ After completing any change:
 - **AI Prefix:** All comments introduced by an AI must be prefixed with `[AI]` so human developers can easily identify AI-authored notes.
 - **Client Context:** When writing or modifying API/controller methods, add comments detailing which client applications (e.g., Customer Web, Vendor App) consume it.
 - **Preservation:** Never delete, strip, or replace existing developer comments or docstrings unless the corresponding code is completely removed.
+
+## 7. Production Deployment & Server Sync SOP (Safe Overlay Protocol)
+- **Monorepo Destination Mapping:** The web application deployed on cPanel (`shop.victoriousmarket.com.ng`) maps **EXCLUSIVELY** to `backend/Admin and web new install V16.1/`. The 3 Flutter mobile apps (`User app`, `Vendor app`, `Delivery Man App`) are built separately via Flutter/Dart pipelines and MUST NEVER be copied into the web root.
+- **Strict Prohibition of Destructive Deletion:** NEVER run `rsync --delete` or `git clean -fd` on the live cPanel server.
+- **The 4 Immutable Server Assets:** The following paths on the live cPanel server MUST NEVER be deleted, overwritten, or wiped:
+  1. `.env` (Live database credentials & secret keys)
+  2. `storage/` (Customer uploads, order receipts, and framework cache)
+  3. `vendor/` (Composer dependency packages)
+  4. `public/assets/` (Storefront UI icons, SVGs, fonts, and stylesheets)
+- **Preservation of Server Customizations:** The live server contains custom Vendor controllers (33 web controllers), custom root scripts (`OrderManager.php`, `Order.php`, `ChattingService.php`), and custom DB migrations (`pickup_code`). Every AI MUST preserve these server-side customizations during any deployment or sync.
+
+## 8. Reference Baseline Guidelines (`reference/`)
+- The `reference/` directory contains extracted clean stock archives (`6valley V16.1` and `Delivery App V4.2`).
+- **Read-Only Status:** The `reference/` directory is strictly READ-ONLY. No AI is permitted to modify files inside `reference/` or automatically overwrite active project code (`backend/`, `User app/`, `Vendor app/`, `Delivery Man App/`) with stock reference code without explicit verification.
+

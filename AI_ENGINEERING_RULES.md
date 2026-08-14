@@ -131,3 +131,19 @@ When a bug or crash is reported:
 * **Include Tag:** Include `[AI]` in the commit message.
 * **Changelog:** Always record changes in `AI_CHANGELOG.md` before committing so the log is part of the commit.
 * **Clean Tree:** Verify `git status` is clean at the conclusion of every turn.
+
+---
+
+## 9. Payment Gateway Atomic Lock Standard (Zero Duplicate Orders)
+
+All payment gateway controllers MUST enforce an **Atomic Row-Level Database Lock** (`where('is_paid', 0)->update(...)`) on `payment_requests`. Before calling `$data->success_hook` (`digital_payment_success`), the code MUST check `$affected > 0`. This prevents concurrent browser callbacks and background IPN/webhooks from generating duplicate orders or duplicate wallet credits.
+
+---
+
+## 10. Production Deployment Protocol (Safe Overlay SOP)
+
+1. **Web Scope:** Only `backend/Admin and web new install V16.1/` maps to `shop.victoriousmarket.com.ng`. Mobile Flutter apps are built separately.
+2. **Non-Destructive Sync:** NEVER run `rsync --delete` or `git clean -fd` on production cPanel.
+3. **4 Protected Assets:** NEVER overwrite `.env`, `storage/`, `vendor/`, or `public/assets/`.
+4. **Preserve Server Customizations:** Preserve the 33 web Vendor controllers and custom root scripts (`OrderManager.php`, `Order.php`, `ChattingService.php`).
+

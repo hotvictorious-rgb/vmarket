@@ -7,6 +7,16 @@ Always append your completed tasks here in chronological order at the top. Forma
 `### [YYYY-MM-DD HH:MM UTC] <Feature / Fix Title> [<Component Scope>]`
 Include the specific app/component modified and bullet points detailing the exact technical changes.
 
+### [2026-08-14 19:18 UTC] Governance & AI Project Intelligence Update [AI Governance]
+* **Component:** System Governance (`.agents/AGENTS.md`, `AI_ENGINEERING_RULES.md`)
+* **Action:** Added authoritative AI governance rules covering Atomic Payment Hooks, Production Safe Overlay SOP, Server Customizations Preservation, and Read-Only Baseline Guidelines.
+* **Changes Made:**
+  - **`.agents/AGENTS.md`**: Added Section 3.D (Atomic Payment Hook Lock Directive), Section 7 (Production Deployment & Server Sync SOP), and Section 8 (Reference Baseline Guidelines).
+  - **`AI_ENGINEERING_RULES.md`**: Added Section 9 (Payment Gateway Atomic Lock Standard) and Section 10 (Production Deployment Protocol).
+  - **Result**: Ensures any future AI agent will strictly adhere to the unified platform architecture, atomic payment locks, and non-destructive cPanel deployment SOP.
+
+---
+
 ### [2026-08-14 17:25 UTC] System-Wide Payment Gateway Race Condition Hardening [Laravel Backend]
 * **Component:** Laravel Backend (`FlutterwaveV3Controller.php`, `StripePaymentController.php`, `RazorPayController.php`, `PaypalPaymentController.php`, `SslCommerzPaymentController.php`, `BkashPaymentController.php`, `PaytmController.php`, `PaytabsController.php`, `SenangPayController.php`, `LiqPayController.php`, `MercadoPagoController.php`, `PaymobController.php`, `NewPaystackController.php`)
 * **Action:** Extended atomic row-level database locks (`where('is_paid', 0)`) across all 13 remaining payment gateway controllers.
