@@ -9,6 +9,18 @@ Include the specific app/component modified and bullet points detailing the exac
 
 ---
 
+### [2026-08-14 05:00 UTC] Safe Null Decodes for order details API [Backend]
+* **Component:** Backend (`OrderController.php` (v1/v3), `DeliveryManController.php` (v2))
+* **Action:** Fixed 500 crashes occurring in order details API endpoints when retrieving orders that have missing or `null` values for `product_details` in the database.
+* **Changes Made:**
+  - Added null coalescing fallback arrays (`?? []`) to `json_decode` on `product_details` to prevent PHP fatal errors when trying to read array indices (e.g. `product_type`, `digital_variation`, `thumbnail_full_url`) from a null value.
+  - Affected controllers fixed:
+    - Customer API: `v1/OrderController.php`
+    - Delivery Man API: `v2/delivery_man/DeliveryManController.php`
+    - Vendor API: `v3/seller/OrderController.php`
+
+---
+
 ### [2026-08-13 23:07 UTC] Migrate App Typography to Ubuntu Font Family [User App]
 * **Component:** User App (`pubspec.yaml`, `custom_themes.dart`, `light_theme.dart`, `dark_theme.dart`, `home_screens.dart`, `aster_theme_home_screen.dart`, `fashion_theme_home_screen.dart`)
 * **Action:** Overhauled the Customer App's typography configuration to use the bundled **Ubuntu** font family, mapping true weight variations (Light, Regular, Medium, Bold) to eliminate synthetic font-weight rendering.

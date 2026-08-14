@@ -145,7 +145,7 @@ class OrderController extends Controller
         }
 
         foreach ($detailsList as $detail) {
-            $product = json_decode($detail['product_details'], true);
+            $product = json_decode($detail['product_details'], true) ?? [];
 
             if (!isset($product['digital_variation'])) {
                 $product['digital_variation'] = [];
@@ -529,7 +529,7 @@ class OrderController extends Controller
 
             if ($request['order_status'] == 'delivered') {
                 foreach ($order['details'] as $orderDetail) {
-                    $productDetails = json_decode($orderDetail?->product_details ?? '', true);
+                    $productDetails = json_decode($orderDetail?->product_details ?? '', true) ?? [];
                     if (
                         $productDetails['product_type'] == 'digital' &&
                         (isset($productDetails['digital_product_type']) && $productDetails['digital_product_type'] == 'ready_after_sell') &&

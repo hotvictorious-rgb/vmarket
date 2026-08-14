@@ -304,7 +304,7 @@ class DeliveryManController extends Controller
             $data['is_pause'] = $order['is_pause'];
             $data['variation'] = is_array($data['variation']) ? $data['variation'] : json_decode($data['variation'], true);
 
-            $product = is_array($data['product_details']) ? $data['product_details'] : json_decode($data['product_details'], true);
+            $product = is_array($data['product_details']) ? $data['product_details'] : (json_decode($data['product_details'], true) ?? []);
             $product['thumbnail_full_url'] = $detail?->productAllStatus?->thumbnail_full_url;
             $data['product_details'] = Helpers::product_data_formatting_for_json_data($product);
 
