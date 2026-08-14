@@ -7,6 +7,16 @@ Always append your completed tasks here in chronological order at the top. Forma
 `### [YYYY-MM-DD HH:MM UTC] <Feature / Fix Title> [<Component Scope>]`
 Include the specific app/component modified and bullet points detailing the exact technical changes.
 
+### [2026-08-14 17:10 UTC] Atomic Paystack Hook Locks to Prevent Duplicate Orders [Laravel Backend]
+* **Component:** Laravel Backend (`PaystackController.php`)
+* **Action:** Fixed duplicate order creation on Paystack checkout by enforcing atomic row-level database locks on `payment_requests`.
+* **Changes Made:**
+  - **`PaystackController.php` (`handleGatewayCallback`)**: Added `where('is_paid', 0)` constraint and `$affected > 0` guard before invoking `$data->success_hook`.
+  - **`PaystackController.php` (`webhook`)**: Added `where('is_paid', 0)` constraint and `$affected > 0` guard before invoking `$updatedPayment->success_hook`.
+  - **Result**: Prevents concurrent browser redirect callbacks and asynchronous server webhooks from double-executing `digital_payment_success` and generating twin orders for a single payment.
+
+---
+
 ### [2026-08-14 11:31 UTC] Fix Dependency Injection Initialization [Vendor App]
 * **Component:** Vendor App (`di_container.dart`)
 * **Action:** Restored the accidentally deleted `Future<void> init() async` function declaration.

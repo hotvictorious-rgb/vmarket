@@ -111,13 +111,16 @@ class PaystackController extends Controller
             $paid_amount = $paymentDetails['data']['amount'];
 
             if ($paid_amount >= $expected_amount) {
-                $this->payment::where(['id' => $paymentDetails['data']['metadata']['payment_id']])->update([
-                    'payment_method' => 'paystack',
-                    'is_paid' => 1,
-                    'transaction_id' => $request['trxref'],
-                ]);
+                $affected = $this->payment::where(['id' => $paymentDetails['data']['metadata']['payment_id']])
+                    ->where('is_paid', 0)
+                    ->update([
+                        'payment_method' => 'paystack',
+                        'is_paid' => 1,
+                        'transaction_id' => $request['trxref'],
+                    ]);
+
                 $data = $this->payment::where(['id' => $paymentDetails['data']['metadata']['payment_id']])->first();
-                if (isset($data) && function_exists($data->success_hook)) {
+                if ($affected > 0 && isset($data) && function_exists($data->success_hook)) {
                     call_user_func($data->success_hook, $data);
                 }
                 return $this->payment_response($data, 'success');
@@ -214,17 +217,21 @@ class PaystackController extends Controller
                 if ($paymentRequest && $paymentRequest->is_paid == 0) {
                     $expectedAmount = round(($paymentRequest->payment_amount ?? 0) * 100);
                     if ($amountPaid >= $expectedAmount) {
-                        $paymentRequest->update([
-                            'payment_method' => 'paystack',
-                            'is_paid' => 1,
-                            'transaction_id' => $reference,
-                        ]);
+                        $affected = $this->payment::where('id', $paymentId)
+                            ->where('is_paid', 0)
+                            ->update([
+                                'payment_method' => 'paystack',
+                                'is_paid' => 1,
+                                'transaction_id' => $reference,
+                            ]);
 
-                        $updatedPayment = $this->payment::where('id', $paymentId)->first();
-                        if (!empty($updatedPayment->success_hook) && function_exists($updatedPayment->success_hook)) {
-                            call_user_func($updatedPayment->success_hook, $updatedPayment);
+                        if ($affected > 0) {
+                            $updatedPayment = $this->payment::where('id', $paymentId)->first();
+                            if (!empty($updatedPayment->success_hook) && function_exists($updatedPayment->success_hook)) {
+                                call_user_func($updatedPayment->success_hook, $updatedPayment);
+                            }
+                            Log::info("Paystack Webhook: Successfully processed PaymentRequest #{$paymentId} with ref {$reference}.");
                         }
-                        Log::info("Paystack Webhook: Successfully processed PaymentRequest #{$paymentId} with ref {$reference}.");
                     }
                 }
             }
