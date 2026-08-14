@@ -23,7 +23,7 @@ Vmarket is **NOT** a collection of independent repositories or isolated apps. It
 ```
 
 The platform consists of:
-1. **Laravel 10 Backend & REST API** (`backend/Admin and web new install V16.1`)
+1. **Laravel 10 Backend & REST API** (`backend/vmarket-web`)
 2. **Super Admin Web Portal** (Blade + AJAX)
 3. **Vendor Web Dashboard** (Blade + AJAX)
 4. **Customer Web Storefront** (Blade Views: Default & Aster Theme)
@@ -142,7 +142,7 @@ All payment gateway controllers MUST enforce an **Atomic Row-Level Database Lock
 
 ## 10. Production Deployment Protocol (Safe Overlay SOP)
 
-1. **Web Scope:** Only `backend/Admin and web new install V16.1/` maps to `shop.victoriousmarket.com.ng`. Mobile Flutter apps are built separately.
+1. **Web Scope:** Only `backend/vmarket-web/` maps to `shop.victoriousmarket.com.ng`. Mobile Flutter apps are built separately.
 2. **Non-Destructive Sync:** NEVER run `rsync --delete` or `git clean -fd` on production cPanel.
 3. **4 Protected Assets:** NEVER overwrite `.env`, `storage/`, `vendor/`, or `public/assets/`.
 4. **Preserve Server Customizations:** Preserve the 33 web Vendor controllers and custom root scripts (`OrderManager.php`, `Order.php`, `ChattingService.php`).

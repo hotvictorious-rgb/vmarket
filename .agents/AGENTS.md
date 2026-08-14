@@ -88,7 +88,7 @@ After completing any change:
 - **Preservation:** Never delete, strip, or replace existing developer comments or docstrings unless the corresponding code is completely removed.
 
 ## 7. Production Deployment & Server Sync SOP (Safe Overlay Protocol)
-- **Monorepo Destination Mapping:** The web application deployed on cPanel (`shop.victoriousmarket.com.ng`) maps **EXCLUSIVELY** to `backend/Admin and web new install V16.1/`. The 3 Flutter mobile apps (`User app`, `Vendor app`, `Delivery Man App`) are built separately via Flutter/Dart pipelines and MUST NEVER be copied into the web root.
+- **Monorepo Destination Mapping:** The web application deployed on cPanel (`shop.victoriousmarket.com.ng`) maps **EXCLUSIVELY** to `backend/vmarket-web/`. The 3 Flutter mobile apps (`User app`, `Vendor app`, `Delivery Man App`) are built separately via Flutter/Dart pipelines and MUST NEVER be copied into the web root.
 - **Strict Prohibition of Destructive Deletion:** NEVER run `rsync --delete` or `git clean -fd` on the live cPanel server.
 - **The 4 Immutable Server Assets:** The following paths on the live cPanel server MUST NEVER be deleted, overwritten, or wiped:
   1. `.env` (Live database credentials & secret keys)
@@ -98,6 +98,10 @@ After completing any change:
 - **Preservation of Server Customizations:** The live server contains custom Vendor controllers (33 web controllers), custom root scripts (`OrderManager.php`, `Order.php`, `ChattingService.php`), and custom DB migrations (`pickup_code`). Every AI MUST preserve these server-side customizations during any deployment or sync.
 
 ## 8. Reference Baseline Guidelines (`reference/`)
-- The `reference/` directory contains extracted clean stock archives (`6valley V16.1` and `Delivery App V4.2`).
-- **Read-Only Status:** The `reference/` directory is strictly READ-ONLY. No AI is permitted to modify files inside `reference/` or automatically overwrite active project code (`backend/`, `User app/`, `Vendor app/`, `Delivery Man App/`) with stock reference code without explicit verification.
+- The `reference/` directory contains extracted clean stock reference baselines for all 4 platforms:
+  1. `reference/6valley_v16.1_web/` — Stock 6valley V16.1 Laravel Web Backend & Web Dashboards
+  2. `reference/6valley_user_app_v16.1/` — Stock 6valley V16.1 Customer Mobile App (Flutter)
+  3. `reference/6valley_vendor_app_v16.1/` — Stock 6valley V16.1 Vendor Mobile App (Flutter)
+  4. `reference/6valley_delivery_v4.2/` — Stock 6valley Delivery Rider Mobile App V4.2 (Flutter)
+- **Read-Only Status:** The `reference/` directory is strictly READ-ONLY. No AI is permitted to modify files inside `reference/` or automatically overwrite active project code (`backend/vmarket-web/`, `User app/`, `Vendor app/`, `Delivery Man App/`) with stock reference code without explicit verification.
 

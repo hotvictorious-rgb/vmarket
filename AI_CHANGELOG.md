@@ -7,6 +7,16 @@ Always append your completed tasks here in chronological order at the top. Forma
 `### [YYYY-MM-DD HH:MM UTC] <Feature / Fix Title> [<Component Scope>]`
 Include the specific app/component modified and bullet points detailing the exact technical changes.
 
+### [2026-08-14 19:40 UTC] Governance Rule Update: 4-System Stock Reference Baselines [AI Governance]
+* **Component:** System Governance (`.agents/AGENTS.md`, `AI_ENGINEERING_RULES.md`)
+* **Action:** Updated Section 8 of `AGENTS.md` and `AI_ENGINEERING_RULES.md` to document all 4 stock reference baselines in `reference/` and enforce `backend/vmarket-web` path consistency.
+* **Changes Made:**
+  - **`.agents/AGENTS.md`**: Updated Section 7 (cPanel Web Scope to `backend/vmarket-web/`) and Section 8 (documented all 4 stock baseline reference directories: `6valley_v16.1_web`, `6valley_user_app_v16.1`, `6valley_vendor_app_v16.1`, and `6valley_delivery_v4.2`).
+  - **`AI_ENGINEERING_RULES.md`**: Updated Section 1 (Architecture & System mapping) and Section 10 (Production Deployment SOP to `backend/vmarket-web/`).
+  - **Result**: Guarantees that any future AI coding agent will reference the exact 4 stock baselines for comparative verification.
+
+---
+
 ### [2026-08-14 19:26 UTC] Project Cleanup & Path Naming Standardization [Workspace Architecture]
 * **Component:** Workspace Architecture & Documentation
 * **Action:** Purged obsolete scratch files, zip dumps, and renamed Laravel backend path to `backend/vmarket-web` for clean shell compatibility.
