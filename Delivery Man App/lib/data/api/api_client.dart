@@ -25,11 +25,11 @@ class ApiClient extends GetxService {
   String? token;
   late Map<String, String>? _mainHeaders;
 
-  ApiClient({required this.appBaseUrl, required this.sharedPreferences, required this.secureStorage}) {
-    token = sharedPreferences.getString(AppConstants.token);
-    debugPrint('Token: $token');
+  ApiClient({required this.appBaseUrl, required this.sharedPreferences, required this.secureStorage, String? token}) {
+    this.token = token ?? sharedPreferences.getString(AppConstants.token);
+    debugPrint('Token: ${this.token}');
 
-    updateHeader(token, sharedPreferences.getString(AppConstants.languageCode));
+    updateHeader(this.token, sharedPreferences.getString(AppConstants.languageCode));
     _loadSecureToken();
   }
 

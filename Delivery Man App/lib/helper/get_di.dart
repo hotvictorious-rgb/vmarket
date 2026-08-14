@@ -80,7 +80,14 @@ Future<Map<String, Map<String, String>>> init() async {
   const secureStorage = FlutterSecureStorage();
   Get.lazyPut(() => sharedPreferences);
   Get.lazyPut(() => secureStorage);
-  Get.lazyPut(() => ApiClient(appBaseUrl: AppConstants.baseUri, sharedPreferences: Get.find(), secureStorage: secureStorage));
+
+  // [AI] Pre-load secure token asynchronously on startup to prevent boot race condition
+  String? secureToken = await secureStorage.read(key: AppConstants.token);
+  if (secureToken == null) {
+    secureToken = sharedPreferences.getString(AppConstants.token);
+  }
+
+  Get.lazyPut(() => ApiClient(appBaseUrl: AppConstants.baseUri, sharedPreferences: Get.find(), secureStorage: secureStorage, token: secureToken));
 
 
   ///Interface
