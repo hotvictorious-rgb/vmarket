@@ -16,29 +16,15 @@ class SmsGatewayController extends Controller
     public function update(Request $request, $name)
     {
         if ($name == 'sms_nexmo') {
-            $sms = BusinessSetting::where('type', 'sms_nexmo')->first();
-            if (isset($sms) == false) {
-                BusinessSetting::insert([
-                    'type' => 'sms_nexmo',
-                    'value' => json_encode([
-                        'status' => 1,
-                        'nexmo_key' => '',
-                        'nexmo_secret' => '',
-                    ]),
-                    'created_at' => now(),
-                    'updated_at' => now()
-                ]);
-            } else {
-                BusinessSetting::where(['type' => 'sms_nexmo'])->update([
-                    'type' => 'sms_nexmo',
-                    'value' => json_encode([
-                        'status' => $request['status'],
-                        'nexmo_key' => $request['nexmo_key'],
-                        'nexmo_secret' => $request['nexmo_secret'],
-                    ]),
-                    'updated_at' => now()
-                ]);
-            }
+            // [AI] Use Eloquent updateOrCreate to trigger boot events and invalidate business settings cache automatically
+            BusinessSetting::updateOrCreate(
+                ['type' => 'sms_nexmo'],
+                ['value' => json_encode([
+                    'status' => $request['status'] ?? 0,
+                    'nexmo_key' => $request['nexmo_key'] ?? '',
+                    'nexmo_secret' => $request['nexmo_secret'] ?? '',
+                ])]
+            );
             clearWebConfigCacheKeys();
         }
 

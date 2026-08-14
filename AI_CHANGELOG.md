@@ -7,6 +7,17 @@ Always append your completed tasks here in chronological order at the top. Forma
 `### [YYYY-MM-DD HH:MM UTC] <Feature / Fix Title> [<Component Scope>]`
 Include the specific app/component modified and bullet points detailing the exact technical changes.
 
+### [2026-08-14 09:48 UTC] Robust Settings Cache Invalidation [Laravel Backend]
+* **Component:** Laravel Admin Controllers (`PaymentMethodController.php`, `SmsGatewayController.php`) and Utilities (`panel-helpers.php`)
+* **Action:** Replaced direct query builder database writes on the `business_settings` table with Eloquent model `updateOrCreate` calls.
+* **Changes Made:**
+  - **`PaymentMethodController.php`**: Replaced direct `BusinessSetting::updateOrInsert` query builder statements in `update()` with Eloquent `updateOrCreate` calls.
+  - **`SmsGatewayController.php`**: Replaced complex query builder check-insert/update statements in `update()` with a single Eloquent `updateOrCreate` statement.
+  - **`panel-helpers.php`**: Replaced manual query builder check-update/create logic for setup guide setting records with an Eloquent `updateOrCreate` statement.
+  - **Benefit**: Ensures that the `saved` model boot event on the `BusinessSetting` model (which invokes `cacheRemoveByType('business_settings')`) is always triggered, preventing stale cache data on storefront configurations when settings are modified via the Admin dashboard.
+
+---
+
 ### [2026-08-14 08:25 UTC] Rule Compliance & Architectural Alignment [Laravel Backend, User App, Vendor App, Delivery Man App, AI Governance]
 * **Component:** Laravel Models (`Customer.php`, `SellerWalletHistory.php`, `SearchFunction.php`), Flutter Dependency Injection & API Client, and AI Governance (`AGENTS.md`)
 * **Action:** Patched the mass assignment security vulnerabilities on backend models, resolved boot-time secure token race conditions across the three mobile applications, and updated developer rules.

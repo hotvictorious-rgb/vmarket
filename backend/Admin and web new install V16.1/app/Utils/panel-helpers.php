@@ -75,17 +75,11 @@ if (!function_exists('updateSetupGuideCacheKey')) {
                 $newCacheKeys = [];
                 $newCacheKeys[$key] = true;
                 $checkSetupGuideCacheKeys = array_merge($checkSetupGuideCacheKeys, $newCacheKeys);
-                if (BusinessSetting::where(['type' => 'setup_guide_requirements_for_admin'])->first()) {
-                    BusinessSetting::where(['type' => 'setup_guide_requirements_for_admin'])->update([
-                        'value' => json_encode($checkSetupGuideCacheKeys),
-                    ]);
-                } else {
-                    BusinessSetting::create([
-                        'type' => 'setup_guide_requirements_for_admin',
-                        'value' => json_encode($checkSetupGuideCacheKeys),
-                        'updated_at' => now()
-                    ]);
-                }
+                // [AI] Use Eloquent updateOrCreate to trigger boot events and invalidate business settings cache automatically
+                BusinessSetting::updateOrCreate(
+                    ['type' => 'setup_guide_requirements_for_admin'],
+                    ['value' => json_encode($checkSetupGuideCacheKeys)]
+                );
                 cacheRemoveByType(type: 'business_settings');
             }
         } elseif ($panel == 'vendor') {

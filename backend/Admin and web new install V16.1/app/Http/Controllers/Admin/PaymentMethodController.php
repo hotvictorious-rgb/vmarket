@@ -46,21 +46,21 @@ class PaymentMethodController extends Controller
 
     public function update(Request $request)
     {
+        // [AI] Use Eloquent updateOrCreate to trigger boot events and invalidate business settings cache automatically
+        BusinessSetting::updateOrCreate(
+            ['type' => 'cash_on_delivery'],
+            ['value' => json_encode(['status' => $request['cash_on_delivery'] ?? 0])]
+        );
 
-        BusinessSetting::updateOrInsert(['type' => 'cash_on_delivery'], [
-            'value' => json_encode(['status' => $request['cash_on_delivery'] ?? 0]),
-            'updated_at' => now()
-        ]);
+        BusinessSetting::updateOrCreate(
+            ['type' => 'digital_payment'],
+            ['value' => json_encode(['status' => $request['digital_payment'] ?? 0])]
+        );
 
-        BusinessSetting::updateOrInsert(['type' => 'digital_payment'], [
-            'value' => json_encode(['status' => $request['digital_payment'] ?? 0]),
-            'updated_at' => now()
-        ]);
-
-        BusinessSetting::updateOrInsert(['type' => 'offline_payment'], [
-            'value' => json_encode(['status' => $request['offline_payment'] ?? 0]),
-            'updated_at' => now()
-        ]);
+        BusinessSetting::updateOrCreate(
+            ['type' => 'offline_payment'],
+            ['value' => json_encode(['status' => $request['offline_payment'] ?? 0])]
+        );
         clearWebConfigCacheKeys();
         ToastMagic::success(translate('successfully_updated'));
         return back();
