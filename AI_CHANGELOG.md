@@ -9,6 +9,15 @@ Include the specific app/component modified and bullet points detailing the exac
 
 ---
 
+### [2026-08-14 05:07 UTC] Fix Dashboard Spinner Hang [Vendor App]
+* **Component:** Vendor App (`delivery_man_controller.dart`, `top_delivery_man_view_widget.dart`)
+* **Action:** Fixed an infinite loading spinner hang on the home dashboard screen under the completed orders section.
+* **Changes Made:**
+  - Wrapped `getTopDeliveryManList` in a `try-catch-finally` block to guarantee the `_isLoading` flag resets to `false` even if the backend returns a non-200 response or if response parsing fails.
+  - Replaced the unsafe force unwrapping operator (`deliveryManList!`) in `TopDeliveryManViewWidget` with a safe null check (`deliveryManList != null && deliveryManList.isNotEmpty`) to prevent runtime NullPointer crashes.
+
+---
+
 ### [2026-08-14 05:00 UTC] Safe Null Decodes for order details API [Backend]
 * **Component:** Backend (`OrderController.php` (v1/v3), `DeliveryManController.php` (v2))
 * **Action:** Fixed 500 crashes occurring in order details API endpoints when retrieving orders that have missing or `null` values for `product_details` in the database.

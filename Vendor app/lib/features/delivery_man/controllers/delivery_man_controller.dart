@@ -246,14 +246,26 @@ class DeliveryManController extends ChangeNotifier {
 
   Future<void> getTopDeliveryManList(BuildContext context, {bool reload = true}) async {
     if(reload){
-      _isLoading = false;
       _topDeliveryManList = [];
     }
     _isLoading = true;
-    ApiResponse apiResponse = await deliveryServiceInterface.getTopDeliveryManList();
-    _topDeliveryManList!.addAll(TopDeliveryManModel.fromJson(apiResponse.response!.data).deliveryMan!);
-    _isLoading = false;
     notifyListeners();
+    try {
+      ApiResponse apiResponse = await deliveryServiceInterface.getTopDeliveryManList();
+      if (apiResponse.response != null && apiResponse.response!.statusCode == 200) {
+        _topDeliveryManList = [];
+        if (apiResponse.response!.data != null) {
+          _topDeliveryManList!.addAll(TopDeliveryManModel.fromJson(apiResponse.response!.data).deliveryMan ?? []);
+        }
+      } else {
+        ApiChecker.checkApi(apiResponse);
+      }
+    } catch (e) {
+      debugPrint('Error fetching top delivery man list: $e');
+    } finally {
+      _isLoading = false;
+      notifyListeners();
+    }
   }
 
 

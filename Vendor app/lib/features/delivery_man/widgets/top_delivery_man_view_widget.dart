@@ -42,7 +42,7 @@ class TopDeliveryManViewWidget extends StatelessWidget {
             ),
           ):const SizedBox(),
 
-          !deliveryProvider.isLoading ? deliveryManList!.isNotEmpty ?
+          !deliveryProvider.isLoading ? (deliveryManList != null && deliveryManList.isNotEmpty) ?
           Padding(
             padding: const EdgeInsets.symmetric(horizontal : Dimensions.paddingSizeSmall,
                 vertical: Dimensions.paddingSizeSmall),
