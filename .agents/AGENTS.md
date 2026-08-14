@@ -1,6 +1,6 @@
 # Victorious MARKET AI Development Rules
 
-Welcome to the Victorious MARKET (Vmarket) ecosystem! This file enforces strict rules and patterns that **ALL AIs** must adhere to when working on this repository.
+Welcome to the Victorious MARKET (Vmarket) ecosystem! This file enforces strict rules and patterns that **ALL AIs** must adhere to when working on this repository. **All AIs must follow all the rules in AGENTS.md strictly; no AI is allowed to bypass them under any circumstances.**
 
 ## 0. Prime Directive: Read Governance Documents First
 Before taking ANY action, every AI **MUST** read:
@@ -77,3 +77,8 @@ After completing any change:
 - Group commits by **component** (one commit per app, one for backend).
 - Do NOT mix Flutter app changes with Laravel backend changes in a single commit.
 - New untracked files (widgets, screens) must be explicitly staged with `git add <path>`.
+
+## 6. Code Commenting Standards
+- **AI Prefix:** All comments introduced by an AI must be prefixed with `[AI]` so human developers can easily identify AI-authored notes.
+- **Client Context:** When writing or modifying API/controller methods, add comments detailing which client applications (e.g., Customer Web, Vendor App) consume it.
+- **Preservation:** Never delete, strip, or replace existing developer comments or docstrings unless the corresponding code is completely removed.
