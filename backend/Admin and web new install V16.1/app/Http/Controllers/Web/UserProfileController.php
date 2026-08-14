@@ -744,7 +744,7 @@ class UserProfileController extends Controller
         $isOrderOnlyDigital = true;
         if ($order->orderDetails) {
             foreach ($order->orderDetails as $detail) {
-                $product = json_decode($detail->product_details, true);
+                $product = json_decode($detail->product_details, true) ?? [];
                 if (isset($product['product_type']) && $product['product_type'] == 'physical') {
                     $isOrderOnlyDigital = false;
                 }

@@ -7,6 +7,14 @@ Always append your completed tasks here in chronological order at the top. Forma
 `### [YYYY-MM-DD HH:MM UTC] <Feature / Fix Title> [<Component Scope>]`
 Include the specific app/component modified and bullet points detailing the exact technical changes.
 
+### [2026-08-14 05:44 UTC] Multi-Platform Order Details Safety Coverage [Web Storefront, Admin & Vendor Web]
+* **Component:** Web Controllers (`UserProfileController.php`, `WebController.php`, `Vendor/Order/OrderController.php`, `Admin/Order/OrderController.php`)
+* **Action:** Extended null safety validation checks for decoded order product details to prevent fatal type errors on admin/vendor status changes and customer digital product downloads.
+* **Changes Made:**
+  - **`UserProfileController.php`**: Handled null values in `getCheckIsOrderOnlyDigital` using null coalescing.
+  - **`WebController.php`**: Wrapped digital file check decoding in `getDigitalProductDownloadProcess` and `getDigitalProductDownloadOtpVerify` inside `isset` and null coalescing checks.
+  - **`Vendor/Order/OrderController.php` & `Admin/Order/OrderController.php`**: Protected digital product check loops in `updateStatus` methods from throwing exceptions on null/missing `product_details` fields.
+
 ---
 
 ### [2026-08-14 05:25 UTC] Safe Pagination Limits & Resilient Loading [Backend & Vendor App]

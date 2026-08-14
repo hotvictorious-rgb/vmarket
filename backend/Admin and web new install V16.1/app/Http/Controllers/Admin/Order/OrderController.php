@@ -618,9 +618,9 @@ class OrderController extends BaseController
 
         if ($request['order_status'] == 'delivered') {
             foreach ($order['details'] as $orderDetail) {
-                $productDetails = json_decode($orderDetail?->product_details ?? '', true);
+                $productDetails = json_decode($orderDetail?->product_details ?? '', true) ?? [];
                 if (
-                    $productDetails['product_type'] == 'digital' &&
+                    isset($productDetails['product_type']) && $productDetails['product_type'] == 'digital' &&
                     (isset($productDetails['digital_product_type']) && $productDetails['digital_product_type'] == 'ready_after_sell') &&
                     is_null($orderDetail['digital_file_after_sell'])
                 ) {

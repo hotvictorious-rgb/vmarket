@@ -1256,8 +1256,8 @@ class WebController extends Controller
                 if (auth('customer')->check() && auth('customer')->user()->id == $orderDetailsData->order->customer->id) {
                     $fileName = '';
                     $fileExist = false;
-                    $productDetails = json_decode($orderDetailsData['product_details'], true);
-                    if ($productDetails['digital_product_type'] == 'ready_product' && $productDetails['digital_file_ready']) {
+                    $productDetails = json_decode($orderDetailsData['product_details'], true) ?? [];
+                    if (isset($productDetails['digital_product_type']) && $productDetails['digital_product_type'] == 'ready_product' && $productDetails['digital_file_ready']) {
                         $checkFilePath = storageLink('product/digital-product', $productDetails['digital_file_ready'], ($productDetails['storage_path'] ?? 'public'));
                         $filePath = $checkFilePath['path'];
                         $fileExist = $checkFilePath['status'] == 200;
@@ -1303,8 +1303,8 @@ class WebController extends Controller
             $fileName = '';
             $fileExist = false;
             if ($orderDetailsData) {
-                $productDetails = json_decode($orderDetailsData['product_details'], true);
-                if ($productDetails['digital_product_type'] == 'ready_product' && $productDetails['digital_file_ready']) {
+                $productDetails = json_decode($orderDetailsData['product_details'], true) ?? [];
+                if (isset($productDetails['digital_product_type']) && $productDetails['digital_product_type'] == 'ready_product' && $productDetails['digital_file_ready']) {
                     $checkFilePath = storageLink('product/digital-product', $productDetails['digital_file_ready'], ($productDetails['storage_path'] ?? 'public'));
                     $filePath = $checkFilePath['path'];
                     $fileExist = $checkFilePath['status'] == 200;
