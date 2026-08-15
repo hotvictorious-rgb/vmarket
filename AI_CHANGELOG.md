@@ -7,6 +7,14 @@ Always append your completed tasks here in chronological order at the top. Forma
 `### [YYYY-MM-DD HH:MM UTC] <Feature / Fix Title> [<Component Scope>]`
 Include the specific app/component modified and bullet points detailing the exact technical changes.
 
+### [2026-08-15 09:45 UTC] Harden Delivery OTP Gate, Paystack Callback, and COD Lifecycle Idempotency (F1, F2, F3) [Laravel Backend]
+* **Component:** Laravel REST API (`app/Http/Controllers/RestAPI/v2/delivery_man/DeliveryManController.php`)
+* **Action:** Hardened delivery verification gate, Paystack door payment callback idempotency, and COD delivery status transitions against double execution and race conditions.
+* **Changes Made:**
+  - **F1 (Delivery OTP Gate)**: In `update_order_status`, added a conditional check: when `order_verification` is enabled (`getWebConfig(name: 'order_verification') == 1`), delivery to `delivered` status is strictly gated on `$order->verification_status == 1` or passing the matching `verification_code`.
+  - **F2 (Paystack Callback Idempotency)**: In `paystack_delivery_callback`, wrapped state transition and wallet credits inside a `DB::transaction()`. Enforced an atomic update guard (`where('order_status', '!=', 'delivered')->where('payment_status', '!=', 'paid')`) checking `$affected > 0` before mutating delivery man or seller wallet balances.
+  - **F3 (COD Delivery Status Idempotency)**: In `update_order_status`, wrapped the `delivered` status change, wallet crediting, and order detail updates inside a `DB::transaction()` with an atomic check (`where('order_status', '!=', 'delivered')`) to eliminate double wallet crediting on network retries.
+
 ### [2026-08-15 08:55 UTC] Enforce 403 on Customer Chat in Legacy v2 Seller API [Laravel Backend]
 * **Component:** Laravel REST API (`app/Http/Controllers/RestAPI/v2/seller/ChatController.php`)
 * **Action:** Hardened legacy v2 seller chat endpoints to block customer-to-vendor and vendor-to-customer communication.

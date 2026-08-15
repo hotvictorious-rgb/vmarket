@@ -141,6 +141,10 @@ class DeliveryManController extends Controller
 
         $order = Order::with(['customer', 'deliveryMan', 'latestEditHistory'])->where(['delivery_man_id' => $deliveryMan['id'], 'id' => $request['order_id']])->first();
 
+        if (!$order) {
+            return response()->json(['success' => 0, 'message' => translate('order_not_found')], 404);
+        }
+
         if ($order->order_status == 'delivered') {
             return response()->json(['success' => 0, 'message' => 'order is already delivered.'], 200);
         }
@@ -151,55 +155,90 @@ class DeliveryManController extends Controller
             }
         }
 
-        Order::where(['id' => $request['order_id'], 'delivery_man_id' => $deliveryMan['id']])->update([
-            'order_status' => $request['status'],
-            'cause' => $cause
-        ]);
+        if ($request['status'] == 'delivered') {
+            $order_verification = getWebConfig(name: 'order_verification');
+            if ($order_verification == 1) {
+                if (isset($request['verification_code']) && $order->verification_code == $request['verification_code']) {
+                    $order->verification_status = 1;
+                    $order->save();
+                } elseif ($order->verification_status != 1) {
+                    return response()->json(['success' => 0, 'message' => translate('order_is_not_verified_by_customer_delivery_otp')], 403);
+                }
+            }
+        }
 
-        if (isset($deliveryMan['id']) && $request['status'] == 'delivered') {
-            Order::where(['id' => $request['order_id']])->update([
-                'order_amount' => $order['order_amount'] + $order['edit_due_amount'],
-                'payment_status' => 'paid',
-                'edit_due_amount' => 0,
-            ]);
-            if ($order?->latestEditHistory) {
-                OrderEditHistory::where(['id' => $order?->latestEditHistory?->id])->update([
-                    'order_due_payment_status' => 'paid',
-                    'order_due_payment_note' => 'Marked as paid by Delivery Man',
+        DB::beginTransaction();
+        try {
+            $affected = Order::where(['id' => $request['order_id'], 'delivery_man_id' => $deliveryMan['id']])
+                ->where('order_status', '!=', 'delivered')
+                ->update([
+                    'order_status' => $request['status'],
+                    'cause' => $cause
                 ]);
+
+            if ($affected == 0 && $request['status'] == 'delivered') {
+                DB::rollBack();
+                return response()->json(['success' => 0, 'message' => 'order is already delivered.'], 200);
             }
 
-            $order = Order::with(['customer', 'deliveryMan', 'latestEditHistory'])
-                ->where(['delivery_man_id' => $deliveryMan['id'], 'id' => $request['order_id']])->first();
-            $deliveryManWallet = DeliverymanWallet::where('delivery_man_id', $deliveryMan['id'])->first();
+            if (isset($deliveryMan['id']) && $request['status'] == 'delivered') {
+                Order::where(['id' => $request['order_id']])->update([
+                    'order_amount' => $order['order_amount'] + $order['edit_due_amount'],
+                    'payment_status' => 'paid',
+                    'edit_due_amount' => 0,
+                ]);
+                if ($order?->latestEditHistory) {
+                    OrderEditHistory::where(['id' => $order?->latestEditHistory?->id])->update([
+                        'order_due_payment_status' => 'paid',
+                        'order_due_payment_note' => 'Marked as paid by Delivery Man',
+                    ]);
+                }
 
-            $cashInHand = 0;
-            if ($order->payment_method == 'cash_on_delivery') {
-                $cashInHand = $order->order_amount;
-            } else {
-                if (
-                    $order?->latestEditHistory &&
-                    $order?->latestEditHistory?->order_due_payment_status == 'paid' &&
-                    $order?->latestEditHistory?->order_due_payment_method == 'cash_on_delivery'
-                ) {
-                    $cashInHand += $order?->latestEditHistory?->order_due_amount ?? 0;
+                $order = Order::with(['customer', 'deliveryMan', 'latestEditHistory'])
+                    ->where(['delivery_man_id' => $deliveryMan['id'], 'id' => $request['order_id']])->first();
+                $deliveryManWallet = DeliverymanWallet::where('delivery_man_id', $deliveryMan['id'])->first();
+
+                $cashInHand = 0;
+                if ($order->payment_method == 'cash_on_delivery') {
+                    $cashInHand = $order->order_amount;
+                } else {
+                    if (
+                        $order?->latestEditHistory &&
+                        $order?->latestEditHistory?->order_due_payment_status == 'paid' &&
+                        $order?->latestEditHistory?->order_due_payment_method == 'cash_on_delivery'
+                    ) {
+                        $cashInHand += $order?->latestEditHistory?->order_due_amount ?? 0;
+                    }
+                }
+
+                if (empty($deliveryManWallet)) {
+                    DeliverymanWallet::create([
+                        'delivery_man_id' => $deliveryMan['id'],
+                        'current_balance' => $order?->deliveryman_charge ?? 0,
+                        'cash_in_hand' => $cashInHand,
+                        'pending_withdraw' => 0,
+                        'total_withdraw' => 0,
+                    ]);
+                } else {
+                    $deliveryManWallet->cash_in_hand += $cashInHand;
+                    $deliveryManWallet->current_balance += $order->deliveryman_charge ?? 0;
+                    $deliveryManWallet->save();
                 }
             }
 
-            if (empty($deliveryManWallet)) {
-                DeliverymanWallet::create([
-                    'delivery_man_id' => $deliveryMan['id'],
-                    'current_balance' => $order?->deliveryman_charge ?? 0,
-                    'cash_in_hand' => $cashInHand,
-                    'pending_withdraw' => 0,
-                    'total_withdraw' => 0,
-                ]);
-            } else {
-                $deliveryManWallet->cash_in_hand += $cashInHand;
-                $deliveryManWallet->current_balance += $order->deliveryman_charge ?? 0;
-                $deliveryManWallet->save();
+            if ($request['status'] == 'delivered' && $order['seller_id'] != null) {
+                OrderManager::getWalletManageOnOrderStatusChange($order, 'delivery man');
+                OrderDetail::where('order_id', $order->id)->update(
+                    ['delivery_status' => 'delivered']
+                );
             }
+
+            DB::commit();
+        } catch (\Exception $e) {
+            DB::rollBack();
+            return response()->json(['message' => 'Failed to update order status', 'error' => $e->getMessage()], 500);
         }
+
         if ($request['status'] == 'out_for_delivery') {
             event(new OrderStatusEvent(key: 'out_for_delivery', type: 'customer', order: $order));
         } elseif ($request['status'] == 'delivered') {
@@ -210,13 +249,6 @@ class DeliveryManController extends Controller
 
         OrderManager::getStockUpdateOnOrderStatusChange($order, $request['status']);
         OrderManager::generateReferBonusForFirstOrder(orderId: $order['id']);
-
-        if ($request['status'] == 'delivered' && $order['seller_id'] != null) {
-            OrderManager::getWalletManageOnOrderStatusChange($order, 'delivery man');
-            OrderDetail::where('order_id', $order->id)->update(
-                ['delivery_status' => 'delivered']
-            );
-        }
 
         $refEarningStatus = BusinessSetting::where('type', 'ref_earning_status')->first()->value ?? 0;
         $refEarningExchangeRate = BusinessSetting::where('type', 'ref_earning_exchange_rate')->first()->value ?? 0;
@@ -932,58 +964,75 @@ class DeliveryManController extends Controller
                 $paid_amount = $paymentDetails['data']['amount'];
 
                 if ($paid_amount >= $expected_amount) {
-                    Order::where(['id' => $order_id])->update([
-                    'order_status' => 'delivered',
-                    'order_amount' => $order['order_amount'] + $order['edit_due_amount'],
-                    'payment_status' => 'paid',
-                    'edit_due_amount' => 0,
-                    'payment_method' => 'paystack'
-                ]);
-                
-                if ($order?->latestEditHistory) {
-                    OrderEditHistory::where(['id' => $order?->latestEditHistory?->id])->update([
-                        'order_due_payment_status' => 'paid',
-                        'order_due_payment_note' => 'Marked as paid by Paystack at Door',
-                    ]);
-                }
-                
-                $deliveryMan = $order->deliveryMan;
-                $deliveryManWallet = \App\Models\DeliverymanWallet::where('delivery_man_id', $deliveryMan['id'])->first();
-                
-                if (empty($deliveryManWallet)) {
-                    \App\Models\DeliverymanWallet::create([
-                        'delivery_man_id' => $deliveryMan['id'],
-                        'current_balance' => $order?->deliveryman_charge ?? 0,
-                        'cash_in_hand' => 0,
-                        'pending_withdraw' => 0,
-                        'total_withdraw' => 0,
-                    ]);
-                } else {
-                    $deliveryManWallet->current_balance += $order->deliveryman_charge ?? 0;
-                    $deliveryManWallet->save();
-                }
+                    DB::beginTransaction();
+                    try {
+                        $affected = Order::where(['id' => $order_id])
+                            ->where('order_status', '!=', 'delivered')
+                            ->where('payment_status', '!=', 'paid')
+                            ->update([
+                                'order_status' => 'delivered',
+                                'order_amount' => $order['order_amount'] + $order['edit_due_amount'],
+                                'payment_status' => 'paid',
+                                'edit_due_amount' => 0,
+                                'payment_method' => 'paystack'
+                            ]);
 
-                event(new \App\Events\OrderStatusEvent(key: 'delivered', type: 'customer', order: $order));
-                OrderManager::getStockUpdateOnOrderStatusChange($order, 'delivered');
-                OrderManager::generateReferBonusForFirstOrder(orderId: $order['id']);
-                
-                if ($order['seller_id'] != null) {
-                    OrderManager::getWalletManageOnOrderStatusChange($order, 'delivery man');
-                    OrderDetail::where('order_id', $order->id)->update(['delivery_status' => 'delivered']);
-                }
-                
-                if(isset($deliveryMan->fcm_token)) {
-                    $data = [
-                        'title' => 'Payment Received!',
-                        'description' => 'Customer paid via Paystack. Order automatically marked as delivered.',
-                        'order_id' => $order->id,
-                        'image' => '',
-                        'type' => 'order_status'
-                    ];
-                    Helpers::send_push_notif_to_device($deliveryMan->fcm_token, $data);
-                }
-                
-                return response("<div style='text-align:center; padding: 50px; font-family: sans-serif;'><h2>Payment Successful!</h2><p>Your order has been marked as paid and delivered. You can close this window.</p></div>");
+                        if ($affected > 0) {
+                            if ($order?->latestEditHistory) {
+                                OrderEditHistory::where(['id' => $order?->latestEditHistory?->id])->update([
+                                    'order_due_payment_status' => 'paid',
+                                    'order_due_payment_note' => 'Marked as paid by Paystack at Door',
+                                ]);
+                            }
+                            
+                            $deliveryMan = $order->deliveryMan;
+                            if ($deliveryMan) {
+                                $deliveryManWallet = \App\Models\DeliverymanWallet::where('delivery_man_id', $deliveryMan['id'])->first();
+                                
+                                if (empty($deliveryManWallet)) {
+                                    \App\Models\DeliverymanWallet::create([
+                                        'delivery_man_id' => $deliveryMan['id'],
+                                        'current_balance' => $order?->deliveryman_charge ?? 0,
+                                        'cash_in_hand' => 0,
+                                        'pending_withdraw' => 0,
+                                        'total_withdraw' => 0,
+                                    ]);
+                                } else {
+                                    $deliveryManWallet->current_balance += $order->deliveryman_charge ?? 0;
+                                    $deliveryManWallet->save();
+                                }
+                            }
+
+                            if ($order['seller_id'] != null) {
+                                OrderManager::getWalletManageOnOrderStatusChange($order, 'delivery man');
+                                OrderDetail::where('order_id', $order->id)->update(['delivery_status' => 'delivered']);
+                            }
+                            
+                            DB::commit();
+
+                            event(new \App\Events\OrderStatusEvent(key: 'delivered', type: 'customer', order: $order));
+                            OrderManager::getStockUpdateOnOrderStatusChange($order, 'delivered');
+                            OrderManager::generateReferBonusForFirstOrder(orderId: $order['id']);
+
+                            if(isset($deliveryMan->fcm_token)) {
+                                $data = [
+                                    'title' => 'Payment Received!',
+                                    'description' => 'Customer paid via Paystack. Order automatically marked as delivered.',
+                                    'order_id' => $order->id,
+                                    'image' => '',
+                                    'type' => 'order_status'
+                                ];
+                                Helpers::send_push_notif_to_device($deliveryMan->fcm_token, $data);
+                            }
+                        } else {
+                            DB::rollBack();
+                        }
+
+                        return response("<div style='text-align:center; padding: 50px; font-family: sans-serif;'><h2>Payment Successful!</h2><p>Your order has been marked as paid and delivered. You can close this window.</p></div>");
+                    } catch (\Exception $e) {
+                        DB::rollBack();
+                        return response()->json(['message' => 'Callback processing error', 'error' => $e->getMessage()], 500);
+                    }
                 }
             }
         }
