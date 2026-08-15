@@ -154,7 +154,7 @@ class _GuestTrackOrderScreenState extends State<GuestTrackOrderScreen> {
                             if(context.mounted) {
                               RouterHelper.getOrderDetailsScreenRoute(
                                 action: RouteAction.push,
-                                orderId: int.parse(orderIdController.text.trim()),
+                                orderId: int.tryParse(orderId) ?? 0,
                                 phone: phone,
                                 fromTrack: true
                               );

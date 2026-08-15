@@ -120,10 +120,10 @@ class WalletTransactionList {
     _id = json['id'];
     _userId = json['user_id'];
     _transactionId = json['transaction_id'];
-    _credit = json['credit'].toDouble();
-    _debit = json['debit'].toDouble();
-    _adminBonus = json['admin_bonus'].toDouble();
-    _balance = json['balance'].toDouble();
+    _credit = double.tryParse(json['credit']?.toString() ?? '') ?? 0.0;
+    _debit = double.tryParse(json['debit']?.toString() ?? '') ?? 0.0;
+    _adminBonus = double.tryParse(json['admin_bonus']?.toString() ?? '') ?? 0.0;
+    _balance = double.tryParse(json['balance']?.toString() ?? '') ?? 0.0;
     _transactionType = json['transaction_type'];
     _reference = json['reference'];
     _createdAt = json['created_at'];

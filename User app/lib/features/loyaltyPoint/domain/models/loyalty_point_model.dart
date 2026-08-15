@@ -119,9 +119,9 @@ class LoyaltyPointList {
     _id = json['id'];
     _userId = json['user_id'];
     _transactionId = json['transaction_id'];
-    _credit =  double.tryParse(json['credit'].toString());
-    _debit = double.tryParse(json['debit'].toString());
-    _balance = json['balance'].toDouble();
+    _credit = double.tryParse(json['credit']?.toString() ?? '');
+    _debit = double.tryParse(json['debit']?.toString() ?? '');
+    _balance = double.tryParse(json['balance']?.toString() ?? '') ?? 0.0;
     _reference = json['reference'];
     _transactionType = json['transaction_type'];
     _createdAt = json['created_at'];

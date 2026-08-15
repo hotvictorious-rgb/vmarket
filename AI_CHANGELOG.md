@@ -7,6 +7,15 @@ Always append your completed tasks here in chronological order at the top. Forma
 `### [YYYY-MM-DD HH:MM UTC] <Feature / Fix Title> [<Component Scope>]`
 Include the specific app/component modified and bullet points detailing the exact technical changes.
 
+### [2026-08-15 14:50 UTC] Comprehensive Model & Numeric Parsing Hardening [User App]
+* **Component:** Flutter Customer App (`User app/lib/features/wallet/domain/models/wallet_transaction_model.dart`, `User app/lib/features/wallet/domain/models/wallet_bonus_model.dart`, `User app/lib/features/loyaltyPoint/domain/models/loyalty_point_model.dart`, `User app/lib/features/refund/domain/models/refund_result_model.dart`, `User app/lib/features/refund/domain/models/refund_info_model.dart`, `User app/lib/features/shop/domain/models/shop_again_from_recent_store_model.dart`, `User app/lib/features/coupon/domain/models/coupon_model.dart`, `User app/lib/features/coupon/domain/models/coupon_item_model.dart`, `User app/lib/features/order_details/screens/guest_track_order_screen.dart`)
+* **Action:** Hardened fragile numeric `.toDouble()` and `int.parse(...)` deserialization across Wallet, Loyalty Points, Refund Requests, Shop Again, Coupon, and Guest Tracking modules to prevent client-side crashes and blank screens on null/string/integer fields.
+* **Changes Made:**
+  - **Wallet & Loyalty**: Replaced `.toDouble()` with `double.tryParse` on `credit`, `debit`, `admin_bonus`, `balance`, `bonus_amount`, `min_add_money_amount`, and `max_bonus_amount`.
+  - **Refund**: Replaced `.toDouble()` with `double.tryParse` on `product_price`, `product_total_discount`, `product_total_tax`, `subtotal`, `coupon_discount`, `refund_amount`, and `amount`; replaced `int.parse` on `change_by_id` with `int.tryParse`.
+  - **Shop Again & Coupons**: Converted `unit_price`, `reviews_count`, `min_purchase`, `max_discount`, `discount`, `limit`, and `order_count` to safe `tryParse` deserialization.
+  - **Guest Order Tracking**: Hardened `orderId` parsing in `guest_track_order_screen.dart` to prevent uncaught `FormatException`.
+
 ### [2026-08-15 14:35 UTC] Harden Nested Order Models, Verification Images, and Pagination Parsing [User App, Vendor App]
 * **Component:** Flutter Mobile Apps (`Vendor app/lib/features/order/domain/models/order_model.dart`, `Vendor app/lib/features/order_details/domain/models/order_details_model.dart`, `Vendor app/lib/features/order/screens/order_screen.dart`, `User app/lib/features/order/domain/models/order_model.dart`, `User app/lib/features/order_details/domain/models/order_details_model.dart`, `User app/lib/features/order/screens/order_screen.dart`, `User app/lib/features/order_details/widgets/cancel_and_support_center_widget.dart`)
 * **Action:** Fixed client-side runtime `FormatException` and unhandled parsing throws when tapping delivered/COD/edited orders by thoroughly converting all nested `Order.fromJson`, `Shipping.fromJson`, `VerificationImages.fromJson`, and `EditOrderPaymentHistoryModel` parses to safe `tryParse`.

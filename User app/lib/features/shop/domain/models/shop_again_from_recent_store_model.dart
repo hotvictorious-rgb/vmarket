@@ -32,9 +32,9 @@ class ShopAgainFromRecentStoreModel {
     name = json['name'];
     slug = json['slug'];
     thumbnail = json['thumbnail'];
-    unitPrice = json['unit_price'].toDouble();
+    unitPrice = double.tryParse(json['unit_price']?.toString() ?? '');
     userId = json['user_id'];
-    reviewsCount = int.parse(json['reviews_count'].toString());
+    reviewsCount = int.tryParse(json['reviews_count']?.toString() ?? '');
     seller = json['seller'] != null ? Seller.fromJson(json['seller']) : null;
     thumbnailFullUrl = json['thumbnail_full_url'] != null
       ? ImageFullUrl.fromJson(json['thumbnail_full_url'])

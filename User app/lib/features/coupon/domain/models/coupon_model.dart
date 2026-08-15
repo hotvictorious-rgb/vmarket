@@ -67,9 +67,9 @@ class CouponModel {
     }
     _startDate = json['start_date'];
     _expireDate = json['expire_date'];
-    _minPurchase = json['min_purchase'].toDouble();
-    _maxDiscount = json['max_discount'].toDouble();
-    _discount = json['discount'].toDouble();
+    _minPurchase = double.tryParse(json['min_purchase']?.toString() ?? '') ?? 0.0;
+    _maxDiscount = double.tryParse(json['max_discount']?.toString() ?? '') ?? 0.0;
+    _discount = double.tryParse(json['discount']?.toString() ?? '') ?? 0.0;
     _discountType = json['discount_type'];
     _status = json['status'];
     _createdAt = json['created_at'];

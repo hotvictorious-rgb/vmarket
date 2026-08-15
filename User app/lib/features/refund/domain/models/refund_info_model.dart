@@ -45,14 +45,14 @@ class Refund {
       });
 
   Refund.fromJson(Map<String, dynamic> json) {
-    productPrice = json['product_price'].toDouble();
+    productPrice = double.tryParse(json['product_price']?.toString() ?? '') ?? 0.0;
     quntity = json['quntity'];
-    productTotalDiscount = json['product_total_discount'].toDouble();
-    productTotalTax = json['product_total_tax'].toDouble();
-    subtotal = json['subtotal'].toDouble();
-    couponDiscount = json['coupon_discount'].toDouble();
-    refundAmount = json['refund_amount'].toDouble();
-    referralDiscount = double.tryParse(json['referral_discount'].toString()) ?? 0.0;
+    productTotalDiscount = double.tryParse(json['product_total_discount']?.toString() ?? '') ?? 0.0;
+    productTotalTax = double.tryParse(json['product_total_tax']?.toString() ?? '') ?? 0.0;
+    subtotal = double.tryParse(json['subtotal']?.toString() ?? '') ?? 0.0;
+    couponDiscount = double.tryParse(json['coupon_discount']?.toString() ?? '') ?? 0.0;
+    refundAmount = double.tryParse(json['refund_amount']?.toString() ?? '') ?? 0.0;
+    referralDiscount = double.tryParse(json['referral_discount']?.toString() ?? '') ?? 0.0;
   }
 
   Map<String, dynamic> toJson() {

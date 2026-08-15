@@ -21,13 +21,13 @@ class RefundResultModel {
         this.refundRequest});
 
   RefundResultModel.fromJson(Map<String, dynamic> json) {
-    productPrice = json['product_price'].toDouble();
+    productPrice = double.tryParse(json['product_price']?.toString() ?? '') ?? 0.0;
     quntity = json['quntity'];
-    productTotalDiscount = json['product_total_discount'].toDouble();
-    productTotalTax = json['product_total_tax'].toDouble();
-    subtotal = json['subtotal'].toDouble();
-    couponDiscount = json['coupon_discount'].toDouble();
-    refundAmount = json['refund_amount'].toDouble();
+    productTotalDiscount = double.tryParse(json['product_total_discount']?.toString() ?? '') ?? 0.0;
+    productTotalTax = double.tryParse(json['product_total_tax']?.toString() ?? '') ?? 0.0;
+    subtotal = double.tryParse(json['subtotal']?.toString() ?? '') ?? 0.0;
+    couponDiscount = double.tryParse(json['coupon_discount']?.toString() ?? '') ?? 0.0;
+    refundAmount = double.tryParse(json['refund_amount']?.toString() ?? '') ?? 0.0;
     if (json['refund_request'] != null) {
       refundRequest = <RefundRequest>[];
       json['refund_request'].forEach((v) {
@@ -97,7 +97,7 @@ class RefundRequest {
     orderDetailsId = json['order_details_id'];
     customerId = json['customer_id'];
     status = json['status'];
-    amount = json['amount'].toDouble();
+    amount = double.tryParse(json['amount']?.toString() ?? '') ?? 0.0;
     productId = json['product_id'];
     orderId = json['order_id'];
     refundReason = json['refund_reason'];
@@ -174,11 +174,7 @@ class RefundStatus {
     changeBy = json['change_by'];
     if(json['change_by_id']!=null)
     {
-      try{
-        changeById = json['change_by_id'];
-      }catch(e){
-        changeById = int.parse(json['change_by_id']);
-      }
+      changeById = int.tryParse(json['change_by_id']?.toString() ?? '');
     }
 
     status = json['status'];

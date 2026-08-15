@@ -69,7 +69,7 @@ class Coupons {
     code = json['code'];
     sellerId = json['seller_id'];
     if(json['limit'] != null){
-      limit = int.parse(json['limit'].toString());
+      limit = int.tryParse(json['limit'].toString());
     }
 
     seller = json['seller'] != null ? Seller.fromJson(json['seller']) : null;
@@ -77,19 +77,15 @@ class Coupons {
     planExpireDate = json['plain_expire_date'];
     expireDatePlanText = json['plain_expire_date'];
     if(json['discount'] != null){
-      discount = json['discount'].toDouble();
+      discount = double.tryParse(json['discount'].toString());
     }
     if(json['min_purchase'] != null){
-      minPurchase = json['min_purchase'].toDouble();
+      minPurchase = double.tryParse(json['min_purchase'].toString());
     }
 
     discountType = json['discount_type'];
     if(json['order_count'] != null){
-      try{
-        orderCount = json['order_count'];
-      }catch(e){
-        orderCount = int.parse(json['order_count'].toString());
-      }
+      orderCount = int.tryParse(json['order_count'].toString()) ?? 0;
     }else{
       orderCount = 0;
     }
