@@ -132,6 +132,12 @@ class DashBoardScreenState extends State<DashBoardScreen> {
     setState(() {
       _pageIndex = pageIndex;
     });
+    // [AI] Lightweight background sync on tab switch to keep Cart and Orders perfectly fresh
+    if (pageIndex == 2) {
+      Provider.of<CartController>(context, listen: false).getCartData(context);
+    } else if (pageIndex == 3 && Provider.of<AuthController>(context, listen: false).isLoggedIn()) {
+      Provider.of<OrderController>(context, listen: false).getOrderList(1, 'all');
+    }
   }
 
   List<Widget> _getBottomWidget(bool isSingleVendor) {
