@@ -68,29 +68,37 @@ class HomePage extends StatefulWidget {
 
     final splashController = Provider.of<SplashController>(context, listen: false);
 
+    final authController = Provider.of<AuthController>(context, listen: false);
+
     splashController.initConfig(context, null, null);
 
-    // [AI] Fire non-blocking asynchronous loads so widgets render instantly without boot lag
-    categoryController.getCategoryList(reload);
-    bannerController.getBannerList();
-    productController.getLatestProductList(1, isUpdate: reload);
-    productController.getFeaturedProductModel(1, isUpdate: reload);
-    productController.getSelectedProductModel(1, isUpdate: reload);
-    productController.getHomeCategoryProductList(reload);
-    shopController.getTopSellerList(offset: 1, isUpdate: reload);
-    brandController.getBrandList(offset: 1, isUpdate: reload);
-    featuredDealController.getFeaturedDealList();
-    productController.getRecommendedProduct();
-    productController.getClearanceAllProductList(1, isUpdate: reload);
-    productController.loadRecentlyViewedProducts();
+    // [AI] Coordinate non-blocking parallel loads with graceful error handling
+    final List<Future> futures = [
+      categoryController.getCategoryList(reload),
+      bannerController.getBannerList(),
+      productController.getLatestProductList(1, isUpdate: reload),
+      productController.getFeaturedProductModel(1, isUpdate: reload),
+      productController.getSelectedProductModel(1, isUpdate: reload),
+      productController.getHomeCategoryProductList(reload),
+      shopController.getTopSellerList(offset: 1, isUpdate: reload),
+      brandController.getBrandList(offset: 1, isUpdate: reload),
+      featuredDealController.getFeaturedDealList(),
+      productController.getRecommendedProduct(),
+      productController.getClearanceAllProductList(1, isUpdate: reload),
+      productController.loadRecentlyViewedProducts(),
+      cartController.getCartData(context),
+      addressController.getAddressList(),
+    ];
 
-    cartController.getCartData(context);
-    addressController.getAddressList();
     if (notificationController.notificationModel == null || reload) {
-      notificationController.getNotificationList(1);
+      futures.add(notificationController.getNotificationList(1));
     }
-    if (Provider.of<AuthController>(context, listen: false).isLoggedIn() && (profileController.userInfoModel == null || reload)) {
-      profileController.getUserInfo(context);
+    if (authController.isLoggedIn() && (profileController.userInfoModel == null || reload)) {
+      futures.add(profileController.getUserInfo(context));
+    }
+
+    if (reload) {
+      await Future.wait(futures.map((f) => f.catchError((e) => debugPrint('Home reload error: $e'))));
     }
   }
 }

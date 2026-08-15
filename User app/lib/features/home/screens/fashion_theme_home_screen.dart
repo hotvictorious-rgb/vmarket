@@ -70,32 +70,40 @@ class FashionThemeHomePage extends StatefulWidget {
     final sellerProductController = Provider.of<SellerProductController>(context, listen: false);
     final splashController = Provider.of<SplashController>(context, listen: false);
 
+    final authController = Provider.of<AuthController>(context, listen: false);
+
     splashController.initConfig(context, null, null);
 
-    // [AI] Fire non-blocking asynchronous loads for instant rendering
-    categoryController.getCategoryList(reload);
-    bannerController.getBannerList();
-    productController.getLatestProductList(1, isUpdate: reload);
-    productController.getFeaturedProductModel(1, isUpdate: reload);
-    productController.getHomeCategoryProductList(reload);
-    shopController.getTopSellerList(offset: 1, isUpdate: reload);
-    brandController.getBrandList(offset: 1, isUpdate: reload);
-    featuredDealController.getFeaturedDealList();
-    productController.getRecommendedProduct();
-    productController.getMostDemandedProduct();
-    productController.getMostSearchingProduct(1, isUpdate: reload);
-    productController.getClearanceAllProductList(1, isUpdate: reload);
-    shopController.getMoreStore();
+    // [AI] Coordinate non-blocking parallel loads with graceful error handling
+    final List<Future> futures = [
+      categoryController.getCategoryList(reload),
+      bannerController.getBannerList(),
+      productController.getLatestProductList(1, isUpdate: reload),
+      productController.getFeaturedProductModel(1, isUpdate: reload),
+      productController.getHomeCategoryProductList(reload),
+      shopController.getTopSellerList(offset: 1, isUpdate: reload),
+      brandController.getBrandList(offset: 1, isUpdate: reload),
+      featuredDealController.getFeaturedDealList(),
+      productController.getRecommendedProduct(),
+      productController.getMostDemandedProduct(),
+      productController.getMostSearchingProduct(1, isUpdate: reload),
+      productController.getClearanceAllProductList(1, isUpdate: reload),
+      shopController.getMoreStore(),
+      cartController.getCartData(context),
+    ];
 
-    cartController.getCartData(context);
     if (notificationController.notificationModel == null || reload) {
-      notificationController.getNotificationList(1);
+      futures.add(notificationController.getNotificationList(1));
     }
-    if (Provider.of<AuthController>(context, listen: false).isLoggedIn()) {
+    if (authController.isLoggedIn()) {
       if (profileController.userInfoModel == null || reload) {
-        profileController.getUserInfo(context);
+        futures.add(profileController.getUserInfo(context));
       }
-      sellerProductController.getShopAgainFromRecentStore();
+      futures.add(sellerProductController.getShopAgainFromRecentStore());
+    }
+
+    if (reload) {
+      await Future.wait(futures.map((f) => f.catchError((e) => debugPrint('Fashion reload error: $e'))));
     }
   }
 

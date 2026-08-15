@@ -24,9 +24,6 @@ class DataSyncHelper {
     final clientResponse = await fetchFromClient();
     if (clientResponse.isSuccess) {
       onResponse(clientResponse.response?.data, DataSourceEnum.client);
-    } else {
-
-      ApiChecker.checkApi(clientResponse);
     }
 
   }

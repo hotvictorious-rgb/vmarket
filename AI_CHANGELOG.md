@@ -7,6 +7,13 @@ Always append your completed tasks here in chronological order at the top. Forma
 `### [YYYY-MM-DD HH:MM UTC] <Feature / Fix Title> [<Component Scope>]`
 Include the specific app/component modified and bullet points detailing the exact technical changes.
 
+### [2026-08-15 18:30 UTC] Fix Pull-To-Refresh Hang and Suppress Intrusive Background Snackbars [User App]
+* **Component:** Flutter Customer App (`User app/lib/helper/data_sync_helper.dart`, `User app/lib/features/home/screens/aster_theme_home_screen.dart`, `User app/lib/features/home/screens/home_screens.dart`, `User app/lib/features/home/screens/fashion_theme_home_screen.dart`)
+* **Action:** Resolved pull-to-refresh hanging/long loading and eliminated spurious "Unexpected error occured" snackbars on home refresh by coordinating reload futures with `Future.wait` and removing intrusive background cache sync error snackbars from `DataSyncHelper`.
+* **Changes Made:**
+  - **DataSyncHelper (`data_sync_helper.dart`)**: Removed intrusive `ApiChecker.checkApi()` popup on background cache sync updates so local cache is smoothly updated without showing error banners to the user.
+  - **Home Screen Reload Coordination (`aster_theme_home_screen.dart`, `home_screens.dart`, `fashion_theme_home_screen.dart`)**: Structured `loadData` to return `Future.wait` on explicit pull-to-refresh (`reload: true`) with per-future `.catchError()`, allowing the refresh spinner to complete and dismiss smoothly without hanging or crashing.
+
 ### [2026-08-15 18:20 UTC] Set Aster Theme as Permanent Default Across Customer App [User App]
 * **Component:** Flutter Customer App (`User app/lib/features/splash/domain/models/config_model.dart`, `User app/lib/features/dashboard/screens/dashboard_screen.dart`)
 * **Action:** Configured the Customer App to use `theme_aster` (Aster theme) as the permanent default active theme, ensuring that config updates or default server responses never unexpectedly reset or alter the user's active Aster theme interface.
