@@ -55,11 +55,37 @@ class OrderController extends Controller
             return response()->json(['errors' => Helpers::validationErrorProcessor($validator)], 403);
         }
 
-        $data = Order::with(['deliveryMan', 'orderStatusHistory' => function ($query) {
+        $user = Helpers::getCustomerInformation($request);
+        $order = Order::with(['deliveryMan', 'orderStatusHistory' => function ($query) {
             return $query->latest();
         }])->where(['id' => $request['order_id']])->first();
 
-        $data = json_decode(json_encode($data), true);
+        if (!$order) {
+            return response()->json(['message' => translate('order_not_found')], 404);
+        }
+
+        $isOwner = false;
+        if ($user != 'offline' && $order->customer_id == $user->id) {
+            $isOwner = true;
+        } elseif ($order->is_guest && $request->has('guest_id') && $order->customer_id == $request['guest_id']) {
+            $isOwner = true;
+        }
+
+        $data = json_decode(json_encode($order), true);
+
+        // Sanitize sensitive PII if unauthenticated or non-owner caller
+        if (!$isOwner) {
+            unset($data['customer']);
+            unset($data['billing_address_data']);
+            unset($data['shipping_address_data']);
+            unset($data['transaction_ref']);
+            if (isset($data['delivery_man'])) {
+                unset($data['delivery_man']['identity_number']);
+                unset($data['delivery_man']['identity_image']);
+                unset($data['delivery_man']['fcm_token']);
+            }
+        }
+
         return response()->json($data, 200);
     }
 
@@ -73,10 +99,12 @@ class OrderController extends Controller
         }
         $orderId = $request['order_id'];
         $order = Order::find($orderId);
+        if (!$order) {
+            return response()->json(['message' => translate('order_not_found')], 404);
+        }
         $isOrderOnlyDigital = $this->orderService->getCheckIsOrderOnlyDigital(order: $order);
         $getTrackOrderHistory = OrderManager::getTrackOrderStatusHistory(orderId: $orderId, isOrderOnlyDigital: $isOrderOnlyDigital);
         return response()->json($getTrackOrderHistory, 200);
-
     }
 
     public function order_cancel(Request $request)
@@ -88,7 +116,25 @@ class OrderController extends Controller
         if ($validator->fails()) {
             return response()->json(['errors' => Helpers::validationErrorProcessor($validator)], 403);
         }
+
+        $user = Helpers::getCustomerInformation($request);
         $order = Order::where(['id' => $request->order_id])->first();
+
+        if (!$order) {
+            return response()->json(['message' => translate('order_not_found')], 404);
+        }
+
+        // Ownership verification (registered customer vs guest)
+        $isOwner = false;
+        if ($user != 'offline' && $order->customer_id == $user->id) {
+            $isOwner = true;
+        } elseif ($order->is_guest && $request->has('guest_id') && $order->customer_id == $request['guest_id']) {
+            $isOwner = true;
+        }
+
+        if (!$isOwner) {
+            return response()->json(['message' => translate('unauthorized_access')], 403);
+        }
 
         if ($order['payment_method'] == 'cash_on_delivery' && $order['order_status'] == 'pending') {
             OrderManager::getStockUpdateOnOrderStatusChange($order, 'canceled');

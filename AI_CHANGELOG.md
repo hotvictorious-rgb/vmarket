@@ -7,6 +7,14 @@ Always append your completed tasks here in chronological order at the top. Forma
 `### [YYYY-MM-DD HH:MM UTC] <Feature / Fix Title> [<Component Scope>]`
 Include the specific app/component modified and bullet points detailing the exact technical changes.
 
+### [2026-08-15 14:10 UTC] Harden Order Cancellation, PII Tracking, and Delivery OTP Scoping (F1, F2, F3) [Laravel Backend]
+* **Component:** Laravel REST API (`backend/vmarket-web/routes/rest_api/v1/api.php`, `RestAPI/v1/OrderController.php`, `RestAPI/v2/delivery_man/DeliveryManController.php`)
+* **Action:** Fixed critical authorization gaps, IDOR vulnerabilities, and unauthenticated PII leakage in order cancellation, tracking, and delivery OTP verification endpoints.
+* **Changes Made:**
+  - **F1 (Order Cancellation IDOR & Ownership)**: Added `apiGuestCheck` middleware to the `order` route group in `v1/api.php`. In `OrderController::order_cancel`, enforced customer ownership check (`$order->customer_id == $user->id` or guest match), returning `403 Unauthorized` on non-owner requests to prevent unauthorized cancellation of other customers' orders.
+  - **F2 (Tracking PII Sanitization)**: In `OrderController::track_by_order_id`, added caller ownership verification. If an unauthenticated or non-owner caller requests tracking, sensitive PII fields (`customer`, `billing_address_data`, `shipping_address_data`, `transaction_ref`, rider `identity_number` and `fcm_token`) are stripped from the response.
+  - **F3 (Delivery OTP Rider Scoping)**: In `DeliveryManController::verify_order_delivery_otp` and `resend_verification_code`, added `order_id` validation and scoped query by `delivery_man_id` (`$deliveryMan['id']`), preventing unauthorized verification or OTP resends across riders.
+
 ### [2026-08-15 12:55 UTC] Clean Corrupted Trailing Script Bytes in Admin Withdraw View [Laravel Backend]
 * **Component:** Blade Views (`backend/vmarket-web/resources/views/admin-views/vendor/withdraw-view.blade.php`)
 * **Action:** Stripped corrupted trailing NUL-prefixed script bytes after `@endpush`, restoring clean file termination and eliminating diff noise against live.

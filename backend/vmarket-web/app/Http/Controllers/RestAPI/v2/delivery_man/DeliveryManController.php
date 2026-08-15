@@ -779,7 +779,21 @@ class DeliveryManController extends Controller
     /** Dellivery man order verification */
     public function verify_order_delivery_otp(Request $request):JsonResponse
     {
-        $order = $this->order->where('id', $request['order_id'])->first();
+        $validator = Validator::make($request->all(), [
+            'order_id' => 'required',
+            'verification_code' => 'required',
+        ]);
+
+        if ($validator->fails()) {
+            return response()->json(['errors' => Helpers::validationErrorProcessor($validator)], 403);
+        }
+
+        $deliveryMan = $request['delivery_man'];
+        $order = $this->order->where(['id' => $request['order_id'], 'delivery_man_id' => $deliveryMan['id']])->first();
+
+        if (!$order) {
+            return response()->json(['message' => translate('order_not_found_or_not_assigned_to_you')], 404);
+        }
 
         if ($order->verification_code == $request['verification_code']) {
             $order->verification_status = 1;
@@ -812,23 +826,38 @@ class DeliveryManController extends Controller
     /** Resend OTP Verification */
     public function resend_verification_code(Request $request):JsonResponse
     {
-        $order = $this->order::with('customer')->where('id', $request['order_id'])->first();
+        $validator = Validator::make($request->all(), [
+            'order_id' => 'required',
+        ]);
+
+        if ($validator->fails()) {
+            return response()->json(['errors' => Helpers::validationErrorProcessor($validator)], 403);
+        }
+
+        $deliveryMan = $request['delivery_man'];
+        $order = $this->order::with('customer')->where(['id' => $request['order_id'], 'delivery_man_id' => $deliveryMan['id']])->first();
+
+        if (!$order) {
+            return response()->json(['message' => translate('order_not_found_or_not_assigned_to_you')], 404);
+        }
 
         $fcm_token = $order->customer->cm_firebase_token ?? null;
         $verification_code = rand(100000, 999999);
         $order->verification_code = $verification_code;
-        if ($order->save() && !$order->is_guest && $fcm_token) {
-            $data = [
-                'title' => translate('order_verification_code'),
-                'description' => translate('order_verification_code') . ' ' . $verification_code,
-                'order_id' => $order->id,
-                'image' => '',
-                'type' => 'order'
-            ];
-            Helpers::send_push_notif_to_device($fcm_token, $data);
-            return response()->json(['message' => 'successfully send verification code'], 200);
+        if ($order->save()) {
+            if (!$order->is_guest && $fcm_token) {
+                $data = [
+                    'title' => translate('order_verification_code'),
+                    'description' => translate('order_verification_code') . ' ' . $verification_code,
+                    'order_id' => $order->id,
+                    'image' => '',
+                    'type' => 'order'
+                ];
+                Helpers::send_push_notif_to_device($fcm_token, $data);
+            }
+            return response()->json(['message' => translate('successfully_sent_verification_code')], 200);
         } else {
-            return response()->json(["message" => "verification code send failed"], 403);
+            return response()->json(["message" => translate("verification_code_send_failed")], 403);
         }
     }
 
