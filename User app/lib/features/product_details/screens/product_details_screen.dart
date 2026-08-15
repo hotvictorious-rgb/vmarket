@@ -50,31 +50,31 @@ class _ProductDetailsState extends State<ProductDetails> {
   Size widgetSize = const Size(100, 400);
 
   Future<void> _loadData( BuildContext context) async {
-    Provider.of<ReviewController>(context, listen: false).removePrevReview();
-    Provider.of<ProductDetailsController>(context, listen: false).removePrevLink();
-    Provider.of<ProductController>(context, listen: false).removePrevRelatedProduct();
-    Provider.of<ProductDetailsController>(context, listen: false).setImageSliderSelectedIndex(0, isUpdate: false);
-    Provider.of<ShopController>(context, listen: false).emptyProductDetailsSeller();
+    final productDetailsController = Provider.of<ProductDetailsController>(context, listen: false);
+    final reviewController = Provider.of<ReviewController>(context, listen: false);
+    final productController = Provider.of<ProductController>(context, listen: false);
+    final shopController = Provider.of<ShopController>(context, listen: false);
 
-    // Await critical UI data first
-    await Provider.of<ProductDetailsController>(context, listen: false).getProductDetails(context, widget.slug.toString(), widget.slug.toString());
+    reviewController.removePrevReview();
+    productDetailsController.removePrevLink();
+    productController.removePrevRelatedProduct();
+    productDetailsController.setImageSliderSelectedIndex(0, isUpdate: false);
+    shopController.emptyProductDetailsSeller();
 
-    if(context.mounted) {
-      final detailsModel = Provider.of<ProductDetailsController>(context, listen: false).productDetailsModel;
-      if (detailsModel != null) {
-        Provider.of<ProductController>(context, listen: false).addRecentlyViewedProduct(detailsModel);
-      }
-    }
-
-    // Lazy load secondary data to prevent 5-second UI freeze
-    Future.delayed(const Duration(milliseconds: 100), () {
-      if(mounted) {
-        Provider.of<ReviewController>(context, listen: false).getReviewList(widget.slug, context);
-        Provider.of<ProductController>(context, listen: false).initRelatedProductList(widget.slug.toString(), context);
-        Provider.of<ProductDetailsController>(context, listen: false).getCount(widget.slug.toString(), context);
-        Provider.of<ProductDetailsController>(context, listen: false).getSharableLink(widget.slug.toString(), context);
+    // [AI] Fire all product-details endpoints concurrently in parallel for maximum speed
+    productDetailsController.getProductDetails(context, widget.slug.toString(), widget.slug.toString()).then((_) {
+      if (context.mounted) {
+        final detailsModel = productDetailsController.productDetailsModel;
+        if (detailsModel != null) {
+          productController.addRecentlyViewedProduct(detailsModel);
+        }
       }
     });
+
+    reviewController.getReviewList(widget.slug, context);
+    productController.initRelatedProductList(widget.slug.toString(), context);
+    productDetailsController.getCount(widget.slug.toString(), context);
+    productDetailsController.getSharableLink(widget.slug.toString(), context);
   }
 
   @override
