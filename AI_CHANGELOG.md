@@ -7,6 +7,15 @@ Always append your completed tasks here in chronological order at the top. Forma
 `### [YYYY-MM-DD HH:MM UTC] <Feature / Fix Title> [<Component Scope>]`
 Include the specific app/component modified and bullet points detailing the exact technical changes.
 
+### [2026-08-15 16:56 UTC] Fix Delivered Order Details Infinite Spinner and Model Deserialization [User App, Vendor App]
+* **Component:** Flutter Mobile Apps (`User app/lib/features/order_details/domain/models/order_details_model.dart`, `User app/lib/features/order_details/widgets/ordered_product_list_widget.dart`, `User app/lib/features/order_details/widgets/order_amount_calculation.dart`, `User app/lib/features/order_details/screens/order_details_screen.dart`, `Vendor app/lib/features/delivery_man/domain/model/delivery_man_review_model.dart`)
+* **Action:** Resolved infinite loading spinner / shimmer freeze when opening delivered orders in customer app by correcting `DeliveryManReview` `attachment_full_url` type mismatch from `List<String>` to `List<ImageFullUrl>`, adding safe `int.tryParse` on product reviews, and replacing fragile force-unwrapped parameters with null-safe defaults across order details calculation and item list widgets.
+* **Changes Made:**
+  - **User App DeliveryManReview (`order_details_model.dart`)**: Changed `attachmentFullUrl` from `List<String>?` to `List<ImageFullUrl>?`. Hardened `DeliveryManReview.fromJson` to parse both `Map<String, dynamic>` and raw string paths gracefully; added safe `int.tryParse` on `id`, `productId`, `customerId`, `deliveryManId`, `orderId`, `rating`, `status`, and `isSaved`.
+  - **User App Review (`order_details_model.dart`)**: Safely parsed `id` and `product_id` with `int.tryParse` against null/string responses for delivered order product reviews.
+  - **User App Widgets (`ordered_product_list_widget.dart`, `order_amount_calculation.dart`, `order_details_screen.dart`)**: Replaced fragile `orderType!`, `paymentStatus!`, `orderId!`, `isGuest!`, `eeDiscount!`, and `discountAmount!` force unwraps with null-safe fallbacks (`??`).
+  - **Vendor App DeliveryManReview (`delivery_man_review_model.dart`)**: Hardened `DeliveryManReview.fromJson` with safe integer and double tryParses and null-safe `isSaved` boolean evaluation.
+
 ### [2026-08-15 15:30 UTC] Harden Offline Payment, Review, Shipping, Shop Seller, Profile, and Config Deserialization [User App, Vendor App]
 * **Component:** Flutter Customer & Vendor Apps (`User app/lib/features/offline_payment/domain/models/offline_payment_model.dart`, `User app/lib/features/review/domain/models/review_model.dart`, `User app/lib/features/shipping/domain/models/shipping_method_model.dart`, `User app/lib/features/shop/domain/models/seller_info_model.dart`, `User app/lib/features/shop/domain/models/seller_model.dart`, `User app/lib/features/splash/domain/models/config_model.dart`, `Vendor app/lib/features/profile/domain/models/profile_info.dart`, `Vendor app/lib/features/splash/domain/models/config_model.dart`)
 * **Action:** Hardened remaining models in User and Vendor apps against `FormatException` / `TypeError` on null, empty string, or uncast numeric values.

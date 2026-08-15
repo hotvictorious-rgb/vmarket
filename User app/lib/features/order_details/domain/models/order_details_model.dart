@@ -243,17 +243,18 @@ class Order {
 }
 
 class Review {
-  int id;
-  int productId;
+  int? id;
+  int? productId;
 
   Review({
-    required this.id,
-    required this.productId,
+    this.id,
+    this.productId,
   });
 
+  // [AI] Safely parse review ID and product ID against string/null types
   factory Review.fromJson(Map<String, dynamic> json) => Review(
-    id: json["id"],
-    productId: json["product_id"],
+    id: int.tryParse(json["id"]?.toString() ?? ''),
+    productId: int.tryParse(json["product_id"]?.toString() ?? ''),
   );
 
   Map<String, dynamic> toJson() => {
@@ -277,7 +278,7 @@ class DeliveryManReview {
   final bool? isSaved;
   final String? createdAt;
   final String? updatedAt;
-  final List<String>? attachmentFullUrl;
+  final List<ImageFullUrl>? attachmentFullUrl;
 
   DeliveryManReview({
     this.id,
@@ -298,23 +299,33 @@ class DeliveryManReview {
 
 
 
+  // [AI] Hardened deserialization to accept ImageFullUrl objects or strings for attachment_full_url
   factory DeliveryManReview.fromJson(Map<String, dynamic> json) {
+    List<ImageFullUrl> fullUrls = [];
+    if (json['attachment_full_url'] != null && json['attachment_full_url'] is List) {
+      for (var v in json['attachment_full_url']) {
+        if (v is Map<String, dynamic>) {
+          fullUrls.add(ImageFullUrl.fromJson(v));
+        } else if (v is String) {
+          fullUrls.add(ImageFullUrl(path: v, key: v));
+        }
+      }
+    }
+
     return DeliveryManReview(
-      id: json['id'],
-      productId: json['product_id'],
-      customerId: json['customer_id'],
-      deliveryManId: json['delivery_man_id'],
-      orderId: json['order_id'],
-      comment: json['comment'],
-      attachment: json['attachment'],
-      rating: json['rating'],
-      status: json['status'],
-      isSaved: json['is_saved'],
-      createdAt: json['created_at'],
-      updatedAt: json['updated_at'],
-      attachmentFullUrl: json['attachment_full_url'] != null
-          ? List<String>.from(json['attachment_full_url'])
-          : [],
+      id: int.tryParse(json['id']?.toString() ?? ''),
+      productId: int.tryParse(json['product_id']?.toString() ?? ''),
+      customerId: int.tryParse(json['customer_id']?.toString() ?? ''),
+      deliveryManId: int.tryParse(json['delivery_man_id']?.toString() ?? ''),
+      orderId: int.tryParse(json['order_id']?.toString() ?? ''),
+      comment: json['comment']?.toString(),
+      attachment: json['attachment']?.toString(),
+      rating: int.tryParse(json['rating']?.toString() ?? ''),
+      status: int.tryParse(json['status']?.toString() ?? ''),
+      isSaved: json['is_saved'] == true || json['is_saved'] == 1 || json['is_saved'] == '1',
+      createdAt: json['created_at']?.toString(),
+      updatedAt: json['updated_at']?.toString(),
+      attachmentFullUrl: fullUrls,
     );
   }
 
@@ -332,7 +343,7 @@ class DeliveryManReview {
       'is_saved': isSaved,
       'created_at': createdAt,
       'updated_at': updatedAt,
-      'attachment_full_url': attachmentFullUrl,
+      'attachment_full_url': attachmentFullUrl?.map((v) => v.toJson()).toList(),
     };
   }
 }

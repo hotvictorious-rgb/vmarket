@@ -493,10 +493,10 @@ class _OrderDetailsScreenState extends State<OrderDetailsScreen> {
 
                           if(orderProvider.orders != null)
                             OrderProductListWidget(
-                              orderType: orderProvider.orders!.orderType,
+                              orderType: orderProvider.orders?.orderType,
                               fromTrack: widget.fromTrack,
-                              isGuest: orderProvider.orders!.isGuest!,
-                              orderId: orderProvider.orders!.id.toString(),
+                              isGuest: orderProvider.orders?.isGuest ?? 0,
+                              orderId: orderProvider.orders?.id?.toString(),
                             ),
                           const SizedBox(height: Dimensions.paddingSizeSmall),
 

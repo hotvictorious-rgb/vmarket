@@ -30,9 +30,10 @@ class OrderProductListWidget extends StatelessWidget {
             callback: () {
               showCustomSnackBarWidget(getTranslated('review_submitted_successfully', context), context, snackBarType: SnackBarType.success);
             },
-            orderType: orderType!,
-            paymentStatus: orderDetailsController.orders!.paymentStatus!,
-            orderId: orderId!,
+            // [AI] Provide safe fallbacks instead of force unwrapping nullable fields
+            orderType: orderType ?? 'default_type',
+            paymentStatus: orderDetailsController.orders?.paymentStatus ?? 'unpaid',
+            orderId: orderId ?? '',
             index: i,
           ),
         );
