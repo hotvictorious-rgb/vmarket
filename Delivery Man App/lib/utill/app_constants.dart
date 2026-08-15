@@ -23,7 +23,8 @@ class AppConstants {
   static const String pauseAndResumeOrderStatusUri = '/api/v2/delivery-man/order-update-is-pause';
   static const String updatePaymentStatusUri = '/api/v2/delivery-man/update-payment-status';
   static const String tokenUri = '/api/v2/delivery-man/update-fcm-token';
-  static const String searchConversationListUri = '/api/v2/delivery-man/update-fcm-token';
+  // [AI] Corrected searchConversationListUri endpoint to messages/search
+  static const String searchConversationListUri = '/api/v2/delivery-man/messages/search/';
   static const String statusOnOffUri = '/api/v2/delivery-man/is-online';
   static const String withdrawRequestUri = '/api/v2/delivery-man/withdraw-request';
   static const String walletInfoUri = '/api/v2/delivery-man/wallet';

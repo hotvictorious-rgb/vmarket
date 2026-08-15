@@ -7,6 +7,12 @@ Always append your completed tasks here in chronological order at the top. Forma
 `### [YYYY-MM-DD HH:MM UTC] <Feature / Fix Title> [<Component Scope>]`
 Include the specific app/component modified and bullet points detailing the exact technical changes.
 
+### [2026-08-15 18:33 UTC] Correct Delivery Man App Search Conversation URI [Delivery Man App]
+* **Component:** Flutter Delivery Rider App (`Delivery Man App/lib/utill/app_constants.dart`)
+* **Action:** Corrected `searchConversationListUri` constant from `/api/v2/delivery-man/update-fcm-token` to `/api/v2/delivery-man/messages/search/`, ensuring full endpoint accuracy matching `routes/rest_api/v2/api.php`.
+* **Changes Made:**
+  - **App Constants (`app_constants.dart`)**: Repointed `searchConversationListUri` to `/api/v2/delivery-man/messages/search/`.
+
 ### [2026-08-15 18:30 UTC] Fix Pull-To-Refresh Hang and Suppress Intrusive Background Snackbars [User App]
 * **Component:** Flutter Customer App (`User app/lib/helper/data_sync_helper.dart`, `User app/lib/features/home/screens/aster_theme_home_screen.dart`, `User app/lib/features/home/screens/home_screens.dart`, `User app/lib/features/home/screens/fashion_theme_home_screen.dart`)
 * **Action:** Resolved pull-to-refresh hanging/long loading and eliminated spurious "Unexpected error occured" snackbars on home refresh by coordinating reload futures with `Future.wait` and removing intrusive background cache sync error snackbars from `DataSyncHelper`.
