@@ -167,8 +167,8 @@ class _HomePageState extends State<HomePage> with AutomaticKeepAliveClientMixin 
                                 style: TextStyle(
                                   fontFamily: 'Ubuntu',
                                   fontWeight: FontWeight.w900,
-                                  fontSize: 20,
-                                  letterSpacing: 0.5,
+                                  fontSize: 23,
+                                  letterSpacing: 0.6,
                                   height: 1.1,
                                   color: Colors.white, // ShaderMask overrides to gold gradient
                                   shadows: [
@@ -186,14 +186,14 @@ class _HomePageState extends State<HomePage> with AutomaticKeepAliveClientMixin 
                                   blendMode: BlendMode.srcIn,
                                   shaderCallback: (_) => const LinearGradient(
                                     colors: [Colors.white, Color(0xFFF0F0F0)],
-                                  ).createShader(const Rect.fromLTWH(0, 0, 120, 20)),
+                                  ).createShader(const Rect.fromLTWH(0, 0, 140, 24)),
                                   child: Text(
                                     'MARKET',
                                     style: TextStyle(
                                       fontFamily: 'Ubuntu',
                                       fontWeight: FontWeight.w900,
-                                      fontSize: 18,
-                                      letterSpacing: 4.5,
+                                      fontSize: 20,
+                                      letterSpacing: 5.0,
                                       height: 1.0,
                                       color: Colors.white,
                                       shadows: [

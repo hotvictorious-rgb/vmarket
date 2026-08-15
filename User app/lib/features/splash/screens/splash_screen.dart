@@ -286,10 +286,57 @@ class SplashWidget extends StatelessWidget {
           duration: const Duration(milliseconds: 2000), lift: 50, ratio: 0.5, pause: 0.25,
           child: SizedBox(width: 150, child: Image.asset(Images.logo, width: 150.0))
         ),
-        Text(AppConstants.appName,style: textRegular.copyWith(fontSize: Dimensions.fontSizeOverLarge, color: Colors.white)),
+        const SizedBox(height: 14),
+        // [AI] Signature Victorious MARKET Brand Wordmark (Gold + White)
+        ShaderMask(
+          blendMode: BlendMode.srcIn,
+          shaderCallback: (bounds) => const LinearGradient(
+            colors: [Color(0xFFFFD700), Color(0xFFFFB300)],
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+          ).createShader(bounds),
+          child: RichText(
+            textAlign: TextAlign.center,
+            text: TextSpan(
+              children: [
+                TextSpan(
+                  text: 'Victorious',
+                  style: TextStyle(
+                    fontFamily: 'Ubuntu',
+                    fontWeight: FontWeight.w900,
+                    fontSize: 32,
+                    letterSpacing: 0.8,
+                    height: 1.1,
+                    color: Colors.white,
+                    shadows: [Shadow(color: Colors.black.withValues(alpha: 0.35), offset: const Offset(0, 2), blurRadius: 8)],
+                  ),
+                ),
+                const TextSpan(text: '\n'),
+                WidgetSpan(
+                  child: ShaderMask(
+                    blendMode: BlendMode.srcIn,
+                    shaderCallback: (_) => const LinearGradient(colors: [Colors.white, Color(0xFFF0F0F0)]).createShader(const Rect.fromLTWH(0, 0, 180, 30)),
+                    child: Text(
+                      'MARKET',
+                      style: TextStyle(
+                        fontFamily: 'Ubuntu',
+                        fontWeight: FontWeight.w900,
+                        fontSize: 27,
+                        letterSpacing: 6.5,
+                        height: 1.0,
+                        color: Colors.white,
+                        shadows: [Shadow(color: Colors.black.withValues(alpha: 0.3), offset: const Offset(0, 2), blurRadius: 6)],
+                      ),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
         Padding(
           padding: const EdgeInsets.only(top: Dimensions.paddingSizeSmall),
-          child: Text(AppConstants.slogan,style: textRegular.copyWith(fontSize: Dimensions.fontSizeDefault, color: Colors.white))
+          child: Text(AppConstants.slogan,style: textRegular.copyWith(fontSize: Dimensions.fontSizeDefault, color: Colors.white.withValues(alpha: 0.9)))
         )
       ]),
     );

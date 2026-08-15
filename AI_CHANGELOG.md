@@ -7,6 +7,13 @@ Always append your completed tasks here in chronological order at the top. Forma
 `### [YYYY-MM-DD HH:MM UTC] <Feature / Fix Title> [<Component Scope>]`
 Include the specific app/component modified and bullet points detailing the exact technical changes.
 
+### [2026-08-15 19:03 UTC] Unify & Enlarge Victorious MARKET Brand Wordmark on Splash & Home Screens [User App]
+* **Component:** Flutter Customer App (`User app/lib/features/splash/screens/splash_screen.dart`, `User app/lib/features/home/screens/aster_theme_home_screen.dart`, `User app/lib/features/home/screens/home_screens.dart`, `User app/lib/features/home/screens/fashion_theme_home_screen.dart`)
+* **Action:** Unified the Victorious MARKET signature brand wordmark across the splash screen and all 3 theme home screens (Default, Aster, Fashion) with identical two-tone gold-gradient ("Victorious") and white ("MARKET") typography, increasing font sizes for enhanced visual hierarchy and brand prominence.
+* **Changes Made:**
+  - **Splash Screen (`splash_screen.dart`)**: Rendered the signature two-tone gold gradient and white wordmark with Ubuntu font weights and depth shadows.
+  - **Home Screen Headers (`aster_theme_home_screen.dart`, `home_screens.dart`, `fashion_theme_home_screen.dart`)**: Enlarged header wordmark ("Victorious" font size 23, "MARKET" font size 20, letterSpacing 5.0) identically across all 3 theme home headers per multi-theme guidelines.
+
 ### [2026-08-15 18:56 UTC] Fix Customer App Voice Note & Audio Attachment Playback [User App]
 * **Component:** Flutter Customer App (`User app/lib/features/chat/controllers/chat_controller.dart`, `User app/lib/features/chat/widgets/message_bubble_widget.dart`)
 * **Action:** Fixed the critical voice note playback bug in the Customer App by identifying audio attachments (`.m4a`, `.mp3`, `.wav`, `.aac`, `.ogg`, `type: 'audio'`) and routing them to `AudioPlayerWidget` with their full server storage URL rather than erroneously passing raw message text.
