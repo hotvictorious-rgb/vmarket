@@ -101,10 +101,10 @@ class ChatController extends ChangeNotifier {
       notifyListeners();
     }
 
-    if(offset == 1){
-      if(offset == 1 && userType == 0){
+    if(offset == 1 && reload){
+      if(userType == 0){
         deliverymanChatModel = null;
-      }else if (offset == 1 && userType == 1) {
+      }else if (userType == 1) {
         adminChatModel = null;
       }
       if(userType == null){

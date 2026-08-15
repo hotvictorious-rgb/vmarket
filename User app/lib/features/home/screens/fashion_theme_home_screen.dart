@@ -72,45 +72,30 @@ class FashionThemeHomePage extends StatefulWidget {
 
     splashController.initConfig(context, null, null);
 
-    // Primary Visual Fold
-    await Future.wait([
-      categoryController.getCategoryList(reload).catchError((e) => debugPrint('Error loading categories: $e')),
-      bannerController.getBannerList().catchError((e) => debugPrint('Error loading banners: $e')),
-      productController.getLatestProductList(1, isUpdate: reload).catchError((e) => debugPrint('Error loading latest products: $e')),
-      productController.getFeaturedProductModel(1, isUpdate: reload).catchError((e) => debugPrint('Error loading featured products: $e')),
-    ]);
+    // [AI] Fire non-blocking asynchronous loads for instant rendering
+    categoryController.getCategoryList(reload);
+    bannerController.getBannerList();
+    productController.getLatestProductList(1, isUpdate: reload);
+    productController.getFeaturedProductModel(1, isUpdate: reload);
+    productController.getHomeCategoryProductList(reload);
+    shopController.getTopSellerList(offset: 1, isUpdate: reload);
+    brandController.getBrandList(offset: 1, isUpdate: reload);
+    featuredDealController.getFeaturedDealList();
+    productController.getRecommendedProduct();
+    productController.getMostDemandedProduct();
+    productController.getMostSearchingProduct(1, isUpdate: reload);
+    productController.getClearanceAllProductList(1, isUpdate: reload);
+    shopController.getMoreStore();
 
-    // Secondary Visual Fold
-    await Future.delayed(const Duration(milliseconds: 100));
-    await Future.wait([
-      productController.getHomeCategoryProductList(reload).catchError((e) => debugPrint('Error: $e')),
-      shopController.getTopSellerList(offset: 1, isUpdate: reload).catchError((e) => debugPrint('Error: $e')),
-      brandController.getBrandList(offset: 1, isUpdate: reload).catchError((e) => debugPrint('Error: $e')),
-      featuredDealController.getFeaturedDealList().catchError((e) => debugPrint('Error: $e')),
-      productController.getRecommendedProduct().catchError((e) => debugPrint('Error: $e')),
-      productController.getMostDemandedProduct().catchError((e) => debugPrint('Error: $e')),
-      productController.getMostSearchingProduct(1, isUpdate: reload).catchError((e) => debugPrint('Error: $e')),
-      productController.getClearanceAllProductList(1, isUpdate: reload).catchError((e) => debugPrint('Error: $e')),
-      shopController.getMoreStore().catchError((e) => debugPrint('Error: $e')),
-    ]);
-
-    // Background Utilities
-    await Future.delayed(const Duration(milliseconds: 100));
-    try {
-      if (!context.mounted) return;
-      await cartController.getCartData(context);
-      if (notificationController.notificationModel == null || reload) {
-        await notificationController.getNotificationList(1);
+    cartController.getCartData(context);
+    if (notificationController.notificationModel == null || reload) {
+      notificationController.getNotificationList(1);
+    }
+    if (Provider.of<AuthController>(context, listen: false).isLoggedIn()) {
+      if (profileController.userInfoModel == null || reload) {
+        profileController.getUserInfo(context);
       }
-      if (!context.mounted) return;
-      if (Provider.of<AuthController>(context, listen: false).isLoggedIn()) {
-        if (profileController.userInfoModel == null) {
-          await profileController.getUserInfo(context);
-        }
-        await sellerProductController.getShopAgainFromRecentStore();
-      }
-    } catch (e) {
-      debugPrint('Fashion background error: $e');
+      sellerProductController.getShopAgainFromRecentStore();
     }
   }
 

@@ -27,12 +27,17 @@ class InboxScreen extends StatefulWidget {
   State<InboxScreen> createState() => _InboxScreenState();
 }
 
-class _InboxScreenState extends State<InboxScreen> {
+// [AI] Add AutomaticKeepAliveClientMixin to keep InboxScreen state alive across tab switches
+class _InboxScreenState extends State<InboxScreen> with AutomaticKeepAliveClientMixin {
   TextEditingController searchController = TextEditingController();
   late bool isGuestMode;
 
   @override
+  bool get wantKeepAlive => true;
+
+  @override
   void initState() {
+    super.initState();
     final ChatController chatController = Provider.of<ChatController>(context, listen: false);
 
     chatController.setUserTypeIndex(context, 0, isUpdate: false);
@@ -50,11 +55,11 @@ class _InboxScreenState extends State<InboxScreen> {
         Provider.of<ProfileController>(context, listen: false).getUserInfo(context);
       }
     }
-    super.initState();
   }
 
   @override
   Widget build(BuildContext context) {
+    super.build(context);
     final Size size = MediaQuery.of(context).size;
 
     return Scaffold(

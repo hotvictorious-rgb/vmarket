@@ -101,9 +101,11 @@ class DashBoardScreenState extends State<DashBoardScreen> {
         return;
       },
       child: Scaffold(
-        key: _scaffoldKey,
-
-        body: PageStorage(bucket: bucket, child: _screens[_pageIndex].screen),
+        // [AI] Use IndexedStack to preserve bottom navigation tabs in memory for instant tab switching
+        body: IndexedStack(
+          index: _pageIndex,
+          children: _screens.map((screen) => screen.screen).toList(),
+        ),
         bottomNavigationBar: Container(height: 68,
           decoration: BoxDecoration(borderRadius: const BorderRadius.vertical(
               top: Radius.circular(Dimensions.paddingSizeLarge)),

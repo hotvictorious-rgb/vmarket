@@ -66,42 +66,31 @@ class HomePage extends StatefulWidget {
     final cartController = Provider.of<CartController>(context, listen: false);
     final profileController = Provider.of<ProfileController>(context, listen: false);
 
-    // Primary UI Fold: Load critical visual components concurrently
-    await Future.wait([
-      categoryController.getCategoryList(reload).catchError((e) => debugPrint('Error loading categories: $e')),
-      bannerController.getBannerList().catchError((e) => debugPrint('Error loading banners: $e')),
-      productController.getLatestProductList(1, isUpdate: reload).catchError((e) => debugPrint('Error loading latest products: $e')),
-      productController.getFeaturedProductModel(1, isUpdate: reload).catchError((e) => debugPrint('Error loading featured products: $e')),
-    ]);
+    final splashController = Provider.of<SplashController>(context, listen: false);
 
-    // Secondary UI Fold: Staggered background load
-    await Future.delayed(const Duration(milliseconds: 100));
-    await Future.wait([
-      productController.getSelectedProductModel(1, isUpdate: reload).catchError((e) => debugPrint('Error loading filterable products: $e')),
-      productController.getHomeCategoryProductList(reload).catchError((e) => debugPrint('Error loading home categories: $e')),
-      shopController.getTopSellerList(offset: 1, isUpdate: reload).catchError((e) => debugPrint('Error loading top sellers: $e')),
-      brandController.getBrandList(offset: 1, isUpdate: reload).catchError((e) => debugPrint('Error loading brands: $e')),
-      featuredDealController.getFeaturedDealList().catchError((e) => debugPrint('Error loading featured deals: $e')),
-      productController.getRecommendedProduct().catchError((e) => debugPrint('Error loading recommended products: $e')),
-      productController.getClearanceAllProductList(1, isUpdate: reload).catchError((e) => debugPrint('Error loading clearance products: $e')),
-      productController.loadRecentlyViewedProducts().catchError((e) => debugPrint('Error loading recently viewed: $e')),
-    ]);
+    splashController.initConfig(context, null, null);
 
-    // Background Utilities & User Data
-    await Future.delayed(const Duration(milliseconds: 100));
-    try {
-      if (!context.mounted) return;
-      await cartController.getCartData(context);
-      await addressController.getAddressList();
-      if (notificationController.notificationModel == null || reload) {
-        await notificationController.getNotificationList(1);
-      }
-      if (!context.mounted) return;
-      if (Provider.of<AuthController>(context, listen: false).isLoggedIn() && profileController.userInfoModel == null) {
-        await profileController.getUserInfo(context);
-      }
-    } catch (e) {
-      debugPrint('Background utility load error: $e');
+    // [AI] Fire non-blocking asynchronous loads so widgets render instantly without boot lag
+    categoryController.getCategoryList(reload);
+    bannerController.getBannerList();
+    productController.getLatestProductList(1, isUpdate: reload);
+    productController.getFeaturedProductModel(1, isUpdate: reload);
+    productController.getSelectedProductModel(1, isUpdate: reload);
+    productController.getHomeCategoryProductList(reload);
+    shopController.getTopSellerList(offset: 1, isUpdate: reload);
+    brandController.getBrandList(offset: 1, isUpdate: reload);
+    featuredDealController.getFeaturedDealList();
+    productController.getRecommendedProduct();
+    productController.getClearanceAllProductList(1, isUpdate: reload);
+    productController.loadRecentlyViewedProducts();
+
+    cartController.getCartData(context);
+    addressController.getAddressList();
+    if (notificationController.notificationModel == null || reload) {
+      notificationController.getNotificationList(1);
+    }
+    if (Provider.of<AuthController>(context, listen: false).isLoggedIn() && (profileController.userInfoModel == null || reload)) {
+      profileController.getUserInfo(context);
     }
   }
 }
