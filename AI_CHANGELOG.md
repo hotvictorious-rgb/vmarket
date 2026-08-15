@@ -7,6 +7,14 @@ Always append your completed tasks here in chronological order at the top. Forma
 `### [YYYY-MM-DD HH:MM UTC] <Feature / Fix Title> [<Component Scope>]`
 Include the specific app/component modified and bullet points detailing the exact technical changes.
 
+### [2026-08-15 20:47 UTC] Fix Dart Compilation Syntax and Missing Imports Across Flutter Apps [User, Vendor, Delivery Man]
+* **Component:** Flutter Customer App (`User app/.../dashboard_screen.dart`), Flutter Vendor App (`Vendor app/.../message_bubble_widget.dart`), Flutter Delivery Rider App (`Delivery Man App/.../message_bubble_widget.dart`)
+* **Action:** Fixed CI/CD Android build release compilation failures by removing invalid `final` keyword from local `isAudio` function declarations in Vendor and Delivery Man apps, and adding missing `OrderController` import in User app.
+* **Changes Made:**
+  - **User App (`dashboard_screen.dart`)**: Added `import '.../order/controllers/order_controller.dart'` for tab-switch re-sync.
+  - **Vendor App (`message_bubble_widget.dart`)**: Corrected local function declaration `bool isAudio(Attachment a)` (removed invalid `final`).
+  - **Delivery Man App (`message_bubble_widget.dart`)**: Corrected local function declaration `bool isAudio(Attachment a)` (removed invalid `final`) and excluded audio from image grid.
+
 ### [2026-08-15 20:06 UTC] Revert Default Theme to Original Default HomePage [Backend & User App]
 * **Component:** Laravel Web Backend (`backend/vmarket-web/app/Utils/theme-helpers.php`, `backend/vmarket-web/app/Http/Controllers/Web/HomeController.php`), Flutter Customer App (`User app/lib/features/dashboard/screens/dashboard_screen.dart`)
 * **Action:** Fully reverted default theme resolution back to the original stock Default theme across the entire ecosystem (both Laravel backend and Flutter mobile customer app), ensuring 100% stability with the live server.

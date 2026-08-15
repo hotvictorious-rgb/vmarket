@@ -20,6 +20,7 @@ import 'package:flutter_sixvalley_ecommerce/features/home/screens/aster_theme_ho
 import 'package:flutter_sixvalley_ecommerce/features/home/screens/fashion_theme_home_screen.dart';
 import 'package:flutter_sixvalley_ecommerce/features/home/screens/home_screens.dart';
 import 'package:flutter_sixvalley_ecommerce/features/more/screens/more_screen_view.dart';
+import 'package:flutter_sixvalley_ecommerce/features/order/controllers/order_controller.dart';
 import 'package:flutter_sixvalley_ecommerce/features/order/screens/order_screen.dart';
 import 'package:provider/provider.dart';
 
