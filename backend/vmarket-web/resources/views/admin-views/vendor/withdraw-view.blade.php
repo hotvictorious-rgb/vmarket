@@ -223,8 +223,4 @@
         // initialize on load
         toggleProofField(document.getElementById('inputGroupSelect02').value);
     </script>
-@endpush^ < s c r i p t ^ > 
- 
- ^ < / s c r i p t ^ > 
- 
- 
+@endpush

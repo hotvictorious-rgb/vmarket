@@ -7,6 +7,12 @@ Always append your completed tasks here in chronological order at the top. Forma
 `### [YYYY-MM-DD HH:MM UTC] <Feature / Fix Title> [<Component Scope>]`
 Include the specific app/component modified and bullet points detailing the exact technical changes.
 
+### [2026-08-15 12:55 UTC] Clean Corrupted Trailing Script Bytes in Admin Withdraw View [Laravel Backend]
+* **Component:** Blade Views (`backend/vmarket-web/resources/views/admin-views/vendor/withdraw-view.blade.php`)
+* **Action:** Stripped corrupted trailing NUL-prefixed script bytes after `@endpush`, restoring clean file termination and eliminating diff noise against live.
+* **Changes Made:**
+  - **`withdraw-view.blade.php`**: Cleaned trailing corrupted control characters, aligning repository copy with verified clean production live file.
+
 ### [2026-08-15 12:35 UTC] Harden Numeric Parsing and Null-Safety in Customer & Vendor Apps (Bugs A, B, C) [User App, Vendor App, Laravel Backend]
 * **Component:** Flutter Models & Backend API (`User app`, `Vendor app`, `backend/vmarket-web/app/Http/Controllers/RestAPI/v3/seller/ProductController.php`)
 * **Action:** Resolved runtime exceptions caused by unsafe `.toDouble()` and `int.parse()` calls on nullable/string fields in order details and product models, and defaulted limit/offset in seller product endpoints.
