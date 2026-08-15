@@ -806,6 +806,9 @@ class DeliveryManController extends Controller
         $delivery_man->app_language = $request->current_language;
         $delivery_man->save();
 
+        return response()->json(['message' => 'Successfully change'], 200);
+    }
+
     private function _set_paystack_config()
     {
         $config = \Illuminate\Support\Facades\DB::table('addon_settings')->where('key_name', 'paystack')
