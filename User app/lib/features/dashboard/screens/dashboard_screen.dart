@@ -63,13 +63,13 @@ class DashBoardScreenState extends State<DashBoardScreen> {
       _pageIndex = widget.pageIndex!;
     }
 
-    // [AI] Load Aster theme data by default, supporting dynamic themes
+    // [AI] Load original Default theme by default, fully respecting dynamic backend themes
     if(splashController.configModel?.activeTheme == "theme_fashion") {
       FashionThemeHomePage.loadData(false);
-    } else if(splashController.configModel?.activeTheme == "default") {
-      HomePage.loadData(false);
-    } else {
+    } else if(splashController.configModel?.activeTheme == "theme_aster") {
       AsterThemeHomeScreen.loadData(false);
+    } else {
+      HomePage.loadData(false);
     }
 
       _screens = [
@@ -78,9 +78,9 @@ class DashBoardScreenState extends State<DashBoardScreen> {
           icon: Images.homeImage,
           screen: (splashController.configModel?.activeTheme == "theme_fashion")
             ? const FashionThemeHomePage()
-            : (splashController.configModel?.activeTheme == "default")
-            ? const HomePage()
-            : const AsterThemeHomeScreen(),
+            : (splashController.configModel?.activeTheme == "theme_aster")
+            ? const AsterThemeHomeScreen()
+            : const HomePage(),
         ),
 
         NavigationModel(name: 'inbox', icon: Images.messageImage, screen: InboxScreen(fromDashboard: true)),
