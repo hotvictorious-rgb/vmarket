@@ -7,6 +7,13 @@ Always append your completed tasks here in chronological order at the top. Forma
 `### [YYYY-MM-DD HH:MM UTC] <Feature / Fix Title> [<Component Scope>]`
 Include the specific app/component modified and bullet points detailing the exact technical changes.
 
+### [2026-08-15 21:03 UTC] Fix Customer App CI/CD Release Build Compilation [User App]
+* **Component:** Flutter Customer App (`User app/.../product_details_model.dart`, `User app/.../message_bubble_widget.dart`)
+* **Action:** Added missing `dart:convert` import for `jsonDecode` in `ProductDetailsModel` and updated `AudioPlayerWidget` to consume attachment path directly without invalid `BaseUrls.chatImageUrl` getter reference.
+* **Changes Made:**
+  - **Product Details Model (`product_details_model.dart`)**: Added `import 'dart:convert';` for attribute JSON deserialization.
+  - **Message Bubble Widget (`message_bubble_widget.dart`)**: Sourced audio URL from `a.path` / `message.message` directly.
+
 ### [2026-08-15 20:47 UTC] Fix Dart Compilation Syntax and Missing Imports Across Flutter Apps [User, Vendor, Delivery Man]
 * **Component:** Flutter Customer App (`User app/.../dashboard_screen.dart`), Flutter Vendor App (`Vendor app/.../message_bubble_widget.dart`), Flutter Delivery Rider App (`Delivery Man App/.../message_bubble_widget.dart`)
 * **Action:** Fixed CI/CD Android build release compilation failures by removing invalid `final` keyword from local `isAudio` function declarations in Vendor and Delivery Man apps, and adding missing `OrderController` import in User app.

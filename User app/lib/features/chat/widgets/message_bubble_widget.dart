@@ -86,9 +86,7 @@ class MessageBubbleWidget extends StatelessWidget {
                   right: (!isMe && !isLTR) ? 40 : 0,
                 ),
                 child: AudioPlayerWidget(
-                  url: (a.path?.startsWith('http') ?? false)
-                      ? a.path!
-                      : '${Provider.of<SplashController>(context, listen: false).baseUrls?.chatImageUrl}/${a.path}',
+                  url: a.path ?? '',
                   isMe: isMe,
                 ),
               )),
@@ -207,9 +205,7 @@ class _MessageText extends StatelessWidget {
         ),
         child: (message.message != null && chatProvider.isAudioExtension(message.message!)) 
         ? AudioPlayerWidget(
-            url: message.message!.startsWith('http')
-                ? message.message!
-                : '${Provider.of<SplashController>(context, listen: false).baseUrls?.chatImageUrl}/${message.message}',
+            url: message.message ?? '',
             isMe: isMe,
           ) 
         : Text(
