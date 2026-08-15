@@ -1,4 +1,5 @@
 import 'package:file_picker/file_picker.dart';
+import 'package:dio/dio.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_downloader/flutter_downloader.dart';
@@ -589,7 +590,11 @@ class ChatController extends ChangeNotifier {
 
 
   Future<ApiResponse> seenMessage(BuildContext context, int? customerId, int? deliveryId) async {
-    ApiResponse apiResponse = await chatServiceInterface.seenMessage(_userTypeIndex == 0 ? customerId!: deliveryId!, _userTypeIndex == 0 ? 'customer' : 'delivery-man');
+    if (_userTypeIndex == 1) {
+      // Admin chat seen endpoint is not supported on backend, return mock success
+      return ApiResponse.withSuccess(Response(requestOptions: RequestOptions(path: ''), statusCode: 200));
+    }
+    ApiResponse apiResponse = await chatServiceInterface.seenMessage(deliveryId!, 'delivery-man');
     if (apiResponse.response != null && apiResponse.response!.statusCode == 200) {} else {
       ApiChecker.checkApi(apiResponse);
     }

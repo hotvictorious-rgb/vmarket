@@ -34,8 +34,8 @@ class _ChatSearchWidgetState extends State<ChatSearchWidget> {
                       child: ListView(
                         shrinkWrap: true,
                         scrollDirection: Axis.horizontal, children: [
-                          ChatTypeButtonWidget(text: getTranslated('seller', context), index: 0),
-                        ChatTypeButtonWidget(text: getTranslated('delivery-man', context), index: 1)]))),
+                          ChatTypeButtonWidget(text: getTranslated('delivery-man', context), index: 0),
+                        ChatTypeButtonWidget(text: getTranslated('admin', context) ?? 'Admin', index: 1)]))),
 
                     InboxSearchWidget(width: MediaQuery.of(context).size.width,
                       textController: _textEditingController,

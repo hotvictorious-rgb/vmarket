@@ -19,16 +19,17 @@ class ChatCardWidget extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
 
-    int? id = Provider.of<ChatController>(context, listen: false).userTypeIndex == 0 ?
-    chat!.customer?.id?? -1 : chat!.deliveryManId;
+    final int userTypeIndex = Provider.of<ChatController>(context, listen: false).userTypeIndex;
 
-    String? image = Provider.of<ChatController>(context, listen: false).userTypeIndex == 0 ?
-    chat!.customer != null? chat?.customer?.imageFullUrl?.path: '' : chat!.deliveryMan?.imageFullUrl?.path;
+    int? id = userTypeIndex == 0 ?
+    (chat!.deliveryManId ?? chat!.deliveryMan?.id ?? -1) : 0;
 
-    String name = Provider.of<ChatController>(context, listen: false).userTypeIndex == 0 ?
-    chat!.customer != null?
-    '${chat!.customer?.fName} ${chat!.customer?.lName}' :'Deleted' :
-    '${chat!.deliveryMan?.fName??'Deliveryman'} ${chat!.deliveryMan?.lName??'Deleted'}';
+    String? image = userTypeIndex == 0 ?
+    chat!.deliveryMan?.imageFullUrl?.path : '';
+
+    String name = userTypeIndex == 0 ?
+    '${chat!.deliveryMan?.fName ?? 'Deliveryman'} ${chat!.deliveryMan?.lName ?? ''}' :
+    (getTranslated('admin', context) ?? 'Admin');
 
 
     return Padding(

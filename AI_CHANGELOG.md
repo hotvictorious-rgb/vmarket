@@ -7,6 +7,14 @@ Always append your completed tasks here in chronological order at the top. Forma
 `### [YYYY-MM-DD HH:MM UTC] <Feature / Fix Title> [<Component Scope>]`
 Include the specific app/component modified and bullet points detailing the exact technical changes.
 
+### [2026-08-15 08:35 UTC] Align Mobile Apps & REST API Chat Contracts [User App, Vendor App, API Contract]
+* **Component:** Mobile Apps & API Docs (`API_CONTRACT.md`, `User app`, `Vendor app`)
+* **Action:** Resolved route drift, UI mismatches, and incorrect indices in Customer/Vendor chat modules.
+* **Changes Made:**
+  - **`API_CONTRACT.md`**: Updated stale documentation from `/api/v1/seller/` routes to `/api/v3/seller/` to match backend v3 structure. Fixed path and method definitions for seller bank update (`PUT /api/v3/seller/seller-update`) and withdraw requests (`POST /api/v3/seller/balance-withdraw`).
+  - **`User app`**: Fixed search tab mismatch in `chat_search_widget.dart` by relabeling the obsolete "seller" tab to "delivery-man" (index 0) and "admin" (index 1) to match the actual conversation tabs.
+  - **`Vendor app`**: Aligned indices in `chat_card_widget.dart` and `chat_controller.dart` to map index 0 strictly to `delivery-man` and index 1 strictly to `admin`. Fixed name/image displays on chat items and patched the `seenMessage` controller method to skip the API call for Admin chat (preventing 403 route errors).
+
 ### [2026-08-15 07:30 UTC] Configure Gitattributes for Line-Ending Normalization [AI Governance]
 * **Component:** Git Configuration (`.gitattributes`, `AI_CHANGELOG.md`)
 * **Action:** Standardized file paths and added line-ending rules to prevent CRLF vs LF diff noise.

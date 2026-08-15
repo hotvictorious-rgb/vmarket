@@ -19,7 +19,7 @@ All requests to `/api/v1/...` must include:
 ### A. Nigerian Banking & Resolution
 
 #### 1. Fetch Nigerian Banks
-* **Route:** `GET /api/v1/seller/banks`
+* **Route:** `GET /api/v3/seller/banks`
 * **Response:**
 ```json
 {
@@ -33,7 +33,7 @@ All requests to `/api/v1/...` must include:
 ```
 
 #### 2. Resolve NUBAN Account (Paystack)
-* **Route:** `POST /api/v1/seller/resolve-account`
+* **Route:** `POST /api/v3/seller/resolve-account`
 * **Request:** `{ "account_number": "0123456789", "bank_code": "044" }`
 * **Response:**
 ```json
@@ -46,12 +46,12 @@ All requests to `/api/v1/...` must include:
 ```
 
 #### 3. Send Bank Change OTP
-* **Route:** `POST /api/v1/seller/bank-info/send-otp`
+* **Route:** `POST /api/v3/seller/bank-info/send-otp`
 * **Request:** `{ "bank_name": "Access Bank", "account_no": "0123456789", "holder_name": "JOHN VICTOR DOE" }`
 * **Response:** `{ "status": true, "message": "OTP sent to your email." }`
 
 #### 4. Update Bank Info (with 48-hr Cooldown)
-* **Route:** `POST /api/v1/seller/bank-info/update`
+* **Route:** `PUT /api/v3/seller/seller-update`
 * **Request (Multipart):**
   - `bank_name`: String
   - `branch`: String
@@ -65,7 +65,7 @@ All requests to `/api/v1/...` must include:
 ### B. Vendor Identity Verification (KYC)
 
 #### 1. Submit KYC Documents
-* **Route:** `POST /api/v1/seller/kyc/submit`
+* **Route:** `POST /api/v3/seller/kyc/submit`
 * **Request (Multipart):**
   - `nin`: String (11 digits, optional)
   - `nin_document`: File (Image/PDF, optional)
@@ -85,8 +85,8 @@ All requests to `/api/v1/...` must include:
 ### C. Withdrawal & Payouts
 
 #### 1. Request Payout (Vendor / Delivery Man)
-* **Route:** `POST /api/v1/seller/withdraw/request`
-* **Request:** `{ "amount": 50000 }`
+* **Route:** `POST /api/v3/seller/balance-withdraw`
+* **Request:** `{ "amount": 50000, "withdraw_method_id": 1, "field_1": "value" }`
 * **Response:** `{ "status": true, "message": "Withdrawal request submitted." }`
 
 #### 2. Admin Approve Payout (Mandatory Screenshot)
