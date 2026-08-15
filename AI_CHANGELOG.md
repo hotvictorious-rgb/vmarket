@@ -7,6 +7,13 @@ Always append your completed tasks here in chronological order at the top. Forma
 `### [YYYY-MM-DD HH:MM UTC] <Feature / Fix Title> [<Component Scope>]`
 Include the specific app/component modified and bullet points detailing the exact technical changes.
 
+### [2026-08-15 19:57 UTC] Exclude Audio Attachments from Media Grid to Prevent Duplicate Rendering [User App & Vendor App]
+* **Component:** Flutter Customer App (`User app/.../message_bubble_widget.dart`), Flutter Vendor App (`Vendor app/.../message_bubble_widget.dart`)
+* **Action:** Excluded audio attachments from the image/media grid filter (`!isAudioExtension()`) across both Customer and Vendor message bubble widgets, completely preventing double-rendering between the image gallery and the audio player widget.
+* **Changes Made:**
+  - **Customer App (`message_bubble_widget.dart`)**: Added `!chatProvider.isAudioExtension(a.path)` to the `images` filter list.
+  - **Vendor App (`message_bubble_widget.dart`)**: Added `!isAudio(a)` to the `images` filter list and unified all audio extensions.
+
 ### [2026-08-15 19:26 UTC] Multi-Platform Audio Attachment Tagging and Tab Re-sync [Backend, User App, Delivery App]
 * **Component:** Laravel Web Backend (`backend/vmarket-web/app/Http/Controllers/RestAPI/v1/ChatController.php`, `.../v2/delivery_man/ChatController.php`, `.../v3/seller/ChatController.php`), Flutter Delivery Rider App (`Delivery Man App/.../message_bubble_widget.dart`), Flutter Customer App (`User app/.../dashboard_screen.dart`)
 * **Action:** Classified all audio attachments explicitly as `type: 'audio'` across v1 (customer), v2 (delivery man), and v3 (seller) backend endpoints. Updated Delivery Man App to render all audio formats (`m4a`, `mp3`, `wav`, `aac`, `ogg`), and added background re-sync on tab switch for Cart and Orders in the Customer App.

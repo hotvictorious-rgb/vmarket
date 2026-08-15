@@ -34,7 +34,7 @@ class MessageBubbleWidget extends StatelessWidget {
         final bool isMe = message.sentByCustomer!;
         final bool isLTR = Provider.of<LocalizationController>(context, listen: false).isLtr;
 
-        final List<Attachment> images = message.attachment?.where((a) => a.type == 'media').toList() ?? [];
+        final List<Attachment> images = message.attachment?.where((a) => a.type == 'media' && !chatProvider.isAudioExtension(a.path ?? '')).toList() ?? [];
         final List<Attachment> files = message.attachment?.where((a) => a.type == 'file' && !chatProvider.isAudioExtension(a.path ?? '')).toList() ?? [];
         final List<Attachment> audioAttachments = message.attachment?.where((a) => a.type == 'audio' || chatProvider.isAudioExtension(a.path ?? '')).toList() ?? [];
 
