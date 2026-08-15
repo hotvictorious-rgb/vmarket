@@ -69,25 +69,22 @@ class DeliveryManReview {
         this.customer
       });
 
+  // [AI] Safely deserialize DeliveryManReview in Vendor App with type safety
   DeliveryManReview.fromJson(Map<String, dynamic> json) {
-    id = json['id'];
-    productId = json['product_id'];
-    customerId = json['customer_id'];
-    deliveryManId = json['delivery_man_id'];
-    orderId = json['order_id'];
+    id = int.tryParse(json['id']?.toString() ?? '');
+    productId = int.tryParse(json['product_id']?.toString() ?? '');
+    customerId = int.tryParse(json['customer_id']?.toString() ?? '');
+    deliveryManId = int.tryParse(json['delivery_man_id']?.toString() ?? '');
+    orderId = int.tryParse(json['order_id']?.toString() ?? '');
     comment = json['comment'];
     if(json['rating'] != null){
-      try{
-        rating = json['rating'].toDouble();
-      }catch(e){
-        rating = double.parse(json['rating'].toString());
-      }
+      rating = double.tryParse(json['rating'].toString()) ?? 0.0;
     }else{
       rating = 0;
     }
 
-    status = json['status'];
-    isSaved = json['is_saved'] ? 1 : 0;
+    status = int.tryParse(json['status']?.toString() ?? '');
+    isSaved = (json['is_saved'] == true || json['is_saved'] == 1 || json['is_saved'] == '1') ? 1 : 0;
     createdAt = json['created_at'];
     updatedAt = json['updated_at'];
     customer = json['customer'] != null
