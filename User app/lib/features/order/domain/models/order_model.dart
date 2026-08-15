@@ -146,7 +146,7 @@ class Orders {
     id = json['id'];
     customerId = json['customer_id'];
     if(json['temporary_close'] != null){
-      isGuest = int.parse(json['temporary_close'].toString());
+      isGuest = int.tryParse(json['temporary_close'].toString()) ?? 0;
     }else{
       isGuest = 0;
     }
@@ -204,7 +204,7 @@ class Orders {
     deliveryServiceName = json['delivery_service_name'];
     thirdPartyDeliveryTrackingId = json['third_party_delivery_tracking_id'];
     if(json['order_details_count'] != null){
-      orderDetailsCount = int.parse(json['order_details_count'].toString());
+      orderDetailsCount = int.tryParse(json['order_details_count'].toString()) ?? 0;
     }else{
       orderDetailsCount = 0;
     }

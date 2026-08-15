@@ -226,11 +226,7 @@ class Order {
   Order({this.isShippingFree, this.sellerIs, this.status, this.deliveryManReview, this.referAndEarnDiscount, this.editedStatus});
 
   Order.fromJson(Map<String, dynamic> json) {
-    try{
-      isShippingFree = int.parse(json['is_shipping_free'].toString());
-    }catch(e){
-      isShippingFree = json['is_shipping_free']?1:0;
-    }
+    isShippingFree = int.tryParse(json['is_shipping_free']?.toString() ?? '') ?? (json['is_shipping_free'] == true ? 1 : 0);
     sellerIs = json['seller_is'];
     status = json['order_status'];
     deliveryManReview = json['delivery_man_review'] != null

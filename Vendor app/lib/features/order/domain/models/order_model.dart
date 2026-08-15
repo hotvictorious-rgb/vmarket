@@ -239,19 +239,11 @@ class Order {
     paymentBy = json['payment_by'];
     paymentNote = json['payment_note'];
     if(json['order_amount'] != null){
-      try{
-        _orderAmount = json['order_amount'].toDouble();
-      }catch(e){
-        _orderAmount = double.parse(json['order_amount'].toString());
-      }
+      _orderAmount = double.tryParse(json['order_amount'].toString());
     }
 
     if(json['paid_amount'] != null){
-      try{
-        _paidAmount = json['paid_amount'].toDouble();
-      }catch(e){
-        _paidAmount = double.parse(json['paid_amount'].toString());
-      }
+      _paidAmount = double.tryParse(json['paid_amount'].toString());
     }
     if(json['shipping_cost'] != null){
       _shippingCost = double.tryParse('${json['shipping_cost']}') ?? 0.0;
@@ -301,11 +293,7 @@ class Order {
       _thirdPartyTrackingId = json['third_party_delivery_tracking_id'];
     }
     if(json['deliveryman_charge'] != null){
-      try{
-        _deliverymanCharge = json['deliveryman_charge'].toDouble();
-      }catch(e){
-        _deliverymanCharge = double.parse(json['deliveryman_charge'].toString());
-      }
+      _deliverymanCharge = double.tryParse(json['deliveryman_charge'].toString());
     }
 
     _expectedDeliveryDate = json['expected_delivery_date'];
@@ -315,15 +303,15 @@ class Order {
     verificationCode = json['verification_code'];
     pickupVerificationCode = json['pickup_verification_code'];
     if(json['total_product_price'] != null){
-      totalProductPrice = double.parse(json['total_product_price'].toString());
+      totalProductPrice = double.tryParse(json['total_product_price'].toString());
     }
 
     if(json['total_product_discount'] != null){
-      totalProductDiscount = double.parse(json['total_product_discount'].toString());
+      totalProductDiscount = double.tryParse(json['total_product_discount'].toString());
     }
 
     if(json['total_tax_amount'] != null){
-      totalTaxAmount = double.parse(json['total_tax_amount'].toString());
+      totalTaxAmount = double.tryParse(json['total_tax_amount'].toString());
     }
     if (json['order_details'] != null) {
       orderDetails = <OrderDetailsModel>[];
@@ -579,9 +567,9 @@ class Shipping {
     // _creatorId = json['creator_id'];
     _creatorType = json['creator_type'];
     _title = json['title'];
-    _cost = double.parse(json['cost'].toString());
+    _cost = double.tryParse(json['cost']?.toString() ?? '') ?? 0.0;
     _duration = json['duration'];
-    _status = json['status'] ? 1 : 0;
+    _status = json['status'] == true || json['status'] == 1 || json['status'] == '1' ? 1 : 0;
     _createdAt = json['created_at'];
     _updatedAt = json['updated_at'];
   }

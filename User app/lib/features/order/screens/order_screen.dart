@@ -138,9 +138,7 @@ class _OrderScreenState extends State<OrderScreen> {
                                                   offset!, orderController.selectedType);
                                             },
                                             totalSize: orderController.orderModel?.totalSize,
-                                            offset: orderController.orderModel?.offset != null
-                                                ? int.parse(orderController.orderModel!.offset!)
-                                                : 1,
+                                            offset: int.tryParse(orderController.orderModel?.offset?.toString() ?? '') ?? 1,
                                             itemView: ListView.builder(
                                               shrinkWrap: true,
                                               physics: const NeverScrollableScrollPhysics(),

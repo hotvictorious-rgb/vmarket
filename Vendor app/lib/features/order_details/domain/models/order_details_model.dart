@@ -529,7 +529,7 @@ class VerificationImages {
 
   VerificationImages.fromJson(Map<String, dynamic> json) {
     id = json['id'];
-    orderId = int.parse(json['order_id'].toString());
+    orderId = int.tryParse(json['order_id']?.toString() ?? '');
     image = json['image'];
     imageFullUrl = json['image_full_url'] != null
       ? ImageFullUrl.fromJson(json['image_full_url'])
@@ -751,20 +751,14 @@ class EditOrderPaymentHistoryModel {
       editBy: json['edit_by'],
       editedUserId: json['edited_user_id'],
       editedUserName: json['edited_user_name'],
-      orderAmount: json['order_amount'] != null
-          ? (json['order_amount'] as num).toDouble()
-          : null,
-      orderDueAmount: json['order_due_amount'] != null
-          ? (json['order_due_amount'] as num).toDouble()
-          : null,
+      orderAmount: double.tryParse(json['order_amount']?.toString() ?? ''),
+      orderDueAmount: double.tryParse(json['order_due_amount']?.toString() ?? ''),
       orderDuePaymentStatus: json['order_due_payment_status'],
       orderDuePaymentInfo: json['order_due_payment_info'] != null ? OfflinePaymentsEdit.fromJson(json['order_due_payment_info']) : null,
       orderDuePaymentMethod: json['order_due_payment_method'],
       orderDueTransactionRef: json['order_due_transaction_ref'],
       orderDuePaymentNote: json['order_due_payment_note'],
-      orderReturnAmount: json['order_return_amount'] != null
-          ? (json['order_return_amount'] as num).toDouble()
-          : null,
+      orderReturnAmount: double.tryParse(json['order_return_amount']?.toString() ?? ''),
       orderReturnPaymentStatus: json['order_return_payment_status'],
       orderReturnPaymentMethod: json['order_return_payment_method'],
       orderReturnPaymentInfo: json['order_return_payment_info'] != null ? OfflinePaymentsEdit.fromJson(json['order_return_payment_info']) : null,

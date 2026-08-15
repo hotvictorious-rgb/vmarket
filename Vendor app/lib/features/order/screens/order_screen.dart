@@ -127,7 +127,7 @@ class _OrderScreenState extends State<OrderScreen> {
                     reverse: false,
                     scrollController: scrollController,
                     totalSize: order.orderModel?.totalSize,
-                    offset: order.orderModel != null ? int.parse(order.orderModel!.offset.toString()) : null,
+                    offset: order.orderModel?.offset != null ? int.tryParse(order.orderModel!.offset.toString()) : null,
                     onPaginate: (int? offset) async {
                       await order.getOrderList( context,offset!,order.orderType, order.filterModel, reload: false);
                     },

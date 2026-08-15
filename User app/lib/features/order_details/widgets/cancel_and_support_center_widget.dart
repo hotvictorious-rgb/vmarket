@@ -74,7 +74,7 @@ class CancelAndSupportWidget extends StatelessWidget {
           padding: const EdgeInsets.symmetric(horizontal: Dimensions.paddingSizeSmall, vertical: Dimensions.paddingSizeSmall),
           child: Column(
             children: [
-              (orderModel != null && (orderModel!.customerId! == int.parse(Provider.of<ProfileController>(context, listen: false).userID)) &&
+              (orderModel != null && (orderModel!.customerId! == int.tryParse(Provider.of<ProfileController>(context, listen: false).userID ?? '')) &&
                   (orderModel!.orderStatus == 'pending') && (orderModel!.orderType != "POS")) ?
               CustomButton(textColor: Theme.of(context).colorScheme.error,
                 backgroundColor: Theme.of(context).colorScheme.error.withValues(alpha:0.15),
@@ -87,7 +87,7 @@ class CancelAndSupportWidget extends StatelessWidget {
                 },
               ) :
               (orderModel != null && Provider.of<AuthController>(context, listen: false).isLoggedIn() &&
-                  orderModel!.customerId! == int.parse(Provider.of<ProfileController>(context, listen: false).userID) &&
+                  orderModel!.customerId! == int.tryParse(Provider.of<ProfileController>(context, listen: false).userID ?? '') &&
                   orderModel!.orderStatus == 'delivered' && orderModel!.orderType != "POS") ?
               CustomButton(textColor:  Theme.of(context).colorScheme.secondaryContainer,
                   backgroundColor: Theme.of(context).primaryColor,
@@ -95,7 +95,7 @@ class CancelAndSupportWidget extends StatelessWidget {
                   onTap: () => Provider.of<ReOrderController>(context, listen: false).reorder(orderId: orderModel?.id.toString())):
 
               (Provider.of<AuthController>(context, listen: false).isLoggedIn() &&
-                  orderModel!.customerId! == int.parse(Provider.of<ProfileController>(context, listen: false).userID) &&
+                  orderModel!.customerId! == int.tryParse(Provider.of<ProfileController>(context, listen: false).userID ?? '') &&
                   orderModel!.orderType != "POS" && (orderModel!.orderStatus != 'canceled' &&
                   orderModel!.orderStatus != 'returned'  && orderModel!.orderStatus != 'fail_to_delivered' )) ?
 

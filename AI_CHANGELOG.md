@@ -7,6 +7,15 @@ Always append your completed tasks here in chronological order at the top. Forma
 `### [YYYY-MM-DD HH:MM UTC] <Feature / Fix Title> [<Component Scope>]`
 Include the specific app/component modified and bullet points detailing the exact technical changes.
 
+### [2026-08-15 14:35 UTC] Harden Nested Order Models, Verification Images, and Pagination Parsing [User App, Vendor App]
+* **Component:** Flutter Mobile Apps (`Vendor app/lib/features/order/domain/models/order_model.dart`, `Vendor app/lib/features/order_details/domain/models/order_details_model.dart`, `Vendor app/lib/features/order/screens/order_screen.dart`, `User app/lib/features/order/domain/models/order_model.dart`, `User app/lib/features/order_details/domain/models/order_details_model.dart`, `User app/lib/features/order/screens/order_screen.dart`, `User app/lib/features/order_details/widgets/cancel_and_support_center_widget.dart`)
+* **Action:** Fixed client-side runtime `FormatException` and unhandled parsing throws when tapping delivered/COD/edited orders by thoroughly converting all nested `Order.fromJson`, `Shipping.fromJson`, `VerificationImages.fromJson`, and `EditOrderPaymentHistoryModel` parses to safe `tryParse`.
+* **Changes Made:**
+  - **Vendor `Order.fromJson` & `Shipping.fromJson`**: Replaced unsafe `.toDouble()` / `double.parse(...)` with `double.tryParse(...)` on `_orderAmount`, `_paidAmount`, `_deliverymanCharge`, `totalProductPrice`, `totalProductDiscount`, `totalTaxAmount`, and `_cost`.
+  - **Vendor `VerificationImages.fromJson` & `EditOrderPaymentHistoryModel`**: Converted `orderId` to `int.tryParse(...)` and payment history amounts (`orderAmount`, `orderDueAmount`, `orderReturnAmount`) to `double.tryParse(...)`.
+  - **Customer `Orders.fromJson` & `Order.fromJson`**: Replaced `isGuest` (`temporary_close`), `orderDetailsCount`, and `isShippingFree` with safe `tryParse` + fallback logic.
+  - **Pagination & Widget Safety**: Replaced unsafe `int.parse(offset)` and `int.parse(userID)` across `order_screen.dart` and `cancel_and_support_center_widget.dart` in both apps with safe `int.tryParse`.
+
 ### [2026-08-15 14:10 UTC] Harden Order Cancellation, PII Tracking, and Delivery OTP Scoping (F1, F2, F3) [Laravel Backend]
 * **Component:** Laravel REST API (`backend/vmarket-web/routes/rest_api/v1/api.php`, `RestAPI/v1/OrderController.php`, `RestAPI/v2/delivery_man/DeliveryManController.php`)
 * **Action:** Fixed critical authorization gaps, IDOR vulnerabilities, and unauthenticated PII leakage in order cancellation, tracking, and delivery OTP verification endpoints.
