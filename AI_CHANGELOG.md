@@ -7,6 +7,12 @@ Always append your completed tasks here in chronological order at the top. Forma
 `### [YYYY-MM-DD HH:MM UTC] <Feature / Fix Title> [<Component Scope>]`
 Include the specific app/component modified and bullet points detailing the exact technical changes.
 
+### [2026-08-15 07:30 UTC] Configure Gitattributes for Line-Ending Normalization [AI Governance]
+* **Component:** Git Configuration (`.gitattributes`, `AI_CHANGELOG.md`)
+* **Action:** Standardized file paths and added line-ending rules to prevent CRLF vs LF diff noise.
+* **Changes Made:**
+  - **`.gitattributes`**: Renamed obsolete `backend/Admin and web new install V16.1/` export-ignore paths to `backend/vmarket-web/`. Added text rules (`eol=lf`) for PHP, JS, CSS, blade views, JSON, YAML, and Markdown files to enforce LF line endings globally across active environments.
+
 ### [2026-08-15 06:10 UTC] Fix Gitignore Over-Broad Rules to Unhide Active Vendor Panel [AI Governance, Laravel Backend]
 * **Component:** Git Governance (`.gitignore`, `AI_CHANGELOG.md`)
 * **Action:** Patched over-broad glob match in root `.gitignore` that was ignoring all custom/active Vendor directories.

@@ -1,4 +1,14 @@
-"backend/Admin and web new install V16.1/app/Providers/RouteServiceProvider.php" export-ignore
-"backend/Admin and web new install V16.1/create_linux_zip.py" export-ignore
-"backend/Admin and web new install V16.1/create_patch_zip.py" export-ignore
-"backend/Admin and web new install V16.1/optimize_existing_images.php" export-ignore
+# Renamed backend paths
+"backend/vmarket-web/app/Providers/RouteServiceProvider.php" export-ignore
+"backend/vmarket-web/create_linux_zip.py" export-ignore
+"backend/vmarket-web/create_patch_zip.py" export-ignore
+"backend/vmarket-web/optimize_existing_images.php" export-ignore
+
+# Line Ending Normalization (LF)
+*.php text eol=lf
+*.js text eol=lf
+*.css text eol=lf
+*.blade.php text eol=lf
+*.json text eol=lf
+*.yaml text eol=lf
+*.md text eol=lf
