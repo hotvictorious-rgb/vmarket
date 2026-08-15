@@ -7,6 +7,13 @@ Always append your completed tasks here in chronological order at the top. Forma
 `### [YYYY-MM-DD HH:MM UTC] <Feature / Fix Title> [<Component Scope>]`
 Include the specific app/component modified and bullet points detailing the exact technical changes.
 
+### [2026-08-15 18:20 UTC] Set Aster Theme as Permanent Default Across Customer App [User App]
+* **Component:** Flutter Customer App (`User app/lib/features/splash/domain/models/config_model.dart`, `User app/lib/features/dashboard/screens/dashboard_screen.dart`)
+* **Action:** Configured the Customer App to use `theme_aster` (Aster theme) as the permanent default active theme, ensuring that config updates or default server responses never unexpectedly reset or alter the user's active Aster theme interface.
+* **Changes Made:**
+  - **Config Model (`config_model.dart`)**: Defaulted `activeTheme` to `theme_aster` whenever the server response is null, empty, or default.
+  - **Dashboard Navigation (`dashboard_screen.dart`)**: Updated `_screens` and initial data loading to load and mount `AsterThemeHomeScreen` by default.
+
 ### [2026-08-15 17:36 UTC] Accelerate Product Details Screen Load Times [User App]
 * **Component:** Flutter Customer App (`User app/lib/features/product_details/screens/product_details_screen.dart`)
 * **Action:** Converted product details, reviews, related products, counts, and sharable link requests into fully concurrent, parallel network requests, eliminating artificial sequential delays (`Future.delayed`) and enabling immediate UI rendering.

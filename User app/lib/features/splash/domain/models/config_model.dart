@@ -285,9 +285,10 @@ class ConfigModel {
     }
     offlinePayment = json['offline_payment'] != null ? OfflinePayment.fromJson(json['offline_payment']) : null;
     paymentMethodImagePath = json['payment_method_image_path'];
-    refEarningStatus = json['ref_earning_status'].toString();
-    activeTheme = json['active_theme'];
-    //activeTheme = 'theme_lifestyle';
+    // [AI] Default to 'theme_aster' (Aster theme) so theme is preserved
+    activeTheme = (json['active_theme'] != null && json['active_theme'] != '' && json['active_theme'] != 'default')
+        ? json['active_theme']
+        : 'theme_aster';
     if (json['popular_tags'] != null) {
       popularTags = <PopularTags>[];
       json['popular_tags'].forEach((v) {
