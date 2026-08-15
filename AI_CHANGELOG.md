@@ -7,6 +7,14 @@ Always append your completed tasks here in chronological order at the top. Forma
 `### [YYYY-MM-DD HH:MM UTC] <Feature / Fix Title> [<Component Scope>]`
 Include the specific app/component modified and bullet points detailing the exact technical changes.
 
+### [2026-08-15 19:26 UTC] Multi-Platform Audio Attachment Tagging and Tab Re-sync [Backend, User App, Delivery App]
+* **Component:** Laravel Web Backend (`backend/vmarket-web/app/Http/Controllers/RestAPI/v1/ChatController.php`, `.../v2/delivery_man/ChatController.php`, `.../v3/seller/ChatController.php`), Flutter Delivery Rider App (`Delivery Man App/.../message_bubble_widget.dart`), Flutter Customer App (`User app/.../dashboard_screen.dart`)
+* **Action:** Classified all audio attachments explicitly as `type: 'audio'` across v1 (customer), v2 (delivery man), and v3 (seller) backend endpoints. Updated Delivery Man App to render all audio formats (`m4a`, `mp3`, `wav`, `aac`, `ogg`), and added background re-sync on tab switch for Cart and Orders in the Customer App.
+* **Changes Made:**
+  - **Backend Chat Controllers (`v1`, `v2`, `v3`)**: Updated `getAttachmentData()` to recognize audio extensions (`m4a`, `mp3`, `wav`, `aac`, `ogg`, `opus`, `wma`, `amr`) and return `type: 'audio'`.
+  - **Delivery Man App (`message_bubble_widget.dart`)**: Separated audio attachments from generic files and rendered `AudioPlayerWidget` for all audio files.
+  - **Customer App Dashboard (`dashboard_screen.dart`)**: Added lightweight background re-sync for Cart (`getCartData`) and Orders (`getOrderList`) on tab selection to prevent stale data while preserving keep-alive responsiveness.
+
 ### [2026-08-15 19:21 UTC] Lock Backend Default Theme to Aster Theme [Backend]
 * **Component:** Laravel Web Backend (`backend/vmarket-web/app/Utils/theme-helpers.php`)
 * **Action:** Configured `theme_root_path()` in `theme-helpers.php` to default to `'theme_aster'` instead of `'default'`, locking the backend active theme across the web storefront, controllers, views, assets, caching, and `/api/v1/config` API.

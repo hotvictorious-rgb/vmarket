@@ -251,8 +251,11 @@ class ChatController extends Controller
 
     private function getAttachmentData($attachment): array
     {
-        $extension = strrchr($attachment['path'], '.');
-        if (in_array($extension, GlobalConstant::DOCUMENT_EXTENSION)) {
+        $extension = strtolower((string)strrchr($attachment['path'], '.'));
+        $audioExtensions = ['.m4a', '.mp3', '.wav', '.aac', '.ogg', '.opus', '.wma', '.amr'];
+        if (in_array($extension, $audioExtensions)) {
+            $type = 'audio';
+        } elseif (in_array($extension, GlobalConstant::DOCUMENT_EXTENSION)) {
             $type = 'file';
         } else {
             $type = 'media';
