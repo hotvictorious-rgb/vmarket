@@ -28,8 +28,9 @@ class SupportReplyModel {
     createdAt = json['created_at'];
     updatedAt = json['updated_at'];
     adminId = json['admin_id'].toString();
-    if(json['attachment'] != null && json['attachment'] is !String){
-      attachment = json['attachment'].cast<String>();
+    // [AI] Safely parse attachment without fragile cast
+    if(json['attachment'] != null && json['attachment'] is List){
+      attachment = (json['attachment'] as List).map((e) => e.toString()).toList();
     }else{
       attachment = [];
     }

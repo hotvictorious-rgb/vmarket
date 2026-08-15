@@ -7,6 +7,14 @@ Always append your completed tasks here in chronological order at the top. Forma
 `### [YYYY-MM-DD HH:MM UTC] <Feature / Fix Title> [<Component Scope>]`
 Include the specific app/component modified and bullet points detailing the exact technical changes.
 
+### [2026-08-15 17:15 UTC] Eliminate Fragile List Cast Traps Across Customer App Models [User App]
+* **Component:** Flutter Customer App (`User app/lib/features/product_details/domain/models/product_details_model.dart`, `User app/lib/features/cart/domain/models/cart_model.dart`, `User app/lib/features/product/domain/models/product_model.dart`, `User app/lib/features/shop/domain/models/more_store_model.dart`, `User app/lib/features/support/domain/models/support_reply_model.dart`, `User app/lib/features/review/domain/models/review_body.dart`, `User app/lib/features/review/domain/models/review_model.dart`, `User app/lib/features/location/domain/models/prediction_model.dart`, `User app/lib/features/location/domain/models/place_details_model.dart`, `User app/lib/features/splash/domain/models/config_model.dart`)
+* **Action:** Replaced all fragile `.cast<String>()` and `.cast<int>()` calls across models with null-safe list mapping and exception-guarded parsers to prevent `TypeError` and `NoSuchMethodError` crashes on unexpected, null, or stringified array responses from the backend.
+* **Changes Made:**
+  - **Product Details & Cart**: Hardened `attributes`, `digital_product_file_types`, `digital_product_extensions`, and `variation_indexes` to safely convert values via `.map((e) => ...)` instead of unchecked casting.
+  - **Reviews & Support**: Safely parsed `fileUpload`, `attachment`, and review image arrays against non-list or null values.
+  - **Location & Config**: Hardened Google Maps prediction/place `types` and system `unit` configuration deserialization.
+
 ### [2026-08-15 16:56 UTC] Fix Delivered Order Details Infinite Spinner and Model Deserialization [User App, Vendor App]
 * **Component:** Flutter Mobile Apps (`User app/lib/features/order_details/domain/models/order_details_model.dart`, `User app/lib/features/order_details/widgets/ordered_product_list_widget.dart`, `User app/lib/features/order_details/widgets/order_amount_calculation.dart`, `User app/lib/features/order_details/screens/order_details_screen.dart`, `Vendor app/lib/features/delivery_man/domain/model/delivery_man_review_model.dart`)
 * **Action:** Resolved infinite loading spinner / shimmer freeze when opening delivered orders in customer app by correcting `DeliveryManReview` `attachment_full_url` type mismatch from `List<String>` to `List<ImageFullUrl>`, adding safe `int.tryParse` on product reviews, and replacing fragile force-unwrapped parameters with null-safe defaults across order details calculation and item list widgets.

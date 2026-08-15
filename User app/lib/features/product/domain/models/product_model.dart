@@ -315,9 +315,13 @@ class Product {
     }
     if(json['attributes'] != null && json['attributes'] != "null") {
       try{
-        _attributes = json['attributes'].cast<String>();
-      }catch(e){
-        _attributes = jsonDecode(json['attributes']).cast<String>();
+        if (json['attributes'] is List) {
+          _attributes = (json['attributes'] as List).map((e) => e.toString()).toList();
+        } else {
+          _attributes = (jsonDecode(json['attributes']) as List).map((e) => e.toString()).toList();
+        }
+      }catch(_){
+        _attributes = [];
       }
     }
     if (json['choice_options'] != null) {
@@ -539,7 +543,15 @@ class ChoiceOptions {
     _name = json['name'];
     _title = json['title'];
     if(json['options'] != null){
-      _options = json['options'].cast<String>();
+      try {
+        if (json['options'] is List) {
+          _options = (json['options'] as List).map((e) => e.toString()).toList();
+        } else {
+          _options = (jsonDecode(json['options']) as List).map((e) => e.toString()).toList();
+        }
+      } catch (_) {
+        _options = [];
+      }
     }
   }
 

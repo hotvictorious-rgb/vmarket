@@ -123,7 +123,10 @@ class CartModel {
       json['choice_options'].forEach((v) {choiceOptions!.add(ChoiceOptions.fromJson(v));
       });
     }
-    variationIndexes = json['variation_indexes'] != null ? json['variation_indexes'].cast<int>() : [];
+    // [AI] Safely parse variation_indexes without fragile cast
+    variationIndexes = (json['variation_indexes'] is List)
+        ? (json['variation_indexes'] as List).map((e) => int.tryParse(e.toString()) ?? 0).toList()
+        : [];
     if(json['shipping_cost'] != null){
       shippingCost = double.tryParse(json['shipping_cost'].toString());
     }

@@ -359,7 +359,8 @@ class Products {
     attributes = json['attributes'];
     choiceOptions = json['choice_options'];
     variation = json['variation'];
-    digitalProductFileTypes = json['digital_product_file_types'].cast<String>();
+    // [AI] Safely parse digitalProductFileTypes without fragile cast
+    digitalProductFileTypes = (json['digital_product_file_types'] is List) ? (json['digital_product_file_types'] as List).map((e) => e.toString()).toList() : [];
     published = json['published'];
     unitPrice = json['unit_price'];
     purchasePrice = json['purchase_price'];

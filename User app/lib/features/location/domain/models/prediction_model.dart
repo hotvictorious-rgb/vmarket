@@ -58,7 +58,7 @@ class PlacePrediction {
     structuredFormat = json['structuredFormat'] != null
         ? StructuredFormat.fromJson(json['structuredFormat'])
         : null;
-    types = json['types'].cast<String>();
+    types = (json['types'] is List) ? (json['types'] as List).map((e) => e.toString()).toList() : [];
   }
 
   Map<String, dynamic> toJson() {

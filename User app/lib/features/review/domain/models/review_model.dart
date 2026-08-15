@@ -62,7 +62,7 @@ class ReviewModel {
     _customerId = int.tryParse(json['customer_id']?.toString() ?? '');
     _comment = json['comment'];
     if(json['attachment'] != null && json['attachment'] is List){
-      _attachment = json['attachment'].cast<String>();
+      _attachment = (json['attachment'] as List).map((e) => e.toString()).toList();
     }
     _rating = json['rating'];
     _status = json['status'];

@@ -450,7 +450,19 @@ class ProductDetailsModel {
       });
     }
     _variantProduct = int.tryParse(json['variant_product']?.toString() ?? '') ?? 0;
-    _attributes = json['attributes'].cast<int>();
+    // [AI] Safely deserialize attributes list against int, string, and json strings
+    if (json['attributes'] != null) {
+      try {
+        _attributes = (json['attributes'] is List)
+            ? (json['attributes'] as List).map((e) => int.tryParse(e.toString()) ?? 0).where((e) => e > 0).toList()
+            : (jsonDecode(json['attributes']) as List).map((e) => int.tryParse(e.toString()) ?? 0).where((e) => e > 0).toList();
+      } catch (_) {
+        _attributes = [];
+      }
+    } else {
+      _attributes = [];
+    }
+
     if (json['choice_options'] != null) {
       _choiceOptions = <ChoiceOptions>[];
       json['choice_options'].forEach((v) {
@@ -464,16 +476,20 @@ class ProductDetailsModel {
       });
     }
 
-    if(json['digital_product_file_types'] != null) {
-      _digitalProductFileTypes = json['digital_product_file_types'].cast<String>();
+    if(json['digital_product_file_types'] != null && json['digital_product_file_types'] is List) {
+      _digitalProductFileTypes = (json['digital_product_file_types'] as List).map((e) => e.toString()).toList();
     }else {
       _digitalProductFileTypes = [];
     }
 
     if(json['digital_product_extensions'] != null && json['digital_product_extensions'] is !List) {
-      _digitalProductExtensions = (json['digital_product_extensions'] as Map<String, dynamic>).map(
-            (key, value) => MapEntry(key, List<String>.from(value)),
-      );
+      try {
+        _digitalProductExtensions = (json['digital_product_extensions'] as Map<String, dynamic>).map(
+          (key, value) => MapEntry(key, value is List ? (value).map((e) => e.toString()).toList() : <String>[]),
+        );
+      } catch (_) {
+        _digitalProductExtensions = {};
+      }
     }
     if (json['digital_variation'] != null) {
       _digitalVariation = <DigitalVariation>[];

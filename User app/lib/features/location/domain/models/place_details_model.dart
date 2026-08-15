@@ -41,7 +41,7 @@ class PlaceDetailsModel {
   PlaceDetailsModel.fromJson(Map<String, dynamic> json) {
     name = json['name'];
     id = json['id'];
-    types = json['types'].cast<String>();
+    types = (json['types'] is List) ? (json['types'] as List).map((e) => e.toString()).toList() : [];
     formattedAddress = json['formattedAddress'];
     if (json['addressComponents'] != null) {
       addressComponents = <AddressComponents>[];
@@ -130,7 +130,7 @@ class AddressComponents {
   AddressComponents.fromJson(Map<String, dynamic> json) {
     longText = json['longText'];
     shortText = json['shortText'];
-    types = json['types'].cast<String>();
+    types = (json['types'] is List) ? (json['types'] as List).map((e) => e.toString()).toList() : [];
     languageCode = json['languageCode'];
   }
 

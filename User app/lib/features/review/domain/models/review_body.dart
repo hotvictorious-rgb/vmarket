@@ -36,7 +36,8 @@ class ReviewBody {
     _productId = json['product_id'];
     _comment = json['comment'];
     _rating = json['rating'];
-    _fileUpload = json['fileUpload'].cast<String>();
+    // [AI] Safely parse fileUpload without fragile cast
+    _fileUpload = (json['fileUpload'] is List) ? (json['fileUpload'] as List).map((e) => e.toString()).toList() : [];
   }
 
   Map<String, dynamic> toJson() {

@@ -242,7 +242,8 @@ class ConfigModel {
         colors!.add(ColorsModel.fromJson(v));
       });
     }
-    unit = json['unit'].cast<String>();
+    // [AI] Safely parse unit list without fragile cast
+    unit = (json['unit'] is List) ? (json['unit'] as List).map((e) => e.toString()).toList() : [];
     shippingMethod = json['shipping_method'];
     emailVerification = json['email_verification'];
     phoneVerification = json['phone_verification'];
