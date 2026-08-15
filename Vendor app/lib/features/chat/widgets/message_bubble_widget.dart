@@ -40,7 +40,7 @@ class MessageBubbleWidget extends StatelessWidget {
           bool isLTR = Provider.of<LocalizationController>(context, listen: false).isLtr;
           String previousMessageHasChatTime = previous != null ? chatProvider.getChatTime(previous!.createdAt!, message.createdAt) : "";
 
-          final bool isAudio(Attachment a) => a.type == 'audio' || ['m4a', 'mp3', 'wav', 'aac', 'ogg', 'opus', 'wma', 'amr', 'awb', 'flac'].any((ext) => a.path?.toLowerCase().endsWith(ext) ?? false);
+          bool isAudio(Attachment a) => a.type == 'audio' || ['m4a', 'mp3', 'wav', 'aac', 'ogg', 'opus', 'wma', 'amr', 'awb', 'flac'].any((ext) => a.path?.toLowerCase().endsWith(ext) ?? false);
           final List<Attachment> images = message.attachment?.where((a) => a.type == 'media' && !isAudio(a)).toList() ?? [];
           final List<Attachment> allFiles = message.attachment?.where((a) => a.type == 'file' || a.type == 'audio').toList() ?? [];
           final List<Attachment> audioFiles = allFiles.where((a) => isAudio(a)).toList();
