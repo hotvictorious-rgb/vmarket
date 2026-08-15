@@ -7,6 +7,14 @@ Always append your completed tasks here in chronological order at the top. Forma
 `### [YYYY-MM-DD HH:MM UTC] <Feature / Fix Title> [<Component Scope>]`
 Include the specific app/component modified and bullet points detailing the exact technical changes.
 
+### [2026-08-15 04:30 UTC] Track 4-System Reference Baselines in Git [AI Governance]
+* **Component:** Git Tracking (`.gitignore`, `AI_CHANGELOG.md`)
+* **Action:** Removed `reference/` from `.gitignore` to track all stock baseline files in Git and push them to GitHub.
+* **Changes Made:**
+  - **`.gitignore`**: Removed `reference/` rule so that all extracted baseline reference files across all 4 platforms (Laravel Backend, User App, Vendor App, Delivery App) are tracked and backed up to GitHub.
+
+---
+
 ### [2026-08-14 19:40 UTC] Governance Rule Update: 4-System Stock Reference Baselines [AI Governance]
 * **Component:** System Governance (`.agents/AGENTS.md`, `AI_ENGINEERING_RULES.md`)
 * **Action:** Updated Section 8 of `AGENTS.md` and `AI_ENGINEERING_RULES.md` to document all 4 stock reference baselines in `reference/` and enforce `backend/vmarket-web` path consistency.

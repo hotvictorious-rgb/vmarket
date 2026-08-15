@@ -5,7 +5,6 @@
 *.log
 *.zip
 *.tar.gz
-reference/
 scratch/
 
 # Flutter / Dart
