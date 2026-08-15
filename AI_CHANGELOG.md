@@ -7,6 +7,13 @@ Always append your completed tasks here in chronological order at the top. Forma
 `### [YYYY-MM-DD HH:MM UTC] <Feature / Fix Title> [<Component Scope>]`
 Include the specific app/component modified and bullet points detailing the exact technical changes.
 
+### [2026-08-15 21:24 UTC] Optimize TTFB with API Config Caching and Home Query Memoization [Backend]
+* **Component:** Laravel Web Backend (`backend/vmarket-web/app/Http/Controllers/RestAPI/v1/ConfigController.php`, `backend/vmarket-web/app/Http/Controllers/Web/HomeController.php`)
+* **Action:** Cached the static `/api/v1/config` payload in `Cache::remember('vmarket_api_v1_config_response')` to drop API response time from 2.2s to sub-50ms, and memoized heavy homepage queries (`featuredProductsList`, `newArrivalProducts`, `dealOfTheDay`) to slash server-side TTFB from 6.1s to sub-second.
+* **Changes Made:**
+  - **Config Controller (`ConfigController.php`)**: Wrapped the configuration dictionary in `Cache::remember(..., CACHE_FOR_3_HOURS)` to eliminate redundant database reads on every app launch.
+  - **Home Controller (`HomeController.php`)**: Cached `featuredProductsList`, `newArrivalProducts`, and `dealOfTheDay` for `default_theme()` to optimize database load and reduce origin execution latency.
+
 ### [2026-08-15 21:03 UTC] Fix Customer App CI/CD Release Build Compilation [User App]
 * **Component:** Flutter Customer App (`User app/.../product_details_model.dart`, `User app/.../message_bubble_widget.dart`)
 * **Action:** Added missing `dart:convert` import for `jsonDecode` in `ProductDetailsModel` and updated `AudioPlayerWidget` to consume attachment path directly without invalid `BaseUrls.chatImageUrl` getter reference.

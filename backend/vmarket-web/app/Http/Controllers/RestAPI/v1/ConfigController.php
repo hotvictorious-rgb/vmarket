@@ -10,6 +10,7 @@ use App\Traits\SettingsTrait;
 use App\Utils\Helpers;
 use App\Utils\ProductManager;
 use Illuminate\Http\JsonResponse;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Route;
 use Modules\AI\app\Traits\AIModuleManager;
 use Modules\TaxModule\app\Models\SystemTaxSetup;
@@ -22,7 +23,8 @@ class ConfigController extends Controller
 
     public function configuration(): JsonResponse
     {
-        $socialLoginConfig = [];
+        $responseConfig = Cache::remember('vmarket_api_v1_config_response', CACHE_FOR_3_HOURS, function () {
+            $socialLoginConfig = [];
         foreach (getWebConfig(name: 'social_login') as $social) {
             $config = [
                 'login_medium' => $social['login_medium'],
@@ -244,7 +246,10 @@ class ConfigController extends Controller
             'system_image_file_upload_max_size' => getFileUploadMaxSize(type: 'image'),
             'system_general_file_upload_max_size' => getFileUploadMaxSize(type: 'file'),
             'vendor_can_edit_order_status' => getWebConfig('vendor_can_edit_order') ?? 0,
-        ]);
+        ];
+        });
+
+        return response()->json($responseConfig);
     }
 
     public function getBusinessPagesList(Request $request)

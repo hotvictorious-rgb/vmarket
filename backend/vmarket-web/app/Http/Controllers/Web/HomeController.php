@@ -75,23 +75,30 @@ class HomeController extends Controller
         $bestSellProduct = $bestSellProduct->count() == 0 ? $latestProductsList : $bestSellProduct;
         $topRatedProducts = $topRatedProducts->count() == 0 ? $bestSellProduct : $topRatedProducts;
 
-        $featuredProductsList = ProductManager::getPriorityWiseFeaturedProductsQuery(query: $this->product->active()->with(['clearanceSale' => function ($query) {
-            return $query->active();
-        }]), dataLimit: 12);
-        $newArrivalProducts = ProductManager::getPriorityWiseNewArrivalProductsQuery(query: $this->product->active()->with(['clearanceSale' => function ($query) {
-            return $query->active();
-        }]), dataLimit: 8);
-
-        $dealOfTheDay = DealOfTheDay::with(['product' => function ($query) {
-            return $query->active()->with(['clearanceSale' => function ($query) {
+        $featuredProductsList = Cache::remember('home_featured_products_list_default', CACHE_FOR_3_HOURS, function () {
+            return ProductManager::getPriorityWiseFeaturedProductsQuery(query: $this->product->active()->with(['clearanceSale' => function ($query) {
                 return $query->active();
-            }]);
-        }])
-            ->join('products', 'products.id', '=', 'deal_of_the_days.product_id')
-            ->select('deal_of_the_days.*', 'products.unit_price')
-            ->where('products.status', 1)
-            ->where('deal_of_the_days.status', 1)
-            ->first();
+            }]), dataLimit: 12);
+        });
+
+        $newArrivalProducts = Cache::remember('home_new_arrival_products_list_default', CACHE_FOR_3_HOURS, function () {
+            return ProductManager::getPriorityWiseNewArrivalProductsQuery(query: $this->product->active()->with(['clearanceSale' => function ($query) {
+                return $query->active();
+            }]), dataLimit: 8);
+        });
+
+        $dealOfTheDay = Cache::remember('home_deal_of_the_day_default', CACHE_FOR_3_HOURS, function () {
+            return DealOfTheDay::with(['product' => function ($query) {
+                return $query->active()->with(['clearanceSale' => function ($query) {
+                    return $query->active();
+                }]);
+            }])
+                ->join('products', 'products.id', '=', 'deal_of_the_days.product_id')
+                ->select('deal_of_the_days.*', 'products.unit_price')
+                ->where('products.status', 1)
+                ->where('deal_of_the_days.status', 1)
+                ->first();
+        });
         return view(VIEW_FILE_NAMES['home'],
             compact(
                 'flashDeal', 'featuredProductsList', 'topRatedProducts', 'bestSellProduct', 'latestProductsList', 'categories', 'brands',
