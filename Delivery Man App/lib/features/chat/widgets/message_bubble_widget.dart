@@ -32,8 +32,8 @@ class MessageBubbleWidget extends StatelessWidget {
 
     return GetBuilder<ChatController>(
         builder: (chatController) {
-          final List<Attachment> images = message.attachment?.where((a) => a.type == 'media').toList() ?? [];
-          final bool isAudio(Attachment a) => a.type == 'audio' || ['m4a', 'mp3', 'wav', 'aac', 'ogg', 'opus', 'wma', 'amr'].any((ext) => a.path?.toLowerCase().endsWith(ext) ?? false);
+          bool isAudio(Attachment a) => a.type == 'audio' || ['m4a', 'mp3', 'wav', 'aac', 'ogg', 'opus', 'wma', 'amr'].any((ext) => a.path?.toLowerCase().endsWith(ext) ?? false);
+          final List<Attachment> images = message.attachment?.where((a) => a.type == 'media' && !isAudio(a)).toList() ?? [];
           final List<Attachment> audioFiles = message.attachment?.where((a) => isAudio(a)).toList() ?? [];
           final List<Attachment> files = message.attachment?.where((a) => a.type == 'file' && !isAudio(a)).toList() ?? [];
 
