@@ -7,6 +7,12 @@ Always append your completed tasks here in chronological order at the top. Forma
 `### [YYYY-MM-DD HH:MM UTC] <Feature / Fix Title> [<Component Scope>]`
 Include the specific app/component modified and bullet points detailing the exact technical changes.
 
+### [2026-08-15 08:55 UTC] Enforce 403 on Customer Chat in Legacy v2 Seller API [Laravel Backend]
+* **Component:** Laravel REST API (`app/Http/Controllers/RestAPI/v2/seller/ChatController.php`)
+* **Action:** Hardened legacy v2 seller chat endpoints to block customer-to-vendor and vendor-to-customer communication.
+* **Changes Made:**
+  - **`RestAPI/v2/seller/ChatController.php`**: Replaced legacy customer handling logic in `list()`, `search()`, `get_message()`, and `send_message()` with an explicit `403 Forbidden` response (`Customer-to-Vendor chat is disabled.`), ensuring complete parity with `v3/seller/ChatController.php`.
+
 ### [2026-08-15 08:35 UTC] Align Mobile Apps & REST API Chat Contracts [User App, Vendor App, API Contract]
 * **Component:** Mobile Apps & API Docs (`API_CONTRACT.md`, `User app`, `Vendor app`)
 * **Action:** Resolved route drift, UI mismatches, and incorrect indices in Customer/Vendor chat modules.
