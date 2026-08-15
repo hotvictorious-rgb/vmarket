@@ -449,7 +449,7 @@ class ProductDetailsModel {
         _colors!.add(ColorModel.fromJson(v));
       });
     }
-    _variantProduct = int.parse(json['variant_product'].toString());
+    _variantProduct = int.tryParse(json['variant_product']?.toString() ?? '') ?? 0;
     _attributes = json['attributes'].cast<int>();
     if (json['choice_options'] != null) {
       _choiceOptions = <ChoiceOptions>[];
@@ -514,7 +514,7 @@ class ProductDetailsModel {
     _multiplyQty = json['multiply_qty'];
     _code = json['code'];
     if(json['reviews_count'] != null){
-      _reviewsCount = int.parse(json['reviews_count'].toString());
+      _reviewsCount = int.tryParse(json['reviews_count'].toString()) ?? 0;
     }else{
       _reviewsCount = 0;
     }
@@ -528,11 +528,7 @@ class ProductDetailsModel {
     }
     _seller = json['seller'] != null ? Seller.fromJson(json['seller']) : null;
     if(json['wish_list_count'] != null){
-      try{
-        wishList = json['wish_list_count'];
-      }catch(e){
-        wishList = int.parse(json['wish_list_count'].toString());
-      }
+      wishList = int.tryParse(json['wish_list_count'].toString()) ?? 0;
     }
 
     if (json['color_images_full_url'] != null) {
@@ -703,8 +699,8 @@ class Reviews {
 
   Reviews.fromJson(Map<String, dynamic> json) {
     _id = json['id'];
-    _productId = int.parse(json['product_id'].toString());
-    _customerId = int.parse(json['customer_id'].toString());
+    _productId = int.tryParse(json['product_id']?.toString() ?? '') ?? 0;
+    _customerId = int.tryParse(json['customer_id']?.toString() ?? '') ?? 0;
     _comment = json['comment'];
 
     if(json['attachment'] != null && json['attachment'] is !List){

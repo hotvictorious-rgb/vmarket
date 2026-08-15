@@ -171,7 +171,7 @@ class ProductFullInfo {
     multiplyQty = json['multiply_qty'];
     code = json['code'];
     if(json['reviews_count'] != null){
-      reviewsCount = int.parse(json['reviews_count'].toString());
+      reviewsCount = int.tryParse(json['reviews_count'].toString()) ?? 0;
     }else{
       reviewsCount = 0;
     }

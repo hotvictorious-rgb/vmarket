@@ -7,6 +7,14 @@ Always append your completed tasks here in chronological order at the top. Forma
 `### [YYYY-MM-DD HH:MM UTC] <Feature / Fix Title> [<Component Scope>]`
 Include the specific app/component modified and bullet points detailing the exact technical changes.
 
+### [2026-08-15 14:55 UTC] Harden Cart, Wishlist, and Product Details Model Deserialization [User App]
+* **Component:** Flutter Customer App (`User app/lib/features/cart/domain/models/cart_model.dart`, `User app/lib/features/wishlist/domain/models/wishlist_model.dart`, `User app/lib/features/product_details/domain/models/product_details_model.dart`)
+* **Action:** Hardened CartModel, ProductInfo, FreeDeliveryOrderAmount, WishlistModel, ProductDetailsModel, and Reviews model deserialization against `null` or type-mismatched fields to eliminate infinite spinner risk across Cart, Wishlist, and Product Details screens.
+* **Changes Made:**
+  - **Cart Screen (`CartModel.fromJson`, `ProductInfo.fromJson`, `FreeDeliveryOrderAmount.fromJson`)**: Replaced all unsafe `int.parse` and `double.parse` / `.toDouble()` on `product_id`, `seller_id`, `shipping_cost`, `minimum_order_amount_info`, `is_product_available`, `minimum_order_qty`, `status`, `amount`, `percentage`, `shipping_cost_saved`, and `amount_need` with `int.tryParse` / `double.tryParse`.
+  - **Wishlist Screen (`ProductFullInfo.fromJson`)**: Converted `reviews_count` to `int.tryParse(...) ?? 0`.
+  - **Product Details & Reviews (`ProductDetailsModel.fromJson`, `Reviews.fromJson`)**: Converted `variant_product`, `reviews_count`, `wish_list_count`, `product_id`, and `customer_id` from `int.parse` to safe `int.tryParse`.
+
 ### [2026-08-15 14:50 UTC] Comprehensive Model & Numeric Parsing Hardening [User App]
 * **Component:** Flutter Customer App (`User app/lib/features/wallet/domain/models/wallet_transaction_model.dart`, `User app/lib/features/wallet/domain/models/wallet_bonus_model.dart`, `User app/lib/features/loyaltyPoint/domain/models/loyalty_point_model.dart`, `User app/lib/features/refund/domain/models/refund_result_model.dart`, `User app/lib/features/refund/domain/models/refund_info_model.dart`, `User app/lib/features/shop/domain/models/shop_again_from_recent_store_model.dart`, `User app/lib/features/coupon/domain/models/coupon_model.dart`, `User app/lib/features/coupon/domain/models/coupon_item_model.dart`, `User app/lib/features/order_details/screens/guest_track_order_screen.dart`)
 * **Action:** Hardened fragile numeric `.toDouble()` and `int.parse(...)` deserialization across Wallet, Loyalty Points, Refund Requests, Shop Again, Coupon, and Guest Tracking modules to prevent client-side crashes and blank screens on null/string/integer fields.

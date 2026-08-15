@@ -96,11 +96,11 @@ class CartModel {
 
   CartModel.fromJson(Map<String, dynamic> json) {
     id = json['id'];
-    productId = int.parse(json['product_id'].toString());
+    productId = int.tryParse(json['product_id']?.toString() ?? '') ?? 0;
     name = json['name'];
     seller = json['seller'];
     thumbnail = json['thumbnail'];
-    sellerId = int.parse(json['seller_id'].toString());
+    sellerId = int.tryParse(json['seller_id']?.toString() ?? '') ?? 0;
     sellerIs = json['seller_is'];
     image = json['image'];
     price = json['price'] != null ? double.tryParse(json['price'].toString()) ?? 0.0 : 0.0;
@@ -125,7 +125,7 @@ class CartModel {
     }
     variationIndexes = json['variation_indexes'] != null ? json['variation_indexes'].cast<int>() : [];
     if(json['shipping_cost'] != null){
-      shippingCost =double.parse(json['shipping_cost'].toString());
+      shippingCost = double.tryParse(json['shipping_cost'].toString());
     }
     if(json['shipping_type'] != null){
       shippingType = json['shipping_type'];
@@ -134,18 +134,14 @@ class CartModel {
     productType = json['product_type'];
     slug = json['slug'];
     if(json['minimum_order_amount_info'] != null){
-      try{
-        minimumOrderAmountInfo = json['minimum_order_amount_info'].toDouble();
-      }catch(e){
-        minimumOrderAmountInfo = double.parse(json['minimum_order_amount_info'].toString());
-      }
+      minimumOrderAmountInfo = double.tryParse(json['minimum_order_amount_info'].toString());
     }
     increment = false;
     decrement = false;
     freeDeliveryOrderAmount = json['free_delivery_order_amount'] != null ? FreeDeliveryOrderAmount.fromJson(json['free_delivery_order_amount']) : null;
     shop = json['shop'] != null ? Shop.fromJson(json['shop'], isAdminProduct: json['seller_is'] == 'admin') : null;
     if(json["is_product_available"] != null){
-      isProductAvailable = int.parse(json["is_product_available"].toString());
+      isProductAvailable = int.tryParse(json["is_product_available"].toString()) ?? 1;
     }else{
       isProductAvailable = 1;
     }
@@ -230,11 +226,7 @@ class ProductInfo {
 
   ProductInfo.fromJson(Map<String, dynamic> json) {
     if(json['minimum_order_qty'] != null) {
-      try{
-        minimumOrderQty = json['minimum_order_qty'];
-      }catch(e){
-        minimumOrderQty = int.parse(json['minimum_order_qty'].toString());
-      }
+      minimumOrderQty = int.tryParse(json['minimum_order_qty'].toString());
     }
     totalCurrentStock = json['total_current_stock'];
     thumbnailFullUrl = json['thumbnail_full_url'] != null
@@ -268,21 +260,21 @@ class FreeDeliveryOrderAmount {
         });
 
   FreeDeliveryOrderAmount.fromJson(Map<String, dynamic> json) {
-    status = int.parse(json['status'].toString());
+    status = int.tryParse(json['status']?.toString() ?? '') ?? 0;
     if(json['amount'] != null){
-      amount = json['amount'].toDouble();
+      amount = double.tryParse(json['amount'].toString());
     }
 
     if(json['percentage'] != null){
-      percentage = int.parse(json['percentage'].toString());
+      percentage = int.tryParse(json['percentage'].toString()) ?? 0;
     }
 
     if(json['shipping_cost_saved'] != null){
-      shippingCostSaved = json['shipping_cost_saved'].toDouble();
+      shippingCostSaved = double.tryParse(json['shipping_cost_saved'].toString());
     }
 
     if(json['amount_need'] != null){
-      amountNeed = json['amount_need'].toDouble();
+      amountNeed = double.tryParse(json['amount_need'].toString());
     }
   }
 
