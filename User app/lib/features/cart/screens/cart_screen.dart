@@ -43,7 +43,10 @@ class CartScreen extends StatefulWidget {
   CartScreenState createState() => CartScreenState();
 }
 
-class CartScreenState extends State<CartScreen> {
+class CartScreenState extends State<CartScreen> with AutomaticKeepAliveClientMixin {
+  @override
+  bool get wantKeepAlive => true;
+
   final List<GlobalKey> sellerKeys = [];
   bool validated = false;
   bool singleVendor = false;
@@ -105,6 +108,7 @@ class CartScreenState extends State<CartScreen> {
 
   @override
   Widget build(BuildContext context) {
+    super.build(context);
     return Consumer<SplashController>(
       builder: (context, configProvider,_) {
         return Consumer<ShippingController>(

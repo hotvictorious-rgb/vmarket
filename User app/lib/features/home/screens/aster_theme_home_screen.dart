@@ -116,10 +116,11 @@ class AsterThemeHomeScreen extends StatefulWidget {
   }
 }
 
-class _AsterThemeHomeScreenState extends State<AsterThemeHomeScreen> {
+class _AsterThemeHomeScreenState extends State<AsterThemeHomeScreen> with AutomaticKeepAliveClientMixin {
   final ScrollController _scrollController = ScrollController();
 
-
+  @override
+  bool get wantKeepAlive => true;
 
   void passData(int index, String title) {
     index = index;
@@ -138,6 +139,7 @@ class _AsterThemeHomeScreenState extends State<AsterThemeHomeScreen> {
 
   @override
   Widget build(BuildContext context) {
+    super.build(context);
 
     return Scaffold(resizeToAvoidBottomInset: false,
       body: SafeArea(child: RefreshIndicator(

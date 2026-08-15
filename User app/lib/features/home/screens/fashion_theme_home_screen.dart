@@ -109,8 +109,11 @@ class FashionThemeHomePage extends StatefulWidget {
 
 }
 
-class _FashionThemeHomePageState extends State<FashionThemeHomePage> {
+class _FashionThemeHomePageState extends State<FashionThemeHomePage> with AutomaticKeepAliveClientMixin {
   final ScrollController _scrollController = ScrollController();
+
+  @override
+  bool get wantKeepAlive => true;
 
   final List<ProductType> productTypeList = [
     ProductType.newArrival,
@@ -131,6 +134,7 @@ class _FashionThemeHomePageState extends State<FashionThemeHomePage> {
 
   @override
   Widget build(BuildContext context) {
+    super.build(context);
     return Scaffold(resizeToAvoidBottomInset: false,
       body: SafeArea(child: RefreshIndicator(
         onRefresh: () async {

@@ -103,9 +103,11 @@ class HomePage extends StatefulWidget {
   }
 }
 
-class _HomePageState extends State<HomePage> {
+class _HomePageState extends State<HomePage> with AutomaticKeepAliveClientMixin {
   final ScrollController _scrollController = ScrollController();
 
+  @override
+  bool get wantKeepAlive => true;
 
   void passData(int index, String title) {
     index = index;
@@ -123,6 +125,7 @@ class _HomePageState extends State<HomePage> {
 
   @override
   Widget build(BuildContext context) {
+    super.build(context);
     final ConfigModel? configModel = Provider.of<SplashController>(context, listen: false).configModel;
 
 

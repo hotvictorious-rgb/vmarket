@@ -25,7 +25,10 @@ class OrderScreen extends StatefulWidget {
   State<OrderScreen> createState() => _OrderScreenState();
 }
 
-class _OrderScreenState extends State<OrderScreen> {
+class _OrderScreenState extends State<OrderScreen> with AutomaticKeepAliveClientMixin {
+  @override
+  bool get wantKeepAlive => true;
+
   // FIX 2: One isolated ScrollController per tab to prevent listener bleed.
   final List<ScrollController> _scrollControllers = [
     ScrollController(), // index 0 — Running
@@ -55,6 +58,7 @@ class _OrderScreenState extends State<OrderScreen> {
 
   @override
   Widget build(BuildContext context) {
+    super.build(context);
     return PopScope(
       canPop: Navigator.canPop(context),
       onPopInvokedWithResult: (didPop, result) async {

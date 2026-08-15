@@ -23,7 +23,10 @@ class MoreScreen extends StatefulWidget {
   State<MoreScreen> createState() => _MoreScreenState();
 }
 
-class _MoreScreenState extends State<MoreScreen> {
+class _MoreScreenState extends State<MoreScreen> with AutomaticKeepAliveClientMixin {
+  @override
+  bool get wantKeepAlive => true;
+
   String? version;
   bool singleVendor = false;
 
@@ -44,6 +47,7 @@ class _MoreScreenState extends State<MoreScreen> {
 
   @override
   Widget build(BuildContext context) {
+    super.build(context);
     // var authController = Provider.of<AuthController>(context, listen: false);
 
     return Scaffold(

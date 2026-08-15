@@ -7,6 +7,12 @@ Always append your completed tasks here in chronological order at the top. Forma
 `### [YYYY-MM-DD HH:MM UTC] <Feature / Fix Title> [<Component Scope>]`
 Include the specific app/component modified and bullet points detailing the exact technical changes.
 
+### [2026-08-15 18:40 UTC] Maximize Customer App Tab Speed and Memory Keep-Alive [User App]
+* **Component:** Flutter Customer App (`User app/lib/features/home/screens/aster_theme_home_screen.dart`, `User app/lib/features/home/screens/home_screens.dart`, `User app/lib/features/home/screens/fashion_theme_home_screen.dart`, `User app/lib/features/cart/screens/cart_screen.dart`, `User app/lib/features/order/screens/order_screen.dart`, `User app/lib/features/more/screens/more_screen_view.dart`)
+* **Action:** Implemented `AutomaticKeepAliveClientMixin` across all primary screens (Home, Aster Theme, Fashion Theme, Cart, Orders, More) to keep widget states, scroll positions, cached models, and layout hierarchies alive in memory for instant 0ms tab switching and zero re-fetch shimmers.
+* **Changes Made:**
+  - **Screen State Keep-Alive (`aster_theme_home_screen.dart`, `home_screens.dart`, `fashion_theme_home_screen.dart`, `cart_screen.dart`, `order_screen.dart`, `more_screen_view.dart`)**: Added `AutomaticKeepAliveClientMixin` with `wantKeepAlive => true` and `super.build(context)` across all navigation screen states.
+
 ### [2026-08-15 18:33 UTC] Correct Delivery Man App Search Conversation URI [Delivery Man App]
 * **Component:** Flutter Delivery Rider App (`Delivery Man App/lib/utill/app_constants.dart`)
 * **Action:** Corrected `searchConversationListUri` constant from `/api/v2/delivery-man/update-fcm-token` to `/api/v2/delivery-man/messages/search/`, ensuring full endpoint accuracy matching `routes/rest_api/v2/api.php`.
