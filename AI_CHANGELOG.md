@@ -7,6 +7,14 @@ Always append your completed tasks here in chronological order at the top. Forma
 `### [YYYY-MM-DD HH:MM UTC] <Feature / Fix Title> [<Component Scope>]`
 Include the specific app/component modified and bullet points detailing the exact technical changes.
 
+### [2026-08-15 20:06 UTC] Revert Default Theme to Original Default HomePage [Backend & User App]
+* **Component:** Laravel Web Backend (`backend/vmarket-web/app/Utils/theme-helpers.php`, `backend/vmarket-web/app/Http/Controllers/Web/HomeController.php`), Flutter Customer App (`User app/lib/features/dashboard/screens/dashboard_screen.dart`)
+* **Action:** Fully reverted default theme resolution back to the original stock Default theme across the entire ecosystem (both Laravel backend and Flutter mobile customer app), ensuring 100% stability with the live server.
+* **Changes Made:**
+  - **Theme Helpers (`theme-helpers.php`)**: Restored `theme_root_path()` fallback to `'default'`.
+  - **Home Controller (`HomeController.php`)**: Passed `$newArrivalProducts` and `$brands` in `theme_aster()` to safeguard view cache compatibility.
+  - **Customer App Dashboard (`dashboard_screen.dart`)**: Restored original Default `HomePage` as the default theme screen, while dynamically supporting Aster and Fashion themes if toggled from the backend.
+
 ### [2026-08-15 19:57 UTC] Exclude Audio Attachments from Media Grid to Prevent Duplicate Rendering [User App & Vendor App]
 * **Component:** Flutter Customer App (`User app/.../message_bubble_widget.dart`), Flutter Vendor App (`Vendor app/.../message_bubble_widget.dart`)
 * **Action:** Excluded audio attachments from the image/media grid filter (`!isAudioExtension()`) across both Customer and Vendor message bubble widgets, completely preventing double-rendering between the image gallery and the audio player widget.
