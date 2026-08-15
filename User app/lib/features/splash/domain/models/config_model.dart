@@ -259,7 +259,7 @@ class ConfigModel {
     announcement = json['announcement'] != null ? Announcement.fromJson(json['announcement']) : null;
     softwareVersion = json['software_version'];
     if(json['decimal_point_settings'] != null){
-      decimalPointSettings = int.parse(json['decimal_point_settings'].toString());
+      decimalPointSettings = int.tryParse(json['decimal_point_settings'].toString()) ?? 1;
     }else{
       decimalPointSettings = 1;
     }
@@ -270,7 +270,7 @@ class ConfigModel {
     walletStatus = json['wallet_status'];
     loyaltyPointStatus = json['loyalty_point_status'];
     if(json['loyalty_point_exchange_rate'] != null){
-      loyaltyPointExchangeRate =  double.parse(json['loyalty_point_exchange_rate'].toString());
+      loyaltyPointExchangeRate = double.tryParse(json['loyalty_point_exchange_rate'].toString()) ?? 1.0;
     }else{
       loyaltyPointExchangeRate = 1;
     }
@@ -294,7 +294,7 @@ class ConfigModel {
       });
     }
     if(json['guest_checkout'] != null){
-      guestCheckOut = int.parse(json['guest_checkout'].toString());
+      guestCheckOut = int.tryParse(json['guest_checkout'].toString()) ?? 0;
     }else{
       guestCheckOut = 0;
     }
@@ -304,24 +304,20 @@ class ConfigModel {
       addFundsToWallet = 0;
     }
     if(json['minimum_add_fund_amount'] != null){
-      minimumAddFundAmount = double.parse(json['minimum_add_fund_amount'].toString());
+      minimumAddFundAmount = double.tryParse(json['minimum_add_fund_amount'].toString()) ?? 0.0;
     }else{
       minimumAddFundAmount = 0;
     }
 
     if(json['maximum_add_fund_amount'] != null){
-      maximumAddFundAmount = double.parse(json['maximum_add_fund_amount'].toString());
+      maximumAddFundAmount = double.tryParse(json['maximum_add_fund_amount'].toString()) ?? 0.0;
     }else{
       maximumAddFundAmount = 0;
     }
     refSignup = json['referral_customer_signup_url'];
 
     if(json['order_verification'] != null){
-      try{
-        orderVerification = json['order_verification'];
-      }catch(e){
-        orderVerification = int.parse(json['order_verification'].toString());
-      }
+      orderVerification = int.tryParse(json['order_verification'].toString()) ?? 0;
     }
 
     inhouseTemporaryClose = json['inhouse_temporary_close'] != null
@@ -330,7 +326,7 @@ class ConfigModel {
     inhouseVacationAdd = json['inhouse_vacation_add'] != null
         ? InhouseVacationAdd.fromJson(json['inhouse_vacation_add'])
         : null;
-    mapApiStatus = json['map_api_status'] != null ? int.parse(json['map_api_status'].toString()) : null;
+    mapApiStatus = json['map_api_status'] != null ? int.tryParse(json['map_api_status'].toString()) : null;
 
     defaultLocation = json['default_location'] != null
       ? DefaultLocation.fromJson(json['default_location'])
@@ -476,11 +472,7 @@ class RefundPolicy {
 
   RefundPolicy.fromJson(Map<String, dynamic> json) {
     if(json['status'] != null){
-      try{
-        status = json['status'];
-      }catch(e){
-        status = int.parse(json['status'].toString());
-      }
+      status = int.tryParse(json['status'].toString());
     }
 
     content = json['content'];
@@ -515,11 +507,7 @@ class CurrencyList {
     code = json['code'];
     status = json['status'];
     if(json['exchange_rate'] != null){
-      try{
-        exchangeRate = json['exchange_rate'].toDouble();
-      }catch(e){
-        exchangeRate = double.parse(json['exchange_rate'].toString());
-      }
+      exchangeRate = double.tryParse(json['exchange_rate'].toString());
     }
 
     createdAt = json['created_at'];

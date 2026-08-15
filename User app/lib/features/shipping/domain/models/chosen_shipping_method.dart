@@ -33,13 +33,13 @@ class ChosenShippingMethodModel {
   int? get isCheckItemExist => _isCheckItemExist;
 
   ChosenShippingMethodModel.fromJson(Map<String, dynamic> json) {
-    _id = json['id'];
-    _cartGroupId = json['cart_group_id'];
-    _shippingMethodId = int.parse(json['shipping_method_id'].toString());
-    _shippingCost = double.parse(json['shipping_cost'].toString());
+    _id = json['id'] != null ? int.tryParse(json['id'].toString()) : null;
+    _cartGroupId = json['cart_group_id']?.toString();
+    _shippingMethodId = int.tryParse(json['shipping_method_id']?.toString() ?? '') ?? 0;
+    _shippingCost = double.tryParse(json['shipping_cost']?.toString() ?? '') ?? 0.0;
     _createdAt = json['created_at'];
     _updatedAt = json['updated_at'];
-    _isCheckItemExist = json['is_check_item_exist'];
+    _isCheckItemExist = json['is_check_item_exist'] != null ? int.tryParse(json['is_check_item_exist'].toString()) : null;
   }
 
   Map<String, dynamic> toJson() {

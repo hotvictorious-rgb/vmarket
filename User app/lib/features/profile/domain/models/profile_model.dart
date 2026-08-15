@@ -44,7 +44,7 @@ class ProfileModel {
       });
 
   ProfileModel.fromJson(Map<String, dynamic> json) {
-    id = json['id'];
+    id = json['id'] != null ? int.tryParse(json['id'].toString()) : null;
     name = json['name'];
     method = json['_method'];
     fName = json['f_name'];
@@ -55,31 +55,16 @@ class ProfileModel {
     emailVerifiedAt = json['email_verified_at'];
     createdAt = json['created_at'];
     updatedAt = json['updated_at'];
-    if(json['wallet_balance'] != null){
-      walletBalance = json['wallet_balance'].toDouble();
-    }
-    if(json['loyalty_point'] != null){
-      loyaltyPoint = json['loyalty_point'].toDouble();
-    }else{
-      loyaltyPoint = 0.0;
-    }
+    walletBalance = double.tryParse(json['wallet_balance']?.toString() ?? '') ?? 0.0;
+    loyaltyPoint = double.tryParse(json['loyalty_point']?.toString() ?? '') ?? 0.0;
     if(json['referral_code'] != null){
       referCode = json['referral_code'];
     }
     if(json['referral_user_count'] != null){
-      try{
-        referCount = json['referral_user_count'];
-      }catch(e){
-        referCount = int.parse(json['referral_user_count'].toString());
-      }
-
+      referCount = int.tryParse(json['referral_user_count'].toString()) ?? 0;
     }
     if(json['orders_count'] != null){
-      try{
-        totalOrder = json['orders_count'].toDouble();
-      }catch(e){
-        totalOrder = double.parse(json['orders_count'].toString());
-      }
+      totalOrder = double.tryParse(json['orders_count'].toString()) ?? 0.0;
     }
 
     imageFullUrl = json['image_full_url'] != null
@@ -87,7 +72,7 @@ class ProfileModel {
       : null;
 
     emailVerificationToken = json['email_verification_token'];
-    isPhoneVerified = json['is_phone_verified'];
+    isPhoneVerified = json['is_phone_verified'] != null ? int.tryParse(json['is_phone_verified'].toString()) : null;
   }
 
   Map<String, dynamic> toJson() {

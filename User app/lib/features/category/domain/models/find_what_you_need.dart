@@ -58,7 +58,7 @@ class FindWhatYouNeed {
     updatedAt = json['updated_at'];
     homeStatus = json['home_status'];
     priority = json['priority'];
-    productCount = int.parse(json['product_count'].toString());
+    productCount = int.tryParse(json['product_count']?.toString() ?? '') ?? 0;
     if (json['icon_full_url'] != null) {
       iconFullUrl = ImageFullUrl.fromJson(json['icon_full_url']);
     }
@@ -113,7 +113,7 @@ class Childes {
     updatedAt = json['updated_at'];
     homeStatus = json['home_status'];
     priority = json['priority'];
-    subCategoryProductCount = int.parse(json['sub_category_product_count'].toString());
+    subCategoryProductCount = int.tryParse(json['sub_category_product_count']?.toString() ?? '') ?? 0;
     if (json['icon_full_url'] != null) {
       iconFullUrl = ImageFullUrl.fromJson(json['icon_full_url']);
     }

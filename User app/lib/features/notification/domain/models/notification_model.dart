@@ -64,7 +64,7 @@ class NotificationItem {
     sentTo = json['sent_to'];
     title = json['title'];
     description = json['description'];
-    notificationCount = int.parse(json['notification_count'].toString());
+    notificationCount = int.tryParse(json['notification_count']?.toString() ?? '') ?? 0;
     image = json['image'];
     imageFullUrl = json['image_full_url'] != null
       ? ImageFullUrl.fromJson(json['image_full_url'])
@@ -92,9 +92,9 @@ class NotificationSeenBy {
         });
 
   NotificationSeenBy.fromJson(Map<String, dynamic> json) {
-    id = json['id'];
-    userId = int.parse(json['user_id'].toString());
-    notificationId = int.parse(json['notification_id'].toString());
+    id = json['id'] != null ? int.tryParse(json['id'].toString()) : null;
+    userId = int.tryParse(json['user_id']?.toString() ?? '');
+    notificationId = int.tryParse(json['notification_id']?.toString() ?? '');
     createdAt = json['created_at'];
   }
 }

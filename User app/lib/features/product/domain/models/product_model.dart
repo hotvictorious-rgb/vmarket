@@ -24,15 +24,15 @@ class ProductModel {
   List<Product>? get products => _products;
 
   ProductModel.fromJson(Map<String, dynamic> json) {
-    totalSize = json['total_size'];
-    limit = int.parse(json['limit'].toString());
-    offset = int.parse(json['offset'].toString());
+    totalSize = json['total_size'] != null ? int.tryParse(json['total_size'].toString()) : null;
+    limit = int.tryParse(json['limit']?.toString() ?? '') ?? 10;
+    offset = int.tryParse(json['offset']?.toString() ?? '') ?? 1;
     if (json['min_price'] != null) {
-      minPrice =  double.parse(json['min_price'].toString());
+      minPrice = double.tryParse(json['min_price'].toString());
     }
 
     if(json['max_price'] != null) {
-      maxPrice = double.parse(json['max_price'].toString());
+      maxPrice = double.tryParse(json['max_price'].toString());
     }
     if (json['products'] != null) {
       _products = [];
@@ -276,7 +276,7 @@ class Product {
     _minQty = json['min_qty'];
 
     if(json['refundable']!=null){
-      _refundable = int.parse(json['refundable'].toString());
+      _refundable = int.tryParse(json['refundable'].toString()) ?? 1;
     }
     if(json['digital_product_type']!=null){
       _digitalProductType = json['digital_product_type'];
@@ -379,32 +379,22 @@ class Product {
 
     }
     if(json['shipping_cost']!=null){
-      _shippingCost = double.parse(json['shipping_cost'].toString());
+      _shippingCost = double.tryParse(json['shipping_cost'].toString()) ?? 0.0;
     }
     if(json['multiply_qty']!=null){
-      _isMultiPly = int.parse(json['multiply_qty'].toString());
+      _isMultiPly = int.tryParse(json['multiply_qty'].toString()) ?? 0;
     }
     if(json['reviews_count']!=null){
-      _reviewCount = int.parse(json['reviews_count'].toString());
+      _reviewCount = int.tryParse(json['reviews_count'].toString()) ?? 0;
     }
     _videoUrl = json['video_url'];
     if(json['minimum_order_qty'] != null){
-      try{
-        _minimumOrderQty = json['minimum_order_qty'];
-      }catch(e){
-        _minimumOrderQty = int.parse(json['minimum_order_qty'].toString());
-      }
-
+      _minimumOrderQty = int.tryParse(json['minimum_order_qty'].toString()) ?? 1;
     }else{
       _minimumOrderQty = 1;
     }
     if(json['wish_list_count'] != null){
-      try{
-        wishList = json['wish_list_count'];
-      }catch(e){
-        wishList = int.parse(json['wish_list_count'].toString());
-      }
-
+      wishList = int.tryParse(json['wish_list_count'].toString()) ?? 0;
     }
     brand = json['brand'] != null ? Brand.fromJson(json['brand']) : null;
     _thumbnailFullUrl = json['thumbnail_full_url'] != null

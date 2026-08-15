@@ -65,7 +65,7 @@ class Chat {
     sellerId = json['seller_id'];
     adminId = json['admin_id'];
     if(json['delivery_man_id'] != null){
-      deliveryManId = int.parse(json['delivery_man_id'].toString());
+      deliveryManId = int.tryParse(json['delivery_man_id'].toString());
     }
 
     message = json['message'];
@@ -144,8 +144,8 @@ class Shops {
       });
 
   Shops.fromJson(Map<String, dynamic> json) {
-    id = json['id'];
-    sellerId = int.parse(json['seller_id'].toString());
+    id = json['id'] != null ? int.tryParse(json['id'].toString()) : null;
+    sellerId = int.tryParse(json['seller_id']?.toString() ?? '');
     name = json['name'];
     address = json['address'];
     contact = json['contact'];

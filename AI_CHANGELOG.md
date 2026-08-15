@@ -7,6 +7,16 @@ Always append your completed tasks here in chronological order at the top. Forma
 `### [YYYY-MM-DD HH:MM UTC] <Feature / Fix Title> [<Component Scope>]`
 Include the specific app/component modified and bullet points detailing the exact technical changes.
 
+### [2026-08-15 15:10 UTC] Harden Splash Config, Profile, Shipping, Chat, Notification, and Product Models [User App]
+* **Component:** Flutter Customer App (`User app/lib/features/splash/domain/models/config_model.dart`, `User app/lib/features/profile/domain/models/profile_model.dart`, `User app/lib/features/shipping/domain/models/chosen_shipping_method.dart`, `User app/lib/features/chat/domain/models/chat_model.dart`, `User app/lib/features/notification/domain/models/notification_model.dart`, `User app/lib/features/category/domain/models/find_what_you_need.dart`, `User app/lib/features/product/domain/models/product_model.dart`)
+* **Action:** Hardened remaining numeric/string parsing across system configuration, profile, shipping methods, customer chat, notifications, and products to ensure zero unhandled parsing exceptions across all screens.
+* **Changes Made:**
+  - **Splash & Config (`ConfigModel.fromJson`, `RefundPolicy.fromJson`, `CurrencyList.fromJson`)**: Replaced `int.parse` / `double.parse` on `decimal_point_settings`, `loyalty_point_exchange_rate`, `guest_checkout`, `minimum_add_fund_amount`, `maximum_add_fund_amount`, `order_verification`, `map_api_status`, `status`, and `exchange_rate` with safe `tryParse`.
+  - **Profile (`ProfileModel.fromJson`)**: Hardened `id`, `wallet_balance`, `loyalty_point`, `referral_user_count`, `orders_count`, and `is_phone_verified` with `double.tryParse` and `int.tryParse`.
+  - **Shipping (`ChosenShippingMethodModel.fromJson`)**: Converted `shipping_method_id`, `shipping_cost`, and `is_check_item_exist` to safe `int.tryParse` / `double.tryParse`.
+  - **Chat & Notifications (`Chat.fromJson`, `Shops.fromJson`, `NotificationItem.fromJson`, `NotificationSeenBy.fromJson`)**: Converted `delivery_man_id`, `seller_id`, `notification_count`, `user_id`, and `notification_id` to safe `int.tryParse`.
+  - **Products & Categories (`Product.fromJson`, `FindWhatYouNeedModel.fromJson`)**: Converted `minimum_order_qty`, `wish_list_count`, and `count` to `int.tryParse`.
+
 ### [2026-08-15 14:55 UTC] Harden Cart, Wishlist, and Product Details Model Deserialization [User App]
 * **Component:** Flutter Customer App (`User app/lib/features/cart/domain/models/cart_model.dart`, `User app/lib/features/wishlist/domain/models/wishlist_model.dart`, `User app/lib/features/product_details/domain/models/product_details_model.dart`)
 * **Action:** Hardened CartModel, ProductInfo, FreeDeliveryOrderAmount, WishlistModel, ProductDetailsModel, and Reviews model deserialization against `null` or type-mismatched fields to eliminate infinite spinner risk across Cart, Wishlist, and Product Details screens.
