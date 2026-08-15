@@ -36,8 +36,8 @@ class ProductModel {
 
   ProductModel.fromJson(Map<String, dynamic> json, {bool fromGetProducts = false}) {
     totalSize = int.tryParse('${json['total_size']}');
-    limit = int.parse(json['limit'].toString());
-    offset = int.parse(json['offset'].toString());
+    limit = int.tryParse(json['limit']?.toString() ?? '') ?? 10;
+    offset = int.tryParse(json['offset']?.toString() ?? '') ?? 1;
 
     if(json['product_type'] != null) {
       productType = _getProductType(json['product_type']);
@@ -50,18 +50,18 @@ class ProductModel {
 
     // Parse brandIds and categoryIds as lists of integers
     if (json['brand_ids'] != null) {
-      brandIds = Set<int>.from(json['brand_ids'].map((id) => int.parse(id.toString())));
+      brandIds = Set<int>.from(json['brand_ids'].map((id) => int.tryParse(id.toString()) ?? 0).where((id) => id != 0));
     }
     if (json['category_ids'] != null) {
-      categoryIds = List<int>.from(json['category_ids'].map((id) => int.parse(id.toString())));
+      categoryIds = List<int>.from(json['category_ids'].map((id) => int.tryParse(id.toString()) ?? 0).where((id) => id != 0));
     }
 
     if (json['publishing_house_ids'] != null) {
-      publishHouseIds = Set<int>.from(json['publishing_house_ids'].map((id) => int.parse(id.toString())));
+      publishHouseIds = Set<int>.from(json['publishing_house_ids'].map((id) => int.tryParse(id.toString()) ?? 0).where((id) => id != 0));
     }
 
     if(json['author_ids'] != null) {
-      authorIds = Set<int>.from(json['author_ids'].map((id) => int.parse(id.toString())));
+      authorIds = Set<int>.from(json['author_ids'].map((id) => int.tryParse(id.toString()) ?? 0).where((id) => id != 0));
     }
 
     if (json['products'] != null) {
@@ -88,13 +88,13 @@ class ProductModel {
     if (json['filter_sub_category_ids'] != null) {
       var subCatData = json['filter_sub_category_ids'];
       if(subCatData is String) subCatData = jsonDecode(subCatData);
-      filterSubCategoryIds = List<int>.from(subCatData.map((id) => int.parse(id.toString())));
+      filterSubCategoryIds = List<int>.from(subCatData.map((id) => int.tryParse(id.toString()) ?? 0).where((id) => id != 0));
     }
 
     if (json['filter_sub_sub_category_ids'] != null) {
       var subSubCatData = json['filter_sub_sub_category_ids'];
       if(subSubCatData is String) subSubCatData = jsonDecode(subSubCatData);
-      filterSubSubCategoryIds = List<int>.from(subSubCatData.map((id) => int.parse(id.toString())));
+      filterSubSubCategoryIds = List<int>.from(subSubCatData.map((id) => int.tryParse(id.toString()) ?? 0).where((id) => id != 0));
     }
 
     if (json['translations'] != null) {
@@ -337,7 +337,8 @@ class Product {
     if(json['attributes'] != null && json['category_ids'] is !String) {
       attributes = [];
       for(int index=0; index<json['attributes'].length; index++) {
-        attributes!.add(int.parse(json['attributes'][index].toString()));
+        int? attrId = int.tryParse(json['attributes'][index].toString());
+        if(attrId != null) attributes!.add(attrId);
       }
     }
     if (json['choice_options'] != null && json['category_ids'] is !String) {
@@ -404,7 +405,7 @@ class Product {
       try{
         minimumOrderQty = json['minimum_order_qty'];
       }catch(e){
-        minimumOrderQty = int.parse(json['minimum_order_qty'].toString());
+        minimumOrderQty = int.tryParse(json['minimum_order_qty'].toString()) ?? 1;
       }
     }
     if(json['digital_product_type']!=null){
@@ -414,7 +415,7 @@ class Product {
       digitalFileReady = json['digital_file_ready'];
     }
     if(json['reviews_count'] != null){
-      reviewsCount = int.parse(json['reviews_count'].toString());
+      reviewsCount = int.tryParse(json['reviews_count'].toString()) ?? 0;
     }else{
       reviewsCount = 0;
     }

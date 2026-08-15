@@ -7,6 +7,15 @@ Always append your completed tasks here in chronological order at the top. Forma
 `### [YYYY-MM-DD HH:MM UTC] <Feature / Fix Title> [<Component Scope>]`
 Include the specific app/component modified and bullet points detailing the exact technical changes.
 
+### [2026-08-15 12:35 UTC] Harden Numeric Parsing and Null-Safety in Customer & Vendor Apps (Bugs A, B, C) [User App, Vendor App, Laravel Backend]
+* **Component:** Flutter Models & Backend API (`User app`, `Vendor app`, `backend/vmarket-web/app/Http/Controllers/RestAPI/v3/seller/ProductController.php`)
+* **Action:** Resolved runtime exceptions caused by unsafe `.toDouble()` and `int.parse()` calls on nullable/string fields in order details and product models, and defaulted limit/offset in seller product endpoints.
+* **Changes Made:**
+  - **Bug A (`User app/lib/.../order_details_model.dart`)**: Replaced unsafe `.toDouble()` calls on `price`, `tax`, and `discount` with `double.tryParse(json[...]?.toString()) ?? null`, fixing blank order details screen on delivered/edited orders.
+  - **Bug B (`Vendor app/lib/.../product_model.dart`)**: Replaced unsafe `int.parse(json['limit'].toString())` and attribute/category maps with `int.tryParse(...) ?? default`, preventing crash when backend echoes null limit/offset on top selling and most popular product feeds.
+  - **Bug C (`Vendor app/lib/.../order_details_model.dart`)**: Replaced unsafe `.toDouble()` calls in `OrderDetailsModel` and `ProductDetails` with `double.tryParse(...)`, fixing infinite spinner when tapping orders with null prices/discounts.
+  - **Backend (`RestAPI/v3/seller/ProductController.php`)**: Updated `top_selling_products` and `most_popular_products` to return default integer limit (10) and offset (1) instead of echoing null request parameters.
+
 ### [2026-08-15 11:30 UTC] Align Android Release Keystore Signing Configurations [Vendor App, Delivery Man App]
 * **Component:** Mobile Android Build Pipelines (`Vendor app/android/app/build.gradle.kts`, `Delivery Man App/android/app/build.gradle`)
 * **Action:** Fixed release signing configurations to conditionally use the production release keystore when `key.properties` is present, enabling Google Play-compliant App Bundle (AAB) generation in GitHub Actions CI/CD.

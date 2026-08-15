@@ -74,10 +74,10 @@ class OrderDetailsModel {
     sellerId = json['seller_id'];
     digitalFileAfterSell = json['digital_file_after_sell'];
     productDetails = (json['product_details'] != null && json['product_details'] is !String) ? ProductDetails.fromJson(json['product_details']) : null;
-    qty = json['qty'];
-    price = json['price'].toDouble();
-    tax = json['tax'].toDouble();
-    discount = json['discount'].toDouble();
+    qty = json['qty'] != null ? int.tryParse(json['qty'].toString()) : null;
+    price = json['price'] != null ? double.tryParse(json['price'].toString()) : null;
+    tax = json['tax'] != null ? double.tryParse(json['tax'].toString()) : null;
+    discount = json['discount'] != null ? double.tryParse(json['discount'].toString()) : null;
     taxModel = json['tax_model'];
     deliveryStatus = json['delivery_status'];
     paymentStatus = json['payment_status'];
@@ -310,16 +310,16 @@ class ProductDetails {
         _variation!.add(Variation.fromJson(v));
       });
     }
-    _unitPrice = json['unit_price'].toDouble();
-    _purchasePrice = json['purchase_price'].toDouble();
-    // _tax = json['tax'].toDouble();
+    _unitPrice = json['unit_price'] != null ? double.tryParse(json['unit_price'].toString()) : null;
+    _purchasePrice = json['purchase_price'] != null ? double.tryParse(json['purchase_price'].toString()) : null;
+    // _tax = json['tax'] != null ? double.tryParse(json['tax'].toString()) : null;
     if(json['tax_model'] == null){
       _taxModel = 'exclude';
     }else{
       _taxModel = json['tax_model'];
     }
     _taxType = json['tax_type'];
-    _discount = json['discount'].toDouble();
+    _discount = json['discount'] != null ? double.tryParse(json['discount'].toString()) : null;
     _discountType = json['discount_type'];
     _currentStock = json['current_stock'];
     _details = json['details'];

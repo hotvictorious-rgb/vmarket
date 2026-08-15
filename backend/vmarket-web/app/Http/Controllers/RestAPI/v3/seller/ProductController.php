@@ -1814,10 +1814,13 @@ class ProductController extends Controller
             $collection[] = $product;
         }
 
+        $limit = $request['limit'] && $request['limit'] > 0 ? (int)$request['limit'] : 10;
+        $offset = $request['offset'] && $request['offset'] > 0 ? (int)$request['offset'] : 1;
+
         return response()->json([
             'total_size' => count($collection),
-            'limit' => $request['limit'],
-            'offset' => $request['offset'],
+            'limit' => $limit,
+            'offset' => $offset,
             'products' => $collection
         ], 200);
     }
@@ -1825,6 +1828,8 @@ class ProductController extends Controller
     public function most_popular_products(Request $request): JsonResponse
     {
         $seller = $request->seller;
+        $limit = $request['limit'] && $request['limit'] > 0 ? (int)$request['limit'] : 10;
+        $offset = $request['offset'] && $request['offset'] > 0 ? (int)$request['offset'] : 1;
 
         $products = $this->productRepo->getTopRatedList(
             filters: [
@@ -1835,16 +1840,16 @@ class ProductController extends Controller
             relations: ['rating', 'tags', 'clearanceSale' => function ($query) {
                 return $query->active();
             }],
-            dataLimit: $request['limit'] && $request['limit'] > 0 ? (int)$request['limit'] : 10,
-            offset: $request['offset'] && $request['offset'] > 0 ? (int)$request['offset'] : 1,
+            dataLimit: $limit,
+            offset: $offset,
         );
 
         $productsFinal = Helpers::product_data_formatting($products, true);
 
         return response()->json([
             'total_size' => $products->total(),
-            'limit' => $request['limit'],
-            'offset' => $request['offset'],
+            'limit' => $limit,
+            'offset' => $offset,
             'products' => $productsFinal
         ], 200);
     }
