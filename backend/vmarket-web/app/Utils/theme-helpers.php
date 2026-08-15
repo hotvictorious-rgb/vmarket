@@ -19,7 +19,7 @@ if (!function_exists('theme_asset')) {
 if (!function_exists('theme_root_path')) {
     function theme_root_path(): string
     {
-        return env('WEB_THEME') == null ? 'default' : env('WEB_THEME');
+        return env('WEB_THEME') == null ? 'theme_aster' : env('WEB_THEME');
     }
 }
 

@@ -7,6 +7,12 @@ Always append your completed tasks here in chronological order at the top. Forma
 `### [YYYY-MM-DD HH:MM UTC] <Feature / Fix Title> [<Component Scope>]`
 Include the specific app/component modified and bullet points detailing the exact technical changes.
 
+### [2026-08-15 19:21 UTC] Lock Backend Default Theme to Aster Theme [Backend]
+* **Component:** Laravel Web Backend (`backend/vmarket-web/app/Utils/theme-helpers.php`)
+* **Action:** Configured `theme_root_path()` in `theme-helpers.php` to default to `'theme_aster'` instead of `'default'`, locking the backend active theme across the web storefront, controllers, views, assets, caching, and `/api/v1/config` API.
+* **Changes Made:**
+  - **Theme Helpers (`theme-helpers.php`)**: Updated default fallback of `theme_root_path()` to `'theme_aster'`, ensuring all client applications receive Aster Theme as the single source of truth from the backend config API.
+
 ### [2026-08-15 19:09 UTC] Update SEO Meta Title and Brand Slogan for Search Engines [Backend & User App]
 * **Component:** Laravel Web Backend (`backend/vmarket-web/app/Providers/AppServiceProvider.php`), Flutter Customer App (`User app/lib/utill/app_constants.dart`)
 * **Action:** Configured Google SEO search title and meta description to explicitly index as `"Victorious MARKET || Your Trusted Online Market in Uyo, Akwa Ibom State"` instead of generic ecommerce placeholders.
