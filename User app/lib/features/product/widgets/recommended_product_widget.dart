@@ -75,9 +75,19 @@ class RecommendedProductWidget extends StatelessWidget {
                               Container(
                                 padding: const EdgeInsets.all(Dimensions.paddingSizeSmall),
                                 decoration: BoxDecoration(
-                                  borderRadius:  const BorderRadius.all(Radius.circular(Dimensions.paddingSizeSmall)),
-                                  color: Provider.of<ThemeController>(context, listen: false).darkTheme?
-                                  Theme.of(context).highlightColor : Theme.of(context).highlightColor
+                                  borderRadius: BorderRadius.circular(16),
+                                  color: Theme.of(context).highlightColor,
+                                  border: Border.all(
+                                    color: const Color(0xFFFFD700).withValues(alpha: 0.35),
+                                    width: 1.2,
+                                  ),
+                                  boxShadow: [
+                                    BoxShadow(
+                                      color: Theme.of(context).primaryColor.withValues(alpha: 0.08),
+                                      blurRadius: 12,
+                                      offset: const Offset(0, 4),
+                                    ),
+                                  ],
                                 ),
                                 child: Row(
                                   crossAxisAlignment: CrossAxisAlignment.start,
@@ -86,17 +96,17 @@ class RecommendedProductWidget extends StatelessWidget {
                                     recommended.recommendedProduct !=null && recommended.recommendedProduct!.thumbnail !=null?
                                     Container(
                                       decoration: BoxDecoration(
-                                        color: Theme.of(context).highlightColor,
-                                        border: Border.all(color: Theme.of(context).hintColor.withValues(alpha: 0.5), width: .5),
-                                        borderRadius: const BorderRadius.all(Radius.circular(5))
+                                        color: Theme.of(context).cardColor,
+                                        border: Border.all(color: Theme.of(context).primaryColor.withValues(alpha: 0.12), width: 1),
+                                        borderRadius: BorderRadius.circular(12),
                                       ),
                                         child: LayoutBuilder(builder: (context, boxConstraint)=> ClipRRect(
-                                          borderRadius: const BorderRadius.all(Radius.circular(5)),
+                                          borderRadius: BorderRadius.circular(12),
                                           child: Stack(
                                             children: [
                                               CustomImageWidget(
-                                                height: ResponsiveHelper.isTab(context) ? 250 : 100,
-                                                width: ResponsiveHelper.isTab(context) ? 230 : 100,
+                                                height: ResponsiveHelper.isTab(context) ? 250 : 105,
+                                                width: ResponsiveHelper.isTab(context) ? 230 : 105,
                                                 image: '${recommended.recommendedProduct?.thumbnailFullUrl?.path}',
                                               ),
 
@@ -107,7 +117,7 @@ class RecommendedProductWidget extends StatelessWidget {
                                                   child: Container(
                                                     width: ResponsiveHelper.isTab(context) ? 230 : size.width * 0.4,
                                                     decoration: BoxDecoration(
-                                                        color: Theme.of(context).colorScheme.error.withValues(alpha:0.4),
+                                                        color: Theme.of(context).colorScheme.error.withValues(alpha:0.8),
                                                         borderRadius: const BorderRadius.only(
                                                           topLeft: Radius.circular(Dimensions.radiusSmall),
                                                           topRight: Radius.circular(Dimensions.radiusSmall),
@@ -131,24 +141,35 @@ class RecommendedProductWidget extends StatelessWidget {
                                         children: [
 
                                           if((recommended.recommendedProduct?.reviewCount ?? 0) < 0 || double.parse(ratting!) > 0 )...[
-                                            Row(mainAxisAlignment: MainAxisAlignment.start,crossAxisAlignment: CrossAxisAlignment.center, children: [
-                                              Icon(Icons.star, color: Provider.of<ThemeController>(context).darkTheme ?
-                                              Colors.white : Colors.orange, size: 12),
-
-                                              Text(double.parse(ratting!).toStringAsFixed(1),
-                                                  style: textMedium.copyWith(fontSize: Dimensions.fontSizeSmall, color: Theme.of(context).textTheme.bodyLarge?.color)
+                                            Container(
+                                              padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                                              decoration: BoxDecoration(
+                                                color: Colors.amber.withValues(alpha: 0.15),
+                                                borderRadius: BorderRadius.circular(6),
                                               ),
-
-                                              Text('(${ recommended.recommendedProduct?.reviewCount ?? '0'})', style:
-                                              textRegular.copyWith(fontSize: Dimensions.fontSizeSmall,
-                                                  color: Theme.of(context).hintColor)),
-                                            ]),
+                                              child: Row(
+                                                mainAxisSize: MainAxisSize.min,
+                                                children: [
+                                                  const Icon(Icons.star, color: Colors.amber, size: 12),
+                                                  const SizedBox(width: 3),
+                                                  Text(double.parse(ratting!).toStringAsFixed(1),
+                                                      style: textBold.copyWith(fontSize: Dimensions.fontSizeExtraSmall, color: Theme.of(context).textTheme.bodyLarge?.color)
+                                                  ),
+                                                  Text(' (${ recommended.recommendedProduct?.reviewCount ?? '0'})', style:
+                                                  textRegular.copyWith(fontSize: Dimensions.fontSizeExtraSmall,
+                                                      color: Theme.of(context).hintColor)),
+                                                ],
+                                              ),
+                                            ),
+                                            const SizedBox(height: 4),
                                           ],
 
                                           SizedBox(width: MediaQuery.of(context).size.width / 2.5,
                                             child: Text(recommended.recommendedProduct!.name??'',maxLines: 2, overflow: TextOverflow.ellipsis,
-                                            style: textRegular.copyWith(fontSize: Dimensions.fontSizeDefault, color: Theme.of(context).textTheme.bodyLarge?.color ))
+                                            style: textBold.copyWith(fontSize: Dimensions.fontSizeDefault, color: Theme.of(context).textTheme.bodyLarge?.color ))
                                           ),
+
+                                          const SizedBox(height: 4),
 
                                           Row(
                                             mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -176,8 +197,8 @@ class RecommendedProductWidget extends StatelessWidget {
                                                     discount: (recommended.recommendedProduct?.clearanceSale?.discountAmount ?? 0) > 0
                                                        ?  recommended.recommendedProduct?.clearanceSale?.discountAmount
                                                        : recommended.recommendedProduct?.discount),
-                                                    style: textBold.copyWith(color: Theme.of(context).textTheme.bodyMedium?.color,
-                                                      fontSize: Dimensions.fontSizeDefault)) : const SizedBox(),
+                                                    style: textBold.copyWith(color: const Color(0xFF6A1B9A),
+                                                      fontSize: Dimensions.fontSizeLarge)) : const SizedBox(),
                                                 ],
                                               ),
                                             ],
@@ -201,24 +222,44 @@ class RecommendedProductWidget extends StatelessWidget {
                               DiscountTagWidget(
                                 productModel: recommended.recommendedProduct!,
                                 positionedTop: 0,
-                                topLeftBorderRadius: Dimensions.radiusDefault,
-                                bottomRightBorderRadius: Dimensions.radiusDefault
+                                topLeftBorderRadius: 16,
+                                bottomRightBorderRadius: 12,
                               ) : const SizedBox.shrink(),
 
 
                               Positioned(
-                                bottom: 10,
-                                right: isLtr ? 10 : null,
-                                left: isLtr ? null : 10,
+                                bottom: 12,
+                                right: isLtr ? 12 : null,
+                                left: isLtr ? null : 12,
 
-                                child: Container(width: 110,height: 35,
+                                child: Container(
+                                  padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 7),
                                   decoration: BoxDecoration(
-                                    borderRadius: const BorderRadius.all(Radius.circular(Dimensions.paddingSizeOverLarge)),
-                                    color: Theme.of(context).primaryColor),
-                                  child: Center(child: Text(getTranslated('grab_this_deal', context)!,
-                                    style: titleRegular.copyWith(color: Theme.of(context).colorScheme.secondaryContainer, fontSize: Dimensions.fontSizeDefault)))
-                                )
-                              )
+                                    borderRadius: BorderRadius.circular(20),
+                                    gradient: const LinearGradient(
+                                      colors: [Color(0xFFFFD700), Color(0xFFFFB300)],
+                                      begin: Alignment.topLeft,
+                                      end: Alignment.bottomRight,
+                                    ),
+                                    boxShadow: [
+                                      BoxShadow(
+                                        color: const Color(0xFFFFD700).withValues(alpha: 0.35),
+                                        blurRadius: 6,
+                                        offset: const Offset(0, 2),
+                                      ),
+                                    ],
+                                  ),
+                                  child: Center(
+                                    child: Text(
+                                      getTranslated('grab_this_deal', context)!,
+                                      style: textBold.copyWith(
+                                        color: const Color(0xFF333333),
+                                        fontSize: Dimensions.fontSizeSmall,
+                                      ),
+                                    ),
+                                  ),
+                                ),
+                              ),
 
 
                             ],

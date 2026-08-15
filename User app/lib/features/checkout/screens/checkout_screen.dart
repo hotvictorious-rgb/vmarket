@@ -65,6 +65,7 @@ class CheckoutScreenState extends State<CheckoutScreen> {
   late bool _billingAddress;
   double? _couponDiscount;
   double? _referralDiscount;
+  bool _isSubmitting = false;
 
   DebounceHelper debounceHelper = DebounceHelper(milliseconds: 500);
   SplashController  splashController= Provider.of<SplashController>(Get.context!, listen: false);
@@ -133,7 +134,17 @@ class CheckoutScreenState extends State<CheckoutScreen> {
 
                           Container(
                             padding: const EdgeInsets.all(Dimensions.paddingSizeDefault),
-                            color: Theme.of(context).cardColor,
+                            decoration: BoxDecoration(
+                              color: Theme.of(context).cardColor,
+                              borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
+                              boxShadow: [
+                                BoxShadow(
+                                  color: Colors.black.withValues(alpha: 0.06),
+                                  blurRadius: 12,
+                                  offset: const Offset(0, -4),
+                                ),
+                              ],
+                            ),
                             child: Column(
                               mainAxisSize: MainAxisSize.min,
                               children: [
@@ -141,7 +152,9 @@ class CheckoutScreenState extends State<CheckoutScreen> {
                                 const CheckoutConditionCheckBox(),
                                 const SizedBox(height: Dimensions.paddingSizeSmall),
 
-                                CustomButton(onTap: (orderProvider.isLoading || !orderProvider.isAcceptTerms) ? null : () async {
+                                CustomButton(onTap: (orderProvider.isLoading || !orderProvider.isAcceptTerms || _isSubmitting) ? null : () async {
+                                  if(_isSubmitting) return;
+
                                   if(orderProvider.addressIndex == null && widget.hasPhysical) {
                                     RouterHelper.getSavedAddressListRoute(fromGuest: !Provider.of<AuthController>(context, listen: false).isLoggedIn());
                                     showCustomSnackBarWidget(getTranslated('select_a_shipping_address', context), Get.context!, snackBarType: SnackBarType.warning);
@@ -152,6 +165,7 @@ class CheckoutScreenState extends State<CheckoutScreen> {
                                     showCustomSnackBarWidget(getTranslated('select_a_billing_address', context), Get.context!, snackBarType: SnackBarType.warning);
                                   } else {
                                     if(!orderProvider.isCheckCreateAccount || (orderProvider.isCheckCreateAccount && (passwordFormKey.currentState?.validate() ?? false))) {
+                                      setState(() => _isSubmitting = true);
                                       String orderNote = orderProvider.orderNoteController.text.trim();
                                       String couponCode = couponProvider.discount != null && couponProvider.discount != 0? couponProvider.couponCode : '';
                                       String couponCodeAmount = couponProvider.discount != null && couponProvider.discount != 0?
@@ -188,11 +202,13 @@ class CheckoutScreenState extends State<CheckoutScreen> {
                                       }
 
                                       else if(orderProvider.isOfflineChecked){
+                                        setState(() => _isSubmitting = false);
                                         // Navigator.of(context).push(MaterialPageRoute(builder: (_)=> OfflinePaymentScreen(payableAmount: _order + widget.shippingFee - widget.discount - (_referralDiscount ?? 0) - _couponDiscount! + _tax, callback: _callback)));
                                         RouterHelper.getOfflinePaymentScreen(payableAmount: (_order + widget.shippingFee - widget.discount - (_referralDiscount ?? 0) - _couponDiscount! + _tax), callback: _callback);
                                       }
 
                                       else if(orderProvider.isWalletChecked) {
+                                        setState(() => _isSubmitting = false);
                                         showAnimatedDialog(context, WalletPaymentWidget(
                                           currentBalance: profileProvider.balance ?? 0,
                                           orderAmount: _order + widget.shippingFee - widget.discount - (_referralDiscount ?? 0) - _couponDiscount! + _tax,
@@ -201,6 +217,7 @@ class CheckoutScreenState extends State<CheckoutScreen> {
                                             showCustomSnackBarWidget(getTranslated('insufficient_balance', context), context, snackBarType: SnackBarType.warning);
                                           }else{
                                             Navigator.pop(context);
+                                            setState(() => _isSubmitting = true);
                                             orderProvider.placeOrder(callback: _callback,wallet: true,
                                               addressID : addressId,
                                               couponCode : couponCode,
@@ -211,6 +228,7 @@ class CheckoutScreenState extends State<CheckoutScreen> {
                                         );
                                       }
                                       else {
+                                        setState(() => _isSubmitting = false);
                                         showModalBottomSheet(
                                           context: context, isScrollControlled: true, backgroundColor: Colors.transparent,
                                           builder: (c) {
@@ -426,6 +444,7 @@ class CheckoutScreenState extends State<CheckoutScreen> {
   }
 
   void _callback(bool isSuccess, String message, String orderID, bool createAccount) async {
+    setState(() => _isSubmitting = false);
     if(isSuccess) {
       WidgetsBinding.instance.addPostFrameCallback((_) {
         bool isLoggedIn = Provider.of<AuthController>(context, listen: false).isLoggedIn();
