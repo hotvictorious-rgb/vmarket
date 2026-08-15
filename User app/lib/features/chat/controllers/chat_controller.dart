@@ -369,6 +369,14 @@ class ChatController extends ChangeNotifier {
     ];
     return videoExtensions.contains(fileExtension);
   }
+
+  // [AI] Identify audio file extensions for voice note playback
+  bool isAudioExtension(String path) {
+    if (path.isEmpty) return false;
+    final fileExtension = path.split('.').last.toLowerCase();
+    const audioExtensions = ['m4a', 'mp3', 'wav', 'aac', 'ogg', 'opus', 'wma', 'amr'];
+    return audioExtensions.contains(fileExtension);
+  }
   Future<String?> generateThumbnail(String filePath) async {
     final directory = await getTemporaryDirectory();
 

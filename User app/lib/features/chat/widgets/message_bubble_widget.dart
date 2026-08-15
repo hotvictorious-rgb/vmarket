@@ -35,7 +35,8 @@ class MessageBubbleWidget extends StatelessWidget {
         final bool isLTR = Provider.of<LocalizationController>(context, listen: false).isLtr;
 
         final List<Attachment> images = message.attachment?.where((a) => a.type == 'media').toList() ?? [];
-        final List<Attachment> files = message.attachment?.where((a) => a.type == 'file').toList() ?? [];
+        final List<Attachment> files = message.attachment?.where((a) => a.type == 'file' && !chatProvider.isAudioExtension(a.path ?? '')).toList() ?? [];
+        final List<Attachment> audioAttachments = message.attachment?.where((a) => a.type == 'audio' || chatProvider.isAudioExtension(a.path ?? '')).toList() ?? [];
 
 
         String? image = _getAvatarImage(userTypeIndex: chatProvider.userTypeIndex);
@@ -76,6 +77,21 @@ class MessageBubbleWidget extends StatelessWidget {
             if (images.isNotEmpty) _MediaGridWidget(images: images, isMe: isMe),
 
             if (files.isNotEmpty) _FileGridWidget(files: files, isMe: isMe, isLTR: isLTR),
+
+            if (audioAttachments.isNotEmpty)
+              ...audioAttachments.map((a) => Padding(
+                padding: EdgeInsets.only(
+                  bottom: Dimensions.paddingSizeExtraSmall,
+                  left: (!isMe && isLTR) ? 40 : 0,
+                  right: (!isMe && !isLTR) ? 40 : 0,
+                ),
+                child: AudioPlayerWidget(
+                  url: (a.path?.startsWith('http') ?? false)
+                      ? a.path!
+                      : '${Provider.of<SplashController>(context, listen: false).baseUrls?.chatImageUrl}/${a.path}',
+                  isMe: isMe,
+                ),
+              )),
           ],
         );
       },
@@ -189,10 +205,15 @@ class _MessageText extends StatelessWidget {
             ),
           ],
         ),
-        child: message.message!.endsWith('.m4a') 
-        ? AudioPlayerWidget(url: message.message!, isMe: isMe) 
+        child: (message.message != null && chatProvider.isAudioExtension(message.message!)) 
+        ? AudioPlayerWidget(
+            url: message.message!.startsWith('http')
+                ? message.message!
+                : '${Provider.of<SplashController>(context, listen: false).baseUrls?.chatImageUrl}/${message.message}',
+            isMe: isMe,
+          ) 
         : Text(
-          message.message!,
+          message.message ?? '',
           textAlign: TextAlign.justify,
           style: textRegular.copyWith(
             fontSize: Dimensions.fontSizeDefault,

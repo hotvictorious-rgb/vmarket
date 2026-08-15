@@ -7,6 +7,13 @@ Always append your completed tasks here in chronological order at the top. Forma
 `### [YYYY-MM-DD HH:MM UTC] <Feature / Fix Title> [<Component Scope>]`
 Include the specific app/component modified and bullet points detailing the exact technical changes.
 
+### [2026-08-15 18:56 UTC] Fix Customer App Voice Note & Audio Attachment Playback [User App]
+* **Component:** Flutter Customer App (`User app/lib/features/chat/controllers/chat_controller.dart`, `User app/lib/features/chat/widgets/message_bubble_widget.dart`)
+* **Action:** Fixed the critical voice note playback bug in the Customer App by identifying audio attachments (`.m4a`, `.mp3`, `.wav`, `.aac`, `.ogg`, `type: 'audio'`) and routing them to `AudioPlayerWidget` with their full server storage URL rather than erroneously passing raw message text.
+* **Changes Made:**
+  - **Chat Controller (`chat_controller.dart`)**: Added `isAudioExtension` to recognize audio and voice note extensions.
+  - **Message Bubble Widget (`message_bubble_widget.dart`)**: Added an `audioAttachments` rendering stream in `MessageBubbleWidget` with `chatImageUrl` resolution and updated `_MessageText` to safely parse audio URLs.
+
 ### [2026-08-15 18:50 UTC] Secure & Modernize Checkout Flow and Redesign Recommended Product Layout [User App]
 * **Component:** Flutter Customer App (`User app/lib/features/checkout/screens/checkout_screen.dart`, `User app/lib/features/product/widgets/recommended_product_widget.dart`)
 * **Action:** Hardened order placement against concurrent double-taps, added modern card styling and shadows to the checkout bottom bar, and redesigned the Recommended Product / Deal of the Day card with Victorious MARKET signature gold-gradient accents, star badges, and elevated borders.
