@@ -252,58 +252,19 @@ class ConfigModel {
     _sellerRegistration = json['seller_registration'].toString();
     _companyPhone = json['company_phone'].toString();
     _companyEmail = json['company_email'].toString();
-    if(json['decimal_point_settings'] != null && json['decimal_point_settings'] != "" ){
-      _decimalPointSetting = int.parse(json['decimal_point_settings'].toString());
-    }
+    _decimalPointSetting = int.tryParse(json['decimal_point_settings']?.toString() ?? '') ?? 1;
     // _companyLogo =json['company_logo']??'';
     _companyLogoImage = json['company_logo'] != null
       ? ImageFullUrl.fromJson(json['company_logo'])
       : null;
-    if(json['pos_active'] != null){
-      try{
-        _posActive = json['pos_active'];
-      }catch(e){
-        _posActive = int.parse(json['pos_active'].toString());
-      }
-    }else{
-      _posActive = 0;
-    }
-
+    _posActive = int.tryParse(json['pos_active']?.toString() ?? '') ?? 0;
     activeTheme = json['active_theme'];
-    if(json['minimum_order_amount_status'] != null){
-      try{
-        minimumOrderAmountStatus = json['minimum_order_amount_status'];
-      }catch(e){
-        minimumOrderAmountStatus = int.parse(json['minimum_order_amount_status'].toString());
-      }
-    }
-    if(json['free_delivery_status'] != null){
-      try{
-        freeDeliveryStatus = json['free_delivery_status'];
-      }catch(e){
-        freeDeliveryStatus = int.parse(json['free_delivery_status'].toString());
-      }
-    }
-
-    if(json['order_verification'] != null){
-      try{
-        orderVerification = json['order_verification'];
-      }catch(e){
-        orderVerification = int.parse(json['order_verification'].toString());
-      }
-    }
-
+    minimumOrderAmountStatus = int.tryParse(json['minimum_order_amount_status']?.toString() ?? '') ?? 0;
+    freeDeliveryStatus = int.tryParse(json['free_delivery_status']?.toString() ?? '') ?? 0;
+    orderVerification = int.tryParse(json['order_verification']?.toString() ?? '') ?? 0;
     freeDeliveryResponsibility = json['free_delivery_responsibility'];
-
-     _mapApiStatus = json['map_api_status'] != null ? int.parse(json['map_api_status'].toString()) : null;
-
-    if(json['minimum_order_amount_by_seller'] != null){
-      try{
-        minimumOrderAmountStatusBySeller = json['minimum_order_amount_by_seller'];
-      }catch(e){
-        minimumOrderAmountStatusBySeller = int.parse(json['minimum_order_amount_by_seller'].toString());
-      }
-    }
+    _mapApiStatus = int.tryParse(json['map_api_status']?.toString() ?? '');
+    minimumOrderAmountStatusBySeller = int.tryParse(json['minimum_order_amount_by_seller']?.toString() ?? '') ?? 0;
 
     if(json['vendor_review_reply_status'] != null) {
       try{
@@ -618,13 +579,7 @@ class CurrencyList {
     _name = json['name'];
     _symbol = json['symbol'];
     _code = json['code'];
-    if(json['exchange_rate'] != null){
-      try{
-        _exchangeRate = json['exchange_rate'].toDouble();
-      }catch(e){
-        _exchangeRate = double.parse(json['exchange_rate'].toString());
-      }
-    }
+    _exchangeRate = double.tryParse(json['exchange_rate']?.toString() ?? '') ?? 1.0;
 
     _createdAt = json['created_at'];
     _updatedAt = json['updated_at'];
@@ -995,7 +950,7 @@ class RefundPolicy {
 
 
   RefundPolicy.fromJson(Map<String, dynamic> json) {
-    _status = int.parse(json['status'].toString());
+    _status = int.tryParse(json['status']?.toString() ?? '') ?? 0;
     _content = json['content'];
   }
 

@@ -726,7 +726,7 @@ class ForAndroid {
   ForAndroid({this.status, this.version, this.link});
 
   ForAndroid.fromJson(Map<String, dynamic> json) {
-    status = int.parse(json['status'].toString());
+    status = int.tryParse(json['status']?.toString() ?? '');
     version = json['version'];
     link = json['link'];
   }

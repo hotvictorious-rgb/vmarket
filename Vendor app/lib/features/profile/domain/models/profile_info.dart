@@ -80,51 +80,18 @@ class ProfileInfoModel {
     cacNumber = json['cac_number'];
     kycStatus = json['kyc_status'];
     authToken = json['auth_token'];
-    if(json['sales_commission_percentage']!=null){
-      try{
-        salesCommissionPercentage = (json['sales_commission_percentage']).toDouble();
-      }catch(e){
-        salesCommissionPercentage = double.parse(json['sales_commission_percentage'].toString());
-      }
-
-
-    }
+    salesCommissionPercentage = double.tryParse(json['sales_commission_percentage']?.toString() ?? '');
     if(json['gst']!=null){
       gst = json['gst'];
     }
-    posActive = int.parse(json['pos_status'].toString());
+    posActive = int.tryParse(json['pos_status']?.toString() ?? '') ?? 0;
     productCount = json['product_count'];
     ordersCount = json['orders_count'];
     wallet =
     json['wallet'] != null ? Wallet.fromJson(json['wallet']) : null;
-    if(json['minimum_order_amount'] != null){
-      try{
-        minimumOrderAmount = json['minimum_order_amount'].toDouble();
-      }catch(e){
-        minimumOrderAmount = double.parse(json['minimum_order_amount'].toString());
-      }
-    }else{
-      minimumOrderAmount = 0;
-    }
-    if(json['free_delivery_over_amount'] != null){
-      try{
-        freeOverDeliveryAmount = json['free_delivery_over_amount'].toDouble();
-      }catch(e){
-        freeOverDeliveryAmount = double.parse(json['free_delivery_over_amount'].toString());
-      }
-    }else{
-      freeOverDeliveryAmount = 0;
-    }
-
-    if(json['free_delivery_status'] != null){
-      try{
-        freeOverDeliveryAmountStatus = json['free_delivery_status'];
-      }catch(e){
-        freeOverDeliveryAmountStatus = int.parse(json['free_delivery_status'].toString());
-      }
-    }else{
-      freeOverDeliveryAmountStatus = 0;
-    }
+    minimumOrderAmount = double.tryParse(json['minimum_order_amount']?.toString() ?? '') ?? 0;
+    freeOverDeliveryAmount = double.tryParse(json['free_delivery_over_amount']?.toString() ?? '') ?? 0;
+    freeOverDeliveryAmountStatus = int.tryParse(json['free_delivery_status']?.toString() ?? '') ?? 0;
 
     imageFullUrl = json['image_full_url'] != null
         ? ImageFullUrl.fromJson(json['image_full_url'])

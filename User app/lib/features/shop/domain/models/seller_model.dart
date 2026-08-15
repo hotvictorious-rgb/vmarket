@@ -94,10 +94,10 @@ class Seller {
     authToken = json['auth_token'];
     gst = json['gst'];
     cmFirebaseToken = json['cm_firebase_token'];
-    posStatus = int.parse(json['pos_status'].toString());
-    minimumOrderAmount = double.parse(json['minimum_order_amount'].toString());
-    freeDeliveryStatus = double.parse(json['free_delivery_status'].toString());
-    freeDeliveryOverAmount = double.parse(json['free_delivery_over_amount'].toString());
+    posStatus = int.tryParse(json['pos_status']?.toString() ?? '') ?? 0;
+    minimumOrderAmount = double.tryParse(json['minimum_order_amount']?.toString() ?? '') ?? 0;
+    freeDeliveryStatus = double.tryParse(json['free_delivery_status']?.toString() ?? '') ?? 0;
+    freeDeliveryOverAmount = double.tryParse(json['free_delivery_over_amount']?.toString() ?? '') ?? 0;
     ordersCount = json['orders_count'];
     productCount = json['product_count'];
     totalRating = json['total_rating'];
@@ -165,7 +165,7 @@ class Shop {
 
   Shop.fromJson(Map<String, dynamic> json, {bool isAdminProduct = false}) {
     id = isAdminProduct ? 0 : json['id'];
-    sellerId = int.parse(json['seller_id'].toString());
+    sellerId = int.tryParse(json['seller_id']?.toString() ?? '');
     slug = json['slug'];
     name = json['name'];
     address = json['address'];

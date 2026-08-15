@@ -58,8 +58,8 @@ class ReviewModel {
 
   ReviewModel.fromJson(Map<String, dynamic> json) {
     _id = json['id'];
-    _productId = int.parse(json['product_id'].toString());
-    _customerId = int.parse(json['customer_id'].toString());
+    _productId = int.tryParse(json['product_id']?.toString() ?? '');
+    _customerId = int.tryParse(json['customer_id']?.toString() ?? '');
     _comment = json['comment'];
     if(json['attachment'] != null && json['attachment'] is List){
       _attachment = json['attachment'].cast<String>();

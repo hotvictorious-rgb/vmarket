@@ -22,13 +22,7 @@ class ShippingMethodModel {
     id = json['id'];
     creatorType = json['creator_type'];
     title = json['title'];
-    if(json['cost'] != null){
-      try{
-        cost = json['cost'].toDouble();
-      }catch(e){
-        cost = double.parse(json['cost'].toString());
-      }
-    }
+    cost = double.tryParse(json['cost']?.toString() ?? '') ?? 0.0;
 
     duration = json['duration'];
     createdAt = json['created_at'];

@@ -7,6 +7,14 @@ Always append your completed tasks here in chronological order at the top. Forma
 `### [YYYY-MM-DD HH:MM UTC] <Feature / Fix Title> [<Component Scope>]`
 Include the specific app/component modified and bullet points detailing the exact technical changes.
 
+### [2026-08-15 15:30 UTC] Harden Offline Payment, Review, Shipping, Shop Seller, Profile, and Config Deserialization [User App, Vendor App]
+* **Component:** Flutter Customer & Vendor Apps (`User app/lib/features/offline_payment/domain/models/offline_payment_model.dart`, `User app/lib/features/review/domain/models/review_model.dart`, `User app/lib/features/shipping/domain/models/shipping_method_model.dart`, `User app/lib/features/shop/domain/models/seller_info_model.dart`, `User app/lib/features/shop/domain/models/seller_model.dart`, `User app/lib/features/splash/domain/models/config_model.dart`, `Vendor app/lib/features/profile/domain/models/profile_info.dart`, `Vendor app/lib/features/splash/domain/models/config_model.dart`)
+* **Action:** Hardened remaining models in User and Vendor apps against `FormatException` / `TypeError` on null, empty string, or uncast numeric values.
+* **Changes Made:**
+  - **User App Offline Payment & Review**: Safe `int.tryParse` / `double.tryParse` for `status`, `product_id`, `customer_id`, `rating`, `attachment` in offline payment and review models.
+  - **User App Shipping & Shop**: Safe `int.tryParse` / `double.tryParse` for `creator_id`, `cost`, `status`, `seller_id`, `pos_status`, `minimum_order_amount`, `free_delivery_status`, `free_delivery_over_amount`.
+  - **Vendor App Profile & Splash**: Hardened `sales_commission_percentage`, `pos_status`, `minimum_order_amount`, `free_delivery_over_amount`, `free_delivery_status`, `decimal_point_settings`, `order_verification`, `map_api_status`, `exchange_rate`, and `refund_policy.status`.
+
 ### [2026-08-15 15:10 UTC] Harden Splash Config, Profile, Shipping, Chat, Notification, and Product Models [User App]
 * **Component:** Flutter Customer App (`User app/lib/features/splash/domain/models/config_model.dart`, `User app/lib/features/profile/domain/models/profile_model.dart`, `User app/lib/features/shipping/domain/models/chosen_shipping_method.dart`, `User app/lib/features/chat/domain/models/chat_model.dart`, `User app/lib/features/notification/domain/models/notification_model.dart`, `User app/lib/features/category/domain/models/find_what_you_need.dart`, `User app/lib/features/product/domain/models/product_model.dart`)
 * **Action:** Hardened remaining numeric/string parsing across system configuration, profile, shipping methods, customer chat, notifications, and products to ensure zero unhandled parsing exceptions across all screens.

@@ -246,7 +246,7 @@ class Shop {
   Shop.fromJson(Map<String, dynamic> json) {
     _slug = json['slug'];
     _id = json['id'];
-    _sellerId = int.parse(json['seller_id'].toString());
+    _sellerId = int.tryParse(json['seller_id']?.toString() ?? '');
     _name = json['name'];
     _address = json['address'];
     _contact = json['contact'];
