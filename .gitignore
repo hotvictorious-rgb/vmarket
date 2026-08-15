@@ -33,7 +33,7 @@ local.properties
 Runner.xcuserstate
 
 # Laravel Backend
-backend/**/vendor/
+backend/*/vendor/
 backend/**/.env
 backend/**/node_modules/
 backend/**/public/storage

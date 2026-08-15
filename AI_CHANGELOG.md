@@ -7,6 +7,13 @@ Always append your completed tasks here in chronological order at the top. Forma
 `### [YYYY-MM-DD HH:MM UTC] <Feature / Fix Title> [<Component Scope>]`
 Include the specific app/component modified and bullet points detailing the exact technical changes.
 
+### [2026-08-15 06:10 UTC] Fix Gitignore Over-Broad Rules to Unhide Active Vendor Panel [AI Governance, Laravel Backend]
+* **Component:** Git Governance (`.gitignore`, `AI_CHANGELOG.md`)
+* **Action:** Patched over-broad glob match in root `.gitignore` that was ignoring all custom/active Vendor directories.
+* **Changes Made:**
+  - **`.gitignore`**: Replaced `backend/**/vendor/` (which ignored any folder named `Vendor` or `vendor` at any nesting depth) with `backend/*/vendor/` (which only targets composer dependencies inside backend project roots).
+  - **Result**: Exposed all previously Git-ignored active Vendor Panel files (controllers, requests, enums, views, and routes) to Git tracking, enabling complete synchronization of your custom active backend to GitHub.
+
 ### [2026-08-15 06:05 UTC] Fix Syntax Parse Error in DeliveryManController [Laravel Backend]
 * **Component:** Laravel REST API (`app/Http/Controllers/RestAPI/v2/delivery_man/DeliveryManController.php`)
 * **Action:** Resolved syntax parse error inside the `language_change` method.
