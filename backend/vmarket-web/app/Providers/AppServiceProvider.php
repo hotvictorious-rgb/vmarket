@@ -114,8 +114,8 @@ class AppServiceProvider extends ServiceProvider
                         'digital_product_authors' => Schema::hasTable('authors') ? ProductManager::getProductAuthorList() : null,
                         'firebase_otp_verification' => $firebaseOTPVerification,
                         'firebase_otp_verification_status' => $firebaseOTPVerificationStatus,
-                        'meta_title' => getWebConfig(name: 'company_name').' '.translate('Online_Shopping').' | '.getWebConfig(name: 'company_name').' '.translate('ecommerce'),
-                        'meta_description' => substr(strip_tags(str_replace('&nbsp;', ' ', (BusinessPage::where('slug', 'about-us')->first()?->description ?? ''))), 0, 160),
+                        'meta_title' => getWebConfig(name: 'meta_title') ?: (getWebConfig(name: 'company_name').' || Your Trusted Online Market in Uyo, Akwa Ibom State'),
+                        'meta_description' => getWebConfig(name: 'meta_description') ?: 'Victorious MARKET || Your Trusted Online Market in Uyo, Akwa Ibom State. Shop quality electronics, groceries, fashion, beauty, and home essentials with fast delivery in Uyo.',
                     ];
 
                     if ((!Request::is('admin') && !Request::is('admin/*') && !Request::is('seller/*') && !Request::is('vendor/*')) || Request::is('vendor/auth/registration/*')) {
