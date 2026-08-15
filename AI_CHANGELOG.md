@@ -7,6 +7,13 @@ Always append your completed tasks here in chronological order at the top. Forma
 `### [YYYY-MM-DD HH:MM UTC] <Feature / Fix Title> [<Component Scope>]`
 Include the specific app/component modified and bullet points detailing the exact technical changes.
 
+### [2026-08-15 11:30 UTC] Align Android Release Keystore Signing Configurations [Vendor App, Delivery Man App]
+* **Component:** Mobile Android Build Pipelines (`Vendor app/android/app/build.gradle.kts`, `Delivery Man App/android/app/build.gradle`)
+* **Action:** Fixed release signing configurations to conditionally use the production release keystore when `key.properties` is present, enabling Google Play-compliant App Bundle (AAB) generation in GitHub Actions CI/CD.
+* **Changes Made:**
+  - **`Vendor app` (`build.gradle.kts`)**: Replaced hardcoded `signingConfigs.debug` in `buildTypes.release` with `if (keystorePropertiesFile.exists()) signingConfigs.getByName("release") else signingConfigs.getByName("debug")`.
+  - **`Delivery Man App` (`build.gradle`)**: Replaced hardcoded `signingConfigs.debug` in `buildTypes.release` with `keystorePropertiesFile.exists() ? signingConfigs.release : signingConfigs.debug`. Modernized Java compatibility to `JavaVersion.VERSION_11` and upgraded desugaring to `desugar_jdk_libs:2.1.4`.
+
 ### [2026-08-15 09:45 UTC] Harden Delivery OTP Gate, Paystack Callback, and COD Lifecycle Idempotency (F1, F2, F3) [Laravel Backend]
 * **Component:** Laravel REST API (`app/Http/Controllers/RestAPI/v2/delivery_man/DeliveryManController.php`)
 * **Action:** Hardened delivery verification gate, Paystack door payment callback idempotency, and COD delivery status transitions against double execution and race conditions.
