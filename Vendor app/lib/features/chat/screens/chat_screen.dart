@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
@@ -35,12 +36,28 @@ class ChatScreen extends StatefulWidget {
 class _ChatScreenState extends State<ChatScreen> {
   final ImagePicker picker = ImagePicker();
   final ScrollController _scrollController = ScrollController();
+  Timer? _liveSyncTimer;
 
   @override
   void initState() {
     Provider.of<ChatController>(context, listen: false).getMessageList(widget.userId, 1);
     Provider.of<ChatController>(context, listen: false).setEmojiPickerValue(false, notify: false);
+    _startLiveSync();
     super.initState();
+  }
+
+  @override
+  void dispose() {
+    _liveSyncTimer?.cancel();
+    super.dispose();
+  }
+
+  void _startLiveSync() {
+    _liveSyncTimer = Timer.periodic(const Duration(seconds: 4), (timer) {
+      if (mounted) {
+        Provider.of<ChatController>(context, listen: false).getMessageList(widget.userId, 1, reload: false);
+      }
+    });
   }
 
   @override
