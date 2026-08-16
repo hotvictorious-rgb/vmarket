@@ -164,55 +164,60 @@ class _FashionThemeHomePageState extends State<FashionThemeHomePage> with Automa
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 crossAxisAlignment: CrossAxisAlignment.center,
                 children: [
-                  // Premium Two-Tone Brand Wordmark
+                  // Premium Two-Tone Brand Wordmark — "Victorious" Gold + "MARKET" White
                   Expanded(
                     flex: 5,
                     child: Align(
                       alignment: Alignment.centerLeft,
-                      child: ShaderMask(
-                        blendMode: BlendMode.srcIn,
-                        shaderCallback: (bounds) => const LinearGradient(
-                          colors: [Color(0xFFFFD700), Color(0xFFFFB300)],
-                          begin: Alignment.topLeft,
-                          end: Alignment.bottomRight,
-                        ).createShader(bounds),
-                        child: RichText(
-                          text: TextSpan(
-                            children: [
-                              TextSpan(
-                                text: 'Victorious',
-                                style: TextStyle(
-                                  fontFamily: 'Ubuntu',
-                                  fontWeight: FontWeight.w900,
-                                  fontSize: 23,
-                                  letterSpacing: 0.6,
-                                  height: 1.1,
-                                  color: Colors.white,
-                                  shadows: [Shadow(color: Colors.black.withValues(alpha: 0.35), offset: const Offset(0, 2), blurRadius: 6)],
-                                ),
-                              ),
-                              const TextSpan(text: '\n'),
-                              WidgetSpan(
-                                child: ShaderMask(
-                                  blendMode: BlendMode.srcIn,
-                                  shaderCallback: (_) => const LinearGradient(colors: [Colors.white, Color(0xFFF0F0F0)]).createShader(const Rect.fromLTWH(0, 0, 140, 24)),
-                                  child: Text(
-                                    'MARKET',
-                                    style: TextStyle(
-                                      fontFamily: 'Ubuntu',
-                                      fontWeight: FontWeight.w900,
-                                      fontSize: 20,
-                                      letterSpacing: 5.0,
-                                      height: 1.0,
-                                      color: Colors.white,
-                                      shadows: [Shadow(color: Colors.black.withValues(alpha: 0.3), offset: const Offset(0, 2), blurRadius: 5)],
-                                    ),
+                      child: Column(
+                        mainAxisSize: MainAxisSize.min,
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          ShaderMask(
+                            blendMode: BlendMode.srcIn,
+                            shaderCallback: (bounds) => const LinearGradient(
+                              colors: [Color(0xFFFFD700), Color(0xFFFFB300)],
+                              begin: Alignment.topLeft,
+                              end: Alignment.bottomRight,
+                            ).createShader(bounds),
+                            child: Text(
+                              'Victorious',
+                              style: TextStyle(
+                                fontFamily: 'Ubuntu',
+                                fontWeight: FontWeight.w900,
+                                fontSize: 23,
+                                letterSpacing: 0.6,
+                                height: 1.05,
+                                color: const Color(0xFFFFD700),
+                                shadows: [
+                                  Shadow(
+                                    color: Colors.black.withValues(alpha: 0.35),
+                                    offset: const Offset(0, 2),
+                                    blurRadius: 6,
                                   ),
-                                ),
+                                ],
                               ),
-                            ],
+                            ),
                           ),
-                        ),
+                          Text(
+                            'MARKET',
+                            style: TextStyle(
+                              fontFamily: 'Ubuntu',
+                              fontWeight: FontWeight.w900,
+                              fontSize: 20,
+                              letterSpacing: 5.0,
+                              height: 1.0,
+                              color: Colors.white, // Crisp White #FFFFFF
+                              shadows: [
+                                Shadow(
+                                  color: Colors.black.withValues(alpha: 0.3),
+                                  offset: const Offset(0, 2),
+                                  blurRadius: 5,
+                                ),
+                              ],
+                            ),
+                          ),
+                        ],
                       ),
                     ),
                   ),

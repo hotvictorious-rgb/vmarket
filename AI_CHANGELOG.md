@@ -7,6 +7,16 @@ Always append your completed tasks here in chronological order at the top. Forma
 `### [YYYY-MM-DD HH:MM UTC] <Feature / Fix Title> [<Component Scope>]`
 Include the specific app/component modified and bullet points detailing the exact technical changes.
 
+### [2026-08-16 04:19 UTC] Update Brand Wordmark to Gold Victorious and Crisp White MARKET Across Splash & All Home Themes [User App]
+* **Component:** Flutter Customer App (`User app/lib/features/splash/screens/splash_screen.dart`, `User app/lib/features/home/screens/home_screens.dart`, `User app/lib/features/home/screens/aster_theme_home_screen.dart`, `User app/lib/features/home/screens/fashion_theme_home_screen.dart`)
+* **Action:** Isolated the gold gradient `ShaderMask` strictly to the word "Victorious" and rendered "MARKET" in crisp pure white (`#FFFFFF`), ensuring complete brand consistency across the Splash Screen and all 3 Home Screen themes per `.agents/AGENTS.md` Multi-Theme Home Header governance rules.
+* **Changes Made:**
+  - **Splash Screen Wordmark (`splash_screen.dart`)**: Separated the brand wordmark into a structured Column with gold gradient "Victorious" and pure white `#FFFFFF` "MARKET".
+  - **Default Theme Header (`home_screens.dart`)**: Updated AppBar header brand wordmark to gold "Victorious" + white `#FFFFFF` "MARKET".
+  - **Aster Theme Header (`aster_theme_home_screen.dart`)**: Replicated header wordmark identically in Aster theme.
+  - **Fashion Theme Header (`fashion_theme_home_screen.dart`)**: Replicated header wordmark identically in Fashion theme.
+  - **Cross-Theme Verification**: Validated via `flutter analyze` across splash and home screens (0 compilation errors).
+
 ### [2026-08-16 04:05 UTC] Implement WhatsApp Voice Recording Gestures, Emoji Reactions, and Real-Time Live Sync [User App, Vendor App, Delivery App]
 * **Component:** Flutter Customer App (`User app/lib/features/chat/`), Vendor App (`Vendor app/lib/features/chat/`), Delivery Man App (`Delivery Man App/lib/features/chat/`)
 * **Action:** Implemented WhatsApp Hold-to-Record Voice Notes with Slide-to-Cancel and Hands-Free Lock mode, Long-Press Floating Emoji Message Reactions (👍, ❤️, 😂, 😮, 😢, 🙏) with reaction pill badges, and Real-Time Live Chat Sync with dynamic animated "typing..." / "online" presence status.

@@ -288,51 +288,58 @@ class SplashWidget extends StatelessWidget {
         ),
         const SizedBox(height: 14),
         // [AI] Signature Victorious MARKET Brand Wordmark (Gold + White)
-        ShaderMask(
-          blendMode: BlendMode.srcIn,
-          shaderCallback: (bounds) => const LinearGradient(
-            colors: [Color(0xFFFFD700), Color(0xFFFFB300)],
-            begin: Alignment.topLeft,
-            end: Alignment.bottomRight,
-          ).createShader(bounds),
-          child: RichText(
-            textAlign: TextAlign.center,
-            text: TextSpan(
-              children: [
-                TextSpan(
-                  text: 'Victorious',
-                  style: TextStyle(
-                    fontFamily: 'Ubuntu',
-                    fontWeight: FontWeight.w900,
-                    fontSize: 32,
-                    letterSpacing: 0.8,
-                    height: 1.1,
-                    color: Colors.white,
-                    shadows: [Shadow(color: Colors.black.withValues(alpha: 0.35), offset: const Offset(0, 2), blurRadius: 8)],
-                  ),
-                ),
-                const TextSpan(text: '\n'),
-                WidgetSpan(
-                  child: ShaderMask(
-                    blendMode: BlendMode.srcIn,
-                    shaderCallback: (_) => const LinearGradient(colors: [Colors.white, Color(0xFFF0F0F0)]).createShader(const Rect.fromLTWH(0, 0, 180, 30)),
-                    child: Text(
-                      'MARKET',
-                      style: TextStyle(
-                        fontFamily: 'Ubuntu',
-                        fontWeight: FontWeight.w900,
-                        fontSize: 27,
-                        letterSpacing: 6.5,
-                        height: 1.0,
-                        color: Colors.white,
-                        shadows: [Shadow(color: Colors.black.withValues(alpha: 0.3), offset: const Offset(0, 2), blurRadius: 6)],
-                      ),
+        Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.center,
+          children: [
+            ShaderMask(
+              blendMode: BlendMode.srcIn,
+              shaderCallback: (bounds) => const LinearGradient(
+                colors: [Color(0xFFFFD700), Color(0xFFFFB300)],
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+              ).createShader(bounds),
+              child: Text(
+                'Victorious',
+                textAlign: TextAlign.center,
+                style: TextStyle(
+                  fontFamily: 'Ubuntu',
+                  fontWeight: FontWeight.w900,
+                  fontSize: 32,
+                  letterSpacing: 0.8,
+                  height: 1.1,
+                  color: const Color(0xFFFFD700),
+                  shadows: [
+                    Shadow(
+                      color: Colors.black.withValues(alpha: 0.35),
+                      offset: const Offset(0, 2),
+                      blurRadius: 8,
                     ),
-                  ),
+                  ],
                 ),
-              ],
+              ),
             ),
-          ),
+            const SizedBox(height: 2),
+            Text(
+              'MARKET',
+              textAlign: TextAlign.center,
+              style: TextStyle(
+                fontFamily: 'Ubuntu',
+                fontWeight: FontWeight.w900,
+                fontSize: 27,
+                letterSpacing: 6.5,
+                height: 1.0,
+                color: Colors.white, // Crisp White #FFFFFF
+                shadows: [
+                  Shadow(
+                    color: Colors.black.withValues(alpha: 0.3),
+                    offset: const Offset(0, 2),
+                    blurRadius: 6,
+                  ),
+                ],
+              ),
+            ),
+          ],
         ),
         Padding(
           padding: const EdgeInsets.only(top: Dimensions.paddingSizeSmall),
