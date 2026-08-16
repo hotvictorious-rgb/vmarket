@@ -11,7 +11,7 @@ Include the specific app/component modified and bullet points detailing the exac
 * **Component:** Laravel Web Backend (`backend/vmarket-web/routes/web/routes.php`, `backend/vmarket-web/config/session.php`)
 * **Action:** Implemented defense-in-depth security hardening to eliminate Server-Side Request Forgery (SSRF) and Cross-Site Request Forgery (CSRF) attack vectors.
 * **Changes Made:**
-  - **SSRF Defense on `/image-proxy` (`routes/web/routes.php`)**: Added strict URL schema parsing, host validation against local/private network addresses (`localhost`, `.local`, `.internal`), DNS IP address resolution with `FILTER_FLAG_NO_PRIV_RANGE | FILTER_FLAG_NO_RES_RANGE` check, image MIME-type enforcement (`image/*`), `nosniff` header, and rate limiting (`throttle:60,1`).
+  - **SSRF Defense on `/image-proxy` (`routes/web/routes.php`)**: Added strict URL schema parsing, host validation against local/private network addresses (`localhost`, `.local`, `.internal`), DNS IP address resolution with `FILTER_FLAG_NO_PRIV_RANGE | FILTER_FLAG_NO_RES_RANGE` check, `withoutRedirecting()` to block redirect-based TOCTOU bypasses, image MIME-type enforcement (`image/*`), `nosniff` header, and rate limiting (`throttle:60,1`).
   - **Session Cookie Hardening (`config/session.php`)**: Configured default `same_site` cookie attribute to `lax` (`env('SESSION_SAME_SITE', 'lax')`) to mitigate Cross-Site Request Forgery.
   - **Verification**: Verified PHP syntax with `php -l` (0 errors).
 

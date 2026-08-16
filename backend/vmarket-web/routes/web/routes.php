@@ -78,6 +78,7 @@ Route::get('/image-proxy', function () {
 
     try {
         $response = Http::timeout(8)
+            ->withoutRedirecting()
             ->withHeaders(['User-Agent' => 'Victorious-Image-Proxy'])
             ->get($url);
 
