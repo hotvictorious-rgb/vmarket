@@ -17,6 +17,7 @@ import 'package:sixvalley_vendor_app/utill/dimensions.dart';
 import 'package:sixvalley_vendor_app/common/basewidgets/custom_app_bar_widget.dart';
 import 'package:sixvalley_vendor_app/features/chat/widgets/message_bubble_widget.dart';
 import 'package:sixvalley_vendor_app/features/chat/widgets/send_message_widget.dart';
+import 'package:sixvalley_vendor_app/features/chat/widgets/whatsapp_chat_wallpaper.dart';
 import 'package:sixvalley_vendor_app/utill/images.dart';
 import 'package:sixvalley_vendor_app/utill/styles.dart';
 
@@ -44,16 +45,20 @@ class _ChatScreenState extends State<ChatScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final bool isDark = Theme.of(context).brightness == Brightness.dark;
+
     return Scaffold(
       body: Consumer<ChatController>(builder: (context, chatController, child) {
         return Column(children: [
           CustomAppBarWidget(title: widget.name),
           const SizedBox(height: 2),
           chatController.messageModel != null ?
-          Expanded(child: (chatController.messageModel!.message != null && chatController.messageModel!.message!.isNotEmpty) ?
-          SingleChildScrollView(
-            reverse: true,
-            controller : _scrollController,
+          Expanded(child: WhatsAppChatWallpaper(
+            isDark: isDark,
+            child: (chatController.messageModel!.message != null && chatController.messageModel!.message!.isNotEmpty) ?
+            SingleChildScrollView(
+              reverse: true,
+              controller : _scrollController,
             child: PaginatedListViewWidget(
               reverse: true,
               scrollController: _scrollController,
@@ -91,13 +96,14 @@ class _ChatScreenState extends State<ChatScreen> {
                           message: chatController.messageModel!.message![index],
                           previous: (index != 0) ? chatController.messageModel!.message![index -1 ] : null,
                           next: index == (chatController.messageModel!.message!.length -1) ?  null : chatController.messageModel!.message![index + 1],
-                        )
+                        ),
 
                       ]);
                 },
               ),
             ),
-          ) : const SizedBox.shrink()) : const Expanded(child: ChatShimmerWidget()),
+          ) : const SizedBox.shrink()),
+          ) : const Expanded(child: ChatShimmerWidget()),
           const SizedBox(height: Dimensions.paddingSizeExtraSmall),
 
           chatController.isLoading ? Row(
