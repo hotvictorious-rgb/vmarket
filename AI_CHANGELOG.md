@@ -7,6 +7,14 @@ Always append your completed tasks here in chronological order at the top. Forma
 `### [YYYY-MM-DD HH:MM UTC] <Feature / Fix Title> [<Component Scope>]`
 Include the specific app/component modified and bullet points detailing the exact technical changes.
 
+### [2026-08-16 16:02 UTC] Harden CORS Configuration with First-Party Domain Whitelisting [Backend]
+* **Component:** Laravel Web Backend (`backend/vmarket-web/config/cors.php`)
+* **Action:** Restricted cross-origin resource sharing (CORS) from permissive wildcard (`*`) to explicit first-party Victorious Market domains and wildcard subdomain regex patterns.
+* **Changes Made:**
+  - **Origin Whitelisting (`config/cors.php`)**: Replaced `allowed_origins => ['*']` with explicit allowed origins (`shop.victoriousmarket.com.ng`, `support.victoriousmarket.com.ng`, `pos.victoriousmarket.com.ng`).
+  - **Subdomain Regex Matching (`config/cors.php`)**: Added `#^https://([a-z0-9-]+\.)*victoriousmarket\.com\.ng$#` to `allowed_origins_patterns` to cleanly support authorized ecosystem subdomains and mobile webviews while blocking unauthorized third-party origins.
+  - **Verification**: Verified PHP syntax with `php -l` (0 errors).
+
 ### [2026-08-16 05:30 UTC] Harden Image Proxy Against SSRF and Enable Lax SameSite Session Cookies [Backend]
 * **Component:** Laravel Web Backend (`backend/vmarket-web/routes/web/routes.php`, `backend/vmarket-web/config/session.php`)
 * **Action:** Implemented defense-in-depth security hardening to eliminate Server-Side Request Forgery (SSRF) and Cross-Site Request Forgery (CSRF) attack vectors.

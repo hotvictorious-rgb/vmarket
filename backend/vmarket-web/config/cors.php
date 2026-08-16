@@ -19,9 +19,15 @@ return [
 
     'allowed_methods' => ['*'],
 
-    'allowed_origins' => ['*'],
+    'allowed_origins' => [
+        'https://shop.victoriousmarket.com.ng',
+        'https://support.victoriousmarket.com.ng',
+        'https://pos.victoriousmarket.com.ng',
+    ],
 
-    'allowed_origins_patterns' => [],
+    'allowed_origins_patterns' => [
+        '#^https://([a-z0-9-]+\.)*victoriousmarket\.com\.ng$#',
+    ],
 
     'allowed_headers' => ['*'],
 
