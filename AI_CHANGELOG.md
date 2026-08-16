@@ -7,6 +7,14 @@ Always append your completed tasks here in chronological order at the top. Forma
 `### [YYYY-MM-DD HH:MM UTC] <Feature / Fix Title> [<Component Scope>]`
 Include the specific app/component modified and bullet points detailing the exact technical changes.
 
+### [2026-08-16 05:30 UTC] Harden Image Proxy Against SSRF and Enable Lax SameSite Session Cookies [Backend]
+* **Component:** Laravel Web Backend (`backend/vmarket-web/routes/web/routes.php`, `backend/vmarket-web/config/session.php`)
+* **Action:** Implemented defense-in-depth security hardening to eliminate Server-Side Request Forgery (SSRF) and Cross-Site Request Forgery (CSRF) attack vectors.
+* **Changes Made:**
+  - **SSRF Defense on `/image-proxy` (`routes/web/routes.php`)**: Added strict URL schema parsing, host validation against local/private network addresses (`localhost`, `.local`, `.internal`), DNS IP address resolution with `FILTER_FLAG_NO_PRIV_RANGE | FILTER_FLAG_NO_RES_RANGE` check, image MIME-type enforcement (`image/*`), `nosniff` header, and rate limiting (`throttle:60,1`).
+  - **Session Cookie Hardening (`config/session.php`)**: Configured default `same_site` cookie attribute to `lax` (`env('SESSION_SAME_SITE', 'lax')`) to mitigate Cross-Site Request Forgery.
+  - **Verification**: Verified PHP syntax with `php -l` (0 errors).
+
 ### [2026-08-16 05:12 UTC] Fix Home Screen Shimmer Guards, 1-Tap Reorder, Stepper Timeline & Silent Network Resilience [User App]
 * **Component:** Flutter Customer App (`User app/lib/features/product/controllers/product_controller.dart`, `User app/lib/features/home/screens/aster_theme_home_screen.dart`, `User app/lib/features/home/screens/fashion_theme_home_screen.dart`, `User app/lib/features/home/screens/home_screens.dart`, `User app/lib/features/order/widgets/order_widget.dart`, `User app/lib/features/tracking/widgets/status_stepper_widget.dart`, `User app/lib/helper/api_checker.dart`)
 * **Action:** Resolved blank placeholder swiper below categories across all themes, added 1-tap reorder pill on delivered orders, styled glowing active badges on order tracking timeline, and suppressed raw HTTP error alerts for non-intrusive background sync resilience.

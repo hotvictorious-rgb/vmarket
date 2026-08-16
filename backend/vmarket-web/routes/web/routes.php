@@ -56,14 +56,46 @@ use Illuminate\Support\Facades\Route;
 */
 Route::get('/image-proxy', function () {
     $url = request('url');
-    if (!$url) {
-        abort(400, 'Missing url parameter');
+    if (!$url || !filter_var($url, FILTER_VALIDATE_URL)) {
+        abort(400, 'Invalid or missing URL parameter');
     }
-    $response = Http::withHeaders(['User-Agent' => 'Laravel-Image-Proxy'])->get($url);
-    return response($response->body(), $response->status())
-        ->header('Content-Type', $response->header('Content-Type'))
-        ->header('Access-Control-Allow-Origin', '*');
-});
+
+    $parsed = parse_url($url);
+    if (!isset($parsed['scheme']) || !in_array(strtolower($parsed['scheme']), ['http', 'https'])) {
+        abort(400, 'Invalid URL scheme');
+    }
+
+    $host = $parsed['host'] ?? '';
+    if (empty($host) || strtolower($host) === 'localhost' || str_ends_with(strtolower($host), '.local') || str_ends_with(strtolower($host), '.internal')) {
+        abort(403, 'Access to private or local network is forbidden');
+    }
+
+    // Resolve IP and verify it is not in private or loopback ranges (SSRF defense)
+    $ip = gethostbyname($host);
+    if (!filter_var($ip, FILTER_VALIDATE_IP, FILTER_FLAG_NO_PRIV_RANGE | FILTER_FLAG_NO_RES_RANGE)) {
+        abort(403, 'Access to private, loopback, or reserved IP ranges is forbidden');
+    }
+
+    try {
+        $response = Http::timeout(8)
+            ->withHeaders(['User-Agent' => 'Victorious-Image-Proxy'])
+            ->get($url);
+
+        $contentType = $response->header('Content-Type') ?? '';
+        // Only permit images to prevent arbitrary content proxying or HTML injection
+        if (!str_starts_with(strtolower($contentType), 'image/')) {
+            abort(415, 'Target URL does not return a valid image');
+        }
+
+        return response($response->body(), $response->status())
+            ->header('Content-Type', $contentType)
+            ->header('Cache-Control', 'public, max-age=86400')
+            ->header('X-Content-Type-Options', 'nosniff')
+            ->header('Access-Control-Allow-Origin', '*');
+    } catch (\Throwable $e) {
+        abort(502, 'Unable to proxy requested image');
+    }
+})->middleware('throttle:60,1');
 
 Route::controller(WebController::class)->group(function () {
     Route::get('maintenance-mode', 'maintenance_mode')->name('maintenance-mode');
