@@ -10,12 +10,13 @@ import 'package:sixvalley_delivery_boy/common/controllers/localization_controlle
 import 'package:sixvalley_delivery_boy/features/chat/screens/media_viewer_screen.dart';
 import 'package:sixvalley_delivery_boy/features/splash/controllers/splash_controller.dart';
 import 'package:sixvalley_delivery_boy/features/chat/domain/models/message_model.dart';
-import 'package:sixvalley_delivery_boy/theme/controllers/theme_controller.dart';
 import 'package:sixvalley_delivery_boy/utill/dimensions.dart';
 import 'package:sixvalley_delivery_boy/utill/images.dart';
 import 'package:sixvalley_delivery_boy/utill/styles.dart';
 import 'package:sixvalley_delivery_boy/common/basewidgets/custom_image_widget.dart';
 import 'package:sixvalley_delivery_boy/features/chat/widgets/audio_player_widget.dart';
+import 'package:sixvalley_delivery_boy/features/chat/widgets/whatsapp_bubble_tail.dart';
+import 'package:sixvalley_delivery_boy/helper/date_converter.dart';
 
 
 class MessageBubbleWidget extends StatelessWidget {
@@ -307,59 +308,108 @@ class _MessageText extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final bool isDarkTheme = Get.isDarkMode;
+    final Color bubbleColor = isMe
+        ? (isDarkTheme ? const Color(0xFF381E72) : const Color(0xFFF3E5F5))
+        : (isDarkTheme ? const Color(0xFF1F2C34) : Colors.white);
 
-    return Flexible(child: Column(crossAxisAlignment: isMe ? CrossAxisAlignment.end : CrossAxisAlignment.start, children: [
-      if(message.message != null && message.message!.isNotEmpty)
-        InkWell(
-          highlightColor: Theme.of(context).primaryColor.withValues(alpha:0),
-          splashColor: Theme.of(context).primaryColor.withValues(alpha:0),
-          onTap: (){
-            chatController.toggleOnClickMessage(onMessageTimeShowID : message.id.toString());
-          },
-          child: Container(
-            margin: isMe ?  const EdgeInsets.fromLTRB(70, 4, 10, 2) : const EdgeInsets.fromLTRB(10, 4, 40, 2),
-            padding: const EdgeInsets.symmetric(horizontal: 13, vertical: 8),
-            decoration: BoxDecoration(
-              borderRadius: _getBorderRadius(),
+    final String formattedTime = (message.createdAt != null && message.createdAt!.isNotEmpty)
+        ? DateConverter.dateToTimeOnly(DateConverter.isoStringToLocalDate(message.createdAt!)).trim()
+        : '';
 
-              color: isMe ? Get.isDarkMode ? Theme.of(context).cardColor : Theme.of(context).primaryColor : Get.isDarkMode ? Theme.of(context).hintColor.withValues(alpha:.3) : Theme.of(context).primaryColor.withValues(alpha:.10)),
-
-            child: Column(crossAxisAlignment: CrossAxisAlignment.end, children: [
-              (message.message != null && message.message!.isNotEmpty) ? Text(message.message!,
-                  style: rubikRegular.copyWith(fontSize: Dimensions.fontSizeDefault,
-                      color: isMe ? Get.isDarkMode ? Theme.of(context).textTheme.bodyLarge?.color : Theme.of(context).cardColor :  Get.find<ThemeController>().darkTheme ?
-                      Theme.of(context).colorScheme.secondaryContainer
-                          : Theme.of(context).textTheme.bodyMedium?.color
-                  )
-              ) : const SizedBox.shrink(),
-            ]),
-          ),
+    return Flexible(
+      child: Container(
+        margin: EdgeInsets.only(
+          left: isMe ? 50 : 0,
+          right: isMe ? 0 : 50,
+          top: 2,
+          bottom: 2,
         ),
+        child: Row(
+          mainAxisAlignment: isMe ? MainAxisAlignment.end : MainAxisAlignment.start,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            if (!isMe)
+              CustomPaint(
+                size: const Size(8, 14),
+                painter: WhatsAppBubbleTail(color: bubbleColor, isMe: false),
+              ),
 
+            Flexible(
+              child: Container(
+                padding: const EdgeInsets.fromLTRB(10, 8, 10, 6),
+                decoration: BoxDecoration(
+                  color: bubbleColor,
+                  borderRadius: BorderRadius.only(
+                    topLeft: Radius.circular(isMe ? 12 : 0),
+                    topRight: Radius.circular(isMe ? 0 : 12),
+                    bottomLeft: const Radius.circular(12),
+                    bottomRight: const Radius.circular(12),
+                  ),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withValues(alpha: isDarkTheme ? 0.2 : 0.05),
+                      blurRadius: 3,
+                      offset: const Offset(0, 1),
+                    ),
+                  ],
+                ),
+                child: (message.message != null && ['m4a', 'mp3', 'wav', 'aac', 'ogg', 'opus', 'wma', 'amr'].any((ext) => (message.message ?? '').toLowerCase().endsWith(ext)))
+                    ? AudioPlayerWidget(
+                        url: message.message ?? '',
+                        isMe: isMe,
+                      )
+                    : Wrap(
+                        alignment: WrapAlignment.end,
+                        crossAxisAlignment: WrapCrossAlignment.end,
+                        children: [
+                          Padding(
+                            padding: const EdgeInsets.only(right: 6, bottom: 2),
+                            child: Text(
+                              message.message ?? '',
+                              style: rubikRegular.copyWith(
+                                fontSize: 14.5,
+                                height: 1.3,
+                                color: isMe
+                                    ? (isDarkTheme ? Colors.white : const Color(0xFF2E0854))
+                                    : (isDarkTheme ? Colors.white : const Color(0xFF111B21)),
+                              ),
+                            ),
+                          ),
+                          Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Text(
+                                formattedTime,
+                                style: rubikRegular.copyWith(
+                                  fontSize: 10,
+                                  color: (isDarkTheme ? Colors.white60 : Colors.black45),
+                                ),
+                              ),
+                              if (isMe) ...[
+                                const SizedBox(width: 3),
+                                const Icon(
+                                  Icons.done_all_rounded,
+                                  size: 14,
+                                  color: Color(0xFF53BDEB),
+                                ),
+                              ],
+                            ],
+                          ),
+                        ],
+                      ),
+              ),
+            ),
 
-    ]));
-  }
-
-  BorderRadius _getBorderRadius() {
-    if (isMe && (isSameUserWithNextMessage || isSameUserWithPreviousMessage)) {
-      return BorderRadius.only(
-        topRight: Radius.circular(isSameUserWithNextMessage && isLTR && chatTime =="" ? Dimensions.radiusSmall : Dimensions.radiusExtraLarge + 5),
-        bottomRight: Radius.circular(isSameUserWithPreviousMessage && isLTR && previousMessageHasChatTime =="" ? Dimensions.radiusSmall : Dimensions.radiusExtraLarge + 5),
-        topLeft: Radius.circular(isSameUserWithNextMessage && !isLTR && chatTime ==""? Dimensions.radiusSmall : Dimensions.radiusExtraLarge + 5),
-        bottomLeft: Radius.circular(isSameUserWithPreviousMessage && !isLTR && previousMessageHasChatTime ==""? Dimensions.radiusSmall :Dimensions.radiusExtraLarge + 5),
-      );
-
-    } else if (!isMe && (isSameUserWithNextMessage || isSameUserWithPreviousMessage)) {
-      return BorderRadius.only(
-        topLeft: Radius.circular(isSameUserWithNextMessage && isLTR && chatTime ==""? Dimensions.radiusSmall : Dimensions.radiusExtraLarge + 5),
-        bottomLeft: Radius.circular( isSameUserWithPreviousMessage && isLTR && previousMessageHasChatTime =="" ? Dimensions.radiusSmall : Dimensions.radiusExtraLarge + 5),
-        topRight: Radius.circular(isSameUserWithNextMessage && !isLTR && chatTime ==""? Dimensions.radiusSmall : Dimensions.radiusExtraLarge + 5),
-        bottomRight: Radius.circular(isSameUserWithPreviousMessage && !isLTR && previousMessageHasChatTime ==""? Dimensions.radiusSmall :Dimensions.radiusExtraLarge + 5),
-      );
-
-    } else {
-      return BorderRadius.circular(Dimensions.radiusExtraLarge + 5);
-    }
+            if (isMe)
+              CustomPaint(
+                size: const Size(8, 14),
+                painter: WhatsAppBubbleTail(color: bubbleColor, isMe: true),
+              ),
+          ],
+        ),
+      ),
+    );
   }
 }
 

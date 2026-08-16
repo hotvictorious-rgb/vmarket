@@ -10,6 +10,7 @@ import 'package:sixvalley_delivery_boy/features/chat/controllers/chat_controller
 import 'package:sixvalley_delivery_boy/features/chat/screens/media_viewer_screen.dart';
 import 'package:sixvalley_delivery_boy/features/chat/widgets/message_list_view_widget.dart';
 import 'package:sixvalley_delivery_boy/features/chat/widgets/message_sendig_section_widget.dart';
+import 'package:sixvalley_delivery_boy/features/chat/widgets/whatsapp_chat_wallpaper.dart';
 import 'package:sixvalley_delivery_boy/features/splash/controllers/splash_controller.dart';
 import 'package:sixvalley_delivery_boy/helper/image_size_checker.dart';
 import 'package:sixvalley_delivery_boy/utill/app_constants.dart';
@@ -31,8 +32,6 @@ class ChatScreen extends StatefulWidget {
 class _ChatScreenState extends State<ChatScreen> {
   final ScrollController _scrollController = ScrollController();
 
-
-
   @override
   void initState() {
     super.initState();
@@ -41,6 +40,8 @@ class _ChatScreenState extends State<ChatScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final bool isDarkTheme = Get.isDarkMode;
+
     return GetBuilder<ChatController>(builder: (chatController) {
       return PopScope(
         canPop: true,
@@ -49,35 +50,71 @@ class _ChatScreenState extends State<ChatScreen> {
         },
         child: Scaffold(
           appBar: AppBar(
-            backgroundColor: Theme.of(context).cardColor,
+            backgroundColor: isDarkTheme ? const Color(0xFF1F2C34) : const Color(0xFF4A148C),
             titleSpacing: 0,
             elevation: 1,
             leading: InkWell(
-              ///for making tap transparent
               highlightColor: Theme.of(context).primaryColor.withValues(alpha:0),
               splashColor: Theme.of(context).primaryColor.withValues(alpha:0),
               onTap: ()=> Navigator.pop(context),
-              child: Icon(CupertinoIcons.back, color: Theme.of(context).textTheme.bodyLarge?.color),
+              child: const Icon(CupertinoIcons.back, color: Colors.white),
             ),
             title: Row(children: [
-
-              ClipRRect(
-                borderRadius: BorderRadius.circular(100),
-                child: Container(
-                  decoration: BoxDecoration(borderRadius: BorderRadius.circular(100),
-                      border: Border.all(width: .5, color: Theme.of(context).primaryColor.withValues(alpha:.125))),
-                  height: 40, width: 40,child: CustomImageWidget(image: widget.image??''),
-                ),
+              Stack(
+                clipBehavior: Clip.none,
+                children: [
+                  ClipRRect(
+                    borderRadius: BorderRadius.circular(100),
+                    child: Container(
+                      decoration: BoxDecoration(
+                        borderRadius: BorderRadius.circular(100),
+                        border: Border.all(width: 1, color: const Color(0xFFFFD700)),
+                      ),
+                      height: 38,
+                      width: 38,
+                      child: CustomImageWidget(image: widget.image ?? ''),
+                    ),
+                  ),
+                  Positioned(
+                    bottom: 0,
+                    right: 0,
+                    child: Container(
+                      width: 10,
+                      height: 10,
+                      decoration: BoxDecoration(
+                        color: const Color(0xFF25D366),
+                        shape: BoxShape.circle,
+                        border: Border.all(color: Colors.white, width: 1.5),
+                      ),
+                    ),
+                  ),
+                ],
               ),
+              const SizedBox(width: 10),
 
-              Padding(
-                padding: EdgeInsets.symmetric(horizontal: Dimensions.paddingSizeSmall),
-                child: Text(widget.name??'', style: rubikBold.copyWith(fontSize: Dimensions.fontSizeLarge, color: Theme.of(context).textTheme.bodyLarge?.color)),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Text(
+                      widget.name ?? '',
+                      style: rubikBold.copyWith(fontSize: Dimensions.fontSizeDefault + 1, color: Colors.white),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                    Text(
+                      'online',
+                      style: rubikRegular.copyWith(fontSize: 11, color: const Color(0xFFFFD700).withValues(alpha: 0.9)),
+                    ),
+                  ],
+                ),
               ),
             ]),
           ),
 
-          body: Center(
+          body: WhatsAppChatWallpaper(
+            isDark: isDarkTheme,
             child: SizedBox(
               width: MediaQuery.of(context).size.width,
               child: Column(children: [
