@@ -21,12 +21,11 @@ import 'package:flutter_sixvalley_ecommerce/utill/custom_themes.dart';
 import 'package:flutter_sixvalley_ecommerce/utill/dimensions.dart';
 import 'package:flutter_sixvalley_ecommerce/utill/images.dart';
 import 'package:flutter_sixvalley_ecommerce/common/basewidget/custom_image_widget.dart';
-import 'package:flutter_sixvalley_ecommerce/common/basewidget/custom_textfield_widget.dart';
 import 'package:flutter_sixvalley_ecommerce/common/basewidget/no_internet_screen_widget.dart';
 import 'package:flutter_sixvalley_ecommerce/common/basewidget/paginated_list_view_widget.dart';
 import 'package:flutter_sixvalley_ecommerce/features/chat/widgets/chat_shimmer_widget.dart';
 import 'package:flutter_sixvalley_ecommerce/features/chat/widgets/message_bubble_widget.dart';
-import 'package:flutter_svg/flutter_svg.dart';
+import 'package:flutter_sixvalley_ecommerce/features/chat/widgets/whatsapp_chat_wallpaper.dart';
 import 'package:provider/provider.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:flutter/foundation.dart' as foundation;
@@ -94,35 +93,95 @@ class _ChatScreenState extends State<ChatScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final bool isDarkTheme = Provider.of<ThemeController>(context).darkTheme;
 
     return Scaffold(
-      appBar: AppBar(backgroundColor: Theme.of(context).cardColor,
+      appBar: AppBar(
+        backgroundColor: isDarkTheme ? const Color(0xFF1F2C34) : const Color(0xFF4A148C), // Victorious Purple
         titleSpacing: 0,
         elevation: 1,
-        leading: InkWell(onTap: ()=> Navigator.pop(context),
-          child: Icon(CupertinoIcons.back, color: Theme.of(context).textTheme.bodyLarge?.color)),
-        title: Row(children: [
+        leading: InkWell(
+          onTap: () => Navigator.pop(context),
+          child: const Icon(CupertinoIcons.back, color: Colors.white),
+        ),
+        title: Row(
+          children: [
+            Stack(
+              clipBehavior: Clip.none,
+              children: [
+                ClipRRect(
+                  borderRadius: BorderRadius.circular(100),
+                  child: Container(
+                    decoration: BoxDecoration(
+                      borderRadius: BorderRadius.circular(100),
+                      border: Border.all(width: 1, color: const Color(0xFFFFD700)),
+                    ),
+                    height: 38,
+                    width: 38,
+                    child: CustomImageWidget(image: widget.image ?? ''),
+                  ),
+                ),
+                Positioned(
+                  bottom: 0,
+                  right: 0,
+                  child: Container(
+                    width: 10,
+                    height: 10,
+                    decoration: BoxDecoration(
+                      color: const Color(0xFF25D366), // WhatsApp online green
+                      shape: BoxShape.circle,
+                      border: Border.all(color: Colors.white, width: 1.5),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(width: 10),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Text(
+                    widget.name ?? '',
+                    style: textBold.copyWith(
+                      fontSize: Dimensions.fontSizeDefault + 1,
+                      color: Colors.white,
+                    ),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                  Text(
+                    'online',
+                    style: textRegular.copyWith(
+                      fontSize: 11,
+                      color: const Color(0xFFFFD700).withValues(alpha: 0.9),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
+        actions: [
+          if (widget.phone != null && widget.phone!.isNotEmpty)
+            IconButton(
+              icon: const Icon(Icons.call_rounded, color: Colors.white, size: 22),
+              onPressed: () => _launchUrl("tel:${widget.phone}"),
+            ),
+          IconButton(
+            icon: const Icon(Icons.videocam_rounded, color: Colors.white, size: 24),
+            onPressed: () => _launchUrl("tel:${widget.phone ?? ''}"),
+          ),
+          const SizedBox(width: 4),
+        ],
+      ),
 
-          ClipRRect(borderRadius: BorderRadius.circular(100),
-            child: Container(decoration: BoxDecoration(borderRadius: BorderRadius.circular(100),
-              border: Border.all(width: .5, color: Theme.of(context).primaryColor.withValues(alpha:.125))),
-              height: 40, width: 40,child: CustomImageWidget(image: widget.image??''))),
-
-
-          Padding(padding: const EdgeInsets.symmetric(horizontal: Dimensions.paddingSizeSmall),
-            child: Text(widget.name??'', style: textRegular.copyWith(fontSize: Dimensions.fontSizeLarge, color: Theme.of(context).textTheme.bodyLarge?.color)))]),
-        actions: widget.isDelivery? [InkWell(
-          onTap: ()=> _launchUrl("tel:${widget.phone}"),
-          child: Padding(padding: const EdgeInsets.all(Dimensions.paddingSizeSmall),
-            child: Container(decoration: BoxDecoration(color: Theme.of(context).primaryColor.withValues(alpha:.125),
-                borderRadius: BorderRadius.circular(Dimensions.paddingSizeExtraSmall)),
-                height: 35, width: 35,child: Padding(padding: const EdgeInsets.all(Dimensions.paddingSizeExtraSmall),
-                  child: Image.asset(Images.callIcon, color: Theme.of(context).primaryColor)))),
-        )]:[]),
-
-      body: Stack(
-        children: [
-          Consumer<ChatController>(builder: (context, chatController, child) => Column(children: [
+      body: WhatsAppChatWallpaper(
+        isDark: isDarkTheme,
+        child: Stack(
+          children: [
+            Consumer<ChatController>(builder: (context, chatController, child) => Column(children: [
             chatController.messageModel != null? (chatController.messageModel!.message != null && chatController.messageModel!.message!.isNotEmpty)?
             Expanded(child:  SingleChildScrollView(
               controller: scrollController,
@@ -380,99 +439,140 @@ class _ChatScreenState extends State<ChatScreen> {
                     opacity: ((chatController.isSending || chatController.isLoading) || widget.isShopTemporaryClosed) ? 0.5 : 1,
                     child: AbsorbPointer(
                       absorbing: ((chatController.isSending || chatController.isLoading) || widget.isShopTemporaryClosed),
-                      child: SizedBox(height: 60, child: Row(mainAxisAlignment: MainAxisAlignment.center, children: [
-                        Expanded(child: CustomTextFieldWidget(
-                          inputAction: TextInputAction.send,
-                          //showLabelText: false,
-                          prefixIcon: Images.emoji,
-                          prefixColor: Theme.of(context).colorScheme.onSecondary.withValues(alpha:0.50),
-                          suffixIcon: Images.attachment,
-                          suffixIcon2: Images.file,
-                          suffixColor: Theme.of(context).primaryColor,
-                          isPassword: false,
-                          onTap: (){
-                            setState(() {
-                              emojiPicker = false;
-                            });
-                          },
-                          prefixOnTap: (){
-                            setState(() {
-                              emojiPicker = !emojiPicker;
-                              FocusManager.instance.primaryFocus?.unfocus();
-                            });
-                          },
-                          suffixOnTap: () => showModalBottomSheet(context: context, builder: (context) => CustomImagePickBottomSheet(chatController)),
-                          suffix2OnTap: (){
-                            chatController.pickOtherFile(false);
-                          },
-                          controller: _controller,
-                          labelText: getTranslated('send_a_message', context),
-                          hintText: getTranslated('send_a_message', context),
-                        )),
-                        const SizedBox(width: Dimensions.paddingSizeSmall),
-                      
-                      
-                        InkWell(
-                          onTap: (chatController.isSending && chatController.isLoading) ? null : () {
-                            if(!_isMsgValid(chatController)) {
-                              chatController.pickedFIleCrossMaxLength ?
-                              showCustomSnackBarWidget(getTranslated('can_not_select_more_than_5_files', context), context, snackBarType: SnackBarType.warning)
-                              : showCustomSnackBarWidget(getTranslated('write_somethings', context), context, snackBarType: SnackBarType.warning);
-                            } else{
-                              MessageBody messageBody = MessageBody(id : widget.id,  message: _controller.text);
-                              chatController.sendMessage(messageBody, userType: widget.userType).then((value) {
-                                _controller.clear();
-                              });
-                            }
-                          },
-                          child: Opacity(opacity: (chatController.isSending || chatController.isLoading) ? 0.2 : 1, child: Padding(
-                            padding: const EdgeInsets.symmetric(vertical: 5),
-                            child: Container(
-                              width: 50,
-                              decoration: BoxDecoration(
-                                borderRadius: BorderRadius.circular(Dimensions.paddingSizeSmall),
-                                border: Border.all(width: 1, color: Theme.of(context).hintColor.withValues(alpha: 0.7)),
-                              ),
-                              child: Center(child: Padding(
-                                padding: const EdgeInsets.fromLTRB(
-                                  Dimensions.paddingSizeExtraExtraSmall,
-                                  Dimensions.paddingSizeExtraExtraSmall,
-                                  Dimensions.paddingSizeExtraExtraSmall,
-                                  8,
+                      child: Padding(
+                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
+                        child: Row(
+                          crossAxisAlignment: CrossAxisAlignment.end,
+                          children: [
+                            // WhatsApp Left Rounded Input Pill
+                            Expanded(
+                              child: Container(
+                                decoration: BoxDecoration(
+                                  color: isDarkTheme ? const Color(0xFF1F2C34) : Colors.white,
+                                  borderRadius: BorderRadius.circular(24),
+                                  boxShadow: [
+                                    BoxShadow(
+                                      color: Colors.black.withValues(alpha: isDarkTheme ? 0.2 : 0.06),
+                                      blurRadius: 4,
+                                      offset: const Offset(0, 1),
+                                    ),
+                                  ],
                                 ),
-                                child: Image.asset(Images.send, color: Provider.of<ThemeController>(context).darkTheme ? Colors.white: null),
-                              )),
-                            ),
-                          )),
-                        ),
-                        
-                        const SizedBox(width: Dimensions.paddingSizeSmall),
-                        
-                        InkWell(
-                          onTap: () {
-                            showModalBottomSheet(
-                              context: context,
-                              isScrollControlled: true,
-                              backgroundColor: Colors.transparent,
-                              builder: (context) => VoiceNoteBottomSheet(chatController),
-                            );
-                          },
-                          child: Padding(
-                            padding: const EdgeInsets.symmetric(vertical: 5),
-                            child: Container(
-                              width: 50,
-                              decoration: BoxDecoration(
-                                borderRadius: BorderRadius.circular(Dimensions.paddingSizeSmall),
-                                border: Border.all(width: 1, color: Theme.of(context).hintColor.withValues(alpha: 0.7)),
+                                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                                child: Row(
+                                  children: [
+                                    IconButton(
+                                      icon: Icon(
+                                        emojiPicker ? Icons.keyboard_alt_outlined : Icons.emoji_emotions_outlined,
+                                        color: isDarkTheme ? Colors.white60 : Colors.grey[600],
+                                        size: 24,
+                                      ),
+                                      padding: EdgeInsets.zero,
+                                      constraints: const BoxConstraints(),
+                                      onPressed: () {
+                                        setState(() {
+                                          emojiPicker = !emojiPicker;
+                                          if (emojiPicker) FocusManager.instance.primaryFocus?.unfocus();
+                                        });
+                                      },
+                                    ),
+                                    const SizedBox(width: 8),
+                                    Expanded(
+                                      child: TextField(
+                                        controller: _controller,
+                                        maxLines: 4,
+                                        minLines: 1,
+                                        style: textRegular.copyWith(fontSize: 15, color: isDarkTheme ? Colors.white : Colors.black87),
+                                        decoration: InputDecoration(
+                                          hintText: getTranslated('send_a_message', context) ?? 'Message',
+                                          hintStyle: textRegular.copyWith(color: Colors.grey, fontSize: 15),
+                                          border: InputBorder.none,
+                                          isDense: true,
+                                          contentPadding: const EdgeInsets.symmetric(vertical: 8),
+                                        ),
+                                        onTap: () {
+                                          if (emojiPicker) setState(() => emojiPicker = false);
+                                        },
+                                        onChanged: (text) => setState(() {}),
+                                      ),
+                                    ),
+                                    IconButton(
+                                      icon: Icon(Icons.attach_file_rounded, color: isDarkTheme ? Colors.white60 : Colors.grey[600], size: 22),
+                                      padding: EdgeInsets.zero,
+                                      constraints: const BoxConstraints(),
+                                      onPressed: () => showModalBottomSheet(
+                                        context: context,
+                                        builder: (context) => CustomImagePickBottomSheet(chatController),
+                                      ),
+                                    ),
+                                    const SizedBox(width: 8),
+                                    IconButton(
+                                      icon: Icon(Icons.camera_alt_rounded, color: isDarkTheme ? Colors.white60 : Colors.grey[600], size: 22),
+                                      padding: EdgeInsets.zero,
+                                      constraints: const BoxConstraints(),
+                                      onPressed: () => chatController.pickOtherFile(false),
+                                    ),
+                                    const SizedBox(width: 4),
+                                  ],
+                                ),
                               ),
-                              child: Center(
-                                child: Icon(Icons.mic, color: Provider.of<ThemeController>(context).darkTheme ? Colors.white : Theme.of(context).primaryColor),
+                            ),
+                            const SizedBox(width: 6),
+
+                            // WhatsApp Right Floating Circular Action Button (Purple/Gold)
+                            GestureDetector(
+                              onTap: (chatController.isSending && chatController.isLoading)
+                                  ? null
+                                  : () {
+                                      if (_controller.text.isNotEmpty || _isMediaExist(chatController)) {
+                                        if (!_isMsgValid(chatController)) {
+                                          chatController.pickedFIleCrossMaxLength
+                                              ? showCustomSnackBarWidget(getTranslated('can_not_select_more_than_5_files', context), context, snackBarType: SnackBarType.warning)
+                                              : showCustomSnackBarWidget(getTranslated('write_somethings', context), context, snackBarType: SnackBarType.warning);
+                                        } else {
+                                          MessageBody messageBody = MessageBody(id: widget.id, message: _controller.text);
+                                          chatController.sendMessage(messageBody, userType: widget.userType).then((value) {
+                                            _controller.clear();
+                                            setState(() {});
+                                          });
+                                        }
+                                      } else {
+                                        showModalBottomSheet(
+                                          context: context,
+                                          isScrollControlled: true,
+                                          backgroundColor: Colors.transparent,
+                                          builder: (context) => VoiceNoteBottomSheet(chatController),
+                                        );
+                                      }
+                                    },
+                              child: Container(
+                                width: 48,
+                                height: 48,
+                                decoration: const BoxDecoration(
+                                  color: Color(0xFF4A148C), // Victorious Purple
+                                  shape: BoxShape.circle,
+                                  boxShadow: [
+                                    BoxShadow(
+                                      color: Color(0x334A148C),
+                                      blurRadius: 6,
+                                      offset: Offset(0, 2),
+                                    ),
+                                  ],
+                                ),
+                                child: Center(
+                                  child: Icon(
+                                    (_controller.text.isNotEmpty || _isMediaExist(chatController))
+                                        ? Icons.send_rounded
+                                        : Icons.mic_rounded,
+                                    color: Colors.white,
+                                    size: 22,
+                                  ),
+                                ),
                               ),
                             ),
-                          ),
+                          ],
                         ),
-                      
-                      ])),
+                      ),
                     ),
                   ),
                 ) else Padding(
@@ -538,7 +638,7 @@ class _ChatScreenState extends State<ChatScreen> {
 
         ],
       ),
-    );
+    ));
   }
 
   String? _willShowDate(int index, MessageModel? messageModel) {

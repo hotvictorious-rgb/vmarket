@@ -6,6 +6,8 @@ import 'package:flutter_sixvalley_ecommerce/common/basewidget/custom_image_widge
 import 'package:flutter_sixvalley_ecommerce/features/chat/domain/models/message_model.dart';
 import 'package:flutter_sixvalley_ecommerce/features/chat/controllers/chat_controller.dart';
 import 'package:flutter_sixvalley_ecommerce/features/chat/widgets/audio_player_widget.dart';
+import 'package:flutter_sixvalley_ecommerce/features/chat/widgets/whatsapp_bubble_tail.dart';
+import 'package:flutter_sixvalley_ecommerce/helper/date_converter.dart';
 import 'package:flutter_sixvalley_ecommerce/features/splash/controllers/splash_controller.dart';
 import 'package:flutter_sixvalley_ecommerce/helper/route_healper.dart';
 import 'package:flutter_sixvalley_ecommerce/localization/controllers/localization_controller.dart';
@@ -13,7 +15,6 @@ import 'package:flutter_sixvalley_ecommerce/main.dart';
 import 'package:flutter_sixvalley_ecommerce/theme/controllers/theme_controller.dart';
 import 'package:flutter_sixvalley_ecommerce/utill/custom_themes.dart';
 import 'package:flutter_sixvalley_ecommerce/utill/dimensions.dart';
-import 'package:flutter_sixvalley_ecommerce/common/basewidget/custom_image_widget.dart';
 import 'package:flutter_sixvalley_ecommerce/utill/images.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:permission_handler/permission_handler.dart';
@@ -165,83 +166,107 @@ class _MessageText extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final bool isDarkTheme = Provider.of<ThemeController>(context).darkTheme;
+    final Color bubbleColor = isMe
+        ? (isDarkTheme ? const Color(0xFF381E72) : const Color(0xFFF3E5F5))
+        : (isDarkTheme ? const Color(0xFF1F2C34) : Colors.white);
 
-    return Flexible(child: InkWell(
-      onTap: () => chatProvider.toggleOnClickMessage(onMessageTimeShowID: message.id.toString()),
+    final String formattedTime = (message.createdAt != null && message.createdAt!.isNotEmpty)
+        ? DateConverter.getLocalTimeWithAMPM(message.createdAt!).trim()
+        : '';
+
+    return Flexible(
       child: Container(
-        margin: isMe && isLTR
-            ? const EdgeInsets.fromLTRB(70, 5, 0, 5)
-            : EdgeInsets.fromLTRB(isMe ? 0 : isProfileAvatarActive ? 10 : 40, 5, isLTR ? 70 : isProfileAvatarActive ? 10 : 40, 5),
-        // margin: EdgeInsets.symmetric(horizontal: Dimensions.paddingSizeDefault, vertical: Dimensions.paddingSizeDefault),
-        padding: const EdgeInsets.symmetric(
-          horizontal: Dimensions.paddingSizeSmall,
-          vertical: Dimensions.paddingSizeExtraSmall,
+        margin: EdgeInsets.only(
+          left: isMe ? 50 : 0,
+          right: isMe ? 0 : 50,
+          top: 2,
+          bottom: 2,
         ),
-        decoration: BoxDecoration(
-          borderRadius: _getBorderRadius(),
-          gradient: isMe
-              ? LinearGradient(
-                  colors: isDarkTheme
-                      ? [const Color(0xFF4A148C).withValues(alpha: 0.7), const Color(0xFF311B92).withValues(alpha: 0.7)]
-                      : const [Color(0xFF6A1B9A), Color(0xFF4A148C)],
-                  begin: Alignment.topLeft,
-                  end: Alignment.bottomRight,
-                )
-              : null,
-          color: isMe
-              ? null
-              : isDarkTheme
-                  ? Colors.white.withValues(alpha: 0.08)
-                  : const Color(0xFFF3E5F5).withValues(alpha: 0.5),
-          boxShadow: [
-            BoxShadow(
-              color: isMe
-                  ? const Color(0xFF4A148C).withValues(alpha: 0.15)
-                  : Colors.black.withValues(alpha: 0.03),
-              blurRadius: 6,
-              offset: const Offset(0, 2),
+        child: Row(
+          mainAxisAlignment: isMe ? MainAxisAlignment.end : MainAxisAlignment.start,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            if (!isMe)
+              CustomPaint(
+                size: const Size(8, 14),
+                painter: WhatsAppBubbleTail(color: bubbleColor, isMe: false),
+              ),
+
+            Flexible(
+              child: Container(
+                padding: const EdgeInsets.fromLTRB(10, 8, 10, 6),
+                decoration: BoxDecoration(
+                  color: bubbleColor,
+                  borderRadius: BorderRadius.only(
+                    topLeft: Radius.circular(isMe ? 12 : 0),
+                    topRight: Radius.circular(isMe ? 0 : 12),
+                    bottomLeft: const Radius.circular(12),
+                    bottomRight: const Radius.circular(12),
+                  ),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withValues(alpha: isDarkTheme ? 0.2 : 0.05),
+                      blurRadius: 3,
+                      offset: const Offset(0, 1),
+                    ),
+                  ],
+                ),
+                child: (message.message != null && chatProvider.isAudioExtension(message.message!))
+                    ? AudioPlayerWidget(
+                        url: message.message ?? '',
+                        isMe: isMe,
+                      )
+                    : Wrap(
+                        alignment: WrapAlignment.end,
+                        crossAxisAlignment: WrapCrossAlignment.end,
+                        children: [
+                          Padding(
+                            padding: const EdgeInsets.only(right: 6, bottom: 2),
+                            child: Text(
+                              message.message ?? '',
+                              style: textRegular.copyWith(
+                                fontSize: 14.5,
+                                height: 1.3,
+                                color: isMe
+                                    ? (isDarkTheme ? Colors.white : const Color(0xFF2E0854))
+                                    : (isDarkTheme ? Colors.white : const Color(0xFF111B21)),
+                              ),
+                            ),
+                          ),
+                          Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Text(
+                                formattedTime,
+                                style: textRegular.copyWith(
+                                  fontSize: 10,
+                                  color: (isDarkTheme ? Colors.white60 : Colors.black45),
+                                ),
+                              ),
+                              if (isMe) ...[
+                                const SizedBox(width: 3),
+                                const Icon(
+                                  Icons.done_all_rounded,
+                                  size: 14,
+                                  color: Color(0xFF53BDEB), // Signature WhatsApp double blue ticks
+                                ),
+                              ],
+                            ],
+                          ),
+                        ],
+                      ),
+              ),
             ),
+
+            if (isMe)
+              CustomPaint(
+                size: const Size(8, 14),
+                painter: WhatsAppBubbleTail(color: bubbleColor, isMe: true),
+              ),
           ],
         ),
-        child: (message.message != null && chatProvider.isAudioExtension(message.message!)) 
-        ? AudioPlayerWidget(
-            url: message.message ?? '',
-            isMe: isMe,
-          ) 
-        : Text(
-          message.message ?? '',
-          textAlign: TextAlign.justify,
-          style: textRegular.copyWith(
-            fontSize: Dimensions.fontSizeDefault,
-            color: isMe ? Colors.white : Theme.of(context).textTheme.bodyLarge?.color,
-          ),
-        ),
       ),
-    ));
-  }
-
-  BorderRadius _getBorderRadius() {
-    const double defaultRadius = 25;
-
-    if (isMe && (isSameUserWithNextMessage || isSameUserWithPreviousMessage)) {
-      return BorderRadius.only(
-        topRight: Radius.circular(isSameUserWithNextMessage && isLTR && chatTime.isEmpty ? Dimensions.radiusSmall : defaultRadius),
-        bottomRight: Radius.circular(isSameUserWithPreviousMessage && isLTR && previousMessageHasChatTime.isEmpty ? Dimensions.radiusSmall : defaultRadius),
-        topLeft: Radius.circular(isSameUserWithNextMessage && !isLTR && chatTime.isEmpty ? Dimensions.radiusSmall : defaultRadius),
-        bottomLeft: Radius.circular(isSameUserWithPreviousMessage && !isLTR && previousMessageHasChatTime.isEmpty ? Dimensions.radiusSmall : defaultRadius),
-      );
-
-    } else if (!isMe && (isSameUserWithNextMessage || isSameUserWithPreviousMessage)) {
-      return BorderRadius.only(
-        topLeft: Radius.circular(isSameUserWithNextMessage && isLTR && chatTime.isEmpty ? Dimensions.radiusSmall : defaultRadius),
-        bottomLeft: Radius.circular(isSameUserWithPreviousMessage && isLTR && previousMessageHasChatTime.isEmpty ? Dimensions.radiusSmall : defaultRadius),
-        topRight: Radius.circular(isSameUserWithNextMessage && !isLTR && chatTime.isEmpty ? Dimensions.radiusSmall : defaultRadius),
-        bottomRight: Radius.circular(isSameUserWithPreviousMessage && !isLTR && previousMessageHasChatTime.isEmpty ? Dimensions.radiusSmall : defaultRadius),
-      );
-
-    } else {
-      return BorderRadius.circular(defaultRadius);
-    }
+    );
   }
 }
 
