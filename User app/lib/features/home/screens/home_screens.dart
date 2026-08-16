@@ -19,7 +19,6 @@ import 'package:flutter_sixvalley_ecommerce/features/deal/widgets/featured_deal_
 import 'package:flutter_sixvalley_ecommerce/features/deal/widgets/flash_deals_list_widget.dart';
 import 'package:flutter_sixvalley_ecommerce/features/home/shimmers/flash_deal_shimmer.dart';
 import 'package:flutter_sixvalley_ecommerce/features/home/widgets/announcement_widget.dart';
-import 'package:flutter_sixvalley_ecommerce/features/home/widgets/aster_theme/find_what_you_need_shimmer.dart';
 import 'package:flutter_sixvalley_ecommerce/features/home/widgets/featured_product_widget.dart';
 import 'package:flutter_sixvalley_ecommerce/features/home/widgets/product_list_widget.dart';
 import 'package:flutter_sixvalley_ecommerce/features/home/widgets/product_type_popup_menu_widget.dart';
@@ -376,36 +375,40 @@ class _HomePageState extends State<HomePage> with AutomaticKeepAliveClientMixin 
             SliverToBoxAdapter(
               child: Consumer<FeaturedDealController>(
                   builder: (context, featuredDealProvider, child) {
-                    return  featuredDealProvider.featuredDealProductList != null? featuredDealProvider.featuredDealProductList!.isNotEmpty ?
-                    Column(
-                      children: [
-                        Stack(children: [
-                          Container(
-                            width: MediaQuery.of(context).size.width,
-                            height: 150,
-                            color: Provider.of<ThemeController>(context, listen: false).darkTheme ?
-                            Theme.of(context).highlightColor
-                                : Theme.of(context).colorScheme.onTertiary,
-                          ),
+                    return featuredDealProvider.featuredDealProductList != null
+                      ? (featuredDealProvider.featuredDealProductList!.isNotEmpty
+                        ? Column(
+                            children: [
+                              Stack(children: [
+                                Container(
+                                  width: MediaQuery.of(context).size.width,
+                                  height: 150,
+                                  color: Provider.of<ThemeController>(context, listen: false).darkTheme ?
+                                  Theme.of(context).highlightColor
+                                      : Theme.of(context).colorScheme.onTertiary,
+                                ),
 
-                          Column(children: [
-                            Padding(
-                              padding: const EdgeInsets.symmetric(vertical: Dimensions.paddingSizeDefault),
-                              child: TitleRowWidget(
-                                title: '${getTranslated('featured_deals', context)}',
-                                onTap: () {
-                                  RouterHelper.getFeaturedDealScreenViewRoute();
-                                },
-                              ),
-                            ),
+                                Column(children: [
+                                  Padding(
+                                    padding: const EdgeInsets.symmetric(vertical: Dimensions.paddingSizeDefault),
+                                    child: TitleRowWidget(
+                                      title: '${getTranslated('featured_deals', context)}',
+                                      onTap: () {
+                                        RouterHelper.getFeaturedDealScreenViewRoute();
+                                      },
+                                    ),
+                                  ),
 
-                            const FeaturedDealsListWidget(),
-                          ]),
-                        ]),
+                                  const FeaturedDealsListWidget(),
+                                ]),
+                              ]),
 
-                        const SizedBox(height: Dimensions.paddingSizeDefault),
-                      ],
-                    ) : const SizedBox.shrink() : const FindWhatYouNeedShimmer();}
+                              const SizedBox(height: Dimensions.paddingSizeDefault),
+                            ],
+                          )
+                        : const SizedBox.shrink())
+                      : const SizedBox.shrink();
+                  }
               ),
             ),
 

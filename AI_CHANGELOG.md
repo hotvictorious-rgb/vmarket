@@ -7,6 +7,17 @@ Always append your completed tasks here in chronological order at the top. Forma
 `### [YYYY-MM-DD HH:MM UTC] <Feature / Fix Title> [<Component Scope>]`
 Include the specific app/component modified and bullet points detailing the exact technical changes.
 
+### [2026-08-16 05:12 UTC] Fix Home Screen Shimmer Guards, 1-Tap Reorder, Stepper Timeline & Silent Network Resilience [User App]
+* **Component:** Flutter Customer App (`User app/lib/features/product/controllers/product_controller.dart`, `User app/lib/features/home/screens/aster_theme_home_screen.dart`, `User app/lib/features/home/screens/fashion_theme_home_screen.dart`, `User app/lib/features/home/screens/home_screens.dart`, `User app/lib/features/order/widgets/order_widget.dart`, `User app/lib/features/tracking/widgets/status_stepper_widget.dart`, `User app/lib/helper/api_checker.dart`)
+* **Action:** Resolved blank placeholder swiper below categories across all themes, added 1-tap reorder pill on delivered orders, styled glowing active badges on order tracking timeline, and suppressed raw HTTP error alerts for non-intrusive background sync resilience.
+* **Changes Made:**
+  - **Home Screen Blank Swiper Resolution (`aster_theme_home_screen.dart`, `product_controller.dart`)**: Connected `findWhatYouNeed()` to initial batch data loading and guarded `FindWhatYouNeedShimmer` so that empty/unconfigured sections cleanly collapse with `const SizedBox.shrink()` rather than showing an eternal blank placeholder.
+  - **Default & Fashion Shimmer Guards (`home_screens.dart`, `fashion_theme_home_screen.dart`)**: Collapsed empty Featured Deals / unconfigured sections cleanly.
+  - **1-Tap Quick Reorder (`order_widget.dart`)**: Added an interactive "Reorder" action pill with loading indicator on all delivered order cards in Order History, routing immediately to Cart.
+  - **Order Tracking Progress Timeline (`status_stepper_widget.dart`)**: Enhanced active in-progress checkpoint with signature Gold accent border and elevation shadow.
+  - **Silent Network Resilience (`api_checker.dart`)**: Filtered out raw technical 508 / 503 / timeout errors from interrupting customers with modal error popups during background fetches.
+  - **Verification**: Verified via `flutter analyze` across all modified modules (0 compilation errors).
+
 ### [2026-08-16 04:29 UTC] Add Aster Categories View & Dynamic View Resolver in WebController [Backend]
 * **Component:** Laravel Web Backend (`backend/vmarket-web/resources/themes/theme_aster/theme-views/product/categories.blade.php`, `backend/vmarket-web/resources/themes/theme_aster/file_names.php`, `backend/vmarket-web/resources/themes/default/file_names.php`, `backend/vmarket-web/app/Http/Controllers/Web/WebController.php`)
 * **Action:** Resolved HTTP 500 on the `/categories` storefront route by creating the Aster Theme categories Blade view and updating `WebController@getAllCategoriesView` to use the dynamic `VIEW_FILE_NAMES['all_categories']` resolver across both `theme_aster` and `default` themes.

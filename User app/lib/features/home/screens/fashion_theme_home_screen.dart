@@ -15,7 +15,6 @@ import 'package:flutter_sixvalley_ecommerce/features/deal/widgets/featured_deal_
 import 'package:flutter_sixvalley_ecommerce/features/deal/widgets/flash_deals_list_widget.dart';
 import 'package:flutter_sixvalley_ecommerce/features/home/shimmers/flash_deal_shimmer.dart';
 import 'package:flutter_sixvalley_ecommerce/features/home/widgets/announcement_widget.dart';
-import 'package:flutter_sixvalley_ecommerce/features/home/widgets/aster_theme/find_what_you_need_shimmer.dart';
 import 'package:flutter_sixvalley_ecommerce/features/home/widgets/aster_theme/more_store_list_view_widget.dart';
 import 'package:flutter_sixvalley_ecommerce/features/home/widgets/fashion_theme/most_demanded_product_widget.dart';
 import 'package:flutter_sixvalley_ecommerce/features/home/widgets/fashion_theme/shop_again_from_your_recent_store_list_widget.dart';
@@ -356,7 +355,7 @@ class _FashionThemeHomePageState extends State<FashionThemeHomePage> with Automa
 
                         ]),
                       ],
-                    ) : const SizedBox.shrink() : const FindWhatYouNeedShimmer();
+                    ) : const SizedBox.shrink() : const SizedBox.shrink();
                   },
                 ),
                 const SizedBox(height: Dimensions.paddingSizeDefault),

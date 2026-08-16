@@ -57,6 +57,11 @@ class ProductController extends ChangeNotifier {
   FindWhatYouNeedModel? _findWhatYouNeedModel;
   FindWhatYouNeedModel? get findWhatYouNeedModel => _findWhatYouNeedModel;
 
+  bool _isFindWhatYouNeedLoading = false;
+  bool get isFindWhatYouNeedLoading => _isFindWhatYouNeedLoading;
+  bool _hasFindWhatYouNeedLoaded = false;
+  bool get hasFindWhatYouNeedLoaded => _hasFindWhatYouNeedLoaded;
+
   ProductModel? _clearanceProductModel;
   ProductModel? get clearanceProductModel => _clearanceProductModel;
 
@@ -411,19 +416,19 @@ class ProductController extends ChangeNotifier {
 
 
   Future<void> findWhatYouNeed() async {
+    _isFindWhatYouNeedLoading = true;
     DataSyncHelper.fetchAndSyncData(
       fetchFromLocal: ()=> productServiceInterface!.getFindWhatYouNeed(source: DataSourceEnum.local),
       fetchFromClient: ()=> productServiceInterface!.getFindWhatYouNeed(source: DataSourceEnum.client),
       onResponse: (data, source) {
+        _hasFindWhatYouNeedLoaded = true;
+        _isFindWhatYouNeedLoading = false;
         try{
           _findWhatYouNeedModel = FindWhatYouNeedModel.fromJson(data);
-
         }catch(e){
           _findWhatYouNeedModel = null;
         }
-
         notifyListeners();
-
       },
     );
   }

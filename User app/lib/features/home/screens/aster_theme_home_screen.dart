@@ -96,6 +96,7 @@ class AsterThemeHomeScreen extends StatefulWidget {
       brandController.getBrandList(offset: 1, isUpdate: reload),
       featuredDealController.getFeaturedDealList(),
       productController.getRecommendedProduct(),
+      productController.findWhatYouNeed(),
       productController.getJustForYouProduct(1, isUpdate: reload),
       productController.getClearanceAllProductList(1, isUpdate: reload),
       shopController.getMoreStore(),
@@ -341,16 +342,21 @@ class _AsterThemeHomeScreenState extends State<AsterThemeHomeScreen> with Automa
           SliverToBoxAdapter(
             child: Consumer<ProductController>(
               builder: (context, productController, _) {
-                return productController.findWhatYouNeedModel != null ?
-                (productController.findWhatYouNeedModel!.findWhatYouNeed != null &&
-                    productController.findWhatYouNeedModel!.findWhatYouNeed!.isNotEmpty)?
-                Column(children: [
-                  TitleRowWidget(title: getTranslated('find_what_you_need', context)),
-                  const SizedBox(height: Dimensions.paddingSizeSmall),
+                if (productController.findWhatYouNeedModel != null &&
+                    productController.findWhatYouNeedModel!.findWhatYouNeed != null &&
+                    productController.findWhatYouNeedModel!.findWhatYouNeed!.isNotEmpty) {
+                  return Column(children: [
+                    TitleRowWidget(title: getTranslated('find_what_you_need', context)),
+                    const SizedBox(height: Dimensions.paddingSizeSmall),
 
-                  SizedBox(height: ResponsiveHelper.isTab(context)?  165 :150, child: const FindWhatYouNeedView()),
-                  const SizedBox(height: Dimensions.paddingSizeDefault),
-                ]): const SizedBox() : const FindWhatYouNeedShimmer();
+                    SizedBox(height: ResponsiveHelper.isTab(context) ? 165 : 150, child: const FindWhatYouNeedView()),
+                    const SizedBox(height: Dimensions.paddingSizeDefault),
+                  ]);
+                } else if (productController.isFindWhatYouNeedLoading && !productController.hasFindWhatYouNeedLoaded) {
+                  return const FindWhatYouNeedShimmer();
+                } else {
+                  return const SizedBox.shrink();
+                }
               }
             ),
           ),

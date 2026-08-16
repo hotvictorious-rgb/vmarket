@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_sixvalley_ecommerce/common/basewidget/custom_asset_image_widget.dart';
 import 'package:flutter_sixvalley_ecommerce/common/basewidget/custom_image_widget.dart';
 import 'package:flutter_sixvalley_ecommerce/features/order/domain/models/order_model.dart';
+import 'package:flutter_sixvalley_ecommerce/features/reorder/controllers/re_order_controller.dart';
 import 'package:flutter_sixvalley_ecommerce/features/splash/controllers/splash_controller.dart';
 import 'package:flutter_sixvalley_ecommerce/helper/date_converter.dart';
 import 'package:flutter_sixvalley_ecommerce/helper/price_converter.dart';
@@ -231,11 +232,42 @@ class _OrderWidgetState extends State<OrderWidget> {
                       Row(
                         mainAxisSize: MainAxisSize.min,
                         children: [
+                          if (widget.orderModel?.orderStatus == 'delivered') ...[
+                            Consumer<ReOrderController>(
+                              builder: (context, reOrderController, _) {
+                                return InkWell(
+                                  onTap: () {
+                                    if (widget.orderModel?.id != null) {
+                                      reOrderController.reorder(orderId: widget.orderModel!.id.toString());
+                                    }
+                                  },
+                                  child: Container(
+                                    padding: const EdgeInsets.symmetric(horizontal: Dimensions.paddingSizeSmall, vertical: 4),
+                                    margin: const EdgeInsets.only(right: Dimensions.paddingSizeSmall),
+                                    decoration: BoxDecoration(
+                                      borderRadius: BorderRadius.circular(Dimensions.radiusSmall),
+                                      color: Theme.of(context).primaryColor,
+                                    ),
+                                    child: Row(
+                                      mainAxisSize: MainAxisSize.min,
+                                      children: [
+                                        const Icon(Icons.replay_rounded, size: 13, color: Colors.white),
+                                        const SizedBox(width: 4),
+                                        Text(
+                                          getTranslated('re_order', context) ?? 'Reorder',
+                                          style: textBold.copyWith(fontSize: Dimensions.fontSizeExtraSmall, color: Colors.white),
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                );
+                              },
+                            ),
+                          ],
                           Text(
                             '${widget.orderModel?.orderDetailsCount ?? 0} ',
                             style: textBold.copyWith(fontSize: Dimensions.fontSizeSmall, color: Theme.of(context).textTheme.bodyLarge?.color,),
                           ),
-
                           Text(
                             '${getTranslated('products', context)}',
                             style: textMedium.copyWith(fontSize: Dimensions.fontSizeSmall, color: Theme.of(context).textTheme.bodyLarge?.color,),

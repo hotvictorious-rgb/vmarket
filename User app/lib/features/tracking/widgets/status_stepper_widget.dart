@@ -52,11 +52,30 @@ class StatusStepperWidget extends StatelessWidget {
             Row(mainAxisAlignment: MainAxisAlignment.start, children: [
 
               Padding(padding: const EdgeInsets.symmetric(horizontal: Dimensions.paddingSizeSmall),
-                child: Container(padding: EdgeInsets.symmetric(vertical: Dimensions.paddingSizeSmall, horizontal: Dimensions.paddingSizeDefault),
-                  decoration: BoxDecoration(borderRadius: BorderRadius.circular(Dimensions.paddingSizeExtraSmall),
-                  color: Theme.of(context).primaryColor.withValues(alpha: .075)),
-                  child: SizedBox(height: 30,child: CustomAssetImageWidget(icon, color: (checked || isStatusCanceled) ? Theme.of(context).primaryColor : Theme.of(context).hintColor)),
-                )
+                child: Container(
+                  padding: const EdgeInsets.symmetric(vertical: Dimensions.paddingSizeSmall, horizontal: Dimensions.paddingSizeDefault),
+                  decoration: BoxDecoration(
+                    borderRadius: BorderRadius.circular(Dimensions.paddingSizeSmall),
+                    color: (checked && !isStatusCanceled)
+                      ? Theme.of(context).primaryColor.withValues(alpha: .12)
+                      : Theme.of(context).hintColor.withValues(alpha: .06),
+                    border: (checked && !isNextTrue && !isStatusCanceled)
+                      ? Border.all(color: const Color(0xFFFFD700), width: 1.5) // Signature Gold active accent
+                      : null,
+                    boxShadow: (checked && !isNextTrue && !isStatusCanceled)
+                      ? [BoxShadow(color: Theme.of(context).primaryColor.withValues(alpha: 0.15), blurRadius: 6, offset: const Offset(0, 2))]
+                      : null,
+                  ),
+                  child: SizedBox(
+                    height: 30,
+                    child: CustomAssetImageWidget(
+                      icon,
+                      color: (checked || isStatusCanceled)
+                        ? Theme.of(context).primaryColor
+                        : Theme.of(context).hintColor.withValues(alpha: .6),
+                    ),
+                  ),
+                ),
               ),
 
 

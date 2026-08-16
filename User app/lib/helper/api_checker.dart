@@ -10,27 +10,35 @@ import 'package:provider/provider.dart';
 
 class ApiChecker {
   static void checkApi(ApiResponseModel apiResponse, {bool firebaseResponse = false}) {
+    if (Get.context == null) return;
 
-    dynamic errorResponse = apiResponse.error is String ? apiResponse.error :  ErrorResponse.fromJson(apiResponse.error);
-    if(apiResponse.error == "Failed to load data - status code: 401") {
-      Provider.of<AuthController>(Get.context!,listen: false).clearSharedData();
-    } else if(apiResponse.response?.statusCode == 500) {
-        showCustomSnackBarWidget(getTranslated('internal_server_error', Get.context!),  Get.context!,  snackBarType: SnackBarType.error);
-    } else if(apiResponse.response?.statusCode == 503) {
-        showCustomSnackBarWidget(apiResponse.response?.data['message'],  Get.context!,  snackBarType: SnackBarType.error);
-    } else if(apiResponse.response?.statusCode == 508 || apiResponse.error?.toString().contains('508') == true) {
-        // [AI] Suppress intrusive popup for shared hosting 508 resource limits to avoid interrupting user
-        log("Shared hosting resource limit (508) detected; gracefully handling silently in background.");
-    } else {
-      log("==ff=>${apiResponse.error}");
-      String? errorMessage = apiResponse.error.toString();
-      if (apiResponse.error is String) {
-        errorMessage = apiResponse.error.toString();
-      } else {
-        log(errorResponse.toString());
-        //errorMessage = errorResponse.errors?[0].message;
+    final statusCode = apiResponse.response?.statusCode;
+    final errorStr = apiResponse.error?.toString() ?? '';
+
+    if (apiResponse.error == "Failed to load data - status code: 401" || statusCode == 401) {
+      Provider.of<AuthController>(Get.context!, listen: false).clearSharedData();
+    } else if (statusCode == 500) {
+      showCustomSnackBarWidget(getTranslated('internal_server_error', Get.context!) ?? 'Something went wrong', Get.context!, snackBarType: SnackBarType.error);
+    } else if (statusCode == 503) {
+      final msg = apiResponse.response?.data?['message'];
+      if (msg != null && msg.toString().isNotEmpty) {
+        showCustomSnackBarWidget(msg.toString(), Get.context!, snackBarType: SnackBarType.error);
       }
-      showCustomSnackBarWidget(firebaseResponse ? errorResponse?.replaceAll('_', ' ') : errorMessage,  Get.context!,  snackBarType: SnackBarType.error);
+    } else if (statusCode == 508 || errorStr.contains('508')) {
+      // [AI] Suppress intrusive popup for shared hosting 508 resource limits to avoid interrupting user
+      log("Shared hosting resource limit (508) detected; gracefully handling silently in background.");
+    } else if (errorStr.contains('SocketException') || errorStr.contains('Connection timeout') || errorStr.contains('Network is unreachable')) {
+      // [AI] Graceful non-intrusive offline note
+      log("Network connection issue: $errorStr");
+    } else {
+      dynamic errorResponse = apiResponse.error is String ? apiResponse.error : ErrorResponse.fromJson(apiResponse.error);
+      String? errorMessage = apiResponse.error?.toString();
+      if (apiResponse.error is! String && errorResponse is ErrorResponse && errorResponse.errors != null && errorResponse.errors!.isNotEmpty) {
+        errorMessage = errorResponse.errors![0].message;
+      }
+      if (errorMessage != null && errorMessage.isNotEmpty && !errorMessage.startsWith('Failed to load data - status code: 508')) {
+        showCustomSnackBarWidget(firebaseResponse ? errorResponse?.replaceAll('_', ' ') : errorMessage, Get.context!, snackBarType: SnackBarType.error);
+      }
     }
   }
 
