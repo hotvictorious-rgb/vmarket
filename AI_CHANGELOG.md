@@ -7,6 +7,12 @@ Always append your completed tasks here in chronological order at the top. Forma
 `### [YYYY-MM-DD HH:MM UTC] <Feature / Fix Title> [<Component Scope>]`
 Include the specific app/component modified and bullet points detailing the exact technical changes.
 
+### [2026-08-16 03:06 UTC] Fix ConfigController Cache Closure Return Array Syntax [Backend]
+* **Component:** Laravel Web Backend (`backend/vmarket-web/app/Http/Controllers/RestAPI/v1/ConfigController.php`)
+* **Action:** Corrected `configuration()` cache closure to return an array `return [...]` instead of `return response()->json([...])` inside `Cache::remember()`, resolving the ParseError syntax issue on the live server.
+* **Changes Made:**
+  - **Config Controller (`ConfigController.php`)**: Cleaned closure return structure and verified with `php -l` (0 errors).
+
 ### [2026-08-16 02:52 UTC] Fix Empty Card Swiping, Home Bottom Filter Load, Order Background Sync, and Shared Hosting 508 Limits [User App & Backend]
 * **Component:** Flutter Customer App (`User app/lib/features/deal/controllers/flash_deal_controller.dart`, `User app/lib/features/home/screens/aster_theme_home_screen.dart`, `User app/lib/features/home/screens/home_screens.dart`, `User app/lib/features/home/screens/fashion_theme_home_screen.dart`, `User app/lib/features/order/controllers/order_controller.dart`, `User app/lib/helper/api_checker.dart`, `User app/lib/utill/app_constants.dart`), Laravel Web Backend (`CategoryController.php`, `BannerController.php`, `BrandController.php`)
 * **Action:** Resolved 508 Resource Limit spikes on shared hosting via batched home loading and backend API memoization, eliminated the endless empty swiping flash deal skeleton across all themes, added missing bottom filter products loader on Aster theme, implemented resilient Stale-While-Revalidate background order sync, and updated splash tagline.

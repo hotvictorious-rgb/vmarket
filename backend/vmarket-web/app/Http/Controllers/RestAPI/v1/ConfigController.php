@@ -122,7 +122,7 @@ class ConfigController extends Controller
         }
 
         $systemColors = getWebConfig('colors');
-        return response()->json([
+        return [
             'primary_color' => $systemColors['primary'],
             'secondary_color' => $systemColors['secondary'],
             'primary_color_light' => $systemColors['primary_light'] ?? '',
