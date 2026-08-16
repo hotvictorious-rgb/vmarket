@@ -102,13 +102,13 @@ class OrderController with ChangeNotifier {
         }
       }
     } else {
-      // On API failure, store an empty model so the UI shows the empty state
-      // instead of an endless shimmer.
+      // [AI] On API failure, only fallback to empty model if no cached data exists.
+      // Never overwrite existing valid cached orders on transient errors.
       if (offset == 1) {
         final emptyModel = OrderModel(orders: [], totalSize: 0, offset: '1', limit: '10');
-        if (status == 'ongoing')   runningOrderModel   = emptyModel;
-        if (status == 'delivered') deliveredOrderModel  = emptyModel;
-        if (status == 'canceled')  canceledOrderModel   = emptyModel;
+        if (status == 'ongoing' && runningOrderModel == null)   runningOrderModel   = emptyModel;
+        if (status == 'delivered' && deliveredOrderModel == null) deliveredOrderModel  = emptyModel;
+        if (status == 'canceled' && canceledOrderModel == null)  canceledOrderModel   = emptyModel;
       }
       ApiChecker.checkApi(apiResponse);
     }
@@ -131,24 +131,14 @@ class OrderController with ChangeNotifier {
 
     if (_orderTypeIndex == 0) {
       selectedType = 'ongoing';
-      // FIX: Fetch if model is null (never fetched) OR orders list is null.
-      // An empty orders list (orders: []) is a valid loaded state → don't re-fetch.
-      if (runningOrderModel == null || runningOrderModel!.orders == null) {
-        getOrderList(1, 'ongoing');
-      }
     } else if (_orderTypeIndex == 1) {
       selectedType = 'delivered';
-      // FIX: Same guard for delivered tab.
-      if (deliveredOrderModel == null || deliveredOrderModel!.orders == null) {
-        getOrderList(1, 'delivered');
-      }
     } else if (_orderTypeIndex == 2) {
       selectedType = 'canceled';
-      // FIX: Same guard for canceled tab.
-      if (canceledOrderModel == null || canceledOrderModel!.orders == null) {
-        getOrderList(1, 'canceled');
-      }
     }
+
+    // [AI] Stale-While-Revalidate: Always fetch latest in background while showing cache instantly
+    getOrderList(1, selectedType);
 
     if (notify) {
       notifyListeners();

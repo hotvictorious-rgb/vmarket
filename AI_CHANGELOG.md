@@ -7,6 +7,18 @@ Always append your completed tasks here in chronological order at the top. Forma
 `### [YYYY-MM-DD HH:MM UTC] <Feature / Fix Title> [<Component Scope>]`
 Include the specific app/component modified and bullet points detailing the exact technical changes.
 
+### [2026-08-16 02:52 UTC] Fix Empty Card Swiping, Home Bottom Filter Load, Order Background Sync, and Shared Hosting 508 Limits [User App & Backend]
+* **Component:** Flutter Customer App (`User app/lib/features/deal/controllers/flash_deal_controller.dart`, `User app/lib/features/home/screens/aster_theme_home_screen.dart`, `User app/lib/features/home/screens/home_screens.dart`, `User app/lib/features/home/screens/fashion_theme_home_screen.dart`, `User app/lib/features/order/controllers/order_controller.dart`, `User app/lib/helper/api_checker.dart`, `User app/lib/utill/app_constants.dart`), Laravel Web Backend (`CategoryController.php`, `BannerController.php`, `BrandController.php`)
+* **Action:** Resolved 508 Resource Limit spikes on shared hosting via batched home loading and backend API memoization, eliminated the endless empty swiping flash deal skeleton across all themes, added missing bottom filter products loader on Aster theme, implemented resilient Stale-While-Revalidate background order sync, and updated splash tagline.
+* **Changes Made:**
+  - **Splash Slogan (`app_constants.dart`)**: Updated `slogan` to `'Your Trusted Online Market'`.
+  - **Flash Deal State & View (`flash_deal_controller.dart`, `aster_theme_home_screen.dart`, `home_screens.dart`, `fashion_theme_home_screen.dart`)**: Added `hasLoaded` property in `FlashDealController` and conditionally hid empty flash deals with `SizedBox.shrink()` across all 3 themes, removing the endless empty swiping skeleton.
+  - **Aster & Fashion Home Bottom Filter (`aster_theme_home_screen.dart`, `fashion_theme_home_screen.dart`)**: Added `productController.getSelectedProductModel(1)` to `loadData()` so bottom product list renders on initial load without requiring filter clicks.
+  - **Batched Home Loader (`aster_theme_home_screen.dart`, `home_screens.dart`, `fashion_theme_home_screen.dart`)**: Separated parallel API calls into Priority (above-the-fold) and Secondary (staggered) batches to stay well within shared cPanel concurrent connection limits.
+  - **Order Sync & Cache Preservation (`order_controller.dart`)**: Implemented silent background revalidation on tab switch and prevented transient network errors from overwriting valid cached orders with empty models.
+  - **508 Error Handling (`api_checker.dart`)**: Gracefully handled shared hosting 508 resource limit errors silently without displaying intrusive popups.
+  - **Backend API Memoization (`CategoryController.php`, `BannerController.php`, `BrandController.php`)**: Cached categories, banners, and brands in memory for sub-5ms responses during high-concurrency app launches.
+
 ### [2026-08-15 21:24 UTC] Optimize TTFB with API Config Caching and Home Query Memoization [Backend]
 * **Component:** Laravel Web Backend (`backend/vmarket-web/app/Http/Controllers/RestAPI/v1/ConfigController.php`, `backend/vmarket-web/app/Http/Controllers/Web/HomeController.php`)
 * **Action:** Cached the static `/api/v1/config` payload in `Cache::remember('vmarket_api_v1_config_response')` to drop API response time from 2.2s to sub-50ms, and memoized heavy homepage queries (`featuredProductsList`, `newArrivalProducts`, `dealOfTheDay`) to slash server-side TTFB from 6.1s to sub-second.

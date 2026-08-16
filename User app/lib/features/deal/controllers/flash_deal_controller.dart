@@ -21,9 +21,11 @@ class FlashDealController extends ChangeNotifier {
   final List<Product> _flashDealList = [];
   Duration? _duration;
   Timer? _timer;
+  bool _hasLoaded = false;
   FlashDealModel? get flashDeal => _flashDeal;
   List<Product> get flashDealList => _flashDealList;
   Duration? get duration => _duration;
+  bool get hasLoaded => _hasLoaded;
   int? _currentIndex;
   int? get currentIndex => _currentIndex;
 
@@ -130,6 +132,8 @@ class FlashDealController extends ChangeNotifier {
       } else {
         ApiChecker.checkApi( apiResponse);
       }
+      _hasLoaded = true;
+      notifyListeners();
     }
   }
   void setCurrentIndex(int index) {

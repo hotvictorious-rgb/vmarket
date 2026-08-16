@@ -18,6 +18,9 @@ class ApiChecker {
         showCustomSnackBarWidget(getTranslated('internal_server_error', Get.context!),  Get.context!,  snackBarType: SnackBarType.error);
     } else if(apiResponse.response?.statusCode == 503) {
         showCustomSnackBarWidget(apiResponse.response?.data['message'],  Get.context!,  snackBarType: SnackBarType.error);
+    } else if(apiResponse.response?.statusCode == 508 || apiResponse.error?.toString().contains('508') == true) {
+        // [AI] Suppress intrusive popup for shared hosting 508 resource limits to avoid interrupting user
+        log("Shared hosting resource limit (508) detected; gracefully handling silently in background.");
     } else {
       log("==ff=>${apiResponse.error}");
       String? errorMessage = apiResponse.error.toString();

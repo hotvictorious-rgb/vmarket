@@ -74,12 +74,17 @@ class FashionThemeHomePage extends StatefulWidget {
 
     splashController.initConfig(context, null, null);
 
-    // [AI] Coordinate non-blocking parallel loads with graceful error handling
-    final List<Future> futures = [
+    // [AI] Batch 1: Critical above-the-fold content (instant render)
+    final List<Future> priorityFutures = [
       categoryController.getCategoryList(reload),
       bannerController.getBannerList(),
       productController.getLatestProductList(1, isUpdate: reload),
       productController.getFeaturedProductModel(1, isUpdate: reload),
+      productController.getSelectedProductModel(1, isUpdate: reload),
+    ];
+
+    // [AI] Batch 2: Secondary sections (staggered to prevent 508 resource limits on shared hosting)
+    final List<Future> secondaryFutures = [
       productController.getHomeCategoryProductList(reload),
       shopController.getTopSellerList(offset: 1, isUpdate: reload),
       brandController.getBrandList(offset: 1, isUpdate: reload),
@@ -93,17 +98,22 @@ class FashionThemeHomePage extends StatefulWidget {
     ];
 
     if (notificationController.notificationModel == null || reload) {
-      futures.add(notificationController.getNotificationList(1));
+      secondaryFutures.add(notificationController.getNotificationList(1));
     }
     if (authController.isLoggedIn()) {
       if (profileController.userInfoModel == null || reload) {
-        futures.add(profileController.getUserInfo(context));
+        secondaryFutures.add(profileController.getUserInfo(context));
       }
-      futures.add(sellerProductController.getShopAgainFromRecentStore());
+      secondaryFutures.add(sellerProductController.getShopAgainFromRecentStore());
     }
 
     if (reload) {
-      await Future.wait(futures.map((f) => f.catchError((e) => debugPrint('Fashion reload error: $e'))));
+      await Future.wait(priorityFutures.map((f) => f.catchError((e) => debugPrint('Fashion priority reload error: $e'))));
+      await Future.wait(secondaryFutures.map((f) => f.catchError((e) => debugPrint('Fashion secondary reload error: $e'))));
+    } else {
+      Future.wait(priorityFutures.map((f) => f.catchError((e) => debugPrint('Fashion priority load error: $e')))).then((_) {
+        Future.wait(secondaryFutures.map((f) => f.catchError((e) => debugPrint('Fashion secondary load error: $e'))));
+      });
     }
   }
 
@@ -287,7 +297,7 @@ class _FashionThemeHomePageState extends State<FashionThemeHomePage> with Automa
 
                 Consumer<FlashDealController>(
                     builder: (context, megaDeal, child) {
-                      return  megaDeal.flashDeal != null ? megaDeal.flashDealList.isNotEmpty ?
+                      return (megaDeal.flashDeal != null && megaDeal.flashDealList.isNotEmpty) ?
                       Column(children: [
                         Padding(
                           padding: const EdgeInsets.symmetric(horizontal: Dimensions.homePagePadding),
@@ -307,7 +317,7 @@ class _FashionThemeHomePageState extends State<FashionThemeHomePage> with Automa
 
                         const FlashDealsListWidget(),
 
-                      ]) : const SizedBox.shrink(): const FlashDealShimmer();
+                      ]) : (!megaDeal.hasLoaded ? const FlashDealShimmer() : const SizedBox.shrink());
 
                     }),
 

@@ -80,12 +80,17 @@ class AsterThemeHomeScreen extends StatefulWidget {
 
     splashController.initConfig(context, null, null);
 
-    // [AI] Coordinate non-blocking parallel loads with graceful error handling
-    final List<Future> futures = [
+    // [AI] Batch 1: Critical above-the-fold content (instant render)
+    final List<Future> priorityFutures = [
       categoryController.getCategoryList(reload),
       bannerController.getBannerList(),
       productController.getLatestProductList(1, isUpdate: reload),
       productController.getFeaturedProductModel(1, isUpdate: reload),
+      productController.getSelectedProductModel(1, isUpdate: reload),
+    ];
+
+    // [AI] Batch 2: Secondary sections (staggered to prevent 508 resource limits on shared hosting)
+    final List<Future> secondaryFutures = [
       productController.getHomeCategoryProductList(reload),
       shopController.getTopSellerList(offset: 1, isUpdate: reload),
       brandController.getBrandList(offset: 1, isUpdate: reload),
@@ -98,20 +103,25 @@ class AsterThemeHomeScreen extends StatefulWidget {
     ];
 
     if (notificationController.notificationModel == null || reload) {
-      futures.add(notificationController.getNotificationList(1));
+      secondaryFutures.add(notificationController.getNotificationList(1));
     }
     if (authController.isLoggedIn()) {
       if (profileController.userInfoModel == null || reload) {
-        futures.add(profileController.getUserInfo(context));
+        secondaryFutures.add(profileController.getUserInfo(context));
       }
-      futures.add(sellerProductController.getShopAgainFromRecentStore());
+      secondaryFutures.add(sellerProductController.getShopAgainFromRecentStore());
       if (orderController.orderModel == null || (orderController.orderModel != null && orderController.orderModel!.orders!.isEmpty) || reload) {
-        futures.add(orderController.getOrderList(1, 'delivered', type: 'reorder'));
+        secondaryFutures.add(orderController.getOrderList(1, 'delivered', type: 'reorder'));
       }
     }
 
     if (reload) {
-      await Future.wait(futures.map((f) => f.catchError((e) => debugPrint('Aster reload error: $e'))));
+      await Future.wait(priorityFutures.map((f) => f.catchError((e) => debugPrint('Priority load error: $e'))));
+      await Future.wait(secondaryFutures.map((f) => f.catchError((e) => debugPrint('Secondary load error: $e'))));
+    } else {
+      Future.wait(priorityFutures.map((f) => f.catchError((e) => debugPrint('Priority load error: $e')))).then((_) {
+        Future.wait(secondaryFutures.map((f) => f.catchError((e) => debugPrint('Secondary load error: $e'))));
+      });
     }
   }
 }
@@ -291,7 +301,7 @@ class _AsterThemeHomeScreenState extends State<AsterThemeHomeScreen> with Automa
           SliverToBoxAdapter(
             child: Consumer<FlashDealController>(
               builder: (context, megaDeal, child) {
-                  return  megaDeal.flashDeal != null ? megaDeal.flashDealList.isNotEmpty ?
+                  return (megaDeal.flashDeal != null && megaDeal.flashDealList.isNotEmpty) ?
                   Column(children: [
                     Padding(
                       padding: const EdgeInsets.symmetric(horizontal: Dimensions.paddingSizeDefault),
@@ -317,7 +327,7 @@ class _AsterThemeHomeScreenState extends State<AsterThemeHomeScreen> with Automa
                       padding: EdgeInsets.only(bottom: Dimensions.paddingSizeDefault),
                       child: FlashDealsListWidget(),
                     ),
-                  ]) : const SizedBox.shrink(): const FlashDealShimmer();
+                  ]) : (!megaDeal.hasLoaded ? const FlashDealShimmer() : const SizedBox.shrink());
                 }
             ),
           ),

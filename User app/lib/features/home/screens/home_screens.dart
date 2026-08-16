@@ -72,13 +72,17 @@ class HomePage extends StatefulWidget {
 
     splashController.initConfig(context, null, null);
 
-    // [AI] Coordinate non-blocking parallel loads with graceful error handling
-    final List<Future> futures = [
+    // [AI] Batch 1: Critical above-the-fold content (instant render)
+    final List<Future> priorityFutures = [
       categoryController.getCategoryList(reload),
       bannerController.getBannerList(),
       productController.getLatestProductList(1, isUpdate: reload),
       productController.getFeaturedProductModel(1, isUpdate: reload),
       productController.getSelectedProductModel(1, isUpdate: reload),
+    ];
+
+    // [AI] Batch 2: Secondary sections (staggered to prevent 508 resource limits on shared hosting)
+    final List<Future> secondaryFutures = [
       productController.getHomeCategoryProductList(reload),
       shopController.getTopSellerList(offset: 1, isUpdate: reload),
       brandController.getBrandList(offset: 1, isUpdate: reload),
@@ -91,14 +95,19 @@ class HomePage extends StatefulWidget {
     ];
 
     if (notificationController.notificationModel == null || reload) {
-      futures.add(notificationController.getNotificationList(1));
+      secondaryFutures.add(notificationController.getNotificationList(1));
     }
     if (authController.isLoggedIn() && (profileController.userInfoModel == null || reload)) {
-      futures.add(profileController.getUserInfo(context));
+      secondaryFutures.add(profileController.getUserInfo(context));
     }
 
     if (reload) {
-      await Future.wait(futures.map((f) => f.catchError((e) => debugPrint('Home reload error: $e'))));
+      await Future.wait(priorityFutures.map((f) => f.catchError((e) => debugPrint('Home reload error: $e'))));
+      await Future.wait(secondaryFutures.map((f) => f.catchError((e) => debugPrint('Home reload error: $e'))));
+    } else {
+      Future.wait(priorityFutures.map((f) => f.catchError((e) => debugPrint('Priority load error: $e')))).then((_) {
+        Future.wait(secondaryFutures.map((f) => f.catchError((e) => debugPrint('Secondary load error: $e'))));
+      });
     }
   }
 }
@@ -339,11 +348,10 @@ class _HomePageState extends State<HomePage> with AutomaticKeepAliveClientMixin 
               child: Column(
                 children: [
                   Consumer<FlashDealController>(builder: (context, megaDeal, child) {
-                    return  megaDeal.flashDeal == null ? const FlashDealShimmer()
-                      : megaDeal.flashDealList.isNotEmpty ? Column(children: [
+                    return (megaDeal.flashDeal != null && megaDeal.flashDealList.isNotEmpty) ? Column(children: [
 
                         Padding(
-                        padding: EdgeInsets.symmetric(horizontal: Dimensions.paddingSizeDefault),
+                        padding: const EdgeInsets.symmetric(horizontal: Dimensions.paddingSizeDefault),
                         child: FlashDealBar(
                           title: getTranslated('flash_deal', context)!.toUpperCase(),
                           eventDuration: megaDeal.flashDeal != null ? megaDeal.duration : null,
@@ -351,17 +359,6 @@ class _HomePageState extends State<HomePage> with AutomaticKeepAliveClientMixin 
                             RouterHelper.getFlashDealScreenViewRoute();
                           },
                         ),
-
-                        // TitleRowWidget(
-                        //   title: getTranslated('flash_deal', context)?.toUpperCase(),
-                        //   eventDuration: megaDeal.flashDeal != null ? megaDeal.duration : null,
-                        //   onTap: () {
-                        //     RouterHelper.getFlashDealScreenViewRoute();
-                        //   },
-                        //   isFlash: true,
-                        // ),
-
-
                       ),
                       const SizedBox(height: Dimensions.paddingSizeSmall),
 
@@ -377,7 +374,7 @@ class _HomePageState extends State<HomePage> with AutomaticKeepAliveClientMixin 
 
                       const FlashDealsListWidget()
 
-                    ]) : const SizedBox.shrink();
+                    ]) : (!megaDeal.hasLoaded ? const FlashDealShimmer() : const SizedBox.shrink());
                   }),
                   const SizedBox(height: Dimensions.paddingSizeExtraSmall),
                 ],
