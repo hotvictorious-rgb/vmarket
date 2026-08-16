@@ -133,7 +133,7 @@ class WebController extends Controller
             }])->withCount(['subCategoryProduct'])->where('position', 1);
         }, 'childes.childes'])->where('position', 0)->get();
 
-        return view('web-views.products.categories', [
+        return view(VIEW_FILE_NAMES['all_categories'] ?? 'web-views.products.categories', [
             'categories' => CategoryManager::getPriorityWiseCategorySortQuery(query: $categories),
             'robotsMetaContentData' => $robotsMetaContentData
         ]);

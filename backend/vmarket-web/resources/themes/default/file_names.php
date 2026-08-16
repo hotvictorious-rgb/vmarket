@@ -51,6 +51,7 @@ return [
     'products_view_page' => 'web-views.products.view',
     'products__ajax_partials' => 'web-views.products._ajax-products',
     'all_brands' => 'web-views.products.brands',
+    'all_categories' => 'web-views.products.categories',
     'contacts' => 'web-views.pages.contact-us',
     'flash_deals' => 'web-views.products.flash-deals',
     'shop_view_page' => 'web-views.seller-view.shopview',
