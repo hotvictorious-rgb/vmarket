@@ -7,6 +7,7 @@ import 'package:flutter_sixvalley_ecommerce/features/chat/domain/models/message_
 import 'package:flutter_sixvalley_ecommerce/features/chat/controllers/chat_controller.dart';
 import 'package:flutter_sixvalley_ecommerce/features/chat/widgets/audio_player_widget.dart';
 import 'package:flutter_sixvalley_ecommerce/features/chat/widgets/whatsapp_bubble_tail.dart';
+import 'package:flutter_sixvalley_ecommerce/features/chat/widgets/whatsapp_reaction_popup.dart';
 import 'package:flutter_sixvalley_ecommerce/helper/date_converter.dart';
 import 'package:flutter_sixvalley_ecommerce/features/splash/controllers/splash_controller.dart';
 import 'package:flutter_sixvalley_ecommerce/helper/route_healper.dart';
@@ -140,7 +141,7 @@ class _UserAvatar extends StatelessWidget {
   }
 }
 
-class _MessageText extends StatelessWidget {
+class _MessageText extends StatefulWidget {
   final Message message;
   final bool isMe;
   final bool isLTR;
@@ -164,101 +165,158 @@ class _MessageText extends StatelessWidget {
   });
 
   @override
+  State<_MessageText> createState() => _MessageTextState();
+}
+
+class _MessageTextState extends State<_MessageText> {
+  String? _reaction;
+
+  @override
   Widget build(BuildContext context) {
     final bool isDarkTheme = Provider.of<ThemeController>(context).darkTheme;
-    final Color bubbleColor = isMe
+    final Color bubbleColor = widget.isMe
         ? (isDarkTheme ? const Color(0xFF381E72) : const Color(0xFFF3E5F5))
         : (isDarkTheme ? const Color(0xFF1F2C34) : Colors.white);
 
-    final String formattedTime = (message.createdAt != null && message.createdAt!.isNotEmpty)
-        ? DateConverter.getLocalTimeWithAMPM(message.createdAt!).trim()
+    final String formattedTime = (widget.message.createdAt != null && widget.message.createdAt!.isNotEmpty)
+        ? DateConverter.getLocalTimeWithAMPM(widget.message.createdAt!).trim()
         : '';
 
     return Flexible(
       child: Container(
         margin: EdgeInsets.only(
-          left: isMe ? 50 : 0,
-          right: isMe ? 0 : 50,
+          left: widget.isMe ? 50 : 0,
+          right: widget.isMe ? 0 : 50,
           top: 2,
           bottom: 2,
         ),
         child: Row(
-          mainAxisAlignment: isMe ? MainAxisAlignment.end : MainAxisAlignment.start,
+          mainAxisAlignment: widget.isMe ? MainAxisAlignment.end : MainAxisAlignment.start,
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            if (!isMe)
+            if (!widget.isMe)
               CustomPaint(
                 size: const Size(8, 14),
                 painter: WhatsAppBubbleTail(color: bubbleColor, isMe: false),
               ),
 
             Flexible(
-              child: Container(
-                padding: const EdgeInsets.fromLTRB(10, 8, 10, 6),
-                decoration: BoxDecoration(
-                  color: bubbleColor,
-                  borderRadius: BorderRadius.only(
-                    topLeft: Radius.circular(isMe ? 12 : 0),
-                    topRight: Radius.circular(isMe ? 0 : 12),
-                    bottomLeft: const Radius.circular(12),
-                    bottomRight: const Radius.circular(12),
-                  ),
-                  boxShadow: [
-                    BoxShadow(
-                      color: Colors.black.withValues(alpha: isDarkTheme ? 0.2 : 0.05),
-                      blurRadius: 3,
-                      offset: const Offset(0, 1),
-                    ),
-                  ],
-                ),
-                child: (message.message != null && chatProvider.isAudioExtension(message.message!))
-                    ? AudioPlayerWidget(
-                        url: message.message ?? '',
-                        isMe: isMe,
-                      )
-                    : Wrap(
-                        alignment: WrapAlignment.end,
-                        crossAxisAlignment: WrapCrossAlignment.end,
-                        children: [
-                          Padding(
-                            padding: const EdgeInsets.only(right: 6, bottom: 2),
-                            child: Text(
-                              message.message ?? '',
-                              style: textRegular.copyWith(
-                                fontSize: 14.5,
-                                height: 1.3,
-                                color: isMe
-                                    ? (isDarkTheme ? Colors.white : const Color(0xFF2E0854))
-                                    : (isDarkTheme ? Colors.white : const Color(0xFF111B21)),
-                              ),
-                            ),
-                          ),
-                          Row(
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              Text(
-                                formattedTime,
-                                style: textRegular.copyWith(
-                                  fontSize: 10,
-                                  color: (isDarkTheme ? Colors.white60 : Colors.black45),
-                                ),
-                              ),
-                              if (isMe) ...[
-                                const SizedBox(width: 3),
-                                const Icon(
-                                  Icons.done_all_rounded,
-                                  size: 14,
-                                  color: Color(0xFF53BDEB), // Signature WhatsApp double blue ticks
-                                ),
-                              ],
-                            ],
+              child: Stack(
+                clipBehavior: Clip.none,
+                children: [
+                  GestureDetector(
+                    onLongPress: () {
+                      final RenderBox box = context.findRenderObject() as RenderBox;
+                      final Offset position = box.localToGlobal(Offset.zero);
+                      WhatsAppReactionPopup.show(
+                        context: context,
+                        targetRect: position & box.size,
+                        onReactionSelected: (emoji) {
+                          setState(() {
+                            _reaction = emoji;
+                          });
+                        },
+                      );
+                    },
+                    child: Container(
+                      padding: const EdgeInsets.fromLTRB(10, 8, 10, 6),
+                      decoration: BoxDecoration(
+                        color: bubbleColor,
+                        borderRadius: BorderRadius.only(
+                          topLeft: Radius.circular(widget.isMe ? 12 : 0),
+                          topRight: Radius.circular(widget.isMe ? 0 : 12),
+                          bottomLeft: const Radius.circular(12),
+                          bottomRight: const Radius.circular(12),
+                        ),
+                        boxShadow: [
+                          BoxShadow(
+                            color: Colors.black.withValues(alpha: isDarkTheme ? 0.2 : 0.05),
+                            blurRadius: 3,
+                            offset: const Offset(0, 1),
                           ),
                         ],
                       ),
+                      child: (widget.message.message != null && widget.chatProvider.isAudioExtension(widget.message.message!))
+                          ? AudioPlayerWidget(
+                              url: widget.message.message ?? '',
+                              isMe: widget.isMe,
+                            )
+                          : Wrap(
+                              alignment: WrapAlignment.end,
+                              crossAxisAlignment: WrapCrossAlignment.end,
+                              children: [
+                                Padding(
+                                  padding: const EdgeInsets.only(right: 6, bottom: 2),
+                                  child: Text(
+                                    widget.message.message ?? '',
+                                    style: textRegular.copyWith(
+                                      fontSize: 14.5,
+                                      height: 1.3,
+                                      color: widget.isMe
+                                          ? (isDarkTheme ? Colors.white : const Color(0xFF2E0854))
+                                          : (isDarkTheme ? Colors.white : const Color(0xFF111B21)),
+                                    ),
+                                  ),
+                                ),
+                                Row(
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: [
+                                    Text(
+                                      formattedTime,
+                                      style: textRegular.copyWith(
+                                        fontSize: 10,
+                                        color: (isDarkTheme ? Colors.white60 : Colors.black45),
+                                      ),
+                                    ),
+                                    if (widget.isMe) ...[
+                                      const SizedBox(width: 3),
+                                      const Icon(
+                                        Icons.done_all_rounded,
+                                        size: 14,
+                                        color: Color(0xFF53BDEB),
+                                      ),
+                                    ],
+                                  ],
+                                ),
+                              ],
+                            ),
+                    ),
+                  ),
+
+                  // WhatsApp Reaction Badge on Bubble
+                  if (_reaction != null)
+                    Positioned(
+                      bottom: -10,
+                      right: widget.isMe ? 6 : null,
+                      left: widget.isMe ? null : 6,
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 2),
+                        decoration: BoxDecoration(
+                          color: isDarkTheme ? const Color(0xFF233138) : Colors.white,
+                          borderRadius: BorderRadius.circular(12),
+                          border: Border.all(
+                            color: isDarkTheme ? const Color(0xFF1F2C34) : const Color(0xFFEFEAE2),
+                            width: 1.5,
+                          ),
+                          boxShadow: [
+                            BoxShadow(
+                              color: Colors.black.withValues(alpha: 0.15),
+                              blurRadius: 4,
+                              offset: const Offset(0, 2),
+                            ),
+                          ],
+                        ),
+                        child: Text(
+                          _reaction!,
+                          style: const TextStyle(fontSize: 13),
+                        ),
+                      ),
+                    ),
+                ],
               ),
             ),
 
-            if (isMe)
+            if (widget.isMe)
               CustomPaint(
                 size: const Size(8, 14),
                 painter: WhatsAppBubbleTail(color: bubbleColor, isMe: true),
