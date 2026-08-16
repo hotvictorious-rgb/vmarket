@@ -14,6 +14,7 @@ use Illuminate\Http\Request;
 use Illuminate\Pagination\LengthAwarePaginator;
 use Illuminate\Pagination\Paginator;
 use Illuminate\Support\Collection;
+use Illuminate\Support\Facades\Cache;
 
 class BrandController extends Controller
 {
@@ -30,25 +31,44 @@ class BrandController extends Controller
                     return $query->where(['added_by' => 'seller'])->where('user_id', $shop['seller_id']);
                 })->pluck('brand_id');
             $brands = Brand::active()->whereIn('id', $brand_ids)->withCount('brandProducts');
-        } else {
-            $brands = Brand::active()->withCount('brandProducts');
+            $brands = self::getPriorityWiseBrandProductsQuery(query: $brands);
+            $currentPage = $request['offset'] ?? Paginator::resolveCurrentPage('page');
+            $totalSize = $brands->count();
+            $brands = $brands->forPage($currentPage, $request->get('limit', DEFAULT_DATA_LIMIT));
+
+            $brands = new LengthAwarePaginator($brands, $totalSize, $request->get('limit', DEFAULT_DATA_LIMIT), $currentPage, [
+                'path' => Paginator::resolveCurrentPath(),
+                'appends' => $request->all(),
+            ]);
+            return [
+                'total_size' => $brands->total(),
+                'limit' => (int)$request['limit'],
+                'offset' => (int)$request['offset'],
+                'brands' => $brands->values()
+            ];
         }
 
-        $brands = self::getPriorityWiseBrandProductsQuery(query: $brands);
-        $currentPage = $request['offset'] ?? Paginator::resolveCurrentPage('page');
-        $totalSize = $brands->count();
-        $brands = $brands->forPage($currentPage, $request->get('limit', DEFAULT_DATA_LIMIT));
+        $currentPage = (int)($request['offset'] ?? 1);
+        $limit = (int)($request->get('limit', DEFAULT_DATA_LIMIT));
+        $cacheKey = 'vmarket_api_brands_offset_' . $currentPage . '_limit_' . $limit;
 
-        $brands = new LengthAwarePaginator($brands, $totalSize, $request->get('limit', DEFAULT_DATA_LIMIT), $currentPage, [
-            'path' => Paginator::resolveCurrentPath(),
-            'appends' => $request->all(),
-        ]);
-        return [
-            'total_size' => $brands->total(),
-            'limit' => (int)$request['limit'],
-            'offset' => (int)$request['offset'],
-            'brands' => $brands->values()
-        ];
+        return Cache::remember($cacheKey, CACHE_FOR_3_HOURS, function () use ($request, $currentPage, $limit) {
+            $brands = Brand::active()->withCount('brandProducts');
+            $brands = self::getPriorityWiseBrandProductsQuery(query: $brands);
+            $totalSize = $brands->count();
+            $brands = $brands->forPage($currentPage, $limit);
+
+            $brands = new LengthAwarePaginator($brands, $totalSize, $limit, $currentPage, [
+                'path' => Paginator::resolveCurrentPath(),
+                'appends' => $request->all(),
+            ]);
+            return [
+                'total_size' => $brands->total(),
+                'limit' => $limit,
+                'offset' => $currentPage,
+                'brands' => $brands->values()
+            ];
+        });
     }
 
     function getPriorityWiseBrandProductsQuery($query): Collection

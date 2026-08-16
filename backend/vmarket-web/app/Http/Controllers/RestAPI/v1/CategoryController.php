@@ -10,6 +10,7 @@ use App\Utils\CategoryManager;
 use App\Utils\Helpers;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Cache;
 
 class CategoryController extends Controller
 {
@@ -26,32 +27,50 @@ class CategoryController extends Controller
                 ->when($shop['author_type'] != 'admin', function ($query) use ($request, $shop) {
                     return $query->where(['added_by' => 'seller'])->where('user_id', $shop['seller_id']);
                 })->pluck('category_id');
+
+            $categories = Category::whereIn('id', $categoriesID)
+                ->with(['product' => function ($query) {
+                    return $query->active()->withCount(['orderDetails'])->latest()->limit(10);
+                }])
+                ->withCount(['product' => function ($query) use ($request, $shop) {
+                    return $query->active()->where(['added_by' => 'seller', 'user_id' => $shop['seller_id'], 'status' => '1']);
+                }])->with(['childes' => function ($query) {
+                    return $query->with(['childes' => function ($query) {
+                        return $query->withCount(['subSubCategoryProduct' => function ($query) {
+                            return $query->active();
+                        }])->where('position', 2);
+                    }])->withCount(['subCategoryProduct' => function ($query) {
+                        return $query->active();
+                    }])->where('position', 1);
+                }, 'childes.childes'])
+                ->where(['position' => 0])->get();
+
+            $categories = CategoryManager::getPriorityWiseCategorySortQuery(query: $categories);
+            return response()->json($categories->values());
         }
 
-        $categories = Category::when($shop, function ($query) use ($categoriesID) {
-                return $query->whereIn('id', $categoriesID);
-            })
-            ->with(['product' => function ($query) {
-                return $query->active()->withCount(['orderDetails'])->latest()->limit(10);
-            }])
-            ->withCount(['product' => function ($query) use ($request, $shop) {
-                return $query->active()->when($shop && $shop['author_type'] != 'admin', function ($query) use ($request, $shop) {
-                    return $query->where(['added_by' => 'seller', 'user_id' => $shop['seller_id'], 'status' => '1']);
-                });
-            }])->with(['childes' => function ($query) {
-                return $query->with(['childes' => function ($query) {
-                    return $query->withCount(['subSubCategoryProduct' => function ($query) {
-                        return $query->active();
-                    }])->where('position', 2);
-                }])->withCount(['subCategoryProduct' => function ($query) {
+        // [AI] Cache default guest categories list in memory for high-concurrency shared hosting
+        $cachedCategories = Cache::remember('vmarket_api_categories_list', CACHE_FOR_3_HOURS, function () {
+            $categories = Category::with(['product' => function ($query) {
+                    return $query->active()->withCount(['orderDetails'])->latest()->limit(10);
+                }])
+                ->withCount(['product' => function ($query) {
                     return $query->active();
-                }])->where('position', 1);
-            }, 'childes.childes'])
-            ->where(['position' => 0])->get();
+                }])->with(['childes' => function ($query) {
+                    return $query->with(['childes' => function ($query) {
+                        return $query->withCount(['subSubCategoryProduct' => function ($query) {
+                            return $query->active();
+                        }])->where('position', 2);
+                    }])->withCount(['subCategoryProduct' => function ($query) {
+                        return $query->active();
+                    }])->where('position', 1);
+                }, 'childes.childes'])
+                ->where(['position' => 0])->get();
 
-        $categories = CategoryManager::getPriorityWiseCategorySortQuery(query: $categories);
+            return CategoryManager::getPriorityWiseCategorySortQuery(query: $categories)->values();
+        });
 
-        return response()->json($categories->values());
+        return response()->json($cachedCategories);
     }
 
     public function get_products(Request $request, $id): JsonResponse
