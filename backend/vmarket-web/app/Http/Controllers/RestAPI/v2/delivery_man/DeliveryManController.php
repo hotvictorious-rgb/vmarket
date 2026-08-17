@@ -1067,4 +1067,153 @@ class DeliveryManController extends Controller
         }
         return response()->json(['message' => 'Payment failed or already delivered'], 400);
     }
+
+    public function remit_cash_paystack_init(Request $request): JsonResponse
+    {
+        $validator = Validator::make($request->all(), [
+            'amount' => 'required|numeric|min:1',
+        ]);
+
+        if ($validator->fails()) {
+            return response()->json(['errors' => Helpers::validationErrorProcessor($validator)], 403);
+        }
+
+        $deliveryMan = $request['delivery_man'];
+        $wallet = \App\Models\DeliverymanWallet::where('delivery_man_id', $deliveryMan['id'])->first();
+
+        if (!$wallet || $wallet->cash_in_hand <= 0) {
+            return response()->json(['success' => 0, 'message' => 'No cash in hand available to remit.'], 400);
+        }
+
+        $amount = (float)$request['amount'];
+        if ($amount > (float)$wallet->cash_in_hand) {
+            return response()->json(['success' => 0, 'message' => 'Remittance amount cannot exceed cash in hand (₦' . number_format($wallet->cash_in_hand, 2) . ').'], 400);
+        }
+
+        $this->_set_paystack_config();
+
+        $reference = (string)('REMIT_' . $deliveryMan['id'] . '_' . time() . '_' . rand(1000, 9999));
+        $url = "https://api.paystack.co/transaction/initialize";
+
+        $fields = [
+            'email' => $deliveryMan['email'] ?? "deliveryman_" . $deliveryMan['id'] . "@victoriousmarket.com.ng",
+            'amount' => $amount * 100,
+            'currency' => \App\Utils\Helpers::currency_code() ?? 'NGN',
+            'reference' => $reference,
+            'callback_url' => route('paystack-remittance.callback', [
+                'delivery_man_id' => $deliveryMan['id'],
+                'amount' => $amount,
+            ]),
+            'metadata' => [
+                'type' => 'cash_remittance',
+                'delivery_man_id' => $deliveryMan['id'],
+                'amount' => $amount,
+            ]
+        ];
+
+        $fields_string = http_build_query($fields);
+        $ch = curl_init();
+
+        curl_setopt($ch, CURLOPT_URL, $url);
+        curl_setopt($ch, CURLOPT_POST, true);
+        curl_setopt($ch, CURLOPT_POSTFIELDS, $fields_string);
+        curl_setopt($ch, CURLOPT_HTTPHEADER, array(
+            "Authorization: Bearer " . \Illuminate\Support\Facades\Config::get('paystack.secretKey'),
+            "Cache-Control: no-cache",
+        ));
+
+        curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+        $response = json_decode(curl_exec($ch), true);
+
+        if ($response && isset($response['status']) && $response['status'] && isset($response['data']['authorization_url'])) {
+            return response()->json([
+                'success' => 1,
+                'authorization_url' => $response['data']['authorization_url']
+            ], 200);
+        }
+
+        return response()->json(['success' => 0, 'message' => 'Paystack initialization failed. Please try again.'], 403);
+    }
+
+    public function paystack_remittance_callback(Request $request)
+    {
+        $this->_set_paystack_config();
+
+        $reference = $request->query('reference');
+        $deliveryManId = $request->query('delivery_man_id');
+        $remitAmount = (float)$request->query('amount');
+
+        if (!$reference || !$deliveryManId) {
+            return response()->json(['message' => 'Invalid remittance callback'], 400);
+        }
+
+        $curl = curl_init();
+        curl_setopt_array($curl, array(
+            CURLOPT_URL => "https://api.paystack.co/transaction/verify/" . rawurlencode($reference),
+            CURLOPT_RETURNTRANSFER => true,
+            CURLOPT_HTTPHEADER => [
+                "accept: application/json",
+                "authorization: Bearer " . \Illuminate\Support\Facades\Config::get('paystack.secretKey'),
+                "cache-control: no-cache"
+            ],
+        ));
+
+        $response = curl_exec($curl);
+        $err = curl_error($curl);
+        curl_close($curl);
+
+        if ($err) {
+            return response()->json(['message' => 'Paystack verification failed', 'error' => $err], 500);
+        }
+
+        $tranx = json_decode($response);
+        if ($tranx && isset($tranx->status) && $tranx->status) {
+            if ('success' == $tranx->data->status) {
+                $actualAmount = $tranx->data->amount / 100;
+                $deliveryMan = \App\Models\DeliveryMan::find($deliveryManId);
+                if ($deliveryMan) {
+                    DB::beginTransaction();
+                    try {
+                        $wallet = \App\Models\DeliverymanWallet::where('delivery_man_id', $deliveryManId)->first();
+                        if ($wallet) {
+                            $deductAmount = min($wallet->cash_in_hand, $actualAmount);
+                            $wallet->cash_in_hand = max(0, $wallet->cash_in_hand - $deductAmount);
+                            $wallet->save();
+
+                            // Record in delivery_man_transactions for audit trail
+                            \App\Models\DeliveryManTransaction::create([
+                                'delivery_man_id' => $deliveryManId,
+                                'user_id' => 0,
+                                'user_type' => 'admin',
+                                'transaction_id' => $reference,
+                                'debit' => 0,
+                                'credit' => $actualAmount,
+                                'transaction_type' => 'cash_collect_by_admin',
+                                'transaction_note' => 'Remitted via Paystack in-app',
+                            ]);
+                        }
+                        DB::commit();
+
+                        if (isset($deliveryMan->fcm_token)) {
+                            $data = [
+                                'title' => 'Cash Remitted Successfully!',
+                                'description' => '₦' . number_format($actualAmount, 2) . ' cash in hand has been successfully remitted to Admin.',
+                                'order_id' => '',
+                                'image' => '',
+                                'type' => 'wallet'
+                            ];
+                            Helpers::send_push_notif_to_device($deliveryMan->fcm_token, $data);
+                        }
+
+                        return response("<div style='text-align:center; padding: 60px 20px; font-family: -apple-system, BlinkMacSystemFont, Segoe UI, Roboto, Helvetica, Arial, sans-serif; background-color: #f7f9fc;'><div style='background: white; max-width: 480px; margin: 0 auto; padding: 40px; border-radius: 16px; box-shadow: 0 4px 12px rgba(0,0,0,0.08);'><div style='font-size: 54px; color: #4A148C;'>✓</div><h2 style='color:#4A148C; margin-top: 10px;'>Remittance Successful!</h2><p style='font-size:18px; font-weight: bold; color: #333;'>₦" . number_format($actualAmount, 2) . "</p><p style='color: #666; font-size: 14px;'>Your Cash in Hand balance has been updated successfully. You can return to the app.</p></div></div>");
+                    } catch (\Exception $e) {
+                        DB::rollBack();
+                        return response()->json(['message' => 'Remittance processing error', 'error' => $e->getMessage()], 500);
+                    }
+                }
+            }
+        }
+
+        return response()->json(['message' => 'Remittance payment failed or incomplete'], 400);
+    }
 }

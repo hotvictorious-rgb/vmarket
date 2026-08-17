@@ -174,6 +174,7 @@ Route::group(['namespace' => 'RestAPI\v2', 'prefix' => 'v2', 'middleware' => ['a
                 Route::post('resend-verification-code', 'resend_verification_code');
                 Route::post('order-delivery-verification', 'order_delivery_verification');
                 Route::post('generate-paystack-link', 'generate_paystack_link');
+                Route::post('remit-cash-paystack-init', 'remit_cash_paystack_init');
             });
 
             Route::controller(WithdrawController::class)->group(function () {
