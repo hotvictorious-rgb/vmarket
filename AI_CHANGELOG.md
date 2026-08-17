@@ -7,6 +7,16 @@ Always append your completed tasks here in chronological order at the top. Forma
 `### [YYYY-MM-DD HH:MM UTC] <Feature / Fix Title> [<Component Scope>]`
 Include the specific app/component modified and bullet points detailing the exact technical changes.
 
+### [2026-08-17 03:48 UTC] Upgrade Voice Notes to WhatsApp-Grade Unified Audio Bubbles [User App, Vendor App, Delivery Man App]
+* **Component:** Flutter Customer App (`User app/`), Flutter Vendor App (`Vendor app/`), Flutter Delivery Man App (`Delivery Man App/`)
+* **Action:** Upgraded the voice note chatting experience across all three Flutter mobile applications from detached file attachments into unified, interactive, instant WhatsApp-grade voice message bubbles.
+* **Changes Made:**
+  - **Unified Voice Note Bubble Architecture (`message_bubble_widget.dart` across all 3 apps)**: Eliminated disconnected text headers and floating timestamps when a message contains an audio voice recording. Rendered standalone WhatsApp voice cards with custom bubble tail, signature Victorious purple/emerald theme colors, and internal timestamps.
+  - **Hybrid Instant Playback (`audio_player_widget.dart` across all 3 apps)**: Added support for both `DeviceFileSource` (local file playback for instant zero-lag preview upon sending) and `UrlSource` (streaming remote URLs for receiver), with smart URL resolution.
+  - **Interactive Waveform Scrubber (`audio_player_widget.dart` across all 3 apps)**: Implemented touch-to-seek and horizontal drag scrubbing across 30 waveform amplitude bars with live playback progress.
+  - **WhatsApp Controls & Status (`audio_player_widget.dart` across all 3 apps)**: Added animated circular Play/Pause button with pulse feedback, duration countdown (`0:15`), speed toggle pills (`1.0x`, `1.5x`, `2.0x`), and embedded delivery read-receipt checkmarks (`✓✓`).
+  - **Verification**: Verified via `flutter analyze` on User app, Vendor app, and Delivery Man app (0 errors, 0 warnings in modified files).
+
 ### [2026-08-16 16:02 UTC] Harden CORS Configuration with First-Party Domain Whitelisting [Backend]
 * **Component:** Laravel Web Backend (`backend/vmarket-web/config/cors.php`)
 * **Action:** Restricted cross-origin resource sharing (CORS) from permissive wildcard (`*`) to explicit first-party Victorious Market domains and wildcard subdomain regex patterns.
