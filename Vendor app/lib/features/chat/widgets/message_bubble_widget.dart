@@ -49,15 +49,49 @@ class MessageBubbleWidget extends StatelessWidget {
           final List<Attachment> audioFiles = allFiles.where((a) => isAudio(a)).toList();
           final List<Attachment> files = allFiles.where((a) => !isAudio(a)).toList();
 
+          String resolveAudioUrl(String? path) {
+            if (path == null || path.isEmpty) return '';
+            if (path.startsWith('http://') || path.startsWith('https://') || File(path).existsSync()) return path;
+            final baseUrl = Provider.of<SplashController>(context, listen: false).baseUrls?.chatImageUrl ?? '';
+            return baseUrl.isNotEmpty ? '$baseUrl/$path' : path;
+          }
+
+          if (audioFiles.isNotEmpty && (message.message?.isEmpty ?? true) && images.isEmpty && files.isEmpty) {
+            return Padding(
+              padding: const EdgeInsets.symmetric(horizontal: Dimensions.paddingEye, vertical: 3),
+              child: Row(
+                crossAxisAlignment: CrossAxisAlignment.end,
+                mainAxisSize: MainAxisSize.min,
+                mainAxisAlignment: isMe ? MainAxisAlignment.end : MainAxisAlignment.start,
+                children: [
+                  if (_isUserAvatarActive(isMe, isSameUserWithPreviousMessage, chatProvider))
+                    _UserAvatar(image: image),
+                  if (!_isUserAvatarActive(isMe, isSameUserWithPreviousMessage, chatProvider) && !isMe)
+                    const SizedBox(width: Dimensions.paddingSizeExtraLarge + 5),
+                  AudioPlayerWidget(
+                    url: resolveAudioUrl(audioFiles.first.path),
+                    isMe: isMe,
+                    chatTime: chatTime,
+                    isSeen: message.seenByCustomer ?? message.seenByDeliveryMan ?? false,
+                    avatarUrl: isMe ? null : image,
+                  ),
+                ],
+              ),
+            );
+          }
+
           return Padding(
             padding: const EdgeInsets.symmetric(horizontal: Dimensions.paddingEye),
-            child: Column(crossAxisAlignment: isMe ? CrossAxisAlignment.end : CrossAxisAlignment.start,
+            child: Column(
+              crossAxisAlignment: isMe ? CrossAxisAlignment.end : CrossAxisAlignment.start,
               children: [
-                Row( crossAxisAlignment: CrossAxisAlignment.start, mainAxisSize: MainAxisSize.min,
+                Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  mainAxisSize: MainAxisSize.min,
                   mainAxisAlignment: isMe ? MainAxisAlignment.end : MainAxisAlignment.start,
                   children: [
                     if (_isUserAvatarActive(isMe, isSameUserWithPreviousMessage, chatProvider))
-                    _UserAvatar(image: image),
+                      _UserAvatar(image: image),
 
                     !(_isUserAvatarActive(isMe, isSameUserWithPreviousMessage, chatProvider)) &&
                     !isMe ? const SizedBox(width: Dimensions.paddingSizeExtraLarge + 5) : const SizedBox(),
@@ -74,28 +108,30 @@ class MessageBubbleWidget extends StatelessWidget {
                         chatProvider: chatProvider,
                         isProfileAvatarActive: _isUserAvatarActive(isMe, isSameUserWithPreviousMessage, chatProvider),
                       ),
-
                   ],
                 ),
 
-                _MessageTime(chatProvider: chatProvider, message: message),
+                if (message.message?.isNotEmpty ?? false)
+                  _MessageTime(chatProvider: chatProvider, message: message),
 
-                if(images.isNotEmpty) const SizedBox(height: Dimensions.paddingSizeExtraSmall),
+                if (images.isNotEmpty) const SizedBox(height: Dimensions.paddingSizeExtraSmall),
                 _MediaGridWidget(images: images, isMe: isMe),
-
 
                 if (audioFiles.isNotEmpty)
                   Column(
                     crossAxisAlignment: isMe ? CrossAxisAlignment.end : CrossAxisAlignment.start,
                     children: audioFiles.map((a) => Padding(
                       padding: const EdgeInsets.only(top: Dimensions.paddingSizeExtraSmall),
-                      child: AudioPlayerWidget(url: '${Provider.of<SplashController>(context, listen: false).baseUrls?.chatImageUrl}/${a.path}', isMe: isMe),
+                      child: AudioPlayerWidget(
+                        url: resolveAudioUrl(a.path),
+                        isMe: isMe,
+                        chatTime: chatTime,
+                        isSeen: message.seenByCustomer ?? message.seenByDeliveryMan ?? false,
+                      ),
                     )).toList(),
                   ),
 
                 if (files.isNotEmpty) _FileGridWidget(files: files, isMe: isMe, isLTR: isLTR),
-
-
               ],
             ),
           );
