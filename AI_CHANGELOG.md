@@ -7,6 +7,18 @@ Always append your completed tasks here in chronological order at the top. Forma
 `### [YYYY-MM-DD HH:MM UTC] <Feature / Fix Title> [<Component Scope>]`
 Include the specific app/component modified and bullet points detailing the exact technical changes.
 
+### [2026-08-17 07:56 UTC] Fix Flutter CI Build Syntax Errors in Customer App & Vendor App [User App, Vendor App]
+* **Component:** Customer Mobile App (`User app/`), Vendor Mobile App (`Vendor app/`)
+* **Action:** Resolved Gradle/Flutter build syntax errors reported in GitHub Actions CI release workflow.
+* **Changes Made:**
+  - **Customer App (`lib/features/chat/screens/chat_screen.dart`)**:
+    - Fixed unbalanced closing delimiter in `Consumer<ChatController>` builder lambda (`});` instead of `),`).
+  - **Vendor App (`lib/features/chat/domain/models/message_model.dart`)**:
+    - Added missing `seenByCustomer` and `seenByDeliveryMan` boolean getters/properties to `Message` model and deserialization logic.
+  - **Verification**:
+    - `flutter analyze` on `User app/` -> 0 errors.
+    - `flutter analyze` on `Vendor app/` -> 0 errors.
+
 ### [2026-08-17 07:20 UTC] Implement 30-Day Product Price Auto-Expiry & Omnichannel Feed Export Hub [Backend, Vendor App]
 * **Component:** Laravel Backend (`backend/vmarket-web/`), Vendor Mobile App (`Vendor app/`)
 * **Action:** Implemented automated 30-day product price expiry engine with early warning notifications and instant vendor reactivation, plus an Omnichannel Live Product Feed Export Hub supporting Google Merchant Center (Google Shopping RSS 2.0 XML), Meta Facebook/Instagram Catalog (CSV), and TikTok Shop Catalog (CSV).

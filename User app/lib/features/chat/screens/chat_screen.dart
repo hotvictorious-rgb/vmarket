@@ -708,8 +708,8 @@ class _ChatScreenState extends State<ChatScreen> {
                     child: Text(getTranslated('chatting_is_disabled', context) ?? 'Chat is disabled for vendors', style: textRegular),
                   ),
                 ),
-              ]),
-            ),
+              ]);
+            }),
 
 
 
