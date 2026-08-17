@@ -37,6 +37,8 @@ class Message {
   bool? sentByDeliveryMan;
   bool? sentBySeller;
   bool? seenBySeller;
+  bool? seenByCustomer;
+  bool? seenByDeliveryMan;
   String? createdAt;
   String? updatedAt;
   Customer? customer;
@@ -54,6 +56,8 @@ class Message {
         this.sentByDeliveryMan,
         this.sentBySeller,
         this.seenBySeller,
+        this.seenByCustomer,
+        this.seenByDeliveryMan,
         this.createdAt,
         this.updatedAt,
         this.customer,
@@ -75,6 +79,8 @@ class Message {
     sentByDeliveryMan = json['sent_by_delivery_man']??false;
     sentBySeller = json['sent_by_seller'];
     seenBySeller = json['seen_by_seller'];
+    seenByCustomer = json['seen_by_customer'];
+    seenByDeliveryMan = json['seen_by_delivery_man'];
     createdAt = json['created_at'];
     updatedAt = json['updated_at'];
     customer = json['customer'] != null ? Customer.fromJson(json['customer']) : null;
