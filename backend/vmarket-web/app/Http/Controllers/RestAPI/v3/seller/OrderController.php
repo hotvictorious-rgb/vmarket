@@ -120,7 +120,7 @@ class OrderController extends Controller
     public function details(Request $request, $id): JsonResponse
     {
         $seller = $request->seller;
-        $detailsList = OrderDetail::with(['order.offlinePayments', 'order.customer', 'order.deliveryMan', 'verificationImages', 'latestEditHistory', 'orderEditHistory' => function ($query) {
+        $detailsList = OrderDetail::with(['order.offlinePayments', 'order.customer', 'order.deliveryMan', 'order.shippingAddress', 'order.billingAddress', 'verificationImages', 'latestEditHistory', 'orderEditHistory' => function ($query) {
             return $query->orderBy('updated_at', 'desc');
         }])->where(['seller_id' => $seller['id'], 'order_id' => $id])->get();
 
@@ -140,8 +140,8 @@ class OrderController extends Controller
         $paymentInfo = collect()->merge($filteredEditPaymentHistory)->merge($unpaidDue)->values();
 
         $firstDetails = $detailsList->first();
-        if ($firstDetails?->init_order_amount <= 0) {
-            Order::where('id', $firstDetails->order?->id)->update(['init_order_amount' => $firstDetails->order['order_amount']]);
+        if ($firstDetails?->init_order_amount <= 0 && $firstDetails?->order) {
+            Order::where('id', $firstDetails->order->id)->update(['init_order_amount' => $firstDetails->order['order_amount']]);
         }
 
         foreach ($detailsList as $detail) {
@@ -161,7 +161,7 @@ class OrderController extends Controller
 
             $detailsVariation = is_array($detail['variation']) ? $detail['variation'] : json_decode($detail['variation'] ?? '', true);
             $modifiedVariation = [];
-            if (count($detailsVariation) > 0) {
+            if (is_array($detailsVariation) && count($detailsVariation) > 0) {
                 foreach ($detailsVariation as $variationKey => $variation) {
                     $modifiedVariation[] = [
                         'key' => $variationKey,
@@ -175,10 +175,10 @@ class OrderController extends Controller
 
             $activeProduct = $productList?->firstWhere('id', $detail['product_id']) ?? $product;
             $unitPrice = $activeProduct ? $activeProduct['unit_price'] : $detail['price'];
-            $currentStock = max(0, $activeProduct['current_stock']);
-            $variations = is_array($activeProduct['variation']) ? $activeProduct['variation'] : json_decode($activeProduct['variation'], true);
+            $currentStock = max(0, $activeProduct['current_stock'] ?? 0);
+            $variations = is_array($activeProduct['variation'] ?? null) ? $activeProduct['variation'] : json_decode($activeProduct['variation'] ?? '', true);
             $firstVariation = collect($variations)->first(function ($variation) use ($detail) {
-                return $variation['type'] == $detail['variant'];
+                return ($variation['type'] ?? '') == $detail['variant'];
             });
 
             if ($detail['variant'] && $firstVariation) {
@@ -186,8 +186,8 @@ class OrderController extends Controller
                 $unitPrice = $firstVariation['price'] ?? 0;
             }
 
-            if ($detail && $detail['is_stock_decreased'] == 1) {
-                $currentStock += $details['qty'] ?? 1;
+            if ($detail && ($detail['is_stock_decreased'] ?? 0) == 1) {
+                $currentStock += $detail['qty'] ?? 1;
             }
 
             $detail['current_stock'] = $currentStock;

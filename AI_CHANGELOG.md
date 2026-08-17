@@ -7,6 +7,25 @@ Always append your completed tasks here in chronological order at the top. Forma
 `### [YYYY-MM-DD HH:MM UTC] <Feature / Fix Title> [<Component Scope>]`
 Include the specific app/component modified and bullet points detailing the exact technical changes.
 
+### [2026-08-17 06:45 UTC] Vendor App Order Details Overhaul, Null Safety Hardening & Backend Fixes [Backend, Vendor App]
+* **Component:** Laravel Backend (`backend/vmarket-web/`), Vendor Mobile App (`Vendor app/`)
+* **Action:** Audited and resolved runtime errors, missing data, and fragile UI crashes across the Vendor App order details screens and backend REST API. Upgraded UI resilience with safe fallbacks and Victorious Purple & Gold branding.
+* **Changes Made:**
+  - **Backend REST API (`RestAPI/v3/seller/OrderController.php`)**:
+    - Fixed undefined variable typo in `details()` method (`$details['qty']` -> `$detail['qty']`).
+    - Added Eager Loading of `order.shippingAddress`, `order.billingAddress`, `order.deliveryMan`, and `order.customer` to ensure full customer profile and shipping addresses load reliably for vendors without N+1 query latency.
+    - Added safe null coalescing on digital variation formatting and stock calculation.
+  - **Vendor App Flutter Null Safety & UI Hardening (`order_details_screen.dart`, `order_top_section_widget.dart`, `payment_status_widget.dart`, `customer_contact_widget.dart`, `order_product_list_item_widget.dart`, `app_constants.dart`)**:
+    - **`order_top_section_widget.dart`**: Handled loading state gracefully with a persistent back navigation bar when `orderModel` is null. Fixed unsafe `.toLowerCase()` calls on nullable order status strings. Styled status chips with distinct visual cues (green for delivered, teal for confirmed, orange for processing, gold for pending).
+    - **`payment_status_widget.dart`**: Replaced all forced null unwraps (`!`) on `getTranslated`, `paymentMethod`, `initOrderAmount`, and payment edit histories with safe default text and formatted prices (`₦0.00` fallback).
+    - **`customer_contact_widget.dart`**: Sanitized guest vs registered customer extraction with safe null-safe coalescing for customer names, phone numbers, and addresses.
+    - **`order_product_list_item_widget.dart`**: Fixed evaluation order on product discount checks (`hasDiscount = discountAmount > 0`), safe price calculation for digital and physical variations, and null-safe thumbnail image rendering.
+    - **`order_details_screen.dart`**: Protected order calculation engine (items price, taxes, discounts, shipping, extra discount, refer-and-earn) with safe null coalescing to eliminate runtime exceptions.
+    - **`app_constants.dart`**: Added global `StringExtension` with `.capitalize()` helper to provide consistent string capitalization across all vendor screens.
+  - **Verification**:
+    - Verified `php -l` on `OrderController.php` -> 0 syntax errors.
+    - Verified `flutter analyze` on `Vendor app` -> 0 errors.
+
 ### [2026-08-17 06:20 UTC] Full Payment Security Audit & Gateway Hardening [Backend]
 * **Component:** Laravel Web Backend (`backend/vmarket-web/`)
 * **Action:** Audited all 13 payment gateway controllers (Paystack, Flutterwave, Stripe, PayPal, Razorpay, bKash, Paytabs, Paytm, MercadoPago, Paymob, SenangPay, SSLCommerz, LiqPay) and custom doorstep/remittance handlers. Enforced strict atomic row-level locks, double-execution guards, secret key verification, and exact amount match checks across all payment verification callback endpoints.
