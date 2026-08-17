@@ -19,6 +19,7 @@ class AppConstants {
   static const String recordLocationUri = '/api/v2/delivery-man/record-location-data';
   static const String updateOrderStatusUri = '/api/v2/delivery-man/update-order-status';
   static const String generatePaystackLinkUri = '/api/v2/delivery-man/generate-paystack-link';
+  static const String remitCashPaystackInitUri = '/api/v2/delivery-man/remit-cash-paystack-init';
   static const String rescheduleOrderStatusUri = '/api/v2/delivery-man/update-expected-delivery';
   static const String pauseAndResumeOrderStatusUri = '/api/v2/delivery-man/order-update-is-pause';
   static const String updatePaymentStatusUri = '/api/v2/delivery-man/update-payment-status';

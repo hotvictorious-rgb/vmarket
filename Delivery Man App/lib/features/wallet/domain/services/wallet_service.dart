@@ -31,4 +31,8 @@ class WalletService implements WalletServiceInterface{
     }
   }
 
+  @override
+  Future<Response> remitCashViaPaystack({required double amount}) async {
+    return await walletRepoInterface.remitCashViaPaystack(amount: amount);
+  }
 }

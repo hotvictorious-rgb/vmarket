@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'package:get/get.dart';
+import 'package:sixvalley_delivery_boy/data/api/api_checker.dart';
 import 'package:sixvalley_delivery_boy/features/wallet/domain/models/delivery_wise_earned_model.dart';
 import 'package:sixvalley_delivery_boy/features/wallet/domain/services/wallet_service_interface.dart';
 import 'package:sixvalley_delivery_boy/features/withdraw/controllers/withdraw_controller.dart';
@@ -116,5 +117,18 @@ class WalletController extends GetxController implements GetxService {
     Get.find<WithdrawController>().getWithdrawList(startDate=="dd-mm-yyyy"? '' : startDate, endDate =="dd-mm-yyyy"? '' : endDate, 1, 'pending', reload: true);
   }
 
+  Future<String?> remitCashViaPaystack(double amount) async {
+    _isLoading = true;
+    update();
+    Response response = await walletServiceInterface.remitCashViaPaystack(amount: amount);
+    _isLoading = false;
+    update();
+    if (response.statusCode == 200 && response.body != null && response.body['success'] == 1) {
+      return response.body['authorization_url'];
+    } else {
+      ApiChecker.checkApi(response);
+      return null;
+    }
+  }
 
 }

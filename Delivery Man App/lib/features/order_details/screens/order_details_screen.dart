@@ -177,47 +177,80 @@ class _OrderDetailsScreenState extends State<OrderDetailsScreen> {
                         ),
                       ),
 
-                      Padding(padding:  EdgeInsets.only(top: Dimensions.paddingSizeSmall),
-                          child: Container(
-                            decoration: BoxDecoration(
-                              borderRadius: BorderRadius.circular(Dimensions.paddingSizeExtraSmall),
-                              boxShadow: [BoxShadow(
-                                color: Get.find<ThemeController>().darkTheme ? Colors.black.withValues(alpha:0.10) : Colors.grey[100]!,
+                      Padding(
+                        padding: EdgeInsets.only(top: Dimensions.paddingSizeSmall),
+                        child: Container(
+                          decoration: BoxDecoration(
+                            borderRadius: BorderRadius.circular(Dimensions.paddingSizeSmall),
+                            boxShadow: [
+                              BoxShadow(
+                                color: Get.find<ThemeController>().darkTheme ? Colors.black.withValues(alpha: 0.10) : Colors.grey[100]!,
                                 blurRadius: 5,
-                                 spreadRadius: 1,
-                              )],
-                              color: Theme.of(context).cardColor,
-                            ),
-                              padding:  EdgeInsets.all(Dimensions.paddingSizeDefault),
-                              child: Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
-                                Expanded(child: Text(
-                                  'additional_delivery_charge_by_admin'.tr,
-                                  style: rubikRegular.copyWith(color: Get.isDarkMode ? Theme.of(context).hintColor : Colors.black),
-                                )),
-                                SizedBox(width: Dimensions.paddingSizeSmall),
-
-                                Container(
-                                  decoration: BoxDecoration(
-                                      color: Theme.of(context).primaryColor.withValues(alpha:.07),
-                                      borderRadius: BorderRadius.circular(50)
+                                spreadRadius: 1,
+                              )
+                            ],
+                            color: Theme.of(context).cardColor,
+                            border: Border.all(color: const Color(0xFFFFD700).withValues(alpha: 0.3)),
+                          ),
+                          padding: EdgeInsets.all(Dimensions.paddingSizeDefault),
+                          child: Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                            children: [
+                              Row(
+                                children: [
+                                  Container(
+                                    padding: const EdgeInsets.all(8),
+                                    decoration: BoxDecoration(
+                                      color: const Color(0xFF4A148C).withValues(alpha: 0.1),
+                                      shape: BoxShape.circle,
+                                    ),
+                                    child: const Icon(Icons.account_balance_wallet_rounded, color: Color(0xFF4A148C), size: 20),
                                   ),
-                                  child: DottedBorder(
-                                      color: Theme.of(context).primaryColor.withValues(alpha: 0.30),
-                                      borderType: BorderType.RRect,
-                                      radius: const Radius.circular(50),
-                                    child: Container(
-                                      padding:  EdgeInsets.symmetric(horizontal: Dimensions.paddingSizeExtraSmall, vertical: 2),
-                                      child: Row( children: [
-                                        Text(
-                                            PriceConverter.convertPrice(orderModel!.deliveryManCharge),
-                                            style: rubikMedium.copyWith(color: Get.isDarkMode ? Theme.of(context).hintColor : Theme.of(context).primaryColor),
-                                        )
-                                      ]),
+                                  const SizedBox(width: 10),
+                                  Column(
+                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                    children: [
+                                      Text(
+                                        'Your Delivery Earnings'.tr,
+                                        style: rubikBold.copyWith(
+                                          color: Get.isDarkMode ? Colors.white : const Color(0xFF4A148C),
+                                          fontSize: Dimensions.fontSizeDefault,
+                                        ),
+                                      ),
+                                      const SizedBox(height: 2),
+                                      Text(
+                                        'Credited upon delivery'.tr,
+                                        style: rubikRegular.copyWith(
+                                          color: Get.isDarkMode ? Colors.white60 : Colors.grey[600],
+                                          fontSize: Dimensions.fontSizeExtraSmall,
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ],
+                              ),
+                              Container(
+                                decoration: BoxDecoration(
+                                  color: const Color(0xFF4A148C).withValues(alpha: 0.08),
+                                  borderRadius: BorderRadius.circular(50),
+                                ),
+                                child: DottedBorder(
+                                  color: const Color(0xFFFFD700),
+                                  borderType: BorderType.RRect,
+                                  radius: const Radius.circular(50),
+                                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+                                  child: Text(
+                                    PriceConverter.convertPrice(orderModel!.deliveryManCharge),
+                                    style: rubikBold.copyWith(
+                                      color: Get.isDarkMode ? const Color(0xFFFFD700) : const Color(0xFF4A148C),
+                                      fontSize: Dimensions.fontSizeDefault,
                                     ),
                                   ),
                                 ),
-                              ]),
+                              ),
+                            ],
                           ),
+                        ),
                       ),
 
 

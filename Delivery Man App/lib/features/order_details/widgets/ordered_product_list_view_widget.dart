@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:sixvalley_delivery_boy/common/basewidgets/custom_image_widget.dart';
 import 'package:sixvalley_delivery_boy/features/order_details/controllers/order_details_controller.dart';
 import 'package:sixvalley_delivery_boy/helper/color_helper.dart';
-import 'package:sixvalley_delivery_boy/helper/price_converter.dart';
 import 'package:sixvalley_delivery_boy/utill/dimensions.dart';
 import 'package:sixvalley_delivery_boy/utill/styles.dart';
 import 'package:get/get.dart';
@@ -69,12 +68,7 @@ class OrderedItemProductListWidget extends StatelessWidget {
                                   Text('${'variation'.tr} : ',
                                         style: rubikRegular.copyWith(color: Get.isDarkMode ? Theme.of(context).textTheme.bodyLarge?.color : Theme.of(context).hintColor)),
                                   Text(' ${orderController!.orderDetails![index].variant}', style: rubikMedium.copyWith(color: Get.isDarkMode ? Theme.of(context).textTheme.bodyLarge?.color : Theme.of(context).primaryColor))]): const SizedBox(),
-
-                                Row(children: [
-                                  Text('${'price'.tr} (${'per_unit'.tr}) : ',
-                                      style: rubikRegular.copyWith(color: Get.isDarkMode ? Theme.of(context).textTheme.bodyLarge?.color : Theme.of(context).hintColor)),
-                                  Text(PriceConverter.convertPrice(orderController!.orderDetails![index].price),
-                                      style: rubikMedium.copyWith(color: Get.isDarkMode ? Theme.of(context).textTheme.bodyLarge?.color : Theme.of(context).primaryColor))])]))]),
+                              ]))]),
 
                     ((index+1) < orderController!.orderDetails!.length) ? Padding(padding:  EdgeInsets.symmetric(vertical: Dimensions.paddingSizeDefault),
                         child: Divider(height: .5,color: Theme.of(context).hintColor.withValues(alpha:.5))) : const SizedBox.shrink(),
