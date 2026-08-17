@@ -1,3 +1,4 @@
+import 'dart:io';
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/foundation.dart';
 import 'package:image_picker/image_picker.dart';
@@ -61,10 +62,15 @@ class ChatRepository implements ChatRepositoryInterface{
       request.files.add(part);
     }
 
-    if(platformFile != null ) {
-      if(platformFile.isNotEmpty){
-        for(PlatformFile pfile in platformFile) {
+    if(platformFile != null && platformFile.isNotEmpty) {
+      for(PlatformFile pfile in platformFile) {
+        if (pfile.readStream != null) {
           request.files.add(http.MultipartFile('file[]', pfile.readStream!, pfile.size, filename: basename(pfile.name)));
+        } else if (pfile.bytes != null) {
+          request.files.add(http.MultipartFile.fromBytes('file[]', pfile.bytes!, filename: basename(pfile.name)));
+        } else if (pfile.path != null) {
+          File f = File(pfile.path!);
+          request.files.add(http.MultipartFile.fromBytes('file[]', f.readAsBytesSync(), filename: basename(pfile.name)));
         }
       }
     }

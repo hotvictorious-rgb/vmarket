@@ -31,7 +31,8 @@ class ProfileRepository implements ProfileRepositoryInterface{
     request.headers.addAll(<String,String>{'Authorization': 'Bearer $token'});
     Map<String, String> fields = {};
     if(file != null) {
-      request.files.add(http.MultipartFile('image', file.readAsBytes().asStream(), file.lengthSync(), filename: file.path.split('/').last));
+      final fileName = file.path.split(RegExp(r'[/\\]')).last;
+      request.files.add(http.MultipartFile.fromBytes('image', file.readAsBytesSync(), filename: fileName));
     }
     fields.addAll(<String, String>{
       '_method': 'put', 'f_name': userInfoModel.fName!, 'l_name': userInfoModel.lName!, 'phone': userInfoModel.phone!,
