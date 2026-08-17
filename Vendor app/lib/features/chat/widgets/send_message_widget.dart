@@ -14,7 +14,8 @@ import 'package:flutter/foundation.dart' as foundation;
 
 class SendMessageWidget extends StatefulWidget {
   final int? id;
-  const SendMessageWidget({super.key, this.id});
+  final int? orderId;
+  const SendMessageWidget({super.key, this.id, this.orderId});
 
   @override
   State<SendMessageWidget> createState() => _SendMessageWidgetState();
@@ -122,7 +123,7 @@ class _SendMessageWidgetState extends State<SendMessageWidget> {
                       GestureDetector(
                         onTap: () {
                           if(_isSendingButtonActive(chatController)){
-                            MessageBody messageBody = MessageBody(sellerId: widget.id, message: _controller.text.trim());
+                            MessageBody messageBody = MessageBody(sellerId: widget.id, message: _controller.text.trim(), orderId: widget.orderId);
                             chatController.sendMessage(messageBody).then((value){
                               if(value.statusCode == 200){
                                 _controller.clear();

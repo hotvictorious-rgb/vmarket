@@ -1,4 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
+import 'package:sixvalley_vendor_app/features/chat/controllers/chat_controller.dart';
+import 'package:sixvalley_vendor_app/features/chat/screens/chat_screen.dart';
 import 'package:sixvalley_vendor_app/features/order/domain/models/order_model.dart';
 import 'package:sixvalley_vendor_app/helper/color_helper.dart';
 import 'package:sixvalley_vendor_app/localization/language_constrants.dart';
@@ -65,9 +68,42 @@ class DeliveryManContactInformationWidget extends StatelessWidget {
                   Row(children: [
                     Image.asset(Images.email, width: 15),
                     const SizedBox(width: Dimensions.paddingSizeSmall),
-                    Text(orderModel!.deliveryMan!.email ?? '',
-                        style: titilliumRegular.copyWith(color: ColorHelper.blendColors(Colors.white, Theme.of(context).textTheme.bodyLarge!.color!, 0.7),
-                            fontSize: Dimensions.fontSizeDefault)),
+                    Expanded(
+                      child: Text(orderModel!.deliveryMan!.email ?? '',
+                          style: titilliumRegular.copyWith(color: ColorHelper.blendColors(Colors.white, Theme.of(context).textTheme.bodyLarge!.color!, 0.7),
+                              fontSize: Dimensions.fontSizeDefault),
+                          overflow: TextOverflow.ellipsis),
+                    ),
+                    InkWell(
+                      onTap: () {
+                        Provider.of<ChatController>(context, listen: false).setUserTypeIndex(context, 1);
+                        Navigator.of(context).push(MaterialPageRoute(builder: (_) => ChatScreen(
+                          userId: orderModel!.deliveryMan!.id,
+                          name: '${orderModel!.deliveryMan!.fName ?? ''} ${orderModel!.deliveryMan!.lName ?? ''}'.trim(),
+                          orderId: orderModel!.id,
+                          orderStatus: orderModel!.orderStatus,
+                        )));
+                      },
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                        decoration: BoxDecoration(
+                          gradient: const LinearGradient(
+                            colors: [Color(0xFF6A1B9A), Color(0xFF4A148C)],
+                            begin: Alignment.topLeft,
+                            end: Alignment.bottomRight,
+                          ),
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            const Icon(Icons.chat_bubble_outline_rounded, color: Colors.white, size: 14),
+                            const SizedBox(width: 4),
+                            Text('Chat', style: robotoBold.copyWith(color: Colors.white, fontSize: 11)),
+                          ],
+                        ),
+                      ),
+                    ),
                     ],
                   ),
 

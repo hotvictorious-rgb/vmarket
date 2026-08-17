@@ -27,7 +27,9 @@ import '../../../main.dart';
 class ChatScreen extends StatefulWidget {
   final String name;
   final int? userId;
-  const ChatScreen({super.key, required this.userId, this.name = ''});
+  final int? orderId;
+  final String? orderStatus;
+  const ChatScreen({super.key, required this.userId, this.name = '', this.orderId, this.orderStatus});
 
   @override
   State<ChatScreen> createState() => _ChatScreenState();
@@ -66,8 +68,49 @@ class _ChatScreenState extends State<ChatScreen> {
 
     return Scaffold(
       body: Consumer<ChatController>(builder: (context, chatController, child) {
+        final bool isOrderTerminated = widget.orderStatus == 'delivered' || widget.orderStatus == 'canceled' || widget.orderStatus == 'returned';
+        final bool isChatActive = (chatController.messageModel?.isActive ?? true) && !isOrderTerminated;
+
         return Column(children: [
           CustomAppBarWidget(title: widget.name),
+          if (widget.orderId != null)
+            Container(
+              width: double.infinity,
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+              decoration: BoxDecoration(
+                color: isDark ? const Color(0xFF1E2630) : const Color(0xFFF3E5F5),
+                border: Border(bottom: BorderSide(color: isDark ? Colors.white10 : const Color(0xFFE1BEE7))),
+              ),
+              child: Row(
+                children: [
+                  const Icon(Icons.local_shipping_outlined, size: 18, color: Color(0xFF6A1B9A)),
+                  const SizedBox(width: 8),
+                  Text(
+                    'Order #${widget.orderId}',
+                    style: robotoBold.copyWith(color: const Color(0xFF6A1B9A), fontSize: 13),
+                  ),
+                  if (widget.orderStatus != null && widget.orderStatus!.isNotEmpty) ...[
+                    const SizedBox(width: 8),
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                      decoration: BoxDecoration(
+                        color: isOrderTerminated
+                            ? Colors.grey.withValues(alpha: 0.2)
+                            : const Color(0xFF00A884).withValues(alpha: 0.15),
+                        borderRadius: BorderRadius.circular(10),
+                      ),
+                      child: Text(
+                        widget.orderStatus!.replaceAll('_', ' ').toUpperCase(),
+                        style: robotoBold.copyWith(
+                          color: isOrderTerminated ? Colors.grey : const Color(0xFF00A884),
+                          fontSize: 10,
+                        ),
+                      ),
+                    ),
+                  ],
+                ],
+              ),
+            ),
           const SizedBox(height: 2),
           chatController.messageModel != null ?
           Expanded(child: WhatsAppChatWallpaper(
@@ -291,9 +334,33 @@ class _ChatScreenState extends State<ChatScreen> {
             ),
           ) : const SizedBox(),
 
-          if (chatController.userTypeIndex != 0) SafeArea(top: false, child: SizedBox(
+          if (!isChatActive)
+            Padding(
+              padding: const EdgeInsets.fromLTRB(Dimensions.paddingSizeDefault, 0, Dimensions.paddingSizeDefault, Dimensions.paddingSizeDefault),
+              child: Container(
+                width: double.infinity,
+                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+                decoration: BoxDecoration(
+                  color: isDark ? const Color(0xFF1F2C34) : const Color(0xFFF5F5F5),
+                  borderRadius: BorderRadius.circular(16),
+                  border: Border.all(color: isDark ? Colors.white12 : Colors.grey.withValues(alpha: 0.2)),
+                ),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    const Icon(Icons.lock_outline_rounded, size: 18, color: Colors.grey),
+                    const SizedBox(width: 8),
+                    Text(
+                      getTranslated('order_delivered_chat_closed', context) ?? 'This order is delivered. Chat is closed.',
+                      style: robotoRegular.copyWith(color: isDark ? Colors.white60 : Colors.grey[700], fontSize: 13),
+                    ),
+                  ],
+                ),
+              ),
+            )
+          else if (chatController.userTypeIndex != 0) SafeArea(top: false, child: SizedBox(
             height: chatController.openEmojiPicker ? 360 : 60,
-            child: SendMessageWidget(id: widget.userId),
+            child: SendMessageWidget(id: widget.userId, orderId: widget.orderId),
           )) else Padding(
             padding: const EdgeInsets.all(Dimensions.paddingSizeDefault),
             child: Center(
