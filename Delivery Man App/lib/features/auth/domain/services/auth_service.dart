@@ -44,8 +44,10 @@ class AuthService implements AuthServiceInterface {
     Response response = await authRepoInterface.login(countryCode, phone, password);
 
     if (response.statusCode == 200) {
-      authRepoInterface.saveUserToken(response.body['token']);
-      await authRepoInterface.updateToken();
+      await authRepoInterface.saveUserToken(response.body['token']);
+      authRepoInterface.updateToken().catchError((e) {
+        debugPrint('Error updating delivery man token: $e');
+      });
       return ResponseModel(true, 'successful');
     } else {
       return ResponseModel(false, response.statusText);

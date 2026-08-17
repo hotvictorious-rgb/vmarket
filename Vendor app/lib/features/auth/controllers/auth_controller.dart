@@ -109,7 +109,9 @@ class AuthController with ChangeNotifier {
     _isLoading = false;
     notifyListeners();
     if(apiResponse.response?.statusCode == 200) {
-      await Provider.of<AuthController>(Get.context!, listen: false).updateToken(Get.context!);
+      Provider.of<AuthController>(Get.context!, listen: false).updateToken(Get.context!).catchError((e) {
+        log('Error updating vendor token: $e');
+      });
       setCurrentLanguage(Provider.of<LocalizationController>(Get.context!, listen: false).getCurrentLanguage()??'en');
       setUnAuthorize(false);
       notifyListeners();

@@ -7,16 +7,19 @@ Always append your completed tasks here in chronological order at the top. Forma
 `### [YYYY-MM-DD HH:MM UTC] <Feature / Fix Title> [<Component Scope>]`
 Include the specific app/component modified and bullet points detailing the exact technical changes.
 
-### [2026-08-17 17:55 UTC] Fix Infinite Loading on Customer Login & Navigation Deadlock [User App]
-* **Component:** Flutter Customer App (`User app/lib/features/auth/`)
-* **Action:** Fixed infinite spinner and navigation hang during customer login that forced users to force-quit and reopen the app.
+### [2026-08-17 18:00 UTC] Fix Infinite Loading on Login & FCM Deadlock Across All 3 Mobile Apps [User, Vendor, Delivery Man]
+* **Component:** Flutter Mobile Apps (`User app`, `Vendor app`, `Delivery Man App`)
+* **Action:** Fixed infinite spinner and navigation hang during login that forced users to force-quit and reopen the apps.
 * **Changes Made:**
-  - **`User app/lib/features/auth/controllers/auth_controller.dart`**:
-    - Converted blocking `updateDeviceToken()` call during login to non-blocking asynchronous execution with error handling (`.catchError(...)`). This stops network/FCM timeouts from holding the login loading spinner indefinitely while the user credentials have already been authenticated.
-    - Awaited `saveUserToken()` before triggering screen transition to ensure the session token is securely written to encrypted storage.
+  - **Customer App (`User app/lib/features/auth/`)**:
+    - Converted blocking `updateDeviceToken()` call during login to non-blocking asynchronous execution with error handling (`.catchError(...)`).
+    - Awaited `saveUserToken()` before screen transition.
     - Cleaned up duplicate token synchronization in `socialLogin()` and `firebaseOtpLogin()`.
-  - **`User app/lib/features/auth/screens/login_screen.dart`**:
-    - Removed conflicting duplicate `Navigator.of(context).pop()` call before `navigateToHome()` which previously broke the navigation stack when logging in from the dashboard.
+    - Removed conflicting duplicate `Navigator.pop()` in `login_screen.dart`.
+  - **Vendor App (`Vendor app/lib/features/auth/controllers/auth_controller.dart`)**:
+    - Converted blocking `updateToken()` call after successful authentication to non-blocking background execution (`.catchError(...)`) to prevent FCM/network latency from freezing the login screen.
+  - **Delivery Man App (`Delivery Man App/lib/features/auth/domain/services/auth_service.dart`)**:
+    - Awaited `saveUserToken()` and made `updateToken()` asynchronous to prevent network timeouts from hanging the rider login flow.
 
 ### [2026-08-17 17:35 UTC] Fix Storage Media Routing & Hardened Image Uploads Across Apps & Web [Backend]
 * **Component:** Laravel Web Backend (`.htaccess`, `app/Utils/ImageManager.php`)
