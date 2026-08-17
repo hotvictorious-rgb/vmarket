@@ -86,15 +86,22 @@ class ProfileController extends GetxController implements GetxService {
   Future<ResponseModel> updateUserInfo(UserInfoModel updateUserModel, String pass) async {
     _isLoading = true;
     update();
-    ResponseModel responseModel = await profileServiceInterface.updateProfile(updateUserModel, pass, file, Get.find<AuthController>().getUserToken());
-    responseModel.isSuccess ? _userInfoModel = updateUserModel : null;
-    if(responseModel.isSuccess){
-      _showPassView = false;
-      await getProfile();
+    ResponseModel responseModel;
+    try {
+      responseModel = await profileServiceInterface.updateProfile(updateUserModel, pass, file, Get.find<AuthController>().getUserToken());
+      if(responseModel.isSuccess){
+        _userInfoModel = updateUserModel;
+        _showPassView = false;
+        await getProfile();
+      }
+      showCustomSnackBarWidget(responseModel.message, isError: !responseModel.isSuccess);
+    } catch (e) {
+      responseModel = ResponseModel(false, e.toString());
+      showCustomSnackBarWidget(e.toString(), isError: true);
+    } finally {
+      _isLoading = false;
+      update();
     }
-    showCustomSnackBarWidget(responseModel.message, isError: false);
-    _isLoading = false;
-    update();
     return responseModel;
   }
 

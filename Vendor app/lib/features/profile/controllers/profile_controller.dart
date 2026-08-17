@@ -70,14 +70,21 @@ class ProfileController with ChangeNotifier {
     _isLoading = true;
     notifyListeners();
 
-    http.StreamedResponse response = await profileServiceInterface.updateProfile(updateUserModel, seller, file, token, password);
-    _isLoading = false;
-    if (response.statusCode == 200) {
-      _userInfoModel = updateUserModel;
-      getSellerInfo();
-      showCustomSnackBarWidget(getTranslated('updated_successfully', Get.context!) ?? "", Get.context!, isError: false);
+    try {
+      http.StreamedResponse response = await profileServiceInterface.updateProfile(updateUserModel, seller, file, token, password);
+      if (response.statusCode == 200) {
+        _userInfoModel = updateUserModel;
+        getSellerInfo();
+        showCustomSnackBarWidget(getTranslated('updated_successfully', Get.context!) ?? "", Get.context!, isError: false);
+      } else {
+        showCustomSnackBarWidget(getTranslated('update_failed', Get.context!) ?? "Update failed", Get.context!, isError: true);
+      }
+    } catch (e) {
+      showCustomSnackBarWidget(e.toString(), Get.context!, isError: true);
+    } finally {
+      _isLoading = false;
+      notifyListeners();
     }
-    notifyListeners();
   }
 
 

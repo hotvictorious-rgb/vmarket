@@ -7,6 +7,14 @@ Always append your completed tasks here in chronological order at the top. Forma
 `### [YYYY-MM-DD HH:MM UTC] <Feature / Fix Title> [<Component Scope>]`
 Include the specific app/component modified and bullet points detailing the exact technical changes.
 
+### [2026-08-17 18:05 UTC] Fix Profile & Avatar Update Infinite Spinner Deadlocks [User, Vendor, Delivery Man]
+* **Component:** Flutter Mobile Apps (`User app`, `Vendor app`, `Delivery Man App`)
+* **Action:** Added fail-safe `try-finally` blocks to HTTP multipart image stream uploads across all 3 apps, guaranteeing the loading spinner is dismissed even if network interrupts or slow connections timeout.
+* **Changes Made:**
+  - **`User app/lib/features/profile/controllers/profile_contrroller.dart`**: Wrapped `updateUserInfo()` in `try-finally` to ensure `_isLoading = false` is always executed.
+  - **`Vendor app/lib/features/profile/controllers/profile_controller.dart`**: Wrapped `updateUserInfo()` in `try-finally` so seller profile updates never hang.
+  - **`Delivery Man App/lib/features/profile/controllers/profile_controller.dart`**: Wrapped `updateUserInfo()` in `try-finally` to guarantee rider updates reset loading state.
+
 ### [2026-08-17 18:00 UTC] Fix Infinite Loading on Login & FCM Deadlock Across All 3 Mobile Apps [User, Vendor, Delivery Man]
 * **Component:** Flutter Mobile Apps (`User app`, `Vendor app`, `Delivery Man App`)
 * **Action:** Fixed infinite spinner and navigation hang during login that forced users to force-quit and reopen the apps.

@@ -70,28 +70,29 @@ class ProfileController extends ChangeNotifier {
     notifyListeners();
 
     ResponseModel responseModel;
-    http.StreamedResponse response = await profileServiceInterface!.updateProfile(updateUserModel, pass, file, token);
-    _isLoading = false;
-    if (response.statusCode == 200) {
-      Map map = jsonDecode(await response.stream.bytesToString());
-      String? message = map["message"];
-      await getUserInfo(Get.context!, reload: true);
-      responseModel = ResponseModel(message, true);
-      Navigator.of(Get.context!).pop();
-    } else {
-
-      final String responseBody = await response.stream.bytesToString();
-      var decodedData = jsonDecode(responseBody);
-    
-
-      String? errorMessage;
-
-      if(decodedData != null){
-        errorMessage = decodedData['errors']?[0]?['message'];
+    try {
+      http.StreamedResponse response = await profileServiceInterface!.updateProfile(updateUserModel, pass, file, token);
+      if (response.statusCode == 200) {
+        Map map = jsonDecode(await response.stream.bytesToString());
+        String? message = map["message"];
+        await getUserInfo(Get.context!, reload: true);
+        responseModel = ResponseModel(message, true);
+        Navigator.of(Get.context!).pop();
+      } else {
+        final String responseBody = await response.stream.bytesToString();
+        var decodedData = jsonDecode(responseBody);
+        String? errorMessage;
+        if(decodedData != null){
+          errorMessage = decodedData['errors']?[0]?['message'];
+        }
+        responseModel = ResponseModel('${errorMessage ?? response.reasonPhrase}', false);
       }
-      responseModel = ResponseModel('${errorMessage ?? response.reasonPhrase}', false);
+    } catch (e) {
+      responseModel = ResponseModel('Failed to update profile: $e', false);
+    } finally {
+      _isLoading = false;
+      notifyListeners();
     }
-    notifyListeners();
     return responseModel;
   }
 
