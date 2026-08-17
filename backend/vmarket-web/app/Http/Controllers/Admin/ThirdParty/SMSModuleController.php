@@ -60,7 +60,7 @@ class SMSModuleController extends BaseController
         ]);
 
         if ($request['status'] == 1) {
-            foreach (['releans', 'twilio', 'nexmo', '2factor', 'msg91', 'hubtel', 'paradox', 'signal_wire', '019_sms', 'viatech', 'global_sms', 'akandit_sms', 'sms_to', 'alphanet_sms'] as $gateway) {
+            foreach (['termii', 'ebulksms', 'smart_sms', 'kudisms', 'sendchamp', 'releans', 'twilio', 'nexmo', '2factor', 'msg91', 'hubtel', 'paradox', 'signal_wire', '019_sms', 'viatech', 'global_sms', 'akandit_sms', 'sms_to', 'alphanet_sms'] as $gateway) {
                 $keep = $this->settingRepo->getFirstWhere(params: ['key_name' => $gateway, 'settings_type' => 'sms_config']);
                 if (isset($keep)) {
                     $hold = $keep['live_values'];

@@ -7,6 +7,29 @@ Always append your completed tasks here in chronological order at the top. Forma
 `### [YYYY-MM-DD HH:MM UTC] <Feature / Fix Title> [<Component Scope>]`
 Include the specific app/component modified and bullet points detailing the exact technical changes.
 
+### [2026-08-17 14:25 UTC] Replace Foreign SMS Gateways with Dedicated Nigerian SMS Gateway Suite [Backend]
+* **Component:** Laravel Backend (`backend/vmarket-web/`) & Admin Panel
+* **Action:** Replaced foreign/unsupported SMS gateways (India `2factor`, `msg91`, Bangladesh `alphanet_sms`, legacy `releans`) with a premier Nigerian SMS Gateway suite (Termii, Ebulksms, SmartSMSSolutions, KudiSMS, Sendchamp) + Twilio global fallback.
+* **Changes Made:**
+  - **`app/Enums/GlobalConstant.php` & `app/Utils/Helpers.php`**:
+    - Updated `DEFAULT_SMS_GATEWAYS` to: `termii`, `ebulksms`, `smart_sms`, `kudisms`, `sendchamp`, `twilio`.
+  - **`app/Utils/SMSModule.php`**:
+    - Implemented `formatNigerianPhone()` normalizer (`080...` -> `23480...`).
+    - Implemented `termii()` gateway integration with DND auto-route and error logging.
+    - Implemented `ebulksms()` gateway with transactional DND bypass parameters.
+    - Implemented `smart_sms()` gateway with Priority OTP / transactional route (`routing: 3`).
+    - Implemented `kudisms()` and `sendchamp()` gateways with secure token auth and DND routing.
+  - **`app/Services/SettingService.php`**:
+    - Added comprehensive validation rules for each Nigerian gateway's API credentials.
+  - **`app/Http/Controllers/Admin/ThirdParty/SMSModuleController.php`**:
+    - Updated mutual exclusive gateway switcher loop.
+  - **`resources/views/layouts/admin/partials/offcanvas/_3rd-party-sms-setup.blade.php`**:
+    - Updated admin documentation offcanvas guide.
+  - **`database/migrations/2026_08_17_143000_seed_nigerian_sms_gateways_to_addon_settings.php`**:
+    - Created idempotent migration to seed default configuration rows in `addon_settings`.
+* **Verification:**
+  - `php -l` on all modified files -> 0 syntax errors.
+
 ### [2026-08-17 13:20 UTC] Audit & Harden Product Photo & Digital Product Upload Pipelines [Vendor App]
 * **Component:** Vendor Mobile App (`Vendor app/`)
 * **Action:** Audited and hardened product image, thumbnail, meta image, and digital product uploads.

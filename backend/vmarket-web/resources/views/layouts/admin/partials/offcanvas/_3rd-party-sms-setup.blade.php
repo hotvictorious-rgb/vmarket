@@ -33,12 +33,12 @@
                         {{ translate('as_3rd_party_sms_module_these_options_are_available_to_the_system') }}
                     </p>
                     <ul class="d-flex flex-column gap-2 fs-12">
-                        <li>{{ translate('2_Factor') }}</li>
-                        <li>{{ translate('MSG91') }}</li>
-                        <li>{{ translate('Twillo') }}</li>
-                        <li>{{ translate('Alphanet_SMS') }}</li>
-                        <li>{{ translate('Releans') }}</li>
-                        <li>{{ translate('Nexmo') }}</li>
+                        <li>{{ translate('Termii (Nigeria)') }}</li>
+                        <li>{{ translate('Ebulksms (Nigeria)') }}</li>
+                        <li>{{ translate('SmartSMSSolutions (Nigeria)') }}</li>
+                        <li>{{ translate('KudiSMS (Nigeria)') }}</li>
+                        <li>{{ translate('Sendchamp (Nigeria)') }}</li>
+                        <li>{{ translate('Twilio (Global)') }}</li>
                     </ul>
                     <p class="fs-12">
                         {{ translate('please_note_that_only_one_of_these_methods_can_be_enabled_for_sending_sms_at_any_given_time.') }}

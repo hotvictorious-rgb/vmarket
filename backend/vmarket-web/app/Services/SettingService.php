@@ -22,11 +22,47 @@ class SettingService
     {
         collect(['status'])->each(fn($item, $key) => $request[$item] = $request->has($item) ? (int)$request[$item] : 0);
         $validation = [
-            'gateway' => 'required|in:releans,twilio,nexmo,2factor,msg91,hubtel,paradox,signal_wire,019_sms,viatech,global_sms,akandit_sms,sms_to,alphanet_sms',
+            'gateway' => 'required|in:termii,ebulksms,smart_sms,kudisms,sendchamp,releans,twilio,nexmo,2factor,msg91,hubtel,paradox,signal_wire,019_sms,viatech,global_sms,akandit_sms,sms_to,alphanet_sms',
             'mode' => 'required|in:live,test'
         ];
         $additional_data = [];
-        if ($request['gateway'] == 'releans') {
+        if ($request['gateway'] == 'termii') {
+            $additional_data = [
+                'status' => 'required|in:1,0',
+                'api_key' => 'required',
+                'from' => 'required',
+                'channel' => 'nullable',
+                'otp_template' => 'nullable'
+            ];
+        } elseif ($request['gateway'] == 'ebulksms') {
+            $additional_data = [
+                'status' => 'required|in:1,0',
+                'username' => 'required',
+                'api_key' => 'required',
+                'sender' => 'required'
+            ];
+        } elseif ($request['gateway'] == 'smart_sms') {
+            $additional_data = [
+                'status' => 'required|in:1,0',
+                'api_key' => 'required',
+                'sender_id' => 'required',
+                'otp_template' => 'nullable'
+            ];
+        } elseif ($request['gateway'] == 'kudisms') {
+            $additional_data = [
+                'status' => 'required|in:1,0',
+                'token' => 'required',
+                'sender' => 'required',
+                'otp_template' => 'nullable'
+            ];
+        } elseif ($request['gateway'] == 'sendchamp') {
+            $additional_data = [
+                'status' => 'required|in:1,0',
+                'public_key' => 'required',
+                'sender_name' => 'required',
+                'otp_template' => 'nullable'
+            ];
+        } elseif ($request['gateway'] == 'releans') {
             $additional_data = [
                 'status' => 'required|in:1,0',
                 'api_key' => 'required',

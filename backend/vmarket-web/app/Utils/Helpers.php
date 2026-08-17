@@ -280,11 +280,12 @@ class Helpers
     public static function getDefaultSMSGateways(): array
     {
         return [
+            'termii',
+            'ebulksms',
+            'smart_sms',
+            'kudisms',
+            'sendchamp',
             'twilio',
-            'nexmo',
-            '2factor',
-            'msg91',
-            'releans',
         ];
     }
 

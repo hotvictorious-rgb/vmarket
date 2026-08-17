@@ -1178,12 +1178,12 @@ enum GlobalConstant
     ];
 
     const DEFAULT_SMS_GATEWAYS = [
+        'termii',
+        'ebulksms',
+        'smart_sms',
+        'kudisms',
+        'sendchamp',
         'twilio',
-        'nexmo',
-        '2factor',
-        'msg91',
-        'releans',
-        'alphanet_sms',
     ];
 
     const TIMEZONE_ARRAY = [
