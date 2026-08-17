@@ -7,6 +7,18 @@ Always append your completed tasks here in chronological order at the top. Forma
 `### [YYYY-MM-DD HH:MM UTC] <Feature / Fix Title> [<Component Scope>]`
 Include the specific app/component modified and bullet points detailing the exact technical changes.
 
+### [2026-08-17 17:35 UTC] Fix Storage Media Routing & Hardened Image Uploads Across Apps & Web [Backend]
+* **Component:** Laravel Web Backend (`.htaccess`, `app/Utils/ImageManager.php`)
+* **Action:** Fixed issue causing category images and user profile pictures to fail to load, and hardened image upload processor against corruption.
+* **Changes Made:**
+  - **`backend/vmarket-web/.htaccess`**:
+    - Added explicit whitelist rewrite rule for public storage media (`^storage/.*\.(css|js|png|jpe?g|gif|webp|svg|ico|pdf|...)$ - [L]`) so image files in `storage/` are served directly with HTTP 200 instead of being blocked by security hardening rules.
+    - Excluded `storage` from the `FilesMatch` deny pattern.
+  - **`backend/vmarket-web/app/Utils/ImageManager.php`**:
+    - Hardened `upload()` method with safe MIME extension detection and automatic fallback to PNG/JPEG if the server GD library lacks native WebP conversion support.
+    - Added fail-safe stream copy to prevent image corruption when mobile apps upload uncompressed camera photos or raw image buffers.
+* **Verification:** `php -l` on all modified files -> 0 syntax errors.
+
 ### [2026-08-17 17:20 UTC] Add Product Feeds & Social Catalogs Admin Management Panel [Backend]
 * **Component:** Laravel Web Backend (`backend/vmarket-web/`) & Admin Panel
 * **Action:** Created dedicated Admin Panel interface for managing live streaming catalog data feeds (Google Shopping XML, Meta/Facebook/Instagram CSV, TikTok Shop CSV).

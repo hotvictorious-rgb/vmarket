@@ -13,8 +13,12 @@
     RewriteCond %{REQUEST_FILENAME} -f
     RewriteRule ^resources/themes/[^/]+/public/assets/.*\.(css|js|png|jpe?g|gif|webp|svg|ico|woff2?|ttf|eot|otf|map)$ - [L]
 
+    # Whitelist public uploads and media served from storage/ (images, avatars, documents, attachments)
+    RewriteCond %{REQUEST_FILENAME} -f
+    RewriteRule ^storage/.*\.(css|js|png|jpe?g|gif|webp|svg|ico|pdf|woff2?|ttf|eot|otf|map|mp4|zip)$ - [L]
+
     # Block direct execution/access of internal PHP bootstrap & sensitive configs
-    RewriteRule ^(artisan|composer\.phar|server\.php|config/.*|bootstrap/.*|database/.*|routes/.*|resources/.*|storage/.*|installation/.*|vendor/autoload\.php|vendor/composer/.*|\.env.*|phpunit\.xml.*)$ - [F,L]
+    RewriteRule ^(artisan|composer\.phar|server\.php|config/.*|bootstrap/.*|database/.*|routes/.*|resources/.*|installation/.*|vendor/autoload\.php|vendor/composer/.*|\.env.*|phpunit\.xml.*)$ - [F,L]
 
     # Redirect Trailing Slashes If Not A Folder...
     RewriteCond %{REQUEST_FILENAME} !-d
@@ -34,7 +38,7 @@
 </Files>
 
 # Block sensitive application files from web access (docroot misconfig hardening)
-<FilesMatch "(^(artisan|composer\.json|composer\.lock|composer\.phar|server\.php|phpunit\.xml|phpunit\.xml\.dist|package\.json|package-lock\.json|webpack\.mix\.js|psalm\.xml|phpstan\.neon|\.env\.example|\.env\.bak.*)$|^(composer|config|database|bootstrap|app|routes|resources|storage|modules_statuses\.json|models\.json|backup\.json|modules|installation|\.gitignore|\.gitattributes)$)">
+<FilesMatch "(^(artisan|composer\.json|composer\.lock|composer\.phar|server\.php|phpunit\.xml|phpunit\.xml\.dist|package\.json|package-lock\.json|webpack\.mix\.js|psalm\.xml|phpstan\.neon|\.env\.example|\.env\.bak.*)$|^(composer|config|database|bootstrap|app|routes|resources|modules_statuses\.json|models\.json|backup\.json|modules|installation|\.gitignore|\.gitattributes)$)">
     Order allow,deny
     Deny from all
 </FilesMatch>
