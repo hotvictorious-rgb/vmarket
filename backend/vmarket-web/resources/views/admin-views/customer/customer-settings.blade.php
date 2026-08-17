@@ -113,10 +113,10 @@
                             <div class="d-flex justify-content-between align-items-center gap-3">
                                 <div>
                                     <h2 class="text-capitalize">
-                                        {{ translate('Customer_Loyalty_Point') }}
+                                        {{ translate('Victorious_Points_(Customer_Cashback_Settings)') }}
                                     </h2>
                                     <p class="mb-0">
-                                        {{ translate('in_this_settings_admin_can_set_the_rules_for_the_customers_for_earning_and_use_the_loyalty_points') }}
+                                        {{ translate('configure_victorious_points_cashback_rules_and_maximum_order_redemption_caps_for_customers.') }}
                                     </p>
                                 </div>
                                 <div>
@@ -126,10 +126,10 @@
                                             {{ $loyaltyPointStatus ? 'checked' : '' }} data-modal-type="input-change"
                                             data-on-image="{{ dynamicAsset(path: 'public/assets/new/back-end/img/modal/loyalty-on.png') }}"
                                             data-off-image="{{ dynamicAsset(path: 'public/assets/new/back-end/img/modal/loyalty-off.png') }}"
-                                            data-on-title="{{ translate('want_to_Turn_ON_Loyalty_Point') }}"
-                                            data-off-title="{{ translate('want_to_Turn_OFF_Loyalty_Point') }}"
-                                            data-on-message="<p>{{ translate('if_enabled_the_loyalty_point_option_will_be_available_to_the_customers_account') }}</p>"
-                                            data-off-message="<p>{{ translate('if_disabled_loyalty_point_option_will_be_hidden_from_the_customers_account') }}</p>">
+                                            data-on-title="{{ translate('want_to_Turn_ON_Victorious_Points') }}"
+                                            data-off-title="{{ translate('want_to_Turn_OFF_Victorious_Points') }}"
+                                            data-on-message="<p>{{ translate('if_enabled_the_victorious_points_option_will_be_available_to_the_customers_account') }}</p>"
+                                            data-off-message="<p>{{ translate('if_disabled_victorious_points_option_will_be_hidden_from_the_customers_account') }}</p>">
                                         <span class="switcher_control"></span>
                                     </label>
                                 </div>
@@ -141,14 +141,14 @@
                                 <div class="col-xl-4 col-md-6">
                                     <div class="form-group">
                                         <label class="form-label text-capitalize" for="loyalty_point_exchange_rate">
-                                            {{ translate('Equivalent_Points_Needed_to_Redeem') }}
+                                            {{ translate('Equivalent_Victorious_Points_Needed_to_Redeem') }}
                                             {{ setCurrencySymbol(amount: 1) }}
                                         </label>
                                         <input type="text" class="form-control" name="loyalty_point_exchange_rate"
                                             {{ $loyaltyPointStatus == 0 ? '' : 'required' }}
                                             id="loyalty_point_exchange_rate"
-                                            placeholder="{{ translate('ex') . ': ' . '10' }}"
-                                            value="{{ $loyaltyPointExchangeRate ?? 0 }}" required>
+                                            placeholder="{{ translate('ex') . ': ' . '1' }}"
+                                            value="{{ $loyaltyPointExchangeRate ?? 1 }}" required>
                                     </div>
                                 </div>
                                 @php($loyaltyPointMinimumPoint = getWebConfig(name: 'loyalty_point_minimum_point'))
@@ -162,9 +162,25 @@
                                             </span>
                                         </label>
                                         <input type="text" class="form-control" name="minimum_transfer_point"
-                                            id="minimum_transfer_point" placeholder="{{ translate('ex') . ': ' . '2' }}"
+                                            id="minimum_transfer_point" placeholder="{{ translate('ex') . ': ' . '100' }}"
                                             {{ $loyaltyPointStatus == 0 ? '' : 'required' }}
                                             value="{{ $loyaltyPointMinimumPoint ?? 0 }}">
+                                    </div>
+                                </div>
+                                @php($loyaltyPointMaxRedemption = getWebConfig(name: 'loyalty_point_max_order_redemption_percentage'))
+                                <div class="col-xl-4 col-md-6">
+                                    <div class="form-group">
+                                        <label class="form-label text-capitalize" for="loyalty_point_max_order_redemption_percentage">
+                                            {{ translate('Maximum_Order_Redemption_Cap') }} (%)
+                                            <span class="tooltip-icon" data-bs-toggle="tooltip" data-bs-placement="right"
+                                                data-bs-title="{{ translate('maximum_percentage_of_order_value_that_can_be_paid_with_victorious_points') }}">
+                                                <i class="fi fi-sr-info"></i>
+                                            </span>
+                                        </label>
+                                        <input type="number" class="form-control" name="loyalty_point_max_order_redemption_percentage"
+                                            id="loyalty_point_max_order_redemption_percentage" placeholder="{{ translate('ex') . ': ' . '10' }}"
+                                            min="1" max="100" step="any"
+                                            value="{{ $loyaltyPointMaxRedemption ?? 10 }}" required>
                                     </div>
                                 </div>
                             </div>
@@ -175,10 +191,10 @@
                                 <div class="d-flex justify-content-between align-items-center gap-3">
                                     <div>
                                         <h4 class="fw-medium text-capitalize">
-                                            {{ translate('Earn_Loyalty_Point_on_Each_Order') }}
+                                            {{ translate('Earn_Victorious_Points_Cashback_on_Each_Order') }}
                                         </h4>
                                         <p class="mb-0">
-                                            {{ translate('setup_loyalty_point_percentage_earned_by_customer_based_on_order_amount') }}
+                                            {{ translate('setup_cashback_percentage_earned_by_customer_based_on_confirmed_delivered_order_amount') }}
                                         </p>
                                     </div>
                                     <div>
@@ -190,10 +206,10 @@
                                                    data-modal-type="input-change"
                                                    data-on-image="{{ dynamicAsset(path: 'public/assets/new/back-end/img/modal/loyalty-on.png') }}"
                                                    data-off-image="{{ dynamicAsset(path: 'public/assets/new/back-end/img/modal/loyalty-off.png') }}"
-                                                   data-on-title="{{ translate('want_to_Turn_ON_Loyalty_Point_on_Each_Order') }}"
-                                                   data-off-title="{{ translate('want_to_Turn_OFF_Loyalty_Point_on_Each_Order') }}"
-                                                   data-on-message="<p>{{ translate('if_enabled_the_loyalty_point_option_will_be_available_to_the_customers_each_order_when_order_place') }}</p>"
-                                                   data-off-message="<p>{{ translate('if_disabled_loyalty_point_option_will_be_hidden_from_the_customers_each_order_when_order_place') }}</p>">
+                                                   data-on-title="{{ translate('want_to_Turn_ON_Cashback_on_Each_Order') }}"
+                                                   data-off-title="{{ translate('want_to_Turn_OFF_Cashback_on_Each_Order') }}"
+                                                   data-on-message="<p>{{ translate('if_enabled_the_cashback_option_will_be_available_to_the_customers_each_order_when_delivered') }}</p>"
+                                                   data-off-message="<p>{{ translate('if_disabled_cashback_option_will_be_hidden_from_the_customers_each_order') }}</p>">
                                             <span class="switcher_control"></span>
                                         </label>
                                     </div>
@@ -202,10 +218,10 @@
                                     @php($loyaltyPointItemPurchasePoint = getWebConfig(name: 'loyalty_point_item_purchase_point'))
                                     <div class="form-group">
                                         <label class="form-label text-capitalize" for="">
-                                            {{ translate('Earning_Percentage') }} (%)
+                                            {{ translate('Cashback_Earning_Percentage') }} (%)
                                         </label>
                                         <input type="number" class="form-control" name="item_purchase_point"
-                                            id="" placeholder="{{ translate('ex') . ': ' . '2' }}"
+                                            id="" placeholder="{{ translate('ex') . ': ' . '1' }}"
                                             value="{{ $loyaltyPointItemPurchasePoint ?? 1 }}" min="0" step="any"
                                             {{ $loyaltyPointStatus == 1 ? 'required' : '' }}>
                                     </div>
@@ -246,6 +262,7 @@
                         <div class="p-12 p-sm-20 bg-section rounded">
                             <div class="row g-4 align-items-center">
                                 @php($refEarningExchangeRate = getWebConfig(name: 'ref_earning_exchange_rate'))
+                                @php($refEarningMinOrderAmount = getWebConfig(name: 'ref_earning_min_order_amount'))
 
                                 <div class="col-lg-4">
                                     <h2 class="text-capitalize">
@@ -256,20 +273,40 @@
                                     </p>
                                 </div>
                                 <div class="col-lg-8">
-                                    <div class="form-group">
-                                        <label class="form-label text-capitalize" for="ref_earning_exchange_rate">
-                                            {{ translate('earnings_to_Each_Referral') }}
-                                            ({{ getCurrencySymbol(type: 'default') }})
-                                        </label>
-                                        <input type="text" class="form-control" name="ref_earning_exchange_rate"
-                                            id="ref_earning_exchange_rate"
-                                            placeholder="{{ translate('ex') . ': ' . '10' }}"
-                                            {{ $refEarningStatus == 0 ? '' : 'required' }}
-                                            value="{{ Convert::default($refEarningExchangeRate) ?? 0 }}">
-                                        <p class="text-danger mt-1 mb-0">
-                                            {{ translate('must_turn_on_add_fund_to_wallet_option_otherwise_customer_can_not_receive_the_reward_amount') }}
-                                        </p>
+                                    <div class="row g-3">
+                                        <div class="col-md-6">
+                                            <div class="form-group">
+                                                <label class="form-label text-capitalize" for="ref_earning_exchange_rate">
+                                                    {{ translate('earnings_to_Each_Referral') }}
+                                                    ({{ getCurrencySymbol(type: 'default') }})
+                                                </label>
+                                                <input type="text" class="form-control" name="ref_earning_exchange_rate"
+                                                    id="ref_earning_exchange_rate"
+                                                    placeholder="{{ translate('ex') . ': ' . '1000' }}"
+                                                    {{ $refEarningStatus == 0 ? '' : 'required' }}
+                                                    value="{{ Convert::default($refEarningExchangeRate) ?? 1000 }}">
+                                            </div>
+                                        </div>
+                                        <div class="col-md-6">
+                                            <div class="form-group">
+                                                <label class="form-label text-capitalize" for="ref_earning_min_order_amount">
+                                                    {{ translate('Referee_Minimum_First_Order_Spend') }}
+                                                    ({{ getCurrencySymbol(type: 'default') }})
+                                                    <span class="tooltip-icon" data-bs-toggle="tooltip" data-bs-placement="right"
+                                                        data-bs-title="{{ translate('minimum_spend_required_on_referee_first_order_before_referral_bonus_is_awarded') }}">
+                                                        <i class="fi fi-sr-info"></i>
+                                                    </span>
+                                                </label>
+                                                <input type="text" class="form-control" name="ref_earning_min_order_amount"
+                                                    id="ref_earning_min_order_amount"
+                                                    placeholder="{{ translate('ex') . ': ' . '5000' }}"
+                                                    value="{{ Convert::default($refEarningMinOrderAmount) ?? 5000 }}" required>
+                                            </div>
+                                        </div>
                                     </div>
+                                    <p class="text-danger mt-1 mb-0">
+                                        {{ translate('must_turn_on_add_fund_to_wallet_option_otherwise_customer_can_not_receive_the_reward_amount') }}
+                                    </p>
                                 </div>
                             </div>
                         </div>

@@ -340,8 +340,10 @@ class CustomerController extends BaseController
         $this->businessSettingRepo->updateOrInsert(type: 'loyalty_point_exchange_rate', value: $request->get('loyalty_point_exchange_rate', getWebConfig('loyalty_point_exchange_rate')));
         $this->businessSettingRepo->updateOrInsert(type: 'loyalty_point_item_purchase_point', value: $request->get('item_purchase_point', getWebConfig('loyalty_point_item_purchase_point')));
         $this->businessSettingRepo->updateOrInsert(type: 'loyalty_point_minimum_point', value: $request->get('minimum_transfer_point', getWebConfig('loyalty_point_minimum_point')));
+        $this->businessSettingRepo->updateOrInsert(type: 'loyalty_point_max_order_redemption_percentage', value: $request->get('loyalty_point_max_order_redemption_percentage', getWebConfig('loyalty_point_max_order_redemption_percentage') ?? 10));
         $this->businessSettingRepo->updateOrInsert(type: 'ref_earning_status', value: $request->get('ref_earning_status', 0));
-        $this->businessSettingRepo->updateOrInsert(type: 'ref_earning_exchange_rate', value: currencyConverter(amount: $request->get('ref_earning_exchange_rate', getWebConfig('ref_earning_exchange_rate'))));
+        $this->businessSettingRepo->updateOrInsert(type: 'ref_earning_exchange_rate', value: $request->get('ref_earning_exchange_rate', getWebConfig('ref_earning_exchange_rate')));
+        $this->businessSettingRepo->updateOrInsert(type: 'ref_earning_min_order_amount', value: $request->get('ref_earning_min_order_amount', getWebConfig('ref_earning_min_order_amount') ?? 5000));
         $this->businessSettingRepo->updateOrInsert(type: 'add_funds_to_wallet', value: $request->get('add_funds_to_wallet', 0));
         $this->businessSettingRepo->updateOrInsert(type: 'ref_earning_customer', value: json_encode($data));
         if ($request->has('minimum_add_fund_amount') && $request->has('maximum_add_fund_amount')) {

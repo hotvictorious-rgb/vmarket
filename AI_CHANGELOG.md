@@ -7,6 +7,22 @@ Always append your completed tasks here in chronological order at the top. Forma
 `### [YYYY-MM-DD HH:MM UTC] <Feature / Fix Title> [<Component Scope>]`
 Include the specific app/component modified and bullet points detailing the exact technical changes.
 
+### [2026-08-17 16:25 UTC] Implement Victorious Points (Cashback) & Configurable Redemption Engine [Backend]
+* **Component:** Laravel Web Backend (`backend/vmarket-web/`) & Admin Panel
+* **Action:** Rebranded loyalty point system to **Victorious Points (Cashback)** and added admin-configurable order redemption caps and referral minimum spend thresholds.
+* **Changes Made:**
+  - **`resources/views/admin-views/customer/customer-settings.blade.php`**:
+    - Rebranded UI section to **"Victorious Points (Customer Cashback Settings)"**.
+    - Added configurable **Maximum Order Redemption Cap (%)** input (`loyalty_point_max_order_redemption_percentage`, default 10%).
+    - Added configurable **Referee Minimum First Order Spend (₦)** input (`ref_earning_min_order_amount`, default ₦5,000).
+    - Updated cashback earning percentage and equivalent points needed inputs.
+  - **`app/Http/Controllers/Admin/Customer/CustomerController.php` & `CustomerUpdateSettingsRequest.php`**:
+    - Added persistence and validation rules for `loyalty_point_max_order_redemption_percentage` (1-100%) and `ref_earning_min_order_amount`.
+  - **`database/migrations/2026_08_17_173000_add_victorious_points_and_redemption_caps_to_business_settings.php`**:
+    - Created migration to seed `loyalty_point_max_order_redemption_percentage = 10` and `ref_earning_min_order_amount = 5000` into `business_settings`.
+* **Verification:**
+  - `php -l` on all modified files -> 0 syntax errors.
+
 ### [2026-08-17 15:50 UTC] Harden Loyalty Points & Referral Bonus Subsystems [Backend]
 * **Component:** Laravel Web Backend (`backend/vmarket-web/`)
 * **Action:** Hardened Customer Loyalty Points and Referral Bonus engine against financial leaks, concurrency race conditions, and referral farming fraud.
