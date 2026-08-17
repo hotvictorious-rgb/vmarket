@@ -53,6 +53,8 @@ class CallAndChatWidget extends StatelessWidget {
                 userType: 0,
                 isShopTemporaryClosed: false,
                 isShopOnVacation: false,
+                orderId: orderModel?.id,
+                orderStatus: orderModel?.orderStatus,
               );
             },
             child: Container(

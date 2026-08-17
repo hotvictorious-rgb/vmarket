@@ -42,6 +42,8 @@ class ChatScreen extends StatefulWidget {
   final bool isShopOnVacation;
   final bool isShopTemporaryClosed;
   final int? userType;
+  final int? orderId;
+  final String? orderStatus;
   const ChatScreen({
     super.key,
     this.id,
@@ -52,6 +54,8 @@ class ChatScreen extends StatefulWidget {
     this.userType,
     this.isShopOnVacation = false,
     this.isShopTemporaryClosed = false,
+    this.orderId,
+    this.orderStatus,
   });
 
   @override
@@ -205,7 +209,50 @@ class _ChatScreenState extends State<ChatScreen> {
         isDark: isDarkTheme,
         child: Stack(
           children: [
-            Consumer<ChatController>(builder: (context, chatController, child) => Column(children: [
+            Consumer<ChatController>(builder: (context, chatController, child) {
+              final bool isOrderTerminated = widget.orderStatus == 'delivered' || widget.orderStatus == 'canceled' || widget.orderStatus == 'returned';
+              final bool isChatActive = (chatController.messageModel?.isActive ?? true) && !isOrderTerminated;
+
+              return Column(children: [
+                if (widget.orderId != null)
+                  Container(
+                    width: double.infinity,
+                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                    decoration: BoxDecoration(
+                      color: isDarkTheme ? const Color(0xFF1E2630) : const Color(0xFFF3E5F5),
+                      border: Border(bottom: BorderSide(color: isDarkTheme ? Colors.white10 : const Color(0xFFE1BEE7))),
+                    ),
+                    child: Row(
+                      children: [
+                        const Icon(Icons.local_shipping_outlined, size: 18, color: Color(0xFF6A1B9A)),
+                        const SizedBox(width: 8),
+                        Text(
+                          'Order #${widget.orderId}',
+                          style: titilliumBold.copyWith(color: const Color(0xFF6A1B9A), fontSize: 13),
+                        ),
+                        if (widget.orderStatus != null && widget.orderStatus!.isNotEmpty) ...[
+                          const SizedBox(width: 8),
+                          Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                            decoration: BoxDecoration(
+                              color: isOrderTerminated
+                                  ? Colors.grey.withValues(alpha: 0.2)
+                                  : const Color(0xFF00A884).withValues(alpha: 0.15),
+                              borderRadius: BorderRadius.circular(10),
+                            ),
+                            child: Text(
+                              widget.orderStatus!.replaceAll('_', ' ').toUpperCase(),
+                              style: titilliumBold.copyWith(
+                                color: isOrderTerminated ? Colors.grey : const Color(0xFF00A884),
+                                fontSize: 10,
+                              ),
+                            ),
+                          ),
+                        ],
+                      ],
+                    ),
+                  ),
+
             chatController.messageModel != null? (chatController.messageModel!.message != null && chatController.messageModel!.message!.isNotEmpty)?
             Expanded(child:  SingleChildScrollView(
               controller: scrollController,
@@ -457,7 +504,31 @@ class _ChatScreenState extends State<ChatScreen> {
                 ) : const SizedBox(),
 
 
-                if (widget.isDelivery) Padding(
+                if (widget.isDelivery && !isChatActive)
+                  Padding(
+                    padding: const EdgeInsets.fromLTRB(Dimensions.paddingSizeDefault, 0, Dimensions.paddingSizeDefault, Dimensions.paddingSizeDefault),
+                    child: Container(
+                      width: double.infinity,
+                      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+                      decoration: BoxDecoration(
+                        color: isDarkTheme ? const Color(0xFF1F2C34) : const Color(0xFFF5F5F5),
+                        borderRadius: BorderRadius.circular(16),
+                        border: Border.all(color: isDarkTheme ? Colors.white12 : Colors.grey.withValues(alpha: 0.2)),
+                      ),
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          const Icon(Icons.lock_outline_rounded, size: 18, color: Colors.grey),
+                          const SizedBox(width: 8),
+                          Text(
+                            getTranslated('order_delivered_chat_closed', context) ?? 'This order is delivered. Chat is closed.',
+                            style: textRegular.copyWith(color: isDarkTheme ? Colors.white60 : Colors.grey[700], fontSize: 13),
+                          ),
+                        ],
+                      ),
+                    ),
+                  )
+                else if (widget.isDelivery) Padding(
                   padding: const EdgeInsets.fromLTRB( Dimensions.paddingSizeDefault,  0, Dimensions.paddingSizeSmall,  Dimensions.paddingSizeDefault),
                   child: Opacity(
                     opacity: ((chatController.isSending || chatController.isLoading) || widget.isShopTemporaryClosed) ? 0.5 : 1,
@@ -481,7 +552,7 @@ class _ChatScreenState extends State<ChatScreen> {
                                     bytes: file.readAsBytesSync(),
                                   );
                                   chatController.addVoiceNote(pFile);
-                                  MessageBody messageBody = MessageBody(id: widget.id, message: '');
+                                  MessageBody messageBody = MessageBody(id: widget.id, message: '', orderId: widget.orderId);
                                   chatController.sendMessage(messageBody, userType: widget.userType);
                                 },
                                 onCancel: () {
@@ -588,7 +659,7 @@ class _ChatScreenState extends State<ChatScreen> {
                                                     ? showCustomSnackBarWidget(getTranslated('can_not_select_more_than_5_files', context), context, snackBarType: SnackBarType.warning)
                                                     : showCustomSnackBarWidget(getTranslated('write_somethings', context), context, snackBarType: SnackBarType.warning);
                                               } else {
-                                                MessageBody messageBody = MessageBody(id: widget.id, message: _controller.text);
+                                                MessageBody messageBody = MessageBody(id: widget.id, message: _controller.text, orderId: widget.orderId);
                                                 chatController.sendMessage(messageBody, userType: widget.userType).then((value) {
                                                   _controller.clear();
                                                   setState(() {});

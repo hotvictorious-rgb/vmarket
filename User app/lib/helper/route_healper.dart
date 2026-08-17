@@ -432,6 +432,8 @@ class RouterHelper {
     int? userType,
     bool? isShopOnVacation,
     bool? isShopTemporaryClosed,
+    int? orderId,
+    String? orderStatus,
   }) {
     final params = <String, String>{};
     if (id != null) params['id'] = id.toString();
@@ -442,6 +444,8 @@ class RouterHelper {
     if (userType != null) params['userType'] = userType.toString();
     if (isShopOnVacation != null) params['isShopOnVacation'] = isShopOnVacation.toString();
     if (isShopTemporaryClosed != null) params['isShopTemporaryClosed'] = isShopTemporaryClosed.toString();
+    if (orderId != null) params['orderId'] = orderId.toString();
+    if (orderStatus != null) params['orderStatus'] = Uri.encodeComponent(orderStatus);
 
     final query = params.isNotEmpty ? '?${params.entries.map((e) => '${e.key}=${e.value}').join('&')}' : '';
     return _navigateRoute('$chatScreen$query', route: action);
@@ -1181,6 +1185,8 @@ class RouterHelper {
             userType: qp['userType'] != null ? int.tryParse(qp['userType']!) : null,
             isShopOnVacation: qp['isShopOnVacation'] == 'true',
             isShopTemporaryClosed: qp['isShopTemporaryClosed'] == 'true',
+            orderId: qp['orderId'] != null ? int.tryParse(qp['orderId']!) : null,
+            orderStatus: qp['orderStatus'] != null ? Uri.decodeComponent(qp['orderStatus']!) : null,
           );
         },
       ),
