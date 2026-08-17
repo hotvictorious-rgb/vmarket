@@ -90,22 +90,50 @@ class UserLoyaltyController extends Controller
         }
 
         $user = $request->user();
-        if ($request['point'] < (int)getWebConfig(name: 'loyalty_point_minimum_point') || $request['point'] > $user->loyalty_point) {
+        $minPoints = (int)(getWebConfig(name: 'loyalty_point_minimum_point') ?? 0);
+        $requestedPoints = (int)$request['point'];
+
+        if ($requestedPoints < $minPoints) {
             return response()->json([
                 'message' => translate('insufficient_point!')
             ], 422);
         }
 
-        $walletTransaction = CustomerManager::create_wallet_transaction($user->id, $request['point'], 'loyalty_point', 'point_to_wallet');
-        CustomerManager::create_loyalty_point_transaction($user->id, $walletTransaction->transaction_id, $request['point'], 'point_to_wallet');
-
         try {
-            Mail::to($user['email'])->send(new \App\Mail\AddFundToWallet($walletTransaction));
-        } catch (\Exception $ex) {
-        }
+            $walletTransaction = \Illuminate\Support\Facades\DB::transaction(function () use ($user, $requestedPoints) {
+                // Pessimistic row-level lock on user row
+                $lockedUser = \App\Models\User::where('id', $user->id)->lockForUpdate()->first();
 
-        return response()->json([
-            'message' => translate('point_to_wallet_transfer_successfully!')
-        ], 200);
+                if (!$lockedUser || $requestedPoints > $lockedUser->loyalty_point) {
+                    return null;
+                }
+
+                $walletTx = CustomerManager::create_wallet_transaction($lockedUser->id, $requestedPoints, 'loyalty_point', 'point_to_wallet');
+                if ($walletTx) {
+                    CustomerManager::create_loyalty_point_transaction($lockedUser->id, $walletTx->transaction_id, $requestedPoints, 'point_to_wallet');
+                }
+
+                return $walletTx;
+            });
+
+            if (!$walletTransaction) {
+                return response()->json([
+                    'message' => translate('insufficient_point!')
+                ], 422);
+            }
+
+            try {
+                Mail::to($user['email'])->send(new \App\Mail\AddFundToWallet($walletTransaction));
+            } catch (\Exception $ex) {
+            }
+
+            return response()->json([
+                'message' => translate('point_to_wallet_transfer_successfully!')
+            ], 200);
+        } catch (\Exception $e) {
+            return response()->json([
+                'message' => translate('something_went_wrong_please_try_again')
+            ], 500);
+        }
     }
 }

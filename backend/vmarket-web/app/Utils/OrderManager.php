@@ -742,19 +742,52 @@ class OrderManager
     {
         $refEarningStatus = getWebConfig(name: 'ref_earning_status') ?? 0;
         $refEarningExchangeRate = getWebConfig(name: 'ref_earning_exchange_rate') ?? 0;
+        $minOrderAmount = (float)(getWebConfig(name: 'ref_earning_min_order_amount') ?? 5000);
         $order = Order::with(['customer', 'seller.shop', 'deliveryMan'])->where(['id' => $orderId])->first();
 
-        if (!$order['is_guest'] && $refEarningStatus == 1 && $order['order_status'] == 'delivered') {
+        if ($order && !$order['is_guest'] && $refEarningStatus == 1 && $order['order_status'] == 'delivered') {
+            // Check minimum spend threshold to prevent penny-order bonus farming
+            if ((float)$order['order_amount'] < $minOrderAmount) {
+                return;
+            }
+
             $customer = User::where(['id' => $order['customer_id']])->first();
+            if (!$customer || empty($customer->referred_by)) {
+                return;
+            }
+
             $isFirstOrder = Order::where(['customer_id' => $order['customer_id'], 'order_status' => 'delivered', 'payment_status' => 'paid'])->count();
             $referredByUser = User::where(['id' => $customer['referred_by']])->first();
-            if ($isFirstOrder == 1 && isset($customer->referred_by) && isset($referredByUser)) {
-                self::createWalletTransaction(
-                    user_id: $referredByUser['id'],
-                    amount: usdToDefaultCurrency(amount: $refEarningExchangeRate),
-                    transaction_type: 'add_fund_by_admin',
-                    reference: 'earned_by_referral'
-                );
+
+            // Anti-Fraud Checks: Referrer exists, first delivered order, and NOT self-referral
+            if ($isFirstOrder == 1 && isset($referredByUser)) {
+                // Prevent self-referral (same user, same phone, same email)
+                if ($referredByUser['id'] == $customer['id'] || 
+                    (!empty($referredByUser['phone']) && $referredByUser['phone'] == $customer['phone']) ||
+                    (!empty($referredByUser['email']) && strtolower($referredByUser['email']) == strtolower($customer['email']))) {
+                    return;
+                }
+
+                $bonusAmount = (float)$refEarningExchangeRate;
+                if ($bonusAmount <= 0) {
+                    return;
+                }
+
+                // Idempotency: Prevent double bonus for the same order
+                $reference = 'earned_by_referral_order_' . $order['id'];
+                $alreadyAwarded = \App\Models\WalletTransaction::where([
+                    'user_id' => $referredByUser['id'],
+                    'reference' => $reference
+                ])->exists();
+
+                if (!$alreadyAwarded) {
+                    self::createWalletTransaction(
+                        user_id: $referredByUser['id'],
+                        amount: $bonusAmount,
+                        transaction_type: 'add_fund_by_admin',
+                        reference: $reference
+                    );
+                }
             }
         }
     }

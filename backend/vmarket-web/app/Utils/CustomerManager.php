@@ -56,7 +56,9 @@ class CustomerManager
                 $wallet_transaction->admin_bonus = Helpers::add_fund_to_wallet_bonus(Convert::usd($amount ?? 0));
                 $add_fund_to_wallet_bonus = Helpers::add_fund_to_wallet_bonus(Convert::usd($amount ?? 0));
             } else if ($transaction_type == 'loyalty_point') {
-                $credit = (($amount / BusinessSetting::where('type', 'loyalty_point_exchange_rate')->first()->value) * Convert::default(1));
+                $exchangeRateSetting = BusinessSetting::where('type', 'loyalty_point_exchange_rate')->first();
+                $exchangeRate = (float)($exchangeRateSetting ? $exchangeRateSetting->value : 1);
+                $credit = ($exchangeRate > 0) ? ($amount / $exchangeRate) : 0;
             } else if ($transaction_type == "due_payment_for_order") {
                 $debit = $amount;
                 $credit = 0;
@@ -67,8 +69,8 @@ class CustomerManager
         } else if ($transaction_type == 'order_place') {
             $debit = $amount;
         }
-        $credit_amount = Convert::usd($credit);
-        $debit_amount = Convert::usd($debit);
+        $credit_amount = (float)$credit;
+        $debit_amount = (float)$debit;
         $wallet_transaction->credit = $credit_amount;
         $wallet_transaction->debit = $debit_amount;
         $wallet_transaction->balance = $current_balance + $credit_amount - $debit_amount;

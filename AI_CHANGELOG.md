@@ -7,6 +7,25 @@ Always append your completed tasks here in chronological order at the top. Forma
 `### [YYYY-MM-DD HH:MM UTC] <Feature / Fix Title> [<Component Scope>]`
 Include the specific app/component modified and bullet points detailing the exact technical changes.
 
+### [2026-08-17 15:50 UTC] Harden Loyalty Points & Referral Bonus Subsystems [Backend]
+* **Component:** Laravel Web Backend (`backend/vmarket-web/`)
+* **Action:** Hardened Customer Loyalty Points and Referral Bonus engine against financial leaks, concurrency race conditions, and referral farming fraud.
+* **Changes Made:**
+  - **`app/Utils/OrderManager.php`**:
+    - Enforced minimum spend threshold (`ref_earning_min_order_amount`, default ₦5,000) on referee's first delivered order before referral bonuses can be earned.
+    - Added Anti-Self-Referral guards (disqualifies referrals matching referrer ID, phone number, or email).
+    - Fixed currency calculation to direct Naira platform currency (eliminating foreign USD exchange multiplier bug).
+    - Added idempotency guard (`earned_by_referral_order_{id}`) preventing duplicate payouts.
+  - **`app/Http/Controllers/Web/UserLoyaltyController.php` & `RestAPI/v1/UserLoyaltyController.php`**:
+    - Wrapped loyalty point conversion in `DB::transaction()`.
+    - Added pessimistic database row lock (`User::where('id', ...)->lockForUpdate()`) to stop parallel multi-request race-condition point multiplication.
+  - **`app/Utils/CustomerManager.php`**:
+    - Fixed point-to-wallet exchange rate calculation to direct platform currency values.
+  - **`database/migrations/2026_08_17_170000_add_referral_min_order_amount_to_business_settings.php`**:
+    - Created migration to seed `ref_earning_min_order_amount = 5000` into `business_settings`.
+* **Verification:**
+  - `php -l` on all modified files -> 0 syntax errors.
+
 ### [2026-08-17 15:05 UTC] Synchronize Hardened .htaccess & Theme Assets Whitelist [Backend]
 * **Component:** Laravel Web Backend (`backend/vmarket-web/.htaccess`)
 * **Action:** Synchronized server-side security hardening directly into GitHub master to eliminate drift.
