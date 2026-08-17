@@ -122,26 +122,11 @@ class AuthController with ChangeNotifier {
         temporaryToken = null;
       }
 
-      if(token != null){
-        authServiceInterface.saveUserToken(token);
-        await authServiceInterface.updateDeviceToken();
-        setCurrentLanguage(Provider.of<LocalizationController>(Get.context!, listen: false).getCurrentLanguage() ?? 'en');
-      }
-
-      if(map.containsKey('user')){
-        try{
-          profileModel = ProfileModel.fromJson(map['user']);
-          callback(true, null, null, profileModel, message, socialLogin.medium, null, socialLogin.email, socialLogin.name);
-        }catch(e) {
-          if (kDebugMode) {
-            print('----------$e------------');
-          }
-        }
-      }
-
       if(token != null && token.isNotEmpty) {
-        authServiceInterface.saveUserToken(token);
-        await authServiceInterface.updateDeviceToken();
+        await authServiceInterface.saveUserToken(token);
+        authServiceInterface.updateDeviceToken().catchError((e) {
+          log('Error updating device token: $e');
+        });
         setCurrentLanguage(Provider.of<LocalizationController>(Get.context!, listen: false).getCurrentLanguage() ?? 'en');
         callback(true, token, null, null, message, socialLogin.medium, null, socialLogin.email, socialLogin.name, fromPage, onLoginSuccess);
       }
@@ -192,8 +177,10 @@ class AuthController with ChangeNotifier {
 
 
       if(token != null && token.isNotEmpty) {
-        authServiceInterface.saveUserToken(token);
-        await authServiceInterface.updateDeviceToken();
+        await authServiceInterface.saveUserToken(token);
+        authServiceInterface.updateDeviceToken().catchError((e) {
+          log('Error updating device token: $e');
+        });
         navigateToHome(fromPage, onLoginSuccess);
 
       } else if (tempToken != null && tempToken.isNotEmpty) {
@@ -297,8 +284,11 @@ class AuthController with ChangeNotifier {
 
 
       if(token != null && token.isNotEmpty) {
-        authServiceInterface.saveUserToken(token);
-        await authServiceInterface.updateDeviceToken();
+        await authServiceInterface.saveUserToken(token);
+        // Non-blocking asynchronous device token sync to prevent network timeouts from hanging the login screen
+        authServiceInterface.updateDeviceToken().catchError((e) {
+          log('Error updating device token: $e');
+        });
       } else if (temporaryToken != null) {
         await sendVerificationCode(
           Provider.of<SplashController>(Get.context!, listen: false).configModel!,
@@ -624,7 +614,9 @@ class AuthController with ChangeNotifier {
         }
         if(token != null) {
           await authServiceInterface.saveUserToken(token);
-          await authServiceInterface.updateDeviceToken();
+          authServiceInterface.updateDeviceToken().catchError((e) {
+            log('Error updating device token: $e');
+          });
           navigateToHome(toNavigateScreen, onLoginSuccess);
         } else if(tempToken != null) {
           RouterHelper.getOtpRegistrationRoute(

@@ -353,7 +353,6 @@ class _LoginScreenState extends State<LoginScreen> {
                                               // authProvider.clearUserLogData();
                                             }
                                             if(widget.fromPage == '/dashboard' && !widget.showBackButton) {
-                                              Navigator.of(Get.context!).pop();
                                               if(Provider.of<SplashController>(Get.context!, listen: false).configModel!.activeTheme == "theme_aster") {
                                                 AsterThemeHomeScreen.loadData(false);
                                               }else{

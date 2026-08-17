@@ -7,6 +7,17 @@ Always append your completed tasks here in chronological order at the top. Forma
 `### [YYYY-MM-DD HH:MM UTC] <Feature / Fix Title> [<Component Scope>]`
 Include the specific app/component modified and bullet points detailing the exact technical changes.
 
+### [2026-08-17 17:55 UTC] Fix Infinite Loading on Customer Login & Navigation Deadlock [User App]
+* **Component:** Flutter Customer App (`User app/lib/features/auth/`)
+* **Action:** Fixed infinite spinner and navigation hang during customer login that forced users to force-quit and reopen the app.
+* **Changes Made:**
+  - **`User app/lib/features/auth/controllers/auth_controller.dart`**:
+    - Converted blocking `updateDeviceToken()` call during login to non-blocking asynchronous execution with error handling (`.catchError(...)`). This stops network/FCM timeouts from holding the login loading spinner indefinitely while the user credentials have already been authenticated.
+    - Awaited `saveUserToken()` before triggering screen transition to ensure the session token is securely written to encrypted storage.
+    - Cleaned up duplicate token synchronization in `socialLogin()` and `firebaseOtpLogin()`.
+  - **`User app/lib/features/auth/screens/login_screen.dart`**:
+    - Removed conflicting duplicate `Navigator.of(context).pop()` call before `navigateToHome()` which previously broke the navigation stack when logging in from the dashboard.
+
 ### [2026-08-17 17:35 UTC] Fix Storage Media Routing & Hardened Image Uploads Across Apps & Web [Backend]
 * **Component:** Laravel Web Backend (`.htaccess`, `app/Utils/ImageManager.php`)
 * **Action:** Fixed issue causing category images and user profile pictures to fail to load, and hardened image upload processor against corruption.
