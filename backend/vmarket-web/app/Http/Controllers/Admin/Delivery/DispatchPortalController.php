@@ -131,6 +131,11 @@ class DispatchPortalController extends Controller
                     $order->verification_code = (string) rand(1000, 9999);
                 }
 
+                // Ensure rider per-order earning (deliveryman_charge) is populated
+                if (empty($order->deliveryman_charge) || $order->deliveryman_charge <= 0) {
+                    $order->deliveryman_charge = $order->shipping_cost > 0 ? $order->shipping_cost : ($order->destinationHub?->base_shipping_cost ?? 0);
+                }
+
                 $order->delivery_man_id = $deliveryMan->id;
                 $order->deliveryman_assigned_at = Carbon::now();
                 $order->batch_dispatch_id = $batchId;

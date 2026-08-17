@@ -16,7 +16,7 @@ Include the specific app/component modified and bullet points detailing the exac
     - Created Eloquent models `DeliveryState.php`, `DeliveryCity.php`, and `DeliveryHub.php`.
     - Added fillable fields, `originHub`, and `destinationHub` relationships to `Order.php`, `DeliveryMan.php`, and `Shop.php`.
     - Created `DeliveryHubController.php` with full CRUD for States, Cities, Landmarks, and Motor Parks with flat rates.
-    - Created `DispatchPortalController.php` with Corridor Matrix clustering, checkbox granular multi-order selection, and live rider capacity limit validation (`max_active_orders_limit`).
+    - Created `DispatchPortalController.php` with Corridor Matrix clustering, checkbox granular multi-order selection, live rider capacity limit validation (`max_active_orders_limit`), and automatic per-order earning allocation (`deliveryman_charge`).
     - Created `DeliveryHubApiController.php` for public REST API endpoints (`getStates`, `getCities`, `getHubs`, `calculateHubShipping`).
     - Added `confirm_driver_transit_code` endpoint in `OrderController.php` for customer interstate transit confirmation.
     - Added `interstate_driver_handover` endpoint in `DeliveryManController.php` for motor park bus driver transit code generation.
