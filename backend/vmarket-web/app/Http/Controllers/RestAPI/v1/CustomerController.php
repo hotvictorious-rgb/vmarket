@@ -501,28 +501,31 @@ class CustomerController extends Controller
     public function update_profile(UpdateProfileApiRequest $request):JsonResponse
     {
         $user = User::where(['id' => $request->user()->id])->first();
-        $imageName = $request->user()->image;
-        if ($request->has('image')) {
-            $imageName = $this->update('profile/', $request->user()->image, 'webp', $request->file('image'));
+        if (!$user) {
+            return response()->json(['message' => translate('User not found')], 404);
         }
 
-        $password = $request->user()->password;
-        if ($request['password'] != null && strlen($request['password']) > 5) {
+        $imageName = $user->image;
+        if ($request->hasFile('image')) {
+            $imageName = $this->update('profile/', $user->image, 'webp', $request->file('image'));
+        }
+
+        $password = $user->password;
+        if ($request->filled('password') && strlen($request['password']) > 5) {
             $password = bcrypt($request['password']);
         }
 
-        User::where(['id' => $request->user()->id])->update([
-            'f_name' => $request->f_name,
-            'l_name' => $request->l_name,
-            'image' => $imageName,
-            'phone' => $user['is_phone_verified'] ? $user['phone'] : $request['phone'],
-            'email' => $request['email'],
-            'is_phone_verified' => $request['phone'] == $user['phone'] ? $user['is_phone_verified'] : 0,
-            'is_email_verified' => $request['email'] == $user['email'] ? $user['is_email_verified'] : 0,
-            'email_verified_at' => $request['email'] == $user['email'] ? $user['email_verified_at'] : null,
-            'password' => $password,
-            'updated_at' => now(),
-        ]);
+        $user->f_name = $request->f_name;
+        $user->l_name = $request->l_name;
+        $user->image = $imageName;
+        $user->phone = $user->is_phone_verified ? $user->phone : $request['phone'];
+        $user->email = $request['email'];
+        $user->is_phone_verified = $request['phone'] == $user->phone ? $user->is_phone_verified : 0;
+        $user->is_email_verified = $request['email'] == $user->email ? $user->is_email_verified : 0;
+        $user->email_verified_at = $request['email'] == $user->email ? $user->email_verified_at : null;
+        $user->password = $password;
+        $user->save();
+
         return response()->json(['message' => translate('successfully updated!')], 200);
     }
 

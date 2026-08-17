@@ -7,6 +7,32 @@ Always append your completed tasks here in chronological order at the top. Forma
 `### [YYYY-MM-DD HH:MM UTC] <Feature / Fix Title> [<Component Scope>]`
 Include the specific app/component modified and bullet points detailing the exact technical changes.
 
+### [2026-08-17 12:55 UTC] Fix Profile Picture Uploads, Chat Voice Notes & Media Pipelines Across Backend & Apps [Backend, User App, Vendor App, Delivery Man]
+* **Component:** Laravel Backend (`backend/vmarket-web/`), Customer App (`User app/`), Vendor App (`Vendor app/`), Delivery Rider App (`Delivery Man App/`)
+* **Action:** Resolved systemic profile image update and chat voice note upload/playback failures across the platform.
+* **Changes Made:**
+  - **Laravel Backend**:
+    - `app/Enums/GlobalConstant.php`: Added `AUDIO_EXTENSION` (`.mp3`, `.m4a`, `.wav`, `.aac`, `.ogg`, `.opus`, `.amr`, `.wma`) and integrated into `DOCUMENT_EXTENSION` and `MEDIA_EXTENSION` to pass all request validators.
+    - `app/Http/Controllers/RestAPI/v1/ChatController.php`, `v2/delivery_man/ChatController.php`, `v3/seller/ChatController.php`: Preserved raw audio attachments using `ImageManager::file_upload()` instead of erroneously converting to WebP image format.
+    - `app/Http/Controllers/RestAPI/v1/CustomerController.php`: Fixed `update_profile` to use `$request->hasFile('image')` and Eloquent `$user->save()` to ensure profile pictures upload properly and sync with storage links.
+    - `app/Http/Controllers/RestAPI/v2/delivery_man/DeliveryManController.php`: Fixed proof of delivery verification photo upload to use `$request->hasFile('image')`.
+  - **Customer App (`User app/`)**:
+    - `lib/features/chat/domain/repositories/chat_repository.dart`: Fixed null-safe multipart streaming for attachments without crashing on null `readStream`. Added `order_id` to form fields.
+    - `lib/features/chat/controllers/chat_controller.dart`: Added `sendVoiceNote()` for instantaneous direct voice note dispatch.
+    - `lib/features/chat/screens/chat_screen.dart`: Connected `WhatsAppVoiceRecordBar` `onSend` callback to `sendVoiceNote()`.
+    - `lib/features/profile/domain/repositories/profile_repository.dart`: Hardened image upload streaming using cross-platform path splitting.
+    - `lib/features/profile/controllers/profile_contrroller.dart`: Reloaded user info (`getUserInfo(reload: true)`) on profile update success.
+  - **Vendor App (`Vendor app/`)**:
+    - `lib/features/chat/domain/repositories/chat_repository.dart`: Implemented null-safe multipart file streaming.
+    - `lib/features/profile/domain/repositories/profile_repository.dart`: Hardened profile image upload.
+  - **Delivery Man App (`Delivery Man App/`)**:
+    - `lib/data/api/api_client.dart`: Fixed null-safe multipart streaming and cross-platform filename resolution.
+    - `lib/features/profile/domain/repositories/profile_repository.dart`: Hardened rider profile image upload.
+    - `lib/features/profile/controllers/profile_controller.dart`: Reloaded `getProfile()` upon successful profile update.
+  - **Verification**:
+    - `php -l` on all modified backend controllers -> 0 syntax errors.
+    - `flutter analyze` across all 3 mobile apps -> 0 errors.
+
 ### [2026-08-17 08:20 UTC] Fix Nested Widget Hierarchy & Build Syntax in Customer App [User App]
 * **Component:** Customer Mobile App (`User app/`)
 * **Action:** Corrected nested Column and Container closing delimiters in `chat_screen.dart` and removed duplicate `dart:io` import, achieving 0 analyzer errors and unblocking release APK build.

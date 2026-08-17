@@ -215,7 +215,7 @@ class ChatController extends Controller
         $attachment = [];
         if ($request->file('media')) {
             foreach ($request['media'] as $image) {
-                if (in_array('.'.$image->getClientOriginalExtension(), GlobalConstant::VIDEO_EXTENSION)) {
+                if (in_array('.'.$image->getClientOriginalExtension(), array_merge(GlobalConstant::VIDEO_EXTENSION, GlobalConstant::AUDIO_EXTENSION))) {
                     $attachment[] = [
                         'file_name' => ImageManager::file_upload(dir: 'chatting/', format: $image->getClientOriginalExtension(), file: $image),
                         'storage' => getWebConfig(name: 'storage_connection_type') ?? 'public',

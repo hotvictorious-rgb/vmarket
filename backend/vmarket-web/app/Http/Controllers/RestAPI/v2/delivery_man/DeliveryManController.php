@@ -814,7 +814,7 @@ class DeliveryManController extends Controller
     /**Order Delivery verification */
     public function order_delivery_verification(DeliveryManOrderDeliveryVerificationRequest $request):JsonResponse
     {
-        if($request->has('image')){
+        if($request->hasFile('image')){
             foreach ($request->file('image') as $key => $img) {
                 $data = [
                     'order_id' => $request->order_id,

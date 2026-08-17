@@ -1271,8 +1271,12 @@ enum GlobalConstant
         ["value" => "Pacific/Tongatapu", "name" => "(GMT+13:00) Nuku'alofa"],
     ];
 
+    const AUDIO_EXTENSION = [
+        '.mp3', '.m4a', '.wav', '.aac', '.ogg', '.opus', '.amr', '.wma'
+    ];
+
     const DOCUMENT_EXTENSION = [
-        '.doc', '.docx', '.txt', '.csv', '.xls', '.xlsx', '.rar', '.tar', '.tar.gz', '.zip', '.pdf'
+        '.doc', '.docx', '.txt', '.csv', '.xls', '.xlsx', '.rar', '.tar', '.tar.gz', '.zip', '.pdf', '.mp3', '.m4a', '.wav', '.aac', '.ogg', '.opus', '.amr', '.wma'
     ];
     const IMAGE_EXTENSION = [
         '.jpg', '.jpeg', '.jpe', '.jif', '.jfif', '.jfi', '.png', '.gif', '.webp', '.tiff', '.tif', '.bmp', '.svg',
@@ -1283,7 +1287,7 @@ enum GlobalConstant
     ];
 
     const MEDIA_EXTENSION = [
-        '.jpg', '.jpeg', '.jpe', '.jif', '.jfif', '.jfi', '.png', '.gif', '.webp', '.tiff', '.tif', '.bmp', '.svg', '.mp4','.mp3', '.mkv', '.avi', '.mov', '.wmv', '.flv', '.webm', '.mpeg', '.mpg', '.m4v', '.3gp', '.ogv'
+        '.jpg', '.jpeg', '.jpe', '.jif', '.jfif', '.jfi', '.png', '.gif', '.webp', '.tiff', '.tif', '.bmp', '.svg', '.mp4', '.mp3', '.m4a', '.wav', '.aac', '.ogg', '.opus', '.amr', '.wma', '.mkv', '.avi', '.mov', '.wmv', '.flv', '.webm', '.mpeg', '.mpg', '.m4v', '.3gp', '.ogv'
     ];
 
     const EMPLOYEE_ROLE_MODULE_PERMISSION = [
