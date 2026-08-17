@@ -116,8 +116,8 @@ class AddFundDialogueWidget extends StatelessWidget {
                                 itemBuilder: (context, index){
                                   return  CustomCheckBoxWidget(index: index,
                                     icon: '${configProvider.configModel?.paymentMethodImagePath}/${configProvider.configModel?.paymentMethods?[index].additionalDatas?.gatewayImage??''}',
-                                    name: configProvider.configModel!.paymentMethods![index].keyName!,
-                                    title: configProvider.configModel!.paymentMethods![index].additionalDatas?.gatewayTitle??'');
+                                    name: configProvider.configModel?.paymentMethods?[index].keyName ?? '',
+                                    title: configProvider.configModel?.paymentMethods?[index].additionalDatas?.gatewayTitle??'');
                                 },
                               );
                             }
@@ -131,9 +131,9 @@ class AddFundDialogueWidget extends StatelessWidget {
                             child: CustomButton(
                               buttonText: getTranslated('add_fund', context)!,
                               onTap: () {
-                                if(digitalPaymentProvider.selectedDigitalPaymentMethodName.isEmpty) {
+                                if(digitalPaymentProvider.selectedDigitalPaymentMethodName.isEmpty && (configProvider.configModel?.paymentMethods?.isNotEmpty ?? false)) {
                                   digitalPaymentProvider.setDigitalPaymentMethodName(0,
-                                  configProvider.configModel!.paymentMethods![0].keyName!);
+                                  configProvider.configModel?.paymentMethods?[0].keyName ?? '');
                                 }
                                 if(inputAmountController.text.trim().isEmpty){
                                   showCustomSnackBarWidget(getTranslated('please_input_amount', context), context, snackBarType: SnackBarType.warning);

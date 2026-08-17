@@ -62,7 +62,7 @@ class LogoutCustomBottomSheetWidget extends StatelessWidget {
                   Provider.of<AuthController>(context, listen: false).getGuestIdUrl();
                   Provider.of<OrderController>(context, listen: false).resetOrderList();
                   Provider.of<WishListController>(context, listen: false).emptyWishList();
-                  if(Provider.of<SplashController>(context, listen: false).configModel!.activeTheme == "theme_aster") {
+                  if(Provider.of<SplashController>(context, listen: false).configModel?.activeTheme == "theme_aster") {
                     AsterThemeHomeScreen.loadData(false);
                   } else {
                     HomePage.loadData(false);

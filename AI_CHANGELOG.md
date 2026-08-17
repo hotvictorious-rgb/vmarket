@@ -7,6 +7,18 @@ Always append your completed tasks here in chronological order at the top. Forma
 `### [YYYY-MM-DD HH:MM UTC] <Feature / Fix Title> [<Component Scope>]`
 Include the specific app/component modified and bullet points detailing the exact technical changes.
 
+### [2026-08-17 18:55 UTC] Comprehensive User & Delivery Man App Audit & Null-Safety Hardening [User app, Delivery Man App]
+* **Component:** Customer Mobile App (`User app`) & Delivery Rider Mobile App (`Delivery Man App`)
+* **Action:** Performed full architectural scans and null-safety hardening across modules in both apps.
+* **Audit & Fixes Made:**
+  - **User App (`User app/lib/features/`)**:
+    - `features/more/widgets/logout_confirm_bottom_sheet_widget.dart`: Guarded `configModel?.activeTheme` against null pointer crashes during user logout.
+    - `features/wallet/widgets/add_fund_dialogue_widget.dart`: Added null-safe operators and empty list guards to `configModel?.paymentMethods` accessors to prevent index out of bounds exceptions on digital payment dialogs.
+  - **Delivery Man App (`Delivery Man App/lib/features/`)**:
+    - `features/auth/domain/services/auth_service.dart`: Fixed synchronous `saveUserToken()` call and added `flutter/foundation.dart` for safe debug logging.
+    - `features/help_and_support/screens/help_and_support_screen.dart`: Removed top-level static `final Uri params` instantiation that attempted to query `SplashController` before dependency registration, and dynamically constructed `mailto:` / `tel:` URIs inside `_launchUrl` with try-catch and null-safety.
+* **Verification:** `flutter analyze` verified clean on both Customer App (0 compilation errors) and Delivery Man App (0 errors, 0 warnings).
+
 ### [2026-08-17 18:25 UTC] Comprehensive Vendor App Audit & Null-Safety Hardening [Vendor app]
 * **Component:** Flutter Vendor Mobile App (`Vendor app/lib/features/`)
 * **Action:** Performed a full architectural and screen audit across all 35 vendor modules, verifying image rendering, null-safety guards, and lifecycle popups.
