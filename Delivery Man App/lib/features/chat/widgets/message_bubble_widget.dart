@@ -46,59 +46,86 @@ class MessageBubbleWidget extends StatelessWidget {
           String previousMessageHasChatTime = previous != null ? chatController.getChatTime(previous!.createdAt!, message.createdAt) : "";
 
 
-        return Column(crossAxisAlignment: isMe ? CrossAxisAlignment.end:CrossAxisAlignment.start, children: [
-          Row(crossAxisAlignment: CrossAxisAlignment.start, mainAxisSize: MainAxisSize.min,
-              mainAxisAlignment: isMe ? MainAxisAlignment.end : MainAxisAlignment.start, children: [
-
-                if(_isUserAvatarActive(isMe, isSameUserWithPreviousMessage, chatController))
-                _UserAvatar(image: image),
-
-                !_isUserAvatarActive(isMe, isSameUserWithPreviousMessage, chatController) ? SizedBox(width: Dimensions.paddingSizeExtraLarge + 10) : const SizedBox(),
-
-
-                if (message.message?.isNotEmpty ?? false)
-                  _MessageText(
-                    message: message,
+          if (audioFiles.isNotEmpty && (message.message?.isEmpty ?? true) && images.isEmpty && files.isEmpty) {
+            return Padding(
+              padding: const EdgeInsets.symmetric(vertical: 3),
+              child: Row(
+                crossAxisAlignment: CrossAxisAlignment.end,
+                mainAxisSize: MainAxisSize.min,
+                mainAxisAlignment: isMe ? MainAxisAlignment.end : MainAxisAlignment.start,
+                children: [
+                  if (_isUserAvatarActive(isMe, isSameUserWithPreviousMessage, chatController))
+                    _UserAvatar(image: image),
+                  if (!_isUserAvatarActive(isMe, isSameUserWithPreviousMessage, chatController) && !isMe)
+                    const SizedBox(width: 40),
+                  AudioPlayerWidget(
+                    url: audioFiles.first.path ?? '',
                     isMe: isMe,
-                    isLTR: isLTR,
-                    isSameUserWithNextMessage: isSameUserWithNextMessage,
-                    isSameUserWithPreviousMessage: isSameUserWithPreviousMessage,
                     chatTime: chatTime,
-                    previousMessageHasChatTime: previousMessageHasChatTime,
-                    chatController: chatController,
-                    isProfileAvatarActive: _isUserAvatarActive(isMe, isSameUserWithPreviousMessage, chatController),
+                    isSeen: message.seenByDeliveryMan ?? false,
+                    avatarUrl: isMe ? null : image,
                   ),
-
-              ]),
-
-          _MessageTime(chatController: chatController, message: message),
-
-
-
-          Padding(
-            padding: EdgeInsets.symmetric(horizontal: Dimensions.paddingSizeSmall),
-            child: _MediaGridWidget(images: images, isMe: isMe),
-          ),
-
-          if (files.isNotEmpty) 
-            _FileGridWidget(files: files, isMe: isMe, isLTR: isLTR),
-          
-          if (audioFiles.isNotEmpty)
-            ...audioFiles.map((a) => Padding(
-              padding: EdgeInsets.only(
-                top: 5,
-                left: isMe ? 50 : 10, right: isMe ? 10 : 50,
+                ],
               ),
-              child: AudioPlayerWidget(
-                url: a.path ?? '',
-                isMe: isMe,
+            );
+          }
+
+          return Column(
+            crossAxisAlignment: isMe ? CrossAxisAlignment.end : CrossAxisAlignment.start,
+            children: [
+              Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                mainAxisSize: MainAxisSize.min,
+                mainAxisAlignment: isMe ? MainAxisAlignment.end : MainAxisAlignment.start,
+                children: [
+                  if (_isUserAvatarActive(isMe, isSameUserWithPreviousMessage, chatController))
+                    _UserAvatar(image: image),
+
+                  !_isUserAvatarActive(isMe, isSameUserWithPreviousMessage, chatController) && !isMe
+                      ? SizedBox(width: Dimensions.paddingSizeExtraLarge + 10)
+                      : const SizedBox(),
+
+                  if (message.message?.isNotEmpty ?? false)
+                    _MessageText(
+                      message: message,
+                      isMe: isMe,
+                      isLTR: isLTR,
+                      isSameUserWithNextMessage: isSameUserWithNextMessage,
+                      isSameUserWithPreviousMessage: isSameUserWithPreviousMessage,
+                      chatTime: chatTime,
+                      previousMessageHasChatTime: previousMessageHasChatTime,
+                      chatController: chatController,
+                      isProfileAvatarActive: _isUserAvatarActive(isMe, isSameUserWithPreviousMessage, chatController),
+                    ),
+                ],
               ),
-            )),
 
+              if (message.message?.isNotEmpty ?? false)
+                _MessageTime(chatController: chatController, message: message),
 
+              Padding(
+                padding: EdgeInsets.symmetric(horizontal: Dimensions.paddingSizeSmall),
+                child: _MediaGridWidget(images: images, isMe: isMe),
+              ),
 
+              if (files.isNotEmpty) _FileGridWidget(files: files, isMe: isMe, isLTR: isLTR),
 
-        ]);
+              if (audioFiles.isNotEmpty)
+                ...audioFiles.map((a) => Padding(
+                  padding: EdgeInsets.only(
+                    top: 5,
+                    left: isMe ? 50 : 10,
+                    right: isMe ? 10 : 50,
+                  ),
+                  child: AudioPlayerWidget(
+                    url: a.path ?? '',
+                    isMe: isMe,
+                    chatTime: chatTime,
+                    isSeen: message.seenByDeliveryMan ?? false,
+                  ),
+                )),
+            ],
+          );
       }
     );
   }
