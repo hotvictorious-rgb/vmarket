@@ -56,18 +56,18 @@ class _PaymentStatusWidgetState extends State<PaymentStatusWidget> {
 
               Row(mainAxisAlignment: MainAxisAlignment.spaceBetween,children: [
                 Text(
-                    '${getTranslated('payment_method', context)} : ',
+                    '${getTranslated('payment_method', context) ?? 'Payment Method'} : ',
                     style: robotoRegular.copyWith(color: Theme.of(context).textTheme.titleMedium?.color)
                 ),
 
-                Text(getTranslated(widget.orderModel!.paymentMethod, context)!,
+                Text(getTranslated(widget.orderModel?.paymentMethod, context) ?? widget.orderModel?.paymentMethod?.replaceAll('_', ' ').capitalize() ?? 'Digital Payment',
                     style: robotoMedium.copyWith(color: Theme.of(context).textTheme.bodyLarge?.color)
                 ),
               ]),
 
               Row(mainAxisAlignment: MainAxisAlignment.spaceBetween,children: [
                 Text(
-                  '${getTranslated('order_amount', context)} : ',
+                  '${getTranslated('order_amount', context) ?? 'Order Amount'} : ',
                   style: robotoRegular.copyWith(color: Theme.of(context).textTheme.titleMedium?.color)
                 ),
 
@@ -76,7 +76,7 @@ class _PaymentStatusWidgetState extends State<PaymentStatusWidget> {
                 Row(
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    Text(PriceConverter.convertPrice(context, widget.orderModel!.initOrderAmount!),
+                    Text(PriceConverter.convertPrice(context, widget.orderModel?.initOrderAmount ?? widget.orderModel?.orderAmount ?? 0),
                       style: robotoMedium.copyWith(color: Theme.of(context).textTheme.bodyLarge?.color)
                     ),
                     SizedBox(width: Dimensions.paddingSizeSmall),
@@ -84,11 +84,11 @@ class _PaymentStatusWidgetState extends State<PaymentStatusWidget> {
                     Container(
                       decoration: BoxDecoration(
                         borderRadius: BorderRadius.circular(Dimensions.radiusDefault),
-                        color: widget.orderModel!.paymentStatus =='paid' ? Colors.green.withValues(alpha: 0.1) : Theme.of(context).colorScheme.error.withValues(alpha: 0.1)
+                        color: widget.orderModel?.paymentStatus =='paid' ? Colors.green.withValues(alpha: 0.1) : Theme.of(context).colorScheme.error.withValues(alpha: 0.1)
                       ),
                       padding: EdgeInsets.symmetric(horizontal: Dimensions.paddingSizeSmall, vertical: Dimensions.paddingSizeExtraSmall),
-                      child: Text(getTranslated(widget.orderModel!.paymentStatus, context)!,
-                        style: robotoBold.copyWith(color: widget.orderModel!.paymentStatus =='paid' ? Colors.green: Theme.of(context).colorScheme.error)
+                      child: Text(getTranslated(widget.orderModel?.paymentStatus, context) ?? widget.orderModel?.paymentStatus?.capitalize() ?? 'Unpaid',
+                        style: robotoBold.copyWith(color: widget.orderModel?.paymentStatus =='paid' ? Colors.green: Theme.of(context).colorScheme.error)
                       ),
                     ),
                   ],
@@ -107,20 +107,20 @@ class _PaymentStatusWidgetState extends State<PaymentStatusWidget> {
                     children: [
                       Padding(padding: const EdgeInsets.only(bottom: Dimensions.paddingSizeSmall),
                         child: Row(mainAxisAlignment: MainAxisAlignment.spaceBetween,children: [
-                          Text('${getTranslated('customer_payment_info', context)}',style: robotoMedium.copyWith(color: Theme.of(context).textTheme.bodyLarge!.color)),
+                          Text('${getTranslated('customer_payment_info', context) ?? 'Customer Payment Info'}',style: robotoMedium.copyWith(color: Theme.of(context).textTheme.bodyLarge!.color)),
                         ],),
                       ),
 
                       ListView.builder(
                           shrinkWrap: true,
-                          itemCount: widget.orderModel?.offlinePayments?.infoKey?.length,
+                          itemCount: widget.orderModel?.offlinePayments?.infoKey?.length ?? 0,
                           padding: EdgeInsets.zero,
                           physics: const NeverScrollableScrollPhysics(),
                           itemBuilder: (context, index){
-                            String key = widget.orderModel?.offlinePayments?.infoKey?[index];
+                            String key = widget.orderModel?.offlinePayments?.infoKey?[index] ?? '';
                             String fittedKey = key.replaceAll('_', ' ');
                             return fittedKey != 'method id' ?
-                            PaymentItemCard(leftValue: fittedKey.capitalize(),rightValue: '${widget.orderModel?.offlinePayments?.infoValue?[index]}')
+                            PaymentItemCard(leftValue: fittedKey.capitalize(),rightValue: '${widget.orderModel?.offlinePayments?.infoValue?[index] ?? ''}')
                                 : SizedBox();
                           }
                       ),
@@ -129,7 +129,7 @@ class _PaymentStatusWidgetState extends State<PaymentStatusWidget> {
                 ),
 
 
-                if(widget.orderModel!.paymentStatus != 'paid' && widget.orderModel!.paymentMethod == 'offline_payment')...[
+                if(widget.orderModel?.paymentStatus != 'paid' && widget.orderModel?.paymentMethod == 'offline_payment')...[
                   SizedBox(height: Dimensions.paddingSizeSmall),
 
                   Container(
@@ -143,7 +143,7 @@ class _PaymentStatusWidgetState extends State<PaymentStatusWidget> {
                         CustomAssetImageWidget(Images.infoIcon, height: 15, width: 15),
                         SizedBox(width: Dimensions.paddingSizeSmall),
                         Expanded(
-                          child: Text(getTranslated('this_payment_has_not_been_verified_yet', context)!,
+                          child: Text(getTranslated('this_payment_has_not_been_verified_yet', context) ?? 'This payment has not been verified yet',
                               style: robotoRegular.copyWith(color: Theme.of(context).textTheme.bodyLarge?.color)
                           ),
                         )
@@ -157,14 +157,14 @@ class _PaymentStatusWidgetState extends State<PaymentStatusWidget> {
                 SizedBox(height: Dimensions.paddingSizeExtraSmall),
 
                 Text(
-                    '${getTranslated('another_payment_info', context)} : ',
+                    '${getTranslated('another_payment_info', context) ?? 'Another Payment Info'} : ',
                     style: robotoMedium.copyWith(color: Theme.of(context).textTheme.bodyLarge?.color, fontSize: Dimensions.fontSizeLarge)
                 ),
                 SizedBox(height: Dimensions.paddingSizeExtraSmall),
 
                 ListView.builder(
                     shrinkWrap: true,
-                    itemCount: widget.orderDetailsModel?.editOrderPaymentHistory?.length,
+                    itemCount: widget.orderDetailsModel?.editOrderPaymentHistory?.length ?? 0,
                     padding: EdgeInsets.zero,
                     physics: const NeverScrollableScrollPhysics(),
                     itemBuilder: (context, index){
@@ -178,20 +178,20 @@ class _PaymentStatusWidgetState extends State<PaymentStatusWidget> {
                                 Row(mainAxisAlignment: MainAxisAlignment.start, children: [
                                   Text(
                                       paymentHistory.orderDuePaymentStatus =='unpaid' ?
-                                      '${getTranslated('due', context)} '
-                                      : '${getTranslated('pay_by', context)} ',
+                                      '${getTranslated('due', context) ?? 'Due'} '
+                                      : '${getTranslated('pay_by', context) ?? 'Pay by'} ',
                                       style: robotoRegular.copyWith(color: Theme.of(context).textTheme.bodyLarge?.color)
                                   ),
 
 
                                   if(paymentHistory.orderDuePaymentMethod != null)
-                                    Text('(${getTranslated(paymentHistory.orderDuePaymentMethod!, context)!}) : ',
+                                    Text('(${getTranslated(paymentHistory.orderDuePaymentMethod, context) ?? paymentHistory.orderDuePaymentMethod?.replaceAll('_', ' ')}) : ',
                                         style: robotoRegular.copyWith(color: Theme.of(context).textTheme.bodyLarge?.color)
                                     ),
 
 
                                   Text(
-                                      PriceConverter.convertPrice(context, paymentHistory.orderDueAmount!),
+                                      PriceConverter.convertPrice(context, paymentHistory.orderDueAmount ?? 0),
                                       style: robotoMedium.copyWith(color: Theme.of(context).textTheme.bodyLarge?.color)
                                   ),
 
@@ -203,7 +203,7 @@ class _PaymentStatusWidgetState extends State<PaymentStatusWidget> {
                                         color: paymentHistory.orderDuePaymentStatus =='paid' ? Colors.green.withValues(alpha: 0.1) : Theme.of(context).colorScheme.error.withValues(alpha: 0.1)
                                     ),
                                     padding: EdgeInsets.symmetric(horizontal: Dimensions.paddingSizeSmall, vertical: Dimensions.paddingSizeExtraSmall),
-                                    child: Text(getTranslated(paymentHistory.orderDuePaymentStatus, context)!,
+                                    child: Text(getTranslated(paymentHistory.orderDuePaymentStatus, context) ?? paymentHistory.orderDuePaymentStatus ?? '',
                                         style: robotoBold.copyWith(color: paymentHistory.orderDuePaymentStatus=='paid' ? Colors.green: Theme.of(context).colorScheme.error)
                                     ),
                                   ),
@@ -224,20 +224,20 @@ class _PaymentStatusWidgetState extends State<PaymentStatusWidget> {
                                     children: [
                                       Padding(padding: const EdgeInsets.only(bottom: Dimensions.paddingSizeSmall),
                                         child: Row(mainAxisAlignment: MainAxisAlignment.spaceBetween,children: [
-                                          Text('${getTranslated('receiving_account_details', context)}',style: robotoMedium.copyWith(color: Theme.of(context).textTheme.bodyLarge!.color)),
+                                          Text('${getTranslated('receiving_account_details', context) ?? 'Receiving Account Details'}',style: robotoMedium.copyWith(color: Theme.of(context).textTheme.bodyLarge!.color)),
                                         ],),
                                       ),
 
                                       ListView.builder(
                                           shrinkWrap: true,
-                                          itemCount: paymentHistory.orderDuePaymentInfo?.infoKey?.length,
+                                          itemCount: paymentHistory.orderDuePaymentInfo?.infoKey?.length ?? 0,
                                           padding: EdgeInsets.zero,
                                           physics: const NeverScrollableScrollPhysics(),
                                           itemBuilder: (context, index){
-                                            String key = paymentHistory.orderDuePaymentInfo?.infoKey?[index];
+                                            String key = paymentHistory.orderDuePaymentInfo?.infoKey?[index] ?? '';
                                             String fittedKey = key.replaceAll('_', ' ');
                                             return fittedKey != 'method id' ?
-                                            PaymentItemCard(leftValue: fittedKey.capitalize(),rightValue: '${paymentHistory.orderDuePaymentInfo?.infoValue?[index]}')
+                                            PaymentItemCard(leftValue: fittedKey.capitalize(),rightValue: '${paymentHistory.orderDuePaymentInfo?.infoValue?[index] ?? ''}')
                                                 : SizedBox();
                                           }
                                       ),
@@ -260,7 +260,7 @@ class _PaymentStatusWidgetState extends State<PaymentStatusWidget> {
                                         CustomAssetImageWidget(Images.infoIcon, height: 15, width: 15),
                                         SizedBox(width: Dimensions.paddingSizeSmall),
                                         Expanded(
-                                          child: Text(getTranslated('this_payment_has_not_been_verified_yet', context)!,
+                                          child: Text(getTranslated('this_payment_has_not_been_verified_yet', context) ?? 'This payment has not been verified yet',
                                               style: robotoRegular.copyWith(color: Theme.of(context).textTheme.bodyLarge?.color)
                                           ),
                                         )
@@ -276,19 +276,19 @@ class _PaymentStatusWidgetState extends State<PaymentStatusWidget> {
                                 Row(mainAxisAlignment: MainAxisAlignment.start, children: [
                                   Text(
                                       paymentHistory.orderReturnPaymentStatus =='paid' ?
-                                      '${getTranslated('paid_by', context)} ' : '${getTranslated('pay_by', context)} ',
+                                      '${getTranslated('paid_by', context) ?? 'Paid by'} ' : '${getTranslated('pay_by', context) ?? 'Pay by'} ',
                                       style: robotoRegular.copyWith(color: Theme.of(context).textTheme.bodyLarge?.color)
                                   ),
 
 
                                   if(paymentHistory.orderReturnPaymentMethod != null)
-                                    Text('(${getTranslated(paymentHistory.orderReturnPaymentMethod!, context)!}) : ',
+                                    Text('(${getTranslated(paymentHistory.orderReturnPaymentMethod, context) ?? paymentHistory.orderReturnPaymentMethod?.replaceAll('_', ' ')}) : ',
                                         style: robotoRegular.copyWith(color: Theme.of(context).textTheme.bodyLarge?.color)
                                     ),
 
 
                                   Text(
-                                      PriceConverter.convertPrice(context, paymentHistory.orderReturnAmount!),
+                                      PriceConverter.convertPrice(context, paymentHistory.orderReturnAmount ?? 0),
                                       style: robotoMedium.copyWith(color: Theme.of(context).textTheme.bodyLarge?.color)
                                   ),
                                   SizedBox(width: Dimensions.paddingSizeExtraSmall),
@@ -299,7 +299,7 @@ class _PaymentStatusWidgetState extends State<PaymentStatusWidget> {
                                         color: paymentHistory.orderReturnPaymentStatus =='returned' ? Colors.green.withValues(alpha: 0.1) : Theme.of(context).colorScheme.error.withValues(alpha: 0.1)
                                     ),
                                     padding: EdgeInsets.symmetric(horizontal: Dimensions.paddingSizeSmall, vertical: Dimensions.paddingSizeExtraSmall),
-                                    child: Text(getTranslated(paymentHistory.orderReturnPaymentStatus, context)!,
+                                    child: Text(getTranslated(paymentHistory.orderReturnPaymentStatus, context) ?? paymentHistory.orderReturnPaymentStatus ?? '',
                                         style: robotoBold.copyWith(color: paymentHistory.orderReturnPaymentStatus=='returned' ? Colors.green: Theme.of(context).colorScheme.error)
                                     ),
                                   ),

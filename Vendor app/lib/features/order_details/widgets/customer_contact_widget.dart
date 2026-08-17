@@ -22,18 +22,30 @@ class _CustomerContactWidgetState extends State<CustomerContactWidget> {
 
   @override
   Widget build(BuildContext context) {
+    if (widget.orderModel == null) return const SizedBox();
 
-    String? phone = widget.orderModel!.isGuest! ? '${widget.orderModel!.shippingAddressData != null? widget.orderModel!.shippingAddressData?.phone :
-    '${widget.orderModel?.billingAddressData?.phone}'}' :
-    '${widget.orderModel!.customer?.phone}';
+    final bool isGuest = widget.orderModel?.isGuest ?? false;
+    final String phone = isGuest
+        ? (widget.orderModel?.shippingAddressData?.phone ?? widget.orderModel?.billingAddressData?.phone ?? '')
+        : (widget.orderModel?.customer?.phone ?? '');
 
-    String? email = widget.orderModel!.isGuest! ? '${widget.orderModel!.shippingAddressData != null? widget.orderModel!.shippingAddressData?.email :
-    '${widget.orderModel?.billingAddressData?.email}'}' :
-    '${widget.orderModel!.customer?.email}';
+    final String email = isGuest
+        ? (widget.orderModel?.shippingAddressData?.email ?? widget.orderModel?.billingAddressData?.email ?? '')
+        : (widget.orderModel?.customer?.email ?? '');
 
+    final String customerName = isGuest
+        ? (widget.orderModel?.shippingAddressData?.contactPersonName ?? widget.orderModel?.billingAddressData?.contactPersonName ?? 'Guest Customer')
+        : ('${widget.orderModel?.customer?.fName ?? ''} ${widget.orderModel?.customer?.lName ?? ''}'.trim().isNotEmpty
+            ? '${widget.orderModel?.customer?.fName ?? ''} ${widget.orderModel?.customer?.lName ?? ''}'.trim()
+            : 'Customer');
+
+    final String customerCity = isGuest
+        ? (widget.orderModel?.shippingAddressData != null
+            ? '${widget.orderModel?.shippingAddressData?.city ?? ''}, ${widget.orderModel?.shippingAddressData?.country ?? ''}'
+            : '${widget.orderModel?.billingAddressData?.city ?? ''}, ${widget.orderModel?.billingAddressData?.country ?? ''}')
+        : '';
 
     return Container(
-      // padding: const EdgeInsets.symmetric(horizontal: Dimensions.paddingSizeDefault, vertical: Dimensions.paddingSizeMedium),
       decoration: BoxDecoration(
         color: Theme.of(context).cardColor,
         boxShadow: [BoxShadow(color: Theme.of(context).hintColor.withValues(alpha:0.2), spreadRadius:1.5, blurRadius: 3)],
@@ -43,11 +55,11 @@ class _CustomerContactWidgetState extends State<CustomerContactWidget> {
           padding: const EdgeInsets.symmetric(horizontal: Dimensions.paddingSizeDefault, vertical: Dimensions.paddingSizeSmall),
           child: Row(
             children: [
-              widget.orderModel!.isGuest! ?
-              Text('${getTranslated('customer_info', context)} (${getTranslated('guest_customer', context)})',
+              isGuest ?
+              Text('${getTranslated('customer_info', context) ?? 'Customer Info'} (${getTranslated('guest_customer', context) ?? 'Guest'})',
                   style: robotoBold.copyWith(fontSize: Dimensions.fontSizeLarge, color: Theme.of(context).textTheme.bodyLarge?.color)
               ) :
-              Text('${getTranslated('customer_info', context)}',
+              Text('${getTranslated('customer_info', context) ?? 'Customer Info'}',
                   style: robotoBold.copyWith(fontSize: Dimensions.fontSizeLarge, color: Theme.of(context).textTheme.bodyLarge?.color)
               ),
             ],
@@ -73,19 +85,15 @@ class _CustomerContactWidgetState extends State<CustomerContactWidget> {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      widget.orderModel!.isGuest! ? '${widget.orderModel!.shippingAddressData != null? widget.orderModel!.shippingAddressData?.contactPersonName :
-                      '${widget.orderModel?.billingAddressData?.contactPersonName}'}' :
-                      '${widget.orderModel!.customer?.fName ?? ''} ''${widget.orderModel!.customer?.lName ?? ''}',
+                      customerName,
                       style: robotoMedium.copyWith(color: Theme.of(context).textTheme.bodyLarge?.color,
                         fontSize: Dimensions.fontSizeDefault)
                     ),
                     const SizedBox(height: Dimensions.paddingSizeExtraSmall),
 
-                    if (widget.orderModel?.customerId != 0)
+                    if (widget.orderModel?.customerId != 0 && customerCity.trim().isNotEmpty)
                     Flexible(
-                      child: Text(widget.orderModel!.isGuest! ? widget.orderModel!.shippingAddressData != null ?
-                      '${widget.orderModel!.shippingAddressData?.city}, ${widget.orderModel!.shippingAddressData?.country}' :
-                      '${widget.orderModel?.billingAddressData?.city}, ${widget.orderModel?.billingAddressData?.country}' : '',
+                      child: Text(customerCity,
                        style: titilliumRegular.copyWith(
                          color: ColorHelper.blendColors(Colors.white, Theme.of(context).textTheme.bodyLarge!.color!, 0.7),
                          fontSize: Dimensions.fontSizeDefault),

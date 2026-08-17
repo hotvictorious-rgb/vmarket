@@ -68,24 +68,34 @@ class _OrderedProductListItemWidgetState extends State<OrderedProductListItemWid
   Variation? variation;
   @override
   Widget build(BuildContext context) {
-    if(widget.orderDetailsModel!.productDetails != null && widget.orderDetailsModel!.variant != null && widget.orderDetailsModel!.variant!.isNotEmpty && widget.orderDetailsModel!.productDetails?.productType == 'digital') {
-      for(DigitalVariation dv in widget.orderDetailsModel!.productDetails!.digitalVariation ?? []) {
+    final product = widget.orderDetailsModel?.productDetails;
+    if(product != null && widget.orderDetailsModel?.variant != null && widget.orderDetailsModel!.variant!.isNotEmpty && product.productType == 'digital') {
+      for(DigitalVariation dv in product.digitalVariation ?? []) {
         if(dv.variantKey == widget.orderDetailsModel!.variant){
           digitalVariation = dv;
         }
       }
     }
 
-    if (widget.orderDetailsModel?.productDetails?.productType == 'physical' && widget.orderDetailsModel!.productDetails?.variation != null && widget.orderDetailsModel!.productDetails!.variation!.isNotEmpty) {
-      for(Variation v in widget.orderDetailsModel!.productDetails!.variation ?? []) {
+    if (product?.productType == 'physical' && product?.variation != null && product!.variation!.isNotEmpty) {
+      for(Variation v in product.variation ?? []) {
         if(v.type == widget.orderDetailsModel!.variant){
           variation = v;
         }
       }
     }
 
-    return  widget.orderDetailsModel!.productDetails != null?
-    Padding(
+    if (product == null) return const SizedBox();
+
+    final double discountAmount = product.discount ?? 0;
+    final bool hasDiscount = discountAmount > 0;
+    final double basePrice = (widget.orderDetailsModel?.variant != null && widget.orderDetailsModel!.variant!.isNotEmpty && product.productType == 'digital' && digitalVariation != null)
+        ? (double.tryParse(digitalVariation?.price?.toString() ?? '0') ?? 0)
+        : (product.productType == 'physical' && product.variation != null && product.variation!.isNotEmpty)
+            ? (variation?.price?.toDouble() ?? 0)
+            : (product.unitPrice?.toDouble() ?? 0);
+
+    return Padding(
       padding: const EdgeInsets.only(bottom: Dimensions.paddingSizeExtraSmall),
       child: Container(decoration: BoxDecoration(
           borderRadius: BorderRadius.circular(Dimensions.paddingSizeExtraSmall),
@@ -104,29 +114,29 @@ class _OrderedProductListItemWidgetState extends State<OrderedProductListItemWid
                 child: ClipRRect(
                     borderRadius: BorderRadius.circular(10),
                     child: CustomImageWidget(height: Dimensions.imageSize, width: Dimensions.imageSize,
-                        image: '${widget.orderDetailsModel!.productDetails?.thumbnailFullUrl?.path}')
+                        image: '${product.thumbnailFullUrl?.path}')
                 ),
               ),
 
-              if((widget.orderDetailsModel?.productDetails?.discount ?? 0) > 0 || widget.orderDetailsModel?.productDetails?.clearanceSale != null)
+              if(discountAmount > 0 || product.clearanceSale != null)
                 Positioned(top: 10, left: 0, child: Container(height: 20,
                   padding: const EdgeInsets.symmetric(horizontal: Dimensions.paddingSizeExtraSmall),
                   decoration: BoxDecoration(color: Theme.of(context).primaryColor,
                     borderRadius: const BorderRadius.only(topRight: Radius.circular(Dimensions.paddingSizeExtraSmall), bottomRight: Radius.circular(Dimensions.paddingSizeExtraSmall)),),
 
                   child: Center(
-                    child: Text(widget.orderDetailsModel?.productDetails?.clearanceSale != null ?
+                    child: Text(product.clearanceSale != null ?
                     PriceConverter.percentageCalculation(
                       context,
-                      widget.orderDetailsModel?.productDetails?.unitPrice,
-                      widget.orderDetailsModel?.productDetails?.clearanceSale?.discountAmount,
-                      widget.orderDetailsModel?.productDetails?.clearanceSale?.discountType,
+                      product.unitPrice,
+                      product.clearanceSale?.discountAmount,
+                      product.clearanceSale?.discountType,
                     ) :
                     PriceConverter.percentageCalculation(
                       context,
-                      widget.orderDetailsModel?.productDetails?.unitPrice,
-                      widget.orderDetailsModel?.productDetails?.discount,
-                      widget.orderDetailsModel?.productDetails?.discountType,
+                      product.unitPrice,
+                      product.discount,
+                      product.discountType,
                     ), style: titilliumRegular.copyWith(
                       color: Theme.of(context).cardColor,
                       fontSize: Dimensions.fontSizeSmall,
@@ -139,7 +149,7 @@ class _OrderedProductListItemWidgetState extends State<OrderedProductListItemWid
 
             Expanded(
               child: Column(crossAxisAlignment:CrossAxisAlignment.start, children: [
-                Text(widget.orderDetailsModel!.productDetails?.name??'',
+                Text(product.name ?? '',
                   style: titilliumSemiBold.copyWith(fontSize: Dimensions.fontSizeDefault,
                       color: Theme.of(context).textTheme.bodyLarge?.color),
                   maxLines: 1, overflow: TextOverflow.ellipsis),
@@ -147,30 +157,18 @@ class _OrderedProductListItemWidgetState extends State<OrderedProductListItemWid
 
 
                 Row( children: [
-                  (widget.orderDetailsModel!.productDetails!.discount! > 0 &&
-                      widget.orderDetailsModel!.productDetails!.discount!= null)?
-                  Text(PriceConverter.convertPrice(context,
-                      (widget.orderDetailsModel!.variant != null && widget.orderDetailsModel!.variant!.isNotEmpty && widget.orderDetailsModel!.productDetails?.productType == 'digital' && digitalVariation != null) ?
-                      double.parse(digitalVariation!.price!.toString()) :
-                      (widget.orderDetailsModel!.productDetails?.productType == 'physical' && widget.orderDetailsModel!.productDetails?.variation != null && widget.orderDetailsModel!.productDetails!.variation!.isNotEmpty) ?
-                      variation?.price ?? 0
-                          : widget.orderDetailsModel!.productDetails!.unitPrice!.toDouble()
-                  ),
+                  hasDiscount ?
+                  Text(PriceConverter.convertPrice(context, basePrice),
                     style: titilliumRegular.copyWith(color: Theme.of(context).colorScheme.error,fontSize: Dimensions.fontSizeSmall,
-                        decoration: TextDecoration.lineThrough),):const SizedBox(),
-                  SizedBox(width: widget.orderDetailsModel!.productDetails!.discount! > 0?
-                  Dimensions.paddingSizeDefault : 0),
+                        decoration: TextDecoration.lineThrough),) : const SizedBox(),
+                  SizedBox(width: hasDiscount ? Dimensions.paddingSizeDefault : 0),
 
 
 
                   Text(PriceConverter.convertPrice(context,
-                      (widget.orderDetailsModel!.variant != null && widget.orderDetailsModel!.variant!.isNotEmpty && widget.orderDetailsModel!.productDetails?.productType == 'digital' && digitalVariation != null) ?
-                      double.parse(digitalVariation!.price!.toString()) :
-                      (widget.orderDetailsModel!.productDetails?.productType == 'physical' && widget.orderDetailsModel!.productDetails?.variation != null && widget.orderDetailsModel!.productDetails!.variation!.isNotEmpty) ?
-                      variation?.price ?? 0 :
-                      widget.orderDetailsModel!.productDetails!.unitPrice!.toDouble(),
-                      discount :widget.orderDetailsModel!.productDetails!.discount,
-                      discountType :widget.orderDetailsModel!.productDetails!.discountType),
+                      basePrice,
+                      discount : product.discount,
+                      discountType : product.discountType),
                     style: titilliumSemiBold.copyWith(color: Theme.of(context).primaryColor),),
 
 
@@ -362,7 +360,7 @@ class _OrderedProductListItemWidgetState extends State<OrderedProductListItemWid
         ],
         ),
       ),
-    ) : const SizedBox();
+    );
   }
 
   void _downloadProduct(int index ){

@@ -51,8 +51,9 @@ class _OrderDetailsScreenState extends State<OrderDetailsScreen> {
       await Provider.of<SplashController>(Get.context!, listen: false).initConfig();
     }
     Provider.of<OrderDetailsController>(Get.context!, listen: false).getOrderDetails(widget.orderId.toString());
+    final splashConfig = Provider.of<SplashController>(Get.context!, listen: false).configModel;
     Provider.of<OrderDetailsController>(Get.context!, listen: false).initOrderStatusList(
-      Provider.of<SplashController>(Get.context!, listen: false).configModel!.shippingMethod == 'inhouse_shipping' ?  'inhouse_shipping' : "seller_wise"
+      splashConfig?.shippingMethod == 'inhouse_shipping' ?  'inhouse_shipping' : "seller_wise"
     );
   }
 
@@ -86,7 +87,9 @@ class _OrderDetailsScreenState extends State<OrderDetailsScreen> {
           surfaceTintColor: Theme.of(context).highlightColor,
           title: Consumer<OrderDetailsController>(
             builder: (context, orderDetailsController,_) {
-              return OrderTopSectionWidget(orderModel: orderDetailsController.orderDetails?[0].order, fromNotification: widget.fromNotification);
+              final firstDetail = (orderDetailsController.orderDetails != null && orderDetailsController.orderDetails!.isNotEmpty)
+                  ? orderDetailsController.orderDetails![0] : null;
+              return OrderTopSectionWidget(orderModel: firstDetail?.order, fromNotification: widget.fromNotification);
             }
           ),
         ),
@@ -99,7 +102,7 @@ class _OrderDetailsScreenState extends State<OrderDetailsScreen> {
                 builder: (context, orderDetailsController, child) {
                   double itemsPrice = 0;
                   double discount = 0;
-                  double? eeDiscount = 0;
+                  double eeDiscount = 0;
                   double tax = 0;
                   double coupon = 0;
                   double shipping = 0;
@@ -107,33 +110,34 @@ class _OrderDetailsScreenState extends State<OrderDetailsScreen> {
                   bool isFreeShipping = false;
 
                   if (orderDetailsController.orderDetails != null && orderDetailsController.orderDetails!.isNotEmpty) {
-                    coupon = orderDetailsController.orderDetails![0].order!.discountAmount!;
-                    shipping = orderDetailsController.orderDetails![0].order!.shippingCost!;
-                    isFreeShipping = orderDetailsController.orderDetails?[0].order?.isShippingFree ?? false;
+                    final firstOrder = orderDetailsController.orderDetails![0].order;
+                    coupon = firstOrder?.discountAmount ?? 0;
+                    shipping = firstOrder?.shippingCost ?? 0;
+                    isFreeShipping = firstOrder?.isShippingFree ?? false;
                     for (var orderDetails in orderDetailsController.orderDetails!) {
                       if(orderDetails.productDetails?.productType == "physical") {
                         _onlyDigital =  false;
                       }
-                      itemsPrice = itemsPrice + (orderDetails.price! * orderDetails.qty!);
-                      discount = discount + orderDetails.discount!;
+                      itemsPrice += (orderDetails.price ?? 0) * (orderDetails.qty ?? 0);
+                      discount += orderDetails.discount ?? 0;
                     }
-                    tax = orderDetailsController.orderDetails![0].order?.totalTaxAmount ?? 0;
+                    tax = firstOrder?.totalTaxAmount ?? 0;
 
-                    if(orderDetailsController.orderDetails![0].order!.orderType == 'POS') {
-                      if(orderDetailsController.orderDetails![0].order!.extraDiscountType == 'percent') {
-                        eeDiscount = (itemsPrice - coupon - discount) * (orderDetailsController.orderDetails![0].order!.extraDiscount!/100);
-                      }else{
-                        eeDiscount = orderDetailsController.orderDetails![0].order!.extraDiscount;
+                    if(firstOrder?.orderType == 'POS') {
+                      if(firstOrder?.extraDiscountType == 'percent') {
+                        eeDiscount = (itemsPrice - coupon - discount) * ((firstOrder?.extraDiscount ?? 0) / 100);
+                      } else {
+                        eeDiscount = firstOrder?.extraDiscount ?? 0;
                       }
                     }
 
-                    if(orderDetailsController.orderDetails != null && orderDetailsController.orderDetails![0].order!.orderType != 'POS') {
-                      referAndEarnDiscount = orderDetailsController.orderDetails?[0].order?.referAndEarnDiscount ?? 0;
+                    if(firstOrder?.orderType != 'POS') {
+                      referAndEarnDiscount = firstOrder?.referAndEarnDiscount ?? 0;
                     }
                   }
                   double subTotal = itemsPrice + tax - discount;
 
-                  double totalPrice = subTotal + (isFreeShipping ? 0 : shipping) - coupon - eeDiscount! - referAndEarnDiscount;
+                  double totalPrice = subTotal + (isFreeShipping ? 0 : shipping) - coupon - eeDiscount - referAndEarnDiscount;
 
                   return orderDetailsController.orderDetails != null ? orderDetailsController.orderDetails!.isNotEmpty ?
                   CustomScrollView(slivers: [

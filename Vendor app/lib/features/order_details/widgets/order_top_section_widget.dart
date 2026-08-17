@@ -11,6 +11,7 @@ import 'package:sixvalley_vendor_app/features/order_details/controllers/order_de
 import 'package:sixvalley_vendor_app/features/order_edit/screens/edit_product_screen.dart';
 import 'package:sixvalley_vendor_app/features/splash/controllers/splash_controller.dart';
 import 'package:sixvalley_vendor_app/localization/language_constrants.dart';
+import 'package:sixvalley_vendor_app/utill/app_constants.dart';
 import 'package:sixvalley_vendor_app/utill/dimensions.dart';
 import 'package:sixvalley_vendor_app/utill/images.dart';
 import 'package:sixvalley_vendor_app/utill/styles.dart';
@@ -24,8 +25,34 @@ class OrderTopSectionWidget extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return orderModel != null?
-      Stack(children: [
+    if (orderModel == null) {
+      return Stack(
+        children: [
+          Center(
+            child: Text(
+              getTranslated('order_details', context) ?? 'Order Details',
+              style: robotoBold.copyWith(fontSize: Dimensions.fontSizeLarge, color: Theme.of(context).textTheme.bodyLarge?.color),
+            ),
+          ),
+          InkWell(
+            onTap: () {
+              if (fromNotification == true) {
+                Navigator.of(context).pushAndRemoveUntil(MaterialPageRoute(builder: (BuildContext context) => const DashboardScreen()), (route) => false);
+              } else {
+                Navigator.of(context).pop();
+              }
+              Provider.of<OrderDetailsController>(context, listen: false).emptyOrderDetails();
+            },
+            child: const Padding(
+              padding: EdgeInsets.symmetric(vertical: Dimensions.paddingSizeDefault, horizontal: 0),
+              child: Icon(CupertinoIcons.back),
+            ),
+          ),
+        ],
+      );
+    }
+
+    return Stack(children: [
       Row(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
@@ -35,44 +62,44 @@ class OrderTopSectionWidget extends StatelessWidget {
             children: [
               RichText(
                 text: TextSpan(
-                  text: '${getTranslated('order', context)}# ',
+                  text: '${getTranslated('order', context) ?? 'Order'} #',
                   style: robotoRegular.copyWith(
                     color: Theme.of(context).textTheme.bodyLarge?.color,
                     fontSize: Dimensions.fontSizeDefault,
                   ),
                   children: [
                     TextSpan(
-                      text: orderModel?.id.toString(),
+                      text: orderModel?.id.toString() ?? '',
                       style: robotoBold.copyWith(
-                        color: Theme.of(context).textTheme.bodyLarge?.color,
+                        color: Theme.of(context).primaryColor,
                         fontSize: Dimensions.fontSizeLarge,
                       ),
                     ),
                   ],
                 ),
               ),
-              const SizedBox(height: Dimensions.paddingSizeSmall),
+              const SizedBox(height: Dimensions.paddingSizeExtraSmall),
 
               RichText(
                 text: TextSpan(
-                  text: getTranslated('your_order_is', context),
+                  text: '${getTranslated('your_order_is', context) ?? 'Status:'} ',
                   style: titilliumRegular.copyWith(
-                    fontSize: Dimensions.fontSizeLarge,
+                    fontSize: Dimensions.fontSizeDefault,
                     color: Theme.of(context).hintColor,
                   ),
                   children: [
                     TextSpan(
-                      text: ' ${getTranslated('${orderModel?.orderStatus}', context)}',
+                      text: getTranslated('${orderModel?.orderStatus}', context) ?? orderModel?.orderStatus?.replaceAll('_', ' ').capitalize() ?? '',
                       style: robotoBold.copyWith(
-                        fontSize: Dimensions.fontSizeLarge,
+                        fontSize: Dimensions.fontSizeDefault,
                         color: orderModel?.orderStatus == 'delivered'
-                          ? Theme.of(context).colorScheme.onTertiaryContainer
+                          ? Colors.green
                           : orderModel?.orderStatus == 'pending'
                           ? Theme.of(context).primaryColor
                           : orderModel?.orderStatus == 'confirmed'
-                          ? Theme.of(context).colorScheme.onTertiaryContainer
+                          ? Colors.teal
                           : orderModel?.orderStatus == 'processing'
-                          ? Theme.of(context).colorScheme.outline
+                          ? Colors.orange
                           : ((orderModel?.orderStatus == 'canceled' || orderModel?.orderStatus == "failed")
                           ? Theme.of(context).colorScheme.error
                           : Theme.of(context).colorScheme.secondary
@@ -106,8 +133,9 @@ class OrderTopSectionWidget extends StatelessWidget {
         right: 0,
         child: Consumer<OrderDetailsController>(
           builder: (context, orderProvider, _) {
+            final String orderStatus = orderModel?.orderStatus?.toLowerCase() ?? '';
             bool canEdit = (Provider.of<SplashController>(Get.context!, listen: false).configModel?.canVendorEditOrder == 1
-              && (orderModel?.orderStatus!.toLowerCase() == 'pending' || orderModel?.orderStatus!.toLowerCase() == 'confirmed'));
+              && (orderStatus == 'pending' || orderStatus == 'confirmed'));
 
             bool onlyDigitalProduct = (orderProvider.orderDetails != null && orderProvider.orderDetails?.length == 1 && orderProvider.orderDetails?[0].productDetails?.productType  == 'digital') ;
 
@@ -145,7 +173,9 @@ class OrderTopSectionWidget extends StatelessWidget {
 
                 InkWell(
                   onTap: () {
-                    orderProvider.getOrderInvoice(orderModel!.id.toString(), context);
+                    if (orderModel?.id != null) {
+                      orderProvider.getOrderInvoice(orderModel!.id.toString(), context);
+                    }
                   },
                   child: Container(
                     decoration: BoxDecoration(
@@ -169,6 +199,6 @@ class OrderTopSectionWidget extends StatelessWidget {
 
 
 
-    ]) : const SizedBox();
+    ]);
   }
 }
