@@ -7,6 +7,16 @@ Always append your completed tasks here in chronological order at the top. Forma
 `### [YYYY-MM-DD HH:MM UTC] <Feature / Fix Title> [<Component Scope>]`
 Include the specific app/component modified and bullet points detailing the exact technical changes.
 
+### [2026-08-17 08:20 UTC] Fix Nested Widget Hierarchy & Build Syntax in Customer App [User App]
+* **Component:** Customer Mobile App (`User app/`)
+* **Action:** Corrected nested Column and Container closing delimiters in `chat_screen.dart` and removed duplicate `dart:io` import, achieving 0 analyzer errors and unblocking release APK build.
+* **Changes Made:**
+  - **`lib/features/chat/screens/chat_screen.dart`**:
+    - Properly nested inner media/voice picker Column and Container before outer Column and Consumer closures.
+    - Removed duplicate `dart:io` import.
+  - **Verification**:
+    - `flutter analyze lib/features/chat/screens/chat_screen.dart` -> 0 errors.
+
 ### [2026-08-17 07:56 UTC] Fix Flutter CI Build Syntax Errors in Customer App & Vendor App [User App, Vendor App]
 * **Component:** Customer Mobile App (`User app/`), Vendor Mobile App (`Vendor app/`)
 * **Action:** Resolved Gradle/Flutter build syntax errors reported in GitHub Actions CI release workflow.

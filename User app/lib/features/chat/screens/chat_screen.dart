@@ -27,7 +27,6 @@ import 'package:flutter_sixvalley_ecommerce/features/chat/widgets/message_bubble
 import 'package:flutter_sixvalley_ecommerce/features/chat/widgets/whatsapp_chat_wallpaper.dart';
 import 'package:provider/provider.dart';
 import 'dart:async';
-import 'dart:io';
 import 'package:file_picker/file_picker.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:flutter/foundation.dart' as foundation;
@@ -708,8 +707,10 @@ class _ChatScreenState extends State<ChatScreen> {
                     child: Text(getTranslated('chatting_is_disabled', context) ?? 'Chat is disabled for vendors', style: textRegular),
                   ),
                 ),
-              ]);
-            }),
+              ]),
+            ),
+          ]);
+        }),
 
 
 
@@ -737,7 +738,6 @@ class _ChatScreenState extends State<ChatScreen> {
                   ),
                 ),
               ),
-          ])),
 
           if(widget.isShopOnVacation && !isClosed && !widget.isShopTemporaryClosed)
             Container(padding: const EdgeInsets.symmetric(horizontal: Dimensions.paddingSizeDefault, vertical: Dimensions.paddingSizeSmall),
