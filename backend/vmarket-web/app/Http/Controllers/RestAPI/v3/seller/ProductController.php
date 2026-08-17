@@ -2116,4 +2116,56 @@ class ProductController extends Controller
             'brands' => $brands,
         ], 200);
     }
+
+    public function updatePriceAndReactivate(Request $request): JsonResponse
+    {
+        $validator = Validator::make($request->all(), [
+            'product_id' => 'required|numeric',
+            'unit_price' => 'required|numeric|min:0.01',
+            'purchase_price' => 'nullable|numeric',
+            'discount' => 'nullable|numeric|min:0',
+            'discount_type' => 'nullable|in:flat,percent',
+            'current_stock' => 'nullable|numeric|min:0',
+        ]);
+
+        if ($validator->fails()) {
+            return response()->json(['errors' => Helpers::error_processor($validator)], 403);
+        }
+
+        $seller = $request->seller;
+        $product = Product::where(['id' => $request['product_id'], 'added_by' => 'seller', 'user_id' => $seller['id']])->first();
+
+        if (!$product) {
+            return response()->json(['message' => 'Product not found or unauthorized'], 404);
+        }
+
+        $updateData = [
+            'unit_price' => currencyConverter(amount: $request['unit_price']),
+            'price_updated_at' => Carbon::now(),
+            'price_expiry_notified_at' => null,
+            'deactivation_reason' => null,
+            'status' => 1,
+        ];
+
+        if ($request->has('purchase_price') && $request['purchase_price'] !== null) {
+            $updateData['purchase_price'] = currencyConverter(amount: $request['purchase_price']);
+        }
+        if ($request->has('discount') && $request['discount'] !== null) {
+            $updateData['discount'] = ($request['discount_type'] ?? 'percent') == 'flat' ? currencyConverter(amount: $request['discount']) : $request['discount'];
+            $updateData['discount_type'] = $request['discount_type'] ?? 'percent';
+        }
+        if ($request->has('current_stock') && $request['current_stock'] !== null) {
+            $updateData['current_stock'] = (int)$request['current_stock'];
+        }
+
+        Product::where('id', $product->id)->update($updateData);
+
+        clearWebConfigCacheKeys();
+
+        return response()->json([
+            'status' => true,
+            'message' => 'Product price updated and reactivated successfully',
+            'price_updated_at' => Carbon::now()->toIso8601String(),
+        ], 200);
+    }
 }

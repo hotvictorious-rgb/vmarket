@@ -120,6 +120,9 @@ class Product extends Model
         'digital_file_ready_storage_type',
         'is_shipping_cost_updated',
         'temp_shipping_cost',
+        'price_updated_at',
+        'price_expiry_notified_at',
+        'deactivation_reason',
     ];
 
     /**

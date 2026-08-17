@@ -123,6 +123,7 @@ Route::group(['namespace' => 'RestAPI\v3\seller', 'prefix' => 'v3/seller', 'midd
                 Route::get('restock-request-delete', 'deleteRestockRequest');
                 Route::post('restock-request-stock-update', 'updateRestockQuantity');
                 Route::get('restock-request-brands-list', 'getRestockRequestBrands');
+                Route::post('update-price-and-reactivate', 'updatePriceAndReactivate');
             });
         });
 

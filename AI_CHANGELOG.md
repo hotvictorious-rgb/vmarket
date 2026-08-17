@@ -7,6 +7,31 @@ Always append your completed tasks here in chronological order at the top. Forma
 `### [YYYY-MM-DD HH:MM UTC] <Feature / Fix Title> [<Component Scope>]`
 Include the specific app/component modified and bullet points detailing the exact technical changes.
 
+### [2026-08-17 07:20 UTC] Implement 30-Day Product Price Auto-Expiry & Omnichannel Feed Export Hub [Backend, Vendor App]
+* **Component:** Laravel Backend (`backend/vmarket-web/`), Vendor Mobile App (`Vendor app/`)
+* **Action:** Implemented automated 30-day product price expiry engine with early warning notifications and instant vendor reactivation, plus an Omnichannel Live Product Feed Export Hub supporting Google Merchant Center (Google Shopping RSS 2.0 XML), Meta Facebook/Instagram Catalog (CSV), and TikTok Shop Catalog (CSV).
+* **Changes Made:**
+  - **Database Migration (`database/migrations/2026_08_17_071500_add_price_expiry_columns_to_products_table.php`)**:
+    - Added `price_updated_at`, `price_expiry_notified_at`, and `deactivation_reason` columns to `products` table.
+  - **Laravel Model & Service (`app/Models/Product.php`, `app/Services/ProductService.php`)**:
+    - Registered fields in `$fillable` and `$casts`.
+    - Auto-assigned `price_updated_at = now()` and cleared `deactivation_reason` on all product store and update operations.
+  - **Scheduled Daily Artisan Command (`app/Console/Commands/CheckProductPriceExpiryCommand.php`, `app/Console/Kernel.php`)**:
+    - Created `products:check-price-expiry` command registered in daily schedule.
+    - Sends push notifications at warning window (25 days) and deactivates stale products at 30 days (`status = 0`, `deactivation_reason = 'price_expired'`) with automated storefront cache clearing.
+  - **Vendor Reactivation API (`RestAPI/v3/seller/ProductController.php`, `routes/rest_api/v3/seller.php`)**:
+    - Added `POST /api/v3/seller/products/update-price-and-reactivate` allowing vendors to submit updated pricing and instantly reactivate deactivated products.
+  - **Omnichannel Product Feed Controller (`app/Http/Controllers/ProductFeedExportController.php`, `routes/rest_api/v1/api.php`)**:
+    - Built **Google Merchant Center RSS 2.0 XML** live auto-sync feed (`/api/v1/products/feed/google-merchant.xml?token=...`).
+    - Built **Facebook & Instagram Catalog CSV** live data feed (`/api/v1/products/feed/facebook-catalog.csv?token=...`).
+    - Built **TikTok Shop Catalog CSV** feed (`/api/v1/products/feed/tiktok-catalog.csv?token=...`).
+    - Protected feeds with permanent secret access token (`product_feed_export_token`) with scope filtering (all, in-house, vendor, category).
+  - **Vendor Mobile App (`shop_product_card_widget.dart`)**:
+    - Added `Price Expired` status badge and safe null checks for `requestStatus`.
+  - **Verification**:
+    - Verified `php -l` on all 7 backend files -> 0 syntax errors.
+    - Verified `flutter analyze` on `Vendor app` -> 0 errors.
+
 ### [2026-08-17 06:45 UTC] Vendor App Order Details Overhaul, Null Safety Hardening & Backend Fixes [Backend, Vendor App]
 * **Component:** Laravel Backend (`backend/vmarket-web/`), Vendor Mobile App (`Vendor app/`)
 * **Action:** Audited and resolved runtime errors, missing data, and fragile UI crashes across the Vendor App order details screens and backend REST API. Upgraded UI resilience with safe fallbacks and Victorious Purple & Gold branding.

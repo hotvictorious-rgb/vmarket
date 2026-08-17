@@ -202,6 +202,14 @@ Route::group(['prefix' => 'v1', 'middleware' => ['api_lang']], function () {
                 Route::get('digital-publishing-house-list', 'getDigitalPublishingHouseList');
                 Route::get('clearance-sale', 'getClearanceSale');
             });
+
+            Route::group(['prefix' => 'feed'], function () {
+                Route::controller(\App\Http\Controllers\ProductFeedExportController::class)->group(function () {
+                    Route::get('google-merchant.xml', 'googleMerchantXml');
+                    Route::get('facebook-catalog.csv', 'facebookCatalogCsv');
+                    Route::get('tiktok-catalog.csv', 'tiktokCatalogCsv');
+                });
+            });
         });
 
         Route::group(['prefix' => 'customer'], function () {
