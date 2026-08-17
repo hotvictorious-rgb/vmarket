@@ -58,6 +58,9 @@ class Chatting extends Model
         'created_at' => 'datetime',
         'updated_at' => 'datetime',
         'shop_id' => 'integer',
+        'order_id' => 'integer',
+        'chat_type' => 'string',
+        'is_active' => 'boolean',
     ];
 
     protected $fillable = [
@@ -65,6 +68,9 @@ class Chatting extends Model
         'seller_id',
         'admin_id',
         'delivery_man_id',
+        'order_id',
+        'chat_type',
+        'is_active',
         'message',
         'attachment',
         'sent_by_customer',
@@ -82,6 +88,11 @@ class Chatting extends Model
     ];
 
     protected $guarded=[];
+
+    public function order(): BelongsTo
+    {
+        return $this->belongsTo(Order::class, 'order_id');
+    }
 
     /* seller_info -> sellerInfo*/
     public function sellerInfo():BelongsTo

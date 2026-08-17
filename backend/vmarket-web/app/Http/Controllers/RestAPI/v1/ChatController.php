@@ -164,7 +164,11 @@ class ChatController extends Controller
             return response()->json(['message' => translate('Invalid Chatting Type!')], 403);
         }
 
-        $query = Chatting::with($with)->where(['user_id' => $request->user()->id, $id_param => $id])->latest();
+        $query = Chatting::with($with)->where(['user_id' => $request->user()->id, $id_param => $id]);
+        if ($request->filled('order_id')) {
+            $query->where('order_id', $request->order_id);
+        }
+        $query = $query->latest();
 
         if (!empty($query->get())) {
             $message = $query->paginate($request->limit, ['*'], 'page', $request->offset);
@@ -181,10 +185,15 @@ class ChatController extends Controller
             });
             $query->where($sent_by, 1)->update(['seen_by_customer' => 1]);
 
+            $order = $request->filled('order_id') ? \App\Models\Order::find($request->order_id) : null;
+            $is_active = $order ? !in_array($order->order_status, ['delivered', 'canceled', 'returned', 'failed']) : true;
+
             $data = [];
             $data['total_size'] = $message->total();
             $data['limit'] = $request->limit;
             $data['offset'] = $request->offset;
+            $data['is_active'] = $is_active;
+            $data['order_id'] = $request->order_id ? (int)$request->order_id : null;
             $data['message'] = $message->items();
             return response()->json($data, 200);
         }
@@ -234,6 +243,21 @@ class ChatController extends Controller
         $chatting->sent_by_customer = 1;
         $chatting->seen_by_customer = 1;
         $messageForm = User::find($request->user()->id);
+
+        if ($request->filled('order_id')) {
+            $order = \App\Models\Order::where('id', $request->order_id)
+                ->where('customer_id', $request->user()->id)
+                ->first();
+            if (!$order) {
+                return response()->json(['message' => translate('Invalid order')], 403);
+            }
+            if (in_array($order->order_status, ['delivered', 'canceled', 'returned', 'failed'])) {
+                return response()->json(['message' => translate('This order is delivered. Chat is closed.')], 403);
+            }
+            $chatting->order_id = $order->id;
+            $chatting->is_active = 1;
+        }
+
         if ($type == 'seller') {
             return response()->json(['message' => 'Customer-to-Vendor chat is disabled.'], 403);
         } elseif ($type == 'admin') {
@@ -242,18 +266,25 @@ class ChatController extends Controller
             $chatting->shop_id = null;
             $chatting->seen_by_admin = 0;
             $chatting->notification_receiver = 'admin';
+            $chatting->chat_type = 'customer_to_admin';
         } elseif ($type == 'delivery-man') {
-            // Gating: Only allow if an order is assigned
-            $orderExists = \App\Models\Order::where('customer_id', $request->user()->id)
+            // Gating: Only allow if an active assigned order exists
+            $orderQuery = \App\Models\Order::where('customer_id', $request->user()->id)
                                             ->where('delivery_man_id', $request->id)
-                                            ->exists();
+                                            ->whereNotIn('order_status', ['delivered', 'canceled', 'returned', 'failed']);
+            if ($request->filled('order_id')) {
+                $orderQuery->where('id', $request->order_id);
+            }
+            $orderExists = $orderQuery->exists();
+
             if (!$orderExists) {
-                return response()->json(['message' => translate('You can only chat with your assigned delivery man')], 403);
+                return response()->json(['message' => translate('You can only chat with delivery riders for active assigned orders.')], 403);
             }
 
             $chatting->delivery_man_id = $request->id;
             $chatting->seen_by_delivery_man = 0;
             $chatting->notification_receiver = 'deliveryman';
+            $chatting->chat_type = 'customer_to_delivery';
             $deliveryMan = DeliveryMan::find($request->id);
             event(new ChattingEvent(key: 'message_from_customer', type: 'delivery_man', userData: $deliveryMan, messageForm: $messageForm));
         } else {
