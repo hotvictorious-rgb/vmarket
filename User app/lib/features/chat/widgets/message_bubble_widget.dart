@@ -48,6 +48,29 @@ class MessageBubbleWidget extends StatelessWidget {
         final bool isSameUserWithNextMessage = chatProvider.isSameUserWithNextMessage(message, next);
         final String previousMessageHasChatTime = next != null ? chatProvider.getChatTime(next!.createdAt!, message.createdAt) : "";
 
+        if (audioAttachments.isNotEmpty && (message.message?.isEmpty ?? true) && images.isEmpty && files.isEmpty) {
+          return Padding(
+            padding: const EdgeInsets.symmetric(vertical: 3),
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.end,
+              mainAxisAlignment: isMe ? MainAxisAlignment.end : MainAxisAlignment.start,
+              children: [
+                if (_isUserAvatarActive(isMe, isSameUserWithPreviousMessage, chatProvider))
+                  _UserAvatar(image: image),
+                if (!_isUserAvatarActive(isMe, isSameUserWithPreviousMessage, chatProvider) && !isMe)
+                  const SizedBox(width: 40),
+                AudioPlayerWidget(
+                  url: audioAttachments.first.path ?? '',
+                  isMe: isMe,
+                  chatTime: chatTime,
+                  isSeen: message.seenByDeliveryMan ?? false,
+                  avatarUrl: isMe ? null : image,
+                ),
+              ],
+            ),
+          );
+        }
+
         return Column(
           crossAxisAlignment: isMe ? CrossAxisAlignment.end : CrossAxisAlignment.start,
           children: [
@@ -74,7 +97,8 @@ class MessageBubbleWidget extends StatelessWidget {
               ],
             ),
 
-            _MessageTime(chatProvider: chatProvider, message: message),
+            if (message.message?.isNotEmpty ?? false)
+              _MessageTime(chatProvider: chatProvider, message: message),
 
             if (images.isNotEmpty) _MediaGridWidget(images: images, isMe: isMe),
 
@@ -90,6 +114,8 @@ class MessageBubbleWidget extends StatelessWidget {
                 child: AudioPlayerWidget(
                   url: a.path ?? '',
                   isMe: isMe,
+                  chatTime: chatTime,
+                  isSeen: message.seenByDeliveryMan ?? false,
                 ),
               )),
           ],
