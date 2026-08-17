@@ -1420,7 +1420,6 @@ class AddProductNextScreenState extends State<AddProductNextScreen> with Automat
                                               unitPrice: resProvider.unitPriceController.text.trim(),
                                               currentStock: variationController.totalQuantityController.text.trim(),
                                               orderQuantity: resProvider.minimumOrderQuantityController.text.trim(),
-                                              shippingCost: resProvider.shippingCostController.text.trim(),
                                               isUpdate: widget.product != null,
                                             );
 

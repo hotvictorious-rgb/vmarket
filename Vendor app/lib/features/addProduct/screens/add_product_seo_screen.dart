@@ -722,7 +722,6 @@ class AddProductSeoScreenState extends State<AddProductSeoScreen>  with Automati
                                                 unitPrice: resProvider.unitPriceController.text.trim(),
                                                 currentStock: variationController.totalQuantityController.text.trim(),
                                                 orderQuantity: resProvider.minimumOrderQuantityController.text.trim(),
-                                                shippingCost: resProvider.shippingCostController.text.trim(),
                                                 isUpdate: widget.product != null,
                                               );
                                             }
@@ -798,12 +797,12 @@ class AddProductSeoScreenState extends State<AddProductSeoScreen>  with Automati
 
 
                                                 if(addProductImageController.selectedLogoFile != null){
-                                                  await addProductImageController.addProductImage(context,addProductImageController.thumbnailImageModel, route, update: _update);
+                                                  await addProductImageController.addProductImage(context,addProductImageController.thumbnailImageModel!, route, update: _update);
 
                                                 }
 
                                                 if(addProductImageController.selectedMetaImageFile != null){
-                                                  await addProductImageController.addProductImage(Get.context!, addProductImageController.metaImageModel, route, update: _update);
+                                                  await addProductImageController.addProductImage(Get.context!, addProductImageController.metaImageModel!, route, update: _update);
 
                                                 }
 
@@ -828,11 +827,11 @@ class AddProductSeoScreenState extends State<AddProductSeoScreen>  with Automati
 
                                               else{
                                                 if(addProductImageController.selectedLogoFile != null){
-                                                  await addProductImageController.addProductImage(context, addProductImageController.thumbnailImageModel, route);
+                                                  await addProductImageController.addProductImage(context, addProductImageController.thumbnailImageModel!, route);
                                                 }
 
                                                 if(addProductImageController.selectedMetaImageFile != null) {
-                                                  await addProductImageController.addProductImage(Get.context!, addProductImageController.metaImageModel,route);
+                                                  await addProductImageController.addProductImage(Get.context!, addProductImageController.metaImageModel!,route);
                                                 }
 
 

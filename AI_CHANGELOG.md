@@ -7,6 +7,18 @@ Always append your completed tasks here in chronological order at the top. Forma
 `### [YYYY-MM-DD HH:MM UTC] <Feature / Fix Title> [<Component Scope>]`
 Include the specific app/component modified and bullet points detailing the exact technical changes.
 
+### [2026-08-17 13:20 UTC] Audit & Harden Product Photo & Digital Product Upload Pipelines [Vendor App]
+* **Component:** Vendor Mobile App (`Vendor app/`)
+* **Action:** Audited and hardened product image, thumbnail, meta image, and digital product uploads.
+* **Changes Made:**
+  - **`lib/features/addProduct/domain/repository/add_product_repository.dart`**:
+    - Fixed operator precedence in image upload null check (`if (imageForUpload.image != null)`).
+    - Standardized product image and digital product file upload with cross-platform filename resolution (`RegExp(r'[/\\]')`) and `MultipartFile.fromBytes`.
+  - **`lib/features/addProduct/screens/add_product_next_screen.dart` & `add_product_seo_screen.dart`**:
+    - Cleaned up parameter signatures and added null-checks on `thumbnailImageModel!` and `metaImageModel!`.
+  - **Verification**:
+    - `flutter analyze lib/features/addProduct/` -> 0 errors.
+
 ### [2026-08-17 12:55 UTC] Fix Profile Picture Uploads, Chat Voice Notes & Media Pipelines Across Backend & Apps [Backend, User App, Vendor App, Delivery Man]
 * **Component:** Laravel Backend (`backend/vmarket-web/`), Customer App (`User app/`), Vendor App (`Vendor app/`), Delivery Rider App (`Delivery Man App/`)
 * **Action:** Resolved systemic profile image update and chat voice note upload/playback failures across the platform.

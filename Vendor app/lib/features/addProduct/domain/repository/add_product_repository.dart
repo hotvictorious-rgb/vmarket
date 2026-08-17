@@ -90,9 +90,10 @@ class AddProductRepository implements AddProductRepositoryInterface{
       print('==image is exist or not=${imageForUpload.image!.path}');
     }
     request.headers.addAll(<String, String>{'Authorization': 'Bearer ${Provider.of<AuthController>(context,listen: false).getUserToken()}'});
-    if(Platform.isAndroid || Platform.isIOS && imageForUpload.image != null) {
+    if(imageForUpload.image != null) {
       File file = File(imageForUpload.image!.path);
-      request.files.add(http.MultipartFile('image', file.readAsBytes().asStream(), file.lengthSync(), filename: file.path.split('/').last));
+      final fileName = file.path.split(RegExp(r'[/\\]')).last;
+      request.files.add(http.MultipartFile.fromBytes('image', file.readAsBytesSync(), filename: fileName));
     }
     Map<String, String> fields = {};
     fields.addAll(<String, String>{
@@ -385,9 +386,8 @@ class AddProductRepository implements AddProductRepositoryInterface{
     http.MultipartRequest request = http.MultipartRequest('POST', Uri.parse('${AppConstants.baseUrl}${AppConstants.digitalProductUpload}'));
     request.headers.addAll(<String,String>{'Authorization': 'Bearer $token'});
     if(filePath != null) {
-      Uint8List list = await filePath.readAsBytes();
-      var part = http.MultipartFile('digital_file_ready', filePath.readAsBytes().asStream(), list.length, filename: basename(filePath.path));
-      request.files.add(part);
+      final fileName = filePath.path.split(RegExp(r'[/\\]')).last;
+      request.files.add(http.MultipartFile.fromBytes('digital_file_ready', filePath.readAsBytesSync(), filename: fileName));
     }
 
     Map<String, String> fields = {};
