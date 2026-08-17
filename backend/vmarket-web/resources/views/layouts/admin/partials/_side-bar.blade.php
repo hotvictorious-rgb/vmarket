@@ -422,6 +422,15 @@
                         </span>
                     </a>
                 </li>
+                <li>
+                    <a class="nav-link {{ Request::is('admin/products/product-feeds*') ? 'active' : '' }}"
+                       href="{{ route('admin.products.product-feeds') }}" title="{{ translate('Product_Feeds_&_Catalogs') }}">
+                        <i class="fi fi-sr-share"></i>
+                        <span class="aside-mini-hidden-element text-truncate">
+                            {{ translate('Product_Feeds_&_Catalogs') }}
+                        </span>
+                    </a>
+                </li>
             @endif
 
             @if(Helpers::module_permission_check('promotion_management'))

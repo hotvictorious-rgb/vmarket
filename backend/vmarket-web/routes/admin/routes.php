@@ -233,6 +233,8 @@ Route::group(['prefix' => 'admin', 'as' => 'admin.', 'middleware' => ['admin', '
             Route::get('request-restock-list', 'getRequestRestockListView')->name('request-restock-list');
             Route::get('export-restock', 'exportRestockList')->name('restock-export');
             Route::delete('restock-delete/{id}', 'deleteRestock')->name('restock-delete');
+            Route::get('product-feeds', [\App\Http\Controllers\ProductFeedExportController::class, 'index'])->name('product-feeds');
+            Route::post('product-feeds/regenerate-token', [\App\Http\Controllers\ProductFeedExportController::class, 'regenerateToken'])->name('product-feeds.regenerate-token');
         });
     });
 

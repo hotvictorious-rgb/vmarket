@@ -14,6 +14,41 @@ use Symfony\Component\HttpFoundation\StreamedResponse;
 class ProductFeedExportController extends Controller
 {
     /**
+     * Admin Panel View for Product Feeds and Catalogs.
+     */
+    public function index(Request $request)
+    {
+        $token = self::getFeedToken();
+        $categories = Category::where(['position' => 0])->get();
+        $totalProducts = Product::active()->count();
+        $inhouseProducts = Product::active()->where('added_by', 'admin')->count();
+        $vendorProducts = Product::active()->where('added_by', 'seller')->count();
+
+        return view('admin-views.product.product-feeds', [
+            'token' => $token,
+            'categories' => $categories,
+            'totalProducts' => $totalProducts,
+            'inhouseProducts' => $inhouseProducts,
+            'vendorProducts' => $vendorProducts,
+        ]);
+    }
+
+    /**
+     * Regenerate the secret token.
+     */
+    public function regenerateToken(Request $request)
+    {
+        $token = 'vm_feed_' . Str::random(32);
+        BusinessSetting::updateOrCreate(
+            ['type' => 'product_feed_export_token'],
+            ['value' => $token, 'updated_at' => now()]
+        );
+
+        \Brian2694\Toastr\Facades\Toastr::success(translate('feed_security_token_regenerated_successfully'));
+        return back();
+    }
+
+    /**
      * Get or generate the permanent secret token for live data feeds.
      */
     public static function getFeedToken(): string

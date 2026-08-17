@@ -7,6 +7,24 @@ Always append your completed tasks here in chronological order at the top. Forma
 `### [YYYY-MM-DD HH:MM UTC] <Feature / Fix Title> [<Component Scope>]`
 Include the specific app/component modified and bullet points detailing the exact technical changes.
 
+### [2026-08-17 17:20 UTC] Add Product Feeds & Social Catalogs Admin Management Panel [Backend]
+* **Component:** Laravel Web Backend (`backend/vmarket-web/`) & Admin Panel
+* **Action:** Created dedicated Admin Panel interface for managing live streaming catalog data feeds (Google Shopping XML, Meta/Facebook/Instagram CSV, TikTok Shop CSV).
+* **Changes Made:**
+  - **`resources/views/admin-views/product/product-feeds.blade.php`**:
+    - Created management interface displaying active product metrics (Total, In-House, Vendor).
+    - Added one-click copyable feed URLs for Google Shopping, Meta (FB/IG), and TikTok.
+    - Added direct Preview XML and Download CSV buttons.
+    - Implemented secure token management UI with one-click token regeneration and confirmation prompt.
+    - Added filter parameters cheat sheet (`&in_stock_only=1`, `&scope=inhouse`, `&scope=vendor`, `&category_id=X`).
+  - **`app/Http/Controllers/ProductFeedExportController.php`**:
+    - Added `index()` view method and `regenerateToken()` post action.
+  - **`routes/admin/routes.php`**:
+    - Registered `admin.products.product-feeds` and `admin.products.product-feeds.regenerate-token` routes under product management.
+  - **`resources/views/layouts/admin/partials/_side-bar.blade.php`**:
+    - Added **Product Feeds & Catalogs** menu item under the Product Management section with active state tracking.
+* **Verification:** `php -l` on all modified files -> 0 syntax errors.
+
 ### [2026-08-17 16:38 UTC] Synchronize Victorious Points & Referral Configs with Mobile Apps & Web [Backend]
 * **Component:** Laravel Web Backend (`backend/vmarket-web/app/Http/Controllers/RestAPI/v1/ConfigController.php`)
 * **Action:** Exposed `loyalty_point_max_order_redemption_percentage` and `ref_earning_min_order_amount` via `/api/v1/config` so all Flutter mobile apps and web storefronts automatically consume and reflect live settings.
