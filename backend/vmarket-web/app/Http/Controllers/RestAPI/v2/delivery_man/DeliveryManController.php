@@ -336,8 +336,15 @@ class DeliveryManController extends Controller
             $data['is_pause'] = $order['is_pause'];
             $data['variation'] = is_array($data['variation']) ? $data['variation'] : json_decode($data['variation'], true);
 
+            // [AI] Sanitize price, discount, and tax at the backend API response level for delivery rider privacy
+            $data['price'] = 0;
+            $data['discount'] = 0;
+            $data['tax'] = 0;
+
             $product = is_array($data['product_details']) ? $data['product_details'] : (json_decode($data['product_details'], true) ?? []);
             $product['thumbnail_full_url'] = $detail?->productAllStatus?->thumbnail_full_url;
+            $product['unit_price'] = 0;
+            $product['purchase_price'] = 0;
             $data['product_details'] = Helpers::product_data_formatting_for_json_data($product);
 
             return $data;
