@@ -7,6 +7,15 @@ Always append your completed tasks here in chronological order at the top. Forma
 `### [YYYY-MM-DD HH:MM UTC] <Feature / Fix Title> [<Component Scope>]`
 Include the specific app/component modified and bullet points detailing the exact technical changes.
 
+### [2026-08-17 15:05 UTC] Synchronize Hardened .htaccess & Theme Assets Whitelist [Backend]
+* **Component:** Laravel Web Backend (`backend/vmarket-web/.htaccess`)
+* **Action:** Synchronized server-side security hardening directly into GitHub master to eliminate drift.
+* **Changes Made:**
+  - Consolidated rewrite rules into a unified single `<IfModule mod_rewrite.c>` block.
+  - Placed theme static assets whitelist (`resources/themes/[^/]+/public/assets/.*`) before sensitive file catch-all rule to guarantee storefront CSS, JS, fonts, and images render with HTTP 200.
+  - Enforced strict blocking of `.env`, `resources/views/`, `config/`, `bootstrap/`, `storage/`, `routes/`, and sensitive source files.
+  - Maintained HTTP security headers (HSTS, CSP, X-Frame-Options, XSS protection, MIME sniffing protection).
+
 ### [2026-08-17 14:25 UTC] Replace Foreign SMS Gateways with Dedicated Nigerian SMS Gateway Suite [Backend]
 * **Component:** Laravel Backend (`backend/vmarket-web/`) & Admin Panel
 * **Action:** Replaced foreign/unsupported SMS gateways (India `2factor`, `msg91`, Bangladesh `alphanet_sms`, legacy `releans`) with a premier Nigerian SMS Gateway suite (Termii, Ebulksms, SmartSMSSolutions, KudiSMS, Sendchamp) + Twilio global fallback.
