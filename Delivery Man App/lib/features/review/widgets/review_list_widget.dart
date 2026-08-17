@@ -15,14 +15,14 @@ class ReviewListViewWidget extends StatelessWidget {
       reverse: false,
       child: PaginatedListViewWidget(
         scrollController: scrollController,
-        totalSize: reviewController!.reviewModel?.totalSize,
-        offset: reviewController!.reviewModel != null ? int.parse(reviewController!.reviewModel!.offset!) : null,
-        onPaginate: (int? offset) async => await reviewController!.getReviewList(offset!, reload: false),
+        totalSize: reviewController?.reviewModel?.totalSize,
+        offset: reviewController?.reviewModel?.offset != null ? int.tryParse(reviewController!.reviewModel!.offset!) : null,
+        onPaginate: (int? offset) async => await reviewController?.getReviewList(offset ?? 1, reload: false),
         itemView: ListView.builder(
           physics: const NeverScrollableScrollPhysics(),
           shrinkWrap: true,
           reverse: false,
-          itemCount: reviewController!.reviewModel!.review!.length,
+          itemCount: reviewController?.reviewModel?.review?.length ?? 0,
           itemBuilder: (context, index)=> ReviewCardWidget(review : reviewController!.reviewModel!.review![index], index: index))));
   }
 }

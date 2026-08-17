@@ -28,25 +28,27 @@ class ReviewCardWidget extends StatelessWidget {
             child: Column(mainAxisSize: MainAxisSize.min,children: [
 
               Row(mainAxisAlignment: MainAxisAlignment.spaceBetween,children: [
-                Text('${'order'.tr} # ${review!.orderId}', style: rubikMedium,),
+                Text('${'order'.tr} # ${review?.orderId ?? ''}', style: rubikMedium),
                 Padding(padding:  EdgeInsets.symmetric(vertical: Dimensions.paddingSizeDefault),
                   child: Row(children: [
                       Padding(padding:  EdgeInsets.only(right: Dimensions.paddingSizeSmall),
                         child: Image.asset(Images.calenderIcon, scale: 2.5)),
-                      Text(DateConverter.localToIsoString(DateTime.parse(review!.updatedAt!)),
-                        style: rubikRegular.copyWith(color: Theme.of(context).textTheme.bodyLarge!.color,
+                      Text(review?.updatedAt != null && DateTime.tryParse(review!.updatedAt!) != null
+                          ? DateConverter.localToIsoString(DateTime.parse(review!.updatedAt!))
+                          : (review?.updatedAt ?? ''),
+                        style: rubikRegular.copyWith(color: Theme.of(context).textTheme.bodyLarge?.color ?? Theme.of(context).hintColor,
                             fontSize: Dimensions.fontSizeSmall))]))]),
 
-              review!.customer != null?
+              review?.customer != null?
                Padding(padding:  EdgeInsets.symmetric(vertical: Dimensions.paddingSizeSmall),
                  child: Row(children: [
                    Container(decoration: BoxDecoration(border: Border.all(color: Theme.of(context).primaryColor.withValues(alpha:.5)),
                        borderRadius: BorderRadius.circular(Dimensions.paddingSizeExtraSmall)),
                      child: ClipRRect(borderRadius: BorderRadius.circular(Dimensions.paddingSizeExtraSmall),
-                       child: CustomImageWidget(image: '${review!.customer!.imageFullUrl?.path}',
-                         height: 30,width: 30))),
+                       child: CustomImageWidget(image: review?.customer?.imageFullUrl?.path ?? '',
+                         height: 30, width: 30))),
                    Padding(padding:  EdgeInsets.only(left: Dimensions.paddingSizeSmall),
-                     child: Text('${review!.customer!.fName} ${review!.customer!.lName}',style: rubikMedium))])): const SizedBox(),
+                     child: Text('${review?.customer?.fName ?? ''} ${review?.customer?.lName ?? ''}', style: rubikMedium))])): const SizedBox(),
 
 
               Padding(padding: const EdgeInsets.only(left: 30),
@@ -70,16 +72,20 @@ class ReviewCardWidget extends StatelessWidget {
                     Text('${'rate_your_service'.tr} : '),
                     Icon(Icons.star_rate_rounded, color:Get.isDarkMode?
                     Theme.of(context).hintColor.withValues(alpha:.5) : Theme.of(context).primaryColor,),
-                    Text(review!.rating.toString(), style: rubikMedium.copyWith(),),
+                    Text('${review?.rating ?? 0}', style: rubikMedium.copyWith(),),
 
                     const Spacer(),
                     GetBuilder<ReviewController>(
                       builder: (reviewController) {
-                        return GestureDetector(onTap: ()=> reviewController.savedReview(review!.id, review!.isSaved == 1 ? 0 : 1, index),
-                          child: Icon(review!.isSaved == 1? Icons.bookmark : Icons.bookmark_border,
-                            color: review!.isSaved == 1? Get.isDarkMode?
+                        return GestureDetector(onTap: () {
+                          if(review?.id != null) {
+                            reviewController.savedReview(review!.id, review!.isSaved == 1 ? 0 : 1, index);
+                          }
+                        },
+                          child: Icon(review?.isSaved == 1 ? Icons.bookmark : Icons.bookmark_border,
+                            color: review?.isSaved == 1 ? (Get.isDarkMode ?
                             Theme.of(context).hintColor.withValues(alpha:.5) :
-                            Theme.of(context).primaryColor : Theme.of(context).hintColor));}),
+                            Theme.of(context).primaryColor) : Theme.of(context).hintColor));}),
                   ],
                 ),
               ),

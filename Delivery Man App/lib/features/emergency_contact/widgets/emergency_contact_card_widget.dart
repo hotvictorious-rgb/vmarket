@@ -6,7 +6,6 @@ import 'package:sixvalley_delivery_boy/utill/dimensions.dart';
 import 'package:sixvalley_delivery_boy/utill/images.dart';
 import 'package:sixvalley_delivery_boy/utill/styles.dart';
 import 'package:sixvalley_delivery_boy/common/basewidgets/custom_action_button_widget.dart';
-import 'package:sixvalley_delivery_boy/features/help_and_support/screens/help_and_support_screen.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 class EmergencyContactCardWidget extends StatelessWidget {
@@ -23,23 +22,28 @@ class EmergencyContactCardWidget extends StatelessWidget {
         padding:  EdgeInsets.all(Dimensions.paddingSizeDefault),
         child: Row(mainAxisAlignment: MainAxisAlignment.spaceBetween,children: [
           Column(crossAxisAlignment: CrossAxisAlignment.start,children:  [
-            Text(contactList!.name!, style: rubikMedium.copyWith(fontSize: Dimensions.fontSizeDefault)),
+            Text(contactList?.name ?? '', style: rubikMedium.copyWith(fontSize: Dimensions.fontSizeDefault)),
             Padding(padding:  EdgeInsets.only(top: Dimensions.paddingSizeSmall),
               child: Row(children: [
                 SizedBox(width: Dimensions.iconSizeMediumSmall, child: Image.asset(Images.phone)),
                  Padding(padding:  EdgeInsets.only(left: Dimensions.paddingSizeExtraSmall),
                   child: Text('${contactList?.countryCode ?? ''} ${contactList?.phone ?? ''}',style: rubikRegular))]))]),
 
-          GestureDetector(child: const CustomActionButtonWidget(title: 'call_now'),onTap: (){
-          _launchUrl("tel:${contactList!.phone}",false);
-        },),
+          GestureDetector(child: const CustomActionButtonWidget(title: 'call_now'), onTap: () {
+            if (contactList?.phone != null && contactList!.phone!.isNotEmpty) {
+              _launchUrl("tel:${contactList?.countryCode ?? ''}${contactList!.phone}");
+            }
+          }),
       ],),),
     );
   }
 }
 
-Future<void> _launchUrl(String _url, bool isMail) async {
-  if (!await launchUrl(Uri.parse(isMail? params.toString() :_url))) {
-    throw 'Could not launch $_url';
+Future<void> _launchUrl(String url) async {
+  Uri uri = Uri.parse(url);
+  try {
+    await launchUrl(uri);
+  } catch (e) {
+    debugPrint('Could not launch $url: $e');
   }
 }

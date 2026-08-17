@@ -7,6 +7,15 @@ Always append your completed tasks here in chronological order at the top. Forma
 `### [YYYY-MM-DD HH:MM UTC] <Feature / Fix Title> [<Component Scope>]`
 Include the specific app/component modified and bullet points detailing the exact technical changes.
 
+### [2026-08-17 19:30 UTC] Harden Delivery App Reviews & Emergency Contact Screens [Delivery Man App]
+* **Component:** Flutter Delivery Man App (`Delivery Man App/lib/features/review/`, `features/emergency_contact/`)
+* **Action:** Audited the reviews system and emergency contact views, fixing potential date parsing and launcher errors.
+* **Changes Made:**
+  - **`features/review/widgets/review_card_widget.dart`**: Added `DateTime.tryParse()` guard to prevent format exceptions when rendering timestamps, null-safe customer name/avatar fallbacks, and safe `id` check on review save/bookmark toggling.
+  - **`features/review/widgets/review_list_widget.dart`**: Switched from unsafe `int.parse(offset!)` to `int.tryParse()` and guarded pagination bounds against null arrays.
+  - **`features/emergency_contact/widgets/emergency_contact_card_widget.dart`**: Replaced broken static URL launch logic with clean, safe telephone URL launcher (`tel:`) and cleaned up unused imports.
+* **Verification:** `flutter analyze` verified **0 errors, 0 warnings** across the Delivery Man App.
+
 ### [2026-08-17 18:55 UTC] Comprehensive User & Delivery Man App Audit & Null-Safety Hardening [User app, Delivery Man App]
 * **Component:** Customer Mobile App (`User app`) & Delivery Rider Mobile App (`Delivery Man App`)
 * **Action:** Performed full architectural scans and null-safety hardening across modules in both apps.
