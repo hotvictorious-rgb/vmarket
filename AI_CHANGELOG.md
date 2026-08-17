@@ -7,6 +7,21 @@ Always append your completed tasks here in chronological order at the top. Forma
 `### [YYYY-MM-DD HH:MM UTC] <Feature / Fix Title> [<Component Scope>]`
 Include the specific app/component modified and bullet points detailing the exact technical changes.
 
+### [2026-08-17 06:05 UTC] Implement Rider Financial Privacy & In-App Paystack Cash Remittance [Backend, Delivery Man App]
+* **Component:** Laravel Backend (`backend/vmarket-web/`), Delivery Rider Mobile App (`Delivery Man App/`)
+* **Action:** Hidden internal vendor product costs, markups, platform delivery fees, and discount breakdowns from delivery riders. Displayed unified collection amount (`Amount to Collect from Customer` for COD or `Prepaid Order (₦0.00)`) with clear doorstep payment handling (Cash or Paystack QR/link). Renamed rider payout to "Your Delivery Earnings". Implemented self-serve in-app Paystack cash remittance enabling riders to remit cash in hand directly via Paystack (Bank Transfer, Card, USSD) with instant automated reconciliation and balance deduction.
+* **Changes Made:**
+  - **Delivery Man App Privacy (`ordered_product_list_view_widget.dart`, `payment_info_widget.dart`, `order_details_screen.dart`)**:
+    - Removed product unit prices (`price (per unit)`) from the package contents bottom sheet so riders only see product images, item names, variations, and quantities.
+    - Overhauled `payment_info_widget.dart` to eliminate product price, discount, tax, and delivery fee breakdowns. Replaced with clean **"Amount to Collect from Customer"** card (showing `₦0.00` for prepaid, or exact COD amount) with safety notices.
+    - Upgraded rider earnings card in `order_details_screen.dart` to a branded **"Your Delivery Earnings"** widget with Victorious gold accents.
+  - **In-App Paystack Cash Remittance Engine (`DeliveryManController.php`, `api.php`, `routes.php`, `wallet_controller.dart`, `remit_cash_bottom_sheet_widget.dart`, `wallet_screen.dart`)**:
+    - Added `remit_cash_paystack_init` in backend validating `0 < amount <= cash_in_hand`, initializing Paystack with reference `REMIT_...`.
+    - Added `paystack_remittance_callback` webhook handler verifying transaction with Paystack API, performing atomic balance deduction on `DeliverymanWallet->cash_in_hand`, recording an audit entry in `delivery_man_transactions` (`type: cash_collect_by_admin`), and sending an instant push notification to the rider.
+    - Added `remitCashViaPaystack` API service and repository methods in `Delivery Man App`.
+    - Created `RemitCashBottomSheetWidget` offering one-tap "Remit All" or custom amount input, seamless Paystack redirection, and post-payment balance refresh.
+    - Added a prominent **"Cash in Hand & Remit via Paystack"** action card to `WalletScreen`.
+
 ### [2026-08-17 05:15 UTC] Implement Order-Bound Chat Lifecycle & Delivery Gating Across Backend and All 3 Mobile Apps [Backend, User App, Vendor App, Delivery Man App]
 * **Component:** Laravel Backend (`backend/vmarket-web/`), Customer App (`User app/`), Vendor App (`Vendor app/`), Delivery Man App (`Delivery Man App/`)
 * **Action:** Implemented complete order-bound chat lifecycle where messaging is strictly attached to an active `order_id`, auto-activates when a delivery rider is assigned, automatically closes and locks input upon order delivery/cancellation, and strictly enforces the prohibition of direct Customer-to-Vendor chats.
