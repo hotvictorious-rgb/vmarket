@@ -184,7 +184,7 @@ class _HomePageScreenState extends State<HomePageScreen> {
                       const MostPopularProductScreen(isMain: true),
                       const SizedBox(height: Dimensions.paddingSizeSmall),
 
-                      Provider.of<SplashController>(context, listen: false).configModel!.shippingMethod != 'inhouse_shipping' ?
+                      Provider.of<SplashController>(context, listen: false).configModel?.shippingMethod != 'inhouse_shipping' ?
                       const TopDeliveryManViewWidget(isMain: true) : const SizedBox()
 
                     ],

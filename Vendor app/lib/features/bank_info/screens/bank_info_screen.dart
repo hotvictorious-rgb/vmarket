@@ -22,10 +22,10 @@ class BankInfoScreen extends StatelessWidget {
       appBar: CustomAppBarWidget(title:getTranslated('bank_info', context), isBackButtonExist: true,),
         body: Consumer<BankInfoController>(
           builder: (context, bankProvider, child) {
-            String name = bankProvider.bankInfo!.holderName?? '';
-            String bank = bankProvider.bankInfo!.bankName?? '';
-            String branch = bankProvider.bankInfo!.branch?? '';
-            String accountNo = bankProvider.bankInfo!.accountNo?? '';
+            String name = bankProvider.bankInfo?.holderName ?? '';
+            String bank = bankProvider.bankInfo?.bankName ?? '';
+            String branch = bankProvider.bankInfo?.branch ?? '';
+            String accountNo = bankProvider.bankInfo?.accountNo ?? '';
             return Column(children: [
 
               bankProvider.showWarning?

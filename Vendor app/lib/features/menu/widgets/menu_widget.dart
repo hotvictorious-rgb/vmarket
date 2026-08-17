@@ -164,11 +164,9 @@ class MenuBottomSheetWidget extends StatelessWidget {
 
 
           CustomBottomSheetWidget(image: Images.logOut, title: getTranslated('logout', context),
-            onTap: () async {
+            onTap: () {
               Navigator.pop(context); // Close bottom sheet
-              Future.microtask(
-                await showCupertinoModalPopup(context: context, builder: (_) => const SignOutConfirmationDialogWidget()),
-              );
+              Future.microtask(() => showCupertinoModalPopup(context: Get.context!, builder: (_) => const SignOutConfirmationDialogWidget()));
             }
           ),
 

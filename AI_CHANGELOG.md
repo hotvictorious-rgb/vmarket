@@ -7,6 +7,20 @@ Always append your completed tasks here in chronological order at the top. Forma
 `### [YYYY-MM-DD HH:MM UTC] <Feature / Fix Title> [<Component Scope>]`
 Include the specific app/component modified and bullet points detailing the exact technical changes.
 
+### [2026-08-17 18:25 UTC] Comprehensive Vendor App Audit & Null-Safety Hardening [Vendor app]
+* **Component:** Flutter Vendor Mobile App (`Vendor app/lib/features/`)
+* **Action:** Performed a full architectural and screen audit across all 35 vendor modules, verifying image rendering, null-safety guards, and lifecycle popups.
+* **Audit & Fixes Made:**
+  - **Menu Sheet Logout Popup (`Vendor app/lib/features/menu/widgets/menu_widget.dart`)**:
+    - Fixed invalid un-deferred future execution and replaced popped bottom-sheet context with `Get.context!` to guarantee the sign-out confirmation dialog opens without crashing.
+  - **Bank Info & KYC View (`Vendor app/lib/features/bank_info/screens/bank_info_screen.dart`)**:
+    - Replaced unsafe force-unwrapping `bankProvider.bankInfo!` with null-safe accessors (`bankInfo?.holderName ?? ''`) to prevent red screen crashes if account data is still loading.
+  - **Profile Screen (`Vendor app/lib/features/profile/screens/profile_screen.dart`)**:
+    - Replaced unsafe force unwrap on `BankInfoController.bankInfo!` with safe optional chaining when updating seller profile.
+  - **Home Dashboard Screen (`Vendor app/lib/features/home/screens/home_page_screen.dart`)**:
+    - Guarded `configModel?.shippingMethod` check against null-pointer errors during early app startup.
+* **Verification:** `flutter analyze` completed cleanly across all 35 modules.
+
 ### [2026-08-17 18:05 UTC] Fix Profile & Avatar Update Infinite Spinner Deadlocks [User, Vendor, Delivery Man]
 * **Component:** Flutter Mobile Apps (`User app`, `Vendor app`, `Delivery Man App`)
 * **Action:** Added fail-safe `try-finally` blocks to HTTP multipart image stream uploads across all 3 apps, guaranteeing the loading spinner is dismissed even if network interrupts or slow connections timeout.

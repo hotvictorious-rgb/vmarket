@@ -101,11 +101,11 @@ class ProfileScreenState extends State<ProfileScreen> {
       updateUserInfoModel.phone = _countryDialCode! + _phoneController.text;
       String password = _passwordController.text;
 
-      ProfileInfoModel bank = Provider.of<BankInfoController>(context, listen: false).bankInfo!;
+      ProfileInfoModel? bank = Provider.of<BankInfoController>(context, listen: false).bankInfo;
       ProfileBody sellerBody = ProfileBody(
-          sMethod: '_put', fName: _firstNameController.text, lName: _lastNameController.text,
+        sMethod: '_put', fName: _firstNameController.text, lName: _lastNameController.text,
         image: updateUserInfoModel.image,
-          bankName: bank.bankName, branch: bank.branch, holderName: bank.holderName, accountNo: bank.accountNo,
+        bankName: bank?.bankName, branch: bank?.branch, holderName: bank?.holderName, accountNo: bank?.accountNo,
       );
 
       await Provider.of<ProfileController>(context, listen: false).updateUserInfo(
