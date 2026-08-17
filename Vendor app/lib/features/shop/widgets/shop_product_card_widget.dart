@@ -167,17 +167,21 @@ class _ShopProductWidgetState extends State<ShopProductWidget> {
                             Container(
                                 padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
                                 decoration: BoxDecoration(
-                                  color: widget.productModel!.requestStatus == 1
-                                    ? Theme.of(context).colorScheme.onTertiaryContainer
-                                    : widget.productModel!.requestStatus == 2
-                                    ? Theme.of(context).colorScheme.error
-                                    : Theme.of(context).primaryColor,
+                                  color: (widget.productModel?.status == 0 && widget.productModel?.deniedNote == 'price_expired')
+                                    ? Colors.orange.shade800
+                                    : (widget.productModel?.requestStatus == 1
+                                      ? Theme.of(context).colorScheme.onTertiaryContainer
+                                      : (widget.productModel?.requestStatus == 2
+                                        ? Theme.of(context).colorScheme.error
+                                        : Theme.of(context).primaryColor)),
                                   borderRadius: BorderRadius.circular(Dimensions.radiusSmall),
                                 ),
                                 child: Text(
-                                  widget.productModel!.requestStatus == 0 ? getTranslated('new_request', context)! :
-                                  widget.productModel!.requestStatus == 1 ? getTranslated('approved', context)! :
-                                  getTranslated('denied', context)!,
+                                  (widget.productModel?.status == 0 && widget.productModel?.deniedNote == 'price_expired')
+                                    ? (getTranslated('price_expired', context) ?? 'Price Expired')
+                                    : (widget.productModel?.requestStatus == 0 ? (getTranslated('new_request', context) ?? 'New Request') :
+                                      widget.productModel?.requestStatus == 1 ? (getTranslated('approved', context) ?? 'Approved') :
+                                      (getTranslated('denied', context) ?? 'Denied')),
                                   style: robotoRegular.copyWith(color: Colors.white, fontSize: Dimensions.fontSizeSmall),
                                 ),
                               ),
