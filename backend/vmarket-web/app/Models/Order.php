@@ -128,6 +128,16 @@ class Order extends Model
         'delivery_type',
         'delivery_service_name',
         'third_party_delivery_tracking_id',
+        'origin_hub_id',
+        'destination_hub_id',
+        'house_street_note',
+        'recipient_name',
+        'recipient_phone',
+        'driver_transit_code',
+        'driver_phone',
+        'driver_vehicle_no',
+        'waybill_slip_no',
+        'batch_dispatch_id',
         'edited_status',
         'updated_at'
     ];
@@ -297,6 +307,16 @@ class Order extends Model
                 }
             )
             ->latest('id');
+    }
+
+    public function originHub(): BelongsTo
+    {
+        return $this->belongsTo(DeliveryHub::class, 'origin_hub_id');
+    }
+
+    public function destinationHub(): BelongsTo
+    {
+        return $this->belongsTo(DeliveryHub::class, 'destination_hub_id');
     }
 
     protected static function boot(): void

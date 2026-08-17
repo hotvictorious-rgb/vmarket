@@ -76,6 +76,9 @@ class Shop extends Model
         'tin_expire_date',
         'tin_certificate',
         'tin_certificate_storage_type',
+        'delivery_state_id',
+        'delivery_city_id',
+        'delivery_hub_id',
     ];
 
     protected $appends = ['image_full_url', 'bottom_banner_full_url', 'offer_banner_full_url', 'banner_full_url', 'tin_certificate_full_url'];
@@ -156,6 +159,21 @@ class Shop extends Model
     }
 
 
+
+    public function deliveryState(): \Illuminate\Database\Eloquent\Relations\BelongsTo
+    {
+        return $this->belongsTo(DeliveryState::class, 'delivery_state_id');
+    }
+
+    public function deliveryCity(): \Illuminate\Database\Eloquent\Relations\BelongsTo
+    {
+        return $this->belongsTo(DeliveryCity::class, 'delivery_city_id');
+    }
+
+    public function deliveryHub(): \Illuminate\Database\Eloquent\Relations\BelongsTo
+    {
+        return $this->belongsTo(DeliveryHub::class, 'delivery_hub_id');
+    }
 
     protected static function boot(): void
     {

@@ -32,6 +32,7 @@ use App\Http\Controllers\RestAPI\v1\ShippingMethodController;
 use App\Http\Controllers\RestAPI\v1\UserLoyaltyController;
 use App\Http\Controllers\RestAPI\v1\UserWalletController;
 use App\Http\Controllers\RestAPI\v1\FeedSyncController;
+use App\Http\Controllers\RestAPI\v1\DeliveryHubApiController;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\Customer\PaymentController;
 
@@ -240,6 +241,15 @@ Route::group(['prefix' => 'v1', 'middleware' => ['api_lang']], function () {
             });
         });
 
+        Route::group(['prefix' => 'delivery-hubs'], function () {
+            Route::controller(DeliveryHubApiController::class)->group(function () {
+                Route::get('states', 'getStates');
+                Route::get('cities/{state_id}', 'getCities');
+                Route::get('hubs/{city_id}', 'getHubs');
+                Route::post('calculate-shipping', 'calculateHubShipping');
+            });
+        });
+
         Route::group(['prefix' => 'customer'], function () {
             Route::controller(CustomerController::class)->group(function () {
                 Route::put('cm-firebase-token', 'update_cm_firebase_token');
@@ -330,6 +340,7 @@ Route::group(['prefix' => 'v1', 'middleware' => ['api_lang']], function () {
                 Route::post('refund-store', 'store_refund');
                 Route::get('refund-details', 'refund_details');
                 Route::post('again', 'order_again');
+                Route::post('confirm-driver-transit-code', 'confirm_driver_transit_code');
             });
 
             Route::controller(CustomerController::class)->group(function () {

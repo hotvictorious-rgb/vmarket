@@ -49,6 +49,7 @@ class DeliveryMan extends Model
         'password',
         'is_active',
         'is_online',
+        'max_active_orders_limit',
         'auth_token',
         'fcm_token',
         'app_language',

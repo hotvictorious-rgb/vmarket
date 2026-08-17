@@ -88,6 +88,8 @@ use App\Http\Controllers\Admin\HelpAndSupport\SupportTicketController;
 use App\Http\Controllers\Admin\Payment\OfflinePaymentMethodController;
 use App\Http\Controllers\Admin\Settings\DeliverymanSettingsController;
 use App\Http\Controllers\Admin\Settings\DeliveryRestrictionController;
+use App\Http\Controllers\Admin\Delivery\DeliveryHubController;
+use App\Http\Controllers\Admin\Delivery\DispatchPortalController;
 use App\Http\Controllers\Admin\Settings\EnvironmentSettingsController;
 use App\Http\Controllers\Admin\Settings\SocialMediaSettingsController;
 use App\Http\Controllers\Admin\SystemSetup\SystemLoginSetupController;
@@ -710,6 +712,36 @@ Route::group(['prefix' => 'admin', 'as' => 'admin.', 'middleware' => ['admin', '
                 Route::post('ajax-status-change', 'updateStatus')->name('ajax-status-change');
                 Route::delete('destroy', 'delete')->name('destroy');
             });
+        });
+    });
+
+    Route::group(['prefix' => 'delivery-hubs', 'as' => 'delivery-hubs.', 'middleware' => ['module:order_management']], function () {
+        Route::controller(DeliveryHubController::class)->group(function () {
+            Route::get('/', 'index')->name('index');
+            Route::post('store-state', 'storeState')->name('store-state');
+            Route::post('update-state/{id}', 'updateState')->name('update-state');
+            Route::delete('delete-state/{id}', 'deleteState')->name('delete-state');
+            Route::post('status-state', 'statusState')->name('status-state');
+
+            Route::post('store-city', 'storeCity')->name('store-city');
+            Route::post('update-city/{id}', 'updateCity')->name('update-city');
+            Route::delete('delete-city/{id}', 'deleteCity')->name('delete-city');
+            Route::post('status-city', 'statusCity')->name('status-city');
+
+            Route::post('store-hub', 'storeHub')->name('store-hub');
+            Route::post('update-hub/{id}', 'updateHub')->name('update-hub');
+            Route::delete('delete-hub/{id}', 'deleteHub')->name('delete-hub');
+            Route::post('status-hub', 'statusHub')->name('status-hub');
+
+            Route::get('get-cities-ajax/{state_id}', 'getCitiesAjax')->name('get-cities-ajax');
+            Route::get('get-hubs-ajax/{city_id}', 'getHubsAjax')->name('get-hubs-ajax');
+        });
+    });
+
+    Route::group(['prefix' => 'dispatch-portal', 'as' => 'dispatch-portal.', 'middleware' => ['module:order_management']], function () {
+        Route::controller(DispatchPortalController::class)->group(function () {
+            Route::get('/', 'index')->name('index');
+            Route::post('assign-batch', 'assignBatch')->name('assign-batch');
         });
     });
 

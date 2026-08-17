@@ -959,4 +959,57 @@ class OrderController extends Controller
 
         return response()->json(['message' => 'Invalid Order Id or Phone Number'], 403);
     }
+
+    /**
+     * Customer confirms Interstate Park Waybill receipt via Driver Transit Code
+     */
+    public function confirm_driver_transit_code(Request $request): JsonResponse
+    {
+        $validator = Validator::make($request->all(), [
+            'order_id' => 'required',
+            'driver_transit_code' => 'required|string',
+        ]);
+
+        if ($validator->fails()) {
+            return response()->json(['errors' => Helpers::validationErrorProcessor($validator)], 403);
+        }
+
+        $user = Helpers::getCustomerInformation($request);
+        $orderQuery = Order::where('id', $request->order_id);
+        if ($user && $user != 'offline') {
+            $orderQuery->where('customer_id', $user->id);
+        }
+
+        $order = $orderQuery->first();
+        if (!$order) {
+            return response()->json(['message' => translate('Order not found')], 404);
+        }
+
+        if ($order->order_status == 'delivered') {
+            return response()->json(['message' => translate('Order is already marked as delivered')], 200);
+        }
+
+        if (empty($order->driver_transit_code)) {
+            return response()->json(['message' => translate('This order does not require driver transit code verification')], 400);
+        }
+
+        if (strtoupper(trim($order->driver_transit_code)) !== strtoupper(trim($request->driver_transit_code))) {
+            return response()->json(['message' => translate('Invalid Driver Transit Code. Please check the code with your bus driver.')], 403);
+        }
+
+        $order->order_status = 'delivered';
+        $order->verification_status = 1;
+        if ($order->payment_status != 'paid') {
+            $order->payment_status = 'paid';
+        }
+        $order->save();
+
+        OrderManager::wallet_manage_on_order_status_change($order, 'delivered');
+
+        return response()->json([
+            'status' => 'success',
+            'message' => translate('Parcel delivery successfully confirmed! Thank you for shopping with Victorious Market.'),
+        ], 200);
+    }
 }
+

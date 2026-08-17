@@ -7,6 +7,33 @@ Always append your completed tasks here in chronological order at the top. Forma
 `### [YYYY-MM-DD HH:MM UTC] <Feature / Fix Title> [<Component Scope>]`
 Include the specific app/component modified and bullet points detailing the exact technical changes.
 
+### [2026-08-17 21:35 UTC] Implement Dynamic Logistics Engine, Admin Corridor Dispatch Portal & Dual-OTP Handshake Protocol [Backend, User App, Delivery Man App]
+* **Component:** Laravel Web Backend (`backend/vmarket-web/`), Customer Mobile App (`User app`), Delivery Rider App (`Delivery Man App`)
+* **Action:** Implemented the full dynamic 3-tier geographic logistics infrastructure (Zero Maps dependency), Admin Corridor Batching Portal with live rider capacity limits, and 3-way OTP & Transit Code security protocol.
+* **Changes Made:**
+  - **Laravel Backend & Database (`backend/vmarket-web/`)**:
+    - Created migration `2026_08_18_000001_create_dynamic_delivery_hubs_and_corridors_table.php` with `delivery_states`, `delivery_cities`, `delivery_hubs` (landmarks and motor parks), and order corridor tracking columns.
+    - Created Eloquent models `DeliveryState.php`, `DeliveryCity.php`, and `DeliveryHub.php`.
+    - Added fillable fields, `originHub`, and `destinationHub` relationships to `Order.php`, `DeliveryMan.php`, and `Shop.php`.
+    - Created `DeliveryHubController.php` with full CRUD for States, Cities, Landmarks, and Motor Parks with flat rates.
+    - Created `DispatchPortalController.php` with Corridor Matrix clustering, checkbox granular multi-order selection, and live rider capacity limit validation (`max_active_orders_limit`).
+    - Created `DeliveryHubApiController.php` for public REST API endpoints (`getStates`, `getCities`, `getHubs`, `calculateHubShipping`).
+    - Added `confirm_driver_transit_code` endpoint in `OrderController.php` for customer interstate transit confirmation.
+    - Added `interstate_driver_handover` endpoint in `DeliveryManController.php` for motor park bus driver transit code generation.
+    - Created Admin Blade views `hub-management.blade.php` and `dispatch-portal.blade.php`, and added sidebar navigation links.
+  - **Customer Mobile App (`User app/`)**:
+    - Extended `order_model.dart` with `driverTransitCode`, `driverPhone`, `driverVehicleNo`, `waybillSlipNo`, `houseStreetNote`, `recipientName`, `recipientPhone`.
+    - Added API endpoints in `AppConstants.dart`.
+    - Created `confirmDriverTransitCode` in `OrderDetailsRepository`, `OrderDetailsService`, and `OrderDetailsController`.
+    - Built interactive **Interstate Motor Park Handshake Card** in `order_payment_info_widget.dart` with one-tap driver calling and Driver Transit Code confirmation input.
+  - **Delivery Man App (`Delivery Man App/`)**:
+    - Created `interstate_handover_sheet_widget.dart` with driver phone, vehicle plate, and waybill slip input, generating a bold popup displaying the **Driver Transit Code** to read to the bus driver.
+    - Extended `order_details_controller.dart`, `order_details_service.dart`, and `order_details_repository.dart` with `interstateDriverHandover()`.
+    - Added **"Interstate Park Handover to Bus Driver"** action button in `order_status_change_custom_button_widget.dart`.
+* **Verification:**
+  - `php -l` on all backend controllers and models -> 0 syntax errors.
+  - `flutter analyze` on `Delivery Man App` -> **No issues found (0 errors, 0 warnings)**.
+
 ### [2026-08-17 19:30 UTC] Harden Delivery App Reviews & Emergency Contact Screens [Delivery Man App]
 * **Component:** Flutter Delivery Man App (`Delivery Man App/lib/features/review/`, `features/emergency_contact/`)
 * **Action:** Audited the reviews system and emergency contact views, fixing potential date parsing and launcher errors.

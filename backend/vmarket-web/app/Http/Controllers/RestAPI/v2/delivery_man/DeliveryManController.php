@@ -830,6 +830,63 @@ class DeliveryManController extends Controller
         return response()->json(['message' => 'successfully_uploaded'], 200);
     }
 
+    /**
+     * Handover parcel to Interstate Bus Driver at Motor Park & generate Transit Code
+     */
+    public function interstate_driver_handover(Request $request): JsonResponse
+    {
+        $validator = Validator::make($request->all(), [
+            'order_id' => 'required',
+            'driver_phone' => 'required|string|max:50',
+            'driver_vehicle_no' => 'required|string|max:50',
+            'waybill_slip_no' => 'nullable|string|max:100',
+        ]);
+
+        if ($validator->fails()) {
+            return response()->json(['errors' => Helpers::validationErrorProcessor($validator)], 403);
+        }
+
+        $deliveryMan = $request['delivery_man'];
+        $order = Order::with('customer')->where(['id' => $request['order_id'], 'delivery_man_id' => $deliveryMan['id']])->first();
+
+        if (!$order) {
+            return response()->json(['message' => translate('Order not found or not assigned to you')], 404);
+        }
+
+        $transitCode = 'TR-' . rand(1000, 9999);
+        $order->driver_phone = $request->driver_phone;
+        $order->driver_vehicle_no = $request->driver_vehicle_no;
+        $order->waybill_slip_no = $request->waybill_slip_no;
+        $order->driver_transit_code = $transitCode;
+        $order->order_status = 'out_for_delivery';
+        $order->save();
+
+        // Send push notification & SMS to Customer
+        try {
+            $fcm_token = $order->customer->cm_firebase_token ?? null;
+            if ($fcm_token) {
+                $data = [
+                    'title' => translate('Order Dispatched via Interstate Park Waybill'),
+                    'description' => translate("Your order #{$order->id} is on the way. Driver: {$request->driver_phone}, Bus: {$request->driver_vehicle_no}"),
+                    'order_id' => $order->id,
+                    'image' => '',
+                    'type' => 'order'
+                ];
+                Helpers::send_push_notif_to_device($fcm_token, $data);
+            }
+        } catch (\Exception $e) {
+            // Fail-safe notification
+        }
+
+        return response()->json([
+            'status' => 'success',
+            'message' => translate('Interstate park handover recorded successfully'),
+            'driver_transit_code' => $transitCode,
+            'driver_phone' => $request->driver_phone,
+            'driver_vehicle_no' => $request->driver_vehicle_no,
+        ], 200);
+    }
+
     /** Resend OTP Verification */
     public function resend_verification_code(Request $request):JsonResponse
     {

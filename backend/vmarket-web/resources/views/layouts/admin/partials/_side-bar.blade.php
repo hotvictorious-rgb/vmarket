@@ -955,6 +955,20 @@
                             </a>
                         </li>
                         <li class="nav-item">
+                            <a class="nav-link {{ Request::is('admin/dispatch-portal*') ? 'active' : '' }}"
+                               href="{{ route('admin.dispatch-portal.index') }}"
+                               title="{{ translate('Dispatch Portal') }}">
+                                <span class="text-truncate font-weight-bold text-primary"><i class="tio-flight-takeoff mr-1"></i> {{ translate('Dispatch Portal') }}</span>
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link {{ Request::is('admin/delivery-hubs*') ? 'active' : '' }}"
+                               href="{{ route('admin.delivery-hubs.index') }}"
+                               title="{{ translate('Hubs & Landmarks') }}">
+                                <span class="text-truncate"><i class="tio-map mr-1"></i> {{ translate('Hubs & Landmarks') }}</span>
+                            </a>
+                        </li>
+                        <li class="nav-item">
                             <a class="nav-link  {{ Request::is('admin/delivery-man/emergency-contact') ? 'active' : '' }}"
                                href="{{ route('admin.delivery-man.emergency-contact.index') }}"
                                title="{{ translate('emergency_contact') }}">
