@@ -7,6 +7,14 @@ Always append your completed tasks here in chronological order at the top. Forma
 `### [YYYY-MM-DD HH:MM UTC] <Feature / Fix Title> [<Component Scope>]`
 Include the specific app/component modified and bullet points detailing the exact technical changes.
 
+### [2026-08-17 06:20 UTC] Full Payment Security Audit & Gateway Hardening [Backend]
+* **Component:** Laravel Web Backend (`backend/vmarket-web/`)
+* **Action:** Audited all 13 payment gateway controllers (Paystack, Flutterwave, Stripe, PayPal, Razorpay, bKash, Paytabs, Paytm, MercadoPago, Paymob, SenangPay, SSLCommerz, LiqPay) and custom doorstep/remittance handlers. Enforced strict atomic row-level locks, double-execution guards, secret key verification, and exact amount match checks across all payment verification callback endpoints.
+* **Changes Made:**
+  - Hardened `RazorPayController.php` `callback` method with atomic `where('is_paid', 0)->update(...)` and double execution guard `$affected > 0` before invoking `$payment_data->success_hook`.
+  - Verified 100% compliance across Paystack, Flutterwave, Stripe, PayPal, bKash, SSLCommerz, Paytabs, Paymob, SenangPay, LiqPay, MercadoPago, and Paytm for atomic row-level locking.
+  - Verified server-to-server amount match checks preventing underpayment or currency-swap exploits.
+
 ### [2026-08-17 06:05 UTC] Implement Rider Financial Privacy & In-App Paystack Cash Remittance [Backend, Delivery Man App]
 * **Component:** Laravel Backend (`backend/vmarket-web/`), Delivery Rider Mobile App (`Delivery Man App/`)
 * **Action:** Hidden internal vendor product costs, markups, platform delivery fees, and discount breakdowns from delivery riders. Displayed unified collection amount (`Amount to Collect from Customer` for COD or `Prepaid Order (₦0.00)`) with clear doorstep payment handling (Cash or Paystack QR/link). Renamed rider payout to "Your Delivery Earnings". Implemented self-serve in-app Paystack cash remittance enabling riders to remit cash in hand directly via Paystack (Bank Transfer, Card, USSD) with instant automated reconciliation and balance deduction.

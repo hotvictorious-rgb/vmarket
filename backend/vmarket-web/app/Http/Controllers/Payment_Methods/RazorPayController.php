@@ -107,16 +107,26 @@ class RazorPayController extends Controller
     {
         $input = $request->all();
         $data_id = base64_decode($request?->payment_data);
-        $payment_data = $this->payment::where(['id' => $data_id])->first();
-        if (count($input) && !empty($input['razorpay_payment_id'])) {
-            if (isset($payment_data) && function_exists($payment_data->success_hook)) {
-                $payment_data->payment_method = 'razor_pay';
-                $payment_data->is_paid = 1;
-                $payment_data->transaction_id = $input['razorpay_payment_id'];
-                $payment_data->save();
+        if (count($input) && !empty($input['razorpay_payment_id']) && $data_id) {
+            $affected = $this->payment::where(['id' => $data_id])
+                ->where('is_paid', 0)
+                ->update([
+                    'payment_method' => 'razor_pay',
+                    'is_paid' => 1,
+                    'transaction_id' => $input['razorpay_payment_id'],
+                ]);
+
+            $payment_data = $this->payment::where(['id' => $data_id])->first();
+            if ($affected > 0 && isset($payment_data) && function_exists($payment_data->success_hook)) {
                 call_user_func($payment_data->success_hook, $payment_data);
+            }
+            if ($payment_data && $payment_data->is_paid == 1) {
                 return $this->payment_response($payment_data, 'success');
             }
+        }
+        $payment_data = $this->payment::where(['id' => $data_id])->first();
+        if (isset($payment_data) && function_exists($payment_data->failure_hook)) {
+            call_user_func($payment_data->failure_hook, $payment_data);
         }
         return $this->payment_response($payment_data, 'fail');
     }
