@@ -235,6 +235,28 @@ class ChatController extends ChangeNotifier {
     return response;
   }
 
+  Future<http.StreamedResponse> sendVoiceNote(PlatformFile pFile, int? id, {int? userType, int? orderId}) async {
+    _isSending = true;
+    notifyListeners();
+
+    MessageBody messageBody = MessageBody(id: id, message: '', orderId: orderId);
+    http.StreamedResponse response = await chatServiceInterface!.sendMessage(
+      messageBody,
+      userType != null ? (userType == 0 ? 'delivery-man' : 'admin') : (_userTypeIndex == 0 ? 'delivery-man' : 'admin'),
+      [],
+      [pFile],
+    );
+
+    if (response.statusCode == 200) {
+      getMessageList(Get.context!, id, 1, reload: false, userType: userType);
+      getChatList(1, userType: userType);
+    }
+
+    _isSending = false;
+    notifyListeners();
+    return response;
+  }
+
 
   Future<ApiResponseModel> seenMessage(BuildContext context, int? sellerId, int? deliveryId) async {
     ApiResponseModel apiResponse = await chatServiceInterface!.seenMessage(_userTypeIndex == 0? sellerId!: deliveryId!, _userTypeIndex == 0? 'delivery-man' : 'admin');

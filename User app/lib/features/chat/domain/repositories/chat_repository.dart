@@ -1,3 +1,4 @@
+import 'dart:io';
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter_sixvalley_ecommerce/data/datasource/remote/dio/dio_client.dart';
 import 'package:flutter_sixvalley_ecommerce/data/datasource/remote/exception/api_error_handler.dart';
@@ -76,16 +77,26 @@ class ChatRepository implements ChatRepositoryInterface {
       request.files.add(part);
     }
 
-    if(platformFile != null ) {
-      if(platformFile.isNotEmpty) {
-        for(PlatformFile pfile in platformFile) {
+    if(platformFile != null && platformFile.isNotEmpty) {
+      for(PlatformFile pfile in platformFile) {
+        if (pfile.readStream != null) {
           request.files.add(http.MultipartFile('file[]', pfile.readStream!, pfile.size, filename: basename(pfile.name)));
+        } else if (pfile.bytes != null) {
+          request.files.add(http.MultipartFile.fromBytes('file[]', pfile.bytes!, filename: basename(pfile.name)));
+        } else if (pfile.path != null) {
+          File f = File(pfile.path!);
+          request.files.add(http.MultipartFile.fromBytes('file[]', f.readAsBytesSync(), filename: basename(pfile.name)));
         }
       }
     }
 
-    Map<String, String> fields = {};
-    request.fields.addAll(<String, String>{'id': messageBody.id.toString(), 'message': messageBody.message??''});
+    Map<String, String> fields = {
+      'id': messageBody.id.toString(),
+      'message': messageBody.message ?? '',
+    };
+    if (messageBody.orderId != null) {
+      fields['order_id'] = messageBody.orderId.toString();
+    }
     request.fields.addAll(fields);
     http.StreamedResponse response = await request.send();
     return response;

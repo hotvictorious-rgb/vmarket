@@ -550,9 +550,7 @@ class _ChatScreenState extends State<ChatScreen> {
                                     size: file.lengthSync(),
                                     bytes: file.readAsBytesSync(),
                                   );
-                                  chatController.addVoiceNote(pFile);
-                                  MessageBody messageBody = MessageBody(id: widget.id, message: '', orderId: widget.orderId);
-                                  chatController.sendMessage(messageBody, userType: widget.userType);
+                                  chatController.sendVoiceNote(pFile, widget.id, userType: widget.userType, orderId: widget.orderId);
                                 },
                                 onCancel: () {
                                   setState(() {

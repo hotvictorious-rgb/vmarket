@@ -75,7 +75,7 @@ class ProfileController extends ChangeNotifier {
     if (response.statusCode == 200) {
       Map map = jsonDecode(await response.stream.bytesToString());
       String? message = map["message"];
-      _userInfoModel = updateUserModel;
+      await getUserInfo(Get.context!, reload: true);
       responseModel = ResponseModel(message, true);
       Navigator.of(Get.context!).pop();
     } else {
