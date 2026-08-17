@@ -23,7 +23,9 @@ class ChatScreen extends StatefulWidget {
   final int? userId;
   final String? name;
   final String? image;
-  const ChatScreen({Key? key, required this.userId, this.name = 'chat', this.image = '',}) : super(key: key);
+  final int? orderId;
+  final String? orderStatus;
+  const ChatScreen({Key? key, required this.userId, this.name = 'chat', this.image = '', this.orderId, this.orderStatus}) : super(key: key);
 
   @override
   State<ChatScreen> createState() => _ChatScreenState();
@@ -117,11 +119,55 @@ class _ChatScreenState extends State<ChatScreen> {
             isDark: isDarkTheme,
             child: SizedBox(
               width: MediaQuery.of(context).size.width,
-              child: Column(children: [
-                chatController.messageModel != null ?
-                 Expanded(child: (chatController.messageModel!.message != null && chatController.messageModel!.message!.isNotEmpty) ?
-                    MessageListViewWidget( scrollController: _scrollController, userId: widget.userId) :
-                    const SizedBox()): Expanded(child: CustomLoaderWidget(height: Get.height-300,)),
+              child: Builder(
+                builder: (context) {
+                  final bool isOrderTerminated = widget.orderStatus == 'delivered' || widget.orderStatus == 'canceled' || widget.orderStatus == 'returned';
+                  final bool isChatActive = (chatController.messageModel?.isActive ?? true) && !isOrderTerminated;
+
+                  return Column(children: [
+                    if (widget.orderId != null)
+                      Container(
+                        width: double.infinity,
+                        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                        decoration: BoxDecoration(
+                          color: isDarkTheme ? const Color(0xFF1E2630) : const Color(0xFFF3E5F5),
+                          border: Border(bottom: BorderSide(color: isDarkTheme ? Colors.white10 : const Color(0xFFE1BEE7))),
+                        ),
+                        child: Row(
+                          children: [
+                            const Icon(Icons.local_shipping_outlined, size: 18, color: Color(0xFF6A1B9A)),
+                            const SizedBox(width: 8),
+                            Text(
+                              'Order #${widget.orderId}',
+                              style: rubikBold.copyWith(color: const Color(0xFF6A1B9A), fontSize: 13),
+                            ),
+                            if (widget.orderStatus != null && widget.orderStatus!.isNotEmpty) ...[
+                              const SizedBox(width: 8),
+                              Container(
+                                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                                decoration: BoxDecoration(
+                                  color: isOrderTerminated
+                                      ? Colors.grey.withValues(alpha: 0.2)
+                                      : const Color(0xFF00A884).withValues(alpha: 0.15),
+                                  borderRadius: BorderRadius.circular(10),
+                                ),
+                                child: Text(
+                                  widget.orderStatus!.replaceAll('_', ' ').toUpperCase(),
+                                  style: rubikBold.copyWith(
+                                    color: isOrderTerminated ? Colors.grey : const Color(0xFF00A884),
+                                    fontSize: 10,
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ],
+                        ),
+                      ),
+
+                    chatController.messageModel != null ?
+                     Expanded(child: (chatController.messageModel!.message != null && chatController.messageModel!.message!.isNotEmpty) ?
+                        MessageListViewWidget( scrollController: _scrollController, userId: widget.userId) :
+                        const SizedBox()): Expanded(child: CustomLoaderWidget(height: Get.height-300,)),
 
                 chatController.hasPicked ?
                 Container(
@@ -302,17 +348,39 @@ class _ChatScreenState extends State<ChatScreen> {
                 ) : const SizedBox(),
 
 
-                chatController.isLoading == false && ((chatController.pickedMediaFileModelList!=null && chatController.pickedMediaFileModelList!.isNotEmpty) || (chatController.pickedFiles != null && chatController.pickedFiles!.isNotEmpty)) ?
-                const SizedBox.shrink() : SizedBox(height: Dimensions.paddingSizeSmall),
-                Column(children: [
+                if (!isChatActive)
+                  Padding(
+                    padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
+                    child: Container(
+                      width: double.infinity,
+                      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+                      decoration: BoxDecoration(
+                        color: isDarkTheme ? const Color(0xFF1F2C34) : const Color(0xFFF5F5F5),
+                        borderRadius: BorderRadius.circular(16),
+                        border: Border.all(color: isDarkTheme ? Colors.white12 : Colors.grey.withValues(alpha: 0.2)),
+                      ),
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          const Icon(Icons.lock_outline_rounded, size: 18, color: Colors.grey),
+                          const SizedBox(width: 8),
+                          Text(
+                            'This order is delivered. Chat is closed.'.tr,
+                            style: rubikRegular.copyWith(color: isDarkTheme ? Colors.white60 : Colors.grey[700], fontSize: 13),
+                          ),
+                        ],
+                      ),
+                    ),
+                  )
+                else
                   MessageSendingSectionWidget(userId: widget.userId),
-                ]), //: const SizedBox(),
-              ]),
-            ),
+              ]);
+            },
           ),
         ),
-      );
-    }
-    );
+      ),
+    ),
+  );
+});
   }
 }

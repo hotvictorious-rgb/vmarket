@@ -4,14 +4,18 @@ class MessageModel {
   int? totalSize;
   int? limit;
   int? offset;
+  bool? isActive;
+  int? orderId;
   List<Message>? message;
 
-  MessageModel({this.totalSize, this.limit, this.offset, this.message});
+  MessageModel({this.totalSize, this.limit, this.offset, this.isActive, this.orderId, this.message});
 
   MessageModel.fromJson(Map<String, dynamic> json) {
     totalSize = int.tryParse('${json['total_size']}');
     limit = int.tryParse('${json['limit']}');
     offset = int.tryParse('${json['offset']}');
+    isActive = json['is_active'] ?? true;
+    orderId = json['order_id'] != null ? int.tryParse('${json['order_id']}') : null;
     if (json['message'] != null) {
       message = <Message>[];
       json['message'].forEach((v) {
@@ -24,6 +28,8 @@ class MessageModel {
 
 class Message {
   int? id;
+  int? orderId;
+  bool? isActive;
   String? message;
   bool? sentByCustomer;
   bool? sentBySeller;
@@ -37,6 +43,8 @@ class Message {
 
   Message(
       {this.id,
+        this.orderId,
+        this.isActive,
         this.message,
         this.sentByCustomer,
         this.sentBySeller,
@@ -51,6 +59,8 @@ class Message {
 
   Message.fromJson(Map<String, dynamic> json) {
     id = json['id'];
+    orderId = json['order_id'] != null ? int.tryParse('${json['order_id']}') : null;
+    isActive = json['is_active'] ?? true;
     message = json['message'];
     sentByCustomer = json['sent_by_customer'] ?? false;
     sentBySeller = json['sent_by_seller'] ?? false;

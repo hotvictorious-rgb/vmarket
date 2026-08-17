@@ -54,7 +54,7 @@ class CallAndChatWidget extends StatelessWidget {
           Get.find<ChatController>().setUserTypeIndex(0);
         }
           if(id != -1){
-            Get.to(()=> ChatScreen(userId: id, name: name));
+            Get.to(()=> ChatScreen(userId: id, name: name, orderId: orderModel?.id, orderStatus: orderModel?.orderStatus));
           }else if(id  == -1){
             showCustomSnackBarWidget('user_account_was_deleted'.tr);
           }
