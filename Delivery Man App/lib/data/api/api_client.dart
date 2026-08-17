@@ -93,16 +93,22 @@ class ApiClient extends GetxService {
           _request.files.add(_part);
         }else {
           File _file = File(multipart.file.path);
-          _request.files.add(http.MultipartFile(
-            multipart.key, _file.readAsBytes().asStream(), _file.lengthSync(), filename: _file.path.split('/').last,
+          final fileName = _file.path.split(RegExp(r'[/\\]')).last;
+          _request.files.add(http.MultipartFile.fromBytes(
+            multipart.key, _file.readAsBytesSync(), filename: fileName,
           ));
         }
       }
 
-      if(platformFile != null ) {
-        if(platformFile.isNotEmpty){
-          for(PlatformFile pfile in platformFile) {
+      if(platformFile != null && platformFile.isNotEmpty) {
+        for(PlatformFile pfile in platformFile) {
+          if (pfile.readStream != null) {
             _request.files.add(http.MultipartFile('file[]', pfile.readStream!, pfile.size, filename: basename(pfile.name)));
+          } else if (pfile.bytes != null) {
+            _request.files.add(http.MultipartFile.fromBytes('file[]', pfile.bytes!, filename: basename(pfile.name)));
+          } else if (pfile.path != null) {
+            File f = File(pfile.path!);
+            _request.files.add(http.MultipartFile.fromBytes('file[]', f.readAsBytesSync(), filename: basename(pfile.name)));
           }
         }
       }

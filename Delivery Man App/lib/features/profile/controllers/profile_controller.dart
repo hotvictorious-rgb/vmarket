@@ -90,6 +90,7 @@ class ProfileController extends GetxController implements GetxService {
     responseModel.isSuccess ? _userInfoModel = updateUserModel : null;
     if(responseModel.isSuccess){
       _showPassView = false;
+      await getProfile();
     }
     showCustomSnackBarWidget(responseModel.message, isError: false);
     _isLoading = false;
