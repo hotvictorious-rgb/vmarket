@@ -28,7 +28,7 @@ class HelpAndSupportScreen extends StatelessWidget {
            Padding(padding:  EdgeInsets.symmetric(vertical: Dimensions.paddingSizeSmall),
              child: Column(crossAxisAlignment: CrossAxisAlignment.start,children: [
                Text('you_can_send_us_email_through'.tr, style: rubikRegular.copyWith(color: Theme.of(context).hintColor)),
-               Text(Get.find<SplashController>().configModel!.companyEmail!,
+               Text(Get.find<SplashController>().configModel?.companyEmail ?? '',
                  style: rubikMedium.copyWith(fontSize: Dimensions.fontSizeDefault),),
                Padding(padding:  EdgeInsets.symmetric(vertical: Dimensions.paddingSizeSmall),
                  child: Text.rich(
@@ -47,7 +47,7 @@ class HelpAndSupportScreen extends StatelessWidget {
                child: Text.rich(
                  TextSpan(children: [
                      TextSpan(text: 'contact_with_us'.tr, style: rubikRegular.copyWith(color: Theme.of(context).hintColor)),
-                      TextSpan(text: Get.find<SplashController>().configModel!.companyPhone, style: rubikMedium)]))),
+                      TextSpan(text: Get.find<SplashController>().configModel?.companyPhone ?? '', style: rubikMedium)]))),
 
 
              Text.rich(TextSpan(children: [
@@ -61,25 +61,23 @@ class HelpAndSupportScreen extends StatelessWidget {
           child: Row(children: [
             Expanded(child: Padding(padding:  EdgeInsets.symmetric(horizontal: Dimensions.paddingSizeDefault),
               child: CustomButtonWidget(btnTxt: 'email'.tr,withIcon: true,icon: Icons.email,
-              onTap: ()=> _launchUrl("sms:${Get.find<SplashController>().configModel!.companyEmail}",true)))),
+              onTap: ()=> _launchUrl(Get.find<SplashController>().configModel?.companyEmail ?? '', true)))),
             Expanded(child: Padding(padding:  EdgeInsets.symmetric(horizontal: Dimensions.paddingSizeDefault),
               child: CustomButtonWidget(btnTxt: 'call'.tr,withIcon: true,icon: Icons.call,onTap: (){
-                _launchUrl("tel:${Get.find<SplashController>().configModel!.companyPhone}",false);
+                _launchUrl("tel:${Get.find<SplashController>().configModel?.companyPhone ?? ''}", false);
               })))]))
       ],),),
     );
   }
 }
 
-final Uri params = Uri(
-  scheme: 'mailto',
-  path: Get.find<SplashController>().configModel!.companyEmail,
-  query: 'subject=support Feedback&body=',
-);
-
-
-Future<void> _launchUrl(String _url, bool isMail) async {
-  if (!await launchUrl(Uri.parse(isMail? params.toString() :_url))) {
-    throw 'Could not launch $_url';
+Future<void> _launchUrl(String url, bool isMail) async {
+  Uri uri = isMail
+    ? Uri(scheme: 'mailto', path: url, query: 'subject=support Feedback&body=')
+    : Uri.parse(url);
+  try {
+    await launchUrl(uri);
+  } catch (e) {
+    debugPrint('Could not launch $url: $e');
   }
 }

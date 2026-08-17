@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:get/get.dart';
 import 'package:sixvalley_delivery_boy/common/basewidgets/custom_snackbar_widget.dart';
 import 'package:sixvalley_delivery_boy/data/api/api_checker.dart';
@@ -44,7 +45,7 @@ class AuthService implements AuthServiceInterface {
     Response response = await authRepoInterface.login(countryCode, phone, password);
 
     if (response.statusCode == 200) {
-      await authRepoInterface.saveUserToken(response.body['token']);
+      authRepoInterface.saveUserToken(response.body['token']);
       authRepoInterface.updateToken().catchError((e) {
         debugPrint('Error updating delivery man token: $e');
       });
