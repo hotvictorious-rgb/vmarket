@@ -27,4 +27,6 @@ abstract class OrderDetailsRepositoryInterface<T> extends RepositoryInterface{
 
   Future<dynamic> duePaymentByOfflinePayment(int orderId, String paymentMethod, String? orderDueNote, String? methodId);
 
+  Future<dynamic> confirmDriverTransitCode(String orderId, String transitCode);
+
 }

@@ -219,25 +219,35 @@ class OrderDetailsRepository implements OrderDetailsRepositoryInterface{
     }
   }
 
-  // @override
-  // Future<ApiResponseModel> duePaymentByOfflinePayment(int orderId, String paymentMethod, String? orderDuePaymentNote, String? methodId) async {
-  //   try {
-  //     final response = await dioClient!.post(AppConstants.duePaymentByDigitalPayment,
-  //       data: {
-  //         'order_id': orderId,
-  //         'payment_method': paymentMethod,
-  //         'order_due_payment_note': orderDuePaymentNote,
-  //         'method_id' : methodId,
-  //       }
-  //     );
-  //     return ApiResponseModel.withSuccess(response);
-  //   } catch (e) {
-  //     return ApiResponseModel.withError(ApiErrorHandler.getMessage(e));
-  //   }
-  // }
+  @override
+  Future<ApiResponseModel> duePaymentByOfflinePayment(int orderId, String paymentMethod, String? orderDueNote, String? methodId) async {
+    try {
+      final response = await dioClient!.post(AppConstants.offlinePayment,
+        data: {
+          'order_id': orderId,
+          'payment_method': paymentMethod,
+          'order_due_payment_note': orderDueNote,
+          'method_id' : methodId,
+        }
+      );
+      return ApiResponseModel.withSuccess(response);
+    } catch (e) {
+      return ApiResponseModel.withError(ApiErrorHandler.getMessage(e));
+    }
+  }
 
-
-  // duePaymentByOfflinePayment
-
-
+  @override
+  Future<ApiResponseModel> confirmDriverTransitCode(String orderId, String transitCode) async {
+    try {
+      final response = await dioClient!.post(AppConstants.confirmDriverTransitCodeUri,
+        data: {
+          'order_id': orderId,
+          'driver_transit_code': transitCode,
+        }
+      );
+      return ApiResponseModel.withSuccess(response);
+    } catch (e) {
+      return ApiResponseModel.withError(ApiErrorHandler.getMessage(e));
+    }
+  }
 }

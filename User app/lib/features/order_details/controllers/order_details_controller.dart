@@ -545,9 +545,22 @@ class OrderDetailsController with ChangeNotifier {
     return apiResponse;
   }
 
-
-
-
+  Future<ApiResponseModel> confirmDriverTransitCode(String orderId, String transitCode, BuildContext context) async {
+    _isLoading = true;
+    notifyListeners();
+    ApiResponseModel apiResponse = await orderDetailsServiceInterface.confirmDriverTransitCode(orderId, transitCode);
+    _isLoading = false;
+    if (apiResponse.response != null && apiResponse.response!.statusCode == 200) {
+      showCustomSnackBar(apiResponse.response!.data['message'] ?? 'Delivery successfully confirmed!', context, isError: false);
+      getOrderDetails(orderId);
+      getOrderFromOrderId(orderId);
+    } else {
+      String errorMessage = apiResponse.error is String ? apiResponse.error : (apiResponse.response?.data['message'] ?? 'Invalid Driver Transit Code');
+      showCustomSnackBar(errorMessage, context, isError: true);
+    }
+    notifyListeners();
+    return apiResponse;
+  }
 
 }
 

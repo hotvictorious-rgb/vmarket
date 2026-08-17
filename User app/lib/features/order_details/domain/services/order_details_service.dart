@@ -77,6 +77,8 @@ class OrderDetailsService implements OrderDetailsServiceInterface{
     return await orderDetailsRepositoryInterface.duePaymentByOfflinePayment(orderId, paymentMethod, orderDueNote, methodId);
   }
 
-
-
+  @override
+  Future confirmDriverTransitCode(String orderId, String transitCode) async {
+    return await orderDetailsRepositoryInterface.confirmDriverTransitCode(orderId, transitCode);
+  }
 }

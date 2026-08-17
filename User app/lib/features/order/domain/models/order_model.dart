@@ -77,7 +77,13 @@ class Orders {
   double? bringChangeAmount;
   String? bringChangeAmountCurrency;
   double? totalTaxAmount;
-  String? taxModel;
+  String? driverTransitCode;
+  String? driverPhone;
+  String? driverVehicleNo;
+  String? waybillSlipNo;
+  String? houseStreetNote;
+  String? recipientName;
+  String? recipientPhone;
   int? editedStatus;
   double? editDueAmount;
   double? editReturnAmount;
@@ -220,6 +226,13 @@ class Orders {
     bringChangeAmount = double.tryParse('${json['bring_change_amount']}');
     bringChangeAmountCurrency = json['bring_change_amount_currency'];
     totalTaxAmount = json['total_tax_amount'] != null ? double.tryParse('${json['total_tax_amount']}') : null;
+    driverTransitCode = json['driver_transit_code'];
+    driverPhone = json['driver_phone'];
+    driverVehicleNo = json['driver_vehicle_no'];
+    waybillSlipNo = json['waybill_slip_no'];
+    houseStreetNote = json['house_street_note'];
+    recipientName = json['recipient_name'];
+    recipientPhone = json['recipient_phone'];
     taxModel = json['tax_model'];
     editedStatus = json['edited_status'];
     editDueAmount = json['edit_due_amount'] != null ? double.tryParse(json['edit_due_amount'].toString()) : null;

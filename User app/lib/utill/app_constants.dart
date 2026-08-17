@@ -128,6 +128,10 @@ import 'package:flutter_sixvalley_ecommerce/common/enums/local_caches_type_enum.
   static const String clearanceShopProductUri = '/api/v1/seller/';
   static const String clearanceShopSearchProductUri = '/api/v1/seller/';
   static const String businessPagesUri = '/api/v1/business-pages?type=';
+  static const String deliveryStatesUri = '/api/v1/delivery-hubs/states';
+  static const String deliveryCitiesUri = '/api/v1/delivery-hubs/cities/';
+  static const String deliveryHubsUri = '/api/v1/delivery-hubs/hubs/';
+  static const String confirmDriverTransitCodeUri = '/api/v1/customer/order/confirm-driver-transit-code';
   static const String getDeliveryManReview = '/api/v1/customer/order/deliveryman-review?order_id=';
   static const String submitDeliveryManReview = '/api/v1/customer/order/deliveryman-review/update?order_id=';
   static const String mergeGuestCart = '/api/v1/cart/get-merge-guest-cart';
