@@ -7,6 +7,11 @@ Always append your completed tasks here in chronological order at the top. Forma
 `### [YYYY-MM-DD HH:MM UTC] <Feature / Fix Title> [<Component Scope>]`
 Include the specific app/component modified and bullet points detailing the exact technical changes.
 
+### [2026-08-17 16:38 UTC] Synchronize Victorious Points & Referral Configs with Mobile Apps & Web [Backend]
+* **Component:** Laravel Web Backend (`backend/vmarket-web/app/Http/Controllers/RestAPI/v1/ConfigController.php`)
+* **Action:** Exposed `loyalty_point_max_order_redemption_percentage` and `ref_earning_min_order_amount` via `/api/v1/config` so all Flutter mobile apps and web storefronts automatically consume and reflect live settings.
+* **Verification:** `php -l` -> 0 syntax errors.
+
 ### [2026-08-17 16:25 UTC] Implement Victorious Points (Cashback) & Configurable Redemption Engine [Backend]
 * **Component:** Laravel Web Backend (`backend/vmarket-web/`) & Admin Panel
 * **Action:** Rebranded loyalty point system to **Victorious Points (Cashback)** and added admin-configurable order redemption caps and referral minimum spend thresholds.
