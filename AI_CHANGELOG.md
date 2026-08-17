@@ -7,6 +7,30 @@ Always append your completed tasks here in chronological order at the top. Forma
 `### [YYYY-MM-DD HH:MM UTC] <Feature / Fix Title> [<Component Scope>]`
 Include the specific app/component modified and bullet points detailing the exact technical changes.
 
+### [2026-08-17 05:15 UTC] Implement Order-Bound Chat Lifecycle & Delivery Gating Across Backend and All 3 Mobile Apps [Backend, User App, Vendor App, Delivery Man App]
+* **Component:** Laravel Backend (`backend/vmarket-web/`), Customer App (`User app/`), Vendor App (`Vendor app/`), Delivery Man App (`Delivery Man App/`)
+* **Action:** Implemented complete order-bound chat lifecycle where messaging is strictly attached to an active `order_id`, auto-activates when a delivery rider is assigned, automatically closes and locks input upon order delivery/cancellation, and strictly enforces the prohibition of direct Customer-to-Vendor chats.
+* **Changes Made:**
+  - **Backend Model & Endpoints (`app/Models/Chatting.php`, `RestAPI/v1/ChatController.php`, `RestAPI/v2/delivery_man/ChatController.php`)**:
+    - Added `order_id`, `chat_type`, `is_active` to `$casts` and `$fillable`, with `order()` Eloquent relationship.
+    - Updated customer and delivery man `get_message` endpoints to filter by `order_id` and return thread status (`is_active`, `order_id`).
+    - Enforced delivery lifecycle validation in `send_message`: messages for orders with status `delivered`, `canceled`, or `returned` are rejected with HTTP 403.
+    - Reinforced strict HTTP 403 block on direct Customer ⟷ Vendor chats. Allowed pathways: Customer ⟷ Delivery Man, Vendor ⟷ Delivery Man (pickup coordination), and User/Vendor/Rider ⟷ Admin Support.
+  - **Customer App (`User app/`)**:
+    - Updated `MessageBody` and `MessageModel` to include `orderId` and `isActive`.
+    - Added Order Info Banner (`📦 Order #ID • Status`) at the top of `ChatScreen`.
+    - Implemented read-only lock banner (`🔒 This order is delivered. Chat is closed.`) when order is completed or chat is deactivated.
+    - Bound `orderId` and `orderStatus` to chat button in `CallAndChatWidget` and passed them via `RouterHelper.getChatScreenRoute`.
+  - **Delivery Man App (`Delivery Man App/`)**:
+    - Updated `MessageModel` to parse `order_id` and `is_active`.
+    - Updated `ChatScreen` with Order Info Banner and bottom lock banner on delivered orders.
+    - Passed `orderId` and `orderStatus` when launching `ChatScreen` from `CallAndChatWidget`.
+  - **Vendor App (`Vendor app/`)**:
+    - Updated `MessageModel` and `MessageBody` to parse and serialize `orderId` and `isActive`.
+    - Added Order Info Banner in `ChatScreen` and locked input when order is delivered.
+    - Added "Chat with Rider (Pickup)" button in `DeliveryManContactInformationWidget` bound to `orderId`. Verified Customer-to-Vendor chat remains completely disabled.
+  - **Verification**: Verified PHP syntax with `php -l` (0 errors) and static analysis via `flutter analyze` on all 3 Flutter mobile apps (0 compilation errors).
+
 ### [2026-08-17 03:48 UTC] Upgrade Voice Notes to WhatsApp-Grade Unified Audio Bubbles [User App, Vendor App, Delivery Man App]
 * **Component:** Flutter Customer App (`User app/`), Flutter Vendor App (`Vendor app/`), Flutter Delivery Man App (`Delivery Man App/`)
 * **Action:** Upgraded the voice note chatting experience across all three Flutter mobile applications from detached file attachments into unified, interactive, instant WhatsApp-grade voice message bubbles.
