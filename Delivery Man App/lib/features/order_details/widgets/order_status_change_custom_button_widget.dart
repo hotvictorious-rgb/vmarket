@@ -6,6 +6,7 @@ import 'package:sixvalley_delivery_boy/features/order_details/widgets/camera_or_
 import 'package:sixvalley_delivery_boy/features/order_details/widgets/slider_button_widget.dart';
 import 'package:sixvalley_delivery_boy/features/order_details/widgets/verify_otp_sheet_widget.dart';
 import 'package:sixvalley_delivery_boy/features/order_details/widgets/verify_pickup_sheet_widget.dart';
+import 'package:sixvalley_delivery_boy/features/order_details/widgets/interstate_handover_sheet_widget.dart';
 import 'package:sixvalley_delivery_boy/features/splash/controllers/splash_controller.dart';
 import 'package:sixvalley_delivery_boy/features/order/domain/models/order_model.dart';
 import 'package:flutter/cupertino.dart';
@@ -26,33 +27,82 @@ class OrderStatusChangeCustomButtonWidget extends StatelessWidget {
     return (orderModel!.orderStatus == 'processing' || orderModel!.orderStatus == 'out_for_delivery') && !orderModel!.isPause! ?
     Padding(
       padding:  EdgeInsets.symmetric(horizontal: Dimensions.paddingSizeDefault,vertical: Dimensions.paddingSizeSmall),
-      child: Directionality(
-        textDirection: isLtr ? TextDirection.ltr :  TextDirection.rtl,
-        child: SliderButtonWidget(
-          isRtl: !isLtr,
-          action:  ()  {
-            if(orderModel!.orderStatus == 'processing') {
-              _handleProcessingStatus(context);
-            } else if(orderModel!.orderStatus == 'out_for_delivery') {
-              _handleOutForDeliveryStatus(context);
-            }
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Directionality(
+            textDirection: isLtr ? TextDirection.ltr :  TextDirection.rtl,
+            child: SliderButtonWidget(
+              isRtl: !isLtr,
+              action:  ()  {
+                if(orderModel!.orderStatus == 'processing') {
+                  _handleProcessingStatus(context);
+                } else if(orderModel!.orderStatus == 'out_for_delivery') {
+                  _handleOutForDeliveryStatus(context);
+                }
 
-          },
-          label: Text(orderModel!.orderStatus == 'processing'? 'swipe_to_out_for_delivery_order'.tr : 'swip_to_deliver_order'.tr,
-            style: rubikMedium.copyWith(color: Theme.of(context).primaryColor, fontSize: Dimensions.fontSizeSmall),),
-          dismissThresholds: 0.5,
-          icon: RotationTransition(
-            turns: const AlwaysStoppedAnimation(45 / 360),
-            child: Center(child: isLtr ? Icon(CupertinoIcons.paperplane, size: 20, color: Theme.of(context).cardColor,) :
-            Transform.rotate(angle: rotateAnglePi, child: Icon(CupertinoIcons.paperplane, size: 20, color: Theme.of(context).cardColor,)))
+              },
+              label: Text(orderModel!.orderStatus == 'processing'? 'swipe_to_out_for_delivery_order'.tr : 'swip_to_deliver_order'.tr,
+                style: rubikMedium.copyWith(color: Theme.of(context).primaryColor, fontSize: Dimensions.fontSizeSmall),),
+              dismissThresholds: 0.5,
+              icon: RotationTransition(
+                turns: const AlwaysStoppedAnimation(45 / 360),
+                child: Center(child: isLtr ? Icon(CupertinoIcons.paperplane, size: 20, color: Theme.of(context).cardColor,) :
+                Transform.rotate(angle: rotateAnglePi, child: Icon(CupertinoIcons.paperplane, size: 20, color: Theme.of(context).cardColor,)))
+              ),
+              radius: 100,
+              width: MediaQuery.of(context).size.width-55,
+              boxShadow: const BoxShadow(blurRadius: 0.0),
+              buttonColor: Theme.of(context).primaryColor,
+              backgroundColor: Get.isDarkMode ? Theme.of(context).hintColor : Theme.of(context).primaryColor.withValues(alpha:.05),
+              baseColor: Theme.of(context).primaryColor),
           ),
-          radius: 100,
-          width: MediaQuery.of(context).size.width-55,
-          boxShadow: const BoxShadow(blurRadius: 0.0),
-          buttonColor: Theme.of(context).primaryColor,
-          backgroundColor: Get.isDarkMode ? Theme.of(context).hintColor : Theme.of(context).primaryColor.withValues(alpha:.05),
-          baseColor: Theme.of(context).primaryColor),
-      )):const SizedBox();
+
+          if (orderModel!.orderStatus == 'out_for_delivery') ...[
+            const SizedBox(height: 8),
+            InkWell(
+              onTap: () => _showInterstateHandoverSheet(context),
+              child: Container(
+                width: MediaQuery.of(context).size.width - 55,
+                padding: const EdgeInsets.symmetric(vertical: 10),
+                decoration: BoxDecoration(
+                  color: const Color(0xFFE8F5E9),
+                  borderRadius: BorderRadius.circular(100),
+                  border: Border.all(color: const Color(0xFF4CAF50), width: 1.5),
+                ),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    const Icon(Icons.directions_bus_rounded, color: Color(0xFF2E7D32), size: 18),
+                    const SizedBox(width: 8),
+                    Text(
+                      'Interstate Park Handover to Bus Driver'.tr,
+                      style: rubikBold.copyWith(color: const Color(0xFF1B5E20), fontSize: Dimensions.fontSizeSmall),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ],
+        ],
+      ),
+    ):const SizedBox();
+  }
+
+  void _showInterstateHandoverSheet(BuildContext context) {
+    showModalBottomSheet<void>(
+      backgroundColor: Colors.transparent,
+      isScrollControlled: true,
+      context: context,
+      builder: (BuildContext context) {
+        return Padding(
+          padding: EdgeInsets.only(bottom: MediaQuery.of(context).viewInsets.bottom),
+          child: InterstateHandoverSheetWidget(
+            orderModel: orderModel,
+          ),
+        );
+      },
+    );
   }
 
   void _handleProcessingStatus(BuildContext context) {

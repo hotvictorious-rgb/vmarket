@@ -127,10 +127,18 @@ class OrderDetailsRepository implements OrderDetailsRepositoryInterface{
   }
 
   @override
-  Future update(Map<String, dynamic> body, int? id) {
-    // TODO: implement update
-    throw UnimplementedError();
+  Future<Response> interstateDriverHandover({int? orderId, String? driverPhone, String? driverVehicleNo, String? waybillSlipNo}) async {
+    return await apiClient.postData(AppConstants.interstateDriverHandoverUri, {
+      'order_id': orderId,
+      'driver_phone': driverPhone,
+      'driver_vehicle_no': driverVehicleNo,
+      'waybill_slip_no': waybillSlipNo,
+    });
   }
 
+  @override
+  Future update(Map<String, dynamic> body, int? id) {
+    throw UnimplementedError();
+  }
 
 }

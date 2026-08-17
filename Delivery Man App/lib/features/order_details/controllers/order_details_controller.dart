@@ -101,6 +101,32 @@ class OrderDetailsController extends GetxController implements GetxService {
     return _isSuccess;
   }
 
+  Future<String?> interstateDriverHandover({int? orderId, String? driverPhone, String? driverVehicleNo, String? waybillSlipNo, BuildContext? context}) async {
+    _isLoading = true;
+    update();
+    Response response = await orderDetailsServiceInterface.interstateDriverHandover(
+      orderId: orderId,
+      driverPhone: driverPhone,
+      driverVehicleNo: driverVehicleNo,
+      waybillSlipNo: waybillSlipNo,
+    );
+    String? transitCode;
+    if (response.statusCode == 200) {
+      transitCode = response.body['driver_transit_code'];
+      showCustomSnackBarWidget(response.body['message'] ?? 'Handover recorded successfully', isError: false);
+      Get.find<OrderController>().getCurrentOrders();
+      Get.find<OrderController>().getAllOrderHistory('', '', '', '', 0);
+      if (context != null) {
+        getOrderDetails(orderId.toString(), context);
+      }
+    } else {
+      ApiChecker.checkApi(response);
+    }
+    _isLoading = false;
+    update();
+    return transitCode;
+  }
+
 
 
   Future<bool> cancelOrderStatus({int? orderId, String? cause,BuildContext? context}) async {

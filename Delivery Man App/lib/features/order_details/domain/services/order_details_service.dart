@@ -97,6 +97,16 @@ class OrderDetailsService implements OrderDetailsServiceInterface{
   }
 
   @override
+  Future<Response> interstateDriverHandover({int? orderId, String? driverPhone, String? driverVehicleNo, String? waybillSlipNo}) async {
+    return await orderDetailsRepositoryInterface.interstateDriverHandover(
+      orderId: orderId,
+      driverPhone: driverPhone,
+      driverVehicleNo: driverVehicleNo,
+      waybillSlipNo: waybillSlipNo,
+    );
+  }
+
+  @override
   Future<Response> verifyOrderDeliveryOtp({int? orderId, String? verificationCode}) {
      return orderDetailsRepositoryInterface.verifyOrderDeliveryOtp(orderId: orderId, verificationCode: verificationCode);
   }

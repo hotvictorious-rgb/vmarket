@@ -54,6 +54,7 @@ class AppConstants {
   static const String setCurrentLanguageUri = '/api/v2/delivery-man/language-change';
   static const String singleOrderHistoryUri = '/api/v2/delivery-man/order-item';
   static const String businessPagesUri = '/api/v1/business-pages?type=';
+  static const String interstateDriverHandoverUri = '/api/v2/delivery-man/interstate-driver-handover';
 
 
   // Shared Key

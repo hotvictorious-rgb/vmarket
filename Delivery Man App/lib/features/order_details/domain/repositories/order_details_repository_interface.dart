@@ -14,4 +14,5 @@ abstract class OrderDetailsRepositoryInterface implements RepositoryInterface{
   Future<Response> verifyOrderDeliveryOtp({int? orderId, String? verificationCode});
   Future<dynamic> resendOtpForOrderVerification({int? orderId});
   Future<Response> generatePaystackLink({int? orderId});
+  Future<Response> interstateDriverHandover({int? orderId, String? driverPhone, String? driverVehicleNo, String? waybillSlipNo});
 }
