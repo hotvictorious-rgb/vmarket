@@ -184,6 +184,7 @@ class DeliveryHubController extends Controller
             'name' => 'required|string|max:150',
             'type' => 'required|in:landmark,motor_park',
             'base_shipping_cost' => 'required|numeric|min:0',
+            'rider_delivery_fee' => 'nullable|numeric|min:0',
             'estimated_delivery_time' => 'nullable|string|max:100',
         ]);
 
@@ -192,6 +193,7 @@ class DeliveryHubController extends Controller
             'name' => trim($request->name),
             'type' => $request->type,
             'base_shipping_cost' => $request->base_shipping_cost,
+            'rider_delivery_fee' => $request->rider_delivery_fee ?? 0.00,
             'estimated_delivery_time' => $request->estimated_delivery_time,
             'is_active' => true,
         ]);
@@ -210,6 +212,7 @@ class DeliveryHubController extends Controller
             'name' => 'required|string|max:150',
             'type' => 'required|in:landmark,motor_park',
             'base_shipping_cost' => 'required|numeric|min:0',
+            'rider_delivery_fee' => 'nullable|numeric|min:0',
             'estimated_delivery_time' => 'nullable|string|max:100',
         ]);
 
@@ -219,6 +222,7 @@ class DeliveryHubController extends Controller
             'name' => trim($request->name),
             'type' => $request->type,
             'base_shipping_cost' => $request->base_shipping_cost,
+            'rider_delivery_fee' => $request->rider_delivery_fee ?? 0.00,
             'estimated_delivery_time' => $request->estimated_delivery_time,
         ]);
 

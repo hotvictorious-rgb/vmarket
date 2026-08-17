@@ -1004,7 +1004,26 @@ class OrderController extends Controller
         }
         $order->save();
 
-        OrderManager::wallet_manage_on_order_status_change($order, 'delivered');
+        OrderDetail::where('order_id', $order->id)->update(['delivery_status' => 'delivered']);
+
+        // Credit rider wallet if assigned
+        if ($order->delivery_man_id && $order->deliveryman_charge > 0) {
+            $dmWallet = \App\Models\DeliverymanWallet::where('delivery_man_id', $order->delivery_man_id)->first();
+            if ($dmWallet) {
+                $dmWallet->current_balance += $order->deliveryman_charge;
+                $dmWallet->save();
+            }
+        }
+
+        try {
+            OrderManager::wallet_manage_on_order_status_change($order, 'delivered');
+        } catch (\Exception $e) {
+        }
+
+        try {
+            event(new \App\Events\OrderStatusEvent(key: 'delivered', type: 'customer', order: $order));
+        } catch (\Exception $e) {
+        }
 
         return response()->json([
             'status' => 'success',

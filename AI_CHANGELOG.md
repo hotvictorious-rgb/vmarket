@@ -7,6 +7,18 @@ Always append your completed tasks here in chronological order at the top. Forma
 `### [YYYY-MM-DD HH:MM UTC] <Feature / Fix Title> [<Component Scope>]`
 Include the specific app/component modified and bullet points detailing the exact technical changes.
 
+### [2026-08-17 22:10 UTC] Payment Flow Hardening, Automatic Corridor Order Mapping & Wallet Settlement [Backend]
+* **Component:** Laravel Web Backend (`backend/vmarket-web/app/Utils/OrderManager.php`, `OrderController.php`, `PaystackController.php`)
+* **Action:** Audited and hardened all payment pipelines (Paystack, Wallet, Offline/COD) to ensure complete alignment with the Dynamic Logistics Engine and zero loopholes.
+* **Changes Made:**
+  - **`app/Utils/OrderManager.php`**:
+    - Enhanced `getOrderAddData()` to automatically resolve and persist `origin_hub_id` from vendor shops, `destination_hub_id`, `house_street_note`, `recipient_name`, and `recipient_phone` across all checkout payment channels (Digital, COD, Wallet, Offline).
+  - **`app/Http/Controllers/RestAPI/v1/OrderController.php`**:
+    - Hardened `confirm_driver_transit_code()` to automatically credit the delivery rider's wallet balance (`$dmWallet->current_balance += $order->deliveryman_charge`), update all `OrderDetail` records to `delivered`, and fire the `OrderStatusEvent` notification event upon customer release code confirmation.
+  - **`app/Http/Controllers/Payment_Methods/PaystackController.php`**:
+    - Re-verified Atomic Row-Level Locks (`where('is_paid', 0)->update(...)`) and Double Execution Guards (`$affected > 0`) preventing duplicate orders on concurrent Paystack webhooks and browser callbacks.
+* **Verification:** `php -l` on all modified files -> 0 syntax errors.
+
 ### [2026-08-17 21:35 UTC] Implement Dynamic Logistics Engine, Admin Corridor Dispatch Portal & Dual-OTP Handshake Protocol [Backend, User App, Delivery Man App]
 * **Component:** Laravel Web Backend (`backend/vmarket-web/`), Customer Mobile App (`User app`), Delivery Rider App (`Delivery Man App`)
 * **Action:** Implemented the full dynamic 3-tier geographic logistics infrastructure (Zero Maps dependency), Admin Corridor Batching Portal with live rider capacity limits, and 3-way OTP & Transit Code security protocol.

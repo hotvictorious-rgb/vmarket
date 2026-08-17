@@ -70,8 +70,14 @@
                                 </div>
 
                                 <div class="form-group">
-                                    <label class="title-color">{{ translate('Base Shipping Cost (₦)') }} <span class="text-danger">*</span></label>
+                                    <label class="title-color">{{ translate('Customer Checkout Shipping Fee (₦)') }} <span class="text-danger">*</span></label>
                                     <input type="number" step="0.01" name="base_shipping_cost" class="form-control" placeholder="1000.00" required>
+                                </div>
+
+                                <div class="form-group">
+                                    <label class="title-color">{{ translate('Standard Rider Payout Fee (₦)') }}</label>
+                                    <input type="number" step="0.01" name="rider_delivery_fee" class="form-control" placeholder="{{ translate('e.g. 500.00 (Driver earning per order)') }}">
+                                    <small class="text-muted">{{ translate('Amount credited to rider wallet upon completing this delivery') }}</small>
                                 </div>
 
                                 <div class="form-group">
@@ -107,7 +113,8 @@
                                         <th>{{ translate('Hub / Landmark Name') }}</th>
                                         <th>{{ translate('City / State') }}</th>
                                         <th>{{ translate('Type') }}</th>
-                                        <th>{{ translate('Delivery Fee') }}</th>
+                                        <th>{{ translate('Customer Fee') }}</th>
+                                        <th>{{ translate('Rider Payout') }}</th>
                                         <th>{{ translate('Est. Time') }}</th>
                                         <th>{{ translate('Status') }}</th>
                                         <th>{{ translate('Action') }}</th>
@@ -118,15 +125,14 @@
                                         <tr>
                                             <td>{{ $hubs->firstItem() + $key }}</td>
                                             <td class="font-weight-bold text-left">{{ $hub->name }}</td>
-                                            <td>{{ $hub->city->name ?? 'N/A' }}, {{ $hub->city->state->name ?? '' }}</td>
+                                            <td>{{ $hub->city->name ?? 'N/A' }} ({{ $hub->city->state->name ?? 'N/A' }})</td>
                                             <td>
-                                                @if($hub->type == 'landmark')
-                                                    <span class="badge badge-soft-success font-weight-bold"><i class="tio-poi"></i> {{ translate('Landmark') }}</span>
-                                                @else
-                                                    <span class="badge badge-soft-warning font-weight-bold"><i class="tio-bus"></i> {{ translate('Motor Park') }}</span>
-                                                @endif
+                                                <span class="badge {{ $hub->type == 'landmark' ? 'badge-soft-info' : 'badge-soft-warning' }} font-weight-bold">
+                                                    {{ $hub->type == 'landmark' ? translate('Landmark') : translate('Motor Park') }}
+                                                </span>
                                             </td>
-                                            <td class="font-weight-bold text-primary">₦{{ number_format($hub->base_shipping_cost, 2) }}</td>
+                                            <td class="font-weight-bold text-primary">{{ setCurrencySymbol(amount: usdToDefaultCurrency(amount: $hub->base_shipping_cost), currencyCode: getCurrencyCode()) }}</td>
+                                            <td class="font-weight-bold text-success">{{ setCurrencySymbol(amount: usdToDefaultCurrency(amount: $hub->rider_delivery_fee ?? 0), currencyCode: getCurrencyCode()) }}</td>
                                             <td>{{ $hub->estimated_delivery_time ?? 'Standard' }}</td>
                                             <td>
                                                 <label class="switcher mx-auto">

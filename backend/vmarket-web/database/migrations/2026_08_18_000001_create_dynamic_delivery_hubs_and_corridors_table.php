@@ -37,6 +37,7 @@ return new class extends Migration
                 $table->string('name', 150);
                 $table->enum('type', ['landmark', 'motor_park'])->default('landmark')->index();
                 $table->decimal('base_shipping_cost', 10, 2)->default(0.00);
+                $table->decimal('rider_delivery_fee', 10, 2)->default(0.00);
                 $table->string('estimated_delivery_time', 100)->nullable();
                 $table->boolean('is_active')->default(true);
                 $table->timestamps();

@@ -17,6 +17,7 @@ class DeliveryHub extends Model
         'name',
         'type',
         'base_shipping_cost',
+        'rider_delivery_fee',
         'estimated_delivery_time',
         'is_active',
     ];
@@ -24,6 +25,7 @@ class DeliveryHub extends Model
     protected $casts = [
         'city_id' => 'integer',
         'base_shipping_cost' => 'float',
+        'rider_delivery_fee' => 'float',
         'is_active' => 'boolean',
     ];
 

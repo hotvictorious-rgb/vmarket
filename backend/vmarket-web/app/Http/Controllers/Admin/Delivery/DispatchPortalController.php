@@ -118,9 +118,10 @@ class DispatchPortalController extends Controller
         }
 
         $batchId = 'BATCH-' . strtoupper(Str::random(6)) . '-' . time();
+        $customRiderFee = $request->filled('custom_rider_fee') ? (float) $request->custom_rider_fee : null;
 
         foreach ($request->order_ids as $orderId) {
-            $order = Order::find($orderId);
+            $order = Order::with(['originHub', 'destinationHub'])->find($orderId);
             if ($order) {
                 // Ensure Pickup OTP exists (4 digits)
                 if (empty($order->pickup_verification_code)) {
@@ -131,9 +132,15 @@ class DispatchPortalController extends Controller
                     $order->verification_code = (string) rand(1000, 9999);
                 }
 
-                // Ensure rider per-order earning (deliveryman_charge) is populated
-                if (empty($order->deliveryman_charge) || $order->deliveryman_charge <= 0) {
-                    $order->deliveryman_charge = $order->shipping_cost > 0 ? $order->shipping_cost : ($order->destinationHub?->base_shipping_cost ?? 0);
+                // [AI] Standard Rider Payout Fee (Independent from Customer Shipping Fee)
+                if ($customRiderFee !== null) {
+                    $order->deliveryman_charge = $customRiderFee;
+                } elseif ($order->destinationHub && $order->destinationHub->rider_delivery_fee > 0) {
+                    $order->deliveryman_charge = $order->destinationHub->rider_delivery_fee;
+                } else {
+                    $isInterstate = ($order->destinationHub && $order->destinationHub->type == 'motor_park')
+                        || ($order->originHub && $order->destinationHub && $order->originHub->city_id != $order->destinationHub->city_id);
+                    $order->deliveryman_charge = $isInterstate ? 1000.00 : 500.00;
                 }
 
                 $order->delivery_man_id = $deliveryMan->id;
