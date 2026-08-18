@@ -72,7 +72,7 @@ class OrderManager
             $totalDiscountOnProduct += $item->discount * $item->quantity;
         }
 
-        $orderTotal = $subTotal - $totalDiscountOnProduct - $coupon_discount;
+        $orderTotal = max(0, $subTotal - $totalDiscountOnProduct - $coupon_discount);
         return [
             'order_total' => $orderTotal
         ];
@@ -131,6 +131,15 @@ class OrderManager
     public static function getWalletManageOnOrderStatusChange($order, $received_by): void
     {
         $order = Order::find($order['id']);
+        if (!$order) {
+            return;
+        }
+
+        // [AI] Financial Idempotency Guard: Prevent duplicate vendor earnings or commission crediting
+        if (OrderTransaction::where(['order_id' => $order->id, 'status' => 'disburse'])->exists()) {
+            return;
+        }
+
         $order_summary = OrderManager::getOrderTotalAndSubTotalAmountSummary($order);
         $order_amount = $order_summary['subtotal'] - $order_summary['total_discount_on_product'] - $order['discount_amount'];
         $commission = $order['admin_commission'];

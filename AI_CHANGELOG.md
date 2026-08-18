@@ -7,6 +7,17 @@ Always append your completed tasks here in chronological order at the top. Forma
 `### [YYYY-MM-DD HH:MM UTC] <Feature / Fix Title> [<Component Scope>]`
 Include the specific app/component modified and bullet points detailing the exact technical changes.
 
+### [2026-08-18 13:10 UTC] Financial Deep Scan & Wallet Idempotency Guarding [Backend]
+* **Component:** Laravel Web Backend (`backend/vmarket-web/app/Utils/OrderManager.php`, `app/Http/Controllers/RestAPI/v1/OrderController.php`)
+* **Action:** Performed deep financial logic scan across the platform, eliminating duplicate vendor wallet crediting risks and hardening order status settlements.
+* **Changes Made:**
+  - **`app/Utils/OrderManager.php`**:
+    - Added **Financial Idempotency Guard** at the entry of `getWalletManageOnOrderStatusChange()` checking for disbursed `order_transactions` to prevent duplicate vendor payout or double commission crediting if an order status is updated repeatedly.
+    - Added `max(0, ...)` floor guard on `$orderTotal` to prevent excessive coupon deductions from producing negative order amounts.
+  - **`app/Http/Controllers/RestAPI/v1/OrderController.php`**:
+    - Aligned method invocation in `confirm_driver_transit_code()` to call `OrderManager::getWalletManageOnOrderStatusChange($order, 'customer')`.
+* **Verification:** `php -l` on all modified files -> 0 syntax errors.
+
 ### [2026-08-17 22:10 UTC] Payment Flow Hardening, Automatic Corridor Order Mapping & Wallet Settlement [Backend]
 * **Component:** Laravel Web Backend (`backend/vmarket-web/app/Utils/OrderManager.php`, `OrderController.php`, `PaystackController.php`)
 * **Action:** Audited and hardened all payment pipelines (Paystack, Wallet, Offline/COD) to ensure complete alignment with the Dynamic Logistics Engine and zero loopholes.

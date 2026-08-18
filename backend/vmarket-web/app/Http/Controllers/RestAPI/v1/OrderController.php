@@ -1016,7 +1016,7 @@ class OrderController extends Controller
         }
 
         try {
-            OrderManager::wallet_manage_on_order_status_change($order, 'delivered');
+            OrderManager::getWalletManageOnOrderStatusChange($order, 'customer');
         } catch (\Exception $e) {
         }
 
