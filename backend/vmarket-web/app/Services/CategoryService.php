@@ -23,6 +23,8 @@ class CategoryService
             'parent_id' => $request->get('parent_id', 0),
             'position' => $request['position'] ?? 0,
             'priority' => $request['priority'] ?? 0,
+            'markup_percentage' => $request['markup_percentage'] ?? 10.00,
+            'markup_type' => $request['markup_type'] ?? 'percentage',
             'home_status' => 1,
         ];
     }
@@ -39,6 +41,8 @@ class CategoryService
             'icon' => $image,
             'icon_storage_type' => $request->has('image') ? $storage : $data['icon_storage_type'],
             'priority' => $request['priority'],
+            'markup_percentage' => $request['markup_percentage'] ?? $data['markup_percentage'] ?? 10.00,
+            'markup_type' => $request['markup_type'] ?? $data['markup_type'] ?? 'percentage',
         ];
 
         if ($request['parent_id']) {

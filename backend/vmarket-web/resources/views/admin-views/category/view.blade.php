@@ -59,6 +59,7 @@
                                     @if ($categoryWiseTax)
                                         <th>{{ translate('tax_rate') }}</th>
                                     @endif
+                                    <th class="text-center">{{ translate('Markup_Spread') }}</th>
                                     <th class="text-center">{{ translate('priority') }}</th>
                                     <th class="text-center">{{ translate('Home_Category_Status') }}</th>
                                     <th class="text-center">{{ translate('action') }}</th>
@@ -91,6 +92,11 @@
                                                 @endforelse
                                             </td>
                                         @endif
+                                        <td class="text-center">
+                                            <span class="badge bg-primary bg-opacity-10 text-primary border border-primary border-opacity-25 px-2 py-1 fs-12 fw-semibold">
+                                                +{{ $category['markup_percentage'] ?? 10 }}%
+                                            </span>
+                                        </td>
                                         <td class="text-center">
                                             {{ $category['priority'] }}
                                         </td>

@@ -414,6 +414,18 @@
                     </ul>
                 </li>
                 <li>
+                    <a class="nav-link {{ Request::is('admin/products/approval-portal*') ? 'active' : '' }}"
+                       href="{{ route('admin.products.approval-portal') }}" title="{{ translate('Approval_&_Pricing_Gateway') }}">
+                        <i class="fi fi-sr-shield-check"></i>
+                        <span class="aside-mini-hidden-element flex-grow-1 d-flex justify-content-between align-items-center">
+                            <span class="text-truncate max-w-180">{{ translate('Pricing_&_Approval_Gateway') }}</span>
+                            <span class="badge fw-bold badge-danger badge-sm text-bg-danger">
+                                {{ \App\Models\Product::where('added_by', 'seller')->where('request_status', 0)->count() }}
+                            </span>
+                        </span>
+                    </a>
+                </li>
+                <li>
                     <a class="nav-link {{ Request::is('admin/products/product-gallery') ? 'active' : '' }}"
                        href="{{ route('admin.products.product-gallery') }}" title="{{ translate('Product_Gallery') }}">
                         <i class="fi fi-sr-boxes"></i>

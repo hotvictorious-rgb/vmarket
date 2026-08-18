@@ -39,7 +39,8 @@ class CategoryAddRequest extends FormRequest
                 maxSize: getFileUploadMaxSize(unit: 'kb'),
                 isDisallowed: true
             ),
-            'priority' => 'required'
+            'priority' => 'required',
+            'markup_percentage' => 'nullable|numeric|min:0|max:100',
         ];
     }
 

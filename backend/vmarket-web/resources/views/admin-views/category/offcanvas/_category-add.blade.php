@@ -197,6 +197,22 @@
                     </div>
 
                     @if ($categoryType == 'category')
+                        <div class="form-group mb-20">
+                            <label class="form-label text-capitalize d-flex align-items-center gap-1" for="markup_percentage">
+                                {{ translate('Category_Markup_Percentage_(%)') }}<span class="text-danger">*</span>
+                                <span class="tooltip-icon" data-bs-toggle="tooltip" data-bs-placement="top"
+                                      aria-label="{{ translate('Platform_profit_margin_added_to_vendor_payout_cost_for_products_under_this_category.') }}"
+                                      data-bs-title="{{ translate('Platform_profit_margin_added_to_vendor_payout_cost_for_products_under_this_category.') }}">
+                                    <i class="fi fi-sr-info d-flex"></i>
+                                </span>
+                            </label>
+                            <div class="input-group">
+                                <input type="number" step="0.01" min="0" max="100" name="markup_percentage" class="form-control"
+                                       placeholder="{{ translate('e.g._15.00') }}" value="10.00" required>
+                                <span class="input-group-text">%</span>
+                            </div>
+                        </div>
+
                         @if ($categoryWiseTax)
                             <div class="form-group mb-20">
                                 <label class="form-label" for="tax-ids-for-category-add">

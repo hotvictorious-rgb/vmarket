@@ -237,6 +237,10 @@ Route::group(['prefix' => 'admin', 'as' => 'admin.', 'middleware' => ['admin', '
             Route::delete('restock-delete/{id}', 'deleteRestock')->name('restock-delete');
             Route::get('product-feeds', [\App\Http\Controllers\ProductFeedExportController::class, 'index'])->name('product-feeds');
             Route::post('product-feeds/regenerate-token', [\App\Http\Controllers\ProductFeedExportController::class, 'regenerateToken'])->name('product-feeds.regenerate-token');
+            Route::get('approval-portal', [\App\Http\Controllers\Admin\Product\ApprovalPortalController::class, 'index'])->name('approval-portal');
+            Route::post('approval-portal/approve', [\App\Http\Controllers\Admin\Product\ApprovalPortalController::class, 'approveAndSetPrice'])->name('approve-price');
+            Route::post('approval-portal/batch-approve', [\App\Http\Controllers\Admin\Product\ApprovalPortalController::class, 'batchApprove'])->name('batch-approve');
+            Route::post('approval-portal/deny', [\App\Http\Controllers\Admin\Product\ApprovalPortalController::class, 'deny'])->name('deny-request');
         });
     });
 

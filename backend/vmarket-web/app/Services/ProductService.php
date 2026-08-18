@@ -538,6 +538,18 @@ class ProductService
         $digitalFileOptions = $this->getDigitalVariationOptions(request: $request);
         $digitalFileCombinations = $this->getDigitalVariationCombinations(arrays: $digitalFileOptions);
 
+        $pricingService = app(\App\Services\PricingService::class);
+        if ($addedBy == 'seller') {
+            $vendorCost = currencyConverter(amount: (float)($request['purchase_price'] ?? $request['unit_price'] ?? 0));
+            $pricing = $pricingService->calculateRetailPrice($vendorCost, $request['category_id'] ?? null);
+            $unitPrice = $pricing['unit_price'];
+            $purchasePrice = $vendorCost;
+            $variations = $pricingService->calculateVariationPrices($variations, $request['category_id'] ?? null);
+        } else {
+            $unitPrice = currencyConverter(amount: (float)($request['unit_price'] ?? 0));
+            $purchasePrice = currencyConverter(amount: (float)($request['purchase_price'] ?? 0));
+        }
+
         return [
             'added_by' => $addedBy,
             'user_id' => $addedBy == 'admin' ? auth('admin')->id() : auth('seller')->id(),
@@ -561,8 +573,8 @@ class ProductService
             'variation' => $request['product_type'] == 'physical' ? json_encode($variations) : json_encode([]),
             'digital_product_file_types' => $request->has('extensions_type') ? $request->get('extensions_type') : [],
             'digital_product_extensions' => $digitalFileCombinations,
-            'unit_price' => currencyConverter(amount: $request['unit_price']),
-            'purchase_price' => 0,
+            'unit_price' => $unitPrice,
+            'purchase_price' => $purchasePrice,
             'tax' => $request['tax_type'] == 'flat' ? currencyConverter(amount: $request['tax']) : $request['tax'],
             'tax_type' => $request->get('tax_type', 'percent'),
             'tax_model' => $request['tax_model'],
@@ -626,6 +638,18 @@ class ProductService
         $digitalFileOptions = $this->getDigitalVariationOptions(request: $request);
         $digitalFileCombinations = $this->getDigitalVariationCombinations(arrays: $digitalFileOptions);
 
+        $pricingService = app(\App\Services\PricingService::class);
+        if ($updateBy == 'seller') {
+            $vendorCost = currencyConverter(amount: (float)($request['purchase_price'] ?? $request['unit_price'] ?? $product['purchase_price'] ?? 0));
+            $pricing = $pricingService->calculateRetailPrice($vendorCost, $request['category_id'] ?? $product['category_id'] ?? null);
+            $unitPrice = $pricing['unit_price'];
+            $purchasePrice = $vendorCost;
+            $variations = $pricingService->calculateVariationPrices($variations, $request['category_id'] ?? $product['category_id'] ?? null);
+        } else {
+            $unitPrice = currencyConverter(amount: (float)($request['unit_price'] ?? $product['unit_price'] ?? 0));
+            $purchasePrice = currencyConverter(amount: (float)($request['purchase_price'] ?? $product['purchase_price'] ?? 0));
+        }
+
         $dataArray = [
             'name' => $request['name'][array_search('en', $request['lang'])],
             'code' => $request['code'],
@@ -643,8 +667,8 @@ class ProductService
             'variation' => $request['product_type'] == 'physical' ? json_encode($variations) : json_encode([]),
             'digital_product_file_types' => $request->has('extensions_type') ? $request->get('extensions_type') : [],
             'digital_product_extensions' => $digitalFileCombinations,
-            'unit_price' => currencyConverter(amount: $request['unit_price']),
-            'purchase_price' => 0,
+            'unit_price' => $unitPrice,
+            'purchase_price' => $purchasePrice,
             'tax' => $request['tax_type'] == 'flat' ? currencyConverter(amount: $request['tax']) : $request['tax'],
             'tax_type' => $request['tax_type'],
             'tax_model' => $request['tax_model'],
@@ -698,7 +722,7 @@ class ProductService
                 'shipping_cost' => $request['product_type'] == 'physical' ? currencyConverter(amount: $request['shipping_cost']) : 0,
             ];
         }
-        if ($updateBy == 'seller' && $product->request_status == 2) {
+        if ($updateBy == 'seller') {
             $dataArray += [
                 'request_status' => 0
             ];

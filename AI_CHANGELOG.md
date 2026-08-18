@@ -7,6 +7,33 @@ Always append your completed tasks here in chronological order at the top. Forma
 `### [YYYY-MM-DD HH:MM UTC] <Feature / Fix Title> [<Component Scope>]`
 Include the specific app/component modified and bullet points detailing the exact technical changes.
 
+### [2026-08-19 00:00 UTC] Cost-Plus Markup Engine, Super Admin Pricing Gateway & Total Vendor Price Blindness [backend, vendor-app]
+* **Components:** Laravel Web Backend (`backend/vmarket-web/`), Flutter Vendor Mobile App (`Vendor app/`)
+* **Action:** Transitioned platform pricing architecture to a dynamic Cost-Plus Markup model with Super Admin Pricing & Approval Gateway and strict Vendor Price Blindness.
+* **Core Technical Implementations:**
+  - **Dynamic Markup Database Migration & Models:**
+    - Created `database/migrations/2026_08_19_000001_add_markup_settings_to_categories_and_business_settings.php` adding `markup_percentage` and `markup_type` to `categories` table.
+    - Seeded default dynamic business settings: `default_platform_markup_percentage` (`10.00`), `pricing_model` (`cost_plus_markup`), `price_rounding_strategy` (`none`), `new_product_approval` (`1`).
+    - Extended `app/Models/Category.php` with `$fillable` and `$casts` for `markup_percentage` (float) and `markup_type` (string).
+  - **Dynamic Pricing Engine Service:**
+    - Created `app/Services/PricingService.php` providing `calculateRetailPrice()`, `applyRoundingStrategy()`, and `calculateVariationPrices()`. Dynamically computes retail prices via Category Markup -> Global Platform Default fallback.
+  - **Dedicated Super Admin Product Approval & Pricing Gateway Portal:**
+    - Created `app/Http/Controllers/Admin/Product/ApprovalPortalController.php` with single & batch approval, price fine-tuning, denial workflows, and cache invalidation.
+    - Created `resources/views/admin-views/product/approval-portal.blade.php` featuring live editable selling price inputs, vendor payout badges, markup indicators, and batch processing.
+    - Registered routes in `routes/admin/routes.php` under `admin.products.approval-portal`, `admin.products.approve-price`, `admin.products.batch-approve`, and `admin.products.deny-request`.
+    - Added sidebar navigation link with live pending counter badge in `resources/views/layouts/admin/partials/_side-bar.blade.php`.
+  - **Category Management with Markup Controls:**
+    - Updated `app/Services/CategoryService.php`, `CategoryAddRequest.php`, `CategoryUpdateRequest.php`, `view.blade.php`, `_category-add.blade.php`, and `_category-edit.blade.php` with category markup inputs and table display.
+  - **Product & Order Service Dynamic Calculations:**
+    - Updated `ProductService.php` (`getAddProductData`, `getUpdateProductData`) to store vendor asking price in `purchase_price`, calculate marked-up customer `unit_price` via `PricingService`, and set `request_status = 0` for seller submissions.
+    - Updated `app/Utils/Helpers.php` (`sales_commission_before_order`) to disburse exact markup spread `(price - purchase_price) * qty` to Admin Wallet and vendor asking cost to Seller Wallet under `cost_plus_markup`.
+  - **Total Vendor Price Blindness Guard:**
+    - Hardened `Helpers::set_data_format()` and `setDataFormatForJsonData()` to mask customer retail `unit_price` with the vendor's net payout cost (`purchase_price`) in seller contexts.
+  - **Flutter Vendor App Updates:**
+    - Updated `Vendor app/lib/features/addProduct/domain/repository/add_product_repository.dart` to submit `purchase_price`.
+    - Updated `Vendor app/assets/language/en.json` replacing "Unit Price" / "Purchase Price" labels with "Your Desired Payout (₦)".
+* **Verification:** `php -l` on all PHP files passed with 0 errors; `flutter analyze` verified.
+
 ### [2026-08-18 13:55 UTC] Production Deployment & Logistics Corridors Live Verification [Production Live, Backend]
 * **Component:** Live Production Server (`shop.victoriousmarket.com.ng`), Laravel Backend (`backend/vmarket-web/`)
 * **Action:** Successfully deployed commit `dd20bac3` to the live production server under Safe Overlay Protocol (SOP), executed database migrations, seeded default logistics hubs, and verified live REST API endpoints.

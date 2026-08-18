@@ -36,6 +36,8 @@ class Category extends Model
         'position',
         'home_status',
         'priority',
+        'markup_percentage',
+        'markup_type',
     ];
 
     protected $casts = [
@@ -47,6 +49,8 @@ class Category extends Model
         'position' => 'integer',
         'home_status' => 'integer',
         'priority' => 'integer',
+        'markup_percentage' => 'float',
+        'markup_type' => 'string',
         'created_at' => 'datetime',
         'updated_at' => 'datetime',
     ];

@@ -162,6 +162,21 @@ class Helpers
         }
         $data['variation'] = $variation;
 
+        // [AI] Vendor Price Blindness Guard:
+        // In seller context, mask customer retail unit_price with the vendor's net payout cost (purchase_price)
+        if (request()->is('*seller*') || request()->is('*/seller/*') || auth('seller')->check()) {
+            if (isset($data['purchase_price']) && (float)$data['purchase_price'] > 0) {
+                $data['unit_price'] = (float)$data['purchase_price'];
+            }
+            if (!empty($data['variation']) && is_array($data['variation'])) {
+                foreach ($data['variation'] as &$varItem) {
+                    if (isset($varItem['purchase_price']) && (float)$varItem['purchase_price'] > 0) {
+                        $varItem['price'] = (float)$varItem['purchase_price'];
+                    }
+                }
+            }
+        }
+
         return $data;
     }
 
@@ -226,6 +241,21 @@ class Helpers
             ];
         }
         $data['variation'] = $variation;
+
+        // [AI] Vendor Price Blindness Guard:
+        if (request()->is('*seller*') || request()->is('*/seller/*') || auth('seller')->check()) {
+            if (isset($data['purchase_price']) && (float)$data['purchase_price'] > 0) {
+                $data['unit_price'] = (float)$data['purchase_price'];
+            }
+            if (!empty($data['variation']) && is_array($data['variation'])) {
+                foreach ($data['variation'] as &$varItem) {
+                    if (isset($varItem['purchase_price']) && (float)$varItem['purchase_price'] > 0) {
+                        $varItem['price'] = (float)$varItem['purchase_price'];
+                    }
+                }
+            }
+        }
+
         return $data;
     }
 
@@ -616,6 +646,24 @@ class Helpers
     public static function sales_commission_before_order($cart_group_id, $coupon_discount): int|string
     {
         $carts = CartManager::getCartListQuery(groupId: $cart_group_id);
+        if (!$carts || $carts->isEmpty()) {
+            return 0;
+        }
+
+        $pricingModel = getWebConfig(name: 'pricing_model') ?? 'cost_plus_markup';
+        if ($pricingModel == 'cost_plus_markup') {
+            $totalMarkupCommission = 0;
+            foreach ($carts as $cart) {
+                if ($cart->seller_is == 'seller') {
+                    $product = $cart->product;
+                    $vendorCost = $product ? (float)($product->purchase_price > 0 ? $product->purchase_price : ($cart->price)) : (float)$cart->price;
+                    $markupPerUnit = max(0, (float)$cart->price - $vendorCost);
+                    $totalMarkupCommission += ($markupPerUnit * $cart->quantity);
+                }
+            }
+            return number_format($totalMarkupCommission, 2, '.', '');
+        }
+
         $cart_summery = OrderManager::getOrderSummaryBeforePlaceOrder($carts, $coupon_discount);
         return self::seller_sales_commission($carts[0]['seller_is'], $carts[0]['seller_id'], $cart_summery['order_total']);
     }
