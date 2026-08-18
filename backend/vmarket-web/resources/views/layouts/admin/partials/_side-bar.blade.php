@@ -165,6 +165,19 @@
                     </ul>
                 </li>
 
+                <li class="{{ Request::is('admin/dispatch-portal*') ? 'active' : '' }}">
+                    <a class="nav-link {{ Request::is('admin/dispatch-portal*') ? 'active' : '' }}"
+                       href="{{ route('admin.dispatch-portal.index') }}" title="{{ translate('Batch Dispatch Portal') }}">
+                        <i class="fi fi-sr-paper-plane-launch"></i>
+                        <span class="aside-mini-hidden-element flex-grow-1 d-flex justify-content-between align-items-center">
+                            <span class="text-truncate max-w-180">{{ translate('Batch Dispatch Portal') }}</span>
+                            <span class="badge fw-bold badge-warning badge-sm text-bg-warning">
+                                {{ \App\Models\Order::whereIn('order_status', ['confirmed', 'processing'])->whereNull('delivery_man_id')->count() }}
+                            </span>
+                        </span>
+                    </a>
+                </li>
+
                 <li class="{{ Request::is('admin/refund-section/*') ? 'sub-menu-opened' : '' }}">
                     <a class="nav-link nav-link-toggle {{ Request::is('admin/refund-section/refund/*') ? 'active' : '' }}"
                        href="javascript:" title="{{ translate('refund_Requests') }}">

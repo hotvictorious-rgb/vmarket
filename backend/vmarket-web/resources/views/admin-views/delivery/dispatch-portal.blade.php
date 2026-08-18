@@ -207,7 +207,7 @@
     @endif
 </div>
 
-@push('script_2')
+@push('script')
 <script>
     // Update live counter when checkboxes change
     function updateSelectedCounter() {
@@ -231,14 +231,22 @@
         e.preventDefault();
         var selectedCount = $('.order-checkbox:checked').length;
         if (selectedCount === 0) {
-            toastr.warning('{{ translate("Please select at least 1 order to dispatch.") }}');
+            if (typeof toastr !== 'undefined') {
+                toastr.warning('{{ translate("Please select at least 1 order to dispatch.") }}');
+            } else {
+                alert('{{ translate("Please select at least 1 order to dispatch.") }}');
+            }
             return;
         }
 
         var riderSelect = $('#delivery-man-select');
         var riderId = riderSelect.val();
         if (!riderId) {
-            toastr.warning('{{ translate("Please select a delivery rider for this batch.") }}');
+            if (typeof toastr !== 'undefined') {
+                toastr.warning('{{ translate("Please select a delivery rider for this batch.") }}');
+            } else {
+                alert('{{ translate("Please select a delivery rider for this batch.") }}');
+            }
             riderSelect.focus();
             return;
         }
@@ -249,8 +257,13 @@
         var availableSlots = parseInt(selectedOption.data('available')) || 0;
 
         if (selectedCount > availableSlots) {
-            toastr.error('{{ translate("Rider capacity limit exceeded!") }} ' + 
-                '{{ translate("This rider can only take") }} ' + availableSlots + ' {{ translate("more order(s). You selected") }} ' + selectedCount + '.');
+            var msg = '{{ translate("Rider capacity limit exceeded!") }} ' + 
+                '{{ translate("This rider can only take") }} ' + availableSlots + ' {{ translate("more order(s). You selected") }} ' + selectedCount + '.';
+            if (typeof toastr !== 'undefined') {
+                toastr.error(msg);
+            } else {
+                alert(msg);
+            }
             return;
         }
 

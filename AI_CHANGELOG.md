@@ -7,6 +7,17 @@ Always append your completed tasks here in chronological order at the top. Forma
 `### [YYYY-MM-DD HH:MM UTC] <Feature / Fix Title> [<Component Scope>]`
 Include the specific app/component modified and bullet points detailing the exact technical changes.
 
+### [2026-08-19 00:30 UTC] Delivery Portal & Landmark Hub Audit, Live Edit Modals & Script Stack Fixes [backend]
+* **Component:** Laravel Web Backend (`backend/vmarket-web/`)
+* **Action:** Performed deep audit on the Delivery Corridor & Batch Dispatch Portal and Geographic Hub / Landmark Management, resolving script stack rendering, adding live edit modals, migrating to ToastMagic, and hardening order origin hub fallback.
+* **Changes Made:**
+  - **Script Stack Alignment:** Fixed `@push('script_2')` to `@push('script')` in `dispatch-portal.blade.php` and `hub-management.blade.php` to align with `layouts/admin/app.blade.php` (`@stack('script')`), restoring JavaScript event listeners for cascading dropdowns and batch dispatch guards.
+  - **Live Edit Modals for Delivery Hubs & Locations:** Added interactive Edit Modals for Landmarks / Motor Parks, Operational Cities, and States in `hub-management.blade.php` with dynamic pre-population via AJAX, allowing admins to adjust customer fees, rider earnings, and delivery timeframes without deletion.
+  - **ToastMagic Framework Alignment:** Replaced `Brian2694\Toastr` with standard `Devrabiul\ToastMagic\Facades\ToastMagic` across `DispatchPortalController.php` and `DeliveryHubController.php`.
+  - **Order Origin Hub Mapping Fallback:** Hardened `OrderManager::getOrderAddData()` to safely fall back to the primary active delivery hub if a vendor's shop does not have `delivery_hub_id` explicitly configured, preventing unassigned/orphaned corridor clusters.
+  - **Sidebar Prominence & Live Counter:** Added direct Batch Dispatch Portal navigation link under `order_management` in `_side-bar.blade.php` with a live badge showing unassigned dispatch-ready orders.
+* **Verification:** `php -l` on all modified files passed with 0 errors.
+
 ### [2026-08-19 00:00 UTC] Cost-Plus Markup Engine, Super Admin Pricing Gateway & Total Vendor Price Blindness [backend, vendor-app]
 * **Components:** Laravel Web Backend (`backend/vmarket-web/`), Flutter Vendor Mobile App (`Vendor app/`)
 * **Action:** Transitioned platform pricing architecture to a dynamic Cost-Plus Markup model with Super Admin Pricing & Approval Gateway and strict Vendor Price Blindness.

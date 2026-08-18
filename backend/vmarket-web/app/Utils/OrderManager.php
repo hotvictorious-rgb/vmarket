@@ -39,6 +39,7 @@ use App\Models\ReferralCustomer;
 use App\Models\WalletTransaction;
 use Illuminate\Support\Facades\DB;
 use App\Models\DigitalProductVariation;
+use App\Models\DeliveryHub;
 use Modules\TaxModule\app\Traits\VatTaxManagement;
 
 
@@ -1021,7 +1022,7 @@ class OrderManager
             'created_at' => now(),
             'updated_at' => now(),
             'order_note' => $orderData['order_note'] ?? session('order_note'),
-            'origin_hub_id' => $cartData['seller_id'] ? Shop::where('seller_id', $cartData['seller_id'])->value('delivery_hub_id') : Shop::where('seller_id', 0)->value('delivery_hub_id'),
+            'origin_hub_id' => ($cartData['seller_id'] ? Shop::where('seller_id', $cartData['seller_id'])->value('delivery_hub_id') : Shop::where('seller_id', 0)->value('delivery_hub_id')) ?: DeliveryHub::where('is_active', true)->value('id'),
             'destination_hub_id' => $orderData['destination_hub_id'] ?? request('destination_hub_id') ?? session('destination_hub_id'),
             'house_street_note' => $orderData['house_street_note'] ?? request('house_street_note') ?? session('house_street_note'),
             'recipient_name' => $orderData['recipient_name'] ?? request('recipient_name') ?? (isset($customerData['customer']) ? ($customerData['customer']->f_name . ' ' . $customerData['customer']->l_name) : null),

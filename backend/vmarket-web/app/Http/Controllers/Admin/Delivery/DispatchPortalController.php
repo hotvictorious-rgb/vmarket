@@ -9,7 +9,7 @@ use App\Models\DeliveryMan;
 use App\Models\DeliveryState;
 use App\Models\Order;
 use App\Utils\Helpers;
-use Brian2694\Toastr\Facades\Toastr;
+use Devrabiul\ToastMagic\Facades\ToastMagic;
 use Carbon\Carbon;
 use Illuminate\Contracts\View\View;
 use Illuminate\Http\JsonResponse;
@@ -113,7 +113,7 @@ class DispatchPortalController extends Controller
         // Rider Capacity Guard Check
         if (($currentLoad + $selectedCount) > $maxCapacity) {
             $availableSlots = max(0, $maxCapacity - $currentLoad);
-            Toastr::error(translate("Capacity limit exceeded for {$deliveryMan->f_name}. Available slots: {$availableSlots}, selected: {$selectedCount}. Max capacity is {$maxCapacity}."));
+            ToastMagic::error(translate("Capacity limit exceeded for {$deliveryMan->f_name}. Available slots: {$availableSlots}, selected: {$selectedCount}. Max capacity is {$maxCapacity}."));
             return back();
         }
 
@@ -167,7 +167,7 @@ class DispatchPortalController extends Controller
             }
         }
 
-        Toastr::success(translate("Successfully assigned {$selectedCount} order(s) to {$deliveryMan->f_name} {$deliveryMan->l_name} (Batch: {$batchId})"));
+        ToastMagic::success(translate("Successfully assigned {$selectedCount} order(s) to {$deliveryMan->f_name} {$deliveryMan->l_name} (Batch: {$batchId})"));
         return back();
     }
 }

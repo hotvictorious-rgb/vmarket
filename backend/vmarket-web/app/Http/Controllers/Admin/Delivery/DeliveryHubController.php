@@ -6,7 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Models\DeliveryCity;
 use App\Models\DeliveryHub;
 use App\Models\DeliveryState;
-use Brian2694\Toastr\Facades\Toastr;
+use Devrabiul\ToastMagic\Facades\ToastMagic;
 use Illuminate\Contracts\View\View;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
@@ -53,7 +53,7 @@ class DeliveryHubController extends Controller
             'is_active' => true,
         ]);
 
-        Toastr::success(translate('State added successfully'));
+        ToastMagic::success(translate('State added successfully'));
         return back();
     }
 
@@ -71,7 +71,7 @@ class DeliveryHubController extends Controller
             'name' => trim($request->name),
         ]);
 
-        Toastr::success(translate('State updated successfully'));
+        ToastMagic::success(translate('State updated successfully'));
         return back();
     }
 
@@ -87,7 +87,7 @@ class DeliveryHubController extends Controller
         }
         $state->delete();
 
-        Toastr::success(translate('State and associated cities removed'));
+        ToastMagic::success(translate('State and associated cities removed'));
         return back();
     }
 
@@ -122,7 +122,7 @@ class DeliveryHubController extends Controller
             'is_active' => true,
         ]);
 
-        Toastr::success(translate('City added successfully'));
+        ToastMagic::success(translate('City added successfully'));
         return back();
     }
 
@@ -142,7 +142,7 @@ class DeliveryHubController extends Controller
             'name' => trim($request->name),
         ]);
 
-        Toastr::success(translate('City updated successfully'));
+        ToastMagic::success(translate('City updated successfully'));
         return back();
     }
 
@@ -155,7 +155,7 @@ class DeliveryHubController extends Controller
         $city->hubs()->delete();
         $city->delete();
 
-        Toastr::success(translate('City and associated hubs deleted successfully'));
+        ToastMagic::success(translate('City and associated hubs deleted successfully'));
         return back();
     }
 
@@ -198,7 +198,7 @@ class DeliveryHubController extends Controller
             'is_active' => true,
         ]);
 
-        Toastr::success(translate($request->type == 'landmark' ? 'Landmark added successfully' : 'Motor Park hub added successfully'));
+        ToastMagic::success(translate($request->type == 'landmark' ? 'Landmark added successfully' : 'Motor Park hub added successfully'));
         return back();
     }
 
@@ -226,7 +226,7 @@ class DeliveryHubController extends Controller
             'estimated_delivery_time' => $request->estimated_delivery_time,
         ]);
 
-        Toastr::success(translate('Delivery hub updated successfully'));
+        ToastMagic::success(translate('Delivery hub updated successfully'));
         return back();
     }
 
@@ -238,7 +238,7 @@ class DeliveryHubController extends Controller
         $hub = DeliveryHub::findOrFail($id);
         $hub->delete();
 
-        Toastr::success(translate('Delivery hub removed successfully'));
+        ToastMagic::success(translate('Delivery hub removed successfully'));
         return back();
     }
 
