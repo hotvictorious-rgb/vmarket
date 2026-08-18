@@ -11,6 +11,7 @@ Include the specific app/component modified and bullet points detailing the exac
 * **Component:** Laravel Web Backend (`backend/vmarket-web/`)
 * **Action:** Performed deep audit on the Delivery Corridor & Batch Dispatch Portal and Geographic Hub / Landmark Management, resolving script stack rendering, adding live edit modals, migrating to ToastMagic, and hardening order origin hub fallback.
 * **Changes Made:**
+  - **Delivery Man REST API Eager Loading:** Updated `DeliveryManController::get_current_orders()` to eager-load `originHub.city.state` and `destinationHub.city.state`, delivering full corridor, landmark, and batch metadata to the Delivery Man mobile app.
   - **Script Stack Alignment:** Fixed `@push('script_2')` to `@push('script')` in `dispatch-portal.blade.php` and `hub-management.blade.php` to align with `layouts/admin/app.blade.php` (`@stack('script')`), restoring JavaScript event listeners for cascading dropdowns and batch dispatch guards.
   - **Live Edit Modals for Delivery Hubs & Locations:** Added interactive Edit Modals for Landmarks / Motor Parks, Operational Cities, and States in `hub-management.blade.php` with dynamic pre-population via AJAX, allowing admins to adjust customer fees, rider earnings, and delivery timeframes without deletion.
   - **ToastMagic Framework Alignment:** Replaced `Brian2694\Toastr` with standard `Devrabiul\ToastMagic\Facades\ToastMagic` across `DispatchPortalController.php` and `DeliveryHubController.php`.

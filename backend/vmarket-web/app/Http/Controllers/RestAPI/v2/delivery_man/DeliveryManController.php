@@ -74,7 +74,7 @@ class DeliveryManController extends Controller
     public function get_current_orders(Request $request)
     {
         $deliveryMan = $request['delivery_man'];
-        $orders = Order::with(['shippingAddress', 'customer', 'seller.shop'])
+        $orders = Order::with(['shippingAddress', 'customer', 'seller.shop', 'originHub.city.state', 'destinationHub.city.state'])
             ->whereIn('order_status', ['pending', 'processing', 'out_for_delivery', 'confirmed'])
             ->where(['delivery_man_id' => $deliveryMan['id']])
             ->orderBy('expected_delivery_date', 'asc')
