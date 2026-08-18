@@ -213,6 +213,7 @@ class AddProductRepository implements AddProductRepositoryInterface{
       'name': jsonEncode(addProduct.titleList),
       'description': jsonEncode(addProduct.descriptionList),
       'unit_price': product.unitPrice,
+      'purchase_price': product.unitPrice,
       'discount': product.discount,
       'discount_type': product.discountType,
       'tax_ids': jsonEncode(product.taxIds),
