@@ -7,6 +7,11 @@ Always append your completed tasks here in chronological order at the top. Forma
 `### [YYYY-MM-DD HH:MM UTC] <Feature / Fix Title> [<Component Scope>]`
 Include the specific app/component modified and bullet points detailing the exact technical changes.
 
+### [2026-08-19 13:15 UTC] Fix UrlGenerationException in Admin Hub Management Blade View [backend]
+* **Component:** Admin Delivery Hubs View (`resources/views/admin-views/delivery/hub-management.blade.php`)
+* **Action:** Resolved fatal `UrlGenerationException: Missing required parameter for [Route: admin.delivery-hubs.get-cities-ajax]` on `/admin/delivery-hubs`:
+  - Replaced `route('admin.delivery-hubs.get-cities-ajax', "")` with `url('admin/delivery-hubs/get-cities-ajax')` on lines 509 and 523, preventing Laravel 10/11 parameter resolver exception during Blade template compilation.
+
 ### [2026-08-19 12:57 UTC] Fix Blade Inline @php Compilation Error & Vendor Employee Trait Inconsistency [backend]
 * **Component:** Blade Print Templates & Vendor Staff Controller (`batch-manifest.blade.php`, `dispatch-portal.blade.php`, `packing-slip.blade.php`, `VendorEmployeeController.php`)
 * **Action:** Resolved fatal syntax compilation and missing trait errors:

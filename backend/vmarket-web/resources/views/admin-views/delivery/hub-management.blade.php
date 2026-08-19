@@ -506,7 +506,7 @@
     $('#hub-state-select').on('change', function() {
         var stateId = $(this).val();
         if(stateId) {
-            $.get('{{ route("admin.delivery-hubs.get-cities-ajax", "") }}/' + stateId, function(data) {
+            $.get('{{ url('admin/delivery-hubs/get-cities-ajax') }}/' + stateId, function(data) {
                 $('#hub-city-select').empty().append('<option value="">{{ translate("--- Select City ---") }}</option>');
                 $.each(data, function(index, city) {
                     $('#hub-city-select').append('<option value="'+ city.id +'">'+ city.name +'</option>');
@@ -520,7 +520,7 @@
     $('#edit-hub-state-select').on('change', function() {
         var stateId = $(this).val();
         if(stateId) {
-            $.get('{{ route("admin.delivery-hubs.get-cities-ajax", "") }}/' + stateId, function(data) {
+            $.get('{{ url('admin/delivery-hubs/get-cities-ajax') }}/' + stateId, function(data) {
                 $('#edit-hub-city-select').empty().append('<option value="">{{ translate("--- Select City ---") }}</option>');
                 $.each(data, function(index, city) {
                     $('#edit-hub-city-select').append('<option value="'+ city.id +'">'+ city.name +'</option>');
