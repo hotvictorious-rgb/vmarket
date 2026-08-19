@@ -7,6 +7,13 @@ Always append your completed tasks here in chronological order at the top. Forma
 `### [YYYY-MM-DD HH:MM UTC] <Feature / Fix Title> [<Component Scope>]`
 Include the specific app/component modified and bullet points detailing the exact technical changes.
 
+### [2026-08-19 09:25 UTC] Customer Cart Quantity Validation & Negative Stock / Price Corruption Prevention [backend]
+* **Component:** Laravel Web Backend (`backend/vmarket-web/`)
+* **Action:** Deep scan across Cart management utility functions and Mobile Cart REST API controllers identified and closed non-positive quantity injection vulnerabilities.
+* **Fixes Applied:**
+  - **[CRITICAL] Negative Cart Quantity & Cart Total Price Corruption Guard (`CartManager::update_cart_qty`, `RestAPI/v1/CartController::addToCart`, `update_cart`):** Enforced integer and `min:1` pre-condition checks in `CartManager::update_cart_qty` and request validators across cart addition and quantity adjustment endpoints, preventing attackers from injecting negative or zero quantities to manipulate checkout amounts or corrupt stock levels.
+* **Verification:** `php -l` verified on `app/Utils/CartManager.php` and `RestAPI/v1/CartController.php` — 0 errors.
+
 ### [2026-08-19 09:21 UTC] Mobile Coupon Query Scoping & Seller Customer Dropdown Credential Protection [backend]
 * **Component:** Laravel Web Backend (`backend/vmarket-web/`)
 * **Action:** Deep scan across Mobile Coupon and POS controllers identified and closed un-scoped coupon disclosures and raw customer model credential leaks in seller dropdown APIs.

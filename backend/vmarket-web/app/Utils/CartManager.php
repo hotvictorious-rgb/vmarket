@@ -728,6 +728,15 @@ class CartManager
         $qty = 0;
         $cart = Cart::where(['id' => $request->key, 'customer_id' => ($user == 'offline' ? $guest_id : $user['id'])])->first();
 
+        $requestedQuantity = (int)($request['quantity'] ?? 0);
+        if ($requestedQuantity < 1) {
+            return [
+                'status' => 0,
+                'qty' => $cart ? $cart['quantity'] : 1,
+                'message' => translate('quantity_must_be_greater_than_0'),
+            ];
+        }
+
         if (!$cart) {
             return [
                 'status' => 0,

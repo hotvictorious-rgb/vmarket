@@ -144,7 +144,7 @@ class CartController extends Controller
     {
         $validator = Validator::make($request->all(), [
             'id' => 'required',
-            'quantity' => 'required',
+            'quantity' => 'required|integer|min:1',
         ], [
             'id.required' => translate('Product ID is required!')
         ]);
@@ -161,7 +161,7 @@ class CartController extends Controller
     {
         $validator = Validator::make($request->all(), [
             'key' => 'required',
-            'quantity' => 'required',
+            'quantity' => 'required|integer|min:1',
         ], [
             'key.required' => translate('Cart key or ID is required!')
         ]);
