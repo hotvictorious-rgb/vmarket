@@ -233,7 +233,11 @@ class OrderController extends Controller
 
         $deliveryManCharge = $request->deliveryman_charge;
 
-        $order = Order::with('deliveryMan')->find($request->order_id);
+        // [AI] Ownership Guard: Only update order belonging to authenticated seller
+        $order = Order::with('deliveryMan')->where(['id' => $request->order_id, 'seller_id' => $seller['id']])->first();
+        if (!$order) {
+            return response()->json(['success' => 0, 'message' => translate('unauthorized_access')], 403);
+        }
         $db_expected_date = $order->expected_delivery_date;
 
         $order->deliveryman_charge = $deliveryManCharge;
@@ -266,7 +270,8 @@ class OrderController extends Controller
     public function digital_file_upload_after_sell(DigitalProductFileUploadAfterSell $request): JsonResponse
     {
         $seller = $request->seller;
-        $order_details = OrderDetail::find($request->order_id);
+        // [AI] Ownership Guard: Only update order details belonging to authenticated seller
+        $order_details = OrderDetail::where(['id' => $request->order_id, 'seller_id' => $seller['id']])->first();
         if ($order_details) {
             $order_details->digital_file_after_sell = ImageManager::update('product/digital-product/', $order_details->digital_file_after_sell, $request->digital_file_after_sell->getClientOriginalExtension(), $request->file('digital_file_after_sell'), 'file');
             $order_details->save();
@@ -279,7 +284,11 @@ class OrderController extends Controller
     public function order_detail_status(Request $request): JsonResponse
     {
         $seller = $request->seller;
-        $order = Order::with(['customer', 'seller.shop', 'deliveryMan', 'latestEditHistory'])->find($request['id']);
+        // [AI] Ownership Guard: Only update order status for seller's own orders
+        $order = Order::with(['customer', 'seller.shop', 'deliveryMan', 'latestEditHistory'])->where(['id' => $request['id'], 'seller_id' => $seller['id']])->first();
+        if (!$order) {
+            return response()->json(['success' => 0, 'message' => translate('unauthorized_access')], 403);
+        }
         if (!$order->is_guest && empty($order->customer)) {
             return response()->json(['success' => 0, 'message' => translate("Customer_account_has_been_deleted") . ' ' . translate("you_cant_update_status")], 202);
         }
@@ -400,7 +409,12 @@ class OrderController extends Controller
             return response()->json(['errors' => Helpers::validationErrorProcessor($validator)]);
         }
 
-        $order = Order::find($request->order_id);
+        $seller = $request->seller;
+        // [AI] Ownership Guard: Only assign third party delivery to own orders
+        $order = Order::where(['id' => $request->order_id, 'seller_id' => $seller['id']])->first();
+        if (!$order) {
+            return response()->json(['success' => 0, 'message' => translate('unauthorized_access')], 403);
+        }
         $order->delivery_type = 'third_party_delivery';
         $order->delivery_service_name = $request->delivery_service_name;
         $order->third_party_delivery_tracking_id = $request->third_party_delivery_tracking_id;
@@ -425,7 +439,9 @@ class OrderController extends Controller
         if ($request->payment_status != 'paid') {
             return response()->json(['success' => 0, 'message' => translate('When payment status paid then you can`t change payment status paid to unpaid') . '.'], 200);
         }
-        $order = Order::find($request['order_id']);
+        $seller = $request->seller;
+        // [AI] Ownership Guard: Only update payment status for own orders
+        $order = Order::where(['id' => $request['order_id'], 'seller_id' => $seller['id']])->first();
         if (isset($order)) {
             if ($order->is_guest == '0' && empty($order->customer)) {
                 return response()->json(['success' => 0, 'message' => translate("Customer account has been deleted. you can't update status!")], 202);
@@ -452,7 +468,13 @@ class OrderController extends Controller
 
     public function address_update(Request $request)
     {
-        $order = $this->order->find($request->order_id)->toArray();
+        $seller = $request->seller;
+        // [AI] Ownership Guard: Only update address for own orders
+        $order = $this->order->where(['id' => $request->order_id, 'seller_id' => $seller['id']])->first();
+        if (!$order) {
+            return response()->json(['message' => translate('unauthorized_access')], 403);
+        }
+        $order = $order->toArray();
         $shipping_address_data = $order['shipping_address_data'] ? json_decode(json_encode($order['shipping_address_data']), true) : [];
         $billing_address_data = $order['billing_address_data'] ? json_decode(json_encode($order['billing_address_data']), true) : [];
 
@@ -500,7 +522,8 @@ class OrderController extends Controller
         }
 
         $seller = $request->seller;
-        $order = Order::with(['customer', 'seller.shop', 'deliveryMan', 'latestEditHistory'])->find($request['order_id']);
+        // [AI] Ownership Guard: Only update order details for own orders
+        $order = Order::with(['customer', 'seller.shop', 'deliveryMan', 'latestEditHistory'])->where(['id' => $request['order_id'], 'seller_id' => $seller['id']])->first();
 
         if (isset($order)) {
             if ($order['payment_status'] == 'paid' && $request['payment_status'] != 'paid') {

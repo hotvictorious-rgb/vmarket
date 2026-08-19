@@ -7,6 +7,16 @@ Always append your completed tasks here in chronological order at the top. Forma
 `### [YYYY-MM-DD HH:MM UTC] <Feature / Fix Title> [<Component Scope>]`
 Include the specific app/component modified and bullet points detailing the exact technical changes.
 
+### [2026-08-19 08:53 UTC] Vendor Web & Mobile API Order Mutation & Wallet Return IDOR Hardening [backend]
+* **Component:** Laravel Web Backend (`backend/vmarket-web/`)
+* **Action:** Deep scan across Vendor Web OrderController and Mobile REST API v3 OrderController identified and closed cross-vendor and cross-platform unauthorized order mutations, status changes, and unauthorized wallet return processing.
+* **Fixes Applied:**
+  - **[CRITICAL] Cross-Vendor & In-House Wallet Drain IDOR (`Vendor/Order/OrderController::returnAmount`):** Scoped order return processing by `seller_id == auth('seller')->id()` and `seller_is == 'seller'`, preventing malicious vendors from triggering refund deductions against in-house admin wallets or competitor seller balances.
+  - **[CRITICAL] Order Due Amount & Payment Status Hijacking (`Vendor/Order/OrderController::orderDueAmountMarkAsPaid`, `orderDueAmountSwitchToCOD`, `updatePaymentStatus`):** Scoped payment settlement and COD conversion actions to orders owned by the authenticated seller.
+  - **[CRITICAL] Cross-Vendor Order Status & Address Tampering (`Vendor/Order/OrderController::updateStatus`, `updateAddress`, `updateDeliverInfo`, `uploadDigitalFileAfterSell`):** Enforced seller ownership verification across order cancellation, delivery confirmation, address editing, courier tracking, and sold digital asset uploads.
+  - **[CRITICAL] Mobile API Order Mutation IDOR (`RestAPI/v3/seller/OrderController::amount_date_update`, `digital_file_upload_after_sell`, `order_detail_status`, `assign_third_party_delivery`, `update_payment_status`, `address_update`, `updateOrderDetails`):** Scoped all mutation endpoints by `seller_id == $seller['id']`.
+* **Verification:** `php -l` verified on `Vendor/Order/OrderController.php` and `RestAPI/v3/seller/OrderController.php` — 0 errors.
+
 ### [2026-08-19 08:51 UTC] Vendor Shipping Method Management IDOR Hardening [backend]
 * **Component:** Laravel Web Backend (`backend/vmarket-web/`)
 * **Action:** Deep scan across Vendor Shipping management controllers identified and resolved cross-vendor IDOR vulnerabilities on shipping method activation, modification, and deletion.

@@ -204,7 +204,13 @@ class OrderController extends BaseController
             'order_return_payment_note' => 'required|string|max:255',
         ]);
         try {
-            $order = $this->orderRepo->getFirstWhere(params: ['id' => $validated['order_id']], relations: ['latestEditHistory']);
+            $vendorId = auth('seller')->id();
+            // [AI] Ownership Guard: Vendor can only process return on their own orders
+            $order = $this->orderRepo->getFirstWhere(params: ['id' => $validated['order_id'], 'seller_id' => $vendorId, 'seller_is' => 'seller'], relations: ['latestEditHistory']);
+            if (!$order) {
+                ToastMagic::error(translate('unauthorized_access'));
+                return redirect()->back();
+            }
             $customer = Helpers::getCustomerInformation($request);
             if ($validated['amount'] !== $order['edit_return_amount']) {
                 ToastMagic::error(translate('Return amount must be equal to return amount'));
@@ -254,7 +260,9 @@ class OrderController extends BaseController
             'order_id' => 'required|exists:orders,id',
         ]);
 
-        $order = $this->orderRepo->getFirstWhere(['id' => $validated['order_id']]);
+        $vendorId = auth('seller')->id();
+        // [AI] Ownership Guard: Vendor can only mark their own orders as paid
+        $order = $this->orderRepo->getFirstWhere(['id' => $validated['order_id'], 'seller_id' => $vendorId, 'seller_is' => 'seller']);
         if (!$order) {
             ToastMagic::error(translate('Order_not_found'));
             return back();
@@ -528,7 +536,13 @@ class OrderController extends BaseController
             'order_due_amount' => 'required',
         ]);
 
-        $order = $this->orderRepo->getFirstWhere(params: ['id' => $validated['order_id']]);
+        $vendorId = auth('seller')->id();
+        // [AI] Ownership Guard: Vendor can only switch payment method for their own orders
+        $order = $this->orderRepo->getFirstWhere(params: ['id' => $validated['order_id'], 'seller_id' => $vendorId, 'seller_is' => 'seller']);
+        if (!$order) {
+            ToastMagic::error(translate('unauthorized_access'));
+            return redirect()->back();
+        }
         if ($validated['order_due_amount'] != $order['edit_due_amount']) {
             ToastMagic::error(translate('Due_amount_must_be_equal_to_due_amount'));
             return redirect()->back();
@@ -557,7 +571,15 @@ class OrderController extends BaseController
         OrderStatusHistoryService     $orderStatusHistoryService,
     ): JsonResponse
     {
-        $order = $this->orderRepo->getFirstWhere(params: ['id' => $request['id']], relations: ['customer', 'seller.shop', 'deliveryMan', 'latestEditHistory']);
+        $vendorId = auth('seller')->id();
+        // [AI] Ownership Guard: Vendor can only update status for their own orders
+        $order = $this->orderRepo->getFirstWhere(params: ['id' => $request['id'], 'seller_id' => $vendorId, 'seller_is' => 'seller'], relations: ['customer', 'seller.shop', 'deliveryMan', 'latestEditHistory']);
+        if (!$order) {
+            return response()->json([
+                'status' => 0,
+                'message' => translate('unauthorized_access'),
+            ], 403);
+        }
 
         if (!$order['is_guest'] && !isset($order['customer'])) {
             return response()->json([
@@ -715,7 +737,13 @@ class OrderController extends BaseController
 
     public function updateAddress(Request $request): RedirectResponse
     {
-        $order = $this->orderRepo->getFirstWhere(params: ['id' => $request['order_id']], relations: ['deliveryMan']);
+        $vendorId = auth('seller')->id();
+        // [AI] Ownership Guard: Vendor can only update address for their own orders
+        $order = $this->orderRepo->getFirstWhere(params: ['id' => $request['order_id'], 'seller_id' => $vendorId, 'seller_is' => 'seller'], relations: ['deliveryMan']);
+        if (!$order) {
+            ToastMagic::error(translate('unauthorized_access'));
+            return back();
+        }
         $shippingAddressData = json_decode(json_encode($order['shipping_address_data']), true) ?? [];
         $billingAddressData = json_decode(json_encode($order['billing_address_data']), true) ?? [];
         $commonAddressData = [
@@ -757,7 +785,15 @@ class OrderController extends BaseController
 
     public function updatePaymentStatus(Request $request): JsonResponse
     {
-        $order = $this->orderRepo->getFirstWhere(params: ['id' => $request['id']]);
+        $vendorId = auth('seller')->id();
+        // [AI] Ownership Guard: Vendor can only update payment status for their own orders
+        $order = $this->orderRepo->getFirstWhere(params: ['id' => $request['id'], 'seller_id' => $vendorId, 'seller_is' => 'seller']);
+        if (!$order) {
+            return response()->json([
+                'status' => 0,
+                'message' => translate('unauthorized_access'),
+            ], 403);
+        }
 
         if ($order['payment_status'] == 'paid') {
             return response()->json([
@@ -790,6 +826,14 @@ class OrderController extends BaseController
 
     public function updateDeliverInfo(Request $request): RedirectResponse
     {
+        $vendorId = auth('seller')->id();
+        // [AI] Ownership Guard: Vendor can only update delivery info for their own orders
+        $order = $this->orderRepo->getFirstWhere(params: ['id' => $request['order_id'], 'seller_id' => $vendorId, 'seller_is' => 'seller']);
+        if (!$order) {
+            ToastMagic::error(translate('unauthorized_access'));
+            return back();
+        }
+
         $updateData = [
             'delivery_type' => 'third_party_delivery',
             'delivery_service_name' => $request['delivery_service_name'],
@@ -854,7 +898,14 @@ class OrderController extends BaseController
 
     public function uploadDigitalFileAfterSell(UploadDigitalFileAfterSellRequest $request): RedirectResponse
     {
-        $orderDetails = $this->orderDetailRepo->getFirstWhere(['id' => $request['order_id']]);
+        $vendorId = auth('seller')->id();
+        // [AI] Ownership Guard: Vendor can only upload digital product files for their own sold items
+        $orderDetails = $this->orderDetailRepo->getFirstWhere(['id' => $request['order_id'], 'seller_id' => $vendorId]);
+        if (!$orderDetails) {
+            ToastMagic::error(translate('unauthorized_access'));
+            return back();
+        }
+
         $digitalFileAfterSell = $this->updateFile(dir: 'product/digital-product/', oldImage: $orderDetails['digital_file_after_sell'], format: $request['digital_file_after_sell']->getClientOriginalExtension(), image: $request->file('digital_file_after_sell'), fileType: 'file');
         if ($this->orderDetailRepo->update(id: $orderDetails['id'], data: ['digital_file_after_sell' => $digitalFileAfterSell])) {
             ToastMagic::success(translate('digital_file_upload_successfully'));
