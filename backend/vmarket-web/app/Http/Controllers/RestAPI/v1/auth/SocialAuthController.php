@@ -195,6 +195,10 @@ class SocialAuthController extends Controller
         }
 
         $user = User::where(['temporary_token' => $request->temporary_token])->first();
+        if (!$user) {
+            return response()->json(['message' => translate('unauthorized_access')], 403);
+        }
+
         $user->phone = $request->phone;
         $user->save();
 
@@ -297,8 +301,11 @@ class SocialAuthController extends Controller
             return response()->json(['temp_token' => $temporaryToken, 'status' => false, 'new_user' => 0, 'socialResponse' => $socialResponse]);
         }
 
+        $existingUser->temporary_token = $temporaryToken;
+        $existingUser->save();
+
         if (!$existingUser['is_active'] || (getLoginConfig(key: 'phone_verification') && !$existingUser['is_phone_verified'])) {
-            return response()->json(['user' => $existingUser, 'status' => false]);
+            return response()->json(['user' => $existingUser, 'temp_token' => $temporaryToken, 'status' => false]);
         }
 
         $this->customerRepo->updateWhere(params: ['email' => $data['email']], data: [
@@ -315,35 +322,33 @@ class SocialAuthController extends Controller
             'email' => 'required|email',
             'user_response' => 'required|in:0,1',
             'medium' => 'required|in:google,facebook,apple',
+            'temp_token' => 'required',
         ]);
 
         if ($validator->fails()) {
             return response()->json(['errors' => Helpers::validationErrorProcessor($validator)], 403);
         }
 
-        $user = $this->customerRepo->getFirstWhere(params: ['email' => $request['email']]);
-
-        $temporaryToken = Str::random(40);
+        // [AI] Auth Token Guard: Require matching temporary_token established by verified OAuth callback
+        $user = User::where(['email' => $request['email'], 'temporary_token' => $request['temp_token']])->first();
         if (!$user) {
-            return response()->json(['temp_token' => $temporaryToken, 'status' => false]);
+            return response()->json(['message' => translate('unauthorized_access')], 403);
         }
 
         if ($request['user_response'] == 1) {
-            $this->customerRepo->updateWhere(params: ['id' => $user['id']], data: [
-                'email_verified_at' => now(),
-                'login_medium' => $request['medium'],
-            ]);
+            $user->email_verified_at = now();
+            $user->login_medium = $request['medium'];
+            $user->temporary_token = null;
+            $user->save();
 
             $token = $user->createToken('LaravelAuthApp')->accessToken;
             return response()->json(['token' => $token, 'status' => true]);
         }
 
-        $this->customerRepo->updateWhere(params: ['id' => $user['id']], data: [
-            'email' => null,
-            'email_verified_at' => null,
-        ]);
+        $user->temporary_token = null;
+        $user->save();
 
-        return response()->json(['temp_token' => $temporaryToken, 'status' => false]);
+        return response()->json(['status' => false, 'message' => translate('action_canceled')]);
     }
 
     public function registrationWithSocialMedia(Request $request): JsonResponse
@@ -358,11 +363,18 @@ class SocialAuthController extends Controller
             return response()->json(['errors' => Helpers::validationErrorProcessor($validator)], 403);
         }
 
+        $isEmailExist = $this->customerRepo->getFirstWhere(params: ['email' => $request['email']]);
+        if ($isEmailExist) {
+            return response()->json(['errors' => [
+                ['code' => 'email', 'message' => translate('This_email_has_already_been_used_in_another_account!')]
+            ]], 403);
+        }
+
         $isPhoneExist = $this->customerRepo->getFirstWhere(params: ['phone' => $request['phone']]);
 
         if ($isPhoneExist) {
             return response()->json(['errors' => [
-                ['code' => 'email', 'message' => translate('This phone has already been used in another account!')]
+                ['code' => 'phone', 'message' => translate('This_phone_has_already_been_used_in_another_account!')]
             ]], 403);
         }
         $temporaryToken = Str::random(40);

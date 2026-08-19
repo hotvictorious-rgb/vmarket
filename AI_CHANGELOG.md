@@ -7,6 +7,15 @@ Always append your completed tasks here in chronological order at the top. Forma
 `### [YYYY-MM-DD HH:MM UTC] <Feature / Fix Title> [<Component Scope>]`
 Include the specific app/component modified and bullet points detailing the exact technical changes.
 
+### [2026-08-19 09:36 UTC] Social Auth Zero-Auth Account Takeover & Email Collision Prevention [backend]
+* **Component:** Laravel Web Backend (`backend/vmarket-web/`)
+* **Action:** Deep scan across Mobile Customer Social Authentication controllers identified and closed a critical zero-auth account takeover vulnerability inherited from stock 6valley, along with email collision and null-token crashes.
+* **Fixes Applied:**
+  - **[CRITICAL] Zero-Auth Social Login Account Takeover Elimination (`RestAPI/v1/auth/SocialAuthController::existingAccountCheck`):** Enforced mandatory `temp_token` verification matching the authenticated customer's OAuth callback session before issuing passport tokens or updating login mediums, eliminating an inherited flaw where an attacker could obtain access tokens for any target email without credentials.
+  - **[FIX] Social Media Registration Duplicate Email Collision (`RestAPI/v1/auth/SocialAuthController::registrationWithSocialMedia`):** Added email existence check before creating social media accounts to prevent duplicate registration collisions.
+  - **[FIX] Update Phone Missing Token 500 Crash (`RestAPI/v1/auth/SocialAuthController::update_phone`):** Added a pre-condition guard returning 403 Unauthorized when an invalid or expired `temporary_token` is submitted.
+* **Verification:** `php -l` verified on `RestAPI/v1/auth/SocialAuthController.php` — 0 errors.
+
 ### [2026-08-19 09:34 UTC] Digital Product Download Unpaid Order Bypass & Expired OTP Reuse Guard [backend]
 * **Component:** Laravel Web Backend (`backend/vmarket-web/`)
 * **Action:** Deep scan across Web and Mobile digital product download verification handlers identified and resolved unpaid order file deliveries and stale OTP token acceptance.
