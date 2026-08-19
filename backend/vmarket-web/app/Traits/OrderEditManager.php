@@ -705,30 +705,60 @@ trait OrderEditManager
 
     public function payEditOrderDueByCustomerWallet(object|array $order, object|array $customer): array
     {
-        if (($customer['wallet_balance'] ?? 0) < $order['edit_due_amount']) {
+        $dueAmount = (float)($order['edit_due_amount'] ?? 0);
+        if ($dueAmount <= 0) {
             return [
                 'status' => false,
-                'message' => translate('Insufficient_Wallet_Balance')
+                'message' => translate('No_due_amount_pending_for_this_order')
             ];
         }
-        CustomerManager::create_wallet_transaction($customer['id'], $order['edit_due_amount'], 'due_payment_for_order', 'reduce_wallet_amount', ['payment_method' => 'wallet']);
-        AdminWallet::where(['admin_id' => 1])->increment('pending_amount', $order['edit_due_amount']);
-        OrderEditHistory::where('id', $order?->latestEditHistory?->id)->update([
-            'order_due_payment_status' => 'paid',
-            'order_due_payment_method' => 'wallet',
-        ]);
 
-        Order::where('id', $order['id'])->update([
-            'edit_due_amount' => 0,
-            'order_amount' => $order['order_amount'] + $order['edit_due_amount'],
-            'payment_status' => 'paid'
-        ]);
+        try {
+            return \Illuminate\Support\Facades\DB::transaction(function () use ($order, $customer, $dueAmount) {
+                // Lock user row to check up-to-date balance
+                $lockedUser = \App\Models\User::where('id', $customer['id'])->lockForUpdate()->first();
+                if (!$lockedUser || $lockedUser->wallet_balance < $dueAmount) {
+                    return [
+                        'status' => false,
+                        'message' => translate('Insufficient_Wallet_Balance')
+                    ];
+                }
 
+                $lockedOrder = Order::where('id', $order['id'])->lockForUpdate()->first();
+                if (!$lockedOrder || (float)$lockedOrder->edit_due_amount <= 0) {
+                    return [
+                        'status' => false,
+                        'message' => translate('Order_due_already_paid')
+                    ];
+                }
 
-        return [
-            'status' => true,
-            'message' => translate('Payment_Successful')
-        ];
+                CustomerManager::create_wallet_transaction($lockedUser->id, $dueAmount, 'due_payment_for_order', 'reduce_wallet_amount', ['payment_method' => 'wallet']);
+                AdminWallet::where(['admin_id' => 1])->increment('pending_amount', $dueAmount);
+
+                if ($lockedOrder?->latestEditHistory) {
+                    OrderEditHistory::where('id', $lockedOrder?->latestEditHistory?->id)->update([
+                        'order_due_payment_status' => 'paid',
+                        'order_due_payment_method' => 'wallet',
+                    ]);
+                }
+
+                $lockedOrder->update([
+                    'order_amount' => $lockedOrder['order_amount'] + $dueAmount,
+                    'edit_due_amount' => 0,
+                    'payment_status' => 'paid'
+                ]);
+
+                return [
+                    'status' => true,
+                    'message' => translate('Payment_Successful')
+                ];
+            });
+        } catch (\Exception $e) {
+            return [
+                'status' => false,
+                'message' => translate('Payment_Failed')
+            ];
+        }
     }
 
     public function payEditOrderDueByDigitalPayment(object|array $request, object|array $order, object|array|string $customer): array

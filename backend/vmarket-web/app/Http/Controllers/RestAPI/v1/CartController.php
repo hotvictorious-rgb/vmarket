@@ -217,10 +217,22 @@ class CartController extends Controller
 
     public function updateCheckedCartItems(Request $request): JsonResponse
     {
+        $user = Helpers::getCustomerInformation($request);
+        $ids = is_array($request['ids']) ? $request['ids'] : [$request['ids']];
+
+        // [AI] Ownership Guard: Only update cart rows belonging to the current user/guest
+        $query = Cart::whereIn('id', $ids)
+            ->when($user == 'offline', function ($q) use ($request) {
+                $q->where(['customer_id' => $request->guest_id, 'is_guest' => 1]);
+            })
+            ->when($user != 'offline', function ($q) use ($user) {
+                $q->where(['customer_id' => $user->id, 'is_guest' => 0]);
+            });
+
         if ($request['action'] == 'unchecked') {
-            Cart::whereIn('id', $request['ids'])->update(['is_checked' => 0]);
+            $query->update(['is_checked' => 0]);
         } elseif ($request['action'] == 'checked') {
-            Cart::whereIn('id', $request['ids'])->update(['is_checked' => 1]);
+            $query->update(['is_checked' => 1]);
         }
         return response()->json(translate('Successfully_Update'), 200);
     }

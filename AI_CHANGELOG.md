@@ -7,6 +7,15 @@ Always append your completed tasks here in chronological order at the top. Forma
 `### [YYYY-MM-DD HH:MM UTC] <Feature / Fix Title> [<Component Scope>]`
 Include the specific app/component modified and bullet points detailing the exact technical changes.
 
+### [2026-08-19 08:10 UTC] Order Edit Due Payment Ownership, Due Amount Locking & Cart IDOR Hardening [backend]
+* **Component:** Laravel Web Backend (`backend/vmarket-web/`)
+* **Action:** Resolved authorization and concurrency vulnerabilities across order edit due settlement handlers and shopping cart item check state mutations.
+* **Fixes Applied:**
+  - **[CRITICAL] Order Edit Due Settlement Ownership Bypass (`v1/OrderEditController::duePaymentByWallet`, `duePaymentByCod`, `duePaymentByOfflinePayment`, `duePaymentByDigitalPayment`):** All 4 endpoints accepted arbitrary `order_id` values without verifying customer ownership. Added customer ownership verification (supporting registered customer authentication and verified numeric guest IDs) to all 4 handlers.
+  - **[CRITICAL] Order Edit Due Double Settlement & Zero-Due Bypass (`OrderEditManager::payEditOrderDueByCustomerWallet`):** Ensured `edit_due_amount > 0` before processing, and wrapped balance verification, wallet deduction, admin pending amount credit, and order update in a `DB::transaction()` with pessimistic row locks (`lockForUpdate()`) on both the User and Order records.
+  - **[HIGH] Cart Checked Selection State IDOR (`v1/CartController::updateCheckedCartItems`):** `Cart::whereIn('id', $request['ids'])->update(...)` updated cart items across all users globally. Added user/guest ID scoping to ensure customers can only mutate their own cart items.
+* **Verification:** `php -l` verified on all 3 modified files — 0 errors.
+
 ### [2026-08-19 08:05 UTC] Support Ticket IDOR Hardening, Compare List Isolation & Missing Address Route Implementation [backend]
 * **Component:** Laravel Web Backend (`backend/vmarket-web/`)
 * **Action:** Deep scan uncovered and resolved multiple authorization IDOR flaws in customer support ticket handling, product compare lists, and resolved a runtime routing exception for address retrieval.

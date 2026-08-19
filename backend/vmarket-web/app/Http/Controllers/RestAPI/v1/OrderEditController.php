@@ -61,14 +61,27 @@ class OrderEditController extends Controller
 
         $order = Order::with(['latestEditHistory'])->where('id', $request['order_id'])->first();
         if (!$order) {
-            return response()->json(['message' => translate('Order_not_found')], 401);
+            return response()->json(['message' => translate('Order_not_found')], 404);
+        }
+
+        $user = Helpers::getCustomerInformation($request);
+
+        // [AI] Ownership Guard: Only order owner can pay edit due
+        $isOwner = false;
+        if ($user != 'offline' && $order->customer_id == $user->id) {
+            $isOwner = true;
+        } elseif ($order->is_guest && $request->has('guest_id') && $order->customer_id == $request['guest_id'] && is_numeric($request['guest_id'])) {
+            $isOwner = true;
+        }
+
+        if (!$isOwner) {
+            return response()->json(['message' => translate('unauthorized_access')], 403);
         }
 
         if (getWebConfig('wallet_status') != 1 && $request['payment_method'] == 'wallet') {
             return response()->json(['message' => translate('wallet_is_deactivated')], 401);
         }
 
-        $user = Helpers::getCustomerInformation($request);
         if ($user != 'offline') {
             $response = $this->payEditOrderDueByCustomerWallet(order: $order, customer: $user);
             return response()->json([
@@ -92,9 +105,20 @@ class OrderEditController extends Controller
 
         $order = Order::with(['latestEditHistory'])->where('id', $request['order_id'])->first();
         if (!$order) {
-            return response()->json(['message' => translate('Order_not_found')], 401);
+            return response()->json(['message' => translate('Order_not_found')], 404);
         }
 
+        $user = Helpers::getCustomerInformation($request);
+        $isOwner = false;
+        if ($user != 'offline' && $order->customer_id == $user->id) {
+            $isOwner = true;
+        } elseif ($order->is_guest && $request->has('guest_id') && $order->customer_id == $request['guest_id'] && is_numeric($request['guest_id'])) {
+            $isOwner = true;
+        }
+
+        if (!$isOwner) {
+            return response()->json(['message' => translate('unauthorized_access')], 403);
+        }
 
         OrderEditHistory::where('id', $order?->latestEditHistory?->id)->update([
             'order_due_payment_method' => 'cash_on_delivery',
@@ -128,7 +152,19 @@ class OrderEditController extends Controller
 
         $order = Order::with(['latestEditHistory'])->where('id', $request['order_id'])->first();
         if (!$order) {
-            return response()->json(['message' => translate('Order_not_found')], 401);
+            return response()->json(['message' => translate('Order_not_found')], 404);
+        }
+
+        $user = Helpers::getCustomerInformation($request);
+        $isOwner = false;
+        if ($user != 'offline' && $order->customer_id == $user->id) {
+            $isOwner = true;
+        } elseif ($order->is_guest && $request->has('guest_id') && $order->customer_id == $request['guest_id'] && is_numeric($request['guest_id'])) {
+            $isOwner = true;
+        }
+
+        if (!$isOwner) {
+            return response()->json(['message' => translate('unauthorized_access')], 403);
         }
 
         $offlinePaymentInfo = [];
@@ -168,10 +204,22 @@ class OrderEditController extends Controller
 
         $order = Order::with(['latestEditHistory'])->where('id', $request['order_id'])->first();
         if (!$order) {
-            return response()->json(['message' => translate('Order_not_found')], 401);
+            return response()->json(['message' => translate('Order_not_found')], 404);
         }
 
         $customer = Helpers::getCustomerInformation($request);
+
+        $isOwner = false;
+        if ($customer != 'offline' && $order->customer_id == $customer->id) {
+            $isOwner = true;
+        } elseif ($order->is_guest && $request->has('guest_id') && $order->customer_id == $request['guest_id'] && is_numeric($request['guest_id'])) {
+            $isOwner = true;
+        }
+
+        if (!$isOwner) {
+            return response()->json(['message' => translate('unauthorized_access')], 403);
+        }
+
         $response = $this->payEditOrderDueByDigitalPayment(request: $request, order: $order, customer: $customer);
 
         if (!$response['status'] && isset($response['message'])) {
