@@ -10,13 +10,21 @@ if (!function_exists('loadCurrency')) {
     {
         $defaultCurrency = getWebConfig(name: 'system_default_currency');
         $currentCurrencyInfo = session('system_default_currency_info');
-        if (!session()->has('system_default_currency_info') || $defaultCurrency != $currentCurrencyInfo['id']) {
+        $currentId = is_object($currentCurrencyInfo) ? ($currentCurrencyInfo->id ?? null) : ($currentCurrencyInfo['id'] ?? null);
+
+        if (!session()->has('system_default_currency_info') || $defaultCurrency != $currentId || !$currentCurrencyInfo) {
             $id = getWebConfig(name: 'system_default_currency');
-            $currency = Currency::find($id);
-            session()->put('system_default_currency_info', $currency);
-            session()->put('currency_code', $currency->code);
-            session()->put('currency_symbol', $currency->symbol);
-            session()->put('currency_exchange_rate', $currency->exchange_rate);
+            $currency = $id ? Currency::find($id) : Currency::first();
+            if (!$currency) {
+                $currency = Currency::first();
+            }
+
+            if ($currency) {
+                session()->put('system_default_currency_info', $currency);
+                session()->put('currency_code', $currency->code ?? 'NGN');
+                session()->put('currency_symbol', $currency->symbol ?? '₦');
+                session()->put('currency_exchange_rate', $currency->exchange_rate ?? 1);
+            }
             session()->forget('usd');
             session()->forget('default');
             $usd = exchangeRate(USD);
@@ -36,9 +44,10 @@ if (!function_exists('currencyConverter')) {
         $amount = is_null($amount) ? 0 : $amount;
         $currencyModel = getWebConfig('currency_model');
         if ($currencyModel == MULTI_CURRENCY) {
-            $default = Currency::find(getWebConfig('system_default_currency'))->exchange_rate;
+            $curr = Currency::find(getWebConfig('system_default_currency'));
+            $default = $curr?->exchange_rate ?? 1;
             $exchangeRate = exchangeRate($to);
-            $rate = $default / $exchangeRate;
+            $rate = $exchangeRate > 0 ? ($default / $exchangeRate) : 1;
             if ($amount == 0 || floatval($rate) == 0.0) {
                 $value = $amount;
             } else {
@@ -59,12 +68,14 @@ if (!function_exists('usdToDefaultCurrency')) {
      */
     function usdToDefaultCurrency(float|int|null $amount = 0): float|int
     {
+        $amount = $amount ?? 0;
         $currencyModel = getWebConfig('currency_model');
         if ($currencyModel == MULTI_CURRENCY) {
             if (session()->has('default')) {
                 $default = session('default');
             } else {
-                $default = Currency::find(getWebConfig('system_default_currency'))->exchange_rate;
+                $curr = Currency::find(getWebConfig('system_default_currency'));
+                $default = $curr?->exchange_rate ?? 1;
                 session()->put('default', $default);
             }
 
@@ -75,7 +86,7 @@ if (!function_exists('usdToDefaultCurrency')) {
                 session()->put('usd', $usd);
             }
 
-            $rate = $default / $usd;
+            $rate = ($usd > 0) ? ($default / $usd) : 1;
             $value = $amount * floatval($rate);
         } else {
             $value = $amount;
@@ -100,16 +111,17 @@ if (!function_exists('webCurrencyConverter')) {
             if (session()->has('usd')) {
                 $usd = session('usd');
             } else {
-                $usd = Currency::where(['code' => 'USD'])->first()->exchange_rate;
+                $usdCurr = Currency::where(['code' => 'USD'])->first();
+                $usd = $usdCurr?->exchange_rate ?? 1;
                 session()->put('usd', $usd);
             }
-            $myCurrency = session('currency_exchange_rate');
-            $rate = $myCurrency / $usd;
+            $myCurrency = session('currency_exchange_rate') ?? 1;
+            $rate = ($usd > 0) ? ($myCurrency / $usd) : 1;
         } else {
             $rate = 1;
         }
         $decimalPointSettings = getWebConfig('decimal_point_settings') ?? 2;
-        return setCurrencySymbol(amount: round($amount * $rate, $decimalPointSettings), currencyCode: getCurrencyCode(type: 'web'), type: 'web');
+        return setCurrencySymbol(amount: round(($amount ?? 0) * $rate, $decimalPointSettings), currencyCode: getCurrencyCode(type: 'web'), type: 'web');
     }
 }
 
@@ -121,7 +133,8 @@ if (!function_exists('localToDefaultCurrency')) {
      */
     function localToDefaultCurrency(float|null $amount = 0, string $type = 'default'): float|int|string
     {
-        $value = is_null($amount) || $amount != 0 ? $amount / session('currency_exchange_rate') : 0;
+        $rate = session('currency_exchange_rate') ?: 1;
+        $value = is_null($amount) || $amount != 0 ? ($amount / $rate) : 0;
         if ($type == 'web') {
             return setCurrencySymbol(amount: $value, currencyCode: getCurrencyCode(type: 'web'), type: 'web');
         }
@@ -137,10 +150,11 @@ if (!function_exists('loyaltyPointToLocalCurrency')) {
      */
     function loyaltyPointToLocalCurrency(float|null $amount = 0, string $type = 'default'): string
     {
-        $loyaltyPointExchangeRate = getWebConfig(name: 'loyalty_point_exchange_rate');
-        $value = ((session('currency_exchange_rate') * 1) / $loyaltyPointExchangeRate) * $amount;
+        $loyaltyPointExchangeRate = getWebConfig(name: 'loyalty_point_exchange_rate') ?: 1;
+        $rate = session('currency_exchange_rate') ?: 1;
+        $value = (($rate * 1) / $loyaltyPointExchangeRate) * ($amount ?? 0);
         if ($type == 'web') {
-            return setCurrencySymbol(amount: $value, currencyCode: session('currency_code'), type: 'web');
+            return setCurrencySymbol(amount: $value, currencyCode: session('currency_code') ?? 'NGN', type: 'web');
         }
         return $value;
     }
@@ -160,17 +174,18 @@ if (!function_exists('webCurrencyConverterOnlyDigit')) {
             if (session()->has('usd')) {
                 $usd = session('usd');
             } else {
-                $usd = Currency::where(['code' => 'USD'])->first()->exchange_rate;
+                $usdCurr = Currency::where(['code' => 'USD'])->first();
+                $usd = $usdCurr?->exchange_rate ?? 1;
                 session()->put('usd', $usd);
             }
-            $myCurrency = session('currency_exchange_rate');
-            $rate = $myCurrency / $usd;
+            $myCurrency = session('currency_exchange_rate') ?? 1;
+            $rate = ($usd > 0) ? ($myCurrency / $usd) : 1;
         } else {
             $rate = 1;
         }
 
         $decimalPointSettings = getWebConfig('decimal_point_settings') ?? 2;
-        return round($amount * $rate, $decimalPointSettings);
+        return round(($amount ?? 0) * $rate, $decimalPointSettings);
     }
 }
 
@@ -184,13 +199,15 @@ if (!function_exists('usdToAnotherCurrencyConverter')) {
     function usdToAnotherCurrencyConverter(string $currencyCode, string|int|float|null $amount = 0): float|string
     {
         if ($currencyCode == 'USD') {
-            return $amount;
+            return $amount ?? 0;
         }
-        $usd = Currency::where(['code' => 'USD'])->first()->exchange_rate;
-        $myCurrency = Currency::where(['code' => $currencyCode])->first()->exchange_rate;
-        $rate = $myCurrency / $usd;
+        $usdCurr = Currency::where(['code' => 'USD'])->first();
+        $usd = $usdCurr?->exchange_rate ?? 1;
+        $myCurr = Currency::where(['code' => $currencyCode])->first();
+        $myCurrency = $myCurr?->exchange_rate ?? 1;
+        $rate = ($usd > 0) ? ($myCurrency / $usd) : 1;
         $decimalPointSettings = getWebConfig('decimal_point_settings') ?? 2;
-        return round($amount * $rate, $decimalPointSettings);
+        return round(($amount ?? 0) * $rate, $decimalPointSettings);
     }
 }
 
@@ -201,7 +218,7 @@ if (!function_exists('exchangeRate')) {
      */
     function exchangeRate(string $currencyCode = USD): float|int
     {
-        return Currency::where('code', $currencyCode)->first()->exchange_rate ?? 1;
+        return Currency::where('code', $currencyCode)->first()?->exchange_rate ?? 1;
     }
 }
 
@@ -218,9 +235,11 @@ if (!function_exists('getCurrencySymbol')) {
             $currentSymbol = session('currency_symbol');
         } else {
             $systemDefaultCurrencyInfo = session('system_default_currency_info');
-            $currentSymbol = $systemDefaultCurrencyInfo->symbol;
+            $currentSymbol = is_object($systemDefaultCurrencyInfo) 
+                ? ($systemDefaultCurrencyInfo->symbol ?? '₦') 
+                : ($systemDefaultCurrencyInfo['symbol'] ?? '₦');
         }
-        return $currentSymbol;
+        return $currentSymbol ?? '₦';
     }
 }
 
@@ -234,11 +253,11 @@ if (!function_exists('setCurrencySymbol')) {
     function setCurrencySymbol(string|int|float $amount, string $currencyCode = USD, string $type = 'default'): string
     {
         $decimalPointSettings = getWebConfig('decimal_point_settings');
-        $position = getWebConfig('currency_symbol_position');
+        $position = getWebConfig('currency_symbol_position') ?? 'left';
         if ($position === 'left') {
-            $string = getCurrencySymbol(currencyCode: $currencyCode, type: $type) . '' . number_format($amount, (!empty($decimalPointSettings) ? $decimalPointSettings : 0));
+            $string = getCurrencySymbol(currencyCode: $currencyCode, type: $type) . '' . number_format((float)$amount, (!empty($decimalPointSettings) ? $decimalPointSettings : 0));
         } else {
-            $string = number_format($amount, !empty($decimalPointSettings) ? $decimalPointSettings : 0) . getCurrencySymbol(currencyCode: $currencyCode, type: $type);
+            $string = number_format((float)$amount, !empty($decimalPointSettings) ? $decimalPointSettings : 0) . getCurrencySymbol(currencyCode: $currencyCode, type: $type);
         }
         return $string;
     }
@@ -254,14 +273,16 @@ if (!function_exists('getCurrencyCode')) {
         if ($type == 'web') {
             $currencyCode = session('currency_code');
         } else {
-            if (session()->has('system_default_currency_info')) {
-                $currencyCode = session('system_default_currency_info')->code;
+            if (session()->has('system_default_currency_info') && session('system_default_currency_info')) {
+                $info = session('system_default_currency_info');
+                $currencyCode = is_object($info) ? ($info->code ?? 'NGN') : ($info['code'] ?? 'NGN');
             } else {
                 $currencyId = getWebConfig('system_default_currency');
-                $currencyCode = Currency::where('id', $currencyId)->first()->code;
+                $curr = $currencyId ? Currency::find($currencyId) : null;
+                $currencyCode = $curr?->code ?? Currency::first()?->code ?? 'NGN';
             }
         }
-        return $currencyCode;
+        return $currencyCode ?? 'NGN';
     }
 }
 

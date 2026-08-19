@@ -48,12 +48,12 @@ class DispatchPortalController extends Controller
         // 2. Cluster Orders by Corridor (Origin Hub -> Destination Hub)
         $corridors = [];
         foreach ($allOrders as $order) {
-            $originName = $order->originHub->name ?? ($order->seller->shop->deliveryHub->name ?? translate('Uyo Central Hub'));
-            $originId = $order->origin_hub_id ?? ($order->seller->shop->delivery_hub_id ?? 0);
+            $originName = $order->originHub?->name ?? ($order->seller?->shop?->deliveryHub?->name ?? translate('Uyo Central Hub'));
+            $originId = $order->origin_hub_id ?? ($order->seller?->shop?->delivery_hub_id ?? 0);
             
-            $destName = $order->destinationHub->name ?? translate('General Area');
+            $destName = $order->destinationHub?->name ?? translate('General Area');
             $destId = $order->destination_hub_id ?? 0;
-            $destType = $order->destinationHub->type ?? 'landmark';
+            $destType = $order->destinationHub?->type ?? 'landmark';
 
             $corridorKey = $originId . '_' . $destId . '_' . $destType;
 

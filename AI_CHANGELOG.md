@@ -7,6 +7,12 @@ Always append your completed tasks here in chronological order at the top. Forma
 `### [YYYY-MM-DD HH:MM UTC] <Feature / Fix Title> [<Component Scope>]`
 Include the specific app/component modified and bullet points detailing the exact technical changes.
 
+### [2026-08-19 12:31 UTC] System-Wide Currency & Corridor Dispatch Null-Safety Hardening [backend]
+* **Component:** Global Currency Engine & Dispatch Controller (`app/Utils/currency.php`, `DispatchPortalController.php`)
+* **Action:** Resolved deep root causes of 500 Internal Server Errors in Hubs, Dispatch Portals, and Print Views:
+  - **Global Currency Engine (`app/Utils/currency.php`):** Hardened `loadCurrency()`, `getCurrencySymbol()`, `getCurrencyCode()`, `usdToDefaultCurrency()`, and `webCurrencyConverter()` against null currency model lookups and array vs object session type confusion in PHP 8.1+. All functions now fallback safely to `NGN` and `₦` with valid numeric defaults.
+  - **Corridor Batch Dispatch (`DispatchPortalController.php`):** Added nullsafe operators for origin hubs, seller shops, and destination hubs across corridor clustering loops in `index()` and `printBatchManifest()`.
+
 ### [2026-08-19 12:01 UTC] Deep Scan & 500 Error Resolution across Pricing Approval, Trip Manifest & Waybill Labels [backend]
 * **Component:** Admin Web Panel & Vendor Web Panel (`ApprovalPortalController.php`, `PricingService.php`, `DispatchPortalController.php`, `batch-manifest.blade.php`, `waybill-label.blade.php`, `approval-portal.blade.php`, `packing-slip.blade.php`)
 * **Action:** Performed deep scan across all administrative portal pages and print templates to eliminate PHP 8.1+ null property errors and inheritance conflicts:
