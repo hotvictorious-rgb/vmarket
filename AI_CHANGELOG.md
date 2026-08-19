@@ -7,6 +7,16 @@ Always append your completed tasks here in chronological order at the top. Forma
 `### [YYYY-MM-DD HH:MM UTC] <Feature / Fix Title> [<Component Scope>]`
 Include the specific app/component modified and bullet points detailing the exact technical changes.
 
+### [2026-08-19 08:48 UTC] REST API v3 Seller Product Deletion, Overwrite & Asset Security Hardening [backend]
+* **Component:** Laravel Web Backend (`backend/vmarket-web/`)
+* **Action:** Deep scan across Mobile Vendor REST API v3 Product controllers identified and hardened arbitrary product deletion, overwrite, stock tampering, and digital asset wiping IDORs.
+* **Fixes Applied:**
+  - **[CRITICAL] Mobile API Arbitrary Product Deletion IDOR (`RestAPI/v3/seller/ProductController::delete`):** Enforced `where(['added_by' => 'seller', 'user_id' => $seller->id])` ownership checks before deleting product records, media files, and active deal links.
+  - **[CRITICAL] Mobile API Product Overwrite & Catalog Hijacking (`RestAPI/v3/seller/ProductController::updateProduct`):** Added strict seller ownership verification prior to applying updates to product details, pricing, SKUs, and variations.
+  - **[CRITICAL] Mobile API Digital Variation File Purging IDOR (`RestAPI/v3/seller/ProductController::deleteDigitalProduct`):** Scoped digital variation file deletions to products owned by the authenticated vendor.
+  - **[CRITICAL] Mobile API Stock Manipulation & Restock Tampering (`RestAPI/v3/seller/ProductController::updateProductQuantity`, `updateRestockQuantity`, `deleteRestockRequest`):** Added seller ownership guards across inventory updates and restock request lifecycles.
+* **Verification:** `php -l` verified on `RestAPI/v3/seller/ProductController.php` — 0 errors.
+
 ### [2026-08-19 08:44 UTC] Vendor Product Catalog IDOR, Stock Manipulation & Asset Deletion Hardening [backend]
 * **Component:** Laravel Web Backend (`backend/vmarket-web/`)
 * **Action:** Deep scan across Vendor Product management controllers identified and closed critical cross-vendor product modification, image deletion, variation file tampering, and stock alteration IDORs.

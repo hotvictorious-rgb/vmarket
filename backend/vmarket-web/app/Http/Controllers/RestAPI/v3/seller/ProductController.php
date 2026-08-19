@@ -748,6 +748,13 @@ class ProductController extends Controller
             return response()->json(['errors' => Helpers::validationErrorProcessor($validator)], 403);
         }
 
+        $seller = $request->seller;
+        // [AI] Ownership Guard: Product must belong to authenticated seller
+        $product = Product::where(['id' => $request['product_id'], 'added_by' => 'seller', 'user_id' => $seller->id])->first();
+        if (!$product) {
+            return response()->json(['message' => translate('unauthorized_access')], 403);
+        }
+
         $variation = DigitalProductVariation::where(['product_id' => $request['product_id'], 'variant_key' => $request['variant_key']])->first();
         if ($variation) {
             DigitalProductVariation::where(['id' => $variation['id']])->update(['file' => null]);
@@ -1183,7 +1190,11 @@ class ProductController extends Controller
     {
         $storage = config('filesystems.disks.default') ?? 'public';
         $seller = $request->seller;
-        $product = Product::with(['digitalVariation', 'seoInfo'])->withCount('reviews')->find($id);
+        // [AI] Ownership Guard: Product must belong to authenticated seller
+        $product = Product::with(['digitalVariation', 'seoInfo'])->withCount('reviews')->where(['id' => $id, 'added_by' => 'seller', 'user_id' => $seller->id])->first();
+        if (!$product) {
+            return response()->json(['message' => translate('unauthorized_access')], 403);
+        }
         $oldProductData = $product;
         $validator = Validator::make($request->all(), [
             'name' => 'required',
@@ -1716,7 +1727,9 @@ class ProductController extends Controller
 
     public function updateProductQuantity(Request $request): JsonResponse
     {
-        $product = $this->productRepo->getFirstWhere(params: ['id' => $request['product_id']]);
+        $seller = $request->seller;
+        // [AI] Ownership Guard: Product must belong to authenticated seller
+        $product = $this->productRepo->getFirstWhere(params: ['id' => $request['product_id'], 'added_by' => 'seller', 'user_id' => $seller->id]);
         if ($product) {
             $this->productRepo->updateByParams(params: ['id' => $request['product_id']], data: [
                 'current_stock' => $request['current_stock'],
@@ -1747,7 +1760,12 @@ class ProductController extends Controller
 
     public function delete(Request $request, $id):JsonResponse
     {
-        $product = Product::withCount('reviews')->find($id);
+        $seller = $request->seller;
+        // [AI] Ownership Guard: Product must belong to authenticated seller
+        $product = Product::withCount('reviews')->where(['id' => $id, 'added_by' => 'seller', 'user_id' => $seller->id])->first();
+        if (!$product) {
+            return response()->json(['message' => translate('unauthorized_access')], 403);
+        }
         foreach (json_decode($product['images'], true) as $image) {
             $imageName = is_string($image) ? $image : $image['image_name'];
             $this->deleteFile('/product/' . $imageName);
@@ -2055,6 +2073,19 @@ class ProductController extends Controller
 
     public function deleteRestockRequest(Request $request): JsonResponse
     {
+        $seller = Helpers::getSellerByToken($request);
+        if (!$seller) {
+            return response()->json([
+                'auth-001' => translate('Your_existing_session_token_does_not_authorize_you_any_more')
+            ], 401);
+        }
+
+        // [AI] Ownership Guard: Restock request must belong to authenticated seller
+        $restockProduct = $this->restockProductRepo->getFirstWhere(params: ['id' => $request['id'], 'added_by' => 'seller', 'seller_id' => $seller->id]);
+        if (!$restockProduct) {
+            return response()->json(['message' => translate('unauthorized_access')], 403);
+        }
+
         $this->restockProductRepo->delete(params: ['id' => $request['id']]);
         $this->restockProductCustomerRepo->delete(params: ['restock_product_id' => $request['id']]);
         return response()->json([
@@ -2064,7 +2095,15 @@ class ProductController extends Controller
 
     public function updateRestockQuantity(Request $request): JsonResponse
     {
-        $product = $this->productRepo->getFirstWhere(params: ['id' => $request['product_id']]);
+        $seller = Helpers::getSellerByToken($request);
+        if (!$seller) {
+            return response()->json([
+                'auth-001' => translate('Your_existing_session_token_does_not_authorize_you_any_more')
+            ], 401);
+        }
+
+        // [AI] Ownership Guard: Product must belong to authenticated seller
+        $product = $this->productRepo->getFirstWhere(params: ['id' => $request['product_id'], 'added_by' => 'seller', 'user_id' => $seller->id]);
 
         if ($product && $request['current_stock'] >= 0) {
             $this->productRepo->updateByParams(params: ['id' => $request['product_id']], data: [
