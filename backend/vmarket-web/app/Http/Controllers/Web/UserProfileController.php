@@ -313,8 +313,16 @@ class UserProfileController extends Controller
             'updated_at' => now(),
         ];
         if (auth('customer')->check()) {
-            ShippingAddress::where('id', $request->id)->update($updateAddress);
-            Toastr::success(translate('address_updated_successfully!'));
+            // [AI] Ownership Guard: Only update address belonging to the logged-in customer
+            $affected = ShippingAddress::where('id', $request->id)
+                ->where('customer_id', auth('customer')->id())
+                ->update($updateAddress);
+
+            if ($affected) {
+                Toastr::success(translate('address_updated_successfully!'));
+            } else {
+                Toastr::error(translate('address_not_found_or_unauthorized'));
+            }
         } else {
             Toastr::error(translate('Insufficient_permission!'));
         }
@@ -324,7 +332,10 @@ class UserProfileController extends Controller
     public function address_delete(Request $request)
     {
         if (auth('customer')->check()) {
-            ShippingAddress::destroy($request->id);
+            // [AI] Ownership Guard: Only delete address belonging to the logged-in customer
+            ShippingAddress::where('id', $request->id)
+                ->where('customer_id', auth('customer')->id())
+                ->delete();
             Toastr::success(translate('address_Delete_Successfully'));
             return redirect()->back();
         } else {
@@ -448,7 +459,11 @@ class UserProfileController extends Controller
         $offlinePaymentStatus = getWebConfig(name: 'offline_payment');
         $cashOnDeliveryStatus = getWebConfig(name: 'cash_on_delivery');
 
-        $order = $this->order->with(['seller.shop'])->find($request->id);
+        // [AI] Ownership Guard: Only allow customer to view seller info for their own order
+        $order = $this->order->with(['seller.shop'])
+            ->where('id', $request->id)
+            ->where('customer_id', auth('customer')->id())
+            ->first();
         if (!$order) {
             Toastr::warning(translate('invalid_order'));
             return redirect()->route('account-oder');
@@ -478,9 +493,12 @@ class UserProfileController extends Controller
         $offlinePaymentStatus = getWebConfig(name: 'offline_payment');
         $cashOnDeliveryStatus = getWebConfig(name: 'cash_on_delivery');
 
+        // [AI] Ownership Guard: Only allow customer to view rider info for their own order
         $order = $this->order->with(['verificationImages', 'details.product', 'deliveryMan.rating', 'deliveryManReview', 'deliveryMan' => function ($query) {
             return $query->withCount('review');
-        }])->find($request->id);
+        }])->where('id', $request->id)
+           ->where('customer_id', auth('customer')->id())
+           ->first();
 
         if (!$order) {
             Toastr::warning(translate('invalid_order'));
@@ -626,7 +644,14 @@ class UserProfileController extends Controller
             return back();
         }
 
-        DB::table('support_tickets')->where(['id' => $id])->update([
+        // [AI] Ownership Guard: Only allow replying to own support ticket
+        $ticket = SupportTicket::where(['id' => $id, 'customer_id' => auth('customer')->id()])->first();
+        if (!$ticket) {
+            Toastr::error(translate('unauthorized_access'));
+            return back();
+        }
+
+        $ticket->update([
             'status' => 'open',
             'updated_at' => now(),
         ]);
@@ -659,20 +684,32 @@ class UserProfileController extends Controller
 
     public function support_ticket_close($id)
     {
-        DB::table('support_tickets')->where(['id' => $id])->update([
+        // [AI] Ownership Guard: Only allow closing own support ticket
+        $affected = SupportTicket::where(['id' => $id, 'customer_id' => auth('customer')->id()])->update([
             'status' => 'close',
             'updated_at' => now(),
         ]);
-        Toastr::success(translate('ticket_closed') . '!');
+
+        if ($affected) {
+            Toastr::success(translate('ticket_closed') . '!');
+        } else {
+            Toastr::error(translate('unauthorized_access'));
+        }
         return redirect('/account-tickets');
     }
 
-
     public function support_ticket_delete(Request $request)
     {
-
         if (auth('customer')->check()) {
-            $support = SupportTicket::find($request->id);
+            // [AI] Ownership Guard: Only allow deleting own support ticket
+            $support = SupportTicket::where('id', $request->id)
+                ->where('customer_id', auth('customer')->id())
+                ->first();
+
+            if (!$support) {
+                Toastr::error(translate('unauthorized_access'));
+                return redirect()->back();
+            }
 
             if ($support->attachment && !is_array($support->attachment) && count(json_decode($support->attachment)) > 0) {
                 foreach (json_decode($support->attachment, true) as $image) {
@@ -696,13 +733,11 @@ class UserProfileController extends Controller
                 }
             }
             $support->conversations()->delete();
-
             $support->delete();
             return redirect()->back();
         } else {
             return redirect()->back();
         }
-
     }
 
     public function track_order(): View
@@ -876,7 +911,19 @@ class UserProfileController extends Controller
 
     public function order_cancel($id)
     {
-        $order = Order::where(['id' => $id])->first();
+        // [AI] Ownership Guard: Only allow customer to cancel their own order
+        $order = Order::where(['id' => $id, 'customer_id' => auth('customer')->id()])->first();
+        if (!$order) {
+            Toastr::error(translate('unauthorized_access'));
+            return back();
+        }
+
+        // [AI] Guard: Cannot cancel order if delivery rider has already been assigned
+        if (!empty($order->delivery_man_id)) {
+            Toastr::error(translate('order_cannot_be_cancelled_rider_assigned'));
+            return back();
+        }
+
         if ($order['payment_method'] == 'cash_on_delivery' && $order['order_status'] == 'pending') {
             OrderManager::getStockUpdateOnOrderStatusChange($order, 'canceled');
             $orderStatusHistoryData = $this->orderStatusHistoryService->getOrderHistoryData(orderId: $id, userId: auth('customer')->id(), userType: 'customer', status: 'canceled');
@@ -897,6 +944,20 @@ class UserProfileController extends Controller
     public function refund_request(Request $request, $id): View|RedirectResponse
     {
         $orderDetails = OrderDetail::find($id);
+        if (!$orderDetails) {
+            Toastr::error(translate('order_details_not_found'));
+            return back();
+        }
+
+        // [AI] Ownership Guard: Verify customer owns the order
+        $order = Order::where('id', $orderDetails->order_id)
+            ->where('customer_id', auth('customer')->id())
+            ->first();
+        if (!$order) {
+            Toastr::error(translate('unauthorized_access'));
+            return back();
+        }
+
         $user = auth('customer')->user();
 
         $loyaltyPointStatus = getWebConfig(name: 'loyalty_point_status');
@@ -930,8 +991,28 @@ class UserProfileController extends Controller
                 }
             }
         }
-        $orderDetailsReward = $this->orderDetailsRewardsRepo->getFirstWhere(params: ['order_details_id' => $request['order_details_id'], 'reward_type' => 'loyalty_point']);
         $orderDetails = OrderDetail::find($request->order_details_id);
+        if (!$orderDetails) {
+            Toastr::error(translate('order_details_not_found'));
+            return back();
+        }
+
+        // [AI] Ownership Guard: Verify customer owns the order
+        $order = Order::where('id', $orderDetails->order_id)
+            ->where('customer_id', auth('customer')->id())
+            ->first();
+        if (!$order) {
+            Toastr::error(translate('unauthorized_access'));
+            return back();
+        }
+
+        // [AI] Delivery status guard: refund only allowed after delivery
+        if ($orderDetails->delivery_status !== 'delivered') {
+            Toastr::error(translate('You_can_request_for_refund_after_order_delivered'));
+            return back();
+        }
+
+        $orderDetailsReward = $this->orderDetailsRewardsRepo->getFirstWhere(params: ['order_details_id' => $request['order_details_id'], 'reward_type' => 'loyalty_point']);
         $user = auth('customer')->user();
 
         if ($orderDetailsReward && $user->loyalty_point < $orderDetailsReward['reward_amount']) {
@@ -962,7 +1043,6 @@ class UserProfileController extends Controller
         $orderDetails->refund_request = 1;
         $orderDetails->save();
 
-        $order = Order::find($orderDetails->order_id);
         event(new RefundEvent(status: 'refund_request', order: $order, refund: $refundRequest, orderDetails: $orderDetails));
 
         Toastr::success(translate('refund_requested_successful!!'));
@@ -971,7 +1051,18 @@ class UserProfileController extends Controller
 
     public function generate_invoice($id)
     {
-        $order = Order::with('seller', 'latestEditHistory')->with('shipping')->where('id', $id)->first();
+        // [AI] Ownership Guard: Only allow customer to download their own invoice
+        $order = Order::with('seller', 'latestEditHistory')
+            ->with('shipping')
+            ->where('id', $id)
+            ->where('customer_id', auth('customer')->id())
+            ->first();
+
+        if (!$order) {
+            Toastr::error(translate('unauthorized_access'));
+            return redirect()->route('account-oder');
+        }
+
         $invoiceSettings = getWebConfig(name: 'invoice_settings');
         $mpdf_view = \View::make(VIEW_FILE_NAMES['order_invoice'], compact('order', 'invoiceSettings'));
         $this->generatePdf(view: $mpdf_view, filePrefix: 'order_invoice_', filePostfix: $order['id'], pdfType: 'invoice', requestFrom: 'web');
@@ -980,16 +1071,30 @@ class UserProfileController extends Controller
     public function refund_details($id)
     {
         $order_details = OrderDetail::find($id);
+        if (!$order_details) {
+            Toastr::error(translate('not_found'));
+            return back();
+        }
+
+        // [AI] Ownership Guard: Only allow viewing refund details for own order
+        $order = $this->order->where('id', $order_details->order_id)
+            ->where('customer_id', auth('customer')->id())
+            ->first();
+        if (!$order) {
+            Toastr::error(translate('unauthorized_access'));
+            return back();
+        }
+
         $refund = RefundRequest::with(['product', 'order'])->where('customer_id', auth('customer')->id())
             ->where('order_details_id', $order_details->id)->first();
         $product = $this->product->find($order_details->product_id);
-        $order = $this->order->find($order_details->order_id);
 
         if (request()->ajax()) {
             if ($product) {
                 return response()->json([
-                    'status' => 1,
-                    'view' => view(VIEW_FILE_NAMES['refund_details'], compact('order_details', 'refund', 'product', 'order'))->render(),
+                    'product' => $product,
+                    'refund' => $refund,
+                    'order_details' => $order_details
                 ]);
             }
             return response()->json(['status' => 0, 'message' => translate('product_not_found')]);

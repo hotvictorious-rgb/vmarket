@@ -7,6 +7,17 @@ Always append your completed tasks here in chronological order at the top. Forma
 `### [YYYY-MM-DD HH:MM UTC] <Feature / Fix Title> [<Component Scope>]`
 Include the specific app/component modified and bullet points detailing the exact technical changes.
 
+### [2026-08-19 08:14 UTC] Web Storefront Customer IDOR Hardening & Access Control Lockdown [backend]
+* **Component:** Laravel Web Backend (`backend/vmarket-web/`)
+* **Action:** Deep scan across web storefront customer controllers identified and fixed 8 IDOR vulnerabilities in customer profile, address management, support ticket administration, order cancellation, and invoice downloads.
+* **Fixes Applied:**
+  - **[CRITICAL] Web Invoice & Order Details IDOR (`Web/UserProfileController::generate_invoice`, `account_order_details_seller_info`, `account_order_details_delivery_man_info`):** Added `customer_id == auth('customer')->id()` verification to prevent arbitrary web visitors from downloading invoices or viewing delivery rider and order details of other customers.
+  - **[CRITICAL] Web Order Cancellation IDOR & In-Transit Guard (`Web/UserProfileController::order_cancel`):** Added customer ownership validation and enforced guard blocking cancellations if a delivery rider has already been assigned (`!empty($order->delivery_man_id)`).
+  - **[CRITICAL] Web Address Modification & Deletion IDOR (`Web/UserProfileController::address_update`, `address_delete`):** Enforced `customer_id == auth('customer')->id()` scoping to prevent users from modifying or destroying other customers' saved addresses.
+  - **[CRITICAL] Web Support Ticket Reply, Close & Delete IDOR (`Web/UserProfileController::comment_submit`, `support_ticket_close`, `support_ticket_delete`):** Added customer ownership checks to prevent unauthorized users from posting comments to, closing, or deleting other users' support tickets.
+  - **[CRITICAL] Web Refund IDOR & Delivery Verification (`Web/UserProfileController::refund_request`, `store_refund`, `refund_details`):** Added parent order customer ownership verification and `delivery_status === 'delivered'` checks before allowing refund creation on the web storefront.
+* **Verification:** `php -l` verified on `UserProfileController.php` — 0 errors.
+
 ### [2026-08-19 08:10 UTC] Order Edit Due Payment Ownership, Due Amount Locking & Cart IDOR Hardening [backend]
 * **Component:** Laravel Web Backend (`backend/vmarket-web/`)
 * **Action:** Resolved authorization and concurrency vulnerabilities across order edit due settlement handlers and shopping cart item check state mutations.
