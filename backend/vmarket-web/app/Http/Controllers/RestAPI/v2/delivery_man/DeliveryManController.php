@@ -96,6 +96,12 @@ class DeliveryManController extends Controller
         }
 
         $deliveryMan = $request['delivery_man'];
+        // [AI] Ownership Guard: Only record location for orders assigned to this delivery rider
+        $order = Order::where(['id' => $request['order_id'], 'delivery_man_id' => $deliveryMan['id']])->first();
+        if (!$order) {
+            return response()->json(['message' => translate('unauthorized_access')], 403);
+        }
+
         DB::table('delivery_histories')->insert([
             'order_id' => $request['order_id'],
             'deliveryman_id' => $deliveryMan['id'],
@@ -399,7 +405,14 @@ class DeliveryManController extends Controller
 
     public function getOrderItem(Request $request): JsonResponse
     {
-        $order = Order::with(['shippingAddress', 'customer', 'seller.shop'])->where(['id' => $request['id']])->first();
+        $deliveryMan = $request['delivery_man'];
+        // [AI] Ownership Guard: Only return order assigned to this delivery rider
+        $order = Order::with(['shippingAddress', 'customer', 'seller.shop'])
+            ->where(['id' => $request['id'], 'delivery_man_id' => $deliveryMan['id']])
+            ->first();
+        if (!$order) {
+            return response()->json(['message' => translate('order_not_found')], 404);
+        }
         return response()->json($order, 200);
     }
 

@@ -7,6 +7,14 @@ Always append your completed tasks here in chronological order at the top. Forma
 `### [YYYY-MM-DD HH:MM UTC] <Feature / Fix Title> [<Component Scope>]`
 Include the specific app/component modified and bullet points detailing the exact technical changes.
 
+### [2026-08-19 08:39 UTC] Delivery Rider Location Spoofing & Order Inspection IDOR Hardening [backend]
+* **Component:** Laravel Web Backend (`backend/vmarket-web/`)
+* **Action:** Deep scan across Delivery Man REST API v2 endpoints identified and fixed arbitrary order PII inspection and location spoofing IDORs.
+* **Fixes Applied:**
+  - **[CRITICAL] Delivery Man Arbitrary Order Inspection IDOR (`RestAPI/v2/delivery_man/DeliveryManController::getOrderItem`):** Scoped order lookup by `delivery_man_id == $deliveryMan->id` to prevent authenticated riders from querying and leaking shipping addresses, buyer identities, and order sums for arbitrary platform orders.
+  - **[CRITICAL] Rider Location Recording IDOR & Telemetry Spoofing (`RestAPI/v2/delivery_man/DeliveryManController::record_location_data`):** Enforced order assignment verification (`delivery_man_id == $deliveryMan->id`) before allowing GPS coordinate logging against delivery history.
+* **Verification:** `php -l` verified on `RestAPI/v2/delivery_man/DeliveryManController.php` — 0 errors.
+
 ### [2026-08-19 08:36 UTC] Vendor Profile, Password, Bank Info & Shop Settings IDOR Hardening [backend]
 * **Component:** Laravel Web Backend (`backend/vmarket-web/`)
 * **Action:** Deep scan across Vendor profile and shop settings controllers identified and fixed cross-vendor IDOR vulnerabilities affecting profile details, passwords, payout bank details, and shop status toggles.
