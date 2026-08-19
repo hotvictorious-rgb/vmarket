@@ -71,7 +71,7 @@ class LoginController extends Controller
         $verificationBy = getWebConfig(name: 'deliveryman_forgot_password_method') ?? 'phone';
 
         if (isset($deliveryMan)) {
-            $otp = (env('APP_MODE') == 'live') ? rand(1000, 9999) : 1234;
+            $otp = (env('APP_MODE') == 'live') ? rand(100000, 999999) : 123456;
 
             PasswordReset::insert([
                 'identity' => $request['identity'],
@@ -135,7 +135,7 @@ class LoginController extends Controller
 
         $timeDiff = $data->created_at->diffInMinutes(Carbon::now());
 
-        if ($timeDiff > 2) {
+        if ($timeDiff > 15) {
             PasswordReset::where(['token' => $request['otp'], 'user_type' => 'delivery_man'])->delete();
             return response()->json(['message' => translate('OTP_expired')], 403);
         }
@@ -160,8 +160,13 @@ class LoginController extends Controller
             return response()->json(['errors' => Helpers::validationErrorProcessor($validator)], 403);
         }
 
-        DeliveryMan::where(['phone' => $request['phone']])
-            ->update(['password' => bcrypt(str_replace(' ', '', $request['password']))]);
+        $deliveryMan = DeliveryMan::where(['phone' => $request['phone']])->first();
+        if (!$deliveryMan) {
+            return response()->json(['message' => translate('user_not_found')], 404);
+        }
+
+        $deliveryMan->password = bcrypt(str_replace(' ', '', $request['password']));
+        $deliveryMan->save();
 
         PasswordReset::where(['identity' => $request['phone'], 'user_type' => 'delivery_man'])->delete();
 

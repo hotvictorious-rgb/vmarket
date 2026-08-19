@@ -62,9 +62,9 @@ class ForgotPasswordController extends Controller
                 return response()->json(['message' => $response], 200);
             }
         } elseif ($verification_by == 'phone') {
-            $seller = Seller::where('phone', 'like', "%{$request['identity']}%")->first();
+            $seller = Seller::where('phone', $request['identity'])->first();
             if (isset($seller)) {
-                $token = (env('APP_MODE') == 'live') ? rand(1000, 9999) : 1234;
+                $token = (env('APP_MODE') == 'live') ? rand(100000, 999999) : 123456;
                 DB::table('password_resets')->insert([
                     'identity' => $seller['phone'],
                     'token' => $token,
@@ -77,7 +77,7 @@ class ForgotPasswordController extends Controller
             }
         }
         return response()->json(['errors' => [
-            ['code' => 'not-found', 'message' => 'user not found!']
+            ['code' => 'not-found', 'message' => 'Seller not found!']
         ]], 404);
     }
 
@@ -96,10 +96,15 @@ class ForgotPasswordController extends Controller
         $data = DB::table('password_resets')
             ->where('user_type','seller')
             ->where(['token' => $request['otp']])
-            ->where('identity', 'like', "%{$id}%")
+            ->where('identity', $id)
             ->first();
 
         if (isset($data)) {
+            if (Carbon::parse($data->created_at)->addMinutes(15)->isPast()) {
+                return response()->json(['errors' => [
+                    ['code' => 'expired', 'message' => translate('OTP_expired_please_request_a_new_one')]
+                ]], 403);
+            }
             return response()->json(['message' => 'otp verified.'], 200);
         }
 
@@ -122,18 +127,24 @@ class ForgotPasswordController extends Controller
 
         $data = DB::table('password_resets')
             ->where('user_type','seller')
-            ->where('identity', 'like', "%{$request['identity']}%")
+            ->where('identity', $request['identity'])
             ->where(['token' => $request['otp']])->first();
 
         if (isset($data)) {
-            DB::table('sellers')->where('phone', 'like', "%{$data->identity}%")
+            if (Carbon::parse($data->created_at)->addMinutes(15)->isPast()) {
+                return response()->json(['errors' => [
+                    ['code' => 'expired', 'message' => translate('OTP_expired_please_request_a_new_one')]
+                ]], 403);
+            }
+
+            DB::table('sellers')->where('phone', $data->identity)->orWhere('email', $data->identity)
                 ->update([
                     'password' => bcrypt(str_replace(' ', '', $request['password']))
                 ]);
 
             DB::table('password_resets')
                 ->where('user_type','seller')
-                ->where('identity', 'like', "%{$request['identity']}%")
+                ->where('identity', $request['identity'])
                 ->where(['token' => $request['otp']])->delete();
 
             return response()->json(['message' => 'Password changed successfully.'], 200);

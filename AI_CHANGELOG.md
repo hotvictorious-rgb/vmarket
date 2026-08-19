@@ -7,6 +7,19 @@ Always append your completed tasks here in chronological order at the top. Forma
 `### [YYYY-MM-DD HH:MM UTC] <Feature / Fix Title> [<Component Scope>]`
 Include the specific app/component modified and bullet points detailing the exact technical changes.
 
+### [2026-08-19 10:41 UTC] Universal 6-Digit OTP Standardization & Token Expiration Across All Modules [backend]
+* **Component:** Laravel Web Backend (`backend/vmarket-web/`)
+* **Action:** Swept the entire backend codebase to standardize all legacy 4-digit OTP generators to the bank-grade 6-digit standard format (`rand(100000, 999999)`), eliminating cross-platform pin code mismatches with mobile Flutter `PinCodeTextField` (length 6) and Google Firebase Phone Auth.
+* **Fixes Applied:**
+  - **[SECURITY] Web Digital Download OTP Standardization (`Web/WebController`):** Upgraded digital product download OTP generation in `getDigitalProductDownloadProcess` and `resendOTP` from legacy 4 digits (`rand(1000, 9999)`) to 6 digits (`rand(100000, 999999)`).
+  - **[SECURITY] REST API Digital Download OTP Standardization (`RestAPI/v1/OrderController`):** Upgraded digital product download OTP generation and resend from 4 digits to 6 digits.
+  - **[SECURITY] Customer Email Verification OTP Standardization (`RestAPI/v1/auth/EmailVerificationController`):** Standardized customer registration email verification code and resend tokens to 6 digits.
+  - **[SECURITY] Customer Phone Verification OTP Standardization (`RestAPI/v1/auth/PhoneVerificationController`):** Standardized customer phone registration verification and resend tokens to 6 digits.
+  - **[SECURITY] Seller Password Reset OTP & Expiration (`RestAPI/v3/seller/auth/ForgotPasswordController` & `v2`):** Upgraded seller password reset OTP from 4 digits to 6 digits, eliminated SQL `LIKE` partial identity matching in favor of exact match, and enforced strict 15-minute token expiration checks.
+  - **[SECURITY] Delivery Man Password Reset OTP & 15-Minute Expiration (`RestAPI/v2/delivery_man/auth/LoginController`):** Upgraded rider password reset OTP from 4 digits to 6 digits, aligned expiration window to 15 minutes, and enforced database record verification before password modification.
+  - **[SECURITY] Dispatch Portal Pickup & Delivery Verification Codes (`Admin/Delivery/DispatchPortalController`):** Upgraded order pickup and delivery verification codes to 6 digits to match rider mobile app PIN sheet inputs.
+* **Verification:** `php -l` verified across all 8 modified controller files — 0 errors.
+
 ### [2026-08-19 10:25 UTC] Admin Profile IDOR Elimination & Admin Login Rate Limiting [backend]
 * **Component:** Laravel Web Backend (`backend/vmarket-web/`)
 * **Action:** Deep scan across Admin authentication and profile controllers identified and resolved authorization IDOR loopholes and brute-force vectors on administrative accounts.

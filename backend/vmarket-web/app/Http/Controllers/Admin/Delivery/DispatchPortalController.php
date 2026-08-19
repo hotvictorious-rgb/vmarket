@@ -132,13 +132,13 @@ class DispatchPortalController extends Controller
         foreach ($request->order_ids as $orderId) {
             $order = Order::with(['originHub', 'destinationHub'])->find($orderId);
             if ($order) {
-                // Ensure Pickup OTP exists (4 digits)
+                // Ensure Pickup OTP exists (6 digits)
                 if (empty($order->pickup_verification_code)) {
-                    $order->pickup_verification_code = (string) rand(1000, 9999);
+                    $order->pickup_verification_code = (string) rand(100000, 999999);
                 }
-                // Ensure Delivery OTP exists (4 digits)
+                // Ensure Delivery OTP exists (6 digits)
                 if (empty($order->verification_code)) {
-                    $order->verification_code = (string) rand(1000, 9999);
+                    $order->verification_code = (string) rand(100000, 999999);
                 }
 
                 // [AI] Standard Rider Payout Fee (Independent from Customer Shipping Fee)
