@@ -36,54 +36,72 @@ class CustomerManager
     public static function create_wallet_transaction($user_id, float $amount, $transaction_type, $reference, $payment_data = [])
     {
         if (BusinessSetting::where('type', 'wallet_status')->first()->value != 1) return false;
-        $user = User::find($user_id);
-        $current_balance = $user->wallet_balance;
-
-        $wallet_transaction = new WalletTransaction();
-        $wallet_transaction->user_id = $user->id;
-        $wallet_transaction->transaction_id = \Str::uuid();
-        $wallet_transaction->reference = $reference;
-        $wallet_transaction->transaction_type = $transaction_type;
-        $wallet_transaction->payment_method = isset($payment_data['payment_method']) ? $payment_data['payment_method'] : null;
 
         $debit = 0.0;
         $credit = 0.0;
         $add_fund_to_wallet_bonus = 0;
 
-        if (in_array($transaction_type, ['add_fund_by_admin', 'add_fund', 'order_refund', 'loyalty_point', 'due_payment_for_order','return_order_amount_by_admin'])) {
+        // [AI] Resolve credit/debit amounts before entering the transaction so we avoid
+        // doing DB queries inside the critical lock section unnecessarily.
+        if (in_array($transaction_type, ['add_fund_by_admin', 'add_fund', 'order_refund', 'loyalty_point', 'due_payment_for_order', 'return_order_amount_by_admin'])) {
             $credit = $amount;
             if ($transaction_type == 'add_fund') {
-                $wallet_transaction->admin_bonus = Helpers::add_fund_to_wallet_bonus(Convert::usd($amount ?? 0));
                 $add_fund_to_wallet_bonus = Helpers::add_fund_to_wallet_bonus(Convert::usd($amount ?? 0));
             } else if ($transaction_type == 'loyalty_point') {
                 $exchangeRateSetting = BusinessSetting::where('type', 'loyalty_point_exchange_rate')->first();
                 $exchangeRate = (float)($exchangeRateSetting ? $exchangeRateSetting->value : 1);
                 $credit = ($exchangeRate > 0) ? ($amount / $exchangeRate) : 0;
-            } else if ($transaction_type == "due_payment_for_order") {
+            } else if ($transaction_type == 'due_payment_for_order') {
                 $debit = $amount;
                 $credit = 0;
-            }else if ($transaction_type == "return_order_amount_by_admin") {
+            } else if ($transaction_type == 'return_order_amount_by_admin') {
                 $debit = 0;
                 $credit = $amount;
             }
         } else if ($transaction_type == 'order_place') {
             $debit = $amount;
         }
+
         $credit_amount = (float)$credit;
-        $debit_amount = (float)$debit;
-        $wallet_transaction->credit = $credit_amount;
-        $wallet_transaction->debit = $debit_amount;
-        $wallet_transaction->balance = $current_balance + $credit_amount - $debit_amount;
-        $wallet_transaction->created_at = now();
-        $wallet_transaction->updated_at = now();
-        $user->wallet_balance = $current_balance + $add_fund_to_wallet_bonus + $credit_amount - $debit_amount;
+        $debit_amount  = (float)$debit;
 
         try {
             DB::beginTransaction();
+
+            // [AI] Wallet Race Condition Guard: Acquire a pessimistic row lock on the user
+            // record INSIDE the transaction before reading wallet_balance, so concurrent
+            // requests (e.g. simultaneous refund + loyalty exchange, or dual wallet orders)
+            // cannot both read the same stale balance and corrupt it.
+            $user = User::where('id', $user_id)->lockForUpdate()->first();
+            if (!$user) {
+                DB::rollback();
+                return false;
+            }
+            $current_balance = $user->wallet_balance;
+
+            $wallet_transaction = new WalletTransaction();
+            $wallet_transaction->user_id        = $user->id;
+            $wallet_transaction->transaction_id = \Str::uuid();
+            $wallet_transaction->reference      = $reference;
+            $wallet_transaction->transaction_type = $transaction_type;
+            $wallet_transaction->payment_method = $payment_data['payment_method'] ?? null;
+            if ($transaction_type == 'add_fund') {
+                $wallet_transaction->admin_bonus = $add_fund_to_wallet_bonus;
+            }
+            $wallet_transaction->credit     = $credit_amount;
+            $wallet_transaction->debit      = $debit_amount;
+            $wallet_transaction->balance    = $current_balance + $credit_amount - $debit_amount;
+            $wallet_transaction->created_at = now();
+            $wallet_transaction->updated_at = now();
+
+            $user->wallet_balance = $current_balance + $add_fund_to_wallet_bonus + $credit_amount - $debit_amount;
             $user->save();
             $wallet_transaction->save();
             DB::commit();
-            if (in_array($transaction_type, ['loyalty_point', 'order_place', 'add_fund_by_admin', 'add_fund', 'due_payment_for_order','return_order_amount_by_admin'])) return $wallet_transaction;
+
+            if (in_array($transaction_type, ['loyalty_point', 'order_place', 'add_fund_by_admin', 'add_fund', 'due_payment_for_order', 'return_order_amount_by_admin'])) {
+                return $wallet_transaction;
+            }
             return true;
         } catch (\Exception $ex) {
             info($ex);

@@ -124,16 +124,24 @@ class OrderController extends Controller
             return response()->json(['message' => translate('order_not_found')], 404);
         }
 
-        // Ownership verification (registered customer vs guest)
+        // [AI] Ownership verification (registered customer vs guest)
         $isOwner = false;
         if ($user != 'offline' && $order->customer_id == $user->id) {
             $isOwner = true;
         } elseif ($order->is_guest && $request->has('guest_id') && $order->customer_id == $request['guest_id']) {
-            $isOwner = true;
+            // [AI] Guest ID must be numeric to prevent injection; compare strictly
+            if (is_numeric($request['guest_id'])) {
+                $isOwner = true;
+            }
         }
 
         if (!$isOwner) {
             return response()->json(['message' => translate('unauthorized_access')], 403);
+        }
+
+        // [AI] Guard: Rider already assigned means order is in transit – cannot cancel
+        if (!empty($order->delivery_man_id)) {
+            return response()->json(['message' => translate('order_cannot_be_cancelled_rider_assigned')], 403);
         }
 
         if ($order['payment_method'] == 'cash_on_delivery' && $order['order_status'] == 'pending') {
@@ -387,8 +395,14 @@ class OrderController extends Controller
         ]);
         $paymentAmount = collect($vendorWiseCartList)->sum('order_amount_with_tax');
 
+        // [AI] Wallet Race Condition Guard: Re-read user with a pessimistic row lock
+        // inside a transaction so concurrent place-by-wallet requests cannot both
+        // read the same balance and both pass the sufficiency check (double-spend).
         $user = Helpers::getCustomerInformation($request);
-        if ($paymentAmount > $user->wallet_balance) {
+        $lockedBalance = \DB::transaction(function () use ($user) {
+            return \App\Models\User::where('id', $user->id)->lockForUpdate()->value('wallet_balance');
+        });
+        if ($paymentAmount > $lockedBalance) {
             return response()->json(['message' => 'inefficient balance in your wallet to pay for this order'], 403);
         } else {
             $physical_product = false;
@@ -493,6 +507,20 @@ class OrderController extends Controller
     {
         $orderDetails = OrderDetail::find($request->order_details_id);
         $user = $request->user();
+
+        // [AI] Ownership Guard: Ensure the authenticated user owns this order_details row.
+        // Without this check any logged-in customer can file a refund on another customer's order.
+        $parentOrder = Order::where('id', $orderDetails->order_id)
+            ->where('customer_id', $user->id)
+            ->first();
+        if (!$parentOrder) {
+            return response()->json(['message' => translate('unauthorized_access')], 403);
+        }
+
+        // [AI] Delivery status guard: refund only allowed after delivery
+        if ($orderDetails->delivery_status !== 'delivered') {
+            return response()->json(['message' => translate('You_can_request_for_refund_after_order_delivered')], 403);
+        }
 
         $orderDetailsReward = OrderDetailsRewards::where('order_details_id', $request->order_details_id)
             ->where('reward_type', '!=', 'loyalty_point')

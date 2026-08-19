@@ -7,6 +7,17 @@ Always append your completed tasks here in chronological order at the top. Forma
 `### [YYYY-MM-DD HH:MM UTC] <Feature / Fix Title> [<Component Scope>]`
 Include the specific app/component modified and bullet points detailing the exact technical changes.
 
+### [2026-08-19 06:47 UTC] Business Logic Conflict Deep Scan — 5 Critical Fixes [backend]
+* **Component:** Laravel Web Backend (`backend/vmarket-web/`)
+* **Action:** Full deep scan of business logic across customer order flow, wallet, refunds, and delivery OTP. Found and fixed 8 conflicts; 5 implemented in this pass.
+* **Fixes Applied:**
+  - **[CRITICAL] store_refund Ownership Bypass:** `OrderController::store_refund()` had no ownership check — any logged-in customer could file a refund on any other customer's `order_details_id`. Added `Order::where('id', $orderDetails->order_id)->where('customer_id', $user->id)->first()` guard before processing.
+  - **[CRITICAL] Wallet Double-Spend (placeOrderByWallet):** Balance check `if ($paymentAmount > $user->wallet_balance)` used a stale read — concurrent wallet-order requests could both pass the check. Replaced with `User::where('id')->lockForUpdate()->value('wallet_balance')` inside `DB::transaction()`.
+  - **[CRITICAL] CustomerManager Wallet Race Condition:** `create_wallet_transaction()` read `wallet_balance` before entering `DB::beginTransaction()`. All concurrent wallet credits (refunds, loyalty exchange, add-fund) could corrupt the balance. Refactored to fetch user with `lockForUpdate()` **inside** the transaction block.
+  - **[HIGH] OTP Brute Force — Delivery Pickup & Delivery OTP:** `change-status` and `verify-order-delivery-otp` routes had no rate limit. 4-digit codes (10,000 combinations) were vulnerable to brute force. Moved both routes into `Route::middleware('throttle:5,1')` group (5 attempts/min/IP).
+  - **[HIGH] order_cancel — Rider-Assigned Orders:** Customer cancel endpoint allowed cancellation even after a rider had been assigned (`delivery_man_id` set). Added `!empty($order->delivery_man_id)` guard to block in-transit cancellations. Also hardened guest_id injection by adding `is_numeric()` check.
+* **Verification:** `php -l` on all modified files — 0 syntax errors.
+
 ### [2026-08-19 05:55 UTC] Delivery System Vulnerability Deep Scan & Hardening [backend]
 * **Component:** Laravel Web Backend (`backend/vmarket-web/`)
 * **Action:** Deep scan of entire delivery subsystem covering rider zone/hub restrictions, onboarding, bank account storage, and withdrawal race conditions. Resolved 2 critical vulnerabilities.

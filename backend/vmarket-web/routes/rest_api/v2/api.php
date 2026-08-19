@@ -162,7 +162,6 @@ Route::group(['namespace' => 'RestAPI\v2', 'prefix' => 'v2', 'middleware' => ['a
                 Route::get('order-list-by-date', 'order_list_date_filter');
                 Route::get('search', 'search');
                 Route::get('profile-dashboard-counts', 'profile_dashboard_counts');
-                Route::post('change-status', 'change_status');
                 Route::put('update-info', 'update_info');
                 Route::put('bank-info', 'bank_info');
                 Route::get('review-list', 'review_list');
@@ -170,13 +169,20 @@ Route::group(['namespace' => 'RestAPI\v2', 'prefix' => 'v2', 'middleware' => ['a
                 Route::get('collected_cash_history', 'collected_cash_history');
                 Route::get('emergency-contact-list', 'emergency_contact_list');
                 Route::get('notifications', 'get_all_notification');
-                Route::post('verify-order-delivery-otp', 'verify_order_delivery_otp');
                 Route::post('resend-verification-code', 'resend_verification_code');
                 Route::post('order-delivery-verification', 'order_delivery_verification');
                 Route::post('interstate-driver-handover', 'interstate_driver_handover');
                 Route::post('generate-paystack-link', 'generate_paystack_link');
                 Route::post('remit-cash-paystack-init', 'remit_cash_paystack_init');
                 Route::get('get-waybill-label', 'get_waybill_label');
+            });
+
+            // [AI] OTP brute-force protection: 5 attempts per minute per IP
+            Route::middleware('throttle:5,1')->group(function () {
+                Route::controller(DeliveryManController::class)->group(function () {
+                    Route::post('change-status', 'change_status');
+                    Route::post('verify-order-delivery-otp', 'verify_order_delivery_otp');
+                });
             });
 
             Route::controller(WithdrawController::class)->group(function () {
