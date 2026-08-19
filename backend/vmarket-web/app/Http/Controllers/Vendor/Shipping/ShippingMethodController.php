@@ -114,8 +114,14 @@ class ShippingMethodController extends BaseController
      */
     public function updateStatus(Request $request): JsonResponse
     {
+        $vendorId = auth('seller')->id();
+        // [AI] Ownership Guard: Only update shipping method belonging to this vendor
+        $shippingMethod = $this->shippingMethodRepo->getFirstWhere(params: ['id' => $request['id'], 'creator_id' => $vendorId, 'creator_type' => 'seller']);
+        if (!$shippingMethod) {
+            return response()->json(['success' => 0, 'message' => translate('unauthorized_access')], 403);
+        }
         $this->shippingMethodRepo->update(id: $request['id'], data: ['status' => $request['status']]);
-        return response()->json(['success' => 1,], status: 200);
+        return response()->json(['success' => 1], status: 200);
     }
 
     /**
@@ -124,9 +130,15 @@ class ShippingMethodController extends BaseController
      */
     public function getUpdateView(string|int $id): View|RedirectResponse
     {
-        $shippingMethod = getWebConfig(name: 'shipping_method');
-        if ($shippingMethod === 'sellerwise_shipping') {
-            $shippingMethod = $this->shippingMethodRepo->getFirstWhere(params: ['id' => $id]);
+        $shippingMethodConfig = getWebConfig(name: 'shipping_method');
+        $vendorId = auth('seller')->id();
+        if ($shippingMethodConfig === 'sellerwise_shipping') {
+            // [AI] Ownership Guard: Only view edit page for own shipping method
+            $shippingMethod = $this->shippingMethodRepo->getFirstWhere(params: ['id' => $id, 'creator_id' => $vendorId, 'creator_type' => 'seller']);
+            if (!$shippingMethod) {
+                ToastMagic::error(translate('unauthorized_access'));
+                return redirect()->route(ShippingMethod::INDEX[ROUTE]);
+            }
             return view(ShippingMethod::UPDATE[VIEW], compact('shippingMethod'));
         } else {
             return redirect()->route(Dashboard::INDEX[ROUTE]);
@@ -140,6 +152,13 @@ class ShippingMethodController extends BaseController
      */
     public function update(ShippingMethodRequest $request, string|int $id): RedirectResponse
     {
+        $vendorId = auth('seller')->id();
+        // [AI] Ownership Guard: Only update shipping method belonging to this vendor
+        $shippingMethod = $this->shippingMethodRepo->getFirstWhere(params: ['id' => $id, 'creator_id' => $vendorId, 'creator_type' => 'seller']);
+        if (!$shippingMethod) {
+            ToastMagic::error(translate('unauthorized_access'));
+            return redirect()->route(ShippingMethod::INDEX[ROUTE]);
+        }
         $this->shippingMethodRepo->update(id: $id, data: $this->shippingMethodService->addShippingMethodData(request: $request, addedBy: 'seller'));
         $this->categoryShippingRepo->updateWhere(params: ['shipping_method_id' => $id], data: ['shipping_cost' => currencyConverter($request['cost'])]);
         ToastMagic::success(translate('successfully_updated'));
@@ -152,6 +171,13 @@ class ShippingMethodController extends BaseController
      */
     public function delete(Request $request): RedirectResponse
     {
+        $vendorId = auth('seller')->id();
+        // [AI] Ownership Guard: Only delete shipping method belonging to this vendor
+        $shippingMethod = $this->shippingMethodRepo->getFirstWhere(params: ['id' => $request['id'], 'creator_id' => $vendorId, 'creator_type' => 'seller']);
+        if (!$shippingMethod) {
+            ToastMagic::error(translate('unauthorized_access'));
+            return redirect()->back();
+        }
         $this->shippingMethodRepo->delete(params: ['id' => $request['id']]);
         return redirect()->back();
     }

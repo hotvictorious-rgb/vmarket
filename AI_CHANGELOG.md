@@ -7,6 +7,13 @@ Always append your completed tasks here in chronological order at the top. Forma
 `### [YYYY-MM-DD HH:MM UTC] <Feature / Fix Title> [<Component Scope>]`
 Include the specific app/component modified and bullet points detailing the exact technical changes.
 
+### [2026-08-19 08:51 UTC] Vendor Shipping Method Management IDOR Hardening [backend]
+* **Component:** Laravel Web Backend (`backend/vmarket-web/`)
+* **Action:** Deep scan across Vendor Shipping management controllers identified and resolved cross-vendor IDOR vulnerabilities on shipping method activation, modification, and deletion.
+* **Fixes Applied:**
+  - **[CRITICAL] Vendor Shipping Method Manipulation & Deletion IDOR (`Vendor/Shipping/ShippingMethodController::updateStatus`, `getUpdateView`, `update`, `delete`):** Enforced `creator_id == auth('seller')->id()` and `creator_type == 'seller'` across status toggle, update form rendering, pricing update, and deletion actions, preventing vendors from modifying or deleting shipping configurations belonging to other vendors or platform defaults.
+* **Verification:** `php -l` verified on `Vendor/Shipping/ShippingMethodController.php` — 0 errors.
+
 ### [2026-08-19 08:48 UTC] REST API v3 Seller Product Deletion, Overwrite & Asset Security Hardening [backend]
 * **Component:** Laravel Web Backend (`backend/vmarket-web/`)
 * **Action:** Deep scan across Mobile Vendor REST API v3 Product controllers identified and hardened arbitrary product deletion, overwrite, stock tampering, and digital asset wiping IDORs.
