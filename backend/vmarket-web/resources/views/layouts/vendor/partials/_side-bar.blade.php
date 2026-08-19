@@ -459,34 +459,36 @@
                                 </a>
                             </li>
                         @endif
-                        <li class="navbar-vertical-aside-has-menu {{ Request::is('vendor/business-settings/withdraw*')?'active' : ''}}">
-                            <a class="js-navbar-vertical-aside-menu-link nav-link"
-                               href="{{ route('vendor.business-settings.withdraw.index') }}" title="{{ translate('withdraws') }}">
-                                <i class="tio-wallet-outlined nav-icon"></i>
-                                <span class="navbar-vertical-aside-mini-mode-hidden-elements text-truncate text-capitalize">
-                                        {{ translate('withdraws') }}
-                                </span>
-                            </a>
-                        </li>
-                        <li class="navbar-vertical-aside-has-menu {{ Request::is('vendor/profile/'.Profile::INDEX[URI]) || Request::is('vendor/profile/'.Profile::BANK_INFO_UPDATE[URI]) ?'active' : ''}}">
-                            <a class="js-navbar-vertical-aside-menu-link nav-link"
-                               href="{{ route('vendor.profile.index') }}" title="{{ translate('bank_Information') }}">
-                                <i class="tio-shop nav-icon"></i>
-                                <span class="navbar-vertical-aside-mini-mode-hidden-elements text-truncate text-capitalize">
-                                    {{ translate('bank_Information') }}
-                                </span>
-                            </a>
-                        </li>
-                        <li class="navbar-vertical-aside-has-menu {{ Request::is('vendor/shop*')?'active' : ''}}">
-                            <a class="js-navbar-vertical-aside-menu-link nav-link"
-                               href="{{ route('vendor.shop.index') }}" title="{{ translate('shop_Settings') }}">
-                                <i class="tio-home nav-icon"></i>
-                                <span
-                                    class="navbar-vertical-aside-mini-mode-hidden-elements text-truncate text-capitalize">
-                                    {{ translate('shop_Settings') }}
-                                </span>
-                            </a>
-                        </li>
+                        @if(!session('is_vendor_employee'))
+                            <li class="navbar-vertical-aside-has-menu {{ Request::is('vendor/business-settings/withdraw*')?'active' : ''}}">
+                                <a class="js-navbar-vertical-aside-menu-link nav-link"
+                                   href="{{ route('vendor.business-settings.withdraw.index') }}" title="{{ translate('withdraws') }}">
+                                    <i class="tio-wallet-outlined nav-icon"></i>
+                                    <span class="navbar-vertical-aside-mini-mode-hidden-elements text-truncate text-capitalize">
+                                            {{ translate('withdraws') }}
+                                    </span>
+                                </a>
+                            </li>
+                            <li class="navbar-vertical-aside-has-menu {{ Request::is('vendor/profile/'.Profile::INDEX[URI]) || Request::is('vendor/profile/'.Profile::BANK_INFO_UPDATE[URI]) ?'active' : ''}}">
+                                <a class="js-navbar-vertical-aside-menu-link nav-link"
+                                   href="{{ route('vendor.profile.index') }}" title="{{ translate('bank_Information') }}">
+                                    <i class="tio-shop nav-icon"></i>
+                                    <span class="navbar-vertical-aside-mini-mode-hidden-elements text-truncate text-capitalize">
+                                        {{ translate('bank_Information') }}
+                                    </span>
+                                </a>
+                            </li>
+                            <li class="navbar-vertical-aside-has-menu {{ Request::is('vendor/shop*')?'active' : ''}}">
+                                <a class="js-navbar-vertical-aside-menu-link nav-link"
+                                   href="{{ route('vendor.shop.index') }}" title="{{ translate('shop_Settings') }}">
+                                    <i class="tio-home nav-icon"></i>
+                                    <span
+                                        class="navbar-vertical-aside-mini-mode-hidden-elements text-truncate text-capitalize">
+                                        {{ translate('shop_Settings') }}
+                                    </span>
+                                </a>
+                            </li>
+                        @endif
                         @php( $shippingMethod = getWebConfig('shipping_method'))
                         @if($shippingMethod=='sellerwise_shipping')
                             <li class="nav-item {{ Request::is('vendor/delivery-man*')?'scroll-here' : ''}}">

@@ -7,6 +7,16 @@ Always append your completed tasks here in chronological order at the top. Forma
 `### [YYYY-MM-DD HH:MM UTC] <Feature / Fix Title> [<Component Scope>]`
 Include the specific app/component modified and bullet points detailing the exact technical changes.
 
+### [2026-08-19 05:10 UTC] Role Conflict Audit & Vendor Employee Security Hardening [backend]
+* **Component:** Laravel Web Backend (`backend/vmarket-web/`)
+* **Action:** Performed deep scan of role definitions, permission checks, and cross-guard access barriers across Admin, Vendors, and Delivery Logistics; resolved UI leakage and route middleware binding.
+* **Core Technical Implementations:**
+  - **Middleware Registration & Route Binding:** Registered `'vendor_employee'` middleware in `bootstrap/app.php` and attached it directly to the authenticated vendor route group in `routes/vendor/routes.php` to guarantee request interception on all sensitive endpoints.
+  - **Vendor Sidebar Financial Guarding:** Wrapped withdrawal requests, bank information, and store profile links with `@if(!session('is_vendor_employee'))` in `resources/views/layouts/vendor/partials/_side-bar.blade.php`, removing inaccessible buttons from staff attendants.
+  - **Vendor Header Profile Differentiation:** Updated `layouts/vendor/partials/_header.blade.php` to display the logged-in employee's name, email, and custom role badge with settings link hidden for sub-accounts.
+  - **Admin Role Module Token Alignment:** Aligned pre-configured specialist role seeds in `database/seeds/AdminRoleTable.php` with `GlobalConstant::EMPLOYEE_ROLE_MODULE_PERMISSION` and sidebar checks (`dashboard`, `order_management`, `product_management`, `user_section`, `support_section`).
+* **Verification:** Validated all modified files via `php -l` — 0 errors.
+
 ### [2026-08-19 04:45 UTC] Multi-Tier Employee & Fleet Sub-Account Architecture across Admin, Vendors, and Delivery Hubs [backend]
 * **Component:** Laravel Web Backend (`backend/vmarket-web/`)
 * **Action:** Implemented unified, multi-tier Role-Based Access Control (RBAC) and staff management across Admin, Vendor Shops, and Delivery Logistics Fleet.

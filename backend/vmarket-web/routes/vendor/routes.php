@@ -69,7 +69,7 @@ Route::group(['middleware' => ['maintenance_mode', 'actch:admin_panel']], functi
             });
         });
 
-        Route::group(['middleware' => ['seller']], function () {
+        Route::group(['middleware' => ['seller', 'vendor_employee']], function () {
             Route::group(['prefix' => 'dashboard', 'as' => 'dashboard.'], function () {
                 Route::controller(DashboardController::class)->group(function () {
                     Route::get('/', 'index')->name('index');

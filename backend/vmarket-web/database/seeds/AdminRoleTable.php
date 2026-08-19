@@ -24,7 +24,7 @@ class AdminRoleTable extends Seeder
             [
                 'id' => 2,
                 'name' => 'Central Logistics & Dispatch Officer',
-                'module_access' => json_encode(['order_management', 'delivery_management', 'dispatch_portal']),
+                'module_access' => json_encode(['dashboard', 'order_management', 'delivery_management', 'dispatch_portal']),
                 'status' => 1,
                 'created_at' => now(),
                 'updated_at' => now(),
@@ -32,7 +32,7 @@ class AdminRoleTable extends Seeder
             [
                 'id' => 3,
                 'name' => 'Product & Pricing Gateway Approver',
-                'module_access' => json_encode(['product_management', 'approval_portal', 'category_management']),
+                'module_access' => json_encode(['dashboard', 'product_management', 'approval_portal', 'category_management']),
                 'status' => 1,
                 'created_at' => now(),
                 'updated_at' => now(),
@@ -40,7 +40,7 @@ class AdminRoleTable extends Seeder
             [
                 'id' => 4,
                 'name' => 'Customer Care & Support Specialist',
-                'module_access' => json_encode(['support_section', 'customer_management']),
+                'module_access' => json_encode(['dashboard', 'support_section', 'user_section', 'customer_management']),
                 'status' => 1,
                 'created_at' => now(),
                 'updated_at' => now(),

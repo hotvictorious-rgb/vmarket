@@ -78,6 +78,7 @@ return Application::configure(basePath: dirname(__DIR__))
             'apiGuestCheck' => APIGuestMiddleware::class,
             'logUserBrowsingNavigation' => \App\Http\Middleware\LogUserBrowsingNavigationMiddleware::class,
             'detectMobile' => \App\Http\Middleware\DetectMobile::class,
+            'vendor_employee' => \App\Http\Middleware\VendorEmployeePermissionMiddleware::class,
         ]);
     })
     ->withExceptions(function (Exceptions $exceptions) {

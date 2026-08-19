@@ -238,17 +238,25 @@
                                                  alt="{{translate('image_description')}}">
                                         </div>
                                         <div class="media-body">
-                                            <span class="card-title h5">{{$vendor->f_name}}</span>
-
-                                            <span class="card-text">{{$vendor->email}}</span>
+                                            @if(session('is_vendor_employee'))
+                                                @php($empData = session('vendor_employee_data'))
+                                                <span class="card-title h5">{{ $empData['name'] ?? $vendor->f_name }}</span>
+                                                <span class="card-text fs-12 text-primary font-weight-bold d-block">({{ session('vendor_employee_role.name') ?? translate('Staff') }})</span>
+                                                <span class="card-text text-muted">{{ $empData['email'] ?? $vendor->email }}</span>
+                                            @else
+                                                <span class="card-title h5">{{$vendor->f_name}}</span>
+                                                <span class="card-text">{{$vendor->email}}</span>
+                                            @endif
                                         </div>
                                     </div>
                                 </div>
-                                <div class="dropdown-divider"></div>
-                                <a class="dropdown-item"
-                                   href="{{route('vendor.profile.update',[auth('seller')->id()])}}">
-                                    <span class="text-truncate pr-2" title="Settings">{{translate('settings')}}</span>
-                                </a>
+                                @if(!session('is_vendor_employee'))
+                                    <div class="dropdown-divider"></div>
+                                    <a class="dropdown-item"
+                                       href="{{route('vendor.profile.update',[auth('seller')->id()])}}">
+                                        <span class="text-truncate pr-2" title="Settings">{{translate('settings')}}</span>
+                                    </a>
+                                @endif
                                 <div class="dropdown-divider"></div>
                                 <a class="dropdown-item" href="javascript:" data-toggle="modal"
                                    data-target="#sign-out-modal">
