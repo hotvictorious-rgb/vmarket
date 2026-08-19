@@ -147,3 +147,13 @@ All payment gateway controllers MUST enforce an **Atomic Row-Level Database Lock
 3. **4 Protected Assets:** NEVER overwrite `.env`, `storage/`, `vendor/`, or `public/assets/`.
 4. **Preserve Server Customizations:** Preserve the 33 web Vendor controllers and custom root scripts (`OrderManager.php`, `Order.php`, `ChattingService.php`).
 
+---
+
+## 11. Enterprise Security & Financial Invariants 🛡️
+
+1. **Zero-Trust IDOR Authorization Scoping:** Never rely solely on incoming route `$id` or `$request['id']` parameters. Every query modifying, viewing, or deleting user-owned assets MUST be scoped to `auth('customer')->id()`, `auth('seller')->id()`, or `auth('admin')->id()`.
+2. **Pessimistic Financial Concurrency Locks:** Every read-modify-write on balances (Customer Wallet, Vendor Earnings, Rider Cash-in-Hand) MUST run inside `DB::transaction()` with `->lockForUpdate()`.
+3. **Universal 6-Digit OTP Standards:** All OTP generation must use `rand(100000, 999999)` with exact identity lookups (`=`), 15-minute expiration bounds, and a 5-attempt brute-force lockout.
+4. **Anti-Mass-Assignment Filtering:** Never pass `$request->all()` into model create or update methods. Use explicit whitelisting or Service transformers.
+
+

@@ -7,6 +7,15 @@ Always append your completed tasks here in chronological order at the top. Forma
 `### [YYYY-MM-DD HH:MM UTC] <Feature / Fix Title> [<Component Scope>]`
 Include the specific app/component modified and bullet points detailing the exact technical changes.
 
+### [2026-08-19 10:54 UTC] Formalization of Enterprise Security & Financial Invariants in AI Rules [ai-governance]
+* **Component:** AI Governance (`.agents/AGENTS.md`, `AI_ENGINEERING_RULES.md`)
+* **Action:** Permanently expanded project AI rules with non-negotiable enterprise security and financial invariants to safeguard the repository against future AI or human regressions.
+* **Invariants Formalized:**
+  - **Zero-Trust IDOR Authorization Scoping:** Mandated explicit `auth()` context binding on all queries and mutations across Customer, Vendor, and Admin contexts.
+  - **Pessimistic Balance Concurrency Locks:** Mandated `DB::transaction()` with `->lockForUpdate()` for all financial balance modifications (Wallet, Earnings, Cash-in-Hand, Commissions).
+  - **Universal 6-Digit OTP Standards:** Mandated `rand(100000, 999999)` length standard, exact SQL equality matching (`=`), 15-minute expiration bounds, and 5-attempt brute-force lockouts.
+  - **Anti-Mass-Assignment Filtering:** Strictly prohibited `$request->all()` in Eloquent `create()` or `update()`.
+
 ### [2026-08-19 10:41 UTC] Universal 6-Digit OTP Standardization & Token Expiration Across All Modules [backend]
 * **Component:** Laravel Web Backend (`backend/vmarket-web/`)
 * **Action:** Swept the entire backend codebase to standardize all legacy 4-digit OTP generators to the bank-grade 6-digit standard format (`rand(100000, 999999)`), eliminating cross-platform pin code mismatches with mobile Flutter `PinCodeTextField` (length 6) and Google Firebase Phone Auth.

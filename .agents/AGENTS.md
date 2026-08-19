@@ -105,3 +105,22 @@ After completing any change:
   4. `reference/6valley_delivery_v4.2/` — Stock 6valley Delivery Rider Mobile App V4.2 (Flutter)
 - **Read-Only Status:** The `reference/` directory is strictly READ-ONLY. No AI is permitted to modify files inside `reference/` or automatically overwrite active project code (`backend/vmarket-web/`, `User app/`, `Vendor app/`, `Delivery Man App/`) with stock reference code without explicit verification.
 
+## 9. Enterprise Security & Financial Invariants (Non-Negotiable) 🛡️
+
+### A. Zero-Trust IDOR Authorization Scoping
+Every controller and repository action that views, modifies, or deletes a private resource (Orders, Products, Coupons, Reviews, Addresses, Profile, Wallet, Withdrawals) MUST explicitly scope the query to the authenticated principal:
+- **Customer Context:** Must enforce `where('customer_id', auth('customer')->id())` or verified `guest_id`.
+- **Vendor Context:** Must enforce `where('user_id', auth('seller')->id())->where('added_by', 'seller')` or `where('seller_id', auth('seller')->id())`.
+- **Admin Context:** Must enforce `where('id', auth('admin')->id())` for profile, credential, and password operations. Route parameters (`$id`) must NEVER be trusted alone for ownership.
+
+### B. Pessimistic Balance Concurrency Locks
+Any read-modify-write operation involving financial balances (Customer Wallet, Vendor Balance, Delivery Man Cash-in-Hand, Platform Commissions) MUST execute inside an atomic database transaction (`DB::transaction()`) with a pessimistic row-level lock (`->lockForUpdate()`). Optimistic/unlocked wallet deductions are strictly prohibited.
+
+### C. Universal 6-Digit OTP & Exact Identity Matching Standards
+- **Length Standard:** All OTP generators MUST use the **6-digit cryptographic format** (`rand(100000, 999999)`). Legacy 4-digit codes (`rand(1000, 9999)`) are forbidden.
+- **Exact Identity Matching:** Identity lookups for authentication, password resets, and phone/email verification MUST strictly use exact equality (`where('identity', $identity)`), NEVER fuzzy SQL search (`where('identity', 'like', "%{$identity}%")`).
+- **Expiration & Attempt Bounds:** Every OTP verification endpoint MUST enforce a **15-minute expiration bound** (`addMinutes(15)->isPast()`) and a **5-attempt brute-force lockout** (`max_otp_hit = 5`).
+
+### D. Anti-Mass-Assignment Filtering
+Never pass raw `$request->all()` directly into Eloquent `create()`, `update()`, or repository update methods. All model mutations must strictly use `$request->only(...)` or dedicated Service data mappers to prevent parameter injection into sensitive database columns (`is_paid`, `order_status`, `role_id`, `seller_id`, `wallet_balance`).
+
