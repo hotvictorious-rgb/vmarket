@@ -115,7 +115,8 @@ class CouponController extends Controller
 
         ]);
 
-        $coupon = Coupon::where(['coupon_bearer' => 'seller'])->whereIn('seller_id', [$seller->id, '0'])->find($id);
+        // [AI] Ownership Guard: Only update coupons belonging to this seller
+        $coupon = Coupon::where(['coupon_bearer' => 'seller', 'seller_id' => $seller->id])->find($id);
         if (!$coupon) {
             return response()->json(['message' => translate('coupon_not_found')], 403);
         }
@@ -146,7 +147,8 @@ class CouponController extends Controller
     public function status_update(Request $request): JsonResponse
     {
         $seller = $request->seller;
-        $coupon = Coupon::where(['coupon_bearer' => 'seller'])->whereIn('seller_id', [$seller->id, '0'])->find($request->id);
+        // [AI] Ownership Guard: Only update status of coupons belonging to this seller
+        $coupon = Coupon::where(['coupon_bearer' => 'seller', 'seller_id' => $seller->id])->find($request->id);
         if (!$coupon) {
             return response()->json(['message' => translate('coupon_not_found')], 403);
         }
@@ -159,8 +161,9 @@ class CouponController extends Controller
     public function delete(Request $request, $id): JsonResponse
     {
         $seller = $request->seller;
-        $coupon = Coupon::where(['added_by' => 'seller', 'coupon_bearer' => 'seller'])
-            ->whereIn('seller_id', [$seller->id, '0'])->find($id);
+        // [AI] Ownership Guard: Only delete coupons belonging to this seller
+        $coupon = Coupon::where(['added_by' => 'seller', 'coupon_bearer' => 'seller', 'seller_id' => $seller->id])
+            ->find($id);
 
         if (!$coupon) {
             return response()->json(['message' => translate('coupon_not_found')], 403);

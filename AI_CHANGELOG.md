@@ -7,6 +7,14 @@ Always append your completed tasks here in chronological order at the top. Forma
 `### [YYYY-MM-DD HH:MM UTC] <Feature / Fix Title> [<Component Scope>]`
 Include the specific app/component modified and bullet points detailing the exact technical changes.
 
+### [2026-08-19 08:26 UTC] Vendor Coupon Management IDOR & Global Coupon Hijacking Hardening [backend]
+* **Component:** Laravel Web Backend (`backend/vmarket-web/`)
+* **Action:** Deep scan across vendor web and REST API coupon controllers identified and fixed cross-vendor IDOR and global admin coupon modification vulnerabilities.
+* **Fixes Applied:**
+  - **[CRITICAL] Vendor Web Coupon IDOR (`Vendor/Coupon/CouponController::getUpdateView`, `update`, `updateStatus`, `delete`, `getQuickView`):** Enforced `seller_id == auth('seller')->id()` ownership checks across all web coupon actions, preventing vendors from modifying, disabling, or deleting other vendors' promotional coupons or global coupons (`seller_id == 0`).
+  - **[CRITICAL] REST API Vendor Coupon Hijacking (`RestAPI/v3/seller/CouponController::update`, `status_update`, `delete`):** Removed `whereIn('seller_id', [$seller->id, '0'])` fallback to ensure vendors can strictly manage only their own coupon records and cannot alter platform-wide admin coupons.
+* **Verification:** `php -l` verified on `Vendor/Coupon/CouponController.php` and `RestAPI/v3/seller/CouponController.php` — 0 errors.
+
 ### [2026-08-19 08:25 UTC] Deliveryman Cash Collection Concurrency & Vendor Emergency Contact IDOR Hardening [backend]
 * **Component:** Laravel Web Backend (`backend/vmarket-web/`)
 * **Action:** Resolved financial race conditions in rider cash collection workflows across Admin and Vendor panels, and closed IDOR vulnerabilities in vendor deliveryman emergency contacts.

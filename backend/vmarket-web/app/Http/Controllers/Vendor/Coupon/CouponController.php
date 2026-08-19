@@ -86,9 +86,14 @@ class CouponController extends BaseController
      * @return View
      * @function getUpdateView is the update view
      */
-    public function getUpdateView(string|int $id): View
+    public function getUpdateView(string|int $id): View|RedirectResponse
     {
-        $coupon = $this->couponRepo->getFirstWhere(['id' => $id]);
+        // [AI] Ownership Guard: Vendor can only view/edit their own coupons
+        $coupon = $this->couponRepo->getFirstWhere(['id' => $id, 'seller_id' => auth('seller')->id()]);
+        if (!$coupon) {
+            ToastMagic::error(translate('coupon_not_found'));
+            return redirect()->route(Coupon::INDEX[ROUTE]);
+        }
         $customers = $this->customerRepo->getListWhereNotIn([0]);
         return view(Coupon::UPDATE[VIEW], compact('coupon', 'customers'));
     }
@@ -102,6 +107,13 @@ class CouponController extends BaseController
      */
     public function update(CouponUpdateRequest $request, string|int $id, CouponService $couponService): RedirectResponse
     {
+        // [AI] Ownership Guard: Vendor can only update their own coupons
+        $coupon = $this->couponRepo->getFirstWhere(['id' => $id, 'seller_id' => auth('seller')->id()]);
+        if (!$coupon) {
+            ToastMagic::error(translate('unauthorized_access'));
+            return redirect()->route(Coupon::INDEX[ROUTE]);
+        }
+
         if (!$couponService->checkConditions(request: $request)) {
             return redirect()->back();
         }
@@ -119,7 +131,14 @@ class CouponController extends BaseController
      */
     public function updateStatus(string|int $id, string|int $status): JsonResponse
     {
-        $coupon = $this->couponRepo->getFirstWhere(['added_by' => 'seller', 'coupon_bearer' => 'seller', 'id' => $id]);
+        // [AI] Ownership Guard: Vendor can only toggle their own coupons
+        $coupon = $this->couponRepo->getFirstWhere(['added_by' => 'seller', 'coupon_bearer' => 'seller', 'seller_id' => auth('seller')->id(), 'id' => $id]);
+        if (!$coupon) {
+            return response()->json([
+                'status' => 0,
+                'message' => translate('unauthorized_access')
+            ]);
+        }
         $this->couponRepo->update(id: $coupon['id'], data: ['status' => $status]);
         return response()->json([
             'status' => 1,
@@ -134,9 +153,10 @@ class CouponController extends BaseController
      */
     public function delete(string|int $id): RedirectResponse
     {
-        $coupon = $this->couponRepo->getFirstWhere(['added_by' => 'seller', 'coupon_bearer' => 'seller', 'id' => $id]);
-        if (in_array($coupon['seller_id'], [auth('seller')->id(), 0])) {
-            $this->couponRepo->delete(params: ['id' => $id]);
+        // [AI] Ownership Guard: Vendor can strictly delete only their own coupons
+        $coupon = $this->couponRepo->getFirstWhere(['added_by' => 'seller', 'coupon_bearer' => 'seller', 'seller_id' => auth('seller')->id(), 'id' => $id]);
+        if ($coupon) {
+            $this->couponRepo->delete(params: ['id' => $id, 'seller_id' => auth('seller')->id()]);
             ToastMagic::success(translate('coupon_deleted_successfully'));
         } else {
             ToastMagic::warning(translate('coupon_not_found'));
@@ -152,7 +172,11 @@ class CouponController extends BaseController
      */
     public function getQuickView(Request $request): JsonResponse
     {
-        $coupon = $this->couponRepo->getFirstWhere(['id' => $request['id']]);
+        // [AI] Ownership Guard: Only show quick view of coupons belonging to authenticated vendor
+        $coupon = $this->couponRepo->getFirstWhere(['id' => $request['id'], 'seller_id' => auth('seller')->id()]);
+        if (!$coupon) {
+            return response()->json(['error' => translate('unauthorized_access')]);
+        }
         return response()->json([
             'view' => view(Coupon::QUICK_VIEW[VIEW], compact('coupon'))->render(),
         ]);
