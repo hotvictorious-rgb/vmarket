@@ -7,6 +7,14 @@ Always append your completed tasks here in chronological order at the top. Forma
 `### [YYYY-MM-DD HH:MM UTC] <Feature / Fix Title> [<Component Scope>]`
 Include the specific app/component modified and bullet points detailing the exact technical changes.
 
+### [2026-08-19 08:56 UTC] Vendor Web & Mobile API Refund Request & Status IDOR Hardening [backend]
+* **Component:** Laravel Web Backend (`backend/vmarket-web/`)
+* **Action:** Deep scan across Vendor Web RefundController and Mobile REST API v3 RefundController identified and closed unauthorized refund request details inspection and unauthenticated status modification IDORs.
+* **Fixes Applied:**
+  - **[CRITICAL] Mobile API Refund Request Details & Customer PII Leak IDOR (`RestAPI/v3/seller/RefundController::refund_details`):** Scoped order details lookup by `seller_id == $seller['id']` to prevent unauthorized vendors from inspecting customer refund submissions, item subtotals, and delivery rider info for other vendors.
+  - **[CRITICAL] Unauthorized Refund Status Modification & Null Reference Guard (`RestAPI/v3/seller/RefundController::refund_status_update`, `Vendor/RefundController::updateStatus`):** Added explicit null checks and seller ownership validation before processing refund approvals or denials.
+* **Verification:** `php -l` verified on `Vendor/RefundController.php` and `RestAPI/v3/seller/RefundController.php` — 0 errors.
+
 ### [2026-08-19 08:53 UTC] Vendor Web & Mobile API Order Mutation & Wallet Return IDOR Hardening [backend]
 * **Component:** Laravel Web Backend (`backend/vmarket-web/`)
 * **Action:** Deep scan across Vendor Web OrderController and Mobile REST API v3 OrderController identified and closed cross-vendor and cross-platform unauthorized order mutations, status changes, and unauthorized wallet return processing.

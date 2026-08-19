@@ -122,11 +122,15 @@ class RefundController extends BaseController
     public function updateStatus(RefundStatusRequest $request): JsonResponse
     {
         $vendorId = auth('seller')->id();
+        // [AI] Ownership Guard: Only update refund status on own seller orders
         $refund = $this->refundRequestRepo->getFirstWhereHas(
             params: ['id' => $request['id']],
             whereHas: 'order',
             whereHasFilters: ['seller_is' => 'seller', 'seller_id' => $vendorId],
         );
+        if (!$refund) {
+            return response()->json(['error' => translate('unauthorized_access')], 403);
+        }
         if (($request['refund_status'] == 'approved' && $refund['approved_count'] >= 2) || $request['refund_status'] == 'rejected' && $refund['denied_count'] >= 2) {
             return response()->json(['error' => translate('you_already_changed_') . ($request['refund_status'] == 'approved' ? 'approve' : 'reject') . translate('_status_two_times') . '!!']);
         }

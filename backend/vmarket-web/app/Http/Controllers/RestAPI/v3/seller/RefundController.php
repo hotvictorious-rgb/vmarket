@@ -94,7 +94,11 @@ class RefundController extends Controller
     public function refund_details(Request $request):JsonResponse
     {
         $seller = $request->seller;
-        $order_details = OrderDetail::find($request->order_details_id);
+        // [AI] Ownership Guard: Order details must belong to authenticated seller
+        $order_details = OrderDetail::where(['id' => $request->order_details_id, 'seller_id' => $seller['id']])->first();
+        if (!$order_details) {
+            return response()->json(['message' => translate('unauthorized_access')], 403);
+        }
         $refund_request = RefundRequest::with('refundStatus')->where('order_details_id', $request->order_details_id)->get();
 
         $order = Order::find($order_details->order_id);
@@ -137,6 +141,10 @@ class RefundController extends Controller
         $refund = RefundRequest::whereHas('order', function ($query) use ($seller) {
             $query->where('seller_is', 'seller')->where('seller_id', $seller['id']);
         })->find($request->refund_request_id);
+
+        if (!$refund) {
+            return response()->json(['message' => translate('unauthorized_access')], 403);
+        }
 
         $user = User::find($refund->customer_id);
 
