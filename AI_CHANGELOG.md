@@ -7,6 +7,14 @@ Always append your completed tasks here in chronological order at the top. Forma
 `### [YYYY-MM-DD HH:MM UTC] <Feature / Fix Title> [<Component Scope>]`
 Include the specific app/component modified and bullet points detailing the exact technical changes.
 
+### [2026-08-19 08:28 UTC] POS Order Placement Concurrency, Wallet Locking & Vendor POS IDOR Hardening [backend]
+* **Component:** Laravel Web Backend (`backend/vmarket-web/`)
+* **Action:** Resolved financial race conditions on customer wallet payments in Point of Sale (POS) checkouts, enforced atomic transactions across POS order creations, and closed order viewing IDOR in vendor POS.
+* **Fixes Applied:**
+  - **[CRITICAL] POS Wallet Payment Race Condition & Atomicity (`Vendor/POS/POSOrderController::placeOrder`, `Admin/POS/POSOrderController::placeOrder`):** Wrapped the entire POS order creation flow (stock reduction, order details, tax records, and customer wallet charge) in a `DB::transaction()` with pessimistic row locks (`lockForUpdate()`) on `User` to prevent concurrent POS register overdraws.
+  - **[CRITICAL] Vendor POS Order View IDOR (`Vendor/POS/POSOrderController::getOrderDetails`):** Scoped order lookup by `seller_id == auth('seller')->id()` to prevent vendors from inspecting other vendors' or platform direct orders via POS receipt endpoints.
+* **Verification:** `php -l` verified on `Vendor/POS/POSOrderController.php` and `Admin/POS/POSOrderController.php` — 0 errors.
+
 ### [2026-08-19 08:26 UTC] Vendor Coupon Management IDOR & Global Coupon Hijacking Hardening [backend]
 * **Component:** Laravel Web Backend (`backend/vmarket-web/`)
 * **Action:** Deep scan across vendor web and REST API coupon controllers identified and fixed cross-vendor IDOR and global admin coupon modification vulnerabilities.

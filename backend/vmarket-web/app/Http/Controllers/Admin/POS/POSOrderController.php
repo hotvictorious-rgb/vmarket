@@ -105,15 +105,6 @@ class POSOrderController extends BaseController
         if ($userId == 0 && $checkProductTypeDigital) {
             return response()->json(['checkProductTypeForWalkingCustomer' => true, 'message' => translate('To_order_digital_product') . ',' . translate('_kindly_fill_up_the_“Add_New_Customer”_form') . '.']);
         }
-        if ($request['type'] == 'wallet' && $userId != 0) {
-            $customerBalance = $this->customerRepo->getFirstWhere(params: ['id' => $userId]) ?? 0;
-            if ($customerBalance['wallet_balance'] >= currencyConverter(amount: $amount)) {
-                $this->createWalletTransaction(user_id: $userId, amount: floatval($amount), transaction_type: 'order_place', reference: 'order_place_in_pos');
-            } else {
-                ToastMagic::error(translate('need_Sufficient_Amount_Balance'));
-                return response()->json();
-            }
-        }
 
         $taxConfig = self::getTaxSystemType();
         $cart = session($cartId);
@@ -126,116 +117,145 @@ class POSOrderController extends BaseController
             }], dataLimit: 'all');
             $totalDiscountedPrice = $this->cartService->getCartTotalDiscountPrice(session($cartId), $products, $userId);
 
-            $orderId = 100000 + $this->orderRepo->getList()->count() + 1;
-            $order = $this->orderRepo->getFirstWhere(params: ['id' => $orderId]);
-            if ($order) {
-                $orderId = $this->orderRepo->getList(orderBy: ['id' => 'DESC'])->first()->id + 1;
-            }
-            $totalTaxAmount = 0;
-            foreach ($cartListSession as $item) {
-                if (is_array($item)) {
-                    $product = $products->firstWhere('id', $item['id']);
-                    if ($product) {
-                        $price = $item['price'];
+            try {
+                $placedOrderId = \Illuminate\Support\Facades\DB::transaction(function () use (
+                    $request, $userId, $amount, $paidAmount, $cart, $cartId, $cartListSession, $products, $totalDiscountedPrice, $taxConfig
+                ) {
+                    // [AI] Concurrency Guard: Lock customer wallet if payment is via wallet
+                    if ($request['type'] == 'wallet' && $userId != 0) {
+                        $lockedUser = \App\Models\User::where('id', $userId)->lockForUpdate()->first();
+                        $convertedAmount = currencyConverter(amount: $amount);
+                        if (!$lockedUser || ($lockedUser->wallet_balance ?? 0) < $convertedAmount) {
+                            return ['status' => false, 'error' => translate('need_Sufficient_Amount_Balance')];
+                        }
+                        $this->createWalletTransaction(user_id: $userId, amount: floatval($amount), transaction_type: 'order_place', reference: 'order_place_in_pos');
+                    }
 
-                        $digitalProductVariation = $this->digitalProductVariationRepo->getFirstWhere(params: ['product_id' => $item['id'], 'variant_key' => $item['variant']], relations: ['storage']);
-                        if ($product['product_type'] == 'digital' && $digitalProductVariation) {
-                            $price = $digitalProductVariation['price'];
+                    $orderId = 100000 + $this->orderRepo->getList()->count() + 1;
+                    $order = $this->orderRepo->getFirstWhere(params: ['id' => $orderId]);
+                    if ($order) {
+                        $orderId = $this->orderRepo->getList(orderBy: ['id' => 'DESC'])->first()->id + 1;
+                    }
+                    $totalTaxAmount = 0;
+                    foreach ($cartListSession as $item) {
+                        if (is_array($item)) {
+                            $product = $products->firstWhere('id', $item['id']);
+                            if ($product) {
+                                $price = $item['price'];
 
-                            if ($product['digital_product_type'] == 'ready_product') {
-                                $getStoragePath = $this->storageRepo->getFirstWhere(params: [
-                                    'data_id' => $digitalProductVariation['id'],
-                                    "data_type" => "App\Models\DigitalProductVariation",
-                                ]);
-                                $product['digital_file_ready'] = $digitalProductVariation['file'];
-                                $product['storage_path'] = $getStoragePath ? $getStoragePath['value'] : 'public';
+                                $digitalProductVariation = $this->digitalProductVariationRepo->getFirstWhere(params: ['product_id' => $item['id'], 'variant_key' => $item['variant']], relations: ['storage']);
+                                if ($product['product_type'] == 'digital' && $digitalProductVariation) {
+                                    $price = $digitalProductVariation['price'];
+
+                                    if ($product['digital_product_type'] == 'ready_product') {
+                                        $getStoragePath = $this->storageRepo->getFirstWhere(params: [
+                                            'data_id' => $digitalProductVariation['id'],
+                                            "data_type" => "App\Models\DigitalProductVariation",
+                                        ]);
+                                        $product['digital_file_ready'] = $digitalProductVariation['file'];
+                                        $product['storage_path'] = $getStoragePath ? $getStoragePath['value'] : 'public';
+                                    }
+                                } elseif ($product['digital_product_type'] == 'ready_product' && !empty($product['digital_file_ready'])) {
+                                    $product['storage_path'] = $product['digital_file_ready_storage_type'] ?? 'public';
+                                }
+
+                                $cartSubTotalCalculation = $this->cartService->getCartSubtotalCalculation(
+                                    product: $product,
+                                    cartItem: $item,
+                                    totalDiscountedPrice: $totalDiscountedPrice,
+                                    cartName: $cartId,
+                                );
+
+                                $orderDetail = $this->orderDetailsService->getPOSOrderDetailsData(
+                                    orderId: $orderId, item: $item,
+                                    product: $product, price: $price, tax: $cartSubTotalCalculation['appliedTaxAmount']
+                                );
+                                $totalTaxAmount += $cartSubTotalCalculation['appliedTaxAmount'];
+                                if ($item['variant'] != null) {
+                                    $type = $item['variant'];
+                                    $variantStore = [];
+                                    foreach (json_decode($product['variation'], true) as $variant) {
+                                        if ($type == $variant['type']) {
+                                            $variant['qty'] -= $item['quantity'];
+                                        }
+                                        $variantStore[] = $variant;
+                                    }
+                                    $this->productRepo->update(id: $product['id'], data: ['variation' => json_encode($variantStore)]);
+                                }
+
+                                if ($product['product_type'] == 'physical') {
+                                    $currentStock = $product['current_stock'] - $item['quantity'];
+                                    $this->productRepo->update(id: $product['id'], data: ['current_stock' => $currentStock]);
+                                }
+                                $this->orderDetailRepo->add(data: $orderDetail);
+
+                                $appliedTaxIds = CartManager::getAppliedTaxIds(
+                                    product: $product,
+                                    taxConfig: $taxConfig
+                                );
+
+                                $appliedTaxRate = collect($appliedTaxIds)->sum('tax_rate');
+                                $finalAmount = ($item['price'] - $item['discount']) * $item['quantity'];
+
+                                foreach ($appliedTaxIds as $taxItem) {
+                                    \App\Utils\OrderManager::getAddOrderTaxDetails(
+                                        systemTaxVat: $taxConfig['SystemTaxVat'],
+                                        taxRate: $taxItem,
+                                        orderId: $orderId,
+                                        data: [
+                                            'tax_amount' => ($cartSubTotalCalculation['appliedTaxAmount'] > 0 && $appliedTaxRate > 0) ? ($cartSubTotalCalculation['appliedTaxAmount'] * $taxItem['tax_rate']) / $appliedTaxRate : 0,
+                                            'before_tax_amount' => $finalAmount,
+                                            'after_tax_amount' => $finalAmount + $cartSubTotalCalculation['appliedTaxAmount'],
+                                            'quantity' => $item['quantity'],
+                                            'seller_id' => $product['seller_id'],
+                                            'seller_type' => $product['seller_is'],
+                                        ]
+                                    );
+                                }
                             }
-                        } elseif ($product['digital_product_type'] == 'ready_product' && !empty($product['digital_file_ready'])) {
-                            $product['storage_path'] = $product['digital_file_ready_storage_type'] ?? 'public';
-                        }
-
-                        $cartSubTotalCalculation = $this->cartService->getCartSubtotalCalculation(
-                            product: $product,
-                            cartItem: $item,
-                            totalDiscountedPrice: $totalDiscountedPrice,
-                            cartName: $cartId,
-                        );
-
-                        $orderDetail = $this->orderDetailsService->getPOSOrderDetailsData(
-                            orderId: $orderId, item: $item,
-                            product: $product, price: $price, tax: $cartSubTotalCalculation['appliedTaxAmount']
-                        );
-                        $totalTaxAmount += $cartSubTotalCalculation['appliedTaxAmount'];
-                        if ($item['variant'] != null) {
-                            $variantData = $this->POSService->getVariantData(
-                                type: $item['variant'],
-                                variation: json_decode($product['variation'], true),
-                                quantity: $item['quantity']
-                            );
-                            $this->productRepo->update(id: $product['id'], data: ['variation' => json_encode($variantData)]);
-                        }
-
-                        if ($product['product_type'] == 'physical') {
-                            $currentStock = $product['current_stock'] - $item['quantity'];
-                            $this->productRepo->update(id: $product['id'], data: ['current_stock' => $currentStock]);
-                        }
-                        $this->orderDetailRepo->add(data: $orderDetail);
-
-                        $appliedTaxIds = CartManager::getAppliedTaxIds(
-                            product: $product,
-                            taxConfig: $taxConfig
-                        );
-
-                        $appliedTaxRate = collect($appliedTaxIds)->sum('tax_rate');
-                        $finalAmount = ($item['price'] - $item['discount']) * $item['quantity'];
-
-                        foreach ($appliedTaxIds as $taxItem) {
-                            OrderManager::getAddOrderTaxDetails(
-                                systemTaxVat: $taxConfig['SystemTaxVat'],
-                                taxRate: $taxItem,
-                                orderId: $orderId,
-                                data: [
-                                    'tax_amount' => ($cartSubTotalCalculation['appliedTaxAmount'] > 0 && $appliedTaxRate > 0) ? ($cartSubTotalCalculation['appliedTaxAmount'] * $taxItem['tax_rate']) / $appliedTaxRate : 0,
-                                    'before_tax_amount' => $finalAmount,
-                                    'after_tax_amount' => $finalAmount + $cartSubTotalCalculation['appliedTaxAmount'],
-                                    'quantity' => $item['quantity'],
-                                    'seller_id' => $product['seller_id'],
-                                    'seller_type' => $product['seller_is'],
-                                ]
-                            );
                         }
                     }
-                }
-            }
 
-            $order = $this->orderService->getPOSOrderData(
-                orderId: $orderId,
-                cart: $cart,
-                amount: $amount,
-                totalTaxAmount: $totalTaxAmount,
-                paidAmount: $request['type'] == 'cash' ? $paidAmount : $amount,
-                paymentType: $request['type'],
-                addedBy: 'admin',
-                userId: $userId
-            );
-            $this->orderRepo->add(data: $order);
-            if ($checkProductTypeDigital) {
-                $order = $this->orderRepo->getFirstWhere(params: ['id' => $orderId], relations: ['details.productAllStatus']);
-                $data = [
-                    'userName' => $order?->customer?->f_name ?? "",
-                    'userType' => 'customer',
-                    'templateName' => 'digital-product-download',
-                    'order' => $order,
-                    'subject' => translate('download_Digital_Product'),
-                    'title' => translate('Congratulations') . '!',
-                    'emailId' => $order->customer['email'],
-                ];
-                event(new DigitalProductDownloadEvent(email: $order->customer['email'], data: $data));
+                    $order = $this->orderService->getPOSOrderData(
+                        orderId: $orderId,
+                        cart: $cart,
+                        amount: $amount,
+                        totalTaxAmount: $totalTaxAmount,
+                        paidAmount: $request['type'] == 'cash' ? $paidAmount : $amount,
+                        paymentType: $request['type'],
+                        addedBy: 'admin',
+                        userId: $userId
+                    );
+                    $this->orderRepo->add(data: $order);
+                    return ['status' => true, 'order_id' => $orderId];
+                });
+
+                if (!$placedOrderId['status']) {
+                    ToastMagic::error($placedOrderId['error'] ?? translate('order_place_failed'));
+                    return response()->json();
+                }
+
+                $orderId = $placedOrderId['order_id'];
+                if ($checkProductTypeDigital) {
+                    $order = $this->orderRepo->getFirstWhere(params: ['id' => $orderId], relations: ['details.productAllStatus']);
+                    $data = [
+                        'userName' => $order?->customer?->f_name ?? "",
+                        'userType' => 'customer',
+                        'templateName' => 'digital-product-download',
+                        'order' => $order,
+                        'subject' => translate('download_Digital_Product'),
+                        'title' => translate('Congratulations') . '!',
+                        'emailId' => $order->customer['email'],
+                    ];
+                    event(new DigitalProductDownloadEvent(email: $order->customer['email'], data: $data));
+                }
+                session()->forget($cartId);
+                session(['last_order' => $orderId]);
+                $this->cartService->getNewCartId();
+                ToastMagic::success(translate('order_placed_successfully'));
+            } catch (\Exception $e) {
+                ToastMagic::error(translate('something_went_wrong_please_try_again'));
             }
-            session()->forget($cartId);
-            session(['last_order' => $orderId]);
-            $this->cartService->getNewCartId();
-            ToastMagic::success(translate('order_placed_successfully'));
         }
 
         return response()->json();
