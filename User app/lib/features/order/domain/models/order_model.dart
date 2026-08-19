@@ -87,6 +87,7 @@ class Orders {
   int? editedStatus;
   double? editDueAmount;
   double? editReturnAmount;
+  String? taxModel;
 
 
 

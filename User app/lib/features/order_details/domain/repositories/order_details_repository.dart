@@ -220,23 +220,6 @@ class OrderDetailsRepository implements OrderDetailsRepositoryInterface{
   }
 
   @override
-  Future<ApiResponseModel> duePaymentByOfflinePayment(int orderId, String paymentMethod, String? orderDueNote, String? methodId) async {
-    try {
-      final response = await dioClient!.post(AppConstants.offlinePayment,
-        data: {
-          'order_id': orderId,
-          'payment_method': paymentMethod,
-          'order_due_payment_note': orderDueNote,
-          'method_id' : methodId,
-        }
-      );
-      return ApiResponseModel.withSuccess(response);
-    } catch (e) {
-      return ApiResponseModel.withError(ApiErrorHandler.getMessage(e));
-    }
-  }
-
-  @override
   Future<ApiResponseModel> confirmDriverTransitCode(String orderId, String transitCode) async {
     try {
       final response = await dioClient!.post(AppConstants.confirmDriverTransitCodeUri,

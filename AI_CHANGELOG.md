@@ -7,6 +7,12 @@ Always append your completed tasks here in chronological order at the top. Forma
 `### [YYYY-MM-DD HH:MM UTC] <Feature / Fix Title> [<Component Scope>]`
 Include the specific app/component modified and bullet points detailing the exact technical changes.
 
+### [2026-08-19 11:32 UTC] Fix Customer App Flutter Compilation Errors & Missing Tax Model Field [user-app]
+* **Component:** Customer Mobile Application (`User app/`)
+* **Action:** Resolved Gradle build release compilation errors identified in GitHub Actions workflow:
+  - **Duplicate Method Declaration:** Removed redundant `duePaymentByOfflinePayment` definition in `order_details_repository.dart`.
+  - **Missing Tax Model Property:** Added `String? taxModel;` field declaration to the `Orders` class in `order_model.dart` to fix unresolved setter and getter references in `order_amount_calculation.dart`.
+
 ### [2026-08-19 11:22 UTC] Update Deployment Protocol to Establish GitHub as Single Source of Truth [ai-governance]
 * **Component:** AI Governance (`.agents/AGENTS.md`, `AI_ENGINEERING_RULES.md`)
 * **Action:** Removed legacy references to uncommitted server customizations and formally established GitHub `master` as the sole canonical Single Source of Truth (SSOT).
