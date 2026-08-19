@@ -91,7 +91,7 @@
                                 <th>{{ translate('SL') }}</th>
                                 <th class="text-capitalize">{{ translate('product_name') }}</th>
                                 <th class="text-center text-capitalize">{{ translate('product_type') }}</th>
-                                <th class="text-center text-capitalize">{{ translate('unit_price') }}</th>
+                                <th class="text-center text-capitalize">{{ translate('Desired Payout') }}</th>
                                 <th class="text-center">{{ translate('stock') }}</th>
                                 @if ($productWiseTax)
                                     <th class="text-center">{{ translate('Vat/Tax') }}</th>
@@ -139,8 +139,8 @@
                                     <td class="text-center">
                                         {{ translate($product['product_type']) }}
                                     </td>
-                                    <td class="text-center">
-                                        {{setCurrencySymbol(amount: usdToDefaultCurrency(amount: $product['unit_price']), currencyCode: getCurrencyCode()) }}
+                                    <td class="text-center font-weight-bold text-dark">
+                                        {{ setCurrencySymbol(amount: usdToDefaultCurrency(amount: $product['purchase_price'] > 0 ? $product['purchase_price'] : $product['unit_price']), currencyCode: getCurrencyCode()) }}
                                     </td>
                                     <td>
                                         <div class="d-flex justify-content-center mx-auto w-80px gap-3 align-items-center lh-1">

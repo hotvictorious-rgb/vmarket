@@ -402,12 +402,12 @@
                                     <h4 class="mb-3 fs-14 text-capitalize">{{ translate('price_information') }}</h4>
                                     <div class="pair-list">
                                         <div>
-                                            <span class="key text-nowrap fs-12 text-capitalize">
-                                                {{ translate('unit_price') }}
+                                            <span class="key text-nowrap fs-12 text-capitalize font-weight-bold">
+                                                {{ translate('Desired Payout') }}
                                             </span>
                                             <span>:</span>
-                                            <span class="value fs-12 text-dark">
-                                                {{setCurrencySymbol(amount: usdToDefaultCurrency(amount: $product->unit_price), currencyCode: getCurrencyCode()) }}
+                                            <span class="value fs-12 text-dark font-weight-bold">
+                                                {{ setCurrencySymbol(amount: usdToDefaultCurrency(amount: $product->purchase_price > 0 ? $product->purchase_price : $product->unit_price), currencyCode: getCurrencyCode()) }}
                                             </span>
                                         </div>
 

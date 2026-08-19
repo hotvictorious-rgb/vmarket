@@ -7,6 +7,19 @@ Always append your completed tasks here in chronological order at the top. Forma
 `### [YYYY-MM-DD HH:MM UTC] <Feature / Fix Title> [<Component Scope>]`
 Include the specific app/component modified and bullet points detailing the exact technical changes.
 
+### [2026-08-19 02:00 UTC] Business Logic Hardening: Vendor Price Blindness, Order Edit Markup & Fair Refund Accounting [backend]
+* **Component:** Laravel Web Backend (`backend/vmarket-web/`)
+* **Action:** Resolved 4 core business logic discrepancies discovered during deep scan, enforcing total vendor price blindness on web panel, synchronizing cost-plus markup during order edits, and splitting refund wallet deductions fairly between vendor payout and platform markup.
+* **Core Technical Implementations:**
+  - **Vendor Web Panel Price Blindness:**
+    - Updated `vendor-views/product/list.blade.php`, `vendor-views/product/view.blade.php`, and `vendor-views/report/all-product.blade.php` to display `$product->purchase_price > 0 ? $product->purchase_price : $product->unit_price` under the label `"Desired Payout (₦)"`, preventing vendors from observing marked-up customer retail prices on the web dashboard.
+    - Updated `vendor-views/product/add/_pricing-others.blade.php` and `vendor-views/product/update/_pricing-others.blade.php` input labels to `"Your Desired Payout (₦)"` with explanatory cost-plus pricing tooltips.
+  - **Order Edit Cost-Plus Markup Calculation:**
+    - Updated `app/Traits/OrderEditManager.php` (`generateEditOrderSummary`) to compute admin commission based on dynamic markup spread (`price - purchase_price`) when `pricing_model == 'cost_plus_markup'` on vendor orders, preventing edited orders from reverting to percentage commission.
+  - **Fair Refund Wallet Accounting:**
+    - Updated `app/Http/Controllers/Admin/Order/RefundController.php` (`updateRefundStatus`) to split approved customer refunds on vendor orders: deducting only the vendor's net payout share from `$sellerWallet->total_earning`, while deducting the platform markup share from `$adminWallet->commission_earned`.
+* **Verification:** `php -l` on all modified PHP files passed with 0 errors.
+
 ### [2026-08-19 01:15 UTC] Vendor Packing Slips, Official Parcel Waybill Labels & Corridor Batch Manifests [backend]
 * **Component:** Laravel Web Backend (`backend/vmarket-web/`)
 * **Action:** Implemented complete packing slip, shipping waybill label, and corridor batch manifest infrastructure across Vendor Dashboard, Admin Dispatch Portal, and logistics pipelines with strict privacy and price blindness guarantees.

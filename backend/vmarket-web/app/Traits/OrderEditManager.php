@@ -366,7 +366,22 @@ trait OrderEditManager
 
         $taxConfig = self::getTaxSystemType();
 
-        $adminCommission = (float)str_replace(",", "", Helpers::seller_sales_commission($order['seller_is'], $order['seller_id'], $couponSummary['total_cart_amount']));
+        $pricingModel = getWebConfig(name: 'pricing_model') ?? 'cost_plus_markup';
+        if ($pricingModel == 'cost_plus_markup' && $order['seller_is'] == 'seller') {
+            $totalMarkupCommission = 0;
+            foreach ($editedOrder as $details) {
+                $pId = $details['product_id'] ?? null;
+                $activeProduct = $productList?->firstWhere('id', $pId);
+                $vendorCost = $activeProduct ? (float)($activeProduct->purchase_price > 0 ? $activeProduct->purchase_price : ($details['price'] ?? 0)) : (float)($details['price'] ?? 0);
+                $itemPrice = (float)($details['price'] ?? 0);
+                $itemQty = (int)($details['qty'] ?? 1);
+                $markupPerUnit = max(0, $itemPrice - $vendorCost);
+                $totalMarkupCommission += ($markupPerUnit * $itemQty);
+            }
+            $adminCommission = (float)$totalMarkupCommission;
+        } else {
+            $adminCommission = (float)str_replace(",", "", Helpers::seller_sales_commission($order['seller_is'], $order['seller_id'], $couponSummary['total_cart_amount']));
+        }
 
         $orderArray = [
             'discount_amount' => $couponSummary['discount'] ?? 0,

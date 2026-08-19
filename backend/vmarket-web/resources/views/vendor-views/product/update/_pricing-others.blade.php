@@ -31,22 +31,22 @@
                         <div class="col-md-6 col-lg-4">
                             <div class="form-group mb-0">
                                 <div class="d-flex gap-2">
-                                    <label class="title-color">
-                                        {{ translate('unit_price') }}
+                                    <label class="title-color font-weight-bold">
+                                        {{ translate('Your Desired Payout') }}
                                         ({{ getCurrencySymbol(currencyCode: getCurrencyCode()) }})
                                         <span class="input-required-icon">*</span>
                                     </label>
 
                                     <span class="input-label-secondary cursor-pointer" data-toggle="tooltip"
-                                            title="{{ translate('set_the_selling_price_for_each_unit_of_this_product._This_Unit_Price_section_would_not_be_applied_if_you_set_a_variation_wise_price') }}.">
+                                            title="{{ translate('Enter the exact amount you wish to receive per unit sold. Platform category markup and customer retail prices are calculated and approved automatically.') }}">
                                         <img src="{{ dynamicAsset(path: 'public/assets/back-end/img/info-circle.svg') }}" alt="">
                                     </span>
                                 </div>
 
                                 <input type="number" min="0" step="0.01"
-                                        placeholder="{{ translate('unit_price') }}" id="unit_price"
+                                        placeholder="{{ translate('e.g. 5000') }}" id="unit_price"
                                         name="unit_price" class="form-control"
-                                        value={{ usdToDefaultCurrency($product['unit_price']) }} required>
+                                        value="{{ usdToDefaultCurrency((float)($product['purchase_price'] > 0 ? $product['purchase_price'] : $product['unit_price'])) }}" required>
                             </div>
                         </div>
                         <div class="col-md-6 col-lg-4" id="minimum_order_qty">

@@ -125,12 +125,32 @@ class RefundController extends BaseController
 
         $order = $this->orderRepo->getFirstWhere(params: ['id' => $refund['order_id']]);
         if ($request['refund_status'] == 'refunded' && $refund['status'] != 'refunded') {
+            $pricingModel = getWebConfig(name: 'pricing_model') ?? 'cost_plus_markup';
             if ($order['seller_is'] == 'admin') {
                 $adminWallet = $this->adminWalletRepo->getFirstWhere(params: ['admin_id' => $order['seller_id']]);
                 $this->adminWalletRepo->updateWhere(params: ['admin_id' => $order['seller_id']], data: ['inhouse_earning' => $adminWallet['inhouse_earning'] - $refund['amount']]);
             } else {
                 $sellerWallet = $this->vendorWalletRepo->getFirstWhere(params: ['seller_id' => $order['seller_id']]);
-                $this->vendorWalletRepo->updateWhere(params: ['seller_id' => $order['seller_id']], data: ['total_earning' => $sellerWallet['total_earning'] - $refund['amount']]);
+                $adminWallet = $this->adminWalletRepo->getFirstWhere(params: ['admin_id' => 1]);
+                $orderDetails = $this->orderDetailRepo->getFirstWhere(params: ['id' => $refund['order_details_id']]);
+                $productDetails = $orderDetails ? (is_array($orderDetails['product_details']) ? $orderDetails['product_details'] : json_decode($orderDetails['product_details'], true)) : [];
+                $vendorCost = isset($productDetails['purchase_price']) && (float)$productDetails['purchase_price'] > 0
+                    ? (float)$productDetails['purchase_price']
+                    : (float)($orderDetails['price'] ?? $refund['amount']);
+
+                $itemPrice = (float)($orderDetails['price'] ?? 0);
+                if ($pricingModel == 'cost_plus_markup' && $itemPrice > 0 && $itemPrice > $vendorCost) {
+                    $unitMarkup = $itemPrice - $vendorCost;
+                    $markupShare = ($refund['amount'] / $itemPrice) * $unitMarkup;
+                    $vendorShare = max(0, $refund['amount'] - $markupShare);
+
+                    $this->vendorWalletRepo->updateWhere(params: ['seller_id' => $order['seller_id']], data: ['total_earning' => $sellerWallet['total_earning'] - $vendorShare]);
+                    if ($adminWallet) {
+                        $this->adminWalletRepo->updateWhere(params: ['admin_id' => 1], data: ['commission_earned' => max(0, $adminWallet['commission_earned'] - $markupShare)]);
+                    }
+                } else {
+                    $this->vendorWalletRepo->updateWhere(params: ['seller_id' => $order['seller_id']], data: ['total_earning' => $sellerWallet['total_earning'] - $refund['amount']]);
+                }
             }
             $this->refundTransactionRepo->add(data: $refundTransactionService->getData(request: $request, refund: $refund, order: $order));
         }

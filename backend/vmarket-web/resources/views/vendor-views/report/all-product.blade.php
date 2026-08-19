@@ -176,7 +176,7 @@
                                 {{translate('product_Name')}}
                             </th>
                             <th>
-                                {{translate('product_Unit_Price')}}
+                                {{translate('Desired Payout')}}
                             </th>
                             <th>
                                 {{translate('total_Amount_Sold')}}
@@ -205,7 +205,7 @@
                                         {{ \Illuminate\Support\Str::limit($product->name, 20) }}
                                     </a>
                                 </td>
-                                <td>{{ setCurrencySymbol(amount: usdToDefaultCurrency(amount: $product->unit_price), currencyCode: getCurrencyCode()) }}</td>
+                                <td>{{ setCurrencySymbol(amount: usdToDefaultCurrency(amount: $product->purchase_price > 0 ? $product->purchase_price : $product->unit_price), currencyCode: getCurrencyCode()) }}</td>
                                 <td>{{ setCurrencySymbol(amount: usdToDefaultCurrency(amount: isset($product->orderDetails[0]->total_sold_amount) ? $product->orderDetails[0]->total_sold_amount : 0), currencyCode: getCurrencyCode()) }}</td>
                                 <td>
                                     {{ isset($product->orderDetails[0]->product_quantity) ? $product->orderDetails[0]->product_quantity : 0 }}
