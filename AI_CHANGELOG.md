@@ -7,6 +7,15 @@ Always append your completed tasks here in chronological order at the top. Forma
 `### [YYYY-MM-DD HH:MM UTC] <Feature / Fix Title> [<Component Scope>]`
 Include the specific app/component modified and bullet points detailing the exact technical changes.
 
+### [2026-08-19 08:05 UTC] Support Ticket IDOR Hardening, Compare List Isolation & Missing Address Route Implementation [backend]
+* **Component:** Laravel Web Backend (`backend/vmarket-web/`)
+* **Action:** Deep scan uncovered and resolved multiple authorization IDOR flaws in customer support ticket handling, product compare lists, and resolved a runtime routing exception for address retrieval.
+* **Fixes Applied:**
+  - **[CRITICAL] Support Ticket Reply, Read & Close IDOR (`v1/CustomerController::reply_support_ticket`, `get_support_ticket_conv`, `support_ticket_close`):** All 3 endpoints failed to check whether the requesting user owned the target `SupportTicket`, allowing cross-account viewing of private attachments, conversations, and unauthorized ticket closures. Added `customer_id == $request->user()->id` verification to all 3 handlers.
+  - **[HIGH] Product Compare Replace IDOR (`v1/CompareController::compare_product_replace`):** Looked up `$request['compare_id']` globally without scoping by `user_id`, allowing users to overwrite entries in another customer's compare list. Added `where('user_id', $request->user()->id)` guard.
+  - **[HIGH] Missing Address Retrieval Route Handler (`v1/CustomerController::get_address`):** Route `/api/v1/customer/address/get/{id}` pointed to a non-existent `get_address` method, throwing unhandled 500 `BadMethodCallException`. Implemented `get_address` with guest/registered customer ownership validation.
+* **Verification:** `php -l` verified across modified controllers — 0 errors.
+
 ### [2026-08-19 07:26 UTC] Vendor Withdrawal Race Conditions, Payout IDOR & Customer Invoice Leak Fixes [backend]
 * **Component:** Laravel Web Backend (`backend/vmarket-web/`)
 * **Action:** Deep scan identified and resolved critical financial race conditions and IDOR access control vulnerabilities across vendor withdrawal endpoints and customer order invoice endpoints.

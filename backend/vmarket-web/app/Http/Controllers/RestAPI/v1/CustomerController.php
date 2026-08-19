@@ -94,9 +94,33 @@ class CustomerController extends Controller
         }
     }
 
+    public function get_address(Request $request, $id): JsonResponse
+    {
+        $user = Helpers::getCustomerInformation($request);
+        $shippingAddress = ShippingAddress::where([
+            'id' => $id,
+            'customer_id' => $user == 'offline' ? $request->guest_id : $user->id,
+            'is_guest' => $user == 'offline' ? 1 : 0
+        ])->first();
+
+        if (!$shippingAddress) {
+            return response()->json(['message' => translate('address_not_found')], 404);
+        }
+
+        return response()->json($shippingAddress, 200);
+    }
+
     public function reply_support_ticket(Request $request, $ticket_id)
     {
-        DB::table('support_tickets')->where(['id' => $ticket_id])->update([
+        $ticket = SupportTicket::where('id', $ticket_id)
+            ->where('customer_id', $request->user()->id)
+            ->first();
+
+        if (!$ticket) {
+            return response()->json(['message' => translate('unauthorized_access')], 403);
+        }
+
+        $ticket->update([
             'status' => 'open',
             'updated_at' => now(),
         ]);
@@ -126,40 +150,49 @@ class CustomerController extends Controller
         return response()->json(SupportTicket::where('customer_id', $request->user()->id)->latest()->get(), 200);
     }
 
-    public function get_support_ticket_conv($ticket_id)
+    public function get_support_ticket_conv(Request $request, $ticket_id)
     {
-        $conversations = SupportTicketConv::where('support_ticket_id', $ticket_id)->get();
-        $support_ticket = SupportTicket::find($ticket_id);
+        // [AI] Ownership Guard: Only allow customer to view conversations of their own support ticket
+        $support_ticket = SupportTicket::where('id', $ticket_id)
+            ->where('customer_id', $request->user()->id)
+            ->first();
 
-        $conversations = $conversations->toArray();
-
-        if ($support_ticket) {
-            $description = array(
-                'support_ticket_id' => $ticket_id,
-                'admin_id' => null,
-                'customer_message' => $support_ticket->description,
-                'admin_message' => null,
-                'attachment' => $support_ticket->attachment,
-                'attachment_full_url' => $support_ticket->attachment_full_url,
-                'position' => 0,
-                'created_at' => $support_ticket->created_at,
-                'updated_at' => $support_ticket->updated_at,
-            );
-            array_unshift($conversations, $description);
+        if (!$support_ticket) {
+            return response()->json(['message' => translate('unauthorized_access')], 403);
         }
+
+        $conversations = SupportTicketConv::where('support_ticket_id', $ticket_id)->get()->toArray();
+
+        $description = array(
+            'support_ticket_id' => $ticket_id,
+            'admin_id' => null,
+            'customer_message' => $support_ticket->description,
+            'admin_message' => null,
+            'attachment' => $support_ticket->attachment,
+            'attachment_full_url' => $support_ticket->attachment_full_url,
+            'position' => 0,
+            'created_at' => $support_ticket->created_at,
+            'updated_at' => $support_ticket->updated_at,
+        );
+        array_unshift($conversations, $description);
+
         return response()->json($conversations, 200);
     }
 
-    public function support_ticket_close($id)
+    public function support_ticket_close(Request $request, $id)
     {
-        $ticket = SupportTicket::find($id);
+        // [AI] Ownership Guard: Only allow customer to close their own support ticket
+        $ticket = SupportTicket::where('id', $id)
+            ->where('customer_id', $request->user()->id)
+            ->first();
+
         if ($ticket) {
             $ticket->status = 'close';
             $ticket->updated_at = now();
             $ticket->save();
             return response()->json(['message' => 'Successfully close the ticket'], 200);
         }
-        return response()->json(['message' => 'Ticket not found'], 403);
+        return response()->json(['message' => 'Ticket not found or access denied'], 403);
     }
 
     public function add_to_wishlist(Request $request):JsonResponse

@@ -62,22 +62,26 @@ class CompareController extends Controller
 
     public function compare_product_replace(Request $request): JsonResponse
     {
-        $newCompareList = $this->product_compare->find($request['compare_id']);
+        // [AI] Ownership Guard: Only allow user to replace their own compare list item
+        $newCompareList = $this->product_compare->where('id', $request['compare_id'])
+            ->where('user_id', $request->user()->id)
+            ->first();
+
         if ($newCompareList) {
             $newCompareList->product_id = $request['product_id'];
             $newCompareList->save();
         } else {
             $compareList = $this->product_compare->where(['user_id' => $request->user()->id, 'product_id' => $request['product_id']])->first();
             if ($compareList) {
-                return response()->json(['message' => 'Product already eadded'], 403);
+                return response()->json(['message' => translate('Product already added')], 403);
             }
 
             $this->product_compare->insert([
-                'user_id' => auth('customer')->id(),
+                'user_id' => $request->user()->id,
                 'product_id' => $request['product_id']
             ]);
         }
-        return response()->json(['message' => 'Successfully added'], 200);
+        return response()->json(['message' => translate('Successfully added')], 200);
     }
 
     public function clear_all(Request $request): JsonResponse
