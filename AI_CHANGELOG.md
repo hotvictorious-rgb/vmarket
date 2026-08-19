@@ -7,6 +7,14 @@ Always append your completed tasks here in chronological order at the top. Forma
 `### [YYYY-MM-DD HH:MM UTC] <Feature / Fix Title> [<Component Scope>]`
 Include the specific app/component modified and bullet points detailing the exact technical changes.
 
+### [2026-08-19 09:34 UTC] Digital Product Download Unpaid Order Bypass & Expired OTP Reuse Guard [backend]
+* **Component:** Laravel Web Backend (`backend/vmarket-web/`)
+* **Action:** Deep scan across Web and Mobile digital product download verification handlers identified and resolved unpaid order file deliveries and stale OTP token acceptance.
+* **Fixes Applied:**
+  - **[CRITICAL] Unpaid Order Digital File Delivery Guard (`RestAPI/v1/OrderController::digital_product_download_otp_verify`, `WebController::getDigitalProductDownloadOtpVerify`):** Enforced mandatory pre-condition verification that the associated order is in `paid` status before validating download OTPs, preventing malicious actors from obtaining digital downloads for unpaid or pending orders.
+  - **[CRITICAL] Stale / Expired Digital Product OTP Reuse Prevention (`RestAPI/v1/OrderController::digital_product_download_otp_verify`, `WebController::getDigitalProductDownloadOtpVerify`):** Added a 15-minute token expiration limit and automatic deletion on stale OTP verification attempts.
+* **Verification:** `php -l` verified on `RestAPI/v1/OrderController.php` and `WebController.php` — 0 errors.
+
 ### [2026-08-19 09:27 UTC] Customer Restock Request Unauthenticated Crash Guard [backend]
 * **Component:** Laravel Web Backend (`backend/vmarket-web/`)
 * **Action:** Deep scan across Mobile Customer REST API endpoints identified and resolved fatal unauthenticated access crashes on restock requests.

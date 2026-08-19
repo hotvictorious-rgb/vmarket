@@ -1296,10 +1296,24 @@ class WebController extends Controller
 
     public function getDigitalProductDownloadOtpVerify(Request $request): JsonResponse
     {
-        $verification = DigitalProductOtpVerification::where(['token' => $request->otp, 'order_details_id' => $request->order_details_id])->first();
         $orderDetailsData = OrderDetail::with('order.customer')->find($request->order_details_id);
+        if (!$orderDetailsData || !$orderDetailsData->order || $orderDetailsData->order->payment_status !== "paid") {
+            return response()->json([
+                'status' => 0,
+                'message' => translate('Payment_must_be_confirmed_first') . ' !!',
+            ]);
+        }
+
+        $verification = DigitalProductOtpVerification::where(['token' => $request->otp, 'order_details_id' => $request->order_details_id])->first();
 
         if ($verification) {
+            if (Carbon::parse($verification->created_at)->diffInMinutes() > 15) {
+                $verification->delete();
+                return response()->json([
+                    'status' => 0,
+                    'message' => translate('OTP_is_expired') . ' !',
+                ]);
+            }
             $fileName = '';
             $fileExist = false;
             if ($orderDetailsData) {

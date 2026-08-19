@@ -788,10 +788,23 @@ class OrderController extends Controller
 
     public function digital_product_download_otp_verify(Request $request)
     {
-        $verification = DigitalProductOtpVerification::where(['token' => $request->otp, 'order_details_id' => $request->order_details_id])->first();
         $order_details_data = OrderDetail::with('order.customer')->find($request->order_details_id);
+        if (!$order_details_data || !$order_details_data->order || $order_details_data->order->payment_status !== "paid") {
+            return response()->json([
+                'message' => translate('Payment_must_be_confirmed_first'),
+            ], 403);
+        }
+
+        $verification = DigitalProductOtpVerification::where(['token' => $request->otp, 'order_details_id' => $request->order_details_id])->first();
 
         if ($verification) {
+            if (Carbon::parse($verification->created_at)->diffInMinutes() > 15) {
+                $verification->delete();
+                return response()->json([
+                    'message' => translate('OTP_is_expired'),
+                ], 403);
+            }
+
             if ($order_details_data) {
                 if ($order_details_data->product->digital_product_type == 'ready_product' && $order_details_data->product->digital_file_ready) {
                     $file_path = storage_path('app/public/product/digital-product/' . $order_details_data->product->digital_file_ready);
