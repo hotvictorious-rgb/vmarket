@@ -7,6 +7,14 @@ Always append your completed tasks here in chronological order at the top. Forma
 `### [YYYY-MM-DD HH:MM UTC] <Feature / Fix Title> [<Component Scope>]`
 Include the specific app/component modified and bullet points detailing the exact technical changes.
 
+### [2026-08-19 08:33 UTC] Employee Management Cross-Vendor Role IDOR & Super Admin Lockout Hardening [backend]
+* **Component:** Laravel Web Backend (`backend/vmarket-web/`)
+* **Action:** Hardened shop employee creation against cross-vendor role assignment IDOR and protected super administrator accounts from accidental or malicious deactivation.
+* **Fixes Applied:**
+  - **[CRITICAL] Vendor Employee Cross-Store Role IDOR (`Vendor/Employee/VendorEmployeeController::store`, `update`):** Enforced `where('seller_id', $sellerId)->where('id', $request->vendor_role_id)` validation on employee creation and editing, preventing vendors from assigning custom roles configured by other marketplace vendors.
+  - **[CRITICAL] Super Admin & Self-Deactivation Guard (`Admin/Employee/EmployeeController::updateStatus`):** Added explicit protection preventing the deactivation of the primary Super Administrator (`admin_role_id == 1`) or the currently authenticated admin user to eliminate self-lockout risks.
+* **Verification:** `php -l` verified on `VendorEmployeeController.php` and `Admin EmployeeController.php` — 0 errors.
+
 ### [2026-08-19 08:31 UTC] Product Review Purchase Validation, Image Deletion IDOR & Vendor Reply Hijacking Hardening [backend]
 * **Component:** Laravel Web Backend (`backend/vmarket-web/`)
 * **Action:** Deep scan across customer and vendor review controllers identified and fixed purchase verification bypasses, arbitrary review image deletions, and cross-vendor review reply hijacking.

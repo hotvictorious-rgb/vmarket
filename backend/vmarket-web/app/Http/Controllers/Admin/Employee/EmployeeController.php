@@ -153,6 +153,19 @@ class EmployeeController extends BaseController
 
     public function updateStatus(Request $request): RedirectResponse|JsonResponse
     {
+        // [AI] Protection Guard: Prevent deactivating super admin (role_id 1) or currently logged in administrator
+        $employee = $this->adminRepo->getFirstWhere(params: ['id' => $request['id']]);
+        if (!$employee || $employee['admin_role_id'] == 1 || $employee['id'] == auth('admin')->id()) {
+            if ($request->ajax()) {
+                return response()->json([
+                    'status' => 'error',
+                    'message' => translate('access_denied_cannot_deactivate_super_admin_or_self'),
+                ], 403);
+            }
+            ToastMagic::error(translate('access_denied_cannot_deactivate_super_admin_or_self'));
+            return back();
+        }
+
         $this->adminRepo->update(id:$request['id'], data:['status'=> $request->get('status', 0)]);
         if($request->ajax()) {
             return response()->json([

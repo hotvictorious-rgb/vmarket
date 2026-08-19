@@ -66,6 +66,12 @@ class VendorEmployeeController extends Controller
             'password.min' => translate('Password must be at least 8 characters'),
         ]);
 
+        $role = VendorRole::where('seller_id', $sellerId)->where('id', $request->vendor_role_id)->first();
+        if (!$role) {
+            ToastMagic::error(translate('Invalid employee role selected'));
+            return redirect()->back();
+        }
+
         $imageName = $request->hasFile('image') 
             ? $this->upload(dir: 'vendor-employee/', format: 'webp', image: $request->file('image'))
             : null;
@@ -117,6 +123,13 @@ class VendorEmployeeController extends Controller
             'password' => 'nullable|string|min:8|same:confirm_password',
             'image' => 'nullable|image|mimes:jpg,jpeg,png,webp|max:2048',
         ]);
+
+        // [AI] Ownership Guard: Role must belong to this vendor
+        $role = VendorRole::where('seller_id', $sellerId)->where('id', $request->vendor_role_id)->first();
+        if (!$role) {
+            ToastMagic::error(translate('Invalid employee role selected'));
+            return redirect()->back();
+        }
 
         $data = [
             'name' => $request->name,
