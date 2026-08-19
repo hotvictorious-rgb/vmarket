@@ -13,34 +13,49 @@ use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Validator;
 
+use Illuminate\Support\Facades\DB;
+
 class WithdrawController extends Controller
 {
     public function sendWithdrawRequest(Request $request): JsonResponse
     {
-        $deliveryMan = $request->delivery_man;
-        $parentId = $request->delivery_man->seller_id;
-
-        $withdrawalBalance = CommonTrait::delivery_man_withdrawable_balance($deliveryMan['id']);
-        if ($withdrawalBalance < Convert::usd($request['amount'])) {
-            return response()->json(['message' => translate('withdraw_request_amount_can_not_be_more_than_withdrawable_balance')], 403);
+        $validator = Validator::make($request->all(), [
+            'amount' => 'required|numeric|min:1',
+        ]);
+        if ($validator->fails()) {
+            return response()->json(['errors' => Helpers::validationErrorProcessor($validator)], 403);
         }
 
-        $wallet = DeliverymanWallet::where('delivery_man_id', $deliveryMan['id'])->first();
-        if ($request['amount'] > 1) {
-            WithdrawRequest::insert([
+        $deliveryMan = $request->delivery_man;
+        $parentId = $request->delivery_man->seller_id;
+        $requestedAmount = Convert::usd($request['amount']);
+
+        return DB::transaction(function () use ($deliveryMan, $parentId, $requestedAmount, $request) {
+            $wallet = DeliverymanWallet::where('delivery_man_id', $deliveryMan['id'])->lockForUpdate()->first();
+            
+            if (!$wallet) {
+                return response()->json(['message' => translate('Wallet not found')], 404);
+            }
+
+            $withdrawable = ($wallet->current_balance ?? 0) - (($wallet->cash_in_hand ?? 0) + ($wallet->pending_withdraw ?? 0));
+            if ($withdrawable < $requestedAmount) {
+                return response()->json(['message' => translate('withdraw_request_amount_can_not_be_more_than_withdrawable_balance')], 403);
+            }
+
+            WithdrawRequest::create([
                 'delivery_man_id' => $deliveryMan['id'],
                 ($parentId == 0) ? 'admin_id' : 'seller_id' => $parentId,
-                'amount' => Convert::usd($request['amount']),
-                'transaction_note' => $request['note'],
+                'amount' => $requestedAmount,
+                'transaction_note' => $request['note'] ?? null,
                 'created_at' => now(),
                 'updated_at' => now()
             ]);
 
-            $wallet->pending_withdraw += Convert::usd($request['amount']);
+            $wallet->pending_withdraw += $requestedAmount;
             $wallet->save();
+
             return response()->json(['message' => translate('Withdraw_request_sent_successfully!')], 200);
-        }
-        return response()->json(['message' => translate('Invalid_withdraw_request')], 403);
+        });
     }
 
     public function getWithdrawListByApproved(Request $request): JsonResponse

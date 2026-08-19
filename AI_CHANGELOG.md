@@ -7,6 +7,14 @@ Always append your completed tasks here in chronological order at the top. Forma
 `### [YYYY-MM-DD HH:MM UTC] <Feature / Fix Title> [<Component Scope>]`
 Include the specific app/component modified and bullet points detailing the exact technical changes.
 
+### [2026-08-19 05:55 UTC] Delivery System Vulnerability Deep Scan & Hardening [backend]
+* **Component:** Laravel Web Backend (`backend/vmarket-web/`)
+* **Action:** Deep scan of entire delivery subsystem covering rider zone/hub restrictions, onboarding, bank account storage, and withdrawal race conditions. Resolved 2 critical vulnerabilities.
+* **Core Technical Implementations:**
+  - **Rider Withdrawal Race Condition Fix:** Wrapped `WithdrawController::sendWithdrawRequest()` in `DB::transaction()` with `lockForUpdate()` on the wallet row, preventing concurrent withdrawal requests from double-spending pending balance.
+  - **Cash-In-Hand Overflow Guard:** Added configurable maximum cash-in-hand threshold check (`delivery_man_max_cash_in_hand` from admin settings) in `DispatchPortalController::assignBatch()`. Blocks new batch assignment to riders who have exceeded their unremitted cash limit until they remit via in-app Paystack.
+* **Verification:** Validated all modified files via `php -l` — 0 errors.
+
 ### [2026-08-19 05:40 UTC] Delivery Rider Mobile Waybill Label Printing & REST API Integration [backend]
 * **Component:** Laravel Web Backend (`backend/vmarket-web/`)
 * **Action:** Implemented mobile waybill label generation and printing capabilities directly for Delivery Riders, enabling on-the-spot thermal printing upon merchant pickup.

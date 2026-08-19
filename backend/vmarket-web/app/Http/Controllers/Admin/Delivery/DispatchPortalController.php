@@ -118,6 +118,14 @@ class DispatchPortalController extends Controller
             return back();
         }
 
+        // Rider Cash-In-Hand Remittance Guard Check
+        $wallet = \App\Models\DeliverymanWallet::where('delivery_man_id', $deliveryMan->id)->first();
+        $maxCashLimit = (float)(getWebConfig(name: 'delivery_man_max_cash_in_hand') ?? 150000);
+        if ($wallet && $wallet->cash_in_hand >= $maxCashLimit) {
+            ToastMagic::error(translate("Rider {$deliveryMan->f_name} has unremitted Cash-In-Hand of ₦" . number_format($wallet->cash_in_hand, 2) . " (Limit: ₦" . number_format($maxCashLimit, 2) . "). Rider must remit cash via in-app Paystack before receiving new batches."));
+            return back();
+        }
+
         $batchId = 'BATCH-' . strtoupper(Str::random(6)) . '-' . time();
         $customRiderFee = $request->filled('custom_rider_fee') ? (float) $request->custom_rider_fee : null;
 
