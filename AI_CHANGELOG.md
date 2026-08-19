@@ -7,6 +7,14 @@ Always append your completed tasks here in chronological order at the top. Forma
 `### [YYYY-MM-DD HH:MM UTC] <Feature / Fix Title> [<Component Scope>]`
 Include the specific app/component modified and bullet points detailing the exact technical changes.
 
+### [2026-08-19 10:25 UTC] Admin Profile IDOR Elimination & Admin Login Rate Limiting [backend]
+* **Component:** Laravel Web Backend (`backend/vmarket-web/`)
+* **Action:** Deep scan across Admin authentication and profile controllers identified and resolved authorization IDOR loopholes and brute-force vectors on administrative accounts.
+* **Fixes Applied:**
+  - **[CRITICAL] Admin Profile & Password IDOR Elimination (`Admin/ProfileController`):** Enforced strict `auth('admin')->id() == $id` checks across `getUpdateView`, `update`, and `updatePassword`, preventing malicious or compromised employee accounts from viewing or overwriting the super-administrator's credentials and profile.
+  - **[SECURITY] Admin Login Route Rate Limiting (`routes/admin/routes.php`):** Attached `throttle:10,1` rate-limiting middleware to the administrative POST login endpoint, eliminating automated credential stuffing and dictionary attacks against admin/employee logins.
+* **Verification:** `php -l` verified on `Admin/ProfileController.php` and `routes/admin/routes.php` — 0 errors.
+
 ### [2026-08-19 10:19 UTC] Password Reset SQL LIKE Matching Elimination & 15-Minute Expiration Enforcement [backend]
 * **Component:** Laravel Web Backend (`backend/vmarket-web/`)
 * **Action:** Deep scan across Customer and Vendor Password Reset controllers identified and closed SQL LIKE partial identity matching loopholes and missing token expiration checks.

@@ -34,7 +34,13 @@ class ProfileController extends BaseController
      */
     public function getUpdateView(string|int $id): View|RedirectResponse
     {
-        $admin = $this->adminRepo->getFirstWhere(params: ['id' => $id]);
+        // [AI] Ownership Guard: An admin/employee can strictly view/edit only their own profile
+        if (auth('admin')->id() != $id) {
+            ToastMagic::error(translate('unauthorized_access'));
+            return redirect()->route('admin.profile.update', ['id' => auth('admin')->id()]);
+        }
+
+        $admin = $this->adminRepo->getFirstWhere(params: ['id' => auth('admin')->id()]);
         $shopBanner = getWebConfig('shop_banner');
         return view('admin-views.profile.update-view', compact('admin', 'shopBanner'));
     }
@@ -46,8 +52,14 @@ class ProfileController extends BaseController
      */
     public function update(AdminRequest $request, string|int $id): RedirectResponse
     {
-        $admin = $this->adminRepo->getFirstWhere(params: ['id' => $id]);
-        $this->adminRepo->update(id: $id, data: $this->adminService->getAdminDataForUpdate(request: $request, admin: $admin));
+        // [AI] Ownership Guard: An admin/employee can strictly update only their own profile
+        if (auth('admin')->id() != $id) {
+            ToastMagic::error(translate('unauthorized_access'));
+            return redirect()->route('admin.profile.update', ['id' => auth('admin')->id()]);
+        }
+
+        $admin = $this->adminRepo->getFirstWhere(params: ['id' => auth('admin')->id()]);
+        $this->adminRepo->update(id: auth('admin')->id(), data: $this->adminService->getAdminDataForUpdate(request: $request, admin: $admin));
         ToastMagic::success(translate('profile_updated_successfully'));
         return redirect()->back();
     }
@@ -59,7 +71,13 @@ class ProfileController extends BaseController
      */
     public function updatePassword(AdminPasswordRequest $request, string|int $id): RedirectResponse
     {
-        $this->adminRepo->update(id: $id, data: $this->adminService->getAdminPasswordData(request: $request));
+        // [AI] Ownership Guard: An admin/employee can strictly update only their own password
+        if (auth('admin')->id() != $id) {
+            ToastMagic::error(translate('unauthorized_access'));
+            return redirect()->route('admin.profile.update', ['id' => auth('admin')->id()]);
+        }
+
+        $this->adminRepo->update(id: auth('admin')->id(), data: $this->adminService->getAdminPasswordData(request: $request));
         ToastMagic::success(translate('admin_password_updated_successfully'));
         return redirect()->back();
     }
