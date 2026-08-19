@@ -76,34 +76,59 @@ class DeliverymanWithdrawController extends Controller
 
     public function updateStatus(DeliveryManWithdrawRequest $request, string|int $withdrawId, DeliveryManWithdrawService $deliveryManWithdrawService, DeliveryManWalletService $deliveryManWalletService): JsonResponse
     {
-        $withdraw = $this->withdrawRequestRepo->getFirstWhere(params: ['id' => $withdrawId], relations: ['deliveryMan']);
-        if (!$withdraw) {
-            return response()->json(['error' => translate('Invalid_withdraw')]);
-        }
-        $wallet = $this->deliveryManWalletRepo->getFirstWhere(params: ['delivery_man_id' => $withdraw['delivery_man_id']]);
-        if(!$wallet){
-            $deliverymanWalletData = $deliveryManWalletService->getDeliveryManData(id: $withdraw['delivery_man_id'], deliverymanCharge: 0, cashInHand: 0);
-            $this->deliveryManWalletRepo->add(data: $deliverymanWalletData);
-            $wallet = $this->deliveryManWalletRepo->getFirstWhere(params: ['delivery_man_id' => $withdraw['delivery_man_id']]);
-        }
-        $formatData = $deliveryManWithdrawService->getUpdateData(request: $request, wallet: $wallet, withdraw: $withdraw);
-        $walletData = $formatData['wallet'];
-        $withdrawData = $formatData['withdraw'];
-        if ($request['approved'] == 1) {
-            if (!$request->hasFile('proof_of_payment')) {
-                return response()->json(['error' => translate('Proof_of_payment_screenshot_is_required_when_approving_delivery_man_payout')]);
+        try {
+            $result = \Illuminate\Support\Facades\DB::transaction(function () use ($request, $withdrawId, $deliveryManWithdrawService, $deliveryManWalletService) {
+                // [AI] Idempotency Guard: Ensure withdraw request exists and is strictly pending
+                $withdraw = \App\Models\WithdrawRequest::where('id', $withdrawId)
+                    ->where('approved', 0)
+                    ->lockForUpdate()
+                    ->first();
+
+                if (!$withdraw) {
+                    return ['status' => false, 'error' => translate('withdraw_request_already_processed_or_invalid')];
+                }
+
+                $wallet = \App\Models\DeliveryManWallet::where('delivery_man_id', $withdraw->delivery_man_id)->lockForUpdate()->first();
+                if (!$wallet) {
+                    $deliverymanWalletData = $deliveryManWalletService->getDeliveryManData(id: $withdraw->delivery_man_id, deliverymanCharge: 0, cashInHand: 0);
+                    $this->deliveryManWalletRepo->add(data: $deliverymanWalletData);
+                    $wallet = \App\Models\DeliveryManWallet::where('delivery_man_id', $withdraw->delivery_man_id)->lockForUpdate()->first();
+                }
+
+                $formatData = $deliveryManWithdrawService->getUpdateData(request: $request, wallet: $wallet, withdraw: $withdraw);
+                $walletData = $formatData['wallet'];
+                $withdrawData = $formatData['withdraw'];
+
+                if ($request['approved'] == 1) {
+                    if (!$request->hasFile('proof_of_payment')) {
+                        return ['status' => false, 'error' => translate('Proof_of_payment_screenshot_is_required_when_approving_delivery_man_payout')];
+                    }
+                    $withdrawData['proof_of_payment'] = \App\Utils\ImageManager::upload('withdraw_requests/', 'png', $request->file('proof_of_payment'));
+                }
+
+                $this->deliveryManWalletRepo->update(id: $wallet->id, data: $walletData);
+                $this->withdrawRequestRepo->update(id: $withdrawId, data: $withdrawData);
+
+                return ['status' => true, 'withdraw' => $withdraw];
+            });
+
+            if (!$result['status']) {
+                return response()->json(['error' => $result['error']]);
             }
-            $withdrawData['proof_of_payment'] = \App\Utils\ImageManager::upload('withdraw_requests/', 'png', $request->file('proof_of_payment'));
-        }
-        $this->deliveryManWalletRepo->update(id: $wallet->id, data: $walletData);
-        $this->withdrawRequestRepo->update(id: $withdrawId, data: $withdrawData);
-        if (!empty($withdraw->deliveryMan?->fcm_token)) {
-            WithdrawStatusUpdateEvent::dispatch('withdraw_request_status_message', 'delivery_man', $withdraw->deliveryMan?->app_language ?? getDefaultLanguage(), $request['approved'], $withdraw->deliveryMan?->fcm_token);
-        }
-        if ($request['approved'] == 1) {
-            return response()->json(['message' => translate('Delivery_man_payment_has_been_approved_successfully')]);
-        } else {
-            return response()->json(['message' => translate('Delivery_man_payment_request_has_been_Denied_successfully')]);
+
+            $withdraw = $result['withdraw'];
+            $deliveryMan = \App\Models\DeliveryMan::find($withdraw->delivery_man_id);
+            if (!empty($deliveryMan?->fcm_token)) {
+                WithdrawStatusUpdateEvent::dispatch('withdraw_request_status_message', 'delivery_man', $deliveryMan?->app_language ?? getDefaultLanguage(), $request['approved'], $deliveryMan?->fcm_token);
+            }
+
+            if ($request['approved'] == 1) {
+                return response()->json(['message' => translate('Delivery_man_payment_has_been_approved_successfully')]);
+            } else {
+                return response()->json(['message' => translate('Delivery_man_payment_request_has_been_Denied_successfully')]);
+            }
+        } catch (\Exception $e) {
+            return response()->json(['error' => translate('something_went_wrong_please_try_again')]);
         }
     }
 

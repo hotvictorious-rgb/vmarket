@@ -119,28 +119,58 @@ class DeliveryManWithdrawController extends BaseController
      */
     public function updateStatus(DeliveryManWithdrawRequest $request , string|int $withdrawId):JsonResponse
     {
-        $withdraw = $this->withdrawRequestRepo->getFirstWhere(params: ['id' => $withdrawId,'seller_id' => auth('seller')->id()],relations:['deliveryMan']);
-        if(!$withdraw){
-            return response()->json(['error'=>translate('Invalid_withdraw')]);
-        }
-        $wallet = $this->deliveryManWalletRepo->getFirstWhere(params:['delivery_man_id'=>$withdraw['delivery_man_id']]);
-        $updateWalletData = $this->deliveryManWalletService->getDeliveryManWalletData(
-            request:$request,wallet:$wallet,withdraw: $withdraw
-        );
-        $this->withdrawRequestRepo->update(
-            id:$withdraw['id'],
-            data: $this->deliveryManWithdrawService->getDeliveryManWithdrawData(request: $request)
-        );
-        $this->deliveryManWalletRepo->update(
-            id:$wallet['id'],data: $updateWalletData
-        );
-        if(!empty($withdraw->deliveryMan?->fcm_token)) {
-            WithdrawStatusUpdateEvent::dispatch('withdraw_request_status_message', 'delivery_man', $withdraw->delivery_men?->app_language ?? getDefaultLanguage(), $request['approved'], $withdraw->deliveryMan?->fcm_token);
-        }
-        if ($request['approved'] == 1) {
-            return response()->json(['message'=>translate('Delivery_man_payment_has_been_approved_successfully')]);
-        }else{
-            return response()->json(['message'=>translate('Delivery_man_payment_request_has_been_Denied_successfully')]);
+        $vendorId = auth('seller')->id();
+
+        try {
+            $result = \Illuminate\Support\Facades\DB::transaction(function () use ($request, $withdrawId, $vendorId) {
+                // [AI] Ownership & Idempotency Guard: Ensure withdraw belongs to vendor and is pending
+                $withdraw = \App\Models\WithdrawRequest::where('id', $withdrawId)
+                    ->where('seller_id', $vendorId)
+                    ->where('approved', 0)
+                    ->lockForUpdate()
+                    ->first();
+
+                if (!$withdraw) {
+                    return ['status' => false, 'error' => translate('withdraw_request_already_processed_or_invalid')];
+                }
+
+                $wallet = \App\Models\DeliveryManWallet::where('delivery_man_id', $withdraw->delivery_man_id)->lockForUpdate()->first();
+                if (!$wallet) {
+                    return ['status' => false, 'error' => translate('delivery_man_wallet_not_found')];
+                }
+
+                $updateWalletData = $this->deliveryManWalletService->getDeliveryManWalletData(
+                    request: $request, wallet: $wallet, withdraw: $withdraw
+                );
+
+                $this->withdrawRequestRepo->update(
+                    id: $withdraw->id,
+                    data: $this->deliveryManWithdrawService->getDeliveryManWithdrawData(request: $request)
+                );
+                $this->deliveryManWalletRepo->update(
+                    id: $wallet->id, data: $updateWalletData
+                );
+
+                return ['status' => true, 'withdraw' => $withdraw];
+            });
+
+            if (!$result['status']) {
+                return response()->json(['error' => $result['error']]);
+            }
+
+            $withdraw = $result['withdraw'];
+            $deliveryMan = \App\Models\DeliveryMan::find($withdraw->delivery_man_id);
+            if (!empty($deliveryMan?->fcm_token)) {
+                WithdrawStatusUpdateEvent::dispatch('withdraw_request_status_message', 'delivery_man', $deliveryMan?->app_language ?? getDefaultLanguage(), $request['approved'], $deliveryMan?->fcm_token);
+            }
+
+            if ($request['approved'] == 1) {
+                return response()->json(['message' => translate('Delivery_man_payment_has_been_approved_successfully')]);
+            } else {
+                return response()->json(['message' => translate('Delivery_man_payment_request_has_been_Denied_successfully')]);
+            }
+        } catch (\Exception $e) {
+            return response()->json(['error' => translate('something_went_wrong_please_try_again')]);
         }
     }
 

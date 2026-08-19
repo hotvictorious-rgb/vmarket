@@ -598,27 +598,58 @@ class VendorController extends BaseController
             $withdrawData['proof_of_payment'] = \App\Utils\ImageManager::upload('withdraw_requests/', 'png', $request->file('proof_of_payment'));
         }
 
-        $withdraw = $this->withdrawRequestRepo->getFirstWhere(params: ['id' => $id], relations: ['seller']);
-        if (isset($withdraw->seller->cm_firebase_token) && $withdraw->seller->cm_firebase_token) {
-            event(new WithdrawStatusUpdateEvent(key: 'withdraw_request_status_message', type: 'seller', lang: $withdraw->deliveryMan?->app_language ?? getDefaultLanguage(), status: $request['approved'], fcmToken: $withdraw->seller?->cm_firebase_token));
+        try {
+            $result = \Illuminate\Support\Facades\DB::transaction(function () use ($id, $request, $withdrawData) {
+                // [AI] Idempotency Guard: Ensure request exists and is strictly pending (approved == 0)
+                $withdraw = \App\Models\WithdrawRequest::where('id', $id)
+                    ->where('approved', 0)
+                    ->lockForUpdate()
+                    ->first();
+
+                if (!$withdraw) {
+                    return ['status' => false, 'message' => translate('withdraw_request_already_processed_or_invalid')];
+                }
+
+                // [AI] Pessimistic lock on vendor wallet to prevent balance race conditions
+                $wallet = \App\Models\SellerWallet::where('seller_id', $withdraw->seller_id)->lockForUpdate()->first();
+                if (!$wallet) {
+                    return ['status' => false, 'message' => translate('vendor_wallet_not_found')];
+                }
+
+                if ($request['approved'] == 1) {
+                    $wallet->increment('withdrawn', $withdraw->amount);
+                    $wallet->decrement('pending_withdraw', $withdraw->amount);
+                    $this->withdrawRequestRepo->update(id: $id, data: $withdrawData);
+                    return ['status' => true, 'action' => 'approved', 'withdraw' => $withdraw];
+                } else {
+                    $wallet->increment('total_earning', $withdraw->amount);
+                    $wallet->decrement('pending_withdraw', $withdraw->amount);
+                    $this->withdrawRequestRepo->update(id: $id, data: $withdrawData);
+                    return ['status' => true, 'action' => 'denied', 'withdraw' => $withdraw];
+                }
+            });
+
+            if (!$result['status']) {
+                ToastMagic::error($result['message']);
+                return redirect()->route('admin.vendors.withdraw_list');
+            }
+
+            $withdraw = $result['withdraw'];
+            $seller = \App\Models\Seller::find($withdraw->seller_id);
+            if (!empty($seller?->cm_firebase_token)) {
+                event(new WithdrawStatusUpdateEvent(key: 'withdraw_request_status_message', type: 'seller', lang: getDefaultLanguage(), status: $request['approved'], fcmToken: $seller->cm_firebase_token));
+            }
+
+            if ($result['action'] === 'approved') {
+                ToastMagic::success(translate('Vendor_Payment_has_been_approved_successfully'));
+            } else {
+                ToastMagic::info(translate('Vendor_Payment_request_has_been_Denied_successfully'));
+            }
+        } catch (\Exception $e) {
+            ToastMagic::error(translate('something_went_wrong_please_try_again'));
         }
 
-        if ($request['approved'] == 1) {
-            $this->vendorWalletRepo->getFirstWhere(params: ['seller_id' => $withdraw['seller_id']])->increment('withdrawn', $withdraw['amount']);
-            $this->vendorWalletRepo->getFirstWhere(params: ['seller_id' => $withdraw['seller_id']])->decrement('pending_withdraw', $withdraw['amount']);
-
-            $this->withdrawRequestRepo->update(id: $id, data: $withdrawData);
-            ToastMagic::success(translate('Vendor_Payment_has_been_approved_successfully'));
-            return redirect()->route('admin.vendors.withdraw_list');
-        }
-
-        $this->vendorWalletRepo->getFirstWhere(params: ['seller_id' => $withdraw['seller_id']])->increment('total_earning', $withdraw['amount']);
-        $this->vendorWalletRepo->getFirstWhere(params: ['seller_id' => $withdraw['seller_id']])->decrement('pending_withdraw', $withdraw['amount']);
-        $this->withdrawRequestRepo->update(id: $id, data: $withdrawData);
-
-        ToastMagic::info(translate('Vendor_Payment_request_has_been_Denied_successfully'));
         return redirect()->route('admin.vendors.withdraw_list');
-
     }
 
 

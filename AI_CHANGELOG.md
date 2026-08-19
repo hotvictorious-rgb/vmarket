@@ -7,6 +7,16 @@ Always append your completed tasks here in chronological order at the top. Forma
 `### [YYYY-MM-DD HH:MM UTC] <Feature / Fix Title> [<Component Scope>]`
 Include the specific app/component modified and bullet points detailing the exact technical changes.
 
+### [2026-08-19 08:18 UTC] Vendor & Deliveryman Withdrawal Concurrency, IDOR & Idempotency Hardening [backend]
+* **Component:** Laravel Web Backend (`backend/vmarket-web/`)
+* **Action:** Resolved financial race conditions, IDOR, and double-approval vulnerabilities across vendor and deliveryman withdrawal workflows in Vendor and Admin web panels.
+* **Fixes Applied:**
+  - **[CRITICAL] Vendor Web Withdraw Request Concurrency (`Vendor/DashboardController::getWithdrawRequest`):** Replaced stale balance reads with `DB::transaction()` and pessimistic row locks (`lockForUpdate()`) on `SellerWallet` to prevent parallel overdraws.
+  - **[CRITICAL] Vendor Web Withdraw Close IDOR & Race Condition (`Vendor/WithdrawController::closeWithdrawRequest`):** Added `seller_id == auth('seller')->id()` ownership check to prevent vendors from hijacking other vendors' withdrawal cancellations, and wrapped in `DB::transaction()` with pessimistic wallet locks.
+  - **[CRITICAL] Admin Vendor Withdraw Approval Idempotency & Concurrency (`Admin/Vendor/VendorController::withdrawStatus`):** Enforced `approved == 0` check inside a `DB::transaction()` with `lockForUpdate()` on both `WithdrawRequest` and `SellerWallet` to prevent duplicate approvals, negative balances, or phantom balance inflation.
+  - **[CRITICAL] Admin & Vendor Deliveryman Withdraw Approval Idempotency (`Admin/Deliveryman/DeliverymanWithdrawController::updateStatus`, `Vendor/DeliveryMan/DeliveryManWithdrawController::updateStatus`):** Added `approved == 0` pending guards and wrapped wallet status mutations inside `DB::transaction()` with `lockForUpdate()` on `DeliveryManWallet`.
+* **Verification:** `php -l` verified on all 5 modified controllers — 0 errors.
+
 ### [2026-08-19 08:14 UTC] Web Storefront Customer IDOR Hardening & Access Control Lockdown [backend]
 * **Component:** Laravel Web Backend (`backend/vmarket-web/`)
 * **Action:** Deep scan across web storefront customer controllers identified and fixed 8 IDOR vulnerabilities in customer profile, address management, support ticket administration, order cancellation, and invoice downloads.

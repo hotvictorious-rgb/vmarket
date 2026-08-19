@@ -187,24 +187,44 @@ class DashboardController extends BaseController
     {
         $vendorId = auth('seller')->id();
         $withdrawMethod = $this->withdrawalMethodRepo->getFirstWhere(params: ['id' => $request['withdraw_method']]);
-        $wallet = $this->vendorWalletRepo->getFirstWhere(params: ['seller_id' => auth('seller')->id()]);
-        if (($wallet['total_earning'] ?? 0) >= currencyConverter($request['amount']) && $request['amount'] > 1) {
-            $this->withdrawRequestRepo->add($this->withdrawRequestService->getWithdrawRequestData(
-                withdrawMethod: $withdrawMethod,
-                request: $request,
-                addedBy: 'vendor',
-                vendorId: $vendorId
-            ));
-            $totalEarning = $wallet['total_earning'] - currencyConverter($request['amount']);
-            $pendingWithdraw = $wallet['pending_withdraw'] + currencyConverter($request['amount']);
-            $this->vendorWalletRepo->update(
-                id: $wallet['id'],
-                data: $this->vendorWalletService->getVendorWalletData(totalEarning: $totalEarning, pendingWithdraw: $pendingWithdraw)
-            );
-            ToastMagic::success(translate('withdraw_request_has_been_sent'));
-        } else {
-            ToastMagic::error(translate('invalid_request') . '!');
+
+        try {
+            $status = \Illuminate\Support\Facades\DB::transaction(function () use ($vendorId, $request, $withdrawMethod) {
+                // [AI] Pessimistic lock on vendor wallet to prevent concurrent overdraw
+                $wallet = \App\Models\SellerWallet::where('seller_id', $vendorId)->lockForUpdate()->first();
+                $convertedAmount = currencyConverter($request['amount']);
+
+                if (!$wallet || ($wallet->total_earning ?? 0) < $convertedAmount || $request['amount'] <= 1) {
+                    return false;
+                }
+
+                $this->withdrawRequestRepo->add($this->withdrawRequestService->getWithdrawRequestData(
+                    withdrawMethod: $withdrawMethod,
+                    request: $request,
+                    addedBy: 'vendor',
+                    vendorId: $vendorId
+                ));
+
+                $totalEarning = $wallet->total_earning - $convertedAmount;
+                $pendingWithdraw = $wallet->pending_withdraw + $convertedAmount;
+
+                $this->vendorWalletRepo->update(
+                    id: $wallet->id,
+                    data: $this->vendorWalletService->getVendorWalletData(totalEarning: $totalEarning, pendingWithdraw: $pendingWithdraw)
+                );
+
+                return true;
+            });
+
+            if ($status) {
+                ToastMagic::success(translate('withdraw_request_has_been_sent'));
+            } else {
+                ToastMagic::error(translate('invalid_request') . '!');
+            }
+        } catch (\Exception $e) {
+            ToastMagic::error(translate('something_went_wrong_please_try_again'));
         }
+
         return redirect()->back();
     }
 
