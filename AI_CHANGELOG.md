@@ -7,6 +7,13 @@ Always append your completed tasks here in chronological order at the top. Forma
 `### [YYYY-MM-DD HH:MM UTC] <Feature / Fix Title> [<Component Scope>]`
 Include the specific app/component modified and bullet points detailing the exact technical changes.
 
+### [2026-08-19 11:49 UTC] Fix 500 Error in Admin Delivery Hubs & Landmarks Management View [backend]
+* **Component:** Admin Web Panel (`resources/views/admin-views/delivery/hub-management.blade.php`, `app/Models/DeliveryCity.php`)
+* **Action:** Resolved 500 Internal Server Error when viewing `/admin/delivery-hubs`:
+  - **Nullsafe Property Traversal:** Added PHP 8 nullsafe operators (`$hub->city?->state?->name`, `$hub->city?->state_id`, and `$ct->state?->name`) across Blade tables and modals to prevent fatal `Attempt to read property on null` errors when hubs or cities have unlinked parents.
+  - **Currency Helper Null Guards:** Added null-coalescing defaults (`$hub->base_shipping_cost ?? 0` and `$hub->rider_delivery_fee ?? 0`) for `usdToDefaultCurrency()`.
+  - **Relationship Query Filters:** Standardized boolean `is_active` check in `DeliveryCity.php` to integer `1`.
+
 ### [2026-08-19 11:32 UTC] Fix Customer App Flutter Compilation Errors & Missing Tax Model Field [user-app]
 * **Component:** Customer Mobile Application (`User app/`)
 * **Action:** Resolved Gradle build release compilation errors identified in GitHub Actions workflow:

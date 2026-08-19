@@ -36,11 +36,11 @@ class DeliveryCity extends Model
 
     public function landmarks(): HasMany
     {
-        return $this->hasMany(DeliveryHub::class, 'city_id')->where('type', 'landmark')->where('is_active', true);
+        return $this->hasMany(DeliveryHub::class, 'city_id')->where('type', 'landmark')->where('is_active', 1);
     }
 
     public function motorParks(): HasMany
     {
-        return $this->hasMany(DeliveryHub::class, 'city_id')->where('type', 'motor_park')->where('is_active', true);
+        return $this->hasMany(DeliveryHub::class, 'city_id')->where('type', 'motor_park')->where('is_active', 1);
     }
 }

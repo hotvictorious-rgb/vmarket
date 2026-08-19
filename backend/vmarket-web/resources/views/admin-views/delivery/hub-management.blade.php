@@ -125,13 +125,13 @@
                                         <tr>
                                             <td>{{ $hubs->firstItem() + $key }}</td>
                                             <td class="font-weight-bold text-left">{{ $hub->name }}</td>
-                                            <td>{{ $hub->city->name ?? 'N/A' }} ({{ $hub->city->state->name ?? 'N/A' }})</td>
+                                            <td>{{ $hub->city?->name ?? 'N/A' }} ({{ $hub->city?->state?->name ?? 'N/A' }})</td>
                                             <td>
                                                 <span class="badge {{ $hub->type == 'landmark' ? 'badge-soft-info' : 'badge-soft-warning' }} font-weight-bold">
                                                     {{ $hub->type == 'landmark' ? translate('Landmark') : translate('Motor Park') }}
                                                 </span>
                                             </td>
-                                            <td class="font-weight-bold text-primary">{{ setCurrencySymbol(amount: usdToDefaultCurrency(amount: $hub->base_shipping_cost), currencyCode: getCurrencyCode()) }}</td>
+                                            <td class="font-weight-bold text-primary">{{ setCurrencySymbol(amount: usdToDefaultCurrency(amount: $hub->base_shipping_cost ?? 0), currencyCode: getCurrencyCode()) }}</td>
                                             <td class="font-weight-bold text-success">{{ setCurrencySymbol(amount: usdToDefaultCurrency(amount: $hub->rider_delivery_fee ?? 0), currencyCode: getCurrencyCode()) }}</td>
                                             <td>{{ $hub->estimated_delivery_time ?? 'Standard' }}</td>
                                             <td>
@@ -146,9 +146,9 @@
                                                             data-id="{{ $hub->id }}"
                                                             data-name="{{ $hub->name }}"
                                                             data-type="{{ $hub->type }}"
-                                                            data-state-id="{{ $hub->city->state_id ?? '' }}"
+                                                            data-state-id="{{ $hub->city?->state_id ?? '' }}"
                                                             data-city-id="{{ $hub->city_id }}"
-                                                            data-base-shipping-cost="{{ $hub->base_shipping_cost }}"
+                                                            data-base-shipping-cost="{{ $hub->base_shipping_cost ?? 0 }}"
                                                             data-rider-fee="{{ $hub->rider_delivery_fee ?? 0 }}"
                                                             data-estimated-time="{{ $hub->estimated_delivery_time }}"
                                                             data-url="{{ route('admin.delivery-hubs.update-hub', $hub->id) }}"
@@ -236,9 +236,9 @@
                                         <tr>
                                             <td>{{ $cities->firstItem() + $key }}</td>
                                             <td class="font-weight-bold">{{ $ct->name }}</td>
-                                            <td>{{ $ct->state->name ?? 'N/A' }}</td>
-                                            <td><span class="badge badge-info">{{ $ct->landmarks_count }}</span></td>
-                                            <td><span class="badge badge-warning">{{ $ct->motor_parks_count }}</span></td>
+                                            <td>{{ $ct->state?->name ?? 'N/A' }}</td>
+                                            <td><span class="badge badge-info">{{ $ct->landmarks_count ?? 0 }}</span></td>
+                                            <td><span class="badge badge-warning">{{ $ct->motor_parks_count ?? 0 }}</span></td>
                                             <td>
                                                 <label class="switcher mx-auto">
                                                     <input type="checkbox" class="switcher_input status-toggle" data-id="{{ $ct->id }}" data-url="{{ route('admin.delivery-hubs.status-city') }}" {{ $ct->is_active ? 'checked' : '' }}>
