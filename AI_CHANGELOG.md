@@ -7,6 +7,16 @@ Always append your completed tasks here in chronological order at the top. Forma
 `### [YYYY-MM-DD HH:MM UTC] <Feature / Fix Title> [<Component Scope>]`
 Include the specific app/component modified and bullet points detailing the exact technical changes.
 
+### [2026-08-19 08:44 UTC] Vendor Product Catalog IDOR, Stock Manipulation & Asset Deletion Hardening [backend]
+* **Component:** Laravel Web Backend (`backend/vmarket-web/`)
+* **Action:** Deep scan across Vendor Product management controllers identified and closed critical cross-vendor product modification, image deletion, variation file tampering, and stock alteration IDORs.
+* **Fixes Applied:**
+  - **[CRITICAL] Vendor Product Update IDOR (`Vendor/Product/ProductController::update`, `updateProductImages`):** Enforced `user_id == auth('seller')->id()` and `added_by == 'seller'` on product lookup during update processing, preventing vendors from altering catalog listings, descriptions, or images of other vendors' or admin products.
+  - **[CRITICAL] Arbitrary Digital Variation File Deletion (`Vendor/Product/ProductController::deleteDigitalVariationFile`):** Added vendor product ownership verification before permitting the deletion of downloadable digital product variation assets.
+  - **[CRITICAL] Competitor Stock & Price Manipulation IDOR (`Vendor/Product/ProductController::updateQuantity`):** Scoped quantity and variation price updates to products owned by the authenticated seller.
+  - **[CRITICAL] Arbitrary Product Image Deletion (`Vendor/Product/ProductController::deleteImage`):** Added vendor ownership verification before deleting product media attachments from storage and database arrays.
+* **Verification:** `php -l` verified on `Vendor/Product/ProductController.php` — 0 errors.
+
 ### [2026-08-19 08:39 UTC] Delivery Rider Location Spoofing & Order Inspection IDOR Hardening [backend]
 * **Component:** Laravel Web Backend (`backend/vmarket-web/`)
 * **Action:** Deep scan across Delivery Man REST API v2 endpoints identified and fixed arbitrary order PII inspection and location spoofing IDORs.

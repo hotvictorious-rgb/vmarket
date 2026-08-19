@@ -273,7 +273,12 @@ class ProductController extends BaseController
             return response()->json([], 200);
         }
 
-        $product = $this->productRepo->getFirstWhereWithoutGlobalScope(params: ['id' => $id], relations: ['translations', 'seoInfo']);
+        // [AI] Ownership Guard: Vendor can only update their own products
+        $product = $this->productRepo->getFirstWhereWithoutGlobalScope(params: ['id' => $id, 'user_id' => auth('seller')->id(), 'added_by' => 'seller'], relations: ['translations', 'seoInfo']);
+        if (!$product) {
+            ToastMagic::error(translate('unauthorized_access'));
+            return redirect()->route('vendor.products.list', ['type' => 'all']);
+        }
         $dataArray = $service->getUpdateProductData(request: $request, product: $product, updateBy: 'seller');
         $this->updateProductAuthorAndPublishingHouse(request: $request, product: $product);
 
@@ -311,7 +316,12 @@ class ProductController extends BaseController
 
     public function updateProductImages(Request $request, ProductService $productService, int|string $id): RedirectResponse
     {
-        $product = $this->productRepo->getFirstWhereWithoutGlobalScope(params: ['id' => $id], relations: ['translations', 'seoInfo']);
+        // [AI] Ownership Guard: Vendor can only update images for their own products
+        $product = $this->productRepo->getFirstWhereWithoutGlobalScope(params: ['id' => $id, 'user_id' => auth('seller')->id(), 'added_by' => 'seller'], relations: ['translations', 'seoInfo']);
+        if (!$product) {
+            ToastMagic::error(translate('unauthorized_access'));
+            return back();
+        }
         $storage = config('filesystems.disks.default') ?? 'public';
         $processedImages = $productService->getProcessedUpdateAdditionalImages(request: $request, product: $product);
         $updateData = [
@@ -635,6 +645,15 @@ class ProductController extends BaseController
 
     public function deleteDigitalVariationFile(Request $request, ProductService $service): JsonResponse
     {
+        // [AI] Ownership Guard: Product must belong to authenticated vendor
+        $product = $this->productRepo->getFirstWhere(params: ['id' => $request['product_id'], 'user_id' => auth('seller')->id(), 'added_by' => 'seller']);
+        if (!$product) {
+            return response()->json([
+                'status' => 0,
+                'message' => translate('unauthorized_access')
+            ], 403);
+        }
+
         $variation = $this->digitalProductVariationRepo->getFirstWhere(params: ['product_id' => $request['product_id'], 'variant_key' => $request['variant_key']]);
         if ($variation) {
             $this->deleteFile(filePath: '/product/digital-product/' . $variation['file']);
@@ -758,6 +777,13 @@ class ProductController extends BaseController
 
     public function updateQuantity(Request $request): RedirectResponse
     {
+        // [AI] Ownership Guard: Product must belong to authenticated vendor
+        $product = $this->productRepo->getFirstWhere(params: ['id' => $request['product_id'], 'user_id' => auth('seller')->id(), 'added_by' => 'seller']);
+        if (!$product) {
+            ToastMagic::error(translate('unauthorized_access'));
+            return back();
+        }
+
         $variations = [];
         $stockCount = $request['current_stock'];
         if ($request->has('type')) {
@@ -776,7 +802,6 @@ class ProductController extends BaseController
         ];
 
         if ($stockCount >= 0) {
-            $product = $this->productRepo->getFirstWhere(params: ['id' => $request['product_id']]);
             $this->productRepo->updateByParams(params: ['id' => $request['product_id']], data: $dataArray);
             $updatedProduct = $this->productRepo->getFirstWhere(params: ['id' => $request['product_id']]);
             $this->updateRestockRequestListAndNotify(product: $product, updatedProduct: $updatedProduct);
@@ -790,8 +815,14 @@ class ProductController extends BaseController
 
     public function deleteImage(Request $request, ProductService $service): RedirectResponse
     {
+        // [AI] Ownership Guard: Product must belong to authenticated vendor
+        $product = $this->productRepo->getFirstWhere(params: ['id' => $request['id'], 'user_id' => auth('seller')->id(), 'added_by' => 'seller']);
+        if (!$product) {
+            ToastMagic::error(translate('unauthorized_access'));
+            return back();
+        }
+
         $this->deleteFile(filePath: '/product/' . $request['image']);
-        $product = $this->productRepo->getFirstWhere(params: ['id' => $request['id']]);
 
         if (count(json_decode($product['images'])) < 2) {
             ToastMagic::warning(translate('you_can_not_delete_all_images'));
