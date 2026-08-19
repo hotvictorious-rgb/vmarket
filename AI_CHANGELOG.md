@@ -7,6 +7,15 @@ Always append your completed tasks here in chronological order at the top. Forma
 `### [YYYY-MM-DD HH:MM UTC] <Feature / Fix Title> [<Component Scope>]`
 Include the specific app/component modified and bullet points detailing the exact technical changes.
 
+### [2026-08-19 09:17 UTC] Mobile Product Review Purchase Verification, Review Modification IDOR & Password Reset Identity Fallback [backend]
+* **Component:** Laravel Web Backend (`backend/vmarket-web/`)
+* **Action:** Deep scan across Mobile Customer REST API controllers identified and fixed arbitrary unpurchased product review submissions, cross-customer review modification/image deletion IDORs, and phone/email verification column resolution on password resets.
+* **Fixes Applied:**
+  - **[CRITICAL] Mobile Unpurchased Product Review Submission Guard (`RestAPI/v1/ProductController::submit_product_review`):** Enforced verification that the specified order belongs to the authenticated customer (`customer_id == $request->user()->id`) and that the product was actually purchased within that order before accepting reviews.
+  - **[CRITICAL] Cross-Customer Review Update & Attachment Image Wiping IDOR (`RestAPI/v1/ProductController::updateProductReview`, `deleteReviewImage`):** Scoped review modifications and attachment image deletions by `customer_id == $request->user()->id` to prevent unauthorized customers from editing or wiping competitors' or other customers' reviews.
+  - **[FIX] Password Reset Phone/Email Verification Fallback (`RestAPI/v1/auth/ForgotPasswordController::reset_password_submit`):** Fixed identity column resolution when matching verification records from `phone_or_email_verifications`, ensuring accurate customer matching on password resets.
+* **Verification:** `php -l` verified on `RestAPI/v1/auth/ForgotPasswordController.php` and `RestAPI/v1/ProductController.php` — 0 errors.
+
 ### [2026-08-19 09:14 UTC] Mobile Vendor POS Order Placement Atomicity & Customer Chat Admin Message Seen Fix [backend]
 * **Component:** Laravel Web Backend (`backend/vmarket-web/`)
 * **Action:** Deep scan across Mobile Vendor POS and Customer Chatting controllers identified and fixed order placement transaction rollbacks, cross-vendor POS catalog stock depletion, and missing admin seen-message handling.

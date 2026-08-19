@@ -444,7 +444,11 @@ class ProductController extends Controller
 
     public function deleteReviewImage(Request $request): JsonResponse
     {
-        $review = Review::find($request['id']);
+        // [AI] Ownership Guard: Only delete review image from review owned by customer
+        $review = Review::where(['id' => $request['id'], 'customer_id' => $request->user()->id])->first();
+        if (!$review) {
+            return response()->json(['message' => translate('unauthorized_access')], 403);
+        }
 
         $array = [];
         foreach ($review->attachment as $image) {
@@ -508,6 +512,20 @@ class ProductController extends Controller
         if ($validator->fails()) {
             return response()->json(['errors' => Helpers::validationErrorProcessor($validator)], 403);
         }
+
+        $customerId = $request->user()->id;
+
+        // [AI] Ownership & Purchase Guard: Ensure order belongs to customer and contains the product
+        $order = Order::where(['id' => $request['order_id'], 'customer_id' => $customerId])->first();
+        if (!$order) {
+            return response()->json(['message' => translate('invalid_order')], 403);
+        }
+
+        $orderDetail = OrderDetail::where(['order_id' => $request['order_id'], 'product_id' => $request['product_id']])->first();
+        if (!$orderDetail) {
+            return response()->json(['message' => translate('product_not_found_in_order')], 403);
+        }
+
         $image_array = [];
         if (!empty($request->file('fileUpload'))) {
             foreach ($request->file('fileUpload') as $image) {
@@ -572,7 +590,13 @@ class ProductController extends Controller
             return response()->json(['errors' => Helpers::validationErrorProcessor($validator)], 403);
         }
 
-        $review = Review::find($request['id']);
+        $customerId = $request->user()->id;
+        // [AI] Ownership Guard: Only update review owned by authenticated customer
+        $review = Review::where(['id' => $request['id'], 'customer_id' => $customerId])->first();
+        if (!$review) {
+            return response()->json(['message' => translate('unauthorized_access')], 403);
+        }
+
         $image_array = [];
         if ($review && $review->attachment && $request->has('fileUpload')) {
             foreach ($review->attachment as $image) {

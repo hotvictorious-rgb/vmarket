@@ -194,8 +194,9 @@ class ForgotPasswordController extends Controller
         }
 
         if (isset($data)) {
-            User::where('email', 'like', "%{$data->identity}%")
-                ->orWhere('phone', 'like', "%{$data->identity}%")
+            $identity = $data->identity ?? ($data->phone_or_email ?? $request['identity']);
+            User::where('email', $identity)
+                ->orWhere('phone', $identity)
                 ->update([
                     'password' => bcrypt(str_replace(' ', '', $request['password']))
                 ]);
