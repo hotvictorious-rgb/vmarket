@@ -437,9 +437,16 @@ class OrderManager
             ];
         }
 
-        $coupon = $firstCoupon['coupon_type'] == 'first_order' ? $firstCoupon : ($firstCoupon['limit'] > $couponLimit ? $firstCoupon : null);
+        $coupon = $firstCoupon['coupon_type'] == 'first_order' ? $firstCoupon : (empty($firstCoupon['limit']) || $firstCoupon['limit'] > $couponLimit ? $firstCoupon : null);
 
-        if ($coupon && $coupon['coupon_type'] == 'first_order') {
+        if (!$coupon) {
+            return [
+                'status' => false,
+                'messages' => translate('coupon_limit_reached')
+            ];
+        }
+
+        if ($coupon['coupon_type'] == 'first_order') {
             if (Order::where(['customer_id' => $user['id']])->count() > 0) {
                 return [
                     'status' => false,

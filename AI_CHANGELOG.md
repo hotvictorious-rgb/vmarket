@@ -7,6 +7,14 @@ Always append your completed tasks here in chronological order at the top. Forma
 `### [YYYY-MM-DD HH:MM UTC] <Feature / Fix Title> [<Component Scope>]`
 Include the specific app/component modified and bullet points detailing the exact technical changes.
 
+### [2026-08-19 08:22 UTC] Coupon Usage Limit Null Safety & Digital Product Download OTP Throttling [backend]
+* **Component:** Laravel Web Backend (`backend/vmarket-web/`)
+* **Action:** Resolved null-pointer exception on exhausted coupon application and added brute-force rate-limiting on digital product download OTP endpoints.
+* **Fixes Applied:**
+  - **[CRITICAL] Coupon Limit Exhaustion Null-Pointer Exception (`OrderManager::getTotalCouponAmount`):** When a coupon's usage limit was exhausted, `$coupon` evaluated to null, causing an unhandled fatal error on property read. Added an explicit `$coupon` null guard returning a user-friendly `coupon_limit_reached` message.
+  - **[CRITICAL] Digital Product Download OTP Brute-Force Rate Limiting (`routes/web/routes.php`, `routes/rest_api/v1/api.php`):** Added `throttle:5,1` middleware to web and REST API digital product OTP verification and resend routes (`digital-product-download-otp-verify`, `digital-product-download-otp-reset`, `digital-product-download-otp-resend`) to prevent automated guessing of 4-digit verification tokens.
+* **Verification:** `php -l` verified on `OrderManager.php`, `routes/web/routes.php`, and `routes/rest_api/v1/api.php` — 0 errors.
+
 ### [2026-08-19 08:18 UTC] Vendor & Deliveryman Withdrawal Concurrency, IDOR & Idempotency Hardening [backend]
 * **Component:** Laravel Web Backend (`backend/vmarket-web/`)
 * **Action:** Resolved financial race conditions, IDOR, and double-approval vulnerabilities across vendor and deliveryman withdrawal workflows in Vendor and Admin web panels.

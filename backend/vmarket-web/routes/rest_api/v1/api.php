@@ -384,8 +384,8 @@ Route::group(['prefix' => 'v1', 'middleware' => ['api_lang']], function () {
         Route::group(['prefix' => 'order'], function () {
             Route::controller(OrderController::class)->group(function () {
                 Route::get('digital-product-download/{id}', 'digital_product_download');
-                Route::get('digital-product-download-otp-verify', 'digital_product_download_otp_verify');
-                Route::post('digital-product-download-otp-resend', 'digital_product_download_otp_resend');
+                Route::get('digital-product-download-otp-verify', 'digital_product_download_otp_verify')->middleware('throttle:5,1');
+                Route::post('digital-product-download-otp-resend', 'digital_product_download_otp_resend')->middleware('throttle:5,1');
             });
         });
     });
