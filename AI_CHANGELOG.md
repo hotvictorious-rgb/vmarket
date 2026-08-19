@@ -7,6 +7,13 @@ Always append your completed tasks here in chronological order at the top. Forma
 `### [YYYY-MM-DD HH:MM UTC] <Feature / Fix Title> [<Component Scope>]`
 Include the specific app/component modified and bullet points detailing the exact technical changes.
 
+### [2026-08-19 09:41 UTC] Mobile Seller Delivery Man Withdrawal Approval Atomicity & Double Settlement Guard [backend]
+* **Component:** Laravel Web Backend (`backend/vmarket-web/`)
+* **Action:** Deep scan across Mobile Vendor Delivery Man Withdrawal controllers identified and resolved race conditions and double-settlement loopholes during withdrawal status updates.
+* **Fixes Applied:**
+  - **[CRITICAL] Delivery Man Withdrawal Double-Settlement & Race Condition Guard (`RestAPI/v3/seller/DeliverymanWithdrawController::status_update`):** Wrapped status updates inside `DB::transaction()` and enforced pessimistic row locks with `where(['seller_id' => $seller->id, 'approved' => 0])->lockForUpdate()`, guaranteeing that concurrently dispatched or replayed approval/rejection requests cannot double-deduct delivery rider balances or corrupt ledger totals.
+* **Verification:** `php -l` verified on `RestAPI/v3/seller/DeliverymanWithdrawController.php` — 0 errors.
+
 ### [2026-08-19 09:36 UTC] Social Auth Zero-Auth Account Takeover & Email Collision Prevention [backend]
 * **Component:** Laravel Web Backend (`backend/vmarket-web/`)
 * **Action:** Deep scan across Mobile Customer Social Authentication controllers identified and closed a critical zero-auth account takeover vulnerability inherited from stock 6valley, along with email collision and null-token crashes.

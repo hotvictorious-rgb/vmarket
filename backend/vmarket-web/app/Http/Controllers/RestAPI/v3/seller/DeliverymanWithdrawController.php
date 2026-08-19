@@ -11,6 +11,8 @@ use App\Utils\Helpers;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 
+use Illuminate\Support\Facades\DB;
+
 class DeliverymanWithdrawController extends Controller
 {
     public function list(Request $request): JsonResponse
@@ -60,46 +62,65 @@ class DeliverymanWithdrawController extends Controller
     {
         $id = $request->id;
         $seller = $request->seller;
-        $withdraw = WithdrawRequest::where(['seller_id' => $seller->id])->find($id);
-        if(!$withdraw){
-            return response()->json(['message' => translate('Invalid_withdraw!')], 403);
-        }
-        $withdraw->approved = $request->approved;
-        $withdraw->transaction_note = $request->note;
-        $lang = Helpers::default_lang();
 
-        $delivery_man = DeliveryMan::find($withdraw->delivery_man_id);
-        $delivery_man_fcm_token = $delivery_man?->fcm_token;
+        try {
+            return DB::transaction(function () use ($request, $id, $seller) {
+                // [AI] Ownership & Idempotency Guard: Ensure withdraw belongs to seller and is pending
+                $withdraw = WithdrawRequest::where(['seller_id' => $seller->id, 'approved' => 0])
+                    ->lockForUpdate()
+                    ->find($id);
 
-        if(!empty($delivery_man_fcm_token)) {
-            $lang = $delivery_man?->app_language ?? $lang;
-            $value_delivery_man = Helpers::push_notificatoin_message('withdraw_request_status_message','delivery_man',$lang);
-            if ($value_delivery_man != null) {
-                $data = [
-                    'title' => translate('withdraw_request_' . ($request->approved == 1 ? 'approved' : 'denied')),
-                    'description' => $value_delivery_man,
-                    'image' => '',
-                    'type' => 'notification'
-                ];
-                Helpers::send_push_notif_to_device($delivery_man_fcm_token, $data);
-            }
-        }
+                if (!$withdraw) {
+                    return response()->json(['message' => translate('withdraw_request_already_processed_or_invalid')], 403);
+                }
 
-        $wallet = DeliverymanWallet::where('delivery_man_id', $withdraw->delivery_man_id)->first();
-        if ($request->approved == 1) {
-            $wallet->total_withdraw   += $withdraw['amount'];
-            $wallet->pending_withdraw -= $withdraw['amount'];
-            $wallet->current_balance  -= $withdraw['amount'];
-            $wallet->save();
-            $withdraw->save();
+                $wallet = DeliverymanWallet::where('delivery_man_id', $withdraw->delivery_man_id)
+                    ->lockForUpdate()
+                    ->first();
 
-            return response()->json(['message' => translate('Delivery_man_payment_has_been_approved_successfully!')], 200);
-        }else{
-            $wallet->pending_withdraw -= $withdraw['amount'];
-            $wallet->save();
-            $withdraw->save();
+                if (!$wallet) {
+                    return response()->json(['message' => translate('delivery_man_wallet_not_found')], 404);
+                }
 
-            return response()->json(['message' => translate('Delivery_man_payment_request_has_been_Denied_successfully!')], 200);
+                $withdraw->approved = $request->approved;
+                $withdraw->transaction_note = $request->note;
+
+                $lang = Helpers::default_lang();
+                $delivery_man = DeliveryMan::find($withdraw->delivery_man_id);
+                $delivery_man_fcm_token = $delivery_man?->fcm_token;
+
+                if (!empty($delivery_man_fcm_token)) {
+                    $lang = $delivery_man?->app_language ?? $lang;
+                    $value_delivery_man = Helpers::push_notificatoin_message('withdraw_request_status_message', 'delivery_man', $lang);
+                    if ($value_delivery_man != null) {
+                        $data = [
+                            'title' => translate('withdraw_request_' . ($request->approved == 1 ? 'approved' : 'denied')),
+                            'description' => $value_delivery_man,
+                            'image' => '',
+                            'type' => 'notification'
+                        ];
+                        Helpers::send_push_notif_to_device($delivery_man_fcm_token, $data);
+                    }
+                }
+
+                if ($request->approved == 1) {
+                    $wallet->total_withdraw += $withdraw['amount'];
+                    $wallet->pending_withdraw -= $withdraw['amount'];
+                    $wallet->current_balance -= $withdraw['amount'];
+                    $wallet->save();
+                    $withdraw->save();
+
+                    return response()->json(['message' => translate('Delivery_man_payment_has_been_approved_successfully!')], 200);
+                } else {
+                    $wallet->pending_withdraw -= $withdraw['amount'];
+                    $wallet->save();
+                    $withdraw->save();
+
+                    return response()->json(['message' => translate('Delivery_man_payment_request_has_been_Denied_successfully!')], 200);
+                }
+            });
+        } catch (\Exception $e) {
+            return response()->json(['message' => translate('something_went_wrong')], 500);
         }
     }
 }
