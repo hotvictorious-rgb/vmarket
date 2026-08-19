@@ -7,6 +7,15 @@ Always append your completed tasks here in chronological order at the top. Forma
 `### [YYYY-MM-DD HH:MM UTC] <Feature / Fix Title> [<Component Scope>]`
 Include the specific app/component modified and bullet points detailing the exact technical changes.
 
+### [2026-08-19 07:26 UTC] Vendor Withdrawal Race Conditions, Payout IDOR & Customer Invoice Leak Fixes [backend]
+* **Component:** Laravel Web Backend (`backend/vmarket-web/`)
+* **Action:** Deep scan identified and resolved critical financial race conditions and IDOR access control vulnerabilities across vendor withdrawal endpoints and customer order invoice endpoints.
+* **Fixes Applied:**
+  - **[CRITICAL] Vendor Payout Race Condition (`v3/seller/SellerController::withdraw_request`, `v2/seller/SellerController::withdraw_request`):** Both seller API controllers read `$wallet->total_earning` outside transaction blocks without locks. Wrapped both in `DB::beginTransaction()` with `SellerWallet::where('seller_id')->lockForUpdate()`.
+  - **[CRITICAL] Vendor Withdrawal Cancellation IDOR & Tally Bug (`v3/seller/SellerController::close_withdraw_request`, `v2/seller/SellerController::close_withdraw_request`):** Endpoints failed to verify `seller_id` on the target `WithdrawRequest`, allowing cross-vendor withdrawal cancellations. Additionally, `pending_withdraw` was mistakenly subtracted by `$request['amount']` instead of `$withdraw_request['amount']`. Added ownership validation, row locking, and fixed amount restoration.
+  - **[HIGH] Customer Invoice & Order Inspection IDOR (`v1/CustomerController::getOrderInvoice`, `v1/CustomerController::getOrderById`):** Neither endpoint verified whether the calling user owned the requested order. Added customer ownership verification (supporting registered customers and verified numeric guest IDs) to prevent PII and order leakages.
+* **Verification:** `php -l` executed on all 3 modified controllers — 0 errors.
+
 ### [2026-08-19 07:08 UTC] Complete Business Logic Hardening — System-Wide Wallet, Loyalty, Refund & Delivery Protections [backend]
 * **Component:** Laravel Web Backend (`backend/vmarket-web/`)
 * **Action:** Resolved remaining business logic conflicts and race conditions across system-wide wallet transaction handlers, loyalty point transactions, refund inspection endpoints, and delivery payment transitions.

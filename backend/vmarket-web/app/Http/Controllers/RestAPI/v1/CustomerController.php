@@ -462,7 +462,24 @@ class CustomerController extends Controller
 
     public function getOrderInvoice(Request $request):JsonResponse
     {
+        $user = Helpers::getCustomerInformation($request);
         $order = Order::with('seller')->with('shipping')->where('id', $request['order_id'])->first();
+        if (!$order) {
+            return response()->json(['message' => translate('order_not_found')], 404);
+        }
+
+        // [AI] Ownership Guard: Prevent IDOR leak of customer PII and invoice data
+        $isOwner = false;
+        if ($user != 'offline' && $order->customer_id == $user->id) {
+            $isOwner = true;
+        } elseif ($order->is_guest && $request->has('guest_id') && $order->customer_id == $request['guest_id'] && is_numeric($request['guest_id'])) {
+            $isOwner = true;
+        }
+
+        if (!$isOwner) {
+            return response()->json(['message' => translate('unauthorized_access')], 403);
+        }
+
         $invoiceSettings = json_decode(BusinessSetting::where(['type' => 'invoice_settings'])->first()?->value, true);
         $mpdf_view = \View::make(VIEW_FILE_NAMES['order_invoice'], compact('order', 'invoiceSettings'));
         $mpdf = new \Mpdf\Mpdf(['default_font' => 'FreeSerif', 'mode' => 'utf-8', 'format' => [190, 250], 'autoLangToFont' => true]);
@@ -490,7 +507,24 @@ class CustomerController extends Controller
             return response()->json(['errors' => Helpers::validationErrorProcessor($validator)], 403);
         }
 
+        $user = Helpers::getCustomerInformation($request);
         $order = Order::withCount('orderDetails')->with(['deliveryMan', 'offlinePayments', 'verificationImages', 'latestEditHistory', 'orderEditHistory'])->where(['id' => $request['order_id']])->first();
+        if (!$order) {
+            return response()->json(['message' => translate('order_not_found')], 404);
+        }
+
+        // [AI] Ownership Guard: Prevent unauthorized customer from viewing full order details
+        $isOwner = false;
+        if ($user != 'offline' && $order->customer_id == $user->id) {
+            $isOwner = true;
+        } elseif ($order->is_guest && $request->has('guest_id') && $order->customer_id == $request['guest_id'] && is_numeric($request['guest_id'])) {
+            $isOwner = true;
+        }
+
+        if (!$isOwner) {
+            return response()->json(['message' => translate('unauthorized_access')], 403);
+        }
+
         if (isset($order['offlinePayments'])) {
             $order['offlinePayments']->payment_info = $order->offlinePayments->payment_info;
         }

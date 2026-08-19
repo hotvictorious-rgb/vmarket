@@ -500,12 +500,24 @@ class SellerController extends Controller
         }
 
         $seller = $request->seller;
+        $amountInUsd = Convert::usd($request['amount']);
 
-        $wallet = SellerWallet::where('seller_id', $seller['id'])->first();
-        if (($wallet->total_earning) >= Convert::usd($request['amount']) && $request['amount'] > 1) {
+        if ($request['amount'] <= 1) {
+            return response()->json(['message' => translate('Invalid_withdraw_request')], 403);
+        }
+
+        try {
+            DB::beginTransaction();
+            // [AI] Vendor Wallet Race Condition Guard: Lock wallet row before checking balance
+            $wallet = SellerWallet::where('seller_id', $seller['id'])->lockForUpdate()->first();
+            if (!$wallet || $wallet->total_earning < $amountInUsd) {
+                DB::rollBack();
+                return response()->json(['message' => translate('Insufficient_wallet_balance_for_withdraw_request')], 403);
+            }
+
             DB::table('withdraw_requests')->insert([
                 'seller_id' => $seller['id'],
-                'amount' => Convert::usd($request['amount']),
+                'amount' => $amountInUsd,
                 'transaction_note' => null,
                 'withdrawal_method_id' => $request['withdraw_method_id'],
                 'withdrawal_method_fields' => json_encode($data),
@@ -513,30 +525,55 @@ class SellerController extends Controller
                 'created_at' => now(),
                 'updated_at' => now()
             ]);
+
             $wallet->total_earning -= BackEndHelper::currency_to_usd($request['amount']);
             $wallet->pending_withdraw += BackEndHelper::currency_to_usd($request['amount']);
             $wallet->save();
+            DB::commit();
+
             return response()->json(translate('Withdraw request sent successfully!'), 200);
+        } catch (\Exception $e) {
+            DB::rollBack();
+            return response()->json(['message' => translate('withdraw_request_failed')], 500);
         }
-        return response()->json(['message' => translate('Invalid_withdraw_request')], 403);
     }
 
     public function close_withdraw_request(Request $request): JsonResponse
     {
         $seller = $request->seller;
 
-        $withdraw_request = WithdrawRequest::find($request['id']);
-        $wallet = SellerWallet::where('seller_id', $seller['id'])->first();
+        try {
+            DB::beginTransaction();
+            // [AI] IDOR Guard: Only allow seller to cancel their own pending withdraw request
+            $withdraw_request = WithdrawRequest::where('id', $request['id'])
+                ->where('seller_id', $seller['id'])
+                ->lockForUpdate()
+                ->first();
 
-        if (isset($withdraw_request) && $withdraw_request->approved == 0) {
-            $wallet->total_earning += BackEndHelper::currency_to_usd($withdraw_request['amount']);
-            $wallet->pending_withdraw -= BackEndHelper::currency_to_usd($request['amount']);
+            if (!$withdraw_request || $withdraw_request->approved != 0) {
+                DB::rollBack();
+                return response()->json(translate('Withdraw request is invalid'), 403);
+            }
+
+            $wallet = SellerWallet::where('seller_id', $seller['id'])->lockForUpdate()->first();
+            if (!$wallet) {
+                DB::rollBack();
+                return response()->json(translate('Wallet not found'), 404);
+            }
+
+            // [AI] Fix: Restore the exact amount recorded on the withdraw_request row
+            $restoreAmount = BackEndHelper::currency_to_usd($withdraw_request['amount']);
+            $wallet->total_earning += $restoreAmount;
+            $wallet->pending_withdraw -= $restoreAmount;
             $wallet->save();
             $withdraw_request->delete();
-            return response()->json(translate('Withdraw request has been closed successfully!'), 200);
-        }
+            DB::commit();
 
-        return response()->json(translate('Withdraw request is invalid'), 403);
+            return response()->json(translate('Withdraw request has been closed successfully!'), 200);
+        } catch (\Exception $e) {
+            DB::rollBack();
+            return response()->json(['message' => translate('something_went_wrong')], 500);
+        }
     }
 
     public function transaction(Request $request): JsonResponse
