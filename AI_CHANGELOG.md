@@ -7,6 +7,13 @@ Always append your completed tasks here in chronological order at the top. Forma
 `### [YYYY-MM-DD HH:MM UTC] <Feature / Fix Title> [<Component Scope>]`
 Include the specific app/component modified and bullet points detailing the exact technical changes.
 
+### [2026-08-19 11:22 UTC] Update Deployment Protocol to Establish GitHub as Single Source of Truth [ai-governance]
+* **Component:** AI Governance (`.agents/AGENTS.md`, `AI_ENGINEERING_RULES.md`)
+* **Action:** Removed legacy references to uncommitted server customizations and formally established GitHub `master` as the sole canonical Single Source of Truth (SSOT).
+* **Updates:**
+  - Standardized Safe Overlay Protocol: All application code originates in Git and overlays downwards to production.
+  - Clarified that the 4 immutable server assets (`.env`, `storage/`, `vendor/`, `public/assets/`) are strictly runtime data stores.
+
 ### [2026-08-19 10:54 UTC] Formalization of Enterprise Security & Financial Invariants in AI Rules [ai-governance]
 * **Component:** AI Governance (`.agents/AGENTS.md`, `AI_ENGINEERING_RULES.md`)
 * **Action:** Permanently expanded project AI rules with non-negotiable enterprise security and financial invariants to safeguard the repository against future AI or human regressions.

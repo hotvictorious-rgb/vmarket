@@ -88,14 +88,15 @@ After completing any change:
 - **Preservation:** Never delete, strip, or replace existing developer comments or docstrings unless the corresponding code is completely removed.
 
 ## 7. Production Deployment & Server Sync SOP (Safe Overlay Protocol)
+- **GitHub is the Authoritative Single Source of Truth (SSOT):** All business logic, custom controllers, security patches, and features originate in this repository and are pushed to GitHub `master`. No manual code edits should exist on production.
 - **Monorepo Destination Mapping:** The web application deployed on cPanel (`shop.victoriousmarket.com.ng`) maps **EXCLUSIVELY** to `backend/vmarket-web/`. The 3 Flutter mobile apps (`User app`, `Vendor app`, `Delivery Man App`) are built separately via Flutter/Dart pipelines and MUST NEVER be copied into the web root.
 - **Strict Prohibition of Destructive Deletion:** NEVER run `rsync --delete` or `git clean -fd` on the live cPanel server.
-- **The 4 Immutable Server Assets:** The following paths on the live cPanel server MUST NEVER be deleted, overwritten, or wiped:
+- **The 4 Immutable Runtime Server Assets:** The following runtime paths on the live cPanel server MUST NEVER be deleted, overwritten, or wiped during deployment:
   1. `.env` (Live database credentials & secret keys)
   2. `storage/` (Customer uploads, order receipts, and framework cache)
   3. `vendor/` (Composer dependency packages)
   4. `public/assets/` (Storefront UI icons, SVGs, fonts, and stylesheets)
-- **Preservation of Server Customizations:** The live server contains custom Vendor controllers (33 web controllers), custom root scripts (`OrderManager.php`, `Order.php`, `ChattingService.php`), and custom DB migrations (`pickup_code`). Every AI MUST preserve these server-side customizations during any deployment or sync.
+- **Safe Overlay Execution:** When deploying to production, overlay code directly from `backend/vmarket-web/` (or run `git pull origin master`), preserving the 4 immutable runtime assets above, and execute `php artisan optimize:clear`.
 
 ## 8. Reference Baseline Guidelines (`reference/`)
 - The `reference/` directory contains extracted clean stock reference baselines for all 4 platforms:

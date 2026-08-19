@@ -142,10 +142,11 @@ All payment gateway controllers MUST enforce an **Atomic Row-Level Database Lock
 
 ## 10. Production Deployment Protocol (Safe Overlay SOP)
 
-1. **Web Scope:** Only `backend/vmarket-web/` maps to `shop.victoriousmarket.com.ng`. Mobile Flutter apps are built separately.
-2. **Non-Destructive Sync:** NEVER run `rsync --delete` or `git clean -fd` on production cPanel.
-3. **4 Protected Assets:** NEVER overwrite `.env`, `storage/`, `vendor/`, or `public/assets/`.
-4. **Preserve Server Customizations:** Preserve the 33 web Vendor controllers and custom root scripts (`OrderManager.php`, `Order.php`, `ChattingService.php`).
+1. **GitHub is the Single Source of Truth:** All code and custom logic originate in Git and deploy downwards to production. No manual code edits should exist on production.
+2. **Web Scope:** Only `backend/vmarket-web/` maps to `shop.victoriousmarket.com.ng`. Mobile Flutter apps are built separately.
+3. **Non-Destructive Sync:** NEVER run `rsync --delete` or `git clean -fd` on production cPanel.
+4. **4 Protected Runtime Assets:** NEVER overwrite or delete `.env`, `storage/`, `vendor/`, or `public/assets/`.
+5. **Post-Sync Optimization:** Execute `php artisan optimize:clear` after any deployment.
 
 ---
 
