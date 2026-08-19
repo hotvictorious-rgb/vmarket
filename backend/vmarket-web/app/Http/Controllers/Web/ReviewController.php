@@ -30,10 +30,27 @@ class ReviewController extends Controller
         $request->validate([
             'rating' => 'required',
             'comment' => 'required',
+            'order_id' => 'required',
+            'product_id' => 'required',
         ], [
             'rating.required' => translate('please_rate_the_quality') . '!',
             'comment.required' => translate('The_comment_is_required') . '!',
         ]);
+
+        $customerId = auth('customer')->id();
+
+        // [AI] Ownership & Purchase Guard: Ensure order belongs to customer and contains the product
+        $order = $this->orderRepo->getFirstWhere(params: ['id' => $request['order_id'], 'customer_id' => $customerId]);
+        if (!$order) {
+            Toastr::error(translate('invalid_order'));
+            return redirect()->back();
+        }
+
+        $orderDetail = \App\Models\OrderDetail::where(['order_id' => $request['order_id'], 'product_id' => $request['product_id']])->first();
+        if (!$orderDetail) {
+            Toastr::error(translate('product_not_found_in_order'));
+            return redirect()->back();
+        }
 
         if ($request->has('fileUpload')) {
             foreach ($request->file('fileUpload') as $image) {
@@ -46,10 +63,18 @@ class ReviewController extends Controller
         }
 
         $imageArray = [];
-        $review = $this->reviewRepo->getFirstWhere(params: ['customer_id' => auth('customer')->id(), 'id' => $request['review_id']]);
-        if ($review && $review['attachment']) {
-            foreach ($review['attachment'] as $image) {
-                $imageArray[] = $image;
+        $review = null;
+        if ($request['review_id']) {
+            // [AI] Ownership Guard: Review being edited must belong to the authenticated customer
+            $review = $this->reviewRepo->getFirstWhere(params: ['customer_id' => $customerId, 'id' => $request['review_id']]);
+            if (!$review) {
+                Toastr::error(translate('unauthorized_access'));
+                return redirect()->back();
+            }
+            if ($review['attachment']) {
+                foreach ($review['attachment'] as $image) {
+                    $imageArray[] = $image;
+                }
             }
         }
 
@@ -71,7 +96,7 @@ class ReviewController extends Controller
 
         $dataArray = [
             'id' => $reviewId,
-            'customer_id' => auth('customer')->id(),
+            'customer_id' => $customerId,
             'product_id' => $request['product_id'],
             'order_id' => $request['order_id'],
             'comment' => $request['comment'],
@@ -136,7 +161,11 @@ class ReviewController extends Controller
 
     public function deleteReviewImage(Request $request): JsonResponse
     {
-        $review = Review::find($request['id']);
+        // [AI] Ownership Guard: Only allow deleting images on customer's own review
+        $review = Review::where('id', $request['id'])->where('customer_id', auth('customer')->id())->first();
+        if (!$review) {
+            return response()->json(['error' => translate('unauthorized_access')], 403);
+        }
         $array = [];
 
         foreach ($review['attachment'] as $image) {

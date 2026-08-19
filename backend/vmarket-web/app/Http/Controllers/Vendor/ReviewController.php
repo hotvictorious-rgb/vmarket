@@ -195,15 +195,24 @@ class ReviewController extends BaseController
 
     public function addReviewReply(Request $request): RedirectResponse
     {
+        $vendorId = auth('seller')->id();
+        // [AI] Ownership Guard: Vendor can only reply to reviews for their own products
+        $review = $this->reviewRepo->getFirstWhere(params: ['id' => $request['review_id']], relations: ['product']);
+        if (!$review || !$review->product || $review->product->added_by != 'seller' || $review->product->user_id != $vendorId) {
+            \Devrabiul\ToastMagic\Facades\ToastMagic::error(translate('unauthorized_access'));
+            return back();
+        }
+
         $this->reviewReplyRepo->updateOrInsert(params: [
             'review_id' => $request['review_id'],
             'added_by' => 'seller',
-            'added_by_id' => auth('seller')->id()
+            'added_by_id' => $vendorId
         ], data: [
             'reply_text' => $request['reply_text'],
             'created_at' => now(),
             'updated_at' => now(),
         ]);
+        \Devrabiul\ToastMagic\Facades\ToastMagic::success(translate('review_reply_added_successfully'));
         return back();
     }
 }

@@ -7,6 +7,15 @@ Always append your completed tasks here in chronological order at the top. Forma
 `### [YYYY-MM-DD HH:MM UTC] <Feature / Fix Title> [<Component Scope>]`
 Include the specific app/component modified and bullet points detailing the exact technical changes.
 
+### [2026-08-19 08:31 UTC] Product Review Purchase Validation, Image Deletion IDOR & Vendor Reply Hijacking Hardening [backend]
+* **Component:** Laravel Web Backend (`backend/vmarket-web/`)
+* **Action:** Deep scan across customer and vendor review controllers identified and fixed purchase verification bypasses, arbitrary review image deletions, and cross-vendor review reply hijacking.
+* **Fixes Applied:**
+  - **[CRITICAL] Customer Review Purchase & Order Validation (`Web/ReviewController::add`):** Added validation verifying that the submitted `order_id` belongs to the authenticated customer and that the `product_id` is an actual item line within that order. Scoped review edits by `customer_id` to prevent modifying other users' reviews.
+  - **[CRITICAL] Arbitrary Review Image Deletion IDOR (`Web/ReviewController::deleteReviewImage`):** Enforced `where('customer_id', auth('customer')->id())` on `Review` lookup to prevent any user from purging attachments from arbitrary reviews.
+  - **[CRITICAL] Vendor Review Reply Hijacking (`Vendor/ReviewController::addReviewReply`):** Added validation verifying that the review's associated product belongs to the authenticated vendor (`product->user_id == auth('seller')->id()`), preventing vendors from posting official replies onto reviews of competing vendors' products.
+* **Verification:** `php -l` verified on `Web/ReviewController.php` and `Vendor/ReviewController.php` — 0 errors.
+
 ### [2026-08-19 08:28 UTC] POS Order Placement Concurrency, Wallet Locking & Vendor POS IDOR Hardening [backend]
 * **Component:** Laravel Web Backend (`backend/vmarket-web/`)
 * **Action:** Resolved financial race conditions on customer wallet payments in Point of Sale (POS) checkouts, enforced atomic transactions across POS order creations, and closed order viewing IDOR in vendor POS.
