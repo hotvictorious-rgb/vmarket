@@ -519,8 +519,25 @@ class PaymentController extends Controller
             return back();
         }
 
-        $orderEditHistory = OrderEditHistory::where('order_id', $validated['order_id'])->latest('created_at')->first();
         $customer = Helpers::getCustomerInformation($request);
+
+        // [AI] Ownership Guard: Only the order owner can pay or update due payment method
+        $isOwner = false;
+        if ($customer != 'offline' && $order->customer_id == $customer->id) {
+            $isOwner = true;
+        } elseif ($order->is_guest && $request->has('guest_id') && $order->customer_id == $request['guest_id'] && is_numeric($request['guest_id'])) {
+            $isOwner = true;
+        }
+
+        if (!$isOwner) {
+            if ($request->payment_request_from === 'app') {
+                return response()->json(['message' => translate('unauthorized_access')], 403);
+            }
+            Toastr::error(translate('unauthorized_access'));
+            return back();
+        }
+
+        $orderEditHistory = OrderEditHistory::where('order_id', $validated['order_id'])->latest('created_at')->first();
 
         if ($validated['payment_method'] === 'wallet' && $customer != 'offline') {
             if (getWebConfig('wallet_status') != 1 && $request['payment_method'] == 'wallet') {

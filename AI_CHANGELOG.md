@@ -7,6 +7,13 @@ Always append your completed tasks here in chronological order at the top. Forma
 `### [YYYY-MM-DD HH:MM UTC] <Feature / Fix Title> [<Component Scope>]`
 Include the specific app/component modified and bullet points detailing the exact technical changes.
 
+### [2026-08-19 10:01 UTC] Customer Payment Controller Order Edit Due Payment Ownership Guard [backend]
+* **Component:** Laravel Web Backend (`backend/vmarket-web/`)
+* **Action:** Deep scan across Customer Payment controllers identified and closed an IDOR loophole in order edit due payment processing.
+* **Fixes Applied:**
+  - **[CRITICAL] Order Edit Due Payment Ownership Guard (`Customer/PaymentController::customerOrderEditPayDueAmount`):** Enforced mandatory customer ownership verification (`$customer->id == $order->customer_id` or matching numeric `guest_id`) before allowing order edit payment method updates or digital due settlements, preventing unauthorized modification of third-party orders.
+* **Verification:** `php -l` verified on `Customer/PaymentController.php` — 0 errors.
+
 ### [2026-08-19 09:41 UTC] Mobile Seller Delivery Man Withdrawal Approval Atomicity & Double Settlement Guard [backend]
 * **Component:** Laravel Web Backend (`backend/vmarket-web/`)
 * **Action:** Deep scan across Mobile Vendor Delivery Man Withdrawal controllers identified and resolved race conditions and double-settlement loopholes during withdrawal status updates.
