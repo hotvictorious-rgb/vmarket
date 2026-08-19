@@ -74,9 +74,14 @@ class ProfileController extends BaseController
      */
     public function update(VendorRequest $request, string|int $id): JsonResponse
     {
+        $vendorId = auth('seller')->id();
+        // [AI] Ownership Guard: Vendor can only update their own profile
+        if ($vendorId != $id) {
+            return response()->json(['error' => translate('you_can_not_change_others_profile')], 403);
+        }
 
-        $vendor = $this->vendorRepo->getFirstWhere(['id' => $id]);
-        $this->vendorRepo->update(id: $id, data: $this->vendorService->getVendorDataForUpdate(request: $request, vendor: $vendor));
+        $vendor = $this->vendorRepo->getFirstWhere(['id' => $vendorId]);
+        $this->vendorRepo->update(id: $vendorId, data: $this->vendorService->getVendorDataForUpdate(request: $request, vendor: $vendor));
         return response()->json(['message' => translate('profile_updated_successfully')]);
     }
 
@@ -87,7 +92,13 @@ class ProfileController extends BaseController
      */
     public function updatePassword(VendorPasswordRequest $request, string|int $id): JsonResponse
     {
-        $this->vendorRepo->update(id: $id, data: $this->vendorService->getVendorPasswordData(request: $request));
+        $vendorId = auth('seller')->id();
+        // [AI] Ownership Guard: Vendor can only change their own password
+        if ($vendorId != $id) {
+            return response()->json(['error' => translate('you_can_not_change_others_profile')], 403);
+        }
+
+        $this->vendorRepo->update(id: $vendorId, data: $this->vendorService->getVendorPasswordData(request: $request));
         return response()->json(['message' => translate('password_updated_successfully')]);
     }
 
@@ -113,7 +124,14 @@ class ProfileController extends BaseController
      */
     public function updateBankInfo(VendorBankInfoRequest $request, string|int $id): RedirectResponse
     {
-        $vendor = $this->vendorRepo->getFirstWhere(['id' => $id]);
+        $vendorId = auth('seller')->id();
+        // [AI] Ownership Guard: Vendor can only update their own bank information
+        if ($vendorId != $id) {
+            ToastMagic::error(translate('you_can_not_change_others_info'));
+            return redirect()->route('vendor.profile.index');
+        }
+
+        $vendor = $this->vendorRepo->getFirstWhere(['id' => $vendorId]);
         $this->vendorRepo->update(id: $vendor['id'], data: $this->vendorService->getVendorBankInfoData(request: $request));
         ToastMagic::success(translate('successfully_updated') . '!!');
         return redirect()->route('vendor.profile.index');

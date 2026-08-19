@@ -89,9 +89,15 @@ class ShopController extends BaseController
      * @param string|int $id
      * @return View
      */
-    public function getUpdateView(string|int $id): View
+    public function getUpdateView(string|int $id): View|RedirectResponse
     {
-        $shop = $this->shopRepo->getFirstWhere(['id' => $id]);
+        $sellerId = auth('seller')->id();
+        // [AI] Ownership Guard: Vendor can only view edit page for their own shop
+        $shop = $this->shopRepo->getFirstWhere(['id' => $id, 'seller_id' => $sellerId]);
+        if (!$shop) {
+            ToastMagic::error(translate('shop_not_found'));
+            return redirect()->route('vendor.shop.index');
+        }
         return view('vendor-views.shop.update-view', compact('shop'));
     }
 
@@ -102,7 +108,14 @@ class ShopController extends BaseController
      */
     public function update(ShopRequest $request, string|int $id): RedirectResponse
     {
-        $shop = $this->shopRepo->getFirstWhere(['id' => $id]);
+        $sellerId = auth('seller')->id();
+        // [AI] Ownership Guard: Vendor can only update their own shop
+        $shop = $this->shopRepo->getFirstWhere(['id' => $id, 'seller_id' => $sellerId]);
+        if (!$shop) {
+            ToastMagic::error(translate('unauthorized_access'));
+            return redirect()->route('vendor.shop.index');
+        }
+
         $this->shopRepo->update(id: $id, data: $this->shopService->getShopDataForUpdate(request: $request, shop: $shop));
         updateSetupGuideCacheKey(key: 'shop_setup', panel: 'vendor');
         ToastMagic::info(translate('Shop_updated_successfully'));
@@ -115,6 +128,14 @@ class ShopController extends BaseController
      */
     public function updateVacation(ShopVacationRequest $request): RedirectResponse
     {
+        $sellerId = auth('seller')->id();
+        // [AI] Ownership Guard: Vendor can only update vacation mode on their own shop
+        $shop = $this->shopRepo->getFirstWhere(['id' => $request['id'], 'seller_id' => $sellerId]);
+        if (!$shop) {
+            ToastMagic::error(translate('unauthorized_access'));
+            return back();
+        }
+
         $this->shopRepo->update(id: $request['id'], data: $this->shopService->getVacationData(request: $request));
         updateSetupGuideCacheKey(key: 'shop_setup', panel: 'vendor');
         ToastMagic::success(translate('Vacation_mode_updated_successfully'));
@@ -127,6 +148,14 @@ class ShopController extends BaseController
      */
     public function closeShopTemporary(Request $request): RedirectResponse
     {
+        $sellerId = auth('seller')->id();
+        // [AI] Ownership Guard: Vendor can only toggle temporary closure on their own shop
+        $shop = $this->shopRepo->getFirstWhere(['id' => $request['id'], 'seller_id' => $sellerId]);
+        if (!$shop) {
+            ToastMagic::error(translate('unauthorized_access'));
+            return back();
+        }
+
         $this->shopRepo->update(id: $request['id'], data: ['temporary_close' => !$request->get(key: 'status', default: 0)]);
         Cache::clear();
         updateSetupGuideCacheKey(key: 'shop_setup', panel: 'vendor');

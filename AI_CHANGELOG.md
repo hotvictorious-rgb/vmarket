@@ -7,6 +7,14 @@ Always append your completed tasks here in chronological order at the top. Forma
 `### [YYYY-MM-DD HH:MM UTC] <Feature / Fix Title> [<Component Scope>]`
 Include the specific app/component modified and bullet points detailing the exact technical changes.
 
+### [2026-08-19 08:36 UTC] Vendor Profile, Password, Bank Info & Shop Settings IDOR Hardening [backend]
+* **Component:** Laravel Web Backend (`backend/vmarket-web/`)
+* **Action:** Deep scan across Vendor profile and shop settings controllers identified and fixed cross-vendor IDOR vulnerabilities affecting profile details, passwords, payout bank details, and shop status toggles.
+* **Fixes Applied:**
+  - **[CRITICAL] Vendor Profile, Password & Bank Account Hijacking IDOR (`Vendor/ProfileController::update`, `updatePassword`, `updateBankInfo`):** Replaced unvalidated `$id` path parameters with strict `auth('seller')->id()` session checks, preventing malicious vendors from updating other sellers' contact information, changing their passwords, or hijacking payout bank details.
+  - **[CRITICAL] Vendor Shop Information & Status IDOR (`Vendor/ShopController::getUpdateView`, `update`, `updateVacation`, `closeShopTemporary`):** Enforced `seller_id == auth('seller')->id()` on all shop record lookups and mutations, preventing cross-vendor shop name tampering, unauthorized vacation mode triggers, and malicious temporary store closures.
+* **Verification:** `php -l` verified on `Vendor/ProfileController.php` and `Vendor/ShopController.php` — 0 errors.
+
 ### [2026-08-19 08:33 UTC] Employee Management Cross-Vendor Role IDOR & Super Admin Lockout Hardening [backend]
 * **Component:** Laravel Web Backend (`backend/vmarket-web/`)
 * **Action:** Hardened shop employee creation against cross-vendor role assignment IDOR and protected super administrator accounts from accidental or malicious deactivation.
