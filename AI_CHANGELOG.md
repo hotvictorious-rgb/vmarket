@@ -7,6 +7,13 @@ Always append your completed tasks here in chronological order at the top. Forma
 `### [YYYY-MM-DD HH:MM UTC] <Feature / Fix Title> [<Component Scope>]`
 Include the specific app/component modified and bullet points detailing the exact technical changes.
 
+### [2026-08-19 09:27 UTC] Customer Restock Request Unauthenticated Crash Guard [backend]
+* **Component:** Laravel Web Backend (`backend/vmarket-web/`)
+* **Action:** Deep scan across Mobile Customer REST API endpoints identified and resolved fatal unauthenticated access crashes on restock requests.
+* **Fixes Applied:**
+  - **[FIX] Customer Restock Request List & Delete Offline Crash (`RestAPI/v1/CustomerRestockRequestController::restockRequestsList`, `deleteRestockRequests`):** Added explicit `$user == 'offline'` authentication checks returning 401 Unauthorized, preventing 500 error property access crashes when unauthenticated guest users reach restock request endpoints.
+* **Verification:** `php -l` verified on `RestAPI/v1/CustomerRestockRequestController.php` — 0 errors.
+
 ### [2026-08-19 09:25 UTC] Customer Cart Quantity Validation & Negative Stock / Price Corruption Prevention [backend]
 * **Component:** Laravel Web Backend (`backend/vmarket-web/`)
 * **Action:** Deep scan across Cart management utility functions and Mobile Cart REST API controllers identified and closed non-positive quantity injection vulnerabilities.

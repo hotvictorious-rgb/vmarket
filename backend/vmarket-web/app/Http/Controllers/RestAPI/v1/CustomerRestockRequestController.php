@@ -24,6 +24,9 @@ class CustomerRestockRequestController extends Controller
     public function restockRequestsList(Request $request): JsonResponse
     {
         $user = Helpers::getCustomerInformation($request);
+        if ($user == 'offline') {
+            return response()->json(['message' => translate('unauthorized_access')], 401);
+        }
 
         $requestList = $this->restockProductRepo->getListWhere(
             orderBy: ['updated_at' => 'desc'],
@@ -50,6 +53,9 @@ class CustomerRestockRequestController extends Controller
     public function deleteRestockRequests(Request $request): JsonResponse
     {
         $user = Helpers::getCustomerInformation($request);
+        if ($user == 'offline') {
+            return response()->json(['message' => translate('unauthorized_access')], 401);
+        }
 
         if ($request['type'] == 'all') {
             $this->restockProductCustomerRepo->delete(params: ['customer_id' => $user->id]);
