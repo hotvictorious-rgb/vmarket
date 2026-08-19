@@ -5,7 +5,7 @@ namespace App\Http\Controllers\Vendor\Employee;
 use App\Http\Controllers\Controller;
 use App\Models\VendorEmployee;
 use App\Models\VendorRole;
-use App\Traits\ImageManagerTrait;
+use App\Traits\FileManagerTrait;
 use Devrabiul\ToastMagic\Facades\ToastMagic;
 use Illuminate\Contracts\View\View;
 use Illuminate\Http\JsonResponse;
@@ -15,7 +15,7 @@ use Illuminate\Support\Facades\Hash;
 
 class VendorEmployeeController extends Controller
 {
-    use ImageManagerTrait;
+    use FileManagerTrait;
 
     public function list(Request $request): View
     {
@@ -143,7 +143,7 @@ class VendorEmployeeController extends Controller
         }
 
         if ($request->hasFile('image')) {
-            $data['image'] = $this->updateFile(dir: 'vendor-employee/', oldImage: $employee->image, format: 'webp', image: $request->file('image'));
+            $data['image'] = $this->update(dir: 'vendor-employee/', oldImage: $employee->image, format: 'webp', image: $request->file('image'));
         }
 
         $employee->update($data);

@@ -129,7 +129,9 @@
                 </tr>
             </thead>
             <tbody>
-                @php($totalRiderFee = 0)
+                @php
+                    $totalRiderFee = 0;
+                @endphp
                 @foreach($orders as $key => $ord)
                     @php
                         $riderCharge = $ord->deliveryman_charge ?? ($ord->destinationHub?->rider_delivery_fee ?? 500);
@@ -149,7 +151,9 @@
                         <td>
                             <div class="fs-12">
                                 @foreach($ord->details->take(2) as $det)
-                                    @php($p = json_decode($det->product_details, true))
+                                    @php
+                                        $p = json_decode($det->product_details, true);
+                                    @endphp
                                     <div>• {{ $det->qty }}x {{ Str::limit($p['name'] ?? 'Item', 24) }}</div>
                                 @endforeach
                                 @if($ord->details->count() > 2)

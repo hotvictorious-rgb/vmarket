@@ -7,6 +7,12 @@ Always append your completed tasks here in chronological order at the top. Forma
 `### [YYYY-MM-DD HH:MM UTC] <Feature / Fix Title> [<Component Scope>]`
 Include the specific app/component modified and bullet points detailing the exact technical changes.
 
+### [2026-08-19 12:57 UTC] Fix Blade Inline @php Compilation Error & Vendor Employee Trait Inconsistency [backend]
+* **Component:** Blade Print Templates & Vendor Staff Controller (`batch-manifest.blade.php`, `dispatch-portal.blade.php`, `packing-slip.blade.php`, `VendorEmployeeController.php`)
+* **Action:** Resolved fatal syntax compilation and missing trait errors:
+  - **Blade Inline `@php(...)` Compilation Error:** Converted inline `@php($totalRiderFee = 0)` to standard block `@php ... @endphp` across `batch-manifest.blade.php`, `dispatch-portal.blade.php`, and `packing-slip.blade.php` to prevent Blade compiler unclosed PHP tag parsing failures that swallowed subsequent `@foreach` loops.
+  - **Missing Trait Resolution:** Switched `VendorEmployeeController.php` from nonexistent `App\Traits\ImageManagerTrait` to the authoritative `App\Traits\FileManagerTrait`, resolving 8 out of 10 fatal production log errors.
+
 ### [2026-08-19 12:31 UTC] System-Wide Currency & Corridor Dispatch Null-Safety Hardening [backend]
 * **Component:** Global Currency Engine & Dispatch Controller (`app/Utils/currency.php`, `DispatchPortalController.php`)
 * **Action:** Resolved deep root causes of 500 Internal Server Errors in Hubs, Dispatch Portals, and Print Views:

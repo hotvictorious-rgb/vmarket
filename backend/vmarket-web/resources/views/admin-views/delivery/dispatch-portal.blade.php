@@ -134,7 +134,9 @@
                                 <div class="d-flex align-items-center gap-3">
                                     <span class="badge badge-soft-dark">{{ count($corridor['orders']) }} {{ translate('Orders') }}</span>
                                     <span class="font-weight-bold text-dark">₦{{ number_format($corridor['total_amount'], 2) }}</span>
-                                    @php($orderIdList = implode(',', array_map(function($o) { return $o->id; }, $corridor['orders'])))
+                                    @php
+                                        $orderIdList = implode(',', array_map(function($o) { return $o->id; }, $corridor['orders']));
+                                    @endphp
                                     <a href="{{ route('admin.dispatch-portal.print-manifest', ['order_ids' => $orderIdList]) }}" 
                                        target="_blank" class="btn btn-outline-primary btn-xs font-weight-bold" title="{{ translate('Print Rider Corridor Manifest') }}">
                                         <i class="tio-print mr-1"></i> {{ translate('Trip Manifest') }}

@@ -145,7 +145,9 @@
                 </tr>
             </thead>
             <tbody>
-                @php($totalVendorPayout = 0)
+                @php
+                    $totalVendorPayout = 0;
+                @endphp
                 @foreach($order->details as $key => $detail)
                     @php
                         $product = json_decode($detail->product_details, true);
