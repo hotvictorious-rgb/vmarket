@@ -79,9 +79,19 @@ class CustomerManager
             }
             $current_balance = $user->wallet_balance;
 
+            $txId = (!empty($payment_data['id']) && is_string($payment_data['id'])) ? $payment_data['id'] : (string)\Str::uuid();
+            // [AI] Idempotency Guard: If an add_fund transaction for this payment request already exists, return it to prevent double crediting
+            if ($transaction_type == 'add_fund' && !empty($payment_data['id'])) {
+                $alreadyExists = WalletTransaction::where('transaction_id', $txId)->first();
+                if ($alreadyExists) {
+                    DB::rollback();
+                    return $alreadyExists;
+                }
+            }
+
             $wallet_transaction = new WalletTransaction();
             $wallet_transaction->user_id        = $user->id;
-            $wallet_transaction->transaction_id = \Str::uuid();
+            $wallet_transaction->transaction_id = $txId;
             $wallet_transaction->reference      = $reference;
             $wallet_transaction->transaction_type = $transaction_type;
             $wallet_transaction->payment_method = $payment_data['payment_method'] ?? null;

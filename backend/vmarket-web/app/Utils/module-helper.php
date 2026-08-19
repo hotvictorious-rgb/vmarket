@@ -110,6 +110,10 @@ if (!function_exists('customer_order_edit_pay_due_amount_success')) {
             return;
         }
         $order = Order::where('id', $additionalData['order_id'])->first();
+        // [AI] Double Execution Guard: If order not found or due amount is already 0, do not re-process
+        if (!$order || $order->edit_due_amount <= 0) {
+            return;
+        }
         DB::transaction(function () use ($additionalData, $payment_data, $order) {
             $order->update([
                 'edit_due_amount' => 0,

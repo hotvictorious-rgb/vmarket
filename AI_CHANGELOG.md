@@ -7,6 +7,14 @@ Always append your completed tasks here in chronological order at the top. Forma
 `### [YYYY-MM-DD HH:MM UTC] <Feature / Fix Title> [<Component Scope>]`
 Include the specific app/component modified and bullet points detailing the exact technical changes.
 
+### [2026-08-19 09:03 UTC] Digital Payment & Wallet Add Funds Idempotency & Double Crediting Guard [backend]
+* **Component:** Laravel Web Backend (`backend/vmarket-web/`)
+* **Action:** Deep scan across payment webhook callbacks and wallet helpers identified and hardened payment request idempotency against concurrent webhook and browser redirect execution.
+* **Fixes Applied:**
+  - **[CRITICAL] Customer Add-Fund Double Crediting Race Condition (`CustomerManager::create_wallet_transaction`):** Tied wallet transaction IDs directly to the incoming `payment_data['id']` and added an atomic existence check inside the pessimistic row lock, guaranteeing that concurrent browser callbacks and IPN webhooks cannot double-credit a customer's wallet balance.
+  - **[CRITICAL] Order Due Amount Re-Settlement & Admin Wallet Double Increment Guard (`app/Utils/module-helper.php::customer_order_edit_pay_due_amount_success`):** Added a pre-condition guard checking `$order->edit_due_amount > 0` before updating order edit history or incrementing `AdminWallet->pending_amount`.
+* **Verification:** `php -l` verified on `app/Utils/CustomerManager.php` and `app/Utils/module-helper.php` — 0 errors.
+
 ### [2026-08-19 08:56 UTC] Vendor Web & Mobile API Refund Request & Status IDOR Hardening [backend]
 * **Component:** Laravel Web Backend (`backend/vmarket-web/`)
 * **Action:** Deep scan across Vendor Web RefundController and Mobile REST API v3 RefundController identified and closed unauthorized refund request details inspection and unauthenticated status modification IDORs.
