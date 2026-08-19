@@ -7,6 +7,14 @@ Always append your completed tasks here in chronological order at the top. Forma
 `### [YYYY-MM-DD HH:MM UTC] <Feature / Fix Title> [<Component Scope>]`
 Include the specific app/component modified and bullet points detailing the exact technical changes.
 
+### [2026-08-19 05:25 UTC] Customer REST API & Storefront Price Isolation Hardening [backend]
+* **Component:** Laravel Web Backend (`backend/vmarket-web/`)
+* **Action:** Hardened customer REST API serializers and endpoints to guarantee total isolation of vendor payout prices (`purchase_price`), ensuring customers and external network inspectors strictly receive the platform selling price (`unit_price`).
+* **Core Technical Implementations:**
+  - **Helpers Product Formatting Serializer:** Updated `Helpers::set_data_format()` and `Helpers::setDataFormatForJsonData()` in `app/Utils/Helpers.php` to explicitly `unset($data['purchase_price'])` whenever the request originates outside the vendor panel (`!request()->is('*seller*') && !auth('seller')->check()`) and outside admin management.
+  - **Customer RestAPI Select Statement:** Removed `'purchase_price'` from `ProductController::getShopAgainProduct()` query in `app/Http/Controllers/RestAPI/v1/ProductController.php`.
+* **Verification:** Validated all modified files via `php -l` — 0 errors.
+
 ### [2026-08-19 05:10 UTC] Role Conflict Audit & Vendor Employee Security Hardening [backend]
 * **Component:** Laravel Web Backend (`backend/vmarket-web/`)
 * **Action:** Performed deep scan of role definitions, permission checks, and cross-guard access barriers across Admin, Vendors, and Delivery Logistics; resolved UI leakage and route middleware binding.

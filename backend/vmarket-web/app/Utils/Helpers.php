@@ -162,9 +162,9 @@ class Helpers
         }
         $data['variation'] = $variation;
 
-        // [AI] Vendor Price Blindness Guard:
-        // In seller context, mask customer retail unit_price with the vendor's net payout cost (purchase_price)
+        // [AI] Strict Price Blindness & Customer Isolation Guard:
         if (request()->is('*seller*') || request()->is('*/seller/*') || auth('seller')->check()) {
+            // Vendor Context: Mask customer retail unit_price with the vendor's net payout cost (purchase_price)
             if (isset($data['purchase_price']) && (float)$data['purchase_price'] > 0) {
                 $data['unit_price'] = (float)$data['purchase_price'];
             }
@@ -172,6 +172,18 @@ class Helpers
                 foreach ($data['variation'] as &$varItem) {
                     if (isset($varItem['purchase_price']) && (float)$varItem['purchase_price'] > 0) {
                         $varItem['price'] = (float)$varItem['purchase_price'];
+                    }
+                }
+            }
+        } elseif (!auth('admin')->check() && !request()->is('*admin*')) {
+            // Customer / Storefront / Mobile App Context: Strictly strip vendor purchase_price
+            if (isset($data['purchase_price'])) {
+                unset($data['purchase_price']);
+            }
+            if (!empty($data['variation']) && is_array($data['variation'])) {
+                foreach ($data['variation'] as &$varItem) {
+                    if (isset($varItem['purchase_price'])) {
+                        unset($varItem['purchase_price']);
                     }
                 }
             }
@@ -242,8 +254,9 @@ class Helpers
         }
         $data['variation'] = $variation;
 
-        // [AI] Vendor Price Blindness Guard:
+        // [AI] Strict Price Blindness & Customer Isolation Guard:
         if (request()->is('*seller*') || request()->is('*/seller/*') || auth('seller')->check()) {
+            // Vendor Context: Mask customer retail unit_price with the vendor's net payout cost (purchase_price)
             if (isset($data['purchase_price']) && (float)$data['purchase_price'] > 0) {
                 $data['unit_price'] = (float)$data['purchase_price'];
             }
@@ -251,6 +264,18 @@ class Helpers
                 foreach ($data['variation'] as &$varItem) {
                     if (isset($varItem['purchase_price']) && (float)$varItem['purchase_price'] > 0) {
                         $varItem['price'] = (float)$varItem['purchase_price'];
+                    }
+                }
+            }
+        } elseif (!auth('admin')->check() && !request()->is('*admin*')) {
+            // Customer / Storefront / Mobile App Context: Strictly strip vendor purchase_price
+            if (isset($data['purchase_price'])) {
+                unset($data['purchase_price']);
+            }
+            if (!empty($data['variation']) && is_array($data['variation'])) {
+                foreach ($data['variation'] as &$varItem) {
+                    if (isset($varItem['purchase_price'])) {
+                        unset($varItem['purchase_price']);
                     }
                 }
             }

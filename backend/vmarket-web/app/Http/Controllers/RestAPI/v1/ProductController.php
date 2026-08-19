@@ -687,7 +687,7 @@ class ProductController extends Controller
                 ->whereHas('orderDetails.order', function ($query) use ($request) {
                     $query->where(['customer_id' => $request->user()->id]);
                 })
-                ->select('id', 'name', 'slug', 'thumbnail', 'unit_price', 'purchase_price', 'added_by', 'user_id')
+                ->select('id', 'name', 'slug', 'thumbnail', 'unit_price', 'added_by', 'user_id')
                 ->inRandomOrder()->take(12)->get();
 
             $products?->map(function ($product) {
