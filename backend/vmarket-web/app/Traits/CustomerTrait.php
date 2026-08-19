@@ -42,15 +42,6 @@ trait CustomerTrait
     protected function createWalletTransaction($user_id, float $amount, $transaction_type, $reference, $payment_data = []): bool|WalletTransaction
     {
         if (BusinessSetting::where('type', 'wallet_status')->first()->value != 1) return false;
-        $user = User::find($user_id);
-        $currentBalance = $user->wallet_balance;
-
-        $walletTransaction = new WalletTransaction();
-        $walletTransaction->user_id = $user->id;
-        $walletTransaction->transaction_id = \Str::uuid();
-        $walletTransaction->reference = $reference;
-        $walletTransaction->transaction_type = $transaction_type;
-        $walletTransaction->payment_method = $payment_data['payment_method'] ?? null;
 
         $debit = 0.0;
         $credit = 0.0;
@@ -59,7 +50,6 @@ trait CustomerTrait
         if (in_array($transaction_type, ['add_fund_by_admin', 'add_fund', 'order_refund', 'loyalty_point'])) {
             $credit = $amount;
             if ($transaction_type == 'add_fund') {
-                $walletTransaction->admin_bonus = Helpers::add_fund_to_wallet_bonus(Convert::usd($amount ?? 0));
                 $addFundToWalletBonus = Helpers::add_fund_to_wallet_bonus(Convert::usd($amount ?? 0));
             } else if ($transaction_type == 'loyalty_point') {
                 $credit = localToDefaultCurrency(amount: loyaltyPointToLocalCurrency(amount: $amount));
@@ -70,15 +60,33 @@ trait CustomerTrait
 
         $creditAmount = currencyConverter($credit);
         $debitAmount = currencyConverter($debit);
-        $walletTransaction->credit = $creditAmount;
-        $walletTransaction->debit = $debitAmount;
-        $walletTransaction->balance = $currentBalance + $creditAmount - $debitAmount;
-        $walletTransaction->created_at = now();
-        $walletTransaction->updated_at = now();
-        $user->wallet_balance = $currentBalance + $addFundToWalletBonus + $creditAmount - $debitAmount;
 
         try {
             DB::beginTransaction();
+            // [AI] Wallet Race Condition Guard: Acquire lock on user row inside transaction
+            $user = User::where('id', $user_id)->lockForUpdate()->first();
+            if (!$user) {
+                DB::rollback();
+                return false;
+            }
+            $currentBalance = $user->wallet_balance;
+
+            $walletTransaction = new WalletTransaction();
+            $walletTransaction->user_id = $user->id;
+            $walletTransaction->transaction_id = \Str::uuid();
+            $walletTransaction->reference = $reference;
+            $walletTransaction->transaction_type = $transaction_type;
+            $walletTransaction->payment_method = $payment_data['payment_method'] ?? null;
+            if ($transaction_type == 'add_fund') {
+                $walletTransaction->admin_bonus = $addFundToWalletBonus;
+            }
+            $walletTransaction->credit = $creditAmount;
+            $walletTransaction->debit = $debitAmount;
+            $walletTransaction->balance = $currentBalance + $creditAmount - $debitAmount;
+            $walletTransaction->created_at = now();
+            $walletTransaction->updated_at = now();
+
+            $user->wallet_balance = $currentBalance + $addFundToWalletBonus + $creditAmount - $debitAmount;
             $user->save();
             $walletTransaction->save();
             DB::commit();

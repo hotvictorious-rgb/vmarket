@@ -113,38 +113,44 @@ class CustomerManager
     public static function create_loyalty_point_transaction($user_id, $reference, $amount, $transaction_type): bool
     {
         $settings = array_column(BusinessSetting::whereIn('type', ['loyalty_point_status', 'loyalty_point_exchange_rate', 'loyalty_point_item_purchase_point'])->get()->toArray(), 'value', 'type');
-        if ($settings['loyalty_point_status'] != 1) {
+        if (($settings['loyalty_point_status'] ?? 0) != 1) {
             return true;
         }
 
         $credit = 0;
         $debit = 0;
-        $user = User::find($user_id);
-
-        $loyalty_point_transaction = new LoyaltyPointTransaction();
-        $loyalty_point_transaction->user_id = $user->id;
-        $loyalty_point_transaction->transaction_id = \Str::uuid();
-        $loyalty_point_transaction->reference = $reference;
-        $loyalty_point_transaction->transaction_type = $transaction_type;
 
         if ($transaction_type == 'order_place') {
-            $credit = (int)($amount * $settings['loyalty_point_item_purchase_point'] / 100);
+            $credit = (int)($amount * ($settings['loyalty_point_item_purchase_point'] ?? 0) / 100);
         } else if ($transaction_type == 'point_to_wallet') {
             $debit = $amount;
         } else if ($transaction_type == 'refund_order') {
             $debit = $amount;
         }
 
-        $current_balance = $user->loyalty_point + $credit - $debit;
-        $loyalty_point_transaction->balance = $current_balance;
-        $loyalty_point_transaction->credit = $credit;
-        $loyalty_point_transaction->debit = $debit;
-        $loyalty_point_transaction->created_at = now();
-        $loyalty_point_transaction->updated_at = now();
-        $user->loyalty_point = $current_balance;
-
         try {
             DB::beginTransaction();
+            // [AI] Loyalty Race Condition Guard: Acquire a pessimistic row lock before reading/writing loyalty_point
+            $user = User::where('id', $user_id)->lockForUpdate()->first();
+            if (!$user) {
+                DB::rollback();
+                return false;
+            }
+
+            $current_balance = $user->loyalty_point + $credit - $debit;
+
+            $loyalty_point_transaction = new LoyaltyPointTransaction();
+            $loyalty_point_transaction->user_id = $user->id;
+            $loyalty_point_transaction->transaction_id = \Str::uuid();
+            $loyalty_point_transaction->reference = $reference;
+            $loyalty_point_transaction->transaction_type = $transaction_type;
+            $loyalty_point_transaction->balance = $current_balance;
+            $loyalty_point_transaction->credit = $credit;
+            $loyalty_point_transaction->debit = $debit;
+            $loyalty_point_transaction->created_at = now();
+            $loyalty_point_transaction->updated_at = now();
+
+            $user->loyalty_point = $current_balance;
             $user->save();
             $loyalty_point_transaction->save();
             DB::commit();
@@ -152,8 +158,8 @@ class CustomerManager
         } catch (\Exception $ex) {
             info($ex);
             DB::rollback();
+            return false;
         }
-        return false;
     }
 
     public static function countLoyaltyPointForAmount($id): int

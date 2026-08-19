@@ -430,24 +430,39 @@ class DeliveryManController extends Controller
         $deliveryMan = $request['delivery_man'];
         $order = Order::where(['delivery_man_id' => $deliveryMan['id'], 'id' => $request['order_id']])->first();
         if (!empty($order)) {
-            $order->payment_status = $request['payment_status'];
-            $order->save();
-
-            $order->update([
-                'order_amount' => $order['order_amount'] + $order['edit_due_amount'],
-                'payment_status' => 'paid',
-                'edit_due_amount' => 0,
-            ]);
-
-            if ($order?->latestEditHistory) {
-                OrderEditHistory::where(['id' => $order?->latestEditHistory?->id])->update([
-                    'order_due_payment_status' => 'paid',
-                    'order_due_payment_method' => $order?->latestEditHistory?->order_due_payment_method ?? 'cash_on_delivery',
-                    'order_due_transaction_ref' => '',
-                    'order_due_payment_note' => 'Marked as paid by deliveryman',
-                ]);
+            // [AI] Business Logic Guard: Block payment status update on canceled or returned orders
+            if (in_array($order->order_status, ['canceled', 'returned', 'failed'])) {
+                return response()->json(['message' => translate('cannot_update_payment_for_canceled_or_returned_order')], 403);
             }
-            return response()->json(['message' => translate('Payment status updated')], 200);
+
+            // [AI] Idempotency Guard: If already marked as paid, return success without recalculation
+            if ($order->payment_status === 'paid') {
+                return response()->json(['message' => translate('payment_is_already_marked_as_paid')], 200);
+            }
+
+            DB::beginTransaction();
+            try {
+                $dueAmount = $order['edit_due_amount'] ?? 0;
+                $order->update([
+                    'order_amount' => $order['order_amount'] + $dueAmount,
+                    'payment_status' => 'paid',
+                    'edit_due_amount' => 0,
+                ]);
+
+                if ($order?->latestEditHistory) {
+                    OrderEditHistory::where(['id' => $order?->latestEditHistory?->id])->update([
+                        'order_due_payment_status' => 'paid',
+                        'order_due_payment_method' => $order?->latestEditHistory?->order_due_payment_method ?? 'cash_on_delivery',
+                        'order_due_transaction_ref' => '',
+                        'order_due_payment_note' => 'Marked as paid by deliveryman',
+                    ]);
+                }
+                DB::commit();
+                return response()->json(['message' => translate('Payment status updated')], 200);
+            } catch (\Exception $e) {
+                DB::rollBack();
+                return response()->json(['message' => translate('payment_status_update_failed')], 500);
+            }
         }
         return response()->json([
             'errors' => [

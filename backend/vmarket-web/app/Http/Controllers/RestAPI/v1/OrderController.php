@@ -456,9 +456,21 @@ class OrderController extends Controller
 
     public function refund_request(Request $request): JsonResponse
     {
-        $order_details = OrderDetail::find($request->order_details_id);
+        $orderDetails = OrderDetail::find($request->order_details_id);
+        if (!$orderDetails) {
+            return response()->json(['message' => translate('order_details_not_found')], 404);
+        }
 
         $user = $request->user();
+
+        // [AI] Ownership Guard: Ensure the customer owns the parent order
+        $order = Order::where('id', $orderDetails->order_id)
+            ->where('customer_id', $user->id)
+            ->first();
+        if (!$order) {
+            return response()->json(['message' => translate('unauthorized_access')], 403);
+        }
+
         $loyaltyPointStatus = getWebConfig(name: 'loyalty_point_status');
         if ($loyaltyPointStatus == 1) {
             $loyaltyPoint = CustomerManager::countLoyaltyPointForAmount($request->order_details_id);
@@ -467,8 +479,7 @@ class OrderController extends Controller
             }
         }
 
-        if ($order_details->delivery_status == 'delivered') {
-            $order = Order::find($order_details->order_id);
+        if ($orderDetails->delivery_status == 'delivered') {
             $total_product_price = 0;
             $data = [];
             foreach ($order->details as $key => $or_d) {
@@ -581,11 +592,21 @@ class OrderController extends Controller
     public function refund_details(Request $request): JsonResponse
     {
         $orderDetails = OrderDetail::find($request->id);
+        if (!$orderDetails) {
+            return response()->json(['message' => translate('order_details_not_found')], 404);
+        }
+
+        // [AI] Ownership Guard: Ensure the authenticated user owns this order
+        $order = Order::where('id', $orderDetails->order_id)
+            ->where('customer_id', $request->user()->id)
+            ->first();
+        if (!$order) {
+            return response()->json(['message' => translate('unauthorized_access')], 403);
+        }
+
         $refund = RefundRequest::where('customer_id', $request->user()->id)
             ->with(['refundStatus'])
             ->where('order_details_id', $orderDetails->id)->get();
-
-        $order = Order::find($orderDetails->order_id);
 
         $total_product_price = 0;
         $data = [];

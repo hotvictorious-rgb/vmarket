@@ -7,6 +7,16 @@ Always append your completed tasks here in chronological order at the top. Forma
 `### [YYYY-MM-DD HH:MM UTC] <Feature / Fix Title> [<Component Scope>]`
 Include the specific app/component modified and bullet points detailing the exact technical changes.
 
+### [2026-08-19 07:08 UTC] Complete Business Logic Hardening — System-Wide Wallet, Loyalty, Refund & Delivery Protections [backend]
+* **Component:** Laravel Web Backend (`backend/vmarket-web/`)
+* **Action:** Resolved remaining business logic conflicts and race conditions across system-wide wallet transaction handlers, loyalty point transactions, refund inspection endpoints, and delivery payment transitions.
+* **Fixes Applied:**
+  - **[CRITICAL] System-Wide Wallet Transaction Race Conditions (`WalletTransactionRepository`, `OrderManager`, `CustomerTrait`):** All 3 secondary wallet transaction creation methods (`addWalletTransaction`, `createWalletTransaction`) previously performed stale reads of `$user->wallet_balance` outside transaction blocks. Standardized all 3 to fetch the User model via `User::where('id', $user_id)->lockForUpdate()` within `DB::beginTransaction()`.
+  - **[CRITICAL] Loyalty Point Concurrent Overwrite (`CustomerManager::create_loyalty_point_transaction`):** Secured loyalty point balance calculation by acquiring a pessimistic row lock (`lockForUpdate`) on the user record inside the transaction block before reading/writing `loyalty_point`.
+  - **[CRITICAL] Refund IDOR & Leak Prevention (`OrderController::refund_request`, `OrderController::refund_details`):** Added explicit order ownership guards (`Order::where('id', $orderDetails->order_id)->where('customer_id', $user->id)`) and null checks on `$orderDetails`, preventing unauthorized users from probing order details or triggering unhandled null pointer exceptions.
+  - **[HIGH] Delivery Rider Payment Status Bypass & Double Execution (`DeliveryManController::order_payment_status_update`):** Enforced business rules blocking payment status updates on `canceled`, `returned`, or `failed` orders. Added idempotency guard (`payment_status === 'paid'`) and wrapped order due calculations and edit history updates in a single `DB::transaction()`.
+* **Verification:** `php -l` verified on all 6 modified files — 0 errors.
+
 ### [2026-08-19 06:47 UTC] Business Logic Conflict Deep Scan — 5 Critical Fixes [backend]
 * **Component:** Laravel Web Backend (`backend/vmarket-web/`)
 * **Action:** Full deep scan of business logic across customer order flow, wallet, refunds, and delivery OTP. Found and fixed 8 conflicts; 5 implemented in this pass.
