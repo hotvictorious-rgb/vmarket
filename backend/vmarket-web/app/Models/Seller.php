@@ -114,6 +114,16 @@ class Seller extends Authenticatable
         return $this->hasOne(SellerWallet::class);
     }
 
+    public function roles(): HasMany
+    {
+        return $this->hasMany(VendorRole::class, 'seller_id');
+    }
+
+    public function employees(): HasMany
+    {
+        return $this->hasMany(VendorEmployee::class, 'seller_id');
+    }
+
     public function coupon(): HasMany
     {
         return $this->hasMany(Coupon::class, 'seller_id')

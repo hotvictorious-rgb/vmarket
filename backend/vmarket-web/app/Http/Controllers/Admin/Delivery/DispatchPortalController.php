@@ -80,6 +80,7 @@ class DispatchPortalController extends Controller
 
         // 3. Fetch Delivery Men with Active Workload calculation
         $deliveryMen = DeliveryMan::where('is_active', 1)
+            ->with(['deliveryHub'])
             ->withCount(['orders' => function ($q) {
                 $q->whereIn('order_status', ['confirmed', 'processing', 'out_for_delivery']);
             }])

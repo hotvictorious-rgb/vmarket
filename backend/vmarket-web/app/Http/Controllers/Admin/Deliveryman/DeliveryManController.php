@@ -50,9 +50,9 @@ class DeliveryManController extends Controller
      */
     public function index(Request|null $request, ?string $type = null): View
     {
-        $relations = ['rating'];
+        $relations = ['rating', 'deliveryHub.city.state'];
         if ($request['sort_by'] == 'rating') {
-            $relations = ['deliveredOrders', 'rating', 'review'];
+            $relations = ['deliveredOrders', 'rating', 'review', 'deliveryHub.city.state'];
         }
         $deliveryMens = $this->deliveryManRepo->getListWhere(
             searchValue: $request['searchValue'],
@@ -66,7 +66,8 @@ class DeliveryManController extends Controller
     public function getAddView(Request $request): View
     {
         $telephoneCodes = TELEPHONE_CODES;
-        return view('admin-views.delivery-man.index', compact('telephoneCodes'));
+        $deliveryHubs = \App\Models\DeliveryHub::with('city.state')->where('is_active', true)->get();
+        return view('admin-views.delivery-man.index', compact('telephoneCodes', 'deliveryHubs'));
     }
 
     public function updateStatus(Request $request): JsonResponse
@@ -77,9 +78,9 @@ class DeliveryManController extends Controller
 
     public function exportList(Request $request): BinaryFileResponse
     {
-        $relations = ['rating'];
+        $relations = ['rating', 'deliveryHub.city.state'];
         if ($request['sort_by'] == 'rating') {
-            $relations = ['deliveredOrders', 'rating', 'review'];
+            $relations = ['deliveredOrders', 'rating', 'review', 'deliveryHub.city.state'];
         }
 
         $deliveryMens = $this->deliveryManRepo->getListWhere(
@@ -105,7 +106,8 @@ class DeliveryManController extends Controller
     {
         $deliveryMan = $this->deliveryManRepo->getFirstWhere(params: ['id' => $id]);
         $telephoneCodes = TELEPHONE_CODES;
-        return view('admin-views.delivery-man.edit', compact('deliveryMan', 'telephoneCodes'));
+        $deliveryHubs = \App\Models\DeliveryHub::with('city.state')->where('is_active', true)->get();
+        return view('admin-views.delivery-man.edit', compact('deliveryMan', 'telephoneCodes', 'deliveryHubs'));
     }
 
 

@@ -20,6 +20,7 @@ class DeliveryManService
     {
         return [
             'seller_id' => $addedBy == 'seller' ? auth('seller')->id() : 0,
+            'delivery_hub_id' => $request['delivery_hub_id'] ?? null,
             'f_name' => $request['f_name'],
             'l_name' => $request['l_name'],
             'address' => $request['address'],

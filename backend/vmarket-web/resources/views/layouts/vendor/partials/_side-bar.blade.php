@@ -536,6 +536,39 @@
                             </li>
                         @endif
 
+                        <!-- Shop Employee Management -->
+                        @if(!session('is_vendor_employee'))
+                            <li class="navbar-vertical-aside-has-menu {{ Request::is('vendor/employee*') || Request::is('vendor/employee-role*') ? 'active' : '' }}">
+                                <a class="js-navbar-vertical-aside-menu-link nav-link nav-link-toggle" href="javascript:">
+                                    <i class="tio-user-big nav-icon"></i>
+                                    <span class="navbar-vertical-aside-mini-mode-hidden-elements text-truncate">
+                                        {{ translate('Shop_Employees') }}
+                                    </span>
+                                </a>
+                                <ul class="js-navbar-vertical-aside-submenu nav nav-sub"
+                                    style="display: {{ Request::is('vendor/employee*') || Request::is('vendor/employee-role*') ? 'block' : 'none' }}">
+                                    <li class="nav-item {{ Request::is('vendor/employee-role*') ? 'active' : '' }}">
+                                        <a class="nav-link" href="{{ route('vendor.employee-role.index') }}">
+                                            <span class="tio-circle nav-indicator-icon"></span>
+                                            <span class="text-truncate">{{ translate('Role_Setup') }}</span>
+                                        </a>
+                                    </li>
+                                    <li class="nav-item {{ Request::is('vendor/employee/list') || Request::is('vendor/employee/edit/*') ? 'active' : '' }}">
+                                        <a class="nav-link" href="{{ route('vendor.employee.list') }}">
+                                            <span class="tio-circle nav-indicator-icon"></span>
+                                            <span class="text-truncate">{{ translate('Employee_List') }}</span>
+                                        </a>
+                                    </li>
+                                    <li class="nav-item {{ Request::is('vendor/employee/add-new') ? 'active' : '' }}">
+                                        <a class="nav-link" href="{{ route('vendor.employee.add-new') }}">
+                                            <span class="tio-circle nav-indicator-icon"></span>
+                                            <span class="text-truncate">{{ translate('Add_New') }}</span>
+                                        </a>
+                                    </li>
+                                </ul>
+                            </li>
+                        @endif
+
                         <?php $checkSetupGuideRequirements = checkSetupGuideRequirements(panel: 'vendor'); ?>
 
                         <li class="nav-item ">

@@ -7,6 +7,26 @@ Always append your completed tasks here in chronological order at the top. Forma
 `### [YYYY-MM-DD HH:MM UTC] <Feature / Fix Title> [<Component Scope>]`
 Include the specific app/component modified and bullet points detailing the exact technical changes.
 
+### [2026-08-19 04:45 UTC] Multi-Tier Employee & Fleet Sub-Account Architecture across Admin, Vendors, and Delivery Hubs [backend]
+* **Component:** Laravel Web Backend (`backend/vmarket-web/`)
+* **Action:** Implemented unified, multi-tier Role-Based Access Control (RBAC) and staff management across Admin, Vendor Shops, and Delivery Logistics Fleet.
+* **Core Technical Implementations:**
+  - **Vendor Employee & Sub-Account Management:**
+    - Created migrations and tables `vendor_roles` and `vendor_employees` linking staff sub-accounts directly to master merchant shops (`sellers.id`).
+    - Built `VendorRoleController` and `VendorEmployeeController` with granular permissions (`order_management`, `product_management`, `pos_management`, `report_management`).
+    - Implemented `VendorEmployeePermissionMiddleware` enforcing hard security guards to protect master merchant bank credentials, wallet payouts, and withdrawal forms from sub-accounts.
+    - Updated `Vendor/Auth/LoginController.php` to authenticate both Master Merchants and Shop Attendants seamlessly under the active shop context.
+    - Added full Blade view interfaces: `vendor-views/employee/roles/index.blade.php`, `roles/edit.blade.php`, `list.blade.php`, `add-new.blade.php`, and `edit.blade.php`.
+    - Added "Shop Employees" dropdown menu in the Vendor Dashboard sidebar.
+  - **Delivery Man Hub-Fleet Grouping:**
+    - Added `delivery_hub_id` to `delivery_men` table with Eloquent relationship `deliveryHub()` in `DeliveryMan.php`.
+    - Updated `DeliveryManService` and `Admin\DeliveryMan\DeliveryManController` to assign and manage riders by Operational Delivery Hub.
+    - Updated `admin-views/delivery-man/index.blade.php`, `edit.blade.php`, and `list.blade.php` with "Assigned Primary Hub" selectors and badges.
+    - Updated `DispatchPortalController.php` and `dispatch-portal.blade.php` to display and highlight riders assigned to the corridor's origin Hub.
+  - **Admin Pre-Configured Specialist Roles:**
+    - Updated `AdminRoleTable.php` seeder with pre-configured specialist platform roles (*Central Logistics & Dispatch Officer*, *Product & Pricing Gateway Approver*, *Customer Care & Support Specialist*).
+* **Verification:** `php -l` on all 11 modified/new PHP files passed with 0 syntax errors.
+
 ### [2026-08-19 02:00 UTC] Business Logic Hardening: Vendor Price Blindness, Order Edit Markup & Fair Refund Accounting [backend]
 * **Component:** Laravel Web Backend (`backend/vmarket-web/`)
 * **Action:** Resolved 4 core business logic discrepancies discovered during deep scan, enforcing total vendor price blindness on web panel, synchronizing cost-plus markup during order edits, and splitting refund wallet deductions fairly between vendor payout and platform markup.

@@ -39,6 +39,8 @@ use App\Http\Controllers\Vendor\TransactionReportController;
 use App\Http\Controllers\Vendor\ProductReportController;
 use App\Http\Controllers\Vendor\OrderReportController;
 use App\Http\Controllers\Vendor\VendorPaymentInfoController;
+use App\Http\Controllers\Vendor\Employee\VendorRoleController;
+use App\Http\Controllers\Vendor\Employee\VendorEmployeeController;
 
 Route::group(['middleware' => ['maintenance_mode', 'actch:admin_panel']], function () {
 
@@ -377,11 +379,29 @@ Route::group(['middleware' => ['maintenance_mode', 'actch:admin_panel']], functi
                     Route::get('order-list', 'order_transaction_list')->name('order-list');
                     Route::get('pdf-order-wise-transaction', 'pdf_order_wise_transaction')->name('pdf-order-wise-transaction');
                     Route::get('order-transaction-export-excel', 'orderTransactionExportExcel')->name('order-transaction-export-excel');
-                    Route::get('order-transaction-summary-pdf', 'order_transaction_summary_pdf')->name('order-transaction-summary-pdf');
-                    Route::get('expense-list', 'getExpenseTransactionList')->name('expense-list');
-                    Route::get('pdf-order-wise-expense-transaction', 'pdf_order_wise_expense_transaction')->name('pdf-order-wise-expense-transaction');
                     Route::get('expense-transaction-summary-pdf', 'expense_transaction_summary_pdf')->name('expense-transaction-summary-pdf');
                     Route::get('expense-transaction-export-excel', 'expenseTransactionExportExcel')->name('expense-transaction-export-excel');
+                });
+            });
+
+            Route::group(['prefix' => 'employee-role', 'as' => 'employee-role.'], function () {
+                Route::controller(VendorRoleController::class)->group(function () {
+                    Route::get('/', 'index')->name('index');
+                    Route::post('store', 'store')->name('store');
+                    Route::get('edit/{id}', 'edit')->name('edit');
+                    Route::post('update/{id}', 'update')->name('update');
+                    Route::post('status', 'status')->name('status');
+                });
+            });
+
+            Route::group(['prefix' => 'employee', 'as' => 'employee.'], function () {
+                Route::controller(VendorEmployeeController::class)->group(function () {
+                    Route::get('list', 'list')->name('list');
+                    Route::get('add-new', 'addNew')->name('add-new');
+                    Route::post('store', 'store')->name('store');
+                    Route::get('edit/{id}', 'edit')->name('edit');
+                    Route::post('update/{id}', 'update')->name('update');
+                    Route::post('status', 'status')->name('status');
                 });
             });
         });

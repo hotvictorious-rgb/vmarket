@@ -112,6 +112,7 @@
                                 <th>{{translate('SL')}}</th>
                                 <th>{{translate('name')}}</th>
                                 <th>{{translate('contact info')}}</th>
+                                <th>{{translate('Primary Hub')}}</th>
                                 <th>{{translate('total_Orders')}}</th>
                                 <th>{{translate('rating')}}</th>
                                 <th class="text-center">{{translate('status')}}</th>
@@ -139,6 +140,15 @@
                                         <a class="text-dark text-hover-primary" href="tel:{{$deliveryMen['country_code']}}{{$deliveryMen['phone']}}">
                                             {{ $deliveryMen['country_code'].$deliveryMen['phone'] }}</a>
                                     </div>
+                                </td>
+                                <td>
+                                    @if($deliveryMen->deliveryHub)
+                                        <span class="badge badge-soft-primary font-weight-bold">
+                                            <i class="tio-poi"></i> {{ $deliveryMen->deliveryHub->name }}
+                                        </span>
+                                    @else
+                                        <span class="badge badge-soft-secondary">{{ translate('Roaming / All') }}</span>
+                                    @endif
                                 </td>
                                 <td>
                                     <a href="{{ route('admin.orders.list', ['all', 'delivery_man_id' => $deliveryMen['id']]) }}" class="badge badge-info text-bg-info">

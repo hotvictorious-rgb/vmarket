@@ -48,6 +48,36 @@ class LoginController extends Controller
 
         $vendor = $this->vendorRepo->getFirstWhere(['identity' => $request['email']]);
         if (!$vendor) {
+            // Check if login is by a Vendor Employee
+            $employee = \App\Models\VendorEmployee::with('role', 'seller')
+                ->where('email', $request['email'])
+                ->first();
+
+            if ($employee && Hash::check($request['password'], $employee->password)) {
+                if (!$employee->status) {
+                    ToastMagic::error(translate('Your employee account has been deactivated by the shop owner.'));
+                    return back();
+                }
+
+                if (!$employee->seller || $employee->seller->status !== 'approved') {
+                    ToastMagic::error(translate('The associated vendor shop is not approved yet.'));
+                    return back();
+                }
+
+                // Authenticate under the parent seller shop context
+                auth('seller')->loginUsingId($employee->seller_id, $request->remember ?? false);
+
+                // Set employee sub-account session context
+                session([
+                    'is_vendor_employee' => true,
+                    'vendor_employee_data' => $employee->toArray(),
+                    'vendor_employee_role' => $employee->role ? $employee->role->toArray() : [],
+                ]);
+
+                ToastMagic::info(translate('Welcome back, ') . $employee->name . ' (' . ($employee->role->name ?? translate('Staff')) . ')');
+                return redirect()->route('vendor.dashboard.index');
+            }
+
             ToastMagic::error(translate('credentials_doesnt_match') . '!');
             return back();
         }
@@ -57,6 +87,7 @@ class LoginController extends Controller
             return back();
         }
         if ($this->vendorService->isLoginSuccessful($request->email, $request->password, $request->remember)) {
+            session()->forget(['is_vendor_employee', 'vendor_employee_data', 'vendor_employee_role']);
             if ($this->vendorWalletRepo->getFirstWhere(params: ['id' => auth('seller')->id()]) === false) {
                 $this->vendorWalletRepo->add($this->vendorService->getInitialWalletData(vendorId: auth('seller')->id()));
             }
@@ -70,6 +101,7 @@ class LoginController extends Controller
 
     public function logout(): RedirectResponse
     {
+        session()->forget(['is_vendor_employee', 'vendor_employee_data', 'vendor_employee_role']);
         $this->vendorService->logout();
         ToastMagic::success(translate('logged_out_successfully') . '.');
         return redirect()->route('vendor.auth.login');

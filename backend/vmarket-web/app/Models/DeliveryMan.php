@@ -36,6 +36,7 @@ class DeliveryMan extends Model
 
     protected $fillable = [
         'seller_id',
+        'delivery_hub_id',
         'f_name',
         'l_name',
         'address',
@@ -58,6 +59,7 @@ class DeliveryMan extends Model
     protected $casts = [
         'id' => 'integer',
         'seller_id' => 'integer',
+        'delivery_hub_id' => 'integer',
         'f_name' => 'string',
         'l_name' => 'string',
         'address' => 'string',
@@ -75,6 +77,11 @@ class DeliveryMan extends Model
         'fcm_token' => 'string',
         'app_language' => 'string',
     ];
+
+    public function deliveryHub(): \Illuminate\Database\Eloquent\Relations\BelongsTo
+    {
+        return $this->belongsTo(DeliveryHub::class, 'delivery_hub_id');
+    }
 
     public function orders(): HasMany
     {

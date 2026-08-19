@@ -90,6 +90,21 @@
                                         <textarea name="address" class="form-control" id="address" rows="1" placeholder="Address">{{ $deliveryMan['address'] }}</textarea>
                                     </div>
                                 </div>
+                                <div class="col-md-4">
+                                    <div class="form-group">
+                                        <label class="mb-2 font-weight-bold" for="delivery_hub_id">{{ translate('Assigned_Primary_Hub') }}</label>
+                                        <div class="select-wrapper">
+                                            <select name="delivery_hub_id" class="form-select js-select2-custom">
+                                                <option value="">{{ translate('All_Hubs_/_Roaming') }}</option>
+                                                @foreach($deliveryHubs as $hub)
+                                                    <option value="{{ $hub->id }}" {{ $deliveryMan['delivery_hub_id'] == $hub->id ? 'selected' : '' }}>
+                                                        {{ $hub->name }} ({{ $hub->city->name ?? 'Uyo' }})
+                                                    </option>
+                                                @endforeach
+                                            </select>
+                                        </div>
+                                    </div>
+                                </div>
                                 <div class="col-md-12">
                                     <div class="p-12 p-sm-20 bg-section rounded">
                                         <div class="row g-4">

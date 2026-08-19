@@ -12,14 +12,43 @@ class AdminRoleTable extends Seeder
      */
     public function run()
     {
-        DB::table('admin_roles')->insert([
-            'id' => 1,
-            'name' => 'Master Admin',
-        ]);
+        $roles = [
+            [
+                'id' => 1,
+                'name' => 'Master Admin',
+                'module_access' => null,
+                'status' => 1,
+                'created_at' => now(),
+                'updated_at' => now(),
+            ],
+            [
+                'id' => 2,
+                'name' => 'Central Logistics & Dispatch Officer',
+                'module_access' => json_encode(['order_management', 'delivery_management', 'dispatch_portal']),
+                'status' => 1,
+                'created_at' => now(),
+                'updated_at' => now(),
+            ],
+            [
+                'id' => 3,
+                'name' => 'Product & Pricing Gateway Approver',
+                'module_access' => json_encode(['product_management', 'approval_portal', 'category_management']),
+                'status' => 1,
+                'created_at' => now(),
+                'updated_at' => now(),
+            ],
+            [
+                'id' => 4,
+                'name' => 'Customer Care & Support Specialist',
+                'module_access' => json_encode(['support_section', 'customer_management']),
+                'status' => 1,
+                'created_at' => now(),
+                'updated_at' => now(),
+            ],
+        ];
 
-        DB::table('admin_roles')->insert([
-            'id' => 2,
-            'name' => 'Employee',
-        ]);
+        foreach ($roles as $role) {
+            DB::table('admin_roles')->updateOrInsert(['id' => $role['id']], $role);
+        }
     }
 }

@@ -96,6 +96,9 @@
                                         {{ $isFull ? 'disabled' : '' }}>
                                     {{ $isFull ? '🔴' : ($available <= 1 ? '🟡' : '🟢') }}
                                     {{ $dm->f_name }} {{ $dm->l_name }} 
+                                    @if($dm->deliveryHub)
+                                        [{{ $dm->deliveryHub->name }}]
+                                    @endif
                                     [{{ translate('Active:') }} {{ $activeCount }}/{{ $maxLimit }}] 
                                     - {{ $isFull ? translate('FULL CAPACITY') : ($available . ' ' . translate('slots left')) }}
                                 </option>
