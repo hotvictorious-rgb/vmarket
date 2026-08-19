@@ -206,9 +206,9 @@ class DispatchPortalController extends Controller
 
         $firstOrder = $orders->first();
         $batchId = $firstOrder->batch_dispatch_id ?? ('MANIFEST-' . strtoupper(Str::random(6)));
-        $originName = $firstOrder->originHub->name ?? ($firstOrder->seller->shop->deliveryHub->name ?? 'Plaza / Central Sorting Hub');
-        $destName = $firstOrder->destinationHub->name ?? 'General Landmark Corridor';
-        $destCity = $firstOrder->destinationHub->city->name ?? 'Uyo';
+        $originName = $firstOrder->originHub?->name ?? ($firstOrder->seller?->shop?->deliveryHub?->name ?? 'Plaza / Central Sorting Hub');
+        $destName = $firstOrder->destinationHub?->name ?? 'General Landmark Corridor';
+        $destCity = $firstOrder->destinationHub?->city?->name ?? 'Uyo';
         $deliveryMan = $firstOrder->deliveryMan;
 
         $companyName = getWebConfig(name: 'company_name') ?? 'Victorious MARKET';

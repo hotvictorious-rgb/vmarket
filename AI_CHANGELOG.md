@@ -7,6 +7,13 @@ Always append your completed tasks here in chronological order at the top. Forma
 `### [YYYY-MM-DD HH:MM UTC] <Feature / Fix Title> [<Component Scope>]`
 Include the specific app/component modified and bullet points detailing the exact technical changes.
 
+### [2026-08-19 12:01 UTC] Deep Scan & 500 Error Resolution across Pricing Approval, Trip Manifest & Waybill Labels [backend]
+* **Component:** Admin Web Panel & Vendor Web Panel (`ApprovalPortalController.php`, `PricingService.php`, `DispatchPortalController.php`, `batch-manifest.blade.php`, `waybill-label.blade.php`, `approval-portal.blade.php`, `packing-slip.blade.php`)
+* **Action:** Performed deep scan across all administrative portal pages and print templates to eliminate PHP 8.1+ null property errors and inheritance conflicts:
+  - **Pricing & Approval Gateway (`ApprovalPortalController.php` & `approval-portal.blade.php`):** Switched inheritance to `Controller` to resolve `ControllerInterface` index signature mismatch, added null safe category markup checks in `PricingService.php`, and switched to standard empty-state partial.
+  - **Corridor Batch Trip Manifest (`DispatchPortalController.php` & `batch-manifest.blade.php`):** Added nullsafe operators for origin hubs, destination hubs, and seller shop relations, preventing 500 crashes when unlinked orders are batched.
+  - **Thermal Waybill Labels (`waybill-label.blade.php` & `packing-slip.blade.php`):** Added nullsafe operators for city/state names and origin hub lookups.
+
 ### [2026-08-19 11:49 UTC] Fix 500 Error in Admin Delivery Hubs & Landmarks Management View [backend]
 * **Component:** Admin Web Panel (`resources/views/admin-views/delivery/hub-management.blade.php`, `app/Models/DeliveryCity.php`)
 * **Action:** Resolved 500 Internal Server Error when viewing `/admin/delivery-hubs`:

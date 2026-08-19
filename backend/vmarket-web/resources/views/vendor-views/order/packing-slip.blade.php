@@ -110,10 +110,10 @@
         <div class="col-md-7">
             <div class="corridor-badge w-100 text-center">
                 <i class="tio-map mr-1"></i> 
-                {{ $order->originHub->name ?? ($order->seller->shop->deliveryHub->name ?? 'Plaza / Central Sorting Point') }}
+                {{ $order->originHub?->name ?? ($order->seller?->shop?->deliveryHub?->name ?? 'Plaza / Central Sorting Point') }}
                 &nbsp;➔&nbsp;
-                {{ $order->destinationHub->name ?? 'General Area Landmark' }}
-                @if($order->destinationHub && $order->destinationHub->city)
+                {{ $order->destinationHub?->name ?? 'General Area Landmark' }}
+                @if($order->destinationHub?->city)
                     ({{ $order->destinationHub->city->name }})
                 @endif
             </div>

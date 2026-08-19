@@ -181,11 +181,7 @@
                     @empty
                         <tr>
                             <td colspan="7" class="text-center py-5">
-                                <div class="text-center">
-                                    <img src="{{ dynamicAsset(path: 'public/assets/new/back-end/img/empty-state.png') }}" class="mb-3" style="width: 80px;" alt="">
-                                    <h5 class="text-muted">{{ translate('No_Pending_Products_for_Approval') }}</h5>
-                                    <p class="text-muted fs-13 mb-0">{{ translate('All_vendor_submissions_have_been_reviewed_and_published.') }}</p>
-                                </div>
+                                @include('layouts.admin.partials._empty-state', ['text' => 'No_Pending_Products_for_Approval', 'image' => 'default'])
                             </td>
                         </tr>
                     @endforelse

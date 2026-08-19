@@ -118,10 +118,10 @@
         <div class="destination-block">
             <div class="destination-title">{{ translate('Destination Corridor / Landmark') }}</div>
             <div class="destination-name">
-                {{ $order->destinationHub->name ?? 'General Landmark Corridor' }}
+                {{ $order->destinationHub?->name ?? 'General Landmark Corridor' }}
             </div>
             <div class="fs-11 font-weight-bold mt-1 text-warning">
-                {{ $order->destinationHub->city->name ?? 'Uyo' }}, {{ $order->destinationHub->city->state->name ?? 'Akwa Ibom' }}
+                {{ $order->destinationHub?->city?->name ?? 'Uyo' }}, {{ $order->destinationHub?->city?->state?->name ?? 'Akwa Ibom' }}
             </div>
         </div>
 
@@ -142,11 +142,11 @@
         <div class="d-flex justify-content-between fs-11 text-muted border-bottom pb-2 mb-2">
             <div>
                 <strong>{{ translate('Origin Hub:') }}</strong> 
-                {{ $order->originHub->name ?? ($order->seller->shop->deliveryHub->name ?? 'Plaza Central Hub') }}
+                {{ $order->originHub?->name ?? ($order->seller?->shop?->deliveryHub?->name ?? 'Plaza Central Hub') }}
             </div>
             <div class="text-right">
                 <strong>{{ translate('Channel:') }}</strong> 
-                {{ $order->destinationHub && $order->destinationHub->type == 'motor_park' ? 'Park Waybill' : 'Landmark Dropoff' }}
+                {{ $order->destinationHub?->type == 'motor_park' ? 'Park Waybill' : 'Landmark Dropoff' }}
             </div>
         </div>
 

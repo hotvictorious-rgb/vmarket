@@ -132,7 +132,7 @@
                 @php($totalRiderFee = 0)
                 @foreach($orders as $key => $ord)
                     @php
-                        $riderCharge = $ord->deliveryman_charge ?? ($ord->destinationHub->rider_delivery_fee ?? 500);
+                        $riderCharge = $ord->deliveryman_charge ?? ($ord->destinationHub?->rider_delivery_fee ?? 500);
                         $totalRiderFee += $riderCharge;
                     @endphp
                     <tr>

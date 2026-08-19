@@ -33,7 +33,7 @@ class PricingService
         // 1. Check if Category has specific markup configured
         if ($categoryId) {
             $category = Category::find($categoryId);
-            if ($category && $category->markup_percentage !== null && $category->markup_percentage > 0) {
+            if ($category && isset($category->markup_percentage) && (float)$category->markup_percentage > 0) {
                 $markupRate = (float) $category->markup_percentage;
                 $markupType = $category->markup_type ?? 'percentage';
             }

@@ -4,7 +4,7 @@ namespace App\Http\Controllers\Admin\Product;
 
 use App\Contracts\Repositories\CategoryRepositoryInterface;
 use App\Contracts\Repositories\ProductRepositoryInterface;
-use App\Http\Controllers\BaseController;
+use App\Http\Controllers\Controller;
 use App\Models\Category;
 use App\Models\Product;
 use App\Services\PricingService;
@@ -14,7 +14,7 @@ use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 
-class ApprovalPortalController extends BaseController
+class ApprovalPortalController extends Controller
 {
     public function __construct(
         private readonly ProductRepositoryInterface  $productRepo,
