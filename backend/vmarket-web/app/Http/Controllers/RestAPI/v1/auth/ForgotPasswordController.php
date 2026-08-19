@@ -43,7 +43,7 @@ class ForgotPasswordController extends Controller
         $verification_by = getWebConfig(name: 'forgot_password_verification');
         $otp_interval_time = getWebConfig(name: 'otp_resend_time') ?? 1; //second
 
-        $password_verification_data = PasswordReset::where(['user_type'=>'customer'])->where('identity', 'like', "%{$request['identity']}%")->latest()->first();
+        $password_verification_data = PasswordReset::where(['user_type'=>'customer'])->where('identity', $request['identity'])->latest()->first();
         if ($verification_by == 'email') {
             $customer = User::Where(['email' => $request['identity']])->first();
             if (isset($customer)) {
@@ -99,7 +99,7 @@ class ForgotPasswordController extends Controller
                 }
             }
         } elseif ($verification_by == 'phone') {
-            $customer = User::where('phone', 'like', "%{$request['identity']}%")->first();
+            $customer = User::where('phone', $request['identity'])->first();
             $otp_resend_time = getWebConfig(name: 'otp_resend_time') > 0 ? getWebConfig(name: 'otp_resend_time') : 0;
             if (isset($customer)) {
                 if(isset($password_verification_data) &&  Carbon::parse($password_verification_data->created_at)->diffInSeconds() < $otp_interval_time){
@@ -160,6 +160,13 @@ class ForgotPasswordController extends Controller
 
         $verify = $this->passwordResetRepo->getFirstWhere(params: ['identity' => $request['email_or_phone'], 'token' => $request['reset_token']]);
         if ($verify) {
+            if (Carbon::parse($verify->created_at ?? $verify->updated_at)->addMinutes(15)->isPast()) {
+                return response()->json([
+                    'errors' => [
+                        ['code' => 'expired', 'message' => translate('OTP_expired_please_request_a_new_one')]
+                    ]
+                ], 403);
+            }
             return response()->json(['message' => translate('otp_verified')], 200);
         }
 
@@ -184,16 +191,23 @@ class ForgotPasswordController extends Controller
 
         $data = DB::table('password_resets')
             ->where('user_type','customer')
-            ->where('identity', 'like', "%{$request['identity']}%")
+            ->where('identity', $request['identity'])
             ->where(['token' => $request['otp']])->first();
 
         if (!$data) {
             $data = DB::table('phone_or_email_verifications')
-                ->where('phone_or_email', 'like', "%{$request['identity']}%")
+                ->where('phone_or_email', $request['identity'])
                 ->where(['token' => $request['otp']])->first();
         }
 
         if (isset($data)) {
+            // [AI] Expiration Guard: Ensure OTP is not older than 15 minutes
+            if (Carbon::parse($data->created_at ?? $data->updated_at)->addMinutes(15)->isPast()) {
+                return response()->json(['errors' => [
+                    ['code' => 'expired', 'message' => translate('OTP_expired_please_request_a_new_one')]
+                ]], 403);
+            }
+
             $identity = $data->identity ?? ($data->phone_or_email ?? $request['identity']);
             User::where('email', $identity)
                 ->orWhere('phone', $identity)
@@ -203,11 +217,11 @@ class ForgotPasswordController extends Controller
 
             DB::table('password_resets')
                 ->where('user_type','customer')
-                ->where('identity', 'like', "%{$request['identity']}%")
+                ->where('identity', $request['identity'])
                 ->where(['token' => $request['otp']])->delete();
 
             DB::table('phone_or_email_verifications')
-                ->where('phone_or_email', 'like', "%{$request['identity']}%")
+                ->where('phone_or_email', $request['identity'])
                 ->where(['token' => $request['otp']])->delete();
 
             return response()->json(['message' => translate('password_changed_successfully')], 200);

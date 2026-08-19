@@ -7,6 +7,14 @@ Always append your completed tasks here in chronological order at the top. Forma
 `### [YYYY-MM-DD HH:MM UTC] <Feature / Fix Title> [<Component Scope>]`
 Include the specific app/component modified and bullet points detailing the exact technical changes.
 
+### [2026-08-19 10:19 UTC] Password Reset SQL LIKE Matching Elimination & 15-Minute Expiration Enforcement [backend]
+* **Component:** Laravel Web Backend (`backend/vmarket-web/`)
+* **Action:** Deep scan across Customer and Vendor Password Reset controllers identified and closed SQL LIKE partial identity matching loopholes and missing token expiration checks.
+* **Fixes Applied:**
+  - **[CRITICAL] SQL LIKE Partial Identity Matching Elimination (`RestAPI/v1/auth/ForgotPasswordController`):** Replaced fuzzy SQL `where('identity', 'like', "%{$identity}%")` queries with strict exact matching (`=`), preventing attackers from matching unintended customer accounts with common substring patterns.
+  - **[SECURITY] 15-Minute Token Expiration Enforcement (`RestAPI/v1/auth/ForgotPasswordController` & `Vendor/Auth/ForgotPasswordController`):** Added strict 15-minute expiration checks on password reset OTP tokens and password reset submission endpoints, preventing the replay of stale verification tokens.
+* **Verification:** `php -l` verified on `RestAPI/v1/auth/ForgotPasswordController.php` and `Vendor/Auth/ForgotPasswordController.php` — 0 errors.
+
 ### [2026-08-19 10:01 UTC] Customer Payment Controller Order Edit Due Payment Ownership Guard [backend]
 * **Component:** Laravel Web Backend (`backend/vmarket-web/`)
 * **Action:** Deep scan across Customer Payment controllers identified and closed an IDOR loophole in order edit due payment processing.

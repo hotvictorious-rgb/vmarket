@@ -255,6 +255,11 @@ class ForgotPasswordController extends BaseController
     {
         $passwordResetData = $this->passwordResetRepo->getFirstWhere(params: ['user_type' => 'seller', 'token' => $request['token']]);
         if (isset($passwordResetData)) {
+            // [AI] Expiration Guard: Ensure reset token is not older than 15 minutes
+            if (Carbon::parse($passwordResetData['created_at'] ?? $passwordResetData['updated_at'])->addMinutes(15)->isPast()) {
+                ToastMagic::error(translate('OTP_expired_please_request_a_new_one'));
+                return redirect()->route('vendor.auth.login');
+            }
             $token = $request['token'];
             return view(ForgotPassword::RESET_PASSWORD[VIEW], compact('token'));
         }
@@ -271,6 +276,15 @@ class ForgotPasswordController extends BaseController
     {
         $passwordResetData = $this->passwordResetRepo->getFirstWhere(params: ['user_type' => 'seller', 'token' => $request['reset_token']]);
         if ($passwordResetData) {
+            // [AI] Expiration Guard: Ensure reset token is not older than 15 minutes
+            if (Carbon::parse($passwordResetData['created_at'] ?? $passwordResetData['updated_at'])->addMinutes(15)->isPast()) {
+                if ($request->ajax()) {
+                    return response()->json(['error' => translate('OTP_expired_please_request_a_new_one')]);
+                }
+                ToastMagic::error(translate('OTP_expired_please_request_a_new_one'));
+                return redirect()->route('vendor.auth.login');
+            }
+
             $vendor = $this->vendorRepo->getFirstWhere(params: ['identity' => $passwordResetData['identity']]);
             $this->vendorRepo->update(id: $vendor['id'], data: ['password' => bcrypt($request['password'])]);
             $this->passwordResetRepo->delete(params: ['id' => $passwordResetData['id']]);
