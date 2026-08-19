@@ -114,6 +114,14 @@ class CouponController extends Controller
     {
         $customerId = $request->user() ? $request->user()->id : '0';
         $shop = Shop::where('slug', $slug)->first();
+        if (!$shop) {
+            return [
+                'total_size' => 0,
+                'limit' => (int)$request['limit'],
+                'offset' => (int)$request['offset'],
+                'coupons' => []
+            ];
+        }
         $sellerIds = ['0'];
         $coupons = Coupon::with('seller.shop')
             ->where(['status' => 1])

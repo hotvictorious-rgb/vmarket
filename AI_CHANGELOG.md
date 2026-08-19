@@ -7,6 +7,14 @@ Always append your completed tasks here in chronological order at the top. Forma
 `### [YYYY-MM-DD HH:MM UTC] <Feature / Fix Title> [<Component Scope>]`
 Include the specific app/component modified and bullet points detailing the exact technical changes.
 
+### [2026-08-19 09:21 UTC] Mobile Coupon Query Scoping & Seller Customer Dropdown Credential Protection [backend]
+* **Component:** Laravel Web Backend (`backend/vmarket-web/`)
+* **Action:** Deep scan across Mobile Coupon and POS controllers identified and closed un-scoped coupon disclosures and raw customer model credential leaks in seller dropdown APIs.
+* **Fixes Applied:**
+  - **[CRITICAL] Customer Model Credential & Balance Leak in Seller APIs (`RestAPI/v3/seller/CouponController::customers`, `RestAPI/v3/seller/POSController::customers`):** Explicitly selected non-sensitive columns (`id`, `f_name`, `l_name`, `phone`) on customer lookup endpoints to prevent leaking password hashes, remember tokens, wallet balances, and auth credentials to vendors.
+  - **[FIX] Seller-Wise Coupon Query Null Shop Slug Guard (`RestAPI/v1/CouponController::getSellerWiseCoupon`):** Added a pre-condition guard returning an empty collection when an invalid shop slug is queried, preventing un-scoped platform-wide coupon disclosures.
+* **Verification:** `php -l` verified on `RestAPI/v1/CouponController.php`, `RestAPI/v3/seller/CouponController.php`, and `RestAPI/v3/seller/POSController.php` — 0 errors.
+
 ### [2026-08-19 09:17 UTC] Mobile Product Review Purchase Verification, Review Modification IDOR & Password Reset Identity Fallback [backend]
 * **Component:** Laravel Web Backend (`backend/vmarket-web/`)
 * **Action:** Deep scan across Mobile Customer REST API controllers identified and fixed arbitrary unpurchased product review submissions, cross-customer review modification/image deletion IDORs, and phone/email verification column resolution on password resets.

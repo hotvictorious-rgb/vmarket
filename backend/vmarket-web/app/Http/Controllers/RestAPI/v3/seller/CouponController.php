@@ -228,8 +228,9 @@ class CouponController extends Controller
                     ->orWhere('l_name', 'like', "%{$name}%");
             }
         })
-            ->whereNotNull(['f_name', 'l_name', 'phone'])
+            ->whereNotNull(['f_name', 'l_name'])
             ->whereNotIn('id', [0])
+            ->select('id', 'f_name', 'l_name')
             ->take(10)
             ->get()->toArray();
 

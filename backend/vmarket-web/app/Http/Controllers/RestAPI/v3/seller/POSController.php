@@ -156,7 +156,8 @@ class POSController extends Controller
                     ->orWhere('l_name', 'like', "%{$search}%");
             });
         })
-            ->whereNotNull(['f_name', 'l_name', 'phone'])
+            ->whereNotNull(['f_name', 'l_name'])
+            ->select('id', 'f_name', 'l_name', 'phone')
             ->take(10)
             ->get()
             ->toArray();
