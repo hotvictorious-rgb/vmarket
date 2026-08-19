@@ -161,29 +161,49 @@ class DeliveryManWalletController extends BaseController
      */
     public function collectCash(DeliveryManWalletRequest $request, string|int $id): RedirectResponse
     {
-        $wallet = $this->deliveryManWalletRepo->getFirstWhere(params: ['delivery_man_id' => $id]);
-        if (empty($wallet) || currencyConverter($request->input('amount')) > $wallet['cash_in_hand']) {
-            ToastMagic::warning(translate('receive_amount_can_not_be_more_than_cash_in_hand') . '!');
+        $vendorId = auth('seller')->id();
+        // [AI] Ownership Guard: Deliveryman must belong to the authenticated vendor
+        $deliveryMan = $this->deliveryManRepo->getFirstWhere(params: ['id' => $id, 'seller_id' => $vendorId]);
+        if (!$deliveryMan) {
+            ToastMagic::error(translate('unauthorized_access'));
             return redirect()->back();
         }
-        $amount = currencyConverter($request->get('amount', 0));
-        $wallet['cash_in_hand'] -= currencyConverter($request->get('amount', 0));
-        $this->deliveryManTransactionRepo->add(
-            $this->deliveryManTransactionService->getDeliveryManTransactionData(
-                amount: $amount,
-                addedBy: 'seller',
-                id: $id,
-                transactionType: 'cash_in_hand')
-        );
-        $deliveryMan = $this->deliveryManRepo->getFirstWhere(params: ['id' => $id]);
-        if ($wallet->update()) {
+
+        try {
+            $amount = currencyConverter($request->get('amount', 0));
+            $status = \Illuminate\Support\Facades\DB::transaction(function () use ($id, $amount) {
+                // [AI] Pessimistic lock on delivery man wallet to prevent concurrent over-collection
+                $wallet = \App\Models\DeliveryManWallet::where('delivery_man_id', $id)->lockForUpdate()->first();
+                if (!$wallet || $amount > $wallet->cash_in_hand) {
+                    return false;
+                }
+
+                $wallet->cash_in_hand -= $amount;
+                $wallet->save();
+
+                $this->deliveryManTransactionRepo->add(
+                    $this->deliveryManTransactionService->getDeliveryManTransactionData(
+                        amount: $amount,
+                        addedBy: 'seller',
+                        id: $id,
+                        transactionType: 'cash_in_hand')
+                );
+                return true;
+            });
+
+            if (!$status) {
+                ToastMagic::warning(translate('receive_amount_can_not_be_more_than_cash_in_hand') . '!');
+                return redirect()->back();
+            }
+
             if (!empty($deliveryMan['fcm_token'])) {
                 CashCollectEvent::dispatch('cash_collect_by_seller_message', 'delivery_man', $deliveryMan['app_language'] ?? getDefaultLanguage(), $amount, $deliveryMan['fcm_token']);
             }
             ToastMagic::success(translate('amount_receive_successfully') . '!');
             return back();
+        } catch (\Exception $e) {
+            ToastMagic::error(translate('amount_receive_failed') . '!');
+            return back();
         }
-        ToastMagic::error(translate('amount_receive_failed') . '!');
-        return back();
     }
 }

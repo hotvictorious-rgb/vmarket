@@ -65,13 +65,22 @@ class EmergencyContactController extends BaseController
 
     public function getUpdateView($id): JsonResponse
     {
-        $emergencyContact = $this->emergencyContactRepo->getFirstWhere(params: ['id' => $id]);
+        // [AI] Ownership Guard: Only fetch emergency contact belonging to authenticated vendor
+        $emergencyContact = $this->emergencyContactRepo->getFirstWhere(params: ['id' => $id, 'user_id' => auth('seller')->id()]);
+        if (!$emergencyContact) {
+            return response()->json(['error' => translate('unauthorized_access')]);
+        }
         return response()->json(['view' => view('vendor-views.delivery-man.emergency-contact._update-emergency-contact', compact('emergencyContact'))->render()]);
-
     }
 
     public function update(EmergencyContactRequest $request, $id): RedirectResponse
     {
+        // [AI] Ownership Guard: Only update emergency contact belonging to authenticated vendor
+        $emergencyContact = $this->emergencyContactRepo->getFirstWhere(params: ['id' => $id, 'user_id' => auth('seller')->id()]);
+        if (!$emergencyContact) {
+            ToastMagic::error(translate('unauthorized_access'));
+            return back();
+        }
         $this->emergencyContactRepo->update(id: $id, data: $this->emergencyContactService->getEmergencyContactUpdateData(request: $request));
         ToastMagic::success(translate('emergency_contact_update_successfully'));
         return back();

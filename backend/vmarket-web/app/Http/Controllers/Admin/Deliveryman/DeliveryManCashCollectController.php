@@ -54,20 +54,41 @@ class DeliveryManCashCollectController extends BaseController
 
     public function getCashReceive(DeliveryManCashCollectRequest $request, $id, DeliveryManCashCollectService $deliveryManCashCollectService): RedirectResponse
     {
-        $wallet = $this->deliveryManWalletRepo->getFirstWhere(params: ['delivery_man_id' => $id]);
-        if (empty($wallet) || currencyConverter(amount: $request['amount']) > $wallet['cash_in_hand']) {
-            ToastMagic::warning(translate('receive_amount_can_not_be_more_than_cash_in_hand'));
+        $deliveryMan = $this->deliveryManRepo->getFirstWhere(params: ['id' => $id]);
+        if (!$deliveryMan) {
+            ToastMagic::error(translate('deliveryman_not_found'));
             return back();
         }
-        $deliveryMan = $this->deliveryManRepo->getFirstWhere(params: ['id' => $id]);
-        $dataArray = $deliveryManCashCollectService->getIdentityImages(request: $request, deliveryMan: $deliveryMan);
-        $this->deliveryManTransactionRepo->add(data: $dataArray);
-        $amount = $wallet['cash_in_hand'] - currencyConverter(amount: $request['amount']);
-        $this->deliveryManWalletRepo->update(id: $wallet['id'], data: ['cash_in_hand' => $amount]);
-        if (!empty($deliveryMan['fcm_token'])) {
-            CashCollectEvent::dispatch('cash_collect_by_admin_message', 'delivery_man', $deliveryMan['app_language'] ?? getDefaultLanguage(), currencyConverter(amount: $request['amount']), $deliveryMan['fcm_token']);
+
+        try {
+            $convertedAmount = currencyConverter(amount: $request['amount']);
+            $status = \Illuminate\Support\Facades\DB::transaction(function () use ($request, $id, $deliveryManCashCollectService, $deliveryMan, $convertedAmount) {
+                // [AI] Pessimistic lock on delivery man wallet to prevent concurrent over-collection
+                $wallet = \App\Models\DeliveryManWallet::where('delivery_man_id', $id)->lockForUpdate()->first();
+                if (!$wallet || $convertedAmount > $wallet->cash_in_hand) {
+                    return false;
+                }
+
+                $dataArray = $deliveryManCashCollectService->getIdentityImages(request: $request, deliveryMan: $deliveryMan);
+                $this->deliveryManTransactionRepo->add(data: $dataArray);
+                $amount = $wallet->cash_in_hand - $convertedAmount;
+                $this->deliveryManWalletRepo->update(id: $wallet->id, data: ['cash_in_hand' => $amount]);
+                return true;
+            });
+
+            if (!$status) {
+                ToastMagic::warning(translate('receive_amount_can_not_be_more_than_cash_in_hand'));
+                return back();
+            }
+
+            if (!empty($deliveryMan['fcm_token'])) {
+                CashCollectEvent::dispatch('cash_collect_by_admin_message', 'delivery_man', $deliveryMan['app_language'] ?? getDefaultLanguage(), $convertedAmount, $deliveryMan['fcm_token']);
+            }
+            ToastMagic::success(translate('amount_receive_successfully'));
+        } catch (\Exception $e) {
+            ToastMagic::error(translate('something_went_wrong_please_try_again'));
         }
-        ToastMagic::success(translate('amount_receive_successfully'));
+
         return back();
     }
 

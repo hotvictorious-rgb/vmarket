@@ -7,6 +7,15 @@ Always append your completed tasks here in chronological order at the top. Forma
 `### [YYYY-MM-DD HH:MM UTC] <Feature / Fix Title> [<Component Scope>]`
 Include the specific app/component modified and bullet points detailing the exact technical changes.
 
+### [2026-08-19 08:25 UTC] Deliveryman Cash Collection Concurrency & Vendor Emergency Contact IDOR Hardening [backend]
+* **Component:** Laravel Web Backend (`backend/vmarket-web/`)
+* **Action:** Resolved financial race conditions in rider cash collection workflows across Admin and Vendor panels, and closed IDOR vulnerabilities in vendor deliveryman emergency contacts.
+* **Fixes Applied:**
+  - **[CRITICAL] Admin Deliveryman Cash Collect Race Condition (`Admin/Deliveryman/DeliveryManCashCollectController::getCashReceive`):** Wrapped balance verification, transaction recording, and wallet cash deduction inside `DB::transaction()` with pessimistic row locks (`lockForUpdate()`) on `DeliveryManWallet` to prevent concurrent over-collection.
+  - **[CRITICAL] Vendor Deliveryman Cash Collect IDOR & Race Condition (`Vendor/DeliveryMan/DeliveryManWalletController::collectCash`):** Enforced `seller_id == auth('seller')->id()` ownership check on target deliveryman and wrapped wallet cash deduction in a `DB::transaction()` with `lockForUpdate()`.
+  - **[CRITICAL] Vendor Emergency Contact IDOR (`Vendor/DeliveryMan/EmergencyContactController::getUpdateView`, `update`):** Added `user_id == auth('seller')->id()` verification to prevent vendors from viewing or tampering with emergency contact records belonging to other vendors.
+* **Verification:** `php -l` verified on `DeliveryManCashCollectController.php`, `DeliveryManWalletController.php`, and `EmergencyContactController.php` — 0 errors.
+
 ### [2026-08-19 08:22 UTC] Coupon Usage Limit Null Safety & Digital Product Download OTP Throttling [backend]
 * **Component:** Laravel Web Backend (`backend/vmarket-web/`)
 * **Action:** Resolved null-pointer exception on exhausted coupon application and added brute-force rate-limiting on digital product download OTP endpoints.
