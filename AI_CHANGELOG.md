@@ -7,6 +7,28 @@ Always append your completed tasks here in chronological order at the top. Forma
 `### [YYYY-MM-DD HH:MM UTC] <Feature / Fix Title> [<Component Scope>]`
 Include the specific app/component modified and bullet points detailing the exact technical changes.
 
+### [2026-08-19 01:15 UTC] Vendor Packing Slips, Official Parcel Waybill Labels & Corridor Batch Manifests [backend]
+* **Component:** Laravel Web Backend (`backend/vmarket-web/`)
+* **Action:** Implemented complete packing slip, shipping waybill label, and corridor batch manifest infrastructure across Vendor Dashboard, Admin Dispatch Portal, and logistics pipelines with strict privacy and price blindness guarantees.
+* **Core Technical Implementations:**
+  - **Vendor Packing & Fulfillment Slip:**
+    - Created printable view `resources/views/vendor-views/order/packing-slip.blade.php` tailored for standard A4 and 80mm thermal printers.
+    - Displays order details, items, sizes, SKUs, 4-digit pickup handshake OTP, and corridor routing.
+    - **Strict Vendor-Buyer Isolation**: Completely strips buyer personal phone numbers and private addresses (shows only destination landmark).
+    - **Strict Vendor Price Blindness**: Conceals customer retail prices; displays only the vendor's net desired payout (`purchase_price`).
+    - Added `generatePackingSlip()` method in `Vendor/Order/OrderController.php` and registered route in `routes/vendor/routes.php`.
+    - Added "Packing Slip" action button on vendor order details view (`vendor-views/order/order-details.blade.php`).
+  - **Official Parcel Shipping Waybill Label (4x6 / Thermal Sticker):**
+    - Created `resources/views/admin-views/delivery/waybill-label.blade.php` formatted for 4x6 inch (100x150mm) adhesive parcel stickers.
+    - Displays bold destination landmark (e.g. `UNIUYO TOWN CAMPUS`), order barcode, pickup OTP, recipient name + initial, and security seal warning.
+    - Added `printWaybill()` in `DispatchPortalController.php` and registered route in `routes/admin/routes.php`.
+  - **Corridor Batch Dispatch Manifest (Rider Trip Sheet):**
+    - Created `resources/views/admin-views/delivery/batch-manifest.blade.php` formatted for standard A4 rider clipboards.
+    - Summarizes all orders along a single corridor run with recipient details, package contents, payment methods, individual rider earnings, and delivery OTP check-boxes.
+    - Added `printBatchManifest()` in `DispatchPortalController.php` and registered route in `routes/admin/routes.php`.
+    - Added "Trip Manifest" and "Waybill" action buttons directly on corridor cards and order rows in `dispatch-portal.blade.php`.
+* **Verification:** `php -l` on all PHP files passed with 0 errors.
+
 ### [2026-08-19 00:30 UTC] Delivery Portal & Landmark Hub Audit, Live Edit Modals & Script Stack Fixes [backend]
 * **Component:** Laravel Web Backend (`backend/vmarket-web/`)
 * **Action:** Performed deep audit on the Delivery Corridor & Batch Dispatch Portal and Geographic Hub / Landmark Management, resolving script stack rendering, adding live edit modals, migrating to ToastMagic, and hardening order origin hub fallback.

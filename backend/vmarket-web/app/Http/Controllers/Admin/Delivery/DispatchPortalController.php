@@ -170,4 +170,62 @@ class DispatchPortalController extends Controller
         ToastMagic::success(translate("Successfully assigned {$selectedCount} order(s) to {$deliveryMan->f_name} {$deliveryMan->l_name} (Batch: {$batchId})"));
         return back();
     }
+
+    /**
+     * Print Corridor Batch Dispatch Manifest (Rider Trip Sheet)
+     */
+    public function printBatchManifest(Request $request): View|RedirectResponse
+    {
+        $orderIds = $request->get('order_ids');
+        if (is_string($orderIds)) {
+            $orderIds = explode(',', $orderIds);
+        }
+
+        if (empty($orderIds)) {
+            ToastMagic::error(translate('No orders selected for manifest'));
+            return back();
+        }
+
+        $orders = Order::with(['seller.shop.deliveryHub', 'originHub', 'destinationHub.city.state', 'deliveryMan', 'customer', 'details'])
+            ->whereIn('id', $orderIds)
+            ->get();
+
+        if ($orders->isEmpty()) {
+            ToastMagic::error(translate('No matching orders found'));
+            return back();
+        }
+
+        $firstOrder = $orders->first();
+        $batchId = $firstOrder->batch_dispatch_id ?? ('MANIFEST-' . strtoupper(Str::random(6)));
+        $originName = $firstOrder->originHub->name ?? ($firstOrder->seller->shop->deliveryHub->name ?? 'Plaza / Central Sorting Hub');
+        $destName = $firstOrder->destinationHub->name ?? 'General Landmark Corridor';
+        $destCity = $firstOrder->destinationHub->city->name ?? 'Uyo';
+        $deliveryMan = $firstOrder->deliveryMan;
+
+        $companyName = getWebConfig(name: 'company_name') ?? 'Victorious MARKET';
+        $companyPhone = getWebConfig(name: 'company_phone');
+
+        return view('admin-views.delivery.batch-manifest', compact(
+            'orders', 'batchId', 'originName', 'destName', 'destCity', 'deliveryMan', 'companyName', 'companyPhone'
+        ));
+    }
+
+    /**
+     * Print Official Parcel Shipping Waybill Label (4x6 / Thermal Sticker)
+     */
+    public function printWaybill(string|int $id): View|RedirectResponse
+    {
+        $order = Order::with(['seller.shop.deliveryHub', 'originHub', 'destinationHub.city.state', 'deliveryMan', 'customer', 'details'])
+            ->find($id);
+
+        if (!$order) {
+            ToastMagic::error(translate('Order not found'));
+            return back();
+        }
+
+        $companyName = getWebConfig(name: 'company_name') ?? 'Victorious MARKET';
+        $companyPhone = getWebConfig(name: 'company_phone');
+
+        return view('admin-views.delivery.waybill-label', compact('order', 'companyName', 'companyPhone'));
+    }
 }

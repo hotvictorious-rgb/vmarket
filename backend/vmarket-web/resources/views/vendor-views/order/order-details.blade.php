@@ -154,6 +154,11 @@
                                             <i class="fi fi-sr-pencil fs-12 d-flex"></i> {{ translate('Edit_Products') }}
                                         </buton>
                                     @endif
+                                    <a class="btn btn-outline--primary btn-sm text-nowrap" target="_blank"
+                                       href="{{ route('vendor.orders.generate-packing-slip', [$order['id']]) }}"
+                                       title="{{ translate('Print Vendor Packing Manifest') }}">
+                                        <i class="tio-receipt mr-1"></i> {{ translate('Packing_Slip') }}
+                                    </a>
                                     <a class="btn btn--primary btn-sm text-nowrap" target="_blank"
                                        href="{{ route('vendor.orders.generate-invoice', [$order['id']]) }}">
                                         <i class="tio-print mr-1"></i> {{ translate('print__Invoice') }}

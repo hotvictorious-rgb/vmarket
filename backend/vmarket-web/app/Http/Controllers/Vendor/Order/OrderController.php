@@ -419,6 +419,31 @@ class OrderController extends BaseController
         $this->generatePdf(view: $mpdf_view, filePrefix: 'order_invoice_', filePostfix: $order['id'], pdfType: 'invoice');
     }
 
+    /**
+     * Generate Vendor Packing Slip (Buyer-Isolated & Price-Blind)
+     */
+    public function generatePackingSlip(string|int $id): View|RedirectResponse
+    {
+        $vendorId = auth('seller')->id();
+        $params = ['id' => $id, 'seller_id' => $vendorId, 'seller_is' => 'seller'];
+        $relations = ['details.productAllStatus', 'originHub.city.state', 'destinationHub.city.state', 'seller.shop'];
+        $order = $this->orderRepo->getFirstWhere(params: $params, relations: $relations);
+
+        if (!$order) {
+            ToastMagic::error(translate('Order_not_found'));
+            return back();
+        }
+
+        $companyPhone = getWebConfig(name: 'company_phone');
+        $companyEmail = getWebConfig(name: 'company_email');
+        $companyName = getWebConfig(name: 'company_name');
+        $companyWebLogo = getWebConfig(name: 'company_web_logo');
+
+        return view('vendor-views.order.packing-slip', compact(
+            'order', 'companyPhone', 'companyEmail', 'companyName', 'companyWebLogo'
+        ));
+    }
+
     public function getView(string|int $id, DeliveryCountryCodeService $service, OrderService $orderService): View|RedirectResponse
     {
         $vendorId = auth('seller')->id();

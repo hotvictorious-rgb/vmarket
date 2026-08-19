@@ -155,6 +155,7 @@ Route::group(['middleware' => ['maintenance_mode', 'actch:admin_panel']], functi
                     Route::get('customers', 'getCustomers')->name('customers');
                     Route::get('export-excel/{status}', 'exportList')->name('export-excel');
                     Route::get('generate-invoice/{id}', 'generateInvoice')->name('generate-invoice');
+                    Route::get('generate-packing-slip/{id}', 'generatePackingSlip')->name('generate-packing-slip');
                     Route::get('details/{id}', 'getView')->name('details');
                     Route::post('address-update', 'updateAddress')->name('address-update');// update address from order details
                     Route::post('payment-status', 'updatePaymentStatus')->name('payment-status');

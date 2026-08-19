@@ -131,6 +131,11 @@
                                 <div class="d-flex align-items-center gap-3">
                                     <span class="badge badge-soft-dark">{{ count($corridor['orders']) }} {{ translate('Orders') }}</span>
                                     <span class="font-weight-bold text-dark">₦{{ number_format($corridor['total_amount'], 2) }}</span>
+                                    @php($orderIdList = implode(',', array_map(function($o) { return $o->id; }, $corridor['orders'])))
+                                    <a href="{{ route('admin.dispatch-portal.print-manifest', ['order_ids' => $orderIdList]) }}" 
+                                       target="_blank" class="btn btn-outline-primary btn-xs font-weight-bold" title="{{ translate('Print Rider Corridor Manifest') }}">
+                                        <i class="tio-print mr-1"></i> {{ translate('Trip Manifest') }}
+                                    </a>
                                 </div>
                             </div>
                             <div class="table-responsive">
@@ -146,6 +151,7 @@
                                             <th>{{ translate('Pickup OTP') }}</th>
                                             <th>{{ translate('Assigned Rider') }}</th>
                                             <th>{{ translate('Status') }}</th>
+                                            <th>{{ translate('Action') }}</th>
                                         </tr>
                                     </thead>
                                     <tbody>
@@ -193,6 +199,11 @@
                                                     <span class="badge badge-{{ $order->order_status == 'confirmed' ? 'info' : ($order->order_status == 'processing' ? 'warning' : 'primary') }}">
                                                         {{ translate($order->order_status) }}
                                                     </span>
+                                                </td>
+                                                <td>
+                                                    <a href="{{ route('admin.dispatch-portal.print-waybill', [$order->id]) }}" target="_blank" class="btn btn-outline-info btn-xs square-btn" title="{{ translate('Print Waybill Sticker') }}">
+                                                        <i class="tio-print"></i>
+                                                    </a>
                                                 </td>
                                             </tr>
                                         @endforeach
