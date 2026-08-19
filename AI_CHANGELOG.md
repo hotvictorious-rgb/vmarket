@@ -7,6 +7,14 @@ Always append your completed tasks here in chronological order at the top. Forma
 `### [YYYY-MM-DD HH:MM UTC] <Feature / Fix Title> [<Component Scope>]`
 Include the specific app/component modified and bullet points detailing the exact technical changes.
 
+### [2026-08-19 05:40 UTC] Delivery Rider Mobile Waybill Label Printing & REST API Integration [backend]
+* **Component:** Laravel Web Backend (`backend/vmarket-web/`)
+* **Action:** Implemented mobile waybill label generation and printing capabilities directly for Delivery Riders, enabling on-the-spot thermal printing upon merchant pickup.
+* **Core Technical Implementations:**
+  - **Delivery Man REST API Endpoint:** Added `get_waybill_label` in `app/Http/Controllers/RestAPI/v2/delivery_man/DeliveryManController.php` validating rider assignment (`delivery_man_id == $deliveryMan->id`) and returning the 4x6" / thermal responsive waybill sticker.
+  - **Route Registration:** Registered `GET /api/v2/delivery-man/get-waybill-label` in `routes/rest_api/v2/api.php` under `delivery_man_auth` middleware.
+* **Verification:** Validated all modified files via `php -l` — 0 errors.
+
 ### [2026-08-19 05:25 UTC] Customer REST API & Storefront Price Isolation Hardening [backend]
 * **Component:** Laravel Web Backend (`backend/vmarket-web/`)
 * **Action:** Hardened customer REST API serializers and endpoints to guarantee total isolation of vendor payout prices (`purchase_price`), ensuring customers and external network inspectors strictly receive the platform selling price (`unit_price`).

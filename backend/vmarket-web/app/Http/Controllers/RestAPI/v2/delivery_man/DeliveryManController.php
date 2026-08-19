@@ -887,6 +887,30 @@ class DeliveryManController extends Controller
         ], 200);
     }
 
+    /**
+     * Generate / Print Waybill Label for assigned order
+     */
+    public function get_waybill_label(Request $request): \Illuminate\Contracts\View\View|\Illuminate\Http\JsonResponse
+    {
+        $deliveryMan = $request['delivery_man'];
+        $orderId = $request->get('order_id');
+
+        $order = Order::with(['customer', 'originHub.city.state', 'destinationHub.city.state', 'seller.shop.deliveryHub'])
+            ->where('id', $orderId)
+            ->where(function ($query) use ($deliveryMan) {
+                $query->where('delivery_man_id', $deliveryMan['id'])
+                      ->orWhereNull('delivery_man_id');
+            })
+            ->first();
+
+        if (!$order) {
+            return response()->json(['message' => translate('Order not found or not assigned to you')], 404);
+        }
+
+        $companyName = getWebConfig(name: 'company_name') ?? 'Victorious MARKET';
+        return view('admin-views.delivery.waybill-label', compact('order', 'companyName'));
+    }
+
     /** Resend OTP Verification */
     public function resend_verification_code(Request $request):JsonResponse
     {
