@@ -266,98 +266,110 @@ class POSController extends Controller
             ]);
         }
 
-        if ($paymentMethod == 'wallet' && $customerId != 0) {
-            $customerBalance = $this->customerRepo->getFirstWhere(params: ['id' => $customerId]) ?? 0;
-            if ($customerBalance['wallet_balance'] >= $paidAmount) {
-                $this->createWalletTransaction(user_id: $customerId, amount: floatval($paidAmount), transaction_type: 'order_place', reference: 'order_place_in_pos');
-            } else {
-                return response()->json([
-                    'need_balance' => true,
-                    'message' => translate('need_Sufficient_Amount_Balance')
-                ]);
-            }
-        }
-
         $cartsTotalAmount = 0;
         $generateOrderID = self::getOrderNewId();
 
-        if ($request['modified_cart']) {
-            foreach ($request['modified_cart'] as $cartItem) {
-                if (is_array($cartItem)) {
-                    $product = Product::where(['id' => $cartItem['id']])->with(['digitalVariation', 'clearanceSale' => function ($query) {
-                        return $query->active();
-                    }])->withCount('reviews')->first();
-                    if (!$product || $cartItem['quantity'] > $product['current_stock']) {
-                        return response()->json([
-                            'product_not_available' => true,
-                            'message' => $product['name'] . ' ' . translate('not_available_for_order_place')
-                        ]);
+        try {
+            DB::beginTransaction();
+
+            if ($paymentMethod == 'wallet' && $customerId != 0) {
+                $customerBalance = $this->customerRepo->getFirstWhere(params: ['id' => $customerId]) ?? 0;
+                if ($customerBalance['wallet_balance'] >= $paidAmount) {
+                    $this->createWalletTransaction(user_id: $customerId, amount: floatval($paidAmount), transaction_type: 'order_place', reference: 'order_place_in_pos');
+                } else {
+                    DB::rollBack();
+                    return response()->json([
+                        'need_balance' => true,
+                        'message' => translate('need_Sufficient_Amount_Balance')
+                    ]);
+                }
+            }
+
+            if ($request['modified_cart']) {
+                foreach ($request['modified_cart'] as $cartItem) {
+                    if (is_array($cartItem)) {
+                        // [AI] Product Ownership Guard: Ensure vendor only adds their own products to POS orders
+                        $product = Product::where(['id' => $cartItem['id'], 'added_by' => 'seller', 'user_id' => $seller['id']])->with(['digitalVariation', 'clearanceSale' => function ($query) {
+                            return $query->active();
+                        }])->withCount('reviews')->first();
+                        if (!$product || $cartItem['quantity'] > $product['current_stock']) {
+                            DB::rollBack();
+                            return response()->json([
+                                'product_not_available' => true,
+                                'message' => ($product['name'] ?? translate('Product')) . ' ' . translate('not_available_for_order_place')
+                            ]);
+                        }
+                    }
+                }
+
+                foreach ($request['modified_cart'] as $cartItem) {
+                    if (is_array($cartItem)) {
+                        $product = Product::where(['id' => $cartItem['id'], 'added_by' => 'seller', 'user_id' => $seller['id']])->with(['digitalVariation', 'clearanceSale' => function ($query) {
+                            return $query->active();
+                        }])->withCount('reviews')->first();
+                        if ($product) {
+                            $getProductArray = self::getOrderDetailsAddData(cartItem: $cartItem, product: $product);
+                            $cartsTotalAmount += $cartItem['discounted_price'] * $cartItem['quantity'];
+                            $cartsTotalAmount += $cartItem['applied_tax_amount'] * $cartItem['quantity'];
+                            $cartsTotalAmount -= $cartItem['coupon_discount'] ?? 0;
+                            $cartsTotalAmount -= $cartItem['extra_discount'] ?? 0;
+
+                            $orderDetailsData = [
+                                'order_id' => $generateOrderID,
+                                'product_id' => $cartItem['id'],
+                                'product_details' => $getProductArray['product'],
+                                'qty' => $cartItem['quantity'],
+                                'price' => $cartItem['price'],
+                                'seller_id' => $product['user_id'],
+                                'tax' => $cartItem['applied_tax_amount'] * $cartItem['quantity'],
+                                'tax_model' => $taxConfig['is_included'] ? 'include' : 'exclude',
+                                'discount' => $cartItem['discount'] * $cartItem['quantity'],
+                                'discount_type' => 'discount_on_product',
+                                'delivery_status' => 'delivered',
+                                'payment_status' => 'paid',
+                                'variant' => $getProductArray['variant'],
+                                'variation' => json_encode($cartItem['variation']),
+                                'created_at' => now(),
+                                'updated_at' => now()
+                            ];
+                            self::getProductStockCalculate(cartItem: $cartItem, product: $product);
+                            DB::table('order_details')->insert($orderDetailsData);
+                        }
                     }
                 }
             }
 
-            foreach ($request['modified_cart'] as $cartItem) {
-                if (is_array($cartItem)) {
-                    $product = Product::where(['id' => $cartItem['id']])->with(['digitalVariation', 'clearanceSale' => function ($query) {
-                        return $query->active();
-                    }])->withCount('reviews')->first();
-                    if ($product) {
-                        $getProductArray = self::getOrderDetailsAddData(cartItem: $cartItem, product: $product);
-                        $cartsTotalAmount += $cartItem['discounted_price'] * $cartItem['quantity'];
-                        $cartsTotalAmount += $cartItem['applied_tax_amount'] * $cartItem['quantity'];
-                        $cartsTotalAmount -= $cartItem['coupon_discount'] ?? 0;
-                        $cartsTotalAmount -= $cartItem['extra_discount'] ?? 0;
+            $orderData = [
+                'id' => $generateOrderID,
+                'customer_id' => $customerId,
+                'customer_type' => 'customer',
+                'payment_status' => 'paid',
+                'order_status' => 'delivered',
+                'seller_id' => $seller->id,
+                'seller_is' => 'seller',
+                'payment_method' => $paymentMethod,
+                'order_type' => 'POS',
+                'checked' => 1,
+                'extra_discount' => $extraDiscount ?? 0,
+                'extra_discount_type' => $extraDiscountType ?? null,
+                'order_amount' => $cartsTotalAmount,
+                'total_tax_amount' => $request['total_tax_amount'] ?? 0,
+                'tax_type' => $taxConfig['SystemTaxVatType'],
+                'paid_amount' => $paidAmount,
+                'discount_amount' => currencyConverter(amount: $couponDiscountAmount ?? 0),
+                'coupon_code' => $couponCode ?? null,
+                'discount_type' => (isset($carts['coupon_code']) && $carts['coupon_code']) ? 'coupon_discount' : NULL,
+                'coupon_discount_bearer' => $carts['coupon_bearer'] ?? 'inhouse',
+                'created_at' => now(),
+                'updated_at' => now(),
+            ];
+            DB::table('orders')->insertGetId($orderData);
 
-                        $orderDetailsData = [
-                            'order_id' => $generateOrderID,
-                            'product_id' => $cartItem['id'],
-                            'product_details' => $getProductArray['product'],
-                            'qty' => $cartItem['quantity'],
-                            'price' => $cartItem['price'],
-                            'seller_id' => $product['user_id'],
-                            'tax' => $cartItem['applied_tax_amount'] * $cartItem['quantity'],
-                            'tax_model' => $taxConfig['is_included'] ? 'include' : 'exclude',
-                            'discount' => $cartItem['discount'] * $cartItem['quantity'],
-                            'discount_type' => 'discount_on_product',
-                            'delivery_status' => 'delivered',
-                            'payment_status' => 'paid',
-                            'variant' => $getProductArray['variant'],
-                            'variation' => json_encode($cartItem['variation']),
-                            'created_at' => now(),
-                            'updated_at' => now()
-                        ];
-                        self::getProductStockCalculate(cartItem: $cartItem, product: $product);
-                        DB::table('order_details')->insert($orderDetailsData);
-                    }
-                }
-            }
+            DB::commit();
+        } catch (\Throwable $e) {
+            DB::rollBack();
+            return response()->json(['message' => translate('order_placement_failed') . ': ' . $e->getMessage()], 403);
         }
-
-        $orderData = [
-            'id' => $generateOrderID,
-            'customer_id' => $customerId,
-            'customer_type' => 'customer',
-            'payment_status' => 'paid',
-            'order_status' => 'delivered',
-            'seller_id' => $seller->id,
-            'seller_is' => 'seller',
-            'payment_method' => $paymentMethod,
-            'order_type' => 'POS',
-            'checked' => 1,
-            'extra_discount' => $extraDiscount ?? 0,
-            'extra_discount_type' => $extraDiscountType ?? null,
-            'order_amount' => $cartsTotalAmount,
-            'total_tax_amount' => $request['total_tax_amount'] ?? 0,
-            'tax_type' => $taxConfig['SystemTaxVatType'],
-            'paid_amount' => $paidAmount,
-            'discount_amount' => currencyConverter(amount: $couponDiscountAmount ?? 0),
-            'coupon_code' => $couponCode ?? null,
-            'discount_type' => (isset($carts['coupon_code']) && $carts['coupon_code']) ? 'coupon_discount' : NULL,
-            'coupon_discount_bearer' => $carts['coupon_bearer'] ?? 'inhouse',
-            'created_at' => now(),
-            'updated_at' => now(),
-        ];
-        DB::table('orders')->insertGetId($orderData);
 
         if ($isDigitalProduct) {
             $order = Order::with(['details.productAllStatus', 'customer'])->find($generateOrderID);
@@ -384,10 +396,11 @@ class POSController extends Controller
         }
 
         $orders = Order::with('details', 'shipping')->where(['seller_id' => $seller['id']])->find($request['id']);
-        if ($orders) {
-            foreach ($orders['details'] as $order) {
-                $order['product_details'] = Helpers::product_data_formatting(json_decode($order['product_details'], true));
-            }
+        if (!$orders) {
+            return response()->json(['message' => translate('order_not_found')], 404);
+        }
+        foreach ($orders['details'] as $order) {
+            $order['product_details'] = Helpers::product_data_formatting(json_decode($order['product_details'], true));
         }
 
         return response()->json($orders, 200);

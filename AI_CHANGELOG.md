@@ -7,6 +7,15 @@ Always append your completed tasks here in chronological order at the top. Forma
 `### [YYYY-MM-DD HH:MM UTC] <Feature / Fix Title> [<Component Scope>]`
 Include the specific app/component modified and bullet points detailing the exact technical changes.
 
+### [2026-08-19 09:14 UTC] Mobile Vendor POS Order Placement Atomicity & Customer Chat Admin Message Seen Fix [backend]
+* **Component:** Laravel Web Backend (`backend/vmarket-web/`)
+* **Action:** Deep scan across Mobile Vendor POS and Customer Chatting controllers identified and fixed order placement transaction rollbacks, cross-vendor POS catalog stock depletion, and missing admin seen-message handling.
+* **Fixes Applied:**
+  - **[CRITICAL] Mobile POS Order Placement Atomicity & Stock Depletion IDOR (`RestAPI/v3/seller/POSController::place_order`):** Wrapped entire POS order placement flow in `DB::beginTransaction()` / `DB::commit()` / `DB::rollback()` to prevent wallet deduction loss on item insert failures, and enforced strict product ownership checks (`added_by == 'seller'`, `user_id == $seller['id']`) on cart items to prevent vendors from placing POS orders that deplete competitor stock.
+  - **[FIX] Customer Admin Chat Message Seen 403 Error (`RestAPI/v1/ChatController::seen_message`):** Added support for `$type == 'admin'` with `$id_param = 'admin_id'` in `seen_message`, resolving 403 Invalid Chatting Type errors when customers acknowledge support messages.
+  - **[FIX] Vendor POS Invoice 404 Response (`RestAPI/v3/seller/POSController::get_invoice`):** Enforced proper 404 JSON error response when requested POS invoice does not exist or does not belong to the seller.
+* **Verification:** `php -l` verified on `RestAPI/v1/ChatController.php` and `RestAPI/v3/seller/POSController.php` — 0 errors.
+
 ### [2026-08-19 09:03 UTC] Digital Payment & Wallet Add Funds Idempotency & Double Crediting Guard [backend]
 * **Component:** Laravel Web Backend (`backend/vmarket-web/`)
 * **Action:** Deep scan across payment webhook callbacks and wallet helpers identified and hardened payment request idempotency against concurrent webhook and browser redirect execution.

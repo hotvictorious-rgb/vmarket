@@ -310,6 +310,8 @@ class ChatController extends Controller
             $id_param = 'delivery_man_id';
         } elseif ($type == 'seller') {
             return response()->json(['message' => 'Customer-to-Vendor chat is disabled.'], 403);
+        } elseif ($type == 'admin') {
+            $id_param = 'admin_id';
         } else {
             return response()->json(['message' => 'Invalid Chatting Type'], 403);
         }
