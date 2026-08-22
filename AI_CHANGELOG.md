@@ -7,6 +7,13 @@ Always append your completed tasks here in chronological order at the top. Forma
 `### [YYYY-MM-DD HH:MM UTC] <Feature / Fix Title> [<Component Scope>]`
 Include the specific app/component modified and bullet points detailing the exact technical changes.
 
+### [2026-08-22 15:49 UTC] WhatsApp Conversational Commerce Engine (Chat-to-Order, Cart, Coupons & Paystack) [backend]
+* **Component:** Laravel Backend (`backend/vmarket-web/app/Services/WhatsAppOrderService.php`, `WhatsAppAiService.php`)
+* **Action:** Built a native Conversational Commerce (Chat-to-Order) engine enabling customers to shop, manage cart, apply promo coupons, place formal orders, and pay directly on WhatsApp:
+  - **Conversational Ordering Service (`WhatsAppOrderService.php`):** Implemented `autoRegisterCustomer`, `addToCart`, `getCartSummary`, `clearCart`, `applyCoupon`, and `placeOrder` with atomic inventory lock (`->lockForUpdate()`), authoritative backend pricing calculations, and universal 6-digit Delivery OTP generation (`verification_code = rand(100000, 999999)`).
+  - **Dynamic Paystack Payment Sessions:** Automated generation of tamper-proof Paystack checkout URLs (`/pay/order/{id}`) for instant Card, USSD, and Bank Transfer collections on WhatsApp.
+  - **AI Function Tools Expansion (`WhatsAppAiService.php`):** Added 5 new tools (`add_to_cart`, `view_cart`, `clear_cart`, `apply_coupon`, `place_order`) to the Gemini Flash reasoning loop with complete omnichannel database synchronization across the Web Storefront and Flutter Mobile Apps.
+
 ### [2026-08-22 15:26 UTC] Enterprise WhatsApp Gateway, Multi-Agent CRM, AI Relationship Brain & Scheduled Broadcasts [backend]
 * **Component:** Laravel Backend, Admin Web Portal & Delivery Man App (`backend/vmarket-web`, `Delivery Man App/`)
 * **Action:** Built a native, zero-subscription WhatsApp Communications & Customer Intelligence Hub for Victorious MARKET:

@@ -60,6 +60,10 @@ You are "Victor", the official AI Sales & Customer Care Specialist for Victoriou
 4. NEVER reveal vendor phone numbers, private bank details, or wholesale costs. If asked, explain that Victorious MARKET directly manages quality check and delivery for their buyer protection.
 5. If the customer asks about order status, delivery fees, or product availability, ALWAYS invoke the relevant function tool to get live database facts before answering.
 6. If the customer is furious, has a damaged item, or requests a human agent, invoke the `escalate_to_human` tool immediately.
+7. CONVERSATIONAL COMMERCE POWERS:
+   - You can add items to cart (`add_to_cart`), show cart summaries (`view_cart`), clear cart (`clear_cart`), and apply coupon promo codes (`apply_coupon`).
+   - When the customer wants to buy, confirm their delivery address/landmark in Uyo/Nigeria and preferred payment method (Pay-on-Delivery or Paystack), then invoke `place_order`.
+   - When an order is placed, ALWAYS highlight their 6-digit Delivery OTP and Paystack payment link clearly to the customer.
 
 ### STORE KNOWLEDGE BASE (FAQs):
 {$faqsJson}
@@ -71,6 +75,60 @@ PROMPT;
         return [
             [
                 'function_declarations' => [
+                    [
+                        'name' => 'add_to_cart',
+                        'description' => 'Add a specific product to the customer cart in MySQL with chosen variant/size.',
+                        'parameters' => [
+                            'type' => 'OBJECT',
+                            'properties' => [
+                                'product_id' => ['type' => 'INTEGER', 'description' => 'The ID of the product to add'],
+                                'quantity' => ['type' => 'INTEGER', 'description' => 'Quantity to add (default 1)'],
+                                'variant' => ['type' => 'STRING', 'description' => 'Optional chosen size or color variant (e.g. Size 43, Black)'],
+                            ],
+                            'required' => ['product_id'],
+                        ],
+                    ],
+                    [
+                        'name' => 'view_cart',
+                        'description' => 'View the customer current cart items, subtotal, and grand total.',
+                        'parameters' => [
+                            'type' => 'OBJECT',
+                            'properties' => [],
+                        ],
+                    ],
+                    [
+                        'name' => 'clear_cart',
+                        'description' => 'Clear all items from the customer cart.',
+                        'parameters' => [
+                            'type' => 'OBJECT',
+                            'properties' => [],
+                        ],
+                    ],
+                    [
+                        'name' => 'apply_coupon',
+                        'description' => 'Apply a promotional coupon code to the customer cart and get the exact discount in Naira.',
+                        'parameters' => [
+                            'type' => 'OBJECT',
+                            'properties' => [
+                                'coupon_code' => ['type' => 'STRING', 'description' => 'The promo code to validate and apply (e.g. UYO10)'],
+                            ],
+                            'required' => ['coupon_code'],
+                        ],
+                    ],
+                    [
+                        'name' => 'place_order',
+                        'description' => 'Atomically places a formal order in MySQL, reserves stock, generates 6-digit Delivery OTP and Paystack link.',
+                        'parameters' => [
+                            'type' => 'OBJECT',
+                            'properties' => [
+                                'delivery_address' => ['type' => 'STRING', 'description' => 'Full street delivery address or landmark in Uyo/Nigeria'],
+                                'payment_method' => ['type' => 'STRING', 'description' => 'paystack or cash_on_delivery (default: cash_on_delivery)'],
+                                'customer_name' => ['type' => 'STRING', 'description' => 'Customer full name'],
+                                'coupon_code' => ['type' => 'STRING', 'description' => 'Optional coupon code used'],
+                            ],
+                            'required' => ['delivery_address'],
+                        ],
+                    ],
                     [
                         'name' => 'search_inventory',
                         'description' => 'Search products in store, live stock availability, and retail price in Naira.',
@@ -238,6 +296,33 @@ PROMPT;
     protected function invokeLocalTool(string $name, array $args, array $dossier): array
     {
         switch ($name) {
+            case 'add_to_cart':
+                return WhatsAppOrderService::addToCart(
+                    $dossier['phone'],
+                    (int)($args['product_id'] ?? 0),
+                    (int)($args['quantity'] ?? 1),
+                    $args['variant'] ?? null
+                );
+
+            case 'view_cart':
+                return WhatsAppOrderService::getCartSummary($dossier['phone']);
+
+            case 'clear_cart':
+                $cleared = WhatsAppOrderService::clearCart($dossier['phone']);
+                return ['status' => $cleared, 'message' => 'Cart cleared successfully.'];
+
+            case 'apply_coupon':
+                return WhatsAppOrderService::applyCoupon($dossier['phone'], $args['coupon_code'] ?? '');
+
+            case 'place_order':
+                return WhatsAppOrderService::placeOrder(
+                    $dossier['phone'],
+                    $args['delivery_address'] ?? 'Uyo, Akwa Ibom',
+                    $args['payment_method'] ?? 'cash_on_delivery',
+                    $args['customer_name'] ?? $dossier['name'],
+                    $args['coupon_code'] ?? null
+                );
+
             case 'search_inventory':
                 $query = Product::active()->where('name', 'like', '%' . ($args['keyword'] ?? '') . '%');
                 if (!empty($args['max_price'])) {
