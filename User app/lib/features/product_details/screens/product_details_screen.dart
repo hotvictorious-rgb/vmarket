@@ -254,7 +254,7 @@ class _ProductDetailsState extends State<ProductDetails> {
                     ]):
 
                     Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                      (details.productDetailsModel?.details != null && details.productDetailsModel!.details!.isNotEmpty) ?
+                      ((details.productDetailsModel?.details != null && details.productDetailsModel!.details!.isNotEmpty) || (details.productDetailsModel?.specifications != null && details.productDetailsModel!.specifications!.isNotEmpty)) ?
                       Container(
                         decoration: BoxDecoration(
                           color: Theme.of(context).cardColor,
@@ -263,6 +263,7 @@ class _ProductDetailsState extends State<ProductDetails> {
                         padding: const EdgeInsets.symmetric(vertical: Dimensions.paddingSizeSmall, horizontal: Dimensions.paddingSizeDefault),
                         child: ProductSpecificationWidget(
                           productSpecification: ProductHelper.removeIframe(details.productDetailsModel!.details ?? ''),
+                          specifications: details.productDetailsModel?.specifications,
                         ),
                       ) : const SizedBox(),
 

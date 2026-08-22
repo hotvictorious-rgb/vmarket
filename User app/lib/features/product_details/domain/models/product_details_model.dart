@@ -71,6 +71,7 @@ class ProductDetailsModel {
   List<String?>? restockRequestedList;
   int? isRestockRequested;
   ClearanceSale? clearanceSale;
+  Map<String, dynamic>? _specifications;
 
   ProductDetailsModel(
       {int? id,
@@ -337,6 +338,7 @@ class ProductDetailsModel {
     clearanceSale;
   }
 
+  Map<String, dynamic>? get specifications => _specifications;
   int? get id => _id;
   String? get addedBy => _addedBy;
   int? get userId => _userId;
@@ -530,6 +532,17 @@ class ProductDetailsModel {
     _shippingCost = json['shipping_cost'] != null ? double.tryParse(json['shipping_cost'].toString()) ?? 0.0 : 0.0;
     _multiplyQty = json['multiply_qty'];
     _code = json['code'];
+    if (json['specifications'] != null) {
+      try {
+        if (json['specifications'] is Map) {
+          _specifications = Map<String, dynamic>.from(json['specifications']);
+        } else if (json['specifications'] is String) {
+          _specifications = Map<String, dynamic>.from(jsonDecode(json['specifications']));
+        }
+      } catch (_) {
+        _specifications = null;
+      }
+    }
     if(json['reviews_count'] != null){
       _reviewsCount = int.tryParse(json['reviews_count'].toString()) ?? 0;
     }else{

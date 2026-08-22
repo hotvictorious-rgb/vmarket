@@ -11,17 +11,63 @@ import 'package:url_launcher/url_launcher.dart';
 
 class ProductSpecificationWidget extends StatelessWidget {
   final String productSpecification;
+  final Map<String, dynamic>? specifications;
 
-  const ProductSpecificationWidget({super.key, required this.productSpecification});
+  const ProductSpecificationWidget({super.key, required this.productSpecification, this.specifications});
 
   @override
   Widget build(BuildContext context) {
+    bool hasSpecs = specifications != null && specifications!.isNotEmpty;
 
     return Column(crossAxisAlignment : CrossAxisAlignment.start, children: [
         Text(getTranslated('product_specification', context)??'', style: textBold.copyWith(
           color: Theme.of(context).textTheme.bodyLarge?.color, fontSize: Dimensions.fontSizeLarge
         )),
         const SizedBox(height: Dimensions.paddingSizeExtraSmall),
+
+        if (hasSpecs)
+          Container(
+            margin: const EdgeInsets.only(bottom: Dimensions.paddingSizeDefault),
+            decoration: BoxDecoration(
+              borderRadius: BorderRadius.circular(Dimensions.radiusDefault),
+              border: Border.all(color: Theme.of(context).primaryColor.withValues(alpha: 0.15)),
+              color: Theme.of(context).cardColor,
+            ),
+            child: ClipRRect(
+              borderRadius: BorderRadius.circular(Dimensions.radiusDefault),
+              child: Column(
+                children: specifications!.entries.map((entry) {
+                  final String valueStr = entry.value is List ? (entry.value as List).join(', ') : entry.value.toString();
+                  if (valueStr.trim().isEmpty) return const SizedBox();
+                  return Container(
+                    padding: const EdgeInsets.symmetric(horizontal: Dimensions.paddingSizeSmall, vertical: Dimensions.paddingSizeSmall),
+                    decoration: BoxDecoration(
+                      border: Border(bottom: BorderSide(color: Theme.of(context).hintColor.withValues(alpha: 0.1))),
+                    ),
+                    child: Row(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Expanded(
+                          flex: 4,
+                          child: Text(
+                            entry.key,
+                            style: textMedium.copyWith(fontSize: Dimensions.fontSizeSmall, color: Theme.of(context).hintColor),
+                          ),
+                        ),
+                        Expanded(
+                          flex: 6,
+                          child: Text(
+                            valueStr,
+                            style: textBold.copyWith(fontSize: Dimensions.fontSizeSmall, color: Theme.of(context).textTheme.bodyLarge?.color),
+                          ),
+                        ),
+                      ],
+                    ),
+                  );
+                }).toList(),
+              ),
+            ),
+          ),
 
         Padding(
           padding: const EdgeInsets.symmetric(horizontal: 0),

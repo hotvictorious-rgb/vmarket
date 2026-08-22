@@ -7,6 +7,13 @@ Always append your completed tasks here in chronological order at the top. Forma
 `### [YYYY-MM-DD HH:MM UTC] <Feature / Fix Title> [<Component Scope>]`
 Include the specific app/component modified and bullet points detailing the exact technical changes.
 
+### [2026-08-22 22:20 UTC] Product Specifications Card Integration on Customer Mobile App [user-app]
+* **Component:** Flutter Customer Mobile App (`User app/lib/features/product_details/`)
+* **Action:** Added native support for category-specific technical specifications in the Customer Mobile App:
+  - **Model Deserialization (`product_details_model.dart`):** Added `_specifications` map property with defensive JSON parsing (`is Map` and `is String`).
+  - **Specifications Table Widget (`product_specification_widget.dart`):** Built a clean, bordered mobile specifications table displaying all key-value technical specs above the product description.
+  - **Screen Integration (`product_details_screen.dart`):** Connected the specifications payload into the product details screen.
+
 ### [2026-08-22 22:15 UTC] Smart Category Specifications Engine, Gemini AI Auto-Fill & Schema.org SEO [backend]
 * **Component:** Laravel Backend, Admin & Vendor Dashboards, Storefront Details & REST API (`backend/vmarket-web`)
 * **Action:** Built an enterprise Category-Specific Dynamic Specification Engine with AI auto-fill and SEO rich snippets:
