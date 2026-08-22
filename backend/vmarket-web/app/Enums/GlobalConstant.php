@@ -471,57 +471,59 @@ enum GlobalConstant
 
     const THEME_RATIO = [
         'default' => [
-            'Main Banner' => '(2400 x 996 px)',
+            'Main Banner' => 'Ratio 2.4:1 (2400 x 996 px)',
             'Footer Banner' => 'Ratio 2:1 (2000 x 1000 px)',
             'Popup Banner' => 'Ratio 1:1 (1200 x 1200 px)',
             'Main Section Banner' => 'Ratio 4:1 (2000 x 500 px)',
             'Store cover Image' => 'Ratio 4:1 (2000 x 500 px)',
-            'Main website Logo' => '(1000 x 308 px)',
-            'Product Image' => 'Ratio 1:1 (500 x 500 px)',
+            'Store Banner Image' => 'Ratio 4:1 (2000 x 500 px)',
+            'Header Banner' => 'Ratio 4:1 (2000 x 500 px)',
+            'Sidebar Banner' => 'Ratio 1:2 (500 x 1000 px)',
+            'Top Side Banner' => 'Ratio 1:2 (500 x 1000 px)',
+            'Main website Logo' => 'Ratio 3.2:1 (1000 x 308 px)',
+            'Product Image' => 'Ratio 1:1 (800 x 800 px)',
             'Category Image' => 'Ratio 1:1 (500 x 500 px)',
             'Brand Image' => 'Ratio 1:1 (500 x 500 px)',
             'Seller Image' => 'Ratio 1:1 (500 x 500 px)',
-            'Meta Thumbnail' => '(Ratio 2:1)'
+            'Meta Thumbnail' => 'Ratio 2:1 (1200 x 600 px)'
         ],
         'theme_aster' => [
             'Main Banner' => 'Ratio 2:1 (2000 x 1000 px)',
-            'Footer Banner' => '(2500 x 602 px)',
+            'Footer Banner' => 'Ratio 4.1:1 (2500 x 602 px)',
             'Popup Banner' => 'Ratio 1:1 (1200 x 1200 px)',
-
-            'Main Section Banner' => '(2000 x 618 px)',
+            'Main Section Banner' => 'Ratio 3.2:1 (2000 x 618 px)',
             'Store cover Image' => 'Ratio 4:1 (2000 x 500 px)',
-            'Store Banner Image' => '(2000 x 377 px)',
-            'Header Banner' => '(585 x 160 px)',
-            'Sidebar Banner' => '(280 x 500 px)',
-            'Top Side Banner' => '(205 x 500 px)',
-
-            'Main website Logo' => '(1000 x 308 px)',
-            'Product Image' => 'Ratio 1:1 (500 x 500 px)',
+            'Store Banner Image' => 'Ratio 5.3:1 (2000 x 377 px)',
+            'Header Banner' => 'Ratio 3.6:1 (585 x 160 px)',
+            'Sidebar Banner' => 'Ratio 1:1.8 (280 x 500 px)',
+            'Top Side Banner' => 'Ratio 1:2.4 (205 x 500 px)',
+            'Main website Logo' => 'Ratio 3.2:1 (1000 x 308 px)',
+            'Product Image' => 'Ratio 1:1 (800 x 800 px)',
             'Category Image' => 'Ratio 1:1 (500 x 500 px)',
             'Brand Image' => 'Ratio 1:1 (500 x 500 px)',
             'Seller Image' => 'Ratio 1:1 (500 x 500 px)',
-            'Meta Thumbnail' => '(Ratio 2:1)'
+            'Meta Thumbnail' => 'Ratio 2:1 (1200 x 600 px)'
         ],
         'theme_fashion' => [
-            'Main Banner' => 'Ratio 1:1 (Transparent PNG)',
-            'Footer Banner' => 'Ratio 4:1',
-            'Popup Banner' => 'Ratio 2:1',
-            'Main Section Banner' => 'Ratio 4:1',
+            'Main Banner' => 'Ratio 1:1 (1000 x 1000 px Transparent PNG)',
+            'Footer Banner' => 'Ratio 4:1 (2000 x 500 px)',
+            'Popup Banner' => 'Ratio 2:1 (1200 x 600 px)',
+            'Main Section Banner' => 'Ratio 4:1 (2000 x 500 px)',
             'Store cover Image' => 'Ratio 4:1 (1500 x 500 px)',
             'Store Banner Image' => 'Ratio 3:1 (1500 x 500 px)',
             'Promo Banner Left' => 'Ratio 1:1 (1000 x 1000 px)',
             'Promo Banner Middle Top' => 'Ratio 3:1 (1000 x 330 px)',
             'Promo Banner Middle Bottom' => 'Ratio 3:1 (1000 x 330 px)',
             'Promo Banner Right' => 'Ratio 1:1.5 (1000 x 1500 px)',
-            'Promo Banner Bottom' => 'Ratio 8:1',
-
-            'Main website Logo' => '(1000 x 308 px)',
-            'Product Image' => 'Ratio 1:1.3 (400 x 500 px)',
+            'Promo Banner Bottom' => 'Ratio 8:1 (2000 x 250 px)',
+            'Main website Logo' => 'Ratio 3.2:1 (1000 x 308 px)',
+            'Product Image' => 'Ratio 1:1.25 (800 x 1000 px)',
             'Category Image' => 'Ratio 1:1 (500 x 500 px)',
             'Brand Image' => 'Ratio 1:1 (500 x 500 px)',
             'Seller Image' => 'Ratio 1:1 (500 x 500 px)',
-            'Meta Thumbnail' => '(Ratio 2:1)'
+            'Meta Thumbnail' => 'Ratio 2:1 (1200 x 600 px)'
         ],
+    ];
 
     ];
 

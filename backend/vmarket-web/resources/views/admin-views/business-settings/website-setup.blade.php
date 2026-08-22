@@ -84,8 +84,8 @@
                                                             </div>
                                                             <p class="fs-10 mb-0 text-center text-capitalize">
                                                                 {{ getFileUploadFormats(skip: '.svg', asBladeMessage: true).' '. translate('Image_size'). ' : '. translate('Max').' '. getFileUploadMaxSize() . 'MB' }}
-                                                                <span class="text-dark fw-medium">
-                                                                    {{ "(325 x 100 px)" }}
+                                                                <span class="text-dark fw-semibold">
+                                                                    {{ "(Ratio 3.2:1 • 1000 x 308 px)" }}
                                                                 </span>
                                                             </p>
                                                         </div>
@@ -135,7 +135,7 @@
 
                                                             <p class="fs-10 mb-0 text-center">
                                                                 {{ getFileUploadFormats(skip: '.svg,', asBladeMessage: true).' '. translate('Image_size'). ' : '. translate('Max').' '. getFileUploadMaxSize() . 'MB' }}
-                                                                <span class="fw-medium">{{ "(325 x 100 px)" }}</span>
+                                                                <span class="text-dark fw-semibold">{{ "(Ratio 3.2:1 • 1000 x 308 px)" }}</span>
                                                             </p>
                                                         </div>
                                                     </div>
@@ -181,7 +181,7 @@
                                                             </div>
                                                             <p class="fs-10 mb-0 text-center">
                                                                 {{ getFileUploadFormats(skip: '.svg,', asBladeMessage: true).' '. translate('Image_size'). ' : '. translate('Max').' '. getFileUploadMaxSize() . 'MB' }}
-                                                                <span class="fw-medium">{{ "(325 x 100 px)" }}
+                                                                <span class="text-dark fw-semibold">{{ "(Ratio 3.2:1 • 1000 x 308 px)" }}
                                                                 </span>
                                                             </p>
                                                         </div>
@@ -227,7 +227,7 @@
                                                             </div>
                                                             <p class="fs-10 mb-0 text-center">
                                                                 {{ getFileUploadFormats(skip: '.svg,', asBladeMessage: true).' '. translate('Image_size'). ' : '. translate('Max').' '. getFileUploadMaxSize() . 'MB' }}
-                                                                <span class="fw-medium">{{ "(325 x 100 px)" }}</span>
+                                                                <span class="text-dark fw-semibold">{{ "(Ratio 1:1 • 128 x 128 px)" }}</span>
                                                             </p>
                                                         </div>
                                                     </div>
@@ -271,7 +271,7 @@
                                                             </div>
                                                             <p class="fs-10 mb-0 text-center">
                                                                 {{ getFileUploadFormats(skip: '.svg,', asBladeMessage: true).' '. translate('Image_size'). ' : '. translate('Max').' '. getFileUploadMaxSize() . 'MB' }}
-                                                                <span class="fw-medium">{{ "(325 x 100 px)" }}</span>
+                                                                <span class="text-dark fw-semibold">{{ "(Ratio 1:1 • 200 x 200 px)" }}</span>
                                                             </p>
                                                         </div>
                                                     </div>

@@ -137,6 +137,9 @@
                                     </div>
                                     <p class="fs-10 mb-0 text-center">
                                         {{ getFileUploadFormats(skip:'.svg,.gif') }} : {{ translate('Max_'.getFileUploadMaxSize().'_MB') }}
+                                        <span class="text-dark fw-semibold">
+                                            {{ THEME_RATIO[theme_root_path()]['Brand Image'] }}
+                                        </span>
                                     </p>
                                 </div>
                             </div>

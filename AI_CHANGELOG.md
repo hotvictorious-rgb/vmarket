@@ -7,6 +7,14 @@ Always append your completed tasks here in chronological order at the top. Forma
 `### [YYYY-MM-DD HH:MM UTC] <Feature / Fix Title> [<Component Scope>]`
 Include the specific app/component modified and bullet points detailing the exact technical changes.
 
+### [2026-08-22 22:50 UTC] Universal Asset Dimensions & Exact Resolution Guides Across All Dashboards [backend]
+* **Component:** Admin Panel & Vendor Panel Image Upload Touchpoints (`backend/vmarket-web`)
+* **Action:** Standardized exact pixel resolutions and aspect ratio badges across all upload forms:
+  - **Global Constants Dictionary (`GlobalConstant.php`, `Constant.php`):** Enhanced `THEME_RATIO` across Aster, Default, and Fashion themes with exact pixel resolutions (`Main Banner: 2000x1000 px`, `Section Banner: 2000x618 px`, `Footer Banner: 2500x602 px`, `Header Banner: 585x160 px`, `Sidebar Banner: 280x500 px`, `Store Banner: 2000x377 px`, `Store Cover: 2000x500 px`, `Product Image: 800x800 px`, `Category Icon: 500x500 px`, `Brand Image: 500x500 px`, `Meta SEO: 1200x600 px`).
+  - **Brand Setup (`add-new.blade.php`, `edit.blade.php`):** Added clear `Ratio 1:1 (500 x 500 px)` badge to brand logo upload boxes.
+  - **Vendor Shop Setup (`update-view.blade.php`):** Connected dynamic `Store Banner Image` ratio helper for secondary store banners.
+  - **Website & System Setup (`website-setup.blade.php`):** Corrected legacy hardcoded dimensions with accurate badges for Header Logo (`1000 x 308 px`), Mobile Logo (`1000 x 308 px`), Footer Logo (`1000 x 308 px`), Favicon (`128 x 128 px`), and Loading GIF (`200 x 200 px`).
+
 ### [2026-08-22 22:20 UTC] Product Specifications Card Integration on Customer Mobile App [user-app]
 * **Component:** Flutter Customer Mobile App (`User app/lib/features/product_details/`)
 * **Action:** Added native support for category-specific technical specifications in the Customer Mobile App:

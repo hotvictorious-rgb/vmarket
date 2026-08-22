@@ -232,8 +232,8 @@
                                             </div>
                                             <p class="fs-10 mb-0 text-center ">
                                                 {{ getFileUploadFormats(skip: '.svg'). translate('_image_size') }}: {{ translate('Max_').getFileUploadMaxSize().'MB' }}
-                                                <span class="fw-medium">
-                                                    ({{ translate('ratio') . ' ' . '( 6:1 )' }})
+                                                <span class="fw-medium text-dark">
+                                                    ({{ THEME_RATIO[theme_root_path()]['Store Banner Image'] ?? 'Ratio 5.3:1 (2000 x 377 px)' }})
                                                 </span>
                                             </p>
                                         </div>
