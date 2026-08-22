@@ -7,6 +7,13 @@ Always append your completed tasks here in chronological order at the top. Forma
 `### [YYYY-MM-DD HH:MM UTC] <Feature / Fix Title> [<Component Scope>]`
 Include the specific app/component modified and bullet points detailing the exact technical changes.
 
+### [2026-08-22 23:15 UTC] Resolve Legacy Route Handlers & Storefront 500s [backend]
+* **Component:** Web Storefront & Admin Route Definitions (`backend/vmarket-web/routes/web/routes.php`, `backend/vmarket-web/routes/admin/routes.php`)
+* **Action:** Resolved 100% of route-to-controller method mismatches and stale legacy handlers:
+  - **Storefront 500 Route Resolutions (`routes/web/routes.php`):** Re-pointed legacy aliases `/top-rated`, `/best-sell`, and `/new-product` directly to `ProductListController` (`getTopRatedProductsView`, `getBestSellingProductsView`, `getLatestProductsView`). Re-pointed `/checkout-shipping` and `/checkout-review` to `checkout_details` and `checkout_payment`.
+  - **Customer Profile & Address Routes (`routes/web/routes.php`):** Corrected `user-account-picture` to route to `getUserProfileUpdate`, fixed typo `ROute::` on `address-edit`, mapped `user-all-restock-request-delete` to `deleteRestockRequest`, and connected `choose-billing-address` to `getChooseShippingAddress`.
+  - **Admin Stale Handlers (`routes/admin/routes.php`):** Re-pointed `admin.sub-category.update` to `SubCategoryController@update`, `admin.report.earning` to `ReportController@admin_earning`, `admin.pos.get-cart-items` to `CartController@index`, `admin.stock.ps-filter` to `ProductStockReportController@index`, and `admin.pages-and-media.fetch` to `SocialMediaSettingsController@index`.
+
 ### [2026-08-22 22:50 UTC] Universal Asset Dimensions & Exact Resolution Guides Across All Dashboards [backend]
 * **Component:** Admin Panel & Vendor Panel Image Upload Touchpoints (`backend/vmarket-web`)
 * **Action:** Standardized exact pixel resolutions and aspect ratio badges across all upload forms:

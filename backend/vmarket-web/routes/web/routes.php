@@ -135,9 +135,9 @@ Route::group(['namespace' => 'Web', 'middleware' => ['maintenance_mode', 'guestC
 
     Route::controller(WebController::class)->group(function () {
         Route::get('checkout-details', 'checkout_details')->name('checkout-details');
-        Route::get('checkout-shipping', 'checkout_shipping')->name('checkout-shipping');
+        Route::get('checkout-shipping', 'checkout_details')->name('checkout-shipping');
         Route::get('checkout-payment', 'checkout_payment')->name('checkout-payment');
-        Route::get('checkout-review', 'checkout_review')->name('checkout-review');
+        Route::get('checkout-review', 'checkout_payment')->name('checkout-review');
         Route::get('checkout-complete', 'getCashOnDeliveryCheckoutComplete')->name('checkout-complete');
         Route::post('offline-payment-checkout-complete', 'getOfflinePaymentCheckoutComplete')->name('offline-payment-checkout-complete');
         Route::get('order-placed', 'order_placed')->name('order-placed');
@@ -230,12 +230,12 @@ Route::group(['namespace' => 'Web', 'middleware' => ['maintenance_mode', 'guestC
         Route::get('user-profile', 'user_profile')->name('user-profile')->middleware('customer'); //theme_aster
         Route::get('user-account', 'user_account')->name('user-account')->middleware('customer');
         Route::post('user-account-update', 'getUserProfileUpdate')->name('user-update')->middleware('customer');
-        Route::post('user-account-picture', 'user_picture')->name('user-picture');
+        Route::post('user-account-picture', 'getUserProfileUpdate')->name('user-picture');
         Route::get('account-address-add', 'account_address_add')->name('account-address-add');
         Route::get('account-address', 'account_address')->name('account-address');
         Route::post('account-address-store', 'address_store')->name('address-store');
         Route::get('account-address-delete', 'address_delete')->name('address-delete');
-        ROute::get('account-address-edit/{id}', 'address_edit')->name('address-edit');
+        Route::get('account-address-edit/{id}', 'address_edit')->name('address-edit');
         Route::post('account-address-update', 'address_update')->name('address-update');
         Route::get('account-payment', 'account_payment')->name('account-payment');
         Route::get('account-oder', 'account_order')->name('account-oder')->middleware('customer');
@@ -256,7 +256,7 @@ Route::group(['namespace' => 'Web', 'middleware' => ['maintenance_mode', 'guestC
         Route::get('user-coupons', 'user_coupons')->name('user-coupons')->middleware('customer');
         Route::get('user-restock-requests', 'restockRequestsView')->name('user-restock-requests')->middleware('customer');
         Route::get('user-restock-request-delete', 'deleteRestockRequest')->name('user-restock-request-delete')->middleware('customer');
-        Route::get('user-all-restock-request-delete/{ids}', 'deleteAllRestockRequest')->name('user-all-restock-request-delete')->middleware('customer');
+        Route::get('user-all-restock-request-delete/{ids}', 'deleteRestockRequest')->name('user-all-restock-request-delete')->middleware('customer');
     });
 
     Route::controller(ChattingController::class)->group(function () {
@@ -287,11 +287,14 @@ Route::group(['namespace' => 'Web', 'middleware' => ['maintenance_mode', 'guestC
         Route::get('ajax-shop-vacation-check', 'ajax_shop_vacation_check')->name('ajax-shop-vacation-check');
     });
 
+    Route::controller(ProductListController::class)->group(function () {
+        Route::get('top-rated', 'getTopRatedProductsView')->name('topRated');
+        Route::get('best-sell', 'getBestSellingProductsView')->name('bestSell');
+        Route::get('new-product', 'getLatestProductsView')->name('newProduct');
+    });
+
     Route::controller(WebController::class)->group(function () {
         Route::post('vendor-shop/{id}', 'seller_shop_product');
-        Route::get('top-rated', 'top_rated')->name('topRated');
-        Route::get('best-sell', 'best_sell')->name('bestSell');
-        Route::get('new-product', 'new_product')->name('newProduct');
     });
 
     Route::group(['prefix' => 'contact', 'as' => 'contact.'], function () {
@@ -388,7 +391,7 @@ Route::group(['namespace' => 'Customer', 'prefix' => 'customer', 'as' => 'custom
         Route::get('set-shipping-method', 'setShippingMethod')->name('set-shipping-method');
         Route::post('choose-shipping-address', 'getChooseShippingAddress')->name('choose-shipping-address');
         Route::post('choose-shipping-address-other', 'getChooseShippingAddressOther')->name('choose-shipping-address-other');
-        Route::post('choose-billing-address', 'choose_billing_address')->name('choose-billing-address');
+        Route::post('choose-billing-address', 'getChooseShippingAddress')->name('choose-billing-address');
     });
 
     Route::group(['prefix' => 'reward-points', 'as' => 'reward-points.', 'middleware' => ['auth:customer']], function () {

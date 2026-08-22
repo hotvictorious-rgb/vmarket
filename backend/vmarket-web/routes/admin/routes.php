@@ -197,7 +197,7 @@ Route::group(['prefix' => 'admin', 'as' => 'admin.', 'middleware' => ['admin', '
             Route::get('get-cart-ids', 'getCartIds')->name('get-cart-ids');
             Route::get('clear-cart-ids', 'clearSessionCartIds')->name('clear-cart-ids');
             Route::post('add-to-cart', 'addToCart')->name('add-to-cart');
-            Route::get('get-cart-items', 'getCartItems')->name('get-cart-items');
+            Route::get('get-cart-items', 'index')->name('get-cart-items');
             Route::post('cart-remove', 'removeCart')->name('remove-cart');
             Route::any('cart-empty', 'emptyCart')->name('empty-cart');
             Route::any('change-cart', 'changeCart')->name('change-cart');
@@ -347,8 +347,7 @@ Route::group(['prefix' => 'admin', 'as' => 'admin.', 'middleware' => ['admin', '
         Route::controller(SubCategoryController::class)->group(function () {
             Route::get('view', 'index')->name('view');
             Route::post('store', 'add')->name('store');
-            Route::get('update/{id}', 'getUpdateView')->name('update');
-            Route::post('update/{id}', 'update');
+            Route::post('update/{id}', 'update')->name('update');
             Route::post('delete', 'delete')->name('delete');
             Route::get('export', 'getExportList')->name('export');
             Route::post('load-more-categories', 'loadMoreCategories')->name('load-more-categories');
@@ -512,7 +511,7 @@ Route::group(['prefix' => 'admin', 'as' => 'admin.', 'middleware' => ['admin', '
 
     Route::group(['prefix' => 'report', 'as' => 'report.', 'middleware' => ['module:report']], function () {
         Route::controller(ReportController::class)->group(function () {
-            Route::get('earning', 'earning_index')->name('earning');
+            Route::get('earning', 'admin_earning')->name('earning');
             Route::get('admin-earning', 'admin_earning')->name('admin-earning');
             Route::get('admin-earning-excel-export', 'exportAdminEarning')->name('admin-earning-excel-export');
             Route::post('admin-earning-duration-download-pdf', 'admin_earning_duration_download_pdf')->name('admin-earning-duration-download-pdf');
@@ -560,7 +559,7 @@ Route::group(['prefix' => 'admin', 'as' => 'admin.', 'middleware' => ['admin', '
             //product stock report
             Route::get('product-stock', 'index')->name('product-stock');
             Route::get('product-stock-export', 'export')->name('product-stock-export');
-            Route::post('ps-filter', 'filter')->name('ps-filter');
+            Route::post('ps-filter', 'index')->name('ps-filter');
         });
 
         //product in wishlist report
@@ -1207,7 +1206,7 @@ Route::group(['prefix' => 'admin', 'as' => 'admin.', 'middleware' => ['admin', '
 
             Route::controller(SocialMediaSettingsController::class)->group(function () {
                 Route::get('social-media', 'index')->name('social-media');
-                Route::get('fetch', 'getList')->name('fetch');
+                Route::get('fetch', 'index')->name('fetch');
                 Route::post('social-media-store', 'add')->name('social-media-store');
                 Route::post('social-media-edit', 'getUpdate')->name('social-media-edit');
                 Route::post('social-media-update', 'update')->name('social-media-update');
