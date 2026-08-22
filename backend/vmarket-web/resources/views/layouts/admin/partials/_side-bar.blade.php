@@ -634,6 +634,16 @@
                     </a>
                 </li>
                 <li>
+                    <a class="nav-link {{ Request::is('admin/whatsapp-crm*') ? 'active' : '' }}"
+                       title="{{ translate('WhatsApp_CRM') }}"
+                       href="{{ route('admin.whatsapp-crm.index') }}">
+                        <i class="fi fi-sr-comment-alt-middle"></i>
+                        <span class="aside-mini-hidden-element text-truncate">
+                            {{ translate('WhatsApp_CRM') }}
+                        </span>
+                    </a>
+                </li>
+                <li>
                     <a class="nav-link {{ Request::is('admin/contact*') ? 'active' : '' }}"
                        href="{{ route('admin.contact.list') }}" title="{{ translate('messages') }}">
                         <i class="fi fi-sr-comment-alt-dots"></i>

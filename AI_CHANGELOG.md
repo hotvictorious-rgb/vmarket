@@ -7,6 +7,10 @@ Always append your completed tasks here in chronological order at the top. Forma
 `### [YYYY-MM-DD HH:MM UTC] <Feature / Fix Title> [<Component Scope>]`
 Include the specific app/component modified and bullet points detailing the exact technical changes.
 
+### [2026-08-22 18:45 UTC] Add WhatsApp CRM Sidebar Link [backend]
+* **Component:** Admin Web Panel (`backend/vmarket-web/resources/views/layouts/admin/partials/_side-bar.blade.php`)
+* **Action:** Added the WhatsApp CRM menu link under the Help & Support section in the admin sidebar navigation to allow administrators to access the dashboard.
+
 ### [2026-08-22 16:17 UTC] Multi-Agent Chat Reassignment, AI Bot Handoff & Vendor/Rider Automated WhatsApp Alerts [backend]
 * **Component:** Laravel Backend (`backend/vmarket-web/app/Http/Controllers/Admin/WhatsApp/WhatsAppCrmController.php`, `WhatsAppAutomationWorkflow.php`, `OrderController.php`, `WhatsAppOrderService.php`)
 * **Action:** Implemented dynamic worker reassignment, 2-way AI bot handoffs, and automated WhatsApp alert triggers for vendors and delivery riders:
