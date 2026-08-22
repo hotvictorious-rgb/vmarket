@@ -17,13 +17,13 @@
     <!-- Navigation Tabs -->
     <ul class="nav nav-tabs mb-4">
         <li class="nav-item">
-            <a class="nav-link active" data-toggle="tab" href="#hubs-tab">{{ translate('Landmarks & Motor Parks') }}</a>
+            <a class="nav-link active" data-toggle="tab" data-bs-toggle="tab" href="#hubs-tab">{{ translate('Landmarks & Motor Parks') }}</a>
         </li>
         <li class="nav-item">
-            <a class="nav-link" data-toggle="tab" href="#cities-tab">{{ translate('Cities & Zones') }}</a>
+            <a class="nav-link" data-toggle="tab" data-bs-toggle="tab" href="#cities-tab">{{ translate('Cities & Zones') }}</a>
         </li>
         <li class="nav-item">
-            <a class="nav-link" data-toggle="tab" href="#states-tab">{{ translate('States & Regions') }}</a>
+            <a class="nav-link" data-toggle="tab" data-bs-toggle="tab" href="#states-tab">{{ translate('States & Regions') }}</a>
         </li>
     </ul>
 
@@ -375,7 +375,7 @@
         <div class="modal-content">
             <div class="modal-header">
                 <h5 class="modal-title font-weight-bold">{{ translate('Edit Delivery Hub / Landmark') }}</h5>
-                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                <button type="button" class="close" data-dismiss="modal" data-bs-dismiss="modal" aria-label="Close">
                     <span aria-hidden="true">&times;</span>
                 </button>
             </div>
@@ -431,7 +431,7 @@
                     </div>
                 </div>
                 <div class="modal-footer">
-                    <button type="button" class="btn btn-secondary" data-dismiss="modal">{{ translate('Cancel') }}</button>
+                    <button type="button" class="btn btn-secondary" data-dismiss="modal" data-bs-dismiss="modal">{{ translate('Cancel') }}</button>
                     <button type="submit" class="btn btn--primary">{{ translate('Update Hub') }}</button>
                 </div>
             </form>
@@ -445,7 +445,7 @@
         <div class="modal-content">
             <div class="modal-header">
                 <h5 class="modal-title font-weight-bold">{{ translate('Edit Operational City') }}</h5>
-                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                <button type="button" class="close" data-dismiss="modal" data-bs-dismiss="modal" aria-label="Close">
                     <span aria-hidden="true">&times;</span>
                 </button>
             </div>
@@ -466,7 +466,7 @@
                     </div>
                 </div>
                 <div class="modal-footer">
-                    <button type="button" class="btn btn-secondary" data-dismiss="modal">{{ translate('Cancel') }}</button>
+                    <button type="button" class="btn btn-secondary" data-dismiss="modal" data-bs-dismiss="modal">{{ translate('Cancel') }}</button>
                     <button type="submit" class="btn btn--primary">{{ translate('Update City') }}</button>
                 </div>
             </form>
@@ -480,7 +480,7 @@
         <div class="modal-content">
             <div class="modal-header">
                 <h5 class="modal-title font-weight-bold">{{ translate('Edit State / Region') }}</h5>
-                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                <button type="button" class="close" data-dismiss="modal" data-bs-dismiss="modal" aria-label="Close">
                     <span aria-hidden="true">&times;</span>
                 </button>
             </div>
@@ -493,7 +493,7 @@
                     </div>
                 </div>
                 <div class="modal-footer">
-                    <button type="button" class="btn btn-secondary" data-dismiss="modal">{{ translate('Cancel') }}</button>
+                    <button type="button" class="btn btn-secondary" data-dismiss="modal" data-bs-dismiss="modal">{{ translate('Cancel') }}</button>
                     <button type="submit" class="btn btn--primary">{{ translate('Update State') }}</button>
                 </div>
             </form>
