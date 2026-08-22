@@ -126,6 +126,25 @@ Route::group(['prefix' => 'login'], function () {
 });
 
 Route::group(['prefix' => 'admin', 'as' => 'admin.', 'middleware' => ['admin', 'actch:admin_panel']], function () {
+
+    // [AI] WhatsApp Enterprise CRM, Campaigns & AI Brain Routes
+    Route::group(['prefix' => 'whatsapp-crm', 'as' => 'whatsapp-crm.'], function () {
+        Route::get('/', [\App\Http\Controllers\Admin\WhatsApp\WhatsAppCrmController::class, 'index'])->name('index');
+        Route::get('messages/{id}', [\App\Http\Controllers\Admin\WhatsApp\WhatsAppCrmController::class, 'getMessages'])->name('get-messages');
+        Route::post('send/{id}', [\App\Http\Controllers\Admin\WhatsApp\WhatsAppCrmController::class, 'sendMessage'])->name('send-message');
+        Route::post('status/{id}', [\App\Http\Controllers\Admin\WhatsApp\WhatsAppCrmController::class, 'updateStatus'])->name('update-status');
+
+        // Broadcast Campaigns
+        Route::get('broadcasts', [\App\Http\Controllers\Admin\WhatsApp\WhatsAppBroadcastController::class, 'index'])->name('broadcasts');
+        Route::post('broadcasts/store', [\App\Http\Controllers\Admin\WhatsApp\WhatsAppBroadcastController::class, 'store'])->name('broadcasts.store');
+
+        // AI Knowledge Base & Settings
+        Route::get('ai-settings', [\App\Http\Controllers\Admin\WhatsApp\WhatsAppAiSettingsController::class, 'index'])->name('ai-settings');
+        Route::post('ai-settings/faq', [\App\Http\Controllers\Admin\WhatsApp\WhatsAppAiSettingsController::class, 'storeFaq'])->name('ai-settings.faq-store');
+        Route::delete('ai-settings/faq/{id}', [\App\Http\Controllers\Admin\WhatsApp\WhatsAppAiSettingsController::class, 'deleteFaq'])->name('ai-settings.faq-delete');
+        Route::post('ai-settings/update', [\App\Http\Controllers\Admin\WhatsApp\WhatsAppAiSettingsController::class, 'updateSettings'])->name('ai-settings.update');
+    });
+
     Route::get('component', function () {
         return view('layouts.admin.component');
     });

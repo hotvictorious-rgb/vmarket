@@ -18,7 +18,13 @@ class SMSModule
 
     public static function send($receiver, $otp): string
     {
-        // 1. Termii (Nigeria - Primary)
+        // 0. WhatsApp Meta Cloud API (Primary - Instant, Verified, 6-Digit OTP)
+        $config = self::get_settings('whatsapp_meta');
+        if (isset($config) && $config['status'] == 1) {
+            return self::whatsapp_meta($receiver, $otp);
+        }
+
+        // 1. Termii (Nigeria - Primary SMS Fallback)
         $config = self::get_settings('termii');
         if (isset($config) && $config['status'] == 1) {
             return self::termii($receiver, $otp);
@@ -549,6 +555,93 @@ class SMSModule
                 $response = 'error';
             }
         }
+        return $response;
+    }
+
+    public static function whatsapp_meta($receiver, $otp): string
+    {
+        $config = self::get_settings('whatsapp_meta');
+        $response = 'error';
+
+        if (isset($config) && $config['status'] == 1) {
+            $formattedPhone = self::formatNigerianPhone($receiver);
+            $token = $config['token'] ?? '';
+            $phoneNumberId = $config['phone_number_id'] ?? '';
+            $templateName = $config['template_name'] ?? 'victorious_otp_auth';
+            $languageCode = $config['language_code'] ?? 'en';
+
+            if (empty($token) || empty($phoneNumberId)) {
+                return 'error';
+            }
+
+            $payload = [
+                'messaging_product' => 'whatsapp',
+                'recipient_type' => 'individual',
+                'to' => $formattedPhone,
+                'type' => 'template',
+                'template' => [
+                    'name' => $templateName,
+                    'language' => ['code' => $languageCode],
+                    'components' => [
+                        [
+                            'type' => 'body',
+                            'parameters' => [
+                                ['type' => 'text', 'text' => (string)$otp]
+                            ]
+                        ],
+                        [
+                            'type' => 'button',
+                            'sub_type' => 'url',
+                            'index' => '0',
+                            'parameters' => [
+                                ['type' => 'text', 'text' => (string)$otp]
+                            ]
+                        ]
+                    ]
+                ]
+            ];
+
+            try {
+                $curl = curl_init();
+                curl_setopt_array($curl, [
+                    CURLOPT_URL => "https://graph.facebook.com/v19.0/{$phoneNumberId}/messages",
+                    CURLOPT_RETURNTRANSFER => true,
+                    CURLOPT_TIMEOUT => 15,
+                    CURLOPT_CUSTOMREQUEST => 'POST',
+                    CURLOPT_POSTFIELDS => json_encode($payload),
+                    CURLOPT_HTTPHEADER => [
+                        "Authorization: Bearer {$token}",
+                        "Content-Type: application/json"
+                    ],
+                ]);
+
+                $result = curl_exec($curl);
+                $err = curl_error($curl);
+                $httpCode = curl_getinfo($curl, CURLINFO_HTTP_CODE);
+                curl_close($curl);
+
+                $resData = json_decode($result, true);
+
+                if (!$err && ($httpCode == 200 || $httpCode == 201)) {
+                    $response = 'success';
+                } else {
+                    $errorCode = $resData['error']['code'] ?? 0;
+                    $errorSubcode = $resData['error']['error_subcode'] ?? 0;
+                    $errorMessage = strtolower($resData['error']['message'] ?? '');
+
+                    if ($errorCode == 131026 || str_contains($errorMessage, 'recipient_not_registered_on_whatsapp') || str_contains($errorMessage, 'not a valid whatsapp user')) {
+                        $response = 'not_on_whatsapp';
+                    } else {
+                        Log::error('[AI WhatsApp Gateway Error]', ['code' => $errorCode, 'subcode' => $errorSubcode, 'response' => $resData]);
+                        $response = 'error';
+                    }
+                }
+            } catch (Exception $e) {
+                Log::error('[AI WhatsApp Gateway Exception] ' . $e->getMessage());
+                $response = 'error';
+            }
+        }
+
         return $response;
     }
 

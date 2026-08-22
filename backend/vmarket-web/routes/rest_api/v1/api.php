@@ -33,6 +33,7 @@ use App\Http\Controllers\RestAPI\v1\UserLoyaltyController;
 use App\Http\Controllers\RestAPI\v1\UserWalletController;
 use App\Http\Controllers\RestAPI\v1\FeedSyncController;
 use App\Http\Controllers\RestAPI\v1\DeliveryHubApiController;
+use App\Http\Controllers\RestAPI\v1\WhatsAppWebhookController;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\Customer\PaymentController;
 
@@ -48,6 +49,12 @@ use App\Http\Controllers\Customer\PaymentController;
  */
 
 Route::group(['prefix' => 'v1', 'middleware' => ['api_lang']], function () {
+
+    // [AI] Meta WhatsApp Webhook Gateway
+    Route::controller(WhatsAppWebhookController::class)->group(function () {
+        Route::get('webhooks/whatsapp', 'verify');
+        Route::post('webhooks/whatsapp', 'handle');
+    });
 
     Route::controller(FeedSyncController::class)->group(function () {
         Route::get('feed/sync', 'getInitialFeed');
