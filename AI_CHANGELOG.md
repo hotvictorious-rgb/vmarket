@@ -7,6 +7,10 @@ Always append your completed tasks here in chronological order at the top. Forma
 `### [YYYY-MM-DD HH:MM UTC] <Feature / Fix Title> [<Component Scope>]`
 Include the specific app/component modified and bullet points detailing the exact technical changes.
 
+### [2026-08-22 23:25 UTC] GlobalConstant Syntax Bracket Prune & Production Parity [backend]
+* **Component:** Global Constants Definition (`backend/vmarket-web/app/Enums/GlobalConstant.php`)
+* **Action:** Removed duplicate stray closing bracket (`];`) at line 528 after the `THEME_RATIO` array definition, ensuring 100% clean PHP lint and full byte-level parity with live production.
+
 ### [2026-08-22 23:15 UTC] Resolve Legacy Route Handlers & Storefront 500s [backend]
 * **Component:** Web Storefront & Admin Route Definitions (`backend/vmarket-web/routes/web/routes.php`, `backend/vmarket-web/routes/admin/routes.php`)
 * **Action:** Resolved 100% of route-to-controller method mismatches and stale legacy handlers:

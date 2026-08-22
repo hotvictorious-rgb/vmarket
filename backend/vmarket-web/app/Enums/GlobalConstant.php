@@ -525,8 +525,6 @@ enum GlobalConstant
         ],
     ];
 
-    ];
-
     //payment methods
     const GATEWAYS_PAYMENT_METHODS = [
         ['key' => 'ssl_commerz', 'value' => 'SSLCOMMERZ'],
