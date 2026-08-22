@@ -92,6 +92,11 @@ class Category extends Model
         return $this->hasMany(Product::class, 'sub_sub_category_id', 'id');
     }
 
+    public function specifications(): HasMany
+    {
+        return $this->hasMany(CategorySpecification::class, 'category_id')->orderBy('sort_order', 'asc');
+    }
+
     public function getNameAttribute($name): string|null
     {
         $segment = request()->segment(1);

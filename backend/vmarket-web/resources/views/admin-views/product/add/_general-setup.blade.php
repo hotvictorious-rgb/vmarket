@@ -213,6 +213,8 @@
                         </div>
 
                         <input type="hidden"  id="generated_combinations" name="generated_combinations" value="">
+
+                        @include('shared-views.product.category-specifications-input')
                     </div>
                 </div>
             </div>

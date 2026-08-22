@@ -533,6 +533,29 @@
                                                                         allowfullscreen></iframe>
                                                             </div>
                                                         @endif
+                                                        @if (!empty($product->specifications) && count((array)$product->specifications) > 0)
+                                                             <div class="col-12 my-3">
+                                                                 <h4 class="fs-15 fw-bold mb-3" style="color: #4A154B;">
+                                                                     <i class="bi bi-sliders mr-1" style="color: #D4AF37;"></i> {{ translate('Technical_Specifications') }}
+                                                                 </h4>
+                                                                 <div class="table-responsive rounded border shadow-sm mb-4">
+                                                                     <table class="table table-striped table-bordered mb-0">
+                                                                         <tbody>
+                                                                             @foreach((array)$product->specifications as $specKey => $specVal)
+                                                                                 @if(!empty($specVal))
+                                                                                     <tr>
+                                                                                         <th class="bg-light text-muted text-nowrap py-2 px-3" style="width: 35%; max-width: 240px; font-size: 13px;">{{ $specKey }}</th>
+                                                                                         <td class="font-weight-bold text-dark py-2 px-3" style="font-size: 13px;">
+                                                                                             {{ is_array($specVal) ? implode(', ', $specVal) : $specVal }}
+                                                                                         </td>
+                                                                                     </tr>
+                                                                                 @endif
+                                                                             @endforeach
+                                                                         </tbody>
+                                                                     </table>
+                                                                 </div>
+                                                             </div>
+                                                         @endif
                                                         <div class="rich-editor-html-content">
                                                             {!! $product->details !!}
                                                         </div>

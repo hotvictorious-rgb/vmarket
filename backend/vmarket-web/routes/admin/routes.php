@@ -34,6 +34,7 @@ use App\Http\Controllers\Admin\Settings\ThemeController;
 use App\Http\Controllers\Admin\Product\ProductController;
 use App\Http\Controllers\Admin\ThirdParty\MailController;
 use App\Http\Controllers\Admin\Product\CategoryController;
+use App\Http\Controllers\Admin\Product\CategorySpecificationController;
 use App\Http\Controllers\Admin\Promotion\BannerController;
 use App\Http\Controllers\Admin\Promotion\CouponController;
 use App\Http\Controllers\Admin\Settings\SiteMapController;
@@ -363,6 +364,19 @@ Route::group(['prefix' => 'admin', 'as' => 'admin.', 'middleware' => ['admin', '
             Route::post('delete', 'delete')->name('delete');
             Route::post('get-sub-category', 'getSubCategory')->name('getSubCategory');
             Route::get('export', 'getExportList')->name('export');
+        });
+    });
+
+    // Category Specifications
+    Route::group(['prefix' => 'category-specifications', 'as' => 'category-specifications.', 'middleware' => ['module:product_management']], function () {
+        Route::controller(CategorySpecificationController::class)->group(function () {
+            Route::get('/', 'index')->name('index');
+            Route::post('store', 'store')->name('store');
+            Route::post('update/{id}', 'update')->name('update');
+            Route::delete('delete/{id}', 'delete')->name('delete');
+            Route::post('status', 'status')->name('status');
+            Route::get('get-by-category/{category_id}', 'getByCategoryAjax')->name('get-by-category');
+            Route::post('ai-suggest-specs', 'aiSuggestSpecs')->name('ai-suggest-specs');
         });
     });
 

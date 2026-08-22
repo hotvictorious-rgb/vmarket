@@ -189,4 +189,33 @@ class CategoryManager
         }
         return $query->sortByDesc('priority');
     }
+
+    public static function getCategoryVectorIcon(string $name): string
+    {
+        $name = strtolower($name);
+        if (str_contains($name, 'phone') || str_contains($name, 'mobile')) {
+            return 'tio-smartphone';
+        } elseif (str_contains($name, 'electronic') || str_contains($name, 'gadget') || str_contains($name, 'laptop')) {
+            return 'tio-devices';
+        } elseif (str_contains($name, 'fashion') || str_contains($name, 'cloth') || str_contains($name, 'wear')) {
+            return 'tio-tag';
+        } elseif (str_contains($name, 'furniture') || str_contains($name, 'bed')) {
+            return 'tio-home-vs-1';
+        } elseif (str_contains($name, 'music') || str_contains($name, 'instrument') || str_contains($name, 'piano')) {
+            return 'tio-music';
+        } elseif (str_contains($name, 'beauty') || str_contains($name, 'skin') || str_contains($name, 'care') || str_contains($name, 'perfume')) {
+            return 'tio-star';
+        } elseif (str_contains($name, 'kitchen') || str_contains($name, 'cook')) {
+            return 'tio-restaurant';
+        } elseif (str_contains($name, 'appliance') || str_contains($name, 'fridge')) {
+            return 'tio-airplay';
+        } elseif (str_contains($name, 'bag') || str_contains($name, 'luggage')) {
+            return 'tio-briefcase';
+        } elseif (str_contains($name, 'auto') || str_contains($name, 'car')) {
+            return 'tio-car';
+        } elseif (str_contains($name, 'grocer') || str_contains($name, 'food')) {
+            return 'tio-shopping-basket';
+        }
+        return 'tio-folder';
+    }
 }

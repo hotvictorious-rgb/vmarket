@@ -200,6 +200,8 @@
                                         name="tags" id="tags" data-role="tagsinput">
                             </div>
                         </div>
+
+                        @include('shared-views.product.category-specifications-input')
                     </div>
                 </div>
             </div>

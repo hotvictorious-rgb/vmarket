@@ -283,6 +283,13 @@
                                 <span class="text-truncate">{{ translate('sub_Sub_Categories') }}</span>
                             </a>
                         </li>
+                        <li class="nav-item">
+                            <a class="nav-link {{ Request::is('admin/category-specifications*') ? 'active' : '' }}"
+                               href="{{ route('admin.category-specifications.index') }}"
+                               title="{{ translate('Specifications & Questions') }}">
+                                <span class="text-truncate font-weight-bold text-primary">{{ translate('Specifications') }}</span>
+                            </a>
+                        </li>
                     </ul>
                 </li>
 
