@@ -18,15 +18,27 @@ class FirebaseServiceProvider extends ServiceProvider
     {
         $this->app->singleton(Factory::class, function ($app) {
             $firebaseConfig = getWebConfig('push_notification_key');
-            return (new Factory)->withServiceAccount($firebaseConfig);
+            $factory = new Factory;
+            if (!empty($firebaseConfig) && (is_array($firebaseConfig) || (is_string($firebaseConfig) && file_exists($firebaseConfig)))) {
+                $factory = $factory->withServiceAccount($firebaseConfig);
+            }
+            return $factory;
         });
 
         $this->app->singleton(Auth::class, function ($app) {
-            return $app->make(Factory::class)->createAuth();
+            try {
+                return $app->make(Factory::class)->createAuth();
+            } catch (\Throwable $e) {
+                return null;
+            }
         });
 
         $this->app->singleton(Messaging::class, function ($app) {
-            return $app->make(Factory::class)->createMessaging();
+            try {
+                return $app->make(Factory::class)->createMessaging();
+            } catch (\Throwable $e) {
+                return null;
+            }
         });
 
         // Optionally, you can bind it to a simpler alias

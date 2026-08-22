@@ -7,6 +7,10 @@ Always append your completed tasks here in chronological order at the top. Forma
 `### [YYYY-MM-DD HH:MM UTC] <Feature / Fix Title> [<Component Scope>]`
 Include the specific app/component modified and bullet points detailing the exact technical changes.
 
+### [2026-08-22 19:50 UTC] FirebaseServiceProvider Exception Guarding & Route Stability [backend]
+* **Component:** Laravel Backend Provider (`backend/vmarket-web/app/Providers/FirebaseServiceProvider.php`)
+* **Action:** Added defensive exception handling and null checks in `FirebaseServiceProvider.php` when service account credentials are unconfigured or placeholder strings exist, preventing fatal console crashes during route resolution and console optimization commands.
+
 ### [2026-08-22 19:25 UTC] WhatsApp CRM Frontend Hardening & JS Event Handler Fixes [backend]
 * **Component:** Admin Web Panel (`backend/vmarket-web/resources/views/admin-views/whatsapp-crm/index.blade.php`, `broadcasts.blade.php`, `ai-settings.blade.php`)
 * **Action:** Hardened WhatsApp CRM frontend interaction logic and resolved JavaScript errors:
