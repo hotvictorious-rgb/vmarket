@@ -7,6 +7,13 @@ Always append your completed tasks here in chronological order at the top. Forma
 `### [YYYY-MM-DD HH:MM UTC] <Feature / Fix Title> [<Component Scope>]`
 Include the specific app/component modified and bullet points detailing the exact technical changes.
 
+### [2026-08-22 16:17 UTC] Multi-Agent Chat Reassignment, AI Bot Handoff & Vendor/Rider Automated WhatsApp Alerts [backend]
+* **Component:** Laravel Backend (`backend/vmarket-web/app/Http/Controllers/Admin/WhatsApp/WhatsAppCrmController.php`, `WhatsAppAutomationWorkflow.php`, `OrderController.php`, `WhatsAppOrderService.php`)
+* **Action:** Implemented dynamic worker reassignment, 2-way AI bot handoffs, and automated WhatsApp alert triggers for vendors and delivery riders:
+  - **Dynamic Admin Chat Reassignment (`WhatsAppCrmController.php`, `index.blade.php`):** Added `reassignAgent` endpoint and live team selector UI allowing supervisors to reassign any customer conversation to any staff employee or toggle AI Bot takeover with 1 click.
+  - **Vendor Automated WhatsApp Order & Payout Alerts (`WhatsAppAutomationWorkflow.php`):** Implemented `triggerVendorNewOrderAlert` (alerts vendors when an order containing their product is placed) and `triggerVendorWithdrawalApprovedAlert` (payout confirmation).
+  - **Delivery Rider Automated WhatsApp Task Alerts (`WhatsAppAutomationWorkflow.php`, `OrderController.php`):** Connected `triggerDeliveryManAssignmentAlert` into `addDeliveryMan`, sending automated WhatsApp task assignments with dropoff address, customer contact, and 6-digit OTP instructions.
+
 ### [2026-08-22 15:49 UTC] WhatsApp Conversational Commerce Engine (Chat-to-Order, Cart, Coupons & Paystack) [backend]
 * **Component:** Laravel Backend (`backend/vmarket-web/app/Services/WhatsAppOrderService.php`, `WhatsAppAiService.php`)
 * **Action:** Built a native Conversational Commerce (Chat-to-Order) engine enabling customers to shop, manage cart, apply promo coupons, place formal orders, and pay directly on WhatsApp:

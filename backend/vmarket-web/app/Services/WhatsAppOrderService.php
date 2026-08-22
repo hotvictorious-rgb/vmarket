@@ -308,6 +308,9 @@ class WhatsAppOrderService
                 // 4. Generate Paystack link if payment method requires online payment
                 $paystackUrl = url("/pay/order/{$order->id}");
 
+                // 5. [AI] Trigger Automated WhatsApp Alert to Vendors
+                WhatsAppAutomationWorkflow::triggerVendorNewOrderAlert($order);
+
                 return [
                     'status' => true,
                     'order_id' => $order->id,

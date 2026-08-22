@@ -49,7 +49,43 @@ class WhatsAppCrmController extends Controller
         $botCount = WhatsAppConversation::where('status', 'bot_handling')->count();
         $disputeCount = WhatsAppConversation::where('priority', 'urgent_dispute')->count();
 
-        return view('admin-views.whatsapp-crm.index', compact('conversations', 'status', 'openCount', 'botCount', 'disputeCount', 'search'));
+        $agents = \App\Models\Admin::where('status', 1)->get(['id', 'name', 'email', 'admin_role_id']);
+
+        return view('admin-views.whatsapp-crm.index', compact('conversations', 'status', 'openCount', 'botCount', 'disputeCount', 'search', 'agents'));
+    }
+
+    /**
+     * [AI] Reassign conversation to a worker or handoff to AI bot
+     */
+    public function reassignAgent(Request $request, int $id): JsonResponse
+    {
+        $conversation = WhatsAppConversation::findOrFail($id);
+        $agentId = $request->agent_id; // null or admin_id
+
+        if ($request->has('handoff_to_bot') && $request->handoff_to_bot) {
+            $conversation->update([
+                'status' => 'bot_handling',
+                'assigned_agent_id' => null,
+                'locked_until' => null,
+                'locked_by_agent_id' => null,
+            ]);
+            return response()->json([
+                'status' => true,
+                'message' => 'Chat handed off to AI Assistant successfully.',
+            ]);
+        }
+
+        $conversation->update([
+            'assigned_agent_id' => $agentId,
+            'status' => 'open',
+            'locked_until' => null,
+            'locked_by_agent_id' => null,
+        ]);
+
+        return response()->json([
+            'status' => true,
+            'message' => 'Chat reassigned to agent successfully.',
+        ]);
     }
 
     /**

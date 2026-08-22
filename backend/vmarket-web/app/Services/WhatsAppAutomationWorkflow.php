@@ -57,17 +57,75 @@ class WhatsAppAutomationWorkflow
     }
 
     /**
-     * [AI] Trigger Abandoned Cart Recovery Reminder.
+     * [AI] Trigger Vendor WhatsApp Notification on New Order Received.
      */
-    public static function triggerCartRecovery(User $user, string $productName, float $cartTotal): void
+    public static function triggerVendorNewOrderAlert(Order $order): void
     {
-        if (empty($user->phone)) return;
+        $order->loadMissing(['details.seller', 'details.product']);
+        $sellersNotified = [];
 
-        $checkoutUrl = url('/cart');
-        $message = "👋 *Hi {$user->f_name}! Did you forget something?*\n\n"
-            . "You left *{$productName}* (Total: ₦" . number_format($cartTotal, 2) . ") in your Victorious MARKET cart.\n\n"
-            . "Items sell fast in Uyo! Tap below to complete your order right now:\n{$checkoutUrl}";
+        foreach ($order->details as $detail) {
+            $seller = $detail->seller;
+            if (!$seller || empty($seller->phone) || in_array($seller->id, $sellersNotified)) {
+                continue;
+            }
 
-        dispatch(new SendWhatsAppJob($user->phone, 'text', ['text' => $message]));
+            $sellersNotified[] = $seller->id;
+            $vendorName = $seller->f_name ?? 'Partner Vendor';
+            $productName = $detail->product ? $detail->product->name : 'Product Item';
+            $qty = $detail->qty;
+
+            $message = "📦 *Victorious MARKET — New Order Alert!*\n\n"
+                . "Hello {$vendorName}! You have received a new order *#{$order->id}*.\n\n"
+                . "🛒 *Item to prepare:* {$qty}x {$productName}\n"
+                . "📍 *Pickup Hub:* Uyo Central Hub\n"
+                . "🕒 Please package this item promptly for courier pickup.\n\n"
+                . "Thank you for partnering with Victorious MARKET!";
+
+            dispatch(new SendWhatsAppJob($seller->phone, 'text', ['text' => $message]));
+        }
+    }
+
+    /**
+     * [AI] Trigger Delivery Rider WhatsApp Notification on Order Assignment.
+     */
+    public static function triggerDeliveryManAssignmentAlert(Order $order, $deliveryMan): void
+    {
+        if (!$deliveryMan || empty($deliveryMan->phone)) return;
+
+        $riderName = $deliveryMan->f_name ?? 'Dispatch Rider';
+        $orderId = $order->id;
+        $shippingData = json_decode($order->shipping_address_data, true) ?? [];
+        $dropoff = $shippingData['address'] ?? 'Uyo, Akwa Ibom';
+        $customerName = $shippingData['contact_person_name'] ?? 'Customer';
+        $customerPhone = $shippingData['phone'] ?? '';
+
+        $message = "🛵 *Victorious MARKET — New Delivery Assignment!*\n\n"
+            . "Hello {$riderName}! Order *#{$orderId}* has been assigned to you.\n\n"
+            . "📍 *Dropoff Address:* {$dropoff}\n"
+            . "👤 *Customer:* {$customerName} ({$customerPhone})\n"
+            . "💰 *Order Total:* ₦" . number_format($order->order_amount, 2) . " (" . strtoupper($order->payment_status) . ")\n\n"
+            . "⚠️ *CRITICAL:* Collect the customer's secret 6-digit Delivery OTP upon doorstep arrival to complete the delivery.\n\n"
+            . "Drive safely!";
+
+        dispatch(new SendWhatsAppJob($deliveryMan->phone, 'text', ['text' => $message]));
+    }
+
+    /**
+     * [AI] Trigger Vendor WhatsApp Notification on Payout / Withdrawal Approval.
+     */
+    public static function triggerVendorWithdrawalApprovedAlert($withdraw): void
+    {
+        $seller = $withdraw->seller ?? null;
+        if (!$seller || empty($seller->phone)) return;
+
+        $vendorName = $seller->f_name ?? 'Partner Vendor';
+        $amount = number_format($withdraw->amount, 2);
+
+        $message = "💰 *Victorious MARKET — Payout Approved!*\n\n"
+            . "Hello {$vendorName}! Your withdrawal request of *₦{$amount}* has been approved and disbursed to your registered bank account.\n\n"
+            . "Thank you for your business!";
+
+        dispatch(new SendWhatsAppJob($seller->phone, 'text', ['text' => $message]));
     }
 }

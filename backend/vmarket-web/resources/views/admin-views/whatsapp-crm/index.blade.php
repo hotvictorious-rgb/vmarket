@@ -187,7 +187,13 @@
                         <span class="fs-11 text-muted" id="activeChatPhone">{{ translate('WhatsApp_Verified_Channel') }}</span>
                     </div>
                 </div>
-                <div id="chatActionButtons" class="d-none d-flex gap-2">
+                <div id="chatActionButtons" class="d-none d-flex align-items-center gap-2">
+                    <select id="agentSelect" class="form-select form-select-sm" style="max-width: 150px; font-size: 11px;" onchange="reassignToAgent(this.value)">
+                        <option value="">{{ translate('Assign Agent...') }}</option>
+                        @foreach($agents ?? [] as $ag)
+                            <option value="{{ $ag->id }}">{{ $ag->name }}</option>
+                        @endforeach
+                    </select>
                     <button class="btn btn-xs btn-outline-danger" onclick="toggleBotHandling()">
                         <i class="tio-android-robot"></i> <span id="botToggleText">{{ translate('Handover_to_Bot') }}</span>
                     </button>
@@ -350,13 +356,25 @@
 
     function toggleBotHandling() {
         if (!activeConversationId) return;
-        fetch("{{ url('admin/whatsapp-crm/status') }}/" + activeConversationId, {
+        fetch("{{ url('admin/whatsapp-crm/reassign') }}/" + activeConversationId, {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
                 'X-CSRF-TOKEN': '{{ csrf_token() }}'
             },
-            body: json_encode({ status: 'bot_handling' })
+            body: JSON.stringify({ handoff_to_bot: true })
+        }).then(() => loadConversation(activeConversationId));
+    }
+
+    function reassignToAgent(agentId) {
+        if (!activeConversationId) return;
+        fetch("{{ url('admin/whatsapp-crm/reassign') }}/" + activeConversationId, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRF-TOKEN': '{{ csrf_token() }}'
+            },
+            body: JSON.stringify({ agent_id: agentId || null })
         }).then(() => loadConversation(activeConversationId));
     }
 
@@ -368,7 +386,7 @@
                 'Content-Type': 'application/json',
                 'X-CSRF-TOKEN': '{{ csrf_token() }}'
             },
-            body: json_encode({ status: 'resolved' })
+            body: JSON.stringify({ status: 'resolved' })
         }).then(() => loadConversation(activeConversationId));
     }
 </script>

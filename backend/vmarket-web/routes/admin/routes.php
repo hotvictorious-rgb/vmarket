@@ -133,6 +133,7 @@ Route::group(['prefix' => 'admin', 'as' => 'admin.', 'middleware' => ['admin', '
         Route::get('messages/{id}', [\App\Http\Controllers\Admin\WhatsApp\WhatsAppCrmController::class, 'getMessages'])->name('get-messages');
         Route::post('send/{id}', [\App\Http\Controllers\Admin\WhatsApp\WhatsAppCrmController::class, 'sendMessage'])->name('send-message');
         Route::post('status/{id}', [\App\Http\Controllers\Admin\WhatsApp\WhatsAppCrmController::class, 'updateStatus'])->name('update-status');
+        Route::post('reassign/{id}', [\App\Http\Controllers\Admin\WhatsApp\WhatsAppCrmController::class, 'reassignAgent'])->name('reassign');
 
         // Broadcast Campaigns
         Route::get('broadcasts', [\App\Http\Controllers\Admin\WhatsApp\WhatsAppBroadcastController::class, 'index'])->name('broadcasts');

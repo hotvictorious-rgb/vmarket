@@ -795,6 +795,11 @@ class OrderController extends BaseController
 
         event(new OrderStatusEvent(key: 'new_order_assigned_message', type: 'delivery_man', order: $order));
 
+        // [AI] Trigger WhatsApp Automated Assignment Alert to Delivery Rider
+        if (!empty($order->deliveryMan)) {
+            \App\Services\WhatsAppAutomationWorkflow::triggerDeliveryManAssignmentAlert($order, $order->deliveryMan);
+        }
+
         /** For Seller Product Send Notification */
         if ($order['seller_is'] == 'seller') {
             event(new OrderStatusEvent(key: 'delivery_man_assign_by_admin_message', type: 'seller', order: $order));
