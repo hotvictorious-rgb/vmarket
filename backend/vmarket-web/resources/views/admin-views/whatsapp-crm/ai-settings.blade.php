@@ -68,7 +68,7 @@
                     <h5 class="card-title font-weight-bold" style="color: #4A154B;">
                         <i class="tio-book"></i> {{ translate('AI_Knowledge_Base_&_Store_Policies') }}
                     </h5>
-                    <button class="btn btn-xs btn-outline-primary" data-toggle="modal" data-target="#addFaqModal">
+                    <button class="btn btn-xs btn-outline-primary" data-toggle="modal" data-target="#addFaqModal" data-bs-toggle="modal" data-bs-target="#addFaqModal">
                         <i class="tio-add"></i> {{ translate('Add_FAQ') }}
                     </button>
                 </div>
@@ -120,7 +120,7 @@
                 @csrf
                 <div class="modal-header">
                     <h5 class="modal-title font-weight-bold">{{ translate('Add_New_Rule_/_FAQ_to_AI_Brain') }}</h5>
-                    <button type="button" class="btn-close" data-dismiss="modal" aria-label="Close"></button>
+                    <button type="button" class="btn-close" data-dismiss="modal" data-bs-dismiss="modal" aria-label="Close"></button>
                 </div>
                 <div class="modal-body">
                     <div class="mb-3">
@@ -142,7 +142,7 @@
                     </div>
                 </div>
                 <div class="modal-footer">
-                    <button type="button" class="btn btn-secondary" data-dismiss="modal">{{ translate('Cancel') }}</button>
+                    <button type="button" class="btn btn-secondary" data-dismiss="modal" data-bs-dismiss="modal">{{ translate('Cancel') }}</button>
                     <button type="submit" class="btn btn--primary" style="background: #4A154B; border-color: #4A154B;">{{ translate('Save_to_AI_Brain') }}</button>
                 </div>
             </form>

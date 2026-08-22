@@ -11,7 +11,7 @@
             </h2>
             <p class="text-muted fs-12 mb-0">{{ translate('Targeted marketing broadcasts, seasonal sales & promotional blasts') }}</p>
         </div>
-        <button class="btn btn--primary" data-toggle="modal" data-target="#createBroadcastModal" style="background-color: #4A154B; border-color: #4A154B;">
+        <button class="btn btn--primary" data-toggle="modal" data-target="#createBroadcastModal" data-bs-toggle="modal" data-bs-target="#createBroadcastModal" style="background-color: #4A154B; border-color: #4A154B;">
             <i class="tio-add"></i> {{ translate('Create_New_Broadcast') }}
         </button>
     </div>
@@ -75,7 +75,7 @@
                 @csrf
                 <div class="modal-header">
                     <h5 class="modal-title font-weight-bold">{{ translate('Create_Targeted_WhatsApp_Broadcast') }}</h5>
-                    <button type="button" class="btn-close" data-dismiss="modal" aria-label="Close"></button>
+                    <button type="button" class="btn-close" data-dismiss="modal" data-bs-dismiss="modal" aria-label="Close"></button>
                 </div>
                 <div class="modal-body">
                     <div class="mb-3">
@@ -96,7 +96,7 @@
                     </div>
                 </div>
                 <div class="modal-footer">
-                    <button type="button" class="btn btn-secondary" data-dismiss="modal">{{ translate('Cancel') }}</button>
+                    <button type="button" class="btn btn-secondary" data-dismiss="modal" data-bs-dismiss="modal">{{ translate('Cancel') }}</button>
                     <button type="submit" class="btn btn--primary" style="background: #4A154B; border-color: #4A154B;">{{ translate('Queue_&_Launch_Broadcast') }}</button>
                 </div>
             </form>

@@ -334,6 +334,18 @@
         `;
     }
 
+    function sendActionTemplate(type) {
+        if (!activeConversationId) return;
+        let msg = '';
+        if (type === 'otp') {
+            msg = 'Hello! Here is a reminder of your 6-digit Delivery OTP code for your Victorious MARKET order. Please present this code to your rider upon delivery.';
+        } else if (type === 'paystack') {
+            msg = 'Hello! You can complete payment for your Victorious MARKET order securely via Paystack using this link: ' + window.location.origin + '/pay';
+        }
+        document.getElementById('messageInput').value = msg;
+        submitMessage();
+    }
+
     function submitMessage() {
         const input = document.getElementById('messageInput');
         const text = input.value.trim();
@@ -345,7 +357,7 @@
                 'Content-Type': 'application/json',
                 'X-CSRF-TOKEN': '{{ csrf_token() }}'
             },
-            body: json_encode({ message: text })
+            body: JSON.stringify({ message: text })
         }).then(res => res.json()).then(data => {
             if (data.status) {
                 input.value = '';
