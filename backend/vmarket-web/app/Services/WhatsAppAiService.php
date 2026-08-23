@@ -277,11 +277,34 @@ PROMPT;
                         'description' => 'Check available vendor earnings and linked bank withdrawal details.',
                         'parameters' => ['type' => 'OBJECT', 'properties' => []],
                     ],
+                    [
+                        'name' => 'get_vendor_pickup_code',
+                        'description' => 'Fetch the 6-digit Pickup Verification Code for an order to give to the arriving dispatch rider.',
+                        'parameters' => [
+                            'type' => 'OBJECT',
+                            'properties' => [
+                                'order_id' => ['type' => 'INTEGER', 'description' => 'The order ID to get pickup code for'],
+                            ],
+                            'required' => ['order_id'],
+                        ],
+                    ],
                     // Rider Tools
                     [
                         'name' => 'get_rider_route',
                         'description' => 'Fetch assigned delivery stops for today with customer landmark, Google Maps link, and payment type.',
                         'parameters' => ['type' => 'OBJECT', 'properties' => []],
+                    ],
+                    [
+                        'name' => 'confirm_rider_pickup',
+                        'description' => 'Confirm physical pickup of package at vendor shop by submitting the 6-digit pickup code.',
+                        'parameters' => [
+                            'type' => 'OBJECT',
+                            'properties' => [
+                                'order_id' => ['type' => 'INTEGER', 'description' => 'The order ID being picked up'],
+                                'pickup_code' => ['type' => 'STRING', 'description' => '6-digit pickup code provided by the vendor'],
+                            ],
+                            'required' => ['order_id', 'pickup_code'],
+                        ],
                     ],
                     [
                         'name' => 'verify_doorstep_otp',
@@ -574,9 +597,19 @@ PROMPT;
             case 'get_vendor_payout':
                 return WhatsAppVendorService::getPayoutSummary($dossier['phone']);
 
+            case 'get_vendor_pickup_code':
+                return WhatsAppVendorService::getPickupCode($dossier['phone'], (int)($args['order_id'] ?? 0));
+
             // Rider Operations
             case 'get_rider_route':
                 return WhatsAppRiderService::getRiderRoute($dossier['phone']);
+
+            case 'confirm_rider_pickup':
+                return WhatsAppRiderService::confirmPickup(
+                    $dossier['phone'],
+                    (int)($args['order_id'] ?? 0),
+                    (string)($args['pickup_code'] ?? '')
+                );
 
             case 'verify_doorstep_otp':
                 return WhatsAppRiderService::verifyDoorstepOtp(

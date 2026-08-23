@@ -82,7 +82,59 @@ class WhatsAppRiderService
     }
 
     /**
-     * [AI] Doorstep 6-digit Delivery OTP Verification with instant order completion.
+     * [AI] Vendor Shop Pickup Verification (Phase 1 of Handshake).
+     */
+    public static function confirmPickup(string $phone, int $orderId, string $pickupCode): array
+    {
+        $rider = self::getRider($phone);
+        if (!$rider) {
+            return ['status' => false, 'message' => 'Unauthorized rider access.'];
+        }
+
+        $order = Order::where('id', $orderId)
+            ->where('delivery_man_id', $rider->id)
+            ->first();
+
+        if (!$order) {
+            return ['status' => false, 'message' => "Order #{$orderId} is not assigned to your route."];
+        }
+
+        $lockKey = "rider_pickup_attempts_{$orderId}";
+        $attempts = (int)\Illuminate\Support\Facades\Cache::get($lockKey, 0);
+        if ($attempts >= 5) {
+            return [
+                'status' => false,
+                'message' => "⛔ Pickup verification for Order #{$orderId} is temporarily locked due to 5 failed attempts. Please contact central dispatch.",
+            ];
+        }
+
+        $cleanInputCode = trim((string)$pickupCode);
+        $savedCode = trim((string)$order->pickup_verification_code);
+
+        if (!hash_equals($savedCode, $cleanInputCode)) {
+            \Illuminate\Support\Facades\Cache::put($lockKey, $attempts + 1, now()->addMinutes(15));
+            $remaining = 5 - ($attempts + 1);
+            return [
+                'status' => false,
+                'message' => "❌ Invalid Pickup Code for Order #{$orderId} ({$remaining} attempts remaining). Please request the 6-digit Pickup Code from the vendor.",
+            ];
+        }
+
+        \Illuminate\Support\Facades\Cache::forget($lockKey);
+
+        $order->update([
+            'order_status' => 'out_for_delivery',
+        ]);
+
+        return [
+            'status' => true,
+            'order_id' => $orderId,
+            'message' => "📦 Pickup Confirmed for Order #{$orderId}! Order is now Out for Delivery.",
+        ];
+    }
+
+    /**
+     * [AI] Doorstep 6-digit Delivery OTP Verification with instant order completion & brute-force lockout.
      */
     public static function verifyDoorstepOtp(string $phone, int $orderId, string $otp): array
     {
@@ -103,16 +155,30 @@ class WhatsAppRiderService
             return ['status' => false, 'message' => "Order #{$orderId} has already been marked delivered."];
         }
 
+        // [AI] Brute-Force Rate Limiter: Max 5 attempts per order (15-min lockout)
+        $lockKey = "rider_otp_attempts_{$orderId}";
+        $attempts = (int)\Illuminate\Support\Facades\Cache::get($lockKey, 0);
+        if ($attempts >= 5) {
+            return [
+                'status' => false,
+                'message' => "⛔ Doorstep OTP verification for Order #{$orderId} is locked due to 5 consecutive failed attempts. Contact dispatch support.",
+            ];
+        }
+
         // [AI] Cryptographic Constant-Time Comparison (Zero Timing-Leak)
         $cleanInputOtp = trim((string)$otp);
         $savedOtp = trim((string)$order->verification_code);
 
         if (!hash_equals($savedOtp, $cleanInputOtp)) {
+            \Illuminate\Support\Facades\Cache::put($lockKey, $attempts + 1, now()->addMinutes(15));
+            $remaining = 5 - ($attempts + 1);
             return [
                 'status' => false,
-                'message' => "❌ Invalid OTP code for Order #{$orderId}. Please request the correct 6-digit code from the customer at the doorstep.",
+                'message' => "❌ Invalid OTP code for Order #{$orderId} ({$remaining} attempts remaining). Please request the correct 6-digit code from the customer at the doorstep.",
             ];
         }
+
+        \Illuminate\Support\Facades\Cache::forget($lockKey);
 
         // OTP Matches! Complete delivery atomically
         DB::transaction(function () use ($order) {

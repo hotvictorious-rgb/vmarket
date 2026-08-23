@@ -7,6 +7,14 @@ Always append your completed tasks here in chronological order at the top. Forma
 `### [YYYY-MM-DD HH:MM UTC] <Feature / Fix Title> [<Component Scope>]`
 Include the specific app/component modified and bullet points detailing the exact technical changes.
 
+### [2026-08-24 00:16 UTC] Two-Phase Handshake (Vendor Pickup Code & Doorstep OTP) with 5-Attempt Brute-Force Rate Limiter [backend]
+* **Component:** Laravel Backend, Vendor & Rider Security Services, Inbound Webhook Controller (`backend/vmarket-web`)
+* **Action:** Implemented the complete two-phase marketplace verification handshake and multi-tier rate limiting:
+  - **Vendor Shop Pickup Code Handshake (`WhatsAppVendorService.php`, `WhatsAppRiderService.php`):** Added `getPickupCode` for merchants to retrieve the 6-digit `pickup_verification_code` and `confirmPickup` for riders to submit the pickup code at the shop, transitioning order status to `out_for_delivery`.
+  - **5-Attempt Brute-Force Rate Limiter (`WhatsAppRiderService.php`):** Implemented Cache-based attempt tracking (`rider_otp_attempts_` & `rider_pickup_attempts_`), locking verification for 15 minutes after 5 failed attempts to eliminate brute-force attack vectors.
+  - **Inbound Webhook DDoS Rate Limiter (`WhatsAppWebhookController.php`):** Enforced 30 messages/minute throttle per verified phone number to neutralize spam floods.
+  - **AI Tool Suite Enhancements (`WhatsAppAiService.php`):** Declared `get_vendor_pickup_code` and `confirm_rider_pickup` in Gemini function definitions and wired local handlers.
+
 ### [2026-08-24 00:07 UTC] Blind Cryptographic 6-Digit OTP Doorstep Verification Guard [backend]
 * **Component:** Laravel Backend, Rider WhatsApp Security Layer & Order Fulfillment Pipeline (`backend/vmarket-web`)
 * **Action:** Hardened doorstep delivery OTP verification with zero LLM exposure and constant-time comparison:

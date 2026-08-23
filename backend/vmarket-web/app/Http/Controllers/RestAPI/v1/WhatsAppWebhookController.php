@@ -97,6 +97,15 @@ class WhatsAppWebhookController extends Controller
 
             $formattedPhone = SMSModule::formatNigerianPhone($rawPhone);
 
+            // [AI] Inbound WhatsApp DDoS Rate Limiter: Max 30 messages/min per phone
+            $rateKey = 'wa_inbound_rate_' . $formattedPhone;
+            $msgHits = (int)\Illuminate\Support\Facades\Cache::get($rateKey, 0);
+            if ($msgHits >= 30) {
+                Log::warning("[WhatsApp Rate Limit] Throttling messages from {$formattedPhone}");
+                return response()->json(['status' => 'rate_limited'], 200);
+            }
+            \Illuminate\Support\Facades\Cache::put($rateKey, $msgHits + 1, now()->addMinute());
+
             // Extract message body / media
             $messageBody = '';
             $mediaUrl = null;

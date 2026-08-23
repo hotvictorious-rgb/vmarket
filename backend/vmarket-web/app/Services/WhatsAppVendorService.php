@@ -151,6 +151,37 @@ class WhatsAppVendorService
     }
 
     /**
+     * [AI] Fetch vendor pickup code for rider shop collection.
+     */
+    public static function getPickupCode(string $phone, int $orderId): array
+    {
+        $seller = self::getSeller($phone);
+        if (!$seller) {
+            return ['status' => false, 'message' => 'Unauthorized vendor access.'];
+        }
+
+        $order = Order::where('id', $orderId)
+            ->where('seller_id', $seller->id)
+            ->first();
+
+        if (!$order) {
+            return ['status' => false, 'message' => "Order #{$orderId} not found in your store catalog."];
+        }
+
+        if (empty($order->pickup_verification_code)) {
+            $order->update(['pickup_verification_code' => (string)rand(100000, 999999)]);
+            $order->refresh();
+        }
+
+        return [
+            'status' => true,
+            'order_id' => $order->id,
+            'pickup_code' => $order->pickup_verification_code,
+            'message' => "🔑 The Pickup Verification Code for Order #{$order->id} is: *{$order->pickup_verification_code}*. Please provide this 6-digit code to the Victorious MARKET rider upon collection.",
+        ];
+    }
+
+    /**
      * [AI] Conversational stock adjustment with strict vendor IDOR scoping.
      */
     public static function updateStock(string $phone, string $productName, int $newStock, ?string $variant = null): array
