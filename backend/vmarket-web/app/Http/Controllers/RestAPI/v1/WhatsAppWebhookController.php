@@ -166,8 +166,19 @@ class WhatsAppWebhookController extends Controller
 
                 $aiResult = $aiService->generateResponse($formattedPhone, $messageBody, $recentHistory);
 
-                if (!empty($aiResult['reply'])) {
-                    // Dispatch AI response
+                if (!empty($aiResult['image_url'])) {
+                    // Dispatch Media Message with real product photo + caption
+                    dispatch(new SendWhatsAppJob(
+                        $formattedPhone,
+                        'image',
+                        [
+                            'media_url' => $aiResult['image_url'],
+                            'caption' => $aiResult['reply'] ?? '',
+                        ],
+                        $conversation->id
+                    ));
+                } elseif (!empty($aiResult['reply'])) {
+                    // Dispatch Text response
                     dispatch(new SendWhatsAppJob(
                         $formattedPhone,
                         'text',

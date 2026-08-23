@@ -78,6 +78,12 @@ You are "Victor", the official AI Sales & Customer Care Specialist for Victoriou
    - You can manage wallet (`get_wallet_balance`, `fund_wallet_paystack`, `pay_order_with_wallet`).
    - When placing orders (`place_order`), confirm delivery landmark in Uyo/Nigeria and highlight the 6-digit Delivery OTP clearly.
 
+### STRICT ZERO IMAGE GENERATION DIRECTIVE (ANTI-LECTURE BREVITY RULE):
+1. You ONLY share real, verified product photos from the Victorious MARKET catalog using the `get_product_showcase` tool.
+2. You CANNOT and MUST NEVER generate, synthesize, draw, or create artificial images or AI art.
+3. If a customer asks you to draw, create, or generate an image, DO NOT give long preachy lectures or technical AI disclaimers (NEVER say "As an AI language model I cannot draw...").
+4. Simply provide a short, direct 1-sentence reply: "I only share real photos of items in our store! Here are the products we have in stock:" and show matching real catalog items using `get_product_showcase`.
+
 ### STORE KNOWLEDGE BASE (FAQs):
 {$faqsJson}
 PROMPT;
@@ -89,14 +95,25 @@ PROMPT;
             [
                 'function_declarations' => [
                     [
+                        'name' => 'get_product_showcase',
+                        'description' => 'Fetch authentic, real catalog product photos, thumbnail, gallery images, sizes, and live stock from Victorious MARKET store.',
+                        'parameters' => [
+                            'type' => 'OBJECT',
+                            'properties' => [
+                                'query' => ['type' => 'STRING', 'description' => 'Product name or search keyword (e.g. Chelsea boots, Nike sneakers, wristwatch)'],
+                                'product_id' => ['type' => 'INTEGER', 'description' => 'Optional specific product ID'],
+                            ],
+                        ],
+                    ],
+                    [
                         'name' => 'add_to_cart',
                         'description' => 'Add a specific product to the customer cart in MySQL with chosen variant/size.',
                         'parameters' => [
                             'type' => 'OBJECT',
                             'properties' => [
-                                'product_id' => ['type' => 'INTEGER', 'description' => 'The ID of the product to add'],
+                                'product_id' => ['type' => 'INTEGER', 'description' => 'The product ID to add'],
                                 'quantity' => ['type' => 'INTEGER', 'description' => 'Quantity to add (default 1)'],
-                                'variant' => ['type' => 'STRING', 'description' => 'Optional chosen size or color variant (e.g. Size 43, Black)'],
+                                'variant' => ['type' => 'STRING', 'description' => 'Size, color, or variant choice (e.g. Size 42, Black)'],
                             ],
                             'required' => ['product_id'],
                         ],
@@ -318,7 +335,12 @@ PROMPT;
                 ]);
 
                 $finalText = $finalResponse->json('candidates.0.content.parts.0.text') ?? "I have found the information for you!";
-                return ['type' => 'text', 'reply' => $finalText, 'escalate' => false];
+                return [
+                    'type' => !empty($toolResult['image_url']) ? 'image' : 'text',
+                    'reply' => $finalText,
+                    'image_url' => $toolResult['image_url'] ?? null,
+                    'escalate' => false
+                ];
             }
 
             // Normal text response
@@ -338,6 +360,42 @@ PROMPT;
     protected function invokeLocalTool(string $name, array $args, array $dossier): array
     {
         switch ($name) {
+            case 'get_product_showcase':
+                $q = $args['query'] ?? '';
+                $pId = !empty($args['product_id']) ? (int)$args['product_id'] : null;
+                $query = \App\Models\Product::where('status', 1)->where('current_stock', '>', 0);
+                if ($pId) {
+                    $prod = $query->where('id', $pId)->first();
+                } else {
+                    $prod = $query->where('name', 'like', "%{$q}%")->first();
+                }
+
+                if (!$prod) {
+                    return ['found' => false, 'message' => 'No in-stock item matching your search was found in our catalog.'];
+                }
+
+                $thumbnailUrl = $prod->thumbnail ? asset('storage/app/public/product/thumbnail/' . $prod->thumbnail) : null;
+                $gallery = [];
+                if (!empty($prod->images)) {
+                    $imgArray = is_array($prod->images) ? $prod->images : json_decode($prod->images, true);
+                    if (is_array($imgArray)) {
+                        foreach (array_slice($imgArray, 0, 3) as $img) {
+                            $gallery[] = asset('storage/app/public/product/' . $img);
+                        }
+                    }
+                }
+
+                return [
+                    'found' => true,
+                    'product_id' => $prod->id,
+                    'name' => $prod->name,
+                    'unit_price' => (float)$prod->unit_price,
+                    'formatted_price' => '₦' . number_format($prod->unit_price, 2),
+                    'current_stock' => $prod->current_stock,
+                    'image_url' => $thumbnailUrl ?: ($gallery[0] ?? null),
+                    'gallery_images' => $gallery,
+                ];
+
             case 'add_to_cart':
                 return WhatsAppOrderService::addToCart(
                     $dossier['phone'],

@@ -7,6 +7,13 @@ Always append your completed tasks here in chronological order at the top. Forma
 `### [YYYY-MM-DD HH:MM UTC] <Feature / Fix Title> [<Component Scope>]`
 Include the specific app/component modified and bullet points detailing the exact technical changes.
 
+### [2026-08-23 23:36 UTC] WhatsApp Real Product Image Showcase & Zero AI Generation Brevity Guard [backend]
+* **Component:** Laravel Backend, WhatsApp AI Service, Webhook Controller & Catalog Media Pipeline (`backend/vmarket-web`)
+* **Action:** Implemented real product photo delivery and strict zero AI generative art rules:
+  - **Authentic Product Showcase Tool (`WhatsAppAiService.php`):** Added `get_product_showcase` function tool fetching real high-resolution product thumbnails and gallery photos from MySQL `products` storage (`storage/product/{image}`) with automatic out-of-stock filtering (`current_stock > 0`).
+  - **Zero AI Image Generation & Anti-Lecture Brevity Directive (`WhatsAppAiService.php`):** Enforced strict system instructions prohibiting synthetic image generation/AI art, banning robotic disclaimers ("As an AI language model I cannot draw..."), and directing the AI to provide crisp 1-sentence marketplace stock answers.
+  - **WhatsApp Media Message Dispatch (`WhatsAppWebhookController.php`, `SendWhatsAppJob.php`):** Updated inbound message handler to detect `image_url` from AI tool outputs and dispatch native WhatsApp image messages with formatted captions (price, sizes, 1-click buy).
+
 ### [2026-08-23 23:28 UTC] Autonomous Human-Handoff Resume & Deep Episodic Memory Engine (Isolated Per WhatsApp Number) [backend]
 * **Component:** Laravel Backend, WhatsApp AI Services, Console Scheduler & CRM Dashboard (`backend/vmarket-web`)
 * **Action:** Implemented autonomous ghostwriter human-agent handoff, inactivity auto-resume, and phone-isolated lifetime episodic memory:
