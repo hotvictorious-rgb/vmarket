@@ -7,6 +7,16 @@ Always append your completed tasks here in chronological order at the top. Forma
 `### [YYYY-MM-DD HH:MM UTC] <Feature / Fix Title> [<Component Scope>]`
 Include the specific app/component modified and bullet points detailing the exact technical changes.
 
+### [2026-08-23 22:52 UTC] AI Receipt Vision Inspector, Anti-Duplicate Verification & 1-Click Fraud Banning Engine [backend]
+* **Component:** Laravel Backend, AI Vision Services, Upload Security Pipeline, WhatsApp CRM & Customer Moderation (`backend/vmarket-web`)
+* **Action:** Implemented automated bank transfer receipt inspection, anti-duplicate Session ID locks, and user banning engine:
+  - **Database Migration & Model Mapping (`2026_08_24_000004_add_receipt_verification_and_banning_tables.php`, `Order.php`, `BlacklistedCustomer.php`):** Added `bank_session_id` (indexed), `receipt_image`, `receipt_metadata`, `receipt_verified_by`, `receipt_verified_at` to `orders`, and created `blacklisted_customers` table for multi-identifier blocking.
+  - **AI Vision OCR & Anti-Tampering (`ReceiptOcrAiService.php`):** Integrated Gemini 1.5 Flash Vision to extract Nigerian bank session IDs, amounts, senders, and timestamps while performing automatic font tampering and image artifact detection.
+  - **Anti-Duplicate Session ID Mathematical Guard:** Enforced database uniqueness checks on bank session IDs, preventing fraudsters from reusing past transfer receipts.
+  - **Privacy Guardrail (Zero Cross-Customer Leaks):** Enforced sanitized, generic feedback in `WhatsAppAiService::processReceiptImage` when duplicates are caught to prevent receipt probing attacks.
+  - **Secure Upload Pipeline & Anti-Malware (`ReceiptUploadService.php`):** Implemented MIME-type whitelist, 5MB bounds, EXIF payload stripping, and re-encoding into clean `.webp` format with rate limiting.
+  - **1-Click Moderation & Split-Screen CRM UI (`BlacklistController.php`, `CheckBannedCustomerMiddleware.php`, `whatsapp-crm/index.blade.php`):** Built 1-click ban/unban actions and interactive receipt review drawer with AI scorecard and approval triggers.
+
 ### [2026-08-23 22:18 UTC] Cryptographic Paystack Expected Amount Verification Guard [backend]
 * **Component:** Laravel Payment Gateway Engine (`backend/vmarket-web/app/Packages/PaystackGateway`, `app/Http/Controllers/Payment_Methods`)
 * **Action:** Hardened cryptographic verification and monetary amount matching across Paystack payment handlers:

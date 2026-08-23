@@ -293,16 +293,44 @@
         let ordersHtml = '';
         if (dossier.active_orders && dossier.active_orders.length > 0) {
             dossier.active_orders.forEach(ord => {
+                if (ord.receipt_image || ord.bank_session_id) {
+                    let meta = ord.receipt_metadata || {};
+                    let isDup = meta.is_duplicate ? '<span class="text-danger font-weight-bold">🚨 DUPLICATE DETECTED</span>' : '<span class="text-success">✅ Unique Ref</span>';
+                    let isMatch = meta.is_amount_matched ? '<span class="text-success">✅ Amount Match</span>' : '<span class="text-warning">⚠️ Mismatch</span>';
+
+                ordersHtml += `
+                    <div class="p-2 mb-2 rounded border bg-white border-warning">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <strong class="text-dark fs-12">#${ord.id} (${ord.order_type})</strong>
+                            <span class="badge bg-warning">${ord.status}</span>
+                        </div>
+                        <div class="text-muted fs-11 mt-1">Total: ₦${ord.order_amount.toLocaleString()}</div>
+                        
+                        <div class="p-2 mt-2 rounded bg-light border">
+                            <div class="font-weight-bold fs-11 text-primary mb-1">💸 Transfer Receipt Review:</div>
+                            <div class="fs-10">Ref: <code>${ord.bank_session_id || 'N/A'}</code> (${isDup})</div>
+                            <div class="fs-10">AI Check: ${isMatch}</div>
+                            ${ord.receipt_image ? `<a href="${ord.receipt_image}" target="_blank" class="fs-10 text-primary d-block mt-1">🔍 View Uploaded Receipt</a>` : ''}
+                            
+                            <div class="d-flex gap-1 mt-2">
+                                <button class="btn btn-xs btn-success w-100" onclick="verifyReceipt(${ord.id})">✅ Approve Payment</button>
+                                <button class="btn btn-xs btn-outline-danger w-100" onclick="rejectReceipt(${ord.id})">❌ Reject</button>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            } else {
                 ordersHtml += `
                     <div class="p-2 mb-2 rounded border bg-white">
-                        <div class="d-flex justify-content-between font-weight-bold">
-                            <span>Order #${ord.order_id}</span>
+                        <div class="d-flex justify-content-between">
+                            <strong>#${ord.id} (${ord.order_type})</strong>
                             <span class="badge bg-warning">${ord.status}</span>
                         </div>
                         <div class="text-muted fs-11 mt-1">Total: ₦${ord.order_amount.toLocaleString()}</div>
                         <div class="text-muted fs-11">OTP: <strong class="text-primary">${ord.verification_code}</strong></div>
                     </div>
                 `;
+            }
             });
         } else {
             ordersHtml = '<div class="text-muted fs-11">No active pending orders.</div>';
@@ -355,8 +383,61 @@
             <div class="d-grid gap-2">
                 <button class="btn btn-xs btn-outline-primary" onclick="sendActionTemplate('otp')">Resend 6-Digit Delivery OTP</button>
                 <button class="btn btn-xs btn-outline-success" onclick="sendActionTemplate('paystack')">Send Paystack Payment Link</button>
+                <button class="btn btn-xs btn-outline-danger" onclick="banCustomerPrompt('${dossier.phone}', ${dossier.customer_id || 'null'})">🚫 1-Click Ban Customer</button>
             </div>
         `;
+    }
+
+    function verifyReceipt(orderId) {
+        if (!confirm('Are you sure you want to approve this bank transfer and confirm Order #' + orderId + '?')) return;
+        fetch("{{ url('admin/customer/verify-receipt') }}/" + orderId, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRF-TOKEN': '{{ csrf_token() }}'
+            }
+        }).then(res => res.json()).then(data => {
+            alert(data.message);
+            if (data.status) {
+                loadConversation(activeConversationId);
+            }
+        });
+    }
+
+    function rejectReceipt(orderId) {
+        let reason = prompt('Please enter the reason for rejection (e.g., Transfer not reflecting):');
+        if (!reason) return;
+        fetch("{{ url('admin/customer/reject-receipt') }}/" + orderId, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRF-TOKEN': '{{ csrf_token() }}'
+            },
+            body: JSON.stringify({ reason: reason })
+        }).then(res => res.json()).then(data => {
+            alert(data.message);
+            if (data.status) {
+                loadConversation(activeConversationId);
+            }
+        });
+    }
+
+    function banCustomerPrompt(phone, userId) {
+        let reason = prompt('Enter reason for banning this customer (e.g., Fake payment receipt fraud):');
+        if (!reason) return;
+        fetch("{{ url('admin/customer/ban') }}", {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRF-TOKEN': '{{ csrf_token() }}'
+            },
+            body: JSON.stringify({ phone: phone, user_id: userId, reason: reason })
+        }).then(res => res.json()).then(data => {
+            alert(data.message);
+            if (data.status) {
+                loadConversation(activeConversationId);
+            }
+        });
     }
 
     function sendActionTemplate(type) {

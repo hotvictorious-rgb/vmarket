@@ -65,13 +65,18 @@ class WhatsAppCustomerTransformer
         }
 
         return [
+            'id' => $order->id,
             'order_id' => $order->id,
+            'order_type' => $order->order_type ?? 'default_type',
             'status' => $order->order_status,
             'payment_status' => $order->payment_status,
             'payment_method' => $order->payment_method,
             'order_amount' => (float) $order->order_amount,
             'pod_dispatch_fee' => (float) ($order->pod_dispatch_fee ?? 0.0),
             'doorstep_due_amount' => (float) ($order->doorstep_due_amount > 0 ? $order->doorstep_due_amount : $order->order_amount),
+            'bank_session_id' => $order->bank_session_id,
+            'receipt_image' => $order->receipt_image ? (str_starts_with($order->receipt_image, 'http') ? $order->receipt_image : asset('storage/' . $order->receipt_image)) : null,
+            'receipt_metadata' => $order->receipt_metadata,
             'verification_code' => $order->verification_code, // 6-digit Customer Delivery OTP
             'delivery_rider' => $rider,
             'items' => $items,

@@ -38,6 +38,7 @@ use App\Http\Controllers\Admin\Product\CategorySpecificationController;
 use App\Http\Controllers\Admin\Promotion\BannerController;
 use App\Http\Controllers\Admin\Promotion\CouponController;
 use App\Http\Controllers\Admin\Settings\SiteMapController;
+use App\Http\Controllers\Admin\Customer\BlacklistController;
 use App\Http\Controllers\Admin\Customer\CustomerController;
 use App\Http\Controllers\Admin\Employee\EmployeeController;
 use App\Http\Controllers\Admin\Product\AttributeController;
@@ -405,6 +406,14 @@ Route::group(['prefix' => 'admin', 'as' => 'admin.', 'middleware' => ['admin', '
             Route::get('customer-list-without-all-customer', 'getCustomerListWithoutAllCustomerName')->name('customer-list-without-all-customer');
             Route::post('add', 'add')->name('add');
             Route::post('profile-update', 'updateProfile')->name('profile-update');
+        });
+
+        // [AI] 1-Click Ban & Manual Receipt Verification Routes
+        Route::controller(BlacklistController::class)->group(function () {
+            Route::post('ban', 'banCustomer')->name('ban');
+            Route::post('unban', 'unbanCustomer')->name('unban');
+            Route::post('verify-receipt/{id}', 'verifyReceipt')->name('verify-receipt');
+            Route::post('reject-receipt/{id}', 'rejectReceipt')->name('reject-receipt');
         });
 
         Route::group(['prefix' => 'wallet', 'as' => 'wallet.'], function () {

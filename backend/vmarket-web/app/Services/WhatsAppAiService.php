@@ -26,6 +26,15 @@ class WhatsAppAiService
      */
     public function generateResponse(string $phone, string $customerMessage, array $recentChatHistory = []): array
     {
+        // 0. Security Guard: Blacklist check
+        if (\App\Models\BlacklistedCustomer::isBlacklisted($phone)) {
+            return [
+                'type' => 'text',
+                'reply' => "Hello. This WhatsApp account has been restricted by Victorious MARKET security due to a policy violation. Please contact support@victoriousmarket.com for assistance.",
+                'escalate' => false,
+            ];
+        }
+
         // 1. Fetch Customer Past/Present/Future Dossier
         $dossier = CustomerAiRelationshipEngine::buildCustomerDossier($phone);
 
@@ -362,4 +371,73 @@ PROMPT;
                 return ['status' => 'acknowledged'];
         }
     }
+
+    /**
+     * [AI] Autonomous Vision Inspection of WhatsApp Customer Transfer Receipts.
+     * Enforces Anti-Duplicate Session ID locking & zero-privacy-leak responses.
+     */
+    public function processReceiptImage(string $phone, string $imageFullPath, ?int $orderId = null): array
+    {
+        $dossier = CustomerAiRelationshipEngine::buildCustomerDossier($phone);
+        $order = null;
+
+        if ($orderId) {
+            $order = Order::find($orderId);
+        } elseif (!empty($dossier['active_orders'])) {
+            $order = Order::find($dossier['active_orders'][0]['order_id']);
+        }
+
+        if (!$order) {
+            return [
+                'type' => 'text',
+                'reply' => "Hello {$dossier['name']}! I received your transfer receipt, but I couldn't find an active unpaid order under your account. Please confirm your order first, or let me know if you want to place a new one!",
+                'escalate' => false,
+            ];
+        }
+
+        $ocrService = app(ReceiptOcrAiService::class);
+        $inspection = $ocrService->inspectReceipt($imageFullPath, $order, (float)$order->order_amount);
+
+        if (!$inspection['status']) {
+            return [
+                'type' => 'text',
+                'reply' => "Hello {$dossier['name']}! I couldn't clearly read the details from this receipt image. Please send a clearer screenshot of your bank transfer receipt so we can verify your payment!",
+                'escalate' => false,
+            ];
+        }
+
+        // 1. Handle Duplicate Session ID (Zero Customer Privacy Leak)
+        if ($inspection['is_duplicate']) {
+            return [
+                'type' => 'text',
+                'reply' => "Hello {$dossier['name']}! ⚠️ This transfer reference (Ref: {$inspection['session_id']}) has already been recorded in our system for a previous order. Please provide a fresh, valid transfer receipt for Order #{$order->id} or pay securely via Paystack.",
+                'escalate' => false,
+            ];
+        }
+
+        // 2. Handle Underpaid Amount Mismatch
+        if ($inspection['is_underpaid']) {
+            $shortage = $inspection['target_amount'] - $inspection['amount'];
+            return [
+                'type' => 'text',
+                'reply' => "Hello {$dossier['name']}! ℹ️ Your order total is {$inspection['formatted_target_amount']}, but your uploaded receipt shows {$inspection['formatted_amount']} (Remaining balance: ₦" . number_format($shortage, 2) . "). Please complete the balance transfer so we can verify and dispatch your rider!",
+                'escalate' => false,
+            ];
+        }
+
+        // 3. Attach receipt metadata to Order record
+        $order->update([
+            'bank_session_id' => $inspection['session_id'],
+            'receipt_image' => $imageFullPath,
+            'receipt_metadata' => $inspection,
+        ]);
+
+        return [
+            'type' => 'text',
+            'reply' => "Thank you, {$dossier['name']}! 🙏 I have received your {$inspection['formatted_amount']} transfer receipt (Ref: {$inspection['session_id']}). Our verification team has been notified and will confirm your credit shortly. Your 6-digit delivery OTP will be issued upon approval!",
+            'escalate' => false,
+            'inspection' => $inspection,
+        ];
+    }
 }
+

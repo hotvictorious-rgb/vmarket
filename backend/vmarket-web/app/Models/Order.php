@@ -140,6 +140,11 @@ class Order extends Model
         'batch_dispatch_id',
         'pod_dispatch_fee',
         'doorstep_due_amount',
+        'bank_session_id',
+        'receipt_image',
+        'receipt_metadata',
+        'receipt_verified_by',
+        'receipt_verified_at',
         'edited_status',
         'updated_at'
     ];
@@ -152,6 +157,11 @@ class Order extends Model
         'order_status' => 'string',
         'payment_method' => 'string',
         'transaction_ref' => 'string',
+        'bank_session_id' => 'string',
+        'receipt_image' => 'string',
+        'receipt_metadata' => 'array',
+        'receipt_verified_by' => 'integer',
+        'receipt_verified_at' => 'datetime',
         'payment_by' => 'string',
         'payment_note' => 'string',
         'order_amount' => 'float',
