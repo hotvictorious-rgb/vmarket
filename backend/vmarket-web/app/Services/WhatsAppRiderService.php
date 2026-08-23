@@ -17,9 +17,11 @@ class WhatsAppRiderService
     public static function getRider(string $phone): ?DeliveryMan
     {
         $normalizedPhone = SMSModule::formatNigerianPhone($phone);
-        return DeliveryMan::where('phone', $normalizedPhone)
-            ->orWhere('phone', '0' . substr($normalizedPhone, 3))
-            ->orWhere('phone', '+' . $normalizedPhone)
+        return DeliveryMan::where(function ($query) use ($normalizedPhone) {
+                $query->where('phone', $normalizedPhone)
+                    ->orWhere('phone', '0' . substr($normalizedPhone, 3))
+                    ->orWhere('phone', '+' . $normalizedPhone);
+            })
             ->where('is_active', 1)
             ->first();
     }

@@ -19,9 +19,12 @@ class WhatsAppVendorService
     public static function getSeller(string $phone): ?Seller
     {
         $normalizedPhone = SMSModule::formatNigerianPhone($phone);
-        return Seller::where('phone', $normalizedPhone)
-            ->orWhere('phone', '0' . substr($normalizedPhone, 3))
-            ->orWhere('phone', '+' . $normalizedPhone)
+        return Seller::where(function ($query) use ($normalizedPhone) {
+                $query->where('phone', $normalizedPhone)
+                    ->orWhere('phone', '0' . substr($normalizedPhone, 3))
+                    ->orWhere('phone', '+' . $normalizedPhone);
+            })
+            ->where('status', 'approved')
             ->with(['shop', 'wallet'])
             ->first();
     }

@@ -7,6 +7,12 @@ Always append your completed tasks here in chronological order at the top. Forma
 `### [YYYY-MM-DD HH:MM UTC] <Feature / Fix Title> [<Component Scope>]`
 Include the specific app/component modified and bullet points detailing the exact technical changes.
 
+### [2026-08-24 00:01 UTC] Enforce Mandatory Admin Approval & Active Verification Guards for Vendor & Rider WhatsApp Access [backend]
+* **Component:** Laravel Backend, Vendor & Rider WhatsApp Security Layer (`backend/vmarket-web`)
+* **Action:** Hardened authentication guards across WhatsApp Vendor and Rider operations:
+  - **Approved Vendor Status Guard (`WhatsAppVendorService.php`, `WhatsAppRoleRouter.php`):** Enforced `where('status', 'approved')` in all vendor database queries. Unverified, pending, or suspended sellers cannot view store revenue, pack orders, or update catalog inventory over WhatsApp.
+  - **Active Rider Status Guard (`WhatsAppRiderService.php`, `WhatsAppRoleRouter.php`):** Enforced `where('is_active', 1)` on all rider queries. Deactivated or suspended riders are blocked from viewing customer delivery stops or verifying OTPs.
+
 ### [2026-08-23 23:58 UTC] Unified Tri-Role Omnichannel WhatsApp AI Engine (Customer, Vendor & Rider) [backend]
 * **Component:** Laravel Backend, WhatsApp AI Services, Webhook Ingestion & Multi-Role Commerce (`backend/vmarket-web`)
 * **Action:** Built a unified tri-role WhatsApp AI engine allowing single phone numbers to operate simultaneously as Customers, Vendors, and Delivery Riders:
