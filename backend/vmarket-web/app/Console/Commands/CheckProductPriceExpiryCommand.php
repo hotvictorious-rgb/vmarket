@@ -81,11 +81,12 @@ class CheckProductPriceExpiryCommand extends Command
                         Helpers::send_push_notif_to_device(
                             $seller->cm_firebase_token,
                             [
-                                'title' => 'Price Update Reminder - Action Needed',
-                                'description' => "The price for '{$product->name}' will expire in {$daysLeft} days. Please review and update your price to keep it active.",
+                                'title' => 'Price Update & Clearance Reminder - Action Needed',
+                                'description' => "The price for '{$product->name}' will expire in {$daysLeft} days. Please update your price or add to Stock Clearance to keep sales active.",
                                 'image' => '',
                                 'type' => 'product_price_warning',
                                 'product_id' => $product->id,
+                                'suggest_clearance' => true,
                             ]
                         );
                     }

@@ -308,6 +308,28 @@
             ordersHtml = '<div class="text-muted fs-11">No active pending orders.</div>';
         }
 
+        let ticketsHtml = '';
+        if (dossier.support_tickets && dossier.support_tickets.length > 0) {
+            dossier.support_tickets.forEach(t => {
+                let badgeClass = t.status === 'open' ? 'bg-danger' : (t.status === 'pending' ? 'bg-warning' : 'bg-success');
+                ticketsHtml += `
+                    <div class="p-2 mb-2 rounded border bg-white">
+                        <div class="d-flex justify-content-between font-weight-bold">
+                            <span class="text-truncate" style="max-width: 140px;" title="${t.subject}">#${t.id}: ${t.subject}</span>
+                            <span class="badge ${badgeClass}">${t.status}</span>
+                        </div>
+                        <div class="d-flex justify-content-between text-muted fs-10 mt-1">
+                            <span>Priority: <strong>${t.priority}</strong></span>
+                            <span>${t.created_at}</span>
+                        </div>
+                        <a href="{{ url('admin/support-ticket/single-ticket') }}/${t.id}" target="_blank" class="fs-10 text-primary mt-1 d-inline-block">View Full Ticket &rarr;</a>
+                    </div>
+                `;
+            });
+        } else {
+            ticketsHtml = '<div class="text-muted fs-11">No support tickets found.</div>';
+        }
+
         panel.innerHTML = `
             <div class="text-center pb-3 border-bottom mb-3">
                 <h4 class="mb-1">${dossier.name}</h4>
@@ -325,6 +347,9 @@
 
             <h6 class="font-weight-bold text-uppercase fs-11 text-muted mb-2">📦 Active Orders</h6>
             ${ordersHtml}
+
+            <h6 class="font-weight-bold text-uppercase fs-11 text-muted mb-2 mt-3">🎫 Web Support Tickets</h6>
+            ${ticketsHtml}
 
             <h6 class="font-weight-bold text-uppercase fs-11 text-muted mb-2 mt-3">⚡ 1-Click Quick Actions</h6>
             <div class="d-grid gap-2">

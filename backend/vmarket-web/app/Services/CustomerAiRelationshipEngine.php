@@ -87,6 +87,22 @@ class CustomerAiRelationshipEngine
             $loyaltyTier = 'Silver Shopper';
         }
 
+        // 6. Web Support Tickets (Omnichannel Support Integration)
+        $supportTickets = [];
+        if ($user) {
+            $tickets = \App\Models\SupportTicket::where('customer_id', $user->id)->orderBy('id', 'desc')->take(5)->get();
+            foreach ($tickets as $t) {
+                $supportTickets[] = [
+                    'id' => $t->id,
+                    'subject' => $t->subject,
+                    'type' => $t->type,
+                    'priority' => $t->priority,
+                    'status' => $t->status,
+                    'created_at' => $t->created_at ? $t->created_at->format('d M Y, h:i A') : '',
+                ];
+            }
+        }
+
         return [
             'phone' => $normalizedPhone,
             'user_id' => $user?->id,
@@ -108,6 +124,7 @@ class CustomerAiRelationshipEngine
             'active_orders' => $activeOrders,
             'cart_items' => $cartItems,
             'recent_orders' => $pastOrders,
+            'support_tickets' => $supportTickets,
         ];
     }
 }

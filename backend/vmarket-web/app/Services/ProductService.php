@@ -822,14 +822,17 @@ class ProductService
             'refundable',
             'youtube_video_url',
             'unit_price',
+            'purchase_price',
             'tax_ids',
             'discount',
             'discount_type',
             'current_stock',
             'details',
-            'thumbnail'
+            'thumbnail',
+            'specifications',
+            'delivery_hub_id'
         ];
-        $skip = ['sub_category_id', 'sub_sub_category_id', 'brand_id', 'youtube_video_url', 'details', 'thumbnail'];
+        $skip = ['sub_category_id', 'sub_sub_category_id', 'brand_id', 'youtube_video_url', 'details', 'thumbnail', 'purchase_price', 'specifications', 'delivery_hub_id'];
 
         if (count($collections) <= 0) {
             return [
@@ -841,6 +844,8 @@ class ProductService
 
         $products = [];
         $productsTax = [];
+        $pricingService = app(\App\Services\PricingService::class);
+
         foreach ($collections as $collection) {
             foreach ($collection as $key => $value) {
                 if ($key != "" && !in_array($key, $columnKey)) {
@@ -865,6 +870,23 @@ class ProductService
 
             $productsTax[$productCode] = $collection['tax_ids'];
 
+            // [AI] Dynamic Retail Margin & Pricing Resolution on Bulk Import
+            if ($addedBy == 'seller') {
+                $vendorCost = currencyConverter(amount: (float)($collection['purchase_price'] ?? $collection['unit_price'] ?? 0));
+                $pricing = $pricingService->calculateRetailPrice($vendorCost, $collection['category_id'] ?? null);
+                $unitPrice = $pricing['unit_price'];
+                $purchasePrice = $vendorCost;
+            } else {
+                $unitPrice = currencyConverter(amount: (float)($collection['unit_price'] ?? 0));
+                $purchasePrice = currencyConverter(amount: (float)($collection['purchase_price'] ?? 0));
+            }
+
+            $specs = null;
+            if (!empty($collection['specifications'])) {
+                $decoded = json_decode($collection['specifications'], true);
+                $specs = is_array($decoded) ? $decoded : null;
+            }
+
             $products[] = [
                 'name' => $collection['name'],
                 'shop_id' => $shopId,
@@ -877,10 +899,10 @@ class ProductService
                 'unit' => $collection['unit'],
                 'minimum_order_qty' => $collection['minimum_order_qty'],
                 'refundable' => $collection['refundable'],
-                'unit_price' => currencyConverter(amount: $collection['unit_price']),
-                'purchase_price' => 0,
-                'discount' => $collection['discount_type'] == 'flat' ? currencyConverter(amount: $collection['discount']) : $collection['discount'],
-                'discount_type' => $collection['discount_type'],
+                'unit_price' => $unitPrice,
+                'purchase_price' => $purchasePrice,
+                'discount' => ($collection['discount_type'] ?? 'percent') == 'flat' ? currencyConverter(amount: $collection['discount'] ?? 0) : ($collection['discount'] ?? 0),
+                'discount_type' => $collection['discount_type'] ?? 'percent',
                 'shipping_cost' => 0,
                 'current_stock' => $collection['current_stock'],
                 'details' => $collection['details'],
@@ -888,8 +910,12 @@ class ProductService
                 'video_url' => $collection['youtube_video_url'],
                 'images' => json_encode(['def.png']),
                 'thumbnail' => $thumbnail[1] ?? $thumbnail[0],
-                'status' => $addedBy == 'admin' && $collection['status'] == 1 ? 1 : 0,
+                'status' => $addedBy == 'admin' && ($collection['status'] ?? 1) == 1 ? 1 : 0,
                 'request_status' => $addedBy == 'admin' ? 1 : (getWebConfig(name: 'new_product_approval') == 1 ? 0 : 1),
+                'price_updated_at' => now(),
+                'price_expiry_notified_at' => null,
+                'deactivation_reason' => null,
+                'specifications' => $specs,
                 'colors' => json_encode([]),
                 'attributes' => json_encode([]),
                 'choice_options' => json_encode([]),

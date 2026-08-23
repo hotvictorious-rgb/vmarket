@@ -44,13 +44,37 @@ class FlashDealService
     }
 
 
-    public function getAddProduct(object $request,string|int $productId ,string|int $id): array
+    public function getAddProduct(object $request, string|int $productId, string|int $id): array
     {
+        $discount = isset($request['discount']) ? (float)$request['discount'] : 0.0;
+        $discountType = $request['discount_type'] ?? 'percent';
+
+        // [AI] Retail Margin Floor Guard: Fetch product and ensure discount does not wipe out base cost
+        $product = \App\Models\Product::find($productId);
+        if ($product) {
+            $costPrice = (float)($product->purchase_price > 0 ? $product->purchase_price : 0);
+            $unitPrice = (float)$product->unit_price;
+
+            if ($unitPrice > 0) {
+                if ($discountType === 'percent') {
+                    $maxPercent = $costPrice > 0 ? max(0, min(90, (($unitPrice - $costPrice) / $unitPrice) * 100)) : 90;
+                    if ($discount > $maxPercent && $costPrice > 0) {
+                        $discount = round($maxPercent, 2);
+                    }
+                } elseif ($discountType === 'flat' || $discountType === 'amount') {
+                    $maxFlat = $costPrice > 0 ? max(0, $unitPrice - $costPrice) : ($unitPrice * 0.9);
+                    if ($discount > $maxFlat && $costPrice > 0) {
+                        $discount = round($maxFlat, 2);
+                    }
+                }
+            }
+        }
+
         return [
             'product_id' => $productId,
             'flash_deal_id' => $id,
-            'discount' => $request['discount'] ?? 0,
-            'discount_type' => $request['discount_type'] ?? 0,
+            'discount' => $discount,
+            'discount_type' => $discountType,
             'created_at' => now(),
             'updated_at' => now(),
         ];
