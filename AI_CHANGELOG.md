@@ -7,6 +7,13 @@ Always append your completed tasks here in chronological order at the top. Forma
 `### [YYYY-MM-DD HH:MM UTC] <Feature / Fix Title> [<Component Scope>]`
 Include the specific app/component modified and bullet points detailing the exact technical changes.
 
+### [2026-08-24 00:58 UTC] Configurable Loyalty Points Engine & Automated First-Order Delivery Rewards [backend]
+* **Component:** Laravel Backend, Loyalty Automation & Cart Upsell Workflows (`backend/vmarket-web`)
+* **Action:** Implemented automated loyalty points distribution and in-chat cart upsells:
+  - **Cart Loyalty Upsell (`WhatsAppOrderService.php`):** Enriched `getCartSummary` with conversational prompts notifying customers of their spendable point balances and equivalent Naira values during checkout.
+  - **Automated Delivery Rewards (`WhatsAppAutomationWorkflow.php`):** Updated `triggerOrderDeliveredNotification` upon 6-digit OTP doorstep verification to compute purchase points (`loyalty_point_item_purchase_point`) and grant a **500 Welcome Bonus Points** reward on the customer's first completed order in Uyo.
+  - **Zero Regression Guarantee:** Fully wired to platform `business_settings` (`loyalty_point_status`, `loyalty_point_exchange_rate`, `loyalty_point_minimum_point`) with zero database schema deviations.
+
 ### [2026-08-24 00:54 UTC] Customer Loyalty Points Inquiry & Wallet Conversion on WhatsApp [backend]
 * **Component:** Laravel Backend, Customer Order & Loyalty Services, Gemini Function Calling (`backend/vmarket-web`)
 * **Action:** Built a secure loyalty points inquiry and atomic wallet conversion engine on WhatsApp:

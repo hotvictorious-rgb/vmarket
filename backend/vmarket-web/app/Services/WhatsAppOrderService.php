@@ -135,6 +135,15 @@ class WhatsAppOrderService
         $shippingFee = $subtotal > 0 ? 1000.0 : 0.0;
         $grandTotal = $subtotal + $shippingFee;
 
+        $points = (float)($user->loyalty_point ?? 0.0);
+        $exchangeRate = (float)(\App\Models\BusinessSetting::where('type', 'loyalty_point_exchange_rate')->first()?->value ?: 1);
+        $minPoint = (int)(\App\Models\BusinessSetting::where('type', 'loyalty_point_minimum_point')->first()?->value ?: 100);
+        $equivalentNaira = $exchangeRate > 0 ? ($points / $exchangeRate) : 0.0;
+        $loyaltyUpsell = null;
+        if ($points >= $minPoint) {
+            $loyaltyUpsell = "💡 You have " . number_format($points) . " Loyalty Points (worth ₦" . number_format($equivalentNaira, 2) . "). You can convert them to instant wallet funds to pay for this order!";
+        }
+
         return [
             'item_count' => count($items),
             'items' => $items,
@@ -142,6 +151,8 @@ class WhatsAppOrderService
             'shipping_fee' => $shippingFee,
             'grand_total' => $grandTotal,
             'formatted_total' => '₦' . number_format($grandTotal, 2),
+            'loyalty_points_available' => $points,
+            'loyalty_upsell' => $loyaltyUpsell,
         ];
     }
 

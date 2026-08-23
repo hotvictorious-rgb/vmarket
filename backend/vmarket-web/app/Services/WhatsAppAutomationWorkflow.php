@@ -39,6 +39,60 @@ class WhatsAppAutomationWorkflow
     }
 
     /**
+     * [AI] Trigger Delivery Confirmation & Loyalty Rewards on Order Completion.
+     */
+    public static function triggerOrderDeliveredNotification(Order $order): void
+    {
+        $phone = $order->customer?->phone ?? $order->billing_address_data['phone'] ?? null;
+        if (empty($phone)) return;
+
+        $customerName = $order->customer ? $order->customer->f_name : 'Customer';
+        $orderId = $order->id;
+
+        // 1. Calculate & credit loyalty points
+        $earnedPoints = 0;
+        $bonusPoints = 0;
+        if ($order->customer_id) {
+            $purchasePointPct = (float)(\App\Models\BusinessSetting::where('type', 'loyalty_point_item_purchase_point')->first()?->value ?: 0);
+            if ($purchasePointPct > 0) {
+                $earnedPoints = (int)($order->order_amount * $purchasePointPct / 100);
+                \App\Utils\CustomerManager::create_loyalty_point_transaction($order->customer_id, "Order #{$order->id} Purchase", (float)$order->order_amount, 'order_place');
+            }
+
+            // Check if first completed order
+            $completedCount = Order::where('customer_id', $order->customer_id)->where('order_status', 'delivered')->count();
+            if ($completedCount === 1) {
+                $bonusPoints = 500;
+                \App\Models\LoyaltyPointTransaction::create([
+                    'user_id' => $order->customer_id,
+                    'transaction_id' => (string)\Illuminate\Support\Str::uuid(),
+                    'reference' => 'First Order Welcome Bonus',
+                    'transaction_type' => 'welcome_bonus',
+                    'balance' => ($order->customer->fresh()->loyalty_point ?? 0) + $bonusPoints,
+                    'credit' => $bonusPoints,
+                    'debit' => 0,
+                    'created_at' => now(),
+                    'updated_at' => now(),
+                ]);
+                $order->customer->increment('loyalty_point', $bonusPoints);
+            }
+        }
+
+        $totalPoints = $earnedPoints + $bonusPoints;
+        $pointsMessage = "";
+        if ($totalPoints > 0) {
+            $pointsMessage = "\n\n🎁 *Loyalty Reward:* You earned *+{$totalPoints} Loyalty Points* on this order!" . ($bonusPoints > 0 ? " (Includes 500 Welcome Bonus 🎉)" : "");
+        }
+
+        $message = "✅ *Order #{$orderId} Delivered!*\n\n"
+            . "Hello {$customerName}! Your parcel has been successfully delivered and verified with your 6-digit OTP."
+            . $pointsMessage
+            . "\n\nThank you for shopping with Victorious MARKET!";
+
+        dispatch(new SendWhatsAppJob($phone, 'text', ['text' => $message]));
+    }
+
+    /**
      * [AI] Trigger Post-Delivery Thank You & Review Request (2 hours post-delivery).
      */
     public static function triggerPostDeliveryReview(Order $order): void
