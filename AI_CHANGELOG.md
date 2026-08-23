@@ -7,6 +7,14 @@ Always append your completed tasks here in chronological order at the top. Forma
 `### [YYYY-MM-DD HH:MM UTC] <Feature / Fix Title> [<Component Scope>]`
 Include the specific app/component modified and bullet points detailing the exact technical changes.
 
+### [2026-08-23 19:25 UTC] Configurable Product Price & Update Approval Engine with Vendor Quick Edit [backend]
+* **Component:** Laravel Backend, Admin Settings, Vendor Dashboard & REST API (`backend/vmarket-web`)
+* **Action:** Overhauled product price updates, approval workflows, and vendor management across web and mobile:
+  - **Configurable Product Edit Approval Policy (`BusinessSettingsController.php`, `product-settings.blade.php`, `ProductSettingsUpdateRequest.php`):** Added a 3-way approval policy in Admin Settings (`threshold` [default ±20%], `auto` [instant live markup], and `strict` [manual admin review]) along with a configurable price variance tolerance threshold input.
+  - **Dynamic Markup & Approval Decision Engine (`ProductService.php`):** Implemented `shouldRequireUpdateApproval()` to intelligently check the approval policy and price variance against vendor cost; ensures products with acceptable price adjustments remain live without sales interruption.
+  - **Vendor Quick Price & Stock Update (`ProductController.php`, `list.blade.php`, `routes/vendor/routes.php`):** Added a fast AJAX modal on the Vendor Product List table allowing vendors to adjust cost price, stock, and discounts in one click without filling out the full multi-tab product form.
+  - **Mobile REST API Alignment (`RestAPI/v3/seller/ProductController.php`):** Harmonized `updateProduct` and `updatePriceAndReactivate` endpoints to apply `PricingService` retail calculations and the unified approval policy.
+
 ### [2026-08-22 23:25 UTC] GlobalConstant Syntax Bracket Prune & Production Parity [backend]
 * **Component:** Global Constants Definition (`backend/vmarket-web/app/Enums/GlobalConstant.php`)
 * **Action:** Removed duplicate stray closing bracket (`];`) at line 528 after the `THEME_RATIO` array definition, ensuring 100% clean PHP lint and full byte-level parity with live production.

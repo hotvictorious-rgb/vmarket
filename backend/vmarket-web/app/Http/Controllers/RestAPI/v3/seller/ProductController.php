@@ -1502,10 +1502,19 @@ class ProductController extends Controller
         $digitalFileOptions = self::getDigitalVariationOptions(request: $request);
         $digitalFileCombinations = self::getDigitalVariationCombinations(arrays: $digitalFileOptions);
 
+        $pricingService = app(\App\Services\PricingService::class);
+        $productService = app(\App\Services\ProductService::class);
+
+        $vendorCost = Convert::usd((float)($request['purchase_price'] ?? $request['unit_price'] ?? $product['purchase_price'] ?? 0));
+        $pricing = $pricingService->calculateRetailPrice($vendorCost, $request['category_id'] ?? $product['category_id'] ?? null);
+        $unitPrice = $pricing['unit_price'];
+        $purchasePrice = $vendorCost;
+        $variations = $pricingService->calculateVariationPrices($variations, $request['category_id'] ?? $product['category_id'] ?? null);
+
         $productArray += [
             'variation' => $request->product_type == 'physical' ? json_encode($variations) : json_encode([]),
-            'unit_price' => Convert::usd($request->unit_price),
-            'purchase_price' => 0,
+            'unit_price' => $unitPrice,
+            'purchase_price' => $purchasePrice,
             'discount' => $request->discount_type == 'flat' ? Convert::usd($request->discount) : $request->discount,
             'discount_type' => $request->discount_type,
             'attributes' => $request->product_type == 'physical' ? json_encode($requestChoiceAttributes) : json_encode([]),
@@ -1544,11 +1553,19 @@ class ProductController extends Controller
             'video_url' => $request['video_url'] ?? '',
         ];
 
-        if ($product['request_status'] == 2) {
-            $productArray += [
-                'request_status' => 0,
-            ];
-        }
+        $needsApproval = $productService->shouldRequireUpdateApproval(
+            oldProduct: $product,
+            newData: array_merge($productArray, ['purchase_price' => $purchasePrice, 'unit_price' => $unitPrice]),
+            updateBy: 'seller'
+        );
+
+        $productArray += [
+            'request_status' => $needsApproval ? 0 : 1,
+            'status' => $needsApproval ? 0 : 1,
+            'price_updated_at' => Carbon::now(),
+            'price_expiry_notified_at' => null,
+            'deactivation_reason' => null,
+        ];
 
         Product::where('id', $id)->update($productArray);
 
@@ -2178,17 +2195,21 @@ class ProductController extends Controller
             return response()->json(['message' => 'Product not found or unauthorized'], 404);
         }
 
+        $pricingService = app(\App\Services\PricingService::class);
+        $productService = app(\App\Services\ProductService::class);
+
+        $vendorCost = currencyConverter(amount: (float)($request['purchase_price'] ?? $request['unit_price']));
+        $pricing = $pricingService->calculateRetailPrice($vendorCost, $product->category_id);
+        $unitPrice = $pricing['unit_price'];
+
         $updateData = [
-            'unit_price' => currencyConverter(amount: $request['unit_price']),
+            'purchase_price' => $vendorCost,
+            'unit_price' => $unitPrice,
             'price_updated_at' => Carbon::now(),
             'price_expiry_notified_at' => null,
             'deactivation_reason' => null,
-            'status' => 1,
         ];
 
-        if ($request->has('purchase_price') && $request['purchase_price'] !== null) {
-            $updateData['purchase_price'] = currencyConverter(amount: $request['purchase_price']);
-        }
         if ($request->has('discount') && $request['discount'] !== null) {
             $updateData['discount'] = ($request['discount_type'] ?? 'percent') == 'flat' ? currencyConverter(amount: $request['discount']) : $request['discount'];
             $updateData['discount_type'] = $request['discount_type'] ?? 'percent';
@@ -2197,13 +2218,25 @@ class ProductController extends Controller
             $updateData['current_stock'] = (int)$request['current_stock'];
         }
 
+        $needsApproval = $productService->shouldRequireUpdateApproval(
+            oldProduct: $product,
+            newData: $updateData,
+            updateBy: 'seller'
+        );
+
+        $updateData['request_status'] = $needsApproval ? 0 : 1;
+        $updateData['status'] = $needsApproval ? 0 : 1;
+
         Product::where('id', $product->id)->update($updateData);
 
         clearWebConfigCacheKeys();
 
         return response()->json([
             'status' => true,
-            'message' => 'Product price updated and reactivated successfully',
+            'message' => $needsApproval ? 'Product price updated and submitted for approval' : 'Product price updated and reactivated successfully',
+            'is_approved' => !$needsApproval,
+            'unit_price' => $unitPrice,
+            'purchase_price' => $vendorCost,
             'price_updated_at' => Carbon::now()->toIso8601String(),
         ], 200);
     }

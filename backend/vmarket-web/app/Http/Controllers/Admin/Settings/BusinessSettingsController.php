@@ -478,6 +478,8 @@ class BusinessSettingsController extends BaseController
         $this->businessSettingRepo->updateOrInsert(type: 'digital_product', value: $request->get('digital_product', 0));
         $this->businessSettingRepo->updateOrInsert(type: 'new_product_approval', value: $request->get('new_product_approval', 0));
         $this->businessSettingRepo->updateOrInsert(type: 'product_wise_shipping_cost_approval', value: $request->get('product_wise_shipping_cost_approval', 0));
+        $this->businessSettingRepo->updateOrInsert(type: 'product_edit_approval_mode', value: $request->get('product_edit_approval_mode', 'threshold'));
+        $this->businessSettingRepo->updateOrInsert(type: 'product_edit_price_threshold_percentage', value: $request->get('product_edit_price_threshold_percentage', 20));
 
         clearWebConfigCacheKeys();
         ToastMagic::success(translate('updated_successfully'));

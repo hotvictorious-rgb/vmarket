@@ -725,17 +725,69 @@ class ProductService
             ];
         }
         if ($updateBy == 'seller') {
+            $needsApproval = $this->shouldRequireUpdateApproval(oldProduct: $product, newData: $dataArray, updateBy: $updateBy);
             $dataArray += [
-                'request_status' => 0
+                'request_status' => $needsApproval ? 0 : 1,
+                'status' => $needsApproval ? 0 : 1,
             ];
         }
         if ($updateBy == 'admin' && $product->added_by == 'seller' && ($product->request_status == 2 || $product->request_status == 0)) {
             $dataArray += [
-                'request_status' => 1
+                'request_status' => 1,
+                'status' => 1,
             ];
         }
 
         return $dataArray;
+    }
+
+    /**
+     * [AI] Determine if a vendor product update requires Admin re-approval based on business policy.
+     *
+     * @param object $oldProduct
+     * @param array $newData
+     * @param string $updateBy
+     * @return bool
+     */
+    public function shouldRequireUpdateApproval(object $oldProduct, array $newData, string $updateBy): bool
+    {
+        if ($updateBy !== 'seller') {
+            return false;
+        }
+
+        // Previously denied products must always be reviewed again
+        if (isset($oldProduct->request_status) && $oldProduct->request_status == 2) {
+            return true;
+        }
+
+        $approvalMode = getWebConfig(name: 'product_edit_approval_mode') ?? 'threshold';
+
+        if ($approvalMode === 'strict') {
+            return true;
+        }
+
+        if ($approvalMode === 'auto') {
+            return false;
+        }
+
+        // Mode: 'threshold' (Default)
+        $thresholdPercent = (float)(getWebConfig(name: 'product_edit_price_threshold_percentage') ?? 20.0);
+        $oldPrice = (float)($oldProduct->purchase_price > 0 ? $oldProduct->purchase_price : ($oldProduct->unit_price ?? 0));
+        $newPrice = (float)($newData['purchase_price'] ?? $newData['unit_price'] ?? $oldPrice);
+
+        if ($oldPrice > 0) {
+            $variance = abs($newPrice - $oldPrice) / $oldPrice * 100.0;
+            if ($variance > $thresholdPercent) {
+                return true;
+            }
+        }
+
+        // Category change warrants review to prevent policy evasion
+        if (isset($newData['category_id']) && $oldProduct->category_id != $newData['category_id']) {
+            return true;
+        }
+
+        return false;
     }
 
     public function getUniqueProductSKUCode(): string

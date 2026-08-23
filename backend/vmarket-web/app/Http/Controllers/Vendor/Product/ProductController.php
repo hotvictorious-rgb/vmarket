@@ -343,6 +343,88 @@ class ProductController extends BaseController
         return back();
     }
 
+    /**
+     * [AI] Quick update price, discount, and stock directly from Vendor product list / view.
+     *
+     * @param Request $request
+     * @param \App\Services\PricingService $pricingService
+     * @return JsonResponse
+     */
+    public function quickPriceStockUpdate(Request $request, \App\Services\PricingService $pricingService): JsonResponse
+    {
+        $request->validate([
+            'product_id' => 'required|numeric',
+            'purchase_price' => 'required|numeric|min:0.01',
+            'current_stock' => 'nullable|numeric|min:0',
+            'discount' => 'nullable|numeric|min:0',
+            'discount_type' => 'nullable|in:flat,percent',
+        ]);
+
+        $vendorId = auth('seller')->id();
+        $product = $this->productRepo->getFirstWhereWithoutGlobalScope(params: [
+            'id' => $request->product_id,
+            'user_id' => $vendorId,
+            'added_by' => 'seller',
+        ]);
+
+        if (!$product) {
+            return response()->json([
+                'status' => 'error',
+                'message' => translate('unauthorized_access_or_product_not_found')
+            ], 403);
+        }
+
+        $vendorCost = currencyConverter(amount: (float)$request->purchase_price);
+        $pricing = $pricingService->calculateRetailPrice($vendorCost, $product->category_id);
+        $unitPrice = $pricing['unit_price'];
+
+        $updateData = [
+            'purchase_price' => $vendorCost,
+            'unit_price' => $unitPrice,
+            'price_updated_at' => now(),
+            'price_expiry_notified_at' => null,
+            'deactivation_reason' => null,
+        ];
+
+        if ($request->has('current_stock') && $request->current_stock !== null) {
+            $updateData['current_stock'] = (int)$request->current_stock;
+        }
+
+        if ($request->has('discount') && $request->discount !== null) {
+            $updateData['discount'] = ($request->discount_type ?? 'percent') == 'flat' ? currencyConverter(amount: $request->discount) : $request->discount;
+            $updateData['discount_type'] = $request->discount_type ?? 'percent';
+        }
+
+        // Determine if approval is needed based on policy
+        $needsApproval = $this->productService->shouldRequireUpdateApproval(
+            oldProduct: $product,
+            newData: $updateData,
+            updateBy: 'seller'
+        );
+
+        $updateData['request_status'] = $needsApproval ? 0 : 1;
+        $updateData['status'] = $needsApproval ? 0 : 1;
+
+        $this->productRepo->update(id: $product->id, data: $updateData);
+
+        if (function_exists('clearWebConfigCacheKeys')) {
+            clearWebConfigCacheKeys();
+        }
+
+        $message = $needsApproval
+            ? translate('price_updated_and_submitted_for_admin_approval')
+            : translate('price_and_stock_updated_successfully');
+
+        return response()->json([
+            'status' => 'success',
+            'message' => $message,
+            'is_approved' => !$needsApproval,
+            'unit_price' => $unitPrice,
+            'purchase_price' => $vendorCost,
+            'current_stock' => $updateData['current_stock'] ?? $product->current_stock,
+        ]);
+    }
+
     public function updateStockClearanceProduct($product): void
     {
         $config = $this->stockClearanceSetupRepo->getFirstWhere(params: [

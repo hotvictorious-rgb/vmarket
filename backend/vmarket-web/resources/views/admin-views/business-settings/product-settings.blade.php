@@ -117,8 +117,10 @@
                     </div>
                     @php($newProductApproval = getWebConfig('new_product_approval'))
                     @php($productWiseShippingCostApproval = getWebConfig('product_wise_shipping_cost_approval'))
+                    @php($productEditApprovalMode = getWebConfig('product_edit_approval_mode') ?? 'threshold')
+                    @php($productEditThreshold = getWebConfig('product_edit_price_threshold_percentage') ?? 20)
                     <div class="bg-section-sm">
-                        <div class="bg-white p-3 rounded border">
+                        <div class="bg-white p-3 rounded border mb-3">
                             <div class="row g-4">
                                 <div class="col-xl-6 col-md-6">
                                     <div class="form-check d-flex gap-10">
@@ -170,6 +172,64 @@
                                             </div>
                                         </div>
                                     </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Product Edit & Price Update Approval Mode -->
+                        <div class="bg-white p-3 rounded border">
+                            <h5 class="text-dark fw-semibold mb-2">{{ translate('Product_Update_&_Price_Change_Approval_Policy') }}</h5>
+                            <p class="fs-12 text-muted mb-3">
+                                {{ translate('Configure_how_the_platform_handles_existing_product_edits_and_price_changes_by_vendors') }}.
+                            </p>
+                            <div class="row g-3">
+                                <div class="col-md-4">
+                                    <div class="border rounded p-3 h-100 {{ $productEditApprovalMode == 'threshold' ? 'border-primary bg-primary bg-opacity-10' : '' }}">
+                                        <div class="form-check">
+                                            <input class="form-check-input" type="radio" name="product_edit_approval_mode" id="approval-mode-threshold" value="threshold" {{ $productEditApprovalMode == 'threshold' ? 'checked' : '' }}>
+                                            <label class="form-check-label fw-semibold text-dark" for="approval-mode-threshold">
+                                                {{ translate('Threshold_Based_Approval') }} ({{ translate('Recommended') }})
+                                            </label>
+                                        </div>
+                                        <p class="fs-12 text-muted mt-2 mb-0">
+                                            {{ translate('Minor_price_changes_and_stock_updates_stay_live_immediately._Price_changes_exceeding_the_tolerance_percentage_require_Admin_approval.') }}
+                                        </p>
+                                    </div>
+                                </div>
+                                <div class="col-md-4">
+                                    <div class="border rounded p-3 h-100 {{ $productEditApprovalMode == 'auto' ? 'border-primary bg-primary bg-opacity-10' : '' }}">
+                                        <div class="form-check">
+                                            <input class="form-check-input" type="radio" name="product_edit_approval_mode" id="approval-mode-auto" value="auto" {{ $productEditApprovalMode == 'auto' ? 'checked' : '' }}>
+                                            <label class="form-check-label fw-semibold text-dark" for="approval-mode-auto">
+                                                {{ translate('Instant_Auto_Approval') }}
+                                            </label>
+                                        </div>
+                                        <p class="fs-12 text-muted mt-2 mb-0">
+                                            {{ translate('All_edits_auto_calculate_category_markups_and_remain_published_instantly_without_unpublishing_or_sales_interruption.') }}
+                                        </p>
+                                    </div>
+                                </div>
+                                <div class="col-md-4">
+                                    <div class="border rounded p-3 h-100 {{ $productEditApprovalMode == 'strict' ? 'border-primary bg-primary bg-opacity-10' : '' }}">
+                                        <div class="form-check">
+                                            <input class="form-check-input" type="radio" name="product_edit_approval_mode" id="approval-mode-strict" value="strict" {{ $productEditApprovalMode == 'strict' ? 'checked' : '' }}>
+                                            <label class="form-check-label fw-semibold text-dark" for="approval-mode-strict">
+                                                {{ translate('Strict_Manual_Approval') }}
+                                            </label>
+                                        </div>
+                                        <p class="fs-12 text-muted mt-2 mb-0">
+                                            {{ translate('Every_product_edit_unpublishes_the_product_until_an_Admin_reviews_and_approves_it_in_the_approval_portal.') }}
+                                        </p>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="row mt-3 align-items-center">
+                                <div class="col-md-6">
+                                    <label class="form-label text-dark fw-semibold fs-13 mb-1" for="product_edit_price_threshold_percentage">
+                                        {{ translate('Price_Variance_Tolerance_Threshold') }} (%)
+                                    </label>
+                                    <input type="number" step="0.1" min="0" max="1000" name="product_edit_price_threshold_percentage" id="product_edit_price_threshold_percentage" class="form-control" value="{{ $productEditThreshold }}">
+                                    <small class="text-muted fs-11">{{ translate('Applies_when_Threshold_Based_Approval_is_selected._e.g._20%_allows_price_adjustments_within_±20%_without_unpublishing.') }}</small>
                                 </div>
                             </div>
                         </div>

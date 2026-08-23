@@ -218,6 +218,16 @@
                                                     <i class="tio-invisible"></i>
                                                 </a>
                                             @endif
+                                            <button type="button" class="btn btn-outline-info btn-sm square-btn quick-price-stock-btn"
+                                                    title="{{ translate('quick_price_and_stock_update') }}"
+                                                    data-id="{{ $product['id'] }}"
+                                                    data-name="{{ htmlspecialchars($product['name'], ENT_QUOTES) }}"
+                                                    data-cost="{{ $product['purchase_price'] > 0 ? $product['purchase_price'] : $product['unit_price'] }}"
+                                                    data-stock="{{ $product['current_stock'] }}"
+                                                    data-discount="{{ $product['discount'] }}"
+                                                    data-discount-type="{{ $product['discount_type'] }}">
+                                                <i class="tio-money"></i>
+                                            </button>
                                             <a class="btn btn-outline--primary btn-sm square-btn"
                                                title="{{ translate('edit') }}"
                                                href="{{ route('vendor.products.update',[$product['id']]) }}">
@@ -256,4 +266,107 @@
         </div>
     </div>
     <span id="message-select-word" data-text="{{ translate('select') }}"></span>
+
+    <!-- Quick Price & Stock Modal -->
+    <div class="modal fade" id="quick-price-stock-modal" tabindex="-1" role="dialog" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered" role="document">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title font-weight-bold" id="quick-modal-title">{{ translate('Quick_Price_&_Stock_Update') }}</h5>
+                    <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                        <span aria-hidden="true">&times;</span>
+                    </button>
+                </div>
+                <form id="quick-price-stock-form" method="POST">
+                    @csrf
+                    <input type="hidden" name="product_id" id="quick-product-id">
+                    <div class="modal-body">
+                        <div class="bg-light p-3 rounded mb-3">
+                            <span class="text-muted fs-12">{{ translate('Product') }}:</span>
+                            <div class="font-weight-bold text-dark fs-14" id="quick-product-name-display"></div>
+                        </div>
+                        <div class="row g-3">
+                            <div class="col-12">
+                                <label class="form-label font-weight-semibold text-dark">{{ translate('Vendor_Purchase_/_Cost_Price') }} ({{ getCurrencyCode() }})</label>
+                                <input type="number" step="0.01" min="0.01" name="purchase_price" id="quick-purchase-price" class="form-control" required placeholder="0.00">
+                                <small class="text-muted fs-11">{{ translate('Retail_price_is_automatically_calculated_with_category_markup.') }}</small>
+                            </div>
+                            <div class="col-12">
+                                <label class="form-label font-weight-semibold text-dark">{{ translate('Current_Stock') }}</label>
+                                <input type="number" min="0" name="current_stock" id="quick-current-stock" class="form-control" required placeholder="0">
+                            </div>
+                            <div class="col-sm-6">
+                                <label class="form-label font-weight-semibold text-dark">{{ translate('Discount') }}</label>
+                                <input type="number" step="0.01" min="0" name="discount" id="quick-discount" class="form-control" value="0">
+                            </div>
+                            <div class="col-sm-6">
+                                <label class="form-label font-weight-semibold text-dark">{{ translate('Discount_Type') }}</label>
+                                <select name="discount_type" id="quick-discount-type" class="form-control">
+                                    <option value="percent">{{ translate('percent') }} (%)</option>
+                                    <option value="flat">{{ translate('flat') }} ({{ getCurrencyCode() }})</option>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-dismiss="modal">{{ translate('Cancel') }}</button>
+                        <button type="submit" class="btn btn-primary" id="quick-save-btn">
+                            <span class="spinner-border spinner-border-sm d-none" id="quick-spinner" role="status" aria-hidden="true"></span>
+                            {{ translate('Save_Changes') }}
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    @push('script')
+    <script>
+        $(document).on('click', '.quick-price-stock-btn', function () {
+            var btn = $(this);
+            $('#quick-product-id').val(btn.data('id'));
+            $('#quick-product-name-display').text(btn.data('name'));
+            $('#quick-purchase-price').val(btn.data('cost'));
+            $('#quick-current-stock').val(btn.data('stock'));
+            $('#quick-discount').val(btn.data('discount') || 0);
+            $('#quick-discount-type').val(btn.data('discount-type') || 'percent');
+            $('#quick-price-stock-modal').modal('show');
+        });
+
+        $('#quick-price-stock-form').on('submit', function (e) {
+            e.preventDefault();
+            var form = $(this);
+            var submitBtn = $('#quick-save-btn');
+            var spinner = $('#quick-spinner');
+
+            submitBtn.prop('disabled', true);
+            spinner.removeClass('d-none');
+
+            $.ajax({
+                url: "{{ route('vendor.products.quick-price-stock-update') }}",
+                type: 'POST',
+                data: form.serialize(),
+                success: function (res) {
+                    submitBtn.prop('disabled', false);
+                    spinner.addClass('d-none');
+                    if (res.status === 'success') {
+                        toastr.success(res.message);
+                        $('#quick-price-stock-modal').modal('hide');
+                        setTimeout(function () {
+                            location.reload();
+                        }, 800);
+                    } else {
+                        toastr.error(res.message || '{{ translate("something_went_wrong") }}');
+                    }
+                },
+                error: function (xhr) {
+                    submitBtn.prop('disabled', false);
+                    spinner.addClass('d-none');
+                    var msg = xhr.responseJSON && xhr.responseJSON.message ? xhr.responseJSON.message : '{{ translate("error_updating_price") }}';
+                    toastr.error(msg);
+                }
+            });
+        });
+    </script>
+    @endpush
 @endsection

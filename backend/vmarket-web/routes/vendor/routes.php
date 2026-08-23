@@ -135,6 +135,7 @@ Route::group(['middleware' => ['maintenance_mode', 'actch:admin_panel']], functi
                     Route::post('update-quantity', 'updateQuantity')->name('update-quantity');
                     Route::get('update/{id}', 'getUpdateView')->name('update');
                     Route::post('update/{id}', 'update');
+                    Route::post('quick-price-stock-update', 'quickPriceStockUpdate')->name('quick-price-stock-update');
                     Route::post('update-product-images/{id}', 'updateProductImages')->name('update-product-images');
                     Route::get('delete-image', 'deleteImage')->name('delete-image');
                     Route::get('get-variations', 'getVariations')->name('get-variations');
