@@ -7,6 +7,15 @@ Always append your completed tasks here in chronological order at the top. Forma
 `### [YYYY-MM-DD HH:MM UTC] <Feature / Fix Title> [<Component Scope>]`
 Include the specific app/component modified and bullet points detailing the exact technical changes.
 
+### [2026-08-23 23:58 UTC] Unified Tri-Role Omnichannel WhatsApp AI Engine (Customer, Vendor & Rider) [backend]
+* **Component:** Laravel Backend, WhatsApp AI Services, Webhook Ingestion & Multi-Role Commerce (`backend/vmarket-web`)
+* **Action:** Built a unified tri-role WhatsApp AI engine allowing single phone numbers to operate simultaneously as Customers, Vendors, and Delivery Riders:
+  - **Multi-Role Identity Resolver (`WhatsAppRoleRouter.php`):** Engineered dynamic role detection across `users`, `sellers`, and `delivery_men` models with zero cross-contamination.
+  - **Vendor Co-Pilot Service (`WhatsAppVendorService.php`):** Implemented merchant tools for store summary metrics, pending order alerts, 1-click package readiness confirmation (`confirmOrderReady`), conversational stock adjustments with IDOR scoping (`updateStock`), and live payout balances.
+  - **Rider Operations Service (`WhatsAppRiderService.php`):** Built rider tools for daily route stop lists with Google Maps navigation links, doorstep 6-digit Delivery OTP verification (`verifyDoorstepOtp`) marking orders delivered atomically, and cash-in-hand tracking for POD remittances.
+  - **AI Tri-Role System Prompt & Tool Suite (`WhatsAppAiService.php`):** Registered vendor & rider tools in Gemini function declarations and wired execution handlers in `invokeLocalTool()`.
+  - **Native WhatsApp GPS Pin Drop Ingestion (`WhatsAppWebhookController.php`):** Added parsing for `location` message types (`latitude`, `longitude`, `name`, `address`) saving GPS delivery landmarks directly into episodic memory.
+
 ### [2026-08-23 23:36 UTC] WhatsApp Real Product Image Showcase & Zero AI Generation Brevity Guard [backend]
 * **Component:** Laravel Backend, WhatsApp AI Service, Webhook Controller & Catalog Media Pipeline (`backend/vmarket-web`)
 * **Action:** Implemented real product photo delivery and strict zero AI generative art rules:

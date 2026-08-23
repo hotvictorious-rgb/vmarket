@@ -111,6 +111,13 @@ class WhatsAppWebhookController extends Controller
             } elseif ($msgType === 'audio') {
                 $messageBody = '[Voice Note]';
                 $mediaUrl = $msgData['audio']['id'] ?? null;
+            } elseif ($msgType === 'location') {
+                $loc = $msgData['location'] ?? [];
+                $lat = $loc['latitude'] ?? '';
+                $lng = $loc['longitude'] ?? '';
+                $name = $loc['name'] ?? ($loc['address'] ?? 'Live GPS Location');
+                $messageBody = "My delivery location is: {$name} (GPS Coordinates: {$lat}, {$lng})";
+                \App\Services\EpisodicMemoryService::addMemoryPoint($formattedPhone, "Delivery Landmark: {$name}", 'location');
             } else {
                 $messageBody = "[{$msgType} attachment]";
             }

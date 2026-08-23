@@ -78,6 +78,12 @@ You are "Victor", the official AI Sales & Customer Care Specialist for Victoriou
    - You can manage wallet (`get_wallet_balance`, `fund_wallet_paystack`, `pay_order_with_wallet`).
    - When placing orders (`place_order`), confirm delivery landmark in Uyo/Nigeria and highlight the 6-digit Delivery OTP clearly.
 
+### MULTI-ROLE CAPABILITIES (CUSTOMER, VENDOR, RIDER):
+- You serve Customers (Shopping, Cart, Checkout, Delivery OTP, Status).
+- You serve registered Vendors (Store summary, pending orders, order ready confirmation, stock updates, payouts via `get_vendor_summary`, `update_vendor_stock`, `get_vendor_payout`, `confirm_order_ready`).
+- You serve registered Dispatch Riders (Daily route, navigation links, doorstep 6-digit OTP verification, cash-in-hand tracking via `get_rider_route`, `verify_doorstep_otp`, `get_cash_in_hand`).
+- If a user asks about vendor operations or rider deliveries, invoke the matching specialized tool.
+
 ### STRICT ZERO IMAGE GENERATION DIRECTIVE (ANTI-LECTURE BREVITY RULE):
 1. You ONLY share real, verified product photos from the Victorious MARKET catalog using the `get_product_showcase` tool.
 2. You CANNOT and MUST NEVER generate, synthesize, draw, or create artificial images or AI art.
@@ -231,6 +237,68 @@ PROMPT;
                                 'order_id' => ['type' => 'INTEGER', 'description' => 'Optional specific Order ID to pay for'],
                             ],
                         ],
+                    ],
+                    // Vendor Tools
+                    [
+                        'name' => 'get_vendor_summary',
+                        'description' => 'Fetch vendor store sales, pending orders, and available payout balance for a registered merchant.',
+                        'parameters' => ['type' => 'OBJECT', 'properties' => []],
+                    ],
+                    [
+                        'name' => 'get_vendor_pending_orders',
+                        'description' => 'List orders awaiting packaging and pickup at the vendor shop in Uyo.',
+                        'parameters' => ['type' => 'OBJECT', 'properties' => []],
+                    ],
+                    [
+                        'name' => 'confirm_order_ready',
+                        'description' => 'Confirm an order is packed and ready for dispatch rider pickup.',
+                        'parameters' => [
+                            'type' => 'OBJECT',
+                            'properties' => [
+                                'order_id' => ['type' => 'INTEGER', 'description' => 'The order ID confirmed packed'],
+                            ],
+                            'required' => ['order_id'],
+                        ],
+                    ],
+                    [
+                        'name' => 'update_vendor_stock',
+                        'description' => 'Update the live inventory stock of a product in the vendor store.',
+                        'parameters' => [
+                            'type' => 'OBJECT',
+                            'properties' => [
+                                'product_name' => ['type' => 'STRING', 'description' => 'Product name to adjust'],
+                                'new_stock' => ['type' => 'INTEGER', 'description' => 'New stock count'],
+                            ],
+                            'required' => ['product_name', 'new_stock'],
+                        ],
+                    ],
+                    [
+                        'name' => 'get_vendor_payout',
+                        'description' => 'Check available vendor earnings and linked bank withdrawal details.',
+                        'parameters' => ['type' => 'OBJECT', 'properties' => []],
+                    ],
+                    // Rider Tools
+                    [
+                        'name' => 'get_rider_route',
+                        'description' => 'Fetch assigned delivery stops for today with customer landmark, Google Maps link, and payment type.',
+                        'parameters' => ['type' => 'OBJECT', 'properties' => []],
+                    ],
+                    [
+                        'name' => 'verify_doorstep_otp',
+                        'description' => 'Verify the customer 6-digit delivery OTP at doorstep to mark order delivered.',
+                        'parameters' => [
+                            'type' => 'OBJECT',
+                            'properties' => [
+                                'order_id' => ['type' => 'INTEGER', 'description' => 'The order ID being delivered'],
+                                'otp' => ['type' => 'STRING', 'description' => '6-digit OTP provided by the customer'],
+                            ],
+                            'required' => ['order_id', 'otp'],
+                        ],
+                    ],
+                    [
+                        'name' => 'get_cash_in_hand',
+                        'description' => 'Calculate total physical cash collected by rider from POD deliveries today to remit at hub.',
+                        'parameters' => ['type' => 'OBJECT', 'properties' => []],
                     ],
                     [
                         'name' => 'escalate_to_human',
@@ -484,6 +552,41 @@ PROMPT;
                     $dossier['phone'],
                     !empty($args['order_id']) ? (int)$args['order_id'] : null
                 );
+
+            // Vendor Operations
+            case 'get_vendor_summary':
+                return WhatsAppVendorService::getVendorSummary($dossier['phone']);
+
+            case 'get_vendor_pending_orders':
+                return WhatsAppVendorService::getPendingOrders($dossier['phone']);
+
+            case 'confirm_order_ready':
+                return WhatsAppVendorService::confirmOrderReady($dossier['phone'], (int)($args['order_id'] ?? 0));
+
+            case 'update_vendor_stock':
+                return WhatsAppVendorService::updateStock(
+                    $dossier['phone'],
+                    $args['product_name'] ?? '',
+                    (int)($args['new_stock'] ?? 0),
+                    $args['variant'] ?? null
+                );
+
+            case 'get_vendor_payout':
+                return WhatsAppVendorService::getPayoutSummary($dossier['phone']);
+
+            // Rider Operations
+            case 'get_rider_route':
+                return WhatsAppRiderService::getRiderRoute($dossier['phone']);
+
+            case 'verify_doorstep_otp':
+                return WhatsAppRiderService::verifyDoorstepOtp(
+                    $dossier['phone'],
+                    (int)($args['order_id'] ?? 0),
+                    (string)($args['otp'] ?? '')
+                );
+
+            case 'get_cash_in_hand':
+                return WhatsAppRiderService::getCashInHand($dossier['phone']);
 
             default:
                 return ['status' => 'acknowledged'];
