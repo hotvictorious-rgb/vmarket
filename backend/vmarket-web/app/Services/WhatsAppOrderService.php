@@ -331,4 +331,142 @@ class WhatsAppOrderService
             ];
         }
     }
+
+    /**
+     * [AI] Fetches live verified wallet balance and loyalty status for WhatsApp shopper.
+     */
+    public static function getWalletSummary(string $phone): array
+    {
+        $user = self::getOrCreateCustomer($phone);
+        $balance = (float)($user->wallet_balance ?? 0.0);
+
+        return [
+            'status' => true,
+            'user_id' => $user->id,
+            'customer_name' => trim($user->f_name . ' ' . $user->l_name),
+            'wallet_balance' => $balance,
+            'formatted_balance' => '₦' . number_format($balance, 2),
+        ];
+    }
+
+    /**
+     * [AI] Generates instant dynamic Paystack Add-Fund URL for WhatsApp wallet top-up.
+     */
+    public static function generateWalletTopUpLink(string $phone, float $amount): array
+    {
+        if ($amount < 100) {
+            return [
+                'status' => false,
+                'message' => 'Minimum wallet top-up amount is ₦100.',
+            ];
+        }
+
+        $user = self::getOrCreateCustomer($phone);
+        $topupUrl = url("/payment-mobile?customer_id={$user->id}&payment_method=paystack&payment_platform=web&is_guest=0&payment_request_from=app&amount={$amount}&type=wallet");
+
+        return [
+            'status' => true,
+            'amount' => $amount,
+            'formatted_amount' => '₦' . number_format($amount, 2),
+            'payment_url' => $topupUrl,
+            'customer_name' => trim($user->f_name . ' ' . $user->l_name),
+        ];
+    }
+
+    /**
+     * [AI] 1-Click WhatsApp Wallet Checkout with pessimistic balance locks.
+     */
+    public static function payWithWallet(string $phone, ?int $orderId = null): array
+    {
+        $user = self::getOrCreateCustomer($phone);
+
+        $order = null;
+        if ($orderId) {
+            $order = Order::find($orderId);
+        } else {
+            $order = Order::where('customer_id', $user->id)
+                ->where('payment_status', 'unpaid')
+                ->orderBy('id', 'desc')
+                ->first();
+        }
+
+        if (!$order) {
+            return [
+                'status' => false,
+                'message' => 'No active unpaid order found to pay for.',
+            ];
+        }
+
+        if ($order->payment_status === 'paid') {
+            return [
+                'status' => false,
+                'message' => "Order #{$order->id} is already paid.",
+                'order_id' => $order->id,
+                'delivery_otp' => $order->verification_code,
+            ];
+        }
+
+        $orderAmount = (float)$order->order_amount;
+
+        try {
+            return DB::transaction(function () use ($user, $order, $orderAmount) {
+                // 1. Pessimistic Row-Level Lock on User Record
+                $lockedUser = User::where('id', $user->id)->lockForUpdate()->first();
+                $currentBalance = (float)($lockedUser->wallet_balance ?? 0.0);
+
+                // 2. Strict Balance Verification
+                if ($currentBalance < $orderAmount) {
+                    $shortage = $orderAmount - $currentBalance;
+                    $topupData = self::generateWalletTopUpLink($lockedUser->phone, ceil($shortage));
+
+                    return [
+                        'status' => false,
+                        'insufficient_balance' => true,
+                        'current_balance' => $currentBalance,
+                        'formatted_current_balance' => '₦' . number_format($currentBalance, 2),
+                        'order_amount' => $orderAmount,
+                        'formatted_order_amount' => '₦' . number_format($orderAmount, 2),
+                        'shortage' => $shortage,
+                        'formatted_shortage' => '₦' . number_format($shortage, 2),
+                        'topup_url' => $topupData['payment_url'] ?? url('/pay'),
+                        'message' => "Insufficient wallet balance. You have ₦" . number_format($currentBalance, 2) . " but need ₦" . number_format($orderAmount, 2) . ".",
+                    ];
+                }
+
+                // 3. Atomically Deduct Balance
+                $lockedUser->decrement('wallet_balance', $orderAmount);
+                $newBalance = (float)$lockedUser->fresh()->wallet_balance;
+
+                // 4. Update Order Status
+                $order->update([
+                    'payment_status' => 'paid',
+                    'order_status' => 'confirmed',
+                    'payment_method' => 'wallet_payment',
+                    'payment_note' => 'Paid via Victorious MARKET Wallet on WhatsApp',
+                ]);
+
+                // 5. Trigger Vendor & Rider Notifications
+                WhatsAppAutomationWorkflow::triggerOrderConfirmedNotification($order);
+
+                return [
+                    'status' => true,
+                    'order_id' => $order->id,
+                    'order_amount' => $orderAmount,
+                    'formatted_order_amount' => '₦' . number_format($orderAmount, 2),
+                    'previous_balance' => $currentBalance,
+                    'new_balance' => $newBalance,
+                    'formatted_new_balance' => '₦' . number_format($newBalance, 2),
+                    'delivery_otp' => $order->verification_code,
+                    'message' => "Order #{$order->id} successfully paid with wallet! Your new balance is ₦" . number_format($newBalance, 2) . ".",
+                ];
+            });
+        } catch (Exception $e) {
+            Log::error('[AI WhatsApp Pay With Wallet Exception] ' . $e->getMessage());
+            return [
+                'status' => false,
+                'message' => 'Wallet payment processing failed. Please try again.',
+            ];
+        }
+    }
 }
+

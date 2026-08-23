@@ -183,6 +183,35 @@ PROMPT;
                         ],
                     ],
                     [
+                        'name' => 'get_wallet_balance',
+                        'description' => 'Check the customer live verified Victorious MARKET wallet balance in Naira.',
+                        'parameters' => [
+                            'type' => 'OBJECT',
+                            'properties' => [],
+                        ],
+                    ],
+                    [
+                        'name' => 'fund_wallet_paystack',
+                        'description' => 'Generate an instant Paystack payment link for the customer to add funds/top up their wallet.',
+                        'parameters' => [
+                            'type' => 'OBJECT',
+                            'properties' => [
+                                'amount' => ['type' => 'NUMBER', 'description' => 'Amount in Naira to top up (e.g. 5000, 10000, 20000)'],
+                            ],
+                            'required' => ['amount'],
+                        ],
+                    ],
+                    [
+                        'name' => 'pay_order_with_wallet',
+                        'description' => 'Atomically pay for an active order using the customer wallet balance with 0% gateway friction.',
+                        'parameters' => [
+                            'type' => 'OBJECT',
+                            'properties' => [
+                                'order_id' => ['type' => 'INTEGER', 'description' => 'Optional specific Order ID to pay for'],
+                            ],
+                        ],
+                    ],
+                    [
                         'name' => 'escalate_to_human',
                         'description' => 'Transfer the chat to a live support agent when the customer requests human help or has a dispute.',
                         'parameters' => [
@@ -366,6 +395,21 @@ PROMPT;
                     ];
                 }
                 return ['error' => 'No active order found to generate payment link.'];
+
+            case 'get_wallet_balance':
+                return WhatsAppOrderService::getWalletSummary($dossier['phone']);
+
+            case 'fund_wallet_paystack':
+                return WhatsAppOrderService::generateWalletTopUpLink(
+                    $dossier['phone'],
+                    (float)($args['amount'] ?? 1000)
+                );
+
+            case 'pay_order_with_wallet':
+                return WhatsAppOrderService::payWithWallet(
+                    $dossier['phone'],
+                    !empty($args['order_id']) ? (int)$args['order_id'] : null
+                );
 
             default:
                 return ['status' => 'acknowledged'];

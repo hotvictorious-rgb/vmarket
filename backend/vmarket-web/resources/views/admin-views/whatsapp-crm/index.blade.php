@@ -364,6 +364,9 @@
                 <span class="vip-badge">${dossier.loyalty_tier}</span>
                 <p class="text-muted fs-11 mt-1 mb-0">${dossier.phone}</p>
                 <div class="mt-2 text-primary font-weight-bold">LTV Spend: ₦${dossier.total_spend.toLocaleString()}</div>
+                <div class="mt-2 p-2 rounded text-white font-weight-bold fs-12" style="background-color: var(--vmarket-purple);">
+                    💳 Wallet Balance: ₦${(dossier.wallet_balance || 0).toLocaleString()}
+                </div>
             </div>
 
             <h6 class="font-weight-bold text-uppercase fs-11 text-muted mb-2">🧠 AI Memory & Preferences</h6>
@@ -383,9 +386,34 @@
             <div class="d-grid gap-2">
                 <button class="btn btn-xs btn-outline-primary" onclick="sendActionTemplate('otp')">Resend 6-Digit Delivery OTP</button>
                 <button class="btn btn-xs btn-outline-success" onclick="sendActionTemplate('paystack')">Send Paystack Payment Link</button>
+                <button class="btn btn-xs btn-outline-info" onclick="sendActionTemplate('wallet_topup')">💰 Send ₦5,000 Wallet Top-Up Link</button>
+                <button class="btn btn-xs btn-outline-secondary" onclick="manualCreditWalletPrompt(${dossier.user_id || 'null'})">➕ Manual Credit Wallet</button>
                 <button class="btn btn-xs btn-outline-danger" onclick="banCustomerPrompt('${dossier.phone}', ${dossier.customer_id || 'null'})">🚫 1-Click Ban Customer</button>
             </div>
         `;
+    }
+
+    function manualCreditWalletPrompt(userId) {
+        if (!userId) {
+            alert('Customer account must be registered first.');
+            return;
+        }
+        let amount = prompt('Enter amount to credit to this customer\'s wallet (in Naira):', '5000');
+        if (!amount || isNaN(amount) || amount <= 0) return;
+
+        fetch("{{ url('admin/customer/credit-wallet') }}/" + userId, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRF-TOKEN': '{{ csrf_token() }}'
+            },
+            body: JSON.stringify({ amount: amount })
+        }).then(res => res.json()).then(data => {
+            alert(data.message);
+            if (data.status) {
+                loadConversation(activeConversationId);
+            }
+        });
     }
 
     function verifyReceipt(orderId) {
@@ -447,6 +475,8 @@
             msg = 'Hello! Here is a reminder of your 6-digit Delivery OTP code for your Victorious MARKET order. Please present this code to your rider upon delivery.';
         } else if (type === 'paystack') {
             msg = 'Hello! You can complete payment for your Victorious MARKET order securely via Paystack using this link: ' + window.location.origin + '/pay';
+        } else if (type === 'wallet_topup') {
+            msg = 'Hello! You can add funds to your Victorious MARKET wallet instantly with Card, Transfer or USSD using this link: ' + window.location.origin + '/payment-mobile?payment_method=paystack&amount=5000&type=wallet';
         }
         document.getElementById('messageInput').value = msg;
         submitMessage();

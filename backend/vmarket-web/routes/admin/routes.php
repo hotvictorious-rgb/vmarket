@@ -414,6 +414,7 @@ Route::group(['prefix' => 'admin', 'as' => 'admin.', 'middleware' => ['admin', '
             Route::post('unban', 'unbanCustomer')->name('unban');
             Route::post('verify-receipt/{id}', 'verifyReceipt')->name('verify-receipt');
             Route::post('reject-receipt/{id}', 'rejectReceipt')->name('reject-receipt');
+            Route::post('credit-wallet/{id}', 'approveWalletReceipt')->name('credit-wallet');
         });
 
         Route::group(['prefix' => 'wallet', 'as' => 'wallet.'], function () {

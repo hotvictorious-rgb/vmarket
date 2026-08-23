@@ -7,6 +7,14 @@ Always append your completed tasks here in chronological order at the top. Forma
 `### [YYYY-MM-DD HH:MM UTC] <Feature / Fix Title> [<Component Scope>]`
 Include the specific app/component modified and bullet points detailing the exact technical changes.
 
+### [2026-08-23 23:12 UTC] WhatsApp Conversational Wallet Engine (Top-Up, Balance Queries & 1-Click Checkout) [backend]
+* **Component:** Laravel Backend, WhatsApp AI Service, Order Management & WhatsApp CRM Dashboard (`backend/vmarket-web`)
+* **Action:** Implemented conversational wallet funding, balance checks, and atomic 1-click wallet checkout:
+  - **AI Wallet Tool Suite (`WhatsAppAiService.php`):** Added tool declarations and execution handlers for `get_wallet_balance` (verified live balance query), `fund_wallet_paystack` (dynamic Paystack Add-Fund URL generator), and `pay_order_with_wallet` (1-click frictionless order checkout).
+  - **Atomic Wallet Checkout & Concurrency Locks (`WhatsAppOrderService.php`):** Implemented `payWithWallet()` enforcing strict balance bounds ($balance \ge orderAmount$) and executing deductions within `DB::transaction()` with pessimistic row locks (`->lockForUpdate()`), issuing instant 6-digit delivery OTPs.
+  - **Manual Bank Transfer Wallet Top-Up Endpoint (`BlacklistController.php`, `routes/admin/routes.php`):** Created `approveWalletReceipt` endpoint allowing admins to credit customer wallets with 1 click from verified bank transfer receipts.
+  - **Admin WhatsApp CRM UI Enhancements (`whatsapp-crm/index.blade.php`):** Rendered live customer wallet balance badge in dossier header, added 1-click `[ 💰 Send ₦5,000 Wallet Top-Up Link ]` and `[ ➕ Manual Credit Wallet ]` prompt actions.
+
 ### [2026-08-23 22:52 UTC] AI Receipt Vision Inspector, Anti-Duplicate Verification & 1-Click Fraud Banning Engine [backend]
 * **Component:** Laravel Backend, AI Vision Services, Upload Security Pipeline, WhatsApp CRM & Customer Moderation (`backend/vmarket-web`)
 * **Action:** Implemented automated bank transfer receipt inspection, anti-duplicate Session ID locks, and user banning engine:
