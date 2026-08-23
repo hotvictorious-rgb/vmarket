@@ -358,6 +358,15 @@
             ticketsHtml = '<div class="text-muted fs-11">No support tickets found.</div>';
         }
 
+        let memoriesHtml = '';
+        if (dossier.episodic_memory && dossier.episodic_memory.length > 0) {
+            dossier.episodic_memory.forEach(m => {
+                memoriesHtml += `<div class="badge bg-light text-dark border p-1 mb-1 me-1 fs-10 text-wrap text-start d-block">📌 ${m.fact}</div>`;
+            });
+        } else {
+            memoriesHtml = '<div class="text-muted fs-10">No custom episodic memory points yet.</div>';
+        }
+
         panel.innerHTML = `
             <div class="text-center pb-3 border-bottom mb-3">
                 <h4 class="mb-1">${dossier.name}</h4>
@@ -369,11 +378,16 @@
                 </div>
             </div>
 
-            <h6 class="font-weight-bold text-uppercase fs-11 text-muted mb-2">🧠 AI Memory & Preferences</h6>
+            <h6 class="font-weight-bold text-uppercase fs-11 text-muted mb-2">🧠 AI Episodic Memory & Preferences</h6>
             <div class="p-2 mb-3 rounded bg-white border">
                 <div><strong>Tone:</strong> ${dossier.preferred_tone}</div>
                 <div><strong>Landmark:</strong> ${dossier.delivery_landmark}</div>
                 <div><strong>Favorite Shoes:</strong> Size ${dossier.size_preferences?.shoes || 'N/A'}</div>
+                <div class="mt-2 pt-2 border-top">
+                    <strong class="fs-11 text-muted d-block mb-1">Persistent Lifetime Notes:</strong>
+                    ${memoriesHtml}
+                </div>
+                <button class="btn btn-xs btn-outline-primary w-100 mt-2" onclick="addMemoryPrompt('${dossier.phone}')">➕ Add Lifetime Memory Note</button>
             </div>
 
             <h6 class="font-weight-bold text-uppercase fs-11 text-muted mb-2">📦 Active Orders</h6>
@@ -391,6 +405,25 @@
                 <button class="btn btn-xs btn-outline-danger" onclick="banCustomerPrompt('${dossier.phone}', ${dossier.customer_id || 'null'})">🚫 1-Click Ban Customer</button>
             </div>
         `;
+    }
+
+    function addMemoryPrompt(phone) {
+        let fact = prompt('Enter a persistent fact or preference for this customer (e.g. Always delivers near Shelter Afrique gate, prefers size 43):');
+        if (!fact) return;
+
+        fetch("{{ url('admin/customer/add-memory') }}", {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRF-TOKEN': '{{ csrf_token() }}'
+            },
+            body: JSON.stringify({ phone: phone, fact: fact })
+        }).then(res => res.json()).then(data => {
+            alert(data.message);
+            if (data.status) {
+                loadConversation(activeConversationId);
+            }
+        });
     }
 
     function manualCreditWalletPrompt(userId) {

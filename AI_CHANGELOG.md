@@ -7,6 +7,15 @@ Always append your completed tasks here in chronological order at the top. Forma
 `### [YYYY-MM-DD HH:MM UTC] <Feature / Fix Title> [<Component Scope>]`
 Include the specific app/component modified and bullet points detailing the exact technical changes.
 
+### [2026-08-23 23:28 UTC] Autonomous Human-Handoff Resume & Deep Episodic Memory Engine (Isolated Per WhatsApp Number) [backend]
+* **Component:** Laravel Backend, WhatsApp AI Services, Console Scheduler & CRM Dashboard (`backend/vmarket-web`)
+* **Action:** Implemented autonomous ghostwriter human-agent handoff, inactivity auto-resume, and phone-isolated lifetime episodic memory:
+  - **Schema & Model Migration (`2026_08_24_000005_enhance_whatsapp_ai_profiles_and_episodic_memory.php`, `WhatsAppCustomerAiProfile.php`):** Added `episodic_memory` (JSON array of persistent facts), `last_human_agent_name`, `last_human_interaction_at`, `unanswered_customer_since`, and `auto_resume_enabled`.
+  - **Episodic Memory Service (`EpisodicMemoryService.php`):** Engineered phone-isolated memory graph storage, deduplication, and bounds management (capping at 20 most recent high-signal memory points per caller).
+  - **Human Continuity & Stylometric Mirroring (`WhatsAppAiService.php`):** Injected lifetime episodic memories into Gemini's system instructions and built `resumeHumanChat()` to smoothly pick up conversations where human agents left off without robotic cliches.
+  - **Inactivity Auto-Resume Worker (`WhatsAppAutoResumeHumanChatsCommand.php`, `Kernel.php`):** Scheduled daemon running every 2 minutes scanning inactive human conversations (> 5 min unanswered customer messages) and automatically transitioning them back to AI ghostwriter handling.
+  - **Admin CRM UI Enhancements (`whatsapp-crm/index.blade.php`, `BlacklistController.php`, `routes/admin/routes.php`):** Rendered persistent memory badges in customer dossier sidebar and added 1-click `[ ➕ Add Lifetime Memory Note ]` action.
+
 ### [2026-08-23 23:15 UTC] Zero-Trust WhatsApp Customer Tenancy Isolation & IDOR Lockdown [backend]
 * **Component:** Laravel Backend, WhatsApp AI Service & Customer Relationship Engine (`backend/vmarket-web`)
 * **Action:** Hardened phone number scoping and verified mathematical isolation against cross-customer data leakage:

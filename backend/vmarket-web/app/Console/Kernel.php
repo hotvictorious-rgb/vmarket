@@ -25,6 +25,7 @@ class Kernel extends ConsoleKernel
     protected function schedule(Schedule $schedule)
     {
         $schedule->command('products:check-price-expiry')->dailyAt('00:01');
+        $schedule->command('whatsapp:auto-resume-human-chats --minutes=5')->everyTwoMinutes()->withoutOverlapping();
     }
 
     /**

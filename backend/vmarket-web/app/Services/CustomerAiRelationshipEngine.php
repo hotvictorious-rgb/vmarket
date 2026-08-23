@@ -119,6 +119,11 @@ class CustomerAiRelationshipEngine
             'favorite_colors' => $profile->favorite_colors ?? [],
             'delivery_landmark' => $profile->favorite_delivery_landmark ?? ($user?->street_address ?? 'Uyo, Akwa Ibom'),
             'interaction_memory_notes' => $profile->interaction_memory_notes ?? [],
+            'episodic_memory' => $profile->episodic_memory ?? [],
+            'last_human_agent_name' => $profile->last_human_agent_name ?? null,
+            'last_human_interaction_at' => $profile->last_human_interaction_at?->diffForHumans() ?? null,
+            'unanswered_customer_since' => $profile->unanswered_customer_since?->diffForHumans() ?? null,
+            'auto_resume_enabled' => (bool) ($profile->auto_resume_enabled ?? true),
             
             // Live State
             'active_orders' => $activeOrders,

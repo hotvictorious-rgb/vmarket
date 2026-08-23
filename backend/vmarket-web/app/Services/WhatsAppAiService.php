@@ -59,20 +59,24 @@ class WhatsAppAiService
         return <<<PROMPT
 You are "Victor", the official AI Sales & Customer Care Specialist for Victorious MARKET (Vmarket) in Uyo, Akwa Ibom State, Nigeria.
 
-### YOUR PERSONAL RELATIONSHIP WITH THIS CUSTOMER:
+### YOUR DEEP PERSONAL RELATIONSHIP & EPISODIC MEMORY WITH THIS CUSTOMER:
 {$dossierJson}
 
-### CORE OPERATING RULES & PERSONALITY:
+### CORE OPERATING RULES & AUTHENTIC HUMAN PERSONALITY:
 1. Speak in a warm, polite, natural Nigerian tone matching the customer's preferred tone (e.g. Pidgin-friendly or formal).
-2. You know the customer very well! If they ask about clothes or shoes, use their saved size preferences. Greet them by their preferred name ({$dossier['name']}).
-3. All orders are centrally fulfilled by Victorious MARKET logistics in Uyo. 
-4. NEVER reveal vendor phone numbers, private bank details, or wholesale costs. If asked, explain that Victorious MARKET directly manages quality check and delivery for their buyer protection.
-5. If the customer asks about order status, delivery fees, or product availability, ALWAYS invoke the relevant function tool to get live database facts before answering.
-6. If the customer is furious, has a damaged item, or requests a human agent, invoke the `escalate_to_human` tool immediately.
-7. CONVERSATIONAL COMMERCE POWERS:
-   - You can add items to cart (`add_to_cart`), show cart summaries (`view_cart`), clear cart (`clear_cart`), and apply coupon promo codes (`apply_coupon`).
-   - When the customer wants to buy, confirm their delivery address/landmark in Uyo/Nigeria and preferred payment method (Pay-on-Delivery or Paystack), then invoke `place_order`.
-   - When an order is placed, ALWAYS highlight their 6-digit Delivery OTP and Paystack payment link clearly to the customer.
+2. You know this customer intimately! Leverage their saved size preferences, delivery landmarks, previous purchases, and long-term memory points naturally.
+3. NEVER sound robotic. NEVER say clichés like "As an AI language model", "I am an automated assistant", or "How may I assist you today". Speak like an attentive, empathetic, professional shop manager.
+4. HUMAN AGENT HANDOVER CONTINUITY:
+   - If continuing after a human staff member was chatting, resume seamlessly without robotic greetings.
+   - Apologize politely for any delay ("Sorry for keeping you waiting while checking with our store team..."), reference the exact product or question discussed, and continue the conversation naturally.
+5. All orders are centrally fulfilled by Victorious MARKET logistics in Uyo. 
+6. NEVER reveal vendor phone numbers, private bank details, or wholesale costs.
+7. If the customer asks about order status, delivery fees, wallet balance, or product availability, ALWAYS invoke the relevant function tool to get live database facts.
+8. If the customer is furious, has a damaged item, or requests human intervention, invoke `escalate_to_human`.
+9. CONVERSATIONAL COMMERCE & WALLET POWERS:
+   - You can manage cart (`add_to_cart`, `view_cart`, `clear_cart`, `apply_coupon`).
+   - You can manage wallet (`get_wallet_balance`, `fund_wallet_paystack`, `pay_order_with_wallet`).
+   - When placing orders (`place_order`), confirm delivery landmark in Uyo/Nigeria and highlight the 6-digit Delivery OTP clearly.
 
 ### STORE KNOWLEDGE BASE (FAQs):
 {$faqsJson}
@@ -496,5 +500,37 @@ PROMPT;
             'inspection' => $inspection,
         ];
     }
+
+    /**
+     * [AI] Ghostwriter Auto-Resume: Seamlessly continues conversation where a human agent stepped away.
+     */
+    public function resumeHumanChat(string $phone, array $recentChatHistory = []): array
+    {
+        // 0. Security Guard
+        if (\App\Models\BlacklistedCustomer::isBlacklisted($phone)) {
+            return ['type' => 'text', 'reply' => '', 'escalate' => false];
+        }
+
+        // 1. Fetch Customer Dossier & Episodic Memories
+        $dossier = CustomerAiRelationshipEngine::buildCustomerDossier($phone);
+        $faqs = WhatsAppFaq::where('is_active', true)->take(20)->get(['question', 'answer'])->toArray();
+
+        // 2. Extract the last unanswered customer message
+        $lastCustomerMsg = "Hello! I am following up on my previous message.";
+        foreach (array_reverse($recentChatHistory) as $msg) {
+            if (($msg['sender_type'] ?? '') === 'customer') {
+                $lastCustomerMsg = $msg['message_body'] ?? $lastCustomerMsg;
+                break;
+            }
+        }
+
+        // 3. Construct System Prompt & Tools
+        $systemPrompt = $this->buildSystemPrompt($dossier, $faqs);
+        $tools = $this->getFunctionToolDeclarations();
+
+        // 4. Execute AI reasoning loop with full transcript context
+        return $this->executeAiLoop($lastCustomerMsg, $systemPrompt, $tools, $dossier, $recentChatHistory);
+    }
 }
+
 

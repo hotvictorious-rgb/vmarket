@@ -212,4 +212,26 @@ class BlacklistController extends Controller
             return back();
         }
     }
+
+    /**
+     * [AI] Add persistent episodic memory point for customer profile.
+     */
+    public function addCustomerMemoryPoint(Request $request): JsonResponse
+    {
+        $request->validate([
+            'phone' => 'required|string',
+            'fact' => 'required|string',
+        ]);
+
+        $success = \App\Services\EpisodicMemoryService::addMemoryPoint(
+            $request->phone,
+            $request->fact,
+            $request->category ?? 'staff_note'
+        );
+
+        return response()->json([
+            'status' => $success,
+            'message' => $success ? 'Memory point added to AI profile!' : 'Failed to add memory point.',
+        ]);
+    }
 }
