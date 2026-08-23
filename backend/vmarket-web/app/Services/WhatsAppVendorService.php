@@ -353,4 +353,95 @@ class WhatsAppVendorService
             ];
         });
     }
+
+    /**
+     * [AI] Create a product draft from WhatsApp conversational merchant listing.
+     * Enforces request_status = 0 (Pending Admin Approval) & status = 0 (Inactive/Hidden).
+     */
+    public static function createProductDraft(
+        string $phone,
+        string $name,
+        float $unitPrice,
+        int $stock = 1,
+        ?string $categoryName = null,
+        ?string $details = null,
+        ?string $imageUrl = null
+    ): array
+    {
+        $seller = self::getSeller($phone);
+        if (!$seller) {
+            return ['status' => false, 'message' => 'Unauthorized vendor access. Your store must be approved by admin.'];
+        }
+
+        if ($unitPrice < 50) {
+            return ['status' => false, 'message' => 'Invalid product price. Must be at least ₦50.00.'];
+        }
+
+        // 1. Resolve or fallback category
+        $category = null;
+        if (!empty($categoryName)) {
+            $category = \App\Models\Category::where('name', 'like', "%{$categoryName}%")->first();
+        }
+        if (!$category) {
+            $category = \App\Models\Category::first();
+        }
+
+        $categoryIds = [];
+        if ($category) {
+            $categoryIds[] = [
+                'id' => (string)$category->id,
+                'position' => 1,
+            ];
+        }
+
+        // 2. Generate unique slug and SKU code
+        $cleanName = trim($name);
+        $slug = \Illuminate\Support\Str::slug($cleanName) . '-' . \Illuminate\Support\Str::random(6);
+        $code = 'PRD-' . rand(100000, 999999);
+        $merchantShopName = $seller->shop?->name ?? 'Merchant';
+        $productDetails = $details ?? "Authentic {$cleanName} listed by {$merchantShopName} in Uyo on Victorious MARKET.";
+
+        // 3. Create product record with strict Pending & Inactive state
+        $product = \App\Models\Product::create([
+            'user_id' => $seller->id,
+            'shop_id' => $seller->shop?->id ?? 0,
+            'added_by' => 'seller',
+            'name' => $cleanName,
+            'code' => $code,
+            'slug' => $slug,
+            'category_ids' => json_encode($categoryIds),
+            'category_id' => $category?->id,
+            'unit_price' => $unitPrice,
+            'purchase_price' => $unitPrice,
+            'tax' => 0.00,
+            'tax_type' => 'percent',
+            'tax_model' => 'exclude',
+            'discount' => 0.00,
+            'discount_type' => 'flat',
+            'current_stock' => max(1, $stock),
+            'minimum_order_qty' => 1,
+            'details' => $productDetails,
+            'product_type' => 'physical',
+            'thumbnail' => $imageUrl ?? 'def.png',
+            'images' => json_encode($imageUrl ? [$imageUrl] : ['def.png']),
+            'status' => 0, // 🔒 HIDDEN from customer storefront until approved
+            'request_status' => 0, // 🔒 PENDING Super Admin Review & Approval
+            'published' => 0,
+            'colors' => json_encode([]),
+            'choice_options' => json_encode([]),
+            'variation' => json_encode([]),
+        ]);
+
+        return [
+            'status' => true,
+            'product_id' => $product->id,
+            'product_name' => $product->name,
+            'unit_price' => $unitPrice,
+            'formatted_price' => '₦' . number_format($unitPrice, 2),
+            'stock' => $product->current_stock,
+            'category' => $category?->name ?? 'General',
+            'request_status' => 'Pending Admin Approval',
+            'message' => "🎉 *Product Draft Created Successfully!*\n\n📦 *Item:* {$product->name}\n💰 *Price:* ₦" . number_format($unitPrice, 2) . "\n📊 *Stock:* {$product->current_stock} units\n🏷️ *Category:* " . ($category?->name ?? 'General') . "\n⏳ *Status:* Submitted to Super Admin for review.\n\nYour product will be reviewed and published to the customer storefront shortly!",
+        ];
+    }
 }

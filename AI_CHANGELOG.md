@@ -7,6 +7,13 @@ Always append your completed tasks here in chronological order at the top. Forma
 `### [YYYY-MM-DD HH:MM UTC] <Feature / Fix Title> [<Component Scope>]`
 Include the specific app/component modified and bullet points detailing the exact technical changes.
 
+### [2026-08-24 00:47 UTC] Conversational Vendor Product Creation with Mandatory Admin Approval [backend]
+* **Component:** Laravel Backend, Vendor Product Listing Service, Gemini Function Tools (`backend/vmarket-web`)
+* **Action:** Enabled merchants to list new products conversationally via WhatsApp with mandatory Admin moderation:
+  - **Product Draft Service (`WhatsAppVendorService.php`):** Implemented `createProductDraft` parsing product title, price, stock, category, and specifications with strict `request_status = 0` (Pending Admin Review) and `status = 0` (Hidden from Storefront).
+  - **Super Admin Moderation Alignment:** Configured products to automatically route into the existing **Admin Web Panel ➔ Products ➔ Pending Requests Queue** (`admin/products/list/pending`) with zero schema deviation.
+  - **AI Tool Suite Enhancements (`WhatsAppAiService.php`):** Declared `create_vendor_product_draft` in Gemini function calling definitions and wired execution handlers.
+
 ### [2026-08-24 00:38 UTC] Update Official AI Persona Name to Victorious [backend]
 * **Component:** Laravel Backend, WhatsApp AI Service (`backend/vmarket-web`)
 * **Action:** Updated official AI persona identity in Gemini system instructions:

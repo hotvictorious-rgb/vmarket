@@ -308,6 +308,21 @@ PROMPT;
                             'required' => ['amount'],
                         ],
                     ],
+                    [
+                        'name' => 'create_vendor_product_draft',
+                        'description' => 'Create a new product listing draft for an approved merchant on Victorious MARKET. The product is queued for Admin Approval.',
+                        'parameters' => [
+                            'type' => 'OBJECT',
+                            'properties' => [
+                                'name' => ['type' => 'STRING', 'description' => 'Product title/name (e.g. Italian Suede Chelsea Boots)'],
+                                'unit_price' => ['type' => 'NUMBER', 'description' => 'Selling price in Naira (e.g. 35000)'],
+                                'stock' => ['type' => 'INTEGER', 'description' => 'Stock quantity (default: 1)'],
+                                'category_name' => ['type' => 'STRING', 'description' => 'Optional category name (e.g. Shoes, Fashion, Electronics)'],
+                                'details' => ['type' => 'STRING', 'description' => 'Optional product specifications/details'],
+                            ],
+                            'required' => ['name', 'unit_price'],
+                        ],
+                    ],
                     // Rider Tools
                     [
                         'name' => 'get_rider_route',
@@ -640,6 +655,16 @@ PROMPT;
                 return WhatsAppVendorService::requestPayout(
                     $dossier['phone'],
                     (float)($args['amount'] ?? 0)
+                );
+
+            case 'create_vendor_product_draft':
+                return WhatsAppVendorService::createProductDraft(
+                    $dossier['phone'],
+                    $args['name'] ?? 'Product Item',
+                    (float)($args['unit_price'] ?? 0),
+                    (int)($args['stock'] ?? 1),
+                    $args['category_name'] ?? null,
+                    $args['details'] ?? null
                 );
 
             // Rider Operations
