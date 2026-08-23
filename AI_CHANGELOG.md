@@ -7,6 +7,16 @@ Always append your completed tasks here in chronological order at the top. Forma
 `### [YYYY-MM-DD HH:MM UTC] <Feature / Fix Title> [<Component Scope>]`
 Include the specific app/component modified and bullet points detailing the exact technical changes.
 
+### [2026-08-23 22:03 UTC] Pay-on-Delivery Upfront Dispatch Fee & Prepaid Free Delivery Restriction Engine [backend]
+* **Component:** Laravel Backend, Order Management, Admin Business Settings, WhatsApp CRM & Rider Logistics (`backend/vmarket-web`)
+* **Action:** Implemented capital protection and delivery commitment engine for Pay-on-Delivery (POD):
+  - **Database Migration & Model Mapping (`2026_08_24_000003_add_pod_dispatch_fee_and_free_delivery_settings.php`, `Order.php`):** Added `pod_dispatch_fee` and `doorstep_due_amount` columns to `orders` table and seeded default settings `pod_dispatch_fee_status` (1), `pod_dispatch_fee_amount` (1000.00), and `pod_free_delivery_prepaid_only` (1).
+  - **Free Delivery Prepaid Restriction (`OrderManager.php`):** Enforced that `free_delivery` coupons strictly require digital payment (Paystack/Card/Wallet/Transfer) and are invalidated on Cash on Delivery.
+  - **Upfront Dispatch Commitment Split (`OrderManager.php`):** Implemented automatic order breakdown on Cash on Delivery into upfront dispatch token (₦1,000 paid online) vs. doorstep cash balance to be collected by the rider with 6-digit OTP.
+  - **Rider Cash Accounting Precision (`DeliveryManController.php`):** Updated rider cash-in-hand accounting to charge rider wallets only for the physical doorstep cash collected, excluding online prepaid dispatch tokens.
+  - **WhatsApp AI CRM Transparency (`WhatsAppCustomerTransformer.php`):** Added `pod_dispatch_fee` and `doorstep_due_amount` to sanitized order response for accurate AI payment link generation and status messaging.
+  - **Admin Control UI (`OrderSettingsController.php`, `order-settings/index.blade.php`):** Created administrative toggle cards and fee amount inputs under Business Setup > Order & Delivery Settings.
+
 ### [2026-08-23 21:23 UTC] Performance Indexing & Coupon Margin Floor Safeguards [backend]
 * **Component:** Laravel Backend Database Migrations & Order Management (`backend/vmarket-web`)
 * **Action:** Implemented system scale and promotional margin refinements:

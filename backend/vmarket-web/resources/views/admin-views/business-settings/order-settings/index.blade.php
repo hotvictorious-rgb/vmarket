@@ -247,6 +247,67 @@
                                 </div>
                             </div>
                         </div>
+            <!-- [AI] Pay-on-Delivery (POD) Commitment Fee & Prepaid Security Card -->
+            <div class="card mt-3">
+                <div class="card-body">
+                    <div class="mb-3 mb-sm-20">
+                        <h3>{{ translate('Pay-on-Delivery (POD) Security & Upfront Dispatch Setup') }}</h3>
+                        <p class="mb-0 fs-12">
+                            {{ translate('Configure upfront commitment deposit to protect riders from failed deliveries and restrict free delivery to digital payments.') }}
+                        </p>
+                    </div>
+                    <div class="p-12 p-sm-20 bg-section rounded">
+                        <div class="row g-4">
+                            @php($podDispatchFeeStatus = getWebConfig('pod_dispatch_fee_status') ?? 1)
+                            <div class="col-xl-6 col-md-6">
+                                <label class="d-flex justify-content-between align-items-start gap-3 border rounded p-3 user-select-none h-100 bg-white">
+                                    <span>
+                                        <h5 class="fw-medium text-dark fs-14 mb-1">{{ translate('Upfront_POD_Dispatch_Commitment_Fee') }}</h5>
+                                        <p class="mb-0 fs-12">
+                                            {{ translate('Require customers to pay a non-refundable upfront dispatch token online via Paystack/Card before dispatch, collecting the remaining item balance at doorstep.') }}
+                                        </p>
+                                    </span>
+
+                                    <label class="switcher" for="pod-dispatch-fee-status">
+                                        <input class="switcher_input" type="checkbox" value="1" name="pod_dispatch_fee_status"
+                                               id="pod-dispatch-fee-status" {{ $podDispatchFeeStatus == 1 ? 'checked' : '' }}>
+                                        <span class="switcher_control"></span>
+                                    </label>
+                                </label>
+                            </div>
+
+                            @php($podDispatchFeeAmount = getWebConfig('pod_dispatch_fee_amount') ?? 1000.00)
+                            <div class="col-xl-6 col-md-6">
+                                <div class="border rounded p-3 h-100 bg-white">
+                                    <label class="form-label font-weight-bold" for="pod_dispatch_fee_amount">
+                                        {{ translate('Upfront_Dispatch_Fee_Amount') }} ({{ getCurrencySymbol(currencyCode: getCurrencyCode()) }})
+                                    </label>
+                                    <input type="number" min="0" step="100" class="form-control" name="pod_dispatch_fee_amount"
+                                           id="pod_dispatch_fee_amount" value="{{ usdToDefaultCurrency($podDispatchFeeAmount) ?? 1000 }}" required>
+                                    <span class="fs-11 text-muted mt-1 d-block">
+                                        {{ translate('Default: ₦1,000. This amount covers rider transport and is deducted from the doorstep balance.') }}
+                                    </span>
+                                </div>
+                            </div>
+
+                            @php($podFreeDeliveryPrepaidOnly = getWebConfig('pod_free_delivery_prepaid_only') ?? 1)
+                            <div class="col-12">
+                                <label class="d-flex justify-content-between align-items-center gap-3 border rounded p-3 user-select-none bg-white">
+                                    <span>
+                                        <h5 class="fw-medium text-dark fs-14 mb-1">{{ translate('Restrict_Free_Delivery_to_Prepaid_Digital_Orders') }}</h5>
+                                        <p class="mb-0 fs-12">
+                                            {{ translate('If enabled, Free Delivery coupons and free shipping offers will strictly require digital payment (Paystack/Card/Wallet) and will NOT apply to Pay-on-Delivery.') }}
+                                        </p>
+                                    </span>
+
+                                    <label class="switcher" for="pod-free-delivery-prepaid-only">
+                                        <input class="switcher_input" type="checkbox" value="1" name="pod_free_delivery_prepaid_only"
+                                               id="pod-free-delivery-prepaid-only" {{ $podFreeDeliveryPrepaidOnly == 1 ? 'checked' : '' }}>
+                                        <span class="switcher_control"></span>
+                                    </label>
+                                </label>
+                            </div>
+                        </div>
                     </div>
                 </div>
             </div>

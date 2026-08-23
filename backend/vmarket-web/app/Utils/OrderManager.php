@@ -525,6 +525,17 @@ class OrderManager
                 $discount = max(0, $onlyProductTotalAmount - 0.01);
             }
         } elseif ($coupon->coupon_type == 'free_delivery') {
+            // [AI] Free Delivery Digital Restriction: Exclude Cash on Delivery when pod_free_delivery_prepaid_only is active
+            $paymentMethod = $request['payment_method'] ?? session('payment_method') ?? null;
+            $freeDeliveryPrepaidOnly = (bool)(getWebConfig(name: 'pod_free_delivery_prepaid_only') ?? 1);
+
+            if ($freeDeliveryPrepaidOnly && $paymentMethod === 'cash_on_delivery') {
+                return [
+                    'status' => false,
+                    'messages' => translate('Free_delivery_coupons_are_exclusive_to_prepaid_digital_orders._Please_select_a_digital_payment_method_or_card.')
+                ];
+            }
+
             foreach ($cartList as $cartItem) {
                 if (($coupon->seller_id == '0') || (is_null($coupon->seller_id) && $cartItem['seller_is'] == 'admin') || ($coupon->seller_id == $cartItem['seller_id'] && $cartItem['seller_is'] == 'seller')) {
                     $onlyProductTotalAmount += ($cartItem['price'] - $cartItem['discount']) * $cartItem['quantity'];
@@ -988,8 +999,22 @@ class OrderManager
 
     public static function getOrderAddData(int $orderId, string $orderGroupId, object|array $customerData = [], object|array $cartData = [], object|array $orderData = [], object|array $totalTax = []): array
     {
-        $taxConfig = self::getTaxSystemType();
-        $adminCommission = (float)str_replace(",", "", Helpers::sales_commission_before_order($cartData['cart_group_id'], $cartData['coupon_discount']));
+        $totalOrderAmount = (float)($cartData['order_amount_with_tax'] - $cartData['refer_and_earn_discount']);
+        $podDispatchFee = 0.00;
+        $doorstepDueAmount = $totalOrderAmount;
+
+        // [AI] Pay-on-Delivery (POD) Upfront Dispatch Fee & Doorstep Due Breakdown
+        if ($orderData['payment_method'] === 'cash_on_delivery') {
+            $podStatus = (bool)(getWebConfig(name: 'pod_dispatch_fee_status') ?? 1);
+            if ($podStatus) {
+                $configuredFee = (float)(getWebConfig(name: 'pod_dispatch_fee_amount') ?? 1000.00);
+                if ($totalOrderAmount > $configuredFee) {
+                    $podDispatchFee = $configuredFee;
+                    $doorstepDueAmount = max(0.00, $totalOrderAmount - $podDispatchFee);
+                }
+            }
+        }
+
         return [
             'id' => $orderId,
             'verification_code' => rand(100000, 999999),
@@ -1010,8 +1035,10 @@ class OrderManager
             'discount_type' => $cartData['discount_type'],
             'coupon_code' => $cartData['coupon_code'],
             'coupon_discount_bearer' => $cartData['coupon_bearer'],
-            'order_amount' => $cartData['order_amount_with_tax'] - $cartData['refer_and_earn_discount'],
-            'init_order_amount' => $cartData['order_amount_with_tax'] - $cartData['refer_and_earn_discount'],
+            'order_amount' => $totalOrderAmount,
+            'init_order_amount' => $totalOrderAmount,
+            'pod_dispatch_fee' => $podDispatchFee,
+            'doorstep_due_amount' => $doorstepDueAmount,
             'total_tax_amount' => $cartData['total_tax_amount'],
             'tax_type' => $taxConfig['SystemTaxVatType'],
             'tax_model' => $taxConfig['is_included'] ? 'include' : 'exclude',

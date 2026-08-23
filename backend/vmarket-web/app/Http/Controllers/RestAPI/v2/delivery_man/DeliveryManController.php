@@ -206,7 +206,8 @@ class DeliveryManController extends Controller
 
                 $cashInHand = 0;
                 if ($order->payment_method == 'cash_on_delivery') {
-                    $cashInHand = $order->order_amount;
+                    // [AI] POD Dispatch Precision: Deduct any upfront dispatch fee already paid online from doorstep cash collection
+                    $cashInHand = (float)($order->doorstep_due_amount > 0 ? $order->doorstep_due_amount : ($order->order_amount - ($order->pod_dispatch_fee ?? 0)));
                 } else {
                     if (
                         $order?->latestEditHistory &&

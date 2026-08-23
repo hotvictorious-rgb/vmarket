@@ -70,6 +70,8 @@ class WhatsAppCustomerTransformer
             'payment_status' => $order->payment_status,
             'payment_method' => $order->payment_method,
             'order_amount' => (float) $order->order_amount,
+            'pod_dispatch_fee' => (float) ($order->pod_dispatch_fee ?? 0.0),
+            'doorstep_due_amount' => (float) ($order->doorstep_due_amount > 0 ? $order->doorstep_due_amount : $order->order_amount),
             'verification_code' => $order->verification_code, // 6-digit Customer Delivery OTP
             'delivery_rider' => $rider,
             'items' => $items,

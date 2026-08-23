@@ -138,6 +138,8 @@ class Order extends Model
         'driver_vehicle_no',
         'waybill_slip_no',
         'batch_dispatch_id',
+        'pod_dispatch_fee',
+        'doorstep_due_amount',
         'edited_status',
         'updated_at'
     ];
@@ -153,6 +155,8 @@ class Order extends Model
         'payment_by' => 'string',
         'payment_note' => 'string',
         'order_amount' => 'float',
+        'pod_dispatch_fee' => 'float',
+        'doorstep_due_amount' => 'float',
         'init_order_amount' => 'float',
         'total_tax_amount' => 'float',
         'tax_type' => 'string',
