@@ -301,4 +301,66 @@ class WhatsAppRiderService
             'recent_payout_receipts' => $receipts,
         ];
     }
+
+    /**
+     * [AI] Securely request a withdrawal to the rider's verified registered bank account.
+     */
+    public static function requestPayout(string $phone, float $amount): array
+    {
+        $rider = self::getRider($phone);
+        if (!$rider) {
+            return ['status' => false, 'message' => 'Unauthorized rider access.'];
+        }
+
+        if (empty($rider->account_no) || empty($rider->bank_name)) {
+            return [
+                'status' => false,
+                'message' => "❌ No bank account configured! Please log in to your Delivery Man App to link and verify your payout bank account before requesting withdrawals.",
+            ];
+        }
+
+        if ($amount < 1000) {
+            return [
+                'status' => false,
+                'message' => "❌ Minimum withdrawal amount is ₦1,000.00.",
+            ];
+        }
+
+        return \Illuminate\Support\Facades\DB::transaction(function () use ($rider, $amount) {
+            $wallet = \App\Models\DeliverymanWallet::where('delivery_man_id', $rider->id)->lockForUpdate()->first();
+            if (!$wallet || (float)$wallet->current_balance < $amount) {
+                $available = (float)($wallet->current_balance ?? 0.0);
+                return [
+                    'status' => false,
+                    'message' => "❌ Insufficient available balance! You have ₦" . number_format($available, 2) . " available for withdrawal.",
+                ];
+            }
+
+            // Atomic balance deduction
+            $wallet->decrement('current_balance', $amount);
+            $wallet->increment('pending_withdraw', $amount);
+
+            $withdraw = \App\Models\WithdrawRequest::create([
+                'delivery_man_id' => $rider->id,
+                'amount' => $amount,
+                'transaction_note' => 'Requested via WhatsApp AI Assistant',
+                'approved' => 0,
+                'created_at' => now(),
+                'updated_at' => now(),
+            ]);
+
+            $maskedAcc = '******' . substr($rider->account_no, -4);
+
+            return [
+                'status' => true,
+                'ref_id' => 'RWD-' . str_pad($withdraw->id, 6, '0', STR_PAD_LEFT),
+                'amount' => $amount,
+                'formatted_amount' => '₦' . number_format($amount, 2),
+                'remaining_balance' => (float)($wallet->current_balance),
+                'formatted_remaining_balance' => '₦' . number_format($wallet->current_balance, 2),
+                'destination_bank' => "{$rider->bank_name} ({$maskedAcc})",
+                'message' => "✅ Rider Payout Request Submitted Successfully!\n\n📋 *Ref ID:* RWD-" . str_pad($withdraw->id, 6, '0', STR_PAD_LEFT) . "\n💰 *Amount:* ₦" . number_format($amount, 2) . "\n🏦 *Destination:* {$rider->bank_name} ({$maskedAcc})\n⏳ *Status:* Pending Admin Bank Transfer\n\nYour remaining rider wallet balance is ₦" . number_format($wallet->current_balance, 2) . ". You will be notified once disbursed!",
+            ];
+        });
+    }
 }

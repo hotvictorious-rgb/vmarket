@@ -291,4 +291,66 @@ class WhatsAppVendorService
             'recent_payout_receipts' => $receipts,
         ];
     }
+
+    /**
+     * [AI] Securely request a withdrawal to the vendor's verified registered bank account.
+     */
+    public static function requestPayout(string $phone, float $amount): array
+    {
+        $seller = self::getSeller($phone);
+        if (!$seller) {
+            return ['status' => false, 'message' => 'Unauthorized vendor access.'];
+        }
+
+        if (empty($seller->account_no) || empty($seller->bank_name)) {
+            return [
+                'status' => false,
+                'message' => "❌ No bank account configured! Please log in to your Seller Web Panel to link and verify your payout bank account before requesting withdrawals.",
+            ];
+        }
+
+        if ($amount < 1000) {
+            return [
+                'status' => false,
+                'message' => "❌ Minimum withdrawal amount is ₦1,000.00.",
+            ];
+        }
+
+        return \Illuminate\Support\Facades\DB::transaction(function () use ($seller, $amount) {
+            $wallet = \App\Models\SellerWallet::where('seller_id', $seller->id)->lockForUpdate()->first();
+            if (!$wallet || (float)$wallet->balance < $amount) {
+                $available = (float)($wallet->balance ?? 0.0);
+                return [
+                    'status' => false,
+                    'message' => "❌ Insufficient available balance! You have ₦" . number_format($available, 2) . " available for withdrawal.",
+                ];
+            }
+
+            // Atomic balance deduction
+            $wallet->decrement('balance', $amount);
+            $wallet->increment('pending_withdraw', $amount);
+
+            $withdraw = \App\Models\WithdrawRequest::create([
+                'seller_id' => $seller->id,
+                'amount' => $amount,
+                'transaction_note' => 'Requested via WhatsApp AI Assistant',
+                'approved' => 0,
+                'created_at' => now(),
+                'updated_at' => now(),
+            ]);
+
+            $maskedAcc = '******' . substr($seller->account_no, -4);
+
+            return [
+                'status' => true,
+                'ref_id' => 'WD-' . str_pad($withdraw->id, 6, '0', STR_PAD_LEFT),
+                'amount' => $amount,
+                'formatted_amount' => '₦' . number_format($amount, 2),
+                'remaining_balance' => (float)($wallet->balance),
+                'formatted_remaining_balance' => '₦' . number_format($wallet->balance, 2),
+                'destination_bank' => "{$seller->bank_name} ({$maskedAcc})",
+                'message' => "✅ Payout Request Submitted Successfully!\n\n📋 *Ref ID:* WD-" . str_pad($withdraw->id, 6, '0', STR_PAD_LEFT) . "\n💰 *Amount:* ₦" . number_format($amount, 2) . "\n🏦 *Destination:* {$seller->bank_name} ({$maskedAcc})\n⏳ *Status:* Pending Admin Bank Transfer\n\nYour remaining store balance is ₦" . number_format($wallet->balance, 2) . ". You will receive a notification once the bank transfer is disbursed!",
+            ];
+        });
+    }
 }

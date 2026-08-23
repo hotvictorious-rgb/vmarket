@@ -7,6 +7,13 @@ Always append your completed tasks here in chronological order at the top. Forma
 `### [YYYY-MM-DD HH:MM UTC] <Feature / Fix Title> [<Component Scope>]`
 Include the specific app/component modified and bullet points detailing the exact technical changes.
 
+### [2026-08-24 00:32 UTC] Conversational In-Chat Payout Requests for Vendors & Riders [backend]
+* **Component:** Laravel Backend, Vendor & Rider Payout Services, Gemini Tool Suite (`backend/vmarket-web`)
+* **Action:** Enabled merchants and delivery riders to securely request withdrawals directly inside WhatsApp:
+  - **Vendor Payout Request (`WhatsAppVendorService.php`):** Implemented `requestPayout` with pessimistic wallet locks (`SellerWallet::lockForUpdate()`), minimum ₦1,000 threshold, registered bank verification, and atomic creation of `WithdrawRequest` (pending admin disbursement).
+  - **Rider Payout Request (`WhatsAppRiderService.php`):** Implemented `requestPayout` with pessimistic wallet locks (`DeliverymanWallet::lockForUpdate()`), bank verification, and atomic balance debit.
+  - **AI Tool Suite Enhancements (`WhatsAppAiService.php`):** Declared `request_vendor_payout` and `request_rider_payout` function tools in Gemini and wired execution handlers.
+
 ### [2026-08-24 00:23 UTC] Strict Payout Account Editing Ban & Masked Withdrawal Receipts on WhatsApp [backend]
 * **Component:** Laravel Backend, Vendor & Rider Financial Services (`backend/vmarket-web`)
 * **Action:** Enforced strict financial anti-fraud security and payout receipt viewing:

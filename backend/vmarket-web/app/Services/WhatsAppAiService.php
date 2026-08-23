@@ -297,6 +297,17 @@ PROMPT;
                             'required' => ['order_id'],
                         ],
                     ],
+                    [
+                        'name' => 'request_vendor_payout',
+                        'description' => 'Request a withdrawal of store earnings to the registered and verified merchant bank account.',
+                        'parameters' => [
+                            'type' => 'OBJECT',
+                            'properties' => [
+                                'amount' => ['type' => 'NUMBER', 'description' => 'Amount in Naira to withdraw (min: 1000)'],
+                            ],
+                            'required' => ['amount'],
+                        ],
+                    ],
                     // Rider Tools
                     [
                         'name' => 'get_rider_route',
@@ -336,6 +347,17 @@ PROMPT;
                         'name' => 'get_rider_payout',
                         'description' => 'Check rider delivery wallet balance, registered bank details, and recent payout receipts.',
                         'parameters' => ['type' => 'OBJECT', 'properties' => []],
+                    ],
+                    [
+                        'name' => 'request_rider_payout',
+                        'description' => 'Request a withdrawal of delivery earnings to the rider registered and verified bank account.',
+                        'parameters' => [
+                            'type' => 'OBJECT',
+                            'properties' => [
+                                'amount' => ['type' => 'NUMBER', 'description' => 'Amount in Naira to withdraw (min: 1000)'],
+                            ],
+                            'required' => ['amount'],
+                        ],
                     ],
                     [
                         'name' => 'escalate_to_human',
@@ -614,6 +636,12 @@ PROMPT;
             case 'get_vendor_pickup_code':
                 return WhatsAppVendorService::getPickupCode($dossier['phone'], (int)($args['order_id'] ?? 0));
 
+            case 'request_vendor_payout':
+                return WhatsAppVendorService::requestPayout(
+                    $dossier['phone'],
+                    (float)($args['amount'] ?? 0)
+                );
+
             // Rider Operations
             case 'get_rider_route':
                 return WhatsAppRiderService::getRiderRoute($dossier['phone']);
@@ -637,6 +665,12 @@ PROMPT;
 
             case 'get_rider_payout':
                 return WhatsAppRiderService::getRiderPayoutSummary($dossier['phone']);
+
+            case 'request_rider_payout':
+                return WhatsAppRiderService::requestPayout(
+                    $dossier['phone'],
+                    (float)($args['amount'] ?? 0)
+                );
 
             default:
                 return ['status' => 'acknowledged'];
