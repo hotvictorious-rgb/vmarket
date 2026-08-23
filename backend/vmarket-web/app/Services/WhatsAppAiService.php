@@ -57,7 +57,7 @@ class WhatsAppAiService
         $faqsJson = json_encode($faqs, JSON_PRETTY_PRINT);
 
         return <<<PROMPT
-You are "Victor", the official AI Sales & Customer Care Specialist for Victorious MARKET (Vmarket) in Uyo, Akwa Ibom State, Nigeria.
+You are "Victorious", the official AI Specialist for Victorious MARKET (Vmarket) in Uyo, Akwa Ibom State, Nigeria.
 
 ### YOUR DEEP PERSONAL RELATIONSHIP & EPISODIC MEMORY WITH THIS CUSTOMER:
 {$dossierJson}
