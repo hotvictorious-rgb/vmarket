@@ -7,6 +7,13 @@ Always append your completed tasks here in chronological order at the top. Forma
 `### [YYYY-MM-DD HH:MM UTC] <Feature / Fix Title> [<Component Scope>]`
 Include the specific app/component modified and bullet points detailing the exact technical changes.
 
+### [2026-08-24 00:07 UTC] Blind Cryptographic 6-Digit OTP Doorstep Verification Guard [backend]
+* **Component:** Laravel Backend, Rider WhatsApp Security Layer & Order Fulfillment Pipeline (`backend/vmarket-web`)
+* **Action:** Hardened doorstep delivery OTP verification with zero LLM exposure and constant-time comparison:
+  - **Blind OTP Pipeline (`WhatsAppRiderService.php`):** Ensured the AI model and rider route payloads NEVER hold or receive the secret 6-digit `verification_code`. The AI acts strictly as an execution transport invoking backend PHP functions.
+  - **Constant-Time Verification (`WhatsAppRiderService.php`):** Implemented `hash_equals($savedOtp, $cleanInputOtp)` to verify OTP codes inside PHP/MySQL with zero timing-leak vulnerabilities.
+  - **Atomic Status & Notification (`Order.php`, `WhatsAppAutomationWorkflow.php`):** Upon exact OTP match, the order is transitioned to `delivered` and `paid` atomically within a database transaction, triggering the customer WhatsApp delivery receipt.
+
 ### [2026-08-24 00:01 UTC] Enforce Mandatory Admin Approval & Active Verification Guards for Vendor & Rider WhatsApp Access [backend]
 * **Component:** Laravel Backend, Vendor & Rider WhatsApp Security Layer (`backend/vmarket-web`)
 * **Action:** Hardened authentication guards across WhatsApp Vendor and Rider operations:

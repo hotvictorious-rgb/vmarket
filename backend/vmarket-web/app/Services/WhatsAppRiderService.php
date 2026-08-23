@@ -103,14 +103,14 @@ class WhatsAppRiderService
             return ['status' => false, 'message' => "Order #{$orderId} has already been marked delivered."];
         }
 
-        // Compare 6-digit OTP code strictly
-        $cleanInputOtp = trim($otp);
+        // [AI] Cryptographic Constant-Time Comparison (Zero Timing-Leak)
+        $cleanInputOtp = trim((string)$otp);
         $savedOtp = trim((string)$order->verification_code);
 
-        if ($cleanInputOtp !== $savedOtp) {
+        if (!hash_equals($savedOtp, $cleanInputOtp)) {
             return [
                 'status' => false,
-                'message' => "❌ Invalid OTP code for Order #{$orderId}. Please request the correct 6-digit code from the customer.",
+                'message' => "❌ Invalid OTP code for Order #{$orderId}. Please request the correct 6-digit code from the customer at the doorstep.",
             ];
         }
 
