@@ -47,27 +47,53 @@ class WhatsAppRiderService
 
         foreach ($orders as $index => $ord) {
             $shipping = is_array($ord->shipping_address_data) ? $ord->shipping_address_data : json_decode($ord->shipping_address_data, true);
-            $address = $shipping['address'] ?? ($ord->customer?->street_address ?? 'Uyo, Akwa Ibom');
+            $deliveryAddress = $shipping['address'] ?? ($ord->customer?->street_address ?? 'Uyo, Akwa Ibom');
             $custName = $shipping['contact_person_name'] ?? ($ord->customer ? trim($ord->customer->f_name . ' ' . $ord->customer->l_name) : 'Customer');
             $custPhone = $shipping['phone'] ?? ($ord->customer?->phone ?? 'N/A');
+
+            // 1. Full Item Breakdown with Sizes/Variants
+            $details = \App\Models\OrderDetail::where('order_id', $ord->id)->get();
+            $itemLines = [];
+            foreach ($details as $d) {
+                $pData = json_decode($d->product_details, true);
+                $varStr = !empty($d->variant) ? " [Variant: {$d->variant}]" : '';
+                $itemLines[] = "• {$d->qty}x " . ($pData['name'] ?? 'Product') . $varStr;
+            }
+
+            // 2. Vendor Shop Location for Pickup
+            $seller = \App\Models\Seller::with('shop')->find($ord->seller_id);
+            $shopName = $seller?->shop?->name ?? 'Victorious MARKET Central Hub';
+            $shopAddress = $seller?->shop?->address ?? 'Central Logistics Hub, Uyo';
+            $shopPhone = $seller?->phone ?? 'Central Dispatch';
 
             $isPod = ($ord->payment_method === 'cash_on_delivery');
             $cashDue = $isPod ? (float)$ord->order_amount : 0.0;
             $totalCashToCollect += $cashDue;
 
-            $mapUrl = 'https://maps.google.com/?q=' . urlencode($address . ', Uyo, Akwa Ibom');
+            $pickupMapUrl = 'https://maps.google.com/?q=' . urlencode($shopAddress . ', Uyo, Akwa Ibom');
+            $deliveryMapUrl = 'https://maps.google.com/?q=' . urlencode($deliveryAddress . ', Uyo, Akwa Ibom');
 
             $stops[] = [
                 'stop_number' => $index + 1,
                 'order_id' => $ord->id,
-                'customer_name' => $custName,
-                'customer_phone' => $custPhone,
-                'delivery_address' => $address,
-                'google_maps_url' => $mapUrl,
-                'payment_type' => $isPod ? 'Cash on Delivery (POD)' : 'Prepaid (Online)',
+                'order_status' => $ord->order_status,
+                'items_list' => implode("\n", $itemLines),
+                'total_items_count' => $details->sum('qty'),
+                'pickup_details' => [
+                    'shop_name' => $shopName,
+                    'shop_address' => $shopAddress,
+                    'vendor_phone' => $shopPhone,
+                    'pickup_map_url' => $pickupMapUrl,
+                ],
+                'delivery_details' => [
+                    'customer_name' => $custName,
+                    'customer_phone' => $custPhone,
+                    'delivery_address' => $deliveryAddress,
+                    'delivery_map_url' => $deliveryMapUrl,
+                ],
+                'payment_type' => $isPod ? '💵 Cash on Delivery (POD)' : '💳 Prepaid (Online)',
                 'cash_to_collect' => $cashDue,
                 'formatted_cash_due' => '₦' . number_format($cashDue, 2),
-                'order_status' => $ord->order_status,
             ];
         }
 

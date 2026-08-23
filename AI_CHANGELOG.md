@@ -7,6 +7,13 @@ Always append your completed tasks here in chronological order at the top. Forma
 `### [YYYY-MM-DD HH:MM UTC] <Feature / Fix Title> [<Component Scope>]`
 Include the specific app/component modified and bullet points detailing the exact technical changes.
 
+### [2026-08-24 00:19 UTC] Mandatory Order Clarity Directive & Rich Itemized Breakdowns [backend]
+* **Component:** Laravel Backend, WhatsApp Vendor & Rider Services, System Prompt Engine (`backend/vmarket-web`)
+* **Action:** Enforced transparent itemized order breakdowns across all WhatsApp operations to eliminate pickup/delivery ambiguity:
+  - **Rider Route Itemization (`WhatsAppRiderService.php`):** Enriched every delivery stop with full item lines (`qty`, `name`, `variant`), total item count, vendor shop address/phone, pickup Google Maps link, and customer destination GPS landmark.
+  - **Vendor Order Breakdown (`WhatsAppVendorService.php`):** Updated `getPendingOrders` and `getPickupCode` to display item variants, assigned rider name & phone, customer destination zone, and formatted amounts.
+  - **Zero-Confusion AI Directive (`WhatsAppAiService.php`):** Enforced system instructions mandating that the AI always explicitly state the itemized product list, variants, pickup landmarks, and payment amounts.
+
 ### [2026-08-24 00:16 UTC] Two-Phase Handshake (Vendor Pickup Code & Doorstep OTP) with 5-Attempt Brute-Force Rate Limiter [backend]
 * **Component:** Laravel Backend, Vendor & Rider Security Services, Inbound Webhook Controller (`backend/vmarket-web`)
 * **Action:** Implemented the complete two-phase marketplace verification handshake and multi-tier rate limiting:

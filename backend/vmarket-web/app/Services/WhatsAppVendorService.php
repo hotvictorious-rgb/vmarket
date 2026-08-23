@@ -90,6 +90,7 @@ class WhatsAppVendorService
         $orders = Order::where('seller_is', 'seller')
             ->where('seller_id', $seller->id)
             ->whereIn('order_status', ['pending', 'confirmed', 'processing'])
+            ->with(['delivery_man', 'customer'])
             ->orderBy('id', 'desc')
             ->take(5)
             ->get();
@@ -97,19 +98,31 @@ class WhatsAppVendorService
         $items = [];
         foreach ($orders as $ord) {
             $details = OrderDetail::where('order_id', $ord->id)->get();
-            $itemNames = [];
+            $itemLines = [];
             foreach ($details as $d) {
                 $pData = json_decode($d->product_details, true);
-                $itemNames[] = ($pData['name'] ?? 'Product') . ' (Qty: ' . $d->qty . ')';
+                $varStr = !empty($d->variant) ? " [{$d->variant}]" : '';
+                $itemLines[] = "• {$d->qty}x " . ($pData['name'] ?? 'Product') . $varStr;
+            }
+
+            $shipping = is_array($ord->shipping_address_data) ? $ord->shipping_address_data : json_decode($ord->shipping_address_data, true);
+            $destination = $shipping['address'] ?? ($ord->customer?->street_address ?? 'Uyo, Akwa Ibom');
+
+            $riderInfo = 'Assigning dispatch rider...';
+            if ($ord->delivery_man) {
+                $riderInfo = trim($ord->delivery_man->f_name . ' ' . $ord->delivery_man->l_name) . ' (📞 ' . ($ord->delivery_man->phone ?? 'N/A') . ')';
             }
 
             $items[] = [
                 'order_id' => $ord->id,
                 'status' => $ord->order_status,
-                'items' => implode(', ', $itemNames),
+                'items_list' => implode("\n", $itemLines),
+                'total_quantity' => $details->sum('qty'),
                 'order_amount' => (float)$ord->order_amount,
                 'formatted_amount' => '₦' . number_format($ord->order_amount, 2),
                 'payment_status' => $ord->payment_status,
+                'delivery_destination' => $destination,
+                'assigned_rider' => $riderInfo,
                 'created_at' => $ord->created_at->format('d M, h:i A'),
             ];
         }
@@ -151,7 +164,7 @@ class WhatsAppVendorService
     }
 
     /**
-     * [AI] Fetch vendor pickup code for rider shop collection.
+     * [AI] Fetch vendor pickup code for rider shop collection with detailed parcel summary.
      */
     public static function getPickupCode(string $phone, int $orderId): array
     {
@@ -162,6 +175,7 @@ class WhatsAppVendorService
 
         $order = Order::where('id', $orderId)
             ->where('seller_id', $seller->id)
+            ->with(['delivery_man', 'details'])
             ->first();
 
         if (!$order) {
@@ -173,11 +187,22 @@ class WhatsAppVendorService
             $order->refresh();
         }
 
+        $itemLines = [];
+        foreach ($order->details as $d) {
+            $pData = json_decode($d->product_details, true);
+            $varStr = !empty($d->variant) ? " [{$d->variant}]" : '';
+            $itemLines[] = "• {$d->qty}x " . ($pData['name'] ?? 'Product') . $varStr;
+        }
+
+        $riderName = $order->delivery_man ? trim($order->delivery_man->f_name . ' ' . $order->delivery_man->l_name) : 'Assigned Victorious MARKET Rider';
+
         return [
             'status' => true,
             'order_id' => $order->id,
             'pickup_code' => $order->pickup_verification_code,
-            'message' => "🔑 The Pickup Verification Code for Order #{$order->id} is: *{$order->pickup_verification_code}*. Please provide this 6-digit code to the Victorious MARKET rider upon collection.",
+            'items_breakdown' => implode("\n", $itemLines),
+            'assigned_rider' => $riderName,
+            'message' => "🔑 *Pickup Code for Order #{$order->id}*: *{$order->pickup_verification_code}*\n\n📦 *Parcel Contents:*\n" . implode("\n", $itemLines) . "\n\n🛵 *Give this 6-digit code to {$riderName} upon package handover.*",
         ];
     }
 
