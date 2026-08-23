@@ -7,6 +7,13 @@ Always append your completed tasks here in chronological order at the top. Forma
 `### [YYYY-MM-DD HH:MM UTC] <Feature / Fix Title> [<Component Scope>]`
 Include the specific app/component modified and bullet points detailing the exact technical changes.
 
+### [2026-08-23 23:15 UTC] Zero-Trust WhatsApp Customer Tenancy Isolation & IDOR Lockdown [backend]
+* **Component:** Laravel Backend, WhatsApp AI Service & Customer Relationship Engine (`backend/vmarket-web`)
+* **Action:** Hardened phone number scoping and verified mathematical isolation against cross-customer data leakage:
+  - **Phone-Anchored Context Generation (`CustomerAiRelationshipEngine.php`):** Verified that customer dossiers (past orders, active deliveries, cart items, support tickets, wallet balance, and size preferences) are strictly bounded to `where('customer_id', $user->id)`.
+  - **Zero-Trust IDOR Tool Hardening (`WhatsAppAiService.php`, `WhatsAppOrderService.php`):** Enforced strict ownership checks (`where('customer_id', $user->id)`) in `generate_paystack_link`, `payWithWallet`, and `processReceiptImage`, blocking any attempt by malicious callers to inspect, pay for, or attach receipts to foreign order IDs.
+  - **Zero Prompt-Injection Info Leak:** Enforced sanitized output schemas so the AI model cannot access or recite third-party customer names, addresses, or order items under any conversational prompt variation.
+
 ### [2026-08-23 23:12 UTC] WhatsApp Conversational Wallet Engine (Top-Up, Balance Queries & 1-Click Checkout) [backend]
 * **Component:** Laravel Backend, WhatsApp AI Service, Order Management & WhatsApp CRM Dashboard (`backend/vmarket-web`)
 * **Action:** Implemented conversational wallet funding, balance checks, and atomic 1-click wallet checkout:

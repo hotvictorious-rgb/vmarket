@@ -386,15 +386,27 @@ PROMPT;
                 return ['city' => 'Standard Delivery', 'rate' => '₦1,500', 'timeline' => '1 - 2 Business Days'];
 
             case 'generate_paystack_link':
-                $orderId = $args['order_id'] ?? ($dossier['active_orders'][0]['order_id'] ?? null);
-                if ($orderId) {
+                $requestedId = !empty($args['order_id']) ? (int)$args['order_id'] : null;
+                $order = null;
+
+                if ($requestedId && !empty($dossier['user_id'])) {
+                    // [AI] Zero-Trust IDOR Guard: Verify order belongs to the chatting customer
+                    $order = Order::where('id', $requestedId)->where('customer_id', $dossier['user_id'])->first();
+                } elseif (!empty($dossier['active_orders'])) {
+                    $orderId = $dossier['active_orders'][0]['order_id'] ?? null;
+                    $order = $orderId ? Order::find($orderId) : null;
+                }
+
+                if ($order) {
                     return [
-                        'order_id' => $orderId,
-                        'payment_link' => url("/pay/order/{$orderId}"),
+                        'order_id' => $order->id,
+                        'order_amount' => (float)$order->order_amount,
+                        'formatted_amount' => '₦' . number_format($order->order_amount, 2),
+                        'payment_link' => url("/pay/order/{$order->id}"),
                         'instruction' => 'Click this link to pay securely with Card, Bank Transfer, or USSD via Paystack.',
                     ];
                 }
-                return ['error' => 'No active order found to generate payment link.'];
+                return ['error' => 'No active order matching your account was found to generate a payment link.'];
 
             case 'get_wallet_balance':
                 return WhatsAppOrderService::getWalletSummary($dossier['phone']);
@@ -418,15 +430,16 @@ PROMPT;
 
     /**
      * [AI] Autonomous Vision Inspection of WhatsApp Customer Transfer Receipts.
-     * Enforces Anti-Duplicate Session ID locking & zero-privacy-leak responses.
+     * Enforces Anti-Duplicate Session ID locking, Zero-Trust customer scoping & zero-privacy-leak responses.
      */
     public function processReceiptImage(string $phone, string $imageFullPath, ?int $orderId = null): array
     {
         $dossier = CustomerAiRelationshipEngine::buildCustomerDossier($phone);
         $order = null;
 
-        if ($orderId) {
-            $order = Order::find($orderId);
+        if ($orderId && !empty($dossier['user_id'])) {
+            // [AI] Zero-Trust IDOR Guard: Verify order belongs to chatting customer
+            $order = Order::where('id', $orderId)->where('customer_id', $dossier['user_id'])->first();
         } elseif (!empty($dossier['active_orders'])) {
             $order = Order::find($dossier['active_orders'][0]['order_id']);
         }

@@ -382,7 +382,7 @@ class WhatsAppOrderService
 
         $order = null;
         if ($orderId) {
-            $order = Order::find($orderId);
+            $order = Order::where('id', $orderId)->where('customer_id', $user->id)->first();
         } else {
             $order = Order::where('customer_id', $user->id)
                 ->where('payment_status', 'unpaid')
