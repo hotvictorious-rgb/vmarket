@@ -7,6 +7,12 @@ Always append your completed tasks here in chronological order at the top. Forma
 `### [YYYY-MM-DD HH:MM UTC] <Feature / Fix Title> [<Component Scope>]`
 Include the specific app/component modified and bullet points detailing the exact technical changes.
 
+### [2026-08-23 22:18 UTC] Cryptographic Paystack Expected Amount Verification Guard [backend]
+* **Component:** Laravel Payment Gateway Engine (`backend/vmarket-web/app/Packages/PaystackGateway`, `app/Http/Controllers/Payment_Methods`)
+* **Action:** Hardened cryptographic verification and monetary amount matching across Paystack payment handlers:
+  - **Strict Amount Matching (`NewPaystackController.php`, `PaystackController.php`):** Verified that both gateway callback handlers and asynchronous webhooks strictly compare `$paid_amount` against `$expected_amount` in kobo, blocking any order completion or wallet crediting if the paid amount is less than the order/dispatch fee amount.
+  - **Double Execution Guard:** Guaranteed row-level lock (`where('is_paid', 0)->update(...)`) and `$affected > 0` validation before invoking `success_hook` (`digital_payment_success`).
+
 ### [2026-08-23 22:03 UTC] Pay-on-Delivery Upfront Dispatch Fee & Prepaid Free Delivery Restriction Engine [backend]
 * **Component:** Laravel Backend, Order Management, Admin Business Settings, WhatsApp CRM & Rider Logistics (`backend/vmarket-web`)
 * **Action:** Implemented capital protection and delivery commitment engine for Pay-on-Delivery (POD):

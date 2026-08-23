@@ -102,20 +102,28 @@ class NewPaystackController extends Controller
     public function handleGatewayCallback(Request $request): Redirector|RedirectResponse
     {
         $paymentDetails = self::getPaystackPaymentData(request: $request);
+        $paymentId = $paymentDetails['data']['metadata']['payment_id'] ?? null;
+        $paymentData = $this->payment::where(['id' => $paymentId])->first();
 
-        if ($paymentDetails['status'] === true) {
-            $affected = $this->payment::where(['id' => $paymentDetails['data']['metadata']['payment_id']])
-                ->where('is_paid', 0)
-                ->update([
-                    'payment_method' => 'paystack',
-                    'is_paid' => 1,
-                    'transaction_id' => $request['trxref'],
-                ]);
-            $data = $this->payment::where(['id' => $paymentDetails['data']['metadata']['payment_id']])->first();
-            if ($affected > 0 && isset($data) && function_exists($data->success_hook)) {
-                call_user_func($data->success_hook, $data);
+        if ($paymentDetails['status'] === true && $paymentData) {
+            $expectedAmount = round(($paymentData['payment_amount'] ?? 0) * 100);
+            $paidAmount = $paymentDetails['data']['amount'] ?? 0;
+
+            // [AI] Strict Payment Amount Matching Guard
+            if ($paidAmount >= $expectedAmount && $expectedAmount > 0) {
+                $affected = $this->payment::where(['id' => $paymentId])
+                    ->where('is_paid', 0)
+                    ->update([
+                        'payment_method' => 'paystack',
+                        'is_paid' => 1,
+                        'transaction_id' => $request['trxref'],
+                    ]);
+                $data = $this->payment::where(['id' => $paymentId])->first();
+                if ($affected > 0 && isset($data) && function_exists($data->success_hook)) {
+                    call_user_func($data->success_hook, $data);
+                }
+                return $this->payment_response($data, 'success');
             }
-            return $this->payment_response($data, 'success');
         }
 
         $payment_data = $this->payment::where(['id' => $paymentDetails['data']['metadata']['payment_id']])->first();
