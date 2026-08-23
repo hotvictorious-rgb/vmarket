@@ -7,6 +7,12 @@ Always append your completed tasks here in chronological order at the top. Forma
 `### [YYYY-MM-DD HH:MM UTC] <Feature / Fix Title> [<Component Scope>]`
 Include the specific app/component modified and bullet points detailing the exact technical changes.
 
+### [2026-08-23 21:23 UTC] Performance Indexing & Coupon Margin Floor Safeguards [backend]
+* **Component:** Laravel Backend Database Migrations & Order Management (`backend/vmarket-web`)
+* **Action:** Implemented system scale and promotional margin refinements:
+  - **High-Performance Composite Indexing (`2026_08_24_000002_add_price_expiry_and_approval_indexes_to_products_table.php`):** Created migration adding composite index `(status, price_updated_at)` for instant execution of the daily price expiry worker, and composite index `(added_by, request_status)` for optimized admin approval portal queries across large catalog sizes.
+  - **Coupon Margin & Subtotal Floor Guard (`OrderManager.php`):** Enforced a floor boundary in `getTotalCouponAmount()` preventing promotional coupons from wiping out 100% of the eligible product subtotal and safeguarding positive platform margins.
+
 ### [2026-08-23 20:53 UTC] Ecosystem Hardening: Promotional Margins, Bulk Import Engine, WhatsApp CRM Omnichannel Support & Price Expiry Clearance [backend]
 * **Component:** Laravel Backend, Promotions, Bulk Import, WhatsApp CRM, and Price Expiry Scheduler (`backend/vmarket-web`)
 * **Action:** Implemented system-wide hardening across remaining stock 6valley gaps:

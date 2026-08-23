@@ -519,6 +519,11 @@ class OrderManager
             } else {
                 $discount = $couponDiscount;
             }
+
+            // [AI] Coupon Margin & Subtotal Guard: Ensure discount never wipes out the entire eligible subtotal
+            if ($discount >= $onlyProductTotalAmount && $onlyProductTotalAmount > 0) {
+                $discount = max(0, $onlyProductTotalAmount - 0.01);
+            }
         } elseif ($coupon->coupon_type == 'free_delivery') {
             foreach ($cartList as $cartItem) {
                 if (($coupon->seller_id == '0') || (is_null($coupon->seller_id) && $cartItem['seller_is'] == 'admin') || ($coupon->seller_id == $cartItem['seller_id'] && $cartItem['seller_is'] == 'seller')) {
