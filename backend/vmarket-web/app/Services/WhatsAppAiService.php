@@ -247,6 +247,21 @@ PROMPT;
                             ],
                         ],
                     ],
+                    [
+                        'name' => 'get_loyalty_points',
+                        'description' => 'Check customer reward loyalty points balance, equivalent Naira value, and recent earned/redeemed history.',
+                        'parameters' => ['type' => 'OBJECT', 'properties' => []],
+                    ],
+                    [
+                        'name' => 'convert_loyalty_points',
+                        'description' => 'Convert accumulated loyalty reward points into instant spendable wallet funds.',
+                        'parameters' => [
+                            'type' => 'OBJECT',
+                            'properties' => [
+                                'points' => ['type' => 'INTEGER', 'description' => 'Optional specific points to convert (defaults to all eligible points)'],
+                            ],
+                        ],
+                    ],
                     // Vendor Tools
                     [
                         'name' => 'get_vendor_summary',
@@ -625,6 +640,15 @@ PROMPT;
                 return WhatsAppOrderService::payWithWallet(
                     $dossier['phone'],
                     !empty($args['order_id']) ? (int)$args['order_id'] : null
+                );
+
+            case 'get_loyalty_points':
+                return WhatsAppOrderService::getLoyaltySummary($dossier['phone']);
+
+            case 'convert_loyalty_points':
+                return WhatsAppOrderService::convertLoyaltyToWallet(
+                    $dossier['phone'],
+                    !empty($args['points']) ? (int)$args['points'] : null
                 );
 
             // Vendor Operations

@@ -468,5 +468,118 @@ class WhatsAppOrderService
             ];
         }
     }
+
+    /**
+     * [AI] Fetch customer loyalty points balance and recent transaction history.
+     */
+    public static function getLoyaltySummary(string $phone): array
+    {
+        $user = self::getOrCreateCustomer($phone);
+        $points = (float)($user->loyalty_point ?? 0.0);
+
+        $exchangeRate = (float)(\App\Models\BusinessSetting::where('type', 'loyalty_point_exchange_rate')->first()?->value ?: 1);
+        $minPoint = (int)(\App\Models\BusinessSetting::where('type', 'loyalty_point_minimum_point')->first()?->value ?: 100);
+        $equivalentNaira = $exchangeRate > 0 ? ($points / $exchangeRate) : 0.0;
+
+        // Fetch recent point transactions
+        $recentTransactions = \App\Models\LoyaltyPointTransaction::where('user_id', $user->id)
+            ->orderBy('id', 'desc')
+            ->take(3)
+            ->get();
+
+        $history = [];
+        foreach ($recentTransactions as $tx) {
+            $isCredit = ($tx->credit > 0);
+            $history[] = [
+                'type' => $isCredit ? '➕ Earned' : '➖ Redeemed',
+                'points' => $isCredit ? "+{$tx->credit} pts" : "-{$tx->debit} pts",
+                'reason' => ucwords(str_replace('_', ' ', $tx->transaction_type)),
+                'date' => $tx->created_at->format('d M Y'),
+            ];
+        }
+
+        return [
+            'status' => true,
+            'loyalty_points' => $points,
+            'equivalent_naira' => $equivalentNaira,
+            'formatted_naira' => '₦' . number_format($equivalentNaira, 2),
+            'exchange_rate_text' => "{$exchangeRate} Points = ₦1.00",
+            'min_conversion_point' => $minPoint,
+            'can_convert' => ($points >= $minPoint),
+            'history' => $history,
+            'message' => "🌟 *Your Loyalty Points:* *" . number_format($points) . " Points* (worth *₦" . number_format($equivalentNaira, 2) . "* in wallet credit).\n" . ($points >= $minPoint ? "👉 You can convert your points to instant wallet funds anytime!" : "👉 Minimum points required for wallet conversion: {$minPoint} points."),
+        ];
+    }
+
+    /**
+     * [AI] Convert loyalty points to instant wallet funds with pessimistic lock.
+     */
+    public static function convertLoyaltyToWallet(string $phone, ?int $pointsToConvert = null): array
+    {
+        $user = self::getOrCreateCustomer($phone);
+
+        return \Illuminate\Support\Facades\DB::transaction(function () use ($user, $pointsToConvert) {
+            $lockedUser = \App\Models\User::where('id', $user->id)->lockForUpdate()->first();
+            $currentPoints = (float)($lockedUser->loyalty_point ?? 0.0);
+
+            $exchangeRate = (float)(\App\Models\BusinessSetting::where('type', 'loyalty_point_exchange_rate')->first()?->value ?: 1);
+            $minPoint = (int)(\App\Models\BusinessSetting::where('type', 'loyalty_point_minimum_point')->first()?->value ?: 100);
+
+            $pts = $pointsToConvert ? min((int)$pointsToConvert, (int)$currentPoints) : (int)$currentPoints;
+
+            if ($pts < $minPoint || $currentPoints < $minPoint) {
+                return [
+                    'status' => false,
+                    'message' => "❌ You need at least {$minPoint} loyalty points to convert to wallet funds. (You currently have {$currentPoints} points).",
+                ];
+            }
+
+            $nairaCredit = $exchangeRate > 0 ? ($pts / $exchangeRate) : 0.0;
+
+            // 1. Deduct loyalty points
+            $lockedUser->decrement('loyalty_point', $pts);
+
+            // 2. Credit customer wallet
+            $lockedUser->increment('wallet_balance', $nairaCredit);
+
+            // 3. Record Loyalty Point Transaction Ledger
+            \App\Models\LoyaltyPointTransaction::create([
+                'user_id' => $lockedUser->id,
+                'transaction_id' => (string)\Illuminate\Support\Str::uuid(),
+                'reference' => 'WhatsApp AI Conversion',
+                'transaction_type' => 'loyalty_point_to_wallet',
+                'balance' => $lockedUser->loyalty_point,
+                'credit' => 0,
+                'debit' => $pts,
+                'created_at' => now(),
+                'updated_at' => now(),
+            ]);
+
+            // 4. Record Wallet Transaction Ledger
+            \App\Models\WalletTransaction::create([
+                'user_id' => $lockedUser->id,
+                'transaction_id' => (string)\Illuminate\Support\Str::uuid(),
+                'reference' => 'Loyalty Point Conversion',
+                'transaction_type' => 'loyalty_point',
+                'balance' => $lockedUser->wallet_balance,
+                'credit' => $nairaCredit,
+                'debit' => 0,
+                'admin_bonus' => 0,
+                'created_at' => now(),
+                'updated_at' => now(),
+            ]);
+
+            return [
+                'status' => true,
+                'converted_points' => $pts,
+                'credited_naira' => $nairaCredit,
+                'formatted_credit' => '₦' . number_format($nairaCredit, 2),
+                'new_wallet_balance' => (float)$lockedUser->wallet_balance,
+                'formatted_new_wallet' => '₦' . number_format($lockedUser->wallet_balance, 2),
+                'remaining_points' => (float)$lockedUser->loyalty_point,
+                'message' => "🎉 *Conversion Successful!*\n\n⭐ *Points Converted:* " . number_format($pts) . " Points\n💰 *Wallet Credited:* ₦" . number_format($nairaCredit, 2) . "\n💳 *New Wallet Balance:* ₦" . number_format($lockedUser->wallet_balance, 2) . "\n\nYou can use your wallet balance to pay for orders with 0% gateway fees!",
+            ];
+        });
+    }
 }
 

@@ -7,6 +7,13 @@ Always append your completed tasks here in chronological order at the top. Forma
 `### [YYYY-MM-DD HH:MM UTC] <Feature / Fix Title> [<Component Scope>]`
 Include the specific app/component modified and bullet points detailing the exact technical changes.
 
+### [2026-08-24 00:54 UTC] Customer Loyalty Points Inquiry & Wallet Conversion on WhatsApp [backend]
+* **Component:** Laravel Backend, Customer Order & Loyalty Services, Gemini Function Calling (`backend/vmarket-web`)
+* **Action:** Built a secure loyalty points inquiry and atomic wallet conversion engine on WhatsApp:
+  - **Loyalty Inquiry Service (`WhatsAppOrderService.php`):** Implemented `getLoyaltySummary` calculating points balance, equivalent Naira value using `loyalty_point_exchange_rate`, minimum redemption threshold (`loyalty_point_minimum_point`), and recent point transaction history.
+  - **Atomic Points-to-Wallet Conversion (`WhatsAppOrderService.php`):** Implemented `convertLoyaltyToWallet` with pessimistic row locking (`User::lockForUpdate()`), debiting `users.loyalty_point`, crediting `users.wallet_balance`, and recording immutable entries in both `loyalty_point_transactions` and `wallet_transactions`.
+  - **AI Tool Suite Enhancements (`WhatsAppAiService.php`):** Declared and wired `get_loyalty_points` and `convert_loyalty_points` in Gemini function calling definitions.
+
 ### [2026-08-24 00:47 UTC] Conversational Vendor Product Creation with Mandatory Admin Approval [backend]
 * **Component:** Laravel Backend, Vendor Product Listing Service, Gemini Function Tools (`backend/vmarket-web`)
 * **Action:** Enabled merchants to list new products conversationally via WhatsApp with mandatory Admin moderation:
