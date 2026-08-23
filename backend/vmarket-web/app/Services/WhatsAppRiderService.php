@@ -249,4 +249,56 @@ class WhatsAppRiderService
             'instruction' => 'Please remit collected physical cash to the Uyo Central Hub supervisor at the end of your shift.',
         ];
     }
+
+    /**
+     * [AI] Fetch rider wallet balance and recent payout receipts.
+     * Note: Bank account editing is STRICTLY FORBIDDEN over WhatsApp for anti-fraud security.
+     */
+    public static function getRiderPayoutSummary(string $phone): array
+    {
+        $rider = self::getRider($phone);
+        if (!$rider) {
+            return ['status' => false, 'message' => 'Unauthorized rider access.'];
+        }
+
+        $wallet = \App\Models\DeliverymanWallet::where('delivery_man_id', $rider->id)->first();
+        $balance = (float)($wallet->current_balance ?? 0.0);
+
+        // Fetch recent payout receipts
+        $withdrawals = \App\Models\WithdrawRequest::where('delivery_man_id', $rider->id)
+            ->orderBy('id', 'desc')
+            ->take(3)
+            ->get();
+
+        $receipts = [];
+        foreach ($withdrawals as $w) {
+            $statusText = match ((int)$w->approved) {
+                1 => '✅ Approved & Settled',
+                2 => '❌ Denied / Returned',
+                default => '⏳ Pending Admin Processing',
+            };
+            $receipts[] = [
+                'ref_id' => 'RWD-' . str_pad($w->id, 6, '0', STR_PAD_LEFT),
+                'amount' => '₦' . number_format($w->amount, 2),
+                'status' => $statusText,
+                'date' => $w->created_at->format('d M Y, h:i A'),
+            ];
+        }
+
+        return [
+            'status' => true,
+            'rider_name' => trim($rider->f_name . ' ' . $rider->l_name),
+            'current_balance' => $balance,
+            'formatted_balance' => '₦' . number_format($balance, 2),
+            'total_withdrawn' => '₦' . number_format($wallet->total_withdraw ?? 0.0, 2),
+            'pending_withdraw' => '₦' . number_format($wallet->pending_withdraw ?? 0.0, 2),
+            'registered_bank' => [
+                'bank_name' => $rider->bank_name ?? 'Not configured',
+                'account_no' => $rider->account_no ? ('******' . substr($rider->account_no, -4)) : 'Not configured',
+                'account_holder' => $rider->holder_name ?? trim($rider->f_name . ' ' . $rider->l_name),
+                'security_notice' => '🔒 For security, bank account edits must be performed inside your Delivery App with identity verification.',
+            ],
+            'recent_payout_receipts' => $receipts,
+        ];
+    }
 }

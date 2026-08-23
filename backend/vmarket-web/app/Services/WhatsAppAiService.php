@@ -333,6 +333,11 @@ PROMPT;
                         'parameters' => ['type' => 'OBJECT', 'properties' => []],
                     ],
                     [
+                        'name' => 'get_rider_payout',
+                        'description' => 'Check rider delivery wallet balance, registered bank details, and recent payout receipts.',
+                        'parameters' => ['type' => 'OBJECT', 'properties' => []],
+                    ],
+                    [
                         'name' => 'escalate_to_human',
                         'description' => 'Transfer the chat to a live support agent when the customer requests human help or has a dispute.',
                         'parameters' => [
@@ -629,6 +634,9 @@ PROMPT;
 
             case 'get_cash_in_hand':
                 return WhatsAppRiderService::getCashInHand($dossier['phone']);
+
+            case 'get_rider_payout':
+                return WhatsAppRiderService::getRiderPayoutSummary($dossier['phone']);
 
             default:
                 return ['status' => 'acknowledged'];

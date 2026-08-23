@@ -241,7 +241,8 @@ class WhatsAppVendorService
     }
 
     /**
-     * [AI] Fetch vendor earnings and withdrawable balance.
+     * [AI] Fetch vendor earnings, withdrawable balance, and recent payout receipts.
+     * Note: Bank account editing is STRICTLY FORBIDDEN over WhatsApp for anti-fraud security.
      */
     public static function getPayoutSummary(string $phone): array
     {
@@ -253,6 +254,27 @@ class WhatsAppVendorService
         $wallet = $seller->wallet;
         $balance = (float)($wallet->balance ?? 0.0);
 
+        // Fetch recent payout receipts
+        $withdrawals = \App\Models\WithdrawRequest::where('seller_id', $seller->id)
+            ->orderBy('id', 'desc')
+            ->take(3)
+            ->get();
+
+        $receipts = [];
+        foreach ($withdrawals as $w) {
+            $statusText = match ((int)$w->approved) {
+                1 => '✅ Approved & Settled',
+                2 => '❌ Denied / Returned',
+                default => '⏳ Pending Admin Processing',
+            };
+            $receipts[] = [
+                'ref_id' => 'WD-' . str_pad($w->id, 6, '0', STR_PAD_LEFT),
+                'amount' => '₦' . number_format($w->amount, 2),
+                'status' => $statusText,
+                'date' => $w->created_at->format('d M Y, h:i A'),
+            ];
+        }
+
         return [
             'status' => true,
             'balance' => $balance,
@@ -260,8 +282,13 @@ class WhatsAppVendorService
             'total_earning' => '₦' . number_format($wallet->total_earning ?? 0.0, 2),
             'withdrawn' => '₦' . number_format($wallet->withdrawn ?? 0.0, 2),
             'pending_withdraw' => '₦' . number_format($wallet->pending_withdraw ?? 0.0, 2),
-            'bank_name' => $seller->bank_name ?? 'Not configured',
-            'account_no' => $seller->account_no ? ('******' . substr($seller->account_no, -4)) : 'Not configured',
+            'registered_bank' => [
+                'bank_name' => $seller->bank_name ?? 'Not configured',
+                'account_no' => $seller->account_no ? ('******' . substr($seller->account_no, -4)) : 'Not configured',
+                'account_holder' => $seller->holder_name ?? 'Registered Merchant',
+                'security_notice' => '🔒 For security, bank account edits must be performed inside your Seller Web Panel with 2FA verification.',
+            ],
+            'recent_payout_receipts' => $receipts,
         ];
     }
 }

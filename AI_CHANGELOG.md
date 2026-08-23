@@ -7,6 +7,14 @@ Always append your completed tasks here in chronological order at the top. Forma
 `### [YYYY-MM-DD HH:MM UTC] <Feature / Fix Title> [<Component Scope>]`
 Include the specific app/component modified and bullet points detailing the exact technical changes.
 
+### [2026-08-24 00:23 UTC] Strict Payout Account Editing Ban & Masked Withdrawal Receipts on WhatsApp [backend]
+* **Component:** Laravel Backend, Vendor & Rider Financial Services (`backend/vmarket-web`)
+* **Action:** Enforced strict financial anti-fraud security and payout receipt viewing:
+  - **Zero Bank Mutation on WhatsApp (`WhatsAppVendorService.php`, `WhatsAppRiderService.php`):** Blocked all bank account modification over WhatsApp to eliminate SIM-swap, account hijacking, and phone theft fraud. Bank updates are restricted to authenticated web dashboards with 2FA.
+  - **Masked Bank Account Display:** Masked all sensitive account numbers (`******1234`) across vendor and rider balance summaries.
+  - **Recent Payout Receipts (`WithdrawRequest.php`):** Enabled vendors and riders to view their recent payout receipts (Reference ID, settlement status, date, and amount) on WhatsApp.
+  - **Rider Payout Tool (`WhatsAppAiService.php`):** Declared and wired `get_rider_payout` to retrieve rider delivery wallet balances, masked bank details, and settled payout receipts.
+
 ### [2026-08-24 00:19 UTC] Mandatory Order Clarity Directive & Rich Itemized Breakdowns [backend]
 * **Component:** Laravel Backend, WhatsApp Vendor & Rider Services, System Prompt Engine (`backend/vmarket-web`)
 * **Action:** Enforced transparent itemized order breakdowns across all WhatsApp operations to eliminate pickup/delivery ambiguity:
