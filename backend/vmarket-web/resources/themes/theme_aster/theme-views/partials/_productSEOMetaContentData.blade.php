@@ -52,4 +52,35 @@
     @if($metaContentData?->max_image_preview)
         <meta name="robots" content="max-image-preview{{ $metaContentData?->max_image_preview_value ? ': ' . $metaContentData?->max_image_preview_value : '' }}">
     @endif
+
+    {{-- Google Schema.org Product & Offer JSON-LD Structured Data --}}
+    <script type="application/ld+json">
+    {
+        "@context": "https://schema.org/",
+        "@type": "Product",
+        "name": "{{ addslashes($metaContentData?->title ?: ($productDetails->name ?? 'Product')) }}",
+        "image": [
+            "{{ $metaContentData?->image_full_url['path'] ?? (isset($productDetails->thumbnail_full_url) ? (is_array($productDetails->thumbnail_full_url) ? ($productDetails->thumbnail_full_url['path'] ?? '') : $productDetails->thumbnail_full_url) : asset('public/assets/front-end/img/image-place-holder.png')) }}"
+        ],
+        "description": "{{ addslashes(Str::limit(strip_tags($metaContentData?->description ?: ($productDetails->details ?? '')), 200)) }}",
+        "sku": "{{ $productDetails->code ?? ('VM-PROD-' . $productDetails->id) }}",
+        "brand": {
+            "@type": "Brand",
+            "name": "{{ addslashes($productDetails->brand?->name ?? 'Victorious MARKET') }}"
+        },
+        "offers": {
+            "@type": "Offer",
+            "url": "{{ route('product', [$productDetails->slug]) }}",
+            "priceCurrency": "NGN",
+            "price": "{{ (float)($productDetails->unit_price - ($productDetails->discount_type == 'flat' ? $productDetails->discount : ($productDetails->unit_price * $productDetails->discount / 100))) }}",
+            "priceValidUntil": "{{ now()->addYear()->format('Y-m-d') }}",
+            "itemCondition": "https://schema.org/NewCondition",
+            "availability": "{{ ($productDetails->current_stock > 0) ? 'https://schema.org/InStock' : 'https://schema.org/OutOfStock' }}",
+            "seller": {
+                "@type": "Organization",
+                "name": "Victorious MARKET"
+            }
+        }
+    }
+    </script>
 @endif

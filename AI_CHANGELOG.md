@@ -7,6 +7,11 @@ Always append your completed tasks here in chronological order at the top. Forma
 `### [YYYY-MM-DD HH:MM UTC] <Feature / Fix Title> [<Component Scope>]`
 Include the specific app/component modified and bullet points detailing the exact technical changes.
 
+### [2026-08-24 02:36 UTC] Google Schema.org JSON-LD Product & Offer Structured Data [backend]
+* **Component:** Laravel Backend, Product SEO Partials (`backend/vmarket-web`)
+* **Action:** Implemented Schema.org `Product` & `Offer` JSON-LD Structured Data across all storefront themes:
+  - **Product Rich Snippets (`_productSEOMetaContentData.blade.php`):** Embedded dynamic `application/ld+json` markup with product title, brand, SKU, calculated discount price in NGN, stock availability (`InStock`/`OutOfStock`), and seller data for Google Search and Google Shopping organic listings.
+
 ### [2026-08-24 02:32 UTC] Google Schema.org JSON-LD BlogPosting Structured Data & SEO Optimization [backend]
 * **Component:** Laravel Backend, Blog SEO Partials (`backend/vmarket-web`)
 * **Action:** Implemented Schema.org `BlogPosting` JSON-LD Structured Data across all storefront themes:
