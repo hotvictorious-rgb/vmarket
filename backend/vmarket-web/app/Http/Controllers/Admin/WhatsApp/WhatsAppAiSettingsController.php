@@ -85,9 +85,12 @@ class WhatsAppAiSettingsController extends Controller
             'token' => 'required|string',
             'waba_id' => 'nullable|string',
             'status' => 'required|in:0,1',
+            'verify_token' => 'nullable|string',
             'gemini_api_key' => 'nullable|string',
             'gemini_model' => 'nullable|string',
         ]);
+
+        $verifyToken = trim($request->verify_token ?: env('WHATSAPP_VERIFY_TOKEN', 'vmarket_webhook_secret_token'));
 
         $liveValues = json_encode([
             'gateway' => 'whatsapp_meta',
@@ -97,6 +100,7 @@ class WhatsAppAiSettingsController extends Controller
             'token' => $request->token,
             'waba_id' => $request->waba_id ?? '',
             'template_name' => $request->template_name ?? 'victorious_otp_auth',
+            'verify_token' => $verifyToken,
             'language_code' => $request->language_code ?? 'en',
         ]);
 
@@ -110,6 +114,11 @@ class WhatsAppAiSettingsController extends Controller
                 'created_at' => now(),
                 'updated_at' => now(),
             ]
+        );
+
+        DB::table('business_settings')->updateOrInsert(
+            ['type' => 'whatsapp_verify_token'],
+            ['value' => $verifyToken, 'updated_at' => now()]
         );
 
         if ($request->filled('gemini_api_key')) {

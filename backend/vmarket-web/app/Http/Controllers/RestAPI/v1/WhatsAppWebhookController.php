@@ -26,7 +26,17 @@ class WhatsAppWebhookController extends Controller
      */
     public function verify(Request $request)
     {
-        $verifyToken = env('WHATSAPP_VERIFY_TOKEN', 'vmarket_webhook_secret_token');
+        $dbToken = null;
+        try {
+            $config = DB::table('addon_settings')
+                ->where('key_name', 'whatsapp_meta')
+                ->where('settings_type', 'sms_config')
+                ->first();
+            $settings = $config ? json_decode($config->live_values, true) : [];
+            $dbToken = $settings['verify_token'] ?? DB::table('business_settings')->where('type', 'whatsapp_verify_token')->first()?->value;
+        } catch (\Throwable $e) {}
+
+        $verifyToken = !empty($dbToken) ? trim($dbToken) : env('WHATSAPP_VERIFY_TOKEN', 'vmarket_webhook_secret_token');
         
         $mode = $request->query('hub_mode');
         $token = $request->query('hub_verify_token');

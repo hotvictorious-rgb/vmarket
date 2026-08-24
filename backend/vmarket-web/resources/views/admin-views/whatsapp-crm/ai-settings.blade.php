@@ -56,6 +56,28 @@
 
                         <hr class="my-4">
                         <h6 class="font-weight-bold text-primary mb-3">
+                            <i class="tio-globe"></i> {{ translate('Meta_Webhook_Configuration') }}
+                        </h6>
+
+                        <div class="mb-3">
+                            <label class="form-label font-weight-bold">{{ translate('Webhook_Callback_URL') }}</label>
+                            <div class="input-group">
+                                <input type="text" class="form-control font-monospace fs-11" id="webhookCallbackUrl" value="{{ url('/api/v1/whatsapp/webhook') }}" readonly>
+                                <button class="btn btn-outline-secondary btn-sm" type="button" onclick="navigator.clipboard.writeText(document.getElementById('webhookCallbackUrl').value); alert('Callback URL copied to clipboard!');">
+                                    <i class="tio-copy"></i> Copy
+                                </button>
+                            </div>
+                            <small class="text-muted fs-11">{{ translate('Paste this URL into Meta Developer Portal ➔ WhatsApp ➔ Configuration ➔ Callback URL.') }}</small>
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label font-weight-bold">{{ translate('Webhook_Verify_Token') }}</label>
+                            <input type="text" name="verify_token" class="form-control font-monospace fs-12" value="{{ $settings['verify_token'] ?? env('WHATSAPP_VERIFY_TOKEN', 'vmarket_webhook_secret_token') }}" placeholder="vmarket_webhook_secret_token" required>
+                            <small class="text-muted fs-11">{{ translate('Paste this exact same token into Meta Developer Portal ➔ Verify Token.') }}</small>
+                        </div>
+
+                        <hr class="my-4">
+                        <h6 class="font-weight-bold text-primary mb-3">
                             <i class="tio-cpu"></i> {{ translate('Google_Gemini_AI_Intelligence_Settings') }}
                         </h6>
 

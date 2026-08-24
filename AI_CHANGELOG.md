@@ -7,6 +7,12 @@ Always append your completed tasks here in chronological order at the top. Forma
 `### [YYYY-MM-DD HH:MM UTC] <Feature / Fix Title> [<Component Scope>]`
 Include the specific app/component modified and bullet points detailing the exact technical changes.
 
+### [2026-08-24 02:04 UTC] Admin Panel Webhook Verify Token Management & 1-Click Copy [backend]
+* **Component:** Laravel Backend, Admin WhatsApp CRM Views & Webhook Ingestion (`backend/vmarket-web`)
+* **Action:** Added dynamic Webhook Verify Token configuration and 1-click callback URL display to the Admin Panel:
+  - **In-Dashboard Verify Token Control (`ai-settings.blade.php`, `WhatsAppAiSettingsController.php`):** Added a custom input field allowing Super Admins to define their own `verify_token` and a 1-click **[ 📋 Copy URL ]** button for `api/v1/whatsapp/webhook`.
+  - **Dynamic Ingestion Handshake (`WhatsAppWebhookController.php`):** Refactored `verify()` to dynamically validate incoming Meta `hub_verify_token` against database `business_settings` and `addon_settings` with `.env` fallback.
+
 ### [2026-08-24 01:54 UTC] Enforce Strict Zero Vendor Location & Zero Self-Pickup Policy [backend]
 * **Component:** Laravel Backend, Gemini System Prompt & Customer Data Isolation (`backend/vmarket-web`)
 * **Action:** Hardened strict customer delivery rules and vendor privacy protection:
