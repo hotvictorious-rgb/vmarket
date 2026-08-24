@@ -7,6 +7,12 @@ Always append your completed tasks here in chronological order at the top. Forma
 `### [YYYY-MM-DD HH:MM UTC] <Feature / Fix Title> [<Component Scope>]`
 Include the specific app/component modified and bullet points detailing the exact technical changes.
 
+### [2026-08-24 01:51 UTC] Official Store & Verified Merchant Trust Badges [backend]
+* **Component:** Laravel Backend, WhatsApp Transformer & AI Showcase Service (`backend/vmarket-web`)
+* **Action:** Added trust verification badges to distinguish In-House vs 3rd-Party Vendor catalog items:
+  - **In-House Official Badge (`WhatsAppCustomerTransformer.php`, `WhatsAppAiService.php`):** Products tagged with `added_by = 'admin'` automatically carry the **`⭐ Victorious Official (1-Hour Express Dispatch)`** trust badge.
+  - **Verified Merchant Badge (`WhatsAppCustomerTransformer.php`, `WhatsAppAiService.php`):** Products tagged with `added_by = 'seller'` carry the **`🏪 Verified Merchant`** badge.
+
 ### [2026-08-24 01:33 UTC] Admin Panel AI Settings Restructure & In-Dashboard Gemini Model Selection [backend]
 * **Component:** Laravel Backend, Admin WhatsApp CRM Views & AI Settings Controller (`backend/vmarket-web`)
 * **Action:** Restructured and enriched the Admin Panel AI configuration dashboard:

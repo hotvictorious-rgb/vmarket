@@ -19,6 +19,10 @@ class WhatsAppCustomerTransformer
             $thumbnail = $product->thumbnail_full_url;
         }
 
+        $isInHouse = ($product->added_by === 'admin');
+        $badge = $isInHouse ? '⭐ Victorious Official (1-Hour Express Dispatch)' : '🏪 Verified Merchant';
+        $sellerType = $isInHouse ? 'Official Store' : 'Verified Merchant';
+
         return [
             'id' => $product->id,
             'name' => $product->name,
@@ -27,6 +31,8 @@ class WhatsAppCustomerTransformer
             'discount' => (float) $product->discount,
             'discount_type' => $product->discount_type,
             'current_stock' => (int) $product->current_stock,
+            'badge' => $badge,
+            'seller_type' => $sellerType,
             'thumbnail' => $thumbnail,
             'colors' => json_decode($product->colors ?? '[]', true),
             'choice_options' => json_decode($product->choice_options ?? '[]', true),

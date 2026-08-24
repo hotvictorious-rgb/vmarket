@@ -549,10 +549,16 @@ PROMPT;
                     }
                 }
 
+                $isInHouse = ($prod->added_by === 'admin');
+                $badge = $isInHouse ? '⭐ Victorious Official (1-Hour Express Dispatch)' : '🏪 Verified Merchant';
+                $sellerType = $isInHouse ? 'Official Store' : 'Verified Merchant';
+
                 return [
                     'found' => true,
                     'product_id' => $prod->id,
                     'name' => $prod->name,
+                    'badge' => $badge,
+                    'seller_type' => $sellerType,
                     'unit_price' => (float)$prod->unit_price,
                     'formatted_price' => '₦' . number_format($prod->unit_price, 2),
                     'current_stock' => $prod->current_stock,
