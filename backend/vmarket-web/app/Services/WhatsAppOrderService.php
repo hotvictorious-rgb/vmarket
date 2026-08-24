@@ -547,48 +547,24 @@ class WhatsAppOrderService
 
             $nairaCredit = $exchangeRate > 0 ? ($pts / $exchangeRate) : 0.0;
 
-            // 1. Deduct loyalty points
-            $lockedUser->decrement('loyalty_point', $pts);
+            // Execute unified CustomerManager transaction
+            $walletTx = \App\Utils\CustomerManager::create_wallet_transaction($lockedUser->id, $pts, 'loyalty_point', 'point_to_wallet');
+            if ($walletTx) {
+                \App\Utils\CustomerManager::create_loyalty_point_transaction($lockedUser->id, $walletTx->transaction_id, $pts, 'point_to_wallet');
+            }
 
-            // 2. Credit customer wallet
-            $lockedUser->increment('wallet_balance', $nairaCredit);
-
-            // 3. Record Loyalty Point Transaction Ledger
-            \App\Models\LoyaltyPointTransaction::create([
-                'user_id' => $lockedUser->id,
-                'transaction_id' => (string)\Illuminate\Support\Str::uuid(),
-                'reference' => 'WhatsApp AI Conversion',
-                'transaction_type' => 'loyalty_point_to_wallet',
-                'balance' => $lockedUser->loyalty_point,
-                'credit' => 0,
-                'debit' => $pts,
-                'created_at' => now(),
-                'updated_at' => now(),
-            ]);
-
-            // 4. Record Wallet Transaction Ledger
-            \App\Models\WalletTransaction::create([
-                'user_id' => $lockedUser->id,
-                'transaction_id' => (string)\Illuminate\Support\Str::uuid(),
-                'reference' => 'Loyalty Point Conversion',
-                'transaction_type' => 'loyalty_point',
-                'balance' => $lockedUser->wallet_balance,
-                'credit' => $nairaCredit,
-                'debit' => 0,
-                'admin_bonus' => 0,
-                'created_at' => now(),
-                'updated_at' => now(),
-            ]);
+            $refreshedUser = $lockedUser->fresh();
+            $creditedNaira = (float)($walletTx?->credit ?? $nairaCredit);
 
             return [
                 'status' => true,
                 'converted_points' => $pts,
-                'credited_naira' => $nairaCredit,
-                'formatted_credit' => '₦' . number_format($nairaCredit, 2),
-                'new_wallet_balance' => (float)$lockedUser->wallet_balance,
-                'formatted_new_wallet' => '₦' . number_format($lockedUser->wallet_balance, 2),
-                'remaining_points' => (float)$lockedUser->loyalty_point,
-                'message' => "🎉 *Conversion Successful!*\n\n⭐ *Points Converted:* " . number_format($pts) . " Points\n💰 *Wallet Credited:* ₦" . number_format($nairaCredit, 2) . "\n💳 *New Wallet Balance:* ₦" . number_format($lockedUser->wallet_balance, 2) . "\n\nYou can use your wallet balance to pay for orders with 0% gateway fees!",
+                'credited_naira' => $creditedNaira,
+                'formatted_credit' => '₦' . number_format($creditedNaira, 2),
+                'new_wallet_balance' => (float)$refreshedUser->wallet_balance,
+                'formatted_new_wallet' => '₦' . number_format($refreshedUser->wallet_balance, 2),
+                'remaining_points' => (float)$refreshedUser->loyalty_point,
+                'message' => "🎉 *Conversion Successful!*\n\n⭐ *Points Converted:* " . number_format($pts) . " Points\n💰 *Wallet Credited:* ₦" . number_format($creditedNaira, 2) . "\n💳 *New Wallet Balance:* ₦" . number_format($refreshedUser->wallet_balance, 2) . "\n\nYou can use your wallet balance to pay for orders with 0% gateway fees!",
             ];
         });
     }

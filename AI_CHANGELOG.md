@@ -7,6 +7,11 @@ Always append your completed tasks here in chronological order at the top. Forma
 `### [YYYY-MM-DD HH:MM UTC] <Feature / Fix Title> [<Component Scope>]`
 Include the specific app/component modified and bullet points detailing the exact technical changes.
 
+### [2026-08-24 01:01 UTC] Canonical CustomerManager Unification for WhatsApp Loyalty Conversions [backend]
+* **Component:** Laravel Backend, CustomerManager & Loyalty Services (`backend/vmarket-web`)
+* **Action:** Unified WhatsApp loyalty points conversions with the core canonical `CustomerManager` methods:
+  - **Stock Service Binding (`WhatsAppOrderService.php`):** Refactored `convertLoyaltyToWallet` to invoke `CustomerManager::create_wallet_transaction` and `CustomerManager::create_loyalty_point_transaction` directly inside pessimistic locks, guaranteeing 100% parity with Web and Mobile App transaction ledgers and mailers.
+
 ### [2026-08-24 00:58 UTC] Configurable Loyalty Points Engine & Automated First-Order Delivery Rewards [backend]
 * **Component:** Laravel Backend, Loyalty Automation & Cart Upsell Workflows (`backend/vmarket-web`)
 * **Action:** Implemented automated loyalty points distribution and in-chat cart upsells:
