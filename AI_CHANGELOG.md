@@ -7,6 +7,12 @@ Always append your completed tasks here in chronological order at the top. Forma
 `### [YYYY-MM-DD HH:MM UTC] <Feature / Fix Title> [<Component Scope>]`
 Include the specific app/component modified and bullet points detailing the exact technical changes.
 
+### [2026-08-24 01:54 UTC] Enforce Strict Zero Vendor Location & Zero Self-Pickup Policy [backend]
+* **Component:** Laravel Backend, Gemini System Prompt & Customer Data Isolation (`backend/vmarket-web`)
+* **Action:** Hardened strict customer delivery rules and vendor privacy protection:
+  - **Zero Self-Pickup Directive (`WhatsAppAiService.php`):** Formally enforced that all customer orders are 100% door-to-door doorstep deliveries handled by Victorious MARKET dispatch couriers. Customer self-pickup from vendor shops is strictly prohibited.
+  - **Vendor Location Privacy Lockdown (`WhatsAppAiService.php`):** Hardened Gemini system instructions to strictly prevent disclosing vendor street addresses, physical shop locations, phone numbers, or private details to customers.
+
 ### [2026-08-24 01:51 UTC] Official Store & Verified Merchant Trust Badges [backend]
 * **Component:** Laravel Backend, WhatsApp Transformer & AI Showcase Service (`backend/vmarket-web`)
 * **Action:** Added trust verification badges to distinguish In-House vs 3rd-Party Vendor catalog items:
