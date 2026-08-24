@@ -7,6 +7,12 @@ Always append your completed tasks here in chronological order at the top. Forma
 `### [YYYY-MM-DD HH:MM UTC] <Feature / Fix Title> [<Component Scope>]`
 Include the specific app/component modified and bullet points detailing the exact technical changes.
 
+### [2026-08-24 02:32 UTC] Google Schema.org JSON-LD BlogPosting Structured Data & SEO Optimization [backend]
+* **Component:** Laravel Backend, Blog SEO Partials (`backend/vmarket-web`)
+* **Action:** Implemented Schema.org `BlogPosting` JSON-LD Structured Data across all storefront themes:
+  - **Schema.org JSON-LD Implementation (`_blogSEOMetaContentData.blade.php`):** Embedded dynamic `application/ld+json` markup containing `headline`, `description`, `image`, `datePublished`, `dateModified`, `author`, and `publisher` for rich snippet indexing on Google Search and Discover.
+  - **Canonical URL Correction (`theme_aster`):** Corrected Aster theme OpenGraph and Twitter canonical URLs to route directly to `frontend.blog.details`.
+
 ### [2026-08-24 02:04 UTC] Admin Panel Webhook Verify Token Management & 1-Click Copy [backend]
 * **Component:** Laravel Backend, Admin WhatsApp CRM Views & Webhook Ingestion (`backend/vmarket-web`)
 * **Action:** Added dynamic Webhook Verify Token configuration and 1-click callback URL display to the Admin Panel:

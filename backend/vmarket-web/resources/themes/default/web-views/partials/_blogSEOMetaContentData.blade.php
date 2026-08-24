@@ -53,6 +53,36 @@
               href="{{ route('frontend.blog.details', ['slug' => $blogDetails->slug, 'locale' => $translation->locale]) }}" title="{{ $blogDetails->title }}"/>
     @endforeach
 
+    {{-- Google Schema.org Article / BlogPosting JSON-LD Structured Data --}}
+    <script type="application/ld+json">
+    {
+        "@context": "https://schema.org",
+        "@type": "BlogPosting",
+        "mainEntityOfPage": {
+            "@type": "WebPage",
+            "@id": "{{ route('frontend.blog.details', [$blogDetails->slug]) }}"
+        },
+        "headline": "{{ addslashes($metaContentData?->title ?: ($blogDetails->title ?? $blogDetails->name ?? 'Victorious Blog')) }}",
+        "description": "{{ addslashes(Str::limit(strip_tags($metaContentData?->description ?: ($blogDetails->description ?? '')), 200)) }}",
+        "image": [
+            "{{ $metaContentData?->image_full_url['path'] ?? (isset($blogDetails->thumbnail_full_url) ? (is_array($blogDetails->thumbnail_full_url) ? ($blogDetails->thumbnail_full_url['path'] ?? '') : $blogDetails->thumbnail_full_url) : asset('public/assets/front-end/img/image-place-holder.png')) }}"
+        ],
+        "datePublished": "{{ isset($blogDetails->created_at) ? $blogDetails->created_at->toIso8601String() : now()->toIso8601String() }}",
+        "dateModified": "{{ isset($blogDetails->updated_at) ? $blogDetails->updated_at->toIso8601String() : now()->toIso8601String() }}",
+        "author": {
+            "@type": "Person",
+            "name": "{{ addslashes($blogDetails->writer ?? 'Victorious Editorial') }}"
+        },
+        "publisher": {
+            "@type": "Organization",
+            "name": "Victorious MARKET",
+            "logo": {
+                "@type": "ImageObject",
+                "url": "{{ asset('public/assets/front-end/img/logo.png') }}"
+            }
+        }
+    }
+    </script>
 @endif
 
 
