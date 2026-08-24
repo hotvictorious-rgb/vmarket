@@ -17,8 +17,15 @@ class WhatsAppAiService
 
     public function __construct()
     {
-        $this->apiKey = env('GEMINI_API_KEY', '');
-        $this->model = env('GEMINI_MODEL', 'gemini-1.5-flash');
+        $dbApiKey = null;
+        $dbModel = null;
+        try {
+            $dbApiKey = \Illuminate\Support\Facades\DB::table('business_settings')->where('type', 'gemini_api_key')->first()?->value;
+            $dbModel = \Illuminate\Support\Facades\DB::table('business_settings')->where('type', 'gemini_model')->first()?->value;
+        } catch (\Throwable $e) {}
+
+        $this->apiKey = !empty($dbApiKey) ? $dbApiKey : env('GEMINI_API_KEY', '');
+        $this->model = !empty($dbModel) ? $dbModel : env('GEMINI_MODEL', 'gemini-1.5-flash');
     }
 
     /**

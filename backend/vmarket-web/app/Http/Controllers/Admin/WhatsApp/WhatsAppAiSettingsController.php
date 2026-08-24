@@ -30,7 +30,17 @@ class WhatsAppAiSettingsController extends Controller
 
         $settings = $config ? json_decode($config->live_values, true) : [];
 
-        return view('admin-views.whatsapp-crm.ai-settings', compact('faqs', 'corrections', 'memoryProfilesCount', 'settings'));
+        $geminiApiKey = DB::table('business_settings')->where('type', 'gemini_api_key')->first()?->value ?? env('GEMINI_API_KEY', '');
+        $geminiModel = DB::table('business_settings')->where('type', 'gemini_model')->first()?->value ?? env('GEMINI_MODEL', 'gemini-1.5-flash');
+
+        return view('admin-views.whatsapp-crm.ai-settings', compact(
+            'faqs',
+            'corrections',
+            'memoryProfilesCount',
+            'settings',
+            'geminiApiKey',
+            'geminiModel'
+        ));
     }
 
     /**
@@ -75,6 +85,8 @@ class WhatsAppAiSettingsController extends Controller
             'token' => 'required|string',
             'waba_id' => 'nullable|string',
             'status' => 'required|in:0,1',
+            'gemini_api_key' => 'nullable|string',
+            'gemini_model' => 'nullable|string',
         ]);
 
         $liveValues = json_encode([
@@ -100,7 +112,21 @@ class WhatsAppAiSettingsController extends Controller
             ]
         );
 
-        Toastr::success('WhatsApp Gateway & AI Settings updated successfully!');
+        if ($request->filled('gemini_api_key')) {
+            DB::table('business_settings')->updateOrInsert(
+                ['type' => 'gemini_api_key'],
+                ['value' => trim($request->gemini_api_key), 'updated_at' => now()]
+            );
+        }
+
+        if ($request->filled('gemini_model')) {
+            DB::table('business_settings')->updateOrInsert(
+                ['type' => 'gemini_model'],
+                ['value' => trim($request->gemini_model), 'updated_at' => now()]
+            );
+        }
+
+        Toastr::success('WhatsApp Gateway & Gemini AI Model settings updated successfully!');
         return back();
     }
 }

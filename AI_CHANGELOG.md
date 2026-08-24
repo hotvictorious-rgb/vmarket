@@ -7,6 +7,13 @@ Always append your completed tasks here in chronological order at the top. Forma
 `### [YYYY-MM-DD HH:MM UTC] <Feature / Fix Title> [<Component Scope>]`
 Include the specific app/component modified and bullet points detailing the exact technical changes.
 
+### [2026-08-24 01:33 UTC] Admin Panel AI Settings Restructure & In-Dashboard Gemini Model Selection [backend]
+* **Component:** Laravel Backend, Admin WhatsApp CRM Views & AI Settings Controller (`backend/vmarket-web`)
+* **Action:** Restructured and enriched the Admin Panel AI configuration dashboard:
+  - **Admin View Restructuring (`ai-settings.blade.php`):** Added intuitive visual configuration controls for Gemini AI Model selection (`gemini-1.5-flash`, `gemini-2.0-flash`, `gemini-1.5-pro`) and Google Gemini API Key input.
+  - **Database Persistence (`WhatsAppAiSettingsController.php`):** Persisted `gemini_model` and `gemini_api_key` directly to `business_settings` table on form submission.
+  - **Dynamic AI Service Hydration (`WhatsAppAiService.php`):** Hydrated API keys and active models dynamically from `business_settings` with `.env` as reliable fallback.
+
 ### [2026-08-24 01:27 UTC] Environment-Driven Gemini Model Selection [backend]
 * **Component:** Laravel Backend, WhatsApp AI Service (`backend/vmarket-web`)
 * **Action:** Made the Gemini AI model dynamically configurable via `.env`:

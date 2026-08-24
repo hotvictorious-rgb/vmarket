@@ -53,8 +53,36 @@
                             <label class="form-label font-weight-bold">{{ translate('Authentication_OTP_Template_Name') }}</label>
                             <input type="text" name="template_name" class="form-control" value="{{ $settings['template_name'] ?? 'victorious_otp_auth' }}" placeholder="victorious_otp_auth">
                         </div>
+
+                        <hr class="my-4">
+                        <h6 class="font-weight-bold text-primary mb-3">
+                            <i class="tio-cpu"></i> {{ translate('Google_Gemini_AI_Intelligence_Settings') }}
+                        </h6>
+
+                        <div class="mb-3">
+                            <label class="form-label font-weight-bold">{{ translate('Gemini_AI_Model') }}</label>
+                            <select name="gemini_model" class="form-select">
+                                <option value="gemini-1.5-flash" {{ ($geminiModel ?? '') == 'gemini-1.5-flash' ? 'selected' : '' }}>
+                                    ⚡ gemini-1.5-flash (Recommended: Fastest & Most Cost-Effective)
+                                </option>
+                                <option value="gemini-2.0-flash" {{ ($geminiModel ?? '') == 'gemini-2.0-flash' ? 'selected' : '' }}>
+                                    🚀 gemini-2.0-flash (Ultra-Fast Function Calling)
+                                </option>
+                                <option value="gemini-1.5-pro" {{ ($geminiModel ?? '') == 'gemini-1.5-pro' ? 'selected' : '' }}>
+                                    🧠 gemini-1.5-pro (Deep Reasoning & Complex Queries)
+                                </option>
+                            </select>
+                            <small class="text-muted fs-11">{{ translate('gemini-1.5-flash is optimized for near-instant sub-second WhatsApp commerce.') }}</small>
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label font-weight-bold">{{ translate('Google_Gemini_API_Key') }}</label>
+                            <input type="password" name="gemini_api_key" class="form-control font-monospace fs-12" value="{{ $geminiApiKey ?? '' }}" placeholder="AIzaSy...">
+                            <small class="text-muted fs-11">{{ translate('Get your free API key from Google AI Studio (aistudio.google.com).') }}</small>
+                        </div>
+
                         <button type="submit" class="btn btn--primary w-100" style="background: #4A154B; border-color: #4A154B;">
-                            {{ translate('Save_API_Credentials') }}
+                            {{ translate('Save_AI_&_Gateway_Settings') }}
                         </button>
                     </form>
                 </div>
