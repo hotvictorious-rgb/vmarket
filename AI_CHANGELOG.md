@@ -7,6 +7,11 @@ Always append your completed tasks here in chronological order at the top. Forma
 `### [YYYY-MM-DD HH:MM UTC] <Feature / Fix Title> [<Component Scope>]`
 Include the specific app/component modified and bullet points detailing the exact technical changes.
 
+### [2026-08-24 01:27 UTC] Environment-Driven Gemini Model Selection [backend]
+* **Component:** Laravel Backend, WhatsApp AI Service (`backend/vmarket-web`)
+* **Action:** Made the Gemini AI model dynamically configurable via `.env`:
+  - **Dynamic Model Selection (`WhatsAppAiService.php`):** Bound `$this->model` to `env('GEMINI_MODEL', 'gemini-1.5-flash')`, allowing instant switching between `gemini-1.5-flash`, `gemini-2.0-flash`, and `gemini-1.5-pro` with zero code modifications.
+
 ### [2026-08-24 01:01 UTC] Canonical CustomerManager Unification for WhatsApp Loyalty Conversions [backend]
 * **Component:** Laravel Backend, CustomerManager & Loyalty Services (`backend/vmarket-web`)
 * **Action:** Unified WhatsApp loyalty points conversions with the core canonical `CustomerManager` methods:
