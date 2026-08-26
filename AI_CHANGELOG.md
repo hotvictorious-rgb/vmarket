@@ -7,6 +7,11 @@ Always append your completed tasks here in chronological order at the top. Forma
 `### [YYYY-MM-DD HH:MM UTC] <Feature / Fix Title> [<Component Scope>]`
 Include the specific app/component modified and bullet points detailing the exact technical changes.
 
+### [2026-08-26 16:40 UTC] Flutter Build Fix: Pin open_file_manager to 2.0.1 [user-app] [vendor-app]
+* **Component:** Mobile App Dependencies (`User app/pubspec.yaml`, `Vendor app/pubspec.yaml`)
+* **Action:** Resolved Android Gradle build failure caused by newly released upstream package `open_file_manager-2.1.0`:
+  - Pinned `open_file_manager: 2.0.1` (without caret) to avoid Kotlin 2.x DSL compilation errors in `build.gradle.kts` during GitHub Actions CI/CD builds.
+
 ### [2026-08-26 16:25 UTC] Native MySQL SHOW INDEX Idempotency Hardening [backend]
 * **Component:** Database Schema Migrations (`2026_08_26_000003_add_high_scale_performance_indexes.php`)
 * **Action:** Rewrote index existence checks to use raw native MySQL `SHOW INDEX FROM table WHERE Key_name = ?`:
