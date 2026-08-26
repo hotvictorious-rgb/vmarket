@@ -7,6 +7,14 @@ Always append your completed tasks here in chronological order at the top. Forma
 `### [YYYY-MM-DD HH:MM UTC] <Feature / Fix Title> [<Component Scope>]`
 Include the specific app/component modified and bullet points detailing the exact technical changes.
 
+### [2026-08-26 17:55 UTC] Real-Time Push Notifications: Waybill Dispatch/Shortage & Marketplace 1-Click Approval [backend]
+* **Component:** Backend Controllers (`BranchTransferController.php`, `MarketplaceApprovalController.php`)
+* **Action:** Implemented real-time FCM push notification triggers for multi-branch logistics and merchant marketplace approvals:
+  - Added automated waybill dispatch push alert with destination branch, carton count, and driver contact info in `BranchTransferController::store`.
+  - Added real-time theft discrepancy alert when shortage is verified upon delivery in `BranchTransferController::receive`.
+  - Added instant merchant push celebration and catalog link activation alert in `MarketplaceApprovalController::approve`.
+  - Added status update guidance notification in `MarketplaceApprovalController::reject`.
+
 ### [2026-08-26 17:40 UTC] Automated Flutter Code Obfuscation in GitHub Actions CI/CD [user-app] [vendor-app] [delivery-man]
 * **Component:** GitHub Actions Workflow (`.github/workflows/build_android.yml`)
 * **Action:** Hardened production mobile app compilation with automated Dart code obfuscation:

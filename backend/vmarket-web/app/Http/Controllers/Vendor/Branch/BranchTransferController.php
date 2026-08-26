@@ -7,7 +7,9 @@ use App\Models\PosSubscription;
 use App\Models\PosTransfer;
 use App\Models\PosTransferItem;
 use App\Models\Product;
+use App\Models\Seller;
 use App\Models\Shop;
+use App\Utils\Helpers;
 use Devrabiul\ToastMagic\Facades\ToastMagic;
 use Illuminate\Contracts\View\View;
 use Illuminate\Http\RedirectResponse;
@@ -96,6 +98,21 @@ class BranchTransferController extends BaseController
 
             $transfer->total_items_dispatched = $totalDispatched;
             $transfer->save();
+
+            // [AI] Dispatch real-time waybill push notification to merchant/branch manager
+            $seller = Seller::find($sellerId);
+            if ($seller && !empty($seller->cm_firebase_token)) {
+                $destinationBranch = Shop::find($request->destination_branch_id);
+                $destName = $destinationBranch ? $destinationBranch->name : 'Destination Branch';
+                $notifData = [
+                    'title' => translate('🚚 Waybill Dispatched'),
+                    'description' => translate('Waybill ') . $waybillNumber . translate(' with ') . $totalDispatched . translate(' items dispatched to ') . $destName . translate('. Driver: ') . $request->driver_name . ' (' . $request->driver_phone . ')',
+                    'image' => '',
+                    'order_id' => '',
+                    'type' => 'waybill_dispatch',
+                ];
+                Helpers::send_push_notif_to_device($seller->cm_firebase_token, $notifData);
+            }
         });
 
         ToastMagic::success(translate('Waybill_created_and_stock_placed_in_transit_buffer!'));
@@ -161,6 +178,19 @@ class BranchTransferController extends BaseController
             $transfer->received_at = now();
             $transfer->status = $totalVariance > 0 ? 'variance_flagged' : 'received';
             $transfer->save();
+
+            // [AI] Dispatch variance shortage push alert if discrepancy detected
+            $seller = Seller::find($sellerId);
+            if ($totalVariance > 0 && $seller && !empty($seller->cm_firebase_token)) {
+                $notifData = [
+                    'title' => translate('🚨 Waybill Variance Discrepancy Flagged'),
+                    'description' => translate('Waybill ') . $transfer->waybill_number . translate(' received with ') . $totalVariance . translate(' missing units. Driver ') . $transfer->driver_name . translate(' liability stamped on audit radar.'),
+                    'image' => '',
+                    'order_id' => '',
+                    'type' => 'waybill_shortage',
+                ];
+                Helpers::send_push_notif_to_device($seller->cm_firebase_token, $notifData);
+            }
         });
 
         if ($transfer->status === 'variance_flagged') {
