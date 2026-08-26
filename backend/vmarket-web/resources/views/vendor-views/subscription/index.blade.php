@@ -21,8 +21,8 @@
                 <div class="card-body">
                     @if($activeSub && $activeSub->isCurrentlyActive())
                         <div class="p-3 bg-light-success rounded mb-3">
-                            <span class="badge bg-success mb-2">{{ translate('MULTI-BRANCH_PRO_ACTIVE') }}</span>
-                            <h4 class="fw-bold mb-1">{{ translate('Unlimited_Physical_Branches_&_Waybills') }}</h4>
+                            <span class="badge bg-success mb-2">{{ translate('MULTI-BRANCH_&_PRO_AI_ACTIVE') }}</span>
+                            <h4 class="fw-bold mb-1">{{ translate('Unlimited_Branches,_Waybills_&_24/7_AI_Store_Agent') }}</h4>
                             <p class="text-muted fs-12 mb-0">
                                 {{ translate('Renews_/_Expires_on') }}: <strong>{{ $activeSub->expires_at ? $activeSub->expires_at->format('d M Y') : translate('Never') }}</strong>
                             </p>
@@ -32,10 +32,41 @@
                             <span class="badge bg-primary mb-2">{{ translate('FREE_STARTER_PLAN') }}</span>
                             <h4 class="fw-bold mb-1">1 {{ translate('Physical_Store_Location') }}</h4>
                             <p class="text-muted fs-12 mb-0">
-                                {{ translate('Free_Forever._Upgrade_to_Pro_to_add_multiple_shops_and_waybill_tracking.') }}
+                                {{ translate('Free_Forever._Upgrade_to_Pro_to_unlock_Multi-Branch_POS_and_24/7_WhatsApp_AI_Store_Agent.') }}
                             </p>
                         </div>
+                    @endif
 
+                    <!-- Pro AI & Multi-Branch Perks List -->
+                    <div class="border rounded p-3 mb-3 bg-white">
+                        <h6 class="fw-bold mb-2 text-primary d-flex align-items-center gap-2">
+                            <span>✨</span> {{ translate('Pro_Subscription_Exclusive_Features') }}
+                        </h6>
+                        <ul class="list-unstyled mb-0 fs-13 d-flex flex-column gap-2 text-dark">
+                            <li class="d-flex align-items-start gap-2">
+                                <span class="text-success fw-bold">✓</span>
+                                <div><strong>🤖 24/7 WhatsApp AI Sales Agent:</strong> Automatically interacts with your customers and sells your catalog in WhatsApp chat.</div>
+                            </li>
+                            <li class="d-flex align-items-start gap-2">
+                                <span class="text-success fw-bold">✓</span>
+                                <div><strong>⭐ Priority Recommendation Ranking:</strong> Your products are recommended first in WhatsApp AI customer searches.</div>
+                            </li>
+                            <li class="d-flex align-items-start gap-2">
+                                <span class="text-success fw-bold">✓</span>
+                                <div><strong>📊 Automated AI Business Intelligence:</strong> Receive instant Daily, Weekly & Monthly performance reports on sales, debts, and restocks directly on WhatsApp.</div>
+                            </li>
+                            <li class="d-flex align-items-start gap-2">
+                                <span class="text-success fw-bold">✓</span>
+                                <div><strong>⚡ WhatsApp Voice/Text Stock Updates:</strong> Adjust store inventory quantities directly over chat.</div>
+                            </li>
+                            <li class="d-flex align-items-start gap-2">
+                                <span class="text-success fw-bold">✓</span>
+                                <div><strong>🏢 Unlimited Multi-Branch POS & Waybills:</strong> Connect unlimited physical branches with anti-theft logistics radar.</div>
+                            </li>
+                        </ul>
+                    </div>
+
+                    @if(!$activeSub || !$activeSub->isCurrentlyActive())
                         <!-- Upgrade Form -->
                         <form action="{{ route('vendor.subscription.subscribe') }}" method="POST">
                             @csrf
@@ -69,7 +100,7 @@
                             </div>
 
                             <button type="submit" class="btn btn--primary w-100 py-2 fw-bold">
-                                🚀 {{ translate('Upgrade_to_Multi-Branch_Pro') }}
+                                🚀 {{ translate('Upgrade_to_Pro_AI_&_Multi-Branch') }}
                             </button>
                         </form>
                     @endif
