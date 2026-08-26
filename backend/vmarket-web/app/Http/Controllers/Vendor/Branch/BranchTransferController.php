@@ -142,6 +142,7 @@ class BranchTransferController extends BaseController
                     // Add only physically verified counted units to destination stock
                     $product = Product::where('id', $itemData['product_id'])
                         ->where('user_id', $sellerId)
+                        ->lockForUpdate()
                         ->first();
 
                     if ($product) {

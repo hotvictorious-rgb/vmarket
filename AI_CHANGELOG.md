@@ -7,6 +7,12 @@ Always append your completed tasks here in chronological order at the top. Forma
 `### [YYYY-MM-DD HH:MM UTC] <Feature / Fix Title> [<Component Scope>]`
 Include the specific app/component modified and bullet points detailing the exact technical changes.
 
+### [2026-08-26 12:35 UTC] Zero-Leakage Pessimistic Concurrency & Security Hardening [backend]
+* **Component:** Laravel Backend Controllers (`CustomerDebtController.php`, `BranchTransferController.php`)
+* **Action:** Hardened financial mutations and physical inventory receiving against concurrency race conditions and over-deductions:
+  - **Debtor Repayment Concurrency Lock (`CustomerDebtController.php`):** Wrapped repayment transactions with `lockForUpdate()` on `pos_customer_ledgers` and bound deductions to `min($amount, total_credit_due)` to guarantee zero mathematical leakage and prevent negative debt balances.
+  - **Waybill Stock Receiving Concurrency Lock (`BranchTransferController.php`):** Added `lockForUpdate()` on destination `products` stock lookup inside atomic transaction during blind-receiving physical count verification.
+
 ### [2026-08-26 12:30 UTC] High-Scale Database Performance Indexing & Query Optimization [backend]
 * **Component:** Laravel Database Architecture & Storefront Controller (`backend/vmarket-web`)
 * **Action:** Hardened database schema and query layers to guarantee sub-millisecond execution across millions of records:

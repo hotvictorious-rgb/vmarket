@@ -63,30 +63,35 @@ class CustomerDebtController extends BaseController
         ]);
 
         $sellerId = auth('seller')->id();
-        $ledger = PosCustomerLedger::where('id', $request->ledger_id)
-            ->where('seller_id', $sellerId)
-            ->firstOrFail();
-
+        $ledgerId = (int)$request->ledger_id;
         $amount = (float)$request->amount;
-        if ($amount > $ledger->total_credit_due) {
-            $amount = $ledger->total_credit_due;
-        }
 
-        DB::transaction(function () use ($ledger, $sellerId, $amount, $request) {
-            $ledger->total_credit_due = max(0, $ledger->total_credit_due - $amount);
+        $remainingBalance = 0;
+
+        DB::transaction(function () use ($ledgerId, $sellerId, $amount, $request, &$remainingBalance) {
+            $ledger = PosCustomerLedger::where('id', $ledgerId)
+                ->where('seller_id', $sellerId)
+                ->lockForUpdate()
+                ->firstOrFail();
+
+            $actualDeduction = min($amount, (float)$ledger->total_credit_due);
+
+            $ledger->total_credit_due = max(0, (float)$ledger->total_credit_due - $actualDeduction);
             if ($ledger->total_credit_due == 0) {
                 $ledger->is_credit_blocked = false;
                 $ledger->aging_bucket = 'current';
             }
             $ledger->save();
 
+            $remainingBalance = $ledger->total_credit_due;
+
             PosDebtTransaction::create([
                 'ledger_id' => $ledger->id,
                 'seller_id' => $sellerId,
                 'transaction_type' => 'repayment',
-                'amount' => $amount,
+                'amount' => $actualDeduction,
                 'payment_method' => $request->payment_method,
-                'collected_by_id' => auth('seller')->id(),
+                'collected_by_id' => $sellerId,
                 'notes' => $request->notes ?? 'Partial debt installment payment',
             ]);
         });
@@ -95,7 +100,7 @@ class CustomerDebtController extends BaseController
             return response()->json([
                 'status' => true,
                 'message' => translate('Repayment_recorded_successfully'),
-                'remaining_balance' => $ledger->total_credit_due,
+                'remaining_balance' => $remainingBalance,
             ]);
         }
 
