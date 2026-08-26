@@ -503,6 +503,8 @@
                                                                 referrerpolicy="strict-origin-when-cross-origin"
                                                                 allowfullscreen></iframe>
                                                     </div>
+                                                @endif
+
                                                 @if (!empty($product->specifications) && count((array)$product->specifications) > 0)
                                                     <div class="col-12 my-3">
                                                         <h4 class="fs-16 fw-bold mb-3 px-1" style="color: #4A154B;">

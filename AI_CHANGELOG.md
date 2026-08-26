@@ -7,6 +7,12 @@ Always append your completed tasks here in chronological order at the top. Forma
 `### [YYYY-MM-DD HH:MM UTC] <Feature / Fix Title> [<Component Scope>]`
 Include the specific app/component modified and bullet points detailing the exact technical changes.
 
+### [2026-08-26 12:40 UTC] Storefront Template Directive Fix: Default Theme Product Details [backend]
+* **Component:** Customer Storefront (`resources/themes/default/web-views/products/details.blade.php`)
+* **Action:** Fixed blade template nesting directive mismatch:
+  - Added missing `@endif` after the product video iframe block at line 506.
+  - Decoupled `Technical_Specifications` table rendering from the YouTube video condition so technical specifications display properly on products without video content.
+
 ### [2026-08-26 12:35 UTC] Zero-Leakage Pessimistic Concurrency & Security Hardening [backend]
 * **Component:** Laravel Backend Controllers (`CustomerDebtController.php`, `BranchTransferController.php`)
 * **Action:** Hardened financial mutations and physical inventory receiving against concurrency race conditions and over-deductions:
