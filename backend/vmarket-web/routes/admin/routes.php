@@ -1286,4 +1286,22 @@ Route::group(['prefix' => 'admin', 'as' => 'admin.', 'middleware' => ['admin', '
             });
         });
     });
+
+    /* [AI] Omnichannel POS, Subscriptions & Marketplace Approval */
+    Route::group(['prefix' => 'pos-management', 'as' => 'pos-management.'], function () {
+        Route::controller(\App\Http\Controllers\Admin\POS\AdminPOSDashboardController::class)->group(function () {
+            Route::get('dashboard', 'index')->name('dashboard');
+        });
+
+        Route::controller(\App\Http\Controllers\Admin\POS\POSSettingsController::class)->group(function () {
+            Route::get('settings', 'index')->name('settings');
+            Route::post('settings', 'update')->name('settings.update');
+        });
+
+        Route::controller(\App\Http\Controllers\Admin\Vendor\MarketplaceApprovalController::class)->group(function () {
+            Route::get('marketplace-applications', 'index')->name('marketplace-applications');
+            Route::post('marketplace-applications/approve/{id}', 'approve')->name('marketplace-applications.approve');
+            Route::post('marketplace-applications/reject/{id}', 'reject')->name('marketplace-applications.reject');
+        });
+    });
 });

@@ -54,17 +54,42 @@
                         </li>
                         @php($seller = auth('seller')->user())
                         @php($sellerId = $seller['id'])
-                        @php($sellerPOS=getWebConfig('seller_pos'))
-                        @if ($sellerPOS == 1 && $seller['pos_status'] == 1)
-                            <li class="navbar-vertical-aside-has-menu {{ Request::is('vendor/pos*')?'active' : ''}}">
-                                <a class="js-navbar-vertical-aside-menu-link nav-link"
-                                   href="{{ route('vendor.pos.index') }}" title="{{ translate('POS') }}">
-                                    <i class="tio-shopping nav-icon"></i>
-                                    <span
-                                        class="navbar-vertical-aside-mini-mode-hidden-elements text-truncate">{{ translate('POS') }}</span>
-                                </a>
-                            </li>
-                        @endif
+                        <li class="nav-item">
+                            <small class="nav-subtitle">{{ translate('POS_&_In-Store_ERP') }}</small>
+                            <small class="tio-more-horizontal nav-subtitle-replacer"></small>
+                        </li>
+                        <li class="navbar-vertical-aside-has-menu {{ Request::is('vendor/pos*') || Request::is('vendor/branch*') || Request::is('vendor/subscription*') ? 'active' : ''}}">
+                            <a class="js-navbar-vertical-aside-menu-link nav-link nav-link-toggle" href="javascript:" title="{{ translate('POS_&_ERP') }}">
+                                <i class="tio-shopping nav-icon"></i>
+                                <span class="navbar-vertical-aside-mini-mode-hidden-elements text-truncate">{{ translate('POS_&_Shop_ERP') }}</span>
+                            </a>
+                            <ul class="js-navbar-vertical-aside-submenu nav nav-sub" style="display: {{ Request::is('vendor/pos*') || Request::is('vendor/branch*') || Request::is('vendor/subscription*') ? 'block' : 'none'}}">
+                                <li class="nav-item {{ Request::is('vendor/pos') ? 'active' : ''}}">
+                                    <a class="nav-link" href="{{ route('vendor.pos.index') }}" title="{{ translate('POS_Register') }}">
+                                        <span class="tio-circle nav-indicator-icon"></span>
+                                        <span class="text-truncate">{{ translate('POS_Register') }}</span>
+                                    </a>
+                                </li>
+                                <li class="nav-item {{ Request::is('vendor/pos/debt-ledger') ? 'active' : ''}}">
+                                    <a class="nav-link" href="{{ route('vendor.pos.debt-ledger') }}" title="{{ translate('Customer_Debt_Ledger') }}">
+                                        <span class="tio-circle nav-indicator-icon"></span>
+                                        <span class="text-truncate">{{ translate('Customer_Debt_Book') }}</span>
+                                    </a>
+                                </li>
+                                <li class="nav-item {{ Request::is('vendor/branch/transfers*') ? 'active' : ''}}">
+                                    <a class="nav-link" href="{{ route('vendor.branch.transfers') }}" title="{{ translate('Inter-Branch_Waybills') }}">
+                                        <span class="tio-circle nav-indicator-icon"></span>
+                                        <span class="text-truncate">{{ translate('Inter-Branch_Waybills') }}</span>
+                                    </a>
+                                </li>
+                                <li class="nav-item {{ Request::is('vendor/subscription*') ? 'active' : ''}}">
+                                    <a class="nav-link" href="{{ route('vendor.subscription.index') }}" title="{{ translate('Plan_&_Marketplace_Status') }}">
+                                        <span class="tio-circle nav-indicator-icon"></span>
+                                        <span class="text-truncate">{{ translate('Plan_&_Marketplace') }}</span>
+                                    </a>
+                                </li>
+                            </ul>
+                        </li>
 
                         <li class="nav-item">
                             <small class="nav-subtitle">{{ translate('order_management') }}</small>

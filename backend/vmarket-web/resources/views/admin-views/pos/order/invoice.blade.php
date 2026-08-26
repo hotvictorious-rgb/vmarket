@@ -203,7 +203,12 @@ $orderTotalPriceSummary = \App\Utils\OrderManager::getOrderTotalPriceSummary(ord
     </p>
     <span class="dashed-hr"></span>
 
-    <p class="text-center mb-0 text-dark fs-12 overflow-wrap-anywhere">
-        {{ translate('Powered_by') }} {{ getWebConfig(name: 'company_name') }}, {{ translate('phone') }} : {{ getWebConfig('company_phone') }}
-    </p>
+    <div class="text-center pt-2">
+        <p class="fs-11 fw-bold text-dark mb-1">
+            {{ json_decode(getWebConfig(name: 'pos_receipt_footer_text'), true) ?? 'Powered by Victorious MARKET - Your Trusted Online Market' }}
+        </p>
+        <p class="fs-10 text-muted mb-0">
+            {{ translate('Shop_Online_at') }}: shop.victoriousmarket.com.ng
+        </p>
+    </div>
 </div>

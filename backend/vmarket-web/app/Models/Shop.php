@@ -79,6 +79,8 @@ class Shop extends Model
         'delivery_state_id',
         'delivery_city_id',
         'delivery_hub_id',
+        'is_primary_branch',
+        'branch_code',
     ];
 
     protected $appends = ['image_full_url', 'bottom_banner_full_url', 'offer_banner_full_url', 'banner_full_url', 'tin_certificate_full_url'];
@@ -96,6 +98,7 @@ class Shop extends Model
         'setup_guide' => 'array',
         'setup_guide_app' => 'array',
         'tin_expire_date' => 'date',
+        'is_primary_branch' => 'boolean',
     ];
 
     public function seller(): BelongsTo

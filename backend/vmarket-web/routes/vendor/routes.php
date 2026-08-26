@@ -408,6 +408,32 @@ Route::group(['middleware' => ['maintenance_mode', 'actch:admin_panel']], functi
                     Route::post('status', 'status')->name('status');
                 });
             });
+
+            /* [AI] Omnichannel POS, Customer Debt Ledger & Shift Audits */
+            Route::group(['prefix' => 'pos', 'as' => 'pos.'], function () {
+                Route::controller(\App\Http\Controllers\Vendor\POS\CustomerDebtController::class)->group(function () {
+                    Route::get('debt-ledger', 'index')->name('debt-ledger');
+                    Route::post('debt-repay', 'repay')->name('debt-repay');
+                });
+            });
+
+            /* [AI] Multi-Branch Waybills & In-Transit Anti-Theft Transfers */
+            Route::group(['prefix' => 'branch', 'as' => 'branch.'], function () {
+                Route::controller(\App\Http\Controllers\Vendor\Branch\BranchTransferController::class)->group(function () {
+                    Route::get('transfers', 'index')->name('transfers');
+                    Route::post('transfers/store', 'store')->name('transfers.store');
+                    Route::post('transfers/receive/{id}', 'receive')->name('transfers.receive');
+                });
+            });
+
+            /* [AI] Multi-Branch Pro Subscription & Online Marketplace Application */
+            Route::group(['prefix' => 'subscription', 'as' => 'subscription.'], function () {
+                Route::controller(\App\Http\Controllers\Vendor\Subscription\POSSubscriptionController::class)->group(function () {
+                    Route::get('/', 'index')->name('index');
+                    Route::post('subscribe', 'subscribe')->name('subscribe');
+                    Route::post('apply-marketplace', 'applyMarketplace')->name('apply-marketplace');
+                });
+            });
         });
     });
 

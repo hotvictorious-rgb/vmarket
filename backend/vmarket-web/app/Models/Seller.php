@@ -68,6 +68,9 @@ class Seller extends Authenticatable
         'cac_number',
         'cac_document',
         'kyc_status',
+        'marketplace_status',
+        'marketplace_applied_at',
+        'marketplace_approved_at',
     ];
 
     protected $casts = [
@@ -78,6 +81,8 @@ class Seller extends Authenticatable
         'orders_count' => 'integer',
         'product_count' => 'integer',
         'pos_status' => 'integer',
+        'marketplace_applied_at' => 'datetime',
+        'marketplace_approved_at' => 'datetime',
     ];
 
     protected $hidden = [
@@ -97,6 +102,26 @@ class Seller extends Authenticatable
     public function shops(): HasMany
     {
         return $this->hasMany(Shop::class, 'seller_id');
+    }
+
+    public function posLedgers(): HasMany
+    {
+        return $this->hasMany(PosCustomerLedger::class, 'seller_id');
+    }
+
+    public function posSubscriptions(): HasMany
+    {
+        return $this->hasMany(PosSubscription::class, 'seller_id')->orderBy('id', 'desc');
+    }
+
+    public function posShifts(): HasMany
+    {
+        return $this->hasMany(PosCashierShift::class, 'seller_id');
+    }
+
+    public function posTransfers(): HasMany
+    {
+        return $this->hasMany(PosTransfer::class, 'seller_id');
     }
 
     public function orders(): HasMany
