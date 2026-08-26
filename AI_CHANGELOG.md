@@ -7,6 +7,12 @@ Always append your completed tasks here in chronological order at the top. Forma
 `### [YYYY-MM-DD HH:MM UTC] <Feature / Fix Title> [<Component Scope>]`
 Include the specific app/component modified and bullet points detailing the exact technical changes.
 
+### [2026-08-26 17:40 UTC] Automated Flutter Code Obfuscation in GitHub Actions CI/CD [user-app] [vendor-app] [delivery-man]
+* **Component:** GitHub Actions Workflow (`.github/workflows/build_android.yml`)
+* **Action:** Hardened production mobile app compilation with automated Dart code obfuscation:
+  - Added `--obfuscate --split-debug-info=./build/app/outputs/symbols` flags to APK and App Bundle build steps across Customer, Vendor, and Delivery Rider apps.
+  - Guarantees that all compiled production APKs and AABs uploaded to GitHub Releases/Play Store have scrambled class names and encrypted identifiers to prevent reverse engineering.
+
 ### [2026-08-26 16:48 UTC] Governance Rule 10: Mandatory Systemic & Mathematical Proof Directive [ai-governance]
 * **Component:** AI Governance Documents (`.agents/AGENTS.md`, `AI_ENGINEERING_RULES.md`, `VICTORIOUS_MARKET_ECOSYSTEM_MASTER_GUIDE.md`)
 * **Action:** Established the inviolable prime directive mandating that all AIs must formulate, execute, and document reproducible mathematical balance proofs ($\Delta = 0.00$) and cross-module parity checks:

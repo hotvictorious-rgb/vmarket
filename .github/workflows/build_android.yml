@@ -85,8 +85,8 @@ jobs:
       - name: Build APK and App Bundle
         run: |
           cd "User app"
-          flutter build apk --release --no-pub
-          flutter build appbundle --release --no-pub
+          flutter build apk --release --no-pub --obfuscate --split-debug-info=./build/app/outputs/symbols
+          flutter build appbundle --release --no-pub --obfuscate --split-debug-info=./build/app/outputs/symbols
 
       - name: Upload APK Artifact
         uses: actions/upload-artifact@v4
@@ -154,8 +154,8 @@ jobs:
       - name: Build APK and App Bundle
         run: |
           cd "Vendor app"
-          flutter build apk --release --no-pub
-          flutter build appbundle --release --no-pub
+          flutter build apk --release --no-pub --obfuscate --split-debug-info=./build/app/outputs/symbols
+          flutter build appbundle --release --no-pub --obfuscate --split-debug-info=./build/app/outputs/symbols
 
       - name: Upload APK Artifact
         uses: actions/upload-artifact@v4
@@ -223,8 +223,8 @@ jobs:
       - name: Build APK and App Bundle
         run: |
           cd "Delivery Man App"
-          flutter build apk --release --no-pub
-          flutter build appbundle --release --no-pub
+          flutter build apk --release --no-pub --obfuscate --split-debug-info=./build/app/outputs/symbols
+          flutter build appbundle --release --no-pub --obfuscate --split-debug-info=./build/app/outputs/symbols
 
       - name: Upload APK Artifact
         uses: actions/upload-artifact@v4
