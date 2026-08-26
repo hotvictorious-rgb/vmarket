@@ -28,6 +28,9 @@ class ShopRequest extends FormRequest
             'company_phone' => 'required',
             'country_code' => 'required',
             'address' => 'required|string',
+            'delivery_state_id' => 'nullable|integer',
+            'delivery_city_id' => 'nullable|integer',
+            'delivery_hub_id' => 'nullable|integer',
             'banner' =>getRulesStringForImageValidation(
                 rules: ['nullable'],
                 skipMimes: ['.svg'],

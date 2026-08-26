@@ -98,7 +98,15 @@ class ShopController extends BaseController
             ToastMagic::error(translate('shop_not_found'));
             return redirect()->route('vendor.shop.index');
         }
-        return view('vendor-views.shop.update-view', compact('shop'));
+        $states = \App\Models\DeliveryState::where('is_active', true)->orderBy('name', 'asc')->get();
+        $cities = $shop->delivery_state_id 
+            ? \App\Models\DeliveryCity::where('state_id', $shop->delivery_state_id)->where('is_active', true)->orderBy('name', 'asc')->get() 
+            : collect([]);
+        $hubs = $shop->delivery_city_id 
+            ? \App\Models\DeliveryHub::where('city_id', $shop->delivery_city_id)->where('is_active', true)->orderBy('name', 'asc')->get() 
+            : collect([]);
+
+        return view('vendor-views.shop.update-view', compact('shop', 'states', 'cities', 'hubs'));
     }
 
     /**

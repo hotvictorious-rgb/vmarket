@@ -74,6 +74,54 @@
                                     </div>
                                 </div>
                             </div>
+
+                            <div class="row g-3 mt-2 pt-3 border-top">
+                                <div class="col-md-4">
+                                    <div>
+                                        <label for="delivery_state_id" class="text-capitalize">{{ translate('Operational_State') }} <span class="text-info fs-11">({{ translate('Origin_Region') }})</span></label>
+                                        <select name="delivery_state_id" id="delivery_state_id" class="form-control">
+                                            <option value="">{{ translate('Select_State') }}</option>
+                                            @if(isset($states))
+                                                @foreach($states as $state)
+                                                    <option value="{{ $state->id }}" {{ (isset($shop->delivery_state_id) && $shop->delivery_state_id == $state->id) ? 'selected' : '' }}>
+                                                        {{ $state->name }}
+                                                    </option>
+                                                @endforeach
+                                            @endif
+                                        </select>
+                                    </div>
+                                </div>
+                                <div class="col-md-4">
+                                    <div>
+                                        <label for="delivery_city_id" class="text-capitalize">{{ translate('Dispatch_City_/_Zone') }} <span class="text-info fs-11">({{ translate('Storefront_Origin_Badge') }})</span></label>
+                                        <select name="delivery_city_id" id="delivery_city_id" class="form-control">
+                                            <option value="">{{ translate('Select_City') }}</option>
+                                            @if(isset($cities))
+                                                @foreach($cities as $city)
+                                                    <option value="{{ $city->id }}" {{ (isset($shop->delivery_city_id) && $shop->delivery_city_id == $city->id) ? 'selected' : '' }}>
+                                                        {{ $city->name }}
+                                                    </option>
+                                                @endforeach
+                                            @endif
+                                        </select>
+                                    </div>
+                                </div>
+                                <div class="col-md-4">
+                                    <div>
+                                        <label for="delivery_hub_id" class="text-capitalize">{{ translate('Local_Dispatch_Hub_/_Landmark') }}</label>
+                                        <select name="delivery_hub_id" id="delivery_hub_id" class="form-control">
+                                            <option value="">{{ translate('Select_Landmark_/_Hub') }}</option>
+                                            @if(isset($hubs))
+                                                @foreach($hubs as $hub)
+                                                    <option value="{{ $hub->id }}" {{ (isset($shop->delivery_hub_id) && $shop->delivery_hub_id == $hub->id) ? 'selected' : '' }}>
+                                                        {{ $hub->name }} ({{ $hub->type == 'motor_park' ? translate('Motor_Park') : translate('Landmark') }})
+                                                    </option>
+                                                @endforeach
+                                            @endif
+                                        </select>
+                                    </div>
+                                </div>
+                            </div>
                         </div>
                     </div>
 
@@ -309,3 +357,47 @@
         </div>
     </div>
 @endsection
+
+@push('script')
+<script>
+    'use strict';
+    $('#delivery_state_id').on('change', function () {
+        let stateId = $(this).val();
+        let citySelect = $('#delivery_city_id');
+        let hubSelect = $('#delivery_hub_id');
+        citySelect.empty().append('<option value="">{{ translate("Select_City") }}</option>');
+        hubSelect.empty().append('<option value="">{{ translate("Select_Landmark_/_Hub") }}</option>');
+        if (stateId) {
+            $.ajax({
+                url: "{{ url('api/v1/delivery-hubs/cities') }}/" + stateId,
+                type: 'GET',
+                dataType: 'json',
+                success: function (data) {
+                    $.each(data, function (key, value) {
+                        citySelect.append('<option value="' + value.id + '">' + value.name + '</option>');
+                    });
+                }
+            });
+        }
+    });
+
+    $('#delivery_city_id').on('change', function () {
+        let cityId = $(this).val();
+        let hubSelect = $('#delivery_hub_id');
+        hubSelect.empty().append('<option value="">{{ translate("Select_Landmark_/_Hub") }}</option>');
+        if (cityId) {
+            $.ajax({
+                url: "{{ url('api/v1/delivery-hubs/hubs') }}/" + cityId,
+                type: 'GET',
+                dataType: 'json',
+                success: function (data) {
+                    $.each(data, function (key, value) {
+                        let typeBadge = value.type === 'motor_park' ? '({{ translate("Motor_Park") }})' : '({{ translate("Landmark") }})';
+                        hubSelect.append('<option value="' + value.id + '">' + value.name + ' ' + typeBadge + '</option>');
+                    });
+                }
+            });
+        }
+    });
+</script>
+@endpush

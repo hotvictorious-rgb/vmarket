@@ -52,6 +52,9 @@ class ShopService
             'bottom_banner_storage_type' => $request->has('bottom_banner') ? $storage : $shop['bottom_banner_storage_type'],
             'offer_banner' => $offerBanner,
             'offer_banner_storage_type' => $request->has('offer_banner') ? $storage : $shop['offer_banner_storage_type'],
+            'delivery_state_id' => $request['delivery_state_id'] ?? $shop['delivery_state_id'] ?? null,
+            'delivery_city_id' => $request['delivery_city_id'] ?? $shop['delivery_city_id'] ?? null,
+            'delivery_hub_id' => $request['delivery_hub_id'] ?? $shop['delivery_hub_id'] ?? null,
         ];
     }
 

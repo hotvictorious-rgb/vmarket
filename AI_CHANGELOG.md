@@ -7,6 +7,14 @@ Always append your completed tasks here in chronological order at the top. Forma
 `### [YYYY-MM-DD HH:MM UTC] <Feature / Fix Title> [<Component Scope>]`
 Include the specific app/component modified and bullet points detailing the exact technical changes.
 
+### [2026-08-26 06:25 UTC] Vendor Operational City, State, Hub Selection & Storefront Origin Badges [backend] [user-app]
+* **Component:** Laravel Backend, Vendor Dashboard, Storefront Themes & Customer Flutter App (`backend/vmarket-web`, `User app/`)
+* **Action:** Implemented dynamic vendor operational city/state/hub selection and privacy-preserving storefront origin badges:
+  - **Vendor Dashboard Hub Setup (`update-view.blade.php`, `ShopController.php`, `ShopRequest.php`, `ShopService.php`):** Added dynamic Operational State, Dispatch City / Zone, and Local Landmark / Hub selection with responsive AJAX cascading dropdowns to Vendor Shop Settings, persisting `delivery_state_id`, `delivery_city_id`, and `delivery_hub_id`.
+  - **Vendor Mobile REST API (`RestAPI/v3/seller/SellerController.php`):** Eager loaded geographic delivery relations (`deliveryState`, `deliveryCity`, `deliveryHub`) in `shop_info` and `getSellerInfo`, with support for updating delivery location IDs in `shop_info_update`.
+  - **Storefront Origin Badges (`default` & `theme_aster` `details.blade.php`):** Rendered `📍 Ships from: [City Name] Hub` (with fallback to default hub) on vendor store cards and `📍 Ships from: Uyo Central Hub` on in-house store cards across both Default and Aster themes without leaking vendor physical street addresses or personal contacts.
+  - **Customer Mobile App Integration (`shop_info_widget.dart`):** Added a location badge row (`📍 Ships from: Uyo Hub`) on the product details store card.
+
 ### [2026-08-24 02:36 UTC] Google Schema.org JSON-LD Product & Offer Structured Data [backend]
 * **Component:** Laravel Backend, Product SEO Partials (`backend/vmarket-web`)
 * **Action:** Implemented Schema.org `Product` & `Offer` JSON-LD Structured Data across all storefront themes:

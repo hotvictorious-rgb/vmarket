@@ -838,6 +838,10 @@
                                                     <h2 class="cursor-pointer h5 mb-1">
                                                         {{ $product->seller->shop->name }}
                                                     </h2>
+                                                    <div class="d-flex align-items-center gap-1 fs-12 text-white opacity-75 mb-1">
+                                                        <i class="bi bi-geo-alt-fill text-gold"></i>
+                                                        <span>{{ translate('Ships_from') }}: <strong>{{ $product->seller->shop->deliveryCity->name ?? 'Uyo' }} Hub</strong></span>
+                                                    </div>
 
                                                     @if(checkVendorAbility(type: 'vendor', status: 'temporary_close', vendor: $product?->seller?->shop))
                                                         <div>
@@ -920,6 +924,10 @@
                                                     data-link="{{ route('vendor-shop',['slug' => getInHouseShopConfig(key:'slug')]) }}">
                                                     {{ getInHouseShopConfig(key:'name') }}
                                                 </h2>
+                                                <div class="d-flex align-items-center gap-1 fs-12 text-white opacity-75 mb-1">
+                                                    <i class="bi bi-geo-alt-fill text-gold"></i>
+                                                    <span>{{ translate('Ships_from') }}: <strong>{{ translate('Uyo Central Hub') }}</strong></span>
+                                                </div>
                                                 @if(checkVendorAbility(type: 'inhouse', status: 'temporary_close'))
                                                     <div>
                                                         <span class="bg-danger p-1 px-2 rounded small text-white w-auto">

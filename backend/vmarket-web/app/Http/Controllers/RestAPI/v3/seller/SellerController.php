@@ -55,7 +55,7 @@ class SellerController extends Controller
         $seller = $request->seller;
 
         $allProductids = $this->productRepo->getListWithScope(filters: ['added_by' => 'seller', 'seller_id' => $seller['id']], dataLimit: 'all')->pluck('id')->toArray();
-        $shop = Shop::where(['seller_id' => $seller['id']])->first();
+        $shop = Shop::with(['deliveryState', 'deliveryCity', 'deliveryHub'])->where(['seller_id' => $seller['id']])->first();
         $shop['rating'] = round(Review::whereIn('product_id', $allProductids)->avg('rating'), 3);
         $shop['rating_count'] = Review::whereIn('product_id', $allProductids)->count();
 
@@ -193,7 +193,7 @@ class SellerController extends Controller
     public function getSellerInfo(Request $request): JsonResponse
     {
         $seller = $request->seller;
-        $data = Seller::with(['wallet'])->withCount(['product', 'orders' => function ($query) use ($seller) {
+        $data = Seller::with(['wallet', 'shop.deliveryState', 'shop.deliveryCity', 'shop.deliveryHub'])->withCount(['product', 'orders' => function ($query) use ($seller) {
             $query->where(['seller_id' => $seller['id'], 'seller_is' => ($seller['id'] == 0 ? 'admin' : 'seller')]);
         }])->find($seller['id']);
 
@@ -275,7 +275,7 @@ class SellerController extends Controller
             ]);
         }
 
-        Shop::where(['seller_id' => $seller['id']])->update([
+        $shopUpdateData = [
             'name' => $request['name'],
             'address' => $request['address'],
             'contact' => $request['contact'],
@@ -286,7 +286,19 @@ class SellerController extends Controller
             'tax_identification_number' => $request['tax_identification_number'],
             'tin_expire_date' => $request['tin_expire_date'],
             'updated_at' => now()
-        ]);
+        ];
+
+        if ($request->filled('delivery_state_id')) {
+            $shopUpdateData['delivery_state_id'] = $request['delivery_state_id'];
+        }
+        if ($request->filled('delivery_city_id')) {
+            $shopUpdateData['delivery_city_id'] = $request['delivery_city_id'];
+        }
+        if ($request->filled('delivery_hub_id')) {
+            $shopUpdateData['delivery_hub_id'] = $request['delivery_hub_id'];
+        }
+
+        Shop::where(['seller_id' => $seller['id']])->update($shopUpdateData);
 
         return response()->json(translate('Shop_info_updated_successfully'), 200);
     }

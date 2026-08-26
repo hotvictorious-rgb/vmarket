@@ -813,9 +813,13 @@
                                                     </div>
                                                     <div
                                                         class="ms-2 w-0 flex-grow">
-                                                        <h2 class="fs-15 mb-2">
+                                                        <h2 class="fs-15 mb-1">
                                                             {{ $product->seller->shop->name }}
                                                         </h2>
+                                                        <div class="d-flex align-items-center gap-1 fs-12 text-muted mb-2">
+                                                            <i class="tio-map-pin" style="color: #6A1B9A;"></i>
+                                                            <span>{{ translate('Ships_from') }}: <strong class="text-dark">{{ $product->seller->shop->deliveryCity->name ?? 'Uyo' }} Hub</strong></span>
+                                                        </div>
                                                         @if(checkVendorAbility(type: 'vendor', status: 'temporary_close', vendor: $product->seller->shop))
                                                             <span class="badge-danger fs-12 px-3 rounded-full small">
                                                                 <span>{{ translate('Temporary_OFF') }}</span>
@@ -853,7 +857,7 @@
                                                                 src="{{ theme_asset(path: 'public/assets/front-end/img/products.svg') }}"
                                                                 class="mb-2" alt="">
                                                             <div class="__text-12px text-base">
-                                                                <strong>{{ $productsForReview->total() }}</strong>
+                                                                <strong>{{ $productsForReview->count() }}</strong>
                                                                 {{ translate('products') }}
                                                             </div>
                                                         </div>
@@ -861,34 +865,42 @@
                                                 </div>
                                             </div>
                                         </div>
-                                        <div class="col-12 position-static mt-3">
-                                            <div class="chat_with_seller-buttons d-none">
-                                                @if (auth('customer')->id())
-                                                    <button
-                                                        class="btn w-100 d-none text-center web--bg-primary text-white"
-                                                        data-toggle="modal"
-                                                        data-target="#chatting_modal"
-                                                        @if(checkVendorAbility(type: 'vendor', status: 'temporary_close', vendor: $product->seller->shop))
-                                                            disabled
-                                                        @endif
-                                                    >
-                                                        <img class="mb-1" alt=""
-                                                             src="{{ theme_asset(path: 'public/assets/front-end/img/chat-16-filled-icon.png') }}">
-                                                        <span class="d-none d-sm-inline-block text-capitalize">
-                                                        {{ translate('chat_with_vendor') }}
-                                                    </span>
-                                                    </button>
-                                                @else
-                                                    <a href="{{ route('customer.auth.login') }}"
-                                                       class="btn w-100 d-none text-center web--bg-primary text-white">
-                                                        <img
-                                                            src="{{ theme_asset(path: 'public/assets/front-end/img/chat-16-filled-icon.png') }}"
-                                                            class="mb-1" alt="">
-                                                        <span class="d-none d-sm-inline-block text-capitalize">
-                                                        {{ translate('chat_with_vendor') }}
-                                                    </span>
+                                        <div class="col-12 mt-2">
+                                            <div class="row d-flex justify-content-between">
+                                                <div class="col-6">
+                                                    <a href="{{ route('vendor-shop',['slug'=> $product?->seller?->shop->slug]) }}"
+                                                       class="btn btn-outline-primary __btn-outline-primary w-100 d-block text-center">
+                                                        <i class="fa fa-shopping-bag" aria-hidden="true"></i>
+                                                        {{ translate('visit_Store') }}
                                                     </a>
-                                                @endif
+                                                </div>
+                                                <div class="col-6">
+                                                    @if (auth('customer')->check())
+                                                        <button class="btn btn-outline-primary __btn-outline-primary w-100 d-block text-center"
+                                                                data-toggle="modal"
+                                                                data-target="#chatting_modal"
+                                                                @if(checkVendorAbility(type: 'vendor', status: 'temporary_close', vendor: $product->seller->shop))
+                                                                    disabled
+                                                                @endif
+                                                        >
+                                                            <img class="mb-1" alt=""
+                                                                 src="{{ theme_asset(path: 'public/assets/front-end/img/chat-16-filled-icon.png') }}">
+                                                            <span class="d-none d-sm-inline-block text-capitalize">
+                                                            {{ translate('chat_with_vendor') }}
+                                                        </span>
+                                                        </button>
+                                                    @else
+                                                        <a href="{{ route('customer.auth.login') }}"
+                                                           class="btn w-100 d-none text-center web--bg-primary text-white">
+                                                            <img
+                                                                src="{{ theme_asset(path: 'public/assets/front-end/img/chat-16-filled-icon.png') }}"
+                                                                class="mb-1" alt="">
+                                                            <span class="d-none d-sm-inline-block text-capitalize">
+                                                            {{ translate('chat_with_vendor') }}
+                                                        </span>
+                                                        </a>
+                                                    @endif
+                                                </div>
                                             </div>
                                         </div>
                                     </div>
@@ -908,6 +920,10 @@
                                                     <h2 class="font-bold __text-16px mb-1">
                                                         {{ getInHouseShopConfig(key: 'name') }}
                                                     </h2>
+                                                    <div class="d-flex align-items-center gap-1 fs-12 text-muted mb-2">
+                                                        <i class="tio-map-pin" style="color: #6A1B9A;"></i>
+                                                        <span>{{ translate('Ships_from') }}: <strong class="text-dark">{{ translate('Uyo Central Hub') }}</strong></span>
+                                                    </div>
                                                     @if(checkVendorAbility(type: 'inhouse', status: 'temporary_close'))
                                                         <span class="badge-danger fs-12 px-3 rounded-full small">
                                                             <span>{{ translate('Temporary_OFF') }}</span>
