@@ -144,7 +144,21 @@ class _ShopInfoWidgetState extends State<ShopInfoWidget> {
                               Text(seller.sellerInfoModelProductDetails != null ?
                               '(${seller.sellerInfoModelProductDetails?.totalReview})' : '',
                               style: titleRegular.copyWith(fontSize: Dimensions.fontSizeDefault,color: Theme.of(context).hintColor)
-                            )])
+                            )]),
+
+                            const SizedBox(height: 3),
+                            Row(children: [
+                              Icon(Icons.location_on_rounded, size: 13, color: Theme.of(context).primaryColor),
+                              const SizedBox(width: 3),
+                              Text(
+                                '${getTranslated('ships_from', context) ?? 'Ships from'}: Uyo Hub',
+                                style: textRegular.copyWith(
+                                  fontSize: Dimensions.fontSizeSmall,
+                                  color: Theme.of(context).hintColor,
+                                  fontWeight: FontWeight.w500,
+                                ),
+                              ),
+                            ]),
                           ]
                         )
                       )),
