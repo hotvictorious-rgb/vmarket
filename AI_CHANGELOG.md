@@ -7,6 +7,13 @@ Always append your completed tasks here in chronological order at the top. Forma
 `### [YYYY-MM-DD HH:MM UTC] <Feature / Fix Title> [<Component Scope>]`
 Include the specific app/component modified and bullet points detailing the exact technical changes.
 
+### [2026-08-26 21:00 UTC] AI Subscription Gating & Pro Verified Merchant Product Recommendation Priority [backend]
+* **Component:** AI Services (`WhatsAppAiService.php`, `WhatsAppVendorService.php`, `test_ai_subscription_gating_priority.php`)
+* **Action:** Hardened AI access control and product search ranking based on active merchant subscriptions:
+  - Restricted 24/7 WhatsApp AI Store Management operations to active Pro Subscribed Merchants (`PosSubscription` active).
+  - Unsubscribed (Free Starter) merchants are blocked from vendor AI tools and receive a warm, professional upgrade invitation with direct subscription link, while being treated politely as regular shopping customers.
+  - Prioritized products from Pro Subscribed Merchants and Official In-House Stores at the top of all WhatsApp AI product searches and catalog showcases.
+
 ### [2026-08-26 18:25 UTC] 100-Flow Exhaustive Systemic & Mathematical Verification Suite [ai-governance] [backend]
 * **Component:** System Verification Suite (`test_all_100_flows_proof.php`, `VICTORIOUS_MARKET_MATHEMATICAL_AND_SYSTEMIC_PROOF.md`)
 * **Action:** Formulated, executed, and validated all 100 architectural, financial, operational, and security flows across all 4 actors with 100% success (100 / 100 Passed, 0 Failures, $\Delta = 0.0000$):

@@ -30,6 +30,35 @@ class WhatsAppVendorService
     }
 
     /**
+     * [AI] Verify if a seller has an active paid Pro AI/Multi-Branch subscription.
+     */
+    public static function isSubscribedVendor(int $sellerId): bool
+    {
+        return \App\Models\PosSubscription::where('seller_id', $sellerId)
+            ->where('plan_type', '!=', 'starter_free')
+            ->where('status', 'active')
+            ->where(function ($q) {
+                $q->whereNull('expires_at')->orWhere('expires_at', '>', now());
+            })
+            ->exists();
+    }
+
+    /**
+     * [AI] Return professional upgrade guidance message for unsubscribed merchants.
+     */
+    public static function getSubscriptionGuardMessage(Seller $seller): array
+    {
+        $shopName = $seller->shop ? $seller->shop->name : ($seller->f_name . "'s Store");
+        $upgradeUrl = url('/seller/subscription');
+
+        return [
+            'status' => false,
+            'is_unsubscribed' => true,
+            'message' => "🔒 *Exclusive Pro Merchant Feature*\n\nHello *{$shopName}*! Your merchant account is currently on the *Free Starter Plan*.\n\n✨ To unlock your *24/7 WhatsApp AI Store Sales Agent*, instant WhatsApp voice/text inventory updates, and daily automated performance summaries, please upgrade to the *Pro AI Tier* (₦10,000/mo).\n\n👉 *Upgrade Your Store Now:* {$upgradeUrl}\n\n_If you are shopping as a customer, feel free to search products or ask for recommendations!_",
+        ];
+    }
+
+    /**
      * [AI] Fetch vendor store performance, pending orders, and wallet balance.
      */
     public static function getVendorSummary(string $phone): array
@@ -37,6 +66,11 @@ class WhatsAppVendorService
         $seller = self::getSeller($phone);
         if (!$seller) {
             return ['status' => false, 'message' => 'No approved vendor store found for this phone number.'];
+        }
+
+        // [AI] Strict Subscription Guard
+        if (!self::isSubscribedVendor($seller->id)) {
+            return self::getSubscriptionGuardMessage($seller);
         }
 
         $shop = $seller->shop;
@@ -85,6 +119,11 @@ class WhatsAppVendorService
         $seller = self::getSeller($phone);
         if (!$seller) {
             return ['status' => false, 'message' => 'No approved vendor store found.'];
+        }
+
+        // [AI] Strict Subscription Guard
+        if (!self::isSubscribedVendor($seller->id)) {
+            return self::getSubscriptionGuardMessage($seller);
         }
 
         $orders = Order::where('seller_is', 'seller')
@@ -144,6 +183,11 @@ class WhatsAppVendorService
             return ['status' => false, 'message' => 'Unauthorized vendor access.'];
         }
 
+        // [AI] Strict Subscription Guard
+        if (!self::isSubscribedVendor($seller->id)) {
+            return self::getSubscriptionGuardMessage($seller);
+        }
+
         $order = Order::where('id', $orderId)
             ->where('seller_id', $seller->id)
             ->first();
@@ -171,6 +215,11 @@ class WhatsAppVendorService
         $seller = self::getSeller($phone);
         if (!$seller) {
             return ['status' => false, 'message' => 'Unauthorized vendor access.'];
+        }
+
+        // [AI] Strict Subscription Guard
+        if (!self::isSubscribedVendor($seller->id)) {
+            return self::getSubscriptionGuardMessage($seller);
         }
 
         $order = Order::where('id', $orderId)
@@ -216,6 +265,11 @@ class WhatsAppVendorService
             return ['status' => false, 'message' => 'Unauthorized vendor access.'];
         }
 
+        // [AI] Strict Subscription Guard
+        if (!self::isSubscribedVendor($seller->id)) {
+            return self::getSubscriptionGuardMessage($seller);
+        }
+
         $product = Product::where('user_id', $seller->id)
             ->where('added_by', 'seller')
             ->where('name', 'like', "%{$productName}%")
@@ -249,6 +303,11 @@ class WhatsAppVendorService
         $seller = self::getSeller($phone);
         if (!$seller) {
             return ['status' => false, 'message' => 'Unauthorized vendor access.'];
+        }
+
+        // [AI] Strict Subscription Guard
+        if (!self::isSubscribedVendor($seller->id)) {
+            return self::getSubscriptionGuardMessage($seller);
         }
 
         $wallet = $seller->wallet;
@@ -300,6 +359,11 @@ class WhatsAppVendorService
         $seller = self::getSeller($phone);
         if (!$seller) {
             return ['status' => false, 'message' => 'Unauthorized vendor access.'];
+        }
+
+        // [AI] Strict Subscription Guard
+        if (!self::isSubscribedVendor($seller->id)) {
+            return self::getSubscriptionGuardMessage($seller);
         }
 
         if (empty($seller->account_no) || empty($seller->bank_name)) {
@@ -371,6 +435,11 @@ class WhatsAppVendorService
         $seller = self::getSeller($phone);
         if (!$seller) {
             return ['status' => false, 'message' => 'Unauthorized vendor access. Your store must be approved by admin.'];
+        }
+
+        // [AI] Strict Subscription Guard
+        if (!self::isSubscribedVendor($seller->id)) {
+            return self::getSubscriptionGuardMessage($seller);
         }
 
         if ($unitPrice < 50) {

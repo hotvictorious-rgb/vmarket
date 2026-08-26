@@ -94,6 +94,15 @@ You are "Victorious", the official AI Specialist for Victorious MARKET (Vmarket)
 - You serve registered Dispatch Riders (Daily route, navigation links, doorstep 6-digit OTP verification, cash-in-hand tracking via `get_rider_route`, `confirm_rider_pickup`, `verify_doorstep_otp`, `get_cash_in_hand`).
 - If a user asks about vendor operations or rider deliveries, invoke the matching specialized tool.
 
+### VENDOR SUBSCRIPTION POLICY & ACCESS CONTROL (STRICT GUARD):
+- 24/7 WhatsApp AI Store Management (sales summaries, inventory updates, pickup codes, and payout requests) is an EXCLUSIVE PRO FEATURE for Subscribed Merchants (₦10,000/month).
+- Unsubscribed (Free Tier) store owners CANNOT use AI store management tools.
+- If an unsubscribed vendor chats with you, treat them politely as a regular customer for shopping. If they request vendor operations or ask about their store stock/payouts, reply with a warm, polite, and professional upgrade invitation:
+  "Hello! 🔒 The 24/7 WhatsApp AI Store Assistant and instant inventory update tools are exclusive benefits for Pro Subscribed Merchants. Your store is currently on the Free Starter Tier. To unlock WhatsApp AI store management and daily performance reports, upgrade your store to the Pro AI Plan: https://shop.victoriousmarket.com.ng/seller/subscription"
+
+### PRODUCT RECOMMENDATION & SHOWCASE PRIORITY (PRO VENDOR PRIORITY RULE):
+- When customers search for items or ask for recommendations, ALWAYS prioritize products from Verified Pro Subscribed Merchants and Official In-House Stores first before showing standard listings.
+
 ### MANDATORY ORDER CLARITY DIRECTIVE (ZERO-CONFUSION RULE):
 - Whenever presenting an order to Customers, Vendors, or Riders, you MUST ALWAYS explicitly display the complete order details:
   1. Order ID (e.g., *Order #1042*)
@@ -534,7 +543,21 @@ PROMPT;
                 if ($pId) {
                     $prod = $query->where('id', $pId)->first();
                 } else {
-                    $prod = $query->where('name', 'like', "%{$q}%")->first();
+                    // [AI] Subscribed Pro & Official Store Priority Ranking
+                    $activeSubscribedSellerIds = \App\Models\PosSubscription::where('status', 'active')
+                        ->where('plan_type', '!=', 'starter_free')
+                        ->where(function ($sq) {
+                            $sq->whereNull('expires_at')->orWhere('expires_at', '>', now());
+                        })
+                        ->pluck('seller_id')
+                        ->toArray();
+
+                    $sellerIdsStr = !empty($activeSubscribedSellerIds) ? implode(',', $activeSubscribedSellerIds) : '0';
+
+                    $prod = $query->where('name', 'like', "%{$q}%")
+                        ->orderByRaw("CASE WHEN added_by = 'admin' THEN 0 WHEN user_id IN ({$sellerIdsStr}) THEN 1 ELSE 2 END")
+                        ->orderBy('featured_status', 'desc')
+                        ->first();
                 }
 
                 if (!$prod) {
@@ -553,8 +576,9 @@ PROMPT;
                 }
 
                 $isInHouse = ($prod->added_by === 'admin');
-                $badge = $isInHouse ? '⭐ Victorious Official (1-Hour Express Dispatch)' : '🏪 Verified Merchant';
-                $sellerType = $isInHouse ? 'Official Store' : 'Verified Merchant';
+                $isSubscribed = ($prod->added_by === 'seller' && \App\Models\PosSubscription::where('seller_id', $prod->user_id)->where('status', 'active')->where('plan_type', '!=', 'starter_free')->exists());
+                $badge = $isInHouse ? '⭐ Victorious Official (1-Hour Express Dispatch)' : ($isSubscribed ? '👑 Verified Pro Merchant' : '🏪 Marketplace Store');
+                $sellerType = $isInHouse ? 'Official Store' : ($isSubscribed ? 'Verified Pro Merchant' : 'Marketplace Store');
 
                 return [
                     'found' => true,
@@ -597,7 +621,21 @@ PROMPT;
                 );
 
             case 'search_inventory':
-                $query = Product::active()->where('name', 'like', '%' . ($args['keyword'] ?? '') . '%');
+                // [AI] Subscribed Pro & Official Store Priority Ranking
+                $activeSubscribedSellerIds = \App\Models\PosSubscription::where('status', 'active')
+                    ->where('plan_type', '!=', 'starter_free')
+                    ->where(function ($sq) {
+                        $sq->whereNull('expires_at')->orWhere('expires_at', '>', now());
+                    })
+                    ->pluck('seller_id')
+                    ->toArray();
+
+                $sellerIdsStr = !empty($activeSubscribedSellerIds) ? implode(',', $activeSubscribedSellerIds) : '0';
+
+                $query = Product::active()->where('name', 'like', '%' . ($args['keyword'] ?? '') . '%')
+                    ->orderByRaw("CASE WHEN added_by = 'admin' THEN 0 WHEN user_id IN ({$sellerIdsStr}) THEN 1 ELSE 2 END")
+                    ->orderBy('featured_status', 'desc');
+
                 if (!empty($args['max_price'])) {
                     $query->where('unit_price', '<=', (float)$args['max_price']);
                 }
