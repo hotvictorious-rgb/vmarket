@@ -64,7 +64,7 @@ class ShopViewController extends Controller
     public function seller_shop(Request $request, $slug): View|JsonResponse|Redirector|RedirectResponse
     {
         $themeName = theme_root_path();
-        $shop = Shop::where('slug', $slug)->first();
+        $shop = Shop::where('slug', $slug)->with(['seller', 'deliveryHub', 'deliveryCity', 'deliveryState'])->first();
 
         if (!$shop) {
             Toastr::error(translate('Shop_does_not_exist'));

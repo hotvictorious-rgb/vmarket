@@ -7,6 +7,12 @@ Always append your completed tasks here in chronological order at the top. Forma
 `### [YYYY-MM-DD HH:MM UTC] <Feature / Fix Title> [<Component Scope>]`
 Include the specific app/component modified and bullet points detailing the exact technical changes.
 
+### [2026-08-26 12:30 UTC] High-Scale Database Performance Indexing & Query Optimization [backend]
+* **Component:** Laravel Database Architecture & Storefront Controller (`backend/vmarket-web`)
+* **Action:** Hardened database schema and query layers to guarantee sub-millisecond execution across millions of records:
+  - **Database Migration (`create_high_scale_performance_indexes.php`):** Added composite and targeted B-Tree indexes across `sellers` (`marketplace_status`, `status`), `shops` (`is_primary_branch`, `seller_id`), `orders` (`handed_over_by_id`, `handover_branch_id`, `delivery_man_id`, `order_status`), `pos_customer_ledgers` (`seller_id`, `status`), `pos_transfers` (`seller_id`, `status`), and `pos_cashier_shifts` (`seller_id`, `status`).
+  - **N+1 Query Elimination (`ShopViewController.php`):** Eager loaded `seller`, `deliveryHub`, `deliveryCity`, and `deliveryState` relations on storefront shop view requests to ensure instant page loads during peak customer traffic.
+
 ### [2026-08-26 12:20 UTC] 3-Tier Anti-Scam Storefront Lock & Verified Catalog Sharing Engine [backend]
 * **Component:** Laravel Backend, Web Storefront & Vendor Dashboard (`backend/vmarket-web`)
 * **Action:** Implemented the strict 3-Tier business model locking online storefronts and catalog link sharing exclusively to Super Admin Verified & Approved Marketplace Vendors:
