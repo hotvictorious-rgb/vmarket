@@ -43,3 +43,5 @@ backend/**/bootstrap/cache/*
 *.patch
 zip_test/
 zip_test2/
+reference/
+*.phar

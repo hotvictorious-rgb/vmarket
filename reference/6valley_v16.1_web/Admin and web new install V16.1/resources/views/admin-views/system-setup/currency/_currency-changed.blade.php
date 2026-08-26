@@ -1,1 +1,0 @@
-{{ translate('Currency_changed') }}

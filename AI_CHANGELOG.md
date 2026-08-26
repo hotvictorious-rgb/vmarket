@@ -7,6 +7,13 @@ Always append your completed tasks here in chronological order at the top. Forma
 `### [YYYY-MM-DD HH:MM UTC] <Feature / Fix Title> [<Component Scope>]`
 Include the specific app/component modified and bullet points detailing the exact technical changes.
 
+### [2026-08-26 15:40 UTC] Monorepo Storage Optimization & Reference Baseline Cleanup [ai-governance]
+* **Component:** Monorepo Git Tracking (`reference/`, `.gitignore`, `backend/vmarket-web/composer.phar`)
+* **Action:** Reclaimed ~310MB of GitHub repository storage by removing obsolete stock baselines and large binaries:
+  - Removed `reference/` folder (10,000+ files / ~302MB of legacy stock code) from Git tracking.
+  - Removed temporary binary `composer.phar` and test images from `backend/vmarket-web/`.
+  - Added `reference/` and `*.phar` to `.gitignore` to prevent repository bloat.
+
 ### [2026-08-26 12:55 UTC] Comprehensive Mathematical & Systemic Verification Proof Compilation [ai-governance]
 * **Component:** Monorepo Root Documentation (`VICTORIOUS_MARKET_MATHEMATICAL_AND_SYSTEMIC_PROOF.md`)
 * **Action:** Authored and verified exhaustive mathematical balance proofs, searchability indices, notification triggers, and subsystem integrity:
