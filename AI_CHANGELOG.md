@@ -7,6 +7,12 @@ Always append your completed tasks here in chronological order at the top. Forma
 `### [YYYY-MM-DD HH:MM UTC] <Feature / Fix Title> [<Component Scope>]`
 Include the specific app/component modified and bullet points detailing the exact technical changes.
 
+### [2026-08-26 16:25 UTC] Native MySQL SHOW INDEX Idempotency Hardening [backend]
+* **Component:** Database Schema Migrations (`2026_08_26_000003_add_high_scale_performance_indexes.php`)
+* **Action:** Rewrote index existence checks to use raw native MySQL `SHOW INDEX FROM table WHERE Key_name = ?`:
+  - Completely eliminates dependencies on `doctrine/dbal` and unsupported `Schema::hasIndex()` methods across Laravel versions.
+  - Implemented safe `ALTER TABLE table DROP INDEX index_name` in `down()` to ensure 100% crash-free execution on existing and partially migrated live databases.
+
 ### [2026-08-26 15:52 UTC] Database Migration Idempotency & Safe Index Hardening [backend]
 * **Component:** Database Schema Migrations (`2026_08_26_000003_add_high_scale_performance_indexes.php`)
 * **Action:** Hardened high-scale index migration to guarantee 100% crash-free execution across clean installs and updates:
