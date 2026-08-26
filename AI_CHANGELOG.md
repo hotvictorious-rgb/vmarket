@@ -7,6 +7,12 @@ Always append your completed tasks here in chronological order at the top. Forma
 `### [YYYY-MM-DD HH:MM UTC] <Feature / Fix Title> [<Component Scope>]`
 Include the specific app/component modified and bullet points detailing the exact technical changes.
 
+### [2026-08-26 15:52 UTC] Database Migration Idempotency & Safe Index Hardening [backend]
+* **Component:** Database Schema Migrations (`2026_08_26_000003_add_high_scale_performance_indexes.php`)
+* **Action:** Hardened high-scale index migration to guarantee 100% crash-free execution across clean installs and updates:
+  - Added conditional `Schema::hasColumn()` checks for `aging_bucket` on `pos_customer_ledgers` before applying composite indexes.
+  - Added doctrine schema manager index existence checks on all rollback (`down()`) methods to prevent `Index not found` exceptions during rollbacks.
+
 ### [2026-08-26 15:40 UTC] Monorepo Storage Optimization & Reference Baseline Cleanup [ai-governance]
 * **Component:** Monorepo Git Tracking (`reference/`, `.gitignore`, `backend/vmarket-web/composer.phar`)
 * **Action:** Reclaimed ~310MB of GitHub repository storage by removing obsolete stock baselines and large binaries:
