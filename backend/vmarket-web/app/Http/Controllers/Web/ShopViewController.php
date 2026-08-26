@@ -76,6 +76,15 @@ class ShopViewController extends Controller
             return redirect()->route('home');
         }
 
+        // [AI] Strict Anti-Scam Guard: Only Super Admin Approved Vendors can have a public online storefront
+        if ($shop['author_type'] != 'admin') {
+            $seller = $shop->seller;
+            if ($seller && $seller->marketplace_status !== 'approved') {
+                Toastr::warning(translate('This_merchant_operates_exclusively_as_a_private_in-store_POS_counter_and_is_not_authorized_to_accept_online_orders.'));
+                return redirect()->route('home');
+            }
+        }
+
         return match ($themeName) {
             'default' => self::default_theme($request, $shop),
             'theme_aster' => self::theme_aster($request, $shop),

@@ -31,23 +31,47 @@
                 </div>
 
                 @php($storeUrl = route('shopView', ['id' => $shop->id]))
-                <div class="card bg-white border border-primary shadow-sm mb-4">
-                    <div class="card-body p-3 d-flex justify-content-between align-items-center flex-wrap gap-3">
-                        <div>
-                            <span class="badge bg-primary text-white mb-1">🔗 {{ translate('Your_Online_Storefront_Link') }}</span>
-                            <h5 class="fw-bold text-dark mb-1 text-break">{{ $storeUrl }}</h5>
-                            <small class="text-muted">{{ translate('Share_this_link_with_customers_on_WhatsApp,_Instagram,_and_Facebook_so_they_can_order_from_your_catalog_online.') }}</small>
-                        </div>
-                        <div class="d-flex gap-2">
-                            <button type="button" class="btn btn-outline-primary btn-sm" onclick="navigator.clipboard.writeText('{{ $storeUrl }}'); ToastMagic.success('{{ translate('Store_link_copied_to_clipboard!') }}');">
-                                <i class="tio-copy"></i> {{ translate('Copy_Link') }}
-                            </button>
-                            <a href="https://api.whatsapp.com/send?text={{ urlencode('Check out our online store catalog on Victorious Market: ' . $storeUrl) }}" target="_blank" class="btn btn-success btn-sm">
-                                <i class="tio-whatsapp"></i> {{ translate('Share_to_WhatsApp') }}
-                            </a>
+                @php($marketplaceStatus = auth('seller')->user()->marketplace_status ?? 'pos_only')
+                @if($marketplaceStatus === 'approved')
+                    <div class="card bg-white border border-success shadow-sm mb-4">
+                        <div class="card-body p-3 d-flex justify-content-between align-items-center flex-wrap gap-3">
+                            <div>
+                                <span class="badge bg-success text-white mb-1">🛡️ {{ translate('Verified_Marketplace_Storefront_Active') }}</span>
+                                <h5 class="fw-bold text-dark mb-1 text-break">{{ $storeUrl }}</h5>
+                                <small class="text-muted">{{ translate('Share_this_link_with_customers_on_WhatsApp,_Instagram,_and_Facebook_so_they_can_order_from_your_catalog_online.') }}</small>
+                            </div>
+                            <div class="d-flex gap-2">
+                                <button type="button" class="btn btn-outline-primary btn-sm" onclick="navigator.clipboard.writeText('{{ $storeUrl }}'); ToastMagic.success('{{ translate('Store_link_copied_to_clipboard!') }}');">
+                                    <i class="tio-copy"></i> {{ translate('Copy_Link') }}
+                                </button>
+                                <a href="https://api.whatsapp.com/send?text={{ urlencode('Check out our online store catalog on Victorious Market: ' . $storeUrl) }}" target="_blank" class="btn btn-success btn-sm">
+                                    <i class="tio-whatsapp"></i> {{ translate('Share_to_WhatsApp') }}
+                                </a>
+                            </div>
                         </div>
                     </div>
-                </div>
+                @else
+                    <div class="card bg-white border border-warning shadow-sm mb-4">
+                        <div class="card-body p-3 d-flex justify-content-between align-items-center flex-wrap gap-3">
+                            <div>
+                                <span class="badge bg-secondary text-white mb-1">🔒 {{ translate('Storefront_Link_Locked_(Private_POS_Mode)') }}</span>
+                                <h5 class="fw-bold text-dark mb-1">{{ translate('Your_store_is_currently_operating_as_a_Private_In-Store_POS_Counter') }}</h5>
+                                <small class="text-muted">{{ translate('To_prevent_unvetted_sales_and_protect_buyers,_online_storefront_links_and_catalog_sharing_are_exclusively_reserved_for_Verified_&_Approved_Marketplace_Vendors.') }}</small>
+                            </div>
+                            <div>
+                                @if($marketplaceStatus === 'pending_approval')
+                                    <button type="button" class="btn btn-warning btn-sm" disabled>
+                                        ⏳ {{ translate('Verification_Pending_Review') }}
+                                    </button>
+                                @else
+                                    <a href="{{ route('vendor.subscription.index') }}" class="btn btn-primary btn-sm">
+                                        🚀 {{ translate('Apply_for_Marketplace_Approval') }}
+                                    </a>
+                                @endif
+                            </div>
+                        </div>
+                    </div>
+                @endif
 
                 <form action="{{ route('vendor.shop.update', [$shop->id]) }}" method="post" class="text-start form-advance-validation non-ajax-form-validate" novalidate="novalidate"
                     enctype="multipart/form-data">
