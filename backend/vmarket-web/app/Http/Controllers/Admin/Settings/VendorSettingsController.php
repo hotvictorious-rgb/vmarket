@@ -40,12 +40,14 @@ class VendorSettingsController extends BaseController
 
     public function update(Request $request): RedirectResponse
     {
+        $this->businessSettingRepo->updateOrInsert(type: 'sales_commission', value: $request->get('sales_commission', 10));
         $this->businessSettingRepo->updateOrInsert(type: 'seller_pos', value: $request->get('seller_pos', 0));
         $this->businessSettingRepo->updateOrInsert(type: 'seller_registration', value: $request->get('seller_registration', 0));
         $this->businessSettingRepo->updateOrInsert(type: 'minimum_order_amount_by_seller', value: $request->get('minimum_order_amount_by_seller', 0));
         $this->businessSettingRepo->updateOrInsert(type: 'vendor_review_reply_status', value: $request->get('vendor_review_reply_status', 0));
         $this->businessSettingRepo->updateOrInsert(type: 'vendor_can_edit_order', value: $request->get('vendor_can_edit_order', 0));
         $this->businessSettingRepo->updateOrInsert(type: 'vendor_forgot_password_method', value: $request->get('vendor_forgot_password_method', 'phone'));
+        clearWebConfigCacheKeys();
         ToastMagic::success(translate('Updated_successfully'));
         return redirect()->back();
     }

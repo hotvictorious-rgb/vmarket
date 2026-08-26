@@ -22,12 +22,31 @@
             </div>
 
             <div class="card-body">
-                <div class="d-flex gap-2 alert alert-soft-warning" role="alert">
+                <div class="d-flex gap-2 alert alert-soft-warning mb-3" role="alert">
                     <i class="fi fi-sr-info"></i>
                     <p class="fs-12 mb-0 text-dark">
                         {{ translate('after_changes_all_information,_make_sure_you_click_save_button.') }}
                         {{ translate('this_setup_not_related_or_overwrite_to_your_business_information.') }}
                     </p>
+                </div>
+
+                @php($storeUrl = route('shopView', ['id' => $shop->id]))
+                <div class="card bg-white border border-primary shadow-sm mb-4">
+                    <div class="card-body p-3 d-flex justify-content-between align-items-center flex-wrap gap-3">
+                        <div>
+                            <span class="badge bg-primary text-white mb-1">🔗 {{ translate('Your_Online_Storefront_Link') }}</span>
+                            <h5 class="fw-bold text-dark mb-1 text-break">{{ $storeUrl }}</h5>
+                            <small class="text-muted">{{ translate('Share_this_link_with_customers_on_WhatsApp,_Instagram,_and_Facebook_so_they_can_order_from_your_catalog_online.') }}</small>
+                        </div>
+                        <div class="d-flex gap-2">
+                            <button type="button" class="btn btn-outline-primary btn-sm" onclick="navigator.clipboard.writeText('{{ $storeUrl }}'); ToastMagic.success('{{ translate('Store_link_copied_to_clipboard!') }}');">
+                                <i class="tio-copy"></i> {{ translate('Copy_Link') }}
+                            </button>
+                            <a href="https://api.whatsapp.com/send?text={{ urlencode('Check out our online store catalog on Victorious Market: ' . $storeUrl) }}" target="_blank" class="btn btn-success btn-sm">
+                                <i class="tio-whatsapp"></i> {{ translate('Share_to_WhatsApp') }}
+                            </a>
+                        </div>
+                    </div>
                 </div>
 
                 <form action="{{ route('vendor.shop.update', [$shop->id]) }}" method="post" class="text-start form-advance-validation non-ajax-form-validate" novalidate="novalidate"

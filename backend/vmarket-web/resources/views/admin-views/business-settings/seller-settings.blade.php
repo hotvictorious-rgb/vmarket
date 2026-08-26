@@ -188,6 +188,26 @@
                 </div>
             </div>
 
+            <div class="card mb-3">
+                <div class="card-body">
+                    <div class="mb-3 mb-sm-20">
+                        <h3 class="mb-1 text-capitalize">{{ translate('Marketplace_Sales_Commission_Setup') }}</h3>
+                        <p class="mb-0 fs-12">
+                            {{ translate('Set_the_default_flat_commission_percentage_deducted_from_vendor_sales_upon_order_completion') }}.
+                        </p>
+                    </div>
+                    <div class="p-12 p-sm-20 bg-section rounded">
+                        <div class="row g-4">
+                            <div class="col-md-6">
+                                <label class="form-label fw-bold text-dark">{{ translate('Default_Sales_Commission_(%)') }}</label>
+                                <input type="number" name="sales_commission" class="form-control" value="{{ getWebConfig('sales_commission') ?? 10 }}" min="0" max="100" step="0.5" required>
+                                <small class="text-muted">{{ translate('Vendors_set_their_own_prices_on_the_POS_and_the_platform_earns_this_percentage_on_every_online_order.') }}</small>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
             <div class="card">
                 <div class="card-body">
                     <div class="mb-3 mb-sm-20">

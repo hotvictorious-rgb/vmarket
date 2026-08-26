@@ -7,6 +7,14 @@ Always append your completed tasks here in chronological order at the top. Forma
 `### [YYYY-MM-DD HH:MM UTC] <Feature / Fix Title> [<Component Scope>]`
 Include the specific app/component modified and bullet points detailing the exact technical changes.
 
+### [2026-08-26 10:10 UTC] Pure Commission-Based Pricing Transition & Vendor Storefront Link Sharing [backend]
+* **Component:** Laravel Backend, Vendor Dashboard & Admin Settings (`backend/vmarket-web`)
+* **Action:** Streamlined vendor pricing to a pure percentage commission model and enabled vendor digital storefront link sharing:
+  - **Removed Legacy Pricing Approval Portal:** Cleanly removed `ApprovalPortalController`, `approval-portal.blade.php`, related routes in `routes/admin/routes.php`, and admin sidebar menu item to eliminate price-fixing bottlenecks.
+  - **Pure Commission Engine (`Helpers.php`):** Refactored `sales_commission_before_order` to calculate automated flat percentage commission (`seller_sales_commission`) on order totals with vendor/category override support.
+  - **Admin Global Sales Commission Setup (`seller-settings.blade.php`, `VendorSettingsController.php`):** Added a dedicated Commission Setup card in Admin Vendor Settings with real-time percentage configuration (`sales_commission`).
+  - **Vendor Storefront Link Sharing Card (`shop/update-view.blade.php`):** Added a prominent Storefront URL sharing banner with 1-click **[ 📋 Copy Link ]** and **[ 📲 Share to WhatsApp ]** buttons for vendors to market their digital catalog directly to their customer base.
+
 ### [2026-08-26 09:50 UTC] Native Omnichannel POS, Customer Debt Ledger, Anti-Theft Waybills & Marketplace Approval [backend]
 * **Component:** Laravel Backend, Vendor Dashboard, Admin Command Center (`backend/vmarket-web`)
 * **Action:** Engineered complete physical POS, anti-theft stock segregation, customer debt ledger, and multi-branch waybills natively into Victorious MARKET:
