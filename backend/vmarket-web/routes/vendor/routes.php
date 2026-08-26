@@ -434,6 +434,9 @@ Route::group(['middleware' => ['maintenance_mode', 'actch:admin_panel']], functi
                     Route::post('apply-marketplace', 'applyMarketplace')->name('apply-marketplace');
                 });
             });
+
+            /* [AI] In-Shop Staff-Attributed Handover Protocol */
+            Route::post('orders/verify-pickup-otp', [\App\Http\Controllers\Vendor\Order\InShopHandoverController::class, 'verifyPickupOtp'])->name('orders.verify-pickup-otp');
         });
     });
 

@@ -7,6 +7,14 @@ Always append your completed tasks here in chronological order at the top. Forma
 `### [YYYY-MM-DD HH:MM UTC] <Feature / Fix Title> [<Component Scope>]`
 Include the specific app/component modified and bullet points detailing the exact technical changes.
 
+### [2026-08-26 11:35 UTC] Staff-Attributed Handshake Protocol & In-Shop Chain of Custody Audit Trail [backend]
+* **Component:** Laravel Backend, Vendor Dashboard & Order Verification (`backend/vmarket-web`)
+* **Action:** Implemented an unbroken physical Chain of Custody protocol for in-shop order handovers to delivery riders:
+  - **Database Migration (`create_order_handover_logs_and_staff_attribution.php`):** Created `order_handover_logs` table recording `order_id`, `seller_id`, `branch_id`, `handed_over_by_id`, `handed_over_by_name`, `delivery_man_id`, `delivery_man_name`, `pickup_otp_used`, `handed_over_at`, and `notes`; extended `orders` with `handed_over_by_id`, `handed_over_by_name`, `handed_over_at`, and `handover_branch_id`.
+  - **Eloquent Modeling (`OrderHandoverLog.php`, `Order.php`):** Created `OrderHandoverLog` model and established `handoverLogs` relationship on `Order`.
+  - **In-Shop Handover Controller (`InShopHandoverController.php`):** Built cryptographic OTP verification endpoint (`/vendor/orders/verify-pickup-otp`) enforcing authenticated vendor scoping, constant-time comparison, atomic order status transition to `out_for_delivery`, and automatic staff name attribution.
+  - **Vendor Order Details UI (`order-details.blade.php`):** Integrated the **Staff-Attributed Handshake Protocol Card** displaying real-time custody status, active cashier stamp, 6-digit OTP entry field, and permanent handover audit stamp once package is released.
+
 ### [2026-08-26 10:10 UTC] Pure Commission-Based Pricing Transition & Vendor Storefront Link Sharing [backend]
 * **Component:** Laravel Backend, Vendor Dashboard & Admin Settings (`backend/vmarket-web`)
 * **Action:** Streamlined vendor pricing to a pure percentage commission model and enabled vendor digital storefront link sharing:

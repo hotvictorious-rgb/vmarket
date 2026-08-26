@@ -1069,6 +1069,62 @@
                         @endif
                     </div>
                 </div>
+
+                {{-- [AI] In-Shop Staff-Attributed Handshake Protocol --}}
+                <div class="card mb-3 border {{ $order->handed_over_at ? 'border-success' : 'border-primary' }}">
+                    <div class="card-header bg-section py-2 d-flex justify-content-between align-items-center">
+                        <h5 class="mb-0 fs-14 fw-bold d-flex align-items-center gap-2">
+                            <span>🛡️</span>
+                            <span>{{ translate('Staff-Attributed_Handover_Protocol') }}</span>
+                        </h5>
+                        @if($order->handed_over_at)
+                            <span class="badge badge-soft-success fs-12">✅ {{ translate('Custody_Transferred') }}</span>
+                        @else
+                            <span class="badge badge-soft-warning fs-12">⏳ {{ translate('Awaiting_Rider_Pickup') }}</span>
+                        @endif
+                    </div>
+                    <div class="card-body p-3">
+                        @if($order->handed_over_at)
+                            <div class="bg-light p-3 rounded border">
+                                <div class="d-flex align-items-center gap-2 mb-2">
+                                    <i class="tio-checkmark-circle text-success fs-20"></i>
+                                    <span class="fw-bold text-dark fs-13">{{ translate('Package_Released_to_Rider') }}</span>
+                                </div>
+                                <div class="fs-12 text-muted mb-1">
+                                    <strong>{{ translate('Handed_Over_By') }}:</strong> <span class="text-dark fw-semibold">{{ $order->handed_over_by_name }}</span>
+                                </div>
+                                <div class="fs-12 text-muted mb-1">
+                                    <strong>{{ translate('Rider_in_Custody') }}:</strong> <span class="text-dark fw-semibold">{{ $order->deliveryMan ? ($order->deliveryMan->f_name . ' ' . $order->deliveryMan->l_name) : translate('Assigned_Rider') }}</span>
+                                </div>
+                                <div class="fs-12 text-muted">
+                                    <strong>{{ translate('Handover_Timestamp') }}:</strong> <span class="text-dark fw-semibold">{{ date('d M Y, h:i A', strtotime($order->handed_over_at)) }}</span>
+                                </div>
+                            </div>
+                        @else
+                            <div class="alert alert-soft-info p-2 fs-12 mb-3">
+                                <i class="tio-info-outined mr-1"></i>
+                                {{ translate('Ask_the_delivery_rider_for_their_6-digit_Secret_Pickup_OTP_before_giving_them_the_package.') }}
+                            </div>
+                            <form action="{{ route('vendor.orders.verify-pickup-otp') }}" method="POST">
+                                @csrf
+                                <input type="hidden" name="order_id" value="{{ $order->id }}">
+                                <div class="form-group mb-2">
+                                    <label class="form-label fs-12 fw-bold text-dark">{{ translate('Rider_6-Digit_Pickup_OTP') }} <span class="text-danger">*</span></label>
+                                    <input type="text" name="pickup_otp" class="form-control text-center font-weight-bold fs-16 letter-spacing-2" placeholder="• • • • • •" maxlength="6" pattern="[0-9]{6}" required>
+                                </div>
+                                <div class="d-flex justify-content-between align-items-center mb-3">
+                                    <small class="text-muted fs-11">
+                                        {{ translate('Logged-in_Staff') }}: <strong>{{ auth('seller')->user()->name ?? (auth('seller')->user()->f_name . ' ' . auth('seller')->user()->l_name) }}</strong>
+                                    </small>
+                                </div>
+                                <button type="submit" class="btn btn-primary btn-block btn-sm py-2">
+                                    🤝 {{ translate('Verify_OTP_&_Transfer_Custody') }}
+                                </button>
+                            </form>
+                        @endif
+                    </div>
+                </div>
+
                 <div class="card">
                     @if(!empty((array) $shippingAddress))
                         <div class="card-body">

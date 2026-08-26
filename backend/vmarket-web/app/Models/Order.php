@@ -107,6 +107,10 @@ class Order extends Model
         'order_group_id',
         'verification_code',
         'pickup_verification_code',
+        'handed_over_by_id',
+        'handed_over_by_name',
+        'handed_over_at',
+        'handover_branch_id',
         'verification_status',
         'seller_id',
         'seller_is',
@@ -331,6 +335,11 @@ class Order extends Model
     public function destinationHub(): BelongsTo
     {
         return $this->belongsTo(DeliveryHub::class, 'destination_hub_id');
+    }
+
+    public function handoverLogs(): HasMany
+    {
+        return $this->hasMany(OrderHandoverLog::class, 'order_id')->orderBy('id', 'desc');
     }
 
     protected static function boot(): void
