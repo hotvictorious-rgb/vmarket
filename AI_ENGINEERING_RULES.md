@@ -157,4 +157,11 @@ All payment gateway controllers MUST enforce an **Atomic Row-Level Database Lock
 3. **Universal 6-Digit OTP Standards:** All OTP generation must use `rand(100000, 999999)` with exact identity lookups (`=`), 15-minute expiration bounds, and a 5-attempt brute-force lockout.
 4. **Anti-Mass-Assignment Filtering:** Never pass `$request->all()` into model create or update methods. Use explicit whitelisting or Service transformers.
 
+---
+
+## 12. Mandatory Systemic & Mathematical Proof Directive 🧮
+
+Every AI modifying ANY system component (Backend, Mobile Apps, POS, Ledgers, Logistics, Pricing, Payments) MUST formulate and execute mathematical proofs ($\Delta = 0.00$), verify cross-module parity, execute zero-error linter validation, and record concrete reproducible proofs in `VICTORIOUS_MARKET_MATHEMATICAL_AND_SYSTEMIC_PROOF.md` and `AI_CHANGELOG.md` before concluding any session. No change can be considered complete without verifiable proof.
+
+
 

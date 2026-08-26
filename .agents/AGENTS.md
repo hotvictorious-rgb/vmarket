@@ -125,3 +125,15 @@ Any read-modify-write operation involving financial balances (Customer Wallet, V
 ### D. Anti-Mass-Assignment Filtering
 Never pass raw `$request->all()` directly into Eloquent `create()`, `update()`, or repository update methods. All model mutations must strictly use `$request->only(...)` or dedicated Service data mappers to prevent parameter injection into sensitive database columns (`is_paid`, `order_status`, `role_id`, `seller_id`, `wallet_balance`).
 
+## 10. Mandatory Systemic & Mathematical Proof Directive (Zero-Drift & Cross-Module Verification) 🧮
+**This is an inviolable prime directive.** Any AI performing modifications, optimizations, bug fixes, or feature additions across Victorious MARKET MUST rigorously prove that the entire system operates with 100% error-free integrity before concluding any task:
+1. **Mathematical Invariant Proofs ($\Delta = 0.00$):** All financial calculations, order totals, split-tender payments, commission splits, debtor installment bounds, blind drawer shift reconciliations, and waybill shortage variances must be mathematically formulated, executed, and proven with zero drift ($\Delta = 0.00$).
+2. **Cross-Actor & Multi-Platform Verification:** The AI must explicitly verify and prove feature-by-feature that modifications preserve operational parity across all 4 primary system actors:
+   - Super Admin Command Center
+   - Omnichannel Merchants (Web Dashboard & Vendor Mobile App)
+   - Online Shoppers (Web Storefront & Customer Mobile App)
+   - Delivery Logistics Riders (Rider Mobile App)
+3. **Reproducible Test Execution:** Every code edit must pass syntax validation (`php -l` for PHP / `flutter analyze` for Dart) and automated regression execution.
+4. **Mandatory Documentation of Proof:** All mathematical proofs, balance tables, and verification logs must be permanently updated in `VICTORIOUS_MARKET_MATHEMATICAL_AND_SYSTEMIC_PROOF.md` and documented in `AI_CHANGELOG.md` before committing. No task is complete without reproducible proof.
+
+

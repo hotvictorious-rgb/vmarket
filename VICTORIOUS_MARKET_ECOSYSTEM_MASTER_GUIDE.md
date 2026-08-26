@@ -347,6 +347,7 @@ The following engineering rules are permanently enforced across all modules:
 5. **Zero-Spam AI Policy:** POS walk-in customer contacts are strictly protected and never spammed by outbound bots.
 6. **Mandatory Viral Branding:** All thermal receipts permanently print:  
    **`Powered by Victorious MARKET - Your Trusted Online Market`**
+7. **Mandatory Systemic & Mathematical Proof Directive:** Every AI modifying any system component MUST formulate and execute mathematical proofs ($\Delta = 0.00$), verify cross-module parity across Web/Mobile/POS/Logistics, pass zero-error linter checks, and update `VICTORIOUS_MARKET_MATHEMATICAL_AND_SYSTEMIC_PROOF.md` and `AI_CHANGELOG.md` with verifiable proof before committing.
 
 ---
 *© Victorious MARKET Ecosystem — Enterprise Omnichannel Commerce Architecture.*
