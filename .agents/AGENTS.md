@@ -179,6 +179,32 @@ Before concluding any implementation or architectural change, the AI MUST docume
      - **Riders** see active delivery routes and cash collection prompts only.
      - **Customers** see their personalized cart, wishlist, and orders only.
 
+## 13. Vmarket Master Engineering Rules & Execution SOP
+All AIs working on this monorepo must strictly adhere to the following master execution rules:
 
+### A. Omnichannel Codebase Parity Invariant
+The repository contains two Laravel backends: the central marketplace (`backend/vmarket-web`) and In-Store POS (`hysam`).
+- Any database scoping rule (e.g., `company_id`, `seller_id`, or `shop_id` isolation) or query modification applied to central Vmarket must be audited and identically mirrored in POS (`hysam`) to prevent cross-tenant inventory or data leaks.
 
+### B. Pre-Change & Post-Change Verification Checklist
+Before writing any code, evaluate the pre-change impact report checklist:
+1. Explain where the feature currently lives and what will change.
+2. Outline existing security boundaries and client impact (across all 6 client apps/panels).
+After writing code, verify:
+1. Legitimate users can perform the operation (authorized tests).
+2. Unauthorized tenants/branches/users are denied (unauthorized tests).
+3. Run the Two-Minute Security Smoke Test and report execution metrics.
 
+### C. Eloquent-Backed In-Process Request Testing
+To prevent silent query or middleware bypasses, security smoke tests must boot the Laravel kernels in-process, bind mock route resolvers (for parameter routing mapping), authenticate the mock session guard (e.g., `Auth::login()`), and dispatch request simulations. Do not rely solely on static analysis or simple database queries.
+
+### D. Final Response Format
+Upon completing any task, format the final response as follows:
+- **CHANGE:** What was changed.
+- **FILES:** Clickable file links of modified/created files.
+- **SECURITY:** Authorization checks and row locks verified.
+- **DATABASE:** Schema changes or migrations performed.
+- **TESTS:** Tests executed and results.
+- **REGRESSION:** Functionality checked.
+- **RISKS:** Remaining tech debt or warnings.
+- **RESULT:** PASS / FAIL / PASS WITH WARNINGS
