@@ -7,6 +7,14 @@ Always append your completed tasks here in chronological order at the top. Forma
 `### [YYYY-MM-DD HH:MM UTC] <Feature / Fix Title> [<Component Scope>]`
 Include the specific app/component modified and bullet points detailing the exact technical changes.
 
+### [2026-08-27 05:30 UTC] Autonomous Offline-Capable Zero-Verification Installation Wizards [backend] [pos] [install]
+* **Component:** Installation Engines (`InstallController.php`, `step2.blade.php`, `ActivationClass.php`, `hysam/InstallerController.php`, `test_autonomous_installers.php`)
+* **Action:** Bypassed all 3rd-party remote licensing servers and configured 100% autonomous, self-contained installers across both systems:
+  - In Victorious MARKET, removed remote `6amtech.com` license checks in `ActivationClass::getRequestConfig()` and `InstallController::updatePurchaseCode()`, returning `active = 1` locally.
+  - Rebranded Step 2 installer view to "Victorious MARKET Enterprise Setup" with pre-filled zero-friction inputs and removed Envato help links.
+  - In Vmarket POS, updated `InstallerController` to brand as "Vmarket POS", automatically persist `SUPER_ADMIN` credentials to `.env`, and create the single Super Admin user during database migration.
+  - Verified with `test_autonomous_installers.php` (both installers pass with 0 remote dependencies).
+
 ### [2026-08-27 05:15 UTC] Configured Super Admin in .ENV & Enforced Single Root Admin Invariant [backend] [pos] [auth]
 * **Component:** Authentication & Role Governance (`.env`, `AdminService.php`, `Admin/Auth/LoginController.php`, `EmployeeController.php`, `hysam/AuthController.php`, `hysam/UserController.php`, `test_super_admin_env_invariants.php`)
 * **Action:** Enabled master environment-level configuration for the root Super Admin and enforced strict single-admin role invariants:
