@@ -47,7 +47,9 @@ class CustomerAuthController extends Controller
                 'keepCustomerLoginRedirectUrl' => $keepCustomerLoginRedirectUrl,
             ]);
         }
-        return redirect($this->customerAuthService->getCustomerAuthReturnURL());
+        $returnUrl = $this->customerAuthService->getCustomerAuthReturnURL();
+        $separator = str_contains($returnUrl, '?') ? '&' : '?';
+        return redirect($returnUrl . $separator . 'login=open');
     }
 
     public function loginSubmit(Request $request): JsonResponse|RedirectResponse

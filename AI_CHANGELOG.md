@@ -7,6 +7,15 @@ Always append your completed tasks here in chronological order at the top. Forma
 `### [YYYY-MM-DD HH:MM UTC] <Feature / Fix Title> [<Component Scope>]`
 Include the specific app/component modified and bullet points detailing the exact technical changes.
 
+### [2026-08-27 04:00 UTC] Fixed Storefront Asset Mirroring & Customer Login Modal Display [backend]
+* **Component:** Storefront Assets & Customer Auth (`resources/themes/theme_aster/`, `public/themes/`, `CustomerAuthController.php`, `_login.blade.php`, `seed_sqlite_core.php`)
+* **Action:** Resolved FOUC (Flash of Unstyled Content) and repaired customer login modal rendering:
+  - Mirrored all 18 CSS stylesheets and 18 JS plugins from `resources/themes/` into `public/themes/` (resolving 404s to 100% HTTP 200).
+  - Seeded `login_setups` table with default customer authentication configurations (`manual_login: 1`, `otp_login: 1`, `social_login: 0`).
+  - Added defensive fallback in `_login.blade.php` to ensure email/password fields always display cleanly.
+  - Added auto-open trigger script for URL parameter `login=open` and updated `CustomerAuthController::loginView()` redirect.
+  - Verified rendered HTML contains complete email/username inputs, password fields, submit buttons, and sign-up switch links.
+
 ### [2026-08-27 03:30 UTC] SQLite Backend Schema Generation & Concurrent Dual Server Live Deployment [backend] [pos]
 * **Component:** Backend Infrastructure (`backend/vmarket-web/`, `hysam/`, `build_full_sqlite_schema.php`, `seed_sqlite_core.php`, `test_dual_servers_e2e.php`)
 * **Action:** Configured and deployed both local systems concurrently on SQLite with PHP 8.4 runtime type guards:

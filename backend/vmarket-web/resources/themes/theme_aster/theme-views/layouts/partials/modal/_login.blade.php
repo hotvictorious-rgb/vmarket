@@ -3,6 +3,10 @@ $customerManualLogin = $web_config['customer_login_options']['manual_login'] ?? 
 $customerOTPLogin = $web_config['customer_login_options']['otp_login'] ?? 0;
 $customerSocialLogin = $web_config['customer_login_options']['social_login'] ?? 0;
 
+if (!$customerManualLogin && !$customerOTPLogin && !$customerSocialLogin) {
+    $customerManualLogin = 1;
+}
+
 if (!$customerOTPLogin && $customerManualLogin && $customerSocialLogin) {
     $multiColumn = 1;
 } elseif ($customerOTPLogin && !$customerManualLogin && $customerSocialLogin) {
@@ -215,6 +219,15 @@ if (!$customerOTPLogin && $customerManualLogin && $customerSocialLogin) {
 
 
 @push('script')
+    <script>
+        "use strict";
+        $(document).ready(function () {
+            const urlParams = new URLSearchParams(window.location.search);
+            if (urlParams.get('login') === 'open' || urlParams.get('show_login') === '1' || window.location.hash === '#loginModal') {
+                $('#loginModal').modal('show');
+            }
+        });
+    </script>
     @if ($multiColumn)
         <script>
             "use strict";

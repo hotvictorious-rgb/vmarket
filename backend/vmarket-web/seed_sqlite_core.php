@@ -49,6 +49,21 @@ foreach ($settings as $type => $value) {
     );
 }
 
+// Seed login_setups for customer authentication
+$loginSetups = [
+    'login_options' => json_encode(['manual_login' => 1, 'otp_login' => 1, 'social_login' => 0]),
+    'social_media_for_login' => json_encode(['google' => 0, 'facebook' => 0, 'apple' => 0]),
+    'email_verification' => '0',
+    'phone_verification' => '0',
+];
+
+foreach ($loginSetups as $key => $value) {
+    DB::table('login_setups')->updateOrInsert(
+        ['key' => $key],
+        ['value' => $value, 'created_at' => now(), 'updated_at' => now()]
+    );
+}
+
 // Ensure at least 1 currency exists
 DB::table('currencies')->updateOrInsert(
     ['id' => 1],
