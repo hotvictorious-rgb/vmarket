@@ -7,6 +7,14 @@ Always append your completed tasks here in chronological order at the top. Forma
 `### [YYYY-MM-DD HH:MM UTC] <Feature / Fix Title> [<Component Scope>]`
 Include the specific app/component modified and bullet points detailing the exact technical changes.
 
+### [2026-08-28 00:15 UTC] Implemented Real-Time POS-to-Vmarket Product Catalog Sync and Unified Employee Role Mapping [pos] [feature] [security]
+* **Component:** POS (`ProductObserver.php`, `AppServiceProvider.php`, `AuthController.php`, `User.php`)
+* **Action:**
+  - Product Catalog Sync: Created `ProductObserver` to listen to saved events on POS products. Real-time updates sync product codes, stocks, and master prices to Vmarket's central `products` table as unpublished offline drafts (`status = 0`, `request_status = 0`), which require Super Admin approval to go live.
+  - Unified Roles Cross-Login: Updated `AuthController` web and API login flows to detect Vendor Employees from Vmarket's `vendor_employees` table.
+  - Role Mapping: Automatically maps Vmarket vendor roles containing "manager" to the POS `'manager'` role, and other roles to the read-only `'executive'` role. Dynamically assigns `company_id` using the bridge `marketplace_vendor_id` and registers local POS user accounts on authentication.
+* **Verification:** Developed a comprehensive automated validation suite (`test_pos_product_sync.php`) asserting correct product observer draft sync, non-admin product creation rejection, and vendor employee login role mapping (passed 9/9).
+
 ### [2026-08-27 23:00 UTC] Implemented Centralized Immutable Audit Trail [pos] [feature] [security]
 * **Component:** POS (`AuditLogger.php`, `PosController.php`, `StockController.php`)
 * **Action:**

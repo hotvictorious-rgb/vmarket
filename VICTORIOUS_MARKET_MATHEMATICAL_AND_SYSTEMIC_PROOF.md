@@ -451,3 +451,48 @@ Where:
 2. **Sales History Cross-Tenant Leak:** Fixed by scoping all sales transaction fetches in `TransactionController::getSalesQuery` strictly to the caller's `company_id`.
 3. **Cross-Tenant Staff Modification IDOR:** Fixed by scoping `UserController` creation, listing, updates, and status toggles to `company_id`, preventing any unauthorized access to standard worker profiles belonging to other tenants.
 
+
+---
+
+## 6. CATALOG SYNC & UNIFIED EMPLOYEE CROSS-LOGIN PROOF
+
+### Audit Overview
+* **Timestamp:** 2026-08-28 00:15 UTC
+* **Audit Command Coordinator:** `test_pos_product_sync.php`
+* **Test Assertions Executed:** 9 Assertions
+* **Core Components Covered:** central Victorious MARKET web/API, In-Store POS (hysam), observers, and AuthController mapping.
+
+### Summary of Audit Results (Catalog Sync & Unified Employee Roles)
+
+```
+┌────────────────────────────────────────────────────────────────────────────────────────────────────────┐
+│                                CATALOG SYNC & UNIFIED ROLES TEST REPORT                                │
+├───────────────────┬────────────────────────────────────────────┬──────────────────┬────────────────────┤
+│ SCENARIO GROUP    │ TEST TARGET / SECURITY INVARIANT           │ STATUS / OUTCOME │ EXPLANATORY DETAIL │
+├───────────────────┼────────────────────────────────────────────┼──────────────────┼────────────────────┤
+│ Catalog Sync      │ POS Product creates Draft on Vmarket DB    │ 🟢 PASS          │ status = 0 (Draft) │
+├───────────────────┼────────────────────────────────────────────┼──────────────────┼────────────────────┤
+│ Catalog Sync      │ Draft request_status initialized to 0      │ 🟢 PASS          │ Pending Admin Appr │
+├───────────────────┼────────────────────────────────────────────┼──────────────────┼────────────────────┤
+│ Catalog Sync      │ Draft is linked to proper seller_id        │ 🟢 PASS          │ Correct association│
+├───────────────────┼────────────────────────────────────────────┼──────────────────┼────────────────────┤
+│ Catalog Sync      │ Updates to POS product sync prices/stock   │ 🟢 PASS          │ Synced in real-time│
+├───────────────────┼────────────────────────────────────────────┼──────────────────┼────────────────────┤
+│ POS Role Gates    │ Non-Admin (Branch Manager) blocked product │ 🟢 PASS          │ Blocked & Redirect │
+├───────────────────┼────────────────────────────────────────────┼──────────────────┼────────────────────┤
+│ Employee Mapping  │ Sync Vmarket Vendor Employee on login      │ 🟢 PASS          │ Account provisioned│
+├───────────────────┼────────────────────────────────────────────┼──────────────────┼────────────────────┤
+│ Employee Mapping  │ Role containing 'manager' -> POS 'manager' │ 🟢 PASS          │ Role mapped        │
+├───────────────────┼────────────────────────────────────────────┼──────────────────┼────────────────────┤
+│ Employee Mapping  │ Role containing 'executive' -> POS 'exec'  │ 🟢 PASS          │ Role mapped        │
+├───────────────────┼────────────────────────────────────────────┼──────────────────┼────────────────────┤
+│ Employee Mapping  │ Mapped Employee logs in with proper session│ 🟢 PASS          │ Authenticated      │
+└───────────────────┴────────────────────────────────────────────┴──────────────────┴────────────────────┘
+```
+
+### Systemic Verification Log Details
+All 9 assertions run programmatically by booting the Laravel kernel in-process and simulating authentications and database transactions succeeded with zero delta drift:
+* **Product Draft Sync Invariant:** $S_{\text{vmarket\_draft\_status}} \equiv 0 \land S_{\text{vmarket\_request\_status}} \equiv 0$.
+* **Role Sync Boundary:** Mapped user roles are cached locally, but credentials and structures are authenticated directly against the authoritative Vmarket user store.
+
+
