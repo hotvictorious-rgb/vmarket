@@ -22,6 +22,21 @@ class InstallController extends Controller
 {
     use ActivationClass, EmailTemplateTrait, SettingsTrait, UpdateClass, InstallationTrail;
 
+    public function __construct()
+    {
+        try {
+            if (file_exists(storage_path('installed')) || (Schema::hasTable('admins') && DB::table('admins')->count() > 0)) {
+                if (request()->is('system_settings') || request()->is('step6')) {
+                    return;
+                }
+                redirect('/login/admin')->send();
+                exit;
+            }
+        } catch (\Throwable $e) {
+            // Database not configured yet, allow installer
+        }
+    }
+
     public function step0(): View
     {
         return view('installation.step0');
@@ -112,6 +127,7 @@ class InstallController extends Controller
         } catch (\Exception $exception) {
         }
 
+        file_put_contents(storage_path('installed'), date('Y-m-d H:i:s'));
         $previousRouteServiceProvider = base_path('app/Providers/RouteServiceProvider.php');
         $newRouteServiceProvider = base_path('app/Providers/RouteServiceProvider.txt');
         copy($newRouteServiceProvider, $previousRouteServiceProvider);

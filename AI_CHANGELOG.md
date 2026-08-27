@@ -7,6 +7,13 @@ Always append your completed tasks here in chronological order at the top. Forma
 `### [YYYY-MM-DD HH:MM UTC] <Feature / Fix Title> [<Component Scope>]`
 Include the specific app/component modified and bullet points detailing the exact technical changes.
 
+### [2026-08-27 05:40 UTC] Implemented Dual-Tier Auto-Locking Installer Security Guard [backend] [pos] [security]
+* **Component:** Installer Security & Protection (`InstallController.php`, `hysam/InstallerController.php`, `test_installer_auto_lock.php`)
+* **Action:** Implemented robust defense-in-depth installer auto-locking to protect live stores:
+  - In Victorious MARKET, added constructor check in `InstallController` verifying `storage/installed` or active admin accounts, redirecting directly to `/login/admin`. Added lockfile creation upon final setup in `updateSystemSettings()`.
+  - In Vmarket POS, added constructor check in `InstallerController` blocking `/install/*` routes once `storage/installed` exists or users are populated, redirecting to `/login`.
+  - Verified with `test_installer_auto_lock.php` that both systems prevent unauthorized re-installation or route hijacking on live production systems.
+
 ### [2026-08-27 05:30 UTC] Autonomous Offline-Capable Zero-Verification Installation Wizards [backend] [pos] [install]
 * **Component:** Installation Engines (`InstallController.php`, `step2.blade.php`, `ActivationClass.php`, `hysam/InstallerController.php`, `test_autonomous_installers.php`)
 * **Action:** Bypassed all 3rd-party remote licensing servers and configured 100% autonomous, self-contained installers across both systems:
