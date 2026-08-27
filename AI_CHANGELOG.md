@@ -7,6 +7,14 @@ Always append your completed tasks here in chronological order at the top. Forma
 `### [YYYY-MM-DD HH:MM UTC] <Feature / Fix Title> [<Component Scope>]`
 Include the specific app/component modified and bullet points detailing the exact technical changes.
 
+### [2026-08-27 10:25 UTC] Bi-Directional Seamless Return Navigation to Victorious Admin & Vendor Panels [pos] [ui] [navigation]
+* **Component:** Global Layout Navigation & Top Bar Actions (`layouts/app.blade.php`, `.env`, `.env.example`, `test_return_to_vmarket_links.php`)
+* **Action:** Implemented bi-directional ecosystem navigation allowing Super Admins and Merchants to instantly switch back to Victorious MARKET web panels from POS:
+  - **Super Admin Hub Switcher:** Added a prominent purple gradient button *"🔙 Back to Vmarket Admin"* in the POS topbar header and *"🔙 Return to Admin Panel"* at the top of the sidebar, linking directly to `/admin/dashboard`.
+  - **Merchant / Vendor Hub Switcher:** Added a prominent emerald gradient button *"🔙 Back to Vendor Panel"* in the POS topbar header and *"🔙 Return to Vendor Panel"* at the top of the sidebar, linking directly to `/vendor/dashboard`.
+  - **Cashier / Staff Storefront Link:** Added a *"🌐 Victorious Market Web"* link for cashiers and storekeepers without vendor management access.
+  - **Verification:** 100% verified via automated live HTTP test suite `test_return_to_vmarket_links.php`.
+
 ### [2026-08-27 10:11 UTC] Seamless 1-Click SSO Auto-Login from Victorious MARKET to POS [backend] [pos] [sso] [auth]
 * **Component:** Single Sign-On (SSO) Cross-App Authentication (`DashboardController.php`, `POSController.php`, `RegisterController.php`, `CheckWebAuth.php`, `AuthController.php`, `.env`, `test_admin_and_vendor_1click_sso_auto_login.php`)
 * **Action:** Diagnosed and resolved the issue where clicking "POS Terminal" in Victorious MARKET redirected to the login form instead of automatically logging in:
