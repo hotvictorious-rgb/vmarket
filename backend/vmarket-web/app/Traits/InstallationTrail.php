@@ -322,11 +322,10 @@ trait InstallationTrail
             ],
         ];
 
-        if (BusinessSetting::where(['type' => 'company_reliability'])->first() == false) {
-            BusinessSetting::insert(['type' => 'company_reliability'], [
-                'value' => json_encode($data),
-            ]);
-        }
+        BusinessSetting::updateOrInsert(
+            ['type' => 'company_reliability'],
+            ['value' => json_encode($data)]
+        );
     }
 
     public static function updateEnvironmentFile(object|array $request): void

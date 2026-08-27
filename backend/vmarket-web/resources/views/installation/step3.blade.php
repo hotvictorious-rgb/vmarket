@@ -30,14 +30,11 @@
         </div>
         <div class="p-4 mb-md-3 mx-xl-4 px-md-5">
             <div class="d-flex align-items-center column-gap-3 flex-wrap">
-                <h5 class="fw-bold fs text-uppercase">{{ "Step 3." }}</h5>
-                <h5 class="fw-normal">{{ "Update Database Information" }}</h5>
+                <h5 class="fw-bold fs text-uppercase text-primary">{{ "Step 3." }}</h5>
+                <h5 class="fw-bold">{{ "Configure Database Connection" }}</h5>
             </div>
-            <p class="mb-4">
-                {{ "Provide your database information." }}
-                <a href="https://docs.6amtech.com/docs-six-valley/admin-panel/install-on-server" target="_blank">
-                    {{ "Where to get this information ?" }}
-                </a>
+            <p class="text-muted mb-4">
+                {{ "Provide your database connection details below to connect Victorious MARKET to your database." }}
             </p>
 
             @if (isset($error) || session()->has('error'))
@@ -102,10 +99,9 @@
                                         {{ "Database Password" }}
                                     </label>
                                     <div class="input-inner-end-ele position-relative">
-                                        <input type="password" id="db_pass" min="8" class="form-control"
+                                        <input type="password" id="db_pass" class="form-control"
                                                name="DB_PASSWORD"
-                                               required
-                                               placeholder="Ex: password" autocomplete="off">
+                                               placeholder="Leave blank for SQLite / empty password" autocomplete="off">
                                         <div class="togglePassword">
                                             <img alt="" class="svg eye"
                                                 src="{{ dynamicAsset(path: 'public/assets/installation/assets/img/svg-icons/eye.svg') }}">

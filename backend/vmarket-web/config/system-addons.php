@@ -1,12 +1,10 @@
 <?php return array (
   'admin_panel' => 
   array (
-    'active' => '1',
-    'username' => 'victory',
-    'purchase_key' => '1234',
-    'software_id' => 'MzE0NDg1OTc=',
-    'domain' => '127.0.0.1:8000',
-    'software_type' => 'product',
+    'active' => 1,
+    'is_local' => 1,
+    'license_type' => 'enterprise',
+    'message' => 'Victorious MARKET Enterprise Platform Verified Successfully',
   ),
   'vendor_panel' => 
   array (
