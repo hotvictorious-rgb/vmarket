@@ -163,28 +163,31 @@ class HomeController extends Controller
         }
         $category_slider = array_chunk($final_category, 4);
 
-        $featuredProductsList = $this->product->active()->with(['seller.shop', 'flashDealProducts.flashDeal', 'clearanceSale' => function ($query) {
-            return $query->active();
-        }])
-            ->where('featured', 1)
-            ->withCount(['orderDetails']);
-        $featuredProductsList = ProductManager::getPriorityWiseFeaturedProductsQuery(query: $featuredProductsList, dataLimit: 10);
+        $featuredProductsList = Cache::remember('home_featured_products_list_theme_aster', CACHE_FOR_3_HOURS, function () use ($current_date) {
+            $featured = $this->product->active()->with(['seller.shop', 'flashDealProducts.flashDeal', 'clearanceSale' => function ($query) {
+                return $query->active();
+            }])
+                ->where('featured', 1)
+                ->withCount(['orderDetails']);
+            $featured = ProductManager::getPriorityWiseFeaturedProductsQuery(query: $featured, dataLimit: 10);
 
-        $featuredProductsList?->map(function ($product) use ($current_date) {
-            $flashDealStatus = 0;
-            $flash_deal_end_date = 0;
-            if (count($product->flashDealProducts) > 0) {
-                $flash_deal = $product->flashDealProducts[0]->flashDeal;
-                if ($flash_deal) {
-                    $start_date = date('Y-m-d H:i:s', strtotime($flash_deal->start_date));
-                    $end_date = date('Y-m-d H:i:s', strtotime($flash_deal->end_date));
-                    $flashDealStatus = $flash_deal->status == 1 && (($current_date >= $start_date) && ($current_date <= $end_date)) ? 1 : 0;
-                    $flash_deal_end_date = $flash_deal->end_date;
+            $featured?->map(function ($product) use ($current_date) {
+                $flashDealStatus = 0;
+                $flash_deal_end_date = 0;
+                if (count($product->flashDealProducts) > 0) {
+                    $flash_deal = $product->flashDealProducts[0]->flashDeal;
+                    if ($flash_deal) {
+                        $start_date = date('Y-m-d H:i:s', strtotime($flash_deal->start_date));
+                        $end_date = date('Y-m-d H:i:s', strtotime($flash_deal->end_date));
+                        $flashDealStatus = $flash_deal->status == 1 && (($current_date >= $start_date) && ($current_date <= $end_date)) ? 1 : 0;
+                        $flash_deal_end_date = $flash_deal->end_date;
+                    }
                 }
-            }
-            $product['flash_deal_status'] = $flashDealStatus;
-            $product['flash_deal_end_date'] = $flash_deal_end_date;
-            return $product;
+                $product['flash_deal_status'] = $flashDealStatus;
+                $product['flash_deal_end_date'] = $flash_deal_end_date;
+                return $product;
+            });
+            return $featured;
         });
         $bestSellProduct = Product::active()->with([
             'reviews', 'rating', 'seller.shop',
@@ -275,16 +278,18 @@ class HomeController extends Controller
         if ($topRatedProducts->count() == 0) {
             $topRatedProducts = $bestSellProduct;
         }
-        $dealOfTheDay = $this->dealOfTheDay->with(['product' => function ($query) {
-            return $query->active()->with(['clearanceSale' => function ($query) {
-                return $query->active();
-            }]);
-        }])
-            ->join('products', 'products.id', '=', 'deal_of_the_days.product_id')
-            ->select('deal_of_the_days.*', 'products.unit_price')
-            ->where('products.status', 1)
-            ->where('deal_of_the_days.status', 1)
-            ->first();
+        $dealOfTheDay = Cache::remember('home_deal_of_the_day_theme_aster', CACHE_FOR_3_HOURS, function () {
+            return $this->dealOfTheDay->with(['product' => function ($query) {
+                return $query->active()->with(['clearanceSale' => function ($query) {
+                    return $query->active();
+                }]);
+            }])
+                ->join('products', 'products.id', '=', 'deal_of_the_days.product_id')
+                ->select('deal_of_the_days.*', 'products.unit_price')
+                ->where('products.status', 1)
+                ->where('deal_of_the_days.status', 1)
+                ->first();
+        });
         $recommendedProduct = $this->cacheHomePageRandomSingleProductItem();
 
         $banners = $this->cacheBannerTable();

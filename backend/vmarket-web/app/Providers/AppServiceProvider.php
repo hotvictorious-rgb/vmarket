@@ -126,19 +126,23 @@ class AppServiceProvider extends ServiceProvider
                         $userId = Auth::guard('customer')->user() ? Auth::guard('customer')->id() : 0;
                         $flashDeal = ProductManager::getPriorityWiseFlashDealsProductsQuery(userId: $userId);
 
-                        $shops = Shop::whereHas('seller', function ($query) {
-                            return $query->approved();
-                        })->take(9)->get();
+                        $shops = Cache::remember('top_approved_shops_9', CACHE_FOR_3_HOURS, function () {
+                            return Shop::whereHas('seller', function ($query) {
+                                return $query->approved();
+                            })->take(9)->get();
+                        });
 
                         $recaptcha = getWebConfig(name: 'recaptcha');
                         $paymentGatewayPublishedStatus = config('get_payment_publish_status') ?? 0;
 
-                        $paymentGatewaysQuery = Setting::whereIn('settings_type', ['payment_config'])->where('is_active', 1);
-                        if ($paymentGatewayPublishedStatus == 1) {
-                            $paymentsGatewaysList = $paymentGatewaysQuery->select('key_name', 'additional_data')->get();
-                        } else {
-                            $paymentsGatewaysList = $paymentGatewaysQuery->whereIn('key_name', GlobalConstant::DEFAULT_PAYMENT_GATEWAYS)->select('key_name', 'additional_data')->get();
-                        }
+                        $paymentsGatewaysList = Cache::remember('cached_payments_gateways_list_' . $paymentGatewayPublishedStatus, CACHE_FOR_3_HOURS, function () use ($paymentGatewayPublishedStatus) {
+                            $paymentGatewaysQuery = Setting::whereIn('settings_type', ['payment_config'])->where('is_active', 1);
+                            if ($paymentGatewayPublishedStatus == 1) {
+                                return $paymentGatewaysQuery->select('key_name', 'additional_data')->get();
+                            } else {
+                                return $paymentGatewaysQuery->whereIn('key_name', GlobalConstant::DEFAULT_PAYMENT_GATEWAYS)->select('key_name', 'additional_data')->get();
+                            }
+                        });
 
                         $customerLoginOptions = LoginSetup::where(['key' => 'login_options'])->first()?->value ?? '';
                         $customerSocialLoginOptions = LoginSetup::where(['key' => 'social_media_for_login'])->first()?->value ?? '';
@@ -155,17 +159,19 @@ class AppServiceProvider extends ServiceProvider
                                 $socialLoginTextShowStatus = true;
                             }
                         }
-                        $totalDiscountProducts = Product::active()
-                            ->withCount('reviews')
-                            ->where(function ($subQuery) {
-                                return $subQuery->where(function ($query) {
-                                    return $query->where('discount', '!=', 0);
-                                })->orWhere(function ($query) {
-                                    $stockClearanceProductIds = StockClearanceProduct::active()->pluck('product_id')->toArray();
-                                    return $query->whereIn('id', $stockClearanceProductIds);
-                                });
-                            })
-                            ->count();
+
+                        $totalDiscountProducts = Cache::remember('total_discount_products_count', CACHE_FOR_3_HOURS, function () {
+                            return Product::active()
+                                ->where(function ($subQuery) {
+                                    return $subQuery->where(function ($query) {
+                                        return $query->where('discount', '!=', 0);
+                                    })->orWhere(function ($query) {
+                                        $stockClearanceProductIds = StockClearanceProduct::active()->pluck('product_id')->toArray();
+                                        return $query->whereIn('id', $stockClearanceProductIds);
+                                    });
+                                })
+                                ->count();
+                        });
 
                         $web_config += [
                             'cookie_setting' => Helpers::get_settings($web, 'cookie_setting'),
