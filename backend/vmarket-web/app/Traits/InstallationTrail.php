@@ -34,29 +34,34 @@ trait InstallationTrail
 
     public function addSystemPrimaryData(object|array $request): void
     {
-        DB::table('admins')->insertOrIgnore([
-            'name' => $request['admin_name'],
-            'email' => $request['admin_email'],
-            'admin_role_id' => 1,
-            'password' => bcrypt($request['admin_password']),
-            'phone' => $request['admin_phone'],
-            'status' => 1,
-            'created_at' => now(),
-            'updated_at' => now()
-        ]);
+        DB::table('admins')->updateOrInsert(
+            ['id' => 1],
+            [
+                'name' => $request['admin_name'],
+                'email' => $request['admin_email'],
+                'admin_role_id' => 1,
+                'password' => bcrypt($request['admin_password']),
+                'phone' => $request['admin_phone'],
+                'status' => 1,
+                'created_at' => now(),
+                'updated_at' => now()
+            ]
+        );
 
-        DB::table('admin_wallets')->insert([
-            'admin_id' => 1,
-            'withdrawn' => 0,
-            'commission_earned' => 0,
-            'inhouse_earning' => 0,
-            'delivery_charge_earned' => 0,
-            'pending_amount' => 0,
-            'created_at' => now(),
-            'updated_at' => now(),
-        ]);
+        DB::table('admin_wallets')->updateOrInsert(
+            ['admin_id' => 1],
+            [
+                'withdrawn' => 0,
+                'commission_earned' => 0,
+                'inhouse_earning' => 0,
+                'delivery_charge_earned' => 0,
+                'pending_amount' => 0,
+                'created_at' => now(),
+                'updated_at' => now(),
+            ]
+        );
 
-        BusinessSetting::where(['type' => 'company_name'])->update(['value' => $request['company_name']]);
+        BusinessSetting::updateOrInsert(['type' => 'company_name'], ['value' => $request['company_name']]);
 
         $this->businessSettingGetOrInsert(type: 'product_brand', value: 1);
         $this->businessSettingGetOrInsert(type: 'digital_product', value: 1);
@@ -117,10 +122,7 @@ trait InstallationTrail
         $this->businessSettingGetOrInsert(type: 'currency_symbol_position', value: 'left');
 
         // Data insert into shipping table
-        $new_shipping_type = new ShippingType;
-        $new_shipping_type->seller_id = 0;
-        $new_shipping_type->shipping_type = 'order_wise';
-        $new_shipping_type->save();
+        ShippingType::updateOrCreate(['seller_id' => 0], ['shipping_type' => 'order_wise']);
 
         $this->notification_message_import(); // notification message add in the new table
         $this->company_riliability_import(); // company riliability add in the new table
