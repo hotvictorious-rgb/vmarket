@@ -57,7 +57,6 @@
                             </a>
                         </div>
                     </li>
-                    @endif
 
                     @if(isset($shop) && !empty($shop->slug))
                     @php($workerUrl = rtrim(env('VMARKET_POS_URL', 'http://127.0.0.1:8001'), '/') . '/store/' . $shop->slug . '/login')
@@ -71,6 +70,7 @@
                             </button>
                         </div>
                     </li>
+                    @endif
                     @endif
 
                     <li class="nav-item">

@@ -7,6 +7,14 @@ Always append your completed tasks here in chronological order at the top. Forma
 `### [YYYY-MM-DD HH:MM UTC] <Feature / Fix Title> [<Component Scope>]`
 Include the specific app/component modified and bullet points detailing the exact technical changes.
 
+### [2026-08-27 11:20 UTC] Enforced Merchant Terminology & Zero-Bleed Super Admin / Merchant Session Isolation [backend] [pos] [auth] [security]
+* **Component:** Multi-Actor Authentication, Session Flush & UI Personalization (`AuthController.php`, `layouts/app.blade.php`, `POSController.php`, `_header.blade.php`, `test_merchant_admin_isolation_and_terminology.php`)
+* **Action:** Enforced strict zero-bleed session boundaries and standardized terminology across Victorious MARKET and POS:
+  - **Terminology Standard:** Standardized terminology to **"Merchant"** across all interfaces (e.g. *"Merchant Panel"*, *"Return to Merchant Panel"*, *"MERCHANT"* role badge). The **Super Admin** is strictly isolated as the single platform commander (*"Super Admin"*, *"Back to Vmarket Admin"*, *"SaaS Master Control"*).
+  - **Zero-Bleed Session Flush:** Updated `ssoLogin()`, `webLogin()`, and `adminDedicatedLogin()` to immediately flush and regenerate session storage (`Auth::logout(); $request->session()->flush(); $request->session()->regenerate();`) on every authentication event, completely eliminating session leakage when switching users in the same browser.
+  - **Unverified Merchant Access Block:** Fully masked POS buttons from the Vmarket merchant header and sidebar for unapproved merchants (`status !== 'approved'`), and added hard server guards in `POSController::ssoRedirect()`, `AuthController::ssoLogin()`, and `AuthController::webLogin()` that block unverified merchants with an explanatory notice.
+  - **Verification:** Proven via automated multi-session test suite `test_merchant_admin_isolation_and_terminology.php` simulating rapid user switching across Super Admin, Verified Merchant, and Unverified Merchant on a single cookie jar with 100% pass.
+
 ### [2026-08-27 10:35 UTC] Modernized POS Topbar Header Layout & Aligned Logout Action [pos] [ui] [polish]
 * **Component:** Application Topbar & User Identity Card (`layouts/app.blade.php`, `AI_CHANGELOG.md`)
 * **Action:** Restructured and styled the POS top navigation bar to create a clean, uncluttered enterprise experience:

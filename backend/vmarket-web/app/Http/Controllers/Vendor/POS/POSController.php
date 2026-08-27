@@ -531,6 +531,11 @@ class POSController extends BaseController
             return redirect()->route('vendor.auth.login');
         }
 
+        if ($seller->status !== 'approved') {
+            \Brian2694\Toastr\Facades\Toastr::warning(translate('Your merchant account is pending verification and cannot access the POS Terminal yet.'));
+            return redirect()->route('vendor.dashboard');
+        }
+
         $email = strtolower(trim($seller->email));
         $expires = time() + 300;
         $role = 'vendor';
