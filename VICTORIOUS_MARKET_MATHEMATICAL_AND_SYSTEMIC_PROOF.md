@@ -398,13 +398,15 @@ Where:
 
 # 10. OMNICHANNEL AUTHORIZATION & TENANT ISOLATION SECURITY AUDIT REPORT
 
+
 ### Audit Overview
-* **Timestamp:** 2026-08-27 16:20 UTC
+* **Initial Audit Timestamp:** 2026-08-27 16:20 UTC
+* **Security Patch Timestamp:** 2026-08-27 16:30 UTC
 * **Audit Command Coordinator:** `test_vmarket_pos_authorization_isolation.php`
 * **Test Assertions Executed:** 22 Scenarios
 * **Core Components Covered:** central Victorious MARKET web/API, In-Store POS (hysam)
 
-### Summary of Audit Results
+### Summary of Audit Results (Post-Security Patches)
 
 ```
 ┌────────────────────────────────────────────────────────────────────────────────────────────────────────┐
@@ -428,11 +430,9 @@ Where:
 ├───────────────────┼────────────────────────────────────────────┼──────────────────┼────────────────────┤
 │ central Vmarket   │ IDOR URL direct-ID manipulation            │ 🟢 PASS          │ Blocked & Safe     │
 ├───────────────────┼────────────────────────────────────────────┼──────────────────┼────────────────────┤
-│ In-Store POS      │ Vendor A cannot view Vendor B products     │ ❌ FAIL (VULN)   │ Query missing      │
-│                   │                                            │                  │ `company_id` filter│
+│ In-Store POS      │ Vendor A cannot view Vendor B products     │ 🟢 PASS          │ Scoped by company  │
 ├───────────────────┼────────────────────────────────────────────┼──────────────────┼────────────────────┤
-│ In-Store POS      │ Vendor A cannot view Vendor B transactions │ ❌ FAIL (VULN)   │ Query missing      │
-│                   │                                            │                  │ `company_id` filter│
+│ In-Store POS      │ Vendor A cannot view Vendor B transactions │ 🟢 PASS          │ Scoped by company  │
 ├───────────────────┼────────────────────────────────────────────┼──────────────────┼────────────────────┤
 │ In-Store POS      │ Branch A1 Cashier cannot view A2 inventory │ 🟢 PASS          │ Correctly isolated │
 ├───────────────────┼────────────────────────────────────────────┼──────────────────┼────────────────────┤
@@ -442,13 +442,12 @@ Where:
 ├───────────────────┼────────────────────────────────────────────┼──────────────────┼────────────────────┤
 │ In-Store POS      │ Cashier/Staff cannot elevate their role    │ 🟢 PASS          │ Blocked (Safe)     │
 ├───────────────────┼────────────────────────────────────────────┼──────────────────┼────────────────────┤
-│ In-Store POS      │ Owner A cannot modify Owner B's staff      │ ❌ FAIL (VULN)   │ Update lacks       │
-│                   │                                            │                  │ company validation │
+│ In-Store POS      │ Owner A cannot modify Owner B's staff      │ 🟢 PASS          │ Blocked (404 Error)│
 └───────────────────┴────────────────────────────────────────────┴──────────────────┴────────────────────┘
 ```
 
-### Security Vulnerabilities Discovered (POS Component `hysam`)
-1. **Product Cross-Tenant Leak:** `ProductController` queries all products across all companies (`Product::where('archived', false)->get()`).
-2. **Sales History Cross-Tenant Leak:** Admin sales lookup query (`TransactionController::getSalesQuery`) lacks a `company_id` constraint, exposing all companies' historical receipts.
-3. **Cross-Tenant Staff Modification IDOR:** `UserController::update` allows an authenticated owner of Company A to modify staff credentials/roles of Company B.
+### Security Vulnerabilities Patched (POS Component `hysam`)
+1. **Product Cross-Tenant Leak:** Fixed by adding a `company_id` filter to the Product listing and active branch/warehouse fetching queries inside `ProductController`.
+2. **Sales History Cross-Tenant Leak:** Fixed by scoping all sales transaction fetches in `TransactionController::getSalesQuery` strictly to the caller's `company_id`.
+3. **Cross-Tenant Staff Modification IDOR:** Fixed by scoping `UserController` creation, listing, updates, and status toggles to `company_id`, preventing any unauthorized access to standard worker profiles belonging to other tenants.
 
