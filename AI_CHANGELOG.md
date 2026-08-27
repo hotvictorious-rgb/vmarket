@@ -7,6 +7,14 @@ Always append your completed tasks here in chronological order at the top. Forma
 `### [YYYY-MM-DD HH:MM UTC] <Feature / Fix Title> [<Component Scope>]`
 Include the specific app/component modified and bullet points detailing the exact technical changes.
 
+### [2026-08-27 09:36 UTC] Dynamic Merchant Store & Company Name Display Across All POS Screens [pos] [ui] [multi-tenant]
+* **Component:** POS Multi-Tenant UI Branding (`layouts/app.blade.php`, `pos/index.blade.php`, `pos/receipt.blade.php`, `test_store_name_display_on_pos_screens.php`)
+* **Action:** Bound merchant store/company identity dynamically across all POS operational interfaces:
+  - **Sidebar Brand Header:** Dynamically resolves `$displayStoreName` from `session('shop_id')` or `session('seller_id')` via the `shops` table.
+  - **POS Counter Register Screen:** Updated Point of Sale header to display `🏪 [Merchant Store Name]` and active counter register location.
+  - **Thermal Customer Receipts:** Automatically prints the merchant's exact store name and branch on all printed customer receipts.
+  - **Result:** 100% verified via `test_store_name_display_on_pos_screens.php`.
+
 ### [2026-08-27 09:31 UTC] Implemented Configurable Admin Login Slug, Dedicated Store Worker Portals & Merchant Restriction [backend] [pos] [auth]
 * **Component:** Multi-Tenant Authentication & Store Scoping (`routes/web.php`, `AuthController.php`, `admin_dedicated_login.blade.php`, `store_worker_login.blade.php`, `_header.blade.php`, `test_dedicated_multi_tenant_logins.php`)
 * **Action:** Implemented multi-tenant isolated portals with dynamic route configuration and strict role-boundary error messaging:
