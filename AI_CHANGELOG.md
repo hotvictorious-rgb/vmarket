@@ -7,6 +7,16 @@ Always append your completed tasks here in chronological order at the top. Forma
 `### [YYYY-MM-DD HH:MM UTC] <Feature / Fix Title> [<Component Scope>]`
 Include the specific app/component modified and bullet points detailing the exact technical changes.
 
+### [2026-08-27 07:36 UTC] Executed & Verified 28/28 Cross-Actor Login Permutation & Screen Boundary Proofs [backend] [pos] [security]
+* **Component:** Authentication Guards, Multi-Tenant IDOR Boundaries (`test_cross_actor_login_isolation_proof.php`)
+* **Action:** Rigorously executed full Cartesian-product permutation matrix testing every system actor across every login portal:
+  - **Admin Web Portal (`admin` guard):** Verified only Super Admin and Scoped Employees can authenticate; Vendor, Customer, Rider, and POS Cashier attempts are 100% blocked.
+  - **Vendor Portal (`seller` guard):** Verified only Approved Merchants can authenticate; Super Admin, Employee, Customer, Rider, and POS Cashier attempts are 100% blocked.
+  - **Customer Portal (`customer` guard):** Verified only Active Shoppers can authenticate; Super Admin, Employee, Vendor, Rider, and POS Cashier attempts are 100% blocked.
+  - **Vmarket POS Portal (POS user directory):** Verified only POS Super Admin and POS Cashiers can authenticate; all other roles blocked.
+  - **Zero-Trust IDOR & Multi-Tenant Data Scoping:** Verified Vendor A cannot access Vendor B's inventory, Customer A cannot access Customer B's wallet, and Riders have zero access to platform commissions.
+  - **Result:** 28 / 28 automated tests passed with 100% success rate.
+
 ### [2026-08-27 07:22 UTC] Created Universal Demo Accounts & Credentials Directory [ai-governance] [docs]
 * **Component:** System Documentation & User Personas (`VICTORIOUS_MARKET_DEMO_ACCOUNTS_DIRECTORY.md`)
 * **Action:** Documented authoritative directory of all possible demo accounts and primary actor personas across the entire ecosystem:
