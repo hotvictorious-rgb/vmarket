@@ -67,6 +67,23 @@ class AppServiceProvider extends ServiceProvider
 
     public function boot(): void
     {
+        // [AI] Register SQLite Compatibility Functions for MySQL Date Functions
+        try {
+            if (\Illuminate\Support\Facades\DB::connection()->getDriverName() === 'sqlite') {
+                $pdo = \Illuminate\Support\Facades\DB::connection()->getPdo();
+                if ($pdo instanceof \PDO) {
+                    $pdo->sqliteCreateFunction('YEAR', fn($d) => $d ? (int)date('Y', strtotime($d)) : null, 1);
+                    $pdo->sqliteCreateFunction('MONTH', fn($d) => $d ? (int)date('n', strtotime($d)) : null, 1);
+                    $pdo->sqliteCreateFunction('DAY', fn($d) => $d ? (int)date('j', strtotime($d)) : null, 1);
+                    $pdo->sqliteCreateFunction('DAYNAME', fn($d) => $d ? date('l', strtotime($d)) : null, 1);
+                    $pdo->sqliteCreateFunction('IFNULL', fn($v, $def) => $v !== null ? $v : $def, 2);
+                    $pdo->sqliteCreateFunction('NOW', fn() => date('Y-m-d H:i:s'), 0);
+                    $pdo->sqliteCreateFunction('CURDATE', fn() => date('Y-m-d'), 0);
+                    $pdo->sqliteCreateFunction('DATEDIFF', fn($d1, $d2) => (int)round((strtotime($d1) - strtotime($d2)) / 86400), 2);
+                }
+            }
+        } catch (\Throwable $e) {}
+
         if (!in_array(request()->ip(), ['127.0.0.1', '::1']) && env('FORCE_HTTPS')) {
             \URL::forceScheme('https');
         }

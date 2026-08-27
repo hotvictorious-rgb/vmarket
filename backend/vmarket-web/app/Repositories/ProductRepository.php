@@ -471,6 +471,9 @@ class ProductRepository implements ProductRepositoryInterface
     public function getTopRatedList(array $filters = [], array $relations = [], int|string $dataLimit = DEFAULT_DATA_LIMIT, ?int $offset = null): Collection|LengthAwarePaginator
     {
         $query = $this->product->with($relations)->where($filters)
+            ->whereHas('reviews', function ($query) {
+                return $query->whereNull('delivery_man_id');
+            })
             ->with('reviews', function ($query) {
                 return $query->whereHas('product', function ($query) {
                     $query->active();
@@ -480,7 +483,6 @@ class ProductRepository implements ProductRepositoryInterface
                 return $query->whereNull('delivery_man_id');
             }])
             ->withAvg('rating as ratings_average', 'rating')
-            ->having('reviews_count', '>', 0)
             ->orderByDesc('reviews_count');
 
         $result = $query->get();
