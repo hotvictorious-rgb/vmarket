@@ -49,11 +49,14 @@ class PosSyncApiController extends Controller
     public function syncStock(Request $request): JsonResponse
     {
         $request->validate([
+            'seller_id' => 'nullable',
             'items' => 'required|array',
             'items.*.product_id' => 'required|integer',
             'items.*.qty' => 'required|numeric',
+            'items.*.variant' => 'nullable|string',
         ]);
 
+        $sellerId = $request->input('seller_id');
         $items = $request->input('items');
         $updated = [];
 
@@ -62,12 +65,37 @@ class PosSyncApiController extends Controller
             foreach ($items as $item) {
                 $productId = (int) $item['product_id'];
                 $qty = (float) $item['qty'];
+                $variant = $item['variant'] ?? null;
 
-                $product = Product::where('id', $productId)->lockForUpdate()->first();
+                $query = Product::where('id', $productId)->lockForUpdate();
+                if ($sellerId && $sellerId !== 'admin') {
+                    $query->where('added_by', 'seller')->where('user_id', $sellerId);
+                }
+
+                $product = $query->first();
                 if ($product) {
                     $newStock = max(0, $product->current_stock - $qty);
                     $product->current_stock = $newStock;
+
+                    // Atomic Variant Stock Sync
+                    if ($variant && !empty($product->variation)) {
+                        $variations = is_array($product->variation) ? $product->variation : json_decode($product->variation, true);
+                        if (is_array($variations)) {
+                            foreach ($variations as &$v) {
+                                if (($v['type'] ?? '') === $variant) {
+                                    $v['qty'] = max(0, ((float)($v['qty'] ?? 0)) - $qty);
+                                }
+                            }
+                            $product->variation = json_encode($variations);
+                        }
+                    }
+
                     $product->save();
+
+                    // Bust product cache
+                    if (function_exists('clearWebConfigCacheKeys')) {
+                        clearWebConfigCacheKeys();
+                    }
 
                     $updated[] = [
                         'product_id' => $productId,
@@ -91,6 +119,50 @@ class PosSyncApiController extends Controller
     }
 
     /**
+     * [AI] Restock Physical Inventory (e.g. Returned Online Order or Restock Event)
+     */
+    public function restockStock(Request $request): JsonResponse
+    {
+        $request->validate([
+            'items' => 'required|array',
+            'items.*.product_id' => 'required|integer',
+            'items.*.qty' => 'required|numeric',
+        ]);
+
+        $items = $request->input('items');
+        $updated = [];
+
+        DB::beginTransaction();
+        try {
+            foreach ($items as $item) {
+                $productId = (int) $item['product_id'];
+                $qty = (float) $item['qty'];
+
+                $product = Product::where('id', $productId)->lockForUpdate()->first();
+                if ($product) {
+                    $product->current_stock += $qty;
+                    $product->save();
+
+                    $updated[] = [
+                        'product_id' => $productId,
+                        'current_stock' => $product->current_stock,
+                    ];
+                }
+            }
+            DB::commit();
+
+            return response()->json([
+                'status' => 'success',
+                'message' => 'Stock restocked successfully.',
+                'updated' => $updated
+            ]);
+        } catch (\Throwable $e) {
+            DB::rollBack();
+            return response()->json(['status' => 'error', 'message' => $e->getMessage()], 500);
+        }
+    }
+
+    /**
      * [AI] Confirm In-Store Order Dispatch
      */
     public function confirmDispatch(Request $request, $orderId): JsonResponse
@@ -98,6 +170,13 @@ class PosSyncApiController extends Controller
         $order = Order::find($orderId);
         if (!$order) {
             return response()->json(['status' => 'error', 'message' => 'Order not found.'], 404);
+        }
+
+        if (in_array($order->order_status, ['delivered', 'canceled', 'returned'])) {
+            return response()->json([
+                'status' => 'warning',
+                'message' => "Order is already in state: {$order->order_status}."
+            ], 400);
         }
 
         $order->order_status = 'out_for_delivery';
