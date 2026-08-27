@@ -7,6 +7,13 @@ Always append your completed tasks here in chronological order at the top. Forma
 `### [YYYY-MM-DD HH:MM UTC] <Feature / Fix Title> [<Component Scope>]`
 Include the specific app/component modified and bullet points detailing the exact technical changes.
 
+### [2026-08-27 06:24 UTC] Resolved Step 5 Business Settings Integrity Constraint & Verified Full Installation Completion [backend] [install] [security]
+* **Component:** Installation Wizard & Seeding Pipeline (`InstallationTrail.php`, `InstallController.php`, `test_submit_step5.php`)
+* **Action:** Diagnosed and resolved 500 error during Step 5 admin credential & business settings initialization:
+  - Fixed `BusinessSetting::insert` call for `company_reliability` which previously passed 2 arguments to `insert()` causing SQLite/MySQL NOT NULL constraint violations on the `value` column. Converted to idempotent `BusinessSetting::updateOrInsert(['type' => 'company_reliability'], ['value' => json_encode($data)])`.
+  - Converted `admins` and `admin_wallets` insertions to `updateOrInsert` so existing development databases can be safely upgraded or re-seeded without collision.
+  - Verified full installation lifecycle with `test_submit_step5.php`: generated `storage/installed`, mapped production routes, verified Victorious MARKET Storefront (HTTP 200), Admin Panel (HTTP 200), Vendor Panel (HTTP 200), and Vmarket POS (HTTP 200).
+
 ### [2026-08-27 05:40 UTC] Implemented Dual-Tier Auto-Locking Installer Security Guard [backend] [pos] [security]
 * **Component:** Installer Security & Protection (`InstallController.php`, `hysam/InstallerController.php`, `test_installer_auto_lock.php`)
 * **Action:** Implemented robust defense-in-depth installer auto-locking to protect live stores:
