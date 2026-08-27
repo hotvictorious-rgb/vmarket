@@ -25,7 +25,7 @@ class InstallController extends Controller
     public function __construct()
     {
         try {
-            if (file_exists(storage_path('installed')) || (Schema::hasTable('admins') && DB::table('admins')->count() > 0)) {
+            if (file_exists(storage_path('installed'))) {
                 if (request()->is('system_settings') || request()->is('step6')) {
                     return;
                 }
@@ -33,7 +33,7 @@ class InstallController extends Controller
                 exit;
             }
         } catch (\Throwable $e) {
-            // Database not configured yet, allow installer
+            // Uninstalled, allow installer
         }
     }
 
