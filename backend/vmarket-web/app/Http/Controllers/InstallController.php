@@ -24,17 +24,8 @@ class InstallController extends Controller
 
     public function __construct()
     {
-        try {
-            if (file_exists(storage_path('installed'))) {
-                if (request()->is('system_settings') || request()->is('step6')) {
-                    return;
-                }
-                redirect('/login/admin')->send();
-                exit;
-            }
-        } catch (\Throwable $e) {
-            // Uninstalled, allow installer
-        }
+        redirect('/login/admin')->send();
+        exit;
     }
 
     public function step0(): View
