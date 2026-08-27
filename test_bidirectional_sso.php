@@ -109,6 +109,19 @@ echo "\nTest 3: Testing Replay Attack Guard...\n";
 $expiredToken = DB::table('sso_tokens')->where('token', $returnToken)->first();
 assertCondition($expiredToken === null, "Replay attack blocked (re-use of token yields NULL).");
 
+// -------------------------------------------------------------
+// Test Case 4: Role Gating & Zero-Trust Checks
+// -------------------------------------------------------------
+echo "\nTest 4: Verifying Role Gating & Zero-Trust Checks...\n";
+
+$cmdGate = 'php test_pos_sso_part.php test_role_gating';
+$outputGate = shell_exec($cmdGate);
+
+echo "--- POS Sub-Process Output ---\n" . trim($outputGate) . "\n------------------------------\n";
+
+assertCondition(str_contains($outputGate, 'SUCCESS_EMPLOYEE_BLOCKED'), "Security Gate: Super Admin Employee is strictly blocked from returning via SSO (HTTP 403).");
+assertCondition(str_contains($outputGate, 'SUCCESS_CASHIER_BLOCKED'), "Security Gate: Cashier (Merchant Employee) is strictly blocked from returning via SSO (HTTP 403).");
+
 echo "\n=================================================================\n";
 echo "📊 BI-DIRECTIONAL SSO VERIFICATION RESULTS: Passed $passed, Failed $failed\n";
 echo "=================================================================\n";

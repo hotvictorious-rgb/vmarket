@@ -47,12 +47,50 @@ if ($action === 'create_return_token') {
         'token' => $returnToken,
         'email' => $email,
         'role' => $role,
-        'expires_at' => now()->addMinutes(5),
-        'created_at' => now(),
-        'updated_at' => now(),
+        'expires_at' => gmdate('Y-m-d H:i:s', time() + 300),
+        'created_at' => gmdate('Y-m-d H:i:s'),
+        'updated_at' => gmdate('Y-m-d H:i:s'),
     ]);
 
     echo "SUCCESS_RETURN_WRITTEN\n";
+    exit(0);
+}
+
+if ($action === 'test_role_gating') {
+    // Simulate Super Admin Employee session
+    session(['user_role' => 'super_admin_employee', 'user_id' => 'admin-user-1']);
+    $authController = new \App\Http\Controllers\AuthController();
+    
+    // Set a dummy user in Auth facade to bypass null user check
+    $user = new \App\Models\User();
+    $user->email = 'staff.support@victorious.com';
+    \Illuminate\Support\Facades\Auth::login($user);
+
+    try {
+        $req = \Illuminate\Http\Request::create('/pos-sso-return', 'GET');
+        $authController->posSsoReturn($req);
+        echo "FAIL_EMPLOYEE_ALLOWED\n";
+    } catch (\Symfony\Component\HttpKernel\Exception\HttpException $e) {
+        if ($e->getStatusCode() === 403) {
+            echo "SUCCESS_EMPLOYEE_BLOCKED\n";
+        } else {
+            echo "FAIL_UNEXPECTED_CODE:" . $e->getStatusCode() . "\n";
+        }
+    }
+    
+    // Simulate Cashier session
+    session(['user_role' => 'verified_merchant_employee', 'user_id' => 'vendor-worker-1']);
+    try {
+        $req = \Illuminate\Http\Request::create('/pos-sso-return', 'GET');
+        $authController->posSsoReturn($req);
+        echo "FAIL_CASHIER_ALLOWED\n";
+    } catch (\Symfony\Component\HttpKernel\Exception\HttpException $e) {
+        if ($e->getStatusCode() === 403) {
+            echo "SUCCESS_CASHIER_BLOCKED\n";
+        } else {
+            echo "FAIL_UNEXPECTED_CODE:" . $e->getStatusCode() . "\n";
+        }
+    }
     exit(0);
 }
 
