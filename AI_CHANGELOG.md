@@ -7,6 +7,13 @@ Always append your completed tasks here in chronological order at the top. Forma
 `### [YYYY-MM-DD HH:MM UTC] <Feature / Fix Title> [<Component Scope>]`
 Include the specific app/component modified and bullet points detailing the exact technical changes.
 
+### [2026-08-27 23:00 UTC] Implemented Centralized Immutable Audit Trail [pos] [feature] [security]
+* **Component:** POS (`AuditLogger.php`, `PosController.php`, `StockController.php`)
+* **Action:**
+  - Audit Service: Created `AuditLogger` service to write immutable entries containing type, description, actor details (userId/userName), and JSON metadata parameters to the `activities` table under the active company tenant.
+  - POS Integration: Wired audit logger into `PosController` to log details of POS sales checkouts.
+  - Inventory Integration: Wired audit logger into `StockController` to log stock adjustments, supplier stock arrivals (Stock In), transfer dispatches, transfer receipts, transfer recalls, and unsupplied goods dispatches.
+
 ### [2026-08-27 22:40 UTC] Enforced Branch User Capping and 3-Role Standardized Limits [pos] [feature] [security]
 * **Component:** POS (`UserController.php`, middlewares, view templates, migrations), Verification (`test_branch_user_limits.php`)
 * **Action:**
