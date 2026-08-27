@@ -7,6 +7,14 @@ Always append your completed tasks here in chronological order at the top. Forma
 `### [YYYY-MM-DD HH:MM UTC] <Feature / Fix Title> [<Component Scope>]`
 Include the specific app/component modified and bullet points detailing the exact technical changes.
 
+### [2026-08-27 09:57 UTC] Enforced Zero-Trust SaaS Platform Access Isolation & Hidden from Merchants [pos] [saas] [security]
+* **Component:** SaaS Access Guard & Menu Visibility (`RequireSuperAdmin.php`, `routes/web.php`, `AuthController.php`, `layouts/app.blade.php`, `test_merchant_saas_access_blocked.php`)
+* **Action:** Enforced strict Zero-Trust boundaries around Master SaaS Platform controls:
+  - **RequireSuperAdmin Middleware:** Created dedicated middleware enforcing that only Platform Super Administrators (`is_super_admin === true` and no merchant `seller_id` scoping) can access `/saas/*`. All merchants and cashiers are strictly blocked with HTTP 403 / redirect warning.
+  - **Menu Item Masking:** Hidden "SaaS Master Control" link from the sidebar for all merchants and cashiers.
+  - **Session Isolation:** Bound `is_super_admin => false` across vendor SSO and staff logins, and `is_super_admin => true` strictly to the Super Admin dedicated portal.
+  - **Result:** 100% verified via automated test suite `test_merchant_saas_access_blocked.php`.
+
 ### [2026-08-27 09:52 UTC] Resolved Admin Login & Dashboard HTTP 500 Server Error [backend] [admin] [bugfix]
 * **Component:** Admin Dashboard & Repository Compatibility (`ProductRepository.php`, `AppServiceProvider.php`, `test_admin_login_and_dashboard_render.php`)
 * **Action:** Diagnosed and fixed the root causes of the *"We are sorry server is not responding"* HTTP 500 error on Admin login and dashboard:
