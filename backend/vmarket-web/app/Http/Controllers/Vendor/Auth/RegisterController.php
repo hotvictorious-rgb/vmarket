@@ -95,15 +95,27 @@ class RegisterController extends BaseController
             'userType' => 'vendor',
             'templateName' => 'registration',
         ];
+        // [AI] Generate Instant 1-Click SSO Redirect to Free 1-Store POS Terminal
+        $email = $vendor['email'];
+        $expires = time() + 300;
+        $role = 'vendor';
+        $token = hash_hmac('sha256', "{$email}|{$expires}|{$role}", env('APP_KEY', 'VictoriousMarketSecretKey2026'));
+        $posUrl = rtrim(env('VMARKET_POS_URL', 'http://127.0.0.1:8001'), '/');
+        $ssoRedirectUrl = "{$posUrl}/sso-login?email=" . urlencode($email) . "&expires={$expires}&role={$role}&token={$token}";
+
         try {
             event(new VendorRegistrationEvent(email: $request['email'], data: $data));
         } catch (Exception $e) {
-            return response()->json(
-                ['status' => 1, 'redirectRoute' => route('vendor.auth.login')]
-            );
+            return response()->json([
+                'status' => 1,
+                'message' => translate('Registration_successful_Opening_your_Free_POS_Terminal'),
+                'redirectRoute' => $ssoRedirectUrl
+            ]);
         }
-        return response()->json(
-            ['status' => 1, 'redirectRoute' => route('vendor.auth.login')]
-        );
+        return response()->json([
+            'status' => 1,
+            'message' => translate('Registration_successful_Opening_your_Free_POS_Terminal'),
+            'redirectRoute' => $ssoRedirectUrl
+        ]);
     }
 }

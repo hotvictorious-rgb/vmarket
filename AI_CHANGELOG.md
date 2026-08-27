@@ -7,6 +7,13 @@ Always append your completed tasks here in chronological order at the top. Forma
 `### [YYYY-MM-DD HH:MM UTC] <Feature / Fix Title> [<Component Scope>]`
 Include the specific app/component modified and bullet points detailing the exact technical changes.
 
+### [2026-08-27 09:09 UTC] Implemented POS Merchant Sign Up CTA & Instant Post-Registration Free POS Redirection [backend] [pos] [onboarding]
+* **Component:** Vendor Registration & POS Onboarding (`login.blade.php`, `RegisterController.php`, `test_vendor_registration_to_pos_flow.php`)
+* **Action:** Connected POS merchant onboarding to Victorious MARKET vendor registration:
+  - **POS Login Page Retention & Registration CTA:** Retained direct email/password login for staff and existing vendors on `:8001/login`, while updating the merchant banner to a prominent CTA: *"🏪 Sign Up on Victorious MARKET (Get Free POS)"* linking to `/vendor/auth/registration/index`.
+  - **Instant Post-Registration Free POS Redirection:** Enhanced `RegisterController::add` to automatically generate an HMAC-SHA256 signed SSO token upon new vendor signup, immediately opening their Free 1-Store POS Terminal in Store Setup Mode (`can_sell = false`, `seller_status = 'pending'`).
+  - **Result:** Fully proven with automated test suite `test_vendor_registration_to_pos_flow.php`.
+
 ### [2026-08-27 08:52 UTC] Hardened 50 Systemic & Security Loopholes Across Unified Omnichannel Platform [backend] [pos] [security]
 * **Component:** SSO Security, Atomic Stock Sync, Verification Sales Gate, Payment Inheritance (`AuthController.php`, `PosSyncApiController.php`, `PosController.php`, `SubscriptionController.php`)
 * **Action:** Fortified the unified architecture across all 50 identified vulnerability and edge-case vectors:
