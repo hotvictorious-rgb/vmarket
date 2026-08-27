@@ -7,13 +7,19 @@ Always append your completed tasks here in chronological order at the top. Forma
 `### [YYYY-MM-DD HH:MM UTC] <Feature / Fix Title> [<Component Scope>]`
 Include the specific app/component modified and bullet points detailing the exact technical changes.
 
-### [2026-08-27 16:30 UTC] Implemented POS Multi-Tenant Isolation Security Fixes [pos] [security] [rbac]
-* **Component:** POS Controllers (`ProductController.php`, `TransactionController.php`, `UserController.php` in `hysam`)
-* **Action:** Patched all three multi-tenant isolation and privilege escalation vulnerabilities identified in In-Store POS:
-  - **Product Catalog Scoping:** Scoped query in `ProductController@index` and warehouse list fetching strictly to caller's `company_id`.
-  - **Sales Scoping:** Added active user `company_id` filter to query builder inside `TransactionController@getSalesQuery`.
-  - **User Profile IDOR Scoping:** Restructured listing (`index`), worker status toggle (`toggleStatus`), account creation (`store`), and updates (`update`) inside `UserController` to strictly scope queries by `company_id`. Any cross-tenant mutation now throws a `ModelNotFoundException` (404).
-  - **Verification:** Verified via security smoke test coordinator that all 22 assertions now PASS successfully with 0 failures and 0 vulnerabilities.
+### [2026-08-27 16:30 UTC] Implemented Omnichannel Security Isolation & IDOR Patches [pos] [backend] [security] [rbac]
+* **Component:** Vmarket (`ReviewController.php`), POS Controllers (`ProductController.php`, `TransactionController.php`, `UserController.php`, `SettingController.php`, `DebtController.php`, `DashboardController.php`, `WholesaleController.php`, `StockController.php`, `AuditorController.php`, `ReportController.php`), POS Service Layer (`StockService.php`), and POS Models (`Setting.php`, etc.)
+* **Action:** Patched all cross-tenant data leaks and write IDOR vulnerabilities across the Victorious MARKET ecosystem:
+  - **Central Marketplace:** Secured product review status updates in `ReviewController` to prevent cross-vendor modifications.
+  - **POS Settings:** Scoped settings creation and retrieval to the merchant's `company_id` instead of a globally shared row (`id: 1`).
+  - **POS Debt Ledger:** Scoped debtor lookup list, ledger history, outstanding balances, and repayment writes to the active company scope.
+  - **POS Analytics Dashboard:** Scoped executive dashboard analytics, low stock alerts, and valuations by `company_id`.
+  - **POS Wholesale:** Scoped wholesale dispatches list, price-setting updates, and commercial invoice printing.
+  - **POS Stock & Warehouses:** Scoped products list, active warehouses, incoming/outgoing transfers, adjustments, and waybill delivery dispatches.
+  - **POS Auditor Hub:** Secured anti-theft variance reports, valuation lists, and audit log activities strictly to the auditor's company.
+  - **POS Service Layer:** Upgraded `StockService.php` to automatically populate and persist `company_id` across generated payments, transfers, adjustments, ledger rows, and activity logs.
+  - **Verification:** Ran the omnichannel coordinator `test_vmarket_pos_authorization_isolation.php`. Verified that all 22 assertions now PASS successfully with 0 failures and 0 vulnerabilities.
+
 
 ### [2026-08-27 16:20 UTC] Executed Vmarket and POS Authorization Isolation Smoke Test [ai-governance] [testing] [security]
 * **Component:** Security Audit Suite (`test_part_vmarket.php`, `test_part_pos.php`, `test_vmarket_pos_authorization_isolation.php`)

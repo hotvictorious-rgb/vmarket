@@ -123,6 +123,15 @@ class ReviewController extends BaseController
      */
     public function updateStatus(string|int $id, string|int $status): JsonResponse
     {
+        $vendorId = auth('seller')->id();
+        $review = $this->reviewRepo->getFirstWhere(params: ['id' => $id], relations: ['product']);
+        if (!$review || !$review->product || $review->product->added_by != 'seller' || $review->product->user_id != $vendorId) {
+            return response()->json([
+                'status' => 0,
+                'message' => translate('unauthorized_access')
+            ], 403);
+        }
+
         $this->reviewRepo->update(id: $id, data: ['status' => $status]);
         return response()->json([
             'status' => 1,
