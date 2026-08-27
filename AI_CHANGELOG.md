@@ -7,6 +7,16 @@ Always append your completed tasks here in chronological order at the top. Forma
 `### [YYYY-MM-DD HH:MM UTC] <Feature / Fix Title> [<Component Scope>]`
 Include the specific app/component modified and bullet points detailing the exact technical changes.
 
+### [2026-08-27 22:40 UTC] Enforced Branch User Capping and 3-Role Standardized Limits [pos] [feature] [security]
+* **Component:** POS (`UserController.php`, middlewares, view templates, migrations), Verification (`test_branch_user_limits.php`)
+* **Action:**
+  - Role Cap: Restricted allowed roles list strictly to: `['admin', 'manager', 'executive']`.
+  - Database Migration: Ran migration `2026_08_27_000002_migrate_users_to_three_roles` to convert legacy `viewer`, `cashier`, and `storekeeper` to the `executive` role, and legacy `sales_stock` to `manager`.
+  - Branch User Limits: Added validation checks in `UserController.php` (`store` and `update`) restricting each branch (`warehouse_id`) to a maximum of 3 users total, and strictly blocking duplicate roles per branch.
+  - Branch Scoping Lock: Locked all non-admin roles (Managers and Executives) to their assigned branch’s data by removing legacy exceptions from queries in `ProductController`, `StockController`, `ReportController`, `DashboardController`, `TransactionController`, and `PosController`.
+  - Read-Only Executive: Set permissions for the `executive` role to read-only observer. Configured `BlockReadOnlyMutations` and `RequireAdmin` middlewares to reject data mutations for Executives. Masked the "Complete Sale & Print" checkout trigger with a read-only warning badge.
+* **Verification:** Developed a comprehensive automated validation script (`test_branch_user_limits.php`) asserting correct custom roles rejection, 3-user capping limits, duplicate role blocks, branch scope locking, and read-only mutation guards (passed 7/7).
+
 ### [2026-08-27 21:30 UTC] Implemented Dynamic Bi-Directional SSO Token Exchange Protocol [pos] [backend] [security] [feature]
 * **Component:** Vmarket (`POSController.php`, `DashboardController.php`, `routes/web/routes.php`, migrations), POS (`AuthController.php`, `routes/web.php`, `layouts/app.blade.php`), Verification (`test_bidirectional_sso.php`, `test_all_12_governance_rules_proof.php`)
 * **Action:**
