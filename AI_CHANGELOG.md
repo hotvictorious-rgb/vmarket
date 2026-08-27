@@ -7,6 +7,13 @@ Always append your completed tasks here in chronological order at the top. Forma
 `### [YYYY-MM-DD HH:MM UTC] <Feature / Fix Title> [<Component Scope>]`
 Include the specific app/component modified and bullet points detailing the exact technical changes.
 
+### [2026-08-27 07:22 UTC] Created Universal Demo Accounts & Credentials Directory [ai-governance] [docs]
+* **Component:** System Documentation & User Personas (`VICTORIOUS_MARKET_DEMO_ACCOUNTS_DIRECTORY.md`)
+* **Action:** Documented authoritative directory of all possible demo accounts and primary actor personas across the entire ecosystem:
+  - Documented Single Super Admin `.env` governance across Victorious MARKET and Vmarket POS.
+  - Documented accounts for Administrative Employees (Operations Manager, Finance, Support), Multi-Vendor Merchants (Flagship, Gadgets, Pending Approval), Online Shoppers (VIP, Standard, Zero-Balance), Delivery Riders (In-House, Vendor Fleet), and Vmarket POS In-Store Staff (Super Admin, Head Cashier, Shift Cashier, Storekeeper).
+  - Outlined step-by-step omnichannel and point-of-sale test scenarios.
+
 ### [2026-08-27 07:12 UTC] Cleaned .ENV Files to Hold Strictly 1 Super Admin & Enforced Dynamic Creation for All Other Roles [backend] [pos] [security]
 * **Component:** Environment Security & Actor Segregation (`backend/vmarket-web/.env`, `hysam/.env`, `test_super_admin_env_invariants.php`)
 * **Action:** Strictly purged all non-Super-Admin credentials from `.env` across both systems:
