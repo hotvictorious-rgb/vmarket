@@ -8,7 +8,7 @@ Always append your completed tasks here in chronological order at the top. Forma
 Include the specific app/component modified and bullet points detailing the exact technical changes.
 
 ### [2026-08-27 21:30 UTC] Implemented Dynamic Bi-Directional SSO Token Exchange Protocol [pos] [backend] [security] [feature]
-* **Component:** Vmarket (`POSController.php`, `DashboardController.php`, `routes/web/routes.php`, migrations), POS (`AuthController.php`, `routes/web.php`, `layouts/app.blade.php`)
+* **Component:** Vmarket (`POSController.php`, `DashboardController.php`, `routes/web/routes.php`, migrations), POS (`AuthController.php`, `routes/web.php`, `layouts/app.blade.php`), Verification (`test_bidirectional_sso.php`, `test_all_12_governance_rules_proof.php`)
 * **Action:**
   - Database SSO Tokens: Created `sso_tokens` table in the shared database using a new database migration.
   - Vmarket SSO Redirects: Configured Vmarket admin and vendor redirects to write random, single-use, 64-character token exchanges directly to the `sso_tokens` database table with a 5-minute expiry, and redirect using only `?token=...`.
@@ -16,7 +16,8 @@ Include the specific app/component modified and bullet points detailing the exac
   - Bi-Directional Return SSO: Implemented a new POS return endpoint `/pos-sso-return` that inserts a return token to the Vmarket connection and redirects to Vmarket's new `sso-return` receiver, enabling automatic login when navigating back from POS.
   - POS Template Updates: Linked all header and sidebar "Back to Merchant Panel" / "Back to Admin" buttons to the return route to activate seamless back-login redirects.
   - Timezone Sync Fix: Configured token timestamps using `gmdate('Y-m-d H:i:s')` on both sides to prevent validation failures caused by timezone configuration mismatches (Vmarket: `Asia/Dhaka`, POS: `UTC`).
-* **Verification:** Developed a multi-process automated verification suite (`test_bidirectional_sso.php` and `test_pos_sso_part.php`) and confirmed that token verification, anti-replay, and bi-directional login checks PASS with 100% success.
+  - Zero-Trust Role Gates: Enforced strict role restriction checking inside `posSsoReturn` and `sso-return` so that ONLY authenticated Super Admin (ID=1) and Verified Merchants (status='approved') can generate/verify return tokens (blocking staff, cashiers, and unverified users with HTTP 403 Access Denied).
+* **Verification:** Developed a multi-process automated verification suite (`test_bidirectional_sso.php` and `test_pos_sso_part.php`) and updated `test_all_12_governance_rules_proof.php` for dynamic SSO. All 14 dynamic token checks and all 12 platform governance rules PASS with 100% success.
 
 ### [2026-08-27 20:55 UTC] Streamlined Environment Variables and Fixed Dynamic Admin Login Slug Middleware [pos] [backend] [bugfix]
 * **Component:** Vmarket (`backend/vmarket-web/.env`), POS (`hysam/.env`), POS Middleware (`CheckWebAuth.php`)

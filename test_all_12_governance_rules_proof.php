@@ -178,14 +178,31 @@ if ($delta === 0.0) {
 // RULE 11: 9-Role Visibility Breakdown & Multi-Actor Matrix
 // -----------------------------------------------------------------------------------------
 echo "\n▶ [RULE 11] Validating 9-Role Visibility Breakdown & HTTP Parity...\n";
-$secretKey = 'VictoriousMarketSecretKey2026';
+
+// Boot Vmarket to register SSO tokens dynamically for cURL tests
+require_once $vmarketDir . '/vendor/autoload.php';
+$vApp = require_once $vmarketDir . '/bootstrap/app.php';
+$vKernel = $vApp->make(Illuminate\Contracts\Console\Kernel::class);
+$vKernel->bootstrap();
+
+function createTestSsoToken($email, $role) {
+    $token = \Illuminate\Support\Str::random(64);
+    \Illuminate\Support\Facades\DB::table('sso_tokens')->insert([
+        'token' => $token,
+        'email' => $email,
+        'role' => $role,
+        'expires_at' => gmdate('Y-m-d H:i:s', time() + 300),
+        'created_at' => gmdate('Y-m-d H:i:s'),
+        'updated_at' => gmdate('Y-m-d H:i:s'),
+    ]);
+    return $token;
+}
 
 // 1. Super Admin Check
 $jar1 = tempnam(sys_get_temp_dir(), 'sso_r11_adm_');
 $adminEmail = 'admin@admin.com';
-$expires = time() + 300;
-$adminToken = hash_hmac('sha256', "{$adminEmail}|{$expires}|admin", $secretKey);
-$ch = curl_init("http://127.0.0.1:8001/sso-login?email=" . urlencode($adminEmail) . "&expires={$expires}&role=admin&token={$adminToken}");
+$adminToken = createTestSsoToken($adminEmail, 'admin');
+$ch = curl_init("http://127.0.0.1:8001/sso-login?token={$adminToken}");
 curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
 curl_setopt($ch, CURLOPT_FOLLOWLOCATION, true);
 curl_setopt($ch, CURLOPT_COOKIEJAR, $jar1);
@@ -198,8 +215,8 @@ $r11AdminPass = str_contains($adminHtml, 'Back to Vmarket Admin') && str_contain
 // 2. Verified Merchant Check
 $jar2 = tempnam(sys_get_temp_dir(), 'sso_r11_mer_');
 $vendorEmail = 'vendor@victorious.com';
-$vendorToken = hash_hmac('sha256', "{$vendorEmail}|{$expires}|vendor", $secretKey);
-$ch = curl_init("http://127.0.0.1:8001/sso-login?email=" . urlencode($vendorEmail) . "&expires={$expires}&role=vendor&token={$vendorToken}");
+$vendorToken = createTestSsoToken($vendorEmail, 'vendor');
+$ch = curl_init("http://127.0.0.1:8001/sso-login?token={$vendorToken}");
 curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
 curl_setopt($ch, CURLOPT_FOLLOWLOCATION, true);
 curl_setopt($ch, CURLOPT_COOKIEJAR, $jar2);
@@ -212,8 +229,8 @@ $r11MerchantPass = str_contains($vendorHtml, 'Back to Merchant Panel') && str_co
 // 3. Unverified Merchant Check
 $jar3 = tempnam(sys_get_temp_dir(), 'sso_r11_pen_');
 $pendingEmail = 'pending@victorious.com';
-$pendingToken = hash_hmac('sha256', "{$pendingEmail}|{$expires}|vendor", $secretKey);
-$ch = curl_init("http://127.0.0.1:8001/sso-login?email=" . urlencode($pendingEmail) . "&expires={$expires}&role=vendor&token={$pendingToken}");
+$pendingToken = createTestSsoToken($pendingEmail, 'vendor');
+$ch = curl_init("http://127.0.0.1:8001/sso-login?token={$pendingToken}");
 curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
 curl_setopt($ch, CURLOPT_FOLLOWLOCATION, true);
 curl_setopt($ch, CURLOPT_COOKIEJAR, $jar3);
@@ -236,7 +253,8 @@ if ($r11AdminPass && $r11MerchantPass && $r11PendingPass) {
 echo "\n▶ [RULE 12] Validating Universal Zero-Penetration Isolation & Anti-Bleed...\n";
 // Prove that a merchant session in POS cannot access Super Admin SaaS routes
 $cookieJar = tempnam(sys_get_temp_dir(), 'merchant_pos_cookie_');
-$ch = curl_init("http://127.0.0.1:8001/sso-login?email=" . urlencode($vendorEmail) . "&expires={$expires}&role=vendor&token={$vendorToken}");
+$rule12Token = createTestSsoToken($vendorEmail, 'vendor');
+$ch = curl_init("http://127.0.0.1:8001/sso-login?token={$rule12Token}");
 curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
 curl_setopt($ch, CURLOPT_FOLLOWLOCATION, true);
 curl_setopt($ch, CURLOPT_COOKIEJAR, $cookieJar);

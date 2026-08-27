@@ -563,13 +563,13 @@ Route::get('sso-return', function (\Illuminate\Http\Request $request) {
     
     if ($role === 'admin') {
         $admin = \App\Models\Admin::whereRaw('LOWER(email) = ?', [strtolower(trim($email))])->first();
-        if ($admin) {
+        if ($admin && $admin->admin_role_id == 1) {
             auth('admin')->login($admin);
             return redirect()->route('admin.dashboard.index');
         }
     } elseif ($role === 'vendor') {
         $seller = \App\Models\Seller::whereRaw('LOWER(email) = ?', [strtolower(trim($email))])->first();
-        if ($seller) {
+        if ($seller && $seller->status === 'approved') {
             auth('seller')->login($seller);
             return redirect()->route('vendor.dashboard.index');
         }
