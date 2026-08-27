@@ -7,6 +7,23 @@ Always append your completed tasks here in chronological order at the top. Forma
 `### [YYYY-MM-DD HH:MM UTC] <Feature / Fix Title> [<Component Scope>]`
 Include the specific app/component modified and bullet points detailing the exact technical changes.
 
+### [2026-08-27 12:45 UTC] Implemented 9-Tier Ecosystem Role Taxonomy & Unverified Merchant Free POS Access [backend] [pos] [rbac] [security]
+* **Component:** Multi-Actor Role Taxonomy & Navigation Guards (`AuthController.php`, `layouts/app.blade.php`, `POSController.php`, `test_9_tier_role_taxonomy_and_access_matrix.php`)
+* **Action:** Established and enforced the 9 standardized ecosystem roles across Victorious MARKET and In-Store POS:
+  - **The 9 Ecosystem Roles:**
+    1. `Super Admin` (Single Platform Commander / SaaS Master Controller)
+    2. `Super Admin Employee` (Platform Support & Auditor Staff)
+    3. `Verified Merchant` (Approved Store Owner with Full POS & Online Marketplace Selling)
+    4. `Unverified Merchant` (New / Pending KYC Merchant with Free-Tier In-Store POS Access)
+    5. `Verified Merchant Employee` (Cashier / Staff of an approved store)
+    6. `Unverified Merchant Employee` (Cashier / Staff of a physical free-tier store)
+    7. `Active Deliveryman` (Approved logistics rider with live orders)
+    8. `Inactive Deliveryman` (Pending KYC / suspended / offline rider)
+    9. `Customer` (End-user buyer & online shopper)
+  - **Unverified Merchant Free POS Mode:** Unverified merchants are granted immediate access to the Free In-Store POS (1 branch, counter sales, barcode scanning, receipts) so they can conduct physical store sales immediately without waiting for marketplace KYC approval.
+  - **Header Masking & Marketplace Gate:** For unverified merchants, the *"Back to Merchant Panel"* button is masked in the POS topbar header (replaced with `Free In-Store POS (Pending KYC)` badge), and online marketplace selling is locked until Super Admin approval.
+  - **Verification:** Proven via automated multi-tier verification suite `test_9_tier_role_taxonomy_and_access_matrix.php` with 100% test pass.
+
 ### [2026-08-27 11:20 UTC] Enforced Merchant Terminology & Zero-Bleed Super Admin / Merchant Session Isolation [backend] [pos] [auth] [security]
 * **Component:** Multi-Actor Authentication, Session Flush & UI Personalization (`AuthController.php`, `layouts/app.blade.php`, `POSController.php`, `_header.blade.php`, `test_merchant_admin_isolation_and_terminology.php`)
 * **Action:** Enforced strict zero-bleed session boundaries and standardized terminology across Victorious MARKET and POS:
