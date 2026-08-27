@@ -25,6 +25,7 @@ This living document serves as the **Authoritative System Knowledge Base & Verif
 4. [Q4: How are the 27 Demo Personas (3 per role) isolated horizontally and vertically?](#q4-how-are-the-27-demo-personas-3-per-role-isolated-horizontally-and-vertically)
 5. [Q5: How does Bi-Directional Ecosystem Navigation work across Super Admin and Verified Merchants?](#q5-how-does-bi-directional-ecosystem-navigation-work-across-super-admin-and-verified-merchants)
 6. [Q6: Who creates the Super Admin in the entire system and how many are allowed?](#q6-who-creates-the-super-admin-in-the-entire-system-and-how-many-are-allowed)
+7. [Q7: Where is the Super Admin from and what is its authoritative origin in the ecosystem?](#q7-where-is-the-super-admin-from-and-what-is-its-authoritative-origin-in-the-ecosystem)
 
 ---
 
@@ -178,6 +179,40 @@ Navigation between Victorious MARKET and In-Store POS is bi-directional and role
   4. Proving Exclusive Super Admin Access to SaaS Master Controls (/saas/*)...
     ✅ PASS: SaaS Master Control is 100% EXCLUSIVE to Super Admin (HTTP 200). Merchant is strictly BLOCKED (HTTP 302)!
   ```
+
+---
+
+## Q7: Where is the Super Admin from and what is its authoritative origin in the ecosystem?
+
+### 💡 Answer:
+1. **Authoritative Master Origin (Victorious MARKET Central Platform):**  
+   The Super Admin originates directly from the **Victorious MARKET Central Command Hub (`backend/vmarket-web`)**. Specifically, the Super Admin's authoritative identity is anchored in the central platform database (`admins` table) as record **`ID = 1`** with system master role **`admin_role_id = 1`**.
+2. **Topological Position (Apex of the Unified Ecosystem):**  
+   The Super Admin is **NOT** a store-level user, **NOT** a merchant, and **NOT** a local POS cashier. The Super Admin is the **Platform Infrastructure Owner / Sovereign Commander** who sits at the top level of the entire multi-tenant platform architecture.
+3. **Single Source of Credential Truth (`/login/admin`):**  
+   The Super Admin authenticates at the authoritative Central Admin Command (`shop.victoriousmarket.com.ng/login/admin` or `http://localhost:8000/login/admin`). From this single master seat, the Super Admin projects authority across all 4 platforms:
+   - **In-Store POS:** Governed via Master SaaS Control (`/saas/*`) and 1-Click Cryptographic SSO.
+   - **Omnichannel Merchants:** Audited, verified, and managed via `/admin/vendors`.
+   - **Customer Web & Mobile Apps:** Governed via `/admin/customer` and wallet controls.
+   - **Delivery Fleets:** Governed via `/admin/delivery-man` and dispatch portals.
+
+### 🧮 9-Role Authoritative Genesis & Origin Matrix:
+| Role # | Standard Role Name | Authoritative Origin / Database Table | Primary Login Entrypoint | Scope Boundary |
+| :---: | :--- | :--- | :--- | :--- |
+| **1** | **Super Admin** | **Victorious MARKET Central Hub** (`admins` table, `ID=1`) | `/login/admin` (Central Command) | **Platform-Wide Master Sovereignty** |
+| **2** | **Super Admin Employee** | **Victorious MARKET Central Hub** (`admins` table, `admin_role_id > 1`) | `/login/admin` (Central Command) | Admin Sub-Modules Only |
+| **3** | **Verified Merchant** | **Marketplace Vendor Directory** (`sellers` & `shops` tables) | `/vendor/auth/login` | Merchant's Owned Stores & Online Selling |
+| **4** | **Unverified Merchant** | **Marketplace Vendor Directory** (`sellers` table, `status='pending'`) | `/vendor/auth/login` | Free In-Store POS (Local counter only) |
+| **5** | **Verified Merchant Employee** | **Store POS Staff Register** (`pos_users` table) | `/store/{slug}/login` | Assigned Store Register Till |
+| **6** | **Unverified Merchant Employee** | **Store POS Staff Register** (`pos_users` table) | `/store/{slug}/login` | Free Store Counter Till |
+| **7** | **Active Deliveryman** | **Logistics Fleet Roster** (`delivery_men` table) | Delivery Rider Mobile App | Assigned Delivery Routes & Cash Collection |
+| **8** | **Inactive Deliveryman** | **Logistics Fleet Roster** (`delivery_men` table) | Delivery Rider Mobile App | Gated / Pending Verification Notice |
+| **9** | **Customer** | **Customer Accounts Hub** (`users` table) | Storefront Web & Customer Mobile App | Personal Profile, Orders & Wallet |
+
+### 🔒 Proof & Architectural Code Reference:
+* **Apex Schema Invariant:** `database/seeders/AdminTableSeeder.php` registers the root Super Admin at bootstrap.
+* **Master SSO Projection Guard:** [`DashboardController.php`](file:///c:/Users/USER/Downloads/vmarket/backend/vmarket-web/app/Http/Controllers/Admin/DashboardController.php#L150-L185) creates a signed HMAC-SHA256 token projecting Super Admin authority to POS.
+* **POS Zero-Penetration Receiver:** [`AuthController.php`](file:///c:/Users/USER/Downloads/vmarket/hysam/app/Http/Controllers/AuthController.php#L320-L365) validates the token against `APP_KEY` and initializes `user_role = 'super_admin'`, giving exclusive access to `/saas/*`.
 
 ---
 *© Victorious MARKET Ecosystem — Enterprise Mathematical & Architectural Verification Authority.*
