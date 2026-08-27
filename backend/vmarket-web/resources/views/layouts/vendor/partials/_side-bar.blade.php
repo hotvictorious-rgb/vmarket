@@ -55,6 +55,22 @@
                         @php($seller = auth('seller')->user())
                         @php($sellerId = $seller['id'])
 
+                        @if(auth('seller')->check() && auth('seller')->user()->status === 'approved')
+                        <li class="nav-item">
+                            <small class="nav-subtitle">{{ translate('POS_Management') }}</small>
+                            <small class="tio-more-horizontal nav-subtitle-replacer"></small>
+                        </li>
+                        <li class="navbar-vertical-aside-has-menu">
+                            <a class="nav-link" href="{{ env('VMARKET_POS_URL', 'http://127.0.0.1:8001') }}" target="_blank" title="In-Store POS Terminal (1 Free Location Included)">
+                                <i class="tio-receipt nav-icon text-primary"></i>
+                                <span class="navbar-vertical-aside-mini-mode-hidden-elements text-truncate font-weight-bold">
+                                    {{ translate('In-Store_POS_Terminal') }}
+                                    <span class="badge badge-soft-success badge-pill ml-1">Free 1 Store</span>
+                                </span>
+                            </a>
+                        </li>
+                        @endif
+
                         <li class="nav-item">
                             <small class="nav-subtitle">{{ translate('order_management') }}</small>
                             <small class="tio-more-horizontal nav-subtitle-replacer"></small>

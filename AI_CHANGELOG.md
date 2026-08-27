@@ -7,6 +7,23 @@ Always append your completed tasks here in chronological order at the top. Forma
 `### [YYYY-MM-DD HH:MM UTC] <Feature / Fix Title> [<Component Scope>]`
 Include the specific app/component modified and bullet points detailing the exact technical changes.
 
+### [2026-08-27 08:12 UTC] Implemented Universal Cross-System SSO & Real-Time Vendor Verification Gate on POS [backend] [pos] [security]
+* **Component:** Unified Cross-Authentication (`hysam/config/database.php`, `hysam/app/Http/Controllers/AuthController.php`, `test_universal_cross_login_and_vendor_verification.php`)
+* **Action:** Established universal account uniqueness and shared credentials across Victorious MARKET and Vmarket POS:
+  - Configured secondary database connection `vmarket` in Vmarket POS to enable real-time cross-database identity validation.
+  - **Shared Credentials:** Allowed merchants and super admin to use their exact same email & password on both systems without double-registration.
+  - **Verified Vendors Automatic Provisioning:** When an approved vendor (`status === 'approved'`) logs into Vmarket POS, they are granted immediate POS store access with 1 free location included.
+  - **Unverified Vendor Rejection Gate:** When a pending or unverified vendor attempts to log into POS, access is strictly denied with the exact error message: *"You are not yet allowed to sell on Victorious MARKET. Please complete verification or await administrator approval."*
+  - **Result:** 100% verified with automated proof suite `test_universal_cross_login_and_vendor_verification.php`.
+
+### [2026-08-27 08:06 UTC] Implemented Verified Vendor POS Access Gate & Cross-Ecosystem Return Switcher [backend] [pos] [ui]
+* **Component:** Vendor Header & Sidebar, Admin Header, POS Header (`_header.blade.php`, `_side-bar.blade.php`, `App.tsx`, `test_verified_vendor_pos_gate.php`)
+* **Action:** Implemented unified 1-click cross-navigation between Victorious MARKET and Vmarket POS with strict vendor verification feature-gating:
+  - **Verified Vendors Only:** Gated POS Terminal pill button in Vendor Header and "In-Store POS Terminal (Free 1 Store)" menu in Vendor Sidebar strictly to sellers with `status === 'approved'`. Pending / unverified / suspended vendors cannot see or access the POS button.
+  - **Super Admin Switcher:** Added POS Terminal switcher in Admin header linking directly to `VMARKET_POS_URL`.
+  - **POS Return Switcher:** Added prominent "🛍️ Victorious MARKET" return switcher button in Vmarket POS top header (`App.tsx`) for instant return navigation to the online storefront / vendor portal.
+  - **Verified with Automated Proof:** `test_verified_vendor_pos_gate.php` proved approved vendors see the button, pending vendors have it suppressed, and admin header displays the link.
+
 ### [2026-08-27 07:36 UTC] Executed & Verified 28/28 Cross-Actor Login Permutation & Screen Boundary Proofs [backend] [pos] [security]
 * **Component:** Authentication Guards, Multi-Tenant IDOR Boundaries (`test_cross_actor_login_isolation_proof.php`)
 * **Action:** Rigorously executed full Cartesian-product permutation matrix testing every system actor across every login portal:

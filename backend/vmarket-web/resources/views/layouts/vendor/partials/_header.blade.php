@@ -45,7 +45,20 @@
             </div>
             <div class="navbar-nav-wrap-content-right"
                  style="{{$direction === "rtl" ? 'margin-left:unset; margin-right: auto' : 'margin-right:unset; margin-left: auto'}}">
-                <ul class="navbar-nav align-items-center flex-row gap-2 gap-xl-16px">
+                    @if(auth('seller')->check() && auth('seller')->user()->status === 'approved')
+                    <li class="nav-item">
+                        <div class="hs-unfold">
+                            <a title="In-Store POS Terminal (1 Free Location Included)"
+                               class="btn btn-outline-primary btn-sm d-flex align-items-center gap-1 font-weight-bold px-2 py-1"
+                               href="{{ env('VMARKET_POS_URL', 'http://127.0.0.1:8001') }}" target="_blank"
+                               data-toggle="tooltip"
+                               data-custom-class="header-icon-title">
+                                <i class="tio-receipt"></i> <span>{{ translate('POS_Terminal') }}</span>
+                            </a>
+                        </div>
+                    </li>
+                    @endif
+
                     <li class="nav-item">
                         <div class="hs-unfold">
                             <a title="{{translate('website_shop_view')}}"
