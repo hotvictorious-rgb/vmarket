@@ -7,6 +7,13 @@ Always append your completed tasks here in chronological order at the top. Forma
 `### [YYYY-MM-DD HH:MM UTC] <Feature / Fix Title> [<Component Scope>]`
 Include the specific app/component modified and bullet points detailing the exact technical changes.
 
+### [2026-08-27 20:55 UTC] Streamlined Environment Variables and Fixed Dynamic Admin Login Slug Middleware [pos] [backend] [bugfix]
+* **Component:** Vmarket (`backend/vmarket-web/.env`), POS (`hysam/.env`), POS Middleware (`CheckWebAuth.php`)
+* **Action:** 
+  - Streamlined environment configuration: Removed redundant `SUPER_ADMIN_*` credentials from the POS `.env` file to establish the Vmarket database as the Single Source of Truth for Super Admin credentials. Removed duplicate `APP_URL`, `SOFTWARE_ID`, and `PURCHASE_CODE` variables from Vmarket's `.env`.
+  - Fixed Middleware Bypass Bug: Updated POS `CheckWebAuth` middleware to include `'admin/*/login'` in its public path registry. This resolves a critical bug where dynamic admin login slugs (e.g. `/admin/admin/login`) were intercepted and redirected to `/login` by the web auth checker.
+* **Verification:** Re-ran `test_all_12_governance_rules_proof.php` (passed 100%) and executed a newly written test `test_direct_admin_login.php` over HTTP. Verified that direct POS admin login succeeds using central database fallback matching.
+
 ### [2026-08-27 19:05 UTC] Resolved Missing Auth Import in POS Dashboard Controller [pos] [bugfix]
 * **Component:** POS (`DashboardController.php`)
 * **Action:** Added the missing `use Illuminate\Support\Facades\Auth;` facade import statement to POS `DashboardController.php` to resolve the fatal `Class not found` runtime exception that triggered HTTP 500 errors on SSO redirect login events.
