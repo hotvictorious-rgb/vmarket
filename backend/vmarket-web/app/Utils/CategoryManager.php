@@ -163,7 +163,9 @@ class CategoryManager
 
         $categoriesProcessed = self::getPriorityWiseCategorySortQuery(query: $categories);
         if ($dataLimit) {
-            $categoriesProcessed = $categoriesProcessed->paginate($dataLimit);
+            $categoriesProcessed = method_exists($categoriesProcessed, 'paginate')
+                ? $categoriesProcessed->paginate($dataLimit)
+                : $categoriesProcessed->take($dataLimit);
         }
         return $categoriesProcessed;
     }

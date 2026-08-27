@@ -9,8 +9,44 @@ class AdminService implements AdminServiceInterface
 {
     use FileManagerTrait;
 
+    /**
+     * [AI] Synchronize root Super Admin (id = 1) from .env configuration
+     */
+    public static function syncSuperAdminFromEnv(): void
+    {
+        $envEmail = env('SUPER_ADMIN_EMAIL');
+        $envPassword = env('SUPER_ADMIN_PASSWORD');
+        $envName = env('SUPER_ADMIN_NAME', 'Victorious Super Admin');
+        $envPhone = env('SUPER_ADMIN_PHONE', '08000000000');
+
+        if (!empty($envEmail)) {
+            $rootAdmin = \App\Models\Admin::find(1);
+            if (!$rootAdmin) {
+                $rootAdmin = new \App\Models\Admin();
+                $rootAdmin->id = 1;
+            }
+            $rootAdmin->name = $envName;
+            $rootAdmin->email = strtolower(trim($envEmail));
+            $rootAdmin->phone = $envPhone;
+            $rootAdmin->admin_role_id = 1;
+            $rootAdmin->status = 1;
+            if (!empty($envPassword)) {
+                $rootAdmin->password = bcrypt($envPassword);
+            }
+            $rootAdmin->save();
+        }
+    }
+
     public function isLoginSuccessful(string $email, string $password, string|null|bool $rememberToken): bool
     {
+        $normalizedEmail = strtolower(trim($email));
+        $envEmail = strtolower(trim(env('SUPER_ADMIN_EMAIL', '')));
+        $envPassword = env('SUPER_ADMIN_PASSWORD', '');
+
+        if (!empty($envEmail) && $normalizedEmail === $envEmail) {
+            self::syncSuperAdminFromEnv();
+        }
+
         if (auth('admin')->attempt(['email' => $email, 'password' => $password], $rememberToken)) {
             return true;
         }
