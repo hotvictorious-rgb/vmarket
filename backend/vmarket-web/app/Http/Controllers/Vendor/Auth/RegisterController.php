@@ -96,10 +96,11 @@ class RegisterController extends BaseController
             'templateName' => 'registration',
         ];
         // [AI] Generate Instant 1-Click SSO Redirect to Free 1-Store POS Terminal
-        $email = $vendor['email'];
+        $email = strtolower(trim($vendor['email']));
         $expires = time() + 300;
         $role = 'vendor';
-        $token = hash_hmac('sha256', "{$email}|{$expires}|{$role}", env('APP_KEY', 'VictoriousMarketSecretKey2026'));
+        $secretKey = env('VMARKET_SSO_SECRET', 'VictoriousMarketSecretKey2026');
+        $token = hash_hmac('sha256', "{$email}|{$expires}|{$role}", $secretKey);
         $posUrl = rtrim(env('VMARKET_POS_URL', 'http://127.0.0.1:8001'), '/');
         $ssoRedirectUrl = "{$posUrl}/sso-login?email=" . urlencode($email) . "&expires={$expires}&role={$role}&token={$token}";
 

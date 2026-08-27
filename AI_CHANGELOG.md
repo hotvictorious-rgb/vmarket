@@ -7,6 +7,15 @@ Always append your completed tasks here in chronological order at the top. Forma
 `### [YYYY-MM-DD HH:MM UTC] <Feature / Fix Title> [<Component Scope>]`
 Include the specific app/component modified and bullet points detailing the exact technical changes.
 
+### [2026-08-27 10:11 UTC] Seamless 1-Click SSO Auto-Login from Victorious MARKET to POS [backend] [pos] [sso] [auth]
+* **Component:** Single Sign-On (SSO) Cross-App Authentication (`DashboardController.php`, `POSController.php`, `RegisterController.php`, `CheckWebAuth.php`, `AuthController.php`, `.env`, `test_admin_and_vendor_1click_sso_auto_login.php`)
+* **Action:** Diagnosed and resolved the issue where clicking "POS Terminal" in Victorious MARKET redirected to the login form instead of automatically logging in:
+  - **Shared Secret Alignment:** Aligned HMAC generation and verification to use `env('VMARKET_SSO_SECRET', 'VictoriousMarketSecretKey2026')` across both Laravel applications instead of mismatched individual `APP_KEY`s.
+  - **CheckWebAuth Public Route Bypass:** Added `sso-login`, `admin/login`, and `store/*/login` to `$publicPaths` in `CheckWebAuth.php` so the SSO entrypoint can execute without being intercepted and redirected to `/login`.
+  - **Dynamic Admin User Resolution:** Updated `AuthController::ssoLogin` to query the authenticated admin's credentials from Victorious MARKET, dynamically provision the POS user, set `is_super_admin => true`, authenticate with `Auth::login()`, and seamlessly redirect straight to the POS dashboard (`/`).
+  - **Merchant Scoping & SaaS Isolation:** Confirmed that vendors using 1-click SSO are dynamically mapped to their merchant account (`is_super_admin => false`, `seller_id => X`), auto-logged in, and strictly blocked from SaaS master control.
+  - **Proof & Validation:** 100% verified via automated live HTTP test suite `test_admin_and_vendor_1click_sso_auto_login.php` showing HTTP 302 direct dashboard entry and zero login prompts.
+
 ### [2026-08-27 09:57 UTC] Enforced Zero-Trust SaaS Platform Access Isolation & Hidden from Merchants [pos] [saas] [security]
 * **Component:** SaaS Access Guard & Menu Visibility (`RequireSuperAdmin.php`, `routes/web.php`, `AuthController.php`, `layouts/app.blade.php`, `test_merchant_saas_access_blocked.php`)
 * **Action:** Enforced strict Zero-Trust boundaries around Master SaaS Platform controls:

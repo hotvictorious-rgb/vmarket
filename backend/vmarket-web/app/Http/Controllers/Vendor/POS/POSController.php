@@ -531,10 +531,11 @@ class POSController extends BaseController
             return redirect()->route('vendor.auth.login');
         }
 
-        $email = $seller->email;
+        $email = strtolower(trim($seller->email));
         $expires = time() + 300;
         $role = 'vendor';
-        $token = hash_hmac('sha256', "{$email}|{$expires}|{$role}", env('APP_KEY', 'VictoriousMarketSecretKey2026'));
+        $secretKey = env('VMARKET_SSO_SECRET', 'VictoriousMarketSecretKey2026');
+        $token = hash_hmac('sha256', "{$email}|{$expires}|{$role}", $secretKey);
 
         $posUrl = rtrim(env('VMARKET_POS_URL', 'http://127.0.0.1:8001'), '/');
         $ssoUrl = "{$posUrl}/sso-login?email=" . urlencode($email) . "&expires={$expires}&role={$role}&token={$token}";

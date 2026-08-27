@@ -322,10 +322,11 @@ class DashboardController extends BaseController
             return redirect()->route('admin.auth.login');
         }
 
-        $email = $admin->email;
+        $email = strtolower(trim($admin->email));
         $expires = time() + 300;
         $role = 'admin';
-        $token = hash_hmac('sha256', "{$email}|{$expires}|{$role}", env('APP_KEY', 'VictoriousMarketSecretKey2026'));
+        $secretKey = env('VMARKET_SSO_SECRET', 'VictoriousMarketSecretKey2026');
+        $token = hash_hmac('sha256', "{$email}|{$expires}|{$role}", $secretKey);
 
         $posUrl = rtrim(env('VMARKET_POS_URL', 'http://127.0.0.1:8001'), '/');
         $ssoUrl = "{$posUrl}/sso-login?email=" . urlencode($email) . "&expires={$expires}&role={$role}&token={$token}";
