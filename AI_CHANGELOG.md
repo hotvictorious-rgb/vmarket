@@ -7,6 +7,15 @@ Always append your completed tasks here in chronological order at the top. Forma
 `### [YYYY-MM-DD HH:MM UTC] <Feature / Fix Title> [<Component Scope>]`
 Include the specific app/component modified and bullet points detailing the exact technical changes.
 
+### [2026-08-27 09:31 UTC] Implemented Configurable Admin Login Slug, Dedicated Store Worker Portals & Merchant Restriction [backend] [pos] [auth]
+* **Component:** Multi-Tenant Authentication & Store Scoping (`routes/web.php`, `AuthController.php`, `admin_dedicated_login.blade.php`, `store_worker_login.blade.php`, `_header.blade.php`, `test_dedicated_multi_tenant_logins.php`)
+* **Action:** Implemented multi-tenant isolated portals with dynamic route configuration and strict role-boundary error messaging:
+  - **General Merchant Login Restriction (`:8001/login`):** Restricted direct POS web login exclusively to registered marketplace merchants. Any non-merchant email receives the exact notice: *"You are not a merchant yet, sign up."* (with sign-up link).
+  - **Dedicated Configurable Super Admin Portal (`/admin/{slug}/login`):** Created dedicated Super Admin Command Terminal login inheriting the dynamic `admin_login_url` slug setting from Victorious MARKET `business_settings`. Invalid or unauthorized slugs are blocked with HTTP 404.
+  - **Dedicated Store Worker Portals (`/store/{slug}/login`):** Created custom store-branded cashier login pages displaying merchant shop name, logo, address, and counter register. Scoped staff credentials strictly to that store, rejecting unauthorized staff or wrong credentials with *"Invalid email address or password for this store."*
+  - **1-Click Staff Link Copy Widget:** Added permanent "Staff POS Link" copy button to the Victorious MARKET vendor header blade.
+  - **Result:** 100% verified across all permutations via `test_dedicated_multi_tenant_logins.php`.
+
 ### [2026-08-27 09:09 UTC] Implemented POS Merchant Sign Up CTA & Instant Post-Registration Free POS Redirection [backend] [pos] [onboarding]
 * **Component:** Vendor Registration & POS Onboarding (`login.blade.php`, `RegisterController.php`, `test_vendor_registration_to_pos_flow.php`)
 * **Action:** Connected POS merchant onboarding to Victorious MARKET vendor registration:

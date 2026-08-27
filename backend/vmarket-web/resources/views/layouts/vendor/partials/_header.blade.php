@@ -59,6 +59,20 @@
                     </li>
                     @endif
 
+                    @if(isset($shop) && !empty($shop->slug))
+                    @php($workerUrl = rtrim(env('VMARKET_POS_URL', 'http://127.0.0.1:8001'), '/') . '/store/' . $shop->slug . '/login')
+                    <li class="nav-item">
+                        <div class="hs-unfold">
+                            <button type="button" title="{{ translate('Copy_Dedicated_Cashier_Login_Link_for_Staff') }}"
+                               class="btn btn-outline-secondary btn-sm d-flex align-items-center gap-1 font-weight-bold px-2 py-1"
+                               onclick="navigator.clipboard.writeText('{{ $workerUrl }}'); toastr.success('{{ translate('Cashier_link_copied_to_clipboard') }}!');"
+                               data-toggle="tooltip">
+                                <i class="tio-copy"></i> <span>{{ translate('Staff_POS_Link') }}</span>
+                            </button>
+                        </div>
+                    </li>
+                    @endif
+
                     <li class="nav-item">
                         <div class="hs-unfold">
                             <a title="{{translate('website_shop_view')}}"
