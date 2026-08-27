@@ -4,7 +4,7 @@
 
 @php($recaptcha = getWebConfig(name: 'recaptcha'))
 <span id="get-google-recaptcha-key"
-data-value="{{ isset($recaptcha) && $recaptcha['status'] == 1 ? $recaptcha['site_key'] : '' }}"></span>
+data-value="{{ (is_array($recaptcha ?? null) && !empty($recaptcha['status']) && $recaptcha['status'] == 1) ? ($recaptcha['site_key'] ?? '') : '' }}"></span>
 
 <script src="{{ theme_asset('assets/js/jquery-3.6.0.min.js') }}"></script>
 <script defer src="{{ theme_asset('assets/js/bootstrap.bundle.min.js') }}"></script>
@@ -24,8 +24,8 @@ data-value="{{ isset($recaptcha) && $recaptcha['status'] == 1 ? $recaptcha['site
 <script defer src="{{ dynamicAsset(path: 'public/assets/backend/file-validation/just-validate.min.js') }}"></script>
 <script defer src="{{ dynamicAsset(path: 'public/assets/backend/file-validation/form-advance-validation.js') }}"></script>
 
-@if (isset($recaptcha) && $recaptcha['status'] == 1)
-    <script defer src="https://www.google.com/recaptcha/api.js?render={{ $recaptcha['site_key'] }}"></script>
+@if (is_array($recaptcha ?? null) && !empty($recaptcha['status']) && $recaptcha['status'] == 1)
+    <script defer src="https://www.google.com/recaptcha/api.js?render={{ $recaptcha['site_key'] ?? '' }}"></script>
 @endif
 <script defer src="{{ dynamicAsset(path: 'public/assets/backend/libs/google-recaptcha/google-recaptcha-init.js') }}"></script>
 

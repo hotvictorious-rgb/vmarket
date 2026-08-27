@@ -33,41 +33,6 @@
                     </span>
                 </a>
             </li>
-            <li class="{{ Request::is('admin/pos*') || Request::is('admin/pos-management*') ? 'sub-menu-opened' : ''}}">
-                <a class="nav-link nav-link-toggle {{ Request::is('admin/pos*') || Request::is('admin/pos-management*') ? 'active' : ''}}"
-                   href="javascript:" title="{{ translate('POS_&_Anti-Theft_ERP') }}">
-                    <i class="fi fi-sr-point-of-sale-bill"></i>
-                    <span class="aside-mini-hidden-element flex-grow-1 d-flex justify-content-between align-items-center">
-                        <span class="text-truncate max-w-180">{{ translate('POS_&_Shop_ERP') }}</span>
-                        <i class="fi fi-sr-angle-down"></i>
-                    </span>
-                </a>
-                <ul class="aside-submenu navbar-nav">
-                    <li class="nav-item">
-                        <a class="nav-link {{ Request::is('admin/pos') ? 'active' : '' }}" href="{{ route('admin.pos.index') }}" title="{{ translate('POS_Register') }}">
-                            <span class="flex-grow-1 text-truncate">{{ translate('POS_Register') }}</span>
-                        </a>
-                    </li>
-                    <li class="nav-item">
-                        <a class="nav-link {{ Request::is('admin/pos-management/dashboard') ? 'active' : '' }}" href="{{ route('admin.pos-management.dashboard') }}" title="{{ translate('Command_Center_&_Theft_Radar') }}">
-                            <span class="flex-grow-1 text-truncate">{{ translate('Theft_Radar_&_Analytics') }}</span>
-                        </a>
-                    </li>
-                    <li class="nav-item">
-                        <a class="nav-link {{ Request::is('admin/pos-management/settings') ? 'active' : '' }}" href="{{ route('admin.pos-management.settings') }}" title="{{ translate('POS_Pricing_&_Limits') }}">
-                            <span class="flex-grow-1 text-truncate">{{ translate('SaaS_Pricing_&_Limits') }}</span>
-                        </a>
-                    </li>
-                    <li class="nav-item">
-                        <a class="nav-link {{ Request::is('admin/pos-management/marketplace-applications') ? 'active' : '' }}" href="{{ route('admin.pos-management.marketplace-applications') }}" title="{{ translate('Marketplace_Applications') }}">
-                            <span class="flex-grow-1 text-truncate">{{ translate('Marketplace_Applications') }}</span>
-                            <span class="badge fw-bold badge-warning badge-sm text-bg-warning">
-                                {{ \App\Models\Seller::where('marketplace_status', 'pending_approval')->count() }}
-                            </span>
-                        </a>
-                    </li>
-                </ul>
-            </li>
             @if(Helpers::module_permission_check('order_management'))
                 <li class="nav-item nav-item_title {{ Request::is('admin/orders*')?((Request::is('admin/orders/details/*') && request()->has('vendor-order-list')) ? '' : 'scroll-here'):''}}">
                     <small class="nav-subtitle" title="">{{ translate('order_management') }}</small>
@@ -970,6 +935,17 @@
                                href="{{ route('admin.vendors.withdraw-method.list') }}"
                                title="{{ translate('withdrawal_Methods') }}">
                                 <span class="text-truncate">{{ translate('withdrawal_Methods') }}</span>
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link {{ Request::is('admin/vendors/marketplace-applications*') || Request::is('admin/pos-management/marketplace-applications*') ? 'active' : '' }}"
+                               href="{{ route('admin.vendors.marketplace-applications') }}"
+                               title="{{ translate('Marketplace_Applications') }}">
+                                <span class="text-truncate">{{ translate('Marketplace_Applications') }}</span>
+                                @php($pendingApps = \App\Models\Seller::where('marketplace_status', 'pending_approval')->count())
+                                @if($pendingApps > 0)
+                                    <span class="badge fw-bold badge-warning badge-sm text-bg-warning ms-1">{{ $pendingApps }}</span>
+                                @endif
                             </a>
                         </li>
                     </ul>

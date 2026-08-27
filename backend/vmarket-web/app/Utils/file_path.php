@@ -116,7 +116,7 @@ if(!function_exists('checkImageStatus')){
 if (!function_exists('dynamicAsset')) {
     function dynamicAsset(string $path): string
     {
-        if (DOMAIN_POINTED_DIRECTORY == 'public') {
+        if (defined('DOMAIN_POINTED_DIRECTORY') && DOMAIN_POINTED_DIRECTORY == 'public') {
             $position = strpos($path, 'public/');
             $result = $path;
             if ($position === 0) {
@@ -132,7 +132,7 @@ if (!function_exists('dynamicAsset')) {
 if (!function_exists('dynamicStorage')) {
     function dynamicStorage(string $path): string
     {
-        if (DOMAIN_POINTED_DIRECTORY == 'public') {
+        if (defined('DOMAIN_POINTED_DIRECTORY') && DOMAIN_POINTED_DIRECTORY == 'public') {
             $result = str_replace('storage/app/public', 'storage', $path);
         } else {
             $result = $path;
@@ -144,7 +144,7 @@ if (!function_exists('dynamicStorage')) {
 if (!function_exists('getValidImage')) {
     function getValidImage($path, $type = null, $source = null): string
     {
-        if (DOMAIN_POINTED_DIRECTORY == 'public') {
+        if (defined('DOMAIN_POINTED_DIRECTORY') && DOMAIN_POINTED_DIRECTORY == 'public') {
             $path = str_replace('storage/app/public', 'storage', $path);
         }
 

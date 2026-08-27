@@ -55,8 +55,8 @@
         }
 
         .announcement-color {
-            background-color: {{ $web_config['announcement']['color'] }};
-            color: {{$web_config['announcement']['text_color']}};
+            background-color: {{ (is_array($web_config['announcement'] ?? null) ? ($web_config['announcement']['color'] ?? '#5e2e85') : '#5e2e85') }};
+            color: {{ (is_array($web_config['announcement'] ?? null) ? ($web_config['announcement']['text_color'] ?? '#ffffff') : '#ffffff') }};
         }
         .btn-outline-success {
             --bs-btn-hover-bg: {{ $web_config['primary_color'] }} !important;

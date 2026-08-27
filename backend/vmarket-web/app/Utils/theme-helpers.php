@@ -7,7 +7,7 @@ if (!function_exists('theme_asset')) {
         if ($themeName == 'default') {
             return dynamicAsset(path: $path);
         } else {
-            if (DOMAIN_POINTED_DIRECTORY == 'public') {
+            if (defined('DOMAIN_POINTED_DIRECTORY') && DOMAIN_POINTED_DIRECTORY == 'public') {
                 return dynamicAsset(path: 'public/themes/' . $themeName . '/public/' . $path);
             } else {
                 return dynamicAsset(path: 'resources/themes/' . $themeName . '/public/' . $path);

@@ -2384,7 +2384,7 @@ class ProductManager
         $stockClearanceVendors = getWebConfig(name: 'stock_clearance_vendor_priority');
 
         $query = $query->withCount(['orderDetails', 'reviews', 'wishList'])->withAvg('reviews', 'rating');
-        if ($stockClearanceProductSortBy && ($stockClearanceProductSortBy['custom_sorting_status'] == 1)) {
+        if (is_array($stockClearanceProductSortBy) && !empty($stockClearanceProductSortBy['custom_sorting_status'])) {
 
             $query = self::getSortingProductByTemporaryClose(query: $query, temporaryCloseStatus: $stockClearanceProductSortBy['temporary_close_sorting']);
 

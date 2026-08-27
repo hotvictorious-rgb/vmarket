@@ -1,8 +1,8 @@
 @php($recaptcha = getWebConfig(name: 'recaptcha'))
 
-@if ($web_config['firebase_otp_verification'] && $web_config['firebase_otp_verification']['status'])
+@if (is_array($web_config['firebase_otp_verification'] ?? null) && !empty($web_config['firebase_otp_verification']['status']))
     <div class="generate-firebase-auth-recaptcha" id="firebase-auth-recaptcha-{{ rand(111, 999) }}"></div>
-@elseif(isset($recaptcha) && $recaptcha['status'] == 1)
+@elseif(is_array($recaptcha ?? null) && !empty($recaptcha['status']) && $recaptcha['status'] == 1)
 @php($randomNumber = rand(1111,9999))
     <div class="dynamic-default-and-recaptcha-section">
         <input type="hidden" name="g-recaptcha-response" class="render-grecaptcha-response"

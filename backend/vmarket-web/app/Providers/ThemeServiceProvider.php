@@ -14,14 +14,15 @@ class ThemeServiceProvider extends ServiceProvider
      */
     public function register(): void
     {
-        if (!App::runningInConsole()) {
-            $theme = env('WEB_THEME') == null ? 'default' : env('WEB_THEME');
-            $path = base_path('resources/themes/' . $theme);
-            if (!defined('VIEW_FILE_NAMES')) {
-                define("VIEW_FILE_NAMES", include($path . '/file_names.php'));
-            }
-            view()->addLocation($path);
+        $theme = env('WEB_THEME') == null ? 'theme_aster' : env('WEB_THEME');
+        $path = base_path('resources/themes/' . $theme);
+        if (!is_dir($path)) {
+            $path = base_path('resources/themes/theme_aster');
         }
+        if (!defined('VIEW_FILE_NAMES') && file_exists($path . '/file_names.php')) {
+            define("VIEW_FILE_NAMES", include($path . '/file_names.php'));
+        }
+        view()->addLocation($path);
     }
 
     /**

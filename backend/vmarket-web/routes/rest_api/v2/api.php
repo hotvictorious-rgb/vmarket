@@ -23,8 +23,8 @@ use Illuminate\Support\Facades\Route;
 |--------------------------------------------------------------------------
 */
 
-Route::group(['namespace' => 'RestAPI\v2', 'prefix' => 'v2', 'middleware' => ['api_lang']], function () {
-    Route::group(['prefix' => 'seller', 'namespace' => 'seller'], function () {
+Route::group(['prefix' => 'v2', 'middleware' => ['api_lang']], function () {
+    Route::group(['prefix' => 'seller'], function () {
 
         Route::controller(SellerController::class)->group(function () {
             Route::get('seller-info', 'seller_info');
@@ -114,7 +114,7 @@ Route::group(['namespace' => 'RestAPI\v2', 'prefix' => 'v2', 'middleware' => ['a
             });
         });
 
-        Route::group(['prefix' => 'auth', 'namespace' => 'auth'], function () {
+        Route::group(['prefix' => 'auth'], function () {
             Route::post('login', [LoginController::class,'login']);
             Route::controller(ForgotPasswordController::class)->group(function () {
                 Route::post('forgot-password', 'reset_password_request');
@@ -123,14 +123,14 @@ Route::group(['namespace' => 'RestAPI\v2', 'prefix' => 'v2', 'middleware' => ['a
             });
         });
 
-        Route::group(['prefix' => 'registration', 'namespace' => 'auth'], function () {
+        Route::group(['prefix' => 'registration'], function () {
             Route::post('/', [RegisterController::class, 'store']);
         });
     });
 
-    Route::group(['prefix' => 'delivery-man', 'namespace' => 'delivery_man'], function () {
+    Route::group(['prefix' => 'delivery-man'], function () {
 
-        Route::group(['prefix' => 'auth', 'namespace' => 'auth', 'middleware' => ['throttle:10,1']], function () {
+        Route::group(['prefix' => 'auth', 'middleware' => ['throttle:10,1']], function () {
             Route::controller(DeliveryManLoginController::class)->group(function () {
                 Route::post('login', 'login');
                 Route::post('forgot-password', 'reset_password_request');

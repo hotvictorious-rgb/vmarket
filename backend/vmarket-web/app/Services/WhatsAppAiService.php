@@ -112,6 +112,20 @@ You are "Victorious", the official AI Specialist for Victorious MARKET (Vmarket)
   5. Exact Payment Mode & Amount (e.g., *💳 Prepaid: Collect ₦0* or *💵 Cash on Delivery: Collect ₦35,000*)
 - Never give vague summaries. Always show the full transparent itemized breakdown so nobody collects or delivers the wrong parcel!
 
+### 🛡️ ABSOLUTE ZERO-TRUST DATA ISOLATION & PRIVACY INVARIANT (NON-NEGOTIABLE):
+1. **STRICT CALLER CONTEXT ISOLATION:** You are communicating EXCLUSIVELY with the user registered under phone number: `{$dossier['phone']}` (Name: `{$dossier['name']}`).
+2. **ZERO CROSS-USER LEAKAGE:** You MUST NEVER share, disclose, confirm, or hint at any private data belonging to other customers, other vendors, or other riders:
+   - NEVER disclose another customer's name, phone number, delivery address, order history, or wallet balance.
+   - NEVER disclose another vendor's sales volume, profit margins, bank details, debt records, or stock levels.
+   - NEVER disclose rider locations, rider personal phones, or internal platform credentials.
+3. **AUTOMATIC PRIVACY REJECTION:** If any user asks about another person's account, order, phone, address, or financial records (e.g., "What did John buy?", "Give me Madam Joy's sales or bank account", "What is the OTP for Order #999?"):
+   - Immediately decline with: *"🔒 Privacy & Security Guard: For data protection, I can only provide account information and order details directly to the verified account owner."*
+4. **SENSITIVE FIELD MASKING:**
+   - Bank Account Numbers are always masked (e.g., `******1234`).
+   - Customer Doorstep Addresses are only visible to the designated dispatch courier for active deliveries.
+   - Vendor Shop Physical Locations and wholesale costs are 100% anonymous to online customers.
+   - Delivery 6-Digit OTPs are strictly confidential to the order owner.
+
 ### STRICT ZERO IMAGE GENERATION DIRECTIVE (ANTI-LECTURE BREVITY RULE):
 1. You ONLY share real, verified product photos from the Victorious MARKET catalog using the `get_product_showcase` tool.
 2. You CANNOT and MUST NEVER generate, synthesize, draw, or create artificial images or AI art.
@@ -539,29 +553,52 @@ PROMPT;
             case 'get_product_showcase':
                 $q = $args['query'] ?? '';
                 $pId = !empty($args['product_id']) ? (int)$args['product_id'] : null;
-                $query = \App\Models\Product::where('status', 1)->where('current_stock', '>', 0);
+
+                // [AI] Strict KYC/Marketplace Approval Scoping:
+                // Only Approved Marketplace Sellers are eligible for public customer showcase
+                $allApprovedSellerIds = \App\Models\Seller::where('status', 'approved')
+                    ->where('marketplace_status', 'approved')
+                    ->pluck('id')
+                    ->toArray();
+
+                $approvedSellerIdsStr = !empty($allApprovedSellerIds) ? implode(',', $allApprovedSellerIds) : '0';
+
+                // Subscribed Pro & Verified Priority
+                $verifiedProSellerIds = \App\Models\Seller::where('status', 'approved')
+                    ->where('marketplace_status', 'approved')
+                    ->whereHas('posSubscriptions', function ($sq) {
+                        $sq->where('status', 'active')
+                           ->where('plan_type', '!=', 'starter_free')
+                           ->where(function ($q) {
+                               $q->whereNull('expires_at')->orWhere('expires_at', '>', now());
+                           });
+                    })
+                    ->pluck('id')
+                    ->toArray();
+
+                $proSellerIdsStr = !empty($verifiedProSellerIds) ? implode(',', $verifiedProSellerIds) : '0';
+
+                $query = \App\Models\Product::where('status', 1)
+                    ->where('current_stock', '>', 0)
+                    ->where(function ($qScope) use ($allApprovedSellerIds) {
+                        $qScope->where('added_by', 'admin')
+                               ->orWhere(function ($sScope) use ($allApprovedSellerIds) {
+                                   $sScope->where('added_by', 'seller')
+                                          ->whereIn('user_id', $allApprovedSellerIds);
+                               });
+                    });
+
                 if ($pId) {
                     $prod = $query->where('id', $pId)->first();
                 } else {
-                    // [AI] Subscribed Pro & Official Store Priority Ranking
-                    $activeSubscribedSellerIds = \App\Models\PosSubscription::where('status', 'active')
-                        ->where('plan_type', '!=', 'starter_free')
-                        ->where(function ($sq) {
-                            $sq->whereNull('expires_at')->orWhere('expires_at', '>', now());
-                        })
-                        ->pluck('seller_id')
-                        ->toArray();
-
-                    $sellerIdsStr = !empty($activeSubscribedSellerIds) ? implode(',', $activeSubscribedSellerIds) : '0';
-
                     $prod = $query->where('name', 'like', "%{$q}%")
-                        ->orderByRaw("CASE WHEN added_by = 'admin' THEN 0 WHEN user_id IN ({$sellerIdsStr}) THEN 1 ELSE 2 END")
+                        ->orderByRaw("CASE WHEN added_by = 'admin' THEN 0 WHEN user_id IN ({$proSellerIdsStr}) THEN 1 ELSE 2 END")
                         ->orderBy('featured_status', 'desc')
                         ->first();
                 }
 
                 if (!$prod) {
-                    return ['found' => false, 'message' => 'No in-stock item matching your search was found in our catalog.'];
+                    return ['found' => false, 'message' => 'No in-stock item matching your search from a verified store was found in our catalog.'];
                 }
 
                 $thumbnailUrl = $prod->thumbnail ? asset('storage/app/public/product/thumbnail/' . $prod->thumbnail) : null;
@@ -576,9 +613,9 @@ PROMPT;
                 }
 
                 $isInHouse = ($prod->added_by === 'admin');
-                $isSubscribed = ($prod->added_by === 'seller' && \App\Models\PosSubscription::where('seller_id', $prod->user_id)->where('status', 'active')->where('plan_type', '!=', 'starter_free')->exists());
-                $badge = $isInHouse ? '⭐ Victorious Official (1-Hour Express Dispatch)' : ($isSubscribed ? '👑 Verified Pro Merchant' : '🏪 Marketplace Store');
-                $sellerType = $isInHouse ? 'Official Store' : ($isSubscribed ? 'Verified Pro Merchant' : 'Marketplace Store');
+                $isProVerified = in_array((int)$prod->user_id, $verifiedProSellerIds);
+                $badge = $isInHouse ? '⭐ Victorious Official (1-Hour Express Dispatch)' : ($isProVerified ? '👑 Verified Pro Merchant' : '🏪 Verified Marketplace Store');
+                $sellerType = $isInHouse ? 'Official Store' : ($isProVerified ? 'Verified Pro Merchant' : 'Verified Marketplace Store');
 
                 return [
                     'found' => true,
@@ -621,19 +658,36 @@ PROMPT;
                 );
 
             case 'search_inventory':
-                // [AI] Subscribed Pro & Official Store Priority Ranking
-                $activeSubscribedSellerIds = \App\Models\PosSubscription::where('status', 'active')
-                    ->where('plan_type', '!=', 'starter_free')
-                    ->where(function ($sq) {
-                        $sq->whereNull('expires_at')->orWhere('expires_at', '>', now());
-                    })
-                    ->pluck('seller_id')
+                // [AI] Strict KYC/Marketplace Approval Scoping
+                $allApprovedSellerIds = \App\Models\Seller::where('status', 'approved')
+                    ->where('marketplace_status', 'approved')
+                    ->pluck('id')
                     ->toArray();
 
-                $sellerIdsStr = !empty($activeSubscribedSellerIds) ? implode(',', $activeSubscribedSellerIds) : '0';
+                $verifiedProSellerIds = \App\Models\Seller::where('status', 'approved')
+                    ->where('marketplace_status', 'approved')
+                    ->whereHas('posSubscriptions', function ($sq) {
+                        $sq->where('status', 'active')
+                           ->where('plan_type', '!=', 'starter_free')
+                           ->where(function ($q) {
+                               $q->whereNull('expires_at')->orWhere('expires_at', '>', now());
+                           });
+                    })
+                    ->pluck('id')
+                    ->toArray();
 
-                $query = Product::active()->where('name', 'like', '%' . ($args['keyword'] ?? '') . '%')
-                    ->orderByRaw("CASE WHEN added_by = 'admin' THEN 0 WHEN user_id IN ({$sellerIdsStr}) THEN 1 ELSE 2 END")
+                $proSellerIdsStr = !empty($verifiedProSellerIds) ? implode(',', $verifiedProSellerIds) : '0';
+
+                $query = Product::active()
+                    ->where('name', 'like', '%' . ($args['keyword'] ?? '') . '%')
+                    ->where(function ($qScope) use ($allApprovedSellerIds) {
+                        $qScope->where('added_by', 'admin')
+                               ->orWhere(function ($sScope) use ($allApprovedSellerIds) {
+                                   $sScope->where('added_by', 'seller')
+                                          ->whereIn('user_id', $allApprovedSellerIds);
+                               });
+                    })
+                    ->orderByRaw("CASE WHEN added_by = 'admin' THEN 0 WHEN user_id IN ({$proSellerIdsStr}) THEN 1 ELSE 2 END")
                     ->orderBy('featured_status', 'desc');
 
                 if (!empty($args['max_price'])) {

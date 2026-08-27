@@ -117,7 +117,7 @@
                             </div>
                         </div>
 
-                        @if(isset($recaptcha) && $recaptcha['status'] == 1)
+                        @if(is_array($recaptcha ?? null) && !empty($recaptcha['status']) && $recaptcha['status'] == 1)
                             <div class="dynamic-default-and-recaptcha-section">
                                 <input type="hidden" name="g-recaptcha-response" class="render-grecaptcha-response" data-action="login"
                                        data-input="#login-default-captcha-section"
@@ -195,9 +195,9 @@
 
     @php($recaptcha = getWebConfig(name: 'recaptcha'))
     <span id="get-google-recaptcha-key"
-          data-value="{{ isset($recaptcha) && $recaptcha['status'] == 1 ? $recaptcha['site_key'] : '' }}"></span>
-    @if (isset($recaptcha) && $recaptcha['status'] == 1)
-        <script src="https://www.google.com/recaptcha/api.js?render={{ $recaptcha['site_key'] }}"></script>
+          data-value="{{ (is_array($recaptcha ?? null) && !empty($recaptcha['status']) && $recaptcha['status'] == 1) ? ($recaptcha['site_key'] ?? '') : '' }}"></span>
+    @if (is_array($recaptcha ?? null) && !empty($recaptcha['status']) && $recaptcha['status'] == 1)
+        <script src="https://www.google.com/recaptcha/api.js?render={{ $recaptcha['site_key'] ?? '' }}"></script>
     @endif
     <script src="{{ dynamicAsset(path: 'public/assets/backend/libs/google-recaptcha/google-recaptcha-init.js') }}"></script>
 

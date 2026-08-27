@@ -3,7 +3,7 @@
     use App\Models\Category;
     use App\Utils\Helpers;
 @endphp
-@if (isset($web_config['announcement']) && $web_config['announcement']['status']==1)
+@if (is_array($web_config['announcement'] ?? null) && !empty($web_config['announcement']['status']) && $web_config['announcement']['status'] == 1)
     <div class="offer-bar py-2 py-sm-3 announcement-color d--none">
         <div class="d-flex gap-2 align-items-center">
             <div class="offer-bar-close">

@@ -2,7 +2,7 @@
 
 namespace App\Http\Controllers\Admin\Vendor;
 
-use App\Http\Controllers\BaseController;
+use App\Http\Controllers\Controller;
 use App\Models\Seller;
 use App\Utils\Helpers;
 use Devrabiul\ToastMagic\Facades\ToastMagic;
@@ -14,7 +14,7 @@ use Illuminate\Http\Request;
  * [AI] Class MarketplaceApprovalController
  * Manages vendor applications to activate online marketplace selling on Victorious Market.
  */
-class MarketplaceApprovalController extends BaseController
+class MarketplaceApprovalController extends Controller
 {
     public function index(Request $request): View
     {

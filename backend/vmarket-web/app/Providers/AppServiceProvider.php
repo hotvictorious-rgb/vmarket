@@ -70,7 +70,7 @@ class AppServiceProvider extends ServiceProvider
         if (!in_array(request()->ip(), ['127.0.0.1', '::1']) && env('FORCE_HTTPS')) {
             \URL::forceScheme('https');
         }
-        if (!App::runningInConsole()) {
+        if (!App::runningInConsole() || defined('LARAVEL_TEST_RUN') || request()) {
             Paginator::useBootstrap();
 
             Config::set('addon_admin_routes', $this->getAddonAdminRoutes());
@@ -85,14 +85,14 @@ class AppServiceProvider extends ServiceProvider
                     $web = $this->cacheBusinessSettingsTable();
 
                     $firebaseOTPVerification = getWebConfig(name: 'firebase_otp_verification');
-                    $firebaseOTPVerificationStatus = (int)($firebaseOTPVerification && $firebaseOTPVerification['status'] && $firebaseOTPVerification['web_api_key']);
+                    $firebaseOTPVerificationStatus = (int)(is_array($firebaseOTPVerification) && !empty($firebaseOTPVerification['status']) && !empty($firebaseOTPVerification['web_api_key']));
 
                     $systemColors = getWebConfig('colors');
                     $web_config = [
-                        'primary_color' => $systemColors['primary'] ?? '',
-                        'secondary_color' => $systemColors['secondary'] ?? '',
-                        'primary_color_light' => $systemColors['primary_light'] ?? '',
-                        'panel_sidebar_color' => $systemColors['panel-sidebar'] ?? '',
+                        'primary_color' => (is_array($systemColors) ? ($systemColors['primary'] ?? '#5e2e85') : '#5e2e85'),
+                        'secondary_color' => (is_array($systemColors) ? ($systemColors['secondary'] ?? '#f1c40f') : '#f1c40f'),
+                        'primary_color_light' => (is_array($systemColors) ? ($systemColors['primary_light'] ?? '#7a42a7') : '#7a42a7'),
+                        'panel_sidebar_color' => (is_array($systemColors) ? ($systemColors['panel-sidebar'] ?? '#5e2e85') : '#5e2e85'),
                         'name' => Helpers::get_settings($web, 'company_name'),
                         'company_name' => getWebConfig(name: 'company_name'),
                         'phone' => getWebConfig(name: 'company_phone'),
@@ -109,11 +109,15 @@ class AppServiceProvider extends ServiceProvider
                         'loyalty_point_status' => getWebConfig(name: 'loyalty_point_status'),
                         'guest_checkout_status' => getWebConfig(name: 'guest_checkout'),
                         'digital_product_setting' => getWebConfig(name: 'digital_product'),
-                        'language' => getWebConfig(name: 'language'),
+                        'language' => (is_string(getWebConfig(name: 'language')) ? (json_decode(getWebConfig(name: 'language'), true) ?? [['id' => 1, 'name' => 'English', 'code' => 'en', 'status' => 1, 'default' => true, 'direction' => 'ltr']]) : (getWebConfig(name: 'language') ?? [['id' => 1, 'name' => 'English', 'code' => 'en', 'status' => 1, 'default' => true, 'direction' => 'ltr']])),
+                        'currencies' => \App\Models\Currency::where('status', 1)->get(),
+                        'currency_model' => getWebConfig(name: 'currency_model') ?? 'single_currency',
+                        'brand_setting' => getWebConfig(name: 'product_brand') ?? 1,
                         'publishing_houses' => Schema::hasTable('publishing_houses') ? ProductManager::getPublishingHouseList(type: 'count') : null,
                         'digital_product_authors' => Schema::hasTable('authors') ? ProductManager::getProductAuthorList() : null,
                         'firebase_otp_verification' => $firebaseOTPVerification,
                         'firebase_otp_verification_status' => $firebaseOTPVerificationStatus,
+                        'announcement' => getWebConfig(name: 'announcement') ?: ['status' => 0, 'color' => '#5e2e85', 'text_color' => '#ffffff', 'announcement' => ''],
                         'meta_title' => getWebConfig(name: 'meta_title') ?: (getWebConfig(name: 'company_name').' || Your Trusted Online Market in Uyo, Akwa Ibom State'),
                         'meta_description' => getWebConfig(name: 'meta_description') ?: 'Victorious MARKET || Your Trusted Online Market in Uyo, Akwa Ibom State. Shop quality electronics, groceries, fashion, beauty, and home essentials with fast delivery in Uyo.',
                     ];
@@ -225,8 +229,8 @@ class AppServiceProvider extends ServiceProvider
                     View::share(['web_config' => $web_config, 'language' => $language]);
                     Schema::defaultStringLength(191);
                 }
-            } catch (Exception $exception) {
-
+            } catch (\Throwable $exception) {
+                \Log::error("AppServiceProvider boot error: " . $exception->getMessage() . " at " . $exception->getFile() . ":" . $exception->getLine());
             }
 
             try {

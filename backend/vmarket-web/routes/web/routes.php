@@ -102,7 +102,7 @@ Route::controller(WebController::class)->group(function () {
     Route::get('maintenance-mode', 'maintenance_mode')->name('maintenance-mode');
 });
 
-Route::group(['namespace' => 'Web', 'middleware' => ['maintenance_mode', 'guestCheck']], function () {
+Route::group(['middleware' => ['maintenance_mode', 'guestCheck']], function () {
     Route::group(['prefix' => 'product-compare', 'as' => 'product-compare.'], function () {
         Route::controller(ProductCompareController::class)->group(function () {
             Route::get(ProductCompare::INDEX[URI], 'index')->name('index')->middleware('customer');
@@ -114,7 +114,7 @@ Route::group(['namespace' => 'Web', 'middleware' => ['maintenance_mode', 'guestC
     Route::post(ShopFollower::SHOP_FOLLOW[URI], [ShopFollowerController::class, 'followOrUnfollowShop'])->name('shop-follow');
 });
 
-Route::group(['namespace' => 'Web', 'middleware' => ['maintenance_mode', 'guestCheck']], function () {
+Route::group(['middleware' => ['maintenance_mode', 'guestCheck']], function () {
 
     Route::controller(HomeController::class)->group(function () {
         Route::get('/', 'index')->name('home');
@@ -305,7 +305,7 @@ Route::group(['namespace' => 'Web', 'middleware' => ['maintenance_mode', 'guestC
     });
 });
 
-Route::group(['prefix' => 'cart', 'as' => 'cart.', 'namespace' => 'Web'], function () {
+Route::group(['prefix' => 'cart', 'as' => 'cart.'], function () {
     Route::controller(CartController::class)->group(function () {
         Route::post('variant_price', 'getVariantPrice')->name('variant_price');
         Route::post('add', 'addToCart')->name('add');
@@ -323,7 +323,7 @@ Route::group(['prefix' => 'cart', 'as' => 'cart.', 'namespace' => 'Web'], functi
     });
 });
 
-Route::group(['prefix' => 'coupon', 'as' => 'coupon.', 'namespace' => 'Web'], function () {
+Route::group(['prefix' => 'coupon', 'as' => 'coupon.'], function () {
     Route::controller(CouponController::class)->group(function () {
         Route::post('apply', 'apply')->name('apply');
         Route::get('remove', 'removeCoupon')->name('remove');
@@ -338,9 +338,9 @@ Route::get('authentication-failed', function () {
     ], 401);
 })->name('authentication-failed');
 
-Route::group(['namespace' => 'Customer', 'prefix' => 'customer', 'as' => 'customer.'], function () {
+Route::group(['prefix' => 'customer', 'as' => 'customer.'], function () {
 
-    Route::group(['namespace' => 'Auth', 'prefix' => 'auth', 'as' => 'auth.'], function () {
+    Route::group(['prefix' => 'auth', 'as' => 'auth.'], function () {
 
         Route::controller(CustomerAuthController::class)->group(function () {
             Route::get('login', 'loginView')->name('login');
@@ -399,7 +399,7 @@ Route::group(['namespace' => 'Customer', 'prefix' => 'customer', 'as' => 'custom
     });
 });
 
-Route::group(['namespace' => 'Customer', 'prefix' => 'customer', 'as' => 'customer.'], function () {
+Route::group(['prefix' => 'customer', 'as' => 'customer.'], function () {
     Route::controller(PaymentController::class)->group(function () {
         Route::post('web-payment-request', 'payment')->name('web-payment-request');
         Route::post('customer-add-fund-request', 'customer_add_to_fund_request')->name('add-fund-request');

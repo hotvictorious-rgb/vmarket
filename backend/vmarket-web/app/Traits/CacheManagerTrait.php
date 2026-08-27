@@ -541,19 +541,25 @@ trait CacheManagerTrait
             'facebook' => 0,
             'apple' => 0,
         ];
-        foreach (getWebConfig(name: 'social_login') as $singleItem) {
-            if (isset($singleItem['client_id']) && $singleItem['client_id'] && isset($singleItem['client_secret']) && $singleItem['client_secret']) {
-                $configStatus[$singleItem['login_medium']] = 1;
+        $socialLogin = getWebConfig(name: 'social_login');
+        if (is_array($socialLogin)) {
+            foreach ($socialLogin as $singleItem) {
+                if (isset($singleItem['client_id']) && $singleItem['client_id'] && isset($singleItem['client_secret']) && $singleItem['client_secret']) {
+                    $configStatus[$singleItem['login_medium']] = 1;
+                }
             }
         }
-        foreach (getWebConfig(name: 'apple_login') as $singleItem) {
-            if (
-                isset($singleItem['client_id']) && $singleItem['client_id'] &&
-                isset($singleItem['team_id']) && $singleItem['team_id'] &&
-                isset($singleItem['key_id']) && $singleItem['key_id'] &&
-                isset($singleItem['service_file']) && $singleItem['service_file']
-            ) {
-                $configStatus[$singleItem['login_medium']] = 1;
+        $appleLogin = getWebConfig(name: 'apple_login');
+        if (is_array($appleLogin)) {
+            foreach ($appleLogin as $singleItem) {
+                if (
+                    isset($singleItem['client_id']) && $singleItem['client_id'] &&
+                    isset($singleItem['team_id']) && $singleItem['team_id'] &&
+                    isset($singleItem['key_id']) && $singleItem['key_id'] &&
+                    isset($singleItem['service_file']) && $singleItem['service_file']
+                ) {
+                    $configStatus[$singleItem['login_medium']] = 1;
+                }
             }
         }
 

@@ -2,7 +2,7 @@
 
 namespace App\Http\Controllers\Vendor\Order;
 
-use App\Http\Controllers\BaseController;
+use App\Http\Controllers\Controller;
 use App\Models\Order;
 use App\Models\OrderHandoverLog;
 use Devrabiul\ToastMagic\Facades\ToastMagic;
@@ -15,7 +15,7 @@ use Illuminate\Support\Facades\DB;
  * [AI] Class InShopHandoverController
  * Implements the Staff-Attributed Handshake Protocol for rider in-shop parcel pick-ups.
  */
-class InShopHandoverController extends BaseController
+class InShopHandoverController extends Controller
 {
     public function verifyPickupOtp(Request $request): JsonResponse|RedirectResponse
     {

@@ -81,33 +81,6 @@ Route::group(['middleware' => ['maintenance_mode', 'actch:admin_panel']], functi
                     Route::get('real-time-activities', 'getRealTimeActivities')->name('real-time-activities');
                 });
             });
-            Route::group(['prefix' => 'pos', 'as' => 'pos.'], function () {
-                Route::controller(POSController::class)->group(function () {
-                    Route::get(POS::INDEX[URI], 'index')->name('index');
-                    Route::any(POS::CHANGE_CUSTOMER[URI], 'changeCustomer')->name('change-customer');
-                    Route::post(POS::UPDATE_DISCOUNT[URI], 'updateDiscount')->name('update-discount');
-                    Route::post(POS::COUPON_DISCOUNT[URI], 'getCouponDiscount')->name('coupon-discount');
-                    Route::get(POS::QUICK_VIEW[URI], 'getQuickView')->name('quick-view');
-                    Route::get(POS::SEARCH[URI], 'getSearchedProductsView')->name('search-product');
-                });
-                Route::controller(CartController::class)->group(function () {
-                    Route::post('get-variant-price', 'getVariantPrice')->name('get-variant-price');
-                    Route::post('quantity-update', 'updateQuantity')->name('quantity-update');
-                    Route::get('get-cart-ids', 'getCartIds')->name('get-cart-ids');
-                    Route::get('clear-cart-ids', 'clearSessionCartIds')->name('clear-cart-ids');
-                    Route::post('add-to-cart', 'addToCart')->name('add-to-cart');
-                    Route::post('cart-remove', 'removeCart')->name('cart-remove');
-                    Route::any('cart-empty', 'emptyCart')->name('cart-empty');
-                    Route::any('change-cart', 'changeCart')->name('change-cart');
-                    Route::get('new-cart-id', 'addNewCartId')->name('new-cart-id');
-                });
-                Route::controller(POSOrderController::class)->group(function () {
-                    Route::post(POSOrder::ORDER_DETAILS[URI] . '/{id}', 'index')->name('order-details');
-                    Route::post(POSOrder::ORDER_PLACE[URI], 'placeOrder')->name('order-place');
-                    Route::any(POSOrder::CANCEL_ORDER[URI], 'cancelOrder')->name('cancel-order');
-                    Route::any(POSOrder::HOLD_ORDERS[URI], 'getAllHoldOrdersView')->name('view-hold-orders');
-                });
-            });
             Route::group(['prefix' => 'refund', 'as' => 'refund.'], function () {
                 Route::controller(RefundController::class)->group(function () {
                     Route::get(Refund::INDEX[URI] . '/{status}', 'index')->name('index');
@@ -409,35 +382,10 @@ Route::group(['middleware' => ['maintenance_mode', 'actch:admin_panel']], functi
                 });
             });
 
-            /* [AI] Omnichannel POS, Customer Debt Ledger & Shift Audits */
-            Route::group(['prefix' => 'pos', 'as' => 'pos.'], function () {
-                Route::controller(\App\Http\Controllers\Vendor\POS\CustomerDebtController::class)->group(function () {
-                    Route::get('debt-ledger', 'index')->name('debt-ledger');
-                    Route::post('debt-repay', 'repay')->name('debt-repay');
-                });
-            });
-
-            /* [AI] Multi-Branch Waybills & In-Transit Anti-Theft Transfers */
-            Route::group(['prefix' => 'branch', 'as' => 'branch.'], function () {
-                Route::controller(\App\Http\Controllers\Vendor\Branch\BranchTransferController::class)->group(function () {
-                    Route::get('transfers', 'index')->name('transfers');
-                    Route::post('transfers/store', 'store')->name('transfers.store');
-                    Route::post('transfers/receive/{id}', 'receive')->name('transfers.receive');
-                });
-            });
-
-            /* [AI] Multi-Branch Pro Subscription & Online Marketplace Application */
-            Route::group(['prefix' => 'subscription', 'as' => 'subscription.'], function () {
-                Route::controller(\App\Http\Controllers\Vendor\Subscription\POSSubscriptionController::class)->group(function () {
-                    Route::get('/', 'index')->name('index');
-                    Route::post('subscribe', 'subscribe')->name('subscribe');
-                    Route::post('apply-marketplace', 'applyMarketplace')->name('apply-marketplace');
-                });
-            });
-
             /* [AI] In-Shop Staff-Attributed Handover Protocol */
             Route::post('orders/verify-pickup-otp', [\App\Http\Controllers\Vendor\Order\InShopHandoverController::class, 'verifyPickupOtp'])->name('orders.verify-pickup-otp');
         });
     });
 
 });
+

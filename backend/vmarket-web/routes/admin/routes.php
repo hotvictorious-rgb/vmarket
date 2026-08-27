@@ -182,37 +182,6 @@ Route::group(['prefix' => 'admin', 'as' => 'admin.', 'middleware' => ['admin', '
 
     Route::get('logout', [LoginController::class, 'logout'])->name('logout');
 
-    Route::group(['prefix' => 'pos', 'as' => 'pos.', 'middleware' => ['module:pos_management']], function () {
-        Route::controller(POSController::class)->group(function () {
-            Route::get('/', 'index')->name('index');
-            Route::any('change-customer', 'changeCustomer')->name('change-customer');
-            Route::post('update-discount', 'updateDiscount')->name('update-discount');
-            Route::post('coupon-discount', 'getCouponDiscount')->name('coupon-discount');
-            Route::get('quick-view', 'getQuickView')->name('quick-view');
-            Route::get('search-product', 'getSearchedProductsView')->name('search-product');
-        });
-
-        Route::controller(CartController::class)->group(function () {
-            Route::post('get-variant-price', 'getVariantPrice')->name('get-variant-price');
-            Route::post('quantity-update', 'updateQuantity')->name('update-quantity');
-            Route::get('get-cart-ids', 'getCartIds')->name('get-cart-ids');
-            Route::get('clear-cart-ids', 'clearSessionCartIds')->name('clear-cart-ids');
-            Route::post('add-to-cart', 'addToCart')->name('add-to-cart');
-            Route::get('get-cart-items', 'index')->name('get-cart-items');
-            Route::post('cart-remove', 'removeCart')->name('remove-cart');
-            Route::any('cart-empty', 'emptyCart')->name('empty-cart');
-            Route::any('change-cart', 'changeCart')->name('change-cart');
-            Route::get('new-cart-id', 'addNewCartId')->name('new-cart-id');
-        });
-
-        Route::controller(POSOrderController::class)->group(function () {
-            Route::post('order-details/{id}', 'index')->name('order-details');
-            Route::post('order-place', 'placeOrder')->name('place-order');
-            Route::any('cancel-order', 'cancelOrder')->name('cancel-order');
-            Route::any('view-hold-orders', 'getAllHoldOrdersView')->name('view-hold-orders');
-        });
-    });
-
     Route::group(['prefix' => 'profile', 'as' => 'profile.'], function () {
         Route::controller(ProfileController::class)->group(function () {
             Route::get('update/{id}', 'getUpdateView')->name('update');
@@ -463,6 +432,11 @@ Route::group(['prefix' => 'admin', 'as' => 'admin.', 'middleware' => ['admin', '
             Route::post('kyc-status/{id}', 'updateKycStatus')->name('kyc-status');
 
             Route::post('load-more-stores', 'loadMoreStores')->name('load-more-stores');
+
+            /* [AI] Online Marketplace Applications & KYC Review */
+            Route::get('marketplace-applications', [\App\Http\Controllers\Admin\Vendor\MarketplaceApprovalController::class, 'index'])->name('marketplace-applications');
+            Route::post('marketplace-applications/approve/{id}', [\App\Http\Controllers\Admin\Vendor\MarketplaceApprovalController::class, 'approve'])->name('marketplace-applications.approve');
+            Route::post('marketplace-applications/reject/{id}', [\App\Http\Controllers\Admin\Vendor\MarketplaceApprovalController::class, 'reject'])->name('marketplace-applications.reject');
         });
 
         Route::group(['prefix' => 'withdraw-method', 'as' => 'withdraw-method.'], function () {
@@ -1280,24 +1254,6 @@ Route::group(['prefix' => 'admin', 'as' => 'admin.', 'middleware' => ['admin', '
                 Route::get('details/{id}', 'getDetailsView')->name('details');
                 Route::post('refund-status-update', 'updateRefundStatus')->name('refund-status-update');
             });
-        });
-    });
-
-    /* [AI] Omnichannel POS, Subscriptions & Marketplace Approval */
-    Route::group(['prefix' => 'pos-management', 'as' => 'pos-management.'], function () {
-        Route::controller(\App\Http\Controllers\Admin\POS\AdminPOSDashboardController::class)->group(function () {
-            Route::get('dashboard', 'index')->name('dashboard');
-        });
-
-        Route::controller(\App\Http\Controllers\Admin\POS\POSSettingsController::class)->group(function () {
-            Route::get('settings', 'index')->name('settings');
-            Route::post('settings', 'update')->name('settings.update');
-        });
-
-        Route::controller(\App\Http\Controllers\Admin\Vendor\MarketplaceApprovalController::class)->group(function () {
-            Route::get('marketplace-applications', 'index')->name('marketplace-applications');
-            Route::post('marketplace-applications/approve/{id}', 'approve')->name('marketplace-applications.approve');
-            Route::post('marketplace-applications/reject/{id}', 'reject')->name('marketplace-applications.reject');
         });
     });
 });
