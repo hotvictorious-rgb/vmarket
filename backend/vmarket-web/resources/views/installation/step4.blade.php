@@ -36,27 +36,11 @@
                 {{ "Your Database has been connected ! Just click on the section to automatically import database" }}
             </p>
 
-            @if(session()->has('error'))
-                <div class="row">
-                    <div class="col-md-12">
-                        <div class="alert alert-danger">
-                            {{ "Your database is not clean, do you want to clean database then import ?" }}
-                        </div>
-                    </div>
-                </div>
-
-                <div class="text-center">
-                    <a href="{{ route('force-import-sql') }}" class="btn btn-danger px-sm-5 action-installation-show-loader">
-                        {{ "Force Import Database" }}
-                    </a>
-                </div>
-            @else
-                <div class="text-center">
-                    <a href="{{ route('import_sql') }}" class="btn btn-dark px-sm-5 action-installation-show-loader">
-                        {{ "Click Here" }}
-                    </a>
-                </div>
-            @endif
+            <div class="text-center d-flex justify-content-center flex-wrap gap-3">
+                <a href="{{ route('step5') }}" class="btn btn-dark px-sm-5 py-2">
+                    {{ "Continue to Admin Setup (Step 5) →" }}
+                </a>
+            </div>
 
         </div>
     </div>

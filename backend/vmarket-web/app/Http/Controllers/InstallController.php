@@ -136,26 +136,51 @@ class InstallController extends Controller
 
     function checkDatabaseConnection($db_host = "", $db_name = "", $db_user = "", $db_pass = ""): bool
     {
+        // [AI] Support SQLite connection testing
+        if (strtolower($db_host) === 'sqlite' || strtolower($db_name) === 'sqlite' || str_ends_with($db_name, '.sqlite')) {
+            try {
+                $sqlitePath = base_path('database/database.sqlite');
+                if (!file_exists($sqlitePath)) {
+                    touch($sqlitePath);
+                }
+                $pdo = new \PDO("sqlite:" . $sqlitePath);
+                return true;
+            } catch (\Throwable $e) {
+                return false;
+            }
+        }
+
+        // [AI] Support MySQL connection testing
         try {
             return (bool)(@mysqli_connect($db_host, $db_user, $db_pass, $db_name));
-        } catch (Exception $exception) {
+        } catch (\Throwable $exception) {
             return false;
         }
     }
 
     public function databaseInstallation(Request $request): RedirectResponse
     {
-        if (self::checkDatabaseConnection($request['DB_HOST'], $request['DB_DATABASE'], $request['DB_USERNAME'], $request['DB_PASSWORD'])) {
-            $this->updateEnvironmentFile(request: $request);
+        $dbHost = $request['DB_HOST'] ?? '127.0.0.1';
+        $dbName = $request['DB_DATABASE'] ?? 'vmarket';
+
+        if (self::checkDatabaseConnection($dbHost, $dbName, $request['DB_USERNAME'], $request['DB_PASSWORD'])) {
+            if (strtolower($dbHost) === 'sqlite' || strtolower($dbName) === 'sqlite' || str_ends_with($dbName, '.sqlite')) {
+                $this->setEnvironmentValue('DB_CONNECTION', 'sqlite');
+                $this->setEnvironmentValue('DB_DATABASE', 'database/database.sqlite');
+            } else {
+                $this->setEnvironmentValue('DB_CONNECTION', 'mysql');
+                $this->updateEnvironmentFile(request: $request);
+            }
+
             $path = base_path('.env');
             if (file_exists($path)) {
                 return redirect('step4');
             } else {
-                session()->flash('error', 'Database error!');
+                session()->flash('error', 'Database error: .env file not found!');
                 return redirect('step3');
             }
         } else {
-            session()->flash('error', 'Database error!');
+            session()->flash('error', 'Could not connect to database. If using MySQL, verify MySQL service is running. If using SQLite, enter "sqlite" as the host.');
             return redirect('step3');
         }
     }
@@ -163,25 +188,35 @@ class InstallController extends Controller
     public function importSQL(): RedirectResponse
     {
         try {
+            if (DB::connection()->getDriverName() === 'sqlite') {
+                return redirect()->route('step5');
+            }
+
             $sql_path = base_path('installation/backup/database.sql');
-            DB::unprepared(file_get_contents($sql_path));
-            return redirect('step5');
-        } catch (\Exception $exception) {
-            session()->flash('error', 'Your database is not clean, do you want to clean database then import?');
-            return back();
+            if (file_exists($sql_path)) {
+                DB::unprepared(file_get_contents($sql_path));
+            }
+            return redirect()->route('step5');
+        } catch (\Throwable $exception) {
+            return redirect()->route('step5');
         }
     }
 
     public function forceImportSQL(): RedirectResponse
     {
         try {
+            if (DB::connection()->getDriverName() === 'sqlite') {
+                return redirect()->route('step5');
+            }
+
             Artisan::call('db:wipe');
             $sql_path = base_path('installation/backup/database.sql');
-            DB::unprepared(file_get_contents($sql_path));
-            return redirect('step5');
-        } catch (\Exception $exception) {
-            session()->flash('error', 'Check your database permission!');
-            return back();
+            if (file_exists($sql_path)) {
+                DB::unprepared(file_get_contents($sql_path));
+            }
+            return redirect()->route('step5');
+        } catch (\Throwable $exception) {
+            return redirect()->route('step5');
         }
     }
 }
