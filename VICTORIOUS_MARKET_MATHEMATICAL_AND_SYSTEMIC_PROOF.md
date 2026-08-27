@@ -394,3 +394,61 @@ Where:
 ---
 *© Victorious MARKET Ecosystem — Enterprise Mathematical & Architectural Verification Authority.*
 
+---
+
+# 10. OMNICHANNEL AUTHORIZATION & TENANT ISOLATION SECURITY AUDIT REPORT
+
+### Audit Overview
+* **Timestamp:** 2026-08-27 16:20 UTC
+* **Audit Command Coordinator:** `test_vmarket_pos_authorization_isolation.php`
+* **Test Assertions Executed:** 22 Scenarios
+* **Core Components Covered:** central Victorious MARKET web/API, In-Store POS (hysam)
+
+### Summary of Audit Results
+
+```
+┌────────────────────────────────────────────────────────────────────────────────────────────────────────┐
+│                                AUTHORIZATION ISOLATION SMOKE TEST REPORT                               │
+├───────────────────┬────────────────────────────────────────────┬──────────────────┬────────────────────┤
+│ SCENARIO GROUP    │ TEST TARGET / SECURITY INVARIANT           │ STATUS / OUTCOME │ EXPLANATORY DETAIL │
+├───────────────────┼────────────────────────────────────────────┼──────────────────┼────────────────────┤
+│ central Vmarket   │ Vendor A cannot view/edit Vendor B product │ 🟢 PASS          │ Correctly blocked  │
+├───────────────────┼────────────────────────────────────────────┼──────────────────┼────────────────────┤
+│ central Vmarket   │ Vendor A cannot view Vendor B orders       │ 🟢 PASS          │ Correctly blocked  │
+├───────────────────┼────────────────────────────────────────────┼──────────────────┼────────────────────┤
+│ central Vmarket   │ Vendor A cannot view Vendor B wallets      │ 🟢 PASS          │ Correctly isolated │
+├───────────────────┼────────────────────────────────────────────┼──────────────────┼────────────────────┤
+│ central Vmarket   │ Rider cannot view other rider's order      │ 🟢 PASS          │ 404 Not Found      │
+├───────────────────┼────────────────────────────────────────────┼──────────────────┼────────────────────┤
+│ central Vmarket   │ Rider cannot edit other rider's status     │ 🟢 PASS          │ 404 Not Found      │
+├───────────────────┼────────────────────────────────────────────┼──────────────────┼────────────────────┤
+│ central Vmarket   │ Customer cannot view other customer orders │ 🟢 PASS          │ 404 Not Found      │
+├───────────────────┼────────────────────────────────────────────┼──────────────────┼────────────────────┤
+│ central Vmarket   │ Customer cannot access Vendor/Admin panel  │ 🟢 PASS          │ Redirected to login│
+├───────────────────┼────────────────────────────────────────────┼──────────────────┼────────────────────┤
+│ central Vmarket   │ IDOR URL direct-ID manipulation            │ 🟢 PASS          │ Blocked & Safe     │
+├───────────────────┼────────────────────────────────────────────┼──────────────────┼────────────────────┤
+│ In-Store POS      │ Vendor A cannot view Vendor B products     │ ❌ FAIL (VULN)   │ Query missing      │
+│                   │                                            │                  │ `company_id` filter│
+├───────────────────┼────────────────────────────────────────────┼──────────────────┼────────────────────┤
+│ In-Store POS      │ Vendor A cannot view Vendor B transactions │ ❌ FAIL (VULN)   │ Query missing      │
+│                   │                                            │                  │ `company_id` filter│
+├───────────────────┼────────────────────────────────────────────┼──────────────────┼────────────────────┤
+│ In-Store POS      │ Branch A1 Cashier cannot view A2 inventory │ 🟢 PASS          │ Correctly isolated │
+├───────────────────┼────────────────────────────────────────────┼──────────────────┼────────────────────┤
+│ In-Store POS      │ Branch A1 Cashier cannot view A2 sales     │ 🟢 PASS          │ Correctly isolated │
+├───────────────────┼────────────────────────────────────────────┼──────────────────┼────────────────────┤
+│ In-Store POS      │ Cashier/Staff cannot access Auditor dashboard│ 🟢 PASS          │ Redirected (Safe)  │
+├───────────────────┼────────────────────────────────────────────┼──────────────────┼────────────────────┤
+│ In-Store POS      │ Cashier/Staff cannot elevate their role    │ 🟢 PASS          │ Blocked (Safe)     │
+├───────────────────┼────────────────────────────────────────────┼──────────────────┼────────────────────┤
+│ In-Store POS      │ Owner A cannot modify Owner B's staff      │ ❌ FAIL (VULN)   │ Update lacks       │
+│                   │                                            │                  │ company validation │
+└───────────────────┴────────────────────────────────────────────┴──────────────────┴────────────────────┘
+```
+
+### Security Vulnerabilities Discovered (POS Component `hysam`)
+1. **Product Cross-Tenant Leak:** `ProductController` queries all products across all companies (`Product::where('archived', false)->get()`).
+2. **Sales History Cross-Tenant Leak:** Admin sales lookup query (`TransactionController::getSalesQuery`) lacks a `company_id` constraint, exposing all companies' historical receipts.
+3. **Cross-Tenant Staff Modification IDOR:** `UserController::update` allows an authenticated owner of Company A to modify staff credentials/roles of Company B.
+
