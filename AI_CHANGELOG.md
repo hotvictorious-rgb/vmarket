@@ -7,6 +7,11 @@ Always append your completed tasks here in chronological order at the top. Forma
 `### [YYYY-MM-DD HH:MM UTC] <Feature / Fix Title> [<Component Scope>]`
 Include the specific app/component modified and bullet points detailing the exact technical changes.
 
+### [2026-08-27 19:05 UTC] Resolved Missing Auth Import in POS Dashboard Controller [pos] [bugfix]
+* **Component:** POS (`DashboardController.php`)
+* **Action:** Added the missing `use Illuminate\Support\Facades\Auth;` facade import statement to POS `DashboardController.php` to resolve the fatal `Class not found` runtime exception that triggered HTTP 500 errors on SSO redirect login events.
+* **Verification:** Re-ran `test_all_12_governance_rules_proof.php`. All 12 governance rules, including Rule 11 (9-role visibility matrix), now PASS successfully (100% compliance).
+
 ### [2026-08-27 16:30 UTC] Implemented Omnichannel Security Isolation & IDOR Patches [pos] [backend] [security] [rbac]
 * **Component:** Vmarket (`ReviewController.php`), POS Controllers (`ProductController.php`, `TransactionController.php`, `UserController.php`, `SettingController.php`, `DebtController.php`, `DashboardController.php`, `WholesaleController.php`, `StockController.php`, `AuditorController.php`, `ReportController.php`), POS Service Layer (`StockService.php`), and POS Models (`Setting.php`, etc.)
 * **Action:** Patched all cross-tenant data leaks and write IDOR vulnerabilities across the Victorious MARKET ecosystem:
