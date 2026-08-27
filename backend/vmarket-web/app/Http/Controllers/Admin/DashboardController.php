@@ -311,4 +311,25 @@ class DashboardController extends BaseController
             'message' => $chatting > 1 ? $chatting . ' ' . translate('New_Message') : translate('New_Message'),
         ]);
     }
+
+    /**
+     * [AI] 1-Click Seamless SSO Redirect to Vmarket POS Terminal for Super Admin
+     */
+    public function posSsoRedirect(): RedirectResponse
+    {
+        $admin = auth('admin')->user();
+        if (!$admin) {
+            return redirect()->route('admin.auth.login');
+        }
+
+        $email = $admin->email;
+        $expires = time() + 300;
+        $role = 'admin';
+        $token = hash_hmac('sha256', "{$email}|{$expires}|{$role}", env('APP_KEY', 'VictoriousMarketSecretKey2026'));
+
+        $posUrl = rtrim(env('VMARKET_POS_URL', 'http://127.0.0.1:8001'), '/');
+        $ssoUrl = "{$posUrl}/sso-login?email=" . urlencode($email) . "&expires={$expires}&role={$role}&token={$token}";
+
+        return redirect()->away($ssoUrl);
+    }
 }

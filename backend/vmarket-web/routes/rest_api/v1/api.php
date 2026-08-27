@@ -50,6 +50,13 @@ use App\Http\Controllers\Customer\PaymentController;
 
 Route::group(['prefix' => 'v1', 'middleware' => ['api_lang']], function () {
 
+    // [AI] POS Omnichannel Stock & Dispatch Sync Gateway
+    Route::controller(\App\Http\Controllers\RestAPI\v1\PosSyncApiController::class)->group(function () {
+        Route::get('pos/products', 'getProducts');
+        Route::post('pos/sync-stock', 'syncStock');
+        Route::post('pos/order-dispatch/{orderId}', 'confirmDispatch');
+    });
+
     // [AI] Meta WhatsApp Webhook Gateway
     Route::controller(WhatsAppWebhookController::class)->group(function () {
         Route::get('webhooks/whatsapp', 'verify');

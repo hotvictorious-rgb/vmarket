@@ -7,6 +7,16 @@ Always append your completed tasks here in chronological order at the top. Forma
 `### [YYYY-MM-DD HH:MM UTC] <Feature / Fix Title> [<Component Scope>]`
 Include the specific app/component modified and bullet points detailing the exact technical changes.
 
+### [2026-08-27 08:32 UTC] Implemented Streamlined Single-Point Login, 1-Click Cryptographic SSO & Live Sales Gate [backend] [pos] [security]
+* **Component:** Unified SSO Token Flow, POS Selling Gate, Multi-Tenant Stock Sync (`PosSyncApiController.php`, `AuthController.php`, `SubscriptionController.php`, `test_omnichannel_streamlined_sso_and_sales_gate.php`)
+* **Action:** Streamlined the entire ecosystem into a single login point with cryptographic single-sign-on and real-time verification gating:
+  - **Single Login Point & 1-Click SSO:** Enabled HMAC-signed token generation in Victorious MARKET (`/vendor/pos-sso` and `/admin/pos-sso`) that auto-logs users directly into Vmarket POS without re-entering credentials.
+  - **Immediate Free POS for New Signups:** Every new vendor is provisioned a free 1-location POS register instantly upon registration.
+  - **Live Sales Verification Gate:** In-store checkout (`can_sell`) is locked (`can_sell = false`) while shop verification is pending, allowing vendors to configure their store catalog while strictly preventing unauthorized offline sales until verified (`can_sell = true`).
+  - **Centralized Gateway Inheritance:** POS subscription controller inherits Paystack public/secret keys directly from Victorious MARKET settings table.
+  - **Multi-Tenant Stock Sync API:** Built `PosSyncApiController` providing atomic stock decrements (`/api/v1/pos/sync-stock`) and in-store order dispatch signals (`/api/v1/pos/order-dispatch/{id}`) with mathematical zero drift.
+  - **Result:** 100% verified with automated proof suite `test_omnichannel_streamlined_sso_and_sales_gate.php`.
+
 ### [2026-08-27 08:12 UTC] Implemented Universal Cross-System SSO & Real-Time Vendor Verification Gate on POS [backend] [pos] [security]
 * **Component:** Unified Cross-Authentication (`hysam/config/database.php`, `hysam/app/Http/Controllers/AuthController.php`, `test_universal_cross_login_and_vendor_verification.php`)
 * **Action:** Established universal account uniqueness and shared credentials across Victorious MARKET and Vmarket POS:

@@ -520,4 +520,25 @@ class POSController extends BaseController
 
         return response()->json($data);
     }
+
+    /**
+     * [AI] 1-Click Seamless SSO Redirect to Vmarket POS Terminal
+     */
+    public function ssoRedirect(): RedirectResponse
+    {
+        $seller = auth('seller')->user();
+        if (!$seller) {
+            return redirect()->route('vendor.auth.login');
+        }
+
+        $email = $seller->email;
+        $expires = time() + 300;
+        $role = 'vendor';
+        $token = hash_hmac('sha256', "{$email}|{$expires}|{$role}", env('APP_KEY', 'VictoriousMarketSecretKey2026'));
+
+        $posUrl = rtrim(env('VMARKET_POS_URL', 'http://127.0.0.1:8001'), '/');
+        $ssoUrl = "{$posUrl}/sso-login?email=" . urlencode($email) . "&expires={$expires}&role={$role}&token={$token}";
+
+        return redirect()->away($ssoUrl);
+    }
 }

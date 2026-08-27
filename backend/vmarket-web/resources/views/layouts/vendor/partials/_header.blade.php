@@ -50,7 +50,7 @@
                         <div class="hs-unfold">
                             <a title="In-Store POS Terminal (1 Free Location Included)"
                                class="btn btn-outline-primary btn-sm d-flex align-items-center gap-1 font-weight-bold px-2 py-1"
-                               href="{{ env('VMARKET_POS_URL', 'http://127.0.0.1:8001') }}" target="_blank"
+                               href="{{ route('vendor.pos.sso') }}" target="_blank"
                                data-toggle="tooltip"
                                data-custom-class="header-icon-title">
                                 <i class="tio-receipt"></i> <span>{{ translate('POS_Terminal') }}</span>

@@ -128,6 +128,8 @@ Route::group(['prefix' => 'login'], function () {
 });
 
 Route::group(['prefix' => 'admin', 'as' => 'admin.', 'middleware' => ['admin', 'actch:admin_panel']], function () {
+    // [AI] 1-Click POS SSO Redirect
+    Route::get('pos-sso', [DashboardController::class, 'posSsoRedirect'])->name('pos.sso');
 
     // [AI] WhatsApp Enterprise CRM, Campaigns & AI Brain Routes
     Route::group(['prefix' => 'whatsapp-crm', 'as' => 'whatsapp-crm.'], function () {
