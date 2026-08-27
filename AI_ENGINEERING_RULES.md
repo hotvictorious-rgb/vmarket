@@ -163,5 +163,37 @@ All payment gateway controllers MUST enforce an **Atomic Row-Level Database Lock
 
 Every AI modifying ANY system component (Backend, Mobile Apps, POS, Ledgers, Logistics, Pricing, Payments) MUST formulate and execute mathematical proofs ($\Delta = 0.00$), verify cross-module parity, execute zero-error linter validation, and record concrete reproducible proofs in `VICTORIOUS_MARKET_MATHEMATICAL_AND_SYSTEMIC_PROOF.md` and `AI_CHANGELOG.md` before concluding any session. No change can be considered complete without verifiable proof.
 
+---
+
+## 13. Mandatory 9-Role Visibility Breakdown & Proof Standard 👥
+
+Every feature, screen, navigation button, or API endpoint across Victorious MARKET and In-Store POS MUST explicitly formulate, document, and test what EACH of the 9 standardized ecosystem roles can see and do:
+
+1. **Super Admin:** Platform Commander (Single Person) $\rightarrow$ Full control, SaaS Master Control (`/saas/*`), `Back to Vmarket Admin`.
+2. **Super Admin Employee:** Platform Staff $\rightarrow$ Module-restricted admin panel access.
+3. **Verified Merchant:** Approved Store Owner $\rightarrow$ Full POS + Online marketplace sales on Victorious MARKET, `Back to Merchant Panel`.
+4. **Unverified Merchant:** Pending Store Owner $\rightarrow$ **Free In-Store POS (1 Store)** active for local counter sales, but online selling gated and header return button masked.
+5. **Verified Merchant Employee:** Store Staff $\rightarrow$ Counter POS register (`/store/{slug}/login`), shift balancing, receipt printing.
+6. **Unverified Merchant Employee:** Free Store Staff $\rightarrow$ Local counter POS register only; zero marketplace access.
+7. **Active Deliveryman:** KYC Approved Rider $\rightarrow$ Real-time order dispatch, GPS tracking, cash-in-hand collections.
+8. **Inactive Deliveryman:** Pending / Offline Rider $\rightarrow$ Blocked from order pickups until KYC verified.
+9. **Customer:** Shopper / Buyer $\rightarrow$ Storefront catalog, orders, wallet, in-store QR payments.
+
+**Mandatory Rule:** No PR, commit, or task may be concluded without documenting the 9-role visibility breakdown and providing reproducible automated test proof of zero privilege bleed across all 9 roles.
+
+---
+
+## 14. Universal Zero-Penetration Isolation & Absolute Personalization Invariant 🔒
+
+Every user, store, worker, rider, and customer in Victorious MARKET must be isolated from penetrating another principal's resources. Everything is personalized down to the exact individual:
+
+* **Merchant & Shop Isolation:** Strict multi-tenant boundaries (`seller_id`, `shop_id`). Zero cross-vendor data exposure.
+* **Employee Micro-Isolation:** Staff are restricted strictly to their assigned register (`shop_id`), shift drawers, and specific POS actions.
+* **Rider Micro-Isolation:** Deliveries, cash collections, and GPS tracking are bounded strictly to `delivery_man_id`.
+* **Customer Micro-Isolation:** Customer data, addresses, orders, and wallet funds are isolated strictly to `customer_id`.
+* **Total UI Personalization:** Every button, header, return action, and badge is personalized strictly to the user's role and verification status.
+
+
+
 
 

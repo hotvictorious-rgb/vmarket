@@ -7,6 +7,14 @@ Always append your completed tasks here in chronological order at the top. Forma
 `### [YYYY-MM-DD HH:MM UTC] <Feature / Fix Title> [<Component Scope>]`
 Include the specific app/component modified and bullet points detailing the exact technical changes.
 
+### [2026-08-27 13:15 UTC] Codified Rule 11 & Rule 12: 9-Role Visibility Matrix & Universal Zero-Penetration Isolation [ai-governance] [rules] [security]
+* **Component:** Architectural Governance & Engineering Rules (`AGENTS.md`, `CHANGE_IMPACT_PROTOCOL.md`, `AI_ENGINEERING_RULES.md`)
+* **Action:** Ratified and codified the mandatory 9-role visibility breakdown and universal zero-penetration tenant isolation directive across all repository governance documents:
+  - **Rule 11 (9-Role Visibility Breakdown & Proofs):** Mandates that every new feature, endpoint, button, or menu MUST explicitly define what each of the 9 roles sees and does, supported by automated reproducible tests.
+  - **Rule 12 (Universal Zero-Penetration Isolation & Absolute Personalization):** Mandates that every user, merchant, employee, rider, and customer is completely isolated from penetrating another principal's resources (strict multi-tenant database scoping by `seller_id`, `shop_id`, `delivery_man_id`, `customer_id`).
+  - **7-Point Change Impact Checklist:** Updated `CHANGE_IMPACT_PROTOCOL.md` to require pre-change and post-change 9-role visibility matrix analysis before executing modifications.
+  - **AI Engineering Rules Section 13 & 14:** Added strict platform-wide engineering invariants for multi-role parity, tenant isolation, and personalized down-to-the-person UI rendering.
+
 ### [2026-08-27 12:45 UTC] Implemented 9-Tier Ecosystem Role Taxonomy & Unverified Merchant Free POS Access [backend] [pos] [rbac] [security]
 * **Component:** Multi-Actor Role Taxonomy & Navigation Guards (`AuthController.php`, `layouts/app.blade.php`, `POSController.php`, `test_9_tier_role_taxonomy_and_access_matrix.php`)
 * **Action:** Established and enforced the 9 standardized ecosystem roles across Victorious MARKET and In-Store POS:

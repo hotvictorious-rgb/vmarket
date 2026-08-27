@@ -136,4 +136,49 @@ Never pass raw `$request->all()` directly into Eloquent `create()`, `update()`, 
 3. **Reproducible Test Execution:** Every code edit must pass syntax validation (`php -l` for PHP / `flutter analyze` for Dart) and automated regression execution.
 4. **Mandatory Documentation of Proof:** All mathematical proofs, balance tables, and verification logs must be permanently updated in `VICTORIOUS_MARKET_MATHEMATICAL_AND_SYSTEMIC_PROOF.md` and documented in `AI_CHANGELOG.md` before committing. No task is complete without reproducible proof.
 
+## 11. Mandatory 9-Role Visibility Breakdown & Multi-Actor Proof Protocol 👥
+**Every feature, modification, endpoint, or navigation change MUST explicitly break down and prove what each of the 9 standardized ecosystem roles will see, what they can do, and why.** No task is considered complete without this multi-role proof.
+
+### The 9 Standardized Ecosystem Roles:
+1. **Super Admin:** The single platform owner and supreme commander. Exclusive access to SaaS Master Control (`/saas/*`), global configuration, platform auditing, and the `🔙 Back to Vmarket Admin` topbar hub action.
+2. **Super Admin Employee:** Platform staff (Customer Support, Product Moderators, Finance Auditors). Scoped strictly to permitted admin sub-modules with role-tailored navigation.
+3. **Verified Merchant:** Approved store owner. Enjoys full multi-branch In-Store POS, waybills, debt ledgers, live online marketplace selling on Victorious MARKET, omnichannel inventory sync, and `🔙 Back to Merchant Panel`.
+4. **Unverified Merchant:** Newly registered store owner pending KYC verification. Granted **Free-Tier In-Store POS (1 Store)** access for offline counter sales and barcode scanning, but **strictly blocked from online marketplace selling** and has the header return button **masked/hidden** (`Free In-Store POS (Pending KYC)` badge).
+5. **Verified Merchant Employee:** Staff (Cashiers, Storekeepers) assigned to an approved store. Access to POS counter registers (`/store/{slug}/login`), shift drawers, and offline receipt printing.
+6. **Unverified Merchant Employee:** Staff (Cashiers) assigned to a physical free-tier store. Isolated strictly to local offline sales with zero marketplace access.
+7. **Active Deliveryman:** KYC-approved logistics rider with live delivery assignment, GPS tracking, and cash-in-hand collection privileges.
+8. **Inactive Deliveryman:** Logistics rider pending verification, suspended, or offline. Blocked from picking up orders or collecting cash until KYC verified.
+9. **Customer:** End-user shopper on web storefront and mobile apps. Access to product browsing, order tracking, digital wallet, and in-store QR checkout.
+
+### Mandatory Role Breakdown Checklist for Every Feature:
+Before concluding any implementation or architectural change, the AI MUST document:
+1. **Role Visibility Table:** A clear table mapping what each of the 9 roles sees on the screen (buttons, menus, badges, headers).
+2. **Authorization Boundary Proof:** Proof that unauthorized roles (e.g. Unverified Merchants or Employees) cannot access gated routes (e.g. SaaS Master Control or live online selling) via direct URL manipulation.
+3. **Automated Multi-Role Test Suite:** Execution of automated tests (e.g. `test_9_tier_role_taxonomy_and_access_matrix.php`) asserting correct visibility, HTTP response codes, and session isolation.
+
+## 12. Universal Zero-Penetration Isolation & Absolute Personalization Invariant 🔒
+**Every single point in the system must be completely isolated and personalized down to the exact individual person based on their role.** Cross-user penetration, cross-shop data leaks, or unpersonalized UI states are strictly prohibited across all layers:
+
+1. **Total Shop & Merchant Isolation (Zero Cross-Tenant Bleed):**
+   - No merchant or merchant's employee can EVER view, modify, list, or penetrate another merchant's store, products, orders, customers, debts, cash drawers, waybills, or settings.
+   - Every single backend query and repository call MUST strictly enforce `where('seller_id', $authSellerId)` or `where('shop_id', $authShopId)`.
+2. **Employee & Cashier Micro-Isolation:**
+   - Cashiers and staff are strictly locked to their assigned physical store/register (`shop_id`).
+   - Staff cannot access unauthorized modules, cannot view administrative SaaS settings, and cannot access other employees' shift drawers or personal sales histories without elevated manager permissions.
+3. **Rider & Logistics Micro-Isolation:**
+   - Every delivery rider's active orders, delivery earnings, cash-in-hand collections, customer contact masking, and GPS breadcrumbs are isolated strictly to their authenticated `delivery_man_id`.
+   - Zero visibility into other riders' orders, wallets, or routes.
+4. **Customer Micro-Isolation (Zero-Trust IDOR):**
+   - Customer carts, addresses, order receipts, payment methods, and digital wallet balances are strictly bound to `customer_id` / verified `guest_id`.
+5. **Absolute UI / UX Down-to-the-Person Personalization:**
+   - Every header, topbar, sidebar, button, badge, greeting, and notification must be dynamically personalized to that exact user:
+     - Only **Super Admin** sees platform command controls and `Back to Vmarket Admin`.
+     - Only **Verified Merchants** see `Back to Merchant Panel` and live online sync.
+     - **Unverified Merchants** see local Free POS only with `Marketplace Pending` status (never marketplace return buttons).
+     - **Employees** see their active assigned shop register and cashier tools only.
+     - **Riders** see active delivery routes and cash collection prompts only.
+     - **Customers** see their personalized cart, wishlist, and orders only.
+
+
+
 

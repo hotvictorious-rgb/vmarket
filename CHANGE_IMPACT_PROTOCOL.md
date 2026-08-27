@@ -9,7 +9,7 @@ To prevent undocumented regressions, broken API contracts, state divergence, or 
 
 ---
 
-## 2. The 6-Point Inspection Checklist
+## 2. The 7-Point Inspection Checklist
 
 Before modifying any file, the AI must evaluate:
 
@@ -22,6 +22,9 @@ Before modifying any file, the AI must evaluate:
 4. **State Management:** Which state containers are affected (`Provider` in User/Vendor, `GetX` in Delivery)?
 5. **Mobile Permissions & Native Bridges:** Are camera, storage, microphone, or GPS permissions involved?
 6. **Security & Tokens:** Does this affect authentication or sensitive secrets (`flutter_secure_storage`)?
+7. **9-Role Visibility & Privilege Matrix:** How is this feature visible, restricted, or differentiated across the 9 ecosystem roles:
+   - Super Admin, Super Admin Staff, Verified Merchant, Unverified Merchant, Verified Staff, Unverified Staff, Active Rider, Inactive Rider, Customer?
+   - *If Yes:* Document the visibility table and prove zero privilege bleed.
 
 ---
 
