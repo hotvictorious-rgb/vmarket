@@ -533,3 +533,48 @@ if (!$isGatewayPublished) {
         });
     });
 }
+
+// [AI] Bi-Directional Dynamic SSO Return Receiver
+Route::get('sso-return', function (\Illuminate\Http\Request $request) {
+    $token = $request->get('token');
+    if (!$token) {
+        return redirect('/')->with('error', 'Missing SSO token.');
+    }
+    
+    $ssoToken = null;
+    try {
+        $ssoToken = \Illuminate\Support\Facades\DB::table('sso_tokens')
+            ->where('token', $token)
+            ->where('expires_at', '>', gmdate('Y-m-d H:i:s'))
+            ->first();
+    } catch (\Throwable $e) {}
+        
+    if (!$ssoToken) {
+        return redirect('/')->with('error', 'Expired or invalid SSO token.');
+    }
+    
+    // Anti-Replay: consume token immediately
+    try {
+        \Illuminate\Support\Facades\DB::table('sso_tokens')->where('token', $token)->delete();
+    } catch (\Throwable $e) {}
+    
+    $email = $ssoToken->email;
+    $role = $ssoToken->role;
+    
+    if ($role === 'admin') {
+        $admin = \App\Models\Admin::whereRaw('LOWER(email) = ?', [strtolower(trim($email))])->first();
+        if ($admin) {
+            auth('admin')->login($admin);
+            return redirect()->route('admin.dashboard.index');
+        }
+    } elseif ($role === 'vendor') {
+        $seller = \App\Models\Seller::whereRaw('LOWER(email) = ?', [strtolower(trim($email))])->first();
+        if ($seller) {
+            auth('seller')->login($seller);
+            return redirect()->route('vendor.dashboard.index');
+        }
+    }
+    
+    return redirect('/')->with('error', 'Ecosystem account not found.');
+})->name('sso.return');
+
