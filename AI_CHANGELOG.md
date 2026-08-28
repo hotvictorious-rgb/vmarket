@@ -7,6 +7,16 @@ Always append your completed tasks here in chronological order at the top. Forma
 `### [YYYY-MM-DD HH:MM UTC] <Feature / Fix Title> [<Component Scope>]`
 Include the specific app/component modified and bullet points detailing the exact technical changes.
 
+### [2026-08-28 06:00 UTC] Clean POS Removal from Vendor Mobile App [vendor-app] [cleanup]
+* **Component:** Vendor Mobile App (`Vendor app` folder)
+* **Action:**
+  - Disabled all POS user entry points and bottom sheet navigation in the vendor menu (`menu_widget.dart`).
+  - Deleted all visual POS cashier screens, receipt previews, barcode scanners, and hold-order interfaces.
+  - Purged Provider registrations for the unused `BottomMenuController` and `BarcodeScanController` from `main.dart` and `di_container.dart`.
+  - Cleaned up `CartController` dependencies and stubbed out unused POS checkout UI routes and tax calculation calls.
+  - Retained background API dependencies (`CustomerController`, `CartController`) needed by product review search filters to ensure zero compilation or regression impact.
+  - Verified clean syntax compilation with zero errors using `flutter analyze`.
+
 ### [2026-08-28 00:15 UTC] Implemented Real-Time POS-to-Vmarket Product Catalog Sync and Unified Employee Role Mapping [pos] [feature] [security]
 * **Component:** POS (`ProductObserver.php`, `AppServiceProvider.php`, `AuthController.php`, `User.php`)
 * **Action:**
