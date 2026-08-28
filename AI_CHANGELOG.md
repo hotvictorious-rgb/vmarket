@@ -7,6 +7,14 @@ Always append your completed tasks here in chronological order at the top. Forma
 `### [YYYY-MM-DD HH:MM UTC] <Feature / Fix Title> [<Component Scope>]`
 Include the specific app/component modified and bullet points detailing the exact technical changes.
 
+### [2026-08-28 11:38 UTC] Standardized Environment Templates and Brand Naming to VMARKET [backend] [pos] [chore]
+* **Component:** Marketplace Backend (`backend/vmarket-web`), POS (`hysam`)
+* **Action:**
+  - Standardized `APP_NAME` across `.env` and `config/app.php` from legacy `6valley` / `Laravel` to **`VMARKET`** (Backend) and **`VMARKET POS`** (POS).
+  - Modernized `backend/vmarket-web/.env.example` with current production parameters, `theme_aster` theme selector, Super Admin master credential definitions, MySQL/SQLite database connection toggles, and ecosystem SSO secret keys.
+  - Modernized `hysam/.env.example` with standard database connection templates, SSO endpoint URLs, and mail configuration.
+  - Verified PHP syntax validity with `php -l` on all modified configuration files.
+
 ### [2026-08-28 10:55 UTC] Streamlined Vendor App Modules (Coupons, Clearance Sale & Deliveryman Setup Removal) [vendor-app] [cleanup]
 * **Component:** Vendor Mobile App (`Vendor app` folder)
 * **Action:**
