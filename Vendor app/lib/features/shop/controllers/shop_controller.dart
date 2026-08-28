@@ -10,7 +10,6 @@ import 'package:permission_handler/permission_handler.dart';
 import 'package:provider/provider.dart';
 import 'package:sixvalley_vendor_app/data/model/response/base/api_response.dart';
 import 'package:sixvalley_vendor_app/data/model/response/response_model.dart';
-import 'package:sixvalley_vendor_app/features/clearance_sale/widgets/show_custom_time_picker.dart';
 import 'package:sixvalley_vendor_app/features/product/controllers/product_controller.dart';
 import 'package:sixvalley_vendor_app/features/shop/domain/models/payment_information_model.dart';
 import 'package:sixvalley_vendor_app/features/shop/domain/models/shop_model.dart';
@@ -296,13 +295,20 @@ class ShopController extends ChangeNotifier {
       }
 
       if(date != null) {
-        time = await showCustomTimePicker(
-          dateTime: dateTime,
+        time = await showTimePicker(
+          context: context,
+          initialTime: TimeOfDay(hour: (dateTime ?? DateTime.now()).hour, minute: (dateTime ?? DateTime.now()).minute),
+          builder: (BuildContext context, Widget? child) {
+            return MediaQuery(
+              data: MediaQuery.of(context).copyWith(alwaysUse24HourFormat: false),
+              child: child!,
+            );
+          },
         );
       }
 
       DateTime?  combinedDateTime;
-      if(date != null) {
+      if(date != null && time != null) {
         combinedDateTime = DateTime(
           date.year,
           date.month,

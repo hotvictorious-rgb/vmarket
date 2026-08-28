@@ -21,7 +21,6 @@ import 'package:sixvalley_vendor_app/features/product/widgets/stock_out_product_
 import 'package:sixvalley_vendor_app/features/notification/screens/notification_screen.dart';
 import 'package:sixvalley_vendor_app/features/product/screens/most_popular_product_screen.dart';
 import 'package:sixvalley_vendor_app/features/product/screens/top_selling_product_screen.dart';
-import 'package:sixvalley_vendor_app/features/delivery_man/widgets/top_delivery_man_view_widget.dart';
 
 
 class HomePageScreen extends StatefulWidget {
@@ -53,7 +52,6 @@ class _HomePageScreenState extends State<HomePageScreen> {
     await Provider.of<ShippingController>(context,listen: false).getSelectedShippingMethodType(context);
 
     await Future.delayed(const Duration(milliseconds: 150));
-    await Provider.of<DeliveryManController>(context, listen: false).getTopDeliveryManList(context);
     await Provider.of<BankInfoController>(context, listen: false).getDashboardRevenueData(context,'yearEarn');
     Provider.of<BankInfoController>(context, listen: false).setRevenueFilterType(0, false);
     
@@ -82,22 +80,6 @@ class _HomePageScreenState extends State<HomePageScreen> {
 
 
     return Scaffold(
-      // floatingActionButtonLocation: FloatingActionButtonLocation.startFloat,
-      // floatingActionButton: FloatingActionButton(
-      //   backgroundColor: Theme.of(context).scaffoldBackgroundColor,
-      //   shape: RoundedRectangleBorder(
-      //     borderRadius: BorderRadius.only(
-      //       topRight: Radius.circular( isLtr ? Dimensions.radiusDefault : 0),
-      //       topLeft: Radius.circular(isLtr ? 0 : Dimensions.radiusDefault),
-      //       bottomLeft: const Radius.circular(Dimensions.radiusDefault),
-      //       bottomRight: const Radius.circular(Dimensions.radiusDefault),
-      //     ),
-      //   ),
-      //   child: const CustomAssetImageWidget(Images.tutorialFlowIcon, width: 20, height: 20),
-      //   onPressed: () {
-      //   }
-      // ),
-
       body: Consumer<OrderController>(builder: (context, order, child) {
           return RefreshIndicator(
             onRefresh: () async {
@@ -120,29 +102,37 @@ class _HomePageScreenState extends State<HomePageScreen> {
                   title: Image.asset(Images.logoWithAppName, height: 35),
                   actions: [
                     Consumer<NotificationController>(
-                      builder: (context, notificationController, _) {
-                        return InkWell(onTap: ()=> Navigator.push(context, MaterialPageRoute(builder: (_)=> const NotificationScreen())),
-                          child: Stack(
-                            children: [
-                              Padding(padding: const EdgeInsets.fromLTRB(Dimensions.paddingSizeDefault, Dimensions.paddingSizeSmall, Dimensions.paddingSizeDefault, 0),
-                                child: Icon(CupertinoIcons.bell, color: Theme.of(context).primaryColor),
+                        builder: (context, notificationController, _) {
+                          return Padding(
+                            padding: const EdgeInsets.symmetric(horizontal: Dimensions.paddingSizeSmall),
+                            child: IconButton(
+                              icon: Stack(
+                                children: [
+                                  Image.asset(Images.notification, width: 25, height: 25),
+                                  if(notificationController.notificationModel != null && (notificationController.notificationModel!.unreadNotificationCount ?? 0) > 0)
+                                    Positioned(
+                                      top: 0, right: 0,
+                                      child: Container(
+                                        padding: const EdgeInsets.all(4),
+                                        decoration: const BoxDecoration(
+                                          color: Colors.red,
+                                          shape: BoxShape.circle,
+                                        ),
+                                        child: Text(
+                                          '${notificationController.notificationModel?.unreadNotificationCount ?? ''}',
+                                          style: robotoRegular.copyWith(color: Colors.white, fontSize: 8),
+                                        ),
+                                      ),
+                                    )
+                                ],
                               ),
-                              Positioned(top: 5,right: 18,child: Align(alignment: Alignment.topRight,
-                                child: CircleAvatar(backgroundColor: Theme.of(context).colorScheme.error,
-                                  radius: 8,child: Center(
-                                    child: Padding(
-                                      padding: const EdgeInsets.all(1.0),
-                                      child: Text('${notificationController.notificationModel?.newNotificationItem??0}',
-                                        style: robotoRegular.copyWith(fontSize: Dimensions.fontSizeExtraSmall, color: Colors.white),),
-                                    ),
-                                  ),)
-                                )
-                              ),
-                            ],
-                          ),
-                        );
-                      }
-                    )
+                              onPressed: () {
+                                Navigator.push(context, MaterialPageRoute(builder: (_) => const NotificationScreen()));
+                              },
+                            ),
+                          );
+                        }
+                    ),
                   ],
                 ),
 
@@ -183,9 +173,6 @@ class _HomePageScreenState extends State<HomePageScreen> {
 
                       const MostPopularProductScreen(isMain: true),
                       const SizedBox(height: Dimensions.paddingSizeSmall),
-
-                      Provider.of<SplashController>(context, listen: false).configModel?.shippingMethod != 'inhouse_shipping' ?
-                      const TopDeliveryManViewWidget(isMain: true) : const SizedBox()
 
                     ],
                   ),

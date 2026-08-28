@@ -17,12 +17,10 @@ import 'package:sixvalley_vendor_app/features/addProduct/controllers/digital_pro
 import 'package:sixvalley_vendor_app/features/addProduct/controllers/variation_controller.dart';
 import 'package:sixvalley_vendor_app/features/ai/controllers/ai_controller.dart';
 import 'package:sixvalley_vendor_app/features/barcode/controllers/barcode_controller.dart';
-import 'package:sixvalley_vendor_app/features/clearance_sale/controllers/clearance_sale_controller.dart';
 import 'package:sixvalley_vendor_app/features/dashboard/widgets/custom_tutorial_dialog.dart';
 import 'package:sixvalley_vendor_app/features/notification/controllers/notification_controller.dart';
 import 'package:sixvalley_vendor_app/features/order_details/controllers/order_details_controller.dart';
 import 'package:sixvalley_vendor_app/features/order_edit/controllers/order_edit_controller.dart';
-import 'package:sixvalley_vendor_app/features/pos/controllers/coupon_discount_controller.dart';
 import 'package:sixvalley_vendor_app/features/pos/controllers/customer_controller.dart';
 import 'package:sixvalley_vendor_app/features/product/controllers/category_controller.dart';
 import 'package:sixvalley_vendor_app/features/product/widgets/cookies_widget.dart';
@@ -35,7 +33,6 @@ import 'package:sixvalley_vendor_app/features/auth/controllers/auth_controller.d
 import 'package:sixvalley_vendor_app/features/settings/controllers/business_controller.dart';
 import 'package:sixvalley_vendor_app/features/pos/controllers/cart_controller.dart';
 import 'package:sixvalley_vendor_app/features/chat/controllers/chat_controller.dart';
-import 'package:sixvalley_vendor_app/features/coupon/controllers/coupon_controller.dart';
 import 'package:sixvalley_vendor_app/features/delivery_man/controllers/delivery_man_controller.dart';
 import 'package:sixvalley_vendor_app/features/emergency_contract/controllers/emergency_contact_controller.dart';
 import 'package:sixvalley_vendor_app/features/language/controllers/language_controller.dart';
@@ -138,7 +135,6 @@ Future<void> main() async {
 
       ChangeNotifierProvider(create: (context) => di.sl<CartController>()),
       ChangeNotifierProvider(create: (context) => di.sl<EmergencyContactController>()),
-      ChangeNotifierProvider(create: (context) => di.sl<CouponController>()),
       ChangeNotifierProvider(create: (context) => di.sl<LocationController>()),
       ChangeNotifierProvider(create: (context) => di.sl<NotificationController>()),
       ChangeNotifierProvider(create: (context) => di.sl<WalletController>()),
@@ -146,9 +142,7 @@ Future<void> main() async {
       ChangeNotifierProvider(create: (context) => di.sl<ProductDetailsController>()),
       ChangeNotifierProvider(create: (context) => di.sl<BarcodeController>()),
       ChangeNotifierProvider(create: (context) => di.sl<RestockController>()),
-      ChangeNotifierProvider(create: (context) => di.sl<ClearanceSaleController>()),
       ChangeNotifierProvider(create: (context) => di.sl<CustomerController>()),
-      ChangeNotifierProvider(create: (context) => di.sl<CouponDiscountController>()),
 
       ChangeNotifierProvider(create: (context) => di.sl<AddProductImageController>()),
       ChangeNotifierProvider(create: (context) => di.sl<VariationController>()),

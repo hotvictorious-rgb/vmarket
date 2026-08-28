@@ -7,6 +7,17 @@ Always append your completed tasks here in chronological order at the top. Forma
 `### [YYYY-MM-DD HH:MM UTC] <Feature / Fix Title> [<Component Scope>]`
 Include the specific app/component modified and bullet points detailing the exact technical changes.
 
+### [2026-08-28 10:55 UTC] Streamlined Vendor App Modules (Coupons, Clearance Sale & Deliveryman Setup Removal) [vendor-app] [cleanup]
+* **Component:** Vendor Mobile App (`Vendor app` folder)
+* **Action:**
+  - Removed **Coupons**, **Clearance Sale**, and **Deliveryman** navigation items from `menu_widget.dart`.
+  - Deleted obsolete feature directories: `lib/features/coupon` and `lib/features/clearance_sale`.
+  - Pruned deliveryman management screens (`lib/features/delivery_man/screens`) and non-assignment widgets (`lib/features/delivery_man/widgets`), while safely retaining `DeliveryManController`, domain services, and `delivery_man_assign_widget.dart` for order logistics assignment.
+  - Purged Provider and GetIt registrations for `CouponController`, `ClearanceSaleController`, `CouponDiscountController`, and their associated repositories/services from `main.dart` and `di_container.dart`.
+  - Decoupled `CustomerSearchScreen` from `CouponController` and cleaned up `HomePageScreen` top delivery man widgets.
+  - Updated `ShopController.selectDateTime` to use native Flutter `showTimePicker` with active `BuildContext`.
+  - Verified clean syntax compilation with zero errors across all modules using `flutter analyze`.
+
 ### [2026-08-28 06:00 UTC] Clean POS Removal from Vendor Mobile App [vendor-app] [cleanup]
 * **Component:** Vendor Mobile App (`Vendor app` folder)
 * **Action:**
