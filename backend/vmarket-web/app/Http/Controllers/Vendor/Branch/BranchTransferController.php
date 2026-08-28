@@ -12,8 +12,11 @@ use App\Models\Shop;
 use App\Utils\Helpers;
 use Devrabiul\ToastMagic\Facades\ToastMagic;
 use Illuminate\Contracts\View\View;
+use Illuminate\Database\Eloquent\Collection;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Pagination\LengthAwarePaginator;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
 
@@ -23,7 +26,7 @@ use Illuminate\Support\Str;
  */
 class BranchTransferController extends BaseController
 {
-    public function index(): View|RedirectResponse
+    public function index(?Request $request, ?string $type = null): View|Collection|LengthAwarePaginator|null|callable|RedirectResponse|JsonResponse
     {
         $sellerId = auth('seller')->id();
 

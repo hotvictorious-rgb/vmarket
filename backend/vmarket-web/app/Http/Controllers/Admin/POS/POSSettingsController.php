@@ -6,8 +6,11 @@ use App\Http\Controllers\BaseController;
 use App\Models\BusinessSetting;
 use Devrabiul\ToastMagic\Facades\ToastMagic;
 use Illuminate\Contracts\View\View;
+use Illuminate\Database\Eloquent\Collection;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Pagination\LengthAwarePaginator;
 
 /**
  * [AI] Class POSSettingsController
@@ -15,7 +18,7 @@ use Illuminate\Http\Request;
  */
 class POSSettingsController extends BaseController
 {
-    public function index(): View
+    public function index(?Request $request, ?string $type = null): View|Collection|LengthAwarePaginator|null|callable|RedirectResponse|JsonResponse
     {
         $freeBranchLimit = (int)(json_decode(getWebConfig(name: 'pos_free_branch_limit'), true) ?? 1);
         $monthlyPrice = (float)(json_decode(getWebConfig(name: 'pos_multi_branch_monthly_price'), true) ?? 15000);

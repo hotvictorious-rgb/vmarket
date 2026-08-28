@@ -7,8 +7,11 @@ use App\Models\Seller;
 use App\Utils\Helpers;
 use Devrabiul\ToastMagic\Facades\ToastMagic;
 use Illuminate\Contracts\View\View;
+use Illuminate\Database\Eloquent\Collection;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Pagination\LengthAwarePaginator;
 
 /**
  * [AI] Class MarketplaceApprovalController
@@ -16,7 +19,7 @@ use Illuminate\Http\Request;
  */
 class MarketplaceApprovalController extends Controller
 {
-    public function index(Request $request): View
+    public function index(?Request $request, ?string $type = null): View|Collection|LengthAwarePaginator|null|callable|RedirectResponse|JsonResponse
     {
         $status = $request->get('status', 'all');
 

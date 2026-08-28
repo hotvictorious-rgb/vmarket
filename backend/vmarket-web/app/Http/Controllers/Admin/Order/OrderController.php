@@ -116,7 +116,7 @@ class OrderController extends BaseController
      * @return View|Collection|LengthAwarePaginator|callable|RedirectResponse|JsonResponse|null Index function is the starting point of a controller
      * Index function is the starting point of a controller
      */
-    public function index(Request|null $request, $type = 'all'): View|Collection|LengthAwarePaginator|null|callable|RedirectResponse|JsonResponse
+    public function index(?Request $request, ?string $type = 'all'): View|Collection|LengthAwarePaginator|null|callable|RedirectResponse|JsonResponse
     {
         $status = $type;
         $searchValue = $request['searchValue'];

@@ -7,6 +7,13 @@ Always append your completed tasks here in chronological order at the top. Forma
 `### [YYYY-MM-DD HH:MM UTC] <Feature / Fix Title> [<Component Scope>]`
 Include the specific app/component modified and bullet points detailing the exact technical changes.
 
+### [2026-08-28 16:58 UTC] Resolved Controller Contract Mismatches and Gated Address Routes [backend] [fix]
+* **Component:** Marketplace Backend (`backend/vmarket-web`)
+* **Action:**
+  - Standardized the index method parameter and return type signatures across all POS/SaaS controllers implementing `ControllerInterface` to be fully PHP 8.1+ compatible, resolving 500 fatal contract mismatch errors.
+  - Controllers corrected: `AdminPOSDashboardController`, `POSSettingsController`, `BranchTransferController`, `CustomerDebtController`, `POSSubscriptionController`, `MarketplaceApprovalController`, and `OrderController`.
+  - Added `customer` middleware gating to all address management web routes (including `account-address-add`, `account-address-store`, `account-address-delete`, `account-address-edit`, etc.) to prevent guest access 500 errors and properly redirect to login.
+
 ### [2026-08-28 11:38 UTC] Standardized Environment Templates and Brand Naming to VMARKET [backend] [pos] [chore]
 * **Component:** Marketplace Backend (`backend/vmarket-web`), POS (`hysam`)
 * **Action:**
