@@ -9,7 +9,6 @@ import 'package:sixvalley_vendor_app/features/pos/domain/models/place_order_body
 import 'package:sixvalley_vendor_app/data/model/response/base/api_response.dart';
 import 'package:sixvalley_vendor_app/features/pos/domain/models/cart_model.dart';
 import 'package:sixvalley_vendor_app/features/pos/domain/services/cart_service_interface.dart';
-import 'package:sixvalley_vendor_app/features/pos/screens/pos_screen.dart';
 import 'package:sixvalley_vendor_app/features/product/domain/models/product_model.dart';
 import 'package:sixvalley_vendor_app/features/pos/domain/models/temporary_cart_for_customer_model.dart';
 import 'package:sixvalley_vendor_app/helper/api_checker.dart';
@@ -18,7 +17,6 @@ import 'package:sixvalley_vendor_app/helper/price_converter.dart';
 import 'package:sixvalley_vendor_app/localization/language_constrants.dart';
 import 'package:sixvalley_vendor_app/main.dart';
 import 'package:sixvalley_vendor_app/features/order/controllers/order_controller.dart';
-import 'package:sixvalley_vendor_app/features/pos/screens/invoice_screen.dart';
 
 class CartController extends ChangeNotifier{
   final CartServiceInterface cartServiceInterface;
@@ -420,7 +418,7 @@ class CartController extends ChangeNotifier{
         _amount = 0;
 
       }
-      Navigator.push(Get.context!, MaterialPageRoute(builder: (_)=> InVoiceScreen(orderId: response.response!.data['order_id'])));
+      // Navigator.push(Get.context!, MaterialPageRoute(builder: (_)=> InVoiceScreen(orderId: response.response!.data['order_id'])));
 
     }else{
       ApiChecker.checkApi( response);
@@ -820,23 +818,8 @@ class CartController extends ChangeNotifier{
 
 
   Future<void> getTaxAmount() async {
-    _isLoading = true;
-
-    PlaceOrderBody? placeOrderBody =  onPlaceOrder();
-
-    ApiResponse response = await cartServiceInterface.getTaxAmount(placeOrderBody);
-
-    if(response.response != null && response.response!.statusCode == 200) {
-      modifiedCart = PlaceOrderBody.fromJson(response.response?.data);
-      if((modifiedCart?.totalTaxAmount ?? 0) > 0) {
-        _isUpdatePaidAmount = true;
-      }
-      _isLoading = false;
-    }else {
-      _isLoading = false;
-      ApiChecker.checkApi(response);
-    }
-    notifyListeners();
+    // Stubbed out since POS checkout is disabled
+    return;
   }
 
   void removeModifiedTax({bool isUpdate = false}) {

@@ -61,7 +61,6 @@ import 'package:sixvalley_vendor_app/features/order_edit/domain/repositories/ord
 import 'package:sixvalley_vendor_app/features/order_edit/domain/repositories/order_edit_repository_interface.dart';
 import 'package:sixvalley_vendor_app/features/order_edit/domain/services/order_edit_service.dart';
 import 'package:sixvalley_vendor_app/features/order_edit/domain/services/order_edit_service_interface.dart';
-import 'package:sixvalley_vendor_app/features/pos/controllers/barcode_scan_controller.dart';
 import 'package:sixvalley_vendor_app/features/pos/controllers/coupon_discount_controller.dart';
 import 'package:sixvalley_vendor_app/features/pos/domain/repository/cart_repository_interface.dart';
 import 'package:sixvalley_vendor_app/features/pos/domain/services/cart_service.dart';
@@ -145,7 +144,6 @@ import 'package:sixvalley_vendor_app/features/delivery_man/controllers/delivery_
 import 'package:sixvalley_vendor_app/features/emergency_contract/controllers/emergency_contact_controller.dart';
 import 'package:sixvalley_vendor_app/features/language/controllers/language_controller.dart';
 import 'package:sixvalley_vendor_app/localization/controllers/localization_controller.dart';
-import 'package:sixvalley_vendor_app/features/dashboard/controllers/bottom_menu_controller.dart';
 import 'package:sixvalley_vendor_app/features/order/controllers/location_controller.dart';
 import 'package:sixvalley_vendor_app/features/order/controllers/order_controller.dart';
 import 'package:sixvalley_vendor_app/features/product/controllers/product_controller.dart';
@@ -372,14 +370,14 @@ Future<void> init() async {
   sl.registerFactory(() => LanguageController());
   sl.registerFactory(() => ShopController(shopServiceInterface: sl()));
   sl.registerFactory(() => CartController(cartServiceInterface: sl()));
-  sl.registerFactory(() => BottomMenuController());
+
   sl.registerFactory(() => LocationController(locationServiceInterface: sl()));
   sl.registerFactory(() => BarcodeController(barcodeServiceInterface: sl()));
   sl.registerFactory(() => RestockController(restockServiceInterface: sl()));
   sl.registerFactory(() => ClearanceSaleController(chatServiceInterface: sl()));
   sl.registerFactory(() => CustomerController(cartServiceInterface: sl()));
   sl.registerFactory(() => CouponDiscountController(cartServiceInterface: sl()));
-  sl.registerFactory(() => BarcodeScanController(cartServiceInterface: sl()));
+
   sl.registerFactory(() => ShowBottomSheetController());
   sl.registerFactory(() => TutorialController());
   sl.registerFactory(() => AddProductImageController(shopServiceInterface: sl()));

@@ -75,10 +75,7 @@ class MenuBottomSheetWidget extends StatelessWidget {
             ),
 
 
-          // if(configModel?.posActive == 1 && Provider.of<ProfileController>(context, listen: false).userInfoModel?.posActive == 1)
-            CustomBottomSheetWidget(image: Images.pos, title: getTranslated('pos', context),
-              onTap: () => _handleMenuTap(context, const NavBarScreen()),
-            ),
+
 
 
           CustomBottomSheetWidget(image: Images.settings, title: getTranslated('settings', context),
