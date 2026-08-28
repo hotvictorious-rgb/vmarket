@@ -99,7 +99,7 @@ class WebController extends Controller
 
     public function search_shop(Request $request):View
     {
-        $key = explode(' ', $request['shop_name']);
+        $key = explode(' ', (string)($request['shop_name'] ?? ''));
         $sellers = Shop::where(function ($q) use ($key) {
             foreach ($key as $value) {
                 $q->orWhere('name', 'like', "%{$value}%");

@@ -32,15 +32,16 @@ class PaymobController extends Controller
 
     public function __construct(PaymentRequest $payment, User $user)
     {
+        $this->config_values = [];
         $config = $this->payment_config('paymob_accept', 'payment_config');
         if (!is_null($config) && $config->mode == 'live') {
-            $this->config_values = json_decode($config->live_values, true);
+            $this->config_values = json_decode($config->live_values, true) ?? [];
         } elseif (!is_null($config) && $config->mode == 'test') {
-            $this->config_values = json_decode($config->test_values, true);
+            $this->config_values = json_decode($config->test_values, true) ?? [];
         }
         $this->payment = $payment;
         $this->user = $user;
-        $country = $this->config_values['supported_country'];
+        $country = $this->config_values['supported_country'] ?? 'egypt';
         if (array_key_exists($country, $this->supportedCountries)) {
             $this->base_url = $this->supportedCountries[$country];
         } else {

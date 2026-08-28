@@ -17,5 +17,5 @@ interface ControllerInterface
      * @param string|null $type
      * @return View|Collection|LengthAwarePaginator|callable|RedirectResponse|JsonResponse|null
      */
-    public function index(?Request $request, ?string $type = null): View|Collection|LengthAwarePaginator|null|callable|RedirectResponse|JsonResponse;
+    public function index(?Request $request, ?string $type = null);
 }
