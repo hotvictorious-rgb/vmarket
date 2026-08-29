@@ -56,6 +56,12 @@ return [
             'provider' => 'sellers',
         ],
 
+        // [AI] Vendor Employee guard — POS cashier staff login (separate from seller owner)
+        'vendor_employee' => [
+            'driver' => 'session',
+            'provider' => 'vendor_employees',
+        ],
+
         'customer' => [
             'driver' => 'session',
             'provider' => 'users',
@@ -93,6 +99,12 @@ return [
         'sellers' => [
             'driver' => 'eloquent',
             'model' => \App\Models\Seller::class,
+        ],
+
+        // [AI] VendorEmployee provider for POS cashier authentication
+        'vendor_employees' => [
+            'driver' => 'eloquent',
+            'model' => \App\Models\VendorEmployee::class,
         ],
 
         // 'users' => [

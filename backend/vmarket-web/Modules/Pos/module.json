@@ -1,0 +1,11 @@
+{
+    "name": "Pos",
+    "alias": "pos",
+    "description": "In-Store POS module — merged from Hysam standalone app. Handles warehouses, sales, stock, debts, cashier shifts, and POS-specific reports. Uses the unified Vmarket database. Unverified vendors get free POS; verified vendors also sell on the marketplace.",
+    "keywords": ["pos", "in-store", "sales", "inventory", "hysam"],
+    "priority": 0,
+    "providers": [
+        "Modules\\Pos\\app\\Providers\\PosServiceProvider"
+    ],
+    "files": []
+}
