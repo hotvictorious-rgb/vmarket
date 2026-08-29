@@ -7,6 +7,17 @@ Always append your completed tasks here in chronological order at the top. Forma
 `### [YYYY-MM-DD HH:MM UTC] <Feature / Fix Title> [<Component Scope>]`
 Include the specific app/component modified and bullet points detailing the exact technical changes.
 
+### [2026-08-29 17:45 UTC] Branch Order Allocation Engine & Worker-Attributed Handover Custody Protocol [backend] [orders] [pos] [delivery]
+
+* **Component:** `app/Services/BranchOrderAllocationService.php`, `app/Utils/OrderManager.php`, `app/Http/Controllers/Vendor/Order/InShopHandoverController.php`, `test_branch_allocation_and_worker_traceability.php`
+* **Action:**
+  - **Intelligent Branch Order Allocation Engine:** Created `BranchOrderAllocationService.php` to evaluate customer shipping geography, delivery hub matches, and merchant physical branch availability, automatically allocating incoming marketplace orders to `handover_branch_id`.
+  - **Order Creation Integration:** Integrated `BranchOrderAllocationService` into `OrderManager::generate_order` so every new order is bound to an allocated physical branch upon checkout.
+  - **Worker-Attributed Handshake Protocol:** Enhanced `InShopHandoverController.php` to identify and trace the exact worker on duty (Vendor Employee #ID with Predetermined Role vs Store Owner), recording `handed_over_by_id`, `handed_over_by_name`, `handover_branch_id`, and `pickup_otp_used` into `OrderHandoverLog`.
+* **Verification:**
+  1. `test_branch_allocation_and_worker_traceability.php`: 3/3 PASS (100.0%) ✅
+  2. `test_20_critical_security_architectural_proofs.php`: 20/20 PASS (100.0%) ✅
+
 ### [2026-08-29 16:30 UTC] Ecosystem Master Catalogue Scan & 1,583 Endpoints Synchronization [ai-governance] [catalogue] [security]
 
 * **Component:** `ALL_ECOSYSTEM_ENDPOINTS_AND_SECURITY_TAXONOMY.md`, `.agents/AGENTS.md`, `AI_ENGINEERING_RULES.md`, `analyze_all_route_methods.php`, `generate_full_taxonomy_doc.php`

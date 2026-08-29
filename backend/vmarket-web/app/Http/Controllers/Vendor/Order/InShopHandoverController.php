@@ -48,12 +48,22 @@ class InShopHandoverController extends Controller
             return back();
         }
 
-        $staffName = $seller->name ?? ($seller->f_name . ' ' . $seller->l_name . ' (Owner)');
-        $branchId = $seller->shop->id ?? null;
+        // Determine exact worker on duty (Vendor Employee vs Store Owner)
+        $employeeData = session('vendor_employee_data');
+        if (!empty($employeeData)) {
+            $staffId = (int)($employeeData['id'] ?? $sellerId);
+            $roleTitle = session('vendor_employee_role.name') ?? 'Staff';
+            $staffName = ($employeeData['name'] ?? 'Worker') . " ({$roleTitle} - Staff #{$staffId})";
+        } else {
+            $staffId = (int)$sellerId;
+            $staffName = ($seller->name ?? ($seller->f_name . ' ' . $seller->l_name)) . ' (Store Owner)';
+        }
 
-        DB::transaction(function () use ($order, $sellerId, $staffName, $branchId, $request) {
+        $branchId = $seller->shop->id ?? ($order->handover_branch_id ?? null);
+
+        DB::transaction(function () use ($order, $sellerId, $staffId, $staffName, $branchId, $request) {
             $order->order_status = 'out_for_delivery';
-            $order->handed_over_by_id = $sellerId;
+            $order->handed_over_by_id = $staffId;
             $order->handed_over_by_name = $staffName;
             $order->handed_over_at = now();
             $order->handover_branch_id = $branchId;
@@ -63,13 +73,13 @@ class InShopHandoverController extends Controller
                 'order_id' => $order->id,
                 'seller_id' => $sellerId,
                 'branch_id' => $branchId,
-                'handed_over_by_id' => $sellerId,
+                'handed_over_by_id' => $staffId,
                 'handed_over_by_name' => $staffName,
                 'delivery_man_id' => $order->delivery_man_id,
                 'delivery_man_name' => $order->deliveryMan ? ($order->deliveryMan->f_name . ' ' . $order->deliveryMan->l_name) : 'Assigned Rider',
                 'pickup_otp_used' => $request->pickup_otp,
                 'handed_over_at' => now(),
-                'notes' => $request->notes ?? 'In-shop custody transferred via staff-attributed OTP handshake',
+                'notes' => $request->notes ?? "In-shop custody transferred by {$staffName} via 6-digit OTP verification",
             ]);
         });
 

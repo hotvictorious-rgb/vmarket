@@ -1015,10 +1015,16 @@ class OrderManager
             }
         }
 
+        $allocatedBranchId = app(\App\Services\BranchOrderAllocationService::class)->allocateBranch(
+            (int)($cartData['seller_id'] ?? 0),
+            $cartData['shipping_address_id'] ?? null
+        );
+
         return [
             'id' => $orderId,
             'verification_code' => rand(100000, 999999),
             'pickup_verification_code' => rand(100000, 999999),
+            'handover_branch_id' => $allocatedBranchId,
             'customer_id' => $customerData['customer_id'],
             'is_guest' => $customerData['is_guest'],
             'seller_id' => $cartData['seller_id'],
