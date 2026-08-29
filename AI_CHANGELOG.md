@@ -7,6 +7,14 @@ Always append your completed tasks here in chronological order at the top. Forma
 `### [YYYY-MM-DD HH:MM UTC] <Feature / Fix Title> [<Component Scope>]`
 Include the specific app/component modified and bullet points detailing the exact technical changes.
 
+### [2026-08-28 22:30 UTC] Dynamic Ecosystem URLs in In-Store POS Auth & Resolution of Connection Refused [pos] [fix]
+* **Component:** In-Store POS Submodule (`hysam/resources/views/auth/login.blade.php`, `hysam/resources/views/layouts/app.blade.php`, `hysam/app/Http/Controllers/AuthController.php`, `hysam/.env`)
+* **Action:**
+  - Diagnosed `ERR_CONNECTION_REFUSED` on clicking "Sign Up on Victorious MARKET" caused by hardcoded `http://127.0.0.1:8000` which failed on Windows where the dev server was bound to `localhost:8000` or in production.
+  - Made the registration and return URLs fully dynamic using `rtrim(env('VMARKET_URL', 'https://shop.victoriousmarket.com.ng'), '/') . '/vendor/auth/registration/index'`.
+  - Updated `hysam/.env` to configure `VMARKET_URL=http://localhost:8000`.
+  - Verified `curl http://localhost:8000/vendor/auth/registration/index` returns `HTTP 200 OK`.
+
 ### [2026-08-28 22:20 UTC] Paystack Single-Gateway Standardization & Clean Removal of Other Gateways [backend] [payment] [cleanup]
 * **Component:** Marketplace Backend (`backend/vmarket-web/app/Http/Controllers/Payment_Methods`, `routes/web/routes.php`)
 * **Action:**
