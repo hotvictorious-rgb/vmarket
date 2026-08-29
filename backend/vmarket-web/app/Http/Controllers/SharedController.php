@@ -54,18 +54,20 @@ class SharedController extends Controller
         return response()->json(['recaptcha' => $response]);
     }
 
-    public function storeRecaptchaSession(Request $request): void
+    public function storeRecaptchaSession(Request $request)
     {
+        $sessionKey = (string)($request['sessionKey'] ?? 'default_recaptcha');
         $recaptchaBuilder = $this->generateDefaultReCaptcha(4);
-        if (session()->has($request['sessionKey'])) {
-            Session::forget($request['sessionKey']);
+        if (session()->has($sessionKey)) {
+            session()->forget($sessionKey);
         }
-        Session::put($request['sessionKey'], $recaptchaBuilder->getPhrase());
-        header("Cache-Control: no-cache, must-revalidate");
-        header("Content-Type:image/jpeg");
-        header("Pragma:no-cache");
-        header("Expires:Sat, 26 Jul 1997 05:00:00 GMT");
-        $recaptchaBuilder->output();
+        $this->saveRecaptchaValueInSession(
+            sessionKey: $sessionKey,
+            sessionValue: $recaptchaBuilder->getPhrase()
+        );
+        return response($recaptchaBuilder->get())
+            ->header("Cache-Control", "no-cache, must-revalidate")
+            ->header("Content-Type", "image/jpeg");
     }
 
     public function getActivationCheckView(Request $request): View|RedirectResponse

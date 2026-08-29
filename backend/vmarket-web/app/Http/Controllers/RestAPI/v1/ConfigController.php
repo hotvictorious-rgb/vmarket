@@ -25,24 +25,27 @@ class ConfigController extends Controller
     {
         $responseConfig = Cache::remember('vmarket_api_v1_config_response', CACHE_FOR_3_HOURS, function () {
             $socialLoginConfig = [];
-        foreach (getWebConfig(name: 'social_login') as $social) {
+        $socialLoginRaw = getWebConfig(name: 'social_login') ?: [];
+        foreach ($socialLoginRaw as $social) {
             $config = [
-                'login_medium' => $social['login_medium'],
-                'status' => (boolean)$social['status']
+                'login_medium' => $social['login_medium'] ?? 'unknown',
+                'status' => (boolean)($social['status'] ?? false)
             ];
             $socialLoginConfig[] = $config;
         }
 
-        foreach (getWebConfig(name: 'apple_login') as $social) {
+        $appleLoginRaw = getWebConfig(name: 'apple_login') ?: [];
+        foreach ($appleLoginRaw as $social) {
             $config = [
-                'login_medium' => $social['login_medium'],
-                'status' => (boolean)$social['status']
+                'login_medium' => $social['login_medium'] ?? 'apple',
+                'status' => (boolean)($social['status'] ?? false)
             ];
             $socialLoginConfig[] = $config;
         }
 
         $languageArray = [];
-        foreach (getWebConfig(name: 'pnc_language') as $language) {
+        $pncLanguageRaw = getWebConfig(name: 'pnc_language') ?: ['en'];
+        foreach ($pncLanguageRaw as $language) {
             $languageArray[] = [
                 'code' => $language,
                 'name' => Helpers::get_language_name($language)
@@ -50,7 +53,8 @@ class ConfigController extends Controller
         }
 
         $offlinePayment = null;
-        $offlinePaymentStatus = getWebConfig(name: 'offline_payment')['status'] == 1 ?? 0;
+        $offlineConfig = getWebConfig(name: 'offline_payment');
+        $offlinePaymentStatus = (!empty($offlineConfig['status']) && $offlineConfig['status'] == 1);
         if ($offlinePaymentStatus) {
             $offlinePayment = [
                 'name' => 'offline_payment',
@@ -80,8 +84,8 @@ class ConfigController extends Controller
         $companyFavIcon = getWebConfig(name: 'company_fav_icon');
         $companyShopBanner = getWebConfig(name: 'shop_banner');
 
-        $loginOptions = getLoginConfig(key: 'login_options');
-        $socialMediaLoginOptions = getLoginConfig(key: 'social_media_for_login');
+        $loginOptions = getLoginConfig(key: 'login_options') ?: ['manual_login_status' => 1, 'otp_login_status' => 0, 'social_media_login_status' => 0];
+        $socialMediaLoginOptions = getLoginConfig(key: 'social_media_for_login') ?: [];
 
         foreach ($socialMediaLoginOptions as $socialMediaLoginKey => $socialMediaLogin) {
             $socialMediaLoginOptions[$socialMediaLoginKey] = (int)$socialMediaLogin;
@@ -121,18 +125,21 @@ class ConfigController extends Controller
             $systemTax = SystemTaxSetup::where('is_active', 1)->where('is_default', 1)->first();
         }
 
-        $systemColors = getWebConfig('colors');
+        $digitalPayment = getWebConfig(name: 'digital_payment');
+        $cashOnDelivery = getWebConfig(name: 'cash_on_delivery');
+        $systemColors = getWebConfig('colors') ?: ['primary' => '#5E17EB', 'secondary' => '#FFD700', 'primary_light' => '#7B39FD'];
         return [
-            'primary_color' => $systemColors['primary'],
-            'secondary_color' => $systemColors['secondary'],
+            'primary_color' => $systemColors['primary'] ?? '#5E17EB',
+            'secondary_color' => $systemColors['secondary'] ?? '#FFD700',
+            'primary_light' => $systemColors['primary_light'] ?? '#7B39FD',
             'primary_color_light' => $systemColors['primary_light'] ?? '',
-            'brand_setting' => (string)getWebConfig(name: 'product_brand'),
-            'digital_product_setting' => (string)getWebConfig(name: 'digital_product'),
-            'system_default_currency' => (int)getWebConfig(name: 'system_default_currency'),
-            'digital_payment' => (boolean)getWebConfig(name: 'digital_payment')['status'] ?? 0,
-            'cash_on_delivery' => (boolean)getWebConfig(name: 'cash_on_delivery')['status'] ?? 0,
-            'seller_registration' => (string)getWebConfig(name: 'seller_registration') ?? 0,
-            'pos_active' => (string)getWebConfig(name: 'seller_pos') ?? 0,
+            'brand_setting' => (string)(getWebConfig(name: 'product_brand') ?? 1),
+            'digital_product_setting' => (string)(getWebConfig(name: 'digital_product') ?? 0),
+            'system_default_currency' => (int)(getWebConfig(name: 'system_default_currency') ?? 1),
+            'digital_payment' => (boolean)(!empty($digitalPayment['status']) && $digitalPayment['status'] == 1),
+            'cash_on_delivery' => (boolean)(!empty($cashOnDelivery['status']) && $cashOnDelivery['status'] == 1),
+            'seller_registration' => (string)(getWebConfig(name: 'seller_registration') ?? 0),
+            'pos_active' => (string)(getWebConfig(name: 'seller_pos') ?? 0),
             'company_name' => getWebConfig(name: 'company_name') ?? '',
             'company_phone' => getWebConfig(name: 'company_phone') ?? '',
             'company_email' => getWebConfig(name: 'company_email') ?? '',

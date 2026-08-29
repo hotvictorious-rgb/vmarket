@@ -51,9 +51,9 @@ class LoginController extends BaseController
             Session::forget(SessionKey::ADMIN_RECAPTCHA_KEY);
         }
         Session::put(SessionKey::ADMIN_RECAPTCHA_KEY, $recaptchaBuilder->getPhrase());
-        header("Cache-Control: no-cache, must-revalidate");
-        header("Content-Type:image/jpeg");
-        $recaptchaBuilder->output();
+        return response($recaptchaBuilder->get())
+            ->header("Cache-Control", "no-cache, must-revalidate")
+            ->header("Content-Type", "image/jpeg");
     }
 
     public function login(Request $request): RedirectResponse

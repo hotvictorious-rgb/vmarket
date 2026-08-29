@@ -33,6 +33,9 @@ class SellerController extends Controller
     public function get_seller_info(Request $request): JsonResponse
     {
         $shop = Shop::where('slug', $request['slug'])->first();
+        if (!$shop) {
+            return response()->json(['message' => 'Shop not found.'], 404);
+        }
         $data = [];
         $seller = $shop['author_type'] != 'admin' ? Seller::with(['shop'])->where(['id' => $shop['seller_id']])->first(['id', 'f_name', 'l_name', 'phone', 'image', 'minimum_order_amount']) : null;
 

@@ -13,25 +13,26 @@ class DashboardService
         $type = null;
         $range = null;
         $keyRange = null;
-        if ($dateType == 'yearEarn') {
-            $from = Carbon::now()->startOfYear()->format('Y-m-d');
-            $to = Carbon::now()->endOfYear()->format('Y-m-d');
-            $range = range(1, 12);
-            $type = 'month';
-            $keyRange = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
-        } elseif ($dateType == 'MonthEarn') {
+        if ($dateType == 'MonthEarn' || $dateType == 'monthEarn') {
             $from = date('Y-m-01');
             $to = date('Y-m-t 23:59:59');
             $endRange = date('d', strtotime($to));
             $range = range(1, $endRange);
             $type = 'day';
             $keyRange = $range;
-        } elseif ($dateType == 'WeekEarn') {
+        } elseif ($dateType == 'WeekEarn' || $dateType == 'weekEarn') {
             $from = Carbon::now()->startOfWeek(Carbon::SUNDAY)->format('Y-m-d');
             $to = Carbon::now()->endOfWeek(Carbon::SATURDAY)->format('Y-m-d');
             $range = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
             $type = 'day_of_week';
             $keyRange = $range;
+        } else {
+            // Default to yearEarn
+            $from = Carbon::now()->startOfYear()->format('Y-m-d');
+            $to = Carbon::now()->endOfYear()->format('Y-m-d');
+            $range = range(1, 12);
+            $type = 'month';
+            $keyRange = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
         }
         return [
             'from' => $from,

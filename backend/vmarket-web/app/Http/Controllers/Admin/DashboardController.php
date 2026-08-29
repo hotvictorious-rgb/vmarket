@@ -172,7 +172,7 @@ class DashboardController extends BaseController
 
     public function getOrderStatistics(Request $request): JsonResponse
     {
-        $dateType = $request['type'];
+        $dateType = $request['type'] ?: 'YearEarn';
         $dateTypeArray = $this->dashboardService->getDateTypeData(dateType: $dateType);
         $from = $dateTypeArray['from'];
         $to = $dateTypeArray['to'];
@@ -190,7 +190,7 @@ class DashboardController extends BaseController
 
     public function getEarningStatistics(Request $request): JsonResponse
     {
-        $dateType = $request['type'];
+        $dateType = $request['type'] ?: 'YearEarn';
         $dateTypeArray = $this->dashboardService->getDateTypeData(dateType: $dateType);
         $from = $dateTypeArray['from'];
         $to = $dateTypeArray['to'];

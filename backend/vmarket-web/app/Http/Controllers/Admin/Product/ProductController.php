@@ -550,8 +550,13 @@ class ProductController extends BaseController
     {
         $this->deleteFile(filePath: '/product/' . $request['image']);
         $product = $this->productRepo->getFirstWhere(params: ['id' => $request['id']]);
+        if (!$product) {
+            ToastMagic::error(translate('product_not_found'));
+            return back();
+        }
 
-        if (count(json_decode($product['images'])) < 2) {
+        $images = json_decode($product['images'] ?? '[]', true) ?: [];
+        if (count($images) < 2) {
             ToastMagic::warning(translate('you_can_not_delete_all_images'));
             return back();
         }
@@ -723,6 +728,9 @@ class ProductController extends BaseController
     public function getVariations(Request $request): JsonResponse
     {
         $product = $this->productRepo->getFirstWhere(params: ['id' => $request['id']]);
+        if (!$product) {
+            return response()->json(['error' => 'Product not found.'], 404);
+        }
         $restockId = $request['restock_id'];
         $restockVariants = $this->restockProductRepo->getListWhereBetween(filters: ['product_id' => $request['id']])?->pluck('variant')->toArray() ?? [];
 
