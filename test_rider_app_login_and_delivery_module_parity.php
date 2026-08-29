@@ -97,7 +97,9 @@ assertTest("Rider's auth_token matched generated token", $rider->auth_token === 
 // 5. Test Cash-in-Hand Remittance Settlement via Modules/Delivery FinanceController
 $financeController = new FinanceController();
 $wallet = DeliverymanWallet::where('delivery_man_id', $rider->id)->first();
-$initialCash = (float) $wallet->cash_in_hand;
+$wallet->cash_in_hand = 15000.00;
+$wallet->save();
+$initialCash = 15000.00;
 $remitAmount = 5000.00;
 
 $remitRequest = Request::create('/delivery/finance/remittance/record', 'POST', [
