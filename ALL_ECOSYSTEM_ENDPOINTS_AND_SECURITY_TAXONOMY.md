@@ -28,12 +28,12 @@
 | **Vmarket Marketplace** | Customer REST API (v1) | **177** |
 | **Vmarket Marketplace** | Delivery Rider REST API (v2) | **100** |
 | **Vmarket Marketplace** | Vendor Mobile REST API (v3) | **162** |
-| **Vmarket Marketplace** | Super Admin Panel | **639** |
+| **Vmarket Marketplace** | Super Admin Panel (Cleaned) | **638** |
 | **Vmarket Marketplace** | Merchant / Vendor Panel | **205** |
 | **Vmarket Marketplace** | Customer Web Portal | **37** |
 | **Vmarket Marketplace** | Native POS Module | **42** |
 | **Vmarket Marketplace** | Delivery & Logistics Hub Module | **21** |
-| **ECOSYSTEM TOTAL** | **ALL DOMAINS COMBINED** | **1573 ENDPOINTS** |
+| **ECOSYSTEM TOTAL** | **ALL DOMAINS COMBINED** | **1,572 ENDPOINTS** |
 
 ---
 
