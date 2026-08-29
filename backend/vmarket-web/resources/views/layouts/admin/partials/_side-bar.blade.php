@@ -982,13 +982,6 @@
                         <ul class="aside-submenu navbar-nav">
                             <li class="nav-item px-3 py-2 fw-semibold text-dark bg-section2 aside-mini-show-element">{{ translate('employees') }}</li>
                             <li class="nav-item">
-                                <a class="nav-link {{ Request::is('admin/custom-role*') ? 'active' : '' }}"
-                                   href="{{ route('admin.custom-role.create') }}"
-                                   title="{{ translate('employee_Role_Setup') }}">
-                                    <span class="text-truncate">{{ translate('employee_Role_Setup') }}</span>
-                                </a>
-                            </li>
-                            <li class="nav-item">
                                 <a class="nav-link {{ (Request::is('admin/employee/list') || Request::is('admin/employee/add') || Request::is('admin/employee/update*')) ? 'active' : '' }}"
                                    href="{{ route('admin.employee.list') }}" title="{{ translate('employees') }}">
                                     <span class="text-truncate">{{ translate('employees') }}</span>

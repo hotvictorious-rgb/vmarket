@@ -19,88 +19,31 @@ class VendorRoleController extends Controller
         'report_management'  => 'Sales & Stock Reports',
     ];
 
-    public function index(): View
+    public function index(): RedirectResponse
     {
-        $sellerId = auth('seller')->id();
-        $roles = VendorRole::where('seller_id', $sellerId)->latest()->paginate(10);
-        $modules = self::MODULE_PERMISSIONS;
-
-        return view('vendor-views.employee.roles.index', compact('roles', 'modules'));
+        return redirect()->route('vendor.employee.list')->with('info', translate('All merchant employee roles are predetermined. Select a role when adding staff.'));
     }
 
     public function store(Request $request): RedirectResponse
     {
-        $request->validate([
-            'name' => 'required|string|max:100',
-            'modules' => 'required|array|min:1',
-        ], [
-            'name.required' => translate('Role name is required'),
-            'modules.required' => translate('Please select at least one permission module'),
-        ]);
-
-        $sellerId = auth('seller')->id();
-
-        VendorRole::create([
-            'seller_id' => $sellerId,
-            'name' => $request->name,
-            'module_access' => $request->modules,
-            'status' => true,
-        ]);
-
-        ToastMagic::success(translate('Employee role created successfully'));
-        return back();
+        ToastMagic::error(translate('Custom role creation is disabled. All employee roles are predetermined.'));
+        return redirect()->route('vendor.employee.list');
     }
 
-    public function edit(int|string $id): View|RedirectResponse
+    public function edit(int|string $id): RedirectResponse
     {
-        $sellerId = auth('seller')->id();
-        $role = VendorRole::where('seller_id', $sellerId)->find($id);
-
-        if (!$role) {
-            ToastMagic::error(translate('Role not found'));
-            return redirect()->route('vendor.employee-role.index');
-        }
-
-        $modules = self::MODULE_PERMISSIONS;
-        return view('vendor-views.employee.roles.edit', compact('role', 'modules'));
+        ToastMagic::info(translate('System employee roles are predetermined and immutable.'));
+        return redirect()->route('vendor.employee.list');
     }
 
     public function update(Request $request, int|string $id): RedirectResponse
     {
-        $request->validate([
-            'name' => 'required|string|max:100',
-            'modules' => 'required|array|min:1',
-        ]);
-
-        $sellerId = auth('seller')->id();
-        $role = VendorRole::where('seller_id', $sellerId)->find($id);
-
-        if (!$role) {
-            ToastMagic::error(translate('Role not found'));
-            return redirect()->route('vendor.employee-role.index');
-        }
-
-        $role->update([
-            'name' => $request->name,
-            'module_access' => $request->modules,
-        ]);
-
-        ToastMagic::success(translate('Role updated successfully'));
-        return redirect()->route('vendor.employee-role.index');
+        ToastMagic::error(translate('System employee roles are predetermined and cannot be modified.'));
+        return redirect()->route('vendor.employee.list');
     }
 
     public function status(Request $request): JsonResponse
     {
-        $sellerId = auth('seller')->id();
-        $role = VendorRole::where('seller_id', $sellerId)->find($request->id);
-
-        if (!$role) {
-            return response()->json(['success' => false, 'message' => translate('Role not found')], 404);
-        }
-
-        $role->status = $request->status;
-        $role->save();
-
-        return response()->json(['success' => true, 'message' => translate('Role status updated')]);
+        return response()->json(['success' => false, 'message' => translate('System roles cannot be modified.')], 403);
     }
 }
