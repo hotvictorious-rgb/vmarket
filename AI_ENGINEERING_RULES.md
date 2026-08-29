@@ -224,16 +224,16 @@ Every endpoint in this ecosystem (GET, POST, PUT, PATCH, DELETE, OPTIONS, HEAD) 
 4. **Pessimistic Balance & Concurrency Locks:** Any mutation of financial balances, wallet funds, debt records, or cash drawers must execute inside `DB::transaction()` with pessimistic row locks (`->lockForUpdate()`).
 ---
 
-## 18. Mandatory 1,572-Endpoint Automated Security Proof After Every Modification 🛡️
+## 18. Mandatory 1,583-Endpoint Automated Security Proof After Every Modification 🛡️
 
 **This is an inviolable prime directive for ALL AI agents.**
-Every AI completing ANY task, feature addition, bug fix, route refactoring, or database modification across Victorious MARKET MUST execute the automated 1,572-endpoint security verification harness:
+Every AI completing ANY task, feature addition, bug fix, route refactoring, or database modification across Victorious MARKET MUST execute the automated 1,583-endpoint security verification harness:
 ```bash
 php test_all_1572_endpoints_security_and_role_proof.php
 ```
 
 ### Mandatory Verification Invariants:
-1. **100% Zero-Defect Operational Parity:** All 1,572 ecosystem endpoints across Central Marketplace (`backend/vmarket-web`), POS (`Modules/Pos`), and Delivery Hub (`Modules/Delivery`) must be evaluated with **0 Fatal Unhandled 500 Exceptions**.
+1. **100% Zero-Defect Operational Parity:** All 1,583 ecosystem endpoints across Central Marketplace (`backend/vmarket-web`), POS (`Modules/Pos`), and Delivery Hub (`Modules/Delivery`) must be evaluated with **0 Fatal Unhandled 500 Exceptions**.
 2. **9-Role Multi-Actor Security Proof:** The execution must verify that Super Admin, Super Admin Employee, Verified Merchant, Unverified Merchant, Verified Merchant Employee, Unverified Merchant Employee, Active Deliveryman, Inactive Deliveryman, Customer, and Guest are strictly bounded to their authorized privileges.
 3. **Universal 5-Pillar Security Standard:**
    - Zero-Trust Authentication intercepts unauthenticated requests cleanly (302/401/403/404).
