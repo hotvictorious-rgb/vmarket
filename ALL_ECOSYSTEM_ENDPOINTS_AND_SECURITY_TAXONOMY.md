@@ -1685,15 +1685,15 @@
 | 1585 | `POST` | `/api/login` | `—` | `AuthController@login` | web |
 | 1586 | `POST` | `/api/logout` | `—` | `AuthController@logout` | web |
 | 1587 | `GET` | `/api/me` | `—` | `AuthController@me` | web |
-| 1588 | `GET` | `/api/data` | `—` | `DataController@get` | web |
-| 1589 | `POST` | `/api/data` | `—` | `DataController@post` | web |
-| 1590 | `POST` | `/api/reset` | `—` | `DataController@reset` | web |
-| 1591 | `GET` | `/api/backups` | `—` | `BackupController@index` | web |
-| 1592 | `POST` | `/api/backups` | `—` | `BackupController@create` | web |
-| 1593 | `GET` | `/api/backups/{id}/download` | `—` | `BackupController@download` | web |
-| 1594 | `POST` | `/api/backups/{id}/restore` | `—` | `BackupController@restore` | web |
-| 1595 | `POST` | `/api/backups/upload` | `—` | `BackupController@upload` | web |
-| 1596 | `DELETE` | `/api/backups/{id}` | `—` | `BackupController@destroy` | web |
+| 1588 | `GET` | `/api/data` | `—` | `DataController@get` | web, App\Http\Middleware\RequireAdmin |
+| 1589 | `POST` | `/api/data` | `—` | `DataController@post` | web, App\Http\Middleware\RequireAdmin |
+| 1590 | `POST` | `/api/reset` | `—` | `DataController@reset` | web, App\Http\Middleware\RequireAdmin |
+| 1591 | `GET` | `/api/backups` | `—` | `BackupController@index` | web, App\Http\Middleware\RequireAdmin |
+| 1592 | `POST` | `/api/backups` | `—` | `BackupController@create` | web, App\Http\Middleware\RequireAdmin |
+| 1593 | `GET` | `/api/backups/{id}/download` | `—` | `BackupController@download` | web, App\Http\Middleware\RequireAdmin |
+| 1594 | `POST` | `/api/backups/{id}/restore` | `—` | `BackupController@restore` | web, App\Http\Middleware\RequireAdmin |
+| 1595 | `POST` | `/api/backups/upload` | `—` | `BackupController@upload` | web, App\Http\Middleware\RequireAdmin |
+| 1596 | `DELETE` | `/api/backups/{id}` | `—` | `BackupController@destroy` | web, App\Http\Middleware\RequireAdmin |
 | 1597 | `GET` | `/api/v1/tenant/status` | `—` | `Api\MarketplaceBridgeController@status` | web |
 | 1598 | `GET` | `/api/v1/tenant/products` | `—` | `Api\MarketplaceBridgeController@products` | web |
 | 1599 | `POST` | `/api/v1/tenant/orders` | `—` | `Api\MarketplaceBridgeController@createMarketplaceOrder` | web |
