@@ -48,6 +48,8 @@ Route::prefix('pos')->name('pos.')->middleware(['web', 'auth:seller'])->group(fu
     Route::resource('products', ProductController::class)->except(['show']);
 
     // ─── Warehouses / Branches ────────────────────────────────────────────────
+    Route::get('warehouses/ajax/cities/{state_id}', [WarehouseController::class, 'getCitiesAjax'])->name('warehouses.cities-ajax');
+    Route::get('warehouses/ajax/hubs/{city_id}', [WarehouseController::class, 'getHubsAjax'])->name('warehouses.hubs-ajax');
     Route::resource('warehouses', WarehouseController::class);
 
     // ─── Stock Management ─────────────────────────────────────────────────────

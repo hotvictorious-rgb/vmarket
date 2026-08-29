@@ -7,6 +7,16 @@ Always append your completed tasks here in chronological order at the top. Forma
 `### [YYYY-MM-DD HH:MM UTC] <Feature / Fix Title> [<Component Scope>]`
 Include the specific app/component modified and bullet points detailing the exact technical changes.
 
+### [2026-08-29 09:39 UTC] Vendor Branch Location Registration (Country ➔ State ➔ LGA ➔ Hub) [backend] [pos] [database]
+
+* **Component:** `database/migrations/2026_08_29_100000_add_delivery_location_fields_to_shops_table.php`, `Modules/Pos/routes/web.php`, `Modules/Pos/app/Http/Controllers/WarehouseController.php`, `Modules/Pos/resources/views/warehouses/`
+* **Action:**
+  - **Database Migration:** Created and executed a migration adding `country`, `state_id`, `lga_id`, and `hub_id` to the `shops` table with foreign keys referencing `delivery_states`, `delivery_cities`, and `delivery_hubs` (`onDelete('set null')`).
+  - **POS Web Routes:** Registered merchant-scoped location AJAX lookup endpoints `/pos/warehouses/ajax/cities/{state_id}` and `/pos/warehouses/ajax/hubs/{city_id}`.
+  - **Warehouse Controller Overhaul:** Re-scaped `WarehouseController.php` to fetch and validate location hierarchy values, and support dynamic select populating.
+  - **Blade View Creations:** Created the index list view, create/edit forms with vanilla JS AJAX fetch selectors, and a detailed show layout showing the linked logistics hub and full address.
+* **Verification:** Ran `php artisan migrate --path=...` successfully ✅. Checked syntax (`No syntax errors detected` ✅) and compiled routing (`php artisan route:list --path=pos` ✅).
+
 ### [2026-08-29 08:58 UTC] POS SSO Redirect Bridge Removal & Navigation Integration [backend] [pos]
 
 * **Component:** `routes/web/routes.php`, `routes/vendor/routes.php`, `routes/admin/routes.php`, `app/Http/Controllers/Vendor/POS/POSController.php`, `app/Http/Controllers/Admin/DashboardController.php`, `app/Http/Controllers/Vendor/Auth/RegisterController.php`, `resources/views/layouts/vendor/partials/_side-bar.blade.php`, `resources/views/layouts/vendor/partials/_header.blade.php`, `resources/views/layouts/admin/partials/_header.blade.php`
