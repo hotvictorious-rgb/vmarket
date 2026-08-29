@@ -34,6 +34,11 @@ $predefinedAdminRoles = [
         'name' => 'Customer Support Specialist',
         'module_access' => json_encode(['support_section', 'chatting_section']),
         'status' => 1
+    ],
+    6 => [
+        'name' => 'Social Media Manager',
+        'module_access' => json_encode(['promotion_management', 'blog_management']),
+        'status' => 1
     ]
 ];
 
@@ -48,8 +53,8 @@ foreach ($predefinedAdminRoles as $id => $data) {
     echo "  -> Predefined Admin Role #{$id}: {$data['name']} (ACTIVE)\n";
 }
 
-// Clean up any extra admin roles (> 5)
-DB::table('admin_roles')->where('id', '>', 5)->delete();
+// Clean up any extra admin roles (> 6)
+DB::table('admin_roles')->where('id', '>', 6)->delete();
 
 echo "\n=== 2. ENFORCING STRICTLY 1 SUPER ADMIN INVARIANT ===\n";
 
