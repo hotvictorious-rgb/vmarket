@@ -7,6 +7,15 @@ Always append your completed tasks here in chronological order at the top. Forma
 `### [YYYY-MM-DD HH:MM UTC] <Feature / Fix Title> [<Component Scope>]`
 Include the specific app/component modified and bullet points detailing the exact technical changes.
 
+### [2026-08-28 21:50 UTC] Aster Theme Standardization & Clean Removal of Legacy Default Theme [backend] [storefront] [cleanup]
+* **Component:** Marketplace Backend (`backend/vmarket-web`, `resources/themes`)
+* **Action:**
+  - Standardized the entire ecosystem to use the modern, flagship **Aster Theme** as the Single Source of Truth (SSOT).
+  - Updated `app/Utils/theme-helpers.php` so `theme_root_path()` permanently defaults to `'theme_aster'`.
+  - Added `WEB_THEME=theme_aster` to `.env.example`.
+  - Cleanly deleted legacy `resources/themes/default/` and `public/themes/default/` directories.
+  - Executed full test suite `test_all_ecosystem_apis_and_webs_proof.php` verifying that all 41 public/authenticated routes and storefront views pass with 100% green tests.
+
 ### [2026-08-28 21:35 UTC] Universal Ecosystem Authentication & Login Points Verification [backend] [auth] [test]
 * **Component:** Entire Victorious MARKET Ecosystem (`backend/vmarket-web`, `hysam`)
 * **Action:**
