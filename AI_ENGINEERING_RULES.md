@@ -205,6 +205,26 @@ All AI coding agents must strictly adhere to Victorious MARKET's official brand 
 
 **Strict Prohibition:** AI agents must never inject arbitrary generic colors (e.g. standard `#800080`, `#9333ea`, `#ffff00`, or `#eab308`). Always use `#5E17EB`, `#FFD700`, and `#FFFFFF` with elegant visual hierarchy, balanced contrast, and modern aesthetics.
 
+---
+
+## 16. Mandatory Master Endpoint Analysis & Synchronized Catalogue Maintenance 🗺️
+
+1. **Pre-Change Analysis:** Before adding, modifying, or refactoring ANY endpoint, controller action, or route, every AI **MUST** analyze `ALL_ECOSYSTEM_ENDPOINTS_AND_SECURITY_TAXONOMY.md`.
+2. **Synchronized Documentation:** Whenever a route is created or changed across Web Storefront, Customer APIs (v1), Rider APIs (v2), Vendor APIs (v3), Super Admin, or In-Store POS (`hysam`), the AI **MUST append and update** `ALL_ECOSYSTEM_ENDPOINTS_AND_SECURITY_TAXONOMY.md`.
+3. **Continuous Test Harness Integration:** Every new endpoint must be integrated into `test_100_plus_ecosystem_views_and_apis_suite.php` to maintain 100% continuous test coverage.
+
+---
+
+## 17. Universal 5-Pillar Endpoint Security Standard (Zero-Loopholes) 🛡️
+
+Every endpoint in this ecosystem (GET, POST, PUT, PATCH, DELETE, OPTIONS, HEAD) must strictly enforce:
+1. **Zero-Trust Authentication:** Explicit guard binding (`auth:admin`, `auth:seller`, `auth:customer`, `auth:api`, `auth:delivery_man`). Unauthenticated requests must safely redirect or return HTTP 401/403 (never unhandled 500s).
+2. **Tenant Scoping & Micro-Isolation (Zero Cross-Tenant Bleed):** All database operations MUST be scoped to authenticated principals (`seller_id`, `shop_id`, `customer_id`, `delivery_man_id`). Route IDs (`$id`) must never be trusted alone without ownership verification.
+3. **Anti-Mass-Assignment & Input Validation:** Never pass `$request->all()` into model mutations; only validated data via `$request->only(...)` or dedicated FormRequest data mappers.
+4. **Pessimistic Balance & Concurrency Locks:** Any mutation of financial balances, wallet funds, debt records, or cash drawers must execute inside `DB::transaction()` with pessimistic row locks (`->lockForUpdate()`).
+5. **Audit Logging & Double-Execution Guard:** Mutating operations must log structured audit trails and enforce atomic row updates (`where('is_paid', 0)->update(...)`) before triggering success hooks.
+
+
 
 
 

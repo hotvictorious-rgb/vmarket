@@ -214,3 +214,19 @@ Upon completing any task, format the final response as follows:
 - **REGRESSION:** Functionality checked.
 - **RISKS:** Remaining tech debt or warnings.
 - **RESULT:** PASS / FAIL / PASS WITH WARNINGS
+
+## 14. Mandatory Endpoint Pre-Analysis & Synchronized Catalogue Maintenance 🗺️
+**This is a strict invariant for ALL AI agents:**
+1. **Analyze Master Registry First:** Before creating, modifying, or refactoring ANY endpoint, controller method, or route, every AI **MUST** read and analyze `ALL_ECOSYSTEM_ENDPOINTS_AND_SECURITY_TAXONOMY.md`.
+2. **Synchronized Master Catalogue Appending:** Whenever an AI introduces, updates, or deletes any route in Web, Admin, Vendor, Customer, Delivery Rider, POS, or REST API routes (`routes/web/`, `routes/admin/`, `routes/vendor/`, `routes/rest_api/`, or `hysam/routes/`), the AI **MUST explicitly append and update** `ALL_ECOSYSTEM_ENDPOINTS_AND_SECURITY_TAXONOMY.md` with its exact HTTP methods, URI, route name, controller action, guard, and security middleware.
+3. **Continuous 100+ Test Suite Synchronization:** New endpoints must also be registered in `test_100_plus_ecosystem_views_and_apis_suite.php` to ensure 100% continuous test coverage.
+
+## 15. Universal 5-Pillar Security Standard for Every Endpoint (Zero-Loopholes) 🛡️
+**Every endpoint across all platforms (GET, POST, PUT, PATCH, DELETE, OPTIONS, HEAD) must strictly enforce the following 5 security pillars without exception:**
+
+1. **Zero-Trust Authentication:** Explicit guard definition (`auth:admin`, `auth:seller`, `auth:customer`, `auth:api`, `auth:delivery_man`). Unauthenticated fallback must safely redirect or return HTTP 401/403 (never unhandled 500s).
+2. **Tenant Scoping & Micro-Isolation (Zero Cross-Tenant Bleed):** Every database query within the handler MUST enforce `where('seller_id', $authSellerId)`, `where('shop_id', $authShopId)`, `where('customer_id', $authCustomerId)`, or `where('delivery_man_id', $authRiderId)`. Route IDs (`$request->id`) must NEVER be trusted alone for ownership.
+3. **Anti-Mass-Assignment & Input Validation:** Handlers must never pass `$request->all()` into Eloquent model mutations; only validated data via `$request->only(...)` or dedicated FormRequest data mappers.
+4. **Pessimistic Balance & Row Locks:** Any read-modify-write on wallet balances, debt ledgers, order payments, commission splits, or cash drawers must execute inside `DB::transaction()` with pessimistic row-level locking (`->lockForUpdate()`).
+5. **Audit Logging & Atomic Execution Closure:** State mutations, order status transitions, refunds, and financial updates must emit structured audit entries and prevent concurrent double-execution via atomic row updates (`where('is_paid', 0)->update(...)`).
+
