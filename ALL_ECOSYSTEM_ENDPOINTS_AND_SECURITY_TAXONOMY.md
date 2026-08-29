@@ -1,6 +1,6 @@
 # 🌐 Victorious MARKET: Master Ecosystem Endpoint & Security Taxonomy Catalogue
 
-**Authoritative Master Registry of ALL 1609 HTTP Endpoints Across the Victorious MARKET Ecosystem**
+**Authoritative Master Registry of ALL 1552 HTTP Endpoints Across the Victorious MARKET Ecosystem**
 
 ---
 
@@ -8,7 +8,7 @@
 
 > ### 🛡️ RULE 14: Mandatory Endpoint Pre-Analysis & Synchronized Catalogue Maintenance
 > 1. Before creating, modifying, or refactoring ANY route or controller method, every AI **MUST** first read and analyze this document (`ALL_ECOSYSTEM_ENDPOINTS_AND_SECURITY_TAXONOMY.md`).
-> 2. Whenever a new route is introduced or modified in Blade, Web routes, or API routes (`routes/web.php`, `routes/admin/`, `routes/vendor/`, `routes/rest_api/`, or `hysam/routes/`), the AI **MUST append and document** the endpoint in this file under the appropriate domain table with its exact HTTP methods, URI, controller action, guard, and security middleware.
+> 2. Whenever a new route is introduced or modified in Blade, Web routes, or API routes (`routes/web.php`, `routes/admin/`, `routes/vendor/`, `routes/rest_api/`, or `Modules/Pos/routes/`), the AI **MUST append and document** the endpoint in this file under the appropriate domain table with its exact HTTP methods, URI, controller action, guard, and security middleware.
 
 > ### 🔒 RULE 15: Universal 5-Pillar Security Standard for Every Endpoint
 > Every endpoint in this ecosystem (GET, POST, PUT, PATCH, DELETE, OPTIONS, HEAD) must strictly enforce all 5 security pillars without exception:
@@ -31,10 +31,9 @@
 | **Vmarket Marketplace** | Super Admin Panel | **639** |
 | **Vmarket Marketplace** | Merchant / Vendor Panel | **205** |
 | **Vmarket Marketplace** | Customer Web Portal | **37** |
-| **In-Store POS (Hysam)** | In-Store POS Terminal | **74** |
-| **In-Store POS (Hysam)** | POS Hardware / Scanner API | **15** |
-| **In-Store POS (Hysam)** | POS SaaS Multi-Tenant Control | **10** |
-| **ECOSYSTEM TOTAL** | **ALL DOMAINS COMBINED** | **1609 ENDPOINTS** |
+| **Vmarket Marketplace** | Native POS Module | **42** |
+| **Vmarket Marketplace** | Delivery & Logistics Hub Module | **21** |
+| **ECOSYSTEM TOTAL** | **ALL DOMAINS COMBINED** | **1573 ENDPOINTS** |
 
 ---
 
@@ -1597,123 +1596,79 @@
 
 ---
 
-### 🏷️ Domain: In-Store POS Terminal (74 Endpoints)
+### 🏷️ Domain: Native POS Module (42 Endpoints)
 
 | # | Method(s) | URI / Route | Route Name | Controller Action | Security Middleware |
 | :-: | :--- | :--- | :--- | :--- | :--- |
-| 1511 | `GET` | `/up` | `—` | `Closure` | `none / public` |
-| 1512 | `GET` | `/install` | `installer.welcome` | `Installer\InstallerController@welcome` | web |
-| 1513 | `GET` | `/install/requirements` | `installer.requirements` | `Installer\InstallerController@requirements` | web |
-| 1514 | `GET` | `/install/database` | `installer.database` | `Installer\InstallerController@database` | web |
-| 1515 | `POST` | `/install/database` | `installer.database.save` | `Installer\InstallerController@databaseSave` | web |
-| 1516 | `GET` | `/install/admin` | `installer.admin` | `Installer\InstallerController@admin` | web |
-| 1517 | `POST` | `/install/admin` | `installer.install` | `Installer\InstallerController@install` | web |
-| 1518 | `POST` | `/install/run` | `installer.run` | `Installer\InstallerController@run` | web |
-| 1519 | `GET` | `/install/complete` | `installer.complete` | `Installer\InstallerController@complete` | web |
-| 1520 | `GET` | `/login` | `login` | `AuthController@showLogin` | web |
-| 1521 | `POST` | `/login` | `login.post` | `AuthController@webLogin` | web |
-| 1522 | `GET` | `/sso-login` | `sso-login` | `AuthController@ssoLogin` | web |
-| 1523 | `GET` | `/pos-sso-return` | `pos.sso.return` | `AuthController@posSsoReturn` | web |
-| 1524 | `GET|POST` | `/logout` | `logout` | `AuthController@webLogout` | web |
-| 1525 | `GET` | `/admin/{slug}/login` | `admin.dedicated.login` | `AuthController@showAdminDedicatedLogin` | web |
-| 1526 | `POST` | `/admin/{slug}/login` | `admin.dedicated.login.post` | `AuthController@adminDedicatedLogin` | web |
-| 1527 | `GET` | `/store/{slug}/login` | `store.worker.login` | `AuthController@showStoreWorkerLogin` | web |
-| 1528 | `POST` | `/store/{slug}/login` | `store.worker.login.post` | `AuthController@storeWorkerLogin` | web |
-| 1529 | `GET` | `/` | `dashboard` | `Web\DashboardController@index` | web |
-| 1530 | `GET` | `/pos` | `pos.index` | `Web\PosController@index` | web |
-| 1531 | `POST` | `/pos/checkout` | `pos.checkout` | `Web\PosController@checkout` | web |
-| 1532 | `POST` | `/pos/customer/quick-register` | `pos.customer.quick_register` | `Web\PosController@quickRegisterCustomer` | web |
-| 1533 | `GET` | `/pos/receipt/{id}` | `pos.receipt` | `Web\PosController@receipt` | web |
-| 1534 | `GET` | `/pos/returns` | `pos.returns` | `Web\PosController@returns` | web |
-| 1535 | `POST` | `/pos/returns` | `pos.returns.process` | `Web\PosController@processReturn` | web |
-| 1536 | `GET` | `/products` | `products.index` | `Web\ProductController@index` | web |
-| 1537 | `GET` | `/products/template/csv` | `products.template.csv` | `Web\ProductController@downloadCsvTemplate` | web |
-| 1538 | `GET` | `/products/export/csv` | `products.export.csv` | `Web\ProductController@exportCsv` | web |
-| 1539 | `GET` | `/products/export/json` | `products.export.json` | `Web\ProductController@exportJson` | web |
-| 1540 | `POST` | `/products/import/csv` | `products.import.csv` | `Web\ProductController@importCsv` | web |
-| 1541 | `POST` | `/products` | `products.store` | `Web\ProductController@store` | web |
-| 1542 | `POST` | `/products/{id}` | `products.update` | `Web\ProductController@update` | web |
-| 1543 | `POST` | `/products/{id}/delete` | `products.destroy` | `Web\ProductController@destroy` | web |
-| 1544 | `GET` | `/stock` | `stock.index` | `Web\StockController@index` | web |
-| 1545 | `GET` | `/stock/transfers` | `stock.transfers` | `Web\StockController@transfersList` | web |
-| 1546 | `GET` | `/stock/waybill/{id}` | `stock.waybill` | `Web\StockController@waybill` | web |
-| 1547 | `POST` | `/stock/in` | `stock.in` | `Web\StockController@stockIn` | web |
-| 1548 | `POST` | `/stock/transfer-out` | `stock.transfer.out` | `Web\StockController@transferOut` | web |
-| 1549 | `POST` | `/stock/transfer-in/{id}` | `stock.transfer.in` | `Web\StockController@transferIn` | web |
-| 1550 | `POST` | `/stock/transfers/{id}/receive` | `stock.transfers.receive` | `Web\StockController@transferIn` | web |
-| 1551 | `POST` | `/stock/transfer-recall/{id}` | `stock.transfer.recall` | `Web\StockController@recallTransfer` | web |
-| 1552 | `GET` | `/stock/unsupplied` | `stock.unsupplied` | `Web\StockController@unsuppliedList` | web |
-| 1553 | `POST` | `/stock/dispatch/{saleId}` | `stock.dispatch` | `Web\StockController@dispatchConfirm` | web |
-| 1554 | `GET` | `/stock/adjustments` | `stock.adjustments` | `Web\StockController@adjustments` | web |
-| 1555 | `POST` | `/stock/adjustments` | `stock.adjustments.record` | `Web\StockController@recordAdjustment` | web |
-| 1556 | `GET` | `/reports` | `reports.index` | `Web\ReportController@index` | web |
-| 1557 | `GET` | `/reports/export-csv/{type}` | `reports.export.csv` | `Web\ReportController@exportCsv` | web |
-| 1558 | `GET` | `/reports/export-json/{type}` | `reports.export.json` | `Web\ReportController@exportJson` | web |
-| 1559 | `GET` | `/auditor` | `auditor.index` | `Web\AuditorController@index` | web, App\Http\Middleware\RequireAdmin |
-| 1560 | `GET` | `/debts` | `debts.index` | `Web\DebtController@index` | web |
-| 1561 | `POST` | `/debts/pay/{id}` | `debts.pay` | `Web\DebtController@recordPayment` | web |
-| 1562 | `GET` | `/wholesale` | `wholesale.index` | `Web\WholesaleController@index` | web, App\Http\Middleware\RequireAdmin |
-| 1563 | `POST` | `/wholesale/price/{id}` | `wholesale.price` | `Web\WholesaleController@priceOrder` | web, App\Http\Middleware\RequireAdmin |
-| 1564 | `GET` | `/wholesale/invoice/{id}` | `wholesale.invoice` | `Web\WholesaleController@commercialInvoice` | web, App\Http\Middleware\RequireAdmin |
-| 1565 | `GET` | `/transactions` | `transactions.index` | `Web\TransactionController@index` | web |
-| 1566 | `GET` | `/transactions/export-csv/{tab}` | `transactions.export.csv` | `Web\TransactionController@exportCsv` | web |
-| 1567 | `GET` | `/transactions/export-json/{tab}` | `transactions.export.json` | `Web\TransactionController@exportJson` | web |
-| 1568 | `GET` | `/users` | `users.index` | `Web\UserController@index` | web, App\Http\Middleware\RequireAdmin |
-| 1569 | `POST` | `/users` | `users.store` | `Web\UserController@store` | web, App\Http\Middleware\RequireAdmin |
-| 1570 | `POST` | `/users/update/{id}` | `users.update` | `Web\UserController@update` | web, App\Http\Middleware\RequireAdmin |
-| 1571 | `POST` | `/users/toggle/{id}` | `users.toggle` | `Web\UserController@toggleStatus` | web, App\Http\Middleware\RequireAdmin |
-| 1572 | `POST` | `/users/reset-password/{id}` | `users.reset.password` | `Web\UserController@resetPassword` | web, App\Http\Middleware\RequireAdmin |
-| 1573 | `GET` | `/settings` | `settings.index` | `Web\SettingController@index` | web, App\Http\Middleware\RequireAdmin |
-| 1574 | `POST` | `/settings` | `settings.update` | `Web\SettingController@update` | web, App\Http\Middleware\RequireAdmin |
-| 1575 | `POST` | `/settings/warehouse` | `settings.warehouse.store` | `Web\SettingController@storeWarehouse` | web, App\Http\Middleware\RequireAdmin |
-| 1576 | `POST` | `/settings/warehouse/update/{id}` | `settings.warehouse.update` | `Web\SettingController@updateWarehouse` | web, App\Http\Middleware\RequireAdmin |
-| 1577 | `POST` | `/settings/warehouse/toggle/{id}` | `settings.warehouse.toggle` | `Web\SettingController@toggleWarehouse` | web, App\Http\Middleware\RequireAdmin |
-| 1578 | `GET` | `/help` | `help.index` | `Closure` | web |
-| 1579 | `GET` | `/subscription` | `subscription.index` | `Web\SubscriptionController@index` | web |
-| 1580 | `POST` | `/subscription/paystack/init` | `subscription.paystack.init` | `Web\SubscriptionController@initializePaystack` | web |
-| 1581 | `POST` | `/subscription/paystack/verify` | `subscription.paystack.verify` | `Web\SubscriptionController@verifyPaystack` | web |
-| 1582 | `POST` | `/subscription/paystack/webhook` | `subscription.paystack.webhook` | `Web\SubscriptionController@paystackWebhook` | web |
-| 1583 | `POST` | `/subscription/offline-submit` | `subscription.offline.submit` | `Web\SubscriptionController@submitOfflinePayment` | web |
-| 1584 | `GET` | `/storage/{path}` | `storage.local` | `Closure` | `none / public` |
+| 1511 | `GET` | `/pos` | `pos.dashboard` | `Modules\Pos\Http\Controllers\DashboardController@index` | web, seller |
+| 1512 | `GET` | `/pos/terminal` | `pos.index` | `Modules\Pos\Http\Controllers\PosController@index` | web, seller |
+| 1513 | `POST` | `/pos/checkout` | `pos.checkout` | `Modules\Pos\Http\Controllers\PosController@checkout` | web, seller |
+| 1514 | `GET` | `/pos/receipt/{id}` | `pos.receipt` | `Modules\Pos\Http\Controllers\PosController@receipt` | web, seller |
+| 1515 | `GET` | `/pos/returns` | `pos.returns` | `Modules\Pos\Http\Controllers\PosController@returns` | web, seller |
+| 1516 | `POST` | `/pos/returns/process` | `pos.returns.process` | `Modules\Pos\Http\Controllers\PosController@processReturn` | web, seller |
+| 1517 | `POST` | `/pos/customer/quick-register` | `pos.customer.quick_register` | `Modules\Pos\Http\Controllers\PosController@quickRegisterCustomer` | web, seller |
+| 1518 | `GET` | `/pos/products` | `pos.products.index` | `Modules\Pos\Http\Controllers\ProductController@index` | web, seller |
+| 1519 | `GET` | `/pos/products/template/csv` | `pos.products.template.csv` | `Modules\Pos\Http\Controllers\ProductController@downloadCsvTemplate` | web, seller |
+| 1520 | `GET` | `/pos/products/export/csv` | `pos.products.export.csv` | `Modules\Pos\Http\Controllers\ProductController@exportCsv` | web, seller |
+| 1521 | `GET` | `/pos/products/export/json` | `pos.products.export.json` | `Modules\Pos\Http\Controllers\ProductController@exportJson` | web, seller |
+| 1522 | `POST` | `/pos/products/import/csv` | `pos.products.import.csv` | `Modules\Pos\Http\Controllers\ProductController@importCsv` | web, seller |
+| 1523 | `POST` | `/pos/products` | `pos.products.store` | `Modules\Pos\Http\Controllers\ProductController@store` | web, seller |
+| 1524 | `POST` | `/pos/products/{id}` | `pos.products.update` | `Modules\Pos\Http\Controllers\ProductController@update` | web, seller |
+| 1525 | `DELETE` | `/pos/products/{id}` | `pos.products.destroy` | `Modules\Pos\Http\Controllers\ProductController@destroy` | web, seller |
+| 1526 | `GET` | `/pos/warehouses` | `pos.warehouses.index` | `Modules\Pos\Http\Controllers\WarehouseController@index` | web, seller |
+| 1527 | `GET` | `/pos/warehouses/create` | `pos.warehouses.create` | `Modules\Pos\Http\Controllers\WarehouseController@create` | web, seller |
+| 1528 | `POST` | `/pos/warehouses` | `pos.warehouses.store` | `Modules\Pos\Http\Controllers\WarehouseController@store` | web, seller |
+| 1529 | `GET` | `/pos/warehouses/{id}` | `pos.warehouses.show` | `Modules\Pos\Http\Controllers\WarehouseController@show` | web, seller |
+| 1530 | `GET` | `/pos/warehouses/{id}/edit` | `pos.warehouses.edit` | `Modules\Pos\Http\Controllers\WarehouseController@edit` | web, seller |
+| 1531 | `PUT` | `/pos/warehouses/{id}` | `pos.warehouses.update` | `Modules\Pos\Http\Controllers\WarehouseController@update` | web, seller |
+| 1532 | `DELETE` | `/pos/warehouses/{id}` | `pos.warehouses.destroy` | `Modules\Pos\Http\Controllers\WarehouseController@destroy` | web, seller |
+| 1533 | `GET` | `/pos/warehouses/ajax/cities/{state_id}` | `pos.warehouses.cities-ajax` | `Modules\Pos\Http\Controllers\WarehouseController@getCitiesAjax` | web, seller |
+| 1534 | `GET` | `/pos/warehouses/ajax/hubs/{city_id}` | `pos.warehouses.hubs-ajax` | `Modules\Pos\Http\Controllers\WarehouseController@getHubsAjax` | web, seller |
+| 1535 | `GET` | `/pos/stock` | `pos.stock.index` | `Modules\Pos\Http\Controllers\StockController@index` | web, seller |
+| 1536 | `POST` | `/pos/stock/in` | `pos.stock.in` | `Modules\Pos\Http\Controllers\StockController@stockIn` | web, seller |
+| 1537 | `GET` | `/pos/stock/transfers` | `pos.stock.transfers` | `Modules\Pos\Http\Controllers\StockController@transfers` | web, seller |
+| 1538 | `POST` | `/pos/stock/transfers` | `pos.stock.transfers.create` | `Modules\Pos\Http\Controllers\StockController@createTransfer` | web, seller |
+| 1539 | `GET` | `/pos/stock/adjustments` | `pos.stock.adjustments` | `Modules\Pos\Http\Controllers\StockController@adjustments` | web, seller |
+| 1540 | `POST` | `/pos/stock/adjustments` | `pos.stock.adjustments.create` | `Modules\Pos\Http\Controllers\StockController@createAdjustment` | web, seller |
+| 1541 | `GET` | `/pos/transactions` | `pos.transactions.index` | `Modules\Pos\Http\Controllers\TransactionController@index` | web, seller |
+| 1542 | `GET` | `/pos/transactions/cashier-shifts` | `pos.transactions.cashier-shifts` | `Modules\Pos\Http\Controllers\TransactionController@cashierShifts` | web, seller |
+| 1543 | `GET` | `/pos/transactions/inventory-log` | `pos.transactions.inventory-log` | `Modules\Pos\Http\Controllers\TransactionController@inventoryLog` | web, seller |
+| 1544 | `GET` | `/pos/transactions/export` | `pos.transactions.export` | `Modules\Pos\Http\Controllers\TransactionController@export` | web, seller |
+| 1545 | `GET` | `/pos/debts` | `pos.debts.index` | `Modules\Pos\Http\Controllers\DebtController@index` | web, seller |
+| 1546 | `GET` | `/pos/debts/customer/{id}` | `pos.debts.customer` | `Modules\Pos\Http\Controllers\DebtController@customerLedger` | web, seller |
+| 1547 | `POST` | `/pos/debts/payment` | `pos.debts.payment` | `Modules\Pos\Http\Controllers\DebtController@recordPayment` | web, seller |
+| 1548 | `GET` | `/pos/debts/export` | `pos.debts.export` | `Modules\Pos\Http\Controllers\DebtController@export` | web, seller |
+| 1549 | `GET` | `/pos/reports` | `pos.reports.index` | `Modules\Pos\Http\Controllers\ReportController@index` | web, seller |
+| 1550 | `GET` | `/pos/reports/profit-loss` | `pos.reports.profit-loss` | `Modules\Pos\Http\Controllers\ReportController@profitLoss` | web, seller |
+| 1551 | `GET` | `/pos/reports/top-products` | `pos.reports.top-products` | `Modules\Pos\Http\Controllers\ReportController@topProducts` | web, seller |
+| 1552 | `GET` | `/pos/reports/export` | `pos.reports.export` | `Modules\Pos\Http\Controllers\ReportController@export` | web, seller |
 
 ---
 
-### 🏷️ Domain: POS Hardware / Scanner API (15 Endpoints)
+### 🏷️ Domain: Delivery & Logistics Hub Module (21 Endpoints)
 
 | # | Method(s) | URI / Route | Route Name | Controller Action | Security Middleware |
 | :-: | :--- | :--- | :--- | :--- | :--- |
-| 1585 | `POST` | `/api/login` | `—` | `AuthController@login` | web |
-| 1586 | `POST` | `/api/logout` | `—` | `AuthController@logout` | web |
-| 1587 | `GET` | `/api/me` | `—` | `AuthController@me` | web |
-| 1588 | `GET` | `/api/data` | `—` | `DataController@get` | web, App\Http\Middleware\RequireAdmin |
-| 1589 | `POST` | `/api/data` | `—` | `DataController@post` | web, App\Http\Middleware\RequireAdmin |
-| 1590 | `POST` | `/api/reset` | `—` | `DataController@reset` | web, App\Http\Middleware\RequireAdmin |
-| 1591 | `GET` | `/api/backups` | `—` | `BackupController@index` | web, App\Http\Middleware\RequireAdmin |
-| 1592 | `POST` | `/api/backups` | `—` | `BackupController@create` | web, App\Http\Middleware\RequireAdmin |
-| 1593 | `GET` | `/api/backups/{id}/download` | `—` | `BackupController@download` | web, App\Http\Middleware\RequireAdmin |
-| 1594 | `POST` | `/api/backups/{id}/restore` | `—` | `BackupController@restore` | web, App\Http\Middleware\RequireAdmin |
-| 1595 | `POST` | `/api/backups/upload` | `—` | `BackupController@upload` | web, App\Http\Middleware\RequireAdmin |
-| 1596 | `DELETE` | `/api/backups/{id}` | `—` | `BackupController@destroy` | web, App\Http\Middleware\RequireAdmin |
-| 1597 | `GET` | `/api/v1/tenant/status` | `—` | `Api\MarketplaceBridgeController@status` | web |
-| 1598 | `GET` | `/api/v1/tenant/products` | `—` | `Api\MarketplaceBridgeController@products` | web |
-| 1599 | `POST` | `/api/v1/tenant/orders` | `—` | `Api\MarketplaceBridgeController@createMarketplaceOrder` | web |
+| 1553 | `GET` | `/delivery` | `delivery.dashboard` | `Modules\Delivery\app\Http\Controllers\DashboardController@index` | web, admin |
+| 1554 | `GET` | `/delivery/dashboard` | `delivery.dashboard.index` | `Modules\Delivery\app\Http\Controllers\DashboardController@index` | web, admin |
+| 1555 | `GET` | `/delivery/hubs` | `delivery.hubs.index` | `Modules\Delivery\app\Http\Controllers\HubController@index` | web, admin |
+| 1556 | `GET` | `/delivery/hubs/create` | `delivery.hubs.create` | `Modules\Delivery\app\Http\Controllers\HubController@create` | web, admin |
+| 1557 | `POST` | `/delivery/hubs/store` | `delivery.hubs.store` | `Modules\Delivery\app\Http\Controllers\HubController@store` | web, admin |
+| 1558 | `GET` | `/delivery/hubs/show/{id}` | `delivery.hubs.show` | `Modules\Delivery\app\Http\Controllers\HubController@show` | web, admin |
+| 1559 | `POST` | `/delivery/hubs/update/{id}` | `delivery.hubs.update` | `Modules\Delivery\app\Http\Controllers\HubController@update` | web, admin |
+| 1560 | `POST` | `/delivery/hubs/status-toggle` | `delivery.hubs.status-toggle` | `Modules\Delivery\app\Http\Controllers\HubController@toggleStatus` | web, admin |
+| 1561 | `GET` | `/delivery/hubs/ajax/cities/{state_id}` | `delivery.hubs.ajax.cities` | `Modules\Delivery\app\Http\Controllers\HubController@ajaxGetCities` | web, admin |
+| 1562 | `GET` | `/delivery/routes` | `delivery.routes.index` | `Modules\Delivery\app\Http\Controllers\RouteController@index` | web, admin |
+| 1563 | `POST` | `/delivery/routes/store` | `delivery.routes.store` | `Modules\Delivery\app\Http\Controllers\RouteController@store` | web, admin |
+| 1564 | `POST` | `/delivery/routes/update/{id}` | `delivery.routes.update` | `Modules\Delivery\app\Http\Controllers\RouteController@update` | web, admin |
+| 1565 | `POST` | `/delivery/routes/status-toggle` | `delivery.routes.status-toggle` | `Modules\Delivery\app\Http\Controllers\RouteController@toggleStatus` | web, admin |
+| 1566 | `GET` | `/delivery/fleet` | `delivery.fleet.index` | `Modules\Delivery\app\Http\Controllers\FleetController@index` | web, admin |
+| 1567 | `POST` | `/delivery/fleet/company/store` | `delivery.fleet.company.store` | `Modules\Delivery\app\Http\Controllers\FleetController@storeCompany` | web, admin |
+| 1568 | `GET` | `/delivery/fleet/rider/{id}` | `delivery.fleet.rider.show` | `Modules\Delivery\app\Http\Controllers\FleetController@showRider` | web, admin |
+| 1569 | `GET` | `/delivery/shipments` | `delivery.shipments.index` | `Modules\Delivery\app\Http\Controllers\ShipmentController@index` | web, admin |
+| 1570 | `POST` | `/delivery/shipments/batch/create` | `delivery.shipments.batch.create` | `Modules\Delivery\app\Http\Controllers\ShipmentController@createBatch` | web, admin |
+| 1571 | `GET` | `/delivery/shipments/waybill/{id}` | `delivery.shipments.waybill` | `Modules\Delivery\app\Http\Controllers\ShipmentController@waybill` | web, admin |
+| 1572 | `GET` | `/delivery/finance` | `delivery.finance.index` | `Modules\Delivery\app\Http\Controllers\FinanceController@index` | web, admin |
+| 1573 | `POST` | `/delivery/finance/remittance/record` | `delivery.finance.remittance.record` | `Modules\Delivery\app\Http\Controllers\FinanceController@recordRemittance` | web, admin |
 
----
-
-### 🏷️ Domain: POS SaaS Multi-Tenant Control (10 Endpoints)
-
-| # | Method(s) | URI / Route | Route Name | Controller Action | Security Middleware |
-| :-: | :--- | :--- | :--- | :--- | :--- |
-| 1600 | `GET` | `/saas` | `saas.dashboard` | `SaaS\SaaSAdminController@dashboard` | web, App\Http\Middleware\RequireSuperAdmin |
-| 1601 | `GET` | `/saas/tenants` | `saas.tenants` | `SaaS\SaaSAdminController@tenants` | web, App\Http\Middleware\RequireSuperAdmin |
-| 1602 | `POST` | `/saas/tenants` | `saas.tenants.store` | `SaaS\SaaSAdminController@storeTenant` | web, App\Http\Middleware\RequireSuperAdmin |
-| 1603 | `POST` | `/saas/tenants/{id}/plan` | `saas.tenants.plan` | `SaaS\SaaSAdminController@updateTenantPlan` | web, App\Http\Middleware\RequireSuperAdmin |
-| 1604 | `GET` | `/saas/activity` | `saas.activity` | `SaaS\SaaSAdminController@activity` | web, App\Http\Middleware\RequireSuperAdmin |
-| 1605 | `GET` | `/saas/settings` | `saas.settings` | `SaaS\SaaSAdminController@settings` | web, App\Http\Middleware\RequireSuperAdmin |
-| 1606 | `POST` | `/saas/settings` | `saas.settings.update` | `SaaS\SaaSAdminController@updateSettings` | web, App\Http\Middleware\RequireSuperAdmin |
-| 1607 | `GET` | `/saas/invoices` | `saas.invoices` | `SaaS\SaaSAdminController@invoices` | web, App\Http\Middleware\RequireSuperAdmin |
-| 1608 | `POST` | `/saas/invoices/{id}/approve` | `saas.invoices.approve` | `SaaS\SaaSAdminController@approveOfflineInvoice` | web, App\Http\Middleware\RequireSuperAdmin |
-| 1609 | `POST` | `/saas/invoices/{id}/reject` | `saas.invoices.reject` | `SaaS\SaaSAdminController@rejectOfflineInvoice` | web, App\Http\Middleware\RequireSuperAdmin |
-
----
 
