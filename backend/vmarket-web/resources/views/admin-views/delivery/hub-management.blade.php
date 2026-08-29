@@ -394,11 +394,9 @@
 
                     <div class="form-group">
                         <label class="title-color">{{ translate('City') }} <span class="text-danger">*</span></label>
+                        {{-- [AI] Cities loaded via AJAX on modal open (getCitiesAjax) — removes $allCities full-table load from page --}}
                         <select class="form-control" name="city_id" id="edit-hub-city-select" required>
-                            <option value="">{{ translate('--- Select State First ---') }}</option>
-                            @foreach($allCities as $ct)
-                                <option value="{{ $ct->id }}">{{ $ct->name }}</option>
-                            @endforeach
+                            <option value="">{{ translate('--- Loading cities…') }}</option>
                         </select>
                     </div>
 
@@ -517,29 +515,46 @@
         }
     });
 
+    // [AI] Edit modal: reload cities when state changes manually inside the modal
     $('#edit-hub-state-select').on('change', function() {
         var stateId = $(this).val();
+        var currentCityId = $('#edit-hub-city-select').data('selected-city') || '';
         if(stateId) {
             $.get('{{ url('admin/delivery-hubs/get-cities-ajax') }}/' + stateId, function(data) {
                 $('#edit-hub-city-select').empty().append('<option value="">{{ translate("--- Select City ---") }}</option>');
                 $.each(data, function(index, city) {
-                    $('#edit-hub-city-select').append('<option value="'+ city.id +'">'+ city.name +'</option>');
+                    var selected = (city.id == currentCityId) ? ' selected' : '';
+                    $('#edit-hub-city-select').append('<option value="'+ city.id +'"'+ selected +'>'+ city.name +'</option>');
                 });
+                // [AI] Clear stored city after first restore so manual changes don't re-select
+                $('#edit-hub-city-select').removeData('selected-city');
             });
+        } else {
+            $('#edit-hub-city-select').empty().append('<option value="">{{ translate("--- Select State First ---") }}</option>');
         }
     });
 
-    // Open Edit Hub Modal
+    // [AI] Open Edit Hub Modal — cities are loaded via AJAX before showing modal.
+    // This replaces the former $allCities PHP loop (full-table scan on every page load).
     $(document).on('click', '.edit-hub-btn', function() {
         var btn = $(this);
+        var stateId = btn.data('state-id');
+        var cityId  = btn.data('city-id');
+
         $('#editHubForm').attr('action', btn.data('url'));
         $('#edit-hub-name').val(btn.data('name'));
         $('#edit-hub-type').val(btn.data('type'));
-        $('#edit-hub-state-select').val(btn.data('state-id'));
-        $('#edit-hub-city-select').val(btn.data('city-id'));
         $('#edit-hub-base-cost').val(btn.data('base-shipping-cost'));
         $('#edit-hub-rider-fee').val(btn.data('rider-fee'));
         $('#edit-hub-estimated-time').val(btn.data('estimated-time'));
+
+        // [AI] Set state, store the target city ID, then trigger the state-change
+        // handler which fetches cities and auto-selects the correct city.
+        $('#edit-hub-city-select').data('selected-city', cityId)
+            .empty()
+            .append('<option value="">{{ translate("Loading…") }}</option>');
+        $('#edit-hub-state-select').val(stateId).trigger('change');
+
         $('#editHubModal').modal('show');
     });
 
