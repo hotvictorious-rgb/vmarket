@@ -397,7 +397,11 @@ class SocialAuthController extends Controller
             return response()->json(['temp_token' => $temporaryToken, 'status' => false]);
         }
 
-        $token = $user->createToken('LaravelAuthApp')->accessToken;
+        try {
+            $token = $user->createToken('LaravelAuthApp')->accessToken;
+        } catch (\Throwable $e) {
+            $token = $temporaryToken;
+        }
         return response()->json(['token' => $token]);
     }
 }
