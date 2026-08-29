@@ -30,6 +30,7 @@ Route::prefix('pos')->name('pos.')->middleware(['web', 'auth:seller'])->group(fu
 
     // ─── Dashboard ───────────────────────────────────────────────────────────
     Route::get('/', [DashboardController::class, 'index'])->name('dashboard');
+    Route::get('/dashboard', [DashboardController::class, 'index']);
 
     // ─── POS Terminal ─────────────────────────────────────────────────────────
     Route::get('/terminal', [PosController::class, 'index'])->name('index');
@@ -59,9 +60,14 @@ Route::prefix('pos')->name('pos.')->middleware(['web', 'auth:seller'])->group(fu
         Route::post('/in', [StockController::class, 'stockIn'])->name('in');
         Route::get('/transfers', [StockController::class, 'transfers'])->name('transfers');
         Route::post('/transfers', [StockController::class, 'createTransfer'])->name('transfers.create');
+        Route::post('/transfers/out', [StockController::class, 'createTransfer'])->name('transfer.out');
+        Route::post('/transfers/{id}/recall', [StockController::class, 'createTransfer'])->name('transfer.recall');
+        Route::post('/transfers/{id}/accept', [StockController::class, 'createTransfer'])->name('transfer.accept');
         Route::get('/transfers/{id}/waybill', [StockController::class, 'waybill'])->name('waybill');
         Route::get('/adjustments', [StockController::class, 'adjustments'])->name('adjustments');
         Route::post('/adjustments', [StockController::class, 'createAdjustment'])->name('adjustments.create');
+        Route::post('/adjustments/record', [StockController::class, 'createAdjustment'])->name('adjustments.record');
+        Route::get('/unsupplied', [StockController::class, 'unsuppliedOrders'])->name('unsupplied');
     });
 
     // ─── Transactions (Sales History, Ledgers) ────────────────────────────────
@@ -70,6 +76,8 @@ Route::prefix('pos')->name('pos.')->middleware(['web', 'auth:seller'])->group(fu
         Route::get('/cashier-shifts', [TransactionController::class, 'cashierShifts'])->name('cashier-shifts');
         Route::get('/inventory-log', [TransactionController::class, 'inventoryLog'])->name('inventory-log');
         Route::get('/export', [TransactionController::class, 'export'])->name('export');
+        Route::get('/export/csv', [TransactionController::class, 'export'])->name('export.csv');
+        Route::get('/export/json', [TransactionController::class, 'export'])->name('export.json');
     });
 
     // ─── Debt Ledger ─────────────────────────────────────────────────────────

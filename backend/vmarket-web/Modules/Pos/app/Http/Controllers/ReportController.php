@@ -33,58 +33,81 @@ class ReportController extends Controller
 
         [$start, $end] = $this->resolveRange($datePreset, $fromDate, $toDate);
 
-        // Revenue over time (daily breakdown for chart)
-        $revenueByDay = DB::table('pos_sales')
+        // Staff list for filter
+        $seller = DB::table('sellers')->find($sellerId);
+        $staffList = collect([
+            (object) ['id' => $sellerId, 'name' => trim(($seller?->f_name ?? '') . ' ' . ($seller?->l_name ?? '')) ?: 'Merchant Admin']
+        ]);
+
+        $salesQuery = DB::table('pos_sales')
             ->where('seller_id', $sellerId)
-            ->where('status', 'completed')
-            ->when($start && $end, fn($q) => $q->whereBetween('created_at', [$start, $end]))
-            ->selectRaw('DATE(created_at) as day, SUM(total_amount) as revenue, SUM(debt_amount) as debt')
-            ->groupBy('day')
-            ->orderBy('day')
-            ->get();
+            ->when($start && $end, fn($q) => $q->whereBetween('created_at', [$start, $end]));
 
-        // Payment method breakdown
-        $paymentBreakdown = DB::table('pos_payments')
-            ->join('pos_sales', 'pos_sales.id', '=', 'pos_payments.pos_sale_id')
-            ->where('pos_sales.seller_id', $sellerId)
-            ->when($start && $end, fn($q) => $q->whereBetween('pos_payments.created_at', [$start, $end]))
-            ->selectRaw('pos_payments.method, SUM(pos_payments.amount) as total')
-            ->groupBy('pos_payments.method')
-            ->get();
+        $sales = (clone $salesQuery)->orderByDesc('created_at')->limit(50)->get()->map(function ($s) {
+            $s->customerName = $s->customer_name;
+            $s->customerPhone = $s->customer_phone;
+            $s->totalAmount = (float) $s->total_amount;
+            $s->paidAmount = (float) $s->paid_amount;
+            $s->createdAt = $s->created_at;
+            $s->deliveryStatus = $s->delivery_status;
+            $s->items = DB::table('pos_sale_items')->where('pos_sale_id', $s->id)->get();
+            return $s;
+        });
 
-        // Top products
+        $totalRevenue = (float) (clone $salesQuery)->sum('total_amount');
+        $totalInvoices = (clone $salesQuery)->count();
+        $totalCollected = (float) (clone $salesQuery)->sum('paid_amount');
+        $totalDebtCreated = (float) (clone $salesQuery)->sum('debt_amount');
+        $totalDebtOwedAllTime = (float) DB::table('pos_sales')->where('seller_id', $sellerId)->where('debt_amount', '>', 0)->sum('debt_amount');
+
+        $products = Product::where('user_id', $sellerId)->get()->map(function ($p) {
+            $p->product_code = $p->code ?? (string)$p->id;
+            $p->code = $p->product_code;
+            $p->physical_stock = max(0, (int)$p->current_stock);
+            $p->current_stock = $p->physical_stock;
+            return $p;
+        });
+
+        $totalPhysicalUnits = $products->sum('physical_stock');
+        $totalStockValuation = $products->sum(fn($p) => $p->physical_stock * (float)($p->unit_price ?? 0));
+        $totalDiscrepancyUnits = 0;
+        $totalDamagedUnits = (int) DB::table('pos_stock_adjustments')->where('seller_id', $sellerId)->where('quantity_change', '<', 0)->sum('quantity_change');
+        $totalDamagedUnits = abs($totalDamagedUnits);
+
+        $transfers = collect([]);
+        $debtors = collect([]);
+        $adjustments = DB::table('pos_stock_adjustments')->where('seller_id', $sellerId)->latest()->limit(50)->get();
+        $returns = DB::table('pos_sales_returns as psr')->where('psr.seller_id', $sellerId)->latest('psr.created_at')->limit(50)->get();
+
         $topProducts = DB::table('pos_sale_items as psi')
             ->join('pos_sales as ps', 'ps.id', '=', 'psi.pos_sale_id')
             ->where('ps.seller_id', $sellerId)
-            ->where('ps.status', 'completed')
             ->when($start && $end, fn($q) => $q->whereBetween('ps.created_at', [$start, $end]))
-            ->selectRaw('psi.product_name, SUM(psi.quantity) as units_sold, SUM(psi.total_price) as revenue, SUM(psi.quantity * psi.purchase_price) as cogs')
-            ->groupBy('psi.product_name')
-            ->orderByDesc('units_sold')
-            ->limit(10)
-            ->get()
-            ->map(function ($p) {
-                $p->gross_profit = $p->revenue - $p->cogs;
-                $p->margin_pct   = $p->revenue > 0 ? round(($p->gross_profit / $p->revenue) * 100, 1) : 0;
-                return $p;
-            });
+            ->selectRaw('psi.product_name as productName, psi.product_code as code, SUM(psi.quantity) as total_qty, SUM(psi.total_price) as total_revenue')
+            ->groupBy('psi.product_name', 'psi.product_code')
+            ->orderByDesc('total_revenue')
+            ->limit(5)
+            ->get();
 
-        $totalRevenue = (float) DB::table('pos_sales')
-            ->where('seller_id', $sellerId)->where('status', 'completed')
-            ->when($start && $end, fn($q) => $q->whereBetween('created_at', [$start, $end]))
-            ->sum('total_amount');
+        $topStaff = [
+            [
+                'name' => trim(($seller?->f_name ?? '') . ' ' . ($seller?->l_name ?? '')) ?: 'Merchant Admin',
+                'count' => $totalInvoices,
+                'total' => $totalRevenue,
+                'collected' => $totalCollected,
+            ]
+        ];
 
-        $totalCOGS = DB::table('pos_sale_items as psi')
-            ->join('pos_sales as ps', 'ps.id', '=', 'psi.pos_sale_id')
-            ->where('ps.seller_id', $sellerId)->where('ps.status', 'completed')
-            ->when($start && $end, fn($q) => $q->whereBetween('ps.created_at', [$start, $end]))
-            ->selectRaw('SUM(psi.quantity * psi.purchase_price) as cogs')->value('cogs') ?? 0;
-
-        $grossProfit = $totalRevenue - $totalCOGS;
+        $warehouses    = DB::table('shops')->where('seller_id', $sellerId)->get();
+        $branches      = $warehouses;
+        $totalRefunded = 0;
 
         return view('pos::reports.index', compact(
-            'revenueByDay', 'paymentBreakdown', 'topProducts',
-            'totalRevenue', 'totalCOGS', 'grossProfit',
+            'staffList', 'totalRevenue', 'totalInvoices', 'totalCollected', 'totalDebtCreated', 'totalDebtOwedAllTime',
+            'totalStockValuation', 'totalPhysicalUnits', 'totalDiscrepancyUnits', 'totalDamagedUnits', 'totalRefunded',
+            'topProducts', 'topStaff',
+            'sales', 'products', 'transfers', 'debtors', 'adjustments', 'returns',
+            'warehouses', 'branches',
             'datePreset', 'fromDate', 'toDate'
         ));
     }

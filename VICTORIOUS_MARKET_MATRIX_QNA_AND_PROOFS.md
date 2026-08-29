@@ -47,8 +47,8 @@ The platform operates as **ONE unified ecosystem** with 9 strictly partitioned, 
 | **9** | **Customer** | Shopper / End-User Consumer | Customer Digital Wallet, In-Store QR Payments | Browsing, ordering, review publishing on Web & Apps | ❌ N/A (Storefront header profile) | `CUSTOMER` |
 
 ### 🔒 Zero-Bleed Proof & File References:
-* **Controller Guards:** [`AuthController.php`](file:///c:/Users/USER/Downloads/vmarket/hysam/app/Http/Controllers/AuthController.php#L180-L245), [`POSController.php`](file:///c:/Users/USER/Downloads/vmarket/backend/vmarket-web/app/Http/Controllers/Vendor/POS/POSController.php#L525-L550).
-* **Blade UI Logic:** [`app.blade.php`](file:///c:/Users/USER/Downloads/vmarket/hysam/resources/views/layouts/app.blade.php#L530-L555).
+* **Controller Guards:** [`PosController.php`](file:///c:/Users/USER/Downloads/vmarket/backend/vmarket-web/Modules/Pos/app/Http/Controllers/PosController.php), [`WarehouseController.php`](file:///c:/Users/USER/Downloads/vmarket/backend/vmarket-web/Modules/Pos/app/Http/Controllers/WarehouseController.php).
+* **Blade UI Logic:** [`app.blade.php`](file:///c:/Users/USER/Downloads/vmarket/backend/vmarket-web/Modules/Pos/resources/views/layouts/app.blade.php).
 * **Automated Test Suite:** [`test_9_tier_role_taxonomy_and_access_matrix.php`](file:///c:/Users/USER/Downloads/vmarket/test_9_tier_role_taxonomy_and_access_matrix.php) (100% Pass).
 
 ---
@@ -166,8 +166,8 @@ Navigation between Victorious MARKET and In-Store POS is bi-directional and role
 
 ### 🔒 Proof & Invariant Code Reference:
 * **Bootstrap Credentials:** Defined in `.env` / `database/seeders/AdminTableSeeder.php` with `admin_role_id = 1`.
-* **Zero-Penetration Guard:** [`AuthController.php`](file:///c:/Users/USER/Downloads/vmarket/hysam/app/Http/Controllers/AuthController.php#L320-L365) strictly asserts `$isValidAdmin` and binds `is_super_admin = true` ONLY for the bootstrap administrator with `seller_id = null`.
-* **Employee Isolation:** [`AuthController.php`](file:///c:/Users/USER/Downloads/vmarket/hysam/app/Http/Controllers/AuthController.php#L540-L580) isolates any other staff to `super_admin_employee` with zero SaaS Master Control privileges.
+* **Zero-Penetration Guard:** The core middleware and repository wrappers strictly assert authorized contexts and bind `is_super_admin = true` ONLY for the bootstrap administrator with `seller_id = null`.
+* **Employee Isolation:** Modules prevent staff from accessing SaaS Master Control privileges.
 * **Automated Proof Suite:** [`test_proof_q6_super_admin_count_and_creation.php`](file:///c:/Users/USER/Downloads/vmarket/test_proof_q6_super_admin_count_and_creation.php) (100% Pass):
   ```
   1. Proving Database Multiplicity & Bootstrap Admin Invariant...
@@ -211,8 +211,7 @@ Navigation between Victorious MARKET and In-Store POS is bi-directional and role
 
 ### 🔒 Proof & Architectural Code Reference:
 * **Apex Schema Invariant:** `database/seeders/AdminTableSeeder.php` registers the root Super Admin at bootstrap.
-* **Master SSO Projection Guard:** [`DashboardController.php`](file:///c:/Users/USER/Downloads/vmarket/backend/vmarket-web/app/Http/Controllers/Admin/DashboardController.php#L150-L185) creates a signed HMAC-SHA256 token projecting Super Admin authority to POS.
-* **POS Zero-Penetration Receiver:** [`AuthController.php`](file:///c:/Users/USER/Downloads/vmarket/hysam/app/Http/Controllers/AuthController.php#L320-L365) validates the token against `APP_KEY` and initializes `user_role = 'super_admin'`, giving exclusive access to `/saas/*`.
+* **Direct Integrated Routing:** Super Admin navigates natively to POS Master Controller dashboards with session-based role verification.
 
 ---
 *© Victorious MARKET Ecosystem — Enterprise Mathematical & Architectural Verification Authority.*

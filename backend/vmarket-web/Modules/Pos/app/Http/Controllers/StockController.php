@@ -48,8 +48,14 @@ class StockController extends Controller
         $category  = $request->get('category');
         $status    = $request->get('stock_status');
 
-        $branches = DB::table('shops')->where('seller_id', $sellerId)->get();
+        $branches = DB::table('shops')->where('seller_id', $sellerId)->get()->map(function ($b) {
+            $b->code = $b->code ?? ('SHP-' . $b->id);
+            return $b;
+        });
         $activeBranch = $branches->firstWhere('id', $branchId) ?? $branches->first();
+        if ($activeBranch) {
+            $activeBranch->code = $activeBranch->code ?? ('SHP-' . $activeBranch->id);
+        }
 
         $query = Product::where('user_id', $sellerId)->where('status', '!=', 2);
 
@@ -66,6 +72,9 @@ class StockController extends Controller
 
         $products = $query->orderBy('name')->get()->map(function ($p) use ($sellerId) {
             $stockRow = DB::table('product_stocks')->where('product_id', $p->id)->first();
+            $p->code           = $p->code ?? (string)$p->id;
+            $p->product_code   = $p->code;
+            $p->category       = $p->pos_category ?? 'General';
             $p->physical_stock = $stockRow ? (int) $stockRow->qty : (int) $p->current_stock;
             $p->reorder_level  = (int) ($p->pos_reorder_level ?? 5);
             return $p;
@@ -81,8 +90,34 @@ class StockController extends Controller
         }
 
         $categories = Product::where('user_id', $sellerId)->distinct()->pluck('pos_category')->filter()->values();
+        $activeWarehouse = $activeBranch;
+        $warehouses = $branches;
+        $incomingTransfers = collect([]);
+        $totalItemsCount = $products->count();
+        $totalStockUnits = $products->sum('physical_stock');
+        $totalPhysicalUnits = $totalStockUnits;
+        $lowStockCount = $products->filter(fn($p) => $p->physical_stock > 0 && $p->physical_stock <= $p->reorder_level)->count();
+        $outOfStockCount = $products->filter(fn($p) => $p->physical_stock <= 0)->count();
 
-        return view('pos::stock.index', compact('products', 'branches', 'activeBranch', 'categories', 'search', 'category', 'status'));
+        $stockLevels = $products->map(function ($p) {
+            return (object) [
+                'id'              => $p->id,
+                'product_id'      => $p->id,
+                'physical_stock'  => $p->physical_stock,
+                'min_stock_alert' => $p->reorder_level,
+                'product'         => (object) [
+                    'id'        => $p->id,
+                    'name'      => $p->name,
+                    'code'      => $p->code,
+                    'category'  => $p->category,
+                    'unitPrice' => (float) $p->unit_price,
+                ],
+            ];
+        });
+
+        $allProducts = $products;
+
+        return view('pos::stock.index', compact('products', 'allProducts', 'branches', 'warehouses', 'activeBranch', 'activeWarehouse', 'incomingTransfers', 'categories', 'search', 'category', 'status', 'totalItemsCount', 'totalStockUnits', 'totalPhysicalUnits', 'lowStockCount', 'outOfStockCount', 'stockLevels'));
     }
 
     /**
@@ -90,12 +125,7 @@ class StockController extends Controller
      */
     public function stockInForm(Request $request)
     {
-        $sellerId = $this->resolveAuthSellerId();
-        $products = Product::where('user_id', $sellerId)->where('status', '!=', 2)->orderBy('name')->get();
-        $branches = DB::table('shops')->where('seller_id', $sellerId)->get();
-        $suppliers = DB::table('suppliers')->where('seller_id', $sellerId)->orderBy('name')->get();
-
-        return view('pos::stock.stock-in', compact('products', 'branches', 'suppliers'));
+        return redirect()->route('pos.stock.index');
     }
 
     /**
@@ -180,14 +210,28 @@ class StockController extends Controller
     public function transfers(Request $request)
     {
         $sellerId  = $this->resolveAuthSellerId();
-        $transfers = DB::table('pos_cashier_shifts') // reuse existing or pos_activities of type TRANSFER
-            ->where('seller_id', $sellerId)
-            ->orderByDesc('created_at')
-            ->paginate(25);
+        $transfers = \Illuminate\Support\Facades\Schema::hasTable('pos_stock_transfers')
+            ? DB::table('pos_stock_transfers')->where('seller_id', $sellerId)->orderByDesc('created_at')->paginate(25)
+            : new \Illuminate\Pagination\LengthAwarePaginator(collect([]), 0, 25, 1, ['path' => request()->url(), 'query' => request()->query()]);
 
-        $branches = DB::table('shops')->where('seller_id', $sellerId)->get();
+        $allTransfers = $transfers;
+        $pendingCount = 0;
+        $receivedCount = 0;
+        $discrepancyCount = 0;
+        $datePreset = $request->get('date_preset', 'ALL');
+        $carriers = collect([]);
+        $branches = DB::table('shops')->where('seller_id', $sellerId)->get()->map(function ($b) {
+            $b->code = $b->code ?? ('SHP-' . $b->id);
+            return $b;
+        });
 
-        return view('pos::stock.transfers', compact('transfers', 'branches'));
+        $warehouses  = $branches;
+        $allProducts = Product::where('user_id', $sellerId)->get();
+
+        return view('pos::stock.transfers', compact(
+            'transfers', 'allTransfers', 'pendingCount', 'receivedCount', 'discrepancyCount',
+            'datePreset', 'carriers', 'branches', 'warehouses', 'allProducts'
+        ));
     }
 
     /**
@@ -311,10 +355,48 @@ class StockController extends Controller
             ->orderByDesc('created_at')
             ->paginate(25);
 
-        $products = Product::where('user_id', $sellerId)->orderBy('name')->get();
-        $branches = DB::table('shops')->where('seller_id', $sellerId)->get();
+        $totalAdjustmentsCount = DB::table('pos_stock_adjustments')->where('seller_id', $sellerId)->count();
+        $totalUnitsLost = (int) abs(DB::table('pos_stock_adjustments')->where('seller_id', $sellerId)->where('quantity_change', '<', 0)->sum('quantity_change'));
+        $datePreset = $request->get('date_preset', 'ALL');
 
-        return view('pos::stock.adjustments', compact('adjustments', 'products', 'branches'));
+        $products = Product::where('user_id', $sellerId)->orderBy('name')->get()->map(function ($p) {
+            $p->code         = $p->code ?? (string)$p->id;
+            $p->product_code = $p->code;
+            return $p;
+        });
+        $branches = DB::table('shops')->where('seller_id', $sellerId)->get()->map(function ($b) {
+            $b->code = $b->code ?? ('SHP-' . $b->id);
+            return $b;
+        });
+        $warehouses = $branches;
+
+        return view('pos::stock.adjustments', compact('adjustments', 'products', 'branches', 'warehouses', 'totalAdjustmentsCount', 'totalUnitsLost', 'datePreset'));
+    }
+
+    /**
+     * Unsupplied orders awaiting customer pickup.
+     */
+    public function unsuppliedOrders(Request $request)
+    {
+        $sellerId = $this->resolveAuthSellerId();
+        $datePreset = $request->get('date_preset', 'ALL');
+        $fromDate = $request->get('from_date');
+        $toDate = $request->get('to_date');
+
+        $query = DB::table('pos_sales')
+            ->where('seller_id', $sellerId)
+            ->whereIn('delivery_status', ['UNSUPPLIED', 'pending']);
+
+        $unsuppliedSales = $query->orderByDesc('created_at')->paginate(25);
+        $totalUnsuppliedOrders = (clone $query)->count();
+        $totalUnsuppliedValue = (clone $query)->sum('total_amount');
+        $branches = DB::table('shops')->where('seller_id', $sellerId)->get();
+        $activeWarehouse = $branches->first();
+
+        return view('pos::stock.unsupplied', compact(
+            'unsuppliedSales', 'totalUnsuppliedOrders', 'totalUnsuppliedValue',
+            'branches', 'activeWarehouse', 'datePreset', 'fromDate', 'toDate'
+        ));
     }
 
     /**

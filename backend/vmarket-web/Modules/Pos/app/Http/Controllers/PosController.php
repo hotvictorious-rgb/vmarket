@@ -82,6 +82,7 @@ class PosController extends Controller
         $activeBranchId = $this->resolveActiveBranchId($request);
         session(['pos_active_branch_id' => $activeBranchId]);
         $activeBranch = $branches->firstWhere('id', $activeBranchId) ?? $branches->first();
+        $activeWarehouse = $activeBranch;
 
         // [AI] Load this seller's products from the unified catalog, scoped strictly to seller_id
         $products = Product::where('user_id', $sellerId)
@@ -111,7 +112,7 @@ class PosController extends Controller
             ->limit(200)
             ->get();
 
-        return view('pos::pos.index', compact('products', 'categories', 'branches', 'activeBranch', 'customers'));
+        return view('pos::pos.index', compact('products', 'categories', 'branches', 'activeBranch', 'activeWarehouse', 'customers'));
     }
 
     /**
@@ -463,6 +464,7 @@ class PosController extends Controller
         $recentReturns    = $query->orderByDesc('psr.created_at')->paginate(25)->withQueryString();
         $totalRefundValue = (clone $query)->sum('psr.refund_amount');
         $totalReturnsCount = (clone $query)->count();
+        $totalUnitsRestocked = (int) (clone $query)->sum('psr.quantity');
 
         // Recent sales for the return-initiation dropdown with attached items list
         $sales = DB::table('pos_sales')
@@ -489,10 +491,11 @@ class PosController extends Controller
             });
 
         $branches = Shop::where('seller_id', $sellerId)->get();
+        $warehouses = $branches;
 
         return view('pos::pos.returns', compact(
-            'recentReturns', 'totalRefundValue', 'totalReturnsCount',
-            'sales', 'branches', 'datePreset', 'fromDate', 'toDate', 'search'
+            'recentReturns', 'totalRefundValue', 'totalReturnsCount', 'totalUnitsRestocked',
+            'sales', 'branches', 'warehouses', 'datePreset', 'fromDate', 'toDate', 'search'
         ));
     }
 

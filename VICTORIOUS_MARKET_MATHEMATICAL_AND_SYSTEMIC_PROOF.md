@@ -404,7 +404,7 @@ Where:
 * **Security Patch Timestamp:** 2026-08-27 16:30 UTC
 * **Audit Command Coordinator:** `test_vmarket_pos_authorization_isolation.php`
 * **Test Assertions Executed:** 22 Scenarios
-* **Core Components Covered:** central Victorious MARKET web/API, In-Store POS (hysam)
+* **Core Components Covered:** central Victorious MARKET web/API, native POS Module (`Modules/Pos`)
 
 ### Summary of Audit Results (Post-Security Patches)
 
@@ -446,7 +446,7 @@ Where:
 └───────────────────┴────────────────────────────────────────────┴──────────────────┴────────────────────┘
 ```
 
-### Security Vulnerabilities Patched (POS Component `hysam`)
+### Security Vulnerabilities Patched (POS Component `Modules/Pos`)
 1. **Product Cross-Tenant Leak:** Fixed by adding a `company_id` filter to the Product listing and active branch/warehouse fetching queries inside `ProductController`.
 2. **Sales History Cross-Tenant Leak:** Fixed by scoping all sales transaction fetches in `TransactionController::getSalesQuery` strictly to the caller's `company_id`.
 3. **Cross-Tenant Staff Modification IDOR:** Fixed by scoping `UserController` creation, listing, updates, and status toggles to `company_id`, preventing any unauthorized access to standard worker profiles belonging to other tenants.
@@ -460,7 +460,7 @@ Where:
 * **Timestamp:** 2026-08-28 00:15 UTC
 * **Audit Command Coordinator:** `test_pos_product_sync.php`
 * **Test Assertions Executed:** 9 Assertions
-* **Core Components Covered:** central Victorious MARKET web/API, In-Store POS (hysam), observers, and AuthController mapping.
+* **Core Components Covered:** central Victorious MARKET web/API, native POS Module (`Modules/Pos`), observers, and POS Controller mappings.
 
 ### Summary of Audit Results (Catalog Sync & Unified Employee Roles)
 

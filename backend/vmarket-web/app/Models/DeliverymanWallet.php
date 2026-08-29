@@ -45,8 +45,12 @@ class DeliverymanWallet extends Model
     ];
 
     protected $guarded = ['id'];
-    /*delivery_man ->deliveryMan*/
     public function deliveryMan():BelongsTo
+    {
+        return $this->belongsTo(DeliveryMan::class, 'delivery_man_id');
+    }
+
+    public function delivery_man():BelongsTo
     {
         return $this->belongsTo(DeliveryMan::class, 'delivery_man_id');
     }

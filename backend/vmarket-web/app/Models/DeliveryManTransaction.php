@@ -46,4 +46,13 @@ class DeliveryManTransaction extends Model
         'transaction_type',
     ];
 
+    public function deliveryMan(): \Illuminate\Database\Eloquent\Relations\BelongsTo
+    {
+        return $this->belongsTo(DeliveryMan::class, 'delivery_man_id');
+    }
+
+    public function delivery_man(): \Illuminate\Database\Eloquent\Relations\BelongsTo
+    {
+        return $this->belongsTo(DeliveryMan::class, 'delivery_man_id');
+    }
 }

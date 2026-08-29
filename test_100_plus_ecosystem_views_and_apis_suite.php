@@ -247,16 +247,16 @@ echo "\n";
 // SECTION 7: IN-STORE POS TERMINAL & COUNTER CASHIER VIEWS (10 Endpoints)
 // ========================================================================================
 echo "=== SECTION 7: In-Store POS Terminal & Counter Cashier Views ===\n";
-$tester->assertProbe('GET', '/vendor/pos/index', 'Merchant In-Store POS Terminal View', [200, 302, 404], 'seller', $sellerModel);
-$tester->assertProbe('GET', '/vendor/pos/order-list', 'POS Cashier Order History View', [200, 302, 404], 'seller', $sellerModel);
-$tester->assertProbe('GET', '/vendor/pos/debt-ledger', 'POS Customer Debt Repayment View', [200, 302, 404], 'seller', $sellerModel);
-$tester->assertProbe('GET', '/vendor/pos/customers', 'POS Quick Customer Search JSON', [200, 302, 404], 'seller', $sellerModel);
-$tester->assertProbe('GET', '/vendor/pos/products', 'POS Barcode Live Scanner Search', [200, 302, 404], 'seller', $sellerModel);
-$tester->assertProbe('GET', '/vendor/pos/quick-view', 'POS Item Modal Details View', [200, 302, 404], 'seller', $sellerModel);
-$tester->assertProbe('GET', '/vendor/pos-sso', '1-Click POS SSO Cryptographic Bridge', [302], 'seller', $sellerModel);
-$tester->assertProbe('GET', '/admin/pos-sso', '1-Click Super Admin POS SSO Bridge', [302], 'admin', $adminModel);
-$tester->assertProbe('GET', '/admin/pos-management/dashboard', 'Super Admin POS Oversight Matrix', [200, 302, 404], 'admin', $adminModel);
-$tester->assertProbe('GET', '/admin/pos-management/settings', 'POS Terminal Global Hardware Profile', [200, 302, 404], 'admin', $adminModel);
+$tester->assertProbe('GET', '/pos', 'Merchant In-Store POS Terminal View', [200, 302], 'seller', $sellerModel);
+$tester->assertProbe('GET', '/pos/terminal', 'POS Counter Register View', [200, 302], 'seller', $sellerModel);
+$tester->assertProbe('GET', '/pos/transactions', 'POS Cashier Order & Sales History View', [200, 302], 'seller', $sellerModel);
+$tester->assertProbe('GET', '/pos/debts', 'POS Customer Debt & Part-Payments Ledger', [200, 302], 'seller', $sellerModel);
+$tester->assertProbe('GET', '/pos/products', 'POS Products & Catalog View', [200, 302], 'seller', $sellerModel);
+$tester->assertProbe('GET', '/pos/stock', 'POS Multi-Branch Stock Hub', [200, 302], 'seller', $sellerModel);
+$tester->assertProbe('GET', '/pos/stock/transfers', 'POS Stock Transfers & Waybills', [200, 302], 'seller', $sellerModel);
+$tester->assertProbe('GET', '/pos/stock/adjustments', 'POS Stock Adjustment Write-Offs', [200, 302], 'seller', $sellerModel);
+$tester->assertProbe('GET', '/pos/reports', 'POS Executive P&L Analytics Hub', [200, 302], 'seller', $sellerModel);
+$tester->assertProbe('GET', '/pos/warehouses', 'POS Branch Locations & Stores', [200, 302], 'seller', $sellerModel);
 echo "\n";
 
 // ========================================================================================

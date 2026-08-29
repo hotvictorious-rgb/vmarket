@@ -83,6 +83,11 @@ class DeliveryMan extends Model
         return $this->belongsTo(DeliveryHub::class, 'delivery_hub_id');
     }
 
+    public function hub(): \Illuminate\Database\Eloquent\Relations\BelongsTo
+    {
+        return $this->belongsTo(DeliveryHub::class, 'delivery_hub_id');
+    }
+
     public function orders(): HasMany
     {
         return $this->hasMany(Order::class, 'delivery_man_id');

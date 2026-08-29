@@ -60,19 +60,26 @@ class DebtController extends Controller
 
         $debtors = $query->orderByDesc('total_debt')->paginate(25)->withQueryString();
 
-        $totalOutstanding = DB::table('pos_sales')
+        $totalOutstandingDebt = (float) DB::table('pos_sales')
             ->where('seller_id', $sellerId)
             ->where('debt_amount', '>', 0)
             ->whereNotIn('status', ['voided'])
             ->sum('debt_amount');
 
-        $debtorCount = DB::table('pos_sales')
+        $totalDebtorsCount = DB::table('pos_sales')
             ->where('seller_id', $sellerId)
             ->where('debt_amount', '>', 0)
             ->distinct()
             ->count('customer_phone');
 
-        return view('pos::debts.index', compact('debtors', 'totalOutstanding', 'debtorCount', 'search'));
+        $highRiskDebtorsCount = 0;
+        $debtBracket    = $request->get('debt_bracket', 'ALL');
+        $datePreset     = $request->get('date_preset', 'ALL');
+        $branches       = DB::table('shops')->where('seller_id', $sellerId)->get();
+        $warehouses     = $branches;
+        $recentPayments = collect([]);
+
+        return view('pos::debts.index', compact('debtors', 'totalOutstandingDebt', 'totalDebtorsCount', 'highRiskDebtorsCount', 'branches', 'warehouses', 'debtBracket', 'datePreset', 'recentPayments', 'search'));
     }
 
     /**

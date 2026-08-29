@@ -176,7 +176,7 @@
             <a href="{{ route('pos.reports.index') }}" class="btn btn-secondary" style="font-size: 0.85rem;">
                 📊 Executive Reports
             </a>
-            <a href="{{ route('auditor.index') }}" class="btn btn-secondary" style="font-size: 0.85rem; color: #fca5a5;">
+            <a href="{{ route('pos.transactions.inventory-log') }}" class="btn btn-secondary" style="font-size: 0.85rem; color: #fca5a5;">
                 🛡️ Anti-Theft Hub
             </a>
         </div>

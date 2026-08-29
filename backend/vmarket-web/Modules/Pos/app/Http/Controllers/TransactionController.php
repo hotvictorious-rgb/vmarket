@@ -79,13 +79,40 @@ class TransactionController extends Controller
         // Summary cards
         $totalBase     = DB::table('pos_sales')->where('seller_id', $sellerId);
         $this->applyDateFilter($totalBase, $request);
-        $totalRevenue  = (float) (clone $totalBase)->where('status', 'completed')->sum('total_amount');
-        $totalDebt     = (float) (clone $totalBase)->where('debt_amount', '>', 0)->sum('debt_amount');
-        $salesCount    = (clone $totalBase)->where('status', 'completed')->count();
+        $totalRevenue    = (float) (clone $totalBase)->where('status', 'completed')->sum('total_amount');
+        $totalPaid       = (float) (clone $totalBase)->where('status', 'completed')->sum('paid_amount');
+        $totalDebt       = (float) (clone $totalBase)->where('debt_amount', '>', 0)->sum('debt_amount');
+        $salesCount      = (clone $totalBase)->where('status', 'completed')->count();
+        $totalSalesCount = $salesCount;
+        $activeTab       = $request->get('tab', 'sales');
+        $datePreset      = $request->get('date_preset', 'ALL');
+        $fromDate        = $request->get('from_date');
+        $toDate          = $request->get('to_date');
+        $warehouses      = $branches;
+        $allSales        = $sales;
+        $transfers       = collect([]);
+        $shifts          = collect([]);
+        $inventoryLogs   = collect([]);
+        $damages         = collect([]);
+        $returns         = collect([]);
+        $expenses        = collect([]);
+        $debts           = collect([]);
+        $staffList       = collect([]);
+        $carriers        = collect([]);
+        $stockInBatches  = 0;
+        $stockOutCount   = 0;
+        $inTransitCount  = 0;
+        $incomingTotal   = 0;
+        $returnsCount    = 0;
+        $refundsCount    = 0;
+        $debtsEntryCount = 0;
 
         return view('pos::transactions.index', compact(
-            'sales', 'branches', 'statuses', 'branchId',
-            'search', 'status', 'totalRevenue', 'totalDebt', 'salesCount'
+            'sales', 'branches', 'statuses', 'branchId', 'warehouses',
+            'search', 'status', 'totalRevenue', 'totalPaid', 'totalDebt', 'salesCount', 'totalSalesCount',
+            'activeTab', 'datePreset', 'fromDate', 'toDate',
+            'allSales', 'transfers', 'shifts', 'inventoryLogs', 'damages', 'returns', 'expenses', 'debts', 'staffList', 'carriers',
+            'stockInBatches', 'stockOutCount', 'inTransitCount', 'incomingTotal', 'returnsCount', 'refundsCount', 'debtsEntryCount'
         ));
     }
 
@@ -96,10 +123,9 @@ class TransactionController extends Controller
     {
         $sellerId = $this->resolveAuthSellerId();
 
-        $query = DB::table('pos_cashier_shifts')->where('seller_id', $sellerId);
-        $this->applyDateFilter($query, $request, 'opened_at');
-
-        $shifts = $query->orderByDesc('opened_at')->paginate(25)->withQueryString();
+        $shifts = \Illuminate\Support\Facades\Schema::hasTable('pos_cashier_shifts')
+            ? DB::table('pos_cashier_shifts')->where('seller_id', $sellerId)->orderByDesc('opened_at')->paginate(25)
+            : new \Illuminate\Pagination\LengthAwarePaginator(collect([]), 0, 25, 1, ['path' => request()->url(), 'query' => request()->query()]);
 
         return view('pos::transactions.cashier-shifts', compact('shifts'));
     }

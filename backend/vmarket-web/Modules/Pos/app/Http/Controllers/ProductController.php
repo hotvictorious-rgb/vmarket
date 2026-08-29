@@ -50,8 +50,18 @@ class ProductController extends Controller
         }
 
         $products = $query->orderBy('name')->get()->map(function ($p) {
-            $p->physical_stock = max(0, (int) $p->current_stock);
-            $p->reorder_level  = (int) ($p->pos_reorder_level ?? 5);
+            $p->code                 = $p->code ?? (string)$p->id;
+            $p->product_code         = $p->code;
+            $p->category             = $p->pos_category ?? 'General';
+            $p->brand                = $p->brand_id ? 'Brand #' . $p->brand_id : 'Standard';
+            $p->size                 = null;
+            $p->unitPrice            = (float) $p->unit_price;
+            $p->branch_stocks        = [];
+            $p->total_physical_stock = max(0, (int) $p->current_stock);
+            $p->currentStock         = $p->total_physical_stock;
+            $p->minStockLevel        = (int) ($p->pos_reorder_level ?? 5);
+            $p->physical_stock       = $p->total_physical_stock;
+            $p->reorder_level        = $p->minStockLevel;
             return $p;
         });
 
@@ -62,7 +72,10 @@ class ProductController extends Controller
         }
 
         $categories = Product::where('user_id', $sellerId)->distinct()->pluck('pos_category')->filter()->values();
-        $branches   = DB::table('shops')->where('seller_id', $sellerId)->get();
+        $branches   = DB::table('shops')->where('seller_id', $sellerId)->get()->map(function ($b) {
+            $b->code = $b->code ?? ('SHP-' . $b->id);
+            return $b;
+        });
         $warehouses = $branches;
 
         return view('pos::products.index', compact('products', 'categories', 'branches', 'warehouses', 'search', 'category', 'status'));

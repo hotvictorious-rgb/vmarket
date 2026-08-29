@@ -156,7 +156,7 @@
                 <ul class="dropdown-menu dropdown-menu-end shadow-sm">
                     <li><a class="dropdown-item" href="{{ route('admin.dashboard.index') }}"><i class="fa-solid fa-house me-2"></i> Admin Panel</a></li>
                     <li><hr class="dropdown-divider"></li>
-                    <li><a class="dropdown-item text-danger" href="{{ route('admin.auth.logout') }}"><i class="fa-solid fa-right-from-bracket me-2"></i> Sign Out</a></li>
+                    <li><a class="dropdown-item text-danger" href="{{ route('admin.logout') }}"><i class="fa-solid fa-right-from-bracket me-2"></i> Sign Out</a></li>
                 </ul>
             </div>
         </div>
