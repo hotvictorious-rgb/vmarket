@@ -1,0 +1,11 @@
+{
+    "name": "Delivery",
+    "alias": "delivery",
+    "description": "Victorious MARKET Logistics & Delivery Hub Command Center",
+    "keywords": ["delivery", "logistics", "hubs", "corridors", "fleet", "3pl"],
+    "priority": 0,
+    "providers": [
+        "Modules\\Delivery\\app\\Providers\\DeliveryServiceProvider"
+    ],
+    "files": []
+}

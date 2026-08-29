@@ -63,6 +63,12 @@
                 </li>
 
                 <li class="nav-item">
+                    <a class="btn btn-outline-primary btn-sm rounded-pill px-3 py-1 fw-semibold d-flex align-items-center gap-1" href="{{ route('delivery.dashboard') }}" target="_blank" data-bs-toggle="tooltip" data-bs-title="{{ translate('Logistics & Fleet Command') }}">
+                        <i class="fa-solid fa-truck-fast"></i> <span>{{ translate('Delivery Hub') }}</span>
+                    </a>
+                </li>
+
+                <li class="nav-item">
                     @php($local = session()->has('local') ? session('local') : 'en')
                     @php($lang = \App\Models\BusinessSetting::where('type', 'language')->first())
                     <div class="topbar-text dropdown">
