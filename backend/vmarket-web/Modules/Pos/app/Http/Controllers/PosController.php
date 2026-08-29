@@ -94,6 +94,7 @@ class PosController extends Controller
                     ->first();
                 $product->physical_stock  = $stockRow ? (int) $stockRow->qty : (int) $product->current_stock;
                 $product->available_stock = max(0, $product->physical_stock);
+                $product->unitPrice       = (float) $product->unit_price;
                 $product->pos_display_name = $product->name;
                 return $product;
             });
@@ -386,6 +387,28 @@ class PosController extends Controller
         $branch = Shop::where('seller_id', $sellerId)->find($sale->branch_id);
         $seller = Seller::find($sellerId);
 
+        // [AI] Add compatibility properties mapping for the Hysam receipt view template
+        $sale->customerName   = $sale->customer_name;
+        $sale->deliveryStatus = $sale->delivery_status;
+        $sale->totalAmount    = (float) $sale->total_amount;
+        $sale->paidAmount     = (float) $sale->paid_amount;
+        $sale->receiptNumber  = $sale->receipt_number;
+        $sale->userName       = $sale->cashier_name ?? ($seller->f_name . ' ' . $seller->l_name);
+        $sale->createdAt      = $sale->created_at;
+        $sale->sale_type      = $sale->is_wholesale ? 'WHOLESALE_DISPATCH' : 'RETAIL';
+        $sale->deliveredAt    = $sale->delivery_status === 'delivered' ? $sale->updated_at : null;
+
+        $mappedItems = $items->map(function ($item) {
+            $item->productName = $item->product_name;
+            $item->unitPrice   = (float) $item->unit_price;
+            $item->totalPrice  = (float) $item->total_price;
+            // Also assign mock or real product codes if necessary
+            $item->product     = (object) ['code' => $item->product_code];
+            return $item;
+        });
+
+        $sale->items = $mappedItems;
+
         return view('pos::pos.receipt', compact('sale', 'items', 'branch', 'seller'));
     }
 
@@ -400,42 +423,70 @@ class PosController extends Controller
         $toDate      = $request->get('to_date');
         $search      = trim($request->get('search', ''));
 
-        $query = DB::table('pos_sales_returns')->where('seller_id', $sellerId);
+        $query = DB::table('pos_sales_returns as psr')
+            ->join('pos_sales as s', 's.id', '=', 'psr.pos_sale_id')
+            ->where('psr.seller_id', $sellerId)
+            ->select(
+                'psr.*', 
+                's.customer_name as customerName', 
+                's.receipt_number as saleId', 
+                'psr.processed_by as userName', 
+                'psr.product_code as code', 
+                'psr.product_name as productName', 
+                'psr.refund_amount as refundAmount'
+            );
 
         if ($fromDate && $toDate) {
-            $query->whereBetween('created_at', [
+            $query->whereBetween('psr.created_at', [
                 Carbon::parse($fromDate)->startOfDay(),
                 Carbon::parse($toDate)->endOfDay(),
             ]);
         } elseif ($datePreset === 'TODAY') {
-            $query->whereDate('created_at', Carbon::today());
+            $query->whereDate('psr.created_at', Carbon::today());
         } elseif ($datePreset === 'THIS_WEEK') {
-            $query->whereBetween('created_at', [
+            $query->whereBetween('psr.created_at', [
                 Carbon::now()->startOfWeek(), Carbon::now()->endOfWeek(),
             ]);
         } elseif ($datePreset === 'THIS_MONTH') {
-            $query->whereBetween('created_at', [
+            $query->whereBetween('psr.created_at', [
                 Carbon::now()->startOfMonth(), Carbon::now()->endOfMonth(),
             ]);
         }
 
         if ($search) {
             $query->where(function ($q) use ($search) {
-                $q->where('product_name', 'like', "%{$search}%")
-                  ->orWhere('product_code', 'like', "%{$search}%");
+                $q->where('psr.product_name', 'like', "%{$search}%")
+                  ->orWhere('psr.product_code', 'like', "%{$search}%");
             });
         }
 
-        $recentReturns    = $query->orderByDesc('created_at')->paginate(25)->withQueryString();
-        $totalRefundValue = (clone $query)->sum('refund_amount');
+        $recentReturns    = $query->orderByDesc('psr.created_at')->paginate(25)->withQueryString();
+        $totalRefundValue = (clone $query)->sum('psr.refund_amount');
         $totalReturnsCount = (clone $query)->count();
 
-        // Recent sales for the return-initiation dropdown
+        // Recent sales for the return-initiation dropdown with attached items list
         $sales = DB::table('pos_sales')
             ->where('seller_id', $sellerId)
             ->orderByDesc('created_at')
             ->limit(30)
-            ->get();
+            ->get()
+            ->map(function ($s) {
+                $s->customerName = $s->customer_name;
+                $s->totalAmount  = (float) $s->total_amount;
+                $s->items = DB::table('pos_sale_items')
+                    ->where('pos_sale_id', $s->id)
+                    ->get()
+                    ->map(function ($item) {
+                        $item->product_id  = $item->product_id;
+                        $item->productName = $item->product_name;
+                        $item->unitPrice   = (float) $item->unit_price;
+                        $item->totalPrice  = (float) $item->total_price;
+                        $item->quantity    = $item->quantity;
+                        return $item;
+                    })
+                    ->toArray();
+                return $s;
+            });
 
         $branches = Shop::where('seller_id', $sellerId)->get();
 

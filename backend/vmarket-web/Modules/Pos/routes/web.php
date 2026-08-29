@@ -40,6 +40,11 @@ Route::prefix('pos')->name('pos.')->middleware(['web', 'auth:seller'])->group(fu
     Route::post('/customer/quick-register', [PosController::class, 'quickRegisterCustomer'])->name('customer.quick-register');
 
     // ─── Products (POS Catalog) ───────────────────────────────────────────────
+    Route::get('products/template/csv', [ProductController::class, 'downloadCsvTemplate'])->name('products.template.csv');
+    Route::get('products/export/csv', [ProductController::class, 'exportCsv'])->name('products.export.csv');
+    Route::get('products/export/json', [ProductController::class, 'exportJson'])->name('products.export.json');
+    Route::post('products/import/csv', [ProductController::class, 'importCsv'])->name('products.import.csv');
+
     Route::resource('products', ProductController::class)->except(['show']);
 
     // ─── Warehouses / Branches ────────────────────────────────────────────────

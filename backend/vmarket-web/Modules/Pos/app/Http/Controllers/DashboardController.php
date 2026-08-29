@@ -134,6 +134,63 @@ class DashboardController extends Controller
             ->where('current_stock', '<=', 0)
             ->count();
 
+        // ── Inventory Valuation and General Metrics ─────────────────────────
+        $totalStockValuation = (float) Product::where('user_id', $sellerId)
+            ->sum(DB::raw('current_stock * purchase_price'));
+        $totalPhysicalUnits = (int) Product::where('user_id', $sellerId)
+            ->sum('current_stock');
+
+        // Debt Recoveries in Period (payments recorded after initial checkout creation)
+        $debtRecoveryCount = DB::table('pos_activities')
+            ->where('seller_id', $sellerId)
+            ->where('type', 'DEBT_PAYMENT')
+            ->when($startDate && $endDate, fn($q) => $q->whereBetween('created_at', [$startDate, $endDate]))
+            ->count();
+
+        $debtRecoveredInPeriod = (float) DB::table('pos_payments as p')
+            ->join('pos_sales as s', 's.id', '=', 'p.pos_sale_id')
+            ->where('p.seller_id', $sellerId)
+            ->where('p.method', '!=', 'debt')
+            ->whereRaw('p.created_at > s.created_at')
+            ->when($startDate && $endDate, fn($q) => $q->whereBetween('p.created_at', [$startDate, $endDate]))
+            ->sum('p.amount');
+
+        // Stock Flows in Period
+        $totalStockInUnits = (int) DB::table('pos_inventory_logs')
+            ->where('seller_id', $sellerId)
+            ->whereIn('type', ['STOCK_IN', 'TRANSFER_IN'])
+            ->when($startDate && $endDate, fn($q) => $q->whereBetween('created_at', [$startDate, $endDate]))
+            ->when($branchId, fn($q) => $q->where('branch_id', $branchId))
+            ->sum('quantity_change');
+
+        $totalStockOutUnits = (int) DB::table('pos_inventory_logs')
+            ->where('seller_id', $sellerId)
+            ->whereIn('type', ['SALE', 'TRANSFER_OUT', 'ADJUSTMENT'])
+            ->when($startDate && $endDate, fn($q) => $q->whereBetween('created_at', [$startDate, $endDate]))
+            ->when($branchId, fn($q) => $q->where('branch_id', $branchId))
+            ->sum(DB::raw('ABS(quantity_change)'));
+
+        $damagedUnits = (int) DB::table('pos_stock_adjustments')
+            ->where('seller_id', $sellerId)
+            ->whereIn('reason', ['DAMAGED', 'EXPIRED'])
+            ->when($startDate && $endDate, fn($q) => $q->whereBetween('created_at', [$startDate, $endDate]))
+            ->when($branchId, fn($q) => $q->where('branch_id', $branchId))
+            ->sum(DB::raw('ABS(quantity_change)'));
+
+        $returnedUnits = (int) DB::table('pos_sales_returns')
+            ->where('seller_id', $sellerId)
+            ->when($startDate && $endDate, fn($q) => $q->whereBetween('created_at', [$startDate, $endDate]))
+            ->when($branchId, fn($q) => $q->where('branch_id', $branchId))
+            ->sum('quantity');
+
+        $activeDebtorsCount = DB::table('pos_sales')
+            ->where('seller_id', $sellerId)
+            ->where('debt_amount', '>', 0)
+            ->whereNotIn('status', ['voided'])
+            ->distinct()
+            ->count('customer_phone');
+
+
         // ── Top 5 Best Selling Products ────────────────────────────────────
         $topProducts = DB::table('pos_sale_items as psi')
             ->join('pos_sales as ps', 'ps.id', '=', 'psi.pos_sale_id')
@@ -161,6 +218,41 @@ class DashboardController extends Controller
             ->where('debt_amount', '>', 0)
             ->sum('debt_amount');
 
+        // ── Cashier Shift till summary metrics ──────────────────────────────
+        $userRole = 'seller';
+        $mySalesCount = 0;
+        $mySalesAmount = 0;
+        $myCashAmount = 0;
+        $myPosAmount = 0;
+        $myTransferAmount = 0;
+        $myDebtAmount = 0;
+        $myRecentSales = collect();
+
+        if (Auth::guard('vendor_employee')->check()) {
+            $userRole = 'cashier';
+            $cashierId = Auth::guard('vendor_employee')->id();
+
+            $mySalesQuery = DB::table('pos_sales')
+                ->where('seller_id', $sellerId)
+                ->where('cashier_id', $cashierId)
+                ->where('status', 'completed');
+            $applyFilter($mySalesQuery);
+
+            $mySalesCount = (clone $mySalesQuery)->count();
+            $mySalesAmount = (float) (clone $mySalesQuery)->sum('total_amount');
+            $myCashAmount = (float) (clone $mySalesQuery)->sum('cash_amount');
+            $myPosAmount = (float) (clone $mySalesQuery)->sum('pos_card_amount');
+            $myTransferAmount = (float) (clone $mySalesQuery)->sum('transfer_amount');
+            $myDebtAmount = (float) (clone $mySalesQuery)->sum('debt_amount');
+
+            $myRecentSales = DB::table('pos_sales')
+                ->where('seller_id', $sellerId)
+                ->where('cashier_id', $cashierId)
+                ->orderByDesc('created_at')
+                ->limit(8)
+                ->get();
+        }
+
         return view('pos::dashboard.index', compact(
             'branches', 'selectedBranch', 'locationLabel',
             'datePreset', 'rangeLabel', 'fromDate', 'toDate',
@@ -169,7 +261,14 @@ class DashboardController extends Controller
             'totalCOGS', 'grossProfit', 'profitMarginPct',
             'totalReturnsValue', 'totalReturnsCount',
             'lowStockProducts', 'outOfStockProducts',
-            'topProducts', 'recentSales', 'totalOutstandingDebt'
+            'topProducts', 'recentSales', 'totalOutstandingDebt',
+            'userRole', 'mySalesCount', 'mySalesAmount', 'myCashAmount',
+            'myPosAmount', 'myTransferAmount', 'myDebtAmount', 'myRecentSales',
+            'totalStockValuation', 'totalPhysicalUnits', 'debtRecoveryCount',
+            'debtRecoveredInPeriod', 'totalStockInUnits', 'totalStockOutUnits',
+            'damagedUnits', 'returnedUnits', 'activeDebtorsCount'
         ));
+
+
     }
 }

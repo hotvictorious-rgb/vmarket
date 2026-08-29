@@ -63,8 +63,9 @@ class ProductController extends Controller
 
         $categories = Product::where('user_id', $sellerId)->distinct()->pluck('pos_category')->filter()->values();
         $branches   = DB::table('shops')->where('seller_id', $sellerId)->get();
+        $warehouses = $branches;
 
-        return view('pos::products.index', compact('products', 'categories', 'branches', 'search', 'category', 'status'));
+        return view('pos::products.index', compact('products', 'categories', 'branches', 'warehouses', 'search', 'category', 'status'));
     }
 
     public function create()
@@ -196,5 +197,210 @@ class ProductController extends Controller
         ]);
 
         return redirect()->route('pos.products.index')->with('success', "Product [{$product->name}] archived from POS catalog.");
+    }
+
+    /**
+     * Download CSV layout template for bulk POS product registration.
+     */
+    public function downloadCsvTemplate()
+    {
+        $headers = [
+            'Content-Type' => 'text/csv',
+            'Content-Disposition' => 'attachment; filename="vmarket_pos_products_template.csv"',
+        ];
+
+        return response()->stream(function () {
+            $handle = fopen('php://output', 'w');
+            fputcsv($handle, ['name', 'code', 'pos_category', 'unit_price', 'purchase_price', 'current_stock', 'pos_reorder_level']);
+            fputcsv($handle, ['Kings Vegetable Oil (25L)', 'KINGS-OIL-25L', 'Oils & Fats', '46500', '40000', '30', '5']);
+            fputcsv($handle, ['Peak Milk Powder (900g)', 'PEAK-MILK-900G', 'Provisions', '7200', '6500', '100', '15']);
+            fclose($handle);
+        }, 200, $headers);
+    }
+
+    /**
+     * Bulk import POS products from an uploaded CSV sheet.
+     */
+    public function importCsv(Request $request)
+    {
+        $sellerId = $this->resolveAuthSellerId();
+        $request->validate([
+            'csv_file' => 'required|file|mimes:csv,txt|max:5120',
+        ]);
+
+        $file = $request->file('csv_file');
+        $handle = fopen($file->getRealPath(), 'r');
+
+        $header = fgetcsv($handle);
+        if (!$header) {
+            return redirect()->route('pos.products.index')->with('error', 'Uploaded CSV file is empty or invalid.');
+        }
+
+        // Normalize header keys
+        $headerMap = [];
+        foreach ($header as $index => $col) {
+            $cleaned = strtolower(trim(str_replace([' ', '_', '-'], '', $col)));
+            $headerMap[$cleaned] = $index;
+        }
+
+        $importedCount = 0;
+        $updatedCount = 0;
+
+        try {
+            DB::transaction(function () use ($handle, $headerMap, $sellerId, &$importedCount, &$updatedCount) {
+                while (($row = fgetcsv($handle)) !== false) {
+                    if (empty(array_filter($row))) continue;
+
+                    $name = $row[$headerMap['name'] ?? -1] ?? null;
+                    if (!$name) continue;
+
+                    $code = $row[$headerMap['code'] ?? $headerMap['sku'] ?? -1] ?? null;
+                    if (!$code) {
+                        $code = 'SKU-' . strtoupper(Str::random(6));
+                    } else {
+                        $code = strtoupper(trim($code));
+                    }
+
+                    $category = $row[$headerMap['poscategory'] ?? $headerMap['category'] ?? -1] ?? 'General';
+                    $unitPrice = (float) ($row[$headerMap['unitprice'] ?? $headerMap['price'] ?? -1] ?? 0);
+                    $purchasePrice = (float) ($row[$headerMap['purchaseprice'] ?? -1] ?? 0);
+                    $stock = (int) ($row[$headerMap['currentstock'] ?? $headerMap['stock'] ?? $headerMap['quantity'] ?? -1] ?? 0);
+                    $minStock = (int) ($row[$headerMap['posreorderlevel'] ?? $headerMap['reorderlevel'] ?? $headerMap['minstock'] ?? -1] ?? 5);
+
+                    // Scope lookup strictly to current seller
+                    $product = Product::where('user_id', $sellerId)->where('code', $code)->first();
+
+                    if ($product) {
+                        DB::table('products')->where('id', $product->id)->update([
+                            'name'              => $name,
+                            'pos_category'      => $category,
+                            'pos_reorder_level' => $minStock,
+                            'unit_price'        => $unitPrice > 0 ? $unitPrice : $product->unit_price,
+                            'purchase_price'    => $purchasePrice > 0 ? $purchasePrice : $product->purchase_price,
+                            'current_stock'     => $stock > 0 ? $stock : $product->current_stock,
+                            'updated_at'        => now(),
+                        ]);
+
+                        DB::table('product_stocks')->where('product_id', $product->id)->update([
+                            'price'      => $unitPrice > 0 ? $unitPrice : $product->unit_price,
+                            'qty'        => $stock > 0 ? $stock : $product->current_stock,
+                            'updated_at' => now(),
+                        ]);
+
+                        $updatedCount++;
+                    } else {
+                        $slug = Str::slug($name) . '-' . Str::lower(Str::random(5));
+                        $productId = DB::table('products')->insertGetId([
+                            'user_id'          => $sellerId,
+                            'added_by'         => 'seller',
+                            'name'             => $name,
+                            'code'             => $code,
+                            'slug'             => $slug,
+                            'pos_barcode'      => $code,
+                            'pos_category'     => $category,
+                            'pos_reorder_level' => $minStock,
+                            'category_id'      => 1,
+                            'category_ids'     => json_encode([['id' => '1', 'position' => 1]]),
+                            'unit_price'       => $unitPrice,
+                            'purchase_price'   => $purchasePrice,
+                            'current_stock'    => $stock,
+                            'minimum_order_qty' => 1,
+                            'min_qty'          => 1,
+                            'unit'             => 'pc',
+                            'status'           => 0,
+                            'request_status'   => 0,
+                            'published'        => 0,
+                            'images'           => json_encode([]),
+                            'color_image'      => json_encode([]),
+                            'created_at'       => now(),
+                            'updated_at'       => now(),
+                        ]);
+
+                        DB::table('product_stocks')->insert([
+                            'product_id' => $productId,
+                            'sku'        => $code,
+                            'price'      => $unitPrice,
+                            'qty'        => $stock,
+                            'created_at' => now(),
+                            'updated_at' => now(),
+                        ]);
+
+                        $importedCount++;
+                    }
+                }
+            });
+        } catch (\Throwable $e) {
+            fclose($handle);
+            return redirect()->route('pos.products.index')->with('error', 'Error during CSV import: ' . $e->getMessage());
+        }
+
+        fclose($handle);
+        return redirect()->route('pos.products.index')->with('success', "✓ Bulk import complete! Added {$importedCount} new products, updated {$updatedCount} existing items.");
+    }
+
+    /**
+     * Export master POS product catalog to CSV.
+     */
+    public function exportCsv(Request $request)
+    {
+        $sellerId = $this->resolveAuthSellerId();
+        $fileName = "vmarket_pos_products_catalog_" . date('Y_m_d_His') . ".csv";
+
+        return response()->stream(function () use ($sellerId) {
+            $handle = fopen('php://output', 'w');
+            fputcsv($handle, ['SKU / Code', 'Product Name', 'Category', 'Selling Price (NGN)', 'Purchase Price (NGN)', 'Min Stock Alert', 'Current Stock', 'Asset Value (NGN)']);
+
+            $products = Product::where('user_id', $sellerId)->where('status', '!=', 2)->orderBy('name')->get();
+            foreach ($products as $p) {
+                fputcsv($handle, [
+                    $p->code,
+                    $p->name,
+                    $p->pos_category ?? 'General',
+                    $p->unit_price,
+                    $p->purchase_price,
+                    $p->pos_reorder_level ?? 5,
+                    $p->current_stock,
+                    $p->current_stock * (float) $p->unit_price
+                ]);
+            }
+            fclose($handle);
+        }, 200, [
+            'Content-Type' => 'text/csv',
+            'Content-Disposition' => "attachment; filename=\"{$fileName}\"",
+        ]);
+    }
+
+    /**
+     * Export master POS product catalog to JSON for AI analysis.
+     */
+    public function exportJson(Request $request)
+    {
+        $sellerId = $this->resolveAuthSellerId();
+        $fileName = "vmarket_pos_products_catalog_" . date('Y_m_d_His') . ".json";
+
+        $products = Product::where('user_id', $sellerId)->where('status', '!=', 2)->get()->map(function ($p) {
+            return [
+                'id' => $p->id,
+                'code' => $p->code,
+                'name' => $p->name,
+                'pos_category' => $p->pos_category ?? 'General',
+                'unit_price' => (float) $p->unit_price,
+                'purchase_price' => (float) $p->purchase_price,
+                'pos_reorder_level' => (int) ($p->pos_reorder_level ?? 5),
+                'current_stock' => (int) $p->current_stock,
+                'total_asset_value' => $p->current_stock * (float) $p->unit_price,
+            ];
+        });
+
+        return response()->json([
+            'metadata' => [
+                'report' => 'Vmarket Products & Price Catalog',
+                'generated_at' => now()->toIso8601String(),
+                'total_skus' => $products->count(),
+            ],
+            'products' => $products,
+        ], 200, [
+            'Content-Disposition' => "attachment; filename=\"{$fileName}\"",
+        ], JSON_PRETTY_PRINT);
     }
 }
