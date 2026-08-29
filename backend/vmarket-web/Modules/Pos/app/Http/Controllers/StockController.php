@@ -256,6 +256,51 @@ class StockController extends Controller
     }
 
     /**
+     * Printable Transfer Waybill / Delivery Note.
+     */
+    public function waybill($id)
+    {
+        $sellerId = $this->resolveAuthSellerId();
+        
+        // [AI] Tenant Isolation: ensure the transfer waybill belongs to this seller
+        $transfer = DB::table('pos_transfers')
+            ->where('id', $id)
+            ->where('seller_id', $sellerId)
+            ->first();
+
+        abort_if(!$transfer, 404, 'Transfer waybill not found.');
+
+        // Load relations manually
+        $transfer->source = DB::table('shops')->where('id', $transfer->origin_branch_id)->first();
+        $transfer->destination = DB::table('shops')->where('id', $transfer->destination_branch_id)->first();
+        
+        $transfer->transfer_no = $transfer->waybill_number;
+        $transfer->dispatched_by = $transfer->dispatched_by_id 
+            ? (DB::table('vendor_employees')->where('id', $transfer->dispatched_by_id)->value('name') ?? 'Staff') 
+            : 'Store Admin';
+        $transfer->carrier_name = $transfer->driver_name ?? 'N/A';
+
+        $transfer->items = DB::table('pos_transfer_items')
+            ->where('transfer_id', $transfer->id)
+            ->get();
+
+        foreach ($transfer->items as $item) {
+            // [AI] Tenant Isolation: product must belong to the active seller
+            $product = Product::where('id', $item->product_id)->where('user_id', $sellerId)->first();
+            $item->product_name = $product?->name ?? 'Unknown Product';
+            $item->product_code = $product?->code ?? '';
+            $item->dispatched_qty = $item->dispatched_quantity;
+            $item->received_qty = $item->received_quantity;
+            $item->discrepancy_qty = $item->variance_quantity;
+        }
+
+        $businessName = getWebConfig('company_name') ?? 'Victorious MARKET';
+        $systemSettings = (object) ['businessName' => $businessName];
+
+        return view('pos::stock.waybill', compact('transfer', 'systemSettings'));
+    }
+
+    /**
      * Stock adjustments list.
      */
     public function adjustments(Request $request)

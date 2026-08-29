@@ -219,7 +219,7 @@
                 @endif
                 <span class="text-muted">|</span>
             @endif
-            <form action="{{ route('seller.auth.logout') }}" method="POST" class="d-inline">
+            <form action="{{ route('vendor.auth.logout') }}" method="POST" class="d-inline">
                 @csrf
                 <button type="submit" class="btn btn-sm btn-outline-danger" style="font-size: 0.75rem;">
                     <i class="fas fa-sign-out-alt"></i> Logout

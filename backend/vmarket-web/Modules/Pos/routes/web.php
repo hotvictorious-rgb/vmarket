@@ -59,6 +59,7 @@ Route::prefix('pos')->name('pos.')->middleware(['web', 'auth:seller'])->group(fu
         Route::post('/in', [StockController::class, 'stockIn'])->name('in');
         Route::get('/transfers', [StockController::class, 'transfers'])->name('transfers');
         Route::post('/transfers', [StockController::class, 'createTransfer'])->name('transfers.create');
+        Route::get('/transfers/{id}/waybill', [StockController::class, 'waybill'])->name('waybill');
         Route::get('/adjustments', [StockController::class, 'adjustments'])->name('adjustments');
         Route::post('/adjustments', [StockController::class, 'createAdjustment'])->name('adjustments.create');
     });
@@ -84,6 +85,7 @@ Route::prefix('pos')->name('pos.')->middleware(['web', 'auth:seller'])->group(fu
         Route::get('/', [ReportController::class, 'index'])->name('index');
         Route::get('/profit-loss', [ReportController::class, 'profitLoss'])->name('profit-loss');
         Route::get('/top-products', [ReportController::class, 'topProducts'])->name('top-products');
-        Route::get('/export', [ReportController::class, 'export'])->name('export');
+        Route::get('/export/{type}', [ReportController::class, 'exportCsv'])->name('export');
+        Route::get('/export-json/{type}', [ReportController::class, 'exportJson'])->name('export.json');
     });
 });

@@ -466,7 +466,7 @@
                             </td>
                             <td>{{ $t->dispatched_by }}</td>
                             <td>
-                                <a href="{{ route('stock.waybill', $t->id) }}" class="btn btn-secondary" style="padding: 0.25rem 0.6rem; font-size: 0.75rem;" target="_blank">
+                                <a href="{{ route('pos.stock.waybill', $t->id) }}" class="btn btn-secondary" style="padding: 0.25rem 0.6rem; font-size: 0.75rem;" target="_blank">
                                     🖨️ Waybill
                                 </a>
                             </td>

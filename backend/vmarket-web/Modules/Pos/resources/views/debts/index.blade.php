@@ -82,7 +82,7 @@
             </p>
         </div>
         <div style="display: flex; gap: 0.5rem;">
-            <a href="{{ route('transactions.index', ['tab' => 'debts']) }}" class="btn btn-secondary">
+            <a href="{{ route('pos.transactions.index', ['tab' => 'debts']) }}" class="btn btn-secondary">
                 📜 Full Debts Ledger
             </a>
             <a href="{{ route('pos.index') }}" class="btn btn-primary">

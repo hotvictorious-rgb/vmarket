@@ -138,7 +138,7 @@
             <a href="{{ route('pos.stock.transfers') }}" class="btn btn-secondary">
                 🚚 Shop Transfers
             </a>
-            <a href="{{ route('transactions.index') }}" class="btn btn-secondary">
+            <a href="{{ route('pos.transactions.index') }}" class="btn btn-secondary">
                 📜 Ledgers Hub
             </a>
         </div>
@@ -207,7 +207,7 @@
                 Monitoring real-time physical counts, supplier deliveries, and multi-branch inventory balances.
             </p>
         </div>
-        <a href="{{ route('reports.export.csv', 'inventory') }}" class="btn btn-secondary" style="font-size: 0.82rem; color: #facc15; border-color: rgba(234, 179, 8, 0.4);">
+        <a href="{{ route('pos.reports.export', 'inventory') }}" class="btn btn-secondary" style="font-size: 0.82rem; color: #facc15; border-color: rgba(234, 179, 8, 0.4);">
             📥 Export Stock Valuation CSV
         </a>
     </div>
