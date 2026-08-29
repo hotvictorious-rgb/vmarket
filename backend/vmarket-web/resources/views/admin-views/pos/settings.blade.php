@@ -1,4 +1,4 @@
-@extends('layouts.back-end.app')
+@extends('layouts.admin.app')
 
 @section('title', translate('POS_Configuration_&_Pricing'))
 

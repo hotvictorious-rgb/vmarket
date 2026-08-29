@@ -258,6 +258,11 @@ class Order extends Model
         return $this->belongsTo(DeliveryMan::class, 'delivery_man_id');
     }
 
+    public function delivery_man(): BelongsTo
+    {
+        return $this->belongsTo(DeliveryMan::class, 'delivery_man_id');
+    }
+
     /* delivery_man_review -> deliveryManReview */
     public function deliveryManReview(): HasOne
     {

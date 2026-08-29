@@ -384,6 +384,13 @@ Route::group(['middleware' => ['maintenance_mode', 'actch:admin_panel']], functi
                 });
             });
 
+            /* [AI] POS Multi-Branch SaaS Subscription */
+            Route::group(['prefix' => 'subscription', 'as' => 'subscription.'], function () {
+                Route::get('', [\App\Http\Controllers\Vendor\Subscription\POSSubscriptionController::class, 'index'])->name('index');
+                Route::post('subscribe', [\App\Http\Controllers\Vendor\Subscription\POSSubscriptionController::class, 'subscribe'])->name('subscribe');
+                Route::post('apply-marketplace', [\App\Http\Controllers\Vendor\Subscription\POSSubscriptionController::class, 'applyMarketplace'])->name('apply-marketplace');
+            });
+
             /* [AI] In-Shop Staff-Attributed Handover Protocol */
             Route::post('orders/verify-pickup-otp', [\App\Http\Controllers\Vendor\Order\InShopHandoverController::class, 'verifyPickupOtp'])->name('orders.verify-pickup-otp');
         });

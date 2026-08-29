@@ -1,4 +1,4 @@
-@extends('layouts.back-end.app')
+@extends('layouts.admin.app')
 
 @section('title', translate('Marketplace_Vendor_Applications'))
 

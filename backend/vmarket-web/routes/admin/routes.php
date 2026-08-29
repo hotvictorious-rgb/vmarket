@@ -458,6 +458,13 @@ Route::group(['prefix' => 'admin', 'as' => 'admin.', 'middleware' => ['admin', '
         });
     });
 
+    /* [AI] Omnichannel POS & SaaS Master Control Deck */
+    Route::group(['prefix' => 'pos-management', 'as' => 'pos-management.'], function () {
+        Route::get('dashboard', [\App\Http\Controllers\Admin\POS\AdminPOSDashboardController::class, 'index'])->name('dashboard');
+        Route::get('settings', [\App\Http\Controllers\Admin\POS\POSSettingsController::class, 'index'])->name('settings');
+        Route::post('settings/update', [\App\Http\Controllers\Admin\POS\POSSettingsController::class, 'update'])->name('settings.update');
+    });
+
 
     Route::group(['prefix' => 'employee', 'as' => 'employee.', 'middleware' => ['module:user_section']], function () {
         Route::controller(EmployeeController::class)->group(function () {
