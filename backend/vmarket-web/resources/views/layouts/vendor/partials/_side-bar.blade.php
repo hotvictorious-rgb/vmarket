@@ -494,54 +494,6 @@
                                 </a>
                             </li>
                         @endif
-                        @php( $shippingMethod = getWebConfig('shipping_method'))
-                        @if($shippingMethod=='sellerwise_shipping')
-                            <li class="nav-item {{ Request::is('vendor/delivery-man*')?'scroll-here' : ''}}">
-                                <small class="nav-subtitle">{{ translate('delivery_man_management') }}</small>
-                                <small class="tio-more-horizontal nav-subtitle-replacer"></small>
-                            </li>
-                            <li class="navbar-vertical-aside-has-menu {{ Request::is('vendor/delivery-man*')?'active' : ''}}">
-                                <a class="js-navbar-vertical-aside-menu-link nav-link nav-link-toggle"
-                                   href="javascript:">
-                                    <i class="tio-user nav-icon"></i>
-                                    <span class="navbar-vertical-aside-mini-mode-hidden-elements text-truncate">
-                                    {{ translate('delivery-Man') }}
-                                </span>
-                                </a>
-                                <ul class="js-navbar-vertical-aside-submenu nav nav-sub"
-                                    style="display: {{ Request::is('vendor/delivery-man*')?'block' : 'none'}}">
-                                    <li class="nav-item {{ Request::is('vendor/delivery-man/index')?'active' : ''}}">
-                                        <a class="nav-link " href="{{ route('vendor.delivery-man.index') }}">
-                                            <span class="tio-circle nav-indicator-icon"></span>
-                                            <span class="text-truncate text-capitalize">{{ translate('add_new') }}</span>
-                                        </a>
-                                    </li>
-                                    <li class="nav-item {{ Request::is('vendor/delivery-man/list') || Request::is('vendor/delivery-man/update')  ||Request::is('vendor/delivery-man/rating/*') ||  Request::is('vendor/delivery-man/wallet*') ? 'active' : ''}}">
-                                        <a class="nav-link" href="{{ route('vendor.delivery-man.list') }}">
-                                            <span class="tio-circle nav-indicator-icon"></span>
-                                            <span class="text-truncate">{{ translate('list') }}</span>
-                                        </a>
-                                    </li>
-                                    <li class="nav-item {{ Request::is('vendor/delivery-man/withdraw/*')?'active' : ''}}">
-                                        <a class="nav-link " href="{{ route('vendor.delivery-man.withdraw.index') }}"
-                                           title="{{ translate('withdraws') }}">
-                                            <span class="tio-circle nav-indicator-icon"></span>
-                                            <span class="text-truncate">{{ translate('withdraws') }}</span>
-                                        </a>
-                                    </li>
-
-                                    <li class="nav-item {{ Request::is('vendor/delivery-man/emergency-contact/*') ? 'active' : ''}}">
-                                        <a class="nav-link "
-                                           href="{{ route('vendor.delivery-man.emergency-contact.index') }}"
-                                           title="{{ translate('withdraws') }}">
-                                            <span class="tio-circle nav-indicator-icon"></span>
-                                            <span
-                                                class="text-truncate text-capitalize">{{ translate('emergency_contact') }}</span>
-                                        </a>
-                                    </li>
-                                </ul>
-                            </li>
-                        @endif
 
                         <!-- Shop Employee Management -->
                         @if(!session('is_vendor_employee'))

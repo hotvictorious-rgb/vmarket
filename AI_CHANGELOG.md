@@ -7,6 +7,15 @@ Always append your completed tasks here in chronological order at the top. Forma
 `### [YYYY-MM-DD HH:MM UTC] <Feature / Fix Title> [<Component Scope>]`
 Include the specific app/component modified and bullet points detailing the exact technical changes.
 
+### [2026-08-29 13:30 UTC] Legacy Delivery Tabs Removal & Rider Mobile App Parity [backend] [delivery] [mobile-api]
+
+* **Component:** `resources/views/layouts/admin/partials/_side-bar.blade.php`, `resources/views/layouts/vendor/partials/_side-bar.blade.php`, `test_rider_app_login_and_delivery_module_parity.php`
+* **Action:**
+  - **Admin Navigation Cleanup:** Removed fragmented legacy delivery submenus (`admin/delivery-man/*`, `admin/dispatch-portal`, `admin/delivery-hubs`) from Admin sidebar; replaced with direct, high-visibility link to **Delivery & Fleet Logistics Hub** (`route('delivery.dashboard')`).
+  - **Vendor Navigation Cleanup:** Removed isolated legacy vendor delivery menus from Vendor sidebar, routing all merchant delivery coordination through centralized physical hubs.
+  - **Rider Mobile App Login & API Parity:** Verified that `api/v2/delivery-man/auth/login` seamlessly authenticates riders in the unified database (`delivery_men`), issues 50-char bearer tokens, and correctly interacts with `Modules/Delivery` hub structures and wallet ledgers.
+* **Verification:** Executed `test_rider_app_login_and_delivery_module_parity.php` with **5/5 tests passing** (0 failures) ✅.
+
 ### [2026-08-29 13:00 UTC] Enterprise Delivery & Logistics Hub Module Implementation [backend] [delivery] [database]
 
 * **Component:** `Modules/Delivery/`, `database/migrations/2026_08_29_110000_create_delivery_module_tables.php`, `backend/vmarket-web/modules_statuses.json`

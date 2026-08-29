@@ -951,63 +951,19 @@
                     </ul>
                 </li>
 
-                <li class="{{ Request::is('admin/delivery-man*') ? 'sub-menu-opened' : '' }}">
-                    <a class="nav-link nav-link-toggle text-capitalize {{ Request::is('admin/delivery-man*') ? 'active' : '' }}"
-                       href="javascript:"
-                       title="{{ translate('delivery_men') }}">
-                        <i class="fi fi-sr-person-carry-box"></i>
+                <li class="{{ Request::is('delivery*') ? 'active' : '' }}">
+                    <a class="nav-link {{ Request::is('delivery*') ? 'active' : '' }}"
+                       href="{{ route('delivery.dashboard') }}"
+                       title="{{ translate('delivery_and_logistics') }}">
+                        <i class="fi fi-sr-truck-side text-warning"></i>
                         <span
                             class="aside-mini-hidden-element flex-grow-1 d-flex justify-content-between align-items-center">
-                            <span class="text-truncate max-w-180">
-                                {{ translate('delivery_men') }}
+                            <span class="text-truncate max-w-180 font-weight-bold">
+                                {{ translate('Delivery & Logistics') }}
                             </span>
-                            <i class="fi fi-sr-angle-down"></i>
+                            <span class="badge bg-warning text-dark font-weight-bold fs-10 px-2 py-1 rounded">HUB</span>
                         </span>
                     </a>
-                    <ul class="aside-submenu navbar-nav">
-                        <li class="nav-item px-3 py-2 fw-semibold text-dark bg-section2 aside-mini-show-element">{{ translate('delivery_men') }}</li>
-                        <li class="nav-item">
-                            <a class="nav-link {{ Request::is('admin/delivery-man/add') ? 'active' : '' }}"
-                               href="{{ route('admin.delivery-man.add') }}" title="{{ translate('add_new') }}">
-                                <span class="text-truncate">{{ translate('add_new') }}</span>
-                            </a>
-                        </li>
-                        <li class="nav-item">
-                            <a class="nav-link {{ Request::is('admin/delivery-man/list') || Request::is('admin/delivery-man/update*')  || Request::is('admin/delivery-man/order-history-log*') || Request::is('admin/delivery-man/order-wise-earning*') ? 'active' : '' }}"
-                               href="{{ route('admin.delivery-man.list') }}"
-                               title="{{ translate('list') }}">
-                                <span class="text-truncate">{{ translate('list') }}</span>
-                            </a>
-                        </li>
-                        <li class="nav-item">
-                            <a class="nav-link {{ Request::is('admin/delivery-man/withdraw-list') || Request::is('admin/delivery-man/withdraw-view*') ? 'active' : '' }}"
-                               href="{{ route('admin.delivery-man.withdraw-list') }}"
-                               title="{{ translate('withdraws') }}">
-                                <span class="text-truncate">{{ translate('withdraws') }}</span>
-                            </a>
-                        </li>
-                        <li class="nav-item">
-                            <a class="nav-link {{ Request::is('admin/dispatch-portal*') ? 'active' : '' }}"
-                               href="{{ route('admin.dispatch-portal.index') }}"
-                               title="{{ translate('Dispatch Portal') }}">
-                                <span class="text-truncate font-weight-bold text-primary"><i class="tio-flight-takeoff mr-1"></i> {{ translate('Dispatch Portal') }}</span>
-                            </a>
-                        </li>
-                        <li class="nav-item">
-                            <a class="nav-link {{ Request::is('admin/delivery-hubs*') ? 'active' : '' }}"
-                               href="{{ route('admin.delivery-hubs.index') }}"
-                               title="{{ translate('Hubs & Landmarks') }}">
-                                <span class="text-truncate"><i class="tio-map mr-1"></i> {{ translate('Hubs & Landmarks') }}</span>
-                            </a>
-                        </li>
-                        <li class="nav-item">
-                            <a class="nav-link  {{ Request::is('admin/delivery-man/emergency-contact') ? 'active' : '' }}"
-                               href="{{ route('admin.delivery-man.emergency-contact.index') }}"
-                               title="{{ translate('emergency_contact') }}">
-                                <span class="text-truncate">{{ translate('Emergency_Contact') }}</span>
-                            </a>
-                        </li>
-                    </ul>
                 </li>
 
                 @if(auth('admin')->user()->admin_role_id==1)
