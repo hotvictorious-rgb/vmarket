@@ -327,8 +327,7 @@ class Helpers
     public static function getDefaultPaymentGateways(): array
     {
         return [
-            'ssl_commerz', 'paypal', 'stripe', 'razor_pay', 'paystack', 'senang_pay', 'paymob_accept',
-            'flutterwave', 'paytm', 'paytabs', 'liqpay', 'mercadopago', 'bkash'
+            'paystack',
         ];
     }
 

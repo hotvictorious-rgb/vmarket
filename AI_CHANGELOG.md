@@ -7,6 +7,16 @@ Always append your completed tasks here in chronological order at the top. Forma
 `### [YYYY-MM-DD HH:MM UTC] <Feature / Fix Title> [<Component Scope>]`
 Include the specific app/component modified and bullet points detailing the exact technical changes.
 
+### [2026-08-28 22:20 UTC] Paystack Single-Gateway Standardization & Clean Removal of Other Gateways [backend] [payment] [cleanup]
+* **Component:** Marketplace Backend (`backend/vmarket-web/app/Http/Controllers/Payment_Methods`, `routes/web/routes.php`)
+* **Action:**
+  - Standardized the digital payment processing engine exclusively on **Paystack** (Card, Bank Transfer, USSD, Delivery callbacks).
+  - Updated `Helpers::getDefaultPaymentGateways()` in `app/Utils/Helpers.php` to return only `['paystack']`.
+  - Cleaned up `routes/web/routes.php` by removing all 12 unused gateway route blocks (Stripe, Razorpay, Paypal, SenangPay, Paytm, Flutterwave, Bkash, Liqpay, MercadoPago, Paymob, Paytabs, SSLCommerz).
+  - Deleted 12 unused gateway controller files from `app/Http/Controllers/Payment_Methods/`.
+  - Verified 1,510 compiled routes via `php artisan route:list`.
+  - Passed both verification test suites: `test_all_login_points_proof.php` (10/10) and `test_all_ecosystem_apis_and_webs_proof.php` (41/41).
+
 ### [2026-08-28 22:05 UTC] Aster Theme Forensic Scan & Performance Optimizations [backend] [storefront] [perf]
 * **Component:** Marketplace Backend (`resources/themes/theme_aster`)
 * **Action:**
