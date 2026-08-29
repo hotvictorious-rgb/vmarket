@@ -57,7 +57,7 @@
         }
 
         .announcement-color {
-            background-color: {{ (is_array($web_config['announcement'] ?? null) ? ($web_config['announcement']['color'] ?? '#5e2e85') : '#5e2e85') }};
+            background-color: {{ (is_array($web_config['announcement'] ?? null) ? ($web_config['announcement']['color'] ?? '#5E17EB') : '#5E17EB') }};
             color: {{ (is_array($web_config['announcement'] ?? null) ? ($web_config['announcement']['text_color'] ?? '#ffffff') : '#ffffff') }};
         }
         .btn-outline-success {
