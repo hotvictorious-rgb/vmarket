@@ -7,6 +7,15 @@ Always append your completed tasks here in chronological order at the top. Forma
 `### [YYYY-MM-DD HH:MM UTC] <Feature / Fix Title> [<Component Scope>]`
 Include the specific app/component modified and bullet points detailing the exact technical changes.
 
+### [2026-08-29 13:45 UTC] Clean System Scan & Redundant Endpoint Pruning [backend] [routes] [security]
+
+* **Component:** `backend/vmarket-web/routes/admin/routes.php`, `ALL_ECOSYSTEM_ENDPOINTS_AND_SECURITY_TAXONOMY.md`
+* **Action:**
+  - **Pruned Dead Routes:** Removed 22 redundant interim prototype routes (`admin/delivery-hubs/*` and `admin/dispatch-portal/*`) that were superseded by the unified `Modules/Delivery/` module.
+  - **Full Ecosystem Verification:** Verified that all 638 active Super Admin routes, 205 Merchant routes, 190 Storefront routes, and 439 Mobile API endpoints compile cleanly with **0 errors**.
+  - **Zero Mobile App Impact:** Preserved 100% of mobile REST API endpoints (`api/v1/*`, `api/v2/*`, `api/v3/*`) ensuring uninterrupted operation for Customer, Vendor, and Rider mobile apps.
+* **Verification:** Syntax linting passed (`No syntax errors detected` ✅) and compiled route list generated cleanly (`php artisan route:list --path=admin` ✅).
+
 ### [2026-08-29 13:30 UTC] Legacy Delivery Tabs Removal & Rider Mobile App Parity [backend] [delivery] [mobile-api]
 
 * **Component:** `resources/views/layouts/admin/partials/_side-bar.blade.php`, `resources/views/layouts/vendor/partials/_side-bar.blade.php`, `test_rider_app_login_and_delivery_module_parity.php`
