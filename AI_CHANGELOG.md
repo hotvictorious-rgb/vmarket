@@ -7,6 +7,15 @@ Always append your completed tasks here in chronological order at the top. Forma
 `### [YYYY-MM-DD HH:MM UTC] <Feature / Fix Title> [<Component Scope>]`
 Include the specific app/component modified and bullet points detailing the exact technical changes.
 
+### [2026-08-28 22:35 UTC] Codification of Official Brand Color System in AI Governance [ai-governance] [branding]
+* **Component:** Repository AI Governance (`.agents/AGENTS.md`, `AI_ENGINEERING_RULES.md`)
+* **Action:**
+  - Formally codified Victorious MARKET's authoritative brand color system as a non-negotiable invariant for all AI agents:
+    - **Primary Brand Purple:** `#5E17EB` (Vibrant Royal Purple — Main actions, headers, primary buttons, active tabs, wordmarks).
+    - **Secondary Brand Gold:** `#FFD700` (Electric Gold — Badges, star ratings, promo pills, VIP markers, highlights).
+    - **Base Clean White:** `#FFFFFF` (Pure White — Surface cards, typography, modal containers, high contrast).
+  - Explicitly prohibited all AIs from substituting generic purples or yellows, enforcing exact hex codes across Blade, CSS/SCSS, React/Blade POS registers, and Flutter themes.
+
 ### [2026-08-28 22:30 UTC] Dynamic Ecosystem URLs in In-Store POS Auth & Resolution of Connection Refused [pos] [fix]
 * **Component:** In-Store POS Submodule (`hysam/resources/views/auth/login.blade.php`, `hysam/resources/views/layouts/app.blade.php`, `hysam/app/Http/Controllers/AuthController.php`, `hysam/.env`)
 * **Action:**

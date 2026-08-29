@@ -49,8 +49,14 @@ Any time you make a functional change, fix a bug, or complete a feature, you **M
 - **Atomic Payment Row Lock Directive:** Every payment gateway controller (Paystack, Flutterwave, Stripe, PayPal, Razorpay, bKash, Paytm, etc.) MUST enforce an **Atomic Row-Level Lock** (`where('is_paid', 0)->update(...)`) on `payment_requests`.
 - **Double Execution Guard:** Before invoking `$data->success_hook` (`digital_payment_success`), the code MUST check `$affected > 0`. Never call `success_hook` without checking affected rows, to prevent concurrent browser callbacks and background IPN/webhooks from generating duplicate orders or duplicate wallet credits.
 
-## 4. UI / UX Standards
-- The platform uses a specific color scheme (Purple & Gold). Use the predefined theme colors.
+## 4. UI / UX Standards & Official Brand Color System 🎨
+- **Official Brand Palette (Strict Invariant for ALL AIs):**
+  - **Primary Brand Purple:** `#5E17EB` (Vibrant Royal Purple — Used for main navigation, primary action buttons, active tab indicators, brand headers, and primary checkout buttons).
+  - **Secondary Brand Gold:** `#FFD700` (Electric Gold — Used for promotional badges, star ratings, VIP/Verified badges, discount pills, and high-impact highlight accents).
+  - **Base Clean White:** `#FFFFFF` (Pure White — Used for clean card surfaces, readable high-contrast typography, inverted icons, and modal container backgrounds).
+- **Strict Invariant for All AI Agents:**
+  - Every AI modifying Blade templates, CSS/SCSS stylesheets, POS UI registers, or Flutter Dart theme files MUST strictly use these exact hex codes: `#5E17EB`, `#FFD700`, and `#FFFFFF`.
+  - **Prohibition of Generic Colors:** Never substitute with arbitrary generic purples (e.g. `#800080`, `#9333ea`) or generic yellows (e.g. `#ffff00`, `#eab308`). Always apply `#5E17EB` and `#FFD700` with high visual polish, balanced contrast ratios, and elegant micro-interactions.
 - Maintain smooth 60fps performance on mobile apps. Use `cached_network_image` for all network images.
 - **Multi-Theme Home Headers:** Any modification to the Customer App home screen header (app bar, brand logo, wordmark, call-to-order pill, or notifications badge) MUST be implemented identically across all 3 theme screens: `lib/features/home/screens/home_screens.dart` (Default), `lib/features/home/screens/aster_theme_home_screen.dart` (Aster), and `lib/features/home/screens/fashion_theme_home_screen.dart` (Fashion) to prevent visual discrepancies when the active theme is toggled from the admin panel.
 

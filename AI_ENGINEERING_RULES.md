@@ -193,6 +193,18 @@ Every user, store, worker, rider, and customer in Victorious MARKET must be isol
 * **Customer Micro-Isolation:** Customer data, addresses, orders, and wallet funds are isolated strictly to `customer_id`.
 * **Total UI Personalization:** Every button, header, return action, and badge is personalized strictly to the user's role and verification status.
 
+---
+
+## 15. Official Brand Palette & Design System Invariant 🎨
+
+All AI coding agents must strictly adhere to Victorious MARKET's official brand identity and color tokens across all web views, stylesheets, POS terminals, and Flutter mobile applications:
+
+* **Primary Brand Purple (`#5E17EB`):** Main branding, topbars, primary action buttons, active navigation states, call-to-action buttons, and brand wordmarks.
+* **Secondary Brand Gold (`#FFD700`):** Accent highlights, star ratings, promotional badges, verified vendor tags, discount pills, and VIP markers.
+* **Base Clean White (`#FFFFFF`):** High-contrast surface cards, typography, modal containers, and crisp dark-mode inverted text.
+
+**Strict Prohibition:** AI agents must never inject arbitrary generic colors (e.g. standard `#800080`, `#9333ea`, `#ffff00`, or `#eab308`). Always use `#5E17EB`, `#FFD700`, and `#FFFFFF` with elegant visual hierarchy, balanced contrast, and modern aesthetics.
+
 
 
 
