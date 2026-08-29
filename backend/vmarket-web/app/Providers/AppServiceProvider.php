@@ -106,10 +106,10 @@ class AppServiceProvider extends ServiceProvider
 
                     $systemColors = getWebConfig('colors');
                     $web_config = [
-                        'primary_color' => (is_array($systemColors) ? ($systemColors['primary'] ?? '#5e2e85') : '#5e2e85'),
-                        'secondary_color' => (is_array($systemColors) ? ($systemColors['secondary'] ?? '#f1c40f') : '#f1c40f'),
-                        'primary_color_light' => (is_array($systemColors) ? ($systemColors['primary_light'] ?? '#7a42a7') : '#7a42a7'),
-                        'panel_sidebar_color' => (is_array($systemColors) ? ($systemColors['panel-sidebar'] ?? '#5e2e85') : '#5e2e85'),
+                        'primary_color' => (is_array($systemColors) ? ($systemColors['primary'] ?? '#5E17EB') : '#5E17EB'),
+                        'secondary_color' => (is_array($systemColors) ? ($systemColors['secondary'] ?? '#FFD700') : '#FFD700'),
+                        'primary_color_light' => (is_array($systemColors) ? ($systemColors['primary_light'] ?? '#7B39FD') : '#7B39FD'),
+                        'panel_sidebar_color' => (is_array($systemColors) ? ($systemColors['panel-sidebar'] ?? '#5E17EB') : '#5E17EB'),
                         'name' => Helpers::get_settings($web, 'company_name'),
                         'company_name' => getWebConfig(name: 'company_name'),
                         'phone' => getWebConfig(name: 'company_phone'),
