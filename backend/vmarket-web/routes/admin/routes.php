@@ -105,7 +105,11 @@ use App\Http\Controllers\Admin\Notification\PushNotificationSettingsController;
 
 
 Route::get('search', function () {
-    return view('layouts.admin.partials._advance-search-result');
+    return view('layouts.admin.partials._advance-search-result', [
+        'recent' => false,
+        'result' => [],
+        'keyword' => ''
+    ]);
 });
 Route::controller(SharedController::class)->group(function () {
     Route::post('change-language', 'changeLanguage')->name('change-language');
@@ -128,8 +132,7 @@ Route::group(['prefix' => 'login'], function () {
 });
 
 Route::group(['prefix' => 'admin', 'as' => 'admin.', 'middleware' => ['admin', 'actch:admin_panel']], function () {
-    // [AI] 1-Click POS SSO Redirect
-    Route::get('pos-sso', [DashboardController::class, 'posSsoRedirect'])->name('pos.sso');
+
 
     // [AI] WhatsApp Enterprise CRM, Campaigns & AI Brain Routes
     Route::group(['prefix' => 'whatsapp-crm', 'as' => 'whatsapp-crm.'], function () {

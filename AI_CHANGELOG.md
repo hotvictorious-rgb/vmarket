@@ -7,6 +7,17 @@ Always append your completed tasks here in chronological order at the top. Forma
 `### [YYYY-MM-DD HH:MM UTC] <Feature / Fix Title> [<Component Scope>]`
 Include the specific app/component modified and bullet points detailing the exact technical changes.
 
+### [2026-08-29 08:58 UTC] POS SSO Redirect Bridge Removal & Navigation Integration [backend] [pos]
+
+* **Component:** `routes/web/routes.php`, `routes/vendor/routes.php`, `routes/admin/routes.php`, `app/Http/Controllers/Vendor/POS/POSController.php`, `app/Http/Controllers/Admin/DashboardController.php`, `app/Http/Controllers/Vendor/Auth/RegisterController.php`, `resources/views/layouts/vendor/partials/_side-bar.blade.php`, `resources/views/layouts/vendor/partials/_header.blade.php`, `resources/views/layouts/admin/partials/_header.blade.php`
+* **Action:**
+  - **Removed SSO Return Route:** Deleted the `sso-return` receiver endpoint from `routes/web/routes.php` as the POS runs in a unified domain context.
+  - **Removed Vendor/Admin POS SSO Routes:** Deleted the `pos-sso` redirect routes from `routes/vendor/routes.php` and `routes/admin/routes.php`.
+  - **Cleaned Controller Actions:** Deleted the `ssoRedirect()` action in `POSController.php` and `posSsoRedirect()` action in `DashboardController.php`.
+  - **Updated Vendor Registration Redirect:** Updated `RegisterController.php` to redirect newly registered merchants directly to the standard merchant login page (`vendor.auth.login`) rather than generating legacy SSO URLs.
+  - **Updated Layout Navigation:** Changed POS links in the Vendor Panel sidebar and header to route directly to `route('pos.dashboard')`. Removed the POS Terminal button from the Admin Panel header as POS requires a seller context (`auth:seller` guard).
+* **Verification:** Verified syntax checks passed (`No syntax errors detected`) and route list successfully compiles (`php artisan route:list --path=pos` ✅).
+
 ### [2026-08-29 08:32 UTC] Hysam In-Store POS → Unified Vmarket POS Module (Single DB Architecture) [backend] [pos]
 
 * **Component:** `Modules/Pos/` (new Laravel module), `config/auth.php`, `Modules/Pos/database/migrations/`, `AI_CHANGELOG.md`

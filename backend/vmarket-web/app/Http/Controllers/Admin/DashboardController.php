@@ -312,32 +312,5 @@ class DashboardController extends BaseController
         ]);
     }
 
-    /**
-     * [AI] 1-Click Seamless SSO Redirect to Vmarket POS Terminal for Super Admin (Dynamic Token Exchange)
-     */
-    public function posSsoRedirect(): RedirectResponse
-    {
-        $admin = auth('admin')->user();
-        if (!$admin) {
-            return redirect()->route('admin.auth.login');
-        }
 
-        $email = strtolower(trim($admin->email));
-        $role = 'admin';
-
-        $token = \Illuminate\Support\Str::random(64);
-        \Illuminate\Support\Facades\DB::table('sso_tokens')->insert([
-            'token' => $token,
-            'email' => $email,
-            'role' => $role,
-            'expires_at' => gmdate('Y-m-d H:i:s', time() + 300),
-            'created_at' => gmdate('Y-m-d H:i:s'),
-            'updated_at' => gmdate('Y-m-d H:i:s'),
-        ]);
-
-        $posUrl = rtrim(env('VMARKET_POS_URL', 'http://127.0.0.1:8001'), '/');
-        $ssoUrl = "{$posUrl}/sso-login?token={$token}";
-
-        return redirect()->away($ssoUrl);
-    }
 }

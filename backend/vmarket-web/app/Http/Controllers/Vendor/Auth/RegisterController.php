@@ -95,28 +95,20 @@ class RegisterController extends BaseController
             'userType' => 'vendor',
             'templateName' => 'registration',
         ];
-        // [AI] Generate Instant 1-Click SSO Redirect to Free 1-Store POS Terminal
-        $email = strtolower(trim($vendor['email']));
-        $expires = time() + 300;
-        $role = 'vendor';
-        $secretKey = env('VMARKET_SSO_SECRET', 'VictoriousMarketSecretKey2026');
-        $token = hash_hmac('sha256', "{$email}|{$expires}|{$role}", $secretKey);
-        $posUrl = rtrim(env('VMARKET_POS_URL', 'http://127.0.0.1:8001'), '/');
-        $ssoRedirectUrl = "{$posUrl}/sso-login?email=" . urlencode($email) . "&expires={$expires}&role={$role}&token={$token}";
-
+        // [AI] Redirect newly registered vendor to standard login page
         try {
             event(new VendorRegistrationEvent(email: $request['email'], data: $data));
         } catch (Exception $e) {
             return response()->json([
                 'status' => 1,
-                'message' => translate('Registration_successful_Opening_your_Free_POS_Terminal'),
-                'redirectRoute' => $ssoRedirectUrl
+                'message' => translate('Registration_successful_Please_login_to_your_merchant_account'),
+                'redirectRoute' => route('vendor.auth.login')
             ]);
         }
         return response()->json([
             'status' => 1,
-            'message' => translate('Registration_successful_Opening_your_Free_POS_Terminal'),
-            'redirectRoute' => $ssoRedirectUrl
+            'message' => translate('Registration_successful_Please_login_to_your_merchant_account'),
+            'redirectRoute' => route('vendor.auth.login')
         ]);
     }
 }

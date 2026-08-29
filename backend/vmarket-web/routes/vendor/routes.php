@@ -71,8 +71,7 @@ Route::group(['middleware' => ['maintenance_mode', 'actch:admin_panel']], functi
         });
 
         Route::group(['middleware' => ['seller', 'vendor_employee']], function () {
-            // [AI] 1-Click POS SSO Redirect
-            Route::get('pos-sso', [POSController::class, 'ssoRedirect'])->name('pos.sso');
+
 
             Route::group(['prefix' => 'dashboard', 'as' => 'dashboard.'], function () {
                 Route::controller(DashboardController::class)->group(function () {
