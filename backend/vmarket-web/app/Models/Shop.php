@@ -178,6 +178,11 @@ class Shop extends Model
         return $this->belongsTo(DeliveryHub::class, 'delivery_hub_id');
     }
 
+    public function hub(): \Illuminate\Database\Eloquent\Relations\BelongsTo
+    {
+        return $this->belongsTo(DeliveryHub::class, 'delivery_hub_id');
+    }
+
     protected static function boot(): void
     {
         parent::boot();

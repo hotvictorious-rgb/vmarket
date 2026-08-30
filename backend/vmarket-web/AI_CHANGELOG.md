@@ -1,4 +1,14 @@
 
+### [2026-08-30 05:25 UTC] Fix Delivery Module Route Resolution & Admin Auth Handling [backend]
+
+**Scope:** Delivery Module Routing (`Modules/Delivery`) & Admin Middleware
+
+**Root Cause Identified & Fixed:**
+1. **Unauthenticated 404 Abort:** `AdminMiddleware.php` previously called `abort(404)` on unauthenticated requests. When visitors without an active admin session loaded `/delivery`, it served the 404 "Server not responding" error page. Updated `AdminMiddleware` to cleanly redirect unauthenticated requests to the configured admin login URL (`login/{admin_login_url}`).
+2. **Delivery Module Route Registration:** Updated `DeliveryServiceProvider.php` to load module routes and views from resilient absolute `__DIR__` paths, ensuring all 85 delivery routes (Dashboard, Hubs, Corridor Routes, Fleet, Shipments, Finance) register reliably under `/delivery` and `/admin/delivery`.
+3. **Shop Relationship Alias:** Added `hub()` relationship alias on `Shop` model mapping to `delivery_hub_id`, resolving eager-load compatibility on shop queries.
+4. **All 6 Views Verified:** Automated in-process rendering suite tested all 6 delivery module views (`delivery::dashboard`, `delivery::hubs.index`, `delivery::routes.index`, `delivery::fleet.index`, `delivery::shipments.index`, `delivery::finance.index`) — 100% PASS.
+
 ### [2026-08-30 04:50 UTC] Replace Dispatch Portal with Dedicated Delivery & Logistics Module [backend]
 
 **Scope:** Admin Web Panel & Unified Delivery Logistics Subsystem

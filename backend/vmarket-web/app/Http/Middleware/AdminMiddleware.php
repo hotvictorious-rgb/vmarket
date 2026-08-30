@@ -24,7 +24,8 @@ class AdminMiddleware
             }
             return $next($request);
         } else {
-            abort(404);
+            $adminLoginUrl = getWebConfig(name: 'admin_login_url') ?? 'admin';
+            return redirect('login/' . $adminLoginUrl);
         }
     }
 }

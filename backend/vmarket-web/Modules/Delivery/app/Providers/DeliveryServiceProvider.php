@@ -2,6 +2,7 @@
 
 namespace Modules\Delivery\app\Providers;
 
+use Illuminate\Support\Facades\Blade;
 use Illuminate\Support\ServiceProvider;
 
 class DeliveryServiceProvider extends ServiceProvider
@@ -23,7 +24,7 @@ class DeliveryServiceProvider extends ServiceProvider
      */
     public function register(): void
     {
-        //
+        $this->registerRoutes();
     }
 
     /**
@@ -32,21 +33,23 @@ class DeliveryServiceProvider extends ServiceProvider
     public function registerViews(): void
     {
         $viewPath = resource_path('views/modules/' . $this->moduleNameLower);
-        $sourcePath = module_path($this->moduleName, 'resources/views');
+        $sourcePath = __DIR__ . '/../../resources/views';
 
-        $this->publishes([
-            $sourcePath => $viewPath
-        ], ['views', $this->moduleNameLower . '-module-views']);
+        if (is_dir($sourcePath)) {
+            $this->publishes([
+                $sourcePath => $viewPath
+            ], ['views', $this->moduleNameLower . '-module-views']);
 
-        $this->loadViewsFrom(array_merge($this->getPublishableViewPaths(), [$sourcePath]), $this->moduleNameLower);
+            $this->loadViewsFrom(array_merge($this->getPublishableViewPaths(), [$sourcePath]), $this->moduleNameLower);
+        }
     }
 
     /**
-     * Register routes.
+     * Register routes directly with bulletproof relative path.
      */
     protected function registerRoutes(): void
     {
-        $routesPath = module_path($this->moduleName, 'routes/web.php');
+        $routesPath = __DIR__ . '/../../routes/web.php';
         if (file_exists($routesPath)) {
             $this->loadRoutesFrom($routesPath);
         }
@@ -58,7 +61,8 @@ class DeliveryServiceProvider extends ServiceProvider
     private function getPublishableViewPaths(): array
     {
         $paths = [];
-        foreach (\Config::get('view.paths') as $path) {
+        $viewPaths = config('view.paths') ?? [];
+        foreach ($viewPaths as $path) {
             if (is_dir($path . '/modules/' . $this->moduleNameLower)) {
                 $paths[] = $path . '/modules/' . $this->moduleNameLower;
             }

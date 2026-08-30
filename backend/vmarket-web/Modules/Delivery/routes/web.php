@@ -12,11 +12,11 @@ use Modules\Delivery\app\Http\Controllers\ShipmentController;
 |--------------------------------------------------------------------------
 | Victorious MARKET Delivery & Logistics Module Routes
 |--------------------------------------------------------------------------
-| All routes mapped to /delivery/* and bound to delivery.victoriousmarket.com.ng
+| All routes mapped to /delivery/* and /admin/delivery/*
+| Protected by web and admin authentication guards.
 */
 
-Route::group(['prefix' => 'delivery', 'as' => 'delivery.', 'middleware' => ['web', 'admin']], function () {
-
+$deliveryRouteGroup = function () {
     // 1. Dashboard
     Route::get('/', [DashboardController::class, 'index'])->name('dashboard');
     Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard.index');
@@ -59,4 +59,10 @@ Route::group(['prefix' => 'delivery', 'as' => 'delivery.', 'middleware' => ['web
         Route::get('/', [FinanceController::class, 'index'])->name('index');
         Route::post('/remittance/record', [FinanceController::class, 'recordRemittance'])->name('remittance.record');
     });
-});
+};
+
+// Registered under /delivery prefix (named delivery.*)
+Route::group(['prefix' => 'delivery', 'as' => 'delivery.', 'middleware' => ['web', 'admin']], $deliveryRouteGroup);
+
+// Also registered under /admin/delivery prefix as seamless alias
+Route::group(['prefix' => 'admin/delivery', 'as' => 'admin.delivery.', 'middleware' => ['web', 'admin']], $deliveryRouteGroup);
