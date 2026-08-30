@@ -530,7 +530,8 @@
         </div>
 
         @php
-            $currentRole = auth()->user()->role ?? $authUser->role ?? 'admin';
+            $isSuperAdmin = (session('is_super_admin') === true) || Auth::guard('admin')->check();
+            $currentRole = $isSuperAdmin ? 'admin' : (session('user_role') ?? auth()->user()?->role ?? 'admin');
         @endphp
         <nav class="sidebar-menu">
             @php
@@ -538,7 +539,6 @@
                 $userRole = session('user_role');
                 $sellerId = session('seller_id');
                 $sellerStatus = session('seller_status', 'pending');
-                $isSuperAdmin = (session('is_super_admin') === true) && !$sellerId;
                 $isSuperAdminEmployee = ($userRole === 'super_admin_employee');
                 $isVerifiedMerchant = ($userRole === 'verified_merchant') || (!$isSuperAdmin && $sellerId && $sellerStatus === 'approved' && !in_array($userRole, ['verified_merchant_employee', 'unverified_merchant_employee', 'staff']));
                 $isUnverifiedMerchant = ($userRole === 'unverified_merchant') || (!$isSuperAdmin && $sellerId && $sellerStatus !== 'approved' && !in_array($userRole, ['verified_merchant_employee', 'unverified_merchant_employee', 'staff']));
@@ -640,8 +640,8 @@
                     <a href="{{ route('subscription.index') }}" class="nav-item {{ request()->routeIs('subscription.*') ? 'active' : '' }}" style="color: #a78bfa;">
                         <span>⭐</span> <span>Plan & Subscription</span>
                     </a>
-                    @if(session('is_super_admin') === true)
-                        <a href="{{ route('saas.dashboard') }}" class="nav-item" style="color: #f472b6; border: 1px dashed rgba(244,114,182,0.4); border-radius: 10px; margin-top: 0.25rem;">
+                    @if($isSuperAdmin)
+                        <a href="{{ route('saas.dashboard') }}" class="nav-item {{ request()->routeIs('saas.*') ? 'active' : '' }}" style="color: #f472b6; border: 1px dashed rgba(244,114,182,0.4); border-radius: 10px; margin-top: 0.25rem;">
                             <span>👑</span> <span>SaaS Master Control</span>
                         </a>
                     @endif

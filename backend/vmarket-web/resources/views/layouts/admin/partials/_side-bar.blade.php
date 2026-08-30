@@ -33,6 +33,91 @@
                     </span>
                 </a>
             </li>
+
+            {{-- ─── POS & SaaS In-Store System ─────────────────────────── --}}
+            <li class="nav-item nav-item_title">
+                <small class="nav-subtitle">{{ translate('POS & SaaS Operations') }}</small>
+            </li>
+            <li class="{{ Request::is('pos*') ? 'sub-menu-opened' : '' }}">
+                <a class="nav-link nav-link-toggle {{ Request::is('pos*') ? 'active' : '' }}"
+                   href="javascript:" title="{{ translate('POS SaaS & Terminal') }}">
+                    <i class="fi fi-sr-calculator" style="color: #5E17EB;"></i>
+                    <span class="aside-mini-hidden-element flex-grow-1 d-flex justify-content-between align-items-center">
+                        <span class="text-truncate max-w-180">{{ translate('POS & SaaS Hub') }}</span>
+                        <i class="fi fi-sr-angle-down"></i>
+                    </span>
+                </a>
+                <ul class="aside-submenu navbar-nav">
+                    <li class="nav-item px-3 py-2 fw-semibold text-dark bg-section2 aside-mini-show-element">{{ translate('POS SaaS Hub') }}</li>
+                    <li class="nav-item">
+                        <a class="nav-link {{ Request::is('pos') ? 'active' : '' }}"
+                           href="{{ url('/pos') }}" title="{{ translate('POS Executive Dashboard') }}">
+                            <span class="flex-grow-1 text-truncate">🏪 {{ translate('POS Dashboard') }}</span>
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link {{ Request::is('pos/terminal') ? 'active' : '' }}"
+                           href="{{ url('/pos/terminal') }}" target="_blank" title="{{ translate('Launch In-Store Counter Register') }}">
+                            <span class="flex-grow-1 text-truncate" style="color: #5E17EB; font-weight: 700;">💰 {{ translate('Sell Goods (Terminal)') }}</span>
+                            <span class="badge badge-sm text-bg-primary" style="background-color: #5E17EB !important;">LIVE</span>
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link {{ Request::is('pos/saas*') ? 'active' : '' }}"
+                           href="{{ url('/pos/saas') }}" title="{{ translate('SaaS Platform Command Center') }}">
+                            <span class="flex-grow-1 text-truncate" style="color: #db2777; font-weight: 700;">👑 {{ translate('SaaS Master Control') }}</span>
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link {{ Request::is('pos/products*') ? 'active' : '' }}"
+                           href="{{ url('/pos/products') }}" title="{{ translate('Products & Pricing Catalog') }}">
+                            <span class="flex-grow-1 text-truncate">🛍️ {{ translate('POS Products Catalog') }}</span>
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link {{ Request::is('pos/stock*') ? 'active' : '' }}"
+                           href="{{ url('/pos/stock') }}" title="{{ translate('Multi-Branch Stock & Transfers') }}">
+                            <span class="flex-grow-1 text-truncate">📦 {{ translate('Stock & Inter-Shop Transfers') }}</span>
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link {{ Request::is('pos/wholesale*') ? 'active' : '' }}"
+                           href="{{ url('/pos/wholesale') }}" title="{{ translate('Wholesale Operations Desk') }}">
+                            <span class="flex-grow-1 text-truncate">🏢 {{ translate('Wholesale Desk') }}</span>
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link {{ Request::is('pos/auditor*') ? 'active' : '' }}"
+                           href="{{ url('/pos/auditor') }}" title="{{ translate('Auditor Anti-Theft Hub') }}">
+                            <span class="flex-grow-1 text-truncate" style="color: #ef4444;">🚨 {{ translate('Auditor Anti-Theft Hub') }}</span>
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link {{ Request::is('pos/debts*') ? 'active' : '' }}"
+                           href="{{ url('/pos/debts') }}" title="{{ translate('Customer Debt Ledgers') }}">
+                            <span class="flex-grow-1 text-truncate">💳 {{ translate('Customer Debts & Aging') }}</span>
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link {{ Request::is('pos/transactions*') ? 'active' : '' }}"
+                           href="{{ url('/pos/transactions') }}" title="{{ translate('Sales & Shift History') }}">
+                            <span class="flex-grow-1 text-truncate">📜 {{ translate('History & Ledgers') }}</span>
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link {{ Request::is('pos/reports*') ? 'active' : '' }}"
+                           href="{{ url('/pos/reports') }}" title="{{ translate('Reports & AI Data Exports') }}">
+                            <span class="flex-grow-1 text-truncate">📊 {{ translate('Reports & AI Data Exports') }}</span>
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link {{ Request::is('pos/settings*') ? 'active' : '' }}"
+                           href="{{ url('/pos/settings') }}" title="{{ translate('Branches & System Settings') }}">
+                            <span class="flex-grow-1 text-truncate">⚙️ {{ translate('POS Settings & Branches') }}</span>
+                        </a>
+                    </li>
+                </ul>
+            </li>
             @if(Helpers::module_permission_check('order_management'))
                 <li class="nav-item nav-item_title {{ Request::is('admin/orders*')?((Request::is('admin/orders/details/*') && request()->has('vendor-order-list')) ? '' : 'scroll-here'):''}}">
                     <small class="nav-subtitle" title="">{{ translate('order_management') }}</small>

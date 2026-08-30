@@ -69,7 +69,7 @@
                 </li>
 
                 <li class="nav-item">
-                    <a class="btn btn-outline-primary btn-sm rounded-pill px-3 py-1 fw-semibold d-flex align-items-center gap-1" href="{{ route('admin.pos-management.dashboard') }}" data-bs-toggle="tooltip" data-bs-title="{{ translate('POS SaaS Management & Subscriptions') }}">
+                    <a class="btn btn-outline-primary btn-sm rounded-pill px-3 py-1 fw-semibold d-flex align-items-center gap-1" href="{{ url('/pos') }}" target="_blank" data-bs-toggle="tooltip" data-bs-title="{{ translate('Open POS & Inventory SaaS Dashboard') }}">
                         <i class="fa-solid fa-cash-register"></i> <span>{{ translate('POS SaaS Hub') }}</span>
                     </a>
                 </li>
