@@ -34,90 +34,7 @@
                 </a>
             </li>
 
-            {{-- ─── POS Management & SaaS In-Store System ─────────────── --}}
-            <li class="nav-item nav-item_title">
-                <small class="nav-subtitle">{{ translate('pos_management') }}</small>
-            </li>
-            <li class="{{ Request::is('pos*') ? 'sub-menu-opened' : '' }}">
-                <a class="nav-link nav-link-toggle {{ Request::is('pos*') ? 'active' : '' }}"
-                   href="javascript:" title="{{ translate('pos_management') }}">
-                    <i class="fi fi-sr-calculator" style="color: #5E17EB;"></i>
-                    <span class="aside-mini-hidden-element flex-grow-1 d-flex justify-content-between align-items-center">
-                        <span class="text-truncate max-w-180">{{ translate('pos_management') }}</span>
-                        <i class="fi fi-sr-angle-down"></i>
-                    </span>
-                </a>
-                <ul class="aside-submenu navbar-nav">
-                    <li class="nav-item px-3 py-2 fw-semibold text-dark bg-section2 aside-mini-show-element">{{ translate('pos_management') }}</li>
-                    <li class="nav-item">
-                        <a class="nav-link {{ Request::is('pos') ? 'active' : '' }}"
-                           href="{{ url('/pos') }}" title="{{ translate('POS Executive Dashboard') }}">
-                            <span class="flex-grow-1 text-truncate">🏪 {{ translate('POS Dashboard') }}</span>
-                        </a>
-                    </li>
-                    <li class="nav-item">
-                        <a class="nav-link {{ Request::is('pos/terminal') ? 'active' : '' }}"
-                           href="{{ url('/pos/terminal') }}" target="_blank" title="{{ translate('Launch In-Store Counter Register') }}">
-                            <span class="flex-grow-1 text-truncate" style="color: #5E17EB; font-weight: 700;">💰 {{ translate('Sell Goods (Terminal)') }}</span>
-                            <span class="badge badge-sm text-bg-primary" style="background-color: #5E17EB !important;">LIVE</span>
-                        </a>
-                    </li>
-                    <li class="nav-item">
-                        <a class="nav-link {{ Request::is('pos/saas*') ? 'active' : '' }}"
-                           href="{{ url('/pos/saas') }}" title="{{ translate('SaaS Platform Command Center') }}">
-                            <span class="flex-grow-1 text-truncate" style="color: #db2777; font-weight: 700;">👑 {{ translate('SaaS Master Control') }}</span>
-                        </a>
-                    </li>
-                    <li class="nav-item">
-                        <a class="nav-link {{ Request::is('pos/products*') ? 'active' : '' }}"
-                           href="{{ url('/pos/products') }}" title="{{ translate('Products & Pricing Catalog') }}">
-                            <span class="flex-grow-1 text-truncate">🛍️ {{ translate('POS Products Catalog') }}</span>
-                        </a>
-                    </li>
-                    <li class="nav-item">
-                        <a class="nav-link {{ Request::is('pos/stock*') ? 'active' : '' }}"
-                           href="{{ url('/pos/stock') }}" title="{{ translate('Multi-Branch Stock & Transfers') }}">
-                            <span class="flex-grow-1 text-truncate">📦 {{ translate('Stock & Inter-Shop Transfers') }}</span>
-                        </a>
-                    </li>
-                    <li class="nav-item">
-                        <a class="nav-link {{ Request::is('pos/wholesale*') ? 'active' : '' }}"
-                           href="{{ url('/pos/wholesale') }}" title="{{ translate('Wholesale Operations Desk') }}">
-                            <span class="flex-grow-1 text-truncate">🏢 {{ translate('Wholesale Desk') }}</span>
-                        </a>
-                    </li>
-                    <li class="nav-item">
-                        <a class="nav-link {{ Request::is('pos/auditor*') ? 'active' : '' }}"
-                           href="{{ url('/pos/auditor') }}" title="{{ translate('Auditor Anti-Theft Hub') }}">
-                            <span class="flex-grow-1 text-truncate" style="color: #ef4444;">🚨 {{ translate('Auditor Anti-Theft Hub') }}</span>
-                        </a>
-                    </li>
-                    <li class="nav-item">
-                        <a class="nav-link {{ Request::is('pos/debts*') ? 'active' : '' }}"
-                           href="{{ url('/pos/debts') }}" title="{{ translate('Customer Debt Ledgers') }}">
-                            <span class="flex-grow-1 text-truncate">💳 {{ translate('Customer Debts & Aging') }}</span>
-                        </a>
-                    </li>
-                    <li class="nav-item">
-                        <a class="nav-link {{ Request::is('pos/transactions*') ? 'active' : '' }}"
-                           href="{{ url('/pos/transactions') }}" title="{{ translate('Sales & Shift History') }}">
-                            <span class="flex-grow-1 text-truncate">📜 {{ translate('History & Ledgers') }}</span>
-                        </a>
-                    </li>
-                    <li class="nav-item">
-                        <a class="nav-link {{ Request::is('pos/reports*') ? 'active' : '' }}"
-                           href="{{ url('/pos/reports') }}" title="{{ translate('Reports & AI Data Exports') }}">
-                            <span class="flex-grow-1 text-truncate">📊 {{ translate('Reports & AI Data Exports') }}</span>
-                        </a>
-                    </li>
-                    <li class="nav-item">
-                        <a class="nav-link {{ Request::is('pos/settings*') ? 'active' : '' }}"
-                           href="{{ url('/pos/settings') }}" title="{{ translate('Branches & System Settings') }}">
-                            <span class="flex-grow-1 text-truncate">⚙️ {{ translate('POS Settings & Branches') }}</span>
-                        </a>
-                    </li>
-                </ul>
-            </li>
+
             @if(Helpers::module_permission_check('order_management'))
                 <li class="nav-item nav-item_title {{ Request::is('admin/orders*')?((Request::is('admin/orders/details/*') && request()->has('vendor-order-list')) ? '' : 'scroll-here'):''}}">
                     <small class="nav-subtitle" title="">{{ translate('order_management') }}</small>
@@ -241,93 +158,7 @@
                     </ul>
                 </li>
 
-                <li class="nav-item nav-item_title {{ (Request::is('admin/pos-management*') || Request::is('pos*')) ? 'scroll-here' : '' }}">
-                    <small class="nav-subtitle">{{ translate('POS & SaaS Management') }}</small>
-                </li>
-                <li class="{{ (Request::is('admin/pos-management*') || Request::is('pos*')) ? 'sub-menu-opened' : '' }}">
-                    <a class="nav-link nav-link-toggle {{ (Request::is('admin/pos-management*') || Request::is('pos*')) ? 'active' : '' }}"
-                       href="javascript:" title="{{ translate('POS SaaS Command') }}">
-                        <i class="fi fi-sr-calculator"></i>
-                        <span class="aside-mini-hidden-element flex-grow-1 d-flex justify-content-between align-items-center">
-                            <span class="text-truncate max-w-180">{{ translate('POS SaaS Control') }}</span>
-                            <i class="fi fi-sr-angle-down"></i>
-                        </span>
-                    </a>
-                    <ul class="aside-submenu navbar-nav">
-                        <li class="nav-item px-3 py-2 fw-semibold text-dark bg-section2 aside-mini-show-element">{{ translate('POS SaaS Control') }}</li>
-                        <li class="nav-item">
-                            <a class="nav-link {{ Request::is('admin/pos-management/dashboard') ? 'active' : '' }}"
-                               href="{{ route('admin.pos-management.dashboard') }}" title="{{ translate('POS Dashboard') }}">
-                                <span class="flex-grow-1 text-truncate">{{ translate('POS Dashboard') }}</span>
-                            </a>
-                        </li>
-                        <li class="nav-item">
-                            <a class="nav-link {{ Request::is('admin/pos-management/settings') ? 'active' : '' }}"
-                               href="{{ route('admin.pos-management.settings') }}" title="{{ translate('POS SaaS & Plans') }}">
-                                <span class="flex-grow-1 text-truncate">{{ translate('POS SaaS & Plans') }}</span>
-                            </a>
-                        </li>
-                        <li class="nav-item">
-                            <a class="nav-link {{ Request::is('pos/terminal') || Request::is('pos') ? 'active' : '' }}"
-                               href="{{ url('/pos/terminal') }}" target="_blank" title="{{ translate('Launch POS Terminal') }}">
-                                <span class="flex-grow-1 text-truncate fw-bold" style="color: #5E17EB;">{{ translate('Launch In-Store Terminal') }} ↗</span>
-                            </a>
-                        </li>
-                    </ul>
-                </li>
 
-                <li class="nav-item nav-item_title {{ Request::is('delivery*') ? 'scroll-here' : '' }}">
-                    <small class="nav-subtitle">{{ translate('Delivery Logistics') }}</small>
-                </li>
-                <li class="{{ Request::is('delivery*') ? 'sub-menu-opened' : '' }}">
-                    <a class="nav-link nav-link-toggle {{ Request::is('delivery*') ? 'active' : '' }}"
-                       href="javascript:" title="{{ translate('Fleet & Logistics Hub') }}">
-                        <i class="fi fi-sr-truck-side"></i>
-                        <span class="aside-mini-hidden-element flex-grow-1 d-flex justify-content-between align-items-center">
-                            <span class="text-truncate max-w-180">{{ translate('Delivery Hub') }}</span>
-                            <i class="fi fi-sr-angle-down"></i>
-                        </span>
-                    </a>
-                    <ul class="aside-submenu navbar-nav">
-                        <li class="nav-item px-3 py-2 fw-semibold text-dark bg-section2 aside-mini-show-element">{{ translate('Delivery Hub') }}</li>
-                        <li class="nav-item">
-                            <a class="nav-link {{ Request::is('delivery') || Request::is('delivery/dashboard') ? 'active' : '' }}"
-                               href="{{ route('delivery.dashboard') }}" title="{{ translate('Logistics Dashboard') }}">
-                                <span class="flex-grow-1 text-truncate">{{ translate('Logistics Dashboard') }}</span>
-                            </a>
-                        </li>
-                        <li class="nav-item">
-                            <a class="nav-link {{ Request::is('delivery/hubs*') ? 'active' : '' }}"
-                               href="{{ route('delivery.hubs.index') }}" title="{{ translate('Delivery Hubs') }}">
-                                <span class="flex-grow-1 text-truncate">{{ translate('Delivery Hubs') }}</span>
-                            </a>
-                        </li>
-                        <li class="nav-item">
-                            <a class="nav-link {{ Request::is('delivery/routes*') ? 'active' : '' }}"
-                               href="{{ route('delivery.routes.index') }}" title="{{ translate('Corridor Routes') }}">
-                                <span class="flex-grow-1 text-truncate">{{ translate('Corridor Routes') }}</span>
-                            </a>
-                        </li>
-                        <li class="nav-item">
-                            <a class="nav-link {{ Request::is('delivery/fleet*') ? 'active' : '' }}"
-                               href="{{ route('delivery.fleet.index') }}" title="{{ translate('Fleet & Couriers') }}">
-                                <span class="flex-grow-1 text-truncate">{{ translate('Fleet & Couriers') }}</span>
-                            </a>
-                        </li>
-                        <li class="nav-item">
-                            <a class="nav-link {{ Request::is('delivery/shipments*') ? 'active' : '' }}"
-                               href="{{ route('delivery.shipments.index') }}" title="{{ translate('Shipments & Waybills') }}">
-                                <span class="flex-grow-1 text-truncate">{{ translate('Shipments & Waybills') }}</span>
-                            </a>
-                        </li>
-                        <li class="nav-item">
-                            <a class="nav-link {{ Request::is('delivery/finance*') ? 'active' : '' }}"
-                               href="{{ route('delivery.finance.index') }}" title="{{ translate('COD Remittance') }}">
-                                <span class="flex-grow-1 text-truncate">{{ translate('COD Remittance') }}</span>
-                            </a>
-                        </li>
-                    </ul>
-                </li>
 
                 <li class="{{ Request::is('admin/refund-section/*') ? 'sub-menu-opened' : '' }}">
                     <a class="nav-link nav-link-toggle {{ Request::is('admin/refund-section/refund/*') ? 'active' : '' }}"
@@ -1111,20 +942,7 @@
                     </ul>
                 </li>
 
-                <li class="{{ Request::is('delivery*') ? 'active' : '' }}">
-                    <a class="nav-link {{ Request::is('delivery*') ? 'active' : '' }}"
-                       href="{{ route('delivery.dashboard') }}"
-                       title="{{ translate('delivery_and_logistics') }}">
-                        <i class="fi fi-sr-truck-side text-warning"></i>
-                        <span
-                            class="aside-mini-hidden-element flex-grow-1 d-flex justify-content-between align-items-center">
-                            <span class="text-truncate max-w-180 font-weight-bold">
-                                {{ translate('Delivery & Logistics') }}
-                            </span>
-                            <span class="badge bg-warning text-dark font-weight-bold fs-10 px-2 py-1 rounded">HUB</span>
-                        </span>
-                    </a>
-                </li>
+
 
                 @if(auth('admin')->user()->admin_role_id==1)
                     <li class=" {{ (Request::is('admin/employee*') || Request::is('admin/custom-role*')) ? 'sub-menu-opened' : '' }}">
