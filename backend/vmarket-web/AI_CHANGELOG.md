@@ -1,4 +1,34 @@
 
+### [2026-08-30 06:49 UTC] Frontend Admin Payment Config & POS Authorization Hardening — 4 Vulnerabilities Fixed [backend]
+
+**Scope:** Admin ThirdParty PaymentMethodController, Payment Gateway Admin Blade Template
+
+**Files Modified:**
+- `app/Http/Controllers/Admin/ThirdParty/PaymentMethodController.php`
+- `resources/views/admin-views/third-party/payment-method/_payment-gateways-offcanvas.blade.php`
+
+**Syntax Validation:** `php -l` PASS — 0 errors.
+
+#### Fixes Applied
+
+1. **VULN-FRONT-001 [HIGH] — Real Production Controller Had Live/Test Key Mirror Bug**
+   - `ThirdParty/PaymentMethodController.php` L159 — This is the controller the admin panel **actually calls** (`PUT admin.third-party.payment-method.addon-payment-set`). It had the identical `live_values = test_values = $request->validated()` bug — live `secret_key` was mirrored into `test_values` on every save.
+   - **Fix:** Read existing buckets from DB first. Only overwrite the mode-appropriate bucket. The non-active bucket preserves its existing values.
+
+2. **VULN-FRONT-002 [HIGH] — `UpdateStatus()` Trusted `$request->key_name` With No Whitelist**
+   - `ThirdParty/PaymentMethodController.php` L176 — Any authenticated admin employee with `3rd_party_setup` permission could POST `key_name=any_settings_key&status=0` to toggle `is_active` on **any row** in the settings table — far beyond payment gateways.
+   - **Fix:** Added strict `in:` validation against `GlobalConstant::DEFAULT_PAYMENT_GATEWAYS` whitelist. Also added `settings_type = payment_config` scoping to both the `getFirstWhere` lookup and the `updateWhere` mutation, limiting the blast radius to payment gateway rows only.
+
+3. **VULN-FRONT-003 [MEDIUM] — UI Meta-Fields Stored Inside `live_values` JSON**
+   - `ThirdParty/PaymentMethodController.php` L161 — `$request->validated()` included `gateway`, `mode`, `status`, `gateway_title`, `gateway_image` in the stored `live_values` JSON. Client-controlled keys were written into the payload read by gateway constructors.
+   - **Fix:** Strip meta-fields using `collect($request->validated())->except($metaFields)->toArray()` before storing. Only actual gateway credential keys (e.g. `public_key`, `secret_key`, `merchant_email`) are stored in `live_values`/`test_values`.
+
+4. **VULN-FRONT-004 [MEDIUM] — `secret_key` Rendered as `type="text"` in Admin Panel**
+   - `_payment-gateways-offcanvas.blade.php` L161 — All gateway fields used `type="text"`, making `secret_key`, `api_key`, `private_key` etc. visible in plaintext in the browser UI.
+   - **Fix:** Detects 18 known sensitive field names (`secret_key`, `api_key`, `private_key`, `api_secret`, `app_secret`, `store_password`, `merchant_key`, `working_key`, `secured_key`, `access_token`, `client_secret`, `hash`, `hmac`, `pass_phrase`, `subscription_key`, `xml_password`, `password`, `app_key`) and renders them as `type="password"` with `autocomplete="new-password"` and a yellow `Sensitive` badge label. All other informational fields remain `type="text"`.
+
+---
+
 ### [2026-08-30 06:30 UTC] Admin POS SaaS & Paystack Security Hardening — 3 Vulnerabilities Fixed [backend]
 
 **Scope:** Admin Routes, Paystack Payment Gateway Controller, Admin Payment Config Controller

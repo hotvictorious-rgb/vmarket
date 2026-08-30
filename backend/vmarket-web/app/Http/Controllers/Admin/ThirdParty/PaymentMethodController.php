@@ -156,13 +156,30 @@ class PaymentMethodController extends BaseController
             }
         }
 
+        // [AI] SECURITY FIX VULN-FRONT-001: Only write key values to the active mode bucket.
+        // Previously $request->validated() was written to BOTH live_values AND test_values,
+        // meaning live secret_key was always mirrored into test_values on every save.
+        // [AI] SECURITY FIX VULN-FRONT-003: Strip UI meta-fields (gateway, mode, status,
+        // gateway_title, gateway_image) from the stored live/test value JSON. These are
+        // framework-level fields — storing them lets the client inject arbitrary keys into
+        // the value payload read by the gateway constructor.
+        $metaFields = ['gateway', 'mode', 'status', 'gateway_title', 'gateway_image'];
+        $keyValues = collect($request->validated())->except($metaFields)->toArray();
+
+        $existingLiveValues = is_array($settings['live_values'] ?? null)
+            ? $settings['live_values']
+            : json_decode($settings['live_values'] ?? '{}', true) ?? [];
+        $existingTestValues = is_array($settings['test_values'] ?? null)
+            ? $settings['test_values']
+            : json_decode($settings['test_values'] ?? '{}', true) ?? [];
+
         $this->settingRepo->updateOrInsert(params: ['key_name' => $request['gateway'], 'settings_type' => 'payment_config'], data: [
-            'key_name' => $request['gateway'],
-            'live_values' => $request->validated(),
-            'test_values' => $request->validated(),
-            'settings_type' => 'payment_config',
-            'mode' => $request['mode'],
-            'is_active' => $status,
+            'key_name'        => $request['gateway'],
+            'live_values'     => $request['mode'] === 'live' ? $keyValues : $existingLiveValues,
+            'test_values'     => $request['mode'] === 'test' ? $keyValues : $existingTestValues,
+            'settings_type'   => 'payment_config',
+            'mode'            => $request['mode'],
+            'is_active'       => $status,
             'additional_data' => json_encode(['gateway_title' => $request['gateway_title'], 'gateway_image' => $gatewayImage]),
         ]);
 
@@ -175,7 +192,21 @@ class PaymentMethodController extends BaseController
 
     public function UpdateStatus(Request $request): RedirectResponse
     {
-        $payment = $this->settingRepo->getFirstWhere(params: ['key_name' => $request->get('key_name')]);
+        // [AI] SECURITY FIX VULN-FRONT-002: Validate key_name against a strict whitelist of
+        // known payment gateway keys before touching any DB row. Previously any string could
+        // be passed to set is_active on ANY row in the settings table — allowing an admin
+        // employee with 3rd_party_setup access to toggle arbitrary system settings.
+        // Also add settings_type scoping to both the lookup and the update to prevent
+        // cross-table settings mutations.
+        $request->validate([
+            'key_name' => ['required', 'string', 'in:' . implode(',', GlobalConstant::DEFAULT_PAYMENT_GATEWAYS)],
+            'status'   => ['required', 'in:0,1'],
+        ]);
+
+        $payment = $this->settingRepo->getFirstWhere(params: [
+            'key_name'      => $request->get('key_name'),
+            'settings_type' => 'payment_config',
+        ]);
         if ($request['status'] == 1) {
             foreach ($payment['live_values'] as $key => $value) {
                 if (empty($value) && $value != 0) {
@@ -184,7 +215,10 @@ class PaymentMethodController extends BaseController
                 }
             }
         }
-        $this->settingRepo->updateWhere(params: ['key_name' => $request['key_name']], data: ['is_active' => $request['status'] ?? 0]);
+        $this->settingRepo->updateWhere(
+            params: ['key_name' => $request['key_name'], 'settings_type' => 'payment_config'],
+            data:   ['is_active' => $request['status'] ?? 0]
+        );
 
         updateSetupGuideCacheKey(key: 'digital_payment_setup', panel: 'admin');
         ToastMagic::success(translate('Updated_successfully'));

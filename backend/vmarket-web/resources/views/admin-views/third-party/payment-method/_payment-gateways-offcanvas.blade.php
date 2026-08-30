@@ -153,20 +153,33 @@
                         @endif
                         @foreach($gateway->live_values as $gatewayKey => $value)
                             @if(!in_array($gatewayKey , $skip))
+                                {{-- [AI] SECURITY FIX VULN-FRONT-004: Render sensitive credential fields as
+                                     type="password" to prevent plaintext shoulder-surfing and screen recording leaks.
+                                     autocomplete="new-password" stops browsers auto-filling stored passwords. --}}
+                                @php($sensitiveGatewayFields = ['secret_key','api_secret','private_key','app_secret',
+                                    'store_password','merchant_key','working_key','secured_key','api_key',
+                                    'access_token','client_secret','hash','hmac','pass_phrase',
+                                    'subscription_key','xml_password','password','app_key'])
+                                @php($isSecret = in_array($gatewayKey, $sensitiveGatewayFields))
                                 <div class="mb-4">
                                     <label for="gateway-key-{{ $gateway->key_name }}-{{ $gatewayKey }}" class="form-label">
                                         {{ucwords(str_replace('_',' ',$gatewayKey))}}
                                         <span class="text-danger">*</span>
+                                        @if($isSecret)
+                                            <span class="badge bg-warning text-dark fs-10 ms-1">{{ translate('Sensitive') }}</span>
+                                        @endif
                                     </label>
-                                    <input type="text" class="form-control"
+                                    <input type="{{ $isSecret ? 'password' : 'text' }}" class="form-control"
                                            name="{{$gatewayKey}}"
                                            data-required-msg="{{ translate($gatewayKey). translate('_key_field_is_required')}}"
                                            id="gateway-key-{{ $gateway->key_name }}-{{ $gatewayKey }}"
                                            placeholder="{{ ucwords(str_replace('_',' ',$gatewayKey)) }} *"
+                                           autocomplete="{{ $isSecret ? 'new-password' : 'off' }}"
                                            value="{{ showDemoModeInputValue(value: $value) }}" required>
                                 </div>
                             @endif
                         @endforeach
+
 
                         @php($supportedCountry = $gateway->live_values)
                         @if (isset($supportedCountry['supported_country']))
