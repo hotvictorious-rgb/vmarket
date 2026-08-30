@@ -56,6 +56,15 @@ class DebtController extends Controller
         }
 
         $debtors = $query->orderByDesc('total_debt')->paginate(25)->withQueryString();
+        $debtors->getCollection()->transform(function ($d) {
+            $d->name = $d->customer_name ?? 'Walk-in Customer';
+            $d->phone = $d->customer_phone ?? '';
+            $d->address = $d->customer_address ?? $d->address ?? 'Walk-in';
+            $d->id = $d->customer_id ?? 1;
+            $d->totalDebt = $d->total_debt ?? 0;
+            $d->customer_code = $d->customer_code ?? ('CUST-' . str_pad($d->id, 4, '0', STR_PAD_LEFT));
+            return $d;
+        });
 
         $totalOutstandingDebt = (float) DB::table('pos_sales')
             ->where('seller_id', $sellerId)
