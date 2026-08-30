@@ -377,8 +377,16 @@ class TransactionReportController extends Controller
         $seller_info = Shop::where('seller_id', auth('seller')->id())->first()->name;
         $customer_info = 'all';
         if ($customer_id != 'all') {
-            $customer = User::select()->find($customer_id);
-            $customer_info = $customer->f_name . ' ' . $customer->l_name;
+            // [AI] SECURITY FIX VULN-008: Scope customer lookup to only customers who have
+            // transacted with this specific vendor, preventing PII enumeration via IDOR
+            $vendorIdForCustomerLookup = auth('seller')->id();
+            $customer = User::select(['id', 'f_name', 'l_name'])
+                ->whereHas('orders', function ($q) use ($vendorIdForCustomerLookup) {
+                    $q->where('seller_id', $vendorIdForCustomerLookup)->where('seller_is', 'seller');
+                })
+                ->where('id', $customer_id)
+                ->first();
+            $customer_info = $customer ? ($customer->f_name . ' ' . $customer->l_name) : 'Unknown Customer';
         }
 
         $transactions = self::order_transaction_table_data_filter($request)->latest('created_at')->get();

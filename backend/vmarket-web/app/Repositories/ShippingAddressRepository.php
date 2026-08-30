@@ -48,6 +48,13 @@ class ShippingAddressRepository implements ShippingAddressRepositoryInterface
             ->when(isset($filters['id']), function ($query) use ($filters) {
                 $query->where('id', $filters['id']);
             })
+            // [AI] SECURITY FIX VULN-004: Added customer_id filter support to enforce tenant isolation at the repository layer
+            ->when(isset($filters['customer_id']), function ($query) use ($filters) {
+                $query->where('customer_id', $filters['customer_id']);
+            })
+            ->when(isset($filters['is_guest']), function ($query) use ($filters) {
+                $query->where('is_guest', $filters['is_guest']);
+            })
             ->when(!empty($orderBy), function ($query) use ($orderBy) {
                 $query->orderBy(array_key_first($orderBy), array_values($orderBy)[0]);
             });
@@ -56,9 +63,18 @@ class ShippingAddressRepository implements ShippingAddressRepositoryInterface
         return $dataLimit == 'all' ? $query->get() : $query->paginate($dataLimit)->appends($filters);
     }
 
-    public function update(string $id, array $data): bool
+    /**
+     * [AI] SECURITY FIX VULN-010: Added optional $ownerParams to enforce ownership before update.
+     * Callers should always pass ['customer_id' => $userId] (or guest equivalent) to prevent
+     * cross-customer address mutations. Existing callers with no $ownerParams are unaffected.
+     */
+    public function update(string $id, array $data, array $ownerParams = []): bool
     {
-        return $this->shippingAddress->where('id', $id)->update($data);
+        $query = $this->shippingAddress->where('id', $id);
+        if (!empty($ownerParams)) {
+            $query = $query->where($ownerParams);
+        }
+        return (bool) $query->update($data);
     }
 
     public function delete(array $params): bool

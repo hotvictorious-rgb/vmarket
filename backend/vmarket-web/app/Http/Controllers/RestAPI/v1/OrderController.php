@@ -98,7 +98,16 @@ class OrderController extends Controller
             return response()->json(['errors' => Helpers::validationErrorProcessor($validator)], 403);
         }
         $orderId = $request['order_id'];
-        $order = Order::find($orderId);
+        $user = Helpers::getCustomerInformation($request);
+        // [AI] SECURITY FIX VULN-003: Scope order lookup to authenticated customer to prevent IDOR enumeration of any order's history
+        if ($user !== 'offline') {
+            $order = Order::where('id', $orderId)->where('customer_id', $user->id)->first();
+        } else {
+            $order = Order::where('id', $orderId)
+                ->where('customer_id', $request['guest_id'])
+                ->where('is_guest', 1)
+                ->first();
+        }
         if (!$order) {
             return response()->json(['message' => translate('order_not_found')], 404);
         }
@@ -634,7 +643,18 @@ class OrderController extends Controller
     public function digital_product_download($id, Request $request): JsonResponse
     {
         $user = Helpers::getCustomerInformation($request);
-        $order_details_data = OrderDetail::with('order.customer')->find($id);
+        // [AI] SECURITY FIX VULN-001 (CRITICAL): Scope OrderDetail lookup to authenticated customer
+        // to prevent IDOR — Customer A cannot download Customer B's purchased digital files
+        $order_details_data = OrderDetail::with('order.customer')
+            ->where('id', $id)
+            ->whereHas('order', function ($q) use ($user, $request) {
+                if ($user !== 'offline') {
+                    $q->where('customer_id', $user->id);
+                } else {
+                    $q->where('customer_id', $request['guest_id'])->where('is_guest', 1);
+                }
+            })
+            ->first();
 
         if ($order_details_data) {
             if ($order_details_data->order->payment_status !== "paid") {
@@ -788,7 +808,18 @@ class OrderController extends Controller
 
     public function digital_product_download_otp_verify(Request $request)
     {
-        $order_details_data = OrderDetail::with('order.customer')->find($request->order_details_id);
+        $user = Helpers::getCustomerInformation($request);
+        // [AI] SECURITY FIX VULN-001 (CRITICAL): Scope to authenticated customer to prevent cross-customer IDOR on OTP verify
+        $order_details_data = OrderDetail::with('order.customer')
+            ->where('id', $request->order_details_id)
+            ->whereHas('order', function ($q) use ($user, $request) {
+                if ($user !== 'offline') {
+                    $q->where('customer_id', $user->id);
+                } else {
+                    $q->where('customer_id', $request['guest_id'])->where('is_guest', 1);
+                }
+            })
+            ->first();
         if (!$order_details_data || !$order_details_data->order || $order_details_data->order->payment_status !== "paid") {
             return response()->json([
                 'message' => translate('Payment_must_be_confirmed_first'),
@@ -852,7 +883,22 @@ class OrderController extends Controller
             $guest_phone = '';
             $token = rand(100000, 999999);
 
-            $order_details_data = OrderDetail::with('order.customer')->find($request->order_details_id);
+            // [AI] SECURITY FIX VULN-011: Scope OrderDetail lookup to authenticated customer to prevent
+            // OTP spam/enumeration — attacker cannot trigger SMS/email to arbitrary order owners
+            $user = Helpers::getCustomerInformation($request);
+            $order_details_data = OrderDetail::with('order.customer')
+                ->where('id', $request->order_details_id)
+                ->whereHas('order', function ($q) use ($user, $request) {
+                    if ($user !== 'offline') {
+                        $q->where('customer_id', $user->id);
+                    } else {
+                        $q->where('customer_id', $request['guest_id'])->where('is_guest', 1);
+                    }
+                })
+                ->first();
+            if (!$order_details_data) {
+                return response()->json(['message' => translate('order_Not_Found')], 403);
+            }
 
             try {
                 if ($order_details_data->order->shipping_address_data) {

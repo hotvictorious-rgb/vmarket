@@ -646,7 +646,10 @@ class ProductController extends BaseController
         $subCategory = (!empty($request->sub_category_id) && $request->has('sub_category_id')) ? $this->categoryRepo->getFirstWhere(params: ['id' => $request['sub_category_id']]) : 'all';
         $subSubCategory = (!empty($request->sub_sub_category_id) && $request->has('sub_sub_category_id')) ? $this->categoryRepo->getFirstWhere(params: ['id' => $request['sub_sub_category_id']]) : 'all';
         $brand = (!empty($request->brand_id) && $request->has('brand_id')) ? $this->brandRepo->getFirstWhere(params: ['id' => $request->brand_id]) : 'all';
-        $seller = (!empty($request->seller_id) && $request->has('seller_id')) ? $this->vendorRepo->getFirstWhere(params: ['id' => $request->seller_id]) : '';
+        // [AI] SECURITY FIX VULN-009: Always look up the authenticated vendor's own record.
+        // Using $request->seller_id would allow a vendor to pull another merchant's store data
+        // for the export header. The actual product query already enforces seller_id => auth()->id().
+        $seller = $this->vendorRepo->getFirstWhere(params: ['id' => auth('seller')->id()]);
         $data = [
             'data-from' => 'vendor',
             'vendor' => $vendor,

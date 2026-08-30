@@ -169,7 +169,9 @@ class OrderController extends BaseController
             $customer = $this->customerRepo->getFirstWhere(params: ['id' => $request['customer_id']]);
         }
 
-        $vendorId = $request['seller_id'];
+        // [AI] SECURITY FIX VULN-002: Always derive vendorId from auth guard, never from user-supplied request
+        // to prevent a vendor from injecting another seller_id into the view context
+        $vendorId = $seller['id']; // already set from auth('seller')->user() on L111
         $customerId = $request['customer_id'];
 
         return view('vendor-views.order.list', compact(

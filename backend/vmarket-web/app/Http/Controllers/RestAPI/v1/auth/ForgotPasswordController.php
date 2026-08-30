@@ -189,6 +189,18 @@ class ForgotPasswordController extends Controller
             return response()->json(['errors' => Helpers::validationErrorProcessor($validator)], 403);
         }
 
+        // [AI] SECURITY FIX VULN-006: Apply brute-force lockout check before OTP verification.
+        // Previously this endpoint bypassed the lockout enforced in tokenVerificationSubmit(),
+        // allowing unlimited OTP guesses via a direct call to this method.
+        $verificationData = $this->passwordResetRepo->getFirstWhere(params: ['identity' => $request['identity']]);
+        $verifyStatus = $this->checkPasswordResetOTPBlockTimeOrInvalid(
+            verificationData: $verificationData,
+            identity: $request['identity']
+        );
+        if ($verifyStatus['status'] == 1) {
+            return response()->json(['errors' => [['code' => $verifyStatus['code'], 'message' => $verifyStatus['message']]]], 403);
+        }
+
         $data = DB::table('password_resets')
             ->where('user_type','customer')
             ->where('identity', $request['identity'])

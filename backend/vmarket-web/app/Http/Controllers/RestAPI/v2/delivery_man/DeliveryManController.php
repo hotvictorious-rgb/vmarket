@@ -882,7 +882,9 @@ class DeliveryManController extends Controller
             return response()->json(['message' => translate('Order not found or not assigned to you')], 404);
         }
 
-        $transitCode = 'TR-' . rand(1000, 9999);
+        // [AI] SECURITY FIX VULN-005: Upgraded from 4-digit (10,000 combos) to 6-digit (1,000,000 combos)
+        // per AGENTS.md §9.C OTP standard — prevents brute-force transit code interception
+        $transitCode = 'TR-' . rand(100000, 999999);
         $order->driver_phone = $request->driver_phone;
         $order->driver_vehicle_no = $request->driver_vehicle_no;
         $order->waybill_slip_no = $request->waybill_slip_no;
@@ -1209,7 +1211,8 @@ class DeliveryManController extends Controller
 
         $this->_set_paystack_config();
 
-        $reference = (string)('REMIT_' . $deliveryMan['id'] . '_' . time() . '_' . rand(1000, 9999));
+        // [AI] SECURITY FIX VULN-005: 6-digit entropy suffix for remittance reference
+        $reference = (string)('REMIT_' . $deliveryMan['id'] . '_' . time() . '_' . rand(100000, 999999));
         $url = "https://api.paystack.co/transaction/initialize";
 
         $fields = [

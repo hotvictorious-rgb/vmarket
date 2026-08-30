@@ -15,6 +15,7 @@ use Illuminate\Http\Request;
 use Illuminate\Routing\Controller;
 use Illuminate\Routing\Redirector;
 use Illuminate\Support\Facades\Config;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Validator;
 
@@ -240,29 +241,37 @@ class PaystackController extends Controller
             $orderId = $metadata['order_id'] ?? null;
             $type = $metadata['type'] ?? null;
             if ($orderId && $type === 'delivery_payment') {
-                $order = Order::with(['customer', 'deliveryMan', 'latestEditHistory'])->find($orderId);
-                if ($order && $order->order_status != 'delivered') {
-                    $expectedAmount = round(($order['order_amount'] + $order['edit_due_amount']) * 100);
-                    if ($amountPaid >= $expectedAmount) {
-                        $order->update([
-                            'order_status' => 'delivered',
-                            'order_amount' => $order['order_amount'] + $order['edit_due_amount'],
-                            'payment_status' => 'paid',
-                            'edit_due_amount' => 0,
-                            'payment_method' => 'paystack',
-                            'transaction_ref' => $reference,
-                        ]);
-
-                        if ($order->latestEditHistory) {
-                            OrderEditHistory::where('id', $order->latestEditHistory->id)->update([
-                                'order_due_payment_status' => 'paid',
-                                'order_due_payment_note' => 'Marked as paid by Paystack Webhook',
+                // [AI] SECURITY FIX VULN-007: Wrap both order mutations in DB::transaction() with
+                // pessimistic lockForUpdate() to prevent partial updates and concurrent double-processing
+                DB::transaction(function () use ($orderId, $amountPaid, $reference) {
+                    $order = Order::with(['latestEditHistory'])
+                        ->where('id', $orderId)
+                        ->where('order_status', '!=', 'delivered')
+                        ->lockForUpdate()
+                        ->first();
+                    if ($order) {
+                        $expectedAmount = round(($order['order_amount'] + $order['edit_due_amount']) * 100);
+                        if ($amountPaid >= $expectedAmount) {
+                            $order->update([
+                                'order_status' => 'delivered',
+                                'order_amount' => $order['order_amount'] + $order['edit_due_amount'],
+                                'payment_status' => 'paid',
+                                'edit_due_amount' => 0,
+                                'payment_method' => 'paystack',
+                                'transaction_ref' => $reference,
                             ]);
-                        }
 
-                        Log::info("Paystack Webhook: Successfully processed Delivery Order #{$orderId} with ref {$reference}.");
+                            if ($order->latestEditHistory) {
+                                OrderEditHistory::where('id', $order->latestEditHistory->id)->update([
+                                    'order_due_payment_status' => 'paid',
+                                    'order_due_payment_note' => 'Marked as paid by Paystack Webhook',
+                                ]);
+                            }
+
+                            Log::info("Paystack Webhook: Successfully processed Delivery Order #{$orderId} with ref {$reference}.");
+                        }
                     }
-                }
+                });
             }
         }
 
