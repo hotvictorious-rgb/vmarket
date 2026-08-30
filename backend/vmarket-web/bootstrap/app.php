@@ -79,6 +79,7 @@ return Application::configure(basePath: dirname(__DIR__))
             'logUserBrowsingNavigation' => \App\Http\Middleware\LogUserBrowsingNavigationMiddleware::class,
             'detectMobile' => \App\Http\Middleware\DetectMobile::class,
             'vendor_employee' => \App\Http\Middleware\VendorEmployeePermissionMiddleware::class,
+            'pos.access' => \App\Http\Middleware\PosAccessMiddleware::class,
         ]);
     })
     ->withExceptions(function (Exceptions $exceptions) {

@@ -16,15 +16,11 @@ use Illuminate\Support\Str;
  * All branch operations use the `shops` table, scoped to seller_id.
  * Now supports dynamic location hierarchy: Country ➔ State ➔ LGA (City) ➔ Hub.
  */
+use Modules\Pos\app\Traits\PosAuthTrait;
+
 class WarehouseController extends Controller
 {
-    protected function resolveAuthSellerId(): int
-    {
-        if (Auth::guard('vendor_employee')->check()) {
-            return (int) Auth::guard('vendor_employee')->user()->seller_id;
-        }
-        return (int) Auth::guard('seller')->id();
-    }
+    use PosAuthTrait;
 
     public function index()
     {

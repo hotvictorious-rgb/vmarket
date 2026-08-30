@@ -140,13 +140,23 @@
         <div class="brand-logo">
             <i class="fas fa-store" style="color: var(--pos-gold);"></i>
             <span>Vmarket <strong>POS</strong></span>
-            @php $seller = auth('seller')->user(); @endphp
+            @php
+                $seller = auth('seller')->user();
+                $isAdmin = auth('admin')->check();
+                $adminUser = $isAdmin ? auth('admin')->user() : null;
+            @endphp
             {{-- [AI] FREE badge shown when seller is pending/not yet approved on marketplace --}}
-            @if($seller && $seller->status !== 'approved')
+            @if($isAdmin)
+                <span class="badge-free" style="background: #5E17EB; color: #fff;">ADMIN</span>
+            @elseif($seller && $seller->status !== 'approved')
                 <span class="badge-free">FREE</span>
             @endif
         </div>
-        @if($seller)
+        @if($isAdmin)
+            <div style="font-size: 0.7rem; color: rgba(255,255,255,0.7); margin-top: 4px; font-weight: 600;">
+                👑 {{ $adminUser->name ?? 'Super Admin' }} (Platform Hub)
+            </div>
+        @elseif($seller)
             <div style="font-size: 0.7rem; color: rgba(255,255,255,0.4); margin-top: 4px; truncate: ellipsis;">
                 {{ $seller->f_name }} {{ $seller->l_name }}
             </div>
@@ -178,8 +188,13 @@
             <i class="fas fa-code-branch"></i> Branches
         </a>
         <div style="padding: 0.75rem 1.2rem; margin-top: 1rem; border-top: 1px solid rgba(255,255,255,0.08);">
-            {{-- [AI] Marketplace return button: visible ONLY to sellers with status='approved' --}}
-            @if($seller && $seller->status === 'approved')
+            {{-- [AI] Return button tailored to authenticated actor --}}
+            @if($isAdmin)
+                <a href="{{ route('admin.dashboard.index') }}" class="nav-link" style="border-left-color: var(--pos-gold);">
+                    <i class="fas fa-arrow-left" style="color: var(--pos-gold);"></i>
+                    <span style="color: var(--pos-gold); font-weight: 700;">🔙 Back to Vmarket Admin</span>
+                </a>
+            @elseif($seller && $seller->status === 'approved')
                 <a href="{{ url('/vendor') }}" class="nav-link" style="border-left-color: var(--pos-gold);">
                     <i class="fas fa-arrow-left" style="color: var(--pos-gold);"></i>
                     <span style="color: var(--pos-gold);">🔙 Back to Merchant Panel</span>
@@ -204,7 +219,15 @@
             <span class="text-muted" style="font-size: 0.85rem;">@yield('breadcrumb', 'POS')</span>
         </div>
         <div class="seller-badge">
-            @if($seller)
+            @if($isAdmin)
+                <span class="marketplace-badge approved" style="background: rgba(94, 23, 235, 0.15); color: #5E17EB; border: 1px solid rgba(94, 23, 235, 0.3);">
+                    <i class="fas fa-shield-alt"></i> Super Admin (SaaS Commander)
+                </span>
+                <span class="text-muted">|</span>
+                <a href="{{ route('admin.pos-management.dashboard') }}" class="btn btn-sm btn-primary px-2 py-1" style="font-size: 0.75rem; background-color: #5E17EB; border-color: #5E17EB;">
+                    <i class="fas fa-cog"></i> POS SaaS Hub
+                </a>
+            @elseif($seller)
                 {{-- [AI] Seller status badge: uses sellers.status + sellers.pos_status --}}
                 @if($seller->status === 'approved')
                     <span class="marketplace-badge approved"><i class="fas fa-check-circle"></i> Verified Merchant</span>
@@ -218,13 +241,13 @@
                     </span>
                 @endif
                 <span class="text-muted">|</span>
+                <form action="{{ route('vendor.auth.logout') }}" method="POST" class="d-inline">
+                    @csrf
+                    <button type="submit" class="btn btn-sm btn-outline-danger" style="font-size: 0.75rem;">
+                        <i class="fas fa-sign-out-alt"></i> Logout
+                    </button>
+                </form>
             @endif
-            <form action="{{ route('vendor.auth.logout') }}" method="POST" class="d-inline">
-                @csrf
-                <button type="submit" class="btn btn-sm btn-outline-danger" style="font-size: 0.75rem;">
-                    <i class="fas fa-sign-out-alt"></i> Logout
-                </button>
-            </form>
         </div>
     </div>
 

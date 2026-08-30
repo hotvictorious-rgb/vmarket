@@ -26,7 +26,7 @@ use Modules\Pos\app\Http\Controllers\WarehouseController;
 | [AI] Clients: Verified Merchant POS, Unverified Merchant Free POS.
 */
 
-Route::prefix('pos')->name('pos.')->middleware(['web', 'auth:seller'])->group(function () {
+Route::prefix('pos')->name('pos.')->middleware(['web', 'pos.access'])->group(function () {
 
     // ─── Dashboard ───────────────────────────────────────────────────────────
     Route::get('/', [DashboardController::class, 'index'])->name('dashboard');

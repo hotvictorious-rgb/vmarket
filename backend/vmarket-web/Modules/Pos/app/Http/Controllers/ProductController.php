@@ -19,15 +19,11 @@ use Illuminate\Support\Str;
  * - Sellers can promote products to marketplace via the Vendor Panel (separate flow).
  * - All queries strictly scoped to `user_id = seller_id` (IDOR protection).
  */
+use Modules\Pos\app\Traits\PosAuthTrait;
+
 class ProductController extends Controller
 {
-    protected function resolveAuthSellerId(): int
-    {
-        if (Auth::guard('vendor_employee')->check()) {
-            return (int) Auth::guard('vendor_employee')->user()->seller_id;
-        }
-        return (int) Auth::guard('seller')->id();
-    }
+    use PosAuthTrait;
 
     public function index(Request $request)
     {

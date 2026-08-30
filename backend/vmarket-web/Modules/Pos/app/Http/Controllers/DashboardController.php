@@ -23,15 +23,11 @@ use Carbon\Carbon;
  *
  * Clients: Verified Merchant Dashboard, Unverified Merchant Free POS Dashboard.
  */
+use Modules\Pos\app\Traits\PosAuthTrait;
+
 class DashboardController extends Controller
 {
-    protected function resolveAuthSellerId(): int
-    {
-        if (Auth::guard('vendor_employee')->check()) {
-            return (int) Auth::guard('vendor_employee')->user()->seller_id;
-        }
-        return (int) Auth::guard('seller')->id();
-    }
+    use PosAuthTrait;
 
     public function index(Request $request)
     {

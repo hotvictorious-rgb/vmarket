@@ -18,15 +18,11 @@ use Carbon\Carbon;
  *
  * Clients: Verified Merchant, Unverified Merchant Free POS.
  */
+use Modules\Pos\app\Traits\PosAuthTrait;
+
 class DebtController extends Controller
 {
-    protected function resolveAuthSellerId(): int
-    {
-        if (Auth::guard('vendor_employee')->check()) {
-            return (int) Auth::guard('vendor_employee')->user()->seller_id;
-        }
-        return (int) Auth::guard('seller')->id();
-    }
+    use PosAuthTrait;
 
     /**
      * Debt ledger summary — all customers with outstanding balances.

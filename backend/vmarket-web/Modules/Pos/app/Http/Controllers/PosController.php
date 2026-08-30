@@ -28,34 +28,11 @@ use Carbon\Carbon;
  *
  * Clients: Verified Merchant POS terminal, Unverified Merchant Free POS terminal.
  */
+use Modules\Pos\app\Traits\PosAuthTrait;
+
 class PosController extends Controller
 {
-    /**
-     * [AI] Helper: Resolve the authenticated seller_id.
-     * Works for both direct seller login and vendor_employee login.
-     */
-    protected function resolveAuthSellerId(): int
-    {
-        if (Auth::guard('vendor_employee')->check()) {
-            return (int) Auth::guard('vendor_employee')->user()->seller_id;
-        }
-        return (int) Auth::guard('seller')->id();
-    }
-
-    /**
-     * [AI] Helper: Resolve the active branch (shop) id.
-     * Vendor employees share their seller's branches (no per-employee branch lock in DB yet).
-     * Sellers can switch branches via the ?warehouse_id query param or session.
-     */
-    protected function resolveActiveBranchId(Request $request): int
-    {
-        $sellerId = $this->resolveAuthSellerId();
-        $fallbackBranch = Shop::where('seller_id', $sellerId)->where('temporary_close', 0)->first();
-        return (int) $request->get(
-            'warehouse_id',
-            session('pos_active_branch_id', $fallbackBranch?->id ?? 0)
-        );
-    }
+    use PosAuthTrait;
 
     /**
      * Display the POS terminal interface.

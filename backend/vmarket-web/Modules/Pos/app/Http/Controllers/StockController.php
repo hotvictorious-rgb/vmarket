@@ -22,20 +22,11 @@ use Carbon\Carbon;
  *
  * Clients: Verified Merchant, Unverified Merchant Free POS.
  */
+use Modules\Pos\app\Traits\PosAuthTrait;
+
 class StockController extends Controller
 {
-    protected function resolveAuthSellerId(): int
-    {
-        if (Auth::guard('vendor_employee')->check()) {
-            return (int) Auth::guard('vendor_employee')->user()->seller_id;
-        }
-        return (int) Auth::guard('seller')->id();
-    }
-
-    protected function resolveActiveBranchId(Request $request, int $sellerId): int
-    {
-        return (int) $request->get('warehouse_id', session('pos_active_branch_id', 0));
-    }
+    use PosAuthTrait;
 
     /**
      * Stock Management Index — shows all products with stock levels per branch.

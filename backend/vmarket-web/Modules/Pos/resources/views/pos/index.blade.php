@@ -456,7 +456,7 @@
             </div>
 
             <!-- Complete Sale Button -->
-            @if(Auth::user()->role === 'executive')
+            @if(Auth::user()?->role === 'executive')
                 <div style="background: rgba(239,68,68,0.15); border: 1px solid rgba(239,68,68,0.4); border-radius: 12px; padding: 0.75rem; text-align: center; color: #f87171; font-weight: 800; font-size: 0.85rem;" title="Executive accounts have read-only access.">
                     🔒 READ-ONLY EXECUTIVE (Checkout Blocked)
                 </div>

@@ -14,15 +14,11 @@ use Carbon\Carbon;
  * Ported from Hysam standalone ReportController.
  * All queries scoped to seller_id (Zero Cross-Tenant Bleed).
  */
+use Modules\Pos\app\Traits\PosAuthTrait;
+
 class ReportController extends Controller
 {
-    protected function resolveAuthSellerId(): int
-    {
-        if (Auth::guard('vendor_employee')->check()) {
-            return (int) Auth::guard('vendor_employee')->user()->seller_id;
-        }
-        return (int) Auth::guard('seller')->id();
-    }
+    use PosAuthTrait;
 
     public function index(Request $request)
     {
