@@ -35,7 +35,7 @@
 
                             <div>
                                 <ul class="option-select-btn d-grid flex-wrap gap-3">
-                                    @if (isset($offlinePaymentMethods) && $offlinePaymentStatus['status'])
+                                    @if (isset($offlinePaymentMethods) && (!empty($offlinePaymentStatus['status']) || $offlinePaymentStatus == 1))
                                         <li>
                                             <label class="w-100 h-100 d-block cursor-pointer position-relative"
                                                    for="cash_on_delivery">
@@ -140,7 +140,7 @@
                                             </div>
                                         </li>
                                     @endif
-                                    @if(getWebConfig(name: 'digital_payment')['status'])
+                                    @if(!empty(getWebConfig(name: 'digital_payment')['status']) || getWebConfig(name: 'digital_payment') == 1)
                                         <li>
                                             <label id="digital-payment-btn" class="w-100">
                                             <span
@@ -197,7 +197,7 @@
                     </div>
                 </form>
             </div>
-            @if (isset($offlinePaymentMethods) && $offlinePaymentStatus['status'])
+            @if (isset($offlinePaymentMethods) && (!empty($offlinePaymentStatus['status']) || $offlinePaymentStatus == 1))
                 <div class="offline-payment-section d-none">
                     <div class="modal-header border-0 p-2 pb-0">
                         <div class="w-100 d-flex justify-content-between align-items-start gap-3">

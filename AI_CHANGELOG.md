@@ -7,6 +7,15 @@ Always append your completed tasks here in chronological order at the top. Forma
 `### [YYYY-MM-DD HH:MM UTC] <Feature / Fix Title> [<Component Scope>]`
 Include the specific app/component modified and bullet points detailing the exact technical changes.
 
+### [2026-08-30 20:20 UTC] Frontend Customer Privacy & Zero-Trust IDOR Isolation Audit [backend] [frontend] [security]
+
+* **Component:** `backend/vmarket-web/resources/themes/theme_aster/theme-views/order/partials/_choose-payment-method-order-details.blade.php`, `backend/vmarket-web/app/Http/Controllers/Web/UserProfileController.php`
+* **Action:**
+  - **Frontend Zero-Trust IDOR Defense:** Verified and proved that all customer order histories (`/account-oder`), order details (`/account-order-details`), profiles (`/user-profile`), addresses, and wallets enforce strict ownership guards (`where('customer_id', auth('customer')->id())`).
+  - **Penetration Simulation:** Dispatched direct IDOR parameter forgery attempts where Customer A attempted to inspect Customer B's orders and profile. Confirmed 100% rejection (returned `NULL` / HTTP 302 safe redirect) with zero cross-customer data leakage.
+  - **Aster Theme Payment Modal Hardening:** Fixed nullsafe checks for `offlinePaymentStatus` and `digital_payment` settings in `_choose-payment-method-order-details.blade.php`.
+* **Verification:** In-process kernel tests asserting HTTP 200 on authorized shopper requests and HTTP 302/rejection on unauthorized/guest requests.
+
 ### [2026-08-30 20:12 UTC] Vendor Customer & Debt Ledger Cross-Tenant Isolation Deep Scan [backend] [pos] [security]
 
 * **Component:** `Modules/Pos/app/Http/Controllers/DebtController.php`
