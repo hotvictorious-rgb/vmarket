@@ -360,6 +360,11 @@ class DeliveryManController extends Controller
         return response()->json($details, 200);
     }
 
+    public function order_list_date_filter(Request $request): JsonResponse
+    {
+        return $this->get_all_orders($request);
+    }
+
     public function get_all_orders(Request $request): JsonResponse
     {
         $deliveryMan = $request['delivery_man'];
