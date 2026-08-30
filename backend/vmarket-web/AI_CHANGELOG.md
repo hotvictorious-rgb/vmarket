@@ -1,4 +1,35 @@
 
+### [2026-08-30 07:00 UTC] Endpoint Audit, Dead Controller Cleanup & Catalogue Creation [backend]
+
+**Scope:** All route files, all controllers under app/Http/Controllers/**
+
+**Method:** `php artisan route:list` — live Laravel kernel route enumeration
+
+#### Verified Route Counts (1,595 total)
+- REST API v1 (Customer Mobile): **175 routes**
+- REST API v2 (Delivery Man App): **100 routes**
+- REST API v3 (Vendor Seller App): **162 routes**
+- Admin Panel (Web Dashboard): **651 routes**
+- Vendor Panel (Seller Web): **203 routes**
+- Web Storefront (Customer Web): **295 routes** (+ 9 infra/debugbar)
+- **Duplicates found: 0**
+
+#### Dead Controllers Removed (5 files, 536 lines total)
+- `Admin/PaymentMethodController.php` — 361 lines. Legacy superseded by `ThirdParty/PaymentMethodController`. Not in any route.
+- `Admin/SmsGatewayController.php` — 34 lines. No route ever registered.
+- `Auth/ConfirmPasswordController.php` — 40 lines. Stock Laravel stub, unused.
+- `Auth/ResetPasswordController.php` — 30 lines. Stock Laravel stub, unused.
+- `Vendor/PaymentInformationController.php` — 71 lines. No route, stub view only.
+
+#### New Controllers Pending Route Wiring (2 files kept)
+- `Vendor/Branch/BranchTransferController.php` — [AI]-authored, inter-branch stock transfer. No route yet.
+- `Vendor/POS/CustomerDebtController.php` — [AI]-authored, POS debt ledger. No route yet.
+
+#### Catalogue Created
+- `ALL_ECOSYSTEM_ENDPOINTS_AND_SECURITY_TAXONOMY.md` — new file at project root with verified route counts, sub-group breakdown, security taxonomy, and all 16 VULN fixes documented.
+
+---
+
 ### [2026-08-30 06:49 UTC] Frontend Admin Payment Config & POS Authorization Hardening — 4 Vulnerabilities Fixed [backend]
 
 **Scope:** Admin ThirdParty PaymentMethodController, Payment Gateway Admin Blade Template
