@@ -136,9 +136,7 @@ class StockController extends Controller
         $productId   = (int) $request->product_id;
         $branchId    = (int) $request->warehouse_id;
         $qty         = (int) $request->quantity;
-        $cashierName = Auth::guard('vendor_employee')->check()
-            ? Auth::guard('vendor_employee')->user()->name
-            : (Auth::guard('seller')->user()->f_name . ' ' . Auth::guard('seller')->user()->l_name);
+        $cashierName = $this->resolveAuthUserName();
 
         // [AI] IDOR: ensure product belongs to this seller
         $product = Product::where('id', $productId)->where('user_id', $sellerId)->firstOrFail();
@@ -248,9 +246,7 @@ class StockController extends Controller
         abort_if(!$fromBranch || !$toBranch, 403, 'Unauthorized branch access.');
 
         $qty = (int) $request->quantity;
-        $cashierName = Auth::guard('vendor_employee')->check()
-            ? Auth::guard('vendor_employee')->user()->name
-            : Auth::guard('seller')->user()->f_name;
+        $cashierName = $this->resolveAuthUserName();
 
         DB::transaction(function () use ($sellerId, $product, $productId, $qty, $fromBranch, $toBranch, $cashierName) {
             // [AI] Pessimistic lock prevents race-condition transfers
@@ -405,9 +401,7 @@ class StockController extends Controller
         $sellerId    = $this->resolveAuthSellerId();
         $productId   = (int) $request->product_id;
         $qtyChange   = (int) $request->quantity_change;
-        $cashierName = Auth::guard('vendor_employee')->check()
-            ? Auth::guard('vendor_employee')->user()->name
-            : Auth::guard('seller')->user()->f_name;
+        $cashierName = $this->resolveAuthUserName();
 
         $product = Product::where('id', $productId)->where('user_id', $sellerId)->firstOrFail();
 

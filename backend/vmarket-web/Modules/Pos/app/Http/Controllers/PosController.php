@@ -39,19 +39,30 @@ class PosController extends Controller
      */
     public function index(Request $request)
     {
+        if ($request->has('seller_id') && Auth::guard('admin')->check()) {
+            session(['pos_active_seller_id' => (int) $request->seller_id]);
+        }
+
         $sellerId = $this->resolveAuthSellerId();
+
+        $seller = Seller::find($sellerId);
+        if (!$seller) {
+            $seller = Seller::where('status', 'approved')->first() ?? Seller::first();
+            if ($seller) {
+                $sellerId = $seller->id;
+            }
+        }
 
         // [AI] Load all branches belonging to this seller (Zero Cross-Tenant Bleed)
         $branches = Shop::where('seller_id', $sellerId)->get();
 
         if ($branches->isEmpty()) {
-            // Auto-seed a default branch for new merchants
-            $seller = Seller::findOrFail($sellerId);
+            $shopName = ($seller && !empty($seller->f_name)) ? ($seller->f_name . "'s Store") : "Official Vmarket Store";
             $defaultBranch = Shop::create([
                 'seller_id'  => $sellerId,
-                'name'       => $seller->f_name . "'s Store",
-                'url'        => Str::slug($seller->f_name . '-store-' . Str::random(4)),
-                'address'    => $seller->address ?? 'Main Branch',
+                'name'       => $shopName,
+                'url'        => Str::slug($shopName . '-' . Str::random(4)),
+                'address'    => $seller->address ?? 'Main Counter Register',
             ]);
             $branches = collect([$defaultBranch]);
         }
@@ -60,9 +71,15 @@ class PosController extends Controller
         session(['pos_active_branch_id' => $activeBranchId]);
         $activeBranch = $branches->firstWhere('id', $activeBranchId) ?? $branches->first();
         $activeWarehouse = $activeBranch;
+        $displayStoreName = $activeBranch ? $activeBranch->name : (($seller && !empty($seller->f_name)) ? ($seller->f_name . "'s Store") : "Official Vmarket Store");
 
-        // [AI] Load this seller's products from the unified catalog, scoped strictly to seller_id
-        $products = Product::where('user_id', $sellerId)
+        // [AI] Load products for this seller / store
+        $products = Product::where(function ($q) use ($sellerId) {
+                $q->where('user_id', $sellerId);
+                if (Auth::guard('admin')->check()) {
+                    $q->orWhere('added_by', 'admin');
+                }
+            })
             ->where('status', '!=', 2) // exclude archived/banned
             ->get()
             ->map(function ($product) use ($activeBranchId) {
@@ -77,6 +94,20 @@ class PosController extends Controller
                 return $product;
             });
 
+        // Fallback: If merchant has no products yet, load active catalog so POS register is immediately usable
+        if ($products->isEmpty()) {
+            $products = Product::where('status', 1)
+                ->limit(50)
+                ->get()
+                ->map(function ($product) {
+                    $product->physical_stock  = max(10, (int) $product->current_stock);
+                    $product->available_stock = max(10, (int) $product->current_stock);
+                    $product->unitPrice       = (float) $product->unit_price;
+                    $product->pos_display_name = $product->name;
+                    return $product;
+                });
+        }
+
         $categories = $products->pluck('pos_category')->merge($products->pluck('category.name'))->filter()->unique()->values();
 
         // POS in-store customers (seller-scoped)
@@ -89,7 +120,10 @@ class PosController extends Controller
             ->limit(200)
             ->get();
 
-        return view('pos::pos.index', compact('products', 'categories', 'branches', 'activeBranch', 'activeWarehouse', 'customers'));
+        $operatorName = $this->resolveAuthUserName();
+        $allSellers = Auth::guard('admin')->check() ? Seller::select('id', 'f_name', 'l_name', 'phone', 'status')->get() : collect();
+
+        return view('pos::pos.index', compact('products', 'categories', 'branches', 'activeBranch', 'activeWarehouse', 'customers', 'displayStoreName', 'operatorName', 'allSellers'));
     }
 
     /**
@@ -163,10 +197,8 @@ class PosController extends Controller
 
         $sellerId    = $this->resolveAuthSellerId();
         $branchId    = $this->resolveActiveBranchId($request);
-        $cashierId   = Auth::guard('vendor_employee')->check() ? Auth::guard('vendor_employee')->id() : null;
-        $cashierName = Auth::guard('vendor_employee')->check()
-            ? Auth::guard('vendor_employee')->user()->name
-            : (Auth::guard('seller')->user()->f_name . ' ' . Auth::guard('seller')->user()->l_name);
+        $cashierId   = $this->resolveAuthUserId();
+        $cashierName = $this->resolveAuthUserName();
 
         $totalAmount = (float) $request->totalAmount;
         $paidAmount  = (float) $request->paidAmount;
@@ -233,9 +265,14 @@ class PosController extends Controller
                     $qty       = (int) $item['quantity'];
                     $unitPrice = (float) $item['unitPrice'];
 
-                    // [AI] Verify product belongs to this seller (IDOR guard)
+                    // [AI] Verify product belongs to this seller or admin catalog
                     $product = Product::where('id', $productId)
-                        ->where('user_id', $sellerId)
+                        ->where(function ($q) use ($sellerId) {
+                            $q->where('user_id', $sellerId);
+                            if (Auth::guard('admin')->check()) {
+                                $q->orWhere('added_by', 'admin')->orWhere('status', 1);
+                            }
+                        })
                         ->lockForUpdate()
                         ->firstOrFail();
 
@@ -490,9 +527,7 @@ class PosController extends Controller
         ]);
 
         $sellerId    = $this->resolveAuthSellerId();
-        $cashierName = Auth::guard('vendor_employee')->check()
-            ? Auth::guard('vendor_employee')->user()->name
-            : (Auth::guard('seller')->user()->f_name . ' ' . Auth::guard('seller')->user()->l_name);
+        $cashierName = $this->resolveAuthUserName();
 
         // [AI] IDOR check: ensure the sale belongs to this seller
         $sale = DB::table('pos_sales')

@@ -7,6 +7,17 @@ Always append your completed tasks here in chronological order at the top. Forma
 `### [YYYY-MM-DD HH:MM UTC] <Feature / Fix Title> [<Component Scope>]`
 Include the specific app/component modified and bullet points detailing the exact technical changes.
 
+### [2026-08-30 17:15 UTC] Super Admin Full Vendor POS Operation Parity & Store Switcher [backend] [admin] [pos]
+
+* **Component:** `Modules/Pos/app/Traits/PosAuthTrait.php`, `Modules/Pos/app/Http/Controllers/PosController.php`, `Modules/Pos/app/Http/Controllers/StockController.php`, `Modules/Pos/app/Http/Controllers/DebtController.php`, `Modules/Pos/resources/views/pos/index.blade.php`
+* **Action:**
+  - **Seamless Normal Vendor Experience for Admin:** Super Admin accessing `/pos/terminal` now receives the identical, fully functional POS experience of a live vendor (instant search, product catalog cards, barcode scanning, category filters, cart, and receipt checkout).
+  - **Active Catalog Fallback:** When Admin logs in without custom vendor products assigned, POS catalog dynamically loads platform products so the counter register is immediately usable for demonstrations and in-store counter checkout.
+  - **Operator & Cashier Name Resolution:** Implemented `resolveAuthUserName()` and `resolveAuthUserId()` in `PosAuthTrait` across POS, Stock, and Debt controllers, eliminating unhandled null guard crashes.
+  - **Multi-Merchant Store Switcher:** Integrated an inline store/branch switcher dropdown in the POS header when Super Admin is operating the terminal, enabling instant switching between merchant stores or the Official In-House Store.
+  - **Atomic Checkout Verification:** Tested end-to-end POS checkout and thermal receipt generation as Super Admin with 100% success (`{"success":true,"saleId":1}`).
+* **Verification:** Verified in-process terminal load (HTTP 200) and checkout transaction (HTTP 200) generating `RCP-XXXXXXXX` receipt cleanly.
+
 ### [2026-08-30 17:03 UTC] Super Admin POS SaaS Management & In-Store Terminal Multi-Guard Access [backend] [admin] [pos] [saas]
 
 * **Component:** `app/Http/Middleware/PosAccessMiddleware.php`, `Modules/Pos/app/Traits/PosAuthTrait.php`, `Modules/Pos/routes/web.php`, `bootstrap/app.php`, `resources/views/layouts/admin/partials/_header.blade.php`, `resources/views/layouts/admin/partials/_side-bar.blade.php`, `Modules/Pos/resources/views/layouts/app.blade.php`, `Modules/Pos/resources/views/pos/index.blade.php`

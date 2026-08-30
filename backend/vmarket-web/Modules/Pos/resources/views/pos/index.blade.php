@@ -247,11 +247,23 @@
     <div>
         <div class="catalog-header">
             <div>
-                <h2 style="font-size: 1.35rem; font-weight: 800;">
-                    🏪 {{ $displayStoreName ?? 'Point of Sale' }}
-                </h2>
-                <p style="font-size: 0.82rem; color: var(--text-muted);">
-                    Counter Register: <strong style="color: #60a5fa;">{{ $activeWarehouse->name }}</strong> · Operator: <strong style="color: #4ade80;">{{ auth()->user()->name ?? 'Cashier' }}</strong>
+                <div style="display: flex; align-items: center; gap: 0.75rem;">
+                    <h2 style="font-size: 1.35rem; font-weight: 800; margin-bottom: 0;">
+                        🏪 {{ $displayStoreName ?? 'Point of Sale' }}
+                    </h2>
+                    @if(Auth::guard('admin')->check() && isset($allSellers) && $allSellers->count() > 1)
+                        <select onchange="window.location.href='{{ url('/pos/terminal') }}?seller_id=' + this.value" style="background: #1e293b; color: #fbbf24; border: 1px solid #475569; border-radius: 8px; font-size: 0.75rem; padding: 2px 8px; cursor: pointer;">
+                            <option value="">-- Switch Store / Merchant --</option>
+                            @foreach($allSellers as $s)
+                                <option value="{{ $s->id }}" {{ session('pos_active_seller_id') == $s->id ? 'selected' : '' }}>
+                                    🏬 {{ $s->f_name }} {{ $s->l_name }} (ID #{{ $s->id }})
+                                </option>
+                            @endforeach
+                        </select>
+                    @endif
+                </div>
+                <p style="font-size: 0.82rem; color: var(--text-muted); margin-top: 4px; margin-bottom: 0;">
+                    Counter Register: <strong style="color: #60a5fa;">{{ $activeWarehouse->name ?? 'Main Register' }}</strong> · Operator: <strong style="color: #4ade80;">{{ $operatorName ?? 'Cashier' }}</strong>
                 </p>
             </div>
 

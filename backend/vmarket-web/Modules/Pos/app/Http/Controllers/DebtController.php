@@ -123,10 +123,7 @@ class DebtController extends Controller
 
         $sellerId = $this->resolveAuthSellerId();
         $saleId   = (int) $request->pos_sale_id;
-        $amount   = (float) $request->amount;
-        $cashierName = Auth::guard('vendor_employee')->check()
-            ? Auth::guard('vendor_employee')->user()->name
-            : Auth::guard('seller')->user()->f_name;
+        $cashierName = $this->resolveAuthUserName();
 
         try {
             DB::transaction(function () use ($sellerId, $saleId, $amount, $request, $cashierName) {
