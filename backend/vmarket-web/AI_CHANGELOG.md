@@ -1,4 +1,28 @@
 
+### [2026-08-30 07:18 UTC] 10-Suite PHP Multi-User Security Testing Harness & AI Governance Directive [backend]
+
+**Scope:** `tests/Security/`, `.agents/AGENTS.md`, `ALL_ECOSYSTEM_ENDPOINTS_AND_SECURITY_TAXONOMY.md`
+
+#### Implemented 10 Standalone PHP Security Test Suites:
+1. `tests/Security/SecurityTestCase.php` — Base test class providing factory & auth helpers for all 9 standardized ecosystem roles.
+2. `tests/Security/Suite01_SuperAdminAccessTest.php` — Role 1 Super Admin access, POS SaaS management, and payment config tests.
+3. `tests/Security/Suite02_AdminEmployeeModuleGateTest.php` — Role 2 Admin Employee module gates (`module:pos_management`, `module:3rd_party_setup`).
+4. `tests/Security/Suite03_VerifiedMerchantIsolationTest.php` — Role 3 Verified Merchant zero-cross-tenant bleed on products, orders, and shops.
+5. `tests/Security/Suite04_UnverifiedMerchantBlockTest.php` — Role 4 Unverified Merchant marketplace and withdrawal restrictions.
+6. `tests/Security/Suite05_DeliveryManIsolationTest.php` — Roles 7 & 8 Active vs Inactive Delivery Rider order/wallet micro-isolation.
+7. `tests/Security/Suite06_CustomerIDORTest.php` — Role 9 Customer IDOR boundaries on orders, addresses, and account deletion.
+8. `tests/Security/Suite07_PaymentGatewaySecurityTest.php` — Payment Gateway row locks, Paystack entropy, and `UpdateStatus()` whitelist enforcement.
+9. `tests/Security/Suite08_OTPBruteForceTest.php` — 6-digit OTP standards, 5-attempt lockout, 15-minute expiration, and exact identity matching.
+10. `tests/Security/Suite09_AntiMassAssignmentAndInputValidationTest.php` — Anti-mass-assignment parameter injection guards and pessimistic balance concurrency locks.
+11. `tests/Security/Suite10_NineRoleCrossAccessMatrixTest.php` — Master 9-role cross-actor boundary and mutual exclusion matrix.
+
+#### Governance & Rule Updates:
+- Updated `.agents/AGENTS.md` with **Section 17: Mandatory 10-Suite PHP Multi-User Security Testing Harness**. All AIs are strictly required to execute these suites on every backend change.
+- Updated `ALL_ECOSYSTEM_ENDPOINTS_AND_SECURITY_TAXONOMY.md` documenting the 10 standalone test suites.
+- Syntax verification: `php -l` PASS across all 11 test files (0 errors).
+
+---
+
 ### [2026-08-30 07:00 UTC] Endpoint Audit, Dead Controller Cleanup & Catalogue Creation [backend]
 
 **Scope:** All route files, all controllers under app/Http/Controllers/**

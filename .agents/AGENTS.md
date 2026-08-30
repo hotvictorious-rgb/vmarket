@@ -247,5 +247,42 @@ php test_all_1572_endpoints_security_and_role_proof.php
    - Mathematical Invariant Proof with zero drift ($\Delta = 0.00$).
 4. **Mandatory AI Changelog Logging & Clean Commit:** The AI must document the test results in `AI_CHANGELOG.md` before committing changes to Git with `[AI]`. No change may be merged or reported as complete without this passing proof.
 
+## 17. Mandatory 10-Suite PHP Multi-User Security Testing Harness 🧪
+**This is an inviolable rule for ALL AIs:**
+Whenever any AI modifies backend controllers, repositories, middleware, or routes across Victorious MARKET, the AI **MUST execute the 10 dedicated PHP security test suites** located in `tests/Security/`.
+
+### The 10 Standalone Security Suites:
+| Suite File | Target Actor / Standard | Primary Invariants Verified |
+|---|---|---|
+| `tests/Security/Suite01_SuperAdminAccessTest.php` | Role 1: Super Admin | Unrestricted access across all modules, MRR dashboards, SaaS POS, payment config |
+| `tests/Security/Suite02_AdminEmployeeModuleGateTest.php` | Role 2: Admin Employee | Strict `module:*` middleware gates (e.g. `module:pos_management`, `module:3rd_party_setup`) |
+| `tests/Security/Suite03_VerifiedMerchantIsolationTest.php` | Role 3: Verified Merchant | Zero cross-tenant data bleed (`where('seller_id', $authSellerId)` on products, orders, shops) |
+| `tests/Security/Suite04_UnverifiedMerchantBlockTest.php` | Role 4: Unverified Merchant | Status=0 / pending KYC merchants blocked from live marketplace selling & withdrawals |
+| `tests/Security/Suite05_DeliveryManIsolationTest.php` | Roles 7 & 8: Delivery Riders | Active rider route/cash isolation (`delivery_man_id`); inactive rider zero operational access |
+| `tests/Security/Suite06_CustomerIDORTest.php` | Role 9: Customer | Zero-trust IDOR bounds on orders, shipping addresses, wallets, and account delete |
+| `tests/Security/Suite07_PaymentGatewaySecurityTest.php` | Payment Gateways (All Roles) | Atomic locks (`is_paid`=0), Paystack reference entropy, live/test key isolation, `UpdateStatus()` whitelist |
+| `tests/Security/Suite08_OTPBruteForceTest.php` | Universal Auth / OTP | 6-digit standard, 5-attempt brute-force lockout, 15-minute expiry, exact equality matching |
+| `tests/Security/Suite09_AntiMassAssignmentAndInputValidationTest.php` | Data Integrity (Pillars 3 & 4) | Anti-mass-assignment parameter injection guards, pessimistic balance locks (`lockForUpdate()`) |
+| `tests/Security/Suite10_NineRoleCrossAccessMatrixTest.php` | Master 9-Role Cross Matrix | Full cross-actor privilege boundary matrix & mutual exclusion across all 9 roles |
+
+### Mandatory Execution Command:
+```bash
+# Run all suites together:
+php artisan test tests/Security/
+
+# Or run individual suites independently:
+php artisan test tests/Security/Suite01_SuperAdminAccessTest.php
+php artisan test tests/Security/Suite02_AdminEmployeeModuleGateTest.php
+php artisan test tests/Security/Suite03_VerifiedMerchantIsolationTest.php
+php artisan test tests/Security/Suite04_UnverifiedMerchantBlockTest.php
+php artisan test tests/Security/Suite05_DeliveryManIsolationTest.php
+php artisan test tests/Security/Suite06_CustomerIDORTest.php
+php artisan test tests/Security/Suite07_PaymentGatewaySecurityTest.php
+php artisan test tests/Security/Suite08_OTPBruteForceTest.php
+php artisan test tests/Security/Suite09_AntiMassAssignmentAndInputValidationTest.php
+php artisan test tests/Security/Suite10_NineRoleCrossAccessMatrixTest.php
+```
+All AIs must verify 100% PASS across all suites, update `ALL_ECOSYSTEM_ENDPOINTS_AND_SECURITY_TAXONOMY.md` and `AI_CHANGELOG.md`, and make an atomic Git commit with `[AI]`.
+
 
 

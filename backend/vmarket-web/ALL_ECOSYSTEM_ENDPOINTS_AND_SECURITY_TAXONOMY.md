@@ -1,4 +1,4 @@
-﻿# ALL_ECOSYSTEM_ENDPOINTS_AND_SECURITY_TAXONOMY.md
+# ALL_ECOSYSTEM_ENDPOINTS_AND_SECURITY_TAXONOMY.md
 ## Victorious MARKET — Official Endpoint Catalogue & Security Taxonomy
 **Last audited:** 2026-08-30 07:00 UTC
 **Audit method:** `php artisan route:list` (live Laravel kernel, not static analysis)
@@ -82,9 +82,25 @@ Audit date: 2026-08-30. Only unique METHOD+URI combos counted. No duplicates det
 | VULN-FRONT-003 | MEDIUM | Meta-fields stripped from live_values before store |
 | VULN-FRONT-004 | MEDIUM | Secret keys masked as type=password with Sensitive badge |
 
+## 10 Mandatory Standalone Security Test Suites
+
+The following 10 standalone PHPUnit/Laravel security test suites are maintained in `tests/Security/` and must be executed by all AIs:
+
+1. `tests/Security/Suite01_SuperAdminAccessTest.php` — Super Admin universal access & MRR/POS SaaS privilege verification
+2. `tests/Security/Suite02_AdminEmployeeModuleGateTest.php` — Admin Employee `module:*` middleware gate enforcement
+3. `tests/Security/Suite03_VerifiedMerchantIsolationTest.php` — Verified Merchant zero cross-tenant bleed on products/orders/shops
+4. `tests/Security/Suite04_UnverifiedMerchantBlockTest.php` — Unverified Merchant (status=0) marketplace and withdrawal blockage
+5. `tests/Security/Suite05_DeliveryManIsolationTest.php` — Active vs Inactive Delivery Rider order/wallet micro-isolation
+6. `tests/Security/Suite06_CustomerIDORTest.php` — Customer IDOR protection on orders, shipping addresses, and account deletion
+7. `tests/Security/Suite07_PaymentGatewaySecurityTest.php` — Payment Gateway row locks, Paystack entropy, and `UpdateStatus()` whitelist
+8. `tests/Security/Suite08_OTPBruteForceTest.php` — 6-digit OTP format, 5-attempt lockout, 15-minute expiration, exact matching
+9. `tests/Security/Suite09_AntiMassAssignmentAndInputValidationTest.php` — Mass assignment protection and pessimistic concurrency locks
+10. `tests/Security/Suite10_NineRoleCrossAccessMatrixTest.php` — Complete 9-role cross-actor boundary and mutual exclusion matrix
+
 ## Technical Debt
 
 - BranchTransferController: wire to vendor routes for inter-branch stock transfer
 - CustomerDebtController: wire to vendor/pos routes for debt ledger
 - POS management sidebar nav: add link to /admin/pos-management/dashboard
 - Paystack keys: move PAYSTACK_SECRET_KEY to .env (constructor already has env() fallback)
+
