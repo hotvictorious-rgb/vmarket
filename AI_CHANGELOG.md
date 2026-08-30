@@ -7,6 +7,16 @@ Always append your completed tasks here in chronological order at the top. Forma
 `### [YYYY-MM-DD HH:MM UTC] <Feature / Fix Title> [<Component Scope>]`
 Include the specific app/component modified and bullet points detailing the exact technical changes.
 
+### [2026-08-30 17:21 UTC] POS Terminal 500 Error Resolution & Robust Customer/Category Object Handling [backend] [pos]
+
+* **Component:** `Modules/Pos/app/Http/Controllers/PosController.php`, `Modules/Pos/resources/views/pos/index.blade.php`, `Modules/Pos/resources/views/layouts/app.blade.php`, `Modules/Pos/resources/views/warehouses/create.blade.php`, `Modules/Pos/resources/views/warehouses/edit.blade.php`
+* **Action:**
+  - **Import Fix:** Added `use App\Models\User;` to [PosController.php](file:///c:/Users/USER/Downloads/vmarket/backend/vmarket-web/Modules/Pos/app/Http/Controllers/PosController.php).
+  - **Undefined Property Handling:** Fixed customer object mapping in `PosController::index` and [pos/index.blade.php](file:///c:/Users/USER/Downloads/vmarket/backend/vmarket-web/Modules/Pos/resources/views/pos/index.blade.php) using null-coalescing fallbacks for `$c->id`, `$c->name`, `$c->phone`, `$c->total_debt`, `$c->customer_code`.
+  - **Category Object String Conversion Fix:** Fixed `data-category` and category pill badges in [pos/index.blade.php](file:///c:/Users/USER/Downloads/vmarket/backend/vmarket-web/Modules/Pos/resources/views/pos/index.blade.php) by using `$product->category_name` string property instead of passing Eloquent relation models.
+  - **Nullsafe `$errors` View Handling:** Guarded all `$errors->any()` calls with `isset($errors) && $errors->any()` across POS layouts and warehouse views.
+* **Verification:** Verified `/pos/terminal` returns `HTTP 200` with 84,885 bytes rendered cleanly under Admin and Seller sessions, and `HTTP 302` redirect for unauthenticated guests.
+
 ### [2026-08-30 17:15 UTC] Super Admin Full Vendor POS Operation Parity & Store Switcher [backend] [admin] [pos]
 
 * **Component:** `Modules/Pos/app/Traits/PosAuthTrait.php`, `Modules/Pos/app/Http/Controllers/PosController.php`, `Modules/Pos/app/Http/Controllers/StockController.php`, `Modules/Pos/app/Http/Controllers/DebtController.php`, `Modules/Pos/resources/views/pos/index.blade.php`

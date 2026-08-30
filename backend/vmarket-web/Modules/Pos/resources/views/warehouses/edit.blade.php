@@ -21,8 +21,8 @@
                     <h5 class="mb-0 font-weight-bold text-dark">Branch Information</h5>
                 </div>
                 <div class="card-body">
-                    @if ($errors->any())
-                        <div class="alert alert-danger">
+                    @if (isset($errors) && $errors->any())
+                        <div class="alert alert-danger mb-4">
                             <ul class="mb-0">
                                 @foreach ($errors->all() as $error)
                                     <li>{{ $error }}</li>

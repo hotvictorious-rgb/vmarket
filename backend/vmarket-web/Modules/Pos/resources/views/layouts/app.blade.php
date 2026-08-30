@@ -258,7 +258,7 @@
         </div>
     @endif
 
-    @if($errors->any())
+    @if(isset($errors) && $errors->any())
         <div class="alert alert-danger m-3">
             @foreach($errors->all() as $error)
                 <div>{{ $error }}</div>

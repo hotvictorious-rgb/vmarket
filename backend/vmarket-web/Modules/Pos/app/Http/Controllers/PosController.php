@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Models\Product;
 use App\Models\Shop;
 use App\Models\Seller;
+use App\Models\User;
 use App\Models\VendorEmployee;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -81,44 +82,76 @@ class PosController extends Controller
                 }
             })
             ->where('status', '!=', 2) // exclude archived/banned
+            ->with(['category'])
             ->get()
             ->map(function ($product) use ($activeBranchId) {
                 // Stock from unified product_stocks table
                 $stockRow = DB::table('product_stocks')
                     ->where('product_id', $product->id)
                     ->first();
-                $product->physical_stock  = $stockRow ? (int) $stockRow->qty : (int) $product->current_stock;
-                $product->available_stock = max(0, $product->physical_stock);
-                $product->unitPrice       = (float) $product->unit_price;
+                $product->physical_stock   = $stockRow ? (int) $stockRow->qty : (int) $product->current_stock;
+                $product->available_stock  = max(0, $product->physical_stock);
+                $product->unitPrice        = (float) $product->unit_price;
                 $product->pos_display_name = $product->name;
+                $product->code             = $product->code ?: ('SKU-' . $product->id);
+                $product->brand            = is_object($product->brand) ? ($product->brand->name ?? 'Standard') : ($product->brand ?: 'Standard');
+                $product->size             = is_string($product->attributes) ? $product->attributes : '';
+                $product->category_name    = $product->category?->name ?? 'General';
                 return $product;
             });
 
         // Fallback: If merchant has no products yet, load active catalog so POS register is immediately usable
         if ($products->isEmpty()) {
             $products = Product::where('status', 1)
+                ->with(['category'])
                 ->limit(50)
                 ->get()
                 ->map(function ($product) {
-                    $product->physical_stock  = max(10, (int) $product->current_stock);
-                    $product->available_stock = max(10, (int) $product->current_stock);
-                    $product->unitPrice       = (float) $product->unit_price;
+                    $product->physical_stock   = max(10, (int) $product->current_stock);
+                    $product->available_stock  = max(10, (int) $product->current_stock);
+                    $product->unitPrice        = (float) $product->unit_price;
                     $product->pos_display_name = $product->name;
+                    $product->code             = $product->code ?: ('SKU-' . $product->id);
+                    $product->brand            = is_object($product->brand) ? ($product->brand->name ?? 'Standard') : ($product->brand ?: 'Standard');
+                    $product->size             = '';
+                    $product->category_name    = $product->category?->name ?? 'General';
                     return $product;
                 });
         }
 
-        $categories = $products->pluck('pos_category')->merge($products->pluck('category.name'))->filter()->unique()->values();
+        $categories = $products->pluck('category_name')->filter()->unique()->values();
 
-        // POS in-store customers (seller-scoped)
-        $customers = DB::table('pos_sales')
+        // POS in-store customers (seller-scoped + platform registered customers)
+        $posCustomers = DB::table('pos_sales')
             ->where('seller_id', $sellerId)
             ->whereNotNull('customer_name')
-            ->selectRaw('customer_id, customer_name, customer_phone, MAX(created_at) as last_visit, SUM(debt_amount) as total_debt')
+            ->selectRaw('customer_id as id, customer_name as name, customer_phone as phone, MAX(created_at) as last_visit, SUM(debt_amount) as total_debt')
             ->groupBy('customer_id', 'customer_name', 'customer_phone')
             ->orderByDesc('last_visit')
-            ->limit(200)
-            ->get();
+            ->limit(100)
+            ->get()
+            ->map(function ($c) {
+                $c->id = $c->id ?? 0;
+                $c->customer_code = $c->phone ? substr($c->phone, -4) : ('CUST-' . $c->id);
+                return $c;
+            });
+
+        $platformCustomers = User::whereNotNull('phone')
+            ->where('phone', '!=', '')
+            ->selectRaw("id, CONCAT(COALESCE(f_name, ''), ' ', COALESCE(l_name, '')) as name, phone")
+            ->limit(50)
+            ->get()
+            ->map(function ($u) {
+                $c = new \stdClass();
+                $c->id = $u->id;
+                $c->name = trim($u->name) ?: ('Customer #' . $u->id);
+                $c->phone = $u->phone;
+                $c->total_debt = 0;
+                $c->customer_code = substr($u->phone, -4);
+                return $c;
+            });
+
+        $customers = $posCustomers->concat($platformCustomers)->unique('phone')->values();
 
         $operatorName = $this->resolveAuthUserName();
         $allSellers = Auth::guard('admin')->check() ? Seller::select('id', 'f_name', 'l_name', 'phone', 'status')->get() : collect();

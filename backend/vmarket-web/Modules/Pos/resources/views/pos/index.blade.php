@@ -291,7 +291,7 @@
                  data-brand="{{ $product->brand }}"
                  data-size="{{ $product->size }}"
                  data-price="{{ $product->unitPrice }}"
-                 data-category="{{ $product->category }}"
+                 data-category="{{ $product->category_name ?? 'General' }}"
                  data-stock="{{ $product->physical_stock }}"
                  onclick="addToCart('{{ $product->id }}', '{{ addslashes($product->code) }}', {{ $product->unitPrice }}, {{ $product->physical_stock }})">
                 <div style="flex: 1; min-width: 0;">
@@ -299,7 +299,7 @@
                         {{ $product->code }}
                     </div>
                     <div style="font-size: 0.72rem; color: #94a3b8; margin-bottom: 0.25rem;">
-                        <span style="color: #c084fc; font-weight: 600;">{{ $product->category }}</span>@if($product->size) · <span style="color: #cbd5e1;">{{ $product->size }}</span>@endif
+                        <span style="color: #c084fc; font-weight: 600;">{{ $product->category_name ?? 'General' }}</span>@if($product->size) · <span style="color: #cbd5e1;">{{ $product->size }}</span>@endif
                     </div>
                     <div class="p-price">₦{{ number_format($product->unitPrice, 0) }}</div>
                 </div>
@@ -373,13 +373,13 @@
                 <select id="customerSelect" style="width: 100%; padding: 0.45rem 0.65rem; font-size: 0.82rem; background: #0b0f19; border: 1px solid #475569; border-radius: 8px; color: #f8fafc; margin-bottom: 0.5rem;" onchange="onCustomerSelected(this)">
                     <option value="" data-name="Walk-in Customer" data-phone="" data-debt="0" data-code="">-- 🛒 Walk-in Customer (Paid in Full Only) --</option>
                     @foreach($customers as $c)
-                        <option value="{{ $c->id }}" 
-                                data-id="{{ $c->id }}"
-                                data-name="{{ $c->name }}" 
-                                data-phone="{{ $c->phone }}" 
-                                data-debt="{{ $c->total_debt }}" 
-                                data-code="{{ $c->customer_code }}">
-                            {{ $c->name }} ({{ $c->phone ?: 'No Phone' }}) [{{ $c->customer_code }}] — Debt: ₦{{ number_format($c->total_debt) }}
+                        <option value="{{ $c->id ?? '' }}" 
+                                data-id="{{ $c->id ?? '' }}"
+                                data-name="{{ $c->name ?? '' }}" 
+                                data-phone="{{ $c->phone ?? '' }}" 
+                                data-debt="{{ $c->total_debt ?? 0 }}" 
+                                data-code="{{ $c->customer_code ?? '' }}">
+                            {{ $c->name ?? 'Customer' }} ({{ $c->phone ?: 'No Phone' }}) [{{ $c->customer_code ?? '' }}] — Debt: ₦{{ number_format((float)($c->total_debt ?? 0)) }}
                         </option>
                     @endforeach
                 </select>
