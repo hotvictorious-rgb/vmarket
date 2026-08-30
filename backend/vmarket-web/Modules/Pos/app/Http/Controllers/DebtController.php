@@ -27,8 +27,9 @@ class DebtController extends Controller
     /**
      * Debt ledger summary — all customers with outstanding balances.
      */
-    public function index(Request $request)
+    public function index(Request $request = null)
     {
+        $request  = $request ?? request();
         $sellerId = $this->resolveAuthSellerId();
         $search   = trim($request->get('search', ''));
 

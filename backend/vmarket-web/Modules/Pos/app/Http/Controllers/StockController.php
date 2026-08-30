@@ -363,8 +363,9 @@ class StockController extends Controller
     /**
      * Unsupplied orders awaiting customer pickup.
      */
-    public function unsuppliedOrders(Request $request)
+    public function unsuppliedOrders(Request $request = null)
     {
+        $request = $request ?? request();
         $sellerId = $this->resolveAuthSellerId();
         $datePreset = $request->get('date_preset', 'ALL');
         $fromDate = $request->get('from_date');

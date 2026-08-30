@@ -134,7 +134,7 @@
 
     <div style="width: 100%; max-width: 800px;">
         <div class="no-print">
-            <a href="{{ route('pos.stock.transfers') }}" class="btn-print" style="background: #64748b;">⬅ Back to Transfers</a>
+            <a href="{{ route('stock.transfers') }}" class="btn-print" style="background: #64748b;">⬅ Back to Transfers</a>
             <button onclick="window.print()" class="btn-print">🖨️ Print Waybill</button>
         </div>
 

@@ -1,4 +1,4 @@
-@extends('pos::layouts.app')
+@extends('layouts.app')
 
 @section('title', 'Stock Management Hub')
 
@@ -135,10 +135,10 @@
         </div>
 
         <div style="display: flex; gap: 0.5rem; align-items: center;">
-            <a href="{{ route('pos.stock.transfers') }}" class="btn btn-secondary">
+            <a href="{{ route('stock.transfers') }}" class="btn btn-secondary">
                 🚚 Shop Transfers
             </a>
-            <a href="{{ route('pos.transactions.index') }}" class="btn btn-secondary">
+            <a href="{{ route('transactions.index') }}" class="btn btn-secondary">
                 📜 Ledgers Hub
             </a>
         </div>
@@ -188,7 +188,7 @@
         </div>
 
         <!-- 3. Goods Sold & Not Supplied (Awaiting Pickup) -->
-        <a href="{{ route('pos.stock.unsupplied') }}" class="stock-card" style="border-color: rgba(217,119,6,0.4); text-decoration: none; color: inherit;">
+        <a href="{{ route('stock.unsupplied') }}" class="stock-card" style="border-color: rgba(217,119,6,0.4); text-decoration: none; color: inherit;">
             <div class="card-icon-wrap" style="background: rgba(217,119,6,0.15); color: #fbbf24;">
                 ⏳
             </div>
@@ -207,7 +207,7 @@
                 Monitoring real-time physical counts, supplier deliveries, and multi-branch inventory balances.
             </p>
         </div>
-        <a href="{{ route('pos.reports.export', 'inventory') }}" class="btn btn-secondary" style="font-size: 0.82rem; color: #facc15; border-color: rgba(234, 179, 8, 0.4);">
+        <a href="{{ route('reports.export.csv', 'inventory') }}" class="btn btn-secondary" style="font-size: 0.82rem; color: #facc15; border-color: rgba(234, 179, 8, 0.4);">
             📥 Export Stock Valuation CSV
         </a>
     </div>
@@ -235,7 +235,7 @@
 
     <!-- Multi-Criteria Filter Bar for Stock -->
     <div class="filter-card">
-        <form method="GET" action="{{ route('pos.stock.index') }}" id="stockFilterForm">
+        <form method="GET" action="{{ route('stock.index') }}" id="stockFilterForm">
             <div class="grid-4" style="gap: 0.75rem;">
                 <div class="form-group" style="margin-bottom: 0;">
                     <label style="font-size: 0.75rem;">Branch / Warehouse</label>
@@ -278,7 +278,7 @@
                 <button type="submit" class="btn btn-primary" style="padding: 0.65rem 1.25rem;">
                     🔍 Filter Stock
                 </button>
-                <a href="{{ route('pos.stock.index', ['warehouse_id' => $activeWarehouse->id]) }}" class="btn btn-secondary" style="padding: 0.65rem 1rem;">
+                <a href="{{ route('stock.index', ['warehouse_id' => $activeWarehouse->id]) }}" class="btn btn-secondary" style="padding: 0.65rem 1rem;">
                     Reset
                 </a>
             </div>
@@ -354,7 +354,7 @@
                 Add supplier delivery directly to <strong>{{ $activeWarehouse->name }}</strong> physical count.
             </p>
 
-            <form id="stockInForm" method="POST" action="{{ route('pos.stock.in') }}">
+            <form id="stockInForm" method="POST" action="{{ route('stock.in') }}">
                 @csrf
                 <input type="hidden" name="warehouse_id" value="{{ $activeWarehouse->id }}">
 
@@ -398,7 +398,7 @@
                 Dispatches items from <strong>{{ $activeWarehouse->name }}</strong>. Destination shop will verify count on arrival.
             </p>
 
-            <form id="transferOutForm" method="POST" action="{{ route('pos.stock.transfer.out') }}">
+            <form id="transferOutForm" method="POST" action="{{ route('stock.transfer.out') }}">
                 @csrf
                 <input type="hidden" name="source_warehouse_id" value="{{ $activeWarehouse->id }}">
 
@@ -458,7 +458,7 @@
                     <span class="badge badge-info">In-Transit</span>
                 </div>
 
-                <form id="recvTrfForm_{{ $trf->id }}" method="POST" action="{{ route('pos.stock.transfer.in', $trf->id) }}">
+                <form id="recvTrfForm_{{ $trf->id }}" method="POST" action="{{ route('stock.transfer.in', $trf->id) }}">
                     @csrf
                     @foreach($trf->items as $tItem)
                     <div style="display: flex; align-items: center; justify-content: space-between; gap: 1rem; margin-bottom: 0.75rem;">

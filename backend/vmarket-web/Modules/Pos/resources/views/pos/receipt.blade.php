@@ -1,4 +1,4 @@
-@extends('pos::layouts.app')
+@extends('layouts.app')
 
 @section('title', 'Receipt #' . $sale->id)
 

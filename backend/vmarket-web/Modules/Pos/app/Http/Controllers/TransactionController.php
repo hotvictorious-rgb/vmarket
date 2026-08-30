@@ -47,8 +47,9 @@ class TransactionController extends Controller
     /**
      * Sales transaction history with full filtering.
      */
-    public function index(Request $request)
+    public function index(Request $request = null)
     {
+        $request   = $request ?? request();
         $sellerId  = $this->resolveAuthSellerId();
         $branchId  = $request->get('warehouse_id');
         $search    = trim($request->get('search', ''));
@@ -69,6 +70,17 @@ class TransactionController extends Controller
         }
 
         $sales     = $query->orderByDesc('created_at')->paginate(25)->withQueryString();
+        $sales->getCollection()->transform(function ($s) {
+            $s->totalAmount    = (float) ($s->total_amount ?? 0);
+            $s->paidAmount     = (float) ($s->paid_amount ?? 0);
+            $s->createdAt      = $s->created_at ?? now();
+            $s->customerName   = $s->customer_name ?? 'Walk-in Customer';
+            $s->customerPhone  = $s->customer_phone ?? '';
+            $s->userName       = $s->cashier_name ?? 'Cashier';
+            $s->deliveryStatus = $s->delivery_status ?? 'DELIVERED';
+            $s->items          = DB::table('pos_sale_items')->where('pos_sale_id', $s->id)->get();
+            return $s;
+        });
         $branches  = DB::table('shops')->where('seller_id', $sellerId)->get();
         $statuses  = ['completed', 'pending_delivery', 'voided'];
 

@@ -38,8 +38,9 @@ class PosController extends Controller
     /**
      * Display the POS terminal interface.
      */
-    public function index(Request $request)
+    public function index(Request $request = null)
     {
+        $request = $request ?? request();
         if ($request->has('seller_id') && Auth::guard('admin')->check()) {
             session(['pos_active_seller_id' => (int) $request->seller_id]);
         }

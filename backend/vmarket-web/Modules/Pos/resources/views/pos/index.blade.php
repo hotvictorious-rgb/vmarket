@@ -1,4 +1,4 @@
-@extends('pos::layouts.app')
+@extends('layouts.app')
 
 @section('title', 'Point of Sale (POS)')
 
@@ -247,23 +247,11 @@
     <div>
         <div class="catalog-header">
             <div>
-                <div style="display: flex; align-items: center; gap: 0.75rem;">
-                    <h2 style="font-size: 1.35rem; font-weight: 800; margin-bottom: 0;">
-                        🏪 {{ $displayStoreName ?? 'Point of Sale' }}
-                    </h2>
-                    @if(Auth::guard('admin')->check() && isset($allSellers) && $allSellers->count() > 1)
-                        <select onchange="window.location.href='{{ url('/pos/terminal') }}?seller_id=' + this.value" style="background: #1e293b; color: #fbbf24; border: 1px solid #475569; border-radius: 8px; font-size: 0.75rem; padding: 2px 8px; cursor: pointer;">
-                            <option value="">-- Switch Store / Merchant --</option>
-                            @foreach($allSellers as $s)
-                                <option value="{{ $s->id }}" {{ session('pos_active_seller_id') == $s->id ? 'selected' : '' }}>
-                                    🏬 {{ $s->f_name }} {{ $s->l_name }} (ID #{{ $s->id }})
-                                </option>
-                            @endforeach
-                        </select>
-                    @endif
-                </div>
-                <p style="font-size: 0.82rem; color: var(--text-muted); margin-top: 4px; margin-bottom: 0;">
-                    Counter Register: <strong style="color: #60a5fa;">{{ $activeWarehouse->name ?? 'Main Register' }}</strong> · Operator: <strong style="color: #4ade80;">{{ $operatorName ?? 'Cashier' }}</strong>
+                <h2 style="font-size: 1.35rem; font-weight: 800;">
+                    🏪 {{ $displayStoreName ?? 'Point of Sale' }}
+                </h2>
+                <p style="font-size: 0.82rem; color: var(--text-muted);">
+                    Counter Register: <strong style="color: #60a5fa;">{{ $activeWarehouse->name }}</strong> · Operator: <strong style="color: #4ade80;">{{ auth()->user()->name ?? 'Cashier' }}</strong>
                 </p>
             </div>
 
@@ -291,7 +279,7 @@
                  data-brand="{{ $product->brand }}"
                  data-size="{{ $product->size }}"
                  data-price="{{ $product->unitPrice }}"
-                 data-category="{{ $product->category_name ?? 'General' }}"
+                 data-category="{{ $product->category }}"
                  data-stock="{{ $product->physical_stock }}"
                  onclick="addToCart('{{ $product->id }}', '{{ addslashes($product->code) }}', {{ $product->unitPrice }}, {{ $product->physical_stock }})">
                 <div style="flex: 1; min-width: 0;">
@@ -299,7 +287,7 @@
                         {{ $product->code }}
                     </div>
                     <div style="font-size: 0.72rem; color: #94a3b8; margin-bottom: 0.25rem;">
-                        <span style="color: #c084fc; font-weight: 600;">{{ $product->category_name ?? 'General' }}</span>@if($product->size) · <span style="color: #cbd5e1;">{{ $product->size }}</span>@endif
+                        <span style="color: #c084fc; font-weight: 600;">{{ $product->category }}</span>@if($product->size) · <span style="color: #cbd5e1;">{{ $product->size }}</span>@endif
                     </div>
                     <div class="p-price">₦{{ number_format($product->unitPrice, 0) }}</div>
                 </div>
@@ -373,13 +361,13 @@
                 <select id="customerSelect" style="width: 100%; padding: 0.45rem 0.65rem; font-size: 0.82rem; background: #0b0f19; border: 1px solid #475569; border-radius: 8px; color: #f8fafc; margin-bottom: 0.5rem;" onchange="onCustomerSelected(this)">
                     <option value="" data-name="Walk-in Customer" data-phone="" data-debt="0" data-code="">-- 🛒 Walk-in Customer (Paid in Full Only) --</option>
                     @foreach($customers as $c)
-                        <option value="{{ $c->id ?? '' }}" 
-                                data-id="{{ $c->id ?? '' }}"
-                                data-name="{{ $c->name ?? '' }}" 
-                                data-phone="{{ $c->phone ?? '' }}" 
-                                data-debt="{{ $c->total_debt ?? 0 }}" 
-                                data-code="{{ $c->customer_code ?? '' }}">
-                            {{ $c->name ?? 'Customer' }} ({{ $c->phone ?: 'No Phone' }}) [{{ $c->customer_code ?? '' }}] — Debt: ₦{{ number_format((float)($c->total_debt ?? 0)) }}
+                        <option value="{{ $c->id }}" 
+                                data-id="{{ $c->id }}"
+                                data-name="{{ $c->name }}" 
+                                data-phone="{{ $c->phone }}" 
+                                data-debt="{{ $c->total_debt }}" 
+                                data-code="{{ $c->customer_code }}">
+                            {{ $c->name }} ({{ $c->phone ?: 'No Phone' }}) [{{ $c->customer_code }}] — Debt: ₦{{ number_format($c->total_debt) }}
                         </option>
                     @endforeach
                 </select>
@@ -468,7 +456,7 @@
             </div>
 
             <!-- Complete Sale Button -->
-            @if(Auth::user()?->role === 'executive')
+            @if(Auth::user()->role === 'executive')
                 <div style="background: rgba(239,68,68,0.15); border: 1px solid rgba(239,68,68,0.4); border-radius: 12px; padding: 0.75rem; text-align: center; color: #f87171; font-weight: 800; font-size: 0.85rem;" title="Executive accounts have read-only access.">
                     🔒 READ-ONLY EXECUTIVE (Checkout Blocked)
                 </div>
@@ -918,7 +906,7 @@ function submitQuickCustomer(e) {
         address: document.getElementById('qc_address').value.trim()
     };
 
-    fetch("{{ route('pos.customer.quick-register') }}", {
+    fetch("{{ route('pos.customer.quick_register') }}", {
         method: "POST",
         headers: {
             "Content-Type": "application/json",

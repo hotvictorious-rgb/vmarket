@@ -29,8 +29,9 @@ class DashboardController extends Controller
 {
     use PosAuthTrait;
 
-    public function index(Request $request)
+    public function index(Request $request = null)
     {
+        $request    = $request ?? request();
         $sellerId   = $this->resolveAuthSellerId();
         $datePreset = strtoupper($request->get('date_preset', 'TODAY'));
         $fromDate   = $request->get('from_date');
