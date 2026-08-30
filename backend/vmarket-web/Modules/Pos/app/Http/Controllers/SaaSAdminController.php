@@ -12,6 +12,22 @@ use Illuminate\Support\Facades\DB;
 class SaaSAdminController extends Controller
 {
     /**
+     * Restrict SaaS Platform Master Control exclusively to Super Admin.
+     */
+    public function __construct()
+    {
+        $this->middleware(function ($request, $next) {
+            if (!Auth::guard('admin')->check()) {
+                if ($request->expectsJson()) {
+                    return response()->json(['message' => 'Access Denied: SaaS Master Control is restricted to Super Admin.'], 403);
+                }
+                return redirect()->route('dashboard')->with('error', 'Access Denied: SaaS Master Control is restricted to Super Admin.');
+            }
+            return $next($request);
+        });
+    }
+
+    /**
      * Master SaaS Super Admin Platform Panel.
      */
     public function dashboard()

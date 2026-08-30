@@ -7,6 +7,14 @@ Always append your completed tasks here in chronological order at the top. Forma
 `### [YYYY-MM-DD HH:MM UTC] <Feature / Fix Title> [<Component Scope>]`
 Include the specific app/component modified and bullet points detailing the exact technical changes.
 
+### [2026-08-30 19:35 UTC] Single Super Admin Authority Audit & Master README Documentation [backend] [pos] [docs]
+
+* **Component:** `README.md`, `Modules/Pos/app/Http/Controllers/SaaSAdminController.php`
+* **Action:**
+  - **Single Super Admin SSOT Enforcement:** Audited database and verified exactly 1 authoritative Super Admin record (`admin_role_id = 1`). Enforced constructor middleware in `SaaSAdminController` ensuring SaaS Master Control (`/pos/saas`) is strictly locked to Super Admin (`auth:admin`), returning safe redirects (HTTP 302) for non-admin tenants.
+  - **Master README Rewrite:** Comprehensively updated `README.md` to document the unified omnichannel vision, 6 client surfaces, 17 Hysam in-store POS & SaaS modules, interstate logistics network, security invariants, brand palette (`#5E17EB`, `#FFD700`, `#FFFFFF`), and quick-start instructions.
+* **Verification:** Tested Super Admin access (HTTP 200) vs Merchant access (HTTP 302 blocked) across `/pos/saas`, `/delivery`, and `/pos/terminal`.
+
 ### [2026-08-30 19:25 UTC] Clean Header-Only POS Hub & Delivery Hub Architecture [backend] [admin] [pos] [delivery]
 
 * **Component:** `backend/vmarket-web/resources/views/layouts/admin/partials/_header.blade.php`, `backend/vmarket-web/resources/views/layouts/admin/partials/_side-bar.blade.php`
