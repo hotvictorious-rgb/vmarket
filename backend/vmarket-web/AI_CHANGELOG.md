@@ -1,4 +1,28 @@
 
+### [2026-08-30 04:50 UTC] Replace Dispatch Portal with Dedicated Delivery & Logistics Module [backend]
+
+**Scope:** Admin Web Panel & Unified Delivery Logistics Subsystem
+
+**Summary of Work:**
+1. **Clean Removal of Obsolete Dispatch Portal:**
+   - Removed `DispatchPortalController.php` (`App\Http\Controllers\Admin\Delivery\DispatchPortalController`).
+   - Cleaned up `/admin/dispatch-portal` routes in `routes/admin/routes.php`.
+   - Removed obsolete blade views: `dispatch-portal.blade.php`, `batch-manifest.blade.php`, `waybill-label.blade.php`.
+2. **Replaced with Dedicated High-Performance Delivery Module (`Modules/Delivery`):**
+   - Enabled `"Delivery": true` in `modules_statuses.json`.
+   - Updated top header and sidebar navigation in Admin Panel (`_header.blade.php`, `_side-bar.blade.php`) to route directly to `delivery.dashboard` and `delivery.shipments.index`.
+3. **Comprehensive Performance Overhaul across Delivery Module:**
+   - `DashboardController`: 60-second KPI caching (`delivery_dashboard_kpis`), sargable `whereBetween` date query on `orders`, deep eager loading (`delivery_man.hub`, `seller.shop.hub`, `customer`).
+   - `HubController`: Cached active states and cities (`with('state')`), granular cache invalidation on hub mutations.
+   - `hubs/index.blade.php`: High-performance single dynamic edit modal (`#sharedEditHubModal`) replacing 15 duplicate DOM modals.
+   - `RouteController`: Eager loaded active hubs with cities and caching (`delivery_active_hubs_list`).
+   - `routes/index.blade.php`: Single dynamic edit modal (`#sharedEditRouteModal`).
+   - `FleetController`: Removed unused DB queries, cached 3PL partner list with rider count.
+   - `ShipmentController` & `shipments/index.blade.php`: Removed inline DB query from Blade, eager-loaded package relationships (`seller.shop.deliveryHub`).
+   - `FinanceController`: Unified single SQL aggregation for cash-in-hand and collected totals.
+
+**Syntax & Cache Validation:** All controllers syntax check PASS; `php artisan optimize:clear` executed successfully.
+
 ### [2026-08-29 22:18 UTC] Delivery Hub Performance Optimisation [backend]
 
 **Scope:** Admin Web Panel (Delivery Hubs management page) + Customer App / Web Storefront (REST API checkout hub dropdowns)

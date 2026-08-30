@@ -12,11 +12,15 @@ use Illuminate\Contracts\View\View;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Cache;
 
 class HubController extends Controller
 {
+    private const CACHE_TTL = 600;
+
     /**
      * [AI] Display list of official logistics hubs.
+     * Optimized with eager-loading and cached state/city lookups.
      */
     public function index(Request $request): View
     {
@@ -37,8 +41,15 @@ class HubController extends Controller
         }
 
         $hubs = $query->latest()->paginate(15)->appends($request->all());
-        $states = DeliveryState::where('is_active', 1)->get();
-        $cities = DeliveryCity::where('is_active', 1)->get();
+
+        // [AI] Cached states and cities (with state relationship eager-loaded to prevent N+1 queries)
+        $states = Cache::remember('delivery_hub_all_states', self::CACHE_TTL, function () {
+            return DeliveryState::where('is_active', 1)->orderBy('name')->get();
+        });
+
+        $cities = Cache::remember('delivery_active_cities_with_states', self::CACHE_TTL, function () {
+            return DeliveryCity::with('state')->where('is_active', 1)->orderBy('name')->get();
+        });
 
         return view('delivery::hubs.index', compact('hubs', 'states', 'cities'));
     }
@@ -48,7 +59,10 @@ class HubController extends Controller
      */
     public function create(): View
     {
-        $states = DeliveryState::where('is_active', 1)->get();
+        $states = Cache::remember('delivery_hub_all_states', self::CACHE_TTL, function () {
+            return DeliveryState::where('is_active', 1)->orderBy('name')->get();
+        });
+
         return view('delivery::hubs.create', compact('states'));
     }
 
@@ -76,6 +90,8 @@ class HubController extends Controller
             'is_active' => true,
         ]);
 
+        $this->flushHubCaches($request->city_id);
+
         Toastr::success('Logistics hub created successfully!');
         return redirect()->route('delivery.hubs.index');
     }
@@ -97,6 +113,7 @@ class HubController extends Controller
     public function update(Request $request, int $id): RedirectResponse
     {
         $hub = DeliveryHub::findOrFail($id);
+        $oldCityId = $hub->city_id;
 
         $request->validate([
             'city_id' => 'required|exists:delivery_cities,id',
@@ -116,6 +133,11 @@ class HubController extends Controller
             'estimated_delivery_time' => $request->estimated_delivery_time ?? '1 - 3 Hours',
         ]);
 
+        $this->flushHubCaches($oldCityId);
+        if ($oldCityId !== (int) $request->city_id) {
+            $this->flushHubCaches($request->city_id);
+        }
+
         Toastr::success('Logistics hub updated successfully!');
         return back();
     }
@@ -129,6 +151,8 @@ class HubController extends Controller
         $hub->is_active = !$hub->is_active;
         $hub->save();
 
+        $this->flushHubCaches($hub->city_id);
+
         return response()->json([
             'status' => true,
             'is_active' => $hub->is_active,
@@ -141,7 +165,28 @@ class HubController extends Controller
      */
     public function ajaxGetCities(int $stateId): JsonResponse
     {
-        $cities = DeliveryCity::where('state_id', $stateId)->where('is_active', 1)->get(['id', 'name']);
+        $cities = Cache::remember("delivery_hub_ajax_cities_{$stateId}", self::CACHE_TTL, function () use ($stateId) {
+            return DeliveryCity::where('state_id', $stateId)->where('is_active', 1)->get(['id', 'name']);
+        });
+
         return response()->json($cities);
+    }
+
+    /**
+     * [AI] Cache Invalidation Helper
+     */
+    private function flushHubCaches(?int $cityId = null): void
+    {
+        Cache::forget('delivery_hub_states');
+        Cache::forget('delivery_hub_all_states');
+        Cache::forget('delivery_active_cities_with_states');
+        Cache::forget('delivery_active_hubs_list');
+        Cache::forget('delivery_dashboard_kpis');
+
+        if ($cityId) {
+            Cache::forget("delivery_hub_hubs_{$cityId}");
+            Cache::forget("delivery_hub_hubs_{$cityId}_landmark");
+            Cache::forget("delivery_hub_hubs_{$cityId}_motor_park");
+        }
     }
 }

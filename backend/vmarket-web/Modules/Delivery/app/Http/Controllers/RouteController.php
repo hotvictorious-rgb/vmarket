@@ -9,12 +9,16 @@ use Illuminate\Contracts\View\View;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Cache;
 use Modules\Delivery\app\Models\DeliveryRoute;
 
 class RouteController extends Controller
 {
+    private const CACHE_TTL = 600;
+
     /**
      * [AI] Display corridor route matrix & fee structure.
+     * Optimized with eager-loading and cached hub lists.
      */
     public function index(Request $request): View
     {
@@ -29,7 +33,11 @@ class RouteController extends Controller
         }
 
         $routes = $query->latest()->paginate(15)->appends($request->all());
-        $hubs = DeliveryHub::where('is_active', 1)->orderBy('name')->get();
+
+        // [AI] Cached active hubs with city relationship eager-loaded
+        $hubs = Cache::remember('delivery_active_hubs_list', self::CACHE_TTL, function () {
+            return DeliveryHub::with('city')->where('is_active', 1)->orderBy('name')->get();
+        });
 
         return view('delivery::routes.index', compact('routes', 'hubs'));
     }
@@ -69,6 +77,8 @@ class RouteController extends Controller
             'is_active' => true,
         ]);
 
+        $this->flushRouteCaches();
+
         Toastr::success('Corridor route created successfully!');
         return redirect()->route('delivery.routes.index');
     }
@@ -96,6 +106,8 @@ class RouteController extends Controller
             'transit_type' => $request->transit_type,
         ]);
 
+        $this->flushRouteCaches();
+
         Toastr::success('Corridor route rates updated successfully!');
         return back();
     }
@@ -109,10 +121,21 @@ class RouteController extends Controller
         $route->is_active = !$route->is_active;
         $route->save();
 
+        $this->flushRouteCaches();
+
         return response()->json([
             'status' => true,
             'is_active' => $route->is_active,
             'message' => 'Corridor status updated successfully.',
         ]);
+    }
+
+    /**
+     * [AI] Flush route caches
+     */
+    private function flushRouteCaches(): void
+    {
+        Cache::forget('delivery_active_hubs_list');
+        Cache::forget('delivery_dashboard_kpis');
     }
 }

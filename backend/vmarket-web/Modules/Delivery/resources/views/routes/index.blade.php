@@ -68,61 +68,19 @@
                             @endif
                         </td>
                         <td>
-                            <button type="button" class="btn btn-outline-secondary btn-sm py-1 px-2" data-bs-toggle="modal" data-bs-target="#editRouteModal{{ $route->id }}" title="Edit Rates">
+                            <button type="button" class="btn btn-outline-secondary btn-sm py-1 px-2 edit-route-trigger"
+                                    data-id="{{ $route->id }}"
+                                    data-origin="{{ $route->originHub->name ?? 'Origin' }}"
+                                    data-dest="{{ $route->destinationHub->name ?? 'Destination' }}"
+                                    data-customer-fee="{{ $route->customer_fee }}"
+                                    data-rider-payout="{{ $route->rider_payout }}"
+                                    data-margin="{{ $route->logistics_partner_margin }}"
+                                    data-hours="{{ $route->estimated_hours }}"
+                                    data-type="{{ $route->transit_type }}"
+                                    data-url="{{ route('delivery.routes.update', ['id' => $route->id]) }}"
+                                    title="Edit Rates">
                                 <i class="fa-solid fa-pen-to-square"></i>
                             </button>
-
-                            <!-- Edit Route Modal -->
-                            <div class="modal fade" id="editRouteModal{{ $route->id }}" tabindex="-1">
-                                <div class="modal-dialog">
-                                    <div class="modal-content">
-                                        <form action="{{ route('delivery.routes.update', ['id' => $route->id]) }}" method="POST">
-                                            @csrf
-                                            <div class="modal-header">
-                                                <h5 class="modal-title fw-bold">Edit Corridor Rates #{{ $route->id }}</h5>
-                                                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-                                            </div>
-                                            <div class="modal-body">
-                                                <div class="p-2 mb-3 bg-light rounded text-center">
-                                                    <strong>{{ $route->originHub->name ?? '' }}</strong> ➔ <strong class="text-success">{{ $route->destinationHub->name ?? '' }}</strong>
-                                                </div>
-                                                <div class="row g-2 mb-3">
-                                                    <div class="col-6">
-                                                        <label class="form-label font-weight-bold">Customer Fee (₦)</label>
-                                                        <input type="number" step="0.01" name="customer_fee" class="form-control" value="{{ $route->customer_fee }}" required>
-                                                    </div>
-                                                    <div class="col-6">
-                                                        <label class="form-label font-weight-bold">Rider Payout (₦)</label>
-                                                        <input type="number" step="0.01" name="rider_payout" class="form-control" value="{{ $route->rider_payout }}" required>
-                                                    </div>
-                                                </div>
-                                                <div class="row g-2 mb-3">
-                                                    <div class="col-6">
-                                                        <label class="form-label font-weight-bold">3PL Partner Margin (₦)</label>
-                                                        <input type="number" step="0.01" name="logistics_partner_margin" class="form-control" value="{{ $route->logistics_partner_margin }}" required>
-                                                    </div>
-                                                    <div class="col-6">
-                                                        <label class="form-label font-weight-bold">Est. Transit Hours</label>
-                                                        <input type="number" step="0.1" name="estimated_hours" class="form-control" value="{{ $route->estimated_hours }}" required>
-                                                    </div>
-                                                </div>
-                                                <div class="mb-3">
-                                                    <label class="form-label font-weight-bold">Corridor Transit Type</label>
-                                                    <select name="transit_type" class="form-select" required>
-                                                        <option value="intra_city" {{ $route->transit_type == 'intra_city' ? 'selected' : '' }}>Intra-City Express (Direct)</option>
-                                                        <option value="inter_city_linehaul" {{ $route->transit_type == 'inter_city_linehaul' ? 'selected' : '' }}>Inter-City Linehaul (Hub Transfer)</option>
-                                                        <option value="regional" {{ $route->transit_type == 'regional' ? 'selected' : '' }}>Regional Transit</option>
-                                                    </select>
-                                                </div>
-                                            </div>
-                                            <div class="modal-footer">
-                                                <button type="button" class="btn btn-secondary btn-sm" data-bs-dismiss="modal">Cancel</button>
-                                                <button type="submit" class="btn btn-brand-primary btn-sm">Save Rates</button>
-                                            </div>
-                                        </form>
-                                    </div>
-                                </div>
-                            </div>
                         </td>
                     </tr>
                 @empty
@@ -211,4 +169,74 @@
         </div>
     </div>
 </div>
+
+<!-- [AI] Single Dynamic Reusable Edit Modal -->
+<div class="modal fade" id="sharedEditRouteModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <form id="sharedEditRouteForm" method="POST">
+                @csrf
+                <div class="modal-header">
+                    <h5 class="modal-title fw-bold" id="sharedEditRouteTitle">Edit Corridor Rates</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="p-2 mb-3 bg-light rounded text-center" id="routeOriginDestSummary">
+                    </div>
+                    <div class="row g-2 mb-3">
+                        <div class="col-6">
+                            <label class="form-label font-weight-bold">Customer Fee (₦)</label>
+                            <input type="number" step="0.01" name="customer_fee" id="modalCustomerFee" class="form-control" required>
+                        </div>
+                        <div class="col-6">
+                            <label class="form-label font-weight-bold">Rider Payout (₦)</label>
+                            <input type="number" step="0.01" name="rider_payout" id="modalRiderPayout" class="form-control" required>
+                        </div>
+                    </div>
+                    <div class="row g-2 mb-3">
+                        <div class="col-6">
+                            <label class="form-label font-weight-bold">3PL Partner Margin (₦)</label>
+                            <input type="number" step="0.01" name="logistics_partner_margin" id="modalPartnerMargin" class="form-control" required>
+                        </div>
+                        <div class="col-6">
+                            <label class="form-label font-weight-bold">Est. Transit Hours</label>
+                            <input type="number" step="0.1" name="estimated_hours" id="modalEstHours" class="form-control" required>
+                        </div>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label font-weight-bold">Corridor Transit Type</label>
+                        <select name="transit_type" id="modalTransitType" class="form-select" required>
+                            <option value="intra_city">Intra-City Express (Direct)</option>
+                            <option value="inter_city_linehaul">Inter-City Linehaul (Hub Transfer)</option>
+                            <option value="regional">Regional Transit</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary btn-sm" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-brand-primary btn-sm">Save Rates</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
 @endsection
+
+@push('js')
+<script>
+    $(document).on('click', '.edit-route-trigger', function() {
+        var btn = $(this);
+        $('#sharedEditRouteForm').attr('action', btn.data('url'));
+        $('#sharedEditRouteTitle').text('Edit Corridor Rates #' + btn.data('id'));
+        $('#routeOriginDestSummary').html('<strong>' + btn.data('origin') + '</strong> ➔ <strong class="text-success">' + btn.data('dest') + '</strong>');
+        $('#modalCustomerFee').val(btn.data('customer-fee'));
+        $('#modalRiderPayout').val(btn.data('rider-payout'));
+        $('#modalPartnerMargin').val(btn.data('margin'));
+        $('#modalEstHours').val(btn.data('hours'));
+        $('#modalTransitType').val(btn.data('type'));
+        
+        var modal = new bootstrap.Modal(document.getElementById('sharedEditRouteModal'));
+        modal.show();
+    });
+</script>
+@endpush

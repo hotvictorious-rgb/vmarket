@@ -156,9 +156,9 @@
                     </ul>
                 </li>
 
-                <li class="{{ Request::is('admin/dispatch-portal*') ? 'active' : '' }}">
-                    <a class="nav-link {{ Request::is('admin/dispatch-portal*') ? 'active' : '' }}"
-                       href="{{ route('admin.dispatch-portal.index') }}" title="{{ translate('Batch Dispatch Portal') }}">
+                <li class="{{ Request::is('delivery/shipments*') ? 'active' : '' }}">
+                    <a class="nav-link {{ Request::is('delivery/shipments*') ? 'active' : '' }}"
+                       href="{{ route('delivery.shipments.index') }}" title="{{ translate('Batch Dispatch Portal') }}">
                         <i class="fi fi-sr-paper-plane-launch"></i>
                         <span class="aside-mini-hidden-element flex-grow-1 d-flex justify-content-between align-items-center">
                             <span class="text-truncate max-w-180">{{ translate('Batch Dispatch Portal') }}</span>

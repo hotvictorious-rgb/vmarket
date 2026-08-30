@@ -10,12 +10,14 @@ use Brian2694\Toastr\Facades\Toastr;
 use Illuminate\Contracts\View\View;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
 
 class FinanceController extends Controller
 {
     /**
      * [AI] Financial ledger, Cash-on-Delivery collections, and rider remittances.
+     * Optimized with unified SQL aggregation and eager-loaded relationships.
      */
     public function index(Request $request): View
     {
@@ -24,8 +26,14 @@ class FinanceController extends Controller
             ->orderBy('cash_in_hand', 'desc')
             ->paginate(15);
 
-        $totalCashInHand = (float) DeliverymanWallet::sum('cash_in_hand');
-        $totalCollectedCash = (float) DeliverymanWallet::sum('total_withdraw'); // Collected cash historical
+        // [AI] Single consolidated aggregation query instead of 2 separate table scans
+        $financialSummary = DeliverymanWallet::selectRaw('
+            COALESCE(SUM(cash_in_hand), 0) as total_cash_in_hand,
+            COALESCE(SUM(total_withdraw), 0) as total_collected_cash
+        ')->first();
+
+        $totalCashInHand = (float) ($financialSummary->total_cash_in_hand ?? 0);
+        $totalCollectedCash = (float) ($financialSummary->total_collected_cash ?? 0);
 
         $recentTransactions = DeliveryManTransaction::with(['delivery_man'])
             ->latest()
@@ -85,6 +93,8 @@ class FinanceController extends Controller
             Toastr::error('Failed to process remittance.');
             return back();
         }
+
+        Cache::forget('delivery_dashboard_kpis');
 
         Toastr::success("₦" . number_format($amount, 2) . " remittance recorded and cleared from rider successfully!");
         return back();

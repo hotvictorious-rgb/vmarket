@@ -10,17 +10,21 @@ use Brian2694\Toastr\Facades\Toastr;
 use Illuminate\Contracts\View\View;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Str;
 use Modules\Delivery\app\Models\DeliveryBatch;
 
 class ShipmentController extends Controller
 {
+    private const CACHE_TTL = 300;
+
     /**
      * [AI] Display live shipments and package dispatch pipeline.
+     * Deep eager loading of seller.shop.hub and customer relationships.
      */
     public function index(Request $request): View
     {
-        $query = Order::with(['seller.shop', 'delivery_man', 'customer']);
+        $query = Order::with(['seller.shop.deliveryHub', 'delivery_man', 'customer']);
 
         if ($request->filled('status')) {
             $query->where('order_status', $request->status);
@@ -39,11 +43,30 @@ class ShipmentController extends Controller
         }
 
         $shipments = $query->latest()->paginate(15)->appends($request->all());
-        $batches = DeliveryBatch::with(['originHub', 'destinationHub', 'driver'])->latest()->take(10)->get();
-        $hubs = DeliveryHub::where('is_active', 1)->get();
-        $drivers = DeliveryMan::where('is_active', 1)->get();
 
-        return view('delivery::shipments.index', compact('shipments', 'batches', 'hubs', 'drivers'));
+        $batches = DeliveryBatch::with(['originHub', 'destinationHub', 'driver'])
+            ->latest()
+            ->take(10)
+            ->get();
+
+        // [AI] Cached active hubs and drivers for the modal
+        $hubs = Cache::remember('delivery_active_hubs_list', self::CACHE_TTL, function () {
+            return DeliveryHub::where('is_active', 1)->orderBy('name')->get();
+        });
+
+        $drivers = Cache::remember('delivery_active_drivers_list', self::CACHE_TTL, function () {
+            return DeliveryMan::where('is_active', 1)->orderBy('f_name')->get();
+        });
+
+        // [AI] Eager load available orders with customer to eliminate N+1 queries from the Blade template
+        $availableOrders = Order::whereIn('order_status', ['confirmed', 'processing'])
+            ->whereNull('batch_dispatch_id')
+            ->with('customer')
+            ->latest()
+            ->take(20)
+            ->get();
+
+        return view('delivery::shipments.index', compact('shipments', 'batches', 'hubs', 'drivers', 'availableOrders'));
     }
 
     /**
@@ -82,6 +105,8 @@ class ShipmentController extends Controller
             'driver_transit_code' => $transitOtp,
             'order_status' => 'processing',
         ]);
+
+        Cache::forget('delivery_dashboard_kpis');
 
         Toastr::success("Linehaul Batch #{$batchNo} generated with {$batch->package_count} packages!");
         return redirect()->route('delivery.shipments.waybill', ['id' => $batch->id]);

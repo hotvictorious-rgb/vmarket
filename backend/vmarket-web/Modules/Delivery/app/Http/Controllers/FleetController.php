@@ -3,19 +3,21 @@
 namespace Modules\Delivery\app\Http\Controllers;
 
 use App\Http\Controllers\Controller;
-use App\Models\DeliveryHub;
 use App\Models\DeliveryMan;
-use App\Models\DeliverymanWallet;
 use Brian2694\Toastr\Facades\Toastr;
 use Illuminate\Contracts\View\View;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Cache;
 use Modules\Delivery\app\Models\Delivery3plCompany;
 
 class FleetController extends Controller
 {
+    private const CACHE_TTL = 300;
+
     /**
      * [AI] Display list of couriers & 3PL logistics partners.
+     * Optimized with relationship eager loading and removed unused DB queries.
      */
     public function index(Request $request): View
     {
@@ -35,10 +37,13 @@ class FleetController extends Controller
         }
 
         $couriers = $courierQuery->latest()->paginate(15)->appends($request->all());
-        $companies = Delivery3plCompany::withCount('riders')->latest()->get();
-        $hubs = DeliveryHub::where('is_active', 1)->get();
 
-        return view('delivery::fleet.index', compact('couriers', 'companies', 'hubs'));
+        // [AI] Cached 3PL companies with rider count
+        $companies = Cache::remember('delivery_3pl_companies_list', self::CACHE_TTL, function () {
+            return Delivery3plCompany::withCount('riders')->latest()->get();
+        });
+
+        return view('delivery::fleet.index', compact('couriers', 'companies'));
     }
 
     /**
@@ -66,6 +71,9 @@ class FleetController extends Controller
             'address' => $request->address,
             'status' => 'approved',
         ]);
+
+        Cache::forget('delivery_3pl_companies_list');
+        Cache::forget('delivery_dashboard_kpis');
 
         Toastr::success('3PL Logistics partner company registered successfully!');
         return redirect()->route('delivery.fleet.index');

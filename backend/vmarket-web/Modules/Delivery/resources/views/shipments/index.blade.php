@@ -92,7 +92,7 @@
                         </td>
                         <td>
                             <div class="fw-semibold">{{ $order->seller->shop->name ?? 'Vmarket Central Hub' }}</div>
-                            <div class="fs-11 text-muted">{{ $order->seller->shop->hub->name ?? 'Hub' }}</div>
+                            <div class="fs-11 text-muted">{{ $order->seller->shop->deliveryHub->name ?? 'Hub' }}</div>
                         </td>
                         <td>
                             @if($order->batch_dispatch_id)
@@ -182,12 +182,6 @@
 
                     <h6 class="fw-bold mb-2">Select Packages to Consolidate into this Batch:</h6>
                     <div class="border rounded p-3 bg-light max-h-300 overflow-y-auto">
-                        @php
-                            $availableOrders = \App\Models\Order::whereIn('order_status', ['confirmed', 'processing'])
-                                ->whereNull('batch_dispatch_id')
-                                ->take(20)
-                                ->get();
-                        @endphp
                         @forelse($availableOrders as $ord)
                             <div class="form-check mb-2">
                                 <input class="form-check-input" type="checkbox" name="order_ids[]" value="{{ $ord->id }}" id="chkOrd{{ $ord->id }}">

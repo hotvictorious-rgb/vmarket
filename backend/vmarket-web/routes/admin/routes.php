@@ -91,7 +91,6 @@ use App\Http\Controllers\Admin\Payment\OfflinePaymentMethodController;
 use App\Http\Controllers\Admin\Settings\DeliverymanSettingsController;
 use App\Http\Controllers\Admin\Settings\DeliveryRestrictionController;
 use App\Http\Controllers\Admin\Delivery\DeliveryHubController;
-use App\Http\Controllers\Admin\Delivery\DispatchPortalController;
 use App\Http\Controllers\Admin\Settings\EnvironmentSettingsController;
 use App\Http\Controllers\Admin\Settings\SocialMediaSettingsController;
 use App\Http\Controllers\Admin\SystemSetup\SystemLoginSetupController;
@@ -765,15 +764,6 @@ Route::group(['prefix' => 'admin', 'as' => 'admin.', 'middleware' => ['admin', '
 
             Route::get('get-cities-ajax/{state_id}', 'getCitiesAjax')->name('get-cities-ajax');
             Route::get('get-hubs-ajax/{city_id}', 'getHubsAjax')->name('get-hubs-ajax');
-        });
-    });
-
-    Route::group(['prefix' => 'dispatch-portal', 'as' => 'dispatch-portal.', 'middleware' => ['module:order_management']], function () {
-        Route::controller(DispatchPortalController::class)->group(function () {
-            Route::get('/', 'index')->name('index');
-            Route::post('assign-batch', 'assignBatch')->name('assign-batch');
-            Route::get('print-manifest', 'printBatchManifest')->name('print-manifest');
-            Route::get('print-waybill/{id}', 'printWaybill')->name('print-waybill');
         });
     });
 
