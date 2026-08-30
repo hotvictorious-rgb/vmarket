@@ -34,21 +34,21 @@
                 </a>
             </li>
 
-            {{-- ─── POS & SaaS In-Store System ─────────────────────────── --}}
+            {{-- ─── POS Management & SaaS In-Store System ─────────────── --}}
             <li class="nav-item nav-item_title">
-                <small class="nav-subtitle">{{ translate('POS & SaaS Operations') }}</small>
+                <small class="nav-subtitle">{{ translate('pos_management') }}</small>
             </li>
             <li class="{{ Request::is('pos*') ? 'sub-menu-opened' : '' }}">
                 <a class="nav-link nav-link-toggle {{ Request::is('pos*') ? 'active' : '' }}"
-                   href="javascript:" title="{{ translate('POS SaaS & Terminal') }}">
+                   href="javascript:" title="{{ translate('pos_management') }}">
                     <i class="fi fi-sr-calculator" style="color: #5E17EB;"></i>
                     <span class="aside-mini-hidden-element flex-grow-1 d-flex justify-content-between align-items-center">
-                        <span class="text-truncate max-w-180">{{ translate('POS & SaaS Hub') }}</span>
+                        <span class="text-truncate max-w-180">{{ translate('pos_management') }}</span>
                         <i class="fi fi-sr-angle-down"></i>
                     </span>
                 </a>
                 <ul class="aside-submenu navbar-nav">
-                    <li class="nav-item px-3 py-2 fw-semibold text-dark bg-section2 aside-mini-show-element">{{ translate('POS SaaS Hub') }}</li>
+                    <li class="nav-item px-3 py-2 fw-semibold text-dark bg-section2 aside-mini-show-element">{{ translate('pos_management') }}</li>
                     <li class="nav-item">
                         <a class="nav-link {{ Request::is('pos') ? 'active' : '' }}"
                            href="{{ url('/pos') }}" title="{{ translate('POS Executive Dashboard') }}">
