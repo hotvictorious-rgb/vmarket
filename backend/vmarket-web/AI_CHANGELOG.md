@@ -1,4 +1,30 @@
 
+### [2026-08-30 06:30 UTC] Admin POS SaaS & Paystack Security Hardening — 3 Vulnerabilities Fixed [backend]
+
+**Scope:** Admin Routes, Paystack Payment Gateway Controller, Admin Payment Config Controller
+
+**Files Modified:** `routes/admin/routes.php`, `PaystackController.php`, `Admin/PaymentMethodController.php`
+**Syntax Validation:** `php -l` PASS on all 3 files — 0 errors.
+
+#### Fixes Applied
+
+1. **VULN-NEW-001 [CRITICAL] — `pos-management` Route Group Missing Module Middleware**
+   - `routes/admin/routes.php` L461 — The entire `/admin/pos-management/*` route group had NO `module:` middleware gate.
+   - Any authenticated admin employee (Customer Support, Product Moderator, Finance Auditor) could directly visit `/admin/pos-management/dashboard` to view MRR, merchant subscription data, and waybill theft alerts, or POST to `/admin/pos-management/settings/update` to overwrite POS SaaS subscription pricing.
+   - **Fix:** Added `'middleware' => ['module:pos_management']` to the route group. Super Admin (`admin_role_id=1`) passes automatically via `Helpers::module_permission_check()`. Sub-admin employees must be explicitly granted `pos_management` in their custom role's `module_access` JSON.
+
+2. **VULN-NEW-004 [MEDIUM] — Live Paystack Keys Duplicated into `test_values`**
+   - `Admin/PaymentMethodController.php` L333 — `$validator->validate()` was written to **both** `live_values` and `test_values` on every save, regardless of which mode was selected.
+   - Consequence: Configuring live production Paystack keys mirrored the `secret_key` into `test_values`. Switching to `mode=test` would cause the gateway constructor to load `test_values` — which contained the live production secret — and use it for test API calls.
+   - **Fix:** Read existing values for the non-active bucket from DB before saving. Only overwrite the mode-appropriate bucket. Live keys stay in `live_values`; test keys stay in `test_values`.
+
+3. **VULN-NEW-005 [MEDIUM] — Paystack Transaction Reference Not Random (`'RANDOM'` Literal)**
+   - `PaystackController.php` L76 — Reference was `'REF' . time() . 'RANDOM'` where `'RANDOM'` is a hardcoded string, never randomized.
+   - References like `REF1756540800RANDOM` are fully predictable within a 1-second window, enabling enumeration and potential replay if Paystack's side-channel guards fail.
+   - **Fix:** `'REF-' . time() . '-' . bin2hex(random_bytes(8))` — appends 16 cryptographically random hex characters (2^64 entropy per reference).
+
+---
+
 ### [2026-08-30 05:15 UTC] Multi-Tenant & Isolation Vulnerability Remediation — 11 CVEs Fixed [backend]
 
 **Scope:** Laravel Backend — RestAPI v1/v2, Vendor Controllers, Repositories, Payment Gateway

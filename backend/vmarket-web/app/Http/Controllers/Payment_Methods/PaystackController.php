@@ -73,7 +73,9 @@ class PaystackController extends Controller
             'email' => $payer['email'] ?? "customer@email.com",
             'amount' => ($data['payment_amount'] ?? 0) * 100,
             'currency' => $data['currency_code'] ?? 'XOF',
-            'reference' => (string)('REF' . time() . 'RANDOM'),
+            // [AI] SECURITY FIX VULN-NEW-005: 'RANDOM' was a literal string — reference was fully predictable.
+            // random_bytes(8) gives 16 hex chars = 2^64 entropy, preventing reference enumeration/replay.
+            'reference' => (string)('REF-' . time() . '-' . bin2hex(random_bytes(8))),
             'callback_url' => route('paystack.callback', ['payment_id' => $data['id']]),
             'metadata' => [
                 'payment_id' => $data['id'],

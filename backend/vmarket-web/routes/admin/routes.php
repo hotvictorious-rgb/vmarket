@@ -457,8 +457,17 @@ Route::group(['prefix' => 'admin', 'as' => 'admin.', 'middleware' => ['admin', '
         });
     });
 
-    /* [AI] Omnichannel POS & SaaS Master Control Deck */
-    Route::group(['prefix' => 'pos-management', 'as' => 'pos-management.'], function () {
+    /* [AI] Omnichannel POS & SaaS Master Control Deck
+     * [AI] SECURITY FIX VULN-NEW-001: Added 'module:pos_management' middleware.
+     * Previously this group had NO module gate — any admin employee could view MRR
+     * data and overwrite POS SaaS subscription pricing via direct URL navigation.
+     * Super Admin (admin_role_id=1) passes automatically. Sub-admin employees
+     * must have 'pos_management' in their custom role module_access array. */
+    Route::group([
+        'prefix' => 'pos-management',
+        'as' => 'pos-management.',
+        'middleware' => ['module:pos_management'],
+    ], function () {
         Route::get('dashboard', [\App\Http\Controllers\Admin\POS\AdminPOSDashboardController::class, 'index'])->name('dashboard');
         Route::get('settings', [\App\Http\Controllers\Admin\POS\POSSettingsController::class, 'index'])->name('settings');
         Route::post('settings/update', [\App\Http\Controllers\Admin\POS\POSSettingsController::class, 'update'])->name('settings.update');

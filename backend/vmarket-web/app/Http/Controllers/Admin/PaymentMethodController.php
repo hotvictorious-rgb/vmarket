@@ -331,14 +331,27 @@ class PaymentMethodController extends Controller
         ];
 
         $validator = Validator::make($request->all(), array_merge($validation, $additional_data));
+        $validatedValues = $validator->validate();
+
+        // [AI] SECURITY FIX VULN-NEW-004: Write key values only to the mode-appropriate bucket.
+        // Previously, $validator->validate() was written to BOTH live_values AND test_values,
+        // meaning live production secret_key was always mirrored into test_values.
+        // Switching to 'test' mode would still expose the live Paystack secret_key to test code paths.
+        // Now: only the active mode's bucket is overwritten; the other bucket keeps its existing values.
+        $existingLiveValues = isset($settings['live_values']) && is_string($settings['live_values'])
+            ? json_decode($settings['live_values'], true)
+            : ($settings['live_values'] ?? []);
+        $existingTestValues = isset($settings['test_values']) && is_string($settings['test_values'])
+            ? json_decode($settings['test_values'], true)
+            : ($settings['test_values'] ?? []);
 
         Setting::updateOrCreate(['key_name' => $request['gateway'], 'settings_type' => 'payment_config'], [
-            'key_name' => $request['gateway'],
-            'live_values' => $validator->validate(),
-            'test_values' => $validator->validate(),
-            'settings_type' => 'payment_config',
-            'mode' => $request['mode'],
-            'is_active' => $request['status'] ?? 0,
+            'key_name'        => $request['gateway'],
+            'live_values'     => $request['mode'] === 'live' ? $validatedValues : $existingLiveValues,
+            'test_values'     => $request['mode'] === 'test' ? $validatedValues : $existingTestValues,
+            'settings_type'   => 'payment_config',
+            'mode'            => $request['mode'],
+            'is_active'       => $request['status'] ?? 0,
             'additional_data' => json_encode($payment_additional_data),
         ]);
 
