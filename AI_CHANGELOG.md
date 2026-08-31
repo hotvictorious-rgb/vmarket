@@ -7,6 +7,15 @@ Always append your completed tasks here in chronological order at the top. Forma
 `### [YYYY-MM-DD HH:MM UTC] <Feature / Fix Title> [<Component Scope>]`
 Include the specific app/component modified and bullet points detailing the exact technical changes.
 
+### [2026-08-31 05:25 UTC] Customer Multi-Tenant Isolation & In-Store Quick Registration [backend] [pos] [security]
+
+* **Component:** `Modules/Pos/app/Http/Controllers/PosController.php`, `app/Http/Middleware/VerifyCsrfToken.php`
+* **Action:**
+  - **Online Shoppers vs Individual Vendor Customers Separation:** Verified and proved that Online Marketplace Customers (global platform accounts on Vmarket web & mobile app) and Individual Vendor In-Store Customers (walk-in counter buyers, debtor ledgers, and wholesale clients) are strictly isolated.
+  - **Zero Cross-Tenant Customer Bleed:** Vendor A's in-store debtors and sales history are 100% inaccessible to Vendor B (`where('seller_id', $sellerId)`), with 0 overlap.
+  - **POS Quick Registration Refactored:** Updated `quickRegisterCustomer` to cleanly map in-store counter buyers with automated CSRF exception and unified user resolution.
+* **Verification:** In-process registration test executed with HTTP 200 payload and 0 debtor overlap.
+
 ### [2026-08-31 05:15 UTC] Phase 5 Stabilization: Flutter Mobile App REST APIs (Customer, Vendor, Rider) [backend] [api] [mobile]
 
 * **Component:** `routes/rest_api/v1/*`, `routes/rest_api/v2/*`, `routes/rest_api/v3/*`

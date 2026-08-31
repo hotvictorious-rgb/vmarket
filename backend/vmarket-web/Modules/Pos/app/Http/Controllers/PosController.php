@@ -183,33 +183,38 @@ class PosController extends Controller
         $phone      = $rawPhone;
         $name       = trim($request->name);
 
-        // [AI] Look up or create an in-store POS customer record (pos_sales history)
-        // We use the unified Vmarket `customers` table (marketplace customers = POS customers).
-        $customer = DB::table('customers')->where('phone', $phone)->first();
-        if ($customer) {
-            DB::table('customers')->where('id', $customer->id)->update([
-                'name'       => $name,
-                'address'    => $request->address ?? $customer->address,
-                'updated_at' => now(),
-            ]);
+        // [AI] Look up or create customer record using User model
+        $nameParts = explode(' ', $name, 2);
+        $fName     = $nameParts[0];
+        $lName     = $nameParts[1] ?? '';
+
+        $user = User::where('phone', $phone)->first();
+        if ($user) {
+            $user->f_name = $fName;
+            $user->l_name = $lName;
+            if (!empty($request->address)) {
+                $user->street_address = $request->address;
+            }
+            $user->save();
         } else {
-            $customerId = DB::table('customers')->insertGetId([
-                'name'       => $name,
-                'phone'      => $phone,
-                'address'    => $request->address,
-                'created_at' => now(),
-                'updated_at' => now(),
-            ]);
-            $customer = DB::table('customers')->find($customerId);
+            $user = new User();
+            $user->f_name = $fName;
+            $user->l_name = $lName;
+            $user->phone  = $phone;
+            $user->email  = 'pos_' . $phone . '@victoriousmarket.com.ng';
+            $user->street_address = $request->address;
+            $user->is_active = 1;
+            $user->password  = bcrypt(\Illuminate\Support\Str::random(16));
+            $user->save();
         }
 
         return response()->json([
             'success'  => true,
             'message'  => "Customer {$name} registered successfully!",
             'customer' => [
-                'id'    => $customer->id,
-                'name'  => $customer->name,
-                'phone' => $customer->phone,
+                'id'    => $user->id,
+                'name'  => trim($user->f_name . ' ' . $user->l_name),
+                'phone' => $user->phone,
             ],
         ]);
     }
