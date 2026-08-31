@@ -7,6 +7,15 @@ Always append your completed tasks here in chronological order at the top. Forma
 `### [YYYY-MM-DD HH:MM UTC] <Feature / Fix Title> [<Component Scope>]`
 Include the specific app/component modified and bullet points detailing the exact technical changes.
 
+### [2026-08-31 05:45 UTC] Pending Vendor Free In-Store POS Onboarding & Celebratory Redirect [backend] [pos] [vendor]
+
+* **Component:** `app/Http/Controllers/Vendor/Auth/LoginController.php`, `app/Http/Middleware/SellerMiddleware.php`, `Modules/Pos/app/Http/Controllers/PosController.php`
+* **Action:**
+  - **Frictionless Free POS Onboarding:** Eliminated the blocking `"Not approved yet!"` error. Newly registered/pending merchants are now authenticated immediately and welcomed with: *"🎉 Congratulations! Your In-Store Free POS is ready to use while your Online Marketplace store is awaiting KYC approval."*
+  - **Automated POS Redirection:** Pending merchants are routed directly to `/pos` (`pos.dashboard`), granting instant access to Barcode Register, Wholesale Desk, Debts, and Receipt Printing.
+  - **Non-Destructive Marketplace Route Protection:** Updated `SellerMiddleware` so pending merchants attempting to access `/vendor/*` routes are smoothly guided back to their active `/pos` without being logged out.
+* **Verification:** Automated in-process test suite verified 7/7 checks passed (100% pass rate).
+
 ### [2026-08-31 05:30 UTC] Strict Zero Marketplace Customer Leak in Vendor POS Registers [backend] [pos] [privacy]
 
 * **Component:** `Modules/Pos/app/Http/Controllers/PosController.php`

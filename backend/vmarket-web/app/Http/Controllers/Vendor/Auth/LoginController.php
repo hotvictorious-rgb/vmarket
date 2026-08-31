@@ -82,21 +82,32 @@ class LoginController extends Controller
             return back();
         }
         $passwordCheck = Hash::check($request['password'], $vendor['password']);
-        if ($passwordCheck && $vendor['status'] !== 'approved') {
-            ToastMagic::error(translate('Not_approve_yet') . '!');
-            return back();
-        }
-        if ($this->vendorService->isLoginSuccessful($request->email, $request->password, $request->remember)) {
-            session()->forget(['is_vendor_employee', 'vendor_employee_data', 'vendor_employee_role']);
-            if ($this->vendorWalletRepo->getFirstWhere(params: ['id' => auth('seller')->id()]) === false) {
-                $this->vendorWalletRepo->add($this->vendorService->getInitialWalletData(vendorId: auth('seller')->id()));
-            }
-            ToastMagic::info(translate('welcome_to_your_dashboard') . '.');
-            return redirect()->route('vendor.dashboard.index');
-        } else {
+        if (!$passwordCheck) {
             ToastMagic::error(translate('credentials_doesnt_match') . '!');
             return back();
         }
+
+        if ($vendor['status'] === 'suspended') {
+            ToastMagic::error(translate('Your vendor account has been suspended. Please contact support.'));
+            return back();
+        }
+
+        // Authenticate the merchant
+        auth('seller')->loginUsingId($vendor->id, $request->remember ?? false);
+        session()->forget(['is_vendor_employee', 'vendor_employee_data', 'vendor_employee_role']);
+
+        if ($this->vendorWalletRepo->getFirstWhere(params: ['id' => auth('seller')->id()]) === false) {
+            $this->vendorWalletRepo->add($this->vendorService->getInitialWalletData(vendorId: auth('seller')->id()));
+        }
+
+        // If merchant is pending KYC approval, onboard them directly into their Free In-Store POS
+        if ($vendor['status'] !== 'approved') {
+            ToastMagic::success(translate('Congratulations! Your In-Store Free POS is ready to use while your Online Marketplace store is awaiting KYC approval.'));
+            return redirect()->route('pos.dashboard');
+        }
+
+        ToastMagic::info(translate('welcome_to_your_dashboard') . '.');
+        return redirect()->route('vendor.dashboard.index');
     }
 
     public function logout(): RedirectResponse

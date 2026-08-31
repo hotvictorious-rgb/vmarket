@@ -60,12 +60,15 @@ class PosController extends Controller
 
         if ($branches->isEmpty()) {
             $shopName = ($seller && !empty($seller->f_name)) ? ($seller->f_name . "'s Store") : "Official Vmarket Store";
-            $defaultBranch = Shop::create([
-                'seller_id'  => $sellerId,
-                'name'       => $shopName,
-                'url'        => Str::slug($shopName . '-' . Str::random(4)),
-                'address'    => $seller->address ?? 'Main Counter Register',
-            ]);
+            $defaultBranch = new Shop();
+            $defaultBranch->seller_id = $sellerId;
+            $defaultBranch->name      = $shopName;
+            $defaultBranch->address   = $seller->address ?? 'Main Counter Register';
+            $defaultBranch->contact   = $seller->phone ?? '08000000000';
+            $defaultBranch->image     = 'def.png';
+            $defaultBranch->banner    = 'def.png';
+            $defaultBranch->slug      = Str::slug($shopName . '-' . Str::random(4));
+            $defaultBranch->save();
             $branches = collect([$defaultBranch]);
         }
 

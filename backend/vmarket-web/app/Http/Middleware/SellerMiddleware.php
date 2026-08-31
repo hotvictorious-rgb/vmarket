@@ -6,6 +6,7 @@ use Closure;
 use App\Utils\Helpers;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Devrabiul\ToastMagic\Facades\ToastMagic;
 
 class SellerMiddleware
 {
@@ -18,10 +19,17 @@ class SellerMiddleware
      */
     public function handle(Request $request, Closure $next): mixed
     {
-        if (auth('seller')->check() && auth('seller')->user()->status == 'approved') {
-            return $next($request);
+        if (auth('seller')->check()) {
+            $seller = auth('seller')->user();
+            if ($seller && $seller->status === 'approved') {
+                return $next($request);
+            }
+            if ($seller && $seller->status !== 'suspended') {
+                ToastMagic::info(translate('Your Online Marketplace store is undergoing KYC review. Your In-Store Free POS is active!'));
+                return redirect()->route('pos.dashboard');
+            }
+            auth()->guard('seller')->logout();
         }
-        auth()->guard('seller')->logout();
 
         return redirect()->route('vendor.auth.login');
     }
