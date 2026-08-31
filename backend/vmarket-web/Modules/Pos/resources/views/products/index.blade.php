@@ -50,7 +50,12 @@
 
 @section('content')
 
-    @php $isAdmin = (Auth::user()?->role === 'admin' || !Auth::check()); @endphp
+    @php
+        $isSuperAdmin = (session('is_super_admin') === true) || Auth::guard('admin')->check();
+        $userRole     = session('user_role');
+        $isStoreOwner = $isSuperAdmin || in_array($userRole, ['verified_merchant', 'unverified_merchant', 'admin']) || (Auth::guard('seller')->check() && !session('is_vendor_employee'));
+        $isAdmin      = $isStoreOwner;
+    @endphp
 
     <div class="prod-header">
         <div>
@@ -80,9 +85,9 @@
                 <button class="btn btn-primary" onclick="openModal('modalImportCsv')" style="font-size: 0.85rem;">
                     📥 Bulk Import (CSV)
                 </button>
-                <button class="btn btn-success" onclick="openModal('modalAddProduct')" style="font-size: 0.85rem;">
-                    ➕ Add New Product
-                </button>
+                <a href="{{ route('products.create') }}" class="btn btn-success" style="font-size: 0.85rem; font-weight: 700; text-decoration: none; display: inline-flex; align-items: center; gap: 0.35rem;">
+                    <span>➕</span> <span>Add New Product</span>
+                </a>
             @else
                 <a href="{{ route('stock.index') }}" class="btn btn-success btn-lg" style="font-size: 0.95rem;">
                     📥 Add Stock Quantity (Stock In)
@@ -203,12 +208,11 @@
                         </td>
                         <td>
                             @if($isAdmin)
-                                <button class="btn btn-secondary" style="padding: 0.4rem 0.8rem; font-size: 0.75rem;"
-                                        onclick="openEditModal('{{ $p->id }}', '{{ addslashes($p->name) }}', '{{ $p->category }}', {{ $p->unitPrice }}, '{{ $p->brand }}', '{{ $p->size }}')">
-                                    ✏️ Edit
-                                </button>
+                                <a href="{{ route('products.edit', $p->id) }}" class="btn btn-secondary" style="padding: 0.4rem 0.8rem; font-size: 0.75rem; text-decoration: none; font-weight: 700; display: inline-flex; align-items: center; gap: 0.25rem;">
+                                    <span>✏️</span> <span>Edit</span>
+                                </a>
                             @else
-                                <a href="{{ route('stock.index') }}" class="btn btn-secondary" style="padding: 0.4rem 0.8rem; font-size: 0.75rem; color: #4ade80;">
+                                <a href="{{ route('stock.index') }}" class="btn btn-secondary" style="padding: 0.4rem 0.8rem; font-size: 0.75rem; color: #4ade80; text-decoration: none;">
                                     📥 +Stock
                                 </a>
                             @endif

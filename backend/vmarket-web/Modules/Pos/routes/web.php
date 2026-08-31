@@ -87,15 +87,20 @@ Route::middleware(['web', 'pos.access'])->group(function () {
     // ─── 3. Products Catalog Management ───────────────────────────────────────
     Route::prefix('pos/products')->name('products.')->group(function () {
         Route::get('/',                 [ProductController::class, 'index'])->name('index');
+        Route::get('/create',           [ProductController::class, 'create'])->name('create');
+        Route::get('/{id}/edit',        [ProductController::class, 'edit'])->name('edit');
         Route::get('/template/csv',     [ProductController::class, 'downloadCsvTemplate'])->name('template.csv');
         Route::get('/export/csv',       [ProductController::class, 'exportCsv'])->name('export.csv');
         Route::get('/export/json',      [ProductController::class, 'exportJson'])->name('export.json');
         Route::post('/import/csv',      [ProductController::class, 'importCsv'])->name('import.csv');
         Route::post('/',                [ProductController::class, 'store'])->name('store');
         Route::post('/{id}',            [ProductController::class, 'update'])->name('update');
+        Route::put('/{id}',             [ProductController::class, 'update'])->name('update.put');
         Route::post('/{id}/delete',     [ProductController::class, 'destroy'])->name('destroy');
     });
     Route::get('/pos/products-index-alias',            [ProductController::class, 'index'])->name('pos.products.index');
+    Route::get('/pos/products-create-alias',           [ProductController::class, 'create'])->name('pos.products.create');
+    Route::get('/pos/products-edit-alias/{id}',        [ProductController::class, 'edit'])->name('pos.products.edit');
     Route::post('/pos/products-store-alias',           [ProductController::class, 'store'])->name('pos.products.store');
     Route::post('/pos/products-update-alias/{id}',     [ProductController::class, 'update'])->name('pos.products.update');
     Route::post('/pos/products-destroy-alias/{id}',    [ProductController::class, 'destroy'])->name('pos.products.destroy');
