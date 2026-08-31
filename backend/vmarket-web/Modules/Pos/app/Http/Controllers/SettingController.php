@@ -55,12 +55,24 @@ class SettingController extends Controller
     {
         $request->validate(['name' => 'required|string|max:100']);
         $sellerId = $this->resolveAuthSellerId();
+        $seller = Seller::find($sellerId);
+
+        // [AI] Free-Tier In-Store POS (Pending KYC) is limited to 1 Store
+        if ($seller && $seller->status !== 'approved') {
+            $existingBranches = Shop::where('seller_id', $sellerId)->count();
+            if ($existingBranches >= 1) {
+                return back()->with('error', 'Your Free In-Store POS tier includes 1 Store. To add multiple branches, please complete your KYC verification or upgrade your subscription.');
+            }
+        }
 
         Shop::create([
             'seller_id'       => $sellerId,
             'name'            => $request->name,
             'address'         => $request->address ?? 'Branch Address',
             'contact'         => $request->phone ?? '',
+            'image'           => 'def.png',
+            'banner'          => 'def.png',
+            'slug'            => Str::slug($request->name . '-' . Str::random(4)),
             'temporary_close' => 0,
         ]);
 

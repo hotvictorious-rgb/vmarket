@@ -38,6 +38,14 @@ class WarehouseController extends Controller
 
     public function create()
     {
+        $sellerId = $this->resolveAuthSellerId();
+        $seller = \App\Models\Seller::find($sellerId);
+        if ($seller && $seller->status !== 'approved') {
+            $existingBranches = DB::table('shops')->where('seller_id', $sellerId)->count();
+            if ($existingBranches >= 1) {
+                return redirect()->route('settings.index')->with('error', 'Your Free In-Store POS tier includes 1 Store. To add multiple branches, please complete your KYC verification or upgrade your subscription.');
+            }
+        }
         $states = DB::table('delivery_states')->where('is_active', 1)->orderBy('name')->get();
         return view('pos::warehouses.create', compact('states'));
     }
@@ -45,6 +53,14 @@ class WarehouseController extends Controller
     public function store(Request $request)
     {
         $sellerId = $this->resolveAuthSellerId();
+        $seller = \App\Models\Seller::find($sellerId);
+        if ($seller && $seller->status !== 'approved') {
+            $existingBranches = DB::table('shops')->where('seller_id', $sellerId)->count();
+            if ($existingBranches >= 1) {
+                return redirect()->route('settings.index')->with('error', 'Your Free In-Store POS tier includes 1 Store. To add multiple branches, please complete your KYC verification or upgrade your subscription.');
+            }
+        }
+
         $request->validate([
             'name'     => 'required|string|max:255',
             'phone'    => 'nullable|string|max:20',
@@ -60,6 +76,9 @@ class WarehouseController extends Controller
             'seller_id'  => $sellerId,
             'name'       => $request->name,
             'url'        => $url,
+            'slug'       => $url,
+            'image'      => 'def.png',
+            'banner'     => 'def.png',
             'address'    => $request->address,
             'contact'    => $request->phone,
             'country'    => $request->country,

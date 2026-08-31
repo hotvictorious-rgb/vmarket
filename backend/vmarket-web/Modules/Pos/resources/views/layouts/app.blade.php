@@ -531,38 +531,19 @@
 
         @php
             $isSuperAdmin = (session('is_super_admin') === true) || Auth::guard('admin')->check();
-            $currentRole = $isSuperAdmin ? 'admin' : (session('user_role') ?? auth()->user()?->role ?? 'admin');
+            $userRole = session('user_role');
+            $sellerId = session('seller_id');
+            $sellerStatus = session('seller_status', 'pending');
+            $isStoreOwner = $isSuperAdmin || in_array($userRole, ['verified_merchant', 'unverified_merchant', 'admin']) || (Auth::guard('seller')->check() && !session('is_vendor_employee'));
+            $currentRole = $isStoreOwner ? 'admin' : ($userRole ?? 'staff');
+            $isSuperAdminEmployee = ($userRole === 'super_admin_employee');
+            $isVerifiedMerchant = ($userRole === 'verified_merchant') || (!$isSuperAdmin && $sellerId && $sellerStatus === 'approved' && !in_array($userRole, ['verified_merchant_employee', 'unverified_merchant_employee', 'staff']));
+            $isUnverifiedMerchant = ($userRole === 'unverified_merchant') || (!$isSuperAdmin && $sellerId && $sellerStatus !== 'approved' && !in_array($userRole, ['verified_merchant_employee', 'unverified_merchant_employee', 'staff']));
+            $isVerifiedMerchantEmployee = ($userRole === 'verified_merchant_employee') || ($userRole === 'staff' && $sellerStatus === 'approved');
+            $isUnverifiedMerchantEmployee = ($userRole === 'unverified_merchant_employee') || ($userRole === 'staff' && $sellerStatus !== 'approved');
         @endphp
+
         <nav class="sidebar-menu">
-            @php
-                $vmarketUrl = rtrim(env('VMARKET_URL', 'http://localhost:8000'), '/');
-                $userRole = session('user_role');
-                $sellerId = session('seller_id');
-                $sellerStatus = session('seller_status', 'pending');
-                $isSuperAdminEmployee = ($userRole === 'super_admin_employee');
-                $isVerifiedMerchant = ($userRole === 'verified_merchant') || (!$isSuperAdmin && $sellerId && $sellerStatus === 'approved' && !in_array($userRole, ['verified_merchant_employee', 'unverified_merchant_employee', 'staff']));
-                $isUnverifiedMerchant = ($userRole === 'unverified_merchant') || (!$isSuperAdmin && $sellerId && $sellerStatus !== 'approved' && !in_array($userRole, ['verified_merchant_employee', 'unverified_merchant_employee', 'staff']));
-                $isVerifiedMerchantEmployee = ($userRole === 'verified_merchant_employee') || ($userRole === 'staff' && $sellerStatus === 'approved');
-                $isUnverifiedMerchantEmployee = ($userRole === 'unverified_merchant_employee') || ($userRole === 'staff' && $sellerStatus !== 'approved');
-            @endphp
-
-            @if($isSuperAdmin || $isVerifiedMerchant || $isUnverifiedMerchant)
-                <div class="menu-category">Victorious MARKET Hub</div>
-                @if($isSuperAdmin)
-                    <a href="{{ route('pos.sso.return') }}" class="nav-item" style="background: linear-gradient(135deg, rgba(79, 70, 229, 0.25), rgba(124, 58, 237, 0.25)); border: 1px solid rgba(167, 139, 250, 0.5); color: #c4b5fd; font-weight: 800;" title="Return to Victorious MARKET Super Admin Command Center">
-                        <span>🔙</span> <span>Return to Admin Panel</span>
-                    </a>
-                @elseif($isVerifiedMerchant)
-                    <a href="{{ route('pos.sso.return') }}" class="nav-item" style="background: linear-gradient(135deg, rgba(5, 150, 105, 0.25), rgba(13, 148, 136, 0.25)); border: 1px solid rgba(52, 211, 153, 0.5); color: #6ee7b7; font-weight: 800;" title="Return to Victorious MARKET Merchant Web Dashboard">
-                        <span>🔙</span> <span>Return to Merchant Panel</span>
-                    </a>
-                @elseif($isUnverifiedMerchant)
-                    <div class="nav-item" style="background: rgba(245, 158, 11, 0.1); border: 1px dashed rgba(245, 158, 11, 0.3); color: #fde047; font-size: 0.8rem;" title="Marketplace verification is pending approval. You have full Free In-Store POS access.">
-                        <span>⏳</span> <span>Marketplace Pending</span>
-                    </div>
-                @endif
-            @endif
-
             <div class="menu-category">Main Operations</div>
             <a href="{{ route('dashboard') }}" class="nav-item {{ request()->routeIs('dashboard') ? 'active' : '' }}">
                 <span>🏠</span> <span>{{ $currentRole === 'cashier' ? 'My Shift Summary' : ($currentRole === 'storekeeper' ? 'Stock Hub' : 'Dashboard') }}</span>

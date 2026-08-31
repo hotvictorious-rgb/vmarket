@@ -7,6 +7,15 @@ Always append your completed tasks here in chronological order at the top. Forma
 `### [YYYY-MM-DD HH:MM UTC] <Feature / Fix Title> [<Component Scope>]`
 Include the specific app/component modified and bullet points detailing the exact technical changes.
 
+### [2026-08-31 06:48 UTC] Unified POS Sidebar Parity & Free-Tier 1-Store Policy Enforcement [pos] [ui] [vendor]
+
+* **Component:** `Modules/Pos/resources/views/layouts/app.blade.php`, `Modules/Pos/app/Http/Controllers/SettingController.php`, `Modules/Pos/app/Http/Controllers/WarehouseController.php`
+* **Action:**
+  - **Identical Frontend Sidebar Experience:** Streamlined the POS sidebar across all tiers so Free-Tier Unverified Merchants, Verified Merchants, and Super Admins share the exact same UI layout, categories, brand footer ("Powered by Victorious MARKET"), and all 16 operational sub-modules.
+  - **SaaS Master Control Isolation:** Strictly isolated the SaaS Master Control button (`/pos/saas`) to platform Super Admin sessions only.
+  - **1-Store Limit Enforcement for Free Tier:** Guarded branch creation in `SettingController::storeWarehouse` and `WarehouseController::store/create`. Pending/unverified merchants are capped at 1 Store, displaying an upgrade prompt upon multi-branch attempts.
+* **Verification:** Comprehensive 21-point automated audit passed (21/21 checks passed).
+
 ### [2026-08-31 06:20 UTC] Role-Tailored POS Logout Redirection [backend] [pos] [auth]
 
 * **Component:** `Modules/Pos/routes/web.php`
