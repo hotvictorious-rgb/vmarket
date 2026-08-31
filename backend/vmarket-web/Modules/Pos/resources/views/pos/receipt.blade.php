@@ -70,7 +70,7 @@
 
 @php
     $isWholesale = ($sale->sale_type === 'WHOLESALE_DISPATCH');
-    $custObj = \App\Models\Customer::where('name', $sale->customerName)->first();
+    $custObj = \App\Models\User::where('f_name', $sale->customerName)->orWhere(\Illuminate\Support\Facades\DB::raw("CONCAT(f_name, ' ', l_name)"), $sale->customerName)->first();
     $totalUnits = $sale->items->sum('quantity');
     $isSupplied = in_array(strtoupper($sale->deliveryStatus ?? ''), ['DELIVERED', 'SUPPLIED']);
 @endphp
@@ -236,7 +236,7 @@
                 <div style="font-size: 0.75rem; font-weight: 600; margin-top: 0.25rem;">
                     ✓ GOODS SUPPLIED & COLLECTED
                     @if($sale->deliveredAt)
-                        <br><span style="font-weight: 400;">Handed over: {{ \Carbon\Carbon::parse($sale->deliveredAt)->format('d M Y, h:i A') }}@if($sale->deliveredBy) · By: {{ $sale->deliveredBy }}@endif</span>
+                        <br><span style="font-weight: 400;">Handed over: {{ \Carbon\Carbon::parse($sale->deliveredAt)->format('d M Y, h:i A') }}@if(!empty($sale->deliveredBy)) · By: {{ $sale->deliveredBy }}@endif</span>
                     @endif
                 </div>
             @else

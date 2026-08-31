@@ -442,10 +442,11 @@ class PosController extends Controller
         $sale->totalAmount    = (float) $sale->total_amount;
         $sale->paidAmount     = (float) $sale->paid_amount;
         $sale->receiptNumber  = $sale->receipt_number;
-        $sale->userName       = $sale->cashier_name ?? ($seller->f_name . ' ' . $seller->l_name);
+        $sale->userName       = $sale->cashier_name ?? ($seller ? ($seller->f_name . ' ' . $seller->l_name) : 'Super Admin');
         $sale->createdAt      = $sale->created_at;
         $sale->sale_type      = $sale->is_wholesale ? 'WHOLESALE_DISPATCH' : 'RETAIL';
         $sale->deliveredAt    = $sale->delivery_status === 'delivered' ? $sale->updated_at : null;
+        $sale->deliveredBy    = $sale->cashier_name ?? 'Counter Attendant';
 
         $mappedItems = $items->map(function ($item) {
             $item->productName = $item->product_name;

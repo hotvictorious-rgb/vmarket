@@ -122,8 +122,12 @@ class DebtController extends Controller
      * Record a debt repayment against a specific sale.
      * [AI] Pessimistic lock ensures no double-crediting.
      */
-    public function recordPayment(Request $request)
+    public function recordPayment(Request $request, $id = null)
     {
+        if (!$request->has('pos_sale_id') && $id) {
+            $request->merge(['pos_sale_id' => (int) $id]);
+        }
+
         $request->validate([
             'pos_sale_id'    => 'required|integer',
             'amount'         => 'required|numeric|min:0.01',
@@ -133,6 +137,7 @@ class DebtController extends Controller
 
         $sellerId = $this->resolveAuthSellerId();
         $saleId   = (int) $request->pos_sale_id;
+        $amount   = (float) $request->amount;
         $cashierName = $this->resolveAuthUserName();
 
         try {
