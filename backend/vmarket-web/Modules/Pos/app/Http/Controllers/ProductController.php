@@ -4,26 +4,25 @@ namespace Modules\Pos\app\Http\Controllers;
 
 use App\Http\Controllers\Controller;
 use App\Models\Product;
+use App\Models\Category;
+use App\Models\Seller;
+use App\Traits\FileManagerTrait;
+use Modules\Pos\app\Traits\PosAuthTrait;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
 
 /**
- * [AI] ProductController — POS product management (catalog scoped to this seller).
- * Ported from Hysam standalone ProductController.
- *
- * KEY CHANGES:
- * - Operates on the unified Vmarket `products` table (user_id = seller_id).
- * - New products are inserted as `status=0, request_status=0` (POS draft, not yet on marketplace).
- * - Sellers can promote products to marketplace via the Vendor Panel (separate flow).
- * - All queries strictly scoped to `user_id = seller_id` (IDOR protection).
+ * [AI] ProductController — Unified POS & Online Marketplace Product Management.
+ * Operates on the unified Vmarket `products` table (user_id = seller_id).
+ * Intelligently recognizes Verified vs. Unverified/Free-Tier merchants:
+ * - Verified Merchants: Full In-Store POS + Online Marketplace listing with photo upload and publish toggle.
+ * - Free-Tier Merchants: Full In-Store POS (physical barcode register) + preparatory photo staging for KYC approval.
  */
-use Modules\Pos\app\Traits\PosAuthTrait;
-
 class ProductController extends Controller
 {
-    use PosAuthTrait;
+    use PosAuthTrait, FileManagerTrait;
 
     public function index(Request $request)
     {
@@ -79,59 +78,105 @@ class ProductController extends Controller
 
     public function create()
     {
-        $sellerId   = $this->resolveAuthSellerId();
-        $categories = Product::where('user_id', $sellerId)->distinct()->pluck('pos_category')->filter()->values();
+        $sellerId           = $this->resolveAuthSellerId();
+        $seller             = Seller::find($sellerId);
+        $isVerified         = ($seller && $seller->status === 'approved') || Auth::guard('admin')->check();
+        $officialCategories = Category::where(['position' => 0])->get();
+        $posCategories      = Product::where('user_id', $sellerId)->distinct()->pluck('pos_category')->filter()->values();
+        $units              = ['pc', 'kg', 'g', 'ltr', 'bag', 'carton', 'pack', 'bottle', 'box', 'roll', 'meter', 'pair'];
 
-        return view('pos::products.create', compact('categories'));
+        return view('pos::products.create', compact('officialCategories', 'posCategories', 'units', 'isVerified', 'seller'));
     }
 
     /**
-     * Store new product directly in the unified Vmarket products table.
-     * [AI] New products are created as drafts (status=0). They appear in POS immediately
-     * but require Super Admin approval (request_status=1) to list on the marketplace.
+     * Store new product in the unified Vmarket products table.
      */
     public function store(Request $request)
     {
-        $sellerId = $this->resolveAuthSellerId();
+        $sellerId   = $this->resolveAuthSellerId();
+        $seller     = Seller::find($sellerId);
+        $isVerified = ($seller && $seller->status === 'approved') || Auth::guard('admin')->check();
 
         $request->validate([
-            'name'         => 'required|string|max:255',
-            'pos_category' => 'nullable|string|max:100',
-            'unit_price'   => 'required|numeric|min:0',
-            'purchase_price' => 'nullable|numeric|min:0',
-            'current_stock'  => 'required|integer|min:0',
-            'pos_barcode'    => 'nullable|string|max:100',
-            'pos_reorder_level' => 'nullable|integer|min:0',
+            'name'                => 'required|string|max:255',
+            'code'                => 'nullable|string|max:100',
+            'unit_price'          => 'required|numeric|min:0',
+            'purchase_price'      => 'nullable|numeric|min:0',
+            'pos_wholesale_price' => 'nullable|numeric|min:0',
+            'current_stock'       => 'required|integer|min:0',
+            'unit'                => 'nullable|string|max:50',
+            'category_id'         => 'nullable|integer',
+            'pos_category'        => 'nullable|string|max:100',
+            'pos_reorder_level'   => 'nullable|integer|min:0',
+            'tax'                 => 'nullable|numeric|min:0',
+            'tax_type'            => 'nullable|in:percent,flat',
+            'discount'            => 'nullable|numeric|min:0',
+            'discount_type'       => 'nullable|in:percent,flat',
+            'minimum_order_qty'   => 'nullable|integer|min:1',
+            'image'               => 'nullable|image|mimes:jpeg,jpg,png,webp,gif|max:5120',
         ]);
 
         $slug = Str::slug($request->name) . '-' . Str::lower(Str::random(5));
+        $code = $request->code ?: ($request->pos_barcode ?: strtoupper(Str::random(8)));
+
+        // Handle optional product photo upload for online storefront
+        $thumbnail = 'def.png';
+        $images = ['def.png'];
+        if ($request->hasFile('image')) {
+            try {
+                $uploaded = $this->upload('product/thumbnail/', 'webp', $request->file('image'));
+                if ($uploaded) {
+                    $thumbnail = $uploaded;
+                    $images = [$uploaded];
+                }
+            } catch (\Throwable $e) {
+                // Fallback gracefully on image upload error
+                $thumbnail = 'def.png';
+            }
+        }
+
+        $isPublish     = $isVerified && $request->boolean('is_published');
+        $status        = $isPublish ? 1 : 0;
+        $requestStatus = $isPublish ? 1 : 0;
+        $catId         = $request->category_id ?: 1;
+        $categoryIds   = json_encode([['id' => (string)$catId, 'position' => 1]]);
 
         $productId = DB::table('products')->insertGetId([
-            'user_id'          => $sellerId,
-            'added_by'         => 'seller',
-            'name'             => $request->name,
-            'code'             => $request->pos_barcode ?? strtoupper(Str::random(8)),
-            'slug'             => $slug,
-            'pos_barcode'      => $request->pos_barcode,
-            'pos_category'     => $request->pos_category,
-            'pos_reorder_level' => (int) ($request->pos_reorder_level ?? 5),
-            'category_id'      => 1, // Default POS category
-            'category_ids'     => json_encode([['id' => '1', 'position' => 1]]),
-            'unit_price'       => (float) $request->unit_price,
-            'purchase_price'   => (float) ($request->purchase_price ?? 0),
-            'current_stock'    => (int) $request->current_stock,
-            'minimum_order_qty' => 1,
-            'min_qty'          => 1,
-            'unit'             => 'pc',
-            'status'           => 0,           // [AI] 0 = POS draft, not on marketplace
-            'request_status'   => 0,           // [AI] 0 = pending Super Admin approval
-            'published'        => 0,
-            'images'           => json_encode([]),
-            'color_image'      => json_encode([]),
-            'thumbnail'        => '',
-            'details'          => $request->description ?? '',
-            'created_at'       => now(),
-            'updated_at'       => now(),
+            'user_id'             => $sellerId,
+            'added_by'            => 'seller',
+            'name'                => $request->name,
+            'code'                => $code,
+            'slug'                => $slug,
+            'pos_barcode'         => $code,
+            'pos_category'        => $request->pos_category ?? 'General',
+            'pos_reorder_level'   => (int) ($request->pos_reorder_level ?? 5),
+            'category_id'         => $catId,
+            'category_ids'        => $categoryIds,
+            'unit_price'          => (float) $request->unit_price,
+            'purchase_price'      => (float) ($request->purchase_price ?? 0),
+            'pos_wholesale_price' => (float) ($request->pos_wholesale_price ?? $request->unit_price),
+            'current_stock'       => (int) $request->current_stock,
+            'minimum_order_qty'   => (int) ($request->minimum_order_qty ?? 1),
+            'min_qty'             => (int) ($request->minimum_order_qty ?? 1),
+            'unit'                => $request->unit ?? 'pc',
+            'tax'                 => (float) ($request->tax ?? 0),
+            'tax_type'            => $request->tax_type ?? 'percent',
+            'discount'            => (float) ($request->discount ?? 0),
+            'discount_type'       => $request->discount_type ?? 'flat',
+            'product_type'        => 'physical',
+            'status'              => $status,
+            'request_status'      => $requestStatus,
+            'published'           => $status,
+            'thumbnail'           => $thumbnail,
+            'images'              => json_encode($images),
+            'color_image'         => json_encode([]),
+            'colors'              => json_encode([]),
+            'attributes'          => json_encode([]),
+            'choice_options'      => json_encode([]),
+            'variation'           => json_encode([]),
+            'details'             => $request->details ?? ($request->description ?? ''),
+            'created_at'          => now(),
+            'updated_at'          => now(),
         ]);
 
         // Seed product_stocks row
@@ -144,53 +189,102 @@ class ProductController extends Controller
             'updated_at' => now(),
         ]);
 
-        return redirect()->route('pos.products.index')->with('success', "✓ Product [{$request->name}] added to your POS catalog.");
+        return redirect()->route('pos.products.index')->with('success', "✓ Product [{$request->name}] saved and synced to unified catalog.");
     }
 
     public function edit(int $id)
     {
-        $sellerId   = $this->resolveAuthSellerId();
-        // [AI] IDOR: product must belong to this seller
-        $product    = Product::where('id', $id)->where('user_id', $sellerId)->firstOrFail();
-        $categories = Product::where('user_id', $sellerId)->distinct()->pluck('pos_category')->filter()->values();
+        $sellerId           = $this->resolveAuthSellerId();
+        $seller             = Seller::find($sellerId);
+        $isVerified         = ($seller && $seller->status === 'approved') || Auth::guard('admin')->check();
+        $product            = Product::where('id', $id)->where('user_id', $sellerId)->firstOrFail();
+        $officialCategories = Category::where(['position' => 0])->get();
+        $posCategories      = Product::where('user_id', $sellerId)->distinct()->pluck('pos_category')->filter()->values();
+        $units              = ['pc', 'kg', 'g', 'ltr', 'bag', 'carton', 'pack', 'bottle', 'box', 'roll', 'meter', 'pair'];
 
-        return view('pos::products.edit', compact('product', 'categories'));
+        return view('pos::products.edit', compact('product', 'officialCategories', 'posCategories', 'units', 'isVerified', 'seller'));
     }
 
     public function update(Request $request, int $id)
     {
-        $sellerId = $this->resolveAuthSellerId();
-        $product  = Product::where('id', $id)->where('user_id', $sellerId)->firstOrFail();
+        $sellerId   = $this->resolveAuthSellerId();
+        $seller     = Seller::find($sellerId);
+        $isVerified = ($seller && $seller->status === 'approved') || Auth::guard('admin')->check();
+        $product    = Product::where('id', $id)->where('user_id', $sellerId)->firstOrFail();
 
         $request->validate([
-            'name'              => 'required|string|max:255',
-            'unit_price'        => 'required|numeric|min:0',
-            'purchase_price'    => 'nullable|numeric|min:0',
-            'current_stock'     => 'required|integer|min:0',
-            'pos_barcode'       => 'nullable|string|max:100',
-            'pos_category'      => 'nullable|string|max:100',
-            'pos_reorder_level' => 'nullable|integer|min:0',
+            'name'                => 'required|string|max:255',
+            'code'                => 'nullable|string|max:100',
+            'unit_price'          => 'required|numeric|min:0',
+            'purchase_price'      => 'nullable|numeric|min:0',
+            'pos_wholesale_price' => 'nullable|numeric|min:0',
+            'current_stock'       => 'required|integer|min:0',
+            'unit'                => 'nullable|string|max:50',
+            'category_id'         => 'nullable|integer',
+            'pos_category'        => 'nullable|string|max:100',
+            'pos_reorder_level'   => 'nullable|integer|min:0',
+            'tax'                 => 'nullable|numeric|min:0',
+            'tax_type'            => 'nullable|in:percent,flat',
+            'discount'            => 'nullable|numeric|min:0',
+            'discount_type'       => 'nullable|in:percent,flat',
+            'minimum_order_qty'   => 'nullable|integer|min:1',
+            'image'               => 'nullable|image|mimes:jpeg,jpg,png,webp,gif|max:5120',
         ]);
 
-        DB::table('products')->where('id', $id)->where('user_id', $sellerId)->update([
-            'name'              => $request->name,
-            'pos_barcode'       => $request->pos_barcode,
-            'pos_category'      => $request->pos_category,
-            'pos_reorder_level' => (int) ($request->pos_reorder_level ?? 5),
-            'unit_price'        => (float) $request->unit_price,
-            'purchase_price'    => (float) ($request->purchase_price ?? 0),
-            'current_stock'     => (int) $request->current_stock,
-            'details'           => $request->description ?? $product->details,
-            'updated_at'        => now(),
-        ]);
+        $code = $request->code ?: ($request->pos_barcode ?: $product->code);
 
+        $updateData = [
+            'name'                => $request->name,
+            'code'                => $code,
+            'pos_barcode'         => $code,
+            'pos_category'        => $request->pos_category ?? $product->pos_category,
+            'pos_reorder_level'   => (int) ($request->pos_reorder_level ?? 5),
+            'unit_price'          => (float) $request->unit_price,
+            'purchase_price'      => (float) ($request->purchase_price ?? $product->purchase_price),
+            'pos_wholesale_price' => (float) ($request->pos_wholesale_price ?? $request->unit_price),
+            'current_stock'       => (int) $request->current_stock,
+            'minimum_order_qty'   => (int) ($request->minimum_order_qty ?? $product->minimum_order_qty),
+            'min_qty'             => (int) ($request->minimum_order_qty ?? $product->minimum_order_qty),
+            'unit'                => $request->unit ?? $product->unit,
+            'tax'                 => (float) ($request->tax ?? $product->tax),
+            'tax_type'            => $request->tax_type ?? $product->tax_type,
+            'discount'            => (float) ($request->discount ?? $product->discount),
+            'discount_type'       => $request->discount_type ?? $product->discount_type,
+            'details'             => $request->details ?? ($request->description ?? $product->details),
+            'updated_at'          => now(),
+        ];
+
+        if ($request->has('category_id') && $request->category_id) {
+            $updateData['category_id'] = (int) $request->category_id;
+            $updateData['category_ids'] = json_encode([['id' => (string)$request->category_id, 'position' => 1]]);
+        }
+
+        if ($isVerified && $request->has('is_published')) {
+            $isPublish = $request->boolean('is_published');
+            $updateData['status'] = $isPublish ? 1 : 0;
+            $updateData['published'] = $isPublish ? 1 : 0;
+        }
+
+        if ($request->hasFile('image')) {
+            try {
+                $uploaded = $this->upload('product/thumbnail/', 'webp', $request->file('image'));
+                if ($uploaded) {
+                    $updateData['thumbnail'] = $uploaded;
+                    $updateData['images'] = json_encode([$uploaded]);
+                }
+            } catch (\Throwable $e) {}
+        }
+
+        DB::table('products')->where('id', $id)->where('user_id', $sellerId)->update($updateData);
+
+        // Update product_stocks table
         DB::table('product_stocks')->where('product_id', $id)->update([
             'price'      => (float) $request->unit_price,
             'qty'        => (int) $request->current_stock,
             'updated_at' => now(),
         ]);
 
-        return redirect()->route('pos.products.index')->with('success', "✓ Product [{$request->name}] updated.");
+        return redirect()->route('pos.products.index')->with('success', "✓ Product [{$request->name}] updated successfully.");
     }
 
     public function destroy(int $id)

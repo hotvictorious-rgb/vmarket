@@ -7,6 +7,18 @@ Always append your completed tasks here in chronological order at the top. Forma
 `### [YYYY-MM-DD HH:MM UTC] <Feature / Fix Title> [<Component Scope>]`
 Include the specific app/component modified and bullet points detailing the exact technical changes.
 
+### [2026-08-31 07:56 UTC] Unified POS & Online Marketplace Product Management with Intelligent Role Differentiation [pos] [vendor] [catalog]
+
+* **Component:** `Modules/Pos/app/Http/Controllers/ProductController.php`, `Modules/Pos/resources/views/products/create.blade.php`, `Modules/Pos/resources/views/products/edit.blade.php`, `Modules/Pos/database/migrations/2026_08_31_090000_add_pos_wholesale_price_to_products.php`
+* **Action:**
+  - **Single Point of Inventory Management:** Unified the POS product creation and editing workflows with the Vmarket core catalog schema (`products` table), adding official Marketplace Categories, Units of Measure (`pc`, `kg`, `bag`, `carton`, etc.), Wholesale Tier Pricing (`pos_wholesale_price`), Tax, Discount, Reorder Alert Levels, and Min Order Quantities.
+  - **Intelligent Role Differentiation:**
+    - **Verified Merchants (`status === 'approved'`):** Displayed "Verified Merchant Store" status badge, unlocked the "Publish to Online Marketplace" toggle switch, and enabled photo uploads for live storefront discovery on web and mobile apps.
+    - **Free-Tier Unverified Merchants (`status !== 'approved'`):** Displayed "Free In-Store POS Active (Marketplace Locked Pending KYC)" status badge. Products are activated instantly for physical barcode scanning and counter receipts, while photos and online pricing are safely staged for automatic marketplace launch upon KYC verification.
+  - **Ultra-Fast Zero-Image POS Register UX:** Preserved the high-efficiency text/SKU card layout on the Point of Sale terminal register (`/pos/terminal`), ensuring instant rendering and rapid barcode scanner responsiveness.
+* **Verification:** Automated 13-point multi-tier test suite (`test_unified_product_form_and_role_intelligence.php`) executed with 100% success (13/13 passed, $\Delta = 0.00$).
+
+
 ### [2026-08-31 06:48 UTC] Unified POS Sidebar Parity & Free-Tier 1-Store Policy Enforcement [pos] [ui] [vendor]
 
 * **Component:** `Modules/Pos/resources/views/layouts/app.blade.php`, `Modules/Pos/app/Http/Controllers/SettingController.php`, `Modules/Pos/app/Http/Controllers/WarehouseController.php`
