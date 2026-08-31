@@ -35,17 +35,32 @@ Route::middleware(['web', 'pos.access'])->group(function () {
 
     // ─── Return Hub to Vmarket Admin / Vendor Panel ─────────────────────────
     Route::get('/pos-sso-return', function () {
+        if (Auth::guard('seller')->check()) {
+            return redirect()->route('vendor.dashboard.index');
+        }
+        if (Auth::guard('vendor_employee')->check()) {
+            return redirect()->route('vendor.dashboard.index');
+        }
         if (Auth::guard('admin')->check()) {
             return redirect()->route('admin.dashboard.index');
         }
-        return redirect()->route('vendor.dashboard.index');
+        return redirect()->route('vendor.auth.login');
     })->name('pos.sso.return');
 
     Route::match(['get', 'post'], '/pos/logout', function () {
-        if (Auth::guard('admin')->check()) {
-            return redirect()->route('admin.dashboard.index');
+        if (Auth::guard('seller')->check()) {
+            Auth::guard('seller')->logout();
+            return redirect()->route('vendor.auth.login');
         }
-        return redirect()->route('vendor.dashboard.index');
+        if (Auth::guard('vendor_employee')->check()) {
+            Auth::guard('vendor_employee')->logout();
+            return redirect()->route('vendor.auth.login');
+        }
+        if (Auth::guard('admin')->check()) {
+            Auth::guard('admin')->logout();
+            return redirect()->route('admin.auth.login');
+        }
+        return redirect()->route('vendor.auth.login');
     })->name('logout');
 
     // ─── 1. Executive Dashboard ───────────────────────────────────────────────

@@ -7,6 +7,14 @@ Always append your completed tasks here in chronological order at the top. Forma
 `### [YYYY-MM-DD HH:MM UTC] <Feature / Fix Title> [<Component Scope>]`
 Include the specific app/component modified and bullet points detailing the exact technical changes.
 
+### [2026-08-31 05:55 UTC] Multi-Account Same-Device Session Isolation & POS SSO Return Fix [backend] [auth] [security]
+
+* **Component:** `app/Http/Controllers/Admin/Auth/LoginController.php`, `app/Http/Controllers/Vendor/Auth/LoginController.php`, `app/Http/Middleware/PosAccessMiddleware.php`, `Modules/Pos/routes/web.php`
+* **Action:**
+  - **Single Device Multi-Guard Isolation:** Fixed the multi-guard session crossover where logging into Admin and Vendor on the same laptop in the same browser window left lingering admin sessions. Added explicit mutual guard logout upon authentication.
+  - **POS SSO Return Prioritization:** Re-ordered guard evaluation in `PosAccessMiddleware` and `/pos-sso-return` to evaluate `seller` and `vendor_employee` first, ensuring merchant POS registers always route back to `/vendor/dashboard` (never leaking into Super Admin panel).
+* **Verification:** Automated in-process test verified mutual guard revocation and 100% accurate return navigation.
+
 ### [2026-08-31 05:45 UTC] Pending Vendor Free In-Store POS Onboarding & Celebratory Redirect [backend] [pos] [vendor]
 
 * **Component:** `app/Http/Controllers/Vendor/Auth/LoginController.php`, `app/Http/Middleware/SellerMiddleware.php`, `Modules/Pos/app/Http/Controllers/PosController.php`

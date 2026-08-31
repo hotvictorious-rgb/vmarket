@@ -18,19 +18,7 @@ class PosAccessMiddleware
      */
     public function handle(Request $request, Closure $next): mixed
     {
-        // 1. Check Super Admin / Admin Staff
-        if (Auth::guard('admin')->check()) {
-            $adminUser = Auth::guard('admin')->user();
-            session([
-                'is_super_admin' => true,
-                'user_role'      => 'admin',
-                'user_name'      => $adminUser->name ?? 'Super Admin',
-                'user_email'     => $adminUser->email ?? 'admin@admin.com',
-            ]);
-            return $next($request);
-        }
-
-        // 2. Check Store Cashier Employee
+        // 1. Check Store Cashier Employee
         if (Auth::guard('vendor_employee')->check()) {
             $employee = Auth::guard('vendor_employee')->user();
             session([
@@ -43,7 +31,7 @@ class PosAccessMiddleware
             return $next($request);
         }
 
-        // 3. Check Verified / Unverified Merchant Owner
+        // 2. Check Verified / Unverified Merchant Owner
         if (Auth::guard('seller')->check()) {
             $seller = Auth::guard('seller')->user();
             if ($seller && $seller->status != 'suspended') {
@@ -57,6 +45,18 @@ class PosAccessMiddleware
                 ]);
                 return $next($request);
             }
+        }
+
+        // 3. Check Super Admin / Admin Staff
+        if (Auth::guard('admin')->check()) {
+            $adminUser = Auth::guard('admin')->user();
+            session([
+                'is_super_admin' => true,
+                'user_role'      => 'admin',
+                'user_name'      => $adminUser->name ?? 'Super Admin',
+                'user_email'     => $adminUser->email ?? 'admin@admin.com',
+            ]);
+            return $next($request);
         }
 
         // Unauthenticated access

@@ -64,6 +64,9 @@ class LoginController extends Controller
                     return back();
                 }
 
+                // [AI] Clear any lingering admin guard session to prevent multi-account crossover on the same device
+                auth('admin')->logout();
+
                 // Authenticate under the parent seller shop context
                 auth('seller')->loginUsingId($employee->seller_id, $request->remember ?? false);
 
@@ -92,9 +95,12 @@ class LoginController extends Controller
             return back();
         }
 
+        // [AI] Clear any lingering admin guard session to prevent multi-account crossover on the same device
+        auth('admin')->logout();
+
         // Authenticate the merchant
         auth('seller')->loginUsingId($vendor->id, $request->remember ?? false);
-        session()->forget(['is_vendor_employee', 'vendor_employee_data', 'vendor_employee_role']);
+        session()->forget(['is_vendor_employee', 'vendor_employee_data', 'vendor_employee_role', 'is_super_admin']);
 
         if ($this->vendorWalletRepo->getFirstWhere(params: ['id' => auth('seller')->id()]) === false) {
             $this->vendorWalletRepo->add($this->vendorService->getInitialWalletData(vendorId: auth('seller')->id()));
