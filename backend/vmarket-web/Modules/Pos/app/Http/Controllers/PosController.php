@@ -122,8 +122,8 @@ class PosController extends Controller
 
         $categories = $products->pluck('category_name')->filter()->unique()->values();
 
-        // POS in-store customers (seller-scoped + platform registered customers)
-        $posCustomers = DB::table('pos_sales')
+        // [AI] Strict Vendor Isolation: Only load customers who have shopped at THIS vendor's physical store/register
+        $customers = DB::table('pos_sales')
             ->where('seller_id', $sellerId)
             ->whereNotNull('customer_name')
             ->selectRaw('customer_id as id, customer_name as name, customer_phone as phone, MAX(created_at) as last_visit, SUM(debt_amount) as total_debt')
@@ -136,23 +136,6 @@ class PosController extends Controller
                 $c->customer_code = $c->phone ? substr($c->phone, -4) : ('CUST-' . $c->id);
                 return $c;
             });
-
-        $platformCustomers = User::whereNotNull('phone')
-            ->where('phone', '!=', '')
-            ->selectRaw("id, CONCAT(COALESCE(f_name, ''), ' ', COALESCE(l_name, '')) as name, phone")
-            ->limit(50)
-            ->get()
-            ->map(function ($u) {
-                $c = new \stdClass();
-                $c->id = $u->id;
-                $c->name = trim($u->name) ?: ('Customer #' . $u->id);
-                $c->phone = $u->phone;
-                $c->total_debt = 0;
-                $c->customer_code = substr($u->phone, -4);
-                return $c;
-            });
-
-        $customers = $posCustomers->concat($platformCustomers)->unique('phone')->values();
 
         $operatorName = $this->resolveAuthUserName();
         $allSellers = Auth::guard('admin')->check() ? Seller::select('id', 'f_name', 'l_name', 'phone', 'status')->get() : collect();

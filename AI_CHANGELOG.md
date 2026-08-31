@@ -7,6 +7,14 @@ Always append your completed tasks here in chronological order at the top. Forma
 `### [YYYY-MM-DD HH:MM UTC] <Feature / Fix Title> [<Component Scope>]`
 Include the specific app/component modified and bullet points detailing the exact technical changes.
 
+### [2026-08-31 05:30 UTC] Strict Zero Marketplace Customer Leak in Vendor POS Registers [backend] [pos] [privacy]
+
+* **Component:** `Modules/Pos/app/Http/Controllers/PosController.php`
+* **Action:**
+  - **Zero Marketplace Customer Exposure:** Removed platform online customer query from POS terminal customer loading, ensuring vendors ONLY see customers who have directly purchased from their specific store (`where('seller_id', $sellerId)`).
+  - **Enforced Privacy Rules (AGENTS.md & AI_ENGINEERING_RULES.md):** Re-asserted that central marketplace shoppers' accounts, contact details, wallets, and orders are 100% hidden from vendors.
+* **Verification:** Confirmed POS customer dropdown only loads merchant-scoped `pos_sales` records.
+
 ### [2026-08-31 05:25 UTC] Customer Multi-Tenant Isolation & In-Store Quick Registration [backend] [pos] [security]
 
 * **Component:** `Modules/Pos/app/Http/Controllers/PosController.php`, `app/Http/Middleware/VerifyCsrfToken.php`
