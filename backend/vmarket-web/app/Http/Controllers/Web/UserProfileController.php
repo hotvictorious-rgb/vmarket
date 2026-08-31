@@ -165,8 +165,11 @@ class UserProfileController extends Controller
         }
 
         if (auth('customer')->check()) {
-            $shippingAddresses = ShippingAddress::where('customer_id', auth('customer')->id())->latest()->get();
-            return view('web-views.users-profile.account-address', compact('shippingAddresses', 'country_restrict_status', 'zip_restrict_status', 'countries', 'zip_codes', 'countriesName', 'countriesCode'));
+            if (theme_root_path() == 'default') {
+                $shippingAddresses = ShippingAddress::where('customer_id', auth('customer')->id())->latest()->get();
+                return view('web-views.users-profile.account-address', compact('shippingAddresses', 'country_restrict_status', 'zip_restrict_status', 'countries', 'zip_codes', 'countriesName', 'countriesCode'));
+            }
+            return redirect()->route('user-profile');
         } else {
             return redirect()->route('home');
         }
