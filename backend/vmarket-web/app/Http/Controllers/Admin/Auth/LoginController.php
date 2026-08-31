@@ -76,6 +76,8 @@ class LoginController extends BaseController
                 return redirect()->back()
                     ->withInput($request->only('email', 'remember'))
                     ->withErrors([translate('Please_login_from_the_employee_login_page')]);
+            }
+
             // [AI] Clear any lingering merchant/cashier guards to ensure 100% pure Admin session context
             auth('seller')->logout();
             auth('vendor_employee')->logout();
