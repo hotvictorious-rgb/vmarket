@@ -50,16 +50,21 @@ Route::middleware(['web', 'pos.access'])->group(function () {
     Route::match(['get', 'post'], '/pos/logout', function () {
         if (Auth::guard('seller')->check()) {
             Auth::guard('seller')->logout();
+            session()->flush();
             return redirect()->route('vendor.auth.login');
         }
         if (Auth::guard('vendor_employee')->check()) {
             Auth::guard('vendor_employee')->logout();
+            session()->flush();
             return redirect()->route('vendor.auth.login');
         }
         if (Auth::guard('admin')->check()) {
             Auth::guard('admin')->logout();
-            return redirect()->route('admin.auth.login');
+            session()->flush();
+            $adminLoginUrl = getWebConfig(name: 'admin_login_url') ?: 'admin';
+            return redirect('login/' . $adminLoginUrl);
         }
+        session()->flush();
         return redirect()->route('vendor.auth.login');
     })->name('logout');
 

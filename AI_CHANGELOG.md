@@ -7,6 +7,14 @@ Always append your completed tasks here in chronological order at the top. Forma
 `### [YYYY-MM-DD HH:MM UTC] <Feature / Fix Title> [<Component Scope>]`
 Include the specific app/component modified and bullet points detailing the exact technical changes.
 
+### [2026-08-31 06:20 UTC] Role-Tailored POS Logout Redirection [backend] [pos] [auth]
+
+* **Component:** `Modules/Pos/routes/web.php`
+* **Action:**
+  - **Super Admin vs. Vendor POS Logout Redirection:** Fixed `/pos/logout` route handler. When a Super Admin logs out from POS, they are redirected to the Super Admin login page (`/login/admin`). When a Merchant or Cashier logs out, they are redirected to the Vendor login page (`/vendor/auth/login`).
+  - **Full Session Flushing:** Added `session()->flush()` upon logout to eliminate lingering tokens or multi-guard cookies.
+* **Verification:** Automated in-process test verified 302 redirects: Admin $\rightarrow$ `/login/admin`, Vendor $\rightarrow$ `/vendor/auth/login`.
+
 ### [2026-08-31 06:07 UTC] Resolve Admin Login 500 Error & Restore /login/admin [backend] [admin] [auth]
 
 * **Component:** `app/Http/Controllers/Admin/Auth/LoginController.php`
