@@ -54,11 +54,12 @@ $deliveryRouteGroup = function () {
         Route::get('/waybill/{id}', [ShipmentController::class, 'waybill'])->name('waybill');
     });
 
-    // 6. Financial Reconciliation & Remittances
+    // 6. Financial Reconciliation & Remittances (COD)
     Route::group(['prefix' => 'finance', 'as' => 'finance.'], function () {
         Route::get('/', [FinanceController::class, 'index'])->name('index');
         Route::post('/remittance/record', [FinanceController::class, 'recordRemittance'])->name('remittance.record');
     });
+    Route::get('/cod', [FinanceController::class, 'index'])->name('cod.index');
 };
 
 // Registered under /delivery prefix (named delivery.*)
