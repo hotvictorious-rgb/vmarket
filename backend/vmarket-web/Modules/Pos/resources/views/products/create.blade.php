@@ -148,9 +148,18 @@
                 <div>
                     <label class="form-label">Official Marketplace Category</label>
                     <select name="category_id" class="form-select">
-                        <option value="">-- Select Category --</option>
+                        <option value="">-- Select Marketplace Category --</option>
                         @foreach($officialCategories as $cat)
-                            <option value="{{ $cat->id }}" {{ old('category_id') == $cat->id ? 'selected' : '' }}>{{ $cat->name }}</option>
+                            <option value="{{ $cat->id }}" style="font-weight: 800; color: #60a5fa;" {{ old('category_id') == $cat->id ? 'selected' : '' }}>
+                                📁 {{ $cat->name }}
+                            </option>
+                            @if(!empty($cat->childes))
+                                @foreach($cat->childes as $sub)
+                                    <option value="{{ $sub->id }}" {{ old('category_id') == $sub->id ? 'selected' : '' }}>
+                                        &nbsp;&nbsp;&nbsp;&nbsp;↳ {{ $sub->name }}
+                                    </option>
+                                @endforeach
+                            @endif
                         @endforeach
                     </select>
                 </div>

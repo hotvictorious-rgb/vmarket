@@ -303,6 +303,7 @@ Route::group(['prefix' => 'admin', 'as' => 'admin.', 'middleware' => ['admin', '
     Route::group(['prefix' => 'category', 'as' => 'category.', 'middleware' => ['module:product_management']], function () {
         Route::controller(CategoryController::class)->group(function () {
             Route::get('view', 'index')->name('view');
+            Route::get('add-new', 'index')->name('add-new-view');
             Route::post('add-new', 'add')->name('store');
             Route::get('update', 'getUpdateView')->name('update');
             Route::post('update', 'update');

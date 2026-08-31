@@ -7,6 +7,16 @@ Always append your completed tasks here in chronological order at the top. Forma
 `### [YYYY-MM-DD HH:MM UTC] <Feature / Fix Title> [<Component Scope>]`
 Include the specific app/component modified and bullet points detailing the exact technical changes.
 
+### [2026-08-31 08:34 UTC] Official Marketplace Categories Population & Admin Add-New Route Support [admin] [pos] [catalog]
+
+* **Component:** `database/seeders/CategorySpecificationSeeder.php`, `routes/admin/routes.php`, `resources/views/layouts/admin/partials/_script-partials.blade.php`, `Modules/Pos/resources/views/products/create.blade.php`, `Modules/Pos/resources/views/products/edit.blade.php`
+* **Action:**
+  - **Marketplace Categories Seeding:** Populated the official 10 main categories and their sub-categories (Groceries & Provisions, Phones & Accessories, Electronics & Appliances, Fashion & Apparel, Beauty & Personal Care, Home & Furniture, Computers, Automobile, Hardware, Baby & Toys) into the database.
+  - **Hierarchical Dropdown in POS:** Enhanced POS Product Create and Edit forms to display official main categories with folder icons and hierarchical sub-categories (`↳ Subcategory`).
+  - **Admin Route Fallback & Exception Guard:** Added GET route for `/admin/category/add-new` pointing to Category management view, and guarded `$errors` check in `_script-partials.blade.php` with `isset($errors)` to eliminate 500 error screens on direct URL navigation.
+* **Verification:** Automated verification suite passed (5/5 checks passed).
+
+
 ### [2026-08-31 07:56 UTC] Unified POS & Online Marketplace Product Management with Intelligent Role Differentiation [pos] [vendor] [catalog]
 
 * **Component:** `Modules/Pos/app/Http/Controllers/ProductController.php`, `Modules/Pos/resources/views/products/create.blade.php`, `Modules/Pos/resources/views/products/edit.blade.php`, `Modules/Pos/database/migrations/2026_08_31_090000_add_pos_wholesale_price_to_products.php`

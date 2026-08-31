@@ -55,7 +55,7 @@
 
 {!! ToastMagic::scripts() !!}
 
-@if ($errors->any())
+@if (isset($errors) && $errors->any())
     <script>
         'use strict';
         @foreach($errors->all() as $index => $error)

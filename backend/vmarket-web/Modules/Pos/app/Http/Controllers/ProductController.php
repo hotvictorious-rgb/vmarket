@@ -81,7 +81,7 @@ class ProductController extends Controller
         $sellerId           = $this->resolveAuthSellerId();
         $seller             = Seller::find($sellerId);
         $isVerified         = ($seller && $seller->status === 'approved') || Auth::guard('admin')->check();
-        $officialCategories = Category::where(['position' => 0])->get();
+        $officialCategories = Category::with('childes')->where(['position' => 0])->orderBy('priority')->get();
         $posCategories      = Product::where('user_id', $sellerId)->distinct()->pluck('pos_category')->filter()->values();
         $units              = ['pc', 'kg', 'g', 'ltr', 'bag', 'carton', 'pack', 'bottle', 'box', 'roll', 'meter', 'pair'];
 
@@ -130,7 +130,6 @@ class ProductController extends Controller
                     $images = [$uploaded];
                 }
             } catch (\Throwable $e) {
-                // Fallback gracefully on image upload error
                 $thumbnail = 'def.png';
             }
         }
@@ -141,6 +140,11 @@ class ProductController extends Controller
         $catId         = $request->category_id ?: 1;
         $categoryIds   = json_encode([['id' => (string)$catId, 'position' => 1]]);
 
+        $catName = $request->pos_category;
+        if (!$catName && $request->category_id) {
+            $catName = Category::where('id', $request->category_id)->value('name');
+        }
+
         $productId = DB::table('products')->insertGetId([
             'user_id'             => $sellerId,
             'added_by'            => 'seller',
@@ -148,7 +152,7 @@ class ProductController extends Controller
             'code'                => $code,
             'slug'                => $slug,
             'pos_barcode'         => $code,
-            'pos_category'        => $request->pos_category ?? 'General',
+            'pos_category'        => $catName ?? 'General',
             'pos_reorder_level'   => (int) ($request->pos_reorder_level ?? 5),
             'category_id'         => $catId,
             'category_ids'        => $categoryIds,
