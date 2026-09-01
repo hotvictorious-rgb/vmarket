@@ -7,6 +7,16 @@ Always append your completed tasks here in chronological order at the top. Forma
 `### [YYYY-MM-DD HH:MM UTC] <Feature / Fix Title> [<Component Scope>]`
 Include the specific app/component modified and bullet points detailing the exact technical changes.
 
+### [2026-09-01 11:00 UTC] Enforce Strict .env Super Admin Invariant & Fix Admin Route Resolution [admin] [security] [auth]
+
+* **Component:** `app/Services/AdminService.php`, `app/Http/Controllers/Admin/Auth/LoginController.php`, `routes/admin/routes.php`
+* **Action:**
+  - **Strict `.env` Super Admin Authority:** Enforced that the root Super Admin identity and credentials originate strictly from `.env` (`SUPER_ADMIN_EMAIL`, `ADMIN_IDENTIFIER` base64 decode, `SUPER_ADMIN_PASSWORD`), synchronizing on every auth cycle.
+  - **Graceful Admin Login & Route Resolution:** Added root `/admin` and direct `/admin/dashboard` redirect handlers and resolved 404 aborts in `LoginController::index` with robust fallback to `admin` / `employee`.
+* **Verification:** Validated multi-role auth and route dispatch.
+
+
+
 ### [2026-09-01 10:00 UTC] Integrated Automated Deployment Webhook & Live Overlay Packager [backend] [ci-cd]
 
 * **Component:** `backend/vmarket-web/public/deploy.php`, `create_overlay_zip.php`

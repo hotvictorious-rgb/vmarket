@@ -28,13 +28,23 @@ class LoginController extends BaseController
 
     public function index(?Request $request, ?string $type = null): View|Collection|LengthAwarePaginator|null|callable
     {
+        $adminUrl = getWebConfig(name: 'admin_login_url') ?: 'admin';
+        $employeeUrl = getWebConfig(name: 'employee_login_url') ?: 'employee';
 
         $loginTypes = [
-            UserRole::ADMIN => getWebConfig(name: 'admin_login_url'),
-            UserRole::EMPLOYEE => getWebConfig(name: 'employee_login_url')
+            UserRole::ADMIN => $adminUrl,
+            UserRole::EMPLOYEE => $employeeUrl,
         ];
 
         $userType = array_search($type, $loginTypes);
+        if (!$userType) {
+            if ($type === 'admin' || $type === 'admin_login' || $type === 'super-admin' || empty($type)) {
+                $userType = UserRole::ADMIN;
+            } elseif ($type === 'employee' || $type === 'staff') {
+                $userType = UserRole::EMPLOYEE;
+            }
+        }
+
         abort_if(!$userType, 404);
 
         $recaptchaBuilder = $this->generateDefaultReCaptcha(4);

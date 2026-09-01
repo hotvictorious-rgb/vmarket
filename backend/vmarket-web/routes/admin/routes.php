@@ -132,6 +132,9 @@ Route::group(['prefix' => 'login'], function () {
 
 Route::group(['prefix' => 'admin', 'as' => 'admin.', 'middleware' => ['admin', 'actch:admin_panel']], function () {
 
+    Route::get('/', fn() => redirect()->route('admin.dashboard.index'));
+    Route::get('dashboard', [DashboardController::class, 'index'])->name('dashboard');
+
 
     // [AI] WhatsApp Enterprise CRM, Campaigns & AI Brain Routes
     Route::group(['prefix' => 'whatsapp-crm', 'as' => 'whatsapp-crm.'], function () {
