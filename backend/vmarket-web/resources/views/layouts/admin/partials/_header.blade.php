@@ -62,14 +62,41 @@
                     </a>
                 </li>
 
+                {{--
+                  [AI] Delivery Hub Topbar Button
+                  Purpose: Quick-launch button for the Logistics & Fleet Command (Delivery Module Dashboard)
+                  CRITICAL FIX: Must use 'admin.delivery.dashboard' which resolves to /admin/delivery.
+                  DO NOT use 'delivery.dashboard' — that resolves to /delivery which is the
+                  customer-facing delivery info page (shows WhatsApp contact button, NOT the admin hub).
+                  Backend Controller: Modules\Delivery\app\Http\Controllers\DashboardController@index
+                  Route: GET /admin/delivery (admin.delivery.dashboard)
+                  Access: Super Admin, Super Admin Employee only
+                --}}
                 <li class="nav-item">
-                    <a class="btn btn-outline-primary btn-sm rounded-pill px-3 py-1 fw-semibold d-flex align-items-center gap-1" href="{{ \Illuminate\Support\Facades\Route::has('delivery.dashboard') ? route('delivery.dashboard') : url('/delivery') }}" target="_blank" data-bs-toggle="tooltip" data-bs-title="{{ translate('Logistics & Fleet Command') }}">
+                    <a class="btn btn-outline-primary btn-sm rounded-pill px-3 py-1 fw-semibold d-flex align-items-center gap-1"
+                       href="{{ \Illuminate\Support\Facades\Route::has('admin.delivery.dashboard') ? route('admin.delivery.dashboard') : url('/admin/delivery') }}"
+                       target="_blank"
+                       data-bs-toggle="tooltip"
+                       data-bs-title="{{ translate('Logistics & Fleet Command') }}">
                         <i class="fa-solid fa-truck-fast"></i> <span>{{ translate('Delivery Hub') }}</span>
                     </a>
                 </li>
 
+                {{--
+                  [AI] POS Hub Topbar Button
+                  Purpose: Quick-launch button for the In-Store POS Management Dashboard (admin overview of Hysam POS).
+                  CRITICAL FIX: 'url('/pos')' had NO matching route and would 404.
+                  Now correctly uses 'admin.pos-management.dashboard' → /admin/pos-management/dashboard.
+                  Backend Controller: Admin\POS\AdminPOSDashboardController@index
+                  Route: GET /admin/pos-management/dashboard (admin.pos-management.dashboard)
+                  Access: Super Admin only
+                --}}
                 <li class="nav-item">
-                    <a class="btn btn-outline-primary btn-sm rounded-pill px-3 py-1 fw-semibold d-flex align-items-center gap-1" href="{{ url('/pos') }}" target="_blank" data-bs-toggle="tooltip" data-bs-title="{{ translate('In-Store POS & Inventory SaaS Hub') }}">
+                    <a class="btn btn-outline-primary btn-sm rounded-pill px-3 py-1 fw-semibold d-flex align-items-center gap-1"
+                       href="{{ \Illuminate\Support\Facades\Route::has('admin.pos-management.dashboard') ? route('admin.pos-management.dashboard') : url('/admin/pos-management/dashboard') }}"
+                       target="_blank"
+                       data-bs-toggle="tooltip"
+                       data-bs-title="{{ translate('In-Store POS & Inventory SaaS Hub') }}">
                         <i class="fa-solid fa-calculator"></i> <span>{{ translate('POS Hub') }}</span>
                     </a>
                 </li>

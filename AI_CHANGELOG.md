@@ -7,6 +7,26 @@ Always append your completed tasks here in chronological order at the top. Forma
 `### [YYYY-MM-DD HH:MM UTC] <Feature / Fix Title> [<Component Scope>]`
 Include the specific app/component modified and bullet points detailing the exact technical changes.
 
+### [2026-09-01 13:50 UTC] Fix Delivery Hub & POS Hub Topbar Buttons Pointing to Wrong URLs + Full Nav Audit [admin] [routing]
+
+* **Component:** `resources/views/layouts/admin/partials/_header.blade.php`
+* **Root Cause (Delivery Hub):**
+  - The Delivery Hub button used `route('delivery.dashboard')` which resolves to `/delivery`.
+  - `/delivery` is the **customer-facing delivery info page** (shows a WhatsApp contact button to shoppers, NOT the admin Delivery Module hub).
+  - This caused the admin to see a WhatsApp chat link when clicking "Delivery Hub" from the admin panel.
+* **Root Cause (POS Hub):**
+  - The POS Hub button used `url('/pos')` — this URI has **no matching route** in the application (would return 404).
+* **Fixes Applied:**
+  - **Delivery Hub:** Changed from `route('delivery.dashboard')` → `route('admin.delivery.dashboard')` which correctly resolves to `/admin/delivery` (admin Delivery Module, protected by `admin` middleware).
+  - **POS Hub:** Changed from `url('/pos')` → `route('admin.pos-management.dashboard')` which resolves to `/admin/pos-management/dashboard` (the admin POS management overview).
+  - Both links wrapped with `Route::has()` guard for safe fallback.
+  - Added `[AI]` explanatory docblock comments to both buttons documenting the root cause and prevention.
+* **Full Nav Audit:** Ran `test_admin_nav_routes.php` which extracted and verified all **76 route() calls** used across admin `_header.blade.php` and `_side-bar.blade.php`.
+  - **Result: 76/76 PASS — 0 broken routes**
+  - All modules verified: Dashboard, Orders, Products, Categories, Brands, Coupons, Flash Deals, Vendors, Customers, Delivery, POS, Blog, Reports, Settings, Employees, ThirdParty integrations.
+* **Anti-Regression Note:** `delivery.dashboard` (→ `/delivery`) is the **customer page** and must NEVER be linked from admin nav. Always use `admin.delivery.dashboard` (→ `/admin/delivery`).
+* **Verification:** `php test_admin_nav_routes.php` → 76/76 PASS, 0 FAIL.
+
 ### [2026-09-01 12:55 UTC] Fix Route [delivery.dashboard] Undefined View Error & Sync Module Statuses [admin] [deployment]
 
 * **Component:** `resources/views/layouts/admin/partials/_header.blade.php`, `routes/admin/routes.php`, `public/deploy.php`
