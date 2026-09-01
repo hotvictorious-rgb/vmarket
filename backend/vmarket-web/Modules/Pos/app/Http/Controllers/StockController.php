@@ -245,6 +245,16 @@ class StockController extends Controller
 
         abort_if(!$fromBranch || !$toBranch, 403, 'Unauthorized branch access.');
 
+        // [AI] Physical Custody Invariant:
+        // Cashiers/storekeepers can only dispatch stock from the branch they are physically assigned to.
+        // A cashier in Lekki cannot unilaterally dispatch stock out of Ikeja.
+        if (Auth::guard('vendor_employee')->check()) {
+            $assignedBranchId = (int) (Auth::guard('vendor_employee')->user()->assigned_branch_id ?? 0);
+            if ($assignedBranchId > 0 && $assignedBranchId !== (int) $request->from_branch_id) {
+                abort(403, 'Physical Responsibility Invariant: You can only dispatch stock from your assigned branch. Please contact the origin storekeeper to dispatch this waybill.');
+            }
+        }
+
         $qty = (int) $request->quantity;
         $cashierName = $this->resolveAuthUserName();
 

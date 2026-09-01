@@ -248,6 +248,68 @@ $delta = abs($totalBranchStock - $masterStock);
 assertCondition("Mathematical Invariant Proof: Total Branch Stock ({$totalBranchStock}) == Master Product Stock ({$masterStock}) with Delta = 0.00", ($delta == 0), $passed, $total);
 
 // ─────────────────────────────────────────────────────────────────────────────
+// TEST 5: Physical Responsibility & Employee Branch Custody Guard
+// ─────────────────────────────────────────────────────────────────────────────
+echo "\n--- TEST 5: Physical Responsibility & Employee Branch Custody Guard ---\n";
+
+use App\Models\VendorEmployee;
+
+$employeeLekki = VendorEmployee::firstOrCreate(
+    ['email' => 'cashier_lekki@test.com'],
+    [
+        'seller_id' => $sellerA->id,
+        'name' => 'Chinedu (Lekki Cashier)',
+        'phone' => '08099112233',
+        'password' => bcrypt('password'),
+        'vendor_role_id' => 1,
+        'image' => 'def.png',
+        'assigned_branch_id' => $branchLekki->id,
+        'status' => 1
+    ]
+);
+$employeeLekki->assigned_branch_id = $branchLekki->id;
+$employeeLekki->save();
+
+Auth::guard('seller')->logout();
+Auth::guard('admin')->logout();
+Auth::guard('vendor_employee')->setUser($employeeLekki);
+
+// Cashier in Lekki tries to unilaterally dispatch goods out of Ikeja warehouse
+$illegalTransferBlocked = false;
+try {
+    $illegalReq = Request::create('/pos/stock/transfer-out', 'POST', [
+        'from_branch_id' => $branchIkeja->id,
+        'to_branch_id' => $branchLekki->id,
+        'product_id' => $productA->id,
+        'quantity' => 2
+    ]);
+    $stockCtrl->createTransfer($illegalReq);
+} catch (\Symfony\Component\HttpKernel\Exception\HttpException $e) {
+    if ($e->getStatusCode() === 403) {
+        $illegalTransferBlocked = true;
+    }
+}
+
+assertCondition("Lekki cashier is BLOCKED (403 Forbidden) from dispatching goods out of Ikeja without Ikeja storekeeper authorization", $illegalTransferBlocked, $passed, $total);
+
+// Cashier in Lekki dispatches goods out of their OWN assigned branch (Lekki)
+$legalTransferSucceeded = false;
+try {
+    $legalReq = Request::create('/pos/stock/transfer-out', 'POST', [
+        'from_branch_id' => $branchLekki->id,
+        'to_branch_id' => $branchIkeja->id,
+        'product_id' => $productA->id,
+        'quantity' => 1
+    ]);
+    $res = $stockCtrl->createTransfer($legalReq);
+    $legalTransferSucceeded = true;
+} catch (\Throwable $e) {
+    $legalTransferSucceeded = false;
+}
+
+assertCondition("Lekki cashier successfully dispatches goods out of their OWN assigned branch (Lekki)", $legalTransferSucceeded, $passed, $total);
+
+// ─────────────────────────────────────────────────────────────────────────────
 // SUMMARY
 // ─────────────────────────────────────────────────────────────────────────────
 echo "\n========================================================================================\n";

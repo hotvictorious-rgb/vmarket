@@ -7,6 +7,14 @@ Always append your completed tasks here in chronological order at the top. Forma
 `### [YYYY-MM-DD HH:MM UTC] <Feature / Fix Title> [<Component Scope>]`
 Include the specific app/component modified and bullet points detailing the exact technical changes.
 
+### [2026-09-01 06:30 UTC] Physical Custody Responsibility Invariant & Direct Storekeeper Contact Workflow [pos] [security] [logistics]
+
+* **Component:** `Modules/Pos/app/Http/Controllers/StockController.php`, `Modules/Pos/resources/views/pos/index.blade.php`, `test_multi_branch_sync_and_cross_branch_lookup.php`
+* **Action:**
+  - **Physical Custody Guard in `StockController::createTransfer`:** Enforced rule where cashiers/storekeepers (`vendor_employee`) can strictly ONLY originate stock transfers from their physically assigned store branch (`assigned_branch_id`). Unilateral attempts by staff at one branch to deduct/dispatch stock from another branch are blocked with HTTP 403 Forbidden.
+  - **Direct Storekeeper Contact Workflow in POS Modal:** Enhanced cross-branch stock cards on the register with instant 📞 `Call Storekeeper (${branch.contact})` and 💬 `WhatsApp` direct coordination buttons, ensuring the receiving cashier calls the origin storekeeper, who then physically inspects, boxes, and officially dispatches the Waybill.
+* **Verification:** Automated 14-point multi-branch verification suite executed with 100% success (14/14 passed, $\Delta = 0.00$).
+
 ### [2026-09-01 06:25 UTC] Omnichannel Multi-Branch Stock Sync & In-Store Cross-Branch Lookup [pos] [vendor] [logistics]
 
 * **Component:** `Modules/Pos/database/migrations/2026_09_01_070000_create_pos_branch_stocks_table.php`, `Modules/Pos/app/Http/Controllers/PosController.php`, `Modules/Pos/app/Http/Controllers/StockController.php`, `Modules/Pos/routes/web.php`, `Modules/Pos/resources/views/pos/index.blade.php`, `ALL_ECOSYSTEM_ENDPOINTS_AND_SECURITY_TAXONOMY.md`
