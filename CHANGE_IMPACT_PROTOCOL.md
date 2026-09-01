@@ -25,6 +25,7 @@ Before modifying any file, the AI must evaluate:
 7. **9-Role Visibility & Privilege Matrix:** How is this feature visible, restricted, or differentiated across the 9 ecosystem roles:
    - Super Admin, Super Admin Staff, Verified Merchant, Unverified Merchant, Verified Staff, Unverified Staff, Active Rider, Inactive Rider, Customer?
    - *If Yes:* Document the visibility table and prove zero privilege bleed.
+8. **Full-Stack Dual Delivery & UX Standard:** Is this feature delivered completely on BOTH frontend (Blade/Flutter, responsive layouts, modals, validation, official brand colors `#5E17EB`/`#FFD700`/`#FFFFFF`) and backend (migrations, transactions, security gates, endpoints)? Zero half-baked or one-sided implementations are permitted.
 
 ---
 

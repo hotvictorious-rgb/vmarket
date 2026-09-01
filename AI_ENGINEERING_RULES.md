@@ -243,6 +243,26 @@ php test_all_1572_endpoints_security_and_role_proof.php
    - Mathematical Invariant Proof with zero drift ($\Delta = 0.00$).
 4. **Mandatory AI Changelog Logging & Clean Commit:** The AI must document the test results in `AI_CHANGELOG.md` before committing changes to Git with `[AI]`. No change may be merged or reported as complete without this passing proof.
 
+---
+
+## 19. Mandatory Full-Stack Dual Delivery, Role-Awareness, Top-Notch Security & Premium UX 👑
+
+**This is an inviolable master rule for ALL AI agents working on Victorious MARKET:**
+
+1. **Dual Frontend & Backend Delivery (Zero One-Sided Changes):**
+   - Every feature, enhancement, or bug fix MUST be delivered complete on BOTH layers: backend (migrations, models, controllers, transactions, security gates, routes) AND frontend (Blade templates, Flutter widgets, interactive JS, client validation, modal popups, and real-time DOM feedback).
+   - Backend without UI is broken; UI without backed logic is a mock. Both MUST be delivered together.
+2. **Deep 9-Tier Role Awareness & Dynamic Adaptation:**
+   - Every UI screen, action button, and API handler must dynamically adapt to the authenticated role (Super Admin, Admin Staff, Verified Merchant, Unverified Merchant, Store Cashier, Delivery Rider, Customer).
+   - Unauthorized UI elements must be completely masked/hidden, and direct URL access must be strictly forbidden via `abort(403)`.
+3. **Physical Responsibility & Zero Cross-Tenant Bleed:**
+   - Staff/cashiers can only manipulate and dispatch stock for their physically assigned branch (`assigned_branch_id`). Inter-branch coordination requires direct storekeeper communication (Call/WhatsApp), requiring the physical custodian to dispatch.
+   - All tenant queries MUST scope strictly by `seller_id`, `shop_id`, `customer_id`, or `delivery_man_id`.
+4. **World-Class Aesthetic & Frictionless UX:**
+   - Strict use of the Official Brand Palette (`#5E17EB` Royal Purple, `#FFD700` Electric Gold, `#FFFFFF` Clean White).
+   - Modern typography, responsive states, clear visual feedback, error guidance, and seamless workflows.
+
+
 
 
 

@@ -7,6 +7,18 @@ Always append your completed tasks here in chronological order at the top. Forma
 `### [YYYY-MM-DD HH:MM UTC] <Feature / Fix Title> [<Component Scope>]`
 Include the specific app/component modified and bullet points detailing the exact technical changes.
 
+### [2026-09-01 06:35 UTC] Enforce Rule 18: Full-Stack Dual Delivery, 9-Tier Role Awareness, Top-Notch Security & Premium UX [ai-governance]
+
+* **Component:** `.agents/AGENTS.md`, `AI_ENGINEERING_RULES.md`, `CHANGE_IMPACT_PROTOCOL.md`
+* **Action:**
+  - **Rule 18 Established in AGENTS.md & Section 19 in AI_ENGINEERING_RULES.md:** Enacted strict mandate requiring all AI agents to deliver any change or feature as a complete, synchronized vertical slice on BOTH frontend (Blade/Flutter, responsive layouts, modals, validation, official brand palette `#5E17EB`/`#FFD700`/`#FFFFFF`) AND backend (migrations, controllers, pessimistic locks, security gates, route taxonomy).
+  - **9-Tier Role-Awareness Invariant:** Explicitly enforced role-tailored presentation and authorization across all 9 standardized system roles (Super Admin, Super Admin Employee, Verified Merchant, Unverified Merchant, Verified Merchant Employee, Unverified Merchant Employee, Active Deliveryman, Inactive Deliveryman, Customer).
+  - **Physical Custody & IDOR Security Standards:** Strictly codified branch physical custody, zero cross-tenant data bleed, and pessimistic concurrency locks.
+  - **Updated Change Impact Protocol:** Added Point 8 to the mandatory pre-change inspection checklist to enforce full-stack dual delivery.
+* **Verification:** Governance documents updated and synchronized across all AI entry points.
+
+
+
 ### [2026-09-01 06:30 UTC] Physical Custody Responsibility Invariant & Direct Storekeeper Contact Workflow [pos] [security] [logistics]
 
 * **Component:** `Modules/Pos/app/Http/Controllers/StockController.php`, `Modules/Pos/resources/views/pos/index.blade.php`, `test_multi_branch_sync_and_cross_branch_lookup.php`
