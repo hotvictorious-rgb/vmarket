@@ -88,10 +88,51 @@ After completing any change:
 - Do NOT mix Flutter app changes with Laravel backend changes in a single commit.
 - New untracked files (widgets, screens) must be explicitly staged with `git add <path>`.
 
-## 6. Code Commenting Standards
-- **AI Prefix:** All comments introduced by an AI must be prefixed with `[AI]` so human developers can easily identify AI-authored notes.
-- **Client Context:** When writing or modifying API/controller methods, add comments detailing which client applications (e.g., Customer Web, Vendor App) consume it.
-- **Preservation:** Never delete, strip, or replace existing developer comments or docstrings unless the corresponding code is completely removed.
+## 6. Universal Explanatory Code Commenting & Cross-Layer Linking Standard 📝
+
+**This is a mandatory prime directive for ALL AIs:**
+Every file, class, method, function, Blade view, JavaScript block, CSS module, and Flutter widget created or modified MUST include clear, plain-English explanatory comments detailing **what it does, why it exists, which user role uses it, and how the frontend links to the backend**.
+
+### A. Backend Commenting Standard (PHP / Laravel)
+Every Controller method, Repository action, Service, Migration, and Middleware MUST have a structured docblock and inline explanation:
+
+```php
+/**
+ * [AI] Brief Plain-English Summary of what this method accomplishes.
+ *
+ * Business Context: Explains why this exists (e.g. Nigerian retail walk-in customer checkout).
+ *
+ * @role_access       Role 3 (Verified Merchant), Role 5 (Store Cashier)
+ * @frontend_view     resources/views/pos/index.blade.php (POS Counter Register)
+ * @route_name        pos.checkout (POST /pos/checkout)
+ * @security_checks   Zero-Trust IDOR ($sellerId scope), Pessimistic Row Lock (lockForUpdate)
+ * @financial_math    Total = Subtotal + Tax - Discount; Debt = Total - Paid (Delta = 0.00)
+ */
+```
+
+### B. Frontend Commenting Standard (Blade Views, JavaScript, Flutter)
+Every Blade template, JS function, modal component, and Flutter widget MUST declare its purpose and link to its corresponding backend controller:
+
+```blade
+{{-- 
+  [AI] Component: Cross-Branch Stock Lookup Modal
+  Purpose: Displays physical inventory across all merchant branches without allowing unauthorized remote dispatches.
+  Backend Controller: Modules/Pos/app/Http/Controllers/PosController.php :: getBranchStocks()
+  API Route: GET /pos/product/{id}/branch-stocks (Route: pos.product.branch_stocks)
+  Target Roles: Cashiers (Role 5), Storekeepers, Verified Merchants (Role 3)
+--}}
+```
+
+```javascript
+// [AI] Handles real-time barcode scanner enter-key trigger.
+// Matches exact product SKU and increments cart quantity without refreshing the page.
+```
+
+### C. The 4 Non-Negotiable Invariants for Comments:
+1. **Plain-English Empathy:** Explain the *intent* and *business reason*, not just restating obvious code syntax.
+2. **Mandatory Cross-Linking:** Always show which Frontend view connects to which Backend Controller action and Route name.
+3. **Mandatory `[AI]` Prefix:** All AI-authored comments must begin with `[AI]` so human engineers can immediately trace AI contributions.
+4. **Preservation:** NEVER delete, strip, or truncate existing comments or docstrings.
 
 ## 7. Production Deployment & Server Sync SOP (Safe Overlay Protocol)
 - **GitHub is the Authoritative Single Source of Truth (SSOT):** All business logic, custom controllers, security patches, and features originate in this repository and are pushed to GitHub `master`. No manual code edits should exist on production.

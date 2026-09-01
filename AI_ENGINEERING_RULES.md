@@ -258,9 +258,24 @@ php test_all_1572_endpoints_security_and_role_proof.php
 3. **Physical Responsibility & Zero Cross-Tenant Bleed:**
    - Staff/cashiers can only manipulate and dispatch stock for their physically assigned branch (`assigned_branch_id`). Inter-branch coordination requires direct storekeeper communication (Call/WhatsApp), requiring the physical custodian to dispatch.
    - All tenant queries MUST scope strictly by `seller_id`, `shop_id`, `customer_id`, or `delivery_man_id`.
-4. **World-Class Aesthetic & Frictionless UX:**
-   - Strict use of the Official Brand Palette (`#5E17EB` Royal Purple, `#FFD700` Electric Gold, `#FFFFFF` Clean White).
-   - Modern typography, responsive states, clear visual feedback, error guidance, and seamless workflows.
+---
+
+## 20. Universal Explanatory Code Commenting & Cross-Layer Linking Standard 📝
+
+**Every file, class, method, function, Blade view, JavaScript block, CSS module, and Flutter widget created or modified MUST include clear, plain-English explanatory comments detailing what it does, why it exists, which user role uses it, and how the frontend links to the backend.**
+
+1. **Backend Methods (PHP / Laravel):**
+   - Docblock must declare `@role_access`, `@frontend_view` (path to Blade / Flutter file), `@route_name`, `@security_checks` (IDOR, pessimistic locks), and business intent.
+   - Inline comments explaining non-trivial logic and calculations.
+2. **Frontend Components (Blade Views, JS, CSS, Flutter):**
+   - Header comments on views and components declaring purpose, `@backend_controller` (path to controller action), `@route`, and target roles.
+   - Inline comments explaining event handlers, DOM manipulations, and state transitions.
+3. **The 4 Non-Negotiable Invariants:**
+   - **Plain-English Clarity:** Explain the business *intent* clearly.
+   - **Cross-Layer Traceability:** Always link Frontend $\leftrightarrow$ Backend.
+   - **Mandatory `[AI]` Prefix:** All AI comments must start with `[AI]`.
+   - **Preservation:** Never strip or truncate existing docstrings.
+
 
 
 

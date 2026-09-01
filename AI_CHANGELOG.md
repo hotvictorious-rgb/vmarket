@@ -7,6 +7,15 @@ Always append your completed tasks here in chronological order at the top. Forma
 `### [YYYY-MM-DD HH:MM UTC] <Feature / Fix Title> [<Component Scope>]`
 Include the specific app/component modified and bullet points detailing the exact technical changes.
 
+### [2026-09-01 08:42 UTC] Universal Explanatory Code Commenting & Cross-Layer Linking Standard [ai-governance]
+
+* **Component:** `.agents/AGENTS.md`, `AI_ENGINEERING_RULES.md`
+* **Action:**
+  - **Rule 6 & Section 20 Enacted:** Established strict standard requiring every file, class, method, Blade view, JavaScript block, and Flutter widget to include plain-English explanatory comments detailing what it does, why it exists, which user role uses it, and how the frontend links to the backend (with explicit `@role_access`, `@frontend_view`, `@backend_controller`, and `@route_name` cross-links).
+* **Verification:** Governance documents updated and synchronized.
+
+
+
 ### [2026-09-01 08:35 UTC] Streamlined In-Store Cross-Branch Stock Modal (Removed Call/WhatsApp Actions) [pos] [ui]
 
 * **Component:** `Modules/Pos/resources/views/pos/index.blade.php`
