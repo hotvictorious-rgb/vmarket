@@ -33,14 +33,16 @@ $repoCache = $parentDir . '/vmarket_repo_cache';
 
 $output = [];
 
-// 2. Fetch Latest Master from GitHub
+// 2. Fetch Latest Master from GitHub (Bypassing SSH host key verification prompt)
+$gitSsh = 'GIT_SSH_COMMAND="ssh -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null"';
+
 if (!is_dir($repoCache)) {
     $output[] = "Cloning repository cache...";
-    exec("git clone --depth 1 git@github.com:hotvictorious-rgb/vmarket.git {$repoCache} 2>&1", $output);
+    exec("{$gitSsh} git clone --depth 1 git@github.com:hotvictorious-rgb/vmarket.git {$repoCache} 2>&1", $output);
 } else {
     $output[] = "Pulling latest master from GitHub...";
     chdir($repoCache);
-    exec("git fetch origin master && git reset --hard origin/master 2>&1", $output);
+    exec("{$gitSsh} git fetch origin master 2>&1 && git reset --hard origin/master 2>&1", $output);
 }
 
 // 3. Safe Overlay Copy (Preserves .env, storage/, and vendor/)

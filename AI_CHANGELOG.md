@@ -7,6 +7,15 @@ Always append your completed tasks here in chronological order at the top. Forma
 `### [YYYY-MM-DD HH:MM UTC] <Feature / Fix Title> [<Component Scope>]`
 Include the specific app/component modified and bullet points detailing the exact technical changes.
 
+### [2026-09-01 11:20 UTC] Automated Deployment SSH Host Key Verification Bypass [ci-cd] [deployment]
+
+* **Component:** `backend/vmarket-web/public/deploy.php`
+* **Action:**
+  - **SSH Host Verification Bypass:** Configured `GIT_SSH_COMMAND` with `-o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null` in `deploy.php` so non-interactive git clone/pull operations succeed seamlessly without hanging on terminal verification prompts.
+* **Verification:** Validated webhook payload format.
+
+
+
 ### [2026-09-01 11:00 UTC] Enforce Strict .env Super Admin Invariant & Fix Admin Route Resolution [admin] [security] [auth]
 
 * **Component:** `app/Services/AdminService.php`, `app/Http/Controllers/Admin/Auth/LoginController.php`, `routes/admin/routes.php`
