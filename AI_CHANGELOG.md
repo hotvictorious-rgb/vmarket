@@ -7,6 +7,15 @@ Always append your completed tasks here in chronological order at the top. Forma
 `### [YYYY-MM-DD HH:MM UTC] <Feature / Fix Title> [<Component Scope>]`
 Include the specific app/component modified and bullet points detailing the exact technical changes.
 
+### [2026-09-01 08:35 UTC] Streamlined In-Store Cross-Branch Stock Modal (Removed Call/WhatsApp Actions) [pos] [ui]
+
+* **Component:** `Modules/Pos/resources/views/pos/index.blade.php`
+* **Action:**
+  - **Clean Inventory Inspection Modal:** Streamlined the `#modalBranchStocks` popup in the POS terminal to present clean, distraction-free physical branch stock cards with location addresses and stock status badges, removing external tel: and WhatsApp call actions.
+* **Verification:** Verified in browser modal markup and executed regression test suite (`test_rule_18_compliance_and_fullstack_parity.php`) with 15/15 checks passed.
+
+
+
 ### [2026-09-01 06:45 UTC] Full-Stack Dual Delivery & Role-Aware Security Implementation Across POS & Stock Engines [pos] [security] [workers]
 
 * **Component:** `Modules/Pos/app/Http/Controllers/StockController.php`, `Modules/Pos/app/Http/Controllers/UserController.php`, `app/Models/VendorEmployee.php`, `test_rule_18_compliance_and_fullstack_parity.php`

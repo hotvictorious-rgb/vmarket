@@ -1370,24 +1370,6 @@ function checkBranchStock(productId) {
                 ? '<span style="background: rgba(94,23,235,0.25); color: #c084fc; border: 1px solid #5E17EB; padding: 0.15rem 0.4rem; border-radius: 4px; font-size: 0.68rem; font-weight: 800;">THIS COUNTER</span>' 
                 : '';
 
-            const cleanPhone = (branch.contact || '').replace(/[^0-9+]/g, '');
-            const waPhone = cleanPhone.startsWith('0') ? ('234' + cleanPhone.substring(1)) : cleanPhone;
-
-            let actionHtml = '';
-            if (branch.is_current) {
-                actionHtml = `<span style="font-size: 0.7rem; font-weight: 700; color: #94a3b8; background: rgba(255,255,255,0.05); padding: 0.2rem 0.5rem; border-radius: 6px;">Active Counter</span>`;
-            } else if (branch.stock > 0) {
-                actionHtml = `
-                <div style="display: flex; gap: 0.35rem; align-items: center;">
-                    <a href="tel:${cleanPhone}" title="Call branch storekeeper" style="font-size: 0.72rem; font-weight: 700; color: #4ade80; text-decoration: none; padding: 0.25rem 0.55rem; background: rgba(34,197,94,0.15); border: 1px solid rgba(34,197,94,0.35); border-radius: 6px; display: flex; align-items: center; gap: 0.25rem;">
-                        📞 Call (${branch.contact})
-                    </a>
-                    ${cleanPhone ? `<a href="https://wa.me/${waPhone}?text=Hello,%20please%20waybill%20product%20${encodeURIComponent(data.product.name)}%20(SKU:%20${encodeURIComponent(data.product.code)})%20to%20our%20counter." target="_blank" title="WhatsApp storekeeper" style="font-size: 0.72rem; font-weight: 700; color: #22c55e; text-decoration: none; padding: 0.25rem 0.45rem; background: rgba(34,197,94,0.1); border: 1px solid rgba(34,197,94,0.25); border-radius: 6px;">💬 WhatsApp</a>` : ''}
-                </div>`;
-            } else {
-                actionHtml = `<span style="font-size: 0.7rem; color: #94a3b8;">No physical stock</span>`;
-            }
-
             html += `
             <div style="background: rgba(15,23,42,0.7); border: 1px solid rgba(255,255,255,0.08); border-radius: 14px; padding: 0.85rem 1rem; display: flex; align-items: center; justify-content: space-between; gap: 1rem;">
                 <div style="flex: 1; min-width: 0;">
@@ -1396,14 +1378,13 @@ function checkBranchStock(productId) {
                         ${currentTag}
                     </div>
                     <div style="font-size: 0.75rem; color: #94a3b8;">
-                        <span>📍 ${branch.address}</span> · <span>📞 ${branch.contact}</span>
+                        <span>📍 ${branch.address}</span>
                     </div>
                 </div>
                 <div style="display: flex; flex-direction: column; align-items: flex-end; gap: 0.35rem;">
                     <span style="font-size: 0.75rem; font-weight: 800; padding: 0.2rem 0.55rem; border-radius: 6px; background: ${badgeBg}; color: ${badgeColor}; border: 1px solid ${badgeBorder};">
                         ${badgeText}
                     </span>
-                    ${actionHtml}
                 </div>
             </div>`;
         });
