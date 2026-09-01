@@ -15,18 +15,20 @@ class TranslationRepository implements TranslationRepositoryInterface
 
     public function add(object $request, string $model, int|string $id): bool
     {
-        foreach ($request->lang as $index => $key) {
-            foreach (['name', 'description', 'title'] as $type) {
-                if (isset($request[$type][$index]) && $key != 'en') {
-                    $this->translation->insert(
-                        [
-                            'translationable_type' => $model,
-                            'translationable_id' => $id,
-                            'locale' => $key,
-                            'key' => $type,
-                            'value' => $request[$type][$index]
-                        ]
-                    );
+        if (!empty($request->lang) && is_iterable($request->lang)) {
+            foreach ($request->lang as $index => $key) {
+                foreach (['name', 'description', 'title'] as $type) {
+                    if (isset($request[$type][$index]) && $key != 'en') {
+                        $this->translation->insert(
+                            [
+                                'translationable_type' => $model,
+                                'translationable_id' => $id,
+                                'locale' => $key,
+                                'key' => $type,
+                                'value' => $request[$type][$index]
+                            ]
+                        );
+                    }
                 }
             }
         }
@@ -35,20 +37,22 @@ class TranslationRepository implements TranslationRepositoryInterface
 
     public function update(object $request, string $model, int|string $id): bool
     {
-        foreach ($request->lang as $index => $key) {
-            foreach (['name', 'description', 'title'] as $type) {
-                if (isset($request[$type][$index]) && $key != 'en') {
-                    $this->translation->updateOrInsert(
-                        [
-                            'translationable_type' => $model,
-                            'translationable_id' => $id,
-                            'locale' => $key,
-                            'key' => $type
-                        ],
-                        [
-                            'value' => $request[$type][$index]
-                        ]
-                    );
+        if (!empty($request->lang) && is_iterable($request->lang)) {
+            foreach ($request->lang as $index => $key) {
+                foreach (['name', 'description', 'title'] as $type) {
+                    if (isset($request[$type][$index]) && $key != 'en') {
+                        $this->translation->updateOrInsert(
+                            [
+                                'translationable_type' => $model,
+                                'translationable_id' => $id,
+                                'locale' => $key,
+                                'key' => $type
+                            ],
+                            [
+                                'value' => $request[$type][$index]
+                            ]
+                        );
+                    }
                 }
             }
         }

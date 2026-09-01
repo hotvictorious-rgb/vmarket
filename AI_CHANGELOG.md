@@ -7,6 +7,17 @@ Always append your completed tasks here in chronological order at the top. Forma
 `### [YYYY-MM-DD HH:MM UTC] <Feature / Fix Title> [<Component Scope>]`
 Include the specific app/component modified and bullet points detailing the exact technical changes.
 
+### [2026-09-01 06:05 UTC] Robust Category Data Mapping & Defensive Translation Null-Guards [backend] [admin] [catalog]
+
+* **Component:** `app/Services/CategoryService.php`, `app/Repositories/TranslationRepository.php`
+* **Action:**
+  - **Multilingual & Associative Name Handling in CategoryService:** Implemented defensive parsing for category `name` arrays in `getAddData()` and `getUpdateData()`, supporting indexed arrays with language keys, associative `['en' => ...]` maps, and scalar string inputs without triggering undefined array index notices.
+  - **Iterable Guards in TranslationRepository:** Added `!empty($request->lang) && is_iterable($request->lang)` checks before iterating translations in `add()` and `update()` methods, safely avoiding runtime type errors on single-language requests.
+  - **Schema Alignment:** Applied category markup settings migration to ensure local test databases include `markup_percentage` and `markup_type` columns.
+* **Verification:** In-process request simulation to `POST /admin/category/add-new` executed and returned HTTP 302 RedirectResponse with clean database insertion.
+
+
+
 ### [2026-08-31 08:34 UTC] Official Marketplace Categories Population & Admin Add-New Route Support [admin] [pos] [catalog]
 
 * **Component:** `database/seeders/CategorySpecificationSeeder.php`, `routes/admin/routes.php`, `resources/views/layouts/admin/partials/_script-partials.blade.php`, `Modules/Pos/resources/views/products/create.blade.php`, `Modules/Pos/resources/views/products/edit.blade.php`

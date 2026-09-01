@@ -13,7 +13,18 @@ class CategoryService
     public function getAddData(object $request): array
     {
         $storage = config('filesystems.disks.default') ?? 'public';
-        $name = $request['name'][array_search('en', $request['lang'])];
+        
+        $name = '';
+        if (is_array($request['name'] ?? null)) {
+            if (isset($request['lang']) && is_array($request['lang'])) {
+                $langIndex = array_search('en', $request['lang']);
+                $name = ($langIndex !== false && isset($request['name'][$langIndex])) ? $request['name'][$langIndex] : (reset($request['name']) ?: '');
+            } else {
+                $name = $request['name']['en'] ?? (reset($request['name']) ?: '');
+            }
+        } else {
+            $name = (string) ($request['name'] ?? '');
+        }
 
         return [
             'name' => $name,
@@ -33,7 +44,18 @@ class CategoryService
     {
         $storage = config('filesystems.disks.default') ?? 'public';
         $image = $request->file('image') ? $this->update('category/', $data['image'], 'webp', $request->file('image')) : $data['icon'];
-        $name = $request['name'][array_search('en', $request['lang'])];
+        
+        $name = '';
+        if (is_array($request['name'] ?? null)) {
+            if (isset($request['lang']) && is_array($request['lang'])) {
+                $langIndex = array_search('en', $request['lang']);
+                $name = ($langIndex !== false && isset($request['name'][$langIndex])) ? $request['name'][$langIndex] : (reset($request['name']) ?: '');
+            } else {
+                $name = $request['name']['en'] ?? (reset($request['name']) ?: '');
+            }
+        } else {
+            $name = (string) ($request['name'] ?? '');
+        }
 
         $result = [
             'name' => $name,
