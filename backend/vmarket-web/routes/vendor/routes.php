@@ -74,14 +74,6 @@ Route::group(['middleware' => ['maintenance_mode', 'actch:admin_panel']], functi
         Route::get('login', fn() => redirect()->route('vendor.auth.login'));
         Route::get('register', fn() => redirect()->route('vendor.auth.registration.index'));
         Route::get('registration', fn() => redirect()->route('vendor.auth.registration.index'));
-    });
-
-    // Legacy and short vendor/seller alias redirects
-    Route::get('seller/login', fn() => redirect()->route('vendor.auth.login'));
-    Route::get('seller/register', fn() => redirect()->route('vendor.auth.registration.index'));
-    Route::get('seller/auth/login', fn() => redirect()->route('vendor.auth.login'));
-    Route::get('seller/auth/sign-up', fn() => redirect()->route('vendor.auth.registration.index'));
-    Route::get('vendor-registration', fn() => redirect()->route('vendor.auth.registration.index'));
 
         Route::group(['middleware' => ['seller', 'vendor_employee']], function () {
 
@@ -409,5 +401,13 @@ Route::group(['middleware' => ['maintenance_mode', 'actch:admin_panel']], functi
         });
     });
 
+    // Legacy and short vendor/seller alias redirects
+    Route::get('seller/login', fn() => redirect()->route('vendor.auth.login'));
+    Route::get('seller/register', fn() => redirect()->route('vendor.auth.registration.index'));
+    Route::get('seller/auth/login', fn() => redirect()->route('vendor.auth.login'));
+    Route::get('seller/auth/sign-up', fn() => redirect()->route('vendor.auth.registration.index'));
+    Route::get('vendor-registration', fn() => redirect()->route('vendor.auth.registration.index'));
+
 });
+
 
