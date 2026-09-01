@@ -48,9 +48,9 @@ Route::group(['middleware' => ['maintenance_mode', 'actch:admin_panel']], functi
     Route::group(['prefix' => 'vendor', 'as' => 'vendor.'], function () {
         Route::group(['prefix' => 'auth', 'as' => 'auth.'], function () {
             Route::controller(LoginController::class)->group(function () {
-                Route::get('login', 'getLoginView');
-                Route::post('login', 'login')->name('login');
-                Route::get('vendor.auth.login', 'logout')->name('logout');
+                Route::get('login', 'getLoginView')->name('login');
+                Route::post('login', 'login');
+                Route::get('logout', 'logout')->name('logout');
             });
             Route::group(['prefix' => 'forgot-password', 'as' => 'forgot-password.'], function () {
                 Route::controller(ForgotPasswordController::class)->group(function () {
@@ -69,6 +69,19 @@ Route::group(['middleware' => ['maintenance_mode', 'actch:admin_panel']], functi
                 });
             });
         });
+
+        // Direct convenience aliases
+        Route::get('login', fn() => redirect()->route('vendor.auth.login'));
+        Route::get('register', fn() => redirect()->route('vendor.auth.registration.index'));
+        Route::get('registration', fn() => redirect()->route('vendor.auth.registration.index'));
+    });
+
+    // Legacy and short vendor/seller alias redirects
+    Route::get('seller/login', fn() => redirect()->route('vendor.auth.login'));
+    Route::get('seller/register', fn() => redirect()->route('vendor.auth.registration.index'));
+    Route::get('seller/auth/login', fn() => redirect()->route('vendor.auth.login'));
+    Route::get('seller/auth/sign-up', fn() => redirect()->route('vendor.auth.registration.index'));
+    Route::get('vendor-registration', fn() => redirect()->route('vendor.auth.registration.index'));
 
         Route::group(['middleware' => ['seller', 'vendor_employee']], function () {
 

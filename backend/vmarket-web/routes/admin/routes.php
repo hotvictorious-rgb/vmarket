@@ -130,6 +130,10 @@ Route::group(['prefix' => 'login'], function () {
     Route::post('/', [LoginController::class, 'login'])->name('login')->middleware('throttle:10,1');
 });
 
+// Direct admin login aliases (accessible before authentication)
+Route::get('admin/login', fn() => redirect('login/' . (getWebConfig(name: 'admin_login_url') ?: 'admin')));
+Route::get('admin/auth/login', fn() => redirect('login/' . (getWebConfig(name: 'admin_login_url') ?: 'admin')));
+
 Route::group(['prefix' => 'admin', 'as' => 'admin.', 'middleware' => ['admin', 'actch:admin_panel']], function () {
 
     Route::get('/', fn() => redirect()->route('admin.dashboard.index'));

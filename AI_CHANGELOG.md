@@ -7,6 +7,16 @@ Always append your completed tasks here in chronological order at the top. Forma
 `### [YYYY-MM-DD HH:MM UTC] <Feature / Fix Title> [<Component Scope>]`
 Include the specific app/component modified and bullet points detailing the exact technical changes.
 
+### [2026-09-01 11:45 UTC] Universal Admin & Vendor Auth Route Resolution & Alias Normalization [admin] [vendor] [routing]
+
+* **Component:** `routes/admin/routes.php`, `routes/vendor/routes.php`, `app/Http/Controllers/Admin/Auth/LoginController.php`
+* **Action:**
+  - **Admin Auth Route Normalization:** Added direct unauthenticated route aliases for `/admin/login`, `/admin/auth/login`, and root `/admin` $\rightarrow$ `/admin/dashboard`, eliminating 404 aborts.
+  - **Vendor Auth Route & Named Route Fix:** Explicitly registered `name('login')` on `GET /vendor/auth/login`, cleaned up logout route naming, and added convenient alias redirects for `/seller/login`, `/seller/register`, `/seller/auth/sign-up`, and `/vendor-registration`.
+* **Verification:** Verified route definitions and named route lookups.
+
+
+
 ### [2026-09-01 11:38 UTC] Standardized Production & Development Environment Hierarchy [config] [env]
 
 * **Component:** `backend/vmarket-web/.env`, `backend/vmarket-web/.env.example`
