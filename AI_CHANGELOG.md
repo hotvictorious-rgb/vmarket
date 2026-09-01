@@ -7,6 +7,16 @@ Always append your completed tasks here in chronological order at the top. Forma
 `### [YYYY-MM-DD HH:MM UTC] <Feature / Fix Title> [<Component Scope>]`
 Include the specific app/component modified and bullet points detailing the exact technical changes.
 
+### [2026-09-01 11:38 UTC] Standardized Production & Development Environment Hierarchy [config] [env]
+
+* **Component:** `backend/vmarket-web/.env`, `backend/vmarket-web/.env.example`
+* **Action:**
+  - **Standardized Environment Hierarchy:** Synchronized local and template `.env` files to mirror the exact production structure with clear section blocks (App Identity, Super Admin Root Authority, Database, Cache/Session/Queue, Storefront Themes, Metadata).
+  - **Change Notification Protocol:** Enacted protocol requiring explicit notification and instruction to the user whenever any future feature introduces new environment variables.
+* **Verification:** Verified syntax and parsed environment keys.
+
+
+
 ### [2026-09-01 11:20 UTC] Automated Deployment SSH Host Key Verification Bypass [ci-cd] [deployment]
 
 * **Component:** `backend/vmarket-web/public/deploy.php`
