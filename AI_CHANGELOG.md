@@ -7,6 +7,16 @@ Always append your completed tasks here in chronological order at the top. Forma
 `### [YYYY-MM-DD HH:MM UTC] <Feature / Fix Title> [<Component Scope>]`
 Include the specific app/component modified and bullet points detailing the exact technical changes.
 
+### [2026-09-01 06:45 UTC] Full-Stack Dual Delivery & Role-Aware Security Implementation Across POS & Stock Engines [pos] [security] [workers]
+
+* **Component:** `Modules/Pos/app/Http/Controllers/StockController.php`, `Modules/Pos/app/Http/Controllers/UserController.php`, `app/Models/VendorEmployee.php`, `test_rule_18_compliance_and_fullstack_parity.php`
+* **Action:**
+  - **Comprehensive `createAdjustment` Implementation:** Implemented complete full-stack handler for damage, expiry, loss, and audit correction adjustments with physical custody checks (cashiers can only adjust their assigned branch), pessimistic row-level locking, atomic decrement of `pos_branch_stocks` and `products.current_stock`, and logging in `pos_stock_adjustments` and `pos_inventory_logs`.
+  - **Unsupplied Order Handover (`dispatchConfirm`):** Implemented customer order pickup confirmation transitioning `delivery_status` to `DELIVERED` with cashier timestamp and audit trail.
+  - **Atomic Branch Stock-In Synchronization:** Updated `StockController::stockIn` to synchronize physical shelf inventory in `pos_branch_stocks` with master catalog stock.
+  - **Staff Management Role Gates & Model Fillables (`UserController` & `VendorEmployee`):** Enforced authorization preventing non-owner staff from managing workers, added `assigned_branch_id` to `VendorEmployee::$fillable` and saved branch custody during worker registration.
+* **Verification:** Automated 15-assertion Rule 18 verification suite (`test_rule_18_compliance_and_fullstack_parity.php`) executed with 100% success (15/15 passed, $\Delta = 0.00$).
+
 ### [2026-09-01 06:35 UTC] Enforce Rule 18: Full-Stack Dual Delivery, 9-Tier Role Awareness, Top-Notch Security & Premium UX [ai-governance]
 
 * **Component:** `.agents/AGENTS.md`, `AI_ENGINEERING_RULES.md`, `CHANGE_IMPACT_PROTOCOL.md`

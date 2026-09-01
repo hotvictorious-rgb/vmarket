@@ -141,6 +141,15 @@ class StockController extends Controller
         // [AI] IDOR: ensure product belongs to this seller
         $product = Product::where('id', $productId)->where('user_id', $sellerId)->firstOrFail();
 
+        // [AI] Physical Custody Invariant:
+        // Employees can strictly ONLY stock-in goods to their physically assigned branch counter.
+        if (Auth::guard('vendor_employee')->check()) {
+            $assignedBranchId = (int) (Auth::guard('vendor_employee')->user()->assigned_branch_id ?? 0);
+            if ($assignedBranchId > 0 && $assignedBranchId !== (int) $branchId) {
+                abort(403, 'Physical Responsibility Invariant: You can only stock-in goods to your assigned branch counter.');
+            }
+        }
+
         DB::transaction(function () use ($sellerId, $branchId, $productId, $product, $qty, $request, $cashierName) {
             // [AI] Pessimistic lock — prevents double stock-in from concurrent requests
             $product = Product::where('id', $productId)->where('user_id', $sellerId)->lockForUpdate()->first();
@@ -159,6 +168,24 @@ class StockController extends Controller
                     'qty'        => $qty,
                     'created_at' => now(),
                     'updated_at' => now(),
+                ]);
+            }
+
+            // [AI] Atomically synchronize physical branch stock (pos_branch_stocks)
+            $branchStock = DB::table('pos_branch_stocks')
+                ->where('branch_id', $branchId)
+                ->where('product_id', $productId)
+                ->first();
+            if ($branchStock) {
+                DB::table('pos_branch_stocks')->where('id', $branchStock->id)->increment('stock_quantity', $qty, ['updated_at' => now()]);
+            } else {
+                DB::table('pos_branch_stocks')->insert([
+                    'seller_id'       => $sellerId,
+                    'branch_id'       => $branchId,
+                    'product_id'      => $productId,
+                    'stock_quantity'  => $qty,
+                    'created_at'      => now(),
+                    'updated_at'      => now(),
                 ]);
             }
 
@@ -447,38 +474,101 @@ class StockController extends Controller
     public function createAdjustment(Request $request)
     {
         $request->validate([
-            'product_id'      => 'required|integer',
-            'quantity_change' => 'required|integer|not_in:0',
-            'reason'          => 'required|string',
-            'notes'           => 'nullable|string|max:500',
+            'product_id'   => 'required|integer',
+            'warehouse_id' => 'nullable|integer',
+            'branch_id'    => 'nullable|integer',
+            'type'         => 'nullable|string',
+            'reason'       => 'nullable|string|max:255',
+            'notes'        => 'nullable|string|max:500',
         ]);
 
         $sellerId    = $this->resolveAuthSellerId();
         $productId   = (int) $request->product_id;
-        $qtyChange   = (int) $request->quantity_change;
+        $branchId    = (int) ($request->warehouse_id ?? $request->branch_id ?? $this->resolveActiveBranchId());
         $cashierName = $this->resolveAuthUserName();
 
-        $product = Product::where('id', $productId)->where('user_id', $sellerId)->firstOrFail();
+        // Support both positive 'quantity' deducted in form, or explicit 'quantity_change' (+/-)
+        if ($request->has('quantity')) {
+            $rawQty = abs((int) $request->quantity);
+            $qtyChange = -$rawQty; // Form deducts damaged/lost units
+        } else {
+            $qtyChange = (int) $request->input('quantity_change', 0);
+        }
 
-        DB::transaction(function () use ($sellerId, $product, $productId, $qtyChange, $request, $cashierName) {
+        if ($qtyChange === 0) {
+            return back()->withErrors(['error' => 'Adjustment quantity cannot be 0.']);
+        }
+
+        $reason = $request->reason ?? $request->type ?? 'Damage / Audit Correction';
+        $notes  = $request->notes ?? '';
+
+        // [AI] IDOR: ensure product and branch belong to this seller
+        $product = Product::where('id', $productId)->where('user_id', $sellerId)->firstOrFail();
+        $branch  = DB::table('shops')->where('id', $branchId)->where('seller_id', $sellerId)->first();
+        abort_if(!$branch, 403, 'Unauthorized branch access.');
+
+        // [AI] Physical Custody Invariant:
+        // Cashiers/storekeepers can ONLY adjust stock in their physically assigned branch.
+        if (Auth::guard('vendor_employee')->check()) {
+            $assignedBranchId = (int) (Auth::guard('vendor_employee')->user()->assigned_branch_id ?? 0);
+            if ($assignedBranchId > 0 && $assignedBranchId !== (int) $branchId) {
+                abort(403, 'Physical Responsibility Invariant: You can only adjust stock in your physically assigned branch.');
+            }
+        }
+
+        DB::transaction(function () use ($sellerId, $branchId, $product, $productId, $qtyChange, $reason, $notes, $cashierName) {
+            // [AI] Pessimistic lock on product
             Product::where('id', $productId)->where('user_id', $sellerId)->lockForUpdate()->first();
 
+            // [AI] Pessimistic lock on physical branch stock
+            $branchStock = DB::table('pos_branch_stocks')
+                ->where('branch_id', $branchId)
+                ->where('product_id', $productId)
+                ->lockForUpdate()
+                ->first();
+
+            if ($branchStock) {
+                if ($qtyChange < 0 && $branchStock->stock_quantity < abs($qtyChange)) {
+                    throw new \Exception("Cannot reduce stock by " . abs($qtyChange) . " units. Branch only has {$branchStock->stock_quantity} units available.");
+                }
+                DB::table('pos_branch_stocks')
+                    ->where('id', $branchStock->id)
+                    ->increment('stock_quantity', $qtyChange, ['updated_at' => now()]);
+            } else {
+                if ($qtyChange < 0) {
+                    throw new \Exception("Cannot reduce stock from branch with 0 inventory.");
+                }
+                DB::table('pos_branch_stocks')->insert([
+                    'seller_id'      => $sellerId,
+                    'branch_id'      => $branchId,
+                    'product_id'     => $productId,
+                    'stock_quantity' => $qtyChange,
+                    'created_at'     => now(),
+                    'updated_at'     => now(),
+                ]);
+            }
+
+            // Synchronize master catalog stock
             DB::table('products')->where('id', $productId)->increment('current_stock', $qtyChange);
             DB::table('product_stocks')->where('product_id', $productId)->increment('qty', $qtyChange);
 
+            // Record adjustment event
             DB::table('pos_stock_adjustments')->insert([
                 'seller_id'       => $sellerId,
+                'branch_id'       => $branchId,
                 'product_id'      => $productId,
                 'quantity_change' => $qtyChange,
-                'reason'          => $request->reason,
+                'reason'          => $reason,
                 'adjusted_by'     => $cashierName,
-                'notes'           => $request->notes,
+                'notes'           => $notes,
                 'created_at'      => now(),
                 'updated_at'      => now(),
             ]);
 
+            // Record inventory movement audit
             DB::table('pos_inventory_logs')->insert([
                 'seller_id'       => $sellerId,
+                'branch_id'       => $branchId,
                 'product_id'      => $productId,
                 'product_name'    => $product->name,
                 'product_code'    => $product->code,
@@ -486,13 +576,76 @@ class StockController extends Controller
                 'quantity_change' => $qtyChange,
                 'reference_type'  => 'pos_adjustment',
                 'recorded_by'     => $cashierName,
-                'notes'           => $request->reason . ': ' . ($request->notes ?? ''),
+                'notes'           => $reason . ($notes ? ': ' . $notes : ''),
                 'created_at'      => now(),
                 'updated_at'      => now(),
+            ]);
+
+            DB::table('pos_activities')->insert([
+                'seller_id'   => $sellerId,
+                'branch_id'   => $branchId,
+                'actor_id'    => (string) Auth::id(),
+                'actor_name'  => $cashierName,
+                'type'        => 'STOCK_ADJUSTMENT',
+                'description' => "{$cashierName} adjusted stock ({$qtyChange} units) for [{$product->name}] - {$reason}",
+                'metadata'    => json_encode(['product_id' => $productId, 'branch_id' => $branchId, 'change' => $qtyChange]),
+                'created_at'  => now(),
+                'updated_at'  => now(),
             ]);
         });
 
         $direction = $qtyChange > 0 ? '+' . $qtyChange : $qtyChange;
         return redirect()->route('pos.stock.adjustments')->with('success', "✓ Stock adjusted ({$direction} units) for [{$product->name}].");
+    }
+
+    /**
+     * Handover / confirm dispatch for unsupplied customer order.
+     */
+    public function dispatchConfirm($saleId, Request $request = null)
+    {
+        $sellerId    = $this->resolveAuthSellerId();
+        $cashierName = $this->resolveAuthUserName();
+        $saleId      = (int) $saleId;
+
+        DB::transaction(function () use ($sellerId, $saleId, $cashierName) {
+            $sale = DB::table('pos_sales')
+                ->where('id', $saleId)
+                ->where('seller_id', $sellerId)
+                ->lockForUpdate()
+                ->first();
+
+            abort_if(!$sale, 404, 'Sale record not found or unauthorized.');
+
+            // [AI] Physical Custody Invariant:
+            // Employees can strictly ONLY confirm handover from their physically assigned branch register.
+            if (Auth::guard('vendor_employee')->check()) {
+                $assignedBranchId = (int) (Auth::guard('vendor_employee')->user()->assigned_branch_id ?? 0);
+                if ($assignedBranchId > 0 && $assignedBranchId !== (int) $sale->branch_id) {
+                    abort(403, 'Physical Responsibility Invariant: You can only confirm customer handover from your assigned branch counter.');
+                }
+            }
+
+            DB::table('pos_sales')
+                ->where('id', $saleId)
+                ->where('seller_id', $sellerId)
+                ->update([
+                    'delivery_status' => 'DELIVERED',
+                    'updated_at'      => now(),
+                ]);
+
+            DB::table('pos_activities')->insert([
+                'seller_id'   => $sellerId,
+                'branch_id'   => $sale->branch_id,
+                'actor_id'    => (string) Auth::id(),
+                'actor_name'  => $cashierName,
+                'type'        => 'ORDER_DISPATCHED',
+                'description' => "Order #{$sale->receipt_number} handed over / marked as DELIVERED to customer {$sale->customer_name} by {$cashierName}",
+                'metadata'    => json_encode(['pos_sale_id' => $saleId, 'status' => 'DELIVERED']),
+                'created_at'  => now(),
+                'updated_at'  => now(),
+            ]);
+        });
+
+        return redirect()->route('pos.stock.unsupplied')->with('success', '✓ Order handed over / marked as DELIVERED successfully.');
     }
 }

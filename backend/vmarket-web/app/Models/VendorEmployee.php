@@ -39,6 +39,7 @@ class VendorEmployee extends Authenticatable
         'id' => 'integer',
         'seller_id' => 'integer',
         'vendor_role_id' => 'integer',
+        'assigned_branch_id' => 'integer',
         'name' => 'string',
         'phone' => 'string',
         'email' => 'string',
@@ -50,6 +51,7 @@ class VendorEmployee extends Authenticatable
     protected $fillable = [
         'seller_id',
         'vendor_role_id',
+        'assigned_branch_id',
         'name',
         'phone',
         'email',
