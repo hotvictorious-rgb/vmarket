@@ -7,6 +7,18 @@ Always append your completed tasks here in chronological order at the top. Forma
 `### [YYYY-MM-DD HH:MM UTC] <Feature / Fix Title> [<Component Scope>]`
 Include the specific app/component modified and bullet points detailing the exact technical changes.
 
+### [2026-09-01 09:28 UTC] Verified Seamless POS Access for Existing & Pending Merchants [pos] [vendors] [auth]
+
+* **Component:** `app/Http/Middleware/PosAccessMiddleware.php`, `resources/views/layouts/vendor/partials/_header.blade.php`, `resources/views/layouts/vendor/partials/_side-bar.blade.php`, `verify_existing_vendors_pos_access.php`
+* **Action:**
+  - **Comprehensive Multi-Role POS Verification:** Verified in-process request flow proving that:
+    1. **Verified Merchants (Approved status):** Seamlessly launch In-Store POS with full multi-branch synchronization and `Back to Merchant Panel` hub return actions.
+    2. **Unverified / Pending Merchants (Pending KYC):** Instantly provisioned with Free-Tier In-Store POS (1 Store) for physical walk-in sales without blocking.
+    3. **Store Cashiers (`vendor_employee`):** Correctly authenticated and strictly micro-isolated to their assigned branch register (`seller_id` scoping).
+* **Verification:** Executed `verify_existing_vendors_pos_access.php` with 6/6 assertions passed and `test_rule_18_compliance_and_fullstack_parity.php` with 15/15 assertions passed.
+
+
+
 ### [2026-09-01 08:42 UTC] Universal Explanatory Code Commenting & Cross-Layer Linking Standard [ai-governance]
 
 * **Component:** `.agents/AGENTS.md`, `AI_ENGINEERING_RULES.md`
