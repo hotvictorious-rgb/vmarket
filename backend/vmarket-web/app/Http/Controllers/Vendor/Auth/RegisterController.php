@@ -54,16 +54,28 @@ class RegisterController extends BaseController
             ToastMagic::warning(translate('access_denied') . '!!');
             return redirect('/');
         }
-        $vendorRegistrationHeader = json_decode($this->businessSettingRepo->getFirstWhere(params: ['type' => 'vendor_registration_header'])['value']);
-        $vendorRegistrationReasons = $this->vendorRegistrationReasonRepo->getListWhere(orderBy: ['priority' => 'desc'], filters: ['status' => 1], dataLimit: 'all');
-        $sellWithUs = json_decode($this->businessSettingRepo->getFirstWhere(params: ['type' => 'vendor_registration_sell_with_us'])['value']);
-        $downloadVendorApp = json_decode($this->businessSettingRepo->getFirstWhere(params: ['type' => 'download_vendor_app'])['value']);
-        $businessProcess = json_decode($this->businessSettingRepo->getFirstWhere(params: ['type' => 'business_process_main_section'])['value']);
-        $businessProcessStep = json_decode($this->businessSettingRepo->getFirstWhere(params: ['type' => 'business_process_step'])['value']);
+        $headerRecord = $this->businessSettingRepo->getFirstWhere(params: ['type' => 'vendor_registration_header']);
+        $vendorRegistrationHeader = $headerRecord && !empty($headerRecord['value']) ? json_decode($headerRecord['value']) : null;
+
+        $vendorRegistrationReasons = $this->vendorRegistrationReasonRepo->getListWhere(orderBy: ['priority' => 'desc'], filters: ['status' => 1], dataLimit: 'all') ?: [];
+
+        $sellRecord = $this->businessSettingRepo->getFirstWhere(params: ['type' => 'vendor_registration_sell_with_us']);
+        $sellWithUs = $sellRecord && !empty($sellRecord['value']) ? json_decode($sellRecord['value']) : null;
+
+        $downloadRecord = $this->businessSettingRepo->getFirstWhere(params: ['type' => 'download_vendor_app']);
+        $downloadVendorApp = $downloadRecord && !empty($downloadRecord['value']) ? json_decode($downloadRecord['value']) : null;
+
+        $processRecord = $this->businessSettingRepo->getFirstWhere(params: ['type' => 'business_process_main_section']);
+        $businessProcess = $processRecord && !empty($processRecord['value']) ? json_decode($processRecord['value']) : null;
+
+        $stepRecord = $this->businessSettingRepo->getFirstWhere(params: ['type' => 'business_process_step']);
+        $businessProcessStep = $stepRecord && !empty($stepRecord['value']) ? json_decode($stepRecord['value']) : null;
+
         $helpTopics = $this->helpTopicRepo->getListWhere(
             orderBy: ['id' => 'desc'],
             filters: ['type' => 'vendor_registration', 'status' => '1'],
-            dataLimit: 'all');
+            dataLimit: 'all') ?: [];
+
         return view(VIEW_FILE_NAMES['seller_registration'], compact('vendorRegistrationHeader', 'vendorRegistrationReasons', 'sellWithUs', 'downloadVendorApp', 'helpTopics', 'businessProcess', 'businessProcessStep'));
     }
 

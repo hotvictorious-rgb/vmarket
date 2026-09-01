@@ -7,6 +7,16 @@ Always append your completed tasks here in chronological order at the top. Forma
 `### [YYYY-MM-DD HH:MM UTC] <Feature / Fix Title> [<Component Scope>]`
 Include the specific app/component modified and bullet points detailing the exact technical changes.
 
+### [2026-09-01 12:05 UTC] Eliminate 500 Null Access Error in Vendor Registration & Strengthen Deploy Overlay [vendor] [deployment]
+
+* **Component:** `app/Http/Controllers/Vendor/Auth/RegisterController.php`, `public/deploy.php`
+* **Action:**
+  - **Null-Safe Business Setting Lookups:** Wrapped all `businessSettingRepo` queries (`vendor_registration_header`, `sell_with_us`, `download_vendor_app`, `business_process`) in null checks to prevent fatal `Cannot access offset of type string on null` 500 errors when settings are empty.
+  - **Directory Overlay Syntax Fix:** Upgraded `deploy.php` directory copy commands to use trailing slash-dot syntax (`cp -rf dir/. target/`) to prevent duplicate nesting of directories, and added automatic cleanup of stale bootstrap caches.
+* **Verification:** Verified syntax and view binding.
+
+
+
 ### [2026-09-01 11:45 UTC] Universal Admin & Vendor Auth Route Resolution & Alias Normalization [admin] [vendor] [routing]
 
 * **Component:** `routes/admin/routes.php`, `routes/vendor/routes.php`, `app/Http/Controllers/Admin/Auth/LoginController.php`

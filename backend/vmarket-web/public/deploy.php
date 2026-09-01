@@ -31,6 +31,19 @@ $liveDir = dirname(__DIR__); // Root of Laravel application
 $parentDir = dirname($liveDir);
 $repoCache = $parentDir . '/vmarket_repo_cache';
 
+// Diagnostic log viewer
+if (($_GET['action'] ?? '') === 'read_log') {
+    header('Content-Type: text/plain');
+    $logFile = $liveDir . '/storage/logs/laravel.log';
+    if (file_exists($logFile)) {
+        $lines = file($logFile);
+        echo implode('', array_slice($lines, -60));
+    } else {
+        echo "No laravel.log found at " . $logFile;
+    }
+    exit;
+}
+
 $output = [];
 
 // 2. Fetch Latest Master from GitHub (Bypassing SSH host key verification prompt)
@@ -50,27 +63,43 @@ $backendSource = $repoCache . '/backend/vmarket-web';
 
 if (is_dir($backendSource)) {
     $output[] = "Overlaying backend/vmarket-web into live site...";
-    
-    // Copy updated application directories
-    exec("cp -ru {$backendSource}/app {$liveDir}/ 2>&1", $output);
-    exec("cp -ru {$backendSource}/bootstrap {$liveDir}/ 2>&1", $output);
-    exec("cp -ru {$backendSource}/config {$liveDir}/ 2>&1", $output);
-    exec("cp -ru {$backendSource}/database {$liveDir}/ 2>&1", $output);
-    exec("cp -ru {$backendSource}/resources {$liveDir}/ 2>&1", $output);
-    exec("cp -ru {$backendSource}/routes {$liveDir}/ 2>&1", $output);
-    exec("cp -ru {$backendSource}/Modules {$liveDir}/ 2>&1", $output);
+
+    // Remove accidental nested folders if previously created by cp
+    exec("rm -rf {$liveDir}/app/app {$liveDir}/resources/resources {$liveDir}/routes/routes {$liveDir}/Modules/Modules {$liveDir}/config/config {$liveDir}/database/database {$liveDir}/bootstrap/bootstrap 2>&1", $output);
+
+    // Create directories if missing
+    @mkdir("{$liveDir}/app", 0755, true);
+    @mkdir("{$liveDir}/bootstrap", 0755, true);
+    @mkdir("{$liveDir}/config", 0755, true);
+    @mkdir("{$liveDir}/database", 0755, true);
+    @mkdir("{$liveDir}/resources", 0755, true);
+    @mkdir("{$liveDir}/routes", 0755, true);
+    @mkdir("{$liveDir}/Modules", 0755, true);
+    @mkdir("{$liveDir}/public/assets", 0755, true);
+
+    // Copy updated application contents using trailing slash-dot syntax to prevent nesting
+    exec("cp -rf {$backendSource}/app/. {$liveDir}/app/ 2>&1", $output);
+    exec("cp -rf {$backendSource}/bootstrap/. {$liveDir}/bootstrap/ 2>&1", $output);
+    exec("cp -rf {$backendSource}/config/. {$liveDir}/config/ 2>&1", $output);
+    exec("cp -rf {$backendSource}/database/. {$liveDir}/database/ 2>&1", $output);
+    exec("cp -rf {$backendSource}/resources/. {$liveDir}/resources/ 2>&1", $output);
+    exec("cp -rf {$backendSource}/routes/. {$liveDir}/routes/ 2>&1", $output);
+    exec("cp -rf {$backendSource}/Modules/. {$liveDir}/Modules/ 2>&1", $output);
     exec("cp -u {$backendSource}/composer.json {$liveDir}/ 2>&1", $output);
     exec("cp -u {$backendSource}/composer.lock {$liveDir}/ 2>&1", $output);
     
     // Copy public assets safely
-    exec("cp -ru {$backendSource}/public/assets {$liveDir}/public/ 2>&1", $output);
+    exec("cp -rf {$backendSource}/public/assets/. {$liveDir}/public/assets/ 2>&1", $output);
     exec("cp -u {$backendSource}/public/deploy.php {$liveDir}/public/ 2>&1", $output);
+
+    // Clean stale bootstrap caches
+    exec("rm -f {$liveDir}/bootstrap/cache/*.php 2>&1", $output);
 }
 
 // 4. Run Database Migrations & Rebuild Production Cache
 chdir($liveDir);
-exec("php artisan migrate --force 2>&1", $output);
 exec("php artisan optimize:clear 2>&1", $output);
+exec("php artisan migrate --force 2>&1", $output);
 exec("php artisan view:clear 2>&1", $output);
 
 // 5. Log deployment
