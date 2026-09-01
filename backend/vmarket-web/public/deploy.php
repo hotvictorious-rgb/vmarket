@@ -87,6 +87,7 @@ if (is_dir($backendSource)) {
     exec("cp -rf {$backendSource}/Modules/. {$liveDir}/Modules/ 2>&1", $output);
     exec("cp -u {$backendSource}/composer.json {$liveDir}/ 2>&1", $output);
     exec("cp -u {$backendSource}/composer.lock {$liveDir}/ 2>&1", $output);
+    exec("cp -f {$backendSource}/modules_statuses.json {$liveDir}/ 2>&1", $output);
     
     // Copy public assets safely
     exec("cp -rf {$backendSource}/public/assets/. {$liveDir}/public/assets/ 2>&1", $output);

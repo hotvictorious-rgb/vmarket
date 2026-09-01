@@ -1277,3 +1277,15 @@ Route::group(['prefix' => 'admin', 'as' => 'admin.', 'middleware' => ['admin', '
         });
     });
 });
+
+/**
+ * [AI] Fallback Delivery Hub Route
+ * Guarantees that route('delivery.dashboard') always resolves seamlessly
+ * even when the Delivery module is being discovered or cleared from cache.
+ */
+if (!Route::has('delivery.dashboard')) {
+    Route::get('/delivery-hub-dashboard', function () {
+        return redirect()->to('/delivery');
+    })->name('delivery.dashboard');
+}
+
