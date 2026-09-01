@@ -82,6 +82,7 @@ Route::middleware(['web', 'pos.access'])->group(function () {
         Route::get('/receipt/{id}',             [PosController::class, 'receipt'])->name('receipt');
         Route::get('/returns',                  [PosController::class, 'returns'])->name('returns');
         Route::post('/returns',                 [PosController::class, 'processReturn'])->name('returns.process');
+        Route::get('/product/{id}/branch-stocks', [PosController::class, 'getBranchStocks'])->name('product.branch_stocks');
     });
 
     // ─── 3. Products Catalog Management ───────────────────────────────────────

@@ -1,19 +1,19 @@
 # Victorious MARKET — Complete Ecosystem Endpoints & Universal Security Taxonomy
 
-> **Total System Endpoints:** `1583` Registered HTTP Endpoints  
+> **Total System Endpoints:** `1584` Registered HTTP Endpoints  
 > **Status:** 100% Operational & Verified with In-Process Kernel Dispatches  
-> **Last Updated:** 2026-08-29 16:25:26 UTC  
+> **Last Updated:** 2026-09-01 06:20:00 UTC  
 
 ## 📊 Ecosystem HTTP Method Breakdown
 
 | HTTP Method | Total Endpoints | Primary Architectural Function |
 |:---:|:---:|---|
-| **`GET`** | **828** | Read operations, dashboards, catalog grids, cashier registers, reports |
+| **`GET`** | **829** | Read operations, dashboards, catalog grids, cashier registers, reports |
 | **`POST`** | **647** | State mutations, split-tender checkouts, stock transfers, payments, auth handshakes |
 | **`PUT`** | **55** | REST entity replacements, cart updates, review updates, password resets |
 | **`PATCH`** | **3** | Targeted partial state updates (profile toggles, emergency contacts) |
 | **`DELETE`** | **50** | Entity deletions, cart item removals, address drops, token revocations |
-| **TOTAL** | **`1583`** | **Full 6-Platform Unified Monorepo** |
+| **TOTAL** | **`1584`** | **Full 6-Platform Unified Monorepo** |
 
 ## 🏢 Module Breakdown
 
@@ -21,7 +21,7 @@
 |---|:---:|---|
 | **Super Admin Command Center** | `638` | Standardized Ecosystem Roles |
 | **Merchant / Vendor Panel** | `204` | Standardized Ecosystem Roles |
-| **In-Store POS Terminal (Native Module)** | `55` | Standardized Ecosystem Roles |
+| **In-Store POS Terminal (Native Module)** | `56` | Standardized Ecosystem Roles |
 | **Delivery & Fleet Logistics Hub** | `21` | Standardized Ecosystem Roles |
 | **Customer Web Storefront & Aster Theme** | `226` | Standardized Ecosystem Roles |
 | **Mobile REST APIs (v1, v2, v3)** | `439` | Standardized Ecosystem Roles |
@@ -941,6 +941,7 @@
 | 53 | `GET` | `/pos/reports/top-products` | `pos.reports.top-products` | `Modules\Pos\app\Http\Controllers\ReportController@topProducts` |
 | 54 | `GET` | `/pos/reports/export/{type}` | `pos.reports.export` | `Modules\Pos\app\Http\Controllers\ReportController@exportCsv` |
 | 55 | `GET` | `/pos/reports/export-json/{type}` | `pos.reports.export.json` | `Modules\Pos\app\Http\Controllers\ReportController@exportJson` |
+| 56 | `GET` | `/pos/product/{id}/branch-stocks` | `pos.product.branch_stocks` | `Modules\Pos\app\Http\Controllers\PosController@getBranchStocks` |
 
 
 ## Section 4: Delivery & Fleet Logistics Hub (21 Endpoints)

@@ -297,9 +297,14 @@
                     @else
                         <span class="p-stock-badge badge-danger">0 (Out of Stock)</span>
                     @endif
-                    <span style="font-size: 0.75rem; font-weight: 800; color: #3b82f6; background: rgba(59,130,246,0.15); padding: 0.2rem 0.5rem; border-radius: 6px; border: 1px solid rgba(59,130,246,0.3);">
-                        + Add
-                    </span>
+                    <div style="display: flex; gap: 0.3rem; align-items: center;">
+                        <button type="button" onclick="event.stopPropagation(); checkBranchStock('{{ $product->id }}')" title="Check stock in other branches" style="background: rgba(94,23,235,0.18); border: 1px solid rgba(94,23,235,0.4); color: #c084fc; padding: 0.2rem 0.45rem; border-radius: 6px; font-size: 0.7rem; font-weight: 700; cursor: pointer; display: flex; align-items: center; gap: 0.2rem; transition: all 0.2s;">
+                            🏬 Branches
+                        </button>
+                        <span style="font-size: 0.75rem; font-weight: 800; color: #3b82f6; background: rgba(59,130,246,0.15); padding: 0.2rem 0.5rem; border-radius: 6px; border: 1px solid rgba(59,130,246,0.3);">
+                            + Add
+                        </span>
+                    </div>
                 </div>
             </div>
             @empty
@@ -554,6 +559,64 @@
             </button>
             <button type="button" class="btn btn-success" style="flex: 1.3; padding: 0.75rem; font-weight: 800;" onclick="finalProceedSale()">
                 ✅ Yes, Complete Sale
+            </button>
+        </div>
+    </div>
+</div>
+
+<!-- Cross-Branch Live Stock Lookup Modal -->
+<div id="modalBranchStocks" class="modal-backdrop" style="display: none;">
+    <div class="modal" style="max-width: 580px; width: 95%; padding: 1.75rem; background: #0f172a; border: 2px solid #5E17EB; border-radius: 20px; box-shadow: 0 25px 70px rgba(0,0,0,0.85); animation: modalPop 0.22s cubic-bezier(0.16, 1, 0.3, 1);">
+        <!-- Header -->
+        <div style="display: flex; align-items: flex-start; justify-content: space-between; gap: 1rem; margin-bottom: 1.25rem; border-bottom: 1px solid rgba(255,255,255,0.1); padding-bottom: 1rem;">
+            <div>
+                <div style="display: flex; align-items: center; gap: 0.5rem; margin-bottom: 0.25rem;">
+                    <span style="font-size: 1.4rem;">🏬</span>
+                    <h3 id="branchModalProductName" style="font-size: 1.2rem; font-weight: 800; color: #FFFFFF; margin: 0;">Product Name</h3>
+                </div>
+                <div style="display: flex; align-items: center; gap: 0.75rem; font-size: 0.8rem; color: #94a3b8;">
+                    <span>SKU: <strong id="branchModalProductCode" style="color: #60a5fa;">-</strong></span>
+                    <span>·</span>
+                    <span>Price: <strong id="branchModalProductPrice" style="color: #4ade80;">-</strong></span>
+                    <span>·</span>
+                    <span>Total Stock: <strong id="branchModalTotalStock" style="color: #FFD700;">-</strong></span>
+                </div>
+            </div>
+            <button type="button" onclick="closeBranchStockModal()" style="background: rgba(255,255,255,0.08); border: none; color: #94a3b8; width: 32px; height: 32px; border-radius: 8px; font-size: 1.1rem; cursor: pointer; display: flex; align-items: center; justify-content: center; transition: all 0.2s;">
+                ✕
+            </button>
+        </div>
+
+        <!-- Branch Stock List Container -->
+        <div id="branchStockLoading" style="text-align: center; padding: 2.5rem 0;">
+            <div style="display: inline-block; width: 32px; height: 32px; border: 3px solid rgba(94,23,235,0.3); border-top-color: #5E17EB; border-radius: 50%; animation: spin 0.8s linear infinite;"></div>
+            <p style="color: #94a3b8; font-size: 0.85rem; margin-top: 0.75rem;">Querying live branch databases across Nigeria...</p>
+        </div>
+
+        <div id="branchStockList" style="display: none; flex-direction: column; gap: 0.75rem; max-height: 320px; overflow-y: auto; margin-bottom: 1.25rem; padding-right: 0.25rem;">
+            <!-- Dynamically populated branch cards -->
+        </div>
+
+        <!-- Multi-Branch SaaS Upgrade Banner (shown when single-branch / free tier) -->
+        <div id="branchUpgradeBanner" style="display: none; background: linear-gradient(135deg, rgba(94,23,235,0.15), rgba(255,215,0,0.1)); border: 1px solid rgba(255,215,0,0.35); border-radius: 12px; padding: 0.85rem 1rem; margin-bottom: 1.25rem;">
+            <div style="display: flex; align-items: center; justify-content: space-between; gap: 0.75rem;">
+                <div style="font-size: 0.8rem; color: #f8fafc;">
+                    <strong style="color: #FFD700;">⭐ Multi-Branch Sync Pro:</strong>
+                    <span style="color: #cbd5e1; display: block; font-size: 0.75rem;">Link unlimited branches, interstate waybills, and real-time inventory transfers across Nigeria.</span>
+                </div>
+                <a href="{{ route('subscription.index') }}" class="btn btn-primary" style="padding: 0.35rem 0.75rem; font-size: 0.75rem; font-weight: 800; background: #5E17EB; white-space: nowrap;">
+                    Upgrade Plan
+                </a>
+            </div>
+        </div>
+
+        <!-- Footer -->
+        <div style="display: flex; justify-content: space-between; align-items: center; border-top: 1px solid rgba(255,255,255,0.08); padding-top: 1rem;">
+            <a href="{{ route('stock.transfers') }}" class="btn btn-secondary" style="font-size: 0.8rem; padding: 0.5rem 1rem; display: flex; align-items: center; gap: 0.4rem;">
+                🚚 Open Waybill Hub
+            </a>
+            <button type="button" class="btn btn-primary" style="padding: 0.5rem 1.25rem; font-weight: 800; background: #5E17EB; border-color: #5E17EB;" onclick="closeBranchStockModal()">
+                Done
             </button>
         </div>
     </div>
@@ -1247,5 +1310,102 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
 });
+
+// Live In-Store Cross-Branch Stock Lookup
+function checkBranchStock(productId) {
+    const modal = document.getElementById('modalBranchStocks');
+    const loading = document.getElementById('branchStockLoading');
+    const list = document.getElementById('branchStockList');
+    const upgradeBanner = document.getElementById('branchUpgradeBanner');
+
+    modal.style.display = 'flex';
+    loading.style.display = 'block';
+    list.style.display = 'none';
+    upgradeBanner.style.display = 'none';
+
+    fetch(`/pos/product/${productId}/branch-stocks`, {
+        headers: {
+            'Accept': 'application/json',
+            'X-Requested-With': 'XMLHttpRequest'
+        }
+    })
+    .then(res => res.json())
+    .then(data => {
+        loading.style.display = 'none';
+        if (!data.status) {
+            list.innerHTML = `<div style="text-align: center; color: #f87171; padding: 1.5rem 0;">${data.message || 'Error fetching branch stock.'}</div>`;
+            list.style.display = 'flex';
+            return;
+        }
+
+        document.getElementById('branchModalProductName').textContent = data.product.name;
+        document.getElementById('branchModalProductCode').textContent = data.product.code;
+        document.getElementById('branchModalProductPrice').textContent = '₦' + Number(data.product.unit_price).toLocaleString();
+        document.getElementById('branchModalTotalStock').textContent = data.product.total_stock + ' ' + (data.product.pos_unit || 'units');
+
+        if (!data.is_multi_branch_subscribed && data.branch_count <= 1) {
+            upgradeBanner.style.display = 'block';
+        }
+
+        let html = '';
+        data.branches.forEach(branch => {
+            let badgeText = `✓ ${branch.stock} in stock`;
+            let badgeBg = 'rgba(34,197,94,0.15)';
+            let badgeColor = '#4ade80';
+            let badgeBorder = 'rgba(34,197,94,0.3)';
+
+            if (branch.stock <= 0) {
+                badgeText = '❌ 0 (Out of stock)';
+                badgeBg = 'rgba(239,68,68,0.15)';
+                badgeColor = '#f87171';
+                badgeBorder = 'rgba(239,68,68,0.3)';
+            } else if (branch.stock <= branch.reorder_level) {
+                badgeText = `⚠️ ${branch.stock} (Low stock)`;
+                badgeBg = 'rgba(245,158,11,0.15)';
+                badgeColor = '#fbbf24';
+                badgeBorder = 'rgba(245,158,11,0.3)';
+            }
+
+            const currentTag = branch.is_current 
+                ? '<span style="background: rgba(94,23,235,0.25); color: #c084fc; border: 1px solid #5E17EB; padding: 0.15rem 0.4rem; border-radius: 4px; font-size: 0.68rem; font-weight: 800;">THIS COUNTER</span>' 
+                : '';
+
+            const waybillAction = (!branch.is_current && branch.stock > 0)
+                ? `<a href="{{ route('stock.transfers') }}?product_id=${data.product.id}&from_branch=${branch.id}" style="font-size: 0.72rem; font-weight: 700; color: #60a5fa; text-decoration: none; padding: 0.2rem 0.5rem; background: rgba(59,130,246,0.15); border: 1px solid rgba(59,130,246,0.3); border-radius: 6px;">Request Transfer ➔</a>`
+                : '';
+
+            html += `
+            <div style="background: rgba(15,23,42,0.7); border: 1px solid rgba(255,255,255,0.08); border-radius: 14px; padding: 0.85rem 1rem; display: flex; align-items: center; justify-content: space-between; gap: 1rem;">
+                <div style="flex: 1; min-width: 0;">
+                    <div style="display: flex; align-items: center; gap: 0.45rem; margin-bottom: 0.2rem;">
+                        <strong style="color: #f8fafc; font-size: 0.95rem;">${branch.name}</strong>
+                        ${currentTag}
+                    </div>
+                    <div style="font-size: 0.75rem; color: #94a3b8;">
+                        <span>📍 ${branch.address}</span> · <span>📞 ${branch.contact}</span>
+                    </div>
+                </div>
+                <div style="display: flex; flex-direction: column; align-items: flex-end; gap: 0.35rem;">
+                    <span style="font-size: 0.75rem; font-weight: 800; padding: 0.2rem 0.55rem; border-radius: 6px; background: ${badgeBg}; color: ${badgeColor}; border: 1px solid ${badgeBorder};">
+                        ${badgeText}
+                    </span>
+                    ${waybillAction}
+                </div>
+            </div>`;
+        });
+
+        list.innerHTML = html;
+        list.style.display = 'flex';
+    })
+    .catch(err => {
+        loading.style.display = 'none';
+        list.innerHTML = `<div style="text-align: center; color: #f87171; padding: 1.5rem 0;">Failed to load branch stock. Check network connection.</div>`;
+        list.style.display = 'flex';
+    });
+}
+
+function closeBranchStockModal() {
+    document.getElementById('modalBranchStocks').style.display = 'none';
+}
 </script>
 @endpush

@@ -8,6 +8,7 @@ use App\Models\Shop;
 use App\Models\Seller;
 use App\Models\User;
 use App\Models\VendorEmployee;
+use App\Models\PosSubscription;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
@@ -324,6 +325,31 @@ class PosController extends Controller
                         ->where('product_id', $productId)
                         ->decrement('qty', $qty);
 
+                    // [AI] Multi-Branch Stock Tracking: Decrement branch stock
+                    if ($branchId) {
+                        $branchStockExists = DB::table('pos_branch_stocks')
+                            ->where('branch_id', $branchId)
+                            ->where('product_id', $productId)
+                            ->exists();
+
+                        if ($branchStockExists) {
+                            DB::table('pos_branch_stocks')
+                                ->where('branch_id', $branchId)
+                                ->where('product_id', $productId)
+                                ->decrement('stock_quantity', $qty);
+                        } else {
+                            DB::table('pos_branch_stocks')->insert([
+                                'seller_id'      => $sellerId,
+                                'branch_id'      => $branchId,
+                                'product_id'     => $productId,
+                                'stock_quantity' => max(0, (int)$product->current_stock - $qty),
+                                'reorder_level'  => (int)($product->pos_reorder_level ?? 5),
+                                'created_at'     => now(),
+                                'updated_at'     => now(),
+                            ]);
+                        }
+                    }
+
                     // [AI] POS Inventory log
                     DB::table('pos_inventory_logs')->insert([
                         'seller_id'      => $sellerId,
@@ -614,5 +640,104 @@ class PosController extends Controller
         } catch (\Throwable $e) {
             return back()->withErrors(['error' => $e->getMessage()]);
         }
+    }
+
+    /**
+     * [AI] Fetch real-time stock levels across all branches for a given product.
+     * Scoped to the authenticated seller (Zero Cross-Tenant Bleed).
+     *
+     * @param Request $request
+     * @param int $productId
+     * @return \Illuminate\Http\JsonResponse
+     */
+    public function getBranchStocks(Request $request, int $productId)
+    {
+        $sellerId = $this->resolveAuthSellerId();
+        $activeBranchId = $this->resolveActiveBranchId($request, $sellerId);
+
+        $product = Product::where('id', $productId)
+            ->where(function ($q) use ($sellerId) {
+                $q->where('user_id', $sellerId);
+                if (Auth::guard('admin')->check()) {
+                    $q->orWhere('added_by', 'admin')->orWhere('status', 1);
+                }
+            })
+            ->first();
+
+        if (!$product) {
+            return response()->json([
+                'status' => false,
+                'message' => 'Product not found or unauthorized access.'
+            ], 404);
+        }
+
+        $branches = Shop::where('seller_id', $sellerId)->get();
+        if ($branches->isEmpty()) {
+            $branches = collect([
+                (object)[
+                    'id' => $activeBranchId ?: 1,
+                    'name' => 'Main Store Register',
+                    'address' => 'Store Counter',
+                    'contact' => 'N/A'
+                ]
+            ]);
+        }
+
+        $isMultiBranchSubscribed = (bool) PosSubscription::where('seller_id', $sellerId)
+            ->where('status', 'active')
+            ->exists();
+
+        $branchData = [];
+        $totalCrossBranchStock = 0;
+
+        foreach ($branches as $branch) {
+            $branchStockRow = DB::table('pos_branch_stocks')
+                ->where('branch_id', $branch->id)
+                ->where('product_id', $productId)
+                ->first();
+
+            $qty = 0;
+            if ($branchStockRow) {
+                $qty = (int) $branchStockRow->stock_quantity;
+            } else {
+                // If single branch or unallocated, default primary branch to product's current stock
+                if ($branch->id == $activeBranchId || count($branches) === 1 || ($branch->is_primary_branch ?? false)) {
+                    $qty = (int) $product->current_stock;
+                } else {
+                    $qty = 0;
+                }
+            }
+
+            $totalCrossBranchStock += $qty;
+
+            $branchData[] = [
+                'id' => $branch->id,
+                'name' => $branch->name,
+                'address' => $branch->address ?? 'Main Branch',
+                'contact' => $branch->contact ?? 'N/A',
+                'is_current' => ($branch->id == $activeBranchId),
+                'stock' => $qty,
+                'reorder_level' => (int) ($product->pos_reorder_level ?? 5),
+                'status' => $qty > 5 ? 'in_stock' : ($qty > 0 ? 'low_stock' : 'out_of_stock')
+            ];
+        }
+
+        return response()->json([
+            'status' => true,
+            'product' => [
+                'id' => $product->id,
+                'name' => $product->name,
+                'code' => $product->code ?? ('PRD-' . $product->id),
+                'pos_barcode' => $product->pos_barcode ?? $product->code,
+                'unit_price' => (float) $product->unit_price,
+                'pos_wholesale_price' => (float) ($product->pos_wholesale_price ?? $product->unit_price),
+                'total_stock' => (int) $product->current_stock,
+                'pos_unit' => $product->pos_unit ?? ($product->unit ?? 'pc'),
+            ],
+            'active_branch_id' => $activeBranchId,
+            'is_multi_branch_subscribed' => $isMultiBranchSubscribed,
+            'branch_count' => count($branches),
+            'branches' => $branchData,
+        ]);
     }
 }

@@ -252,8 +252,52 @@ class StockController extends Controller
             // [AI] Pessimistic lock prevents race-condition transfers
             Product::where('id', $productId)->where('user_id', $sellerId)->lockForUpdate()->first();
 
-            // Note: since we use current_stock (total across branches) in unified DB,
-            // we simply log the transfer. Branch-level stock uses pos_inventory_logs.
+            // [AI] Deduct from source branch stock
+            $fromStock = DB::table('pos_branch_stocks')
+                ->where('branch_id', $fromBranch->id)
+                ->where('product_id', $productId)
+                ->first();
+
+            if ($fromStock) {
+                DB::table('pos_branch_stocks')
+                    ->where('branch_id', $fromBranch->id)
+                    ->where('product_id', $productId)
+                    ->decrement('stock_quantity', min($qty, (int)$fromStock->stock_quantity));
+            } else {
+                DB::table('pos_branch_stocks')->insert([
+                    'seller_id'      => $sellerId,
+                    'branch_id'      => $fromBranch->id,
+                    'product_id'     => $productId,
+                    'stock_quantity' => max(0, (int)$product->current_stock - $qty),
+                    'reorder_level'  => (int)($product->pos_reorder_level ?? 5),
+                    'created_at'     => now(),
+                    'updated_at'     => now(),
+                ]);
+            }
+
+            // [AI] Increment destination branch stock
+            $toStock = DB::table('pos_branch_stocks')
+                ->where('branch_id', $toBranch->id)
+                ->where('product_id', $productId)
+                ->first();
+
+            if ($toStock) {
+                DB::table('pos_branch_stocks')
+                    ->where('branch_id', $toBranch->id)
+                    ->where('product_id', $productId)
+                    ->increment('stock_quantity', $qty);
+            } else {
+                DB::table('pos_branch_stocks')->insert([
+                    'seller_id'      => $sellerId,
+                    'branch_id'      => $toBranch->id,
+                    'product_id'     => $productId,
+                    'stock_quantity' => $qty,
+                    'reorder_level'  => (int)($product->pos_reorder_level ?? 5),
+                    'created_at'     => now(),
+                    'updated_at'     => now(),
+                ]);
+            }
+
             DB::table('pos_inventory_logs')->insert([[
                 'seller_id'       => $sellerId,
                 'branch_id'       => $fromBranch->id,
