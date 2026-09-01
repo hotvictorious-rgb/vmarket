@@ -10,8 +10,8 @@
         <p style="color: var(--text-muted); font-size: 0.9rem; margin-top: 0.25rem;">Real-time health, tenant subscriptions, and live pulse across all merchant stores.</p>
     </div>
     <div style="display: flex; gap: 0.75rem;">
-        <a href="{{ route('saas.settings') }}" class="btn btn-primary">⚙️ Edit Pricing & Paystack</a>
-        <a href="{{ route('saas.tenants') }}" class="btn btn-success">➕ Onboard Company</a>
+        <a href="{{ route('pos.saas.settings') }}" class="btn btn-primary">⚙️ Edit Pricing & Paystack</a>
+        <a href="{{ route('pos.saas.tenants') }}" class="btn btn-success">➕ Onboard Company</a>
     </div>
 </div>
 
@@ -52,7 +52,7 @@
                 <h3 style="font-size: 1.1rem; font-weight: 800; color: #fff;">📡 Live Platform Pulse</h3>
                 <p style="font-size: 0.75rem; color: var(--text-muted);">Real-time stream of actions across all merchant stores</p>
             </div>
-            <a href="{{ route('saas.activity') }}" class="btn" style="background: rgba(99,102,241,0.15); color: #818cf8; font-size: 0.8rem; padding: 0.4rem 0.8rem;">View All →</a>
+            <a href="{{ route('pos.saas.activity') }}" class="btn" style="background: rgba(99,102,241,0.15); color: #818cf8; font-size: 0.8rem; padding: 0.4rem 0.8rem;">View All →</a>
         </div>
 
         <div style="display: flex; flex-direction: column; gap: 0.65rem; max-height: 480px; overflow-y: auto;">
@@ -88,7 +88,7 @@
                 <h3 style="font-size: 1.1rem; font-weight: 800; color: #fff;">🏢 Onboarded Merchants</h3>
                 <p style="font-size: 0.75rem; color: var(--text-muted);">Active companies and subscription statuses</p>
             </div>
-            <a href="{{ route('saas.tenants') }}" class="btn" style="background: rgba(16,185,129,0.15); color: #34d399; font-size: 0.8rem; padding: 0.4rem 0.8rem;">Manage Tenants →</a>
+            <a href="{{ route('pos.saas.tenants') }}" class="btn" style="background: rgba(16,185,129,0.15); color: #34d399; font-size: 0.8rem; padding: 0.4rem 0.8rem;">Manage Tenants →</a>
         </div>
 
         <div class="table-responsive">

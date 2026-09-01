@@ -85,7 +85,7 @@
             <button class="btn btn-warning" onclick="openModal('modalProcessReturn')">
                 🔄 Process New Return
             </button>
-            <a href="{{ route('transactions.index', ['tab' => 'returns']) }}" class="btn btn-secondary">
+            <a href="{{ route('pos.transactions.index', ['tab' => 'returns']) }}" class="btn btn-secondary">
                 📜 Ledgers Hub
             </a>
         </div>

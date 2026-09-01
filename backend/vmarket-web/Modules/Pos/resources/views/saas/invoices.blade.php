@@ -78,13 +78,13 @@
                             <span class="badge badge-active">✓ PAID</span>
                         @elseif($inv->status === 'PENDING_APPROVAL')
                             <div style="display: flex; gap: 0.35rem; align-items: center;">
-                                <form method="POST" action="{{ route('saas.invoices.approve', $inv->id) }}">
+                                <form method="POST" action="{{ route('pos.saas.invoices.approve', $inv->id) }}">
                                     @csrf
                                     <button type="submit" class="btn btn-success" style="font-size: 0.75rem; padding: 0.35rem 0.65rem;" title="Approve Bank Transfer & Activate PRO">
                                         ✓ Approve
                                     </button>
                                 </form>
-                                <form method="POST" action="{{ route('saas.invoices.reject', $inv->id) }}">
+                                <form method="POST" action="{{ route('pos.saas.invoices.reject', $inv->id) }}">
                                     @csrf
                                     <button type="submit" class="btn btn-danger" style="font-size: 0.75rem; padding: 0.35rem 0.65rem;" title="Reject">
                                         ✕

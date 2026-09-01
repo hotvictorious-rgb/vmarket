@@ -82,7 +82,7 @@
             </p>
         </div>
         <div style="display: flex; gap: 0.5rem;">
-            <a href="{{ route('transactions.index', ['tab' => 'debts']) }}" class="btn btn-secondary">
+            <a href="{{ route('pos.transactions.index', ['tab' => 'debts']) }}" class="btn btn-secondary">
                 📜 Full Debts Ledger
             </a>
             <a href="{{ route('pos.index') }}" class="btn btn-primary">
@@ -109,14 +109,14 @@
 
     <!-- Multi-Criteria Filter Card -->
     <div class="filter-card">
-        <form method="GET" action="{{ route('debts.index') }}">
+        <form method="GET" action="{{ route('pos.debts.index') }}">
             <!-- Quick Debt Brackets -->
             <div style="display: flex; gap: 0.4rem; margin-bottom: 0.85rem; flex-wrap: wrap; align-items: center;">
                 <span style="font-size: 0.75rem; font-weight: 800; color: var(--text-muted); text-transform: uppercase;">Debt Bracket:</span>
-                <a href="{{ route('debts.index', array_merge(request()->except('debt_bracket'), ['debt_bracket' => 'ALL'])) }}" class="date-pill {{ $debtBracket === 'ALL' ? 'active' : '' }}">All Debtors</a>
-                <a href="{{ route('debts.index', array_merge(request()->except('debt_bracket'), ['debt_bracket' => 'HIGH'])) }}" class="date-pill {{ $debtBracket === 'HIGH' ? 'active' : '' }}" style="{{ $debtBracket === 'HIGH' ? 'background: #dc2626; border-color: #ef4444;' : '' }}">🔴 High Debt (≥ ₦100,000)</a>
-                <a href="{{ route('debts.index', array_merge(request()->except('debt_bracket'), ['debt_bracket' => 'MEDIUM'])) }}" class="date-pill {{ $debtBracket === 'MEDIUM' ? 'active' : '' }}">🟠 Medium Debt (₦20k - ₦100k)</a>
-                <a href="{{ route('debts.index', array_merge(request()->except('debt_bracket'), ['debt_bracket' => 'LOW'])) }}" class="date-pill {{ $debtBracket === 'LOW' ? 'active' : '' }}">🟢 Low Debt (< ₦20,000)</a>
+                <a href="{{ route('pos.debts.index', array_merge(request()->except('debt_bracket'), ['debt_bracket' => 'ALL'])) }}" class="date-pill {{ $debtBracket === 'ALL' ? 'active' : '' }}">All Debtors</a>
+                <a href="{{ route('pos.debts.index', array_merge(request()->except('debt_bracket'), ['debt_bracket' => 'HIGH'])) }}" class="date-pill {{ $debtBracket === 'HIGH' ? 'active' : '' }}" style="{{ $debtBracket === 'HIGH' ? 'background: #dc2626; border-color: #ef4444;' : '' }}">🔴 High Debt (≥ ₦100,000)</a>
+                <a href="{{ route('pos.debts.index', array_merge(request()->except('debt_bracket'), ['debt_bracket' => 'MEDIUM'])) }}" class="date-pill {{ $debtBracket === 'MEDIUM' ? 'active' : '' }}">🟠 Medium Debt (₦20k - ₦100k)</a>
+                <a href="{{ route('pos.debts.index', array_merge(request()->except('debt_bracket'), ['debt_bracket' => 'LOW'])) }}" class="date-pill {{ $debtBracket === 'LOW' ? 'active' : '' }}">🟢 Low Debt (< ₦20,000)</a>
             </div>
 
             <div class="grid-2" style="gap: 0.75rem;">
@@ -140,7 +140,7 @@
                 <button type="submit" class="btn btn-primary" style="padding: 0.65rem 1.25rem;">
                     🔍 Apply Filters
                 </button>
-                <a href="{{ route('debts.index') }}" class="btn btn-secondary" style="padding: 0.65rem 1rem;">
+                <a href="{{ route('pos.debts.index') }}" class="btn btn-secondary" style="padding: 0.65rem 1rem;">
                     Reset
                 </a>
             </div>

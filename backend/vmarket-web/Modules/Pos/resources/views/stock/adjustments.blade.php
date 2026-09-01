@@ -91,7 +91,7 @@
                     👑 Executive Observer
                 </span>
             @endif
-            <a href="{{ route('stock.index') }}" class="btn btn-secondary">
+            <a href="{{ route('pos.stock.index') }}" class="btn btn-secondary">
                 📦 Stock Hub
             </a>
         </div>
@@ -111,15 +111,15 @@
 
     <!-- Multi-Criteria Filter Card -->
     <div class="filter-card">
-        <form method="GET" action="{{ route('stock.adjustments') }}">
+        <form method="GET" action="{{ route('pos.stock.adjustments') }}">
             <!-- Quick Date Pills -->
             <div style="display: flex; gap: 0.4rem; margin-bottom: 0.85rem; flex-wrap: wrap; align-items: center;">
                 <span style="font-size: 0.75rem; font-weight: 800; color: var(--text-muted); text-transform: uppercase;">Quick Dates:</span>
-                <a href="{{ route('stock.adjustments', array_merge(request()->except('date_preset', 'from_date', 'to_date'), ['date_preset' => 'ALL'])) }}" class="date-pill {{ $datePreset === 'ALL' && !request('from_date') ? 'active' : '' }}">All Time</a>
-                <a href="{{ route('stock.adjustments', array_merge(request()->except('date_preset', 'from_date', 'to_date'), ['date_preset' => 'TODAY'])) }}" class="date-pill {{ $datePreset === 'TODAY' ? 'active' : '' }}">Today</a>
-                <a href="{{ route('stock.adjustments', array_merge(request()->except('date_preset', 'from_date', 'to_date'), ['date_preset' => 'YESTERDAY'])) }}" class="date-pill {{ $datePreset === 'YESTERDAY' ? 'active' : '' }}">Yesterday</a>
-                <a href="{{ route('stock.adjustments', array_merge(request()->except('date_preset', 'from_date', 'to_date'), ['date_preset' => 'THIS_WEEK'])) }}" class="date-pill {{ $datePreset === 'THIS_WEEK' ? 'active' : '' }}">This Week</a>
-                <a href="{{ route('stock.adjustments', array_merge(request()->except('date_preset', 'from_date', 'to_date'), ['date_preset' => 'THIS_MONTH'])) }}" class="date-pill {{ $datePreset === 'THIS_MONTH' ? 'active' : '' }}">This Month</a>
+                <a href="{{ route('pos.stock.adjustments', array_merge(request()->except('date_preset', 'from_date', 'to_date'), ['date_preset' => 'ALL'])) }}" class="date-pill {{ $datePreset === 'ALL' && !request('from_date') ? 'active' : '' }}">All Time</a>
+                <a href="{{ route('pos.stock.adjustments', array_merge(request()->except('date_preset', 'from_date', 'to_date'), ['date_preset' => 'TODAY'])) }}" class="date-pill {{ $datePreset === 'TODAY' ? 'active' : '' }}">Today</a>
+                <a href="{{ route('pos.stock.adjustments', array_merge(request()->except('date_preset', 'from_date', 'to_date'), ['date_preset' => 'YESTERDAY'])) }}" class="date-pill {{ $datePreset === 'YESTERDAY' ? 'active' : '' }}">Yesterday</a>
+                <a href="{{ route('pos.stock.adjustments', array_merge(request()->except('date_preset', 'from_date', 'to_date'), ['date_preset' => 'THIS_WEEK'])) }}" class="date-pill {{ $datePreset === 'THIS_WEEK' ? 'active' : '' }}">This Week</a>
+                <a href="{{ route('pos.stock.adjustments', array_merge(request()->except('date_preset', 'from_date', 'to_date'), ['date_preset' => 'THIS_MONTH'])) }}" class="date-pill {{ $datePreset === 'THIS_MONTH' ? 'active' : '' }}">This Month</a>
             </div>
 
             <div class="grid-4" style="gap: 0.75rem;">
@@ -163,7 +163,7 @@
                     🔍 Apply Filters
                 </button>
 
-                <a href="{{ route('stock.adjustments') }}" class="btn btn-secondary" style="padding: 0.65rem 1rem;">
+                <a href="{{ route('pos.stock.adjustments') }}" class="btn btn-secondary" style="padding: 0.65rem 1rem;">
                     Reset
                 </a>
             </div>
@@ -243,7 +243,7 @@
                 Deducts unsellable items from the physical closing stock count.
             </p>
 
-            <form id="adjustmentForm" method="POST" action="{{ route('stock.adjustments.record') }}">
+            <form id="adjustmentForm" method="POST" action="{{ route('pos.stock.adjustments.record') }}">
                 @csrf
 
                 <div class="form-group">

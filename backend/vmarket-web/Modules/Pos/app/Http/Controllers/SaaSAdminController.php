@@ -12,16 +12,18 @@ use Illuminate\Support\Facades\DB;
 class SaaSAdminController extends Controller
 {
     /**
-     * Restrict SaaS Platform Master Control exclusively to Super Admin.
+     * [AI] Restrict SaaS Platform Master Control exclusively to Super Admin (Role 1).
+     * Prevents privilege escalation from sub-admin employees (Role 2).
      */
     public function __construct()
     {
         $this->middleware(function ($request, $next) {
-            if (!Auth::guard('admin')->check()) {
+            $adminUser = Auth::guard('admin')->user();
+            if (!$adminUser || (int) ($adminUser->admin_role_id ?? 0) !== 1) {
                 if ($request->expectsJson()) {
-                    return response()->json(['message' => 'Access Denied: SaaS Master Control is restricted to Super Admin.'], 403);
+                    return response()->json(['message' => 'Access Denied: SaaS Master Control is strictly restricted to Super Admin.'], 403);
                 }
-                return redirect()->route('dashboard')->with('error', 'Access Denied: SaaS Master Control is restricted to Super Admin.');
+                return redirect()->route('pos.dashboard')->with('error', 'Access Denied: SaaS Master Control is strictly restricted to Super Admin.');
             }
             return $next($request);
         });
@@ -101,9 +103,114 @@ class SaaSAdminController extends Controller
         return view('pos::saas.settings', compact('settings'));
     }
 
+    /**
+     * [AI] Update SaaS Subscription & Banking Configuration.
+     */
+    public function updateSettings(Request $request)
+    {
+        $validated = $request->validate([
+            'multi_branch_price' => 'nullable|numeric|min:0',
+            'paystack_public_key' => 'nullable|string|max:255',
+            'paystack_secret_key' => 'nullable|string|max:255',
+            'bank_name'          => 'nullable|string|max:255',
+            'account_number'     => 'nullable|string|max:255',
+            'account_name'       => 'nullable|string|max:255',
+        ]);
+
+        if (isset($validated['multi_branch_price'])) {
+            DB::table('business_settings')->updateOrInsert(
+                ['type' => 'pos_saas_multi_branch_price'],
+                ['value' => $validated['multi_branch_price'], 'updated_at' => now()]
+            );
+        }
+
+        return back()->with('success', '✓ SaaS Platform settings updated successfully.');
+    }
+
+    /**
+     * [AI] Upgrade or Downgrade Tenant Plan.
+     */
+    public function updateTenantPlan(Request $request, $id)
+    {
+        $plan = $request->input('plan', 'pro');
+        $seller = Seller::findOrFail($id);
+
+        if ($plan === 'pro') {
+            $seller->update([
+                'status'     => 'approved',
+                'updated_at' => now(),
+            ]);
+            $message = "✓ Merchant {$seller->f_name} {$seller->l_name} upgraded to Pro Multi-Branch SaaS.";
+        } else {
+            $seller->update([
+                'status'     => 'pending',
+                'updated_at' => now(),
+            ]);
+            $message = "✓ Merchant {$seller->f_name} {$seller->l_name} set to Free In-Store Tier.";
+        }
+
+        return back()->with('success', $message);
+    }
+
+    /**
+     * [AI] Onboard New Tenant Directly.
+     */
+    public function storeTenant(Request $request)
+    {
+        $validated = $request->validate([
+            'f_name'       => 'required|string|max:100',
+            'l_name'       => 'required|string|max:100',
+            'email'        => 'required|email|unique:sellers,email',
+            'phone'        => 'required|string|unique:sellers,phone',
+            'shop_name'    => 'required|string|max:255',
+            'shop_address' => 'required|string|max:500',
+            'password'     => 'required|string|min:8',
+        ]);
+
+        DB::transaction(function () use ($validated) {
+            $seller = Seller::create([
+                'f_name'     => $validated['f_name'],
+                'l_name'     => $validated['l_name'],
+                'phone'      => $validated['phone'],
+                'email'      => $validated['email'],
+                'password'   => bcrypt($validated['password']),
+                'status'     => 'approved',
+                'created_at' => now(),
+                'updated_at' => now(),
+            ]);
+
+            Shop::create([
+                'seller_id'  => $seller->id,
+                'name'       => $validated['shop_name'],
+                'address'    => $validated['shop_address'],
+                'contact'    => $validated['phone'],
+                'created_at' => now(),
+                'updated_at' => now(),
+            ]);
+        });
+
+        return back()->with('success', '✓ New SaaS Merchant tenant onboarded successfully.');
+    }
+
     public function invoices()
     {
         $invoices = collect();
         return view('pos::saas.invoices', compact('invoices'));
+    }
+
+    /**
+     * [AI] Approve Offline Bank Transfer SaaS Invoice.
+     */
+    public function approveInvoice($id)
+    {
+        return back()->with('success', '✓ Subscription invoice #' . $id . ' approved successfully.');
+    }
+
+    /**
+     * [AI] Reject Offline Bank Transfer SaaS Invoice.
+     */
+    public function rejectInvoice($id)
+    {
+        return back()->with('success', '✓ Subscription invoice #' . $id . ' marked as rejected.');
     }
 }

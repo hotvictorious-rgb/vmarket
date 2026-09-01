@@ -123,7 +123,7 @@
                         ✏️ Edit / Reassign
                     </button>
 
-                    <form id="toggleForm_{{ $u->id }}" method="POST" action="{{ route('users.toggle', $u->id) }}" style="flex: 1;">
+                    <form id="toggleForm_{{ $u->id }}" method="POST" action="{{ route('pos.users.toggle', $u->id) }}" style="flex: 1;">
                         @csrf
                         <button type="button" class="btn {{ $u->disabled ? 'btn-success' : 'btn-danger' }} btn-block" style="padding: 0.5rem; font-size: 0.8rem;" onclick="confirmToggleWorker('{{ $u->id }}', '{{ addslashes($u->name) }}', {{ $u->disabled ? 'true' : 'false' }}, '{{ addslashes($u->role) }}')">
                             {{ $u->disabled ? '🔓 Unlock' : '🔒 Lock' }}
@@ -207,7 +207,7 @@
                 Set up a login for cashiers, storekeepers, or branch managers.
             </p>
 
-            <form id="addUserForm" method="POST" action="{{ route('users.store') }}">
+            <form id="addUserForm" method="POST" action="{{ route('pos.users.store') }}">
                 @csrf
                 <div class="form-group">
                     <label>Full Name</label>

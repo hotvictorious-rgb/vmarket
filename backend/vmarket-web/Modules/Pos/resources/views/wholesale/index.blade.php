@@ -183,7 +183,7 @@
 
 <!-- Interactive Search & Filtering Toolbar -->
 <div class="filter-card">
-    <form method="GET" action="{{ route('wholesale.index') }}" class="filter-grid">
+    <form method="GET" action="{{ route('pos.wholesale.index') }}" class="filter-grid">
         <div class="form-group" style="margin-bottom: 0;">
             <label style="font-size: 0.75rem;">Wholesaler / Ref Search</label>
             <input type="text" name="search" value="{{ $search }}" placeholder="Search client name, phone or ref...">
@@ -225,7 +225,7 @@
             <button type="submit" class="btn btn-primary" style="padding: 0.55rem 1rem; font-size: 0.85rem; font-weight: 700;">
                 ⚡ Apply Filters
             </button>
-            <a href="{{ route('wholesale.index') }}" class="btn btn-secondary" style="padding: 0.55rem 0.85rem; font-size: 0.85rem;">
+            <a href="{{ route('pos.wholesale.index') }}" class="btn btn-secondary" style="padding: 0.55rem 0.85rem; font-size: 0.85rem;">
                 Reset
             </a>
         </div>
@@ -316,7 +316,7 @@
                             </button>
 
                             @if(!$isPending)
-                            <a href="{{ route('wholesale.invoice', $d->id) }}" target="_blank" class="btn btn-secondary" style="padding: 0.35rem 0.65rem; font-size: 0.78rem; border-color: #3b82f6; color: #93c5fd;" title="Print Official Commercial Invoice">
+                            <a href="{{ route('pos.wholesale.invoice', $d->id) }}" target="_blank" class="btn btn-secondary" style="padding: 0.35rem 0.65rem; font-size: 0.78rem; border-color: #3b82f6; color: #93c5fd;" title="Print Official Commercial Invoice">
                                 📄 Invoice
                             </a>
                             @endif

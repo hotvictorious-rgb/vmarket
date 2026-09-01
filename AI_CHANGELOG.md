@@ -7,6 +7,22 @@ Always append your completed tasks here in chronological order at the top. Forma
 `### [YYYY-MM-DD HH:MM UTC] <Feature / Fix Title> [<Component Scope>]`
 Include the specific app/component modified and bullet points detailing the exact technical changes.
 
+### [2026-09-01 16:45 UTC] POS Module Full Route Standardization, Legacy View Cleanup & Super Admin Role Isolation [pos] [security] [routing]
+
+* **Component:** `Modules/Pos/routes/web.php`, `Modules/Pos/resources/views/*`, `app/Http/Middleware/PosAccessMiddleware.php`, `Modules/Pos/app/Http/Controllers/SaaSAdminController.php`
+* **Route Standardization & Dead Code Cleanup:**
+  - **Eliminated Fake Alias Endpoints:** Removed 25+ redundant `-alias` and `-unprefixed` route endpoints (`pos/products-index-alias`, `pos/warehouses-unprefixed`, `pos/stock-alias`, etc.).
+  - **Standardized Route Catalogue:** Unified all POS routes under the canonical `pos.*` namespace (84 total routes covering Dashboard, Visual Register, Products, Warehouses, Physical Stock, Reports, Debts, Wholesale, Transactions, Workers/Roles, System Settings, Subscription, SaaS Master Control, and User Guide).
+  - **Purged Orphaned Legacy Views:** Deleted legacy standalone Hysam installer directory (`Modules/Pos/resources/views/installer/`), standalone `welcome.blade.php`, and unused `auth/` templates.
+  - **Standardized 24 Blade Views:** Updated all 24 POS Blade templates and layout active navigation indicators to use canonical `pos.*` route helpers.
+* **Security & Privilege Isolation (Role 1 vs. Role 2):**
+  - **PosAccessMiddleware:** Fixed privilege escalation where any authenticated admin was granted `is_super_admin = true`. Now strictly checks `((int) ($adminUser->admin_role_id ?? 0) === 1)` so only Super Admin (Role 1) receives `is_super_admin = true` and `user_role = 'admin'`. Sub-admin employees (`admin_role_id > 1`, Role 2) are properly assigned `is_super_admin = false` and `user_role = 'super_admin_employee'`.
+  - **SaaSAdminController:** Updated constructor gate to strictly assert `admin_role_id === 1`, denying sub-admin employees from unauthorized SaaS tenant and billing access.
+* **Verification:**
+  - `php test_all_pos_routes_and_views.php` → **84/84 PASS (0 FAIL)**
+  - `php test_super_admin_role_discrimination.php` → **AUDIT PASSED (0 privilege escalation)**
+  - `php test_admin_nav_routes.php` → **76/76 PASS (0 broken admin nav routes)**
+
 ### [2026-09-01 13:50 UTC] Fix Delivery Hub & POS Hub Topbar Buttons Pointing to Wrong URLs + Full Nav Audit [admin] [routing]
 
 * **Component:** `resources/views/layouts/admin/partials/_header.blade.php`

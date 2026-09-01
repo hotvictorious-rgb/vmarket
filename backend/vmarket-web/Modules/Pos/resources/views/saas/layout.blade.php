@@ -228,28 +228,28 @@
 
         <nav class="saas-menu">
             <div class="menu-cat">Executive Radar</div>
-            <a href="{{ route('saas.dashboard') }}" class="saas-nav {{ request()->routeIs('saas.dashboard') ? 'active' : '' }}">
+            <a href="{{ route('pos.saas.dashboard') }}" class="saas-nav {{ request()->routeIs('saas.dashboard') ? 'active' : '' }}">
                 <span>📊</span> <span>Master Overview</span>
             </a>
-            <a href="{{ route('saas.activity') }}" class="saas-nav {{ request()->routeIs('saas.activity') ? 'active' : '' }}">
+            <a href="{{ route('pos.saas.activity') }}" class="saas-nav {{ request()->routeIs('saas.activity') ? 'active' : '' }}">
                 <span>📡</span> <span>Live Platform Pulse</span>
             </a>
 
             <div class="menu-cat">Tenants & Businesses</div>
-            <a href="{{ route('saas.tenants') }}" class="saas-nav {{ request()->routeIs('saas.tenants') ? 'active' : '' }}">
+            <a href="{{ route('pos.saas.tenants') }}" class="saas-nav {{ request()->routeIs('saas.tenants') ? 'active' : '' }}">
                 <span>🏢</span> <span>Companies & Shops</span>
             </a>
-            <a href="{{ route('saas.invoices') }}" class="saas-nav {{ request()->routeIs('saas.invoices') ? 'active' : '' }}">
+            <a href="{{ route('pos.saas.invoices') }}" class="saas-nav {{ request()->routeIs('saas.invoices') ? 'active' : '' }}">
                 <span>💳</span> <span>Paystack Billing Ledger</span>
             </a>
 
             <div class="menu-cat">Platform Configuration</div>
-            <a href="{{ route('saas.settings') }}" class="saas-nav {{ request()->routeIs('saas.settings') ? 'active' : '' }}">
+            <a href="{{ route('pos.saas.settings') }}" class="saas-nav {{ request()->routeIs('saas.settings') ? 'active' : '' }}">
                 <span>⚙️</span> <span>SaaS & Pricing Config</span>
             </a>
 
             <div class="menu-cat">POS Store Navigation</div>
-            <a href="{{ route('dashboard') }}" class="saas-nav" style="color: #38bdf8;">
+            <a href="{{ route('pos.dashboard') }}" class="saas-nav" style="color: #38bdf8;">
                 <span>🏪</span> <span>Go to Store POS →</span>
             </a>
         </nav>

@@ -545,7 +545,7 @@
 
         <nav class="sidebar-menu">
             <div class="menu-category">Main Operations</div>
-            <a href="{{ route('dashboard') }}" class="nav-item {{ request()->routeIs('dashboard') ? 'active' : '' }}">
+            <a href="{{ route('pos.dashboard') }}" class="nav-item {{ request()->routeIs('pos.dashboard*') ? 'active' : '' }}">
                 <span>🏠</span> <span>{{ $currentRole === 'cashier' ? 'My Shift Summary' : ($currentRole === 'storekeeper' ? 'Stock Hub' : 'Dashboard') }}</span>
             </a>
 
@@ -557,44 +557,44 @@
             @endif
 
             <div class="menu-category">Inventory & Stock</div>
-            <a href="{{ route('products.index') }}" class="nav-item {{ request()->routeIs('products.*') ? 'active' : '' }}">
+            <a href="{{ route('pos.products.index') }}" class="nav-item {{ request()->routeIs('pos.products.*') ? 'active' : '' }}">
                 <span>🛍️</span> <span>Products Catalog</span>
             </a>
 
             @if(in_array($currentRole, ['admin', 'manager', 'sales_stock', 'storekeeper', 'viewer']))
-                <a href="{{ route('stock.index') }}" class="nav-item {{ request()->routeIs('stock.index') ? 'active' : '' }}">
+                <a href="{{ route('pos.stock.index') }}" class="nav-item {{ request()->routeIs('pos.stock.index') ? 'active' : '' }}">
                     <span>📦</span> <span>Stock In / Out</span>
                 </a>
-                <a href="{{ route('stock.transfers') }}" class="nav-item {{ request()->routeIs('stock.transfers') ? 'active' : '' }}">
+                <a href="{{ route('pos.stock.transfers') }}" class="nav-item {{ request()->routeIs('pos.stock.transfers') ? 'active' : '' }}">
                     <span>🚚</span> <span>Shop Transfers</span>
                 </a>
-                <a href="{{ route('stock.unsupplied') }}" class="nav-item {{ request()->routeIs('stock.unsupplied') ? 'active' : '' }}">
+                <a href="{{ route('pos.stock.unsupplied') }}" class="nav-item {{ request()->routeIs('pos.stock.unsupplied') ? 'active' : '' }}">
                     <span>⏳</span> <span>Pickup Orders</span>
                 </a>
-                <a href="{{ route('stock.adjustments') }}" class="nav-item {{ request()->routeIs('stock.adjustments') ? 'active' : '' }}">
+                <a href="{{ route('pos.stock.adjustments') }}" class="nav-item {{ request()->routeIs('pos.stock.adjustments') ? 'active' : '' }}">
                     <span>📉</span> <span>Damaged Goods</span>
                 </a>
             @endif
 
             <div class="menu-category">Ledgers & History</div>
-            <a href="{{ route('transactions.index') }}" class="nav-item {{ request()->routeIs('transactions.*') ? 'active' : '' }}">
+            <a href="{{ route('pos.transactions.index') }}" class="nav-item {{ request()->routeIs('pos.transactions.*') ? 'active' : '' }}">
                 <span>📜</span> <span>{{ $currentRole === 'cashier' ? 'My Sales History' : 'History & Ledgers' }}</span>
             </a>
 
             @if(in_array($currentRole, ['admin', 'manager', 'sales_stock', 'cashier']))
-                <a href="{{ route('pos.returns') }}" class="nav-item {{ request()->routeIs('pos.returns') ? 'active' : '' }}">
+                <a href="{{ route('pos.returns') }}" class="nav-item {{ request()->routeIs('pos.returns*') ? 'active' : '' }}">
                     <span>🔄</span> <span>Returns & Refunds</span>
                 </a>
             @endif
 
             @if(in_array($currentRole, ['admin', 'manager', 'sales_stock', 'viewer']))
-                <a href="{{ route('debts.index') }}" class="nav-item {{ request()->routeIs('debts.*') ? 'active' : '' }}">
+                <a href="{{ route('pos.debts.index') }}" class="nav-item {{ request()->routeIs('pos.debts.*') ? 'active' : '' }}">
                     <span>💳</span> <span>Customer Debts</span>
                 </a>
             @endif
 
             @if(in_array($currentRole, ['admin', 'viewer']))
-                <a href="{{ route('wholesale.index') }}" class="nav-item {{ request()->routeIs('wholesale.*') ? 'active' : '' }}">
+                <a href="{{ route('pos.wholesale.index') }}" class="nav-item {{ request()->routeIs('pos.wholesale.*') ? 'active' : '' }}">
                     <span>📦</span> <span>Wholesale Hub</span>
                 </a>
             @endif
@@ -602,27 +602,27 @@
             @if(in_array($currentRole, ['admin', 'manager', 'viewer']))
                 <div class="menu-category">Management & Reports</div>
                 @if(in_array($currentRole, ['admin', 'viewer']))
-                    <a href="{{ route('auditor.index') }}" class="nav-item auditor-btn {{ request()->routeIs('auditor.*') ? 'active' : '' }}">
+                    <a href="{{ route('pos.auditor.index') }}" class="nav-item auditor-btn {{ request()->routeIs('pos.auditor.*') ? 'active' : '' }}">
                         <span>🚨</span> <span>Auditor Control Hub</span>
                     </a>
                 @endif
-                <a href="{{ route('reports.index') }}" class="nav-item {{ request()->routeIs('reports.*') ? 'active' : '' }}">
+                <a href="{{ route('pos.reports.index') }}" class="nav-item {{ request()->routeIs('pos.reports.*') ? 'active' : '' }}">
                     <span>📊</span> <span>Reports & AI Exports</span>
                 </a>
                 @if(in_array($currentRole, ['admin', 'viewer']))
-                    <a href="{{ route('users.index') }}" class="nav-item {{ request()->routeIs('users.*') ? 'active' : '' }}">
+                    <a href="{{ route('pos.users.index') }}" class="nav-item {{ request()->routeIs('pos.users.*') ? 'active' : '' }}">
                         <span>👥</span> <span>Workers & Roles</span>
                     </a>
                 @endif
                 @if($currentRole === 'admin')
-                    <a href="{{ route('settings.index') }}" class="nav-item {{ request()->routeIs('settings.*') ? 'active' : '' }}">
+                    <a href="{{ route('pos.settings.index') }}" class="nav-item {{ request()->routeIs('pos.settings.*') ? 'active' : '' }}">
                         <span>⚙️</span> <span>System Settings</span>
                     </a>
-                    <a href="{{ route('subscription.index') }}" class="nav-item {{ request()->routeIs('subscription.*') ? 'active' : '' }}" style="color: #a78bfa;">
+                    <a href="{{ route('pos.subscription.index') }}" class="nav-item {{ request()->routeIs('pos.subscription.*') ? 'active' : '' }}" style="color: #a78bfa;">
                         <span>⭐</span> <span>Plan & Subscription</span>
                     </a>
                     @if($isSuperAdmin)
-                        <a href="{{ route('saas.dashboard') }}" class="nav-item {{ request()->routeIs('saas.*') ? 'active' : '' }}" style="color: #f472b6; border: 1px dashed rgba(244,114,182,0.4); border-radius: 10px; margin-top: 0.25rem;">
+                        <a href="{{ route('pos.saas.dashboard') }}" class="nav-item {{ request()->routeIs('pos.saas.*') ? 'active' : '' }}" style="color: #f472b6; border: 1px dashed rgba(244,114,182,0.4); border-radius: 10px; margin-top: 0.25rem;">
                             <span>👑</span> <span>SaaS Master Control</span>
                         </a>
                     @endif
@@ -630,7 +630,7 @@
             @endif
 
             <div class="menu-category">Support & Help</div>
-            <a href="{{ route('help.index') }}" class="nav-item {{ request()->routeIs('help.*') ? 'active' : '' }}" style="color: #93c5fd;">
+            <a href="{{ route('pos.help.index') }}" class="nav-item {{ request()->routeIs('pos.help.*') ? 'active' : '' }}" style="color: #93c5fd;">
                 <span>📖</span> <span>User Guide & FAQs</span>
             </a>
         </nav>

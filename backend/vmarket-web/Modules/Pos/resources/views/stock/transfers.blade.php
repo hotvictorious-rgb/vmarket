@@ -111,7 +111,7 @@
                     👑 Executive Observer
                 </span>
             @endif
-            <a href="{{ route('stock.index') }}" class="btn btn-secondary">
+            <a href="{{ route('pos.stock.index') }}" class="btn btn-secondary">
                 📦 Stock Hub
             </a>
         </div>
@@ -135,15 +135,15 @@
 
     <!-- Multi-Criteria Filter Card -->
     <div class="filter-card">
-        <form method="GET" action="{{ route('stock.transfers') }}">
+        <form method="GET" action="{{ route('pos.stock.transfers') }}">
             <!-- Quick Date Pills -->
             <div style="display: flex; gap: 0.4rem; margin-bottom: 0.85rem; flex-wrap: wrap; align-items: center;">
                 <span style="font-size: 0.75rem; font-weight: 800; color: var(--text-muted); text-transform: uppercase;">Quick Dates:</span>
-                <a href="{{ route('stock.transfers', array_merge(request()->except('date_preset', 'from_date', 'to_date'), ['date_preset' => 'ALL'])) }}" class="date-pill {{ $datePreset === 'ALL' && !request('from_date') ? 'active' : '' }}">All Time</a>
-                <a href="{{ route('stock.transfers', array_merge(request()->except('date_preset', 'from_date', 'to_date'), ['date_preset' => 'TODAY'])) }}" class="date-pill {{ $datePreset === 'TODAY' ? 'active' : '' }}">Today</a>
-                <a href="{{ route('stock.transfers', array_merge(request()->except('date_preset', 'from_date', 'to_date'), ['date_preset' => 'YESTERDAY'])) }}" class="date-pill {{ $datePreset === 'YESTERDAY' ? 'active' : '' }}">Yesterday</a>
-                <a href="{{ route('stock.transfers', array_merge(request()->except('date_preset', 'from_date', 'to_date'), ['date_preset' => 'THIS_WEEK'])) }}" class="date-pill {{ $datePreset === 'THIS_WEEK' ? 'active' : '' }}">This Week</a>
-                <a href="{{ route('stock.transfers', array_merge(request()->except('date_preset', 'from_date', 'to_date'), ['date_preset' => 'THIS_MONTH'])) }}" class="date-pill {{ $datePreset === 'THIS_MONTH' ? 'active' : '' }}">This Month</a>
+                <a href="{{ route('pos.stock.transfers', array_merge(request()->except('date_preset', 'from_date', 'to_date'), ['date_preset' => 'ALL'])) }}" class="date-pill {{ $datePreset === 'ALL' && !request('from_date') ? 'active' : '' }}">All Time</a>
+                <a href="{{ route('pos.stock.transfers', array_merge(request()->except('date_preset', 'from_date', 'to_date'), ['date_preset' => 'TODAY'])) }}" class="date-pill {{ $datePreset === 'TODAY' ? 'active' : '' }}">Today</a>
+                <a href="{{ route('pos.stock.transfers', array_merge(request()->except('date_preset', 'from_date', 'to_date'), ['date_preset' => 'YESTERDAY'])) }}" class="date-pill {{ $datePreset === 'YESTERDAY' ? 'active' : '' }}">Yesterday</a>
+                <a href="{{ route('pos.stock.transfers', array_merge(request()->except('date_preset', 'from_date', 'to_date'), ['date_preset' => 'THIS_WEEK'])) }}" class="date-pill {{ $datePreset === 'THIS_WEEK' ? 'active' : '' }}">This Week</a>
+                <a href="{{ route('pos.stock.transfers', array_merge(request()->except('date_preset', 'from_date', 'to_date'), ['date_preset' => 'THIS_MONTH'])) }}" class="date-pill {{ $datePreset === 'THIS_MONTH' ? 'active' : '' }}">This Month</a>
             </div>
 
             <div class="grid-4" style="gap: 0.75rem;">
@@ -187,7 +187,7 @@
                     🔍 Apply Filters
                 </button>
 
-                <a href="{{ route('stock.transfers') }}" class="btn btn-secondary" style="padding: 0.65rem 1rem;">
+                <a href="{{ route('pos.stock.transfers') }}" class="btn btn-secondary" style="padding: 0.65rem 1rem;">
                     Reset
                 </a>
             </div>
@@ -257,7 +257,7 @@
                 </div>
 
                 <div style="display: flex; gap: 0.5rem; margin-top: 0.5rem;">
-                    <a href="{{ route('stock.waybill', $trf->id) }}" class="btn btn-secondary" style="flex: 1;" target="_blank">
+                    <a href="{{ route('pos.stock.waybill', $trf->id) }}" class="btn btn-secondary" style="flex: 1;" target="_blank">
                         📄 Waybill
                     </a>
                     @if(auth()->user()?->role !== 'viewer')
@@ -321,11 +321,11 @@
                 </div>
 
                 <div style="display: flex; gap: 0.5rem; margin-top: 0.5rem;">
-                    <a href="{{ route('stock.waybill', $trf->id) }}" class="btn btn-secondary" style="flex: 1;" target="_blank">
+                    <a href="{{ route('pos.stock.waybill', $trf->id) }}" class="btn btn-secondary" style="flex: 1;" target="_blank">
                         📄 Waybill
                     </a>
                     @if(auth()->user()?->role !== 'viewer')
-                        <form method="POST" action="{{ route('stock.transfer.recall', $trf->id) }}" style="flex: 2; margin: 0;" onsubmit="return confirm('Recall this transfer back to your shop? Deducted goods will be restored immediately.')">
+                        <form method="POST" action="{{ route('pos.stock.transfer.recall', $trf->id) }}" style="flex: 2; margin: 0;" onsubmit="return confirm('Recall this transfer back to your shop? Deducted goods will be restored immediately.')">
                             @csrf
                             <button type="submit" class="btn btn-danger btn-block" style="font-size: 0.85rem; padding: 0.55rem;">
                                 ↩ Recall / Cancel
@@ -386,7 +386,7 @@
                         </td>
                         <td>
                             <div style="display: flex; gap: 0.4rem; align-items: center; flex-wrap: wrap;">
-                                <a href="{{ route('stock.waybill', $cTrf->id) }}" class="btn btn-secondary" style="padding: 0.35rem 0.65rem; font-size: 0.75rem;" target="_blank">
+                                <a href="{{ route('pos.stock.waybill', $cTrf->id) }}" class="btn btn-secondary" style="padding: 0.35rem 0.65rem; font-size: 0.75rem;" target="_blank">
                                     📄 Waybill
                                 </a>
                                 @if($cTrf->status === 'DISPATCHED')
@@ -403,7 +403,7 @@
                                     @endif
 
                                     @if($canRecall && !$canReceive)
-                                        <form method="POST" action="{{ route('stock.transfer.recall', $cTrf->id) }}" style="display: inline;" onsubmit="return confirm('Recall this transfer back to {{ $cTrf->source->name ?? 'Origin' }}? Deducted goods will be restored immediately to your shop shelf count.')">
+                                        <form method="POST" action="{{ route('pos.stock.transfer.recall', $cTrf->id) }}" style="display: inline;" onsubmit="return confirm('Recall this transfer back to {{ $cTrf->source->name ?? 'Origin' }}? Deducted goods will be restored immediately to your shop shelf count.')">
                                             @csrf
                                             <button type="submit" class="btn btn-danger" style="padding: 0.35rem 0.65rem; font-size: 0.75rem;">
                                                 ↩ Recall / Cancel
@@ -439,7 +439,7 @@
                 Deducts stock from source shop immediately and puts goods in-transit until destination shop verifies count.
             </p>
 
-            <form id="dispatchForm" method="POST" action="{{ route('stock.transfer.out') }}" onsubmit="return validateTransferDispatch(event)">
+            <form id="dispatchForm" method="POST" action="{{ route('pos.stock.transfer.out') }}" onsubmit="return validateTransferDispatch(event)">
                 @csrf
                 <div class="grid-2" style="gap: 1rem;">
                     @if(!empty($isBranchStaff) && !empty($userWarehouse))

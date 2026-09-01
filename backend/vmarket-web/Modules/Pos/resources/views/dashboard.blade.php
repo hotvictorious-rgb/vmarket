@@ -347,7 +347,7 @@
 
     <!-- Filter Command Hub (Clean Dropdown Selectors) -->
     <div class="filter-hub">
-        <form method="GET" action="{{ route('dashboard') }}" id="dashFilterForm">
+        <form method="GET" action="{{ route('pos.dashboard') }}" id="dashFilterForm">
             <div class="filter-row-top">
                 <!-- 1. Location / Branch Selector -->
                 <div class="filter-control-group">
@@ -379,7 +379,7 @@
                 <!-- Reset Button -->
                 @if($datePreset !== 'TODAY' || $warehouseId)
                     <div style="margin-left: auto;">
-                        <a href="{{ route('dashboard') }}" class="btn btn-outline-secondary btn-sm" style="font-size: 0.78rem; padding: 0.45rem 0.85rem; border-radius: 8px;">
+                        <a href="{{ route('pos.dashboard') }}" class="btn btn-outline-secondary btn-sm" style="font-size: 0.78rem; padding: 0.45rem 0.85rem; border-radius: 8px;">
                             ↺ Reset Filters
                         </a>
                     </div>
@@ -444,7 +444,7 @@
         <div class="card" style="margin-bottom: 2rem;">
             <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
                 <h3 style="font-size: 1.1rem; font-weight: 800; color: #f8fafc; margin: 0;">📜 Recent Invoices Handled by Me</h3>
-                <a href="{{ route('transactions.index') }}" class="btn btn-outline-secondary btn-sm" style="font-size: 0.8rem; padding: 0.35rem 0.75rem;">View All My Invoices →</a>
+                <a href="{{ route('pos.transactions.index') }}" class="btn btn-outline-secondary btn-sm" style="font-size: 0.8rem; padding: 0.35rem 0.75rem;">View All My Invoices →</a>
             </div>
 
             <div style="overflow-x: auto;">
@@ -542,7 +542,7 @@
         <div class="panel-card">
             <div class="panel-header">
                 <span class="panel-title"><span>💳</span> Cash Flow & Debts</span>
-                <a href="{{ route('debts.index') }}" class="btn btn-outline-secondary btn-sm" style="font-size: 0.75rem; padding: 0.2rem 0.5rem;">
+                <a href="{{ route('pos.debts.index') }}" class="btn btn-outline-secondary btn-sm" style="font-size: 0.75rem; padding: 0.2rem 0.5rem;">
                     Debtors Ledger →
                 </a>
             </div>
@@ -606,7 +606,7 @@
         <div class="panel-card">
             <div class="panel-header">
                 <span class="panel-title"><span>📦</span> Stock Flow & Logistics</span>
-                <a href="{{ route('stock.index') }}" class="btn btn-outline-secondary btn-sm" style="font-size: 0.75rem; padding: 0.2rem 0.5rem;">
+                <a href="{{ route('pos.stock.index') }}" class="btn btn-outline-secondary btn-sm" style="font-size: 0.75rem; padding: 0.2rem 0.5rem;">
                     Stock Hub →
                 </a>
             </div>
@@ -670,7 +670,7 @@
         <div class="panel-card">
             <div class="panel-header">
                 <span class="panel-title"><span>🛡️</span> Anti-Theft & Loss Radar</span>
-                <a href="{{ route('auditor.index') }}" class="btn btn-outline-secondary btn-sm" style="font-size: 0.75rem; padding: 0.2rem 0.5rem; color: #fca5a5;">
+                <a href="{{ route('pos.auditor.index') }}" class="btn btn-outline-secondary btn-sm" style="font-size: 0.75rem; padding: 0.2rem 0.5rem; color: #fca5a5;">
                     Auditor Hub →
                 </a>
             </div>

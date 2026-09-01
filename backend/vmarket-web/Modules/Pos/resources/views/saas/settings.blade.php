@@ -9,7 +9,7 @@
     <p style="color: var(--text-muted); font-size: 0.9rem; margin-top: 0.25rem;">Dynamically configure Paystack billing, subscription pricing, free branch allowances, and marketplace bridge settings.</p>
 </div>
 
-<form method="POST" action="{{ route('saas.settings.update') }}">
+<form method="POST" action="{{ route('pos.saas.settings.update') }}">
     @csrf
 
     <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1.75rem;">

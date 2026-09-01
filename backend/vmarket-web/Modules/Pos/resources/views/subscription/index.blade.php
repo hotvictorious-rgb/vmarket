@@ -11,7 +11,7 @@
             <h1 style="font-size: 1.85rem; font-weight: 900; color: #fff; letter-spacing: -0.02em;">Subscription & Multi-Branch Plan</h1>
             <p style="color: #94a3b8; font-size: 0.9rem; margin-top: 0.25rem;">Manage your shop's plan, unlock additional branch locations, and view Paystack billing history.</p>
         </div>
-        <a href="{{ route('settings.index') }}" class="btn btn-secondary">← Back to Settings</a>
+        <a href="{{ route('pos.settings.index') }}" class="btn btn-secondary">← Back to Settings</a>
     </div>
 
     <!-- Active Plan Status Banner -->
@@ -160,7 +160,7 @@
                 </div>
             </div>
 
-            <form method="POST" action="{{ route('subscription.offline.submit') }}">
+            <form method="POST" action="{{ route('pos.subscription.offline.submit') }}">
                 @csrf
                 <div style="margin-bottom: 1rem;">
                     <label style="display: block; font-size: 0.82rem; font-weight: 700; color: #cbd5e1; margin-bottom: 0.35rem;">Transaction Reference / Session ID</label>
@@ -229,7 +229,7 @@
 <script>
 async function initiatePaystackPayment() {
     try {
-        const res = await fetch("{{ route('subscription.paystack.init') }}", {
+        const res = await fetch("{{ route('pos.subscription.paystack.init') }}", {
             method: "POST",
             headers: {
                 "Content-Type": "application/json",
@@ -266,7 +266,7 @@ async function initiatePaystackPayment() {
 
 async function verifyPayment(reference) {
     try {
-        const res = await fetch("{{ route('subscription.paystack.verify') }}", {
+        const res = await fetch("{{ route('pos.subscription.paystack.verify') }}", {
             method: "POST",
             headers: {
                 "Content-Type": "application/json",

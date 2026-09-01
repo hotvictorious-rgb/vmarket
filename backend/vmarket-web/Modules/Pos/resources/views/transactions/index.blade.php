@@ -173,10 +173,10 @@
         </div>
 
         <div style="display: flex; gap: 0.5rem; align-items: center;">
-            <a href="{{ route('reports.index') }}" class="btn btn-secondary" style="font-size: 0.85rem;">
+            <a href="{{ route('pos.reports.index') }}" class="btn btn-secondary" style="font-size: 0.85rem;">
                 📊 Executive Reports
             </a>
-            <a href="{{ route('auditor.index') }}" class="btn btn-secondary" style="font-size: 0.85rem; color: #fca5a5;">
+            <a href="{{ route('pos.auditor.index') }}" class="btn btn-secondary" style="font-size: 0.85rem; color: #fca5a5;">
                 🛡️ Anti-Theft Hub
             </a>
         </div>
@@ -185,56 +185,56 @@
     <!-- 8 Independent Tabs Navigation Bar -->
     <div class="tab-nav-container">
         <!-- 1. Sales -->
-        <a href="{{ route('transactions.index', ['tab' => 'sales']) }}" 
+        <a href="{{ route('pos.transactions.index', ['tab' => 'sales']) }}" 
            class="tab-btn {{ $activeTab === 'sales' ? 'active' : '' }}">
             <span>💰 Sales Invoices</span>
             <span class="badge-pill">{{ number_format($totalSalesCount) }}</span>
         </a>
 
         <!-- 2. Stock In -->
-        <a href="{{ route('transactions.index', ['tab' => 'stock_in']) }}" 
+        <a href="{{ route('pos.transactions.index', ['tab' => 'stock_in']) }}" 
            class="tab-btn {{ $activeTab === 'stock_in' ? 'active' : '' }}">
             <span>📥 Stock In</span>
             <span class="badge-pill">{{ number_format($stockInBatches) }}</span>
         </a>
 
         <!-- 3. Stock Out -->
-        <a href="{{ route('transactions.index', ['tab' => 'stock_out']) }}" 
+        <a href="{{ route('pos.transactions.index', ['tab' => 'stock_out']) }}" 
            class="tab-btn {{ $activeTab === 'stock_out' ? 'active' : '' }}">
             <span>📤 Stock Out & Dispatches</span>
             <span class="badge-pill">{{ number_format($stockOutCount) }}</span>
         </a>
 
         <!-- 4. In Transit -->
-        <a href="{{ route('transactions.index', ['tab' => 'in_transit']) }}" 
+        <a href="{{ route('pos.transactions.index', ['tab' => 'in_transit']) }}" 
            class="tab-btn {{ $activeTab === 'in_transit' ? 'active' : '' }}">
             <span>🚚 In-Transit Buffer</span>
             <span class="badge-pill">{{ number_format($inTransitCount) }}</span>
         </a>
 
         <!-- 5. Incoming Transfers -->
-        <a href="{{ route('transactions.index', ['tab' => 'transfers_in']) }}" 
+        <a href="{{ route('pos.transactions.index', ['tab' => 'transfers_in']) }}" 
            class="tab-btn {{ $activeTab === 'transfers_in' ? 'active' : '' }}">
             <span>🏢 Incoming Transfers</span>
             <span class="badge-pill">{{ number_format($incomingTotal) }}</span>
         </a>
 
         <!-- 6. Returns -->
-        <a href="{{ route('transactions.index', ['tab' => 'returns']) }}" 
+        <a href="{{ route('pos.transactions.index', ['tab' => 'returns']) }}" 
            class="tab-btn {{ $activeTab === 'returns' ? 'active' : '' }}">
             <span>🔄 Returns</span>
             <span class="badge-pill">{{ number_format($returnsCount) }}</span>
         </a>
 
         <!-- 7. Refunds -->
-        <a href="{{ route('transactions.index', ['tab' => 'refunds']) }}" 
+        <a href="{{ route('pos.transactions.index', ['tab' => 'refunds']) }}" 
            class="tab-btn {{ $activeTab === 'refunds' ? 'active' : '' }}">
             <span>💸 Customer Refunds</span>
             <span class="badge-pill">{{ number_format($refundsCount) }}</span>
         </a>
 
         <!-- 8. Debts -->
-        <a href="{{ route('transactions.index', ['tab' => 'debts']) }}" 
+        <a href="{{ route('pos.transactions.index', ['tab' => 'debts']) }}" 
            class="tab-btn {{ $activeTab === 'debts' ? 'active' : '' }}">
             <span>💳 Debts Ledger</span>
             <span class="badge-pill">{{ number_format($debtsEntryCount) }}</span>
@@ -243,17 +243,17 @@
 
     <!-- Multi-Criteria Filter Bar (Adaptive per active tab) -->
     <div class="filter-card">
-        <form method="GET" action="{{ route('transactions.index') }}" id="filterForm">
+        <form method="GET" action="{{ route('pos.transactions.index') }}" id="filterForm">
             <input type="hidden" name="tab" value="{{ $activeTab }}">
 
             <!-- Quick Date Pills -->
             <div style="display: flex; gap: 0.4rem; margin-bottom: 0.85rem; flex-wrap: wrap; align-items: center;">
                 <span style="font-size: 0.75rem; font-weight: 800; color: var(--text-muted); text-transform: uppercase;">Quick Dates:</span>
-                <a href="{{ route('transactions.index', array_merge(request()->except('date_preset', 'from_date', 'to_date'), ['tab' => $activeTab, 'date_preset' => 'ALL'])) }}" class="date-pill {{ $datePreset === 'ALL' && !request('from_date') ? 'active' : '' }}">All Time</a>
-                <a href="{{ route('transactions.index', array_merge(request()->except('date_preset', 'from_date', 'to_date'), ['tab' => $activeTab, 'date_preset' => 'TODAY'])) }}" class="date-pill {{ $datePreset === 'TODAY' ? 'active' : '' }}">Today</a>
-                <a href="{{ route('transactions.index', array_merge(request()->except('date_preset', 'from_date', 'to_date'), ['tab' => $activeTab, 'date_preset' => 'YESTERDAY'])) }}" class="date-pill {{ $datePreset === 'YESTERDAY' ? 'active' : '' }}">Yesterday</a>
-                <a href="{{ route('transactions.index', array_merge(request()->except('date_preset', 'from_date', 'to_date'), ['tab' => $activeTab, 'date_preset' => 'THIS_WEEK'])) }}" class="date-pill {{ $datePreset === 'THIS_WEEK' ? 'active' : '' }}">This Week</a>
-                <a href="{{ route('transactions.index', array_merge(request()->except('date_preset', 'from_date', 'to_date'), ['tab' => $activeTab, 'date_preset' => 'THIS_MONTH'])) }}" class="date-pill {{ $datePreset === 'THIS_MONTH' ? 'active' : '' }}">This Month</a>
+                <a href="{{ route('pos.transactions.index', array_merge(request()->except('date_preset', 'from_date', 'to_date'), ['tab' => $activeTab, 'date_preset' => 'ALL'])) }}" class="date-pill {{ $datePreset === 'ALL' && !request('from_date') ? 'active' : '' }}">All Time</a>
+                <a href="{{ route('pos.transactions.index', array_merge(request()->except('date_preset', 'from_date', 'to_date'), ['tab' => $activeTab, 'date_preset' => 'TODAY'])) }}" class="date-pill {{ $datePreset === 'TODAY' ? 'active' : '' }}">Today</a>
+                <a href="{{ route('pos.transactions.index', array_merge(request()->except('date_preset', 'from_date', 'to_date'), ['tab' => $activeTab, 'date_preset' => 'YESTERDAY'])) }}" class="date-pill {{ $datePreset === 'YESTERDAY' ? 'active' : '' }}">Yesterday</a>
+                <a href="{{ route('pos.transactions.index', array_merge(request()->except('date_preset', 'from_date', 'to_date'), ['tab' => $activeTab, 'date_preset' => 'THIS_WEEK'])) }}" class="date-pill {{ $datePreset === 'THIS_WEEK' ? 'active' : '' }}">This Week</a>
+                <a href="{{ route('pos.transactions.index', array_merge(request()->except('date_preset', 'from_date', 'to_date'), ['tab' => $activeTab, 'date_preset' => 'THIS_MONTH'])) }}" class="date-pill {{ $datePreset === 'THIS_MONTH' ? 'active' : '' }}">This Month</a>
             </div>
 
             <!-- Filter Inputs Grid -->
@@ -438,15 +438,15 @@
                     🔍 Apply Filters
                 </button>
 
-                <a href="{{ route('transactions.index', ['tab' => $activeTab]) }}" class="btn btn-secondary" style="padding: 0.65rem 1rem;">
+                <a href="{{ route('pos.transactions.index', ['tab' => $activeTab]) }}" class="btn btn-secondary" style="padding: 0.65rem 1rem;">
                     Reset
                 </a>
 
                 <div style="display: flex; gap: 0.5rem; margin-left: auto; flex-wrap: wrap;">
-                    <a href="{{ route('transactions.export.csv', array_merge(request()->all(), ['tab' => $activeTab])) }}" class="btn btn-success" style="padding: 0.65rem 1.15rem; font-weight: 700; display: inline-flex; align-items: center; gap: 0.35rem; box-shadow: 0 4px 12px rgba(22,163,74,0.35);">
+                    <a href="{{ route('pos.transactions.export.csv', array_merge(request()->all(), ['tab' => $activeTab])) }}" class="btn btn-success" style="padding: 0.65rem 1.15rem; font-weight: 700; display: inline-flex; align-items: center; gap: 0.35rem; box-shadow: 0 4px 12px rgba(22,163,74,0.35);">
                         <span>📥</span> Export Filtered CSV
                     </a>
-                    <a href="{{ route('transactions.export.json', array_merge(request()->all(), ['tab' => $activeTab])) }}" class="btn btn-secondary" style="padding: 0.65rem 1.15rem; font-weight: 700; display: inline-flex; align-items: center; gap: 0.35rem;">
+                    <a href="{{ route('pos.transactions.export.json', array_merge(request()->all(), ['tab' => $activeTab])) }}" class="btn btn-secondary" style="padding: 0.65rem 1.15rem; font-weight: 700; display: inline-flex; align-items: center; gap: 0.35rem;">
                         <span>📄</span> Export JSON
                     </a>
                 </div>
@@ -483,10 +483,10 @@
                     <input type="text" id="liveSearchSales" placeholder="⚡ Live filter rows on this page..." onkeyup="filterTableRows('salesTable', this.value)" style="padding: 0.45rem 0.85rem; font-size: 0.82rem;">
                 </div>
                 <div style="display: flex; gap: 0.5rem;">
-                    <a href="{{ route('reports.export.csv', 'sales') }}" class="btn btn-secondary" style="padding: 0.45rem 0.85rem; font-size: 0.75rem;">
+                    <a href="{{ route('pos.reports.export.csv', 'sales') }}" class="btn btn-secondary" style="padding: 0.45rem 0.85rem; font-size: 0.75rem;">
                         📥 Export CSV
                     </a>
-                    <a href="{{ route('reports.export.json', 'sales') }}" class="btn btn-secondary" style="padding: 0.45rem 0.85rem; font-size: 0.75rem;">
+                    <a href="{{ route('pos.reports.export.json', 'sales') }}" class="btn btn-secondary" style="padding: 0.45rem 0.85rem; font-size: 0.75rem;">
                         📊 Export JSON
                     </a>
                 </div>
@@ -615,7 +615,7 @@
                     <input type="text" placeholder="⚡ Live filter rows on this page..." onkeyup="filterTableRows('stockInTable', this.value)" style="padding: 0.45rem 0.85rem; font-size: 0.82rem;">
                 </div>
                 <div style="display: flex; gap: 0.5rem;">
-                    <a href="{{ route('reports.export.csv', 'stock') }}" class="btn btn-secondary" style="padding: 0.45rem 0.85rem; font-size: 0.75rem;">
+                    <a href="{{ route('pos.reports.export.csv', 'stock') }}" class="btn btn-secondary" style="padding: 0.45rem 0.85rem; font-size: 0.75rem;">
                         📥 Export CSV
                     </a>
                 </div>
@@ -696,7 +696,7 @@
                     <input type="text" placeholder="⚡ Live filter rows on this page..." onkeyup="filterTableRows('stockOutTable', this.value)" style="padding: 0.45rem 0.85rem; font-size: 0.82rem;">
                 </div>
                 <div style="display: flex; gap: 0.5rem;">
-                    <a href="{{ route('reports.export.csv', 'stock') }}" class="btn btn-secondary" style="padding: 0.45rem 0.85rem; font-size: 0.75rem;">
+                    <a href="{{ route('pos.reports.export.csv', 'stock') }}" class="btn btn-secondary" style="padding: 0.45rem 0.85rem; font-size: 0.75rem;">
                         📥 Export CSV
                     </a>
                 </div>
@@ -793,7 +793,7 @@
                     <input type="text" placeholder="⚡ Live filter rows on this page..." onkeyup="filterTableRows('inTransitTable', this.value)" style="padding: 0.45rem 0.85rem; font-size: 0.82rem;">
                 </div>
                 <div style="display: flex; gap: 0.5rem;">
-                    <a href="{{ route('reports.export.csv', 'transfers') }}" class="btn btn-secondary" style="padding: 0.45rem 0.85rem; font-size: 0.75rem;">
+                    <a href="{{ route('pos.reports.export.csv', 'transfers') }}" class="btn btn-secondary" style="padding: 0.45rem 0.85rem; font-size: 0.75rem;">
                         📥 Export CSV
                     </a>
                 </div>
@@ -834,7 +834,7 @@
                             <td>{{ $trf->dispatched_by }}</td>
                             <td>
                                 <div class="action-btn-group">
-                                    <a href="{{ route('stock.waybill', $trf->id) }}" class="btn btn-secondary" style="padding: 0.35rem 0.65rem; font-size: 0.75rem;" target="_blank">
+                                    <a href="{{ route('pos.stock.waybill', $trf->id) }}" class="btn btn-secondary" style="padding: 0.35rem 0.65rem; font-size: 0.75rem;" target="_blank">
                                         📄 Waybill
                                     </a>
                                     <button type="button" class="btn btn-primary" style="padding: 0.35rem 0.65rem; font-size: 0.75rem;" onclick="viewTransferDetails({{ json_encode($trf) }})">
@@ -883,7 +883,7 @@
                     <input type="text" placeholder="⚡ Live filter rows on this page..." onkeyup="filterTableRows('incomingTransfersTable', this.value)" style="padding: 0.45rem 0.85rem; font-size: 0.82rem;">
                 </div>
                 <div style="display: flex; gap: 0.5rem;">
-                    <a href="{{ route('reports.export.csv', 'transfers') }}" class="btn btn-secondary" style="padding: 0.45rem 0.85rem; font-size: 0.75rem;">
+                    <a href="{{ route('pos.reports.export.csv', 'transfers') }}" class="btn btn-secondary" style="padding: 0.45rem 0.85rem; font-size: 0.75rem;">
                         📥 Export CSV
                     </a>
                 </div>
@@ -940,7 +940,7 @@
                             </td>
                             <td>
                                 <div class="action-btn-group">
-                                    <a href="{{ route('stock.waybill', $trf->id) }}" class="btn btn-secondary" style="padding: 0.35rem 0.65rem; font-size: 0.75rem;" target="_blank">
+                                    <a href="{{ route('pos.stock.waybill', $trf->id) }}" class="btn btn-secondary" style="padding: 0.35rem 0.65rem; font-size: 0.75rem;" target="_blank">
                                         📄 Waybill
                                     </a>
                                     <button type="button" class="btn btn-primary" style="padding: 0.35rem 0.65rem; font-size: 0.75rem;" onclick="viewTransferDetails({{ json_encode($trf) }})">
@@ -1151,7 +1151,7 @@
                     <input type="text" placeholder="⚡ Live filter rows on this page..." onkeyup="filterTableRows('debtsTable', this.value)" style="padding: 0.45rem 0.85rem; font-size: 0.82rem;">
                 </div>
                 <div style="display: flex; gap: 0.5rem;">
-                    <a href="{{ route('reports.export.csv', 'debtors') }}" class="btn btn-secondary" style="padding: 0.45rem 0.85rem; font-size: 0.75rem;">
+                    <a href="{{ route('pos.reports.export.csv', 'debtors') }}" class="btn btn-secondary" style="padding: 0.45rem 0.85rem; font-size: 0.75rem;">
                         📥 Export CSV
                     </a>
                 </div>

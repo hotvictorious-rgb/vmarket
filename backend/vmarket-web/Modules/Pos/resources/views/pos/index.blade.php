@@ -604,7 +604,7 @@
                     <strong style="color: #FFD700;">⭐ Multi-Branch Sync Pro:</strong>
                     <span style="color: #cbd5e1; display: block; font-size: 0.75rem;">Link unlimited branches, interstate waybills, and real-time inventory transfers across Nigeria.</span>
                 </div>
-                <a href="{{ route('subscription.index') }}" class="btn btn-primary" style="padding: 0.35rem 0.75rem; font-size: 0.75rem; font-weight: 800; background: #5E17EB; white-space: nowrap;">
+                <a href="{{ route('pos.subscription.index') }}" class="btn btn-primary" style="padding: 0.35rem 0.75rem; font-size: 0.75rem; font-weight: 800; background: #5E17EB; white-space: nowrap;">
                     Upgrade Plan
                 </a>
             </div>
@@ -612,7 +612,7 @@
 
         <!-- Footer -->
         <div style="display: flex; justify-content: space-between; align-items: center; border-top: 1px solid rgba(255,255,255,0.08); padding-top: 1rem;">
-            <a href="{{ route('stock.transfers') }}" class="btn btn-secondary" style="font-size: 0.8rem; padding: 0.5rem 1rem; display: flex; align-items: center; gap: 0.4rem;">
+            <a href="{{ route('pos.stock.transfers') }}" class="btn btn-secondary" style="font-size: 0.8rem; padding: 0.5rem 1rem; display: flex; align-items: center; gap: 0.4rem;">
                 🚚 Open Waybill Hub
             </a>
             <button type="button" class="btn btn-primary" style="padding: 0.5rem 1.25rem; font-weight: 800; background: #5E17EB; border-color: #5E17EB;" onclick="closeBranchStockModal()">

@@ -65,7 +65,7 @@
 
 <div style="max-width: 720px; margin: 0 auto 1.5rem;" class="no-print">
     <div style="display: flex; gap: 0.75rem; justify-content: space-between;">
-        <a href="{{ route('wholesale.index') }}" class="btn btn-secondary" style="font-size: 0.95rem;">
+        <a href="{{ route('pos.wholesale.index') }}" class="btn btn-secondary" style="font-size: 0.95rem;">
             ← Back to Wholesale Hub
         </a>
         <div style="display: flex; gap: 0.5rem;">

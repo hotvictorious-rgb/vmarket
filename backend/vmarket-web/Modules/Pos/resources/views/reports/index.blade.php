@@ -127,7 +127,7 @@
         </div>
         <div style="display: flex; gap: 0.5rem;">
             <button onclick="window.print()" class="btn btn-secondary">🖨️ Print Summary</button>
-            <a href="{{ route('reports.export.json', 'sales') }}" class="btn btn-primary" style="background: #6366f1;">
+            <a href="{{ route('pos.reports.export.json', 'sales') }}" class="btn btn-primary" style="background: #6366f1;">
                 🤖 AI Data Digest (JSON)
             </a>
         </div>
@@ -135,15 +135,15 @@
 
     <!-- 1. ADVANCED GLOBAL FILTERS -->
     <div class="filter-card">
-        <form method="GET" action="{{ route('reports.index') }}">
+        <form method="GET" action="{{ route('pos.reports.index') }}">
             <div class="preset-pills">
                 <span style="font-size: 0.8rem; font-weight: 800; color: var(--text-muted); align-self: center; margin-right: 0.25rem;">DATE PRESETS:</span>
-                <a href="{{ route('reports.index', ['date_preset' => 'ALL']) }}" class="preset-pill {{ request('date_preset', 'ALL') === 'ALL' ? 'active' : '' }}">All Time</a>
-                <a href="{{ route('reports.index', ['date_preset' => 'TODAY']) }}" class="preset-pill {{ request('date_preset') === 'TODAY' ? 'active' : '' }}">Today</a>
-                <a href="{{ route('reports.index', ['date_preset' => 'YESTERDAY']) }}" class="preset-pill {{ request('date_preset') === 'YESTERDAY' ? 'active' : '' }}">Yesterday</a>
-                <a href="{{ route('reports.index', ['date_preset' => 'THIS_WEEK']) }}" class="preset-pill {{ request('date_preset') === 'THIS_WEEK' ? 'active' : '' }}">This Week</a>
-                <a href="{{ route('reports.index', ['date_preset' => 'THIS_MONTH']) }}" class="preset-pill {{ request('date_preset') === 'THIS_MONTH' ? 'active' : '' }}">This Month</a>
-                <a href="{{ route('reports.index', ['date_preset' => 'THIS_YEAR']) }}" class="preset-pill {{ request('date_preset') === 'THIS_YEAR' ? 'active' : '' }}">This Year</a>
+                <a href="{{ route('pos.reports.index', ['date_preset' => 'ALL']) }}" class="preset-pill {{ request('date_preset', 'ALL') === 'ALL' ? 'active' : '' }}">All Time</a>
+                <a href="{{ route('pos.reports.index', ['date_preset' => 'TODAY']) }}" class="preset-pill {{ request('date_preset') === 'TODAY' ? 'active' : '' }}">Today</a>
+                <a href="{{ route('pos.reports.index', ['date_preset' => 'YESTERDAY']) }}" class="preset-pill {{ request('date_preset') === 'YESTERDAY' ? 'active' : '' }}">Yesterday</a>
+                <a href="{{ route('pos.reports.index', ['date_preset' => 'THIS_WEEK']) }}" class="preset-pill {{ request('date_preset') === 'THIS_WEEK' ? 'active' : '' }}">This Week</a>
+                <a href="{{ route('pos.reports.index', ['date_preset' => 'THIS_MONTH']) }}" class="preset-pill {{ request('date_preset') === 'THIS_MONTH' ? 'active' : '' }}">This Month</a>
+                <a href="{{ route('pos.reports.index', ['date_preset' => 'THIS_YEAR']) }}" class="preset-pill {{ request('date_preset') === 'THIS_YEAR' ? 'active' : '' }}">This Year</a>
             </div>
 
             <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 0.75rem; align-items: end;">
@@ -193,7 +193,7 @@
 
                 <div style="display: flex; gap: 0.5rem;">
                     <button type="submit" class="btn btn-primary" style="flex: 1; padding: 0.65rem;">🔍 Filter</button>
-                    <a href="{{ route('reports.index') }}" class="btn btn-secondary" style="padding: 0.65rem;">Reset</a>
+                    <a href="{{ route('pos.reports.index') }}" class="btn btn-secondary" style="padding: 0.65rem;">Reset</a>
                 </div>
             </div>
         </form>
@@ -299,8 +299,8 @@
             <div class="export-bar">
                 <h3 style="font-size: 1.15rem; font-weight: 800;">Filtered Sales Transactions</h3>
                 <div style="display: flex; gap: 0.5rem;">
-                    <a href="{{ route('reports.export.csv', 'sales') }}" class="btn btn-secondary" style="font-size: 0.8rem; padding: 0.4rem 0.85rem;">📥 Export CSV</a>
-                    <a href="{{ route('reports.export.json', 'sales') }}" class="btn btn-secondary" style="font-size: 0.8rem; padding: 0.4rem 0.85rem; color: #93c5fd;">🤖 Export JSON</a>
+                    <a href="{{ route('pos.reports.export.csv', 'sales') }}" class="btn btn-secondary" style="font-size: 0.8rem; padding: 0.4rem 0.85rem;">📥 Export CSV</a>
+                    <a href="{{ route('pos.reports.export.json', 'sales') }}" class="btn btn-secondary" style="font-size: 0.8rem; padding: 0.4rem 0.85rem; color: #93c5fd;">🤖 Export JSON</a>
                 </div>
             </div>
 
@@ -369,8 +369,8 @@
             <div class="export-bar">
                 <h3 style="font-size: 1.15rem; font-weight: 800;">Multi-Branch Inventory & Stock Health</h3>
                 <div style="display: flex; gap: 0.5rem;">
-                    <a href="{{ route('reports.export.csv', 'inventory') }}" class="btn btn-secondary" style="font-size: 0.8rem; padding: 0.4rem 0.85rem;">📥 Export CSV</a>
-                    <a href="{{ route('reports.export.json', 'inventory') }}" class="btn btn-secondary" style="font-size: 0.8rem; padding: 0.4rem 0.85rem; color: #93c5fd;">🤖 Export JSON</a>
+                    <a href="{{ route('pos.reports.export.csv', 'inventory') }}" class="btn btn-secondary" style="font-size: 0.8rem; padding: 0.4rem 0.85rem;">📥 Export CSV</a>
+                    <a href="{{ route('pos.reports.export.json', 'inventory') }}" class="btn btn-secondary" style="font-size: 0.8rem; padding: 0.4rem 0.85rem; color: #93c5fd;">🤖 Export JSON</a>
                 </div>
             </div>
 
@@ -428,8 +428,8 @@
             <div class="export-bar">
                 <h3 style="font-size: 1.15rem; font-weight: 800;">Inter-Branch Transfers & Discrepancies</h3>
                 <div style="display: flex; gap: 0.5rem;">
-                    <a href="{{ route('reports.export.csv', 'transfers') }}" class="btn btn-secondary" style="font-size: 0.8rem; padding: 0.4rem 0.85rem;">📥 Export CSV</a>
-                    <a href="{{ route('reports.export.json', 'transfers') }}" class="btn btn-secondary" style="font-size: 0.8rem; padding: 0.4rem 0.85rem; color: #93c5fd;">🤖 Export JSON</a>
+                    <a href="{{ route('pos.reports.export.csv', 'transfers') }}" class="btn btn-secondary" style="font-size: 0.8rem; padding: 0.4rem 0.85rem;">📥 Export CSV</a>
+                    <a href="{{ route('pos.reports.export.json', 'transfers') }}" class="btn btn-secondary" style="font-size: 0.8rem; padding: 0.4rem 0.85rem; color: #93c5fd;">🤖 Export JSON</a>
                 </div>
             </div>
 
@@ -466,7 +466,7 @@
                             </td>
                             <td>{{ $t->dispatched_by }}</td>
                             <td>
-                                <a href="{{ route('stock.waybill', $t->id) }}" class="btn btn-secondary" style="padding: 0.25rem 0.6rem; font-size: 0.75rem;" target="_blank">
+                                <a href="{{ route('pos.stock.waybill', $t->id) }}" class="btn btn-secondary" style="padding: 0.25rem 0.6rem; font-size: 0.75rem;" target="_blank">
                                     🖨️ Waybill
                                 </a>
                             </td>
@@ -488,8 +488,8 @@
             <div class="export-bar">
                 <h3 style="font-size: 1.15rem; font-weight: 800;">Customer Debt Aging & Recovery Ledger</h3>
                 <div style="display: flex; gap: 0.5rem;">
-                    <a href="{{ route('reports.export.csv', 'debtors') }}" class="btn btn-secondary" style="font-size: 0.8rem; padding: 0.4rem 0.85rem;">📥 Export CSV</a>
-                    <a href="{{ route('reports.export.json', 'debtors') }}" class="btn btn-secondary" style="font-size: 0.8rem; padding: 0.4rem 0.85rem; color: #93c5fd;">🤖 Export JSON</a>
+                    <a href="{{ route('pos.reports.export.csv', 'debtors') }}" class="btn btn-secondary" style="font-size: 0.8rem; padding: 0.4rem 0.85rem;">📥 Export CSV</a>
+                    <a href="{{ route('pos.reports.export.json', 'debtors') }}" class="btn btn-secondary" style="font-size: 0.8rem; padding: 0.4rem 0.85rem; color: #93c5fd;">🤖 Export JSON</a>
                 </div>
             </div>
 
@@ -524,7 +524,7 @@
                                 ₦{{ number_format($d->total_debt, 0) }}
                             </td>
                             <td>
-                                <a href="{{ route('debts.index') }}" class="btn btn-success" style="padding: 0.25rem 0.6rem; font-size: 0.75rem;">
+                                <a href="{{ route('pos.debts.index') }}" class="btn btn-success" style="padding: 0.25rem 0.6rem; font-size: 0.75rem;">
                                     💰 Record Payment
                                 </a>
                             </td>
@@ -546,8 +546,8 @@
             <div class="export-bar">
                 <h3 style="font-size: 1.15rem; font-weight: 800;">Damaged, Expired & Lost Stock Audit Write-offs</h3>
                 <div style="display: flex; gap: 0.5rem;">
-                    <a href="{{ route('reports.export.csv', 'damages') }}" class="btn btn-secondary" style="font-size: 0.8rem; padding: 0.4rem 0.85rem;">📥 Export CSV</a>
-                    <a href="{{ route('reports.export.json', 'damages') }}" class="btn btn-secondary" style="font-size: 0.8rem; padding: 0.4rem 0.85rem; color: #93c5fd;">🤖 Export JSON</a>
+                    <a href="{{ route('pos.reports.export.csv', 'damages') }}" class="btn btn-secondary" style="font-size: 0.8rem; padding: 0.4rem 0.85rem;">📥 Export CSV</a>
+                    <a href="{{ route('pos.reports.export.json', 'damages') }}" class="btn btn-secondary" style="font-size: 0.8rem; padding: 0.4rem 0.85rem; color: #93c5fd;">🤖 Export JSON</a>
                 </div>
             </div>
 
@@ -595,8 +595,8 @@
             <div class="export-bar">
                 <h3 style="font-size: 1.15rem; font-weight: 800;">Customer Returns & Refunds Audit Ledger</h3>
                 <div style="display: flex; gap: 0.5rem;">
-                    <a href="{{ route('reports.export.csv', 'returns') }}" class="btn btn-secondary" style="font-size: 0.8rem; padding: 0.4rem 0.85rem;">📥 Export CSV</a>
-                    <a href="{{ route('reports.export.json', 'returns') }}" class="btn btn-secondary" style="font-size: 0.8rem; padding: 0.4rem 0.85rem; color: #93c5fd;">🤖 Export JSON</a>
+                    <a href="{{ route('pos.reports.export.csv', 'returns') }}" class="btn btn-secondary" style="font-size: 0.8rem; padding: 0.4rem 0.85rem;">📥 Export CSV</a>
+                    <a href="{{ route('pos.reports.export.json', 'returns') }}" class="btn btn-secondary" style="font-size: 0.8rem; padding: 0.4rem 0.85rem; color: #93c5fd;">🤖 Export JSON</a>
                 </div>
             </div>
 
@@ -664,8 +664,8 @@
                     <h4 style="font-size: 1rem; font-weight: 800; color: #4ade80; margin-bottom: 0.35rem;">📊 Complete Sales Data</h4>
                     <p style="font-size: 0.8rem; color: var(--text-muted); margin-bottom: 1rem;">All customer transactions, payment methods, debt balances, and cashier records.</p>
                     <div style="display: flex; gap: 0.5rem;">
-                        <a href="{{ route('reports.export.csv', 'sales') }}" class="btn btn-secondary" style="flex: 1; font-size: 0.8rem;">CSV (Excel)</a>
-                        <a href="{{ route('reports.export.json', 'sales') }}" class="btn btn-primary" style="flex: 1; font-size: 0.8rem; background: #6366f1;">JSON (AI)</a>
+                        <a href="{{ route('pos.reports.export.csv', 'sales') }}" class="btn btn-secondary" style="flex: 1; font-size: 0.8rem;">CSV (Excel)</a>
+                        <a href="{{ route('pos.reports.export.json', 'sales') }}" class="btn btn-primary" style="flex: 1; font-size: 0.8rem; background: #6366f1;">JSON (AI)</a>
                     </div>
                 </div>
 
@@ -673,8 +673,8 @@
                     <h4 style="font-size: 1rem; font-weight: 800; color: #60a5fa; margin-bottom: 0.35rem;">📦 Inventory & Branch Valuations</h4>
                     <p style="font-size: 0.8rem; color: var(--text-muted); margin-bottom: 1rem;">All catalog SKUs, shelf counts per branch, low stock warnings, and total ₦ asset values.</p>
                     <div style="display: flex; gap: 0.5rem;">
-                        <a href="{{ route('reports.export.csv', 'inventory') }}" class="btn btn-secondary" style="flex: 1; font-size: 0.8rem;">CSV (Excel)</a>
-                        <a href="{{ route('reports.export.json', 'inventory') }}" class="btn btn-primary" style="flex: 1; font-size: 0.8rem; background: #6366f1;">JSON (AI)</a>
+                        <a href="{{ route('pos.reports.export.csv', 'inventory') }}" class="btn btn-secondary" style="flex: 1; font-size: 0.8rem;">CSV (Excel)</a>
+                        <a href="{{ route('pos.reports.export.json', 'inventory') }}" class="btn btn-primary" style="flex: 1; font-size: 0.8rem; background: #6366f1;">JSON (AI)</a>
                     </div>
                 </div>
 
@@ -682,8 +682,8 @@
                     <h4 style="font-size: 1rem; font-weight: 800; color: #fbbf24; margin-bottom: 0.35rem;">🚚 Logistics & In-Transit Transfers</h4>
                     <p style="font-size: 0.8rem; color: var(--text-muted); margin-bottom: 1rem;">Transfer history, carrier driver tracking, and verified count discrepancy flags.</p>
                     <div style="display: flex; gap: 0.5rem;">
-                        <a href="{{ route('reports.export.csv', 'transfers') }}" class="btn btn-secondary" style="flex: 1; font-size: 0.8rem;">CSV (Excel)</a>
-                        <a href="{{ route('reports.export.json', 'transfers') }}" class="btn btn-primary" style="flex: 1; font-size: 0.8rem; background: #6366f1;">JSON (AI)</a>
+                        <a href="{{ route('pos.reports.export.csv', 'transfers') }}" class="btn btn-secondary" style="flex: 1; font-size: 0.8rem;">CSV (Excel)</a>
+                        <a href="{{ route('pos.reports.export.json', 'transfers') }}" class="btn btn-primary" style="flex: 1; font-size: 0.8rem; background: #6366f1;">JSON (AI)</a>
                     </div>
                 </div>
 
@@ -691,8 +691,8 @@
                     <h4 style="font-size: 1rem; font-weight: 800; color: #f87171; margin-bottom: 0.35rem;">💳 Customer Debtors & Aging</h4>
                     <p style="font-size: 0.8rem; color: var(--text-muted); margin-bottom: 1rem;">Complete debtor contact details, total debt exposure, and aging risk buckets.</p>
                     <div style="display: flex; gap: 0.5rem;">
-                        <a href="{{ route('reports.export.csv', 'debtors') }}" class="btn btn-secondary" style="flex: 1; font-size: 0.8rem;">CSV (Excel)</a>
-                        <a href="{{ route('reports.export.json', 'debtors') }}" class="btn btn-primary" style="flex: 1; font-size: 0.8rem; background: #6366f1;">JSON (AI)</a>
+                        <a href="{{ route('pos.reports.export.csv', 'debtors') }}" class="btn btn-secondary" style="flex: 1; font-size: 0.8rem;">CSV (Excel)</a>
+                        <a href="{{ route('pos.reports.export.json', 'debtors') }}" class="btn btn-primary" style="flex: 1; font-size: 0.8rem; background: #6366f1;">JSON (AI)</a>
                     </div>
                 </div>
 
@@ -700,8 +700,8 @@
                     <h4 style="font-size: 1rem; font-weight: 800; color: #fca5a5; margin-bottom: 0.35rem;">🔄 Sales Returns & Refunds</h4>
                     <p style="font-size: 0.8rem; color: var(--text-muted); margin-bottom: 1rem;">Complete logs of returned items, quantity, refund amounts, and reasons.</p>
                     <div style="display: flex; gap: 0.5rem;">
-                        <a href="{{ route('reports.export.csv', 'returns') }}" class="btn btn-secondary" style="flex: 1; font-size: 0.8rem;">CSV (Excel)</a>
-                        <a href="{{ route('reports.export.json', 'returns') }}" class="btn btn-primary" style="flex: 1; font-size: 0.8rem; background: #6366f1;">JSON (AI)</a>
+                        <a href="{{ route('pos.reports.export.csv', 'returns') }}" class="btn btn-secondary" style="flex: 1; font-size: 0.8rem;">CSV (Excel)</a>
+                        <a href="{{ route('pos.reports.export.json', 'returns') }}" class="btn btn-primary" style="flex: 1; font-size: 0.8rem; background: #6366f1;">JSON (AI)</a>
                     </div>
                 </div>
             </div>

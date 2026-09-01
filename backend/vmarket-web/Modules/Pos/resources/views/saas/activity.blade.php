@@ -13,7 +13,7 @@
 
 <!-- Filters -->
 <div class="panel-card" style="padding: 1rem 1.5rem; margin-bottom: 1.5rem;">
-    <form method="GET" action="{{ route('saas.activity') }}" style="display: flex; gap: 1rem; align-items: center;">
+    <form method="GET" action="{{ route('pos.saas.activity') }}" style="display: flex; gap: 1rem; align-items: center;">
         <select name="company_id" style="flex: 1; padding: 0.65rem 1rem; background: #0f172a; border: 1px solid var(--border); border-radius: 10px; color: #fff; font-size: 0.9rem;">
             <option value="">All Merchant Companies</option>
             @foreach($companies as $comp)
@@ -31,7 +31,7 @@
 
         <button type="submit" class="btn btn-primary">Filter Feed</button>
         @if(request()->hasAny(['company_id', 'type']))
-            <a href="{{ route('saas.activity') }}" class="btn" style="background: rgba(255,255,255,0.1); color: #fff;">Clear</a>
+            <a href="{{ route('pos.saas.activity') }}" class="btn" style="background: rgba(255,255,255,0.1); color: #fff;">Clear</a>
         @endif
     </form>
 </div>

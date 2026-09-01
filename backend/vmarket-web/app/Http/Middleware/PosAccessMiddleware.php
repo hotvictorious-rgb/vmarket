@@ -47,14 +47,16 @@ class PosAccessMiddleware
             }
         }
 
-        // 3. Check Super Admin / Admin Staff
+        // 3. Check Super Admin (Role 1) vs Admin Employee (Role 2)
         if (Auth::guard('admin')->check()) {
             $adminUser = Auth::guard('admin')->user();
+            $isSuperAdmin = ((int) ($adminUser->admin_role_id ?? 0) === 1);
             session([
-                'is_super_admin' => true,
-                'user_role'      => 'admin',
-                'user_name'      => $adminUser->name ?? 'Super Admin',
-                'user_email'     => $adminUser->email ?? 'admin@admin.com',
+                'is_super_admin' => $isSuperAdmin,
+                'user_role'      => $isSuperAdmin ? 'admin' : 'super_admin_employee',
+                'admin_role_id'  => (int) ($adminUser->admin_role_id ?? 0),
+                'user_name'      => $adminUser->name ?? ($isSuperAdmin ? 'Super Admin' : 'Admin Staff'),
+                'user_email'     => $adminUser->email ?? '',
             ]);
             return $next($request);
         }

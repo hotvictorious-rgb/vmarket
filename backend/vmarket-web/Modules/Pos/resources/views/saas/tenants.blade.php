@@ -16,7 +16,7 @@
 
 <!-- Filters & Search -->
 <div class="panel-card" style="padding: 1rem 1.5rem; margin-bottom: 1.5rem;">
-    <form method="GET" action="{{ route('saas.tenants') }}" style="display: flex; gap: 1rem; align-items: center;">
+    <form method="GET" action="{{ route('pos.saas.tenants') }}" style="display: flex; gap: 1rem; align-items: center;">
         <input type="text" name="search" value="{{ request('search') }}" placeholder="🔍 Search company name, owner, email, or phone..." 
                style="flex: 1; padding: 0.65rem 1rem; background: #0f172a; border: 1px solid var(--border); border-radius: 10px; color: #fff; font-size: 0.9rem;">
 
@@ -28,7 +28,7 @@
 
         <button type="submit" class="btn btn-primary">Filter</button>
         @if(request()->hasAny(['search', 'plan']))
-            <a href="{{ route('saas.tenants') }}" class="btn" style="background: rgba(255,255,255,0.1); color: #fff;">Clear</a>
+            <a href="{{ route('pos.saas.tenants') }}" class="btn" style="background: rgba(255,255,255,0.1); color: #fff;">Clear</a>
         @endif
     </form>
 </div>
@@ -96,7 +96,7 @@
                     <td>
                         <div style="display: flex; gap: 0.4rem; flex-wrap: wrap;">
                             @if($c->plan !== 'PRO')
-                                <form method="POST" action="{{ route('saas.tenants.plan', $c->id) }}" style="display: inline;">
+                                <form method="POST" action="{{ route('pos.saas.tenants.plan', $c->id) }}" style="display: inline;">
                                     @csrf
                                     <input type="hidden" name="action" value="upgrade_pro">
                                     <button type="submit" class="btn" style="background: rgba(99,102,241,0.2); color: #a5b4fc; font-size: 0.75rem; padding: 0.35rem 0.65rem;" title="Upgrade to Pro Multi-Branch for 30 Days">
@@ -104,7 +104,7 @@
                                     </button>
                                 </form>
                             @else
-                                <form method="POST" action="{{ route('saas.tenants.plan', $c->id) }}" style="display: inline;">
+                                <form method="POST" action="{{ route('pos.saas.tenants.plan', $c->id) }}" style="display: inline;">
                                     @csrf
                                     <input type="hidden" name="action" value="downgrade_free">
                                     <button type="submit" class="btn" style="background: rgba(100,116,139,0.2); color: #cbd5e1; font-size: 0.75rem; padding: 0.35rem 0.65rem;" title="Revert to Free 1-Shop">
@@ -113,7 +113,7 @@
                                 </form>
                             @endif
 
-                            <form method="POST" action="{{ route('saas.tenants.plan', $c->id) }}" style="display: inline;">
+                            <form method="POST" action="{{ route('pos.saas.tenants.plan', $c->id) }}" style="display: inline;">
                                 @csrf
                                 <input type="hidden" name="action" value="extend_trial">
                                 <button type="submit" class="btn" style="background: rgba(245,158,11,0.2); color: #fbbf24; font-size: 0.75rem; padding: 0.35rem 0.65rem;" title="Extend 14-Day Free Trial">
@@ -121,7 +121,7 @@
                                 </button>
                             </form>
 
-                            <form method="POST" action="{{ route('saas.tenants.plan', $c->id) }}" style="display: inline;">
+                            <form method="POST" action="{{ route('pos.saas.tenants.plan', $c->id) }}" style="display: inline;">
                                 @csrf
                                 <input type="hidden" name="action" value="toggle_status">
                                 <button type="submit" class="btn" style="background: rgba(239,68,68,0.2); color: #f87171; font-size: 0.75rem; padding: 0.35rem 0.65rem;" title="Suspend / Activate">
@@ -151,7 +151,7 @@
         <h3 style="font-size: 1.3rem; font-weight: 800; color: #fff; margin-bottom: 0.25rem;">➕ Onboard New Company</h3>
         <p style="font-size: 0.8rem; color: var(--text-muted); margin-bottom: 1.5rem;">Set up a new independent merchant and generate their primary shop counter.</p>
 
-        <form method="POST" action="{{ route('saas.tenants.store') }}">
+        <form method="POST" action="{{ route('pos.saas.tenants.store') }}">
             @csrf
             <div style="margin-bottom: 1rem;">
                 <label style="display: block; font-size: 0.82rem; font-weight: 700; color: #cbd5e1; margin-bottom: 0.35rem;">Business / Company Name</label>

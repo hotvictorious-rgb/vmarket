@@ -69,27 +69,27 @@
             </p>
         </div>
         <div style="display: flex; gap: 0.5rem; flex-wrap: wrap; align-items: center;">
-            <a href="{{ route('products.export.csv') }}" class="btn btn-secondary" style="font-size: 0.85rem;">
+            <a href="{{ route('pos.products.export.csv') }}" class="btn btn-secondary" style="font-size: 0.85rem;">
                 📥 Export CSV
             </a>
-            <a href="{{ route('products.export.json') }}" class="btn btn-secondary" style="font-size: 0.85rem; color: #93c5fd;">
+            <a href="{{ route('pos.products.export.json') }}" class="btn btn-secondary" style="font-size: 0.85rem; color: #93c5fd;">
                 🤖 Export JSON (AI)
             </a>
             <button onclick="window.print()" class="btn btn-secondary" style="font-size: 0.85rem;">
                 🖨️ Print Price List
             </button>
             @if($isAdmin)
-                <a href="{{ route('products.template.csv') }}" class="btn btn-secondary" style="font-size: 0.85rem;">
+                <a href="{{ route('pos.products.template.csv') }}" class="btn btn-secondary" style="font-size: 0.85rem;">
                     📄 CSV Template
                 </a>
                 <button class="btn btn-primary" onclick="openModal('modalImportCsv')" style="font-size: 0.85rem;">
                     📥 Bulk Import (CSV)
                 </button>
-                <a href="{{ route('products.create') }}" class="btn btn-success" style="font-size: 0.85rem; font-weight: 700; text-decoration: none; display: inline-flex; align-items: center; gap: 0.35rem;">
+                <a href="{{ route('pos.products.create') }}" class="btn btn-success" style="font-size: 0.85rem; font-weight: 700; text-decoration: none; display: inline-flex; align-items: center; gap: 0.35rem;">
                     <span>➕</span> <span>Add New Product</span>
                 </a>
             @else
-                <a href="{{ route('stock.index') }}" class="btn btn-success btn-lg" style="font-size: 0.95rem;">
+                <a href="{{ route('pos.stock.index') }}" class="btn btn-success btn-lg" style="font-size: 0.95rem;">
                     📥 Add Stock Quantity (Stock In)
                 </a>
             @endif
@@ -98,22 +98,22 @@
 
     <!-- 1. MULTI-CRITERIA FILTER BAR -->
     <div style="background: var(--card-bg); border: 1px solid var(--border); border-radius: 18px; padding: 1.25rem; margin-bottom: 1.5rem;">
-        <form method="GET" action="{{ route('products.index') }}">
+        <form method="GET" action="{{ route('pos.products.index') }}">
             <div style="display: flex; gap: 0.5rem; flex-wrap: wrap; margin-bottom: 1rem; align-items: center;">
                 <span style="font-size: 0.8rem; font-weight: 800; color: var(--text-muted);">STOCK HEALTH:</span>
-                <a href="{{ route('products.index', array_merge(request()->except('stock_status'), ['stock_status' => ''])) }}" 
+                <a href="{{ route('pos.products.index', array_merge(request()->except('stock_status'), ['stock_status' => ''])) }}" 
                    class="badge {{ !request('stock_status') ? 'badge-primary' : 'badge-secondary' }}" style="padding: 0.4rem 0.85rem; text-decoration: none;">
                    All ({{ $products->count() }})
                 </a>
-                <a href="{{ route('products.index', array_merge(request()->except('stock_status'), ['stock_status' => 'IN_STOCK'])) }}" 
+                <a href="{{ route('pos.products.index', array_merge(request()->except('stock_status'), ['stock_status' => 'IN_STOCK'])) }}" 
                    class="badge {{ request('stock_status') === 'IN_STOCK' ? 'badge-success' : 'badge-secondary' }}" style="padding: 0.4rem 0.85rem; text-decoration: none;">
                    🟢 In Stock
                 </a>
-                <a href="{{ route('products.index', array_merge(request()->except('stock_status'), ['stock_status' => 'LOW_STOCK'])) }}" 
+                <a href="{{ route('pos.products.index', array_merge(request()->except('stock_status'), ['stock_status' => 'LOW_STOCK'])) }}" 
                    class="badge {{ request('stock_status') === 'LOW_STOCK' ? 'badge-warning' : 'badge-secondary' }}" style="padding: 0.4rem 0.85rem; text-decoration: none;">
                    🟡 Low Stock (≤ 5 units)
                 </a>
-                <a href="{{ route('products.index', array_merge(request()->except('stock_status'), ['stock_status' => 'OUT_OF_STOCK'])) }}" 
+                <a href="{{ route('pos.products.index', array_merge(request()->except('stock_status'), ['stock_status' => 'OUT_OF_STOCK'])) }}" 
                    class="badge {{ request('stock_status') === 'OUT_OF_STOCK' ? 'badge-danger' : 'badge-secondary' }}" style="padding: 0.4rem 0.85rem; text-decoration: none;">
                    🔴 Out of Stock (0 units)
                 </a>
@@ -147,7 +147,7 @@
 
                 <div style="display: flex; gap: 0.5rem;">
                     <button type="submit" class="btn btn-primary" style="flex: 1; padding: 0.65rem;">🔍 Apply Filters</button>
-                    <a href="{{ route('products.index') }}" class="btn btn-secondary" style="padding: 0.65rem;">Reset</a>
+                    <a href="{{ route('pos.products.index') }}" class="btn btn-secondary" style="padding: 0.65rem;">Reset</a>
                 </div>
             </div>
         </form>
@@ -208,11 +208,11 @@
                         </td>
                         <td>
                             @if($isAdmin)
-                                <a href="{{ route('products.edit', $p->id) }}" class="btn btn-secondary" style="padding: 0.4rem 0.8rem; font-size: 0.75rem; text-decoration: none; font-weight: 700; display: inline-flex; align-items: center; gap: 0.25rem;">
+                                <a href="{{ route('pos.products.edit', $p->id) }}" class="btn btn-secondary" style="padding: 0.4rem 0.8rem; font-size: 0.75rem; text-decoration: none; font-weight: 700; display: inline-flex; align-items: center; gap: 0.25rem;">
                                     <span>✏️</span> <span>Edit</span>
                                 </a>
                             @else
-                                <a href="{{ route('stock.index') }}" class="btn btn-secondary" style="padding: 0.4rem 0.8rem; font-size: 0.75rem; color: #4ade80; text-decoration: none;">
+                                <a href="{{ route('pos.stock.index') }}" class="btn btn-secondary" style="padding: 0.4rem 0.8rem; font-size: 0.75rem; color: #4ade80; text-decoration: none;">
                                     📥 +Stock
                                 </a>
                             @endif
@@ -238,7 +238,7 @@
                 Register a new inventory SKU for sales and stock tracking.
             </p>
 
-            <form id="addProductForm" method="POST" action="{{ route('products.store') }}">
+            <form id="addProductForm" method="POST" action="{{ route('pos.products.store') }}">
                 @csrf
                 <div class="form-group">
                     <label>Product Name</label>
@@ -363,13 +363,13 @@
                 <strong style="color: #93c5fd;">Required CSV Column Headers:</strong><br>
                 <code>name, code, category, brand, size, unitPrice, minStockLevel, initial_stock</code>
                 <div style="margin-top: 0.5rem;">
-                    <a href="{{ route('products.template.csv') }}" style="color: #4ade80; text-decoration: underline; font-weight: 700;">
+                    <a href="{{ route('pos.products.template.csv') }}" style="color: #4ade80; text-decoration: underline; font-weight: 700;">
                         📥 Download Sample CSV Template
                     </a>
                 </div>
             </div>
 
-            <form id="importCsvForm" method="POST" action="{{ route('products.import.csv') }}" enctype="multipart/form-data">
+            <form id="importCsvForm" method="POST" action="{{ route('pos.products.import.csv') }}" enctype="multipart/form-data">
                 @csrf
 
                 <div class="form-group">

@@ -62,7 +62,7 @@
                 🏢 Business Profile & Printable Receipt Customizer
             </h3>
 
-            <form id="settingsForm" method="POST" action="{{ route('settings.update') }}">
+            <form id="settingsForm" method="POST" action="{{ route('pos.settings.update') }}">
                 @csrf
 
                 <div class="form-group">
@@ -167,7 +167,7 @@
                                     })">
                                         ✏️ Edit
                                     </button>
-                                    <form id="toggleWhForm_{{ $wh->id }}" method="POST" action="{{ route('settings.warehouse.toggle', $wh->id) }}" style="margin: 0;">
+                                    <form id="toggleWhForm_{{ $wh->id }}" method="POST" action="{{ route('pos.settings.warehouse.toggle', $wh->id) }}" style="margin: 0;">
                                         @csrf
                                         <button type="button" class="btn btn-secondary" style="padding: 0.35rem 0.65rem; font-size: 0.75rem;" onclick="confirmToggleWarehouse('{{ $wh->id }}', '{{ addslashes($wh->name) }}', {{ $wh->is_active ? 'true' : 'false' }})">
                                             {{ $wh->is_active ? 'Deactivate' : 'Activate' }}
@@ -281,7 +281,7 @@
                 Set up a new shop, outlet, or depot to track physical stock independently.
             </p>
 
-            <form id="addBranchForm" method="POST" action="{{ route('settings.warehouse.store') }}">
+            <form id="addBranchForm" method="POST" action="{{ route('pos.settings.warehouse.store') }}">
                 @csrf
                 <div class="form-group">
                     <label>Branch Name</label>
