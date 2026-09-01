@@ -7,6 +7,16 @@ Always append your completed tasks here in chronological order at the top. Forma
 `### [YYYY-MM-DD HH:MM UTC] <Feature / Fix Title> [<Component Scope>]`
 Include the specific app/component modified and bullet points detailing the exact technical changes.
 
+### [2026-09-01 12:35 UTC] Resolve Admin Login URL Route Parameter Matching & Direct Aliases [admin] [routing] [auth]
+
+* **Component:** `app/Http/Controllers/Admin/Auth/LoginController.php`, `routes/admin/routes.php`
+* **Action:**
+  - **Login Route Parameter Resolution:** Updated `LoginController::index` to accept `$loginUrl` matching `{loginUrl}` route parameter with fallback to `$request->route('loginUrl')`, eliminating empty type lookup 404s.
+  - **Direct Admin Login Endpoints:** Added direct handlers for `/login`, `/admin/login`, and `/admin/auth/login` to render admin login directly without redirect chains.
+* **Verification:** Verified route parameter binding.
+
+
+
 ### [2026-09-01 12:15 UTC] Fix Vendor Route Group Bracket Syntax & Validate All Routes [vendor] [routing]
 
 * **Component:** `routes/vendor/routes.php`

@@ -26,8 +26,9 @@ class LoginController extends BaseController
         $this->middleware('guest:admin', ['except' => ['logout']]);
     }
 
-    public function index(?Request $request, ?string $type = null): View|Collection|LengthAwarePaginator|null|callable
+    public function index(?Request $request = null, ?string $loginUrl = null): View|Collection|LengthAwarePaginator|null|callable
     {
+        $target = $loginUrl ?: ($request ? ($request->route('loginUrl') ?: $request->route('type')) : null);
         $adminUrl = getWebConfig(name: 'admin_login_url') ?: 'admin';
         $employeeUrl = getWebConfig(name: 'employee_login_url') ?: 'employee';
 
@@ -36,16 +37,14 @@ class LoginController extends BaseController
             UserRole::EMPLOYEE => $employeeUrl,
         ];
 
-        $userType = array_search($type, $loginTypes);
+        $userType = array_search($target, $loginTypes);
         if (!$userType) {
-            if ($type === 'admin' || $type === 'admin_login' || $type === 'super-admin' || empty($type)) {
-                $userType = UserRole::ADMIN;
-            } elseif ($type === 'employee' || $type === 'staff') {
+            if ($target === 'employee' || $target === 'staff' || $target === $employeeUrl) {
                 $userType = UserRole::EMPLOYEE;
+            } else {
+                $userType = UserRole::ADMIN;
             }
         }
-
-        abort_if(!$userType, 404);
 
         $recaptchaBuilder = $this->generateDefaultReCaptcha(4);
         Session::put(SessionKey::ADMIN_RECAPTCHA_KEY, $recaptchaBuilder->getPhrase());

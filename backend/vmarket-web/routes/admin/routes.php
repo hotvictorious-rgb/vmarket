@@ -125,14 +125,15 @@ Route::controller(FirebaseController::class)->group(function () {
 
 
 Route::group(['prefix' => 'login'], function () {
+    Route::get('/', [LoginController::class, 'index']);
     Route::get('{loginUrl}', [LoginController::class, 'index']);
     Route::get('recaptcha/{tmp}', [LoginController::class, 'generateReCaptcha'])->name('recaptcha');
     Route::post('/', [LoginController::class, 'login'])->name('login')->middleware('throttle:10,1');
 });
 
 // Direct admin login aliases (accessible before authentication)
-Route::get('admin/login', fn() => redirect('login/' . (getWebConfig(name: 'admin_login_url') ?: 'admin')));
-Route::get('admin/auth/login', fn() => redirect('login/' . (getWebConfig(name: 'admin_login_url') ?: 'admin')));
+Route::get('admin/login', [LoginController::class, 'index']);
+Route::get('admin/auth/login', [LoginController::class, 'index']);
 
 Route::group(['prefix' => 'admin', 'as' => 'admin.', 'middleware' => ['admin', 'actch:admin_panel']], function () {
 
