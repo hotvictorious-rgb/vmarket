@@ -4,6 +4,8 @@ import 'images.dart';
 class AppConstants {
   static const String companyName = 'Victorious MARKET';
   static const String appName = 'Victorious Delivery';
+  static const String appBadge = 'DISPATCH & COURIER PARTNER';
+  static const String slogan = 'Your Trusted Online Market For Quality Products';
   static const String appVersion = '4.2'; ///flutter SDK : 3.29.3
   static const String polylineMapKey = 'YOUR_MAP_KEY_HERE';
 

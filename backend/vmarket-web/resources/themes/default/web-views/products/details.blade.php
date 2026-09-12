@@ -819,7 +819,7 @@
                                                             {{ $product->seller->shop->name }}
                                                         </h2>
                                                         <div class="d-flex align-items-center gap-1 fs-12 text-muted mb-2">
-                                                            <i class="tio-map-pin" style="color: #6A1B9A;"></i>
+                                                            <i class="tio-map-pin" style="color: #5e17eb;"></i>
                                                             <span>{{ translate('Ships_from') }}: <strong class="text-dark">{{ $product->seller->shop->deliveryCity->name ?? 'Uyo' }} Hub</strong></span>
                                                         </div>
                                                         @if(checkVendorAbility(type: 'vendor', status: 'temporary_close', vendor: $product->seller->shop))
@@ -923,7 +923,7 @@
                                                         {{ getInHouseShopConfig(key: 'name') }}
                                                     </h2>
                                                     <div class="d-flex align-items-center gap-1 fs-12 text-muted mb-2">
-                                                        <i class="tio-map-pin" style="color: #6A1B9A;"></i>
+                                                        <i class="tio-map-pin" style="color: #5e17eb;"></i>
                                                         <span>{{ translate('Ships_from') }}: <strong class="text-dark">{{ translate('Uyo Central Hub') }}</strong></span>
                                                     </div>
                                                     @if(checkVendorAbility(type: 'inhouse', status: 'temporary_close'))

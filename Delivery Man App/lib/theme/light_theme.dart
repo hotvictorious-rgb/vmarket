@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 
 
-Color _primaryColor = const Color(0xFF6A1B9A);
-Color _secondaryColor = const Color(0xFFD4AF37);
+Color _primaryColor = const Color(0xFF5E17EB);
+Color _secondaryColor = const Color(0xFFFFD700);
 
 ThemeData light = ThemeData(
   fontFamily: 'Rubik',

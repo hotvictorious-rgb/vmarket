@@ -4,6 +4,8 @@ import '../features/shop/domain/models/guideline_model.dart';
 
 class AppConstants {
   static const String appName = 'Victorious Vendor'; ///Flutter SDK 3.41.1
+  static const String appBadge = 'MERCHANT COMMAND CENTER';
+  static const String slogan = 'Your Trusted Online Market For Quality Products';
   static const String appVersion = '16.1';
   static const String companyName = 'Victorious MARKET';
   static const bool demo = false;
