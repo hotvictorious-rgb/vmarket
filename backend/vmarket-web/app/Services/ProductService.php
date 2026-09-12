@@ -602,6 +602,9 @@ class ProductService
             'meta_title' => $request['meta_title'],
             'meta_description' => $request['meta_description'],
             'meta_image' => $request->has('meta_image') ? $this->upload(dir: 'product/meta/', format: 'webp', image: $request['meta_image']) : $request->existing_meta_image,
+            'gtin' => $request['gtin'] ?? null,
+            'mpn' => $request['mpn'] ?? null,
+            'google_category_id' => $request['google_category_id'] ?? null,
         ];
     }
 
@@ -692,6 +695,9 @@ class ProductService
             'meta_title' => $request['meta_title'],
             'meta_description' => $request['meta_description'],
             'meta_image' => $request->file('meta_image') ? $this->update(dir: 'product/meta/', oldImage: $product['meta_image'], format: 'png', image: $request['meta_image']) : $product['meta_image'],
+            'gtin' => $request['gtin'] ?? $product['gtin'],
+            'mpn' => $request['mpn'] ?? $product['mpn'],
+            'google_category_id' => $request['google_category_id'] ?? $product['google_category_id'],
         ];
 
         if ($request->file('image')) {

@@ -324,6 +324,13 @@
                                         <span class="text-truncate">{{ translate('Request_Restock_List') }}</span>
                                     </a>
                                 </li>
+                                <li class="nav-item {{ Request::is('vendor/products/feeds*') ? 'active' : '' }}">
+                                    <a class="nav-link " href="{{ route('vendor.products.feeds') }}"
+                                       title="{{ translate('Product_Feeds_&_Channels') }}">
+                                        <span class="tio-circle nav-indicator-icon"></span>
+                                        <span class="text-truncate">{{ translate('Product_Feeds_&_Channels') }} 🌐</span>
+                                    </a>
+                                </li>
                             </ul>
                         </li>
                         <li class="navbar-vertical-aside-has-menu {{ Request::is('vendor/reviews/'.Review::INDEX[URI].'*')?'active' : ''}}">

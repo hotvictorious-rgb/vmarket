@@ -169,11 +169,21 @@
                                         </p>
                                     </div>
                                 </div>
-                                <a class="btn btn-outline-primary text-capitalize" target="_blank"
-                                href="{{ route('vendor-shop',['slug' => $shop['slug']]) }}">
-                                    {{ translate('Visit_Website') }}
-                                    <i class="fi fi-rr-exit"></i>
-                                </a>
+                                <div class="d-flex gap-2 flex-wrap">
+                                    <button type="button" class="btn btn-outline-secondary text-capitalize btn-sm"
+                                        onclick="navigator.clipboard.writeText('{{ route('vendor-store', ['slug' => $shop['slug']]) }}'); toastr.success('{{ translate('store_link_copied_to_clipboard') }}');">
+                                        <i class="fi fi-sr-copy"></i> {{ translate('Copy_Link') }}
+                                    </button>
+                                    <a class="btn btn-outline-success text-capitalize btn-sm" target="_blank"
+                                        href="https://api.whatsapp.com/send?text={{ urlencode('Check out our official online store ' . $shop['name'] . ' on Victorious MARKET: ' . route('vendor-store', ['slug' => $shop['slug']])) }}">
+                                        <i class="tio-whatsapp"></i> {{ translate('Share_WhatsApp') }}
+                                    </a>
+                                    <a class="btn btn-outline-primary text-capitalize btn-sm" target="_blank"
+                                        href="{{ route('vendor-store',['slug' => $shop['slug']]) }}">
+                                        {{ translate('Visit_Store') }}
+                                        <i class="fi fi-rr-exit"></i>
+                                    </a>
+                                </div>
                             </div>
 
                             <div class="row gy-1">

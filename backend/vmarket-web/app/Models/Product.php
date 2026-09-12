@@ -124,6 +124,9 @@ class Product extends Model
         'price_updated_at',
         'price_expiry_notified_at',
         'deactivation_reason',
+        'gtin',
+        'mpn',
+        'google_category_id',
     ];
 
     /**

@@ -7,6 +7,18 @@ Always append your completed tasks here in chronological order at the top. Forma
 `### [YYYY-MM-DD HH:MM UTC] <Feature / Fix Title> [<Component Scope>]`
 Include the specific app/component modified and bullet points detailing the exact technical changes.
 
+### [2026-09-12 10:55 UTC] Vendor-Isolated Product Feeds & Multi-Channel Commerce Hub [backend] [vendor-app]
+* **Component:** Multi-Channel Commerce Engine (`ProductFeedExportController.php`, `Seller.php`, `Product.php`, `ProductService.php`, `feeds/index.blade.php`, `shop/index.blade.php`, `shop-info-card.blade.php`, `_general-setup.blade.php`, `ProductFeedExportIsolationTest.php`)
+* **Action:** Implemented vendor-isolated product feeds and multi-channel commerce command center:
+  - **Zero-Trust Feed Tenant Resolution:** The feed token strictly establishes the tenant context (`token -> locate seller -> query ONLY that seller's products`). Any client parameters (`vendor_id`, `seller_id`, `scope`) are strictly ignored for vendor-scoped requests, mathematically preventing cross-tenant leakage.
+  - **Feed Token Security:** `feed_token` is hidden from serialization and excluded from `$fillable`. Tokens are cryptographically generated using `vm_vfeed_` + 48 hex characters (`random_bytes(24)`). Added instant rotation mechanism that immediately invalidates previous tokens, and masked representation for dashboard UI display (`vm_vfeed_••••••••1234`).
+  - **Dual Approval Security Guard:** Feeds enforce that the merchant must have both `status = 'approved'` and `marketplace_status = 'approved'`, preventing POS-only or unapproved sellers from exporting products into public feeds.
+  - **Preserved Super Admin Global Feeds:** Super Admin token (`product_feed_export_token`) remains functional for platform-wide exports with intentional filters, fully isolated from vendor feeds.
+  - **Standard Catalog Identifiers:** Added `gtin` (Barcode/UPC/EAN/ISBN), `mpn` (Manufacturer Part Number), and `google_category_id` (Google Taxonomy Category ID) to `Product` model, migrations, `ProductService`, and Blade add/update forms for both vendors and admin.
+  - **XML & CSV Channel Feeds:** Updated Google Merchant XML to output `<g:gtin>`, `<g:mpn>`, and `<g:google_product_category>` (or fallback `<g:identifier_exists>no</g:identifier_exists>`), and Meta/TikTok CSV exports to include `gtin` and `mpn`.
+  - **Vendor Dashboard & Store Sharing:** Built dedicated "Product Feeds & Channels" dashboard (`/vendor/products/feeds`) with copy buttons, setup guidance, token rotation modal, vanity store link (`/store/{slug}` and `/vendor-shop/{slug}`), QR modal, and WhatsApp/Facebook social share dropdowns.
+  - **Automated Verification:** Added `ProductFeedExportIsolationTest.php` with 31/31 passing isolation, parameter spoofing resistance, and tenant hard-locking assertions.
+
 ### [2026-08-27 03:30 UTC] SQLite Backend Schema Generation & Concurrent Dual Server Live Deployment [backend] [pos]
 * **Component:** Backend Infrastructure (`backend/vmarket-web/`, `hysam/`, `build_full_sqlite_schema.php`, `seed_sqlite_core.php`, `test_dual_servers_e2e.php`)
 * **Action:** Configured and deployed both local systems concurrently on SQLite with PHP 8.4 runtime type guards:

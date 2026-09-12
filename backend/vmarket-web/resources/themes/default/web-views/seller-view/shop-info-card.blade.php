@@ -146,6 +146,29 @@
                             </a>
                         </div>
                     @endif
+
+                    @php($publicStoreUrl = route('vendor-store', ['slug' => $shopInfoArray['slug']]))
+                    <div class="dropdown d-inline-block ml-2">
+                        <button class="btn btn-outline-primary rounded-10 btn-sm dropdown-toggle d-flex align-items-center gap-1" type="button" id="shareStoreDropdown" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                            <i class="fa fa-share-alt"></i>
+                            <span class="d-none d-sm-inline-block">{{ translate('Share_Store') }}</span>
+                        </button>
+                        <div class="dropdown-menu dropdown-menu-right" aria-labelledby="shareStoreDropdown">
+                            <a class="dropdown-item d-flex align-items-center gap-2" href="https://api.whatsapp.com/send?text={{ urlencode(translate('Check_out_this_verified_store_on_Victorious_MARKET') . ': ' . $publicStoreUrl) }}" target="_blank">
+                                <i class="fa fa-whatsapp text-success"></i> {{ translate('Share_on_WhatsApp') }}
+                            </a>
+                            <a class="dropdown-item d-flex align-items-center gap-2" href="https://www.facebook.com/sharer/sharer.php?u={{ urlencode($publicStoreUrl) }}" target="_blank">
+                                <i class="fa fa-facebook-official text-primary"></i> {{ translate('Share_on_Facebook') }}
+                            </a>
+                            <a class="dropdown-item d-flex align-items-center gap-2" href="https://twitter.com/intent/tweet?text={{ urlencode(translate('Check_out_this_store') . ' ' . $shopInfoArray['name']) }}&url={{ urlencode($publicStoreUrl) }}" target="_blank">
+                                <i class="fa fa-twitter text-info"></i> {{ translate('Share_on_Twitter') }}
+                            </a>
+                            <div class="dropdown-divider"></div>
+                            <button class="dropdown-item d-flex align-items-center gap-2" type="button" onclick="navigator.clipboard.writeText('{{ $publicStoreUrl }}'); toastr.success('{{ translate('store_link_copied_to_clipboard') }}');">
+                                <i class="fa fa-link text-secondary"></i> {{ translate('Copy_Store_Link') }}
+                            </button>
+                        </div>
+                    </div>
                 </div>
             </div>
         </div>

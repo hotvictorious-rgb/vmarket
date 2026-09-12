@@ -283,6 +283,7 @@ Route::group(['middleware' => ['maintenance_mode', 'guestCheck']], function () {
     });
 
     Route::controller(ShopViewController::class)->group(function () {
+        Route::get('store/{slug}', 'seller_shop')->name('vendor-store');
         Route::get('vendor-shop/{slug}', 'seller_shop')->name('vendor-shop');
         Route::get('ajax-shop-vacation-check', 'ajax_shop_vacation_check')->name('ajax-shop-vacation-check');
     });

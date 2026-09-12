@@ -83,11 +83,52 @@ class Seller extends Authenticatable
         'pos_status' => 'integer',
         'marketplace_applied_at' => 'datetime',
         'marketplace_approved_at' => 'datetime',
+        'feed_token_generated_at' => 'datetime',
     ];
 
     protected $hidden = [
         'password',
+        'feed_token',
     ];
+
+    /**
+     * [AI] Generate and rotate a cryptographically secure vendor feed token.
+     * Never uses predictable seller IDs, timestamps, or public hashes.
+     */
+    public function generateFeedToken(): string
+    {
+        $newToken = 'vm_vfeed_' . bin2hex(random_bytes(24));
+        $this->feed_token = $newToken;
+        $this->feed_token_generated_at = now();
+        $this->save();
+        return $newToken;
+    }
+
+    /**
+     * [AI] Retrieve existing feed token or lazily generate a new one if unset.
+     */
+    public function getOrCreateFeedToken(): string
+    {
+        if (!empty($this->feed_token)) {
+            return $this->feed_token;
+        }
+        return $this->generateFeedToken();
+    }
+
+    /**
+     * [AI] Safe masked feed token for UI display (prevents casual shoulder-surfing).
+     */
+    public function getMaskedFeedTokenAttribute(): ?string
+    {
+        if (empty($this->feed_token)) {
+            return null;
+        }
+        $len = strlen($this->feed_token);
+        if ($len <= 16) {
+            return 'vm_vfeed_••••••••';
+        }
+        return substr($this->feed_token, 0, 9) . '••••••••••••' . substr($this->feed_token, -4);
+    }
 
     public function scopeApproved($query)
     {

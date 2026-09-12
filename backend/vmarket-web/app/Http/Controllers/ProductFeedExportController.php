@@ -5,6 +5,8 @@ namespace App\Http\Controllers;
 use App\Models\BusinessSetting;
 use App\Models\Category;
 use App\Models\Product;
+use App\Models\Seller;
+use Brian2694\Toastr\Facades\Toastr;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
@@ -34,7 +36,7 @@ class ProductFeedExportController extends Controller
     }
 
     /**
-     * Regenerate the secret token.
+     * Regenerate the Super Admin secret global feed token.
      */
     public function regenerateToken(Request $request)
     {
@@ -44,12 +46,59 @@ class ProductFeedExportController extends Controller
             ['value' => $token, 'updated_at' => now()]
         );
 
-        \Brian2694\Toastr\Facades\Toastr::success(translate('feed_security_token_regenerated_successfully'));
+        Toastr::success(translate('feed_security_token_regenerated_successfully'));
         return back();
     }
 
     /**
-     * Get or generate the permanent secret token for live data feeds.
+     * Vendor Web Dashboard: Manage Vendor Channels & Isolated Feeds.
+     */
+    public function vendorIndex(Request $request)
+    {
+        $seller = auth('seller')->user();
+        if (!$seller) {
+            Toastr::error(translate('unauthorized_access'));
+            return redirect()->route('vendor.auth.login');
+        }
+
+        // Lazy-generate vendor feed token if not already present
+        $feedToken = $seller->getOrCreateFeedToken();
+        $shop = $seller->shop;
+
+        $totalProducts = Product::where(['added_by' => 'seller', 'user_id' => $seller->id])->count();
+        $activeProducts = Product::where(['added_by' => 'seller', 'user_id' => $seller->id, 'status' => 1, 'request_status' => 1])->count();
+        $outOfStockProducts = Product::where(['added_by' => 'seller', 'user_id' => $seller->id, 'current_stock' => 0])->count();
+
+        return view('vendor-views.product.feeds.index', [
+            'seller' => $seller,
+            'shop' => $shop,
+            'feedToken' => $feedToken,
+            'maskedToken' => $seller->masked_feed_token,
+            'totalProducts' => $totalProducts,
+            'activeProducts' => $activeProducts,
+            'outOfStockProducts' => $outOfStockProducts,
+        ]);
+    }
+
+    /**
+     * Vendor Web Dashboard: Regenerate and invalidate Vendor Feed Token.
+     */
+    public function vendorRegenerateToken(Request $request)
+    {
+        $seller = auth('seller')->user();
+        if (!$seller) {
+            Toastr::error(translate('unauthorized_access'));
+            return redirect()->route('vendor.auth.login');
+        }
+
+        $seller->generateFeedToken();
+
+        Toastr::success(translate('feed_security_token_regenerated_successfully._Previous_token_immediately_invalidated.'));
+        return back();
+    }
+
+    /**
+     * Get or generate the permanent secret token for live admin platform feeds.
      */
     public static function getFeedToken(): string
     {
@@ -68,23 +117,72 @@ class ProductFeedExportController extends Controller
     }
 
     /**
-     * Verify token access for live crawlers.
+     * [AI] Zero-Trust Feed Authentication & Tenant Resolution Engine.
+     * Evaluates incoming token against:
+     * 1. Global Platform Admin Token -> sets context: 'admin' (can view all or filter).
+     * 2. Vendor-Scoped Feed Token -> sets context: 'vendor' hard-locked to that specific Seller model.
+     * 
+     * Security invariant:
+     * For vendor tokens, any client query parameters (e.g. vendor_id, scope) are strictly ignored.
      */
-    private function verifyFeedToken(Request $request): bool
+    public function authenticateFeedRequest(Request $request): array
     {
-        $serverToken = self::getFeedToken();
         $providedToken = $request->query('token') ?? $request->header('X-Feed-Token');
+        if (empty($providedToken)) {
+            return ['authenticated' => false, 'scope' => null, 'seller' => null];
+        }
 
-        return !empty($providedToken) && hash_equals($serverToken, $providedToken);
+        // 1. Check Super Admin Global Token
+        $serverAdminToken = self::getFeedToken();
+        if (hash_equals($serverAdminToken, $providedToken)) {
+            return [
+                'authenticated' => true,
+                'scope' => 'admin',
+                'seller' => null,
+            ];
+        }
+
+        // 2. Check Vendor-Scoped Token (Exact Identity Lookup)
+        // [AI] Strict Security Guard: Vendor must be both status='approved' AND marketplace_status='approved'
+        $seller = Seller::where('feed_token', $providedToken)
+            ->where('status', 'approved')
+            ->where('marketplace_status', 'approved')
+            ->first();
+
+        if ($seller) {
+            return [
+                'authenticated' => true,
+                'scope' => 'vendor',
+                'seller' => $seller,
+            ];
+        }
+
+        return ['authenticated' => false, 'scope' => null, 'seller' => null];
     }
 
     /**
-     * Get filtered base products query.
+     * [AI] Build Tenant-Isolated Products Query.
+     * Enforces Zero-Trust isolation based on authenticated context.
      */
-    private function getFilteredProductsQuery(Request $request)
+    public function getFilteredProductsQuery(Request $request, array $authContext)
     {
-        return Product::active()
-            ->with(['brand', 'category', 'rating'])
+        $query = Product::active()->with(['brand', 'category', 'rating']);
+
+        // [AI] Strict Vendor Scoping: If request is authenticated via vendor token,
+        // hard-lock query exclusively to this vendor. Completely ignore any client-supplied vendor_id/scope.
+        if ($authContext['scope'] === 'vendor' && $authContext['seller']) {
+            return $query->where([
+                'added_by' => 'seller',
+                'user_id' => $authContext['seller']->id,
+            ])
+            ->when($request->query('in_stock_only') == '1', function ($q) {
+                return $q->where('current_stock', '>', 0);
+            })
+            ->latest('updated_at');
+        }
+
+        // [AI] Super Admin Scope: Allows platform-wide filtering
+        return $query
             ->when($request->query('scope') === 'inhouse', function ($q) {
                 return $q->where('added_by', 'admin');
             })
@@ -105,38 +203,49 @@ class ProductFeedExportController extends Controller
 
     /**
      * 1. Google Merchant Center (Google Shopping) RSS 2.0 XML Feed.
+     * Supports both Admin Platform Feed and Vendor-Isolated Catalog Feeds.
      */
     public function googleMerchantXml(Request $request): Response
     {
-        if (!$this->verifyFeedToken($request)) {
+        $auth = $this->authenticateFeedRequest($request);
+        if (!$auth['authenticated']) {
             return response('<error>Unauthorized feed token. Access denied.</error>', 403, [
-                'Content-Type' => 'application/xml'
+                'Content-Type' => 'application/xml; charset=utf-8'
             ]);
         }
 
-        $products = $this->getFilteredProductsQuery($request)->limit(5000)->get();
-        $webConfig = getWebConfig('company_name') ?? 'Victorious MARKET';
-        $siteUrl = url('/');
+        $products = $this->getFilteredProductsQuery($request, $auth)->limit(5000)->get();
+        
+        $channelTitle = ($auth['scope'] === 'vendor' && $auth['seller'] && $auth['seller']->shop)
+            ? $auth['seller']->shop->name . ' - Victorious MARKET'
+            : (getWebConfig('company_name') ?? 'Victorious MARKET');
+
+        $siteUrl = ($auth['scope'] === 'vendor' && $auth['seller'] && $auth['seller']->shop)
+            ? route('vendor-store', $auth['seller']->shop->slug)
+            : url('/');
 
         $xml = '<?xml version="1.0" encoding="UTF-8"?>' . "\n";
         $xml .= '<rss version="2.0" xmlns:g="http://base.google.com/ns/1.0">' . "\n";
         $xml .= "  <channel>\n";
-        $xml .= '    <title>' . htmlspecialchars($webConfig, ENT_XML1, 'UTF-8') . " Product Feed</title>\n";
+        $xml .= '    <title>' . htmlspecialchars($channelTitle, ENT_XML1, 'UTF-8') . " Product Feed</title>\n";
         $xml .= '    <link>' . htmlspecialchars($siteUrl, ENT_XML1, 'UTF-8') . "</link>\n";
-        $xml .= '    <description>Official Google Shopping Catalog Feed for ' . htmlspecialchars($webConfig, ENT_XML1, 'UTF-8') . "</description>\n";
+        $xml .= '    <description>Official Google Shopping Catalog Feed for ' . htmlspecialchars($channelTitle, ENT_XML1, 'UTF-8') . "</description>\n";
 
         foreach ($products as $product) {
             $productUrl = route('product', $product->slug ?? $product->id);
-            $imageUrl = $product->thumbnail_full_url['path'] ?? asset('public/assets/front-end/img/image-place-holder.png');
+            $imageUrl = is_array($product->thumbnail_full_url)
+                ? ($product->thumbnail_full_url['path'] ?? asset('public/assets/front-end/img/image-place-holder.png'))
+                : ($product->thumbnail_full_url ?? asset('public/assets/front-end/img/image-place-holder.png'));
+
             $price = number_format((float)$product->unit_price, 2, '.', '') . ' NGN';
             $availability = ($product->current_stock > 0) ? 'in stock' : 'out of stock';
-            $brand = $product->brand ? $product->brand->name : $webConfig;
+            $brand = $product->brand ? $product->brand->name : $channelTitle;
             $categoryName = $product->category ? $product->category->name : 'General';
             $description = !empty($product->details) ? strip_tags($product->details) : $product->name;
             $description = mb_substr(trim(preg_replace('/\s+/', ' ', $description)), 0, 4990);
 
             $xml .= "    <item>\n";
-            $xml .= '      <g:id>' . htmlspecialchars((string)$product->id, ENT_XML1, 'UTF-8') . "</g:id>\n";
+            $xml .= '      <g:id>' . htmlspecialchars((string)($product->code ?: ('VM-' . $product->id)), ENT_XML1, 'UTF-8') . "</g:id>\n";
             $xml .= '      <g:title>' . htmlspecialchars($product->name, ENT_XML1, 'UTF-8') . "</g:title>\n";
             $xml .= '      <g:description>' . htmlspecialchars($description, ENT_XML1, 'UTF-8') . "</g:description>\n";
             $xml .= '      <g:link>' . htmlspecialchars($productUrl, ENT_XML1, 'UTF-8') . "</g:link>\n";
@@ -155,6 +264,21 @@ class ProductFeedExportController extends Controller
             $xml .= '      <g:brand>' . htmlspecialchars($brand, ENT_XML1, 'UTF-8') . "</g:brand>\n";
             $xml .= "      <g:condition>new</g:condition>\n";
             $xml .= '      <g:product_type>' . htmlspecialchars($categoryName, ENT_XML1, 'UTF-8') . "</g:product_type>\n";
+
+            // [AI] Google Product Taxonomy & Identifiers (GTIN/MPN)
+            if (!empty($product->google_category_id)) {
+                $xml .= '      <g:google_product_category>' . htmlspecialchars((string)$product->google_category_id, ENT_XML1, 'UTF-8') . "</g:google_product_category>\n";
+            }
+            if (!empty($product->gtin)) {
+                $xml .= '      <g:gtin>' . htmlspecialchars((string)$product->gtin, ENT_XML1, 'UTF-8') . "</g:gtin>\n";
+            }
+            if (!empty($product->mpn)) {
+                $xml .= '      <g:mpn>' . htmlspecialchars((string)$product->mpn, ENT_XML1, 'UTF-8') . "</g:mpn>\n";
+            }
+            if (empty($product->gtin) && empty($product->mpn)) {
+                $xml .= "      <g:identifier_exists>no</g:identifier_exists>\n";
+            }
+
             $xml .= "    </item>\n";
         }
 
@@ -163,31 +287,37 @@ class ProductFeedExportController extends Controller
 
         return response($xml, 200, [
             'Content-Type' => 'application/xml; charset=utf-8',
-            'Cache-Control' => 'public, max-age=3600',
+            'Cache-Control' => 'public, max-age=1800',
         ]);
     }
 
     /**
      * 2. Facebook & Instagram Commerce Manager Catalog CSV Feed.
+     * Supports both Admin Platform Feed and Vendor-Isolated Catalog Feeds.
      */
     public function facebookCatalogCsv(Request $request): StreamedResponse|Response
     {
-        if (!$this->verifyFeedToken($request)) {
-            return response('Unauthorized feed token. Access denied.', 403);
+        $auth = $this->authenticateFeedRequest($request);
+        if (!$auth['authenticated']) {
+            return response('Unauthorized feed token. Access denied.', 403, [
+                'Content-Type' => 'text/plain; charset=utf-8'
+            ]);
         }
 
         $headers = [
             'Content-Type' => 'text/csv; charset=utf-8',
             'Content-Disposition' => 'inline; filename="facebook_catalog_feed.csv"',
-            'Cache-Control' => 'public, max-age=3600',
+            'Cache-Control' => 'public, max-age=1800',
         ];
 
-        $webConfig = getWebConfig('company_name') ?? 'Victorious MARKET';
+        $channelTitle = ($auth['scope'] === 'vendor' && $auth['seller'] && $auth['seller']->shop)
+            ? $auth['seller']->shop->name
+            : (getWebConfig('company_name') ?? 'Victorious MARKET');
 
-        return response()->stream(function () use ($request, $webConfig) {
+        return response()->stream(function () use ($request, $auth, $channelTitle) {
             $handle = fopen('php://output', 'w');
 
-            // Meta Commerce standard CSV column headers
+            // Meta Commerce standard CSV column headers (includes GTIN and MPN)
             fputcsv($handle, [
                 'id',
                 'title',
@@ -200,16 +330,21 @@ class ProductFeedExportController extends Controller
                 'image_link',
                 'brand',
                 'google_product_category',
+                'gtin',
+                'mpn',
                 'inventory'
             ]);
 
-            $this->getFilteredProductsQuery($request)->chunk(200, function ($products) use ($handle, $webConfig) {
+            $this->getFilteredProductsQuery($request, $auth)->chunk(200, function ($products) use ($handle, $channelTitle) {
                 foreach ($products as $product) {
                     $productUrl = route('product', $product->slug ?? $product->id);
-                    $imageUrl = $product->thumbnail_full_url['path'] ?? asset('public/assets/front-end/img/image-place-holder.png');
+                    $imageUrl = is_array($product->thumbnail_full_url)
+                        ? ($product->thumbnail_full_url['path'] ?? asset('public/assets/front-end/img/image-place-holder.png'))
+                        : ($product->thumbnail_full_url ?? asset('public/assets/front-end/img/image-place-holder.png'));
+
                     $price = number_format((float)$product->unit_price, 2, '.', '') . ' NGN';
                     $availability = ($product->current_stock > 0) ? 'in stock' : 'out of stock';
-                    $brand = $product->brand ? $product->brand->name : $webConfig;
+                    $brand = $product->brand ? $product->brand->name : $channelTitle;
                     $categoryName = $product->category ? $product->category->name : 'General';
                     $description = !empty($product->details) ? strip_tags($product->details) : $product->name;
                     $description = mb_substr(trim(preg_replace('/\s+/', ' ', $description)), 0, 4990);
@@ -223,7 +358,7 @@ class ProductFeedExportController extends Controller
                     }
 
                     fputcsv($handle, [
-                        $product->id,
+                        $product->code ?: ('VM-' . $product->id),
                         $product->name,
                         $description,
                         $availability,
@@ -233,7 +368,9 @@ class ProductFeedExportController extends Controller
                         $productUrl,
                         $imageUrl,
                         $brand,
-                        $categoryName,
+                        $product->google_category_id ?: $categoryName,
+                        $product->gtin ?? '',
+                        $product->mpn ?? '',
                         $product->current_stock ?? 0,
                     ]);
                 }
@@ -245,22 +382,28 @@ class ProductFeedExportController extends Controller
 
     /**
      * 3. TikTok Catalog CSV Feed.
+     * Supports both Admin Platform Feed and Vendor-Isolated Catalog Feeds.
      */
     public function tiktokCatalogCsv(Request $request): StreamedResponse|Response
     {
-        if (!$this->verifyFeedToken($request)) {
-            return response('Unauthorized feed token. Access denied.', 403);
+        $auth = $this->authenticateFeedRequest($request);
+        if (!$auth['authenticated']) {
+            return response('Unauthorized feed token. Access denied.', 403, [
+                'Content-Type' => 'text/plain; charset=utf-8'
+            ]);
         }
 
         $headers = [
             'Content-Type' => 'text/csv; charset=utf-8',
             'Content-Disposition' => 'inline; filename="tiktok_catalog_feed.csv"',
-            'Cache-Control' => 'public, max-age=3600',
+            'Cache-Control' => 'public, max-age=1800',
         ];
 
-        $webConfig = getWebConfig('company_name') ?? 'Victorious MARKET';
+        $channelTitle = ($auth['scope'] === 'vendor' && $auth['seller'] && $auth['seller']->shop)
+            ? $auth['seller']->shop->name
+            : (getWebConfig('company_name') ?? 'Victorious MARKET');
 
-        return response()->stream(function () use ($request, $webConfig) {
+        return response()->stream(function () use ($request, $auth, $channelTitle) {
             $handle = fopen('php://output', 'w');
 
             // TikTok Catalog CSV headers
@@ -278,13 +421,16 @@ class ProductFeedExportController extends Controller
                 'quantity'
             ]);
 
-            $this->getFilteredProductsQuery($request)->chunk(200, function ($products) use ($handle, $webConfig) {
+            $this->getFilteredProductsQuery($request, $auth)->chunk(200, function ($products) use ($handle, $channelTitle) {
                 foreach ($products as $product) {
                     $productUrl = route('product', $product->slug ?? $product->id);
-                    $imageUrl = $product->thumbnail_full_url['path'] ?? asset('public/assets/front-end/img/image-place-holder.png');
+                    $imageUrl = is_array($product->thumbnail_full_url)
+                        ? ($product->thumbnail_full_url['path'] ?? asset('public/assets/front-end/img/image-place-holder.png'))
+                        : ($product->thumbnail_full_url ?? asset('public/assets/front-end/img/image-place-holder.png'));
+
                     $price = number_format((float)$product->unit_price, 2, '.', '') . ' NGN';
                     $availability = ($product->current_stock > 0) ? 'in_stock' : 'out_of_stock';
-                    $brand = $product->brand ? $product->brand->name : $webConfig;
+                    $brand = $product->brand ? $product->brand->name : $channelTitle;
                     $description = !empty($product->details) ? strip_tags($product->details) : $product->name;
                     $description = mb_substr(trim(preg_replace('/\s+/', ' ', $description)), 0, 4990);
 
@@ -297,7 +443,7 @@ class ProductFeedExportController extends Controller
                     }
 
                     fputcsv($handle, [
-                        $product->id,
+                        $product->code ?: ('VM-' . $product->id),
                         $product->name,
                         $description,
                         $availability,

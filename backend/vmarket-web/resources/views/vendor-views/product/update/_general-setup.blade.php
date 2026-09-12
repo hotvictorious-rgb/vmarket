@@ -206,6 +206,63 @@
                             </div>
                         </div>
 
+                        <div class="col-12 mt-3">
+                            <div class="border rounded p-3 bg-white">
+                                <h5 class="title-color mb-2 d-flex align-items-center gap-2">
+                                    <i class="fi fi-rr-tags"></i>
+                                    {{ translate('Multi-Channel_&_Catalog_Identifiers') }}
+                                    <span class="badge badge-soft-info fs-10 font-weight-normal">{{ translate('Google_/_Meta_/_TikTok_Feeds') }}</span>
+                                </h5>
+                                <p class="fs-12 text-muted mb-3">
+                                    {{ translate('Provide_standard_product_identifiers_to_boost_visibility_and_approval_across_Google_Shopping,_Facebook/Instagram_Catalog,_and_TikTok.') }}
+                                </p>
+                                <div class="row g-2">
+                                    <div class="col-md-4">
+                                        <div class="form-group mb-0">
+                                            <label class="title-color d-flex align-items-center gap-2">
+                                                {{ translate('GTIN_/_Barcode_/_UPC_/_EAN') }}
+                                                <span class="input-label-secondary cursor-pointer" data-toggle="tooltip"
+                                                      title="{{ translate('Global_Trade_Item_Number_(UPC,_EAN,_ISBN)._Required_for_high-ranking_Google_Shopping_listings.') }}">
+                                                    <img src="{{ dynamicAsset(path: 'public/assets/back-end/img/info-circle.svg') }}" alt="">
+                                                </span>
+                                            </label>
+                                            <input type="text" name="gtin" class="form-control"
+                                                   value="{{ old('gtin', $product->gtin ?? '') }}"
+                                                   placeholder="{{ translate('e.g._0123456789012') }}">
+                                        </div>
+                                    </div>
+                                    <div class="col-md-4">
+                                        <div class="form-group mb-0">
+                                            <label class="title-color d-flex align-items-center gap-2">
+                                                {{ translate('MPN_(Manufacturer_Part_Number)') }}
+                                                <span class="input-label-secondary cursor-pointer" data-toggle="tooltip"
+                                                      title="{{ translate('Alphanumeric_code_assigned_by_the_manufacturer_to_identify_the_product.') }}">
+                                                    <img src="{{ dynamicAsset(path: 'public/assets/back-end/img/info-circle.svg') }}" alt="">
+                                                </span>
+                                            </label>
+                                            <input type="text" name="mpn" class="form-control"
+                                                   value="{{ old('mpn', $product->mpn ?? '') }}"
+                                                   placeholder="{{ translate('e.g._PART-1234X') }}">
+                                        </div>
+                                    </div>
+                                    <div class="col-md-4">
+                                        <div class="form-group mb-0">
+                                            <label class="title-color d-flex align-items-center gap-2">
+                                                {{ translate('Google_Product_Category_ID') }}
+                                                <span class="input-label-secondary cursor-pointer" data-toggle="tooltip"
+                                                      title="{{ translate('Google_Taxonomy_numeric_category_ID_(e.g._1604_for_Apparel_&_Accessories)._Helps_Google_accurately_categorize_your_feed.') }}">
+                                                    <img src="{{ dynamicAsset(path: 'public/assets/back-end/img/info-circle.svg') }}" alt="">
+                                                </span>
+                                            </label>
+                                            <input type="number" name="google_category_id" class="form-control"
+                                                   value="{{ old('google_category_id', $product->google_category_id ?? '') }}"
+                                                   placeholder="{{ translate('e.g._1604') }}">
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
                         @include('shared-views.product.category-specifications-input', ['product' => $product])
                     </div>
                 </div>

@@ -125,6 +125,8 @@ Route::group(['middleware' => ['maintenance_mode', 'actch:admin_panel']], functi
                     Route::post('ai-suggest-specs', [CategorySpecificationController::class, 'aiSuggestSpecs'])->name('ai-suggest-specs');
 
                     Route::post('load-more-brands', 'loadMoreBrands')->name('load-more-brands');
+                    Route::get('feeds', [\App\Http\Controllers\ProductFeedExportController::class, 'vendorIndex'])->name('feeds');
+                    Route::post('feeds/regenerate-token', [\App\Http\Controllers\ProductFeedExportController::class, 'vendorRegenerateToken'])->name('feeds.regenerate-token');
                 });
             });
 
