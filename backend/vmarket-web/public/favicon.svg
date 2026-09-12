@@ -1,0 +1,24 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="100%" height="100%">
+  <!-- Royal Purple #5E17EB Circular Field -->
+  <circle cx="256" cy="256" r="256" fill="#5E17EB"/>
+  
+  <!-- Crisp White Shopping Cart Body -->
+  <path d="M 105 145 H 145 L 180 340 H 380 L 425 180 H 155" 
+        fill="#FFFFFF" stroke="#FFFFFF" stroke-width="12" stroke-linecap="round" stroke-linejoin="round"/>
+  
+  <!-- Cart Wheels (White Outer, Royal Purple Inner) -->
+  <circle cx="215" cy="390" r="32" fill="#FFFFFF"/>
+  <circle cx="215" cy="390" r="16" fill="#5E17EB"/>
+  
+  <circle cx="345" cy="390" r="32" fill="#FFFFFF"/>
+  <circle cx="345" cy="390" r="16" fill="#5E17EB"/>
+  
+  <!-- Centered Royal Purple 'VM' Monogram -->
+  <text x="280" y="295" 
+        font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif" 
+        font-size="96" 
+        font-weight="900" 
+        fill="#5E17EB" 
+        text-anchor="middle" 
+        letter-spacing="-1">VM</text>
+</svg>
