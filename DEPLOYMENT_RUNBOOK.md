@@ -4,11 +4,39 @@ This document defines the **standard operating procedure (SOP)** for safely depl
 
 ---
 
+## 🛡️ 0. Authoritative Terminal/CLI Deployment Architecture (No Web `/install` Wizard)
+
+* **Absolute Prohibition of Web-Based Setup Wizards:** Victorious MARKET in production MUST NEVER expose or utilize a web-based `/install` or browser-accessible first-run setup wizard. Public setup routes present severe security vulnerabilities and circumvention risks.
+* **Authoritative Terminal/CLI Control:** Production setup, dependency installation, database migrations, asset linking, and cache rebuilding are driven strictly via server SSH terminal / CLI:
+  ```text
+  SSH into server
+  ↓
+  Configure environment (.env)
+  ↓
+  composer install --no-dev --optimize-autoloader
+  ↓
+  php artisan migrate --force
+  ↓
+  php artisan storage:link
+  ↓
+  php artisan optimize:clear
+  php artisan config:cache
+  php artisan route:cache
+  php artisan view:cache
+  ↓
+  Configure server cron/scheduler & queue
+  ↓
+  Verify live deployment (HTTP 200)
+  ```
+* **Dependency Installation Policy:** Normal, standard CLI dependency installation via Composer (`composer install --no-dev`) is expected during production server deployment; no unnecessary third-party packages or web installers are permitted.
+
+---
+
 ## 🏛️ 1. Architecture & Monorepo Context
 
 Victorious MARKET is maintained as a unified monorepo:
 * **Root Directory:** Contains governance documentation, CI/CD workflows, and 3 Flutter mobile apps (`User app/`, `Vendor app/`, `Delivery Man App/`).
-* **Web Backend Root:** The Laravel 12 application lives inside `backend/vmarket-web/`.
+* **Web Backend Root:** The Laravel application lives inside `backend/vmarket-web/`.
 * **Live Server Destination:** Only the contents of `backend/vmarket-web/` map to `/home1/victori6/public_html/shop.victoriousmarket.com.ng/`.
 
 ---
@@ -43,7 +71,7 @@ git clone --depth 1 https://github.com/hotvictorious-rgb/vmarket.git /tmp/vmarke
 ### Phase 3: Perform Safe Overlay Sync
 Copy only updated application code while preserving live environment assets:
 ```bash
-REPO="/tmp/vmarket_check/backend/Admin and web new install V16.1"
+REPO="/tmp/vmarket_check/backend/vmarket-web"
 LIVE="/home1/victori6/public_html/shop.victoriousmarket.com.ng"
 
 # Copy updated core code
@@ -108,7 +136,7 @@ tar -czf "$BACKUP_DIR/shop_backup_$(date +%Y%m%d_%H%M%S).tar.gz" --exclude="$LIV
 
 echo "=== [2/6] Cloning Latest Code ==="
 git clone --depth 1 "$REPO_URL" "$TEMP_DIR"
-SOURCE_DIR="$TEMP_DIR/backend/Admin and web new install V16.1"
+SOURCE_DIR="$TEMP_DIR/backend/vmarket-web"
 
 echo "=== [3/6] Executing Safe Overlay Sync ==="
 cp -ru "$SOURCE_DIR/app" "$LIVE_DIR/"
