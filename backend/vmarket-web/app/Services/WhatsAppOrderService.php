@@ -252,9 +252,9 @@ class WhatsAppOrderService
 
         try {
             return DB::transaction(function () use ($user, $formattedPhone, $deliveryAddress, $paymentMethod, $cartSummary, $discountAmount, $finalOrderAmount, $couponCode) {
-                // Universal 6-digit Delivery OTP (rand(100000, 999999))
-                $deliveryOtp = (string) rand(100000, 999999);
-                $pickupOtp = (string) rand(100000, 999999);
+                // [AI] Universal 6-digit Cryptographic Delivery & Pickup OTP (CSPRNG)
+                $deliveryOtp = (string) random_int(100000, 999999);
+                $pickupOtp = (string) random_int(100000, 999999);
 
                 $shippingAddressData = [
                     'contact_person_name' => trim($user->f_name . ' ' . $user->l_name),

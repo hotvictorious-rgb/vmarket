@@ -795,7 +795,8 @@ class OrderController extends BaseController
             ], 403);
         }
 
-        if ($order['payment_status'] == 'paid') {
+        // [AI] Immutability: Paid orders cannot be reverted to unpaid by vendor
+        if ($order['payment_status'] == 'paid' || $request['payment_status'] != 'paid') {
             return response()->json([
                 'status' => 0,
                 'message' => translate('when_payment_status_paid_then_you_can_not_change_payment_status_paid_to_unpaid.'),
@@ -810,11 +811,21 @@ class OrderController extends BaseController
             ]);
         }
 
-        if ($order['payment_method'] == 'offline_payment' && $order['payment_status'] == 'unpaid') {
+        // [AI] Payment Authority Invariant: Victorious MARKET backend / payment gateway / admin is the sole payment authority.
+        // Vendors CANNOT manually declare Paystack, OPay, bank transfer, or any other digital/offline payment as paid.
+        if ($order['payment_method'] !== 'cash_on_delivery') {
             return response()->json([
                 'status' => 0,
-                'message' => translate('Please confirm the offline payment information before editing this order.'),
-            ]);
+                'message' => translate('Only_the_payment_gateway_or_admin_can_verify_digital_or_offline_payments._Vendors_cannot_manually_update_payment_status.'),
+            ], 403);
+        }
+
+        // [AI] COD Controlled Transition: COD payment status can only be marked as paid once order is delivered
+        if ($order['order_status'] !== 'delivered') {
+            return response()->json([
+                'status' => 0,
+                'message' => translate('Can_not_change_payment_status_before_order_delivered!'),
+            ], 403);
         }
 
         $this->orderRepo->update(id: $request['id'], data: ['payment_status' => $request['payment_status']]);

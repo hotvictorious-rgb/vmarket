@@ -447,12 +447,22 @@ class OrderController extends Controller
                 return response()->json(['success' => 0, 'message' => translate("Customer account has been deleted. you can't update status!")], 202);
             }
 
+            // [AI] Payment Authority Invariant: Victorious MARKET backend / payment gateway / admin is the sole payment authority.
+            // Vendors CANNOT manually declare Paystack, OPay, bank transfer, or any other digital/offline payment as paid.
+            if ($order['payment_method'] !== 'cash_on_delivery') {
+                return response()->json([
+                    'errors' => [
+                        ['code' => 'payment_method', 'message' => translate('Only the payment gateway or admin can verify digital or offline payments. Vendors cannot manually update payment status.')]
+                    ]
+                ], 403);
+            }
+
             if ($order['payment_method'] == 'cash_on_delivery' && $order['order_status'] != 'delivered' && $request['payment_status'] == 'paid') {
                 return response()->json([
                     'errors' => [
                         ['code' => 'order', 'message' => translate('Can not change payment status before order delivered!')]
                     ]
-                ], 404);
+                ], 403);
             }
 
             $order->payment_status = $request['payment_status'];

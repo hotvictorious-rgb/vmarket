@@ -229,7 +229,7 @@ class WhatsAppVendorService
         }
 
         if (empty($order->pickup_verification_code)) {
-            $order->update(['pickup_verification_code' => (string)rand(100000, 999999)]);
+            $order->update(['pickup_verification_code' => (string) random_int(100000, 999999)]);
             $order->refresh();
         }
 

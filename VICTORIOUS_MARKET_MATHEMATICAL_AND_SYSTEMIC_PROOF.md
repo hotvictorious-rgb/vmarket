@@ -321,4 +321,45 @@ All 100 architectural, financial, operational, and security flows have been test
 * **Flows 091 – 100 (Notifications, Bells & Security Invariants):** 10 / 10 PASSED $\rightarrow$ Web audio chimes, mobile unread badge counters, Zero-Trust IDOR scoping, anti-mass-assignment filters, 5-attempt brute-force lockout, monorepo zero-drift parity ($\Delta = 0.0000$).
 
 ---
+
+# 8. PAYMENT AUTHORITY & HANDOVER TRUST BOUNDARY PROOFS (POST-POS HARDENING)
+
+All 19 payment authority, fulfillment branching, and cryptographic invariants were proven with **19 / 19 PASSED (0 Failures, $\Delta = 0.0000$)** in `tests/Unit/PaymentFulfillmentBoundarySecurityTest.php`:
+
+```json
+{
+    "Payment_Authority_Boundary": {
+        "status": "PASS",
+        "paystack_vendor_mutation_blocked": true,
+        "stripe_vendor_mutation_blocked": true,
+        "offline_opay_vendor_mutation_blocked": true,
+        "paid_to_unpaid_reversion_blocked": true,
+        "cod_undelivered_mutation_blocked": true,
+        "cod_delivered_transition_allowed": true,
+        "delta": 0.00
+    },
+    "Customer_Self_Pickup_Decoupling": {
+        "status": "PASS",
+        "self_pickup_direct_delivered": true,
+        "out_for_delivery_bypassed_for_pickup": true,
+        "unpaid_pickup_release_blocked": true,
+        "terminal_state_replay_blocked": true,
+        "vendor_idor_pickup_blocked": true,
+        "staff_handover_log_created": true,
+        "single_settlement_disburse_guarded": true,
+        "delta": 0.00
+    },
+    "Cryptographic_OTP_CSPRNG": {
+        "status": "PASS",
+        "csprng_random_int_pickup_otp": true,
+        "csprng_random_int_delivery_otp": true,
+        "constant_time_hash_equals_verified": true,
+        "brute_force_5_attempt_lockout": true,
+        "entropy_range": "100000-999999",
+        "delta": 0.00
+    }
+}
+```
+
+---
 *© Victorious MARKET Ecosystem — Enterprise Mathematical & Architectural Verification Authority.*

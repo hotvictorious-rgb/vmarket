@@ -1017,8 +1017,8 @@ class OrderManager
 
         return [
             'id' => $orderId,
-            'verification_code' => rand(100000, 999999),
-            'pickup_verification_code' => rand(100000, 999999),
+            'verification_code' => random_int(100000, 999999),
+            'pickup_verification_code' => random_int(100000, 999999),
             'customer_id' => $customerData['customer_id'],
             'is_guest' => $customerData['is_guest'],
             'seller_id' => $cartData['seller_id'],

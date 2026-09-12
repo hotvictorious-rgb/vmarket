@@ -156,7 +156,7 @@ class DeliveryManController extends Controller
         }
 
         if ($request['status'] == 'out_for_delivery') {
-            if (!isset($request['pickup_verification_code']) || $order->pickup_verification_code != $request['pickup_verification_code']) {
+            if (!isset($request['pickup_verification_code']) || !hash_equals((string)$order->pickup_verification_code, (string)$request['pickup_verification_code'])) {
                 return response()->json(['success' => 0, 'message' => translate('invalid_pickup_otp')], 403);
             }
         }
@@ -164,7 +164,7 @@ class DeliveryManController extends Controller
         if ($request['status'] == 'delivered') {
             $order_verification = getWebConfig(name: 'order_verification');
             if ($order_verification == 1) {
-                if (isset($request['verification_code']) && $order->verification_code == $request['verification_code']) {
+                if (isset($request['verification_code']) && hash_equals((string)$order->verification_code, (string)$request['verification_code'])) {
                     $order->verification_status = 1;
                     $order->save();
                 } elseif ($order->verification_status != 1) {
@@ -831,7 +831,7 @@ class DeliveryManController extends Controller
             return response()->json(['message' => translate('order_not_found_or_not_assigned_to_you')], 404);
         }
 
-        if ($order->verification_code == $request['verification_code']) {
+        if (hash_equals((string)$order->verification_code, (string)$request['verification_code'])) {
             $order->verification_status = 1;
             $order->save();
             return response()->json(['message' => translate('otp_verified_successfully')], 200);

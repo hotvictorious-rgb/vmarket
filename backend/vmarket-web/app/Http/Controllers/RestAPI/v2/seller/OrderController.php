@@ -331,10 +331,32 @@ class OrderController extends Controller
             return response()->json(['errors' => Helpers::validationErrorProcessor($validator)], 403);
         }
 
-        $order = Order::find($request['order_id']);
+        if ($request->payment_status != 'paid') {
+            return response()->json(['success' => 0, 'message' => translate('When payment status paid then you can`t change payment status paid to unpaid') . '.'], 200);
+        }
+
+        // [AI] Ownership Guard: Only update payment status for own orders
+        $order = Order::where(['id' => $request['order_id'], 'seller_id' => $seller['id']])->first();
         if (isset($order)) {
             if ($order->is_guest == '0' && empty($order->customer)) {
                 return response()->json(['success' => 0, 'message' => translate("Customer account has been deleted. you can't update status!")], 202);
+            }
+
+            // [AI] Payment Authority Invariant: Victorious MARKET backend / payment gateway / admin is the sole payment authority.
+            if ($order['payment_method'] !== 'cash_on_delivery') {
+                return response()->json([
+                    'errors' => [
+                        ['code' => 'payment_method', 'message' => translate('Only the payment gateway or admin can verify digital or offline payments. Vendors cannot manually update payment status.')]
+                    ]
+                ], 403);
+            }
+
+            if ($order['payment_method'] == 'cash_on_delivery' && $order['order_status'] != 'delivered' && $request['payment_status'] == 'paid') {
+                return response()->json([
+                    'errors' => [
+                        ['code' => 'order', 'message' => translate('Can not change payment status before order delivered!')]
+                    ]
+                ], 403);
             }
 
             $order->payment_status = $request['payment_status'];
