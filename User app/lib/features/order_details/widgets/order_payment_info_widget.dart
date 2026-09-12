@@ -46,6 +46,20 @@ class OrderPaymentInfoWidget extends StatelessWidget {
                     bool isCodeHidden = true;
                     return StatefulBuilder(
                       builder: (context, setState) {
+                        final bool isSelfPickup = orderProvider.orders?.orderType == 'pickup'
+                            || orderProvider.orders?.orderType == 'self_pickup'
+                            || (orderProvider.orders?.deliveryType == 'self_pickup')
+                            || (orderProvider.orders?.shippingAddressData == null && (orderProvider.orders?.pickupVerificationCode != null && orderProvider.orders!.pickupVerificationCode!.isNotEmpty));
+                        final String displayOtp = isSelfPickup
+                            ? (orderProvider.orders?.pickupVerificationCode ?? '')
+                            : (orderProvider.orders?.verificationCode ?? '');
+                        final String titleText = isSelfPickup
+                            ? (getTranslated('pickup_verification_code', context) ?? 'In-Store Pickup Secret OTP')
+                            : (getTranslated('order_verification_code', context) ?? 'Secret Handover OTP');
+                        final String warningText = isSelfPickup
+                            ? '⚠️ Give this 6-digit code to the merchant staff at the store upon collecting your parcel.'
+                            : '⚠️ Give this code to rider ONLY when your package is received and inspected.';
+
                         return Container(
                           margin: const EdgeInsets.symmetric(vertical: Dimensions.paddingSizeExtraSmall),
                           padding: const EdgeInsets.all(Dimensions.paddingSizeDefault),
@@ -76,7 +90,7 @@ class OrderPaymentInfoWidget extends StatelessWidget {
                                       const Icon(Icons.shield_rounded, color: Color(0xFF6A1B9A), size: 20),
                                       const SizedBox(width: 6),
                                       Text(
-                                        getTranslated('order_verification_code', context) ?? 'Secret Handover OTP',
+                                        titleText,
                                         style: titilliumBold.copyWith(
                                           color: const Color(0xFF4A148C),
                                           fontSize: Dimensions.fontSizeDefault,
@@ -94,7 +108,7 @@ class OrderPaymentInfoWidget extends StatelessWidget {
                                           border: Border.all(color: const Color(0xFFFFD700)),
                                         ),
                                         child: Text(
-                                          isCodeHidden ? '••••••' : (orderProvider.orders?.verificationCode ?? ''),
+                                          isCodeHidden ? '••••••' : displayOtp,
                                           style: robotoBold.copyWith(
                                             color: const Color(0xFF4A148C),
                                             fontSize: Dimensions.fontSizeLarge,
@@ -121,7 +135,7 @@ class OrderPaymentInfoWidget extends StatelessWidget {
                               ),
                               const SizedBox(height: 6),
                               Text(
-                                '⚠️ Give this code to rider ONLY when your package is received and inspected.',
+                                warningText,
                                 style: textRegular.copyWith(
                                   fontSize: Dimensions.fontSizeExtraSmall,
                                   color: const Color(0xFF5D4037),

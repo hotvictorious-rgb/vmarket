@@ -51,6 +51,7 @@ class Orders {
   bool? isShippingFree;
   String? orderGroupId;
   String? verificationCode;
+  String? pickupVerificationCode;
   bool? verificationStatus;
   int? sellerId;
   String? sellerIs;
@@ -117,6 +118,7 @@ class Orders {
         this.isShippingFree,
         this.orderGroupId,
         this.verificationCode,
+        this.pickupVerificationCode,
         this.verificationStatus,
         this.sellerId,
         this.sellerIs,
@@ -184,6 +186,7 @@ class Orders {
     isShippingFree = json['is_shipping_free']??false;
     orderGroupId = json['order_group_id'];
     verificationCode = json['verification_code'];
+    pickupVerificationCode = json['pickup_verification_code'];
     verificationStatus = json['verification_status']??false;
     sellerId = json['seller_id'];
     sellerIs = json['seller_is'];

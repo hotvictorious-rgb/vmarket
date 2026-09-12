@@ -7,6 +7,19 @@ Always append your completed tasks here in chronological order at the top. Forma
 `### [YYYY-MM-DD HH:MM UTC] <Feature / Fix Title> [<Component Scope>]`
 Include the specific app/component modified and bullet points detailing the exact technical changes.
 
+### [2026-09-12 14:30 UTC] Surgical Security Hardening: Vendor Payment Authority & Canonical Pickup OTP [backend] [user-app] [ai-governance]
+* **Component:** Payment Authority, Handover Security & OTP Architecture (`RestAPI/v3/seller/OrderController.php`, `Vendor/Order/OrderController.php`, `RestAPI/v1/auth/PhoneVerificationController.php`, `RestAPI/v1/OrderController.php`, `WhatsAppOrderService.php`, `OrderModel.dart`, `order_payment_info_widget.dart`, `PaymentFulfillmentBoundarySecurityTest.php`)
+* **Action:** Executed surgical security fix based on full-stack read-only audit to close vendor payment authority bypasses and establish canonical self-pickup OTP flow:
+  - **P1-A (Vendor API Payment Bypass Closed):** Hardened `updateOrderDetails` and newly discovered alternate bypass `order_detail_status` in `RestAPI/v3/seller/OrderController.php`. Vendor attempts to mark non-COD orders as `paid` or transition unpaid non-COD orders to `delivered` are strictly rejected with HTTP 403. Delivery payment mutation restricted exclusively to COD orders. Settlement disburse `getWalletManageOnOrderStatusChange()` is guarded to require verified `payment_status === 'paid'`.
+  - **P1-B (Web Vendor Due Payment Bypass Closed):** Hardened `orderDueAmountMarkAsPaid` in `Vendor/Order/OrderController.php` to reject non-COD payment mutations with HTTP 403 and enforce `order_status === 'delivered'` for COD mutations. Hardened web `updateStatus` delivery handler to conditional COD payment mutation and verified paid check prior to wallet settlement.
+  - **P1-C (Canonical Self-Pickup Secret Flow):** Established `pickup_verification_code` as the single canonical self-pickup secret:
+    - Deserialized `pickupVerificationCode` in Flutter `OrderModel`.
+    - Updated Flutter `order_payment_info_widget.dart` to dynamically present `pickupVerificationCode` ("In-Store Pickup Secret OTP") with in-store handover instructions for self-pickup orders, while keeping `verificationCode` ("Secret Handover OTP") with inspection warning exclusively for doorstep rider delivery.
+    - Sanitized `pickup_verification_code` and `verification_code` in `RestAPI/v1/OrderController::track_by_order_id` for non-owners and unauthenticated users.
+    - Updated `WhatsAppOrderService` to deliver the canonical `pickup_otp` to self-pickup customers.
+  - **P3 (CSPRNG Upgrade):** Replaced non-cryptographic `rand(100000, 999999)` with `random_int(100000, 999999)` in `PhoneVerificationController.php` (both initial send and resend methods).
+  - **Regression Test Invariants:** Extended `PaymentFulfillmentBoundarySecurityTest.php` covering all 16 required invariants (21/21 passed). Full test suite (Freshness 23/23, Feed Isolation 31/31, Boundary Security 21/21) passes with 75/75 assertions and zero mathematical drift ($\Delta = 0.00$). All 6 modified PHP files passed `php -l` syntax validation with 0 errors.
+
 ### [2026-09-12 13:55 UTC] Launch-Critical Payment Authority, Customer Self-Pickup & CSPRNG OTP Hardening [backend] [ai-governance]
 * **Component:** Payment Processing & Fulfillment Lifecycle (`OrderController.php`, `InShopHandoverController.php`, `OrderManager.php`, `DeliveryManController.php`, `WhatsAppOrderService.php`, `WhatsAppVendorService.php`, `DispatchPortalController.php`, `routes/vendor/routes.php`, `tests/Unit/PaymentFulfillmentBoundarySecurityTest.php`)
 * **Action:** Resolved P1 payment authority loophole, customer self-pickup state transition bug, and cryptographic OTP entropy weaknesses discovered during post-POS-removal audit:

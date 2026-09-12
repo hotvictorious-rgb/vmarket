@@ -79,6 +79,8 @@ class OrderController extends Controller
             unset($data['billing_address_data']);
             unset($data['shipping_address_data']);
             unset($data['transaction_ref']);
+            unset($data['verification_code']);
+            unset($data['pickup_verification_code']);
             if (isset($data['delivery_man'])) {
                 unset($data['delivery_man']['identity_number']);
                 unset($data['delivery_man']['identity_image']);

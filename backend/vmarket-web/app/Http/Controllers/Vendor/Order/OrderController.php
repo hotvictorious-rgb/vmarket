@@ -271,6 +271,28 @@ class OrderController extends BaseController
             ToastMagic::error(translate('Order_already_paid'));
             return back();
         }
+
+        // [AI] Payment Authority Invariant (P1-B): Vendors CANNOT manually verify non-COD digital/offline payments
+        if ($order->payment_method !== 'cash_on_delivery') {
+            if ($request->ajax()) {
+                return response()->json([
+                    'status' => false,
+                    'message' => translate('Only_platform_administrators_or_payment_gateways_can_verify_digital_payments._Vendors_cannot_manually_mark_non-COD_orders_as_paid.'),
+                ], 403);
+            }
+            abort(403, translate('Only_platform_administrators_or_payment_gateways_can_verify_digital_payments.'));
+        }
+
+        // [AI] Fulfillment Boundary Guard: COD may only be marked as paid upon legitimate order delivery
+        if (!in_array($order->order_status, ['delivered'])) {
+            $msg = translate('Cash_on_Delivery_can_only_be_marked_as_paid_upon_order_delivery.');
+            if ($request->ajax()) {
+                return response()->json(['status' => false, 'message' => $msg], 403);
+            }
+            ToastMagic::error($msg);
+            return back();
+        }
+
         try {
             DB::transaction(function () use ($order, $validated) {
                 $order->update([
@@ -285,9 +307,9 @@ class OrderController extends BaseController
                     'order_amount' => $order['order_amount'],
                     'order_due_amount' => 0,
                     'order_due_payment_status' => 'paid',
-                    'order_due_payment_method' => 'marked_as_paid',
+                    'order_due_payment_method' => 'cash_on_delivery',
                     'order_due_transaction_ref' => '',
-                    'order_due_payment_note' => 'Marked as paid by seller',
+                    'order_due_payment_note' => 'Marked as paid by seller upon delivery',
                     'order_return_amount' => '',
                     'order_return_payment_status' => '',
                     'order_return_payment_method' => '',
@@ -612,8 +634,8 @@ class OrderController extends BaseController
         if ($order['payment_method'] != 'cash_on_delivery' && $request['order_status'] == 'delivered' && $order['payment_status'] != 'paid') {
             return response()->json([
                 'status' => 0,
-                'message' => translate('Please_update_the_payment_status_first'),
-            ]);
+                'message' => translate('Unpaid_digital_or_offline_orders_cannot_be_marked_as_delivered_until_payment_is_confirmed_by_gateway_or_admin.'),
+            ], 403);
         }
 
         if ($order['edit_due_amount'] > 0 && $order?->latestEditHistory?->order_due_payment_method == 'cash_on_delivery' && $order?->latestEditHistory?->order_due_payment_status == 'unpaid' && $order['shipping_responsibility'] == 'inhouse_shipping' && $request['order_status'] == 'delivered') {
@@ -648,8 +670,10 @@ class OrderController extends BaseController
         $this->orderRepo->updateStockOnOrderStatusChange($request['id'], $request['order_status']);
         $this->orderRepo->update(id: $request['id'], data: ['order_status' => $request['order_status']]);
         if ($request['order_status'] == 'delivered') {
-            $this->orderRepo->update(id: $request['id'], data: ['payment_status' => 'paid', 'is_pause' => 0]);
-            $this->orderDetailRepo->updateWhere(params: ['order_id' => $order['id']], data: ['delivery_status' => $request['order_status'], 'payment_status' => 'paid']);
+            // [AI] Only COD orders transition payment_status to 'paid' upon vendor delivery
+            $newPaymentStatus = ($order['payment_method'] === 'cash_on_delivery') ? 'paid' : $order['payment_status'];
+            $this->orderRepo->update(id: $request['id'], data: ['payment_status' => $newPaymentStatus, 'is_pause' => 0]);
+            $this->orderDetailRepo->updateWhere(params: ['order_id' => $order['id']], data: ['delivery_status' => $request['order_status'], 'payment_status' => $newPaymentStatus]);
             $this->orderDetailRepo->updateWhere(params: ['order_id' => $order['id'], 'refund_started_at' => null], data: ['refund_started_at' => now()]);
         }
         event(new OrderStatusEvent(key: $request['order_status'], type: 'customer', order: $order));
@@ -720,7 +744,11 @@ class OrderController extends BaseController
         }
 
         if ($request['order_status'] == 'delivered' && $order['seller_id'] != null) {
-            $this->orderRepo->manageWalletOnOrderStatusChange(order: $order, receivedBy: 'seller');
+            $refreshed = $this->orderRepo->getFirstWhere(params: ['id' => $order['id']]);
+            // [AI] Settlement Invariant: Settlement occurs only if order is verified as paid
+            if ($refreshed && $refreshed['payment_status'] === 'paid') {
+                $this->orderRepo->manageWalletOnOrderStatusChange(order: $refreshed, receivedBy: 'seller');
+            }
         }
         if ($request['order_status'] == 'delivered') {
             $referredUser = ReferralCustomer::where('user_id', $order?->customer?->id)->first();

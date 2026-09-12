@@ -322,12 +322,19 @@ class WhatsAppOrderService
                 // 5. [AI] Trigger Automated WhatsApp Alert to Vendors
                 WhatsAppAutomationWorkflow::triggerVendorNewOrderAlert($order);
 
+                $isSelfPickup = stripos($deliveryAddress, 'pickup') !== false
+                    || ($order->order_type ?? '') === 'pickup'
+                    || ($order->order_type ?? '') === 'self_pickup';
+
                 return [
                     'status' => true,
                     'order_id' => $order->id,
                     'order_amount' => $finalOrderAmount,
                     'formatted_amount' => '₦' . number_format($finalOrderAmount, 2),
                     'delivery_otp' => $deliveryOtp,
+                    'pickup_otp' => $pickupOtp,
+                    'handover_otp' => $isSelfPickup ? $pickupOtp : $deliveryOtp,
+                    'is_self_pickup' => $isSelfPickup,
                     'delivery_address' => $deliveryAddress,
                     'payment_method' => $paymentMethod,
                     'paystack_url' => $paystackUrl,

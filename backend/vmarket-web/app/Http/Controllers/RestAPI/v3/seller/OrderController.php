@@ -316,6 +316,16 @@ class OrderController extends Controller
             return response()->json(['success' => 0, 'message' => translate('order is already delivered')], 200);
         }
 
+        if ($request['order_status'] == 'delivered') {
+            // [AI] Payment Authority Guard: An unpaid non-COD order CANNOT be marked as delivered by a vendor
+            if ($order['payment_status'] !== 'paid' && $order['payment_method'] !== 'cash_on_delivery') {
+                return response()->json([
+                    'status' => false,
+                    'message' => translate('Unpaid_digital_or_offline_orders_cannot_be_marked_as_delivered_until_payment_is_confirmed_by_gateway_or_admin.'),
+                ], 403);
+            }
+        }
+
         event(new OrderStatusEvent(key: $request['order_status'], type: 'customer', order: $order));
         if ($request->order_status == 'canceled') {
             event(new OrderStatusEvent(key: 'canceled', type: 'delivery_man', order: $order));
@@ -323,14 +333,20 @@ class OrderController extends Controller
 
         $order->order_status = $request['order_status'];
         if ($request['order_status'] == 'delivered') {
-            $order->payment_status = 'paid';
-            Order::where('id', $order->id)->update(['is_pause' => 0]);
-            OrderDetail::where('order_id', $order->id)->update(['delivery_status' => 'delivered', 'payment_status' => 'paid']);
+            // [AI] Only COD orders transition payment_status to 'paid' upon vendor delivery
+            $newPaymentStatus = ($order['payment_method'] === 'cash_on_delivery') ? 'paid' : $order['payment_status'];
+            $order->payment_status = $newPaymentStatus;
+            Order::where('id', $order->id)->update(['payment_status' => $newPaymentStatus, 'is_pause' => 0]);
+            OrderDetail::where('order_id', $order->id)->update(['delivery_status' => 'delivered', 'payment_status' => $newPaymentStatus]);
             OrderDetail::where('order_id', $order['id'])->whereNull('refund_started_at')->update(['refund_started_at' => now()]);
         }
         OrderManager::getStockUpdateOnOrderStatusChange($order, $request->order_status);
         if ($request->order_status == 'delivered' && $order['seller_id'] != null) {
-            OrderManager::getWalletManageOnOrderStatusChange($order, 'seller');
+            $refreshedOrder = Order::find($order->id);
+            // [AI] Settlement Invariant: Settlement occurs only if order is verified as paid
+            if ($refreshedOrder && $refreshedOrder->payment_status === 'paid') {
+                OrderManager::getWalletManageOnOrderStatusChange($refreshedOrder, 'seller');
+            }
         }
 
         $order->save();
@@ -540,6 +556,16 @@ class OrderController extends Controller
                 return response()->json(['success' => 0, 'message' => translate('when_payment_status_paid_then_you_can_not_change_payment_status_paid_to_unpaid.')], 403);
             }
 
+            // [AI] Payment Authority Invariant (P1-A): Vendors CANNOT establish payment for non-COD digital/offline methods
+            if ($request->has('payment_status') && $request['payment_status'] === 'paid' && $order['payment_status'] !== 'paid') {
+                if ($order['payment_method'] !== 'cash_on_delivery') {
+                    return response()->json([
+                        'status' => false,
+                        'message' => translate('Only_platform_administrators_or_payment_gateways_can_verify_digital_payments._Vendors_cannot_manually_mark_non-COD_orders_as_paid.'),
+                    ], 403);
+                }
+            }
+
             if ($order['payment_method'] == 'offline_payment' && $order['payment_status'] == 'unpaid') {
                 return response()->json(['status' => 0, 'message' => translate('Please confirm the offline payment information before changing the order status.')], 403);
             }
@@ -561,6 +587,14 @@ class OrderController extends Controller
 
 
             if ($request['order_status'] == 'delivered') {
+                // [AI] Guard: An unpaid non-COD order CANNOT be marked as delivered by a vendor
+                if ($order['payment_status'] !== 'paid' && $order['payment_method'] !== 'cash_on_delivery') {
+                    return response()->json([
+                        'status' => false,
+                        'message' => translate('Unpaid_digital_or_offline_orders_cannot_be_marked_as_delivered_until_payment_is_confirmed_by_gateway_or_admin.'),
+                    ], 403);
+                }
+
                 foreach ($order['details'] as $orderDetail) {
                     $productDetails = json_decode($orderDetail?->product_details ?? '', true) ?? [];
                     if (
@@ -638,16 +672,24 @@ class OrderController extends Controller
 
                 Order::where('id', $request['order_id'])->update(['order_status' => $request['order_status']]);
                 if ($request['order_status'] == 'delivered') {
+                    // [AI] Only COD orders transition payment_status to 'paid' upon vendor delivery
+                    $newPaymentStatus = ($order['payment_method'] === 'cash_on_delivery') ? 'paid' : $order['payment_status'];
                     Order::where('id', $request['order_id'])->update([
-                        'payment_status' => 'paid',
+                        'payment_status' => $newPaymentStatus,
                         'is_pause' => 0,
                     ]);
-                    OrderDetail::where('order_id', $order->id)->update(['delivery_status' => 'delivered', 'payment_status' => 'paid']);
+                    OrderDetail::where('order_id', $order->id)->update([
+                        'delivery_status' => 'delivered',
+                        'payment_status' => $newPaymentStatus,
+                    ]);
                 }
                 OrderManager::getStockUpdateOnOrderStatusChange($order, $request['order_status']);
                 if ($request['order_status'] == 'delivered' && $order['seller_id'] != null) {
-                    OrderManager::getWalletManageOnOrderStatusChange($order, 'seller');
-
+                    $refreshedOrder = Order::find($request['order_id']);
+                    // [AI] Settlement Invariant: Settlement occurs only if order is verified as paid
+                    if ($refreshedOrder && $refreshedOrder->payment_status === 'paid') {
+                        OrderManager::getWalletManageOnOrderStatusChange($refreshedOrder, 'seller');
+                    }
                 }
 
                 if ($order['delivery_man_id'] && $request['order_status'] == 'delivered') {
@@ -705,13 +747,20 @@ class OrderController extends Controller
 
             $order = Order::with(['customer', 'seller.shop', 'deliveryMan'])->find($request['order_id']);
             if ($order['payment_status'] != 'paid' && $request['payment_status'] == 'paid') {
+                // [AI] Redundant security check: Double enforce non-COD rejection
+                if ($order['payment_method'] !== 'cash_on_delivery') {
+                    return response()->json([
+                        'status' => false,
+                        'message' => translate('Only_platform_administrators_or_payment_gateways_can_verify_digital_payments._Vendors_cannot_manually_mark_non-COD_orders_as_paid.'),
+                    ], 403);
+                }
                 if ($order['is_guest'] == '0' && empty($order?->customer)) {
                     return response()->json([
                         'success' => 0,
                         'message' => translate("customer_account_has_been_deleted.") . ' ' . translate('you_can_not_update_status.'),
                     ], 200);
                 }
-                Order::where('id', $request['order_id'])->update(['payment_status' => $request['payment_status']]);
+                Order::where('id', $request['order_id'])->update(['payment_status' => 'paid']);
             }
 
             return response()->json([
