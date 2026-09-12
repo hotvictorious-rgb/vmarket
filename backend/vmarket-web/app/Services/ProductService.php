@@ -5,6 +5,7 @@ namespace App\Services;
 
 use App\Events\RestockProductNotificationEvent;
 use App\Models\Color;
+use App\Models\Product;
 use App\Traits\FileManagerTrait;
 use Illuminate\Support\Str;
 use Rap2hpoutre\FastExcel\FastExcel;
@@ -605,6 +606,9 @@ class ProductService
             'gtin' => $request['gtin'] ?? null,
             'mpn' => $request['mpn'] ?? null,
             'google_category_id' => $request['google_category_id'] ?? null,
+            'marketplace_listing_status' => 'unlisted',
+            'marketplace_availability' => 'in_stock',
+            'marketplace_confirmed_at' => null,
         ];
     }
 
@@ -1241,5 +1245,91 @@ class ProductService
             }
         }
         return true;
+    }
+
+    /**
+     * [AI] Dedicated authorized transition: Confirm availability and list/relist product.
+     * Enforces strict seller tenant ownership.
+     */
+    public function confirmMarketplaceListing(Product $product, int $sellerId): bool
+    {
+        if ($product->added_by !== 'seller' || (int)$product->user_id !== $sellerId) {
+            return false;
+        }
+
+        $product->marketplace_confirmed_at = now();
+        $product->marketplace_listing_status = 'listed';
+        $product->deactivation_reason = null;
+        $product->save();
+
+        cacheRemoveByType(type: 'products');
+        return true;
+    }
+
+    /**
+     * [AI] Dedicated authorized transition: Toggle marketplace availability (in_stock / out_of_stock).
+     * Strictly preserves internal inventory current_stock completely untouched.
+     */
+    public function updateMarketplaceAvailability(Product $product, int $sellerId, string $availability): bool
+    {
+        if ($product->added_by !== 'seller' || (int)$product->user_id !== $sellerId) {
+            return false;
+        }
+
+        if (!in_array($availability, ['in_stock', 'out_of_stock'])) {
+            return false;
+        }
+
+        $product->marketplace_availability = $availability;
+        $product->save();
+
+        cacheRemoveByType(type: 'products');
+        return true;
+    }
+
+    /**
+     * [AI] Dedicated authorized transition: Update marketplace listing status (listed / unlisted).
+     */
+    public function updateMarketplaceListingStatus(Product $product, int $sellerId, string $status): bool
+    {
+        if ($product->added_by !== 'seller' || (int)$product->user_id !== $sellerId) {
+            return false;
+        }
+
+        if (!in_array($status, ['listed', 'unlisted'])) {
+            return false;
+        }
+
+        $product->marketplace_listing_status = $status;
+        $product->save();
+
+        cacheRemoveByType(type: 'products');
+        return true;
+    }
+
+    /**
+     * [AI] Dedicated authorized transition: Bulk confirm marketplace listings for a vendor.
+     */
+    public function bulkConfirmMarketplaceListings(array $productIds, int $sellerId): int
+    {
+        $products = Product::whereIn('id', $productIds)
+            ->where('added_by', 'seller')
+            ->where('user_id', $sellerId)
+            ->get();
+
+        $count = 0;
+        foreach ($products as $product) {
+            $product->marketplace_confirmed_at = now();
+            $product->marketplace_listing_status = 'listed';
+            $product->deactivation_reason = null;
+            $product->save();
+            $count++;
+        }
+
+        if ($count > 0) {
+            cacheRemoveByType(type: 'products');
+        }
+
+        return $count;
     }
 }

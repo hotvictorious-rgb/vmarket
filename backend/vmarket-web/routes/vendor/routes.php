@@ -2,8 +2,7 @@
 
 use App\Enums\ViewPaths\Vendor\Chatting;
 use App\Enums\ViewPaths\Vendor\Coupon;
-use App\Enums\ViewPaths\Vendor\POS;
-use App\Enums\ViewPaths\Vendor\POSOrder;
+
 use App\Enums\ViewPaths\Vendor\Refund;
 use App\Enums\ViewPaths\Vendor\Review;
 use App\Http\Controllers\Vendor\Auth\ForgotPasswordController;
@@ -19,9 +18,7 @@ use App\Http\Controllers\Vendor\DeliveryMan\DeliveryManWithdrawController;
 use App\Http\Controllers\Vendor\DeliveryMan\EmergencyContactController;
 use App\Http\Controllers\Vendor\NotificationController;
 use App\Http\Controllers\Vendor\Order\OrderEditController;
-use App\Http\Controllers\Vendor\POS\CartController;
-use App\Http\Controllers\Vendor\POS\POSController;
-use App\Http\Controllers\Vendor\POS\POSOrderController;
+
 use App\Http\Controllers\Vendor\Product\ProductController;
 use App\Http\Controllers\Admin\Product\CategorySpecificationController;
 use App\Http\Controllers\Vendor\ProfileController;
@@ -127,6 +124,11 @@ Route::group(['middleware' => ['maintenance_mode', 'actch:admin_panel']], functi
                     Route::post('load-more-brands', 'loadMoreBrands')->name('load-more-brands');
                     Route::get('feeds', [\App\Http\Controllers\ProductFeedExportController::class, 'vendorIndex'])->name('feeds');
                     Route::post('feeds/regenerate-token', [\App\Http\Controllers\ProductFeedExportController::class, 'vendorRegenerateToken'])->name('feeds.regenerate-token');
+
+                    Route::post('confirm-marketplace-listing/{id}', 'confirmMarketplaceListing')->name('confirm-marketplace-listing');
+                    Route::post('update-marketplace-availability/{id}', 'updateMarketplaceAvailability')->name('update-marketplace-availability');
+                    Route::post('update-marketplace-listing-status/{id}', 'updateMarketplaceListingStatus')->name('update-marketplace-listing-status');
+                    Route::post('bulk-confirm-marketplace-listings', 'bulkConfirmMarketplaceListings')->name('bulk-confirm-marketplace-listings');
                 });
             });
 

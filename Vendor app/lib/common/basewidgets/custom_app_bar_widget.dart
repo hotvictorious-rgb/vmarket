@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_switch/flutter_switch.dart';
 import 'package:provider/provider.dart';
-import 'package:sixvalley_vendor_app/features/pos/controllers/cart_controller.dart';
+
 import 'package:sixvalley_vendor_app/features/delivery_man/controllers/delivery_man_controller.dart';
 import 'package:sixvalley_vendor_app/features/dashboard/controllers/bottom_menu_controller.dart';
 import 'package:sixvalley_vendor_app/features/product_details/controllers/product_details_controller.dart';
@@ -108,33 +108,7 @@ class CustomAppBarWidget extends StatelessWidget implements PreferredSizeWidget 
                   }
                 );
               }
-            ): isCart?
-            Consumer<CartController>(
-                builder: (context, cartController, _) {
-                  return Padding(
-                    padding: const EdgeInsets.only(right: 12.0),
-                    child: IconButton(
-                      onPressed: () {
-                        Provider.of<BottomMenuController>(context, listen: false).selectHomePage();
-                      },
-                      icon: Stack(clipBehavior: Clip.none, children: [
-                        Image.asset( Images.cart,
-                          height: Dimensions.iconSizeDefault,
-                          width: Dimensions.iconSizeDefault,
-                          color: Theme.of(context).primaryColor,
-                        ),
-
-                        Positioned(top: -4, right: -4,
-                          child: CircleAvatar(radius: 7, backgroundColor: Colors.green,
-                            child: Text('${cartController.currentCartModel != null && cartController.currentCartModel!.cart!.isNotEmpty ?  cartController.currentCartModel?.cart?.length : 0}',
-                                style: robotoRegular.copyWith(color: Theme.of(context).cardColor,
-                                fontSize: Dimensions.fontSizeSmall)), ),
-                        ),
-                      ],),
-                    ),
-                  );
-                }
-            ) : (isFilter || isTooltip) ?
+            ): (isFilter || isTooltip) ?
             Padding(
               padding: const EdgeInsets.only(right: Dimensions.paddingSizeDefault),
               child: widget,

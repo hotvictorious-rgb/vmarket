@@ -145,26 +145,6 @@ class Seller extends Authenticatable
         return $this->hasMany(Shop::class, 'seller_id');
     }
 
-    public function posLedgers(): HasMany
-    {
-        return $this->hasMany(PosCustomerLedger::class, 'seller_id');
-    }
-
-    public function posSubscriptions(): HasMany
-    {
-        return $this->hasMany(PosSubscription::class, 'seller_id')->orderBy('id', 'desc');
-    }
-
-    public function posShifts(): HasMany
-    {
-        return $this->hasMany(PosCashierShift::class, 'seller_id');
-    }
-
-    public function posTransfers(): HasMany
-    {
-        return $this->hasMany(PosTransfer::class, 'seller_id');
-    }
-
     public function orders(): HasMany
     {
         return $this->hasMany(Order::class, 'seller_id');

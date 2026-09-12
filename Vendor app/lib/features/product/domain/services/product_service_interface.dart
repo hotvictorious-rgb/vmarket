@@ -19,4 +19,9 @@ abstract class ProductServiceInterface {
   Future<void> setIsShowCookies();
   Future<void> removeShowCookies();
   Future<dynamic> getBrandList(String languageCode);
+  Future<dynamic> confirmMarketplaceAvailability(int productId);
+  Future<dynamic> confirmAndRelistMarketplace(int productId);
+  Future<dynamic> updateMarketplaceAvailability(int productId, String availability);
+  Future<dynamic> updateMarketplaceListing(int productId, String status);
+  Future<dynamic> bulkConfirmMarketplaceAvailability(List<int> productIds);
 }

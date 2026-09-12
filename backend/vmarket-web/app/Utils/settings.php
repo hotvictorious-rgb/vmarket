@@ -447,3 +447,36 @@ if (!function_exists('cacheRemoveByType')) {
     }
 }
 
+if (!function_exists('getMarketplaceConfirmationDays')) {
+    /**
+     * [AI] Configurable marketplace listing confirmation window in days (default: 7).
+     */
+    function getMarketplaceConfirmationDays(): int
+    {
+        $days = getWebConfig('marketplace_listing_confirmation_days');
+        return !empty($days) && is_numeric($days) ? (int)$days : 7;
+    }
+}
+
+if (!function_exists('isMarketplaceConfirmationRequired')) {
+    /**
+     * [AI] Whether periodic marketplace confirmation is enforced (default: true).
+     */
+    function isMarketplaceConfirmationRequired(): bool
+    {
+        $setting = getWebConfig('marketplace_require_listing_confirmation');
+        return $setting === null ? true : (bool)$setting;
+    }
+}
+
+if (!function_exists('isMarketplaceAutoUnlistEnabled')) {
+    /**
+     * [AI] Whether background worker automatically unlists expired listings (default: true).
+     */
+    function isMarketplaceAutoUnlistEnabled(): bool
+    {
+        $setting = getWebConfig('marketplace_auto_unlist_expired_listings');
+        return $setting === null ? true : (bool)$setting;
+    }
+}
+

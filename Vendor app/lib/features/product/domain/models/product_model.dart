@@ -206,6 +206,11 @@ class Product {
   List<Translations>? translations;
   int? totalQtySold;
   List<ColorImagesFullUrl>? colorImagesFullUrl;
+  String? marketplaceListingStatus;
+  String? marketplaceAvailability;
+  String? marketplaceConfirmedAt;
+  bool? isMarketplaceFresh;
+  int? daysUntilExpiry;
 
   Product(
       {this.id,
@@ -274,7 +279,12 @@ class Product {
         this.taxVats,
         this.translations,
         this.totalQtySold,
-        this.colorImagesFullUrl
+        this.colorImagesFullUrl,
+        this.marketplaceListingStatus,
+        this.marketplaceAvailability,
+        this.marketplaceConfirmedAt,
+        this.isMarketplaceFresh,
+        this.daysUntilExpiry,
       }) {
     if (digitalProductType != null) {
       this.digitalProductType = digitalProductType;
@@ -517,6 +527,12 @@ class Product {
       });
     }
 
+    marketplaceListingStatus = json['marketplace_listing_status'];
+    marketplaceAvailability = json['marketplace_availability'];
+    marketplaceConfirmedAt = json['marketplace_confirmed_at'];
+    isMarketplaceFresh = json['is_marketplace_fresh'] == true || json['is_marketplace_fresh'] == 1 || json['is_marketplace_fresh'] == '1';
+    daysUntilExpiry = json['days_until_marketplace_expiry'] != null ? int.tryParse(json['days_until_marketplace_expiry'].toString()) : null;
+
   }
 
   Map<String, dynamic> toJson() {
@@ -598,6 +614,10 @@ class Product {
     if (translations != null) {
       data['translations'] = translations!.map((v) => v.toJson()).toList();
     }
+
+    data['marketplace_listing_status'] = marketplaceListingStatus;
+    data['marketplace_availability'] = marketplaceAvailability;
+    data['marketplace_confirmed_at'] = marketplaceConfirmedAt;
 
     return data;
   }

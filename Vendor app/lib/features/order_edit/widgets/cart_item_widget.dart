@@ -5,7 +5,7 @@ import 'package:sixvalley_vendor_app/common/basewidgets/custom_loader_widget.dar
 import 'package:sixvalley_vendor_app/common/basewidgets/custom_snackbar_widget.dart';
 import 'package:sixvalley_vendor_app/features/order_edit/controllers/order_edit_controller.dart';
 import 'package:sixvalley_vendor_app/features/order_edit/domain/models/order_edit_cart_model.dart';
-import 'package:sixvalley_vendor_app/features/pos/controllers/cart_controller.dart';
+
 import 'package:sixvalley_vendor_app/helper/color_helper.dart';
 import 'package:sixvalley_vendor_app/helper/debounce_helper.dart';
 import 'package:sixvalley_vendor_app/helper/price_converter.dart';
@@ -166,77 +166,73 @@ class _ItemCartWidgetState extends State<ItemCartWidget> {
                                     ],
                                   ),
 
-                                  Consumer<CartController>(
-                                    builder: (context, cartController, _) {
-                                      return Row(
-                                        children: [
-                                          InkWell(
-                                            onTap: () async {
-                                              if(widget.cartModel?.product?.minimumOrderQty !=  null && widget.cartModel!.quantity! <= widget.cartModel!.product!.minimumOrderQty!) {
-                                                showCustomSnackBarWidget('${getTranslated('minimum_order_quantity_is', context)!} ${widget.cartModel!.product!.minimumOrderQty}', context, sanckBarType: SnackBarType.error);
-                                              } else if (widget.cartModel!.quantity! > 1) {
-                                                clearanceController.setQuantity(widget.index!, widget.cartModel!.quantity! - 1);
+                                  Row(
+                                    children: [
+                                      InkWell(
+                                        onTap: () async {
+                                          if(widget.cartModel?.product?.minimumOrderQty !=  null && widget.cartModel!.quantity! <= widget.cartModel!.product!.minimumOrderQty!) {
+                                            showCustomSnackBarWidget('${getTranslated('minimum_order_quantity_is', context)!} ${widget.cartModel!.product!.minimumOrderQty}', context, sanckBarType: SnackBarType.error);
+                                          } else if (widget.cartModel!.quantity! > 1) {
+                                            clearanceController.setQuantity(widget.index!, widget.cartModel!.quantity! - 1);
 
-                                                showDialog(context: context, builder: (ctx)  => const CustomLoaderWidget());
-                                                await clearanceController.editOrderValidation(widget.orderId ?? 0);
-                                                WidgetsBinding.instance.addPostFrameCallback((_) {
-                                                  Navigator.of(Get.context!).pop();
-                                                });
-                                              }
-                                            },
-                                            child: Container(
-                                              width: 28, height: 28,
-                                              decoration: BoxDecoration(
-                                                shape: BoxShape.circle,
-                                                color: widget.cartModel!.quantity! > 1 ? Theme.of(context).hintColor.withValues(alpha: 0.1) : Theme.of(context).hintColor.withValues(alpha: 0.5) ,
-                                                border: Border.all(color: Theme.of(context).hintColor.withValues(alpha: 0.2)),
-                                              ),
-                                              child: Icon(Icons.remove, size: 16, color: Theme.of(context).textTheme.bodyLarge?.color),
-                                            ),
+                                            showDialog(context: context, builder: (ctx)  => const CustomLoaderWidget());
+                                            await clearanceController.editOrderValidation(widget.orderId ?? 0);
+                                            WidgetsBinding.instance.addPostFrameCallback((_) {
+                                              Navigator.of(Get.context!).pop();
+                                            });
+                                          }
+                                        },
+                                        child: Container(
+                                          width: 28, height: 28,
+                                          decoration: BoxDecoration(
+                                            shape: BoxShape.circle,
+                                            color: widget.cartModel!.quantity! > 1 ? Theme.of(context).hintColor.withValues(alpha: 0.1) : Theme.of(context).hintColor.withValues(alpha: 0.5) ,
+                                            border: Border.all(color: Theme.of(context).hintColor.withValues(alpha: 0.2)),
                                           ),
+                                          child: Icon(Icons.remove, size: 16, color: Theme.of(context).textTheme.bodyLarge?.color),
+                                        ),
+                                      ),
 
-                                          SizedBox(
-                                            width: 30,
-                                            child: Center(
-                                              child: Text(
-                                                widget.cartModel!.quantity.toString(),
-                                                style: robotoBold.copyWith(
-                                                  fontSize: Dimensions.fontSizeLarge,
-                                                  color: Theme.of(context).textTheme.bodyLarge?.color
-                                                )
-                                              ),
-                                            ),
+                                      SizedBox(
+                                        width: 30,
+                                        child: Center(
+                                          child: Text(
+                                            widget.cartModel!.quantity.toString(),
+                                            style: robotoBold.copyWith(
+                                              fontSize: Dimensions.fontSizeLarge,
+                                              color: Theme.of(context).textTheme.bodyLarge?.color
+                                            )
                                           ),
+                                        ),
+                                      ),
 
-                                          InkWell(
+                                      InkWell(
 
-                                            onTap: () async {
-                                              if(widget.cartModel!.product!.currentStock == widget.cartModel!.quantity) {
-                                                showCustomSnackBarWidget(getTranslated('out_of_stock', context)!, context, sanckBarType: SnackBarType.error);
-                                              } else {
-                                                clearanceController.setQuantity(widget.index!, widget.cartModel!.quantity!+1);
+                                        onTap: () async {
+                                          if(widget.cartModel!.product!.currentStock == widget.cartModel!.quantity) {
+                                            showCustomSnackBarWidget(getTranslated('out_of_stock', context)!, context, sanckBarType: SnackBarType.error);
+                                          } else {
+                                            clearanceController.setQuantity(widget.index!, widget.cartModel!.quantity!+1);
 
-                                                showDialog(context: context, builder: (ctx)  => const CustomLoaderWidget(), barrierDismissible: false);
-                                                await clearanceController.editOrderValidation(widget.orderId ?? 0);
-                                                WidgetsBinding.instance.addPostFrameCallback((_) {
-                                                  Navigator.of(Get.context!).pop();
-                                                });
-                                              }
-                                            },
+                                            showDialog(context: context, builder: (ctx)  => const CustomLoaderWidget(), barrierDismissible: false);
+                                            await clearanceController.editOrderValidation(widget.orderId ?? 0);
+                                            WidgetsBinding.instance.addPostFrameCallback((_) {
+                                              Navigator.of(Get.context!).pop();
+                                            });
+                                          }
+                                        },
 
-                                            child: Container(
-                                              width: 28, height: 28,
-                                              decoration: BoxDecoration(
-                                                shape: BoxShape.circle,
-                                                color: Theme.of(context).primaryColor,
-                                              ),
-                                              child: const Icon(Icons.add, size: 16, color: Colors.white),
-                                            ),
+                                        child: Container(
+                                          width: 28, height: 28,
+                                          decoration: BoxDecoration(
+                                            shape: BoxShape.circle,
+                                            color: Theme.of(context).primaryColor,
                                           ),
+                                          child: const Icon(Icons.add, size: 16, color: Colors.white),
+                                        ),
+                                      ),
 
-                                        ],
-                                      );
-                                    }
+                                    ],
                                   ),
 
 

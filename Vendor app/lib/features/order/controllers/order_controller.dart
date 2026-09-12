@@ -8,8 +8,7 @@ import 'package:sixvalley_vendor_app/features/order/domain/models/order_model.da
 import 'package:sixvalley_vendor_app/features/order/domain/services/order_service_interface.dart';
 import 'package:sixvalley_vendor_app/features/order_details/controllers/order_details_controller.dart';
 import 'package:sixvalley_vendor_app/features/order_details/domain/models/order_list_filter_model.dart';
-import 'package:sixvalley_vendor_app/features/pos/controllers/cart_controller.dart';
-import 'package:sixvalley_vendor_app/features/pos/controllers/customer_controller.dart';
+
 import 'package:sixvalley_vendor_app/helper/api_checker.dart';
 import 'package:sixvalley_vendor_app/helper/validation_helper.dart';
 import 'package:sixvalley_vendor_app/localization/language_constrants.dart';
@@ -207,8 +206,6 @@ class OrderController extends ChangeNotifier {
     filterModel = OrderListFilterModel();
     _startDateFilter = null;
     _endDateFilter = null;
-    Provider.of<CustomerController>(Get.context!, listen: false).resetCustomerId(isUpdate: false);
-    Provider.of<CartController>(Get.context!, listen: false).emptyCustomerTextField();
     if(refreshOrderList) {
       getOrderList(Get.context!, 1, _orderStatus ?? '', null);
     }

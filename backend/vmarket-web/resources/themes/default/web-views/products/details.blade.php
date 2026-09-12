@@ -334,7 +334,7 @@
                                                                    value="{{ $initialProductConfig['quantity'] ?? 1 }}"
                                                                    data-producttype="{{ $product->product_type }}"
                                                                    min="{{ $product->minimum_order_qty ?? 1 }}"
-                                                                   max="{{ $product['product_type'] == 'physical' ? $product->current_stock : 100}}">
+                                                                   max="{{ $product['marketplace_availability'] === 'in_stock' ? 99 : 0 }}">
                                                             <span class="input-group-btn h-100">
                                                                 <button class="btn btn-number __p-10 web-text-primary bg-ECF1F6 rounded-0 h-100 w-32px"
                                                                         type="button"
@@ -552,7 +552,7 @@
                                                         "url": "{{ route('product', $product->slug) }}",
                                                         "priceCurrency": "NGN",
                                                         "price": "{{ $product->unit_price }}",
-                                                        "availability": "{{ $product->current_stock > 0 ? 'https://schema.org/InStock' : 'https://schema.org/OutOfStock' }}"
+                                                        "availability": "{{ $product->marketplace_availability === 'in_stock' ? 'https://schema.org/InStock' : 'https://schema.org/OutOfStock' }}"
                                                       },
                                                       "additionalProperty": [
                                                         @php

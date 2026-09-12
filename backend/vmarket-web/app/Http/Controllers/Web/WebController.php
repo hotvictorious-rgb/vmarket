@@ -290,11 +290,11 @@ class WebController extends Controller
 
         $companyName = getInHouseShopConfig(key: 'name');
         if (strpos($request['name'], $companyName) !== false) {
-            $ids = Product::active()->Where('added_by', 'admin')->pluck('id');
+            $ids = Product::marketplaceEligible()->Where('added_by', 'admin')->pluck('id');
             array_push($product_ids, ...$ids);
         }
 
-        $seller_products = Product::active()->withCount('reviews')->whereIn('id', $product_ids)
+        $seller_products = Product::marketplaceEligible()->withCount('reviews')->whereIn('id', $product_ids)
             ->orderByRaw("LOCATE('{$request['name']}', name), name")->get();
 
         return response()->json([
@@ -860,7 +860,7 @@ class WebController extends Controller
 
     public function seller_shop_product(Request $request, $id): View|JsonResponse
     {
-        $products = Product::active()->withCount('reviews')->with('shop')->where(['added_by' => 'seller'])
+        $products = Product::marketplaceEligible()->withCount('reviews')->with('shop')->where(['added_by' => 'seller'])
             ->where('user_id', $id)
             ->whereJsonContains('category_ids', [
                 ['id' => strval($request->category_id)],
@@ -890,7 +890,7 @@ class WebController extends Controller
         $wishlist_status = Wishlist::where(['product_id' => $product->id, 'customer_id' => auth('customer')->id()])->count();
         $countOrder = count($order_details);
         $countWishlist = count($wishlists);
-        $relatedProducts = Product::with(['reviews'])->withCount('reviews')->where('category_ids', $product->category_ids)->where('id', '!=', $product->id)->limit(12)->get();
+        $relatedProducts = Product::marketplaceEligible()->with(['reviews'])->withCount('reviews')->where('category_ids', $product->category_ids)->where('id', '!=', $product->id)->limit(12)->get();
         $currentDate = date('Y-m-d');
         $productAuthorsInfo = $this->productService->getProductAuthorsInfo(product: $product);
         $productPublishingHouseInfo = $this->productService->getProductPublishingHouseInfo(product: $product);
@@ -902,14 +902,11 @@ class WebController extends Controller
         $rating = getRating($product->reviews);
         $reviews_of_product = Review::where('product_id', $product->id)->latest()->paginate(2);
         $decimal_point_settings = getWebConfig(name: 'decimal_point_settings');
-        $more_product_from_seller = Product::active()->withCount('reviews')->where('added_by', $product->added_by)->where('id', '!=', $product->id)->where('user_id', $product->user_id)->latest()->take(5)->get();
+        $more_product_from_seller = Product::marketplaceEligible()->withCount('reviews')->where('added_by', $product->added_by)->where('id', '!=', $product->id)->where('user_id', $product->user_id)->latest()->take(5)->get();
         $compareList = ProductCompare::where(['product_id' => $product->id, 'user_id' => auth('customer')->id()])->count();
 
-        $firstVariationQuantity = $product['current_stock'];
-        if (count(json_decode($product['variation'], true)) > 0) {
-            $firstVariationQuantity = json_decode($product['variation'], true)[0]['qty'];
-        }
-        $firstVariationQuantity = $product['product_type'] == 'physical' ? $firstVariationQuantity : 999;
+        // [AI] Marketplace Stock Privacy: Never expose exact warehouse current_stock or fake 999
+        $firstVariationQuantity = ($product['marketplace_availability'] ?? 'in_stock') === 'in_stock' ? 1 : 0;
         return response()->json([
             'success' => 1,
             'product' => $product,
@@ -922,7 +919,7 @@ class WebController extends Controller
     {
         $request['sort_by'] == null ? $request['sort_by'] == 'latest' : $request['sort_by'];
 
-        $productData = Product::active()->with(['reviews'])->withCount('reviews');
+        $productData = Product::marketplaceEligible()->with(['reviews'])->withCount('reviews');
 
         $query = $productData;
 

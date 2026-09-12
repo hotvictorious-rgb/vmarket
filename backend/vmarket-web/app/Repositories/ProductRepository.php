@@ -77,7 +77,7 @@ class ProductRepository implements ProductRepositoryInterface
 
     public function getWebFirstWhereActive(array $params, array $relations = [], array $withCount = []): ?Model
     {
-        return $this->product->active()
+        return $this->product->marketplaceEligible()
             ->when(isset($relations['reviews']), function ($query) use ($relations) {
                 return $query->with($relations['reviews']);
             })
@@ -284,8 +284,11 @@ class ProductRepository implements ProductRepositoryInterface
     public function getWebListWithScope(array $orderBy = [], ?string $searchValue = null, ?string $scope = null, array $filters = [], array $whereHas = [], array $whereIn = [], array $whereNotIn = [], array $relations = [], array $withCount = [], array $withSum = [], int|string $dataLimit = DEFAULT_DATA_LIMIT, ?int $offset = null): Collection|LengthAwarePaginator
     {
         $query = $this->product
-            ->when(isset($scope) && $scope == 'active', function ($query) {
-                return $query->active();
+            ->when(isset($scope) && $scope == 'marketplacePurchasable', function ($query) {
+                return $query->marketplacePurchasable();
+            })
+            ->when(isset($scope) && ($scope == 'marketplaceEligible' || $scope == 'active'), function ($query) {
+                return $query->marketplaceEligible();
             })
             ->when(isset($filters['added_by']) && $this->isAddedByInHouse(addedBy: $filters['added_by']), function ($query) {
                 return $query->where(['added_by' => 'admin']);

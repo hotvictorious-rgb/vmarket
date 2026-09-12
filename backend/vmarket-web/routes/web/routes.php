@@ -276,11 +276,7 @@ Route::group(['middleware' => ['maintenance_mode', 'guestCheck']], function () {
         Route::get('ajax-loyalty-currency-amount', 'getLoyaltyCurrencyAmount')->name('ajax-loyalty-currency-amount');
     });
 
-    Route::controller(DigitalProductDownloadController::class)->group(function () {
-        Route::group(['prefix' => 'digital-product-download-pos', 'as' => 'digital-product-download-pos.'], function () {
-            Route::get('/', 'index')->name('index');
-        });
-    });
+
 
     Route::controller(ShopViewController::class)->group(function () {
         Route::get('store/{slug}', 'seller_shop')->name('vendor-store');

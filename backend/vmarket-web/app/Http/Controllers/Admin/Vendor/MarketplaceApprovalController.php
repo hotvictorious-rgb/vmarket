@@ -64,15 +64,15 @@ class MarketplaceApprovalController extends Controller
         if (!empty($seller->cm_firebase_token)) {
             $notifData = [
                 'title' => translate('Marketplace Application Update'),
-                'description' => translate('Your store has been set to POS Only. Contact Super Admin to complete marketplace KYC verification.'),
+                'description' => translate('Your store has been deactivated for online marketplace selling. Contact Super Admin to complete marketplace KYC verification.'),
                 'image' => '',
                 'order_id' => '',
-                'type' => 'marketplace_pos_only',
+                'type' => 'marketplace_inactive',
             ];
             Helpers::send_push_notif_to_device($seller->cm_firebase_token, $notifData);
         }
 
-        ToastMagic::info(translate('Marketplace_application_set_to_POS_Only'));
+        ToastMagic::info(translate('Marketplace_storefront_deactivated'));
         return back();
     }
 }

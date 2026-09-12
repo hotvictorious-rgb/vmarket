@@ -183,6 +183,7 @@ class Product extends Model
         'digital_product_extensions' => 'array',
         'thumbnail_storage_type' => 'string',
         'digital_file_ready_storage_type' => 'string',
+        'marketplace_confirmed_at' => 'datetime',
     ];
 
     protected $appends = ['is_shop_temporary_close', 'thumbnail_full_url', 'preview_file_full_url', 'color_images_full_url', 'meta_image_full_url', 'images_full_url', 'digital_file_ready_full_url'];
@@ -228,6 +229,111 @@ class Product extends Model
             $query->where(['added_by' => 'admin', 'status' => 1]);
         });
     }
+
+    /**
+     * [AI] Single Canonical Marketplace Eligibility Rule:
+     * Product Active AND Seller Approved AND Marketplace Approved AND Listed AND Fresh Confirmation.
+     */
+    public function scopeMarketplaceEligible(Builder $query): Builder
+    {
+        $confirmationDays = function_exists('getMarketplaceConfirmationDays') ? getMarketplaceConfirmationDays() : 7;
+
+        return $query->where('status', 1)
+            ->where('request_status', 1)
+            ->where('marketplace_listing_status', 'listed')
+            ->where(function ($q) use ($confirmationDays) {
+                // Admin products are exempt from periodic seller freshness confirmation
+                $q->where('added_by', 'admin')
+                  ->orWhere(function ($sellerQuery) use ($confirmationDays) {
+                      $sellerQuery->where('added_by', 'seller')
+                          ->whereNotNull('marketplace_confirmed_at')
+                          ->where('marketplace_confirmed_at', '>=', now()->subDays($confirmationDays));
+                  });
+            })
+            ->where(function ($q) {
+                // Admin products are platform-owned; seller products must have both status='approved' AND marketplace_status='approved'
+                $q->where('added_by', 'admin')
+                  ->orWhereHas('seller', function ($sellerSubQuery) {
+                      $sellerSubQuery->where('status', 'approved')
+                                     ->where('marketplace_status', 'approved');
+                  });
+            });
+    }
+
+    /**
+     * [AI] Marketplace Purchasability: Marketplace Eligible AND In Stock.
+     */
+    public function scopeMarketplacePurchasable(Builder $query): Builder
+    {
+        return $query->marketplaceEligible()
+            ->where('marketplace_availability', 'in_stock');
+    }
+
+    /**
+     * [AI] Helper to check whether product is fresh according to admin configuration.
+     */
+    public function isMarketplaceFresh(): bool
+    {
+        if ($this->added_by === 'admin') {
+            return true;
+        }
+        if (empty($this->marketplace_confirmed_at)) {
+            return false;
+        }
+        $confirmationDays = function_exists('getMarketplaceConfirmationDays') ? getMarketplaceConfirmationDays() : 7;
+        return $this->marketplace_confirmed_at->isAfter(now()->subDays($confirmationDays));
+    }
+
+    /**
+     * [AI] Helper to check if seller is approved and marketplace approved.
+     */
+    public function isSellerMarketplaceApproved(): bool
+    {
+        if ($this->added_by === 'admin') {
+            return true;
+        }
+        $seller = $this->seller;
+        return $seller && $seller->status === 'approved' && $seller->marketplace_status === 'approved';
+    }
+
+    /**
+     * [AI] Helper to check marketplace eligibility on loaded model.
+     */
+    public function isMarketplaceEligible(): bool
+    {
+        return (int)$this->status === 1
+            && (int)$this->request_status === 1
+            && $this->marketplace_listing_status === 'listed'
+            && $this->isMarketplaceFresh()
+            && $this->isSellerMarketplaceApproved();
+    }
+
+    /**
+     * [AI] Helper to check marketplace purchasability on loaded model.
+     */
+    public function isMarketplacePurchasable(): bool
+    {
+        return $this->isMarketplaceEligible()
+            && $this->marketplace_availability === 'in_stock';
+    }
+
+    /**
+     * [AI] Number of days remaining before confirmation expires.
+     */
+    public function getDaysUntilMarketplaceExpiryAttribute(): int
+    {
+        if ($this->added_by === 'admin') {
+            return 999;
+        }
+        if (empty($this->marketplace_confirmed_at)) {
+            return 0;
+        }
+        $confirmationDays = function_exists('getMarketplaceConfirmationDays') ? getMarketplaceConfirmationDays() : 7;
+        $expiryDate = $this->marketplace_confirmed_at->copy()->addDays($confirmationDays);
+        $diff = (int)now()->diffInDays($expiryDate, false);
+        return max(0, $diff);
+    }
+
 
     public function stocks(): HasMany
     {

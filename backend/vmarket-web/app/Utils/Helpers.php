@@ -175,16 +175,34 @@ class Helpers
                     }
                 }
             }
+            $confirmationDays = function_exists('getMarketplaceConfirmationDays') ? getMarketplaceConfirmationDays() : 7;
+            $data['marketplace_listing_status'] = $data['marketplace_listing_status'] ?? 'unlisted';
+            $data['marketplace_availability'] = $data['marketplace_availability'] ?? 'in_stock';
+            $data['marketplace_confirmed_at'] = $data['marketplace_confirmed_at'] ?? null;
+            if (!empty($data['marketplace_confirmed_at'])) {
+                $confirmedAt = \Carbon\Carbon::parse($data['marketplace_confirmed_at']);
+                $expiryDate = $confirmedAt->copy()->addDays($confirmationDays);
+                $data['days_until_expiry'] = max(0, (int)now()->diffInDays($expiryDate, false));
+                $data['is_marketplace_fresh'] = $confirmedAt->isAfter(now()->subDays($confirmationDays));
+            } else {
+                $data['days_until_expiry'] = 0;
+                $data['is_marketplace_fresh'] = false;
+            }
         } elseif (!auth('admin')->check() && !request()->is('*admin*')) {
-            // Customer / Storefront / Mobile App Context: Strictly strip vendor purchase_price
+            // Customer / Storefront / Mobile App Context: Strictly strip vendor purchase_price and private warehouse stock
             if (isset($data['purchase_price'])) {
                 unset($data['purchase_price']);
             }
+            $data['marketplace_availability'] = $data['marketplace_availability'] ?? 'in_stock';
+            $data['is_marketplace_purchasable'] = ($data['marketplace_availability'] === 'in_stock');
+            unset($data['current_stock']);
+            $data['current_stock'] = null;
             if (!empty($data['variation']) && is_array($data['variation'])) {
                 foreach ($data['variation'] as &$varItem) {
                     if (isset($varItem['purchase_price'])) {
                         unset($varItem['purchase_price']);
                     }
+                    unset($varItem['qty']);
                 }
             }
         }
@@ -267,16 +285,34 @@ class Helpers
                     }
                 }
             }
+            $confirmationDays = function_exists('getMarketplaceConfirmationDays') ? getMarketplaceConfirmationDays() : 7;
+            $data['marketplace_listing_status'] = $data['marketplace_listing_status'] ?? 'unlisted';
+            $data['marketplace_availability'] = $data['marketplace_availability'] ?? 'in_stock';
+            $data['marketplace_confirmed_at'] = $data['marketplace_confirmed_at'] ?? null;
+            if (!empty($data['marketplace_confirmed_at'])) {
+                $confirmedAt = \Carbon\Carbon::parse($data['marketplace_confirmed_at']);
+                $expiryDate = $confirmedAt->copy()->addDays($confirmationDays);
+                $data['days_until_expiry'] = max(0, (int)now()->diffInDays($expiryDate, false));
+                $data['is_marketplace_fresh'] = $confirmedAt->isAfter(now()->subDays($confirmationDays));
+            } else {
+                $data['days_until_expiry'] = 0;
+                $data['is_marketplace_fresh'] = false;
+            }
         } elseif (!auth('admin')->check() && !request()->is('*admin*')) {
-            // Customer / Storefront / Mobile App Context: Strictly strip vendor purchase_price
+            // Customer / Storefront / Mobile App Context: Strictly strip vendor purchase_price and private warehouse stock
             if (isset($data['purchase_price'])) {
                 unset($data['purchase_price']);
             }
+            $data['marketplace_availability'] = $data['marketplace_availability'] ?? 'in_stock';
+            $data['is_marketplace_purchasable'] = ($data['marketplace_availability'] === 'in_stock');
+            unset($data['current_stock']);
+            $data['current_stock'] = null;
             if (!empty($data['variation']) && is_array($data['variation'])) {
                 foreach ($data['variation'] as &$varItem) {
                     if (isset($varItem['purchase_price'])) {
                         unset($varItem['purchase_price']);
                     }
+                    unset($varItem['qty']);
                 }
             }
         }

@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:sixvalley_vendor_app/data/model/response/base/api_response.dart';
 import 'package:sixvalley_vendor_app/features/coupon/domain/models/coupon_model.dart';
-import 'package:sixvalley_vendor_app/features/pos/domain/models/customer_model.dart';
+import 'package:sixvalley_vendor_app/features/coupon/domain/models/customer_model.dart';
 import 'package:sixvalley_vendor_app/features/coupon/domain/services/coupon_service_interface.dart';
 import 'package:sixvalley_vendor_app/helper/api_checker.dart';
 import 'package:sixvalley_vendor_app/localization/language_constrants.dart';

@@ -5,9 +5,7 @@ import 'package:sixvalley_vendor_app/common/basewidgets/custom_container_widget.
 import 'package:sixvalley_vendor_app/common/basewidgets/custom_date_picker_widget.dart';
 import 'package:sixvalley_vendor_app/common/basewidgets/custom_drop_down_item_widget.dart';
 import 'package:sixvalley_vendor_app/common/basewidgets/custom_snackbar_widget.dart';
-import 'package:sixvalley_vendor_app/features/pos/controllers/cart_controller.dart';
-import 'package:sixvalley_vendor_app/features/pos/controllers/customer_controller.dart';
-import 'package:sixvalley_vendor_app/features/pos/screens/customer_search_screen.dart';
+
 import 'package:sixvalley_vendor_app/features/product/controllers/product_controller.dart';
 import 'package:sixvalley_vendor_app/features/review/controllers/product_review_controller.dart';
 import 'package:sixvalley_vendor_app/features/review/widgets/review_product_filter_widget.dart';
@@ -93,33 +91,7 @@ class _ReviewFilterBottomSheetWidgetState extends State<ReviewFilterBottomSheetW
                           ),
 
 
-                        Consumer<CartController>(
-                          builder: (context,cartController,_) {
-                            return InkWell(
-                              onTap: ()=> Navigator.push(context, MaterialPageRoute(builder: (_)=> const CustomerSearchScreen())),
-                              child: Padding(
-                                padding: const EdgeInsets.symmetric(horizontal: Dimensions.paddingSizeDefault),
-                                child: ClipRRect(borderRadius: BorderRadius.circular(Dimensions.paddingSizeExtraSmall),
-                                  child: Container(width: MediaQuery.of(context).size.width,
-                                    decoration: BoxDecoration(
-                                        border: Border.all(width: .25, color: Theme.of(context).hintColor.withValues(alpha:.75)),
-                                        color: Theme.of(context).cardColor,
-                                        boxShadow: ThemeShadow.getShadow(context),
-                                        borderRadius: BorderRadius.circular(Dimensions.paddingSizeExtraSmall)
-                                    ),
-                                    child: Padding(padding: const EdgeInsets.all(Dimensions.paddingSize),
-                                      child: Row(children: [
-                                        Expanded(child: Text(cartController.searchCustomerController.text.trim().isNotEmpty?
-                                        cartController.searchCustomerController.text: '${getTranslated('select_customer', context)}',
-                                            style: robotoRegular.copyWith(color: Theme.of(context).textTheme.bodyLarge?.color))),
-                                        const Icon(Icons.arrow_drop_down_sharp)
-                                      ],
-                                      ),
-                                    )),
-                                ),
-                              ));
-                          }
-                        ),
+
 
 
                         CustomDropDownItemWidget(
@@ -186,7 +158,7 @@ class _ReviewFilterBottomSheetWidgetState extends State<ReviewFilterBottomSheetW
                                   isLoading: reviewProvider.isLoading,
                                   btnTxt: getTranslated('filter', context),
                                   onTap: () {
-                                    if(reviewProvider.startDate == null && reviewProvider.endDate == null && reviewProvider.reviewStatusIndex == 0 && Provider.of<CustomerController>(context, listen: false).customerId == 0 && Provider.of<ProductReviewController>(context, listen: false).selectedProductId == 0) {
+                                    if(reviewProvider.startDate == null && reviewProvider.endDate == null && reviewProvider.reviewStatusIndex == 0 && Provider.of<ProductReviewController>(context, listen: false).selectedProductId == 0) {
                                       showCustomToast(message: getTranslated('select_all_fields', context)!, context:  context, isSuccess: false);
                                     } else if ((reviewProvider.startDate != null &&  reviewProvider.endDate == null) || (reviewProvider.startDate == null &&  reviewProvider.endDate != null)) {
                                       showCustomToast(message: getTranslated('select_start_and_end_time', context)!, context:  context, isSuccess: false);
@@ -195,8 +167,7 @@ class _ReviewFilterBottomSheetWidgetState extends State<ReviewFilterBottomSheetW
                                     } else{
                                       reviewProvider.setAllFieldSelected(true);
                                       int?  productId = Provider.of<ProductReviewController>(context, listen: false).selectedProductId;
-                                      int?  customerId = Provider.of<CustomerController>(context, listen: false).customerId;
-                                      reviewProvider.filterReviewList(context, productId, customerId);
+                                      reviewProvider.filterReviewList(context, productId, null);
                                       // Navigator.pop(context); // Close sheet after filter
                                     }
                                   }

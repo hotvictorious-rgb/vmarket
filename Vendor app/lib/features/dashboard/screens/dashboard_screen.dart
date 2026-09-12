@@ -6,7 +6,7 @@ import 'package:sixvalley_vendor_app/common/basewidgets/confirmation_dialog_widg
 import 'package:sixvalley_vendor_app/common/basewidgets/custom_dialog_widget.dart';
 import 'package:sixvalley_vendor_app/features/addProduct/controllers/digital_product_controller.dart';
 import 'package:sixvalley_vendor_app/features/ai/controllers/ai_controller.dart';
-import 'package:sixvalley_vendor_app/features/pos/controllers/cart_controller.dart';
+
 import 'package:sixvalley_vendor_app/features/product/controllers/category_controller.dart';
 import 'package:sixvalley_vendor_app/features/shop/controllers/shop_controller.dart';
 import 'package:sixvalley_vendor_app/features/splash/controllers/splash_controller.dart';
@@ -47,7 +47,7 @@ class DashboardScreenState extends State<DashboardScreen> {
     Provider.of<DigitalProductController>(context, listen: false).getDigitalAuthor();
     Provider.of<DigitalProductController>(context, listen: false).getPublishingHouse();
     Provider.of<CategoryController>(context,listen: false).getCategoryList(context, null, languageCode);
-    Provider.of<CartController>(context,listen: false).getCartData();
+
     Provider.of<ShopController>(context, listen: false).getShopInfo();
 
     Provider.of<TransactionController>(context, listen: false).getTransactionList(context,'all','','');

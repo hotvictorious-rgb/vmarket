@@ -6,9 +6,7 @@ import 'package:sixvalley_vendor_app/common/basewidgets/custom_drop_down_item_wi
 import 'package:sixvalley_vendor_app/common/basewidgets/custom_snackbar_widget.dart';
 import 'package:sixvalley_vendor_app/features/addProduct/domain/models/category_model.dart';
 import 'package:sixvalley_vendor_app/features/order/controllers/order_controller.dart';
-import 'package:sixvalley_vendor_app/features/pos/controllers/cart_controller.dart';
-import 'package:sixvalley_vendor_app/features/pos/controllers/customer_controller.dart';
-import 'package:sixvalley_vendor_app/features/pos/screens/customer_search_screen.dart';
+
 import 'package:sixvalley_vendor_app/features/product/controllers/product_controller.dart';
 import 'package:sixvalley_vendor_app/features/product/domain/enums/product_type_enum.dart';
 import 'package:sixvalley_vendor_app/features/splash/controllers/splash_controller.dart';
@@ -514,46 +512,6 @@ class _OrderListFilterBottomSheetState extends State<OrderListFilterBottomSheet>
                       ),
                       SizedBox(height: Dimensions.paddingSizeSmall),
 
-                      Container(
-                        decoration: BoxDecoration(
-                          color: Theme.of(context).primaryColor.withValues(alpha: 0.05),
-                          borderRadius: BorderRadius.circular(Dimensions.radiusDefault),
-                        ),
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            CustomDropDownItemWidget(
-                              title: 'customer',
-                              widget: Consumer<CartController>(
-                                builder: (context,cartController,_) {
-                                  return InkWell(
-                                    onTap: ()=> Navigator.push(context, MaterialPageRoute(builder: (_)=> const CustomerSearchScreen())),
-                                    child: ClipRRect(borderRadius: BorderRadius.circular(Dimensions.paddingSizeExtraSmall),
-                                      child: Container(width: MediaQuery.of(context).size.width,
-                                        decoration: BoxDecoration(
-                                          color: Theme.of(context).cardColor,
-                                          boxShadow: ThemeShadow.getShadow(context),
-                                          borderRadius: BorderRadius.circular(Dimensions.paddingSizeExtraSmall)
-                                        ),
-                                        child: Padding(padding: const EdgeInsets.all(Dimensions.paddingSizeSmall),
-                                          child: Row(children: [
-                                            Expanded(child: Text(cartController.searchCustomerController.text.trim().isNotEmpty?
-                                            cartController.searchCustomerController.text: '${getTranslated('select_customer', context)}',
-                                              style: robotoRegular.copyWith(color: Theme.of(context).textTheme.bodyLarge?.color))),
-                                            const Icon(Icons.arrow_drop_down_sharp)
-                                          ],
-                                          ),
-                                        )),
-                                    )
-                                  );
-                                }
-                              ),
-                            ),
-
-                          ],
-                        ),
-                      ),
-                      SizedBox(height: Dimensions.paddingSizeSmall),
 
 
                     ],
@@ -760,9 +718,8 @@ class _ButtonWidget extends StatelessWidget {
               Expanded(child: CustomButtonWidget(
                 isLoading: false,
                 btnTxt: '${getTranslated('filter', context)}',
-                backgroundColor: (ValidationHelper.canOrderFilter(orderController.filterModel) || Provider.of<CustomerController>(context, listen: false).customerId != 0) ? Theme.of(context).primaryColor : Theme.of(context).hintColor.withValues(alpha: .5),
+                backgroundColor: ValidationHelper.canOrderFilter(orderController.filterModel) ? Theme.of(context).primaryColor : Theme.of(context).hintColor.withValues(alpha: .5),
                 onTap: !ValidationHelper.canOrderFilter(orderController.filterModel) ? null : () async {
-                  orderController.filterModel.selectedCustomerId = Provider.of<CustomerController>(context, listen: false).customerId;
                   if (orderController.filterModel.filterDateType == 'custom_date' && (orderController.startDateFilter == null || orderController.endDateFilter == null)) {
                     showCustomSnackBarWidget(getTranslated("please_select_start_and_end_date", context), context, isError: true);
                   } else if (orderController.filterModel.filterDateType == 'custom_date' &&  orderController.endDateFilter!.isBefore(orderController.startDateFilter!)) {

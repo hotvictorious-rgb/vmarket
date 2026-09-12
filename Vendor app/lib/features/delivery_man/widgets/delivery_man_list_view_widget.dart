@@ -4,7 +4,7 @@ import 'package:sixvalley_vendor_app/features/delivery_man/controllers/delivery_
 import 'package:sixvalley_vendor_app/utill/dimensions.dart';
 import 'package:sixvalley_vendor_app/common/basewidgets/no_data_screen.dart';
 import 'package:sixvalley_vendor_app/features/delivery_man/widgets/delivery_man_card_widget.dart';
-import 'package:sixvalley_vendor_app/features/pos/widgets/pos_product_shimmer_widget.dart';
+import 'package:sixvalley_vendor_app/common/basewidgets/order_shimmer_widget.dart';
 
 class DeliveryManListViewWidget extends StatelessWidget {
   const DeliveryManListViewWidget({super.key});
@@ -15,7 +15,7 @@ class DeliveryManListViewWidget extends StatelessWidget {
       builder: (context, prodProvider, child) {
         return Column(mainAxisSize: MainAxisSize.min, children: [
 
-          if(prodProvider.listOfDeliveryMan == null) const PosProductShimmerWidget(),
+          if(prodProvider.listOfDeliveryMan == null) const OrderShimmerWidget(isEnabled: true),
 
           (prodProvider.listOfDeliveryMan?.isNotEmpty ?? false) ?
           Padding(

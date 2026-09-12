@@ -19,7 +19,7 @@ class SendVendorAiPerformanceReportCommand extends Command
      *
      * @var string
      */
-    protected $description = '[AI] Automatically generate and send WhatsApp Business Intelligence reports to Pro Subscribed Vendors';
+    protected $description = '[AI] Automatically generate and send WhatsApp Business Intelligence reports to Approved Marketplace Vendors';
 
     /**
      * Execute the console command.
@@ -32,7 +32,7 @@ class SendVendorAiPerformanceReportCommand extends Command
             return 1;
         }
 
-        $this->info("🚀 Generating and dispatching {$type} AI Business Intelligence reports to Pro Subscribed Vendors...");
+        $this->info("🚀 Generating and dispatching {$type} AI Business Intelligence reports to Approved Marketplace Vendors...");
 
         $sentCount = VendorAiReportService::sendAllSubscribedReports($type);
 

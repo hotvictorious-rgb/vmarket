@@ -564,18 +564,7 @@ PROMPT;
                 $approvedSellerIdsStr = !empty($allApprovedSellerIds) ? implode(',', $allApprovedSellerIds) : '0';
 
                 // Subscribed Pro & Verified Priority
-                $verifiedProSellerIds = \App\Models\Seller::where('status', 'approved')
-                    ->where('marketplace_status', 'approved')
-                    ->whereHas('posSubscriptions', function ($sq) {
-                        $sq->where('status', 'active')
-                           ->where('plan_type', '!=', 'starter_free')
-                           ->where(function ($q) {
-                               $q->whereNull('expires_at')->orWhere('expires_at', '>', now());
-                           });
-                    })
-                    ->pluck('id')
-                    ->toArray();
-
+                $verifiedProSellerIds = $allApprovedSellerIds;
                 $proSellerIdsStr = !empty($verifiedProSellerIds) ? implode(',', $verifiedProSellerIds) : '0';
 
                 $query = \App\Models\Product::where('status', 1)
@@ -664,18 +653,7 @@ PROMPT;
                     ->pluck('id')
                     ->toArray();
 
-                $verifiedProSellerIds = \App\Models\Seller::where('status', 'approved')
-                    ->where('marketplace_status', 'approved')
-                    ->whereHas('posSubscriptions', function ($sq) {
-                        $sq->where('status', 'active')
-                           ->where('plan_type', '!=', 'starter_free')
-                           ->where(function ($q) {
-                               $q->whereNull('expires_at')->orWhere('expires_at', '>', now());
-                           });
-                    })
-                    ->pluck('id')
-                    ->toArray();
-
+                $verifiedProSellerIds = $allApprovedSellerIds;
                 $proSellerIdsStr = !empty($verifiedProSellerIds) ? implode(',', $verifiedProSellerIds) : '0';
 
                 $query = Product::active()

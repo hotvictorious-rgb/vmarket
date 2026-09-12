@@ -96,11 +96,16 @@ class CartController extends Controller
                     }
                 }
 
-                $product = Product::active()->find($data->product_id);
-                if ($product) {
+                // [AI] Check marketplace eligibility and purchasability
+                $product = Product::marketplaceEligible()->find($data->product_id);
+                if ($product && $product->isMarketplacePurchasable()) {
                     $data['is_product_available'] = 1;
+                    $data['product']['marketplace_availability'] = 'in_stock';
+                    $data['product']['total_current_stock'] = null;
                 } else {
                     $data['is_product_available'] = 0;
+                    $data['product']['marketplace_availability'] = 'out_of_stock';
+                    $data['product']['total_current_stock'] = 0;
                 }
                 $data['choices'] = json_decode($data['choices']);
                 $data['variations'] = json_decode($data['variations']);
@@ -119,16 +124,6 @@ class CartController extends Controller
                         'percentage' => 0,
                         'shipping_cost_saved' => 0,
                     ];
-                }
-
-                $data['product']['total_current_stock'] = isset($data['product']['current_stock']) ? $data['product']['current_stock'] : 0;
-                if (isset($data['product']['variation']) && !empty($data['product']['variation'])) {
-                    $variants = json_decode($data['product']['variation']);
-                    foreach ($variants as $var) {
-                        if ($data['variant'] == $var->type) {
-                            $data['product']['total_current_stock'] = $var->qty;
-                        }
-                    }
                 }
 
                 $data['discount'] = getProductPriceByType(product: $data['product'], type: 'discounted_amount', result: 'value', price: $data['price']);

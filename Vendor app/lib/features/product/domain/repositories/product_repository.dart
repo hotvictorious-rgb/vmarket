@@ -191,4 +191,54 @@ class ProductRepository implements ProductRepositoryInterface{
     }
   }
 
+  @override
+  Future<ApiResponse> confirmMarketplaceAvailability(int productId) async {
+    try {
+      final response = await dioClient!.post(AppConstants.confirmMarketplaceAvailabilityUri, data: {'product_id': productId});
+      return ApiResponse.withSuccess(response);
+    } catch (e) {
+      return ApiResponse.withError(ApiErrorHandler.getMessage(e));
+    }
+  }
+
+  @override
+  Future<ApiResponse> confirmAndRelistMarketplace(int productId) async {
+    try {
+      final response = await dioClient!.post(AppConstants.confirmAndRelistMarketplaceUri, data: {'product_id': productId});
+      return ApiResponse.withSuccess(response);
+    } catch (e) {
+      return ApiResponse.withError(ApiErrorHandler.getMessage(e));
+    }
+  }
+
+  @override
+  Future<ApiResponse> updateMarketplaceAvailability(int productId, String availability) async {
+    try {
+      final response = await dioClient!.post(AppConstants.updateMarketplaceAvailabilityUri, data: {'product_id': productId, 'availability': availability});
+      return ApiResponse.withSuccess(response);
+    } catch (e) {
+      return ApiResponse.withError(ApiErrorHandler.getMessage(e));
+    }
+  }
+
+  @override
+  Future<ApiResponse> updateMarketplaceListing(int productId, String status) async {
+    try {
+      final response = await dioClient!.post(AppConstants.updateMarketplaceListingUri, data: {'product_id': productId, 'status': status});
+      return ApiResponse.withSuccess(response);
+    } catch (e) {
+      return ApiResponse.withError(ApiErrorHandler.getMessage(e));
+    }
+  }
+
+  @override
+  Future<ApiResponse> bulkConfirmMarketplaceAvailability(List<int> productIds) async {
+    try {
+      final response = await dioClient!.post(AppConstants.bulkConfirmMarketplaceAvailabilityUri, data: {'product_ids': productIds});
+      return ApiResponse.withSuccess(response);
+    } catch (e) {
+      return ApiResponse.withError(ApiErrorHandler.getMessage(e));
+    }
+  }
+
 }

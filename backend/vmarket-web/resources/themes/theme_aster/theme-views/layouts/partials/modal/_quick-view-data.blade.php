@@ -237,17 +237,11 @@
                                     <div class="opacity-50 d-none d-sm-block">|</div>
                                 @endif
 
-                                @if(($product['product_type'] == 'physical') && ($product['current_stock']<=0))
-                                    <p class="fw-semibold text-muted mb-0">{{ translate('out_of_stock') }}</p>
+                                @if($product->marketplace_availability === 'out_of_stock')
+                                    <p class="fw-semibold text-danger mb-0">{{ translate('out_of_stock') }}</p>
                                 @else
-                                    @if($product['product_type'] === 'physical')
-                                        <p class="fw-semibold text-muted mb-0">
-                                            <span class="product-details-stock-qty text-primary fw-semibold">{{ $product->current_stock }}</span>
-                                            {{ translate('in_Stock') }}
-                                        </p>
-                                    @endif
+                                    <p class="fw-semibold text-success mb-0">{{ translate('in_Stock') }}</p>
                                 @endif
-
                             </div>
 
 

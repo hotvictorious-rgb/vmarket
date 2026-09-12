@@ -4,7 +4,8 @@ import 'package:provider/provider.dart';
 import 'package:sixvalley_vendor_app/features/coupon/domain/models/coupon_model.dart';
 import 'package:sixvalley_vendor_app/helper/price_converter.dart';
 import 'package:sixvalley_vendor_app/localization/language_constrants.dart';
-import 'package:sixvalley_vendor_app/features/pos/controllers/cart_controller.dart';
+
+import 'package:sixvalley_vendor_app/features/coupon/widgets/coupon_customer_search_dialog.dart';
 import 'package:sixvalley_vendor_app/features/coupon/controllers/coupon_controller.dart';
 import 'package:sixvalley_vendor_app/main.dart';
 import 'package:sixvalley_vendor_app/utill/dimensions.dart';
@@ -17,7 +18,7 @@ import 'package:sixvalley_vendor_app/common/basewidgets/custom_drop_down_item_wi
 import 'package:sixvalley_vendor_app/common/basewidgets/custom_field_with_title_widget.dart';
 import 'package:sixvalley_vendor_app/common/basewidgets/custom_snackbar_widget.dart';
 import 'package:sixvalley_vendor_app/common/basewidgets/textfeild/custom_text_feild_widget.dart';
-import 'package:sixvalley_vendor_app/features/pos/screens/customer_search_screen.dart';
+
 
 class AddNewCouponScreen extends StatefulWidget {
   final Coupons? coupons;
@@ -98,7 +99,7 @@ class _AddNewCouponScreenState extends State<AddNewCouponScreen> {
                       child: Padding(padding: const EdgeInsets.fromLTRB(Dimensions.paddingSizeDefault, Dimensions.paddingSizeSmall, Dimensions.paddingSizeDefault, Dimensions.paddingSizeExtraSmall),
                           child: Text(getTranslated('select_customer', context)!, style: robotoRegular.copyWith(color: Theme.of(context).textTheme.bodyLarge?.color))),
                     ),
-                    GestureDetector(onTap: ()=> Navigator.push(context, MaterialPageRoute(builder: (_)=> const CustomerSearchScreen(isCoupon: true,))),
+                    GestureDetector(onTap: ()=> showDialog(context: context, builder: (_) => const CouponCustomerSearchDialog()),
                       child: Padding(padding: const EdgeInsets.symmetric(horizontal: Dimensions.paddingSizeDefault),
                         child: Container(width: MediaQuery.of(context).size.width,
                           decoration: BoxDecoration(border: Border.all(width: .25, color: Theme.of(context).hintColor.withValues(alpha:.75)),
@@ -268,9 +269,7 @@ class _AddNewCouponScreenState extends State<AddNewCouponScreen> {
                 ),
                 child: Consumer<CouponController>(
                     builder: (context, coupon,_) {
-                      return Consumer<CartController>(
-                          builder: (context, customer,_) {
-                            return Padding(
+                      return Padding(
                               padding: const EdgeInsets.symmetric(horizontal: Dimensions.paddingSizeDefault, vertical: Dimensions.paddingSizeExtraLarge),
                               child: coupon.isAdd?
                               const Center(
@@ -331,8 +330,6 @@ class _AddNewCouponScreenState extends State<AddNewCouponScreen> {
                                     }
                                   }),
                             );
-                          }
-                      );
                     }
                 ))
           ]);

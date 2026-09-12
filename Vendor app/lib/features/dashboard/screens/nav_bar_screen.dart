@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import 'package:sixvalley_vendor_app/features/pos/controllers/barcode_scan_controller.dart';
+import 'package:sixvalley_vendor_app/features/addProduct/screens/add_product_screen.dart';
 import 'package:sixvalley_vendor_app/localization/language_constrants.dart';
 import 'package:sixvalley_vendor_app/features/dashboard/controllers/bottom_menu_controller.dart';
 import 'package:sixvalley_vendor_app/utill/dimensions.dart';
@@ -48,12 +48,10 @@ class _NavBarScreenState extends State<NavBarScreen> {
 
           child: FloatingActionButton(backgroundColor: Theme.of(context).primaryColor, elevation: 1,
             onPressed: (){
-            Provider.of<BarcodeScanController>(context,listen: false).scanProductBarCode(context);
+              Navigator.push(context, MaterialPageRoute(builder: (_) => const AddProductScreen()));
             },
-
-
-              child: Padding(padding: const EdgeInsets.all(15.0),
-                  child: Image.asset(Images.scanner)))),
+            child: Padding(padding: const EdgeInsets.all(15.0),
+              child: Image.asset(Images.addProduct)))),
         floatingActionButtonLocation: FloatingActionButtonLocation.centerDocked,
         bottomNavigationBar: Container(height: 60,
           decoration: BoxDecoration(color: Theme.of(context).bottomNavigationBarTheme.backgroundColor,
@@ -65,13 +63,13 @@ class _NavBarScreenState extends State<NavBarScreen> {
           child: Row(mainAxisAlignment: MainAxisAlignment.spaceEvenly,
             children: [
               customBottomItem(tap: () => menuController.selectHomePage(),
-                icon: menuController.currentTab == 0 ? Images.pos : Images.pos,
-                name: getTranslated('pos', context)!, selectIndex: 0,),
-              customBottomItem(tap: () => menuController.selectPosScreen(),
-                icon: menuController.currentTab == 1 ? Images.order : Images.order, name: getTranslated('my_order', context)!, selectIndex: 1),
+                icon: Images.home,
+                name: getTranslated('home', context)!, selectIndex: 0,),
+              customBottomItem(tap: () => menuController.selectOrderScreen(),
+                icon: Images.order, name: getTranslated('my_order', context)!, selectIndex: 1),
               const SizedBox(height: 20, width: 20),
               customBottomItem(tap: () => menuController.selectItemsScreen(),
-                icon: menuController.currentTab == 2 ? Images.productIcon : Images.productIcon, name: getTranslated('products', context)!, selectIndex: 2,
+                icon: Images.productIcon, name: getTranslated('products', context)!, selectIndex: 2,
               ),
               customBottomItem(tap: () {
                 showModalBottomSheet(
@@ -81,7 +79,7 @@ class _NavBarScreenState extends State<NavBarScreen> {
                     builder: (con) => const MenuBottomSheetWidget()
                 );
               },
-                icon: menuController.currentTab == 3 ? Images.menu : Images.menu, name: getTranslated('menu', context)!, selectIndex: 3,
+                icon: Images.menu, name: getTranslated('menu', context)!, selectIndex: 3,
               ),
             ],
           ),

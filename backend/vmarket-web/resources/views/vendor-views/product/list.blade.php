@@ -93,6 +93,7 @@
                                 <th class="text-center text-capitalize">{{ translate('product_type') }}</th>
                                 <th class="text-center text-capitalize">{{ translate('Desired Payout') }}</th>
                                 <th class="text-center">{{ translate('stock') }}</th>
+                                <th class="text-center">{{ translate('Marketplace') }}</th>
                                 @if ($productWiseTax)
                                     <th class="text-center">{{ translate('Vat/Tax') }}</th>
                                 @endif
@@ -161,6 +162,34 @@
                                                 @endif
                                             @else
                                                 <span>-</span>
+                                            @endif
+                                        </div>
+                                    </td>
+                                    <td class="text-center">
+                                        <div class="d-flex flex-column align-items-center gap-1">
+                                            @if($product->marketplace_availability === 'in_stock')
+                                                <span class="badge badge-soft-success font-weight-normal">{{ translate('In Stock') }}</span>
+                                            @else
+                                                <span class="badge badge-soft-danger font-weight-normal">{{ translate('Out of Stock') }}</span>
+                                            @endif
+
+                                            @if($product->marketplace_listing_status === 'listed')
+                                                @if($product->isMarketplaceFresh())
+                                                    <small class="text-muted">{{ $product->days_until_marketplace_expiry }}d {{ translate('left') }}</small>
+                                                    <button type="button" class="btn btn-xs btn-outline-primary py-0 px-1 confirm-marketplace-btn" data-id="{{ $product['id'] }}">
+                                                        {{ translate('Confirm') }}
+                                                    </button>
+                                                @else
+                                                    <span class="badge badge-soft-warning">{{ translate('Expired') }}</span>
+                                                    <button type="button" class="btn btn-xs btn-success py-0 px-1 confirm-marketplace-btn" data-id="{{ $product['id'] }}">
+                                                        {{ translate('Confirm & Relist') }}
+                                                    </button>
+                                                @endif
+                                            @else
+                                                <span class="badge badge-soft-secondary">{{ translate('Unlisted') }}</span>
+                                                <button type="button" class="btn btn-xs btn-outline-success py-0 px-1 confirm-marketplace-btn" data-id="{{ $product['id'] }}">
+                                                    {{ translate('List') }}
+                                                </button>
                                             @endif
                                         </div>
                                     </td>
@@ -363,6 +392,36 @@
                     submitBtn.prop('disabled', false);
                     spinner.addClass('d-none');
                     var msg = xhr.responseJSON && xhr.responseJSON.message ? xhr.responseJSON.message : '{{ translate("error_updating_price") }}';
+                    toastr.error(msg);
+                }
+            });
+        });
+
+        $(document).on('click', '.confirm-marketplace-btn', function () {
+            var btn = $(this);
+            var productId = btn.data('id');
+            btn.prop('disabled', true).text('...');
+
+            $.ajax({
+                url: "{{ url('seller/products/confirm-marketplace-listing') }}/" + productId,
+                type: 'POST',
+                data: {
+                    _token: '{{ csrf_token() }}'
+                },
+                success: function (res) {
+                    btn.prop('disabled', false);
+                    if (res.status === 1) {
+                        toastr.success(res.message);
+                        setTimeout(function () {
+                            location.reload();
+                        }, 600);
+                    } else {
+                        toastr.error(res.message || '{{ translate("something_went_wrong") }}');
+                    }
+                },
+                error: function (xhr) {
+                    btn.prop('disabled', false).text('{{ translate("Confirm") }}');
+                    var msg = xhr.responseJSON && xhr.responseJSON.message ? xhr.responseJSON.message : '{{ translate("error_confirming_listing") }}';
                     toastr.error(msg);
                 }
             });

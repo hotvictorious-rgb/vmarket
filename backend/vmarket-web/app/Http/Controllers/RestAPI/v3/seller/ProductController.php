@@ -2240,4 +2240,134 @@ class ProductController extends Controller
             'price_updated_at' => Carbon::now()->toIso8601String(),
         ], 200);
     }
+
+    /**
+     * [AI] Vendor Mobile API: Confirm availability of a listed product (resets 7-day freshness clock).
+     */
+    public function confirmAvailability(Request $request): JsonResponse
+    {
+        $validator = Validator::make($request->all(), [
+            'product_id' => 'required|numeric',
+        ]);
+        if ($validator->fails()) {
+            return response()->json(['errors' => Helpers::error_processor($validator)], 403);
+        }
+
+        $sellerId = $request->seller['id'] ?? auth('seller')->id();
+        $product = Product::where('id', $request['product_id'])
+            ->where('added_by', 'seller')
+            ->where('user_id', $sellerId)
+            ->first();
+
+        if (!$product) {
+            return response()->json(['message' => 'Product not found or unauthorized'], 404);
+        }
+
+        $success = $this->productService->confirmMarketplaceListing($product, $sellerId);
+
+        return response()->json([
+            'status' => $success,
+            'message' => 'Marketplace availability confirmed successfully',
+            'marketplace_listing_status' => $product->marketplace_listing_status,
+            'marketplace_confirmed_at' => $product->marketplace_confirmed_at?->toIso8601String(),
+            'days_until_expiry' => $product->days_until_marketplace_expiry,
+        ], 200);
+    }
+
+    /**
+     * [AI] Vendor Mobile API: Confirm & Relist an expired or unlisted product.
+     */
+    public function confirmAndRelist(Request $request): JsonResponse
+    {
+        return $this->confirmAvailability($request);
+    }
+
+    /**
+     * [AI] Vendor Mobile API: Toggle marketplace availability (in_stock / out_of_stock).
+     * Internal inventory current_stock remains completely untouched.
+     */
+    public function updateMarketplaceAvailability(Request $request): JsonResponse
+    {
+        $validator = Validator::make($request->all(), [
+            'product_id' => 'required|numeric',
+            'marketplace_availability' => 'required|in:in_stock,out_of_stock',
+        ]);
+        if ($validator->fails()) {
+            return response()->json(['errors' => Helpers::error_processor($validator)], 403);
+        }
+
+        $sellerId = $request->seller['id'] ?? auth('seller')->id();
+        $product = Product::where('id', $request['product_id'])
+            ->where('added_by', 'seller')
+            ->where('user_id', $sellerId)
+            ->first();
+
+        if (!$product) {
+            return response()->json(['message' => 'Product not found or unauthorized'], 404);
+        }
+
+        $success = $this->productService->updateMarketplaceAvailability($product, $sellerId, $request['marketplace_availability']);
+
+        return response()->json([
+            'status' => $success,
+            'message' => 'Marketplace availability updated successfully',
+            'marketplace_availability' => $product->marketplace_availability,
+        ], 200);
+    }
+
+    /**
+     * [AI] Vendor Mobile API: Update marketplace listing status (listed / unlisted).
+     */
+    public function updateMarketplaceListing(Request $request): JsonResponse
+    {
+        $validator = Validator::make($request->all(), [
+            'product_id' => 'required|numeric',
+            'marketplace_listing_status' => 'required|in:listed,unlisted',
+        ]);
+        if ($validator->fails()) {
+            return response()->json(['errors' => Helpers::error_processor($validator)], 403);
+        }
+
+        $sellerId = $request->seller['id'] ?? auth('seller')->id();
+        $product = Product::where('id', $request['product_id'])
+            ->where('added_by', 'seller')
+            ->where('user_id', $sellerId)
+            ->first();
+
+        if (!$product) {
+            return response()->json(['message' => 'Product not found or unauthorized'], 404);
+        }
+
+        $success = $this->productService->updateMarketplaceListingStatus($product, $sellerId, $request['marketplace_listing_status']);
+
+        return response()->json([
+            'status' => $success,
+            'message' => 'Marketplace listing status updated successfully',
+            'marketplace_listing_status' => $product->marketplace_listing_status,
+        ], 200);
+    }
+
+    /**
+     * [AI] Vendor Mobile API: Bulk confirm marketplace availability.
+     */
+    public function bulkConfirmAvailability(Request $request): JsonResponse
+    {
+        $validator = Validator::make($request->all(), [
+            'product_ids' => 'required|array',
+            'product_ids.*' => 'numeric',
+        ]);
+        if ($validator->fails()) {
+            return response()->json(['errors' => Helpers::error_processor($validator)], 403);
+        }
+
+        $sellerId = $request->seller['id'] ?? auth('seller')->id();
+        $count = $this->productService->bulkConfirmMarketplaceListings($request['product_ids'], $sellerId);
+
+        return response()->json([
+            'status' => true,
+            'confirmed_count' => $count,
+            'message' => "{$count} marketplace product(s) confirmed successfully",
+        ], 200);
+    }
 }
+

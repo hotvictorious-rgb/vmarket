@@ -85,17 +85,14 @@ class ProductDetailsController extends Controller
                 dataLimit: 2, offset: 1
             );
 
-            $firstVariationQuantity = $product['current_stock'];
-            if (count(json_decode($product['variation'], true)) > 0) {
-                $firstVariationQuantity = json_decode($product['variation'], true)[0]['qty'];
-            }
-            $firstVariationQuantity = $product['product_type'] == 'physical' ? $firstVariationQuantity : 999;
+            // [AI] Marketplace Stock Privacy: Never expose exact warehouse current_stock or fake 999
+            $firstVariationQuantity = ($product['marketplace_availability'] ?? 'in_stock') === 'in_stock' ? 1 : 0;
 
             $rating = getRating(reviews: $product->reviews);
             $decimalPointSettings = getWebConfig('decimal_point_settings');
             $moreProductFromSeller = $this->productRepo->getWebListWithScope(
                 orderBy: ['id' => 'desc'],
-                scope: 'active',
+                scope: 'marketplaceEligible',
                 filters: ['added_by' => $product['added_by'] == 'admin' ? 'in_house' : $product['added_by'], 'seller_id' => $product['user_id']],
                 whereNotIn: ['id' => [$product['id']]],
                 dataLimit: 5,
@@ -123,7 +120,7 @@ class ProductDetailsController extends Controller
             $countOrder = $this->orderDetailRepo->getListWhereCount(filters: ['product_id' => $product['id']]);
             $countWishlist = $this->wishlistRepo->getListWhereCount(filters: ['product_id' => $product['id']]);
             $relatedProducts = $this->productRepo->getWebListWithScope(
-                scope: 'active',
+                scope: 'marketplaceEligible',
                 filters: ['category_id' => $product['category_id']],
                 whereNotIn: ['id' => [$product['id']]],
                 relations: ['reviews' => 'reviews'],
@@ -164,7 +161,7 @@ class ProductDetailsController extends Controller
             $compareList = $this->compareRepo->getCount(params: ['product_id' => $product->id, 'customer_id' => auth('customer')->id()]);
 
             $relatedProducts = $this->productRepo->getWebListWithScope(
-                scope: 'active',
+                scope: 'marketplaceEligible',
                 filters: ['category_ids' => $product['category_ids'], 'customer_id' => Auth::guard('customer')->user()->id ?? 0],
                 whereNotIn: ['id' => [$product['id']]],
                 relations: ['reviews' => 'reviews', 'flashDealProducts.flashDeal' => 'flashDealProducts.flashDeal', 'wishList' => 'wishList', 'compareList' => 'compareList'],
@@ -201,16 +198,13 @@ class ProductDetailsController extends Controller
                 dataLimit: 2, offset: 1
             );
 
-            $firstVariationQuantity = $product['current_stock'];
-            if (count(json_decode($product['variation'], true)) > 0) {
-                $firstVariationQuantity = json_decode($product['variation'], true)[0]['qty'];
-            }
-            $firstVariationQuantity = $product['product_type'] == 'physical' ? $firstVariationQuantity : 999;
+            // [AI] Marketplace Stock Privacy: Never expose exact warehouse current_stock or fake 999
+            $firstVariationQuantity = ($product['marketplace_availability'] ?? 'in_stock') === 'in_stock' ? 1 : 0;
 
             $decimalPointSettings = getWebConfig('decimal_point_settings');
             $moreProductFromSeller = $this->productRepo->getWebListWithScope(
                 orderBy: ['id' => 'desc'],
-                scope: 'active',
+                scope: 'marketplaceEligible',
                 filters: ['added_by' => $product['added_by'] == 'admin' ? 'in_house' : $product['added_by'], 'seller_id' => $product['user_id']],
                 whereNotIn: ['id' => [$product['id']]],
                 dataLimit: 5,
@@ -279,7 +273,7 @@ class ProductDetailsController extends Controller
             $countWishlist = $product['wish_list_count'];
             $wishlistStatus = $this->wishlistRepo->getCount(params: ['product_id' => $product->id, 'customer_id' => auth('customer')->id()]);
             $relatedProducts = $this->productRepo->getWebListWithScope(
-                scope: 'active',
+                scope: 'marketplaceEligible',
                 filters: ['category_id' => $product['category_id'], 'customer_id' => Auth::guard('customer')->user()->id ?? 0],
                 whereNotIn: ['id' => [$product['id']]],
                 relations: ['reviews' => 'reviews', 'flashDealProducts.flashDeal' => 'flashDealProducts.flashDeal', 'wishList' => 'wishList', 'compareList' => 'compareList'],
@@ -308,16 +302,13 @@ class ProductDetailsController extends Controller
                 dataLimit: 2, offset: 1
             );
 
-            $firstVariationQuantity = $product['current_stock'];
-            if (count(json_decode($product['variation'], true)) > 0) {
-                $firstVariationQuantity = json_decode($product['variation'], true)[0]['qty'];
-            }
-            $firstVariationQuantity = $product['product_type'] == 'physical' ? $firstVariationQuantity : 999;
+            // [AI] Marketplace Stock Privacy: Never expose exact warehouse current_stock or fake 999
+            $firstVariationQuantity = ($product['marketplace_availability'] ?? 'in_stock') === 'in_stock' ? 1 : 0;
 
             $decimalPointSettings = getWebConfig('decimal_point_settings');
             $moreProductFromSeller = $this->productRepo->getWebListWithScope(
                 orderBy: ['id' => 'desc'],
-                scope: 'active',
+                scope: 'marketplaceEligible',
                 filters: ['added_by' => $product['added_by'] == 'admin' ? 'in_house' : $product['added_by'], 'seller_id' => $product['user_id'], 'customer_id' => Auth::guard('customer')->user()->id ?? 0],
                 whereNotIn: ['id' => [$product['id']]],
                 relations: ['wishList' => 'wishList'],

@@ -1084,4 +1084,103 @@ class ProductController extends BaseController
             'totalBrands' => $totalBrands,
         ]);
     }
+
+    /**
+     * [AI] Vendor action: Confirm availability and list/relist a marketplace product.
+     */
+    public function confirmMarketplaceListing(Request $request, $id): JsonResponse
+    {
+        $sellerId = auth('seller')->id();
+        $product = Product::where('id', $id)
+            ->where('added_by', 'seller')
+            ->where('user_id', $sellerId)
+            ->first();
+
+        if (!$product) {
+            return response()->json(['status' => 0, 'message' => translate('Product_not_found_or_unauthorized')], 404);
+        }
+
+        $success = $this->productService->confirmMarketplaceListing($product, $sellerId);
+
+        return response()->json([
+            'status' => $success ? 1 : 0,
+            'message' => $success ? translate('Marketplace_listing_confirmed_successfully') : translate('Operation_failed'),
+            'marketplace_listing_status' => $product->marketplace_listing_status,
+            'marketplace_confirmed_at' => $product->marketplace_confirmed_at?->toIso8601String(),
+            'days_until_expiry' => $product->days_until_marketplace_expiry,
+        ]);
+    }
+
+    /**
+     * [AI] Vendor action: Toggle marketplace availability (in_stock / out_of_stock).
+     * Strictly preserves internal inventory current_stock completely untouched.
+     */
+    public function updateMarketplaceAvailability(Request $request, $id): JsonResponse
+    {
+        $sellerId = auth('seller')->id();
+        $product = Product::where('id', $id)
+            ->where('added_by', 'seller')
+            ->where('user_id', $sellerId)
+            ->first();
+
+        if (!$product) {
+            return response()->json(['status' => 0, 'message' => translate('Product_not_found_or_unauthorized')], 404);
+        }
+
+        $availability = $request->input('marketplace_availability', 'in_stock');
+        $success = $this->productService->updateMarketplaceAvailability($product, $sellerId, $availability);
+
+        return response()->json([
+            'status' => $success ? 1 : 0,
+            'message' => $success ? translate('Marketplace_availability_updated_successfully') : translate('Operation_failed'),
+            'marketplace_availability' => $product->marketplace_availability,
+        ]);
+    }
+
+    /**
+     * [AI] Vendor action: Update marketplace listing status (listed / unlisted).
+     */
+    public function updateMarketplaceListingStatus(Request $request, $id): JsonResponse
+    {
+        $sellerId = auth('seller')->id();
+        $product = Product::where('id', $id)
+            ->where('added_by', 'seller')
+            ->where('user_id', $sellerId)
+            ->first();
+
+        if (!$product) {
+            return response()->json(['status' => 0, 'message' => translate('Product_not_found_or_unauthorized')], 404);
+        }
+
+        $listingStatus = $request->input('marketplace_listing_status', 'unlisted');
+        $success = $this->productService->updateMarketplaceListingStatus($product, $sellerId, $listingStatus);
+
+        return response()->json([
+            'status' => $success ? 1 : 0,
+            'message' => $success ? translate('Marketplace_listing_status_updated_successfully') : translate('Operation_failed'),
+            'marketplace_listing_status' => $product->marketplace_listing_status,
+        ]);
+    }
+
+    /**
+     * [AI] Vendor action: Bulk confirm marketplace listings.
+     */
+    public function bulkConfirmMarketplaceListings(Request $request): JsonResponse
+    {
+        $sellerId = auth('seller')->id();
+        $productIds = $request->input('product_ids', []);
+
+        if (empty($productIds) || !is_array($productIds)) {
+            return response()->json(['status' => 0, 'message' => translate('Please_select_at_least_one_product')], 422);
+        }
+
+        $confirmedCount = $this->productService->bulkConfirmMarketplaceListings($productIds, $sellerId);
+
+        return response()->json([
+            'status' => 1,
+            'confirmed_count' => $confirmedCount,
+            'message' => translate("{$confirmedCount}_marketplace_products_confirmed_successfully"),
+        ]);
+    }
 }
+

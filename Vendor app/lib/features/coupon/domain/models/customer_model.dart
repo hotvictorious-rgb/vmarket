@@ -1,9 +1,15 @@
 class CustomerModel {
+  int? totalSize;
+  String? limit;
+  String? offset;
   List<Customers>? customers;
 
-  CustomerModel({this.customers});
+  CustomerModel({this.totalSize, this.limit, this.offset, this.customers});
 
   CustomerModel.fromJson(Map<String, dynamic> json) {
+    totalSize = json['total_size'];
+    limit = json['limit'];
+    offset = json['offset'];
     if (json['customers'] != null) {
       customers = <Customers>[];
       json['customers'].forEach((v) {
@@ -14,6 +20,9 @@ class CustomerModel {
 
   Map<String, dynamic> toJson() {
     final Map<String, dynamic> data = <String, dynamic>{};
+    data['total_size'] = totalSize;
+    data['limit'] = limit;
+    data['offset'] = offset;
     if (customers != null) {
       data['customers'] = customers!.map((v) => v.toJson()).toList();
     }
@@ -26,32 +35,18 @@ class Customers {
   String? fName;
   String? lName;
   String? phone;
-  String? image;
   String? email;
-  double? walletBalance;
+  String? image;
 
-  Customers(
-      {this.id,
-        this.fName,
-        this.lName,
-        this.phone,
-        this.image,
-        this.email,
-        this.walletBalance
-      });
+  Customers({this.id, this.fName, this.lName, this.phone, this.email, this.image});
 
   Customers.fromJson(Map<String, dynamic> json) {
     id = json['id'];
-    fName = json['f_name'] ?? '';
-    lName = json['l_name'] ?? '';
+    fName = json['f_name'];
+    lName = json['l_name'];
     phone = json['phone'];
-    image = json['image'];
     email = json['email'];
-    if(json['wallet_balance'] != null) {
-      walletBalance = double.tryParse(json['wallet_balance'].toString());
-    } else {
-      walletBalance = 0;
-    }
+    image = json['image'];
   }
 
   Map<String, dynamic> toJson() {
@@ -60,8 +55,8 @@ class Customers {
     data['f_name'] = fName;
     data['l_name'] = lName;
     data['phone'] = phone;
-    data['image'] = image;
     data['email'] = email;
+    data['image'] = image;
     return data;
   }
 }

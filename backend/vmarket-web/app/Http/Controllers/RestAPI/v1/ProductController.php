@@ -180,7 +180,7 @@ class ProductController extends Controller
         $subSubCategoryIds = Category::where(['position' => 2])->whereIn('id', $categories)->pluck('id')->toArray();
 
         // Products search
-        $products = Product::active()->with(['rating', 'tags', 'clearanceSale' => function ($query) {
+        $products = Product::marketplaceEligible()->with(['rating', 'tags', 'clearanceSale' => function ($query) {
             return $query->active();
         }])
             ->when(!empty($productsIDArray), function ($query) use ($productsIDArray) {
@@ -318,7 +318,7 @@ class ProductController extends Controller
     {
         $user = Helpers::getCustomerInformation($request);
 
-        $product = Product::active()->with(['reviews.customer', 'seller.shop', 'tags', 'digitalVariation', 'clearanceSale' => function ($query) {
+        $product = Product::marketplaceEligible()->with(['reviews.customer', 'seller.shop', 'tags', 'digitalVariation', 'clearanceSale' => function ($query) {
                 return $query->active();
             }])
             ->withCount(['wishList' => function ($query) use ($user) {
@@ -702,7 +702,7 @@ class ProductController extends Controller
     {
         $user = Helpers::getCustomerInformation($request);
         if ($user != 'offline') {
-            $products = Product::active()->with(['seller.shop', 'reviews', 'clearanceSale' => function ($query) {
+            $products = Product::marketplaceEligible()->with(['seller.shop', 'reviews', 'clearanceSale' => function ($query) {
                 return $query->active();
             }])
                 ->withCount(['wishList' => function ($query) use ($user) {
@@ -771,7 +771,7 @@ class ProductController extends Controller
                     ->withCount(['wishList' => function ($query) use ($user) {
                         $query->where('customer_id', $user != 'offline' ? $user->id : '0');
                     }])
-                    ->active()
+                    ->marketplaceEligible()
                     ->where(function ($query) use ($ids) {
                         foreach ($ids as $id) {
                             $query->orWhere('category_id', 'like', "%{$id}%")
@@ -793,7 +793,7 @@ class ProductController extends Controller
                     ->withCount(['wishList' => function ($query) use ($user) {
                         $query->where('customer_id', $user != 'offline' ? $user->id : '0');
                     }])
-                    ->active()
+                    ->marketplaceEligible()
                     ->inRandomOrder()
                     ->paginate($limit, ['*'], 'page', $offset);
             }
@@ -809,7 +809,7 @@ class ProductController extends Controller
                 ->withCount(['wishList' => function ($query) use ($user) {
                     $query->where('customer_id', $user != 'offline' ? $user->id : '0');
                 }])
-                ->active()
+                ->marketplaceEligible()
                 ->inRandomOrder()
                 ->paginate($limit, ['*'], 'page', $offset);
         }
@@ -839,7 +839,7 @@ class ProductController extends Controller
     public function getDigitalProductsAuthorList(Request $request): JsonResponse
     {
         $shop = Shop::where('slug', $request['slug'])->first();
-        $productIds = Product::active()
+        $productIds = Product::marketplaceEligible()
             ->when($shop && $shop['author_type'] == 'admin', function ($query) {
                 return $query->where(['added_by' => 'admin']);
             })
@@ -853,7 +853,7 @@ class ProductController extends Controller
     public function getDigitalPublishingHouseList(Request $request): JsonResponse
     {
         $shop = Shop::where('slug', $request['slug'])->first();
-        $productIds = Product::active()
+        $productIds = Product::marketplaceEligible()
             ->when($shop && $shop['author_type'] == 'admin', function ($query) {
                 return $query->where(['added_by' => 'admin']);
             })

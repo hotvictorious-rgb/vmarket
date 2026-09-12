@@ -48,6 +48,11 @@ class AppConstants {
   static const String updateProductUri = '/api/v3/seller/products/update';
   static const String deleteProductUri = '/api/v3/seller/products/delete';
   static const String editProductUri = '/api/v3/seller/products/edit';
+  static const String confirmMarketplaceAvailabilityUri = '/api/v3/seller/products/confirm-availability';
+  static const String confirmAndRelistMarketplaceUri = '/api/v3/seller/products/confirm-and-relist';
+  static const String updateMarketplaceAvailabilityUri = '/api/v3/seller/products/update-marketplace-availability';
+  static const String updateMarketplaceListingUri = '/api/v3/seller/products/update-marketplace-listing';
+  static const String bulkConfirmMarketplaceAvailabilityUri = '/api/v3/seller/products/bulk-confirm-availability';
   static const String addShippingUri = '/api/v3/seller/shipping-method/add';
   static const String updateShippingUri = '/api/v3/seller/shipping-method/update';
   static const String editShippingUri = '/api/v3/seller/shipping-method/edit';
@@ -68,7 +73,7 @@ class AppConstants {
   static const String verifyOtpUri = '/api/v3/seller/auth/verify-otp';
   static const String resetPasswordUri = '/api/v3/seller/auth/reset-password';
   static const String paymentStatusUpdate = '/api/v3/seller/orders/update-payment-status';
-  static const String barCodeGenerateUri = '/api/v3/seller/products/barcode/generate';
+
   static const String digitalProductUpload = '/api/v3/seller/products/upload-digital-product';
   static const String digitalProductUploadAfterSell = '/api/v3/seller/orders/order-wise-product-upload';
   static const String registration = '/api/v3/seller/registration';
@@ -78,17 +83,13 @@ class AppConstants {
   static const String digitalPublishingHouse = '/api/v3/seller/products/digital-publishing-house-list';
 
   static const String getCouponDiscount = '/api/v3/seller/coupon/check-coupon';
-  static const String placeOrderUri = '/api/v3/seller/pos/place-order';
-  static const String getProductFromProductCode = '/api/v3/seller/pos/products';
-  static const String customerSearchUri = '/api/v3/seller/pos/customers';
-  static const String invoice = '/api/v3/seller/pos/get-invoice';
+
   static const String topSellingProduct = '/api/v3/seller/products/top-selling-product?limit=10&offset=';
   static const String mostPopularProduct = '/api/v3/seller/products/most-popular-product?limit=10&offset=';
   static const String topDeliveryMan = '/api/v3/seller/top-delivery-man';
   static const String deliveryManListUri = '/api/v3/seller/delivery-man/list';
   static const String deliveryManDetails = '/api/v3/seller/delivery-man/details/';
-  static const String posProductList = '/api/v3/seller/pos/product-list';
-  static const String searchPosProductList = '/api/v3/seller/pos/product-list';
+
   static const String shippingMethodOnOff = '/api/v3/seller/shipping-method/status';
   static const String updateProductQuantity = '/api/v3/seller/products/quantity-update';
   static const String productWiseReviewList = '/api/v3/seller/products/review-list/';
@@ -107,7 +108,7 @@ class AppConstants {
   static const String deliveryManReviewList = '/api/v3/seller/delivery-man/reviews/';
   static const String deliveryManWithdrawDetails = '/api/v3/seller/delivery-man/withdraw/details/';
   static const String deliveryManWithdrawApprovedRejected = '/api/v3/seller/delivery-man/withdraw/status-update';
-  static const String addNewCustomer = '/api/v3/seller/pos/customer-store';
+
   static const String productStatusOnOff = '/api/v3/seller/products/status-update';
   static const String deliveryManStatusOnOff = '/api/v3/seller/delivery-man/status-update';
   static const String businessAnalytics = '/api/v3/seller/order-statistics?statistics_type=';
@@ -155,7 +156,7 @@ class AppConstants {
   static const String paymentInformationUpdate = '/api/v3/seller/payment-information/update';
   static const String updateSetupGuideApp = '/api/v3/seller/update-setup-guide-app';
   static const String getTaxVatList = '/api/v1/vat-tax/get-taxVat-list';
-  static const String getTaxAmount = '/api/v3/seller/pos/get-tax-amount';
+
   static const String getVatTaxReportList = '/api/v3/seller/get-vat-tax-report-list';
   static const String firebaseAuthTokenStore = '/api/v3/seller/auth/firebase-auth-token-store';
   static const String firebaseAuthVerify = '/api/v3/seller/auth/firebase-auth-verify';
@@ -229,7 +230,7 @@ class AppConstants {
   static const String userEmail = 'user_email';
   static const String langKey = 'lang';
   static const String showCookies = 'cookies';
-  static const String bluetoothMacAddress = 'bluetooth_mac_address';
+
 
   static List<LanguageModel> languages = [
     LanguageModel(imageUrl: Images.unitedKingdom, languageName: 'English', countryCode: 'US', languageCode: 'en'),

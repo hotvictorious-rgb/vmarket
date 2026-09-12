@@ -661,5 +661,79 @@ class ProductController extends ChangeNotifier {
     notifyListeners();
   }
 
+  Future<bool> confirmMarketplaceAvailability(BuildContext context, int productId) async {
+    _isLoading = true;
+    notifyListeners();
+    ApiResponse apiResponse = await productServiceInterface.confirmMarketplaceAvailability(productId);
+    _isLoading = false;
+    notifyListeners();
+    if (apiResponse.response != null && apiResponse.response!.statusCode == 200) {
+      showCustomSnackBarWidget(getTranslated('marketplace_freshness_confirmed_successfully', context) ?? 'Marketplace freshness confirmed successfully', context, isError: false);
+      return true;
+    } else {
+      ApiChecker.checkApi(apiResponse);
+      return false;
+    }
+  }
+
+  Future<bool> confirmAndRelistMarketplace(BuildContext context, int productId) async {
+    _isLoading = true;
+    notifyListeners();
+    ApiResponse apiResponse = await productServiceInterface.confirmAndRelistMarketplace(productId);
+    _isLoading = false;
+    notifyListeners();
+    if (apiResponse.response != null && apiResponse.response!.statusCode == 200) {
+      showCustomSnackBarWidget(getTranslated('marketplace_listing_relisted_successfully', context) ?? 'Product relisted and freshness renewed successfully', context, isError: false);
+      return true;
+    } else {
+      ApiChecker.checkApi(apiResponse);
+      return false;
+    }
+  }
+
+  Future<bool> updateMarketplaceAvailability(BuildContext context, int productId, String availability) async {
+    _isLoading = true;
+    notifyListeners();
+    ApiResponse apiResponse = await productServiceInterface.updateMarketplaceAvailability(productId, availability);
+    _isLoading = false;
+    notifyListeners();
+    if (apiResponse.response != null && apiResponse.response!.statusCode == 200) {
+      showCustomSnackBarWidget(getTranslated('marketplace_availability_updated_successfully', context) ?? 'Marketplace availability updated successfully', context, isError: false);
+      return true;
+    } else {
+      ApiChecker.checkApi(apiResponse);
+      return false;
+    }
+  }
+
+  Future<bool> updateMarketplaceListing(BuildContext context, int productId, String status) async {
+    _isLoading = true;
+    notifyListeners();
+    ApiResponse apiResponse = await productServiceInterface.updateMarketplaceListing(productId, status);
+    _isLoading = false;
+    notifyListeners();
+    if (apiResponse.response != null && apiResponse.response!.statusCode == 200) {
+      showCustomSnackBarWidget(getTranslated('marketplace_listing_updated_successfully', context) ?? 'Marketplace listing status updated successfully', context, isError: false);
+      return true;
+    } else {
+      ApiChecker.checkApi(apiResponse);
+      return false;
+    }
+  }
+
+  Future<bool> bulkConfirmMarketplaceAvailability(BuildContext context, List<int> productIds) async {
+    _isLoading = true;
+    notifyListeners();
+    ApiResponse apiResponse = await productServiceInterface.bulkConfirmMarketplaceAvailability(productIds);
+    _isLoading = false;
+    notifyListeners();
+    if (apiResponse.response != null && apiResponse.response!.statusCode == 200) {
+      showCustomSnackBarWidget(getTranslated('bulk_freshness_confirmed_successfully', context) ?? 'Marketplace products confirmed successfully', context, isError: false);
+      return true;
+    } else {
+      ApiChecker.checkApi(apiResponse);
+      return false;
+    }
+  }
 
 }

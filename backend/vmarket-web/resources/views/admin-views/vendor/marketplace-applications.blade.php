@@ -12,18 +12,19 @@
     </div>
 
     <!-- Filter Buttons -->
+    <!-- Filter Buttons -->
     <div class="d-flex gap-2 mb-3">
-        <a href="{{ route('admin.pos-management.marketplace-applications', ['status' => 'all']) }}" class="btn {{ $status == 'all' ? 'btn--primary' : 'btn-outline-primary' }} btn-sm">
+        <a href="{{ route('admin.vendors.marketplace-applications', ['status' => 'all']) }}" class="btn {{ $status == 'all' ? 'btn--primary' : 'btn-outline-primary' }} btn-sm">
             {{ translate('All_Vendors') }}
         </a>
-        <a href="{{ route('admin.pos-management.marketplace-applications', ['status' => 'pending_approval']) }}" class="btn {{ $status == 'pending_approval' ? 'btn-warning text-white' : 'btn-outline-warning' }} btn-sm">
+        <a href="{{ route('admin.vendors.marketplace-applications', ['status' => 'pending_approval']) }}" class="btn {{ $status == 'pending_approval' ? 'btn-warning text-white' : 'btn-outline-warning' }} btn-sm">
             {{ translate('Pending_Marketplace_Approval') }}
         </a>
-        <a href="{{ route('admin.pos-management.marketplace-applications', ['status' => 'approved']) }}" class="btn {{ $status == 'approved' ? 'btn-success' : 'btn-outline-success' }} btn-sm">
+        <a href="{{ route('admin.vendors.marketplace-applications', ['status' => 'approved']) }}" class="btn {{ $status == 'approved' ? 'btn-success' : 'btn-outline-success' }} btn-sm">
             {{ translate('Approved_Live_Storefronts') }}
         </a>
-        <a href="{{ route('admin.pos-management.marketplace-applications', ['status' => 'pos_only']) }}" class="btn {{ $status == 'pos_only' ? 'btn-secondary' : 'btn-outline-secondary' }} btn-sm">
-            {{ translate('POS_Only_(Private)') }}
+        <a href="{{ route('admin.vendors.marketplace-applications', ['status' => 'pos_only']) }}" class="btn {{ $status == 'pos_only' ? 'btn-secondary' : 'btn-outline-secondary' }} btn-sm">
+            {{ translate('Inactive_Storefronts') }}
         </a>
     </div>
 
@@ -68,22 +69,22 @@
                             @elseif($vendor->marketplace_status === 'pending_approval')
                                 <span class="badge bg-warning text-white">{{ translate('Pending_Approval_🟡') }}</span>
                             @else
-                                <span class="badge bg-secondary">{{ translate('POS_Only_🔒') }}</span>
+                                <span class="badge bg-secondary">{{ translate('Inactive_🔒') }}</span>
                             @endif
                         </td>
                         <td class="text-center">
                             @if($vendor->marketplace_status !== 'approved')
-                                <form action="{{ route('admin.pos-management.marketplace-applications.approve', $vendor->id) }}" method="POST" class="d-inline">
+                                <form action="{{ route('admin.vendors.marketplace-applications.approve', $vendor->id) }}" method="POST" class="d-inline">
                                     @csrf
                                     <button type="submit" class="btn btn-success btn-sm" onclick="return confirm('{{ translate('Approve_vendor_for_public_marketplace_selling?') }}')">
                                         <i class="tio-done"></i> {{ translate('Approve_Online_Selling') }}
                                     </button>
                                 </form>
                             @else
-                                <form action="{{ route('admin.pos-management.marketplace-applications.reject', $vendor->id) }}" method="POST" class="d-inline">
+                                <form action="{{ route('admin.vendors.marketplace-applications.reject', $vendor->id) }}" method="POST" class="d-inline">
                                     @csrf
-                                    <button type="submit" class="btn btn-outline-secondary btn-sm" onclick="return confirm('{{ translate('Switch_vendor_back_to_private_POS_only?') }}')">
-                                        {{ translate('Revert_to_POS_Only') }}
+                                    <button type="submit" class="btn btn-outline-secondary btn-sm" onclick="return confirm('{{ translate('Deactivate_vendor_storefront?') }}')">
+                                        {{ translate('Deactivate_Storefront') }}
                                     </button>
                                 </form>
                             @endif

@@ -4,8 +4,6 @@ namespace App\Services;
 
 use App\Models\Order;
 use App\Models\OrderDetail;
-use App\Models\PosCustomerLedger;
-use App\Models\PosSubscription;
 use App\Models\Product;
 use App\Models\Seller;
 use App\Utils\Helpers;
@@ -18,7 +16,7 @@ use Illuminate\Support\Facades\Log;
 class VendorAiReportService
 {
     /**
-     * [AI] Generate structured Business Intelligence Performance Report for a vendor.
+     * [AI] Generate structured Business Intelligence Performance Report for a marketplace vendor.
      */
     public static function generateReport(Seller $seller, string $period = 'daily'): array
     {
@@ -65,14 +63,7 @@ class VendorAiReportService
             $topItemsLines[] = ($idx + 1) . ". {$pName} ({$tp->total_qty} units — ₦" . number_format($tp->total_revenue, 2) . ")";
         }
 
-        // 3. Customer Debt Ledger & Credit Exposure
-        $totalDebtDue = (float) PosCustomerLedger::where('seller_id', $seller->id)->sum('total_credit_due');
-        $criticalDebtorsCount = PosCustomerLedger::where('seller_id', $seller->id)
-            ->where('total_credit_due', '>', 0)
-            ->where('last_credit_date', '<', Carbon::now()->subDays(30))
-            ->count();
-
-        // 4. Low Stock Inventory Warnings (< 5 units)
+        // 3. Low Stock Inventory Warnings (<= 5 units)
         $lowStockItems = Product::where('user_id', $seller->id)
             ->where('added_by', 'seller')
             ->where('status', 1)
@@ -85,7 +76,7 @@ class VendorAiReportService
             $stockWarningLines[] = "⚠️ {$lsi->name}: Only {$lsi->current_stock} units left!";
         }
 
-        // 5. Build Executive WhatsApp AI Message
+        // 4. Build Executive WhatsApp AI Message
         $message = "📊 *Victorious MARKET AI — {$periodTitle}*\n";
         $message .= "🏬 *Store:* {$shopName}\n";
         $message .= "📅 *Period:* " . $startDate->format('d M Y') . " to " . Carbon::now()->format('d M Y') . "\n";
@@ -102,15 +93,6 @@ class VendorAiReportService
             $message .= "🔥 *Top Performing Items:*\n" . implode("\n", $topItemsLines) . "\n─────────────────────────\n";
         }
 
-        if ($totalDebtDue > 0) {
-            $message .= "💳 *30-Day Customer Debt Book:*\n";
-            $message .= "• Total Outstanding Debt: ₦" . number_format($totalDebtDue, 2) . "\n";
-            if ($criticalDebtorsCount > 0) {
-                $message .= "• Overdue Debts (>30 Days): {$criticalDebtorsCount} customer(s)\n";
-            }
-            $message .= "─────────────────────────\n";
-        }
-
         if (!empty($stockWarningLines)) {
             $message .= "🚨 *Low Stock Restock Alerts:*\n" . implode("\n", $stockWarningLines) . "\n─────────────────────────\n";
         }
@@ -118,8 +100,6 @@ class VendorAiReportService
         $message .= "💡 *AI Store Insight:* ";
         if ($totalSales > 50000) {
             $message .= "Great momentum! Consider running a flash deal on your top seller to accelerate repeat orders.\n";
-        } elseif ($totalDebtDue > 20000) {
-            $message .= "Send automated WhatsApp statements to overdue customers using your 30-Day Debt Ledger to boost cash recovery.\n";
         } else {
             $message .= "Ensure all your fast-moving inventory is restocked to keep your 24/7 WhatsApp AI sales agent selling at peak speed.\n";
         }
@@ -132,7 +112,6 @@ class VendorAiReportService
             'sales_amount' => $totalSales,
             'orders_count' => $totalOrdersCount,
             'completed_deliveries' => $completedDeliveries,
-            'total_debt_due' => $totalDebtDue,
             'message' => $message,
         ];
     }
@@ -164,27 +143,23 @@ class VendorAiReportService
     }
 
     /**
-     * [AI] Dispatch reports to all active Pro Subscribed merchants.
+     * [AI] Dispatch reports to all active approved marketplace merchants.
      */
     public static function sendAllSubscribedReports(string $period = 'daily'): int
     {
-        $activeSubs = PosSubscription::where('status', 'active')
-            ->where('plan_type', '!=', 'starter_free')
-            ->where(function ($q) {
-                $q->whereNull('expires_at')->orWhere('expires_at', '>', now());
-            })
-            ->with(['seller.shop'])
+        $activeSellers = Seller::where('status', 'approved')
+            ->where('marketplace_status', 'approved')
+            ->with(['shop'])
             ->get();
 
         $sentCount = 0;
-        foreach ($activeSubs as $sub) {
-            if ($sub->seller) {
-                if (self::sendReport($sub->seller, $period)) {
-                    $sentCount++;
-                }
+        foreach ($activeSellers as $seller) {
+            if (self::sendReport($seller, $period)) {
+                $sentCount++;
             }
         }
 
         return $sentCount;
     }
 }
+

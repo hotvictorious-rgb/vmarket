@@ -7,7 +7,7 @@ import 'package:sixvalley_vendor_app/common/basewidgets/custom_loader_widget.dar
 import 'package:sixvalley_vendor_app/common/basewidgets/custom_snackbar_widget.dart';
 import 'package:sixvalley_vendor_app/features/order_edit/controllers/order_edit_controller.dart';
 import 'package:sixvalley_vendor_app/features/order_edit/domain/models/order_edit_cart_model.dart';
-import 'package:sixvalley_vendor_app/features/pos/controllers/cart_controller.dart';
+
 import 'package:sixvalley_vendor_app/features/product/domain/models/product_model.dart';
 import 'package:sixvalley_vendor_app/helper/price_converter.dart';
 import 'package:sixvalley_vendor_app/helper/product_helper.dart';
@@ -455,9 +455,7 @@ class EditProductCartBottomSheetWidgetState extends State<EditProductCartBottomS
                     ]),
                     const SizedBox(height: Dimensions.paddingSizeSmall),
 
-                    Consumer<CartController>(
-                      builder: (ctx, cartController, child) {
-                        return CustomButtonWidget(
+                    CustomButtonWidget(
                         buttonHeight: 45,
                         btnTxt: getTranslated(stock! < widget.product!.minimumOrderQty! && widget.product!.productType == "physical"? 'out_of_stock':
                         isUpdate != -1 ? 'update_cart'  : 'add_to_cart', context),
@@ -510,8 +508,6 @@ class EditProductCartBottomSheetWidgetState extends State<EditProductCartBottomS
 
                             }
                           });
-                      }
-                    ),
 
 
                     const SizedBox(width: Dimensions.paddingSizeDefault),

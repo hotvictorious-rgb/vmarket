@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_speed_dial/flutter_speed_dial.dart';
 import 'package:provider/provider.dart';
 import 'package:sixvalley_vendor_app/features/addProduct/screens/add_product_tab_view_screen.dart';
-import 'package:sixvalley_vendor_app/features/barcode/controllers/barcode_controller.dart';
+
 import 'package:sixvalley_vendor_app/features/product/domain/models/filter_model.dart';
 import 'package:sixvalley_vendor_app/features/product/domain/models/product_model.dart';
 import 'package:sixvalley_vendor_app/features/product_details/enums/preview_type.dart';
@@ -23,7 +23,7 @@ import 'package:sixvalley_vendor_app/utill/styles.dart';
 import 'package:sixvalley_vendor_app/common/basewidgets/confirmation_dialog_widget.dart';
 import 'package:sixvalley_vendor_app/common/basewidgets/custom_image_widget.dart';
 import 'package:sixvalley_vendor_app/features/product_details/screens/product_details_screen.dart';
-import 'package:sixvalley_vendor_app/features/barcode/screens/bar_code_generator_screen.dart';
+
 
 import '../../../main.dart';
 
@@ -188,6 +188,113 @@ class _ShopProductWidgetState extends State<ShopProductWidget> {
                           ],
                         ),
 
+                        const SizedBox(height: Dimensions.paddingSizeExtraSmall),
+
+                        Wrap(
+                          spacing: 6,
+                          runSpacing: 4,
+                          crossAxisAlignment: WrapCrossAlignment.center,
+                          children: [
+                            // Marketplace Status Chip
+                            Container(
+                              padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 2.5),
+                              decoration: BoxDecoration(
+                                color: (widget.productModel?.marketplaceListingStatus == 'listed' && (widget.productModel?.isMarketplaceFresh ?? false))
+                                    ? Colors.teal.withValues(alpha: 0.12)
+                                    : Colors.amber.withValues(alpha: 0.15),
+                                borderRadius: BorderRadius.circular(Dimensions.radiusSmall),
+                                border: Border.all(
+                                  color: (widget.productModel?.marketplaceListingStatus == 'listed' && (widget.productModel?.isMarketplaceFresh ?? false))
+                                      ? Colors.teal
+                                      : Colors.amber.shade800,
+                                  width: 0.8,
+                                ),
+                              ),
+                              child: Text(
+                                (widget.productModel?.marketplaceListingStatus == 'listed' && (widget.productModel?.isMarketplaceFresh ?? false))
+                                    ? 'Marketplace: Listed (${widget.productModel?.daysUntilExpiry ?? 7}d left)'
+                                    : 'Marketplace: ${widget.productModel?.marketplaceListingStatus == "unlisted" ? "Unlisted" : "Expired"}',
+                                style: robotoMedium.copyWith(
+                                  fontSize: 10,
+                                  color: (widget.productModel?.marketplaceListingStatus == 'listed' && (widget.productModel?.isMarketplaceFresh ?? false))
+                                      ? Colors.teal.shade900
+                                      : Colors.amber.shade900,
+                                ),
+                              ),
+                            ),
+
+                            // In Stock / Out of Stock Toggle Button
+                            InkWell(
+                              onTap: () async {
+                                String newAvailability = widget.productModel?.marketplaceAvailability == 'in_stock' ? 'out_of_stock' : 'in_stock';
+                                bool success = await Provider.of<ProductController>(context, listen: false).updateMarketplaceAvailability(context, widget.productModel!.id!, newAvailability);
+                                if (success) {
+                                  setState(() {
+                                    widget.productModel?.marketplaceAvailability = newAvailability;
+                                  });
+                                }
+                              },
+                              child: Container(
+                                padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 2.5),
+                                decoration: BoxDecoration(
+                                  color: widget.productModel?.marketplaceAvailability == 'in_stock'
+                                      ? Colors.green.withValues(alpha: 0.12)
+                                      : Colors.red.withValues(alpha: 0.12),
+                                  borderRadius: BorderRadius.circular(Dimensions.radiusSmall),
+                                  border: Border.all(
+                                    color: widget.productModel?.marketplaceAvailability == 'in_stock' ? Colors.green : Colors.red,
+                                    width: 0.8,
+                                  ),
+                                ),
+                                child: Text(
+                                  widget.productModel?.marketplaceAvailability == 'in_stock' ? 'In Stock (tap)' : 'Out of Stock (tap)',
+                                  style: robotoMedium.copyWith(
+                                    fontSize: 10,
+                                    color: widget.productModel?.marketplaceAvailability == 'in_stock' ? Colors.green.shade900 : Colors.red.shade900,
+                                  ),
+                                ),
+                              ),
+                            ),
+
+                            // Confirm / Relist Action Button
+                            InkWell(
+                              onTap: () async {
+                                if (widget.productModel?.marketplaceListingStatus == 'unlisted' || !(widget.productModel?.isMarketplaceFresh ?? false)) {
+                                  bool success = await Provider.of<ProductController>(context, listen: false).confirmAndRelistMarketplace(context, widget.productModel!.id!);
+                                  if (success) {
+                                    setState(() {
+                                      widget.productModel?.marketplaceListingStatus = 'listed';
+                                      widget.productModel?.isMarketplaceFresh = true;
+                                      widget.productModel?.daysUntilExpiry = 7;
+                                    });
+                                  }
+                                } else {
+                                  bool success = await Provider.of<ProductController>(context, listen: false).confirmMarketplaceAvailability(context, widget.productModel!.id!);
+                                  if (success) {
+                                    setState(() {
+                                      widget.productModel?.isMarketplaceFresh = true;
+                                      widget.productModel?.daysUntilExpiry = 7;
+                                    });
+                                  }
+                                }
+                              },
+                              child: Container(
+                                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2.5),
+                                decoration: BoxDecoration(
+                                  color: Theme.of(context).primaryColor,
+                                  borderRadius: BorderRadius.circular(Dimensions.radiusSmall),
+                                ),
+                                child: Text(
+                                  (widget.productModel?.marketplaceListingStatus == 'unlisted' || !(widget.productModel?.isMarketplaceFresh ?? false))
+                                      ? 'Confirm & Relist'
+                                      : 'Confirm Freshness',
+                                  style: robotoMedium.copyWith(fontSize: 10, color: Colors.white),
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+
 
                         if(widget.isDetails && widget.productModel?.productType == 'digital' && widget.productModel?.previewFileFullUrl != null && widget.productModel?.previewFileFullUrl?.path != '')
                         Padding(
@@ -285,16 +392,7 @@ class _ShopProductWidgetState extends State<ShopProductWidget> {
         //             Navigator.of(Get.context!).push(MaterialPageRoute(builder: (_) => AddProductTabView(product: widget.productModel, fromHome: false,)));
         //           },
         //         ),
-        //         SpeedDialChild(
-        //           elevation: 0,
-        //           child: Padding(padding: const EdgeInsets.all(8.0), child: Image.asset(Images.barCode)),
-        //           onTap: () async {
-        //             setState(() { isDialOpen.value = false; extend = false; });
-        //             await Future.delayed(const Duration(milliseconds : 350));
-        //             Navigator.of(Get.context!).push(MaterialPageRoute(builder: (_) => BarCodeGenerateScreen(product: widget.productModel)));
-        //             Provider.of<BarcodeController>(Get.context!, listen: false).setBarCodeQuantity(4);
-        //           },
-        //         ),
+
         //         SpeedDialChild(
         //           elevation: 0,
         //           child: Padding(padding: const EdgeInsets.all(8.0), child: Image.asset(Images.delete)),
@@ -368,16 +466,7 @@ class _ShopProductWidgetState extends State<ShopProductWidget> {
                   Navigator.of(Get.context!).push(MaterialPageRoute(builder: (_) => AddProductTabView(product: widget.productModel, fromHome: false,)));
                 },
               ),
-              SpeedDialChild(
-                elevation: 0,
-                child: Padding(padding: const EdgeInsets.all(8.0), child: Image.asset(Images.barCode)),
-                onTap: () async {
-                  setState(() { isDialOpen.value = false; extend = false; });
-                  await Future.delayed(const Duration(milliseconds : 350));
-                  Navigator.of(Get.context!).push(MaterialPageRoute(builder: (_) => BarCodeGenerateScreen(product: widget.productModel)));
-                  Provider.of<BarcodeController>(Get.context!, listen: false).setBarCodeQuantity(4);
-                },
-              ),
+
               SpeedDialChild(
                 elevation: 0,
                 child: Padding(padding: const EdgeInsets.all(8.0), child: Image.asset(Images.delete)),
@@ -710,22 +799,7 @@ class DiscountTagWidget extends StatelessWidget {
 //                   },
 //                 ),
 //
-//                 SpeedDialChild(
-//                   elevation: 0,
-//                   child: Padding( padding: const EdgeInsets.all(8.0),
-//                     child: Image.asset(Images.barCode),),
-//
-//                   onTap: () async {
-//                     setState(() {
-//                       isDialOpen.value = false;
-//                       extend = false;
-//                     });
-//
-//                     await Future.delayed(const Duration(milliseconds : 350));
-//                     Navigator.of(Get.context!).push(MaterialPageRoute(builder: (_) => BarCodeGenerateScreen(product: widget.productModel)));
-//                     Provider.of<BarcodeController>(Get.context!, listen: false).setBarCodeQuantity(4);
-//                   },
-//                 ),
+
 //
 //                 SpeedDialChild(
 //                   elevation: 0,

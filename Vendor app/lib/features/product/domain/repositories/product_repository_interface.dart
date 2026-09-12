@@ -22,6 +22,9 @@ abstract class ProductRepositoryInterface implements RepositoryInterface{
   Future<void> setIsShowCookies();
   Future<void> removeShowCookies();
   Future<ApiResponse> getBrandList(String languageCode);
-
-
+  Future<ApiResponse> confirmMarketplaceAvailability(int productId);
+  Future<ApiResponse> confirmAndRelistMarketplace(int productId);
+  Future<ApiResponse> updateMarketplaceAvailability(int productId, String availability);
+  Future<ApiResponse> updateMarketplaceListing(int productId, String status);
+  Future<ApiResponse> bulkConfirmMarketplaceAvailability(List<int> productIds);
 }

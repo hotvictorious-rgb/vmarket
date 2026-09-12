@@ -77,4 +77,29 @@ class ProductService implements ProductServiceInterface{
     return productRepoInterface.getBrandList(languageCode);
   }
 
+  @override
+  Future confirmMarketplaceAvailability(int productId) {
+    return productRepoInterface.confirmMarketplaceAvailability(productId);
+  }
+
+  @override
+  Future confirmAndRelistMarketplace(int productId) {
+    return productRepoInterface.confirmAndRelistMarketplace(productId);
+  }
+
+  @override
+  Future updateMarketplaceAvailability(int productId, String availability) {
+    return productRepoInterface.updateMarketplaceAvailability(productId, availability);
+  }
+
+  @override
+  Future updateMarketplaceListing(int productId, String status) {
+    return productRepoInterface.updateMarketplaceListing(productId, status);
+  }
+
+  @override
+  Future bulkConfirmMarketplaceAvailability(List<int> productIds) {
+    return productRepoInterface.bulkConfirmMarketplaceAvailability(productIds);
+  }
+
 }

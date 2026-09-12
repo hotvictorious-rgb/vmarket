@@ -68,17 +68,5 @@
             <span aria-hidden="true">&times;</span>
         </button>
     </div>
-
-
-    <div class="alert alert--message-3 alert--message-for-pos border-bottom alert-dismissible fade show">
-        <img width="28" src="{{ dynamicAsset(path: 'public/assets/back-end/img/warning.png') }}" alt="">
-        <div class="w-0">
-            <h6 class="title text-truncate text-wrap line-2">{{ translate('Warning').'!'}}</h6>
-            <span class="warning-message"></span>
-        </div>
-        <button type="button" class="close position-relative p-0 close-alert--message-for-pos">
-            <span aria-hidden="true">&times;</span>
-        </button>
-    </div>
 </div>
 

@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import 'package:sixvalley_vendor_app/features/pos/controllers/customer_controller.dart';
+
 import 'package:sixvalley_vendor_app/features/product/domain/models/filter_model.dart';
 import 'package:sixvalley_vendor_app/features/review/domain/models/review_model.dart';
 import 'package:sixvalley_vendor_app/features/review/screens/review_reply_widget.dart';
@@ -33,7 +33,7 @@ class _ProductReviewScreenState extends State<ProductReviewScreen> {
   @override
   void initState() {
     Provider.of<ProductReviewController>(context, listen: false).resetReviewData(isUpdate: false);
-    Provider.of<CustomerController>(context, listen: false).getCustomerList('');
+
     Provider.of<ProductController>(context, listen: false).getSellerProductList(Provider.of<ProfileController>(context, listen: false).
     userInfoModel!.id.toString(), 1, 'en','', filterSearchModel: FilterModel(reload: false)
     );

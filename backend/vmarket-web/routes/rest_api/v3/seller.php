@@ -13,8 +13,6 @@ use App\Http\Controllers\RestAPI\v3\seller\DeliverymanWithdrawController;
 use App\Http\Controllers\RestAPI\v3\seller\EmergencyContactController;
 use App\Http\Controllers\RestAPI\v3\seller\OrderController;
 use App\Http\Controllers\RestAPI\v3\seller\OrderEditController;
-use App\Http\Controllers\RestAPI\v3\seller\POSCartController;
-use App\Http\Controllers\RestAPI\v3\seller\POSController;
 use App\Http\Controllers\RestAPI\v3\seller\ProductController;
 use App\Http\Controllers\RestAPI\v3\seller\RefundController;
 use App\Http\Controllers\RestAPI\v3\seller\SellerController;
@@ -124,6 +122,11 @@ Route::group(['prefix' => 'v3/seller', 'middleware' => ['api_lang']], function (
                 Route::post('restock-request-stock-update', 'updateRestockQuantity');
                 Route::get('restock-request-brands-list', 'getRestockRequestBrands');
                 Route::post('update-price-and-reactivate', 'updatePriceAndReactivate');
+                Route::post('confirm-availability', 'confirmAvailability');
+                Route::post('confirm-and-relist', 'confirmAndRelist');
+                Route::post('update-marketplace-availability', 'updateMarketplaceAvailability');
+                Route::post('update-marketplace-listing', 'updateMarketplaceListing');
+                Route::post('bulk-confirm-availability', 'bulkConfirmAvailability');
             });
         });
 
@@ -213,21 +216,6 @@ Route::group(['prefix' => 'v3/seller', 'middleware' => ['api_lang']], function (
             });
         });
 
-        Route::group(['prefix' => 'pos'], function () {
-            Route::controller(POSController::class)->group(function () {
-                Route::get('get-categories', 'get_categories');
-                Route::get('customers', 'customers');
-                Route::post('customer-store', 'customer_store');
-                Route::get('products', 'get_product_by_barcode');
-                Route::get('product-list', 'product_list');
-                Route::post('place-order', 'place_order');
-                Route::get('get-invoice', 'get_invoice');
-            });
-
-            Route::controller(POSCartController::class)->group(function () {
-                Route::post('get-tax-amount', 'getTaxAmountCart');
-            });
-        });
 
         Route::group(['prefix' => 'delivery-man'], function () {
             Route::controller(DeliveryManController::class)->group(function () {

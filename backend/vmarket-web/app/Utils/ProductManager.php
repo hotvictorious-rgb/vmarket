@@ -38,7 +38,7 @@ class ProductManager
 {
     public static function get_product($id)
     {
-        return Product::active()
+        return Product::marketplaceEligible()
             ->with(['rating', 'seller.shop', 'tags', 'seoInfo', 'digitalVariation', 'digitalProductAuthors.author', 'digitalProductPublishingHouse.publishingHouse', 'clearanceSale' => function ($query) {
                 return $query->active();
             }])
@@ -51,7 +51,7 @@ class ProductManager
         $isGuest = $user == 'offline';
 
         $fetchLatest = function() use ($user, $limit, $offset) {
-            $paginator = Product::active()
+            $paginator = Product::marketplaceEligible()
                 ->with(['rating', 'tags', 'seller.shop', 'flashDealProducts.flashDeal', 'clearanceSale' => function ($query) {
                     return $query->active();
                 }])
@@ -102,7 +102,7 @@ class ProductManager
     public static function getNewArrivalProducts($request, $limit = 10, $offset = 1)
     {
         $user = Helpers::getCustomerInformation($request);
-        $products = Product::active()
+        $products = Product::marketplaceEligible()
             ->with(['rating', 'tags', 'seller.shop', 'flashDealProducts.flashDeal', 'clearanceSale' => function ($query) {
                 return $query->active();
             }])
@@ -196,7 +196,7 @@ class ProductManager
             $getReviewProductIds[] = $review['product_id'];
         }
 
-        $productListData = Product::active()->withSum('orderDetails', 'qty', function ($query) {
+        $productListData = Product::marketplaceEligible()->withSum('orderDetails', 'qty', function ($query) {
             $query->where('delivery_status', 'delivered');
         })
             ->with(['seller.shop', 'category', 'reviews', 'rating', 'flashDealProducts.flashDeal',
@@ -256,7 +256,7 @@ class ProductManager
             $getOrderedProductIds[] = $detail['product_id'];
         }
 
-        $productListData = Product::active()->withSum('orderDetails', 'qty', function ($query) {
+        $productListData = Product::marketplaceEligible()->withSum('orderDetails', 'qty', function ($query) {
             $query->where('delivery_status', 'delivered');
         })
             ->with(['seller.shop', 'category', 'reviews', 'rating', 'flashDealProducts.flashDeal',
@@ -340,7 +340,7 @@ class ProductManager
     {
         $user = Helpers::getCustomerInformation($request);
         $product = Product::find($product_id);
-        $products = Product::active()->with(['rating', 'flashDealProducts.flashDeal', 'tags', 'seller.shop', 'clearanceSale' => function ($query) {
+        $products = Product::marketplaceEligible()->with(['rating', 'flashDealProducts.flashDeal', 'tags', 'seller.shop', 'clearanceSale' => function ($query) {
             return $query->active();
         }])
             ->withCount(['reviews', 'wishList' => function ($query) use ($user) {
@@ -388,7 +388,7 @@ class ProductManager
         $publishingHouseIds = PublishingHouse::where('name', 'like', "%{$name}%")->pluck('id')->toArray();
         $publishingHouseProductIds = DigitalProductPublishingHouse::whereIn('publishing_house_id', $publishingHouseIds)->pluck('product_id')->toArray();
 
-        $productListData = Product::active()->with(['rating', 'tags', 'clearanceSale' => function ($query) {
+        $productListData = Product::marketplaceEligible()->with(['rating', 'tags', 'clearanceSale' => function ($query) {
             return $query->active();
         }])
             ->where(function ($q) use ($key) {
@@ -433,7 +433,7 @@ class ProductManager
         $key = [base64_decode($name)];
 
         $product = Product::select('name')
-            ->active()
+            ->marketplaceEligible()
             ->with(['rating', 'tags'])->where(function ($q) use ($key) {
                 foreach ($key as $value) {
                     $q->orWhere('name', 'like', "%{$value}%")
@@ -461,7 +461,7 @@ class ProductManager
         $publishingHouseIds = PublishingHouse::where('name', 'like', "%{$name}%")->pluck('id')->toArray();
         $publishingHouseProductIds = DigitalProductPublishingHouse::whereIn('publishing_house_id', $publishingHouseIds)->pluck('product_id')->toArray();
 
-        $productListData = Product::active()->with(['rating', 'tags'])->where(function ($q) use ($name) {
+        $productListData = Product::marketplaceEligible()->with(['rating', 'tags'])->where(function ($q) use ($name) {
             $q->orWhere('name', 'like', "%{$name}%")
                 ->orWhereHas('tags', function ($query) use ($name) {
                     $query->where('tag', 'like', "%{$name}%");
@@ -716,7 +716,7 @@ class ProductManager
         $subSubCategoryIds = Category::where(['position' => 2])->whereIn('id', $categories)->pluck('id')->toArray();
 
 
-        $products = Product::active()
+        $products = Product::marketplaceEligible()
             ->with(['rating', 'flashDealProducts.flashDeal', 'tags', 'digitalProductAuthors.author', 'digitalProductPublishingHouse.publishingHouse', 'clearanceSale' => function ($query) {
                 return $query->active();
             }])
@@ -903,7 +903,7 @@ class ProductManager
 
     public static function get_user_total_product($added_by, $user_id)
     {
-        $total_product = Product::active()->where(['added_by' => $added_by, 'user_id' => $user_id])->count();
+        $total_product = Product::marketplaceEligible()->where(['added_by' => $added_by, 'user_id' => $user_id])->count();
         return $total_product;
     }
 
@@ -1561,7 +1561,7 @@ class ProductManager
 
         if ($flashDeal) {
             $flashDealProducts = ProductManager::getPriorityWiseFlashDealsProductsQuerySorting(
-                query: Product::active()->with(['compareList', 'clearanceSale' => function ($query) {
+                query: Product::marketplaceEligible()->with(['compareList', 'clearanceSale' => function ($query) {
                     return $query->active();
                 }]),
                 flashDeal: $flashDeal,
@@ -1864,7 +1864,7 @@ class ProductManager
         if (request()->is('flash-deals*')) {
             $productIdsArray = self::getFlashDealProductsArray();
         }
-        $productCount = Product::active()
+        $productCount = Product::marketplaceEligible()
             ->where(['product_type' => 'digital'])
             ->whereNotIn('id', $productIdsArray)
             ->when(!empty($productIds), function ($query) use ($productIds) {
@@ -1944,7 +1944,7 @@ class ProductManager
             $productIdsArray = self::getFlashDealProductsArray();
         }
 
-        $productCount = Product::active()
+        $productCount = Product::marketplaceEligible()
             ->where(['product_type' => 'digital'])
             ->whereNotIn('id', $productIdsArray)
             ->when(!empty($productIds), function ($query) use ($productIds) {
@@ -2057,9 +2057,9 @@ class ProductManager
             unset($request['search_category_value']);
         }
 
-        $productListData = Product::active()
+        $productListData = Product::marketplaceEligible()
             ->with(['category', 'reviews' => function ($query) {
-                $query->active();
+                return $query->active();
             }, 'rating', 'seller.shop', 'clearanceSale' => function ($query) {
                 return $query->active()->with(['setup']);
             }])
@@ -2361,7 +2361,7 @@ class ProductManager
 
     public static function getAllProductsData($request, $productUserID = null, $productAddedBy = null): mixed
     {
-        return Product::active()->with('rating')->withCount('reviews')
+        return Product::marketplaceEligible()->with('rating')->withCount('reviews')
             ->when($productAddedBy == 'admin', function ($query) use ($productAddedBy) {
                 return $query->where(['added_by' => $productAddedBy]);
             })

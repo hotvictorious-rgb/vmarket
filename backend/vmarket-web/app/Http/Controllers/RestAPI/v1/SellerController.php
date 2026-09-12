@@ -36,7 +36,7 @@ class SellerController extends Controller
         $data = [];
         $seller = $shop['author_type'] != 'admin' ? Seller::with(['shop'])->where(['id' => $shop['seller_id']])->first(['id', 'f_name', 'l_name', 'phone', 'image', 'minimum_order_amount']) : null;
 
-        $productIds = Product::active()
+        $productIds = Product::marketplaceEligible()
             ->when($shop && $shop['author_type'] == 'admin', function ($query) {
                 return $query->where(['added_by' => 'admin']);
             })
@@ -50,7 +50,7 @@ class SellerController extends Controller
         $avgRating = Review::active()->whereIn('product_id', $productIds)->avg('rating');
         $totalReview = Review::active()->whereIn('product_id', $productIds)->count();
         $totalOrder = Review::active()->whereIn('product_id', $productIds)->groupBy('order_id')->count();
-        $totalProduct = Product::active()
+        $totalProduct = Product::marketplaceEligible()
             ->when($shop && $shop['author_type'] == 'admin', function ($query) {
                 return $query->where(['added_by' => 'admin']);
             })

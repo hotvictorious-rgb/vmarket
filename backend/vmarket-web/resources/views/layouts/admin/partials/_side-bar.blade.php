@@ -938,7 +938,7 @@
                             </a>
                         </li>
                         <li class="nav-item">
-                            <a class="nav-link {{ Request::is('admin/vendors/marketplace-applications*') || Request::is('admin/pos-management/marketplace-applications*') ? 'active' : '' }}"
+                            <a class="nav-link {{ Request::is('admin/vendors/marketplace-applications*') ? 'active' : '' }}"
                                href="{{ route('admin.vendors.marketplace-applications') }}"
                                title="{{ translate('Marketplace_Applications') }}">
                                 <span class="text-truncate">{{ translate('Marketplace_Applications') }}</span>

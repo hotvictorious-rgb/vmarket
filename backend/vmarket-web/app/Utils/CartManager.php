@@ -54,7 +54,7 @@ class CartManager
         self::updateOrderSummaryShippingCost($groupId, $type);
 
         $cartItems = Cart::with(['product' => function ($query) {
-                return $query->active()->with(['category' => function ($query) {
+                return $query->marketplacePurchasable()->with(['category' => function ($query) {
                     return $query->with(['taxVats' => function ($query) {
                         return $query->with(['tax'])->wherehas('tax', function ($query) {
                             return $query->where('is_active', 1);
@@ -69,7 +69,7 @@ class CartManager
                 }]);
             }])
             ->whereHas('product', function ($query) {
-                return $query->active();
+                return $query->marketplaceEligible();
             })
             ->when($groupId == null, function ($query) {
                 return $query->whereIn('cart_group_id', CartManager::get_cart_group_ids());
@@ -104,7 +104,7 @@ class CartManager
                 }]);
             }])
             ->whereHas('product', function ($query) {
-                return $query->active();
+                return $query->marketplaceEligible();
             })
             ->when($groupId == null, function ($query) use ($request) {
                 return $query->whereIn('cart_group_id', CartManager::get_cart_group_ids($request ?? request()->all()));
@@ -164,7 +164,7 @@ class CartManager
         $user = Helpers::getCustomerInformation(!is_null($request) ? $request : request());
 
         return Cart::whereHas('product', function ($query) {
-                return $query->active();
+                return $query->marketplaceEligible();
             })->when($user == 'offline', function ($query) use ($request) {
                 return $query->where(['customer_id' => session('guest_id') ?? (request('guest_id') ?? 0), 'is_guest' => 1]);
             })->when($user != 'offline', function ($query) use ($user) {
@@ -387,6 +387,10 @@ class CartManager
         $user = Helpers::getCustomerInformation($request);
         $guestId = session('guest_id') ?? ($request->guest_id ?? 0);
 
+        if (!$product->isMarketplacePurchasable()) {
+            return ['status' => 0, 'message' => translate('out_of_stock!')];
+        }
+
         if (($product['product_type'] == 'physical') && ($product['current_stock'] < $request['quantity'])) {
             return ['status' => 0, 'message' => translate('out_of_stock!')];
         }
@@ -579,6 +583,10 @@ class CartManager
 
     public static function addToCartDigitalProduct($request, $product, $shippingType, $sellerShippingList): array
     {
+        if (!$product->isMarketplacePurchasable()) {
+            return ['status' => 0, 'message' => translate('out_of_stock!')];
+        }
+
         if ($product['minimum_order_qty'] > $request['quantity']) {
             return ['status' => 0, 'message' => translate('Minimum_order_quantity').' '. $product['minimum_order_qty']];
         }
@@ -679,8 +687,8 @@ class CartManager
             return $query->active();
         }])->where(['id' => $request['id']])->first();
 
-        if($product['status'] == 0){
-            return ['status' => 0, 'message' => translate('Product_is_unavailable')];
+        if(!$product || $product['status'] == 0 || !$product->isMarketplacePurchasable()){
+            return ['status' => 0, 'message' => translate('Product_is_currently_out_of_stock_or_unavailable')];
         }
 
         $authorType = $product['added_by'] == 'admin' ? 'inhouse' : ($product['added_by'] == 'seller' ? 'vendor' : null);
@@ -746,6 +754,13 @@ class CartManager
         }
 
         $product = Product::find($cart['product_id']);
+        if (!$product || !$product->isMarketplacePurchasable()) {
+            return [
+                'status' => 0,
+                'qty' => $cart ? $cart['quantity'] : 1,
+                'message' => translate('Product_is_currently_out_of_stock_or_unavailable'),
+            ];
+        }
         $count = count(json_decode($product->variation));
         if ($count) {
             for ($i = 0; $i < $count; $i++) {
@@ -872,6 +887,9 @@ class CartManager
         foreach ($carts as $cart) {
             if ($cart->product) {
                 $product = $cart->product;
+                if (!$product->isMarketplacePurchasable()) {
+                    return false;
+                }
                 $count = count(json_decode($product->variation));
                 if ($count) {
                     for ($i = 0; $i < $count; $i++) {

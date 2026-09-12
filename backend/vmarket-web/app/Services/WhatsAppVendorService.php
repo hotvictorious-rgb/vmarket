@@ -30,16 +30,13 @@ class WhatsAppVendorService
     }
 
     /**
-     * [AI] Verify if a seller has an active paid Pro AI/Multi-Branch subscription.
+     * [AI] Verify if a seller is an approved marketplace vendor eligible for WhatsApp AI sales features.
      */
     public static function isSubscribedVendor(int $sellerId): bool
     {
-        return \App\Models\PosSubscription::where('seller_id', $sellerId)
-            ->where('plan_type', '!=', 'starter_free')
-            ->where('status', 'active')
-            ->where(function ($q) {
-                $q->whereNull('expires_at')->orWhere('expires_at', '>', now());
-            })
+        return Seller::where('id', $sellerId)
+            ->where('status', 'approved')
+            ->where('marketplace_status', 'approved')
             ->exists();
     }
 

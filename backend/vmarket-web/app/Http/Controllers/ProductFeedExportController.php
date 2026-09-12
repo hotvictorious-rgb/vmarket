@@ -166,7 +166,7 @@ class ProductFeedExportController extends Controller
      */
     public function getFilteredProductsQuery(Request $request, array $authContext)
     {
-        $query = Product::active()->with(['brand', 'category', 'rating']);
+        $query = Product::marketplaceEligible()->with(['brand', 'category', 'rating']);
 
         // [AI] Strict Vendor Scoping: If request is authenticated via vendor token,
         // hard-lock query exclusively to this vendor. Completely ignore any client-supplied vendor_id/scope.
@@ -176,7 +176,7 @@ class ProductFeedExportController extends Controller
                 'user_id' => $authContext['seller']->id,
             ])
             ->when($request->query('in_stock_only') == '1', function ($q) {
-                return $q->where('current_stock', '>', 0);
+                return $q->where('marketplace_availability', 'in_stock');
             })
             ->latest('updated_at');
         }
@@ -196,7 +196,7 @@ class ProductFeedExportController extends Controller
                 return $q->where('category_id', $request->query('category_id'));
             })
             ->when($request->query('in_stock_only') == '1', function ($q) {
-                return $q->where('current_stock', '>', 0);
+                return $q->where('marketplace_availability', 'in_stock');
             })
             ->latest('updated_at');
     }
@@ -238,7 +238,7 @@ class ProductFeedExportController extends Controller
                 : ($product->thumbnail_full_url ?? asset('public/assets/front-end/img/image-place-holder.png'));
 
             $price = number_format((float)$product->unit_price, 2, '.', '') . ' NGN';
-            $availability = ($product->current_stock > 0) ? 'in stock' : 'out of stock';
+            $availability = ($product->marketplace_availability === 'in_stock') ? 'in stock' : 'out of stock';
             $brand = $product->brand ? $product->brand->name : $channelTitle;
             $categoryName = $product->category ? $product->category->name : 'General';
             $description = !empty($product->details) ? strip_tags($product->details) : $product->name;
@@ -343,7 +343,7 @@ class ProductFeedExportController extends Controller
                         : ($product->thumbnail_full_url ?? asset('public/assets/front-end/img/image-place-holder.png'));
 
                     $price = number_format((float)$product->unit_price, 2, '.', '') . ' NGN';
-                    $availability = ($product->current_stock > 0) ? 'in stock' : 'out of stock';
+                    $availability = ($product->marketplace_availability === 'in_stock') ? 'in stock' : 'out of stock';
                     $brand = $product->brand ? $product->brand->name : $channelTitle;
                     $categoryName = $product->category ? $product->category->name : 'General';
                     $description = !empty($product->details) ? strip_tags($product->details) : $product->name;
@@ -371,7 +371,7 @@ class ProductFeedExportController extends Controller
                         $product->google_category_id ?: $categoryName,
                         $product->gtin ?? '',
                         $product->mpn ?? '',
-                        $product->current_stock ?? 0,
+                        ($product->marketplace_availability === 'in_stock') ? 1 : 0,
                     ]);
                 }
             });
@@ -429,7 +429,7 @@ class ProductFeedExportController extends Controller
                         : ($product->thumbnail_full_url ?? asset('public/assets/front-end/img/image-place-holder.png'));
 
                     $price = number_format((float)$product->unit_price, 2, '.', '') . ' NGN';
-                    $availability = ($product->current_stock > 0) ? 'in_stock' : 'out_of_stock';
+                    $availability = ($product->marketplace_availability === 'in_stock') ? 'in_stock' : 'out_of_stock';
                     $brand = $product->brand ? $product->brand->name : $channelTitle;
                     $description = !empty($product->details) ? strip_tags($product->details) : $product->name;
                     $description = mb_substr(trim(preg_replace('/\s+/', ' ', $description)), 0, 4990);
@@ -453,7 +453,7 @@ class ProductFeedExportController extends Controller
                         $productUrl,
                         $imageUrl,
                         $brand,
-                        $product->current_stock ?? 0,
+                        ($product->marketplace_availability === 'in_stock') ? 1 : 0,
                     ]);
                 }
             });

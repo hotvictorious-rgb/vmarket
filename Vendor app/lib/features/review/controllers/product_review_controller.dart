@@ -4,8 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
 import 'package:sixvalley_vendor_app/data/model/response/base/api_response.dart';
-import 'package:sixvalley_vendor_app/features/pos/controllers/cart_controller.dart';
-import 'package:sixvalley_vendor_app/features/pos/controllers/customer_controller.dart';
+
 import 'package:sixvalley_vendor_app/features/review/domain/models/product_review_model.dart';
 import 'package:sixvalley_vendor_app/features/review/domain/models/ratting_model.dart';
 import 'package:sixvalley_vendor_app/features/review/domain/models/review_model.dart';
@@ -282,8 +281,7 @@ class ProductReviewController extends ChangeNotifier{
     _selectedProductId = 0;
     _reviewStatusName = 'select_status';
     selectedProductName = 'Select Product';
-    Provider.of<CustomerController>(Get.context!, listen: false).resetCustomerId(isUpdate: false);
-    Provider.of<CartController>(Get.context!, listen: false).emptyCustomerTextField();
+
     if(isUpdate) {
       notifyListeners();
     }
