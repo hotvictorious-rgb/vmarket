@@ -103,6 +103,8 @@ class Product {
   int? _status;
   List<Reviews>? _reviews;
   String? _reviewsAvgRating;
+  String? _marketplaceListingStatus;
+  String? _marketplaceAvailability;
   Product(
       {int? id,
         String? addedBy,
@@ -133,6 +135,8 @@ class Product {
         double? discount,
         String? discountType,
         int? currentStock,
+        String? marketplaceListingStatus,
+        String? marketplaceAvailability,
         String? details,
         String? attachment,
         String? createdAt,
@@ -186,6 +190,8 @@ class Product {
     _discount = discount;
     _discountType = discountType;
     _currentStock = currentStock;
+    _marketplaceListingStatus = marketplaceListingStatus;
+    _marketplaceAvailability = marketplaceAvailability;
     _details = details;
     _createdAt = createdAt;
     _updatedAt = updatedAt;
@@ -240,6 +246,9 @@ class Product {
   double? get discount => _discount;
   String? get discountType => _discountType;
   int? get currentStock => _currentStock;
+  String? get marketplaceListingStatus => _marketplaceListingStatus;
+  String? get marketplaceAvailability => _marketplaceAvailability;
+  bool get isMarketplaceInStock => _marketplaceAvailability == 'in_stock';
   String? get details => _details;
   String? get createdAt => _createdAt;
   String? get updatedAt => _updatedAt;
@@ -371,6 +380,8 @@ class Product {
     }
     _discountType = json['discount_type'];
     _currentStock = json['current_stock'] != null ? int.tryParse(json['current_stock'].toString()) ?? 0 : 0;
+    _marketplaceListingStatus = json['marketplace_listing_status'];
+    _marketplaceAvailability = json['marketplace_availability'] ?? (json['current_stock'] != null && (int.tryParse(json['current_stock'].toString()) ?? 0) > 0 ? 'in_stock' : 'out_of_stock');
     _details = json['details'];
     _createdAt = json['created_at'];
     _updatedAt = json['updated_at'];
@@ -460,6 +471,8 @@ class Product {
     data['discount'] = _discount;
     data['discount_type'] = _discountType;
     data['current_stock'] = _currentStock;
+    data['marketplace_listing_status'] = _marketplaceListingStatus;
+    data['marketplace_availability'] = _marketplaceAvailability;
     data['details'] = _details;
     data['created_at'] = _createdAt;
     data['updated_at'] = _updatedAt;

@@ -79,7 +79,7 @@ class ClearanceSaleWidget extends StatelessWidget {
                             mainAxisAlignment: MainAxisAlignment.start,
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
-                              if(product.currentStock! == 0 && product.productType == 'physical')
+                              if((product.marketplaceAvailability == 'out_of_stock' || (product.marketplaceAvailability == null && (product.currentStock ?? 1) == 0)) && product.productType == 'physical')
                                 Text(getTranslated('out_of_stock', context) ?? '',
                                     style: textRegular.copyWith(color: const Color(0xFFF36A6A))
                                 ),

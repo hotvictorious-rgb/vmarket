@@ -72,6 +72,8 @@ class ProductDetailsModel {
   int? isRestockRequested;
   ClearanceSale? clearanceSale;
   Map<String, dynamic>? _specifications;
+  String? _marketplaceListingStatus;
+  String? _marketplaceAvailability;
 
   ProductDetailsModel(
       {int? id,
@@ -110,6 +112,8 @@ class ProductDetailsModel {
         double? discount,
         String? discountType,
         int? currentStock,
+        String? marketplaceListingStatus,
+        String? marketplaceAvailability,
         int? minimumOrderQty,
         String? details,
         int? freeShipping,
@@ -248,6 +252,12 @@ class ProductDetailsModel {
     if (currentStock != null) {
       _currentStock = currentStock;
     }
+    if (marketplaceListingStatus != null) {
+      _marketplaceListingStatus = marketplaceListingStatus;
+    }
+    if (marketplaceAvailability != null) {
+      _marketplaceAvailability = marketplaceAvailability;
+    }
     if (minimumOrderQty != null) {
       _minimumOrderQty = minimumOrderQty;
     }
@@ -375,6 +385,9 @@ class ProductDetailsModel {
   double? get discount => _discount;
   String? get discountType => _discountType;
   int? get currentStock => _currentStock;
+  String? get marketplaceListingStatus => _marketplaceListingStatus;
+  String? get marketplaceAvailability => _marketplaceAvailability;
+  bool get isMarketplaceInStock => _marketplaceAvailability == 'in_stock';
   int? get minimumOrderQty => _minimumOrderQty;
   String? get details => _details;
   int? get freeShipping => _freeShipping;
@@ -512,6 +525,8 @@ class ProductDetailsModel {
     _discount = json['discount'] != null ? double.tryParse(json['discount'].toString()) ?? 0.0 : 0.0;
     _discountType = json['discount_type'];
     _currentStock = json['current_stock'] != null ? int.tryParse(json['current_stock'].toString()) ?? 0 : 0;
+    _marketplaceListingStatus = json['marketplace_listing_status'];
+    _marketplaceAvailability = json['marketplace_availability'] ?? (json['current_stock'] != null && (int.tryParse(json['current_stock'].toString()) ?? 0) > 0 ? 'in_stock' : 'out_of_stock');
     if(json['minimum_order_qty'] != null){
       _minimumOrderQty = int.tryParse(json['minimum_order_qty'].toString()) ?? 1;
     }else{

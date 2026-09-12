@@ -66,7 +66,7 @@ class LatestProductWidget extends StatelessWidget {
                                 image: '${productModel.thumbnailFullUrl?.path}',
                               ),
 
-                              if(productModel.currentStock! == 0 &&
+                              if((productModel.marketplaceAvailability == 'out_of_stock' || (productModel.marketplaceAvailability == null && (productModel.currentStock ?? 1) == 0)) &&
                                   productModel.productType == 'physical')
                                 Positioned.fill(child: Align(
                                   alignment: Alignment.bottomCenter,

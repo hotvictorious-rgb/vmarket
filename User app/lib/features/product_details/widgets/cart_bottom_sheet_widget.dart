@@ -115,13 +115,19 @@ class CartBottomSheetWidgetState extends State<CartBottomSheetWidget> {
               }
       
               double? price = widget.product!.unitPrice;
-              int? stock = widget.product!.currentStock;
+              int? stock = (widget.product?.marketplaceAvailability == 'out_of_stock')
+                  ? 0
+                  : (widget.product?.marketplaceAvailability == 'in_stock'
+                      ? (widget.product?.currentStock != null && widget.product!.currentStock! > 0 ? widget.product!.currentStock : 9999)
+                      : (widget.product?.currentStock ?? 9999));
               variationType = variationType.replaceAll(' ', '');
               for(Variation variation in widget.product!.variation!) {
                 if(variation.type == variationType) {
                   price = variation.price;
                   variation = variation;
-                  stock = variation.qty;
+                  if (widget.product?.marketplaceAvailability != 'out_of_stock') {
+                    stock = (variation.qty != null && variation.qty! > 0) ? variation.qty : 9999;
+                  }
                   break;
                 }
               }

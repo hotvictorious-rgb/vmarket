@@ -350,7 +350,7 @@ class CartScreenState extends State<CartScreen> with AutomaticKeepAliveClientMix
 
                                   for(int index = 0; index < sellerGroupList.length; index++) {
                                     for(CartModel cart in cartProductList[index]) {
-                                      if(cart.isChecked == true && cart.quantity! > cart.productInfo!.totalCurrentStock! && cart.productType =="physical") {
+                                      if(cart.isChecked == true && (cart.productInfo?.isOutOfStock == true || (cart.productInfo?.totalCurrentStock != null && cart.quantity! > cart.productInfo!.totalCurrentStock!)) && cart.productType =="physical") {
                                         stockOutProduct = true;
                                         break;
                                       }

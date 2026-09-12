@@ -258,7 +258,7 @@ class _CartQuantityControlsWidget extends StatelessWidget {
               isIncrement: false,
               index: index,
               quantity: cartModel!.quantity,
-              maxQty: cartModel!.productInfo!.totalCurrentStock,
+              maxQty: cartModel!.productInfo?.totalCurrentStock,
               cartModel: cartModel,
               minimumOrderQuantity: cartModel!.productInfo!.minimumOrderQty,
               digitalProduct: cartModel!.productType == "digital" ? true : false,
@@ -420,7 +420,7 @@ class _CartProductDetailsWidget extends StatelessWidget {
         ),
 
         // Out of stock warning
-        if (cartModel!.quantity! > cartModel!.productInfo!.totalCurrentStock! && cartModel?.productType == "physical")
+        if ((cartModel?.productInfo?.isOutOfStock == true || (cartModel?.productInfo?.totalCurrentStock != null && cartModel!.quantity! > cartModel!.productInfo!.totalCurrentStock!)) && cartModel?.productType == "physical")
           Text(
             "${getTranslated("out_of_stock", context)}",
             style: textRegular.copyWith(

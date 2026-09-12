@@ -74,7 +74,7 @@ class ProductWidget extends StatelessWidget {
                   ),
                 ),
 
-                if(productModel.currentStock! == 0 && productModel.productType == 'physical')...[
+                if((productModel.marketplaceAvailability == 'out_of_stock' || (productModel.marketplaceAvailability == null && (productModel.currentStock ?? 1) == 0)) && productModel.productType == 'physical')...[
                   Container(
                     height: boxConstraint.maxWidth * 0.82,
                     width: boxConstraint.maxWidth,

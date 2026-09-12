@@ -223,15 +223,19 @@ class CartModel {
 class ProductInfo {
   int? minimumOrderQty;
   int? totalCurrentStock;
+  String? marketplaceAvailability;
   ImageFullUrl? thumbnailFullUrl;
 
-  ProductInfo({ this.minimumOrderQty, this.totalCurrentStock});
+  ProductInfo({ this.minimumOrderQty, this.totalCurrentStock, this.marketplaceAvailability});
+
+  bool get isOutOfStock => marketplaceAvailability == 'out_of_stock' || (marketplaceAvailability == null && totalCurrentStock != null && totalCurrentStock! <= 0);
 
   ProductInfo.fromJson(Map<String, dynamic> json) {
     if(json['minimum_order_qty'] != null) {
       minimumOrderQty = int.tryParse(json['minimum_order_qty'].toString());
     }
-    totalCurrentStock = json['total_current_stock'];
+    totalCurrentStock = json['total_current_stock'] != null ? int.tryParse(json['total_current_stock'].toString()) : null;
+    marketplaceAvailability = json['marketplace_availability'];
     thumbnailFullUrl = json['thumbnail_full_url'] != null
         ? ImageFullUrl.fromJson(json['thumbnail_full_url'])
         : null;
@@ -241,6 +245,7 @@ class ProductInfo {
     final data = <String, dynamic>{};
     data['minimum_order_qty'] = minimumOrderQty;
     data['total_current_stock'] = totalCurrentStock;
+    data['marketplace_availability'] = marketplaceAvailability;
     if (thumbnailFullUrl != null) data['thumbnail_full_url'] = thumbnailFullUrl!.toJson();
     return data;
   }

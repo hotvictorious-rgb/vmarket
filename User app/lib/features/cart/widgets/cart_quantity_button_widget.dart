@@ -29,9 +29,9 @@ class CartQuantityButton extends StatelessWidget {
             onTap: () {
               if (!isIncrement && quantity! > minimumOrderQuantity!) {
                 cartProvider.updateCartProductQuantity(cartModel!.id, cartModel!.quantity!-1, context, false, index);
-              } else if ((isIncrement && quantity! < maxQty!) || (isIncrement && digitalProduct!)) {
+              } else if (isIncrement && (maxQty == null || quantity! < maxQty! || digitalProduct!)) {
                 cartProvider.updateCartProductQuantity(cartModel!.id, cartModel!.quantity!+1, context, true, index);
-              }else if(isIncrement && quantity! == maxQty!){
+              }else if(isIncrement && maxQty != null && quantity! >= maxQty!){
                 showCustomSnackBarWidget(getTranslated('out_of_stock', context), context, snackBarType: SnackBarType.warning);
               }else{
                 cartProvider.removeFromCartAPI(cartModel!.id, index);

@@ -73,7 +73,7 @@ class FeaturedDealWidget extends StatelessWidget {
                         mainAxisAlignment: MainAxisAlignment.start,
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          if(product.currentStock! == 0 && product.productType == 'physical')
+                          if((product.marketplaceAvailability == 'out_of_stock' || (product.marketplaceAvailability == null && (product.currentStock ?? 1) == 0)) && product.productType == 'physical')
                             Text(getTranslated('out_of_stock', context) ?? '',
                                 style: textRegular.copyWith(color: const Color(0xFFF36A6A))
                             ),
@@ -106,7 +106,7 @@ class FeaturedDealWidget extends StatelessWidget {
                               width: MediaQuery.of(context).size.width / 3,
                               child: Text(
                                 product.name ?? '', style: textMedium.copyWith(fontSize: Dimensions.fontSizeDefault, color: Theme.of(context).textTheme.bodyLarge?.color),
-                                maxLines: (product.currentStock! == 0 && product.productType == 'physical') ? 1 : 2, overflow: TextOverflow.ellipsis,
+                                maxLines: ((product.marketplaceAvailability == 'out_of_stock' || (product.marketplaceAvailability == null && (product.currentStock ?? 1) == 0)) && product.productType == 'physical') ? 1 : 2, overflow: TextOverflow.ellipsis,
                               ),
                             )),
                           ]),

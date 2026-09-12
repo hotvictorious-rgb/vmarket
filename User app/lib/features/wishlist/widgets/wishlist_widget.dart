@@ -109,7 +109,7 @@ class WishListWidget extends StatelessWidget {
                           ),
                         ),
 
-                        if((wishlistModel?.productFullInfo?.currentStock ?? 0) < 1)
+                        if(wishlistModel?.productFullInfo?.marketplaceAvailability == 'out_of_stock' || (wishlistModel?.productFullInfo?.marketplaceAvailability == null && (wishlistModel?.productFullInfo?.currentStock ?? 0) < 1))
                           Positioned.fill(child: Align(alignment: Alignment.center,
                             child: Stack(children: [
                               Container(decoration: BoxDecoration(

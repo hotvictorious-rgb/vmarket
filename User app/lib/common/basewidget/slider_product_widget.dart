@@ -70,7 +70,7 @@ class SliderProductWidget extends StatelessWidget {
                                   height:constrains.maxWidth * 0.9,
                                 ),
 
-                                if(product.currentStock! == 0 && product.productType == 'physical')...[
+                                if((product.marketplaceAvailability == 'out_of_stock' || (product.marketplaceAvailability == null && (product.currentStock ?? 1) == 0)) && product.productType == 'physical')...[
                                   Container(
                                     color: Colors.black.withValues(alpha:0.4),
                                   ),

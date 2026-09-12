@@ -110,8 +110,8 @@ class RecommendedProductWidget extends StatelessWidget {
                                                 image: '${recommended.recommendedProduct?.thumbnailFullUrl?.path}',
                                               ),
 
-                                              if(recommended.recommendedProduct!.currentStock! == 0 &&
-                                                  recommended.recommendedProduct!.productType == 'physical')
+                                               if((recommended.recommendedProduct!.marketplaceAvailability == 'out_of_stock' || (recommended.recommendedProduct!.marketplaceAvailability == null && (recommended.recommendedProduct!.currentStock ?? 1) == 0)) &&
+                                                   recommended.recommendedProduct!.productType == 'physical')
                                                 Positioned.fill(child: Align(
                                                   alignment: Alignment.bottomCenter,
                                                   child: Container(
