@@ -4,7 +4,7 @@ import 'package:flutter_sixvalley_ecommerce/common/basewidget/no_internet_screen
 import 'package:flutter_sixvalley_ecommerce/common/basewidget/not_loggedin_widget.dart';
 import 'package:flutter_sixvalley_ecommerce/common/basewidget/paginated_list_view_widget.dart';
 import 'package:flutter_sixvalley_ecommerce/features/auth/controllers/auth_controller.dart';
-import 'package:flutter_sixvalley_ecommerce/features/home/screens/aster_theme_home_screen.dart';
+import 'package:flutter_sixvalley_ecommerce/common/basewidget/sliver_delegate.dart';
 import 'package:flutter_sixvalley_ecommerce/features/home/shimmers/transaction_shimmer.dart';
 import 'package:flutter_sixvalley_ecommerce/features/profile/controllers/profile_contrroller.dart';
 import 'package:flutter_sixvalley_ecommerce/features/splash/controllers/splash_controller.dart';
@@ -24,7 +24,6 @@ import 'package:flutter_sixvalley_ecommerce/utill/images.dart';
 import 'package:just_the_tooltip/just_the_tooltip.dart';
 import 'package:provider/provider.dart';
 
-
 class WalletScreen extends StatefulWidget {
   final bool isBacButtonExist;
   const WalletScreen({super.key, this.isBacButtonExist = true});
@@ -38,20 +37,23 @@ class _WalletScreenState extends State<WalletScreen> {
   final TextEditingController inputAmountController = TextEditingController();
   final FocusNode focusNode = FocusNode();
 
-
   final ScrollController scrollController = ScrollController();
-  final bool darkMode = Provider.of<ThemeController>(Get.context!, listen: false).darkTheme;
-  final bool isGuestMode = !Provider.of<AuthController>(Get.context!, listen: false).isLoggedIn();
+  final bool darkMode =
+      Provider.of<ThemeController>(Get.context!, listen: false).darkTheme;
+  final bool isGuestMode =
+      !Provider.of<AuthController>(Get.context!, listen: false).isLoggedIn();
 
   @override
   void initState() {
     super.initState();
 
-    if(Provider.of<AuthController>(context, listen: false).isLoggedIn()) {
-      Provider.of<WalletController>(context, listen: false).getTransactionList(1, isUpdate: false);
-      Provider.of<ProfileController>(context, listen: false).getUserInfo(context);
-      Provider.of<WalletController>(context, listen: false).getWalletBonusBannerList();
-
+    if (Provider.of<AuthController>(context, listen: false).isLoggedIn()) {
+      Provider.of<WalletController>(context, listen: false)
+          .getTransactionList(1, isUpdate: false);
+      Provider.of<ProfileController>(context, listen: false)
+          .getUserInfo(context);
+      Provider.of<WalletController>(context, listen: false)
+          .getWalletBonusBannerList();
     }
   }
 
@@ -65,136 +67,215 @@ class _WalletScreenState extends State<WalletScreen> {
 
   @override
   Widget build(BuildContext context) {
-
-    return Scaffold(resizeToAvoidBottomInset: false, body: RefreshIndicator(
-      color: Theme.of(context).cardColor,
-      backgroundColor: Theme.of(context).primaryColor,
-      onRefresh: () async {
-        Provider.of<WalletController>(context, listen: false).getTransactionList(1);
-      },
-      child: CustomScrollView(controller: scrollController, slivers: [
-        SliverAppBar(
-          floating: true,
-          pinned: true,
-          iconTheme:  IconThemeData(color: Theme.of(context).textTheme.bodyLarge?.color),
-          backgroundColor: Theme.of(context).cardColor,
-          leading: InkWell(onTap: () => Navigator.of(context).pop(),
-            child: const Icon(Icons.arrow_back_ios,),
-          ),
-          centerTitle: true,
-          title: Text(getTranslated('wallet', context)!,style: TextStyle(color: Theme.of(context).textTheme.bodyLarge?.color)),
-        ),
-
-        SliverToBoxAdapter(child: Column(children: [
-
-          isGuestMode
-              ? NotLoggedInWidget(message: getTranslated('to_view_the_wishlist', context), fromPage: RouterHelper.walletScreen)
-              : Column(children: [
-            Consumer<WalletController>(builder: (context, walletP,_) {
-              return Padding(
-                  padding: const EdgeInsets.only(top: Dimensions.paddingSizeSmall),
-                  child: Container(
-                    height: MediaQuery.of(context).size.width / 2.7,
-                    width: MediaQuery.of(context).size.width,
-                    padding: const EdgeInsets.symmetric(horizontal: Dimensions.paddingSizeLarge, vertical: Dimensions.paddingSizeDefault),
-                    margin: const EdgeInsets.symmetric(horizontal: Dimensions.paddingSizeDefault),
-                    decoration: BoxDecoration(
-                      gradient: LinearGradient(
-                        colors: Provider.of<ThemeController>(context, listen: false).darkTheme
-                            ? [const Color(0xFF4A148C).withValues(alpha: 0.8), const Color(0xFF311B92).withValues(alpha: 0.8)]
-                            : const [Color(0xFF6A1B9A), Color(0xFF4A148C)],
-                        begin: Alignment.topLeft,
-                        end: Alignment.bottomRight,
-                      ),
-                      borderRadius: BorderRadius.circular(16),
-                      border: Border.all(color: const Color(0xFFFFD700).withValues(alpha: 0.3), width: 1),
-                      boxShadow: [
-                        BoxShadow(
-                          color: const Color(0xFF4A148C).withValues(alpha: 0.2),
-                          blurRadius: 10,
-                          offset: const Offset(0, 4),
+    return Scaffold(
+        resizeToAvoidBottomInset: false,
+        body: RefreshIndicator(
+          color: Theme.of(context).cardColor,
+          backgroundColor: Theme.of(context).primaryColor,
+          onRefresh: () async {
+            Provider.of<WalletController>(context, listen: false)
+                .getTransactionList(1);
+          },
+          child: CustomScrollView(controller: scrollController, slivers: [
+            SliverAppBar(
+              floating: true,
+              pinned: true,
+              iconTheme: IconThemeData(
+                  color: Theme.of(context).textTheme.bodyLarge?.color),
+              backgroundColor: Theme.of(context).cardColor,
+              leading: InkWell(
+                onTap: () => Navigator.of(context).pop(),
+                child: const Icon(
+                  Icons.arrow_back_ios,
+                ),
+              ),
+              centerTitle: true,
+              title: Text(getTranslated('wallet', context)!,
+                  style: TextStyle(
+                      color: Theme.of(context).textTheme.bodyLarge?.color)),
+            ),
+            SliverToBoxAdapter(
+                child: Column(children: [
+              isGuestMode
+                  ? NotLoggedInWidget(
+                      message: getTranslated('to_view_the_wishlist', context),
+                      fromPage: RouterHelper.walletScreen)
+                  : Column(children: [
+                      Consumer<WalletController>(
+                          builder: (context, walletP, _) {
+                        return Padding(
+                            padding: const EdgeInsets.only(
+                                top: Dimensions.paddingSizeSmall),
+                            child: Container(
+                              height: MediaQuery.of(context).size.width / 2.7,
+                              width: MediaQuery.of(context).size.width,
+                              padding: const EdgeInsets.symmetric(
+                                  horizontal: Dimensions.paddingSizeLarge,
+                                  vertical: Dimensions.paddingSizeDefault),
+                              margin: const EdgeInsets.symmetric(
+                                  horizontal: Dimensions.paddingSizeDefault),
+                              decoration: BoxDecoration(
+                                gradient: LinearGradient(
+                                  colors: Provider.of<ThemeController>(context,
+                                              listen: false)
+                                          .darkTheme
+                                      ? [
+                                          const Color(0xFF4A148C)
+                                              .withValues(alpha: 0.8),
+                                          const Color(0xFF311B92)
+                                              .withValues(alpha: 0.8)
+                                        ]
+                                      : const [
+                                          Color(0xFF6A1B9A),
+                                          Color(0xFF4A148C)
+                                        ],
+                                  begin: Alignment.topLeft,
+                                  end: Alignment.bottomRight,
+                                ),
+                                borderRadius: BorderRadius.circular(16),
+                                border: Border.all(
+                                    color: const Color(0xFFFFD700)
+                                        .withValues(alpha: 0.3),
+                                    width: 1),
+                                boxShadow: [
+                                  BoxShadow(
+                                    color: const Color(0xFF4A148C)
+                                        .withValues(alpha: 0.2),
+                                    blurRadius: 10,
+                                    offset: const Offset(0, 4),
+                                  ),
+                                ],
+                              ),
+                              child: WalletCardWidget(
+                                tooltipController: tooltipController,
+                                focusNode: focusNode,
+                                inputAmountController: inputAmountController,
+                              ),
+                            ));
+                      }),
+                      if (Provider.of<SplashController>(context, listen: false)
+                              .configModel
+                              ?.addFundsToWallet ==
+                          1)
+                        const WalletBonusWidget()
+                    ]),
+            ])),
+            SliverPersistentHeader(
+                pinned: true,
+                delegate: SliverDelegate(
+                    height: 60,
+                    child: Container(
+                      color: Theme.of(context).scaffoldBackgroundColor,
+                      child: Column(children: [
+                        const SizedBox(
+                          height: Dimensions.paddingSizeLarge,
                         ),
-                      ],
-                    ),
-                    child: WalletCardWidget(
-                      tooltipController: tooltipController, focusNode: focusNode,
-                      inputAmountController: inputAmountController,
-                    ),
-                  ));
-            }),
-
-            if(Provider.of<SplashController>(context, listen: false).configModel?.addFundsToWallet == 1)
-            const WalletBonusWidget()
-
+                        Consumer<WalletController>(
+                            builder: (context, walletController, child) {
+                          return Padding(
+                            padding: const EdgeInsets.only(
+                                left: Dimensions.homePagePadding,
+                                right: Dimensions.homePagePadding),
+                            child: Row(
+                                mainAxisAlignment:
+                                    MainAxisAlignment.spaceBetween,
+                                children: [
+                                  Text(
+                                    '${getTranslated('wallet_history', context)}',
+                                    style: robotoBold.copyWith(
+                                        fontSize: Dimensions.fontSizeLarge,
+                                        color: Theme.of(context)
+                                            .textTheme
+                                            .bodyLarge
+                                            ?.color),
+                                  ),
+                                  FilterIconWidget(
+                                    filterCount: _getFilterCount(
+                                        walletController
+                                            .walletTransactionModel),
+                                    onTap: walletController
+                                                .walletTransactionModel ==
+                                            null
+                                        ? null
+                                        : () {
+                                            showModalBottomSheet(
+                                                context: context,
+                                                isScrollControlled: true,
+                                                backgroundColor:
+                                                    Colors.transparent,
+                                                builder: (_) =>
+                                                    const WalletFilterBottomSheetWidget());
+                                          },
+                                  ),
+                                ]),
+                          );
+                        }),
+                      ]),
+                    ))),
+            SliverToBoxAdapter(
+              child: isGuestMode
+                  ? const NotLoggedInWidget(fromPage: RouterHelper.walletScreen)
+                  : Consumer<WalletController>(
+                      builder: (context, walletController, _) {
+                      return (walletController.walletTransactionModel
+                                  ?.walletTransactionList?.isNotEmpty ??
+                              false)
+                          ? PaginatedListView(
+                              scrollController: scrollController,
+                              onPaginate: (int? offset) async =>
+                                  walletController.getTransactionList(
+                                offset ?? 1,
+                                startDate: walletController
+                                    .walletTransactionModel?.startDate,
+                                endDate: walletController
+                                    .walletTransactionModel?.endDate,
+                                filterBy: walletController
+                                    .walletTransactionModel?.filterBy,
+                                transactionTypes: walletController
+                                    .walletTransactionModel?.transactionTypes,
+                              ),
+                              totalSize: walletController
+                                  .walletTransactionModel?.totalSize,
+                              offset: walletController
+                                  .walletTransactionModel?.offset,
+                              itemView: RepaintBoundary(
+                                child: ListView.builder(
+                                  shrinkWrap: true,
+                                  padding: EdgeInsets.zero,
+                                  physics: const NeverScrollableScrollPhysics(),
+                                  itemCount: walletController
+                                      .walletTransactionModel
+                                      ?.walletTransactionList
+                                      ?.length,
+                                  itemBuilder: (ctx, index) {
+                                    return TransactionWidget(
+                                      transactionModel: walletController
+                                          .walletTransactionModel
+                                          ?.walletTransactionList?[index],
+                                      isLastIndex: index + 1 ==
+                                          walletController
+                                              .walletTransactionModel
+                                              ?.walletTransactionList
+                                              ?.length,
+                                    );
+                                  },
+                                ),
+                              ),
+                            )
+                          : (walletController.walletTransactionModel
+                                      ?.walletTransactionList?.isEmpty ??
+                                  false)
+                              ? const NoInternetOrDataScreenWidget(
+                                  padding: EdgeInsets.only(top: 50),
+                                  isNoInternet: false,
+                                  message: 'no_transaction_history',
+                                  icon: Images.noTransactionIcon,
+                                )
+                              : const TransactionShimmer();
+                    }),
+            ),
           ]),
-        ])),
-
-
-        SliverPersistentHeader(pinned: true, delegate: SliverDelegate(height: 60, child: Container(
-          color: Theme.of(context).scaffoldBackgroundColor,
-          child: Column(children: [
-            const SizedBox(height: Dimensions.paddingSizeLarge,),
-            Consumer<WalletController>(builder: (context, walletController, child) {
-              return Padding(padding: const EdgeInsets.only(left: Dimensions.homePagePadding, right: Dimensions.homePagePadding),
-                child: Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
-                  Text('${getTranslated('wallet_history', context)}', style: robotoBold.copyWith(fontSize: Dimensions.fontSizeLarge, color:  Theme.of(context).textTheme.bodyLarge?.color),),
-
-                  FilterIconWidget(
-                    filterCount: _getFilterCount(walletController.walletTransactionModel),
-                    onTap: walletController.walletTransactionModel == null ? null : (){
-                      showModalBottomSheet(
-                        context: context,
-                        isScrollControlled: true,
-                        backgroundColor: Colors.transparent,
-                        builder: (_)=> const WalletFilterBottomSheetWidget()
-                      );
-                    },
-                  ),
-
-                ]),
-              );
-            }),
-          ]),
-        ))),
-
-        SliverToBoxAdapter(
-          child: isGuestMode ? const NotLoggedInWidget(fromPage: RouterHelper.walletScreen) : Consumer<WalletController>(
-              builder: (context, walletController, _) {
-                return (walletController.walletTransactionModel?.walletTransactionList?.isNotEmpty ?? false) ?  PaginatedListView(
-                  scrollController: scrollController,
-                  onPaginate: (int? offset) async => walletController.getTransactionList(
-                    offset ?? 1,
-                    startDate: walletController.walletTransactionModel?.startDate,
-                    endDate: walletController.walletTransactionModel?.endDate,
-                    filterBy: walletController.walletTransactionModel?.filterBy,
-                    transactionTypes: walletController.walletTransactionModel?.transactionTypes,
-                  ),
-                  totalSize: walletController.walletTransactionModel?.totalSize,
-                  offset: walletController.walletTransactionModel?.offset,
-                  itemView: RepaintBoundary(
-                    child: ListView.builder(
-                      shrinkWrap: true,
-                      padding: EdgeInsets.zero,
-                      physics: const NeverScrollableScrollPhysics(),
-                      itemCount: walletController.walletTransactionModel?.walletTransactionList?.length,
-                      itemBuilder: (ctx,index){
-                        return TransactionWidget(
-                          transactionModel: walletController.walletTransactionModel?.walletTransactionList?[index],
-                          isLastIndex: index + 1 == walletController.walletTransactionModel?.walletTransactionList?.length,
-                        );
-                      },
-                    ),
-                  ),
-                ) : (walletController.walletTransactionModel?.walletTransactionList?.isEmpty ?? false) ?
-                const NoInternetOrDataScreenWidget(
-                  padding: EdgeInsets.only(top: 50),
-                  isNoInternet: false, message: 'no_transaction_history', icon: Images.noTransactionIcon,
-                ) : const TransactionShimmer();
-              }
-          ),
-        ),
-      ]),
-    ));
+        ));
   }
 
   int _getFilterCount(WalletTransactionModel? walletTransactionModel) {
@@ -205,14 +286,9 @@ class _WalletScreenState extends State<WalletScreen> {
       walletTransactionModel.startDate,
     ].whereType<Object>().length;
 
-    final int transactionTypesCount = walletTransactionModel.transactionTypes?.length ?? 0;
+    final int transactionTypesCount =
+        walletTransactionModel.transactionTypes?.length ?? 0;
 
     return nonNullFiltersCount + transactionTypesCount;
   }
 }
-
-
-
-
-
-

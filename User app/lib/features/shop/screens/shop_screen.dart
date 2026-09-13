@@ -17,7 +17,7 @@ import 'package:flutter_sixvalley_ecommerce/utill/dimensions.dart';
 import 'package:flutter_sixvalley_ecommerce/utill/images.dart';
 import 'package:flutter_sixvalley_ecommerce/common/basewidget/product_filter_dialog_widget.dart';
 import 'package:flutter_sixvalley_ecommerce/common/basewidget/search_widget.dart';
-import 'package:flutter_sixvalley_ecommerce/features/home/screens/home_screens.dart';
+import 'package:flutter_sixvalley_ecommerce/common/basewidget/sliver_delegate.dart';
 import 'package:flutter_sixvalley_ecommerce/features/shop/screens/overview_screen.dart';
 import 'package:flutter_sixvalley_ecommerce/features/shop/widgets/shop_info_widget.dart';
 import 'package:flutter_sixvalley_ecommerce/features/shop/widgets/shop_product_view_list.dart';
@@ -47,16 +47,21 @@ class TopSellerProductScreen extends StatefulWidget {
     required this.vacationEndDate,
     required this.vacationStartDate,
     required this.vacationDurationType,
-    this.name, this.banner,
+    this.name,
+    this.banner,
     this.image,
-    this.fromMore = false, this.totalReview, this.totalProduct, this.rating,
+    this.fromMore = false,
+    this.totalReview,
+    this.totalProduct,
+    this.rating,
   });
 
   @override
   State<TopSellerProductScreen> createState() => _TopSellerProductScreenState();
 }
 
-class _TopSellerProductScreenState extends State<TopSellerProductScreen> with TickerProviderStateMixin{
+class _TopSellerProductScreenState extends State<TopSellerProductScreen>
+    with TickerProviderStateMixin {
   final ScrollController _scrollController = ScrollController();
   TextEditingController searchController = TextEditingController();
   bool vacationIsOn = false;
@@ -66,9 +71,12 @@ class _TopSellerProductScreenState extends State<TopSellerProductScreen> with Ti
   void _load() async {
     final slugStr = widget.slug.toString();
     final shopCtrl = Provider.of<ShopController>(Get.context!, listen: false);
-    final sellerProdCtrl = Provider.of<SellerProductController>(Get.context!, listen: false);
-    final couponCtrl = Provider.of<CouponController>(Get.context!, listen: false);
-    final catCtrl = Provider.of<CategoryController>(Get.context!, listen: false);
+    final sellerProdCtrl =
+        Provider.of<SellerProductController>(Get.context!, listen: false);
+    final couponCtrl =
+        Provider.of<CouponController>(Get.context!, listen: false);
+    final catCtrl =
+        Provider.of<CategoryController>(Get.context!, listen: false);
     final brandCtrl = Provider.of<BrandController>(Get.context!, listen: false);
 
     // Primary UI fold: essential products & seller info in parallel
@@ -93,32 +101,40 @@ class _TopSellerProductScreenState extends State<TopSellerProductScreen> with Ti
   void initState() {
     super.initState();
     vacationIsOn = ShopHelper.isVacationActive(
-      context, startDate: widget.vacationStartDate,
+      context,
+      startDate: widget.vacationStartDate,
       endDate: widget.vacationEndDate,
       vacationDurationType: widget.vacationDurationType,
       vacationStatus: widget.vacationStatus,
       isInHouseSeller: widget.sellerId == 0,
     );
 
-    if(widget.fromMore){
-      Provider.of<ShopController>(context, listen: false).setMenuItemIndex(1, notify: false);
-    }else{
-      Provider.of<ShopController>(context, listen: false).setMenuItemIndex(0, notify: false);
+    if (widget.fromMore) {
+      Provider.of<ShopController>(context, listen: false)
+          .setMenuItemIndex(1, notify: false);
+    } else {
+      Provider.of<ShopController>(context, listen: false)
+          .setMenuItemIndex(0, notify: false);
     }
 
     searchController.clear();
     _load();
-    if(widget.fromMore) {
+    if (widget.fromMore) {
       _tabController = TabController(length: 2, initialIndex: 1, vsync: this);
-    } else{
+    } else {
       _tabController = TabController(length: 2, initialIndex: 0, vsync: this);
     }
 
-    Provider.of<SearchProductController>(context, listen: false).clearSellerAuthorHouse();
-    Provider.of<SearchProductController>(context, listen: false).getAuthorList(widget.slug);
-    Provider.of<SearchProductController>(context, listen: false).getPublishingHouseList(widget.slug);
-    Provider.of<SearchProductController>(context, listen: false).setProductTypeIndex(0, false);
-    Provider.of<ShopController>(context, listen: false).setShopName(widget.name, notify: false);
+    Provider.of<SearchProductController>(context, listen: false)
+        .clearSellerAuthorHouse();
+    Provider.of<SearchProductController>(context, listen: false)
+        .getAuthorList(widget.slug);
+    Provider.of<SearchProductController>(context, listen: false)
+        .getPublishingHouseList(widget.slug);
+    Provider.of<SearchProductController>(context, listen: false)
+        .setProductTypeIndex(0, false);
+    Provider.of<ShopController>(context, listen: false)
+        .setShopName(widget.name, notify: false);
   }
 
   @override
@@ -126,178 +142,260 @@ class _TopSellerProductScreenState extends State<TopSellerProductScreen> with Ti
     return PopScope(
       canPop: Navigator.canPop(context),
       onPopInvokedWithResult: (didPop, _) {
-        Provider.of<SellerProductController>(context, listen: false).clearSellerProducts();
-        Provider.of<CategoryController>(Get.context!, listen: false).onUpdateFilteredCategoryList(isSeller: false);
-        Provider.of<BrandController>(Get.context!, listen: false).onUpdateFiltererBrandList(isSeller: false);
-        Provider.of<ShopController>(Get.context!, listen: false).nullShopInfoModel();
-        Provider.of<CategoryController>(Get.context!, listen: false).uncheckSellerCategoryList();
-        Provider.of<BrandController>(Get.context!, listen: false).uncheckSellerBrandList();
-        if(widget.sellerId == null) {
-          RouterHelper.getDashboardRoute(action: RouteAction.pushNamedAndRemoveUntil);
+        Provider.of<SellerProductController>(context, listen: false)
+            .clearSellerProducts();
+        Provider.of<CategoryController>(Get.context!, listen: false)
+            .onUpdateFilteredCategoryList(isSeller: false);
+        Provider.of<BrandController>(Get.context!, listen: false)
+            .onUpdateFiltererBrandList(isSeller: false);
+        Provider.of<ShopController>(Get.context!, listen: false)
+            .nullShopInfoModel();
+        Provider.of<CategoryController>(Get.context!, listen: false)
+            .uncheckSellerCategoryList();
+        Provider.of<BrandController>(Get.context!, listen: false)
+            .uncheckSellerBrandList();
+        if (widget.sellerId == null) {
+          RouterHelper.getDashboardRoute(
+              action: RouteAction.pushNamedAndRemoveUntil);
         } else {
           return;
         }
       },
       child: Scaffold(
-        resizeToAvoidBottomInset: false,
-        body: Consumer<ShopController>(
-          builder: (context, sellerProvider, _) {
-
+          resizeToAvoidBottomInset: false,
+          body: Consumer<ShopController>(builder: (context, sellerProvider, _) {
             vacationIsOn = ShopHelper.isVacationActive(
-              context, startDate: sellerProvider.sellerInfoModel?.seller?.shop?.vacationStartDate,
-              endDate: sellerProvider.sellerInfoModel?.seller?.shop?.vacationEndDate,
-              vacationDurationType: sellerProvider.sellerInfoModel?.seller?.shop?.vacationDurationType,
-              vacationStatus: sellerProvider.sellerInfoModel?.seller?.shop?.vacationStatus,
+              context,
+              startDate: sellerProvider
+                  .sellerInfoModel?.seller?.shop?.vacationStartDate,
+              endDate:
+                  sellerProvider.sellerInfoModel?.seller?.shop?.vacationEndDate,
+              vacationDurationType: sellerProvider
+                  .sellerInfoModel?.seller?.shop?.vacationDurationType,
+              vacationStatus:
+                  sellerProvider.sellerInfoModel?.seller?.shop?.vacationStatus,
               isInHouseSeller: widget.sellerId == 0,
             );
 
             return CustomScrollView(controller: _scrollController, slivers: [
               SliverToBoxAdapter(
-                child: (widget.sellerId == null  && sellerProvider.sellerInfoModel == null) ?
-                ShopInfoShimmerWidget() :
-                ShopInfoWidget(
-                  vacationIsOn: vacationIsOn,
-                  sellerName: widget.name ?? sellerProvider.sellerInfoModel?.seller?.shop?.name ?? '',
-                  sellerId: widget.sellerId ?? sellerProvider.sellerInfoModel?.seller?.shop?.sellerId ?? 0,
-                  banner: widget.banner ?? sellerProvider.sellerInfoModel?.seller?.shop?.bannerFullUrl?.path ?? '',
-                  shopImage: widget.image ?? sellerProvider.sellerInfoModel?.seller?.shop?.imageFullUrl?.path ?? '',
-                  temporaryClose: widget.temporaryClose ?? sellerProvider.sellerInfoModel?.seller?.shop?.temporaryClose ?? false,
-                  totalReview: widget.totalReview ?? sellerProvider.sellerInfoModel?.totalReview ?? 0,
-                  totalProduct: widget.totalProduct ?? sellerProvider.sellerInfoModel?.totalProduct ?? 0,
-                  rating: widget.rating ?? (sellerProvider.sellerInfoModel?.seller?.totalRating != null ?
-                  sellerProvider.sellerInfoModel?.seller?.totalRating.toString() : '0') ?? '0',
-                  fromMore: widget.fromMore,
-                  vacationDurationType: widget.vacationDurationType ?? sellerProvider.sellerInfoModel?.seller?.shop?.vacationDurationType,
-                  vacationEndDate: widget.vacationEndDate ?? sellerProvider.sellerInfoModel?.seller?.shop?.vacationEndDate,
-                  vacationStartDate: widget.vacationStartDate ?? sellerProvider.sellerInfoModel?.seller?.shop?.vacationStartDate,
-                ),
-              ),
-
-              SliverPersistentHeader(pinned: true,
-                delegate: SliverDelegate(
-                  height: sellerProvider.shopMenuIndex == 1 ? 140 : 70,
-                  child: Container(color: Theme.of(context).canvasColor,
-                    child: Column(mainAxisAlignment: MainAxisAlignment.end, children: [
-                    Row(mainAxisAlignment: MainAxisAlignment.start, children: [
-                      Expanded(child: Container(height: 40,
-                        color: Theme.of(context).canvasColor,
-                        child: Padding(
-                          padding: const EdgeInsets.only(left: Dimensions.paddingSizeEight),
-                          child: TabBar(physics: const NeverScrollableScrollPhysics(),
-                            isScrollable: true,
-                            dividerColor: Colors.transparent,
-                            padding: const EdgeInsets.all(0),
-                            controller: _tabController,
-                            tabAlignment: TabAlignment.start,
-                            labelColor: Theme.of(context).primaryColor,
-                            unselectedLabelColor: Theme.of(context).hintColor,
-                            indicatorColor: Theme.of(context).primaryColor,
-                            indicatorWeight: 1,
-                            onTap: (value){
-                              sellerProvider.setMenuItemIndex(value);
-                              searchController.clear();},
-                            indicatorPadding: const EdgeInsets.symmetric(horizontal: Dimensions.paddingSizeDefault),
-                            unselectedLabelStyle: textRegular.copyWith(fontSize: Dimensions.fontSizeLarge, fontWeight: FontWeight.w400),
-                            labelStyle: textRegular.copyWith(fontSize: Dimensions.fontSizeLarge, fontWeight: FontWeight.w700),
-                            tabs: [
-                              Tab(text: getTranslated("overview", context)),
-                              Tab(text: getTranslated("all_products", context)),
-                            ],
-                          ),
-                        ),
+                child: (widget.sellerId == null &&
+                        sellerProvider.sellerInfoModel == null)
+                    ? ShopInfoShimmerWidget()
+                    : ShopInfoWidget(
+                        vacationIsOn: vacationIsOn,
+                        sellerName: widget.name ??
+                            sellerProvider
+                                .sellerInfoModel?.seller?.shop?.name ??
+                            '',
+                        sellerId: widget.sellerId ??
+                            sellerProvider
+                                .sellerInfoModel?.seller?.shop?.sellerId ??
+                            0,
+                        banner: widget.banner ??
+                            sellerProvider.sellerInfoModel?.seller?.shop
+                                ?.bannerFullUrl?.path ??
+                            '',
+                        shopImage: widget.image ??
+                            sellerProvider.sellerInfoModel?.seller?.shop
+                                ?.imageFullUrl?.path ??
+                            '',
+                        temporaryClose: widget.temporaryClose ??
+                            sellerProvider.sellerInfoModel?.seller?.shop
+                                ?.temporaryClose ??
+                            false,
+                        totalReview: widget.totalReview ??
+                            sellerProvider.sellerInfoModel?.totalReview ??
+                            0,
+                        totalProduct: widget.totalProduct ??
+                            sellerProvider.sellerInfoModel?.totalProduct ??
+                            0,
+                        rating: widget.rating ??
+                            (sellerProvider
+                                        .sellerInfoModel?.seller?.totalRating !=
+                                    null
+                                ? sellerProvider
+                                    .sellerInfoModel?.seller?.totalRating
+                                    .toString()
+                                : '0') ??
+                            '0',
+                        fromMore: widget.fromMore,
+                        vacationDurationType: widget.vacationDurationType ??
+                            sellerProvider.sellerInfoModel?.seller?.shop
+                                ?.vacationDurationType,
+                        vacationEndDate: widget.vacationEndDate ??
+                            sellerProvider
+                                .sellerInfoModel?.seller?.shop?.vacationEndDate,
+                        vacationStartDate: widget.vacationStartDate ??
+                            sellerProvider.sellerInfoModel?.seller?.shop
+                                ?.vacationStartDate,
                       ),
-                      ),
-
-
-
-                      if(sellerProvider.shopMenuIndex == 1)
-                        Stack(
-                          children: [
-                            Padding(padding:  EdgeInsets.only(right: Provider.of<LocalizationController>(context, listen: false).isLtr ?Dimensions.paddingSizeDefault: 0,
-                              left: Provider.of<LocalizationController>(context, listen: false).isLtr ? 0 : Dimensions.paddingSizeDefault),
-                              child: InkWell(onTap: () => showModalBottomSheet(context: context,
-                                isScrollControlled: true, backgroundColor: Colors.transparent,
-                                builder: (c) =>  ProductFilterDialog(slug: widget.slug!)),
-
-                                child: Container(decoration: BoxDecoration(
-                                  color: Theme.of(context).cardColor,
-                                  border: Border.all(color: Theme.of(context).primaryColor.withValues(alpha:.5)),
-                                  borderRadius: BorderRadius.circular(Dimensions.paddingSizeExtraSmall)),
-                                  width: 30,height: 30,
-                                  child: Padding(padding: const EdgeInsets.all(5.0),
-                                      child: Image.asset(Images.filterImage, color: Theme.of(context).textTheme.bodyLarge?.color))))
-                            ),
-
-                            Consumer<SellerProductController>(
-                              builder: (context, sellerProductController, _) {
-                                return sellerProductController.isFilterApply ?
-                                  CircleAvatar(radius: 5, backgroundColor: Theme.of(context).primaryColor) :
-                                  SizedBox();
-                              }
-                            )
-                          ],
-                        ),
-                    ]),
-
-
-                    if(sellerProvider.shopMenuIndex == 1)
-                      Container(
-                        color: Theme.of(context).canvasColor,
-                        child: SearchWidget(hintText: '${getTranslated('search_hint', context)}', slug: widget.slug!)
-                      )]
-                    )
-                  )
-                )
               ),
-
+              SliverPersistentHeader(
+                  pinned: true,
+                  delegate: SliverDelegate(
+                      height: sellerProvider.shopMenuIndex == 1 ? 140 : 70,
+                      child: Container(
+                          color: Theme.of(context).canvasColor,
+                          child: Column(
+                              mainAxisAlignment: MainAxisAlignment.end,
+                              children: [
+                                Row(
+                                    mainAxisAlignment: MainAxisAlignment.start,
+                                    children: [
+                                      Expanded(
+                                        child: Container(
+                                          height: 40,
+                                          color: Theme.of(context).canvasColor,
+                                          child: Padding(
+                                            padding: const EdgeInsets.only(
+                                                left: Dimensions
+                                                    .paddingSizeEight),
+                                            child: TabBar(
+                                              physics:
+                                                  const NeverScrollableScrollPhysics(),
+                                              isScrollable: true,
+                                              dividerColor: Colors.transparent,
+                                              padding: const EdgeInsets.all(0),
+                                              controller: _tabController,
+                                              tabAlignment: TabAlignment.start,
+                                              labelColor: Theme.of(context)
+                                                  .primaryColor,
+                                              unselectedLabelColor:
+                                                  Theme.of(context).hintColor,
+                                              indicatorColor: Theme.of(context)
+                                                  .primaryColor,
+                                              indicatorWeight: 1,
+                                              onTap: (value) {
+                                                sellerProvider
+                                                    .setMenuItemIndex(value);
+                                                searchController.clear();
+                                              },
+                                              indicatorPadding:
+                                                  const EdgeInsets.symmetric(
+                                                      horizontal: Dimensions
+                                                          .paddingSizeDefault),
+                                              unselectedLabelStyle:
+                                                  textRegular.copyWith(
+                                                      fontSize: Dimensions
+                                                          .fontSizeLarge,
+                                                      fontWeight:
+                                                          FontWeight.w400),
+                                              labelStyle: textRegular.copyWith(
+                                                  fontSize:
+                                                      Dimensions.fontSizeLarge,
+                                                  fontWeight: FontWeight.w700),
+                                              tabs: [
+                                                Tab(
+                                                    text: getTranslated(
+                                                        "overview", context)),
+                                                Tab(
+                                                    text: getTranslated(
+                                                        "all_products",
+                                                        context)),
+                                              ],
+                                            ),
+                                          ),
+                                        ),
+                                      ),
+                                      if (sellerProvider.shopMenuIndex == 1)
+                                        Stack(
+                                          children: [
+                                            Padding(
+                                                padding: EdgeInsets.only(
+                                                    right: Provider.of<LocalizationController>(
+                                                                context,
+                                                                listen: false)
+                                                            .isLtr
+                                                        ? Dimensions
+                                                            .paddingSizeDefault
+                                                        : 0,
+                                                    left: Provider.of<LocalizationController>(
+                                                                context,
+                                                                listen: false)
+                                                            .isLtr
+                                                        ? 0
+                                                        : Dimensions
+                                                            .paddingSizeDefault),
+                                                child: InkWell(
+                                                    onTap: () => showModalBottomSheet(
+                                                        context: context,
+                                                        isScrollControlled: true,
+                                                        backgroundColor: Colors.transparent,
+                                                        builder: (c) => ProductFilterDialog(slug: widget.slug!)),
+                                                    child: Container(decoration: BoxDecoration(color: Theme.of(context).cardColor, border: Border.all(color: Theme.of(context).primaryColor.withValues(alpha: .5)), borderRadius: BorderRadius.circular(Dimensions.paddingSizeExtraSmall)), width: 30, height: 30, child: Padding(padding: const EdgeInsets.all(5.0), child: Image.asset(Images.filterImage, color: Theme.of(context).textTheme.bodyLarge?.color))))),
+                                            Consumer<SellerProductController>(
+                                                builder: (context,
+                                                    sellerProductController,
+                                                    _) {
+                                              return sellerProductController
+                                                      .isFilterApply
+                                                  ? CircleAvatar(
+                                                      radius: 5,
+                                                      backgroundColor:
+                                                          Theme.of(context)
+                                                              .primaryColor)
+                                                  : SizedBox();
+                                            })
+                                          ],
+                                        ),
+                                    ]),
+                                if (sellerProvider.shopMenuIndex == 1)
+                                  Container(
+                                      color: Theme.of(context).canvasColor,
+                                      child: SearchWidget(
+                                          hintText:
+                                              '${getTranslated('search_hint', context)}',
+                                          slug: widget.slug!))
+                              ])))),
               SliverToBoxAdapter(
-                child: sellerProvider.shopMenuIndex == 0 ? ShopOverviewScreen(slug: widget.slug!, scrollController: _scrollController,
-                  sellerNavigationModel: SellerNavigationModel(
-                      slug:  widget.slug,
-                      sellerId: widget.sellerId ?? 0,
-                      banner: widget.banner ?? '',
-                      temporaryClose: widget.temporaryClose ?? false,
-                      totalReview: widget.totalReview,
-                      totalProduct: widget.totalProduct,
-                      rating: widget.rating,
-                      fromMore: widget.fromMore,
-                      vacationDurationType: widget.vacationDurationType,
-                      vacationEndDate: widget.vacationEndDate,
-                      vacationStartDate: widget.vacationStartDate,
-                      vacationStatus: widget.vacationStatus,
-                      name: widget.name,
-                      image: widget.image
-                  )
-                ) :
-                Padding(
-                  padding: const EdgeInsets.fromLTRB(Dimensions.paddingSizeSmall,  Dimensions.paddingSizeSmall,  Dimensions.paddingSizeSmall, 0),
-                  child: ShopProductViewList(
-                    scrollController: _scrollController,
-                    sellerId: widget.sellerId ?? 0,
-                    sellerNavigationModel: SellerNavigationModel(
-                      sellerId: widget.sellerId ?? 0,
-                      banner: widget.banner ?? '',
-                      temporaryClose: widget.temporaryClose ?? false,
-                      slug:  widget.slug,
-                      totalReview: widget.totalReview,
-                      totalProduct: widget.totalProduct,
-                      rating: widget.rating,
-                      fromMore: widget.fromMore,
-                      vacationDurationType: widget.vacationDurationType,
-                      vacationEndDate: widget.vacationEndDate,
-                      vacationStartDate: widget.vacationStartDate,
-                      vacationStatus: widget.vacationStatus,
-                      name: widget.name,
-                      image: widget.image
-                    ),
-                  )
-                )
-              ),
-
+                  child: sellerProvider.shopMenuIndex == 0
+                      ? ShopOverviewScreen(
+                          slug: widget.slug!,
+                          scrollController: _scrollController,
+                          sellerNavigationModel: SellerNavigationModel(
+                              slug: widget.slug,
+                              sellerId: widget.sellerId ?? 0,
+                              banner: widget.banner ?? '',
+                              temporaryClose: widget.temporaryClose ?? false,
+                              totalReview: widget.totalReview,
+                              totalProduct: widget.totalProduct,
+                              rating: widget.rating,
+                              fromMore: widget.fromMore,
+                              vacationDurationType: widget.vacationDurationType,
+                              vacationEndDate: widget.vacationEndDate,
+                              vacationStartDate: widget.vacationStartDate,
+                              vacationStatus: widget.vacationStatus,
+                              name: widget.name,
+                              image: widget.image))
+                      : Padding(
+                          padding: const EdgeInsets.fromLTRB(
+                              Dimensions.paddingSizeSmall,
+                              Dimensions.paddingSizeSmall,
+                              Dimensions.paddingSizeSmall,
+                              0),
+                          child: ShopProductViewList(
+                            scrollController: _scrollController,
+                            sellerId: widget.sellerId ?? 0,
+                            sellerNavigationModel: SellerNavigationModel(
+                                sellerId: widget.sellerId ?? 0,
+                                banner: widget.banner ?? '',
+                                temporaryClose: widget.temporaryClose ?? false,
+                                slug: widget.slug,
+                                totalReview: widget.totalReview,
+                                totalProduct: widget.totalProduct,
+                                rating: widget.rating,
+                                fromMore: widget.fromMore,
+                                vacationDurationType:
+                                    widget.vacationDurationType,
+                                vacationEndDate: widget.vacationEndDate,
+                                vacationStartDate: widget.vacationStartDate,
+                                vacationStatus: widget.vacationStatus,
+                                name: widget.name,
+                                image: widget.image),
+                          ))),
             ]);
-          }
-        )
-      ),
+          })),
     );
   }
 }

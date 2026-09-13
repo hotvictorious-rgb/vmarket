@@ -42,22 +42,14 @@
                                         </h5>
                                     </div>
 
-                                    @if(($key == 'default' || $key == 'theme_aster') || $theme['comfortable_panel_version'] == SOFTWARE_VERSION)
+                                    @if($key == 'theme_aster')
                                         <div class="d-flex gap-2 gap-sm-3 align-items-center">
-                                            @if(($key != 'default' && $key != 'theme_aster') && theme_root_path() != $key)
-                                                <button class="btn btn-outline-danger bg-danger bg-opacity-10 icon-btn" data-bs-toggle="modal"
-                                                        data-bs-target="#deleteThemeModal_{{ $key }}">
-                                                    <i class="fi fi-sr-trash"></i>
-                                                </button>
-                                            @endif
-
-                                            @if(theme_root_path() == $key)
-                                                <input class="form-check-input radio--input radio--input_lg" type="radio" checked>
-                                            @else
-                                                <input class="form-check-input radio--input radio--input_lg theme-publish-status theme-publish-status-{{ $key }}"
-                                                       type="radio" data-bs-toggle="modal"
-                                                       data-bs-target="#shiftThemeModal_{{ $key }}">
-                                            @endif
+                                            <span class="badge bg-primary text-white px-2 py-1 fs-12">{{ translate('Authoritative') }}</span>
+                                            <input class="form-check-input radio--input radio--input_lg" type="radio" checked disabled>
+                                        </div>
+                                    @elseif($theme['comfortable_panel_version'] == SOFTWARE_VERSION)
+                                        <div class="d-flex gap-2 gap-sm-3 align-items-center">
+                                            <span class="badge bg-secondary text-white px-2 py-1 fs-12">{{ translate('Deprecated') }}</span>
                                         </div>
                                     @else
                                         <div class="max-w-150px text-white px-2 py-1 fs-12 fw-semibold rounded bg-warning">
