@@ -275,13 +275,9 @@
                                                     {{ $order->customer['f_name'].' '.$order->customer['l_name'] }}
                                                 </strong>
                                             </span>
-                                            @if($order->customer['phone'])
-                                                <a class="d-block title-color"
-                                                   href="tel:{{ $order->customer['phone'] }}">{{ $order->customer['phone'] }}</a>
-                                            @else
-                                                <a class="d-block title-color"
-                                                   href="mailto:{{ $order->customer['email'] }}">{{ $order->customer['email'] }}</a>
-                                            @endif
+                                            <span class="d-block text-muted fs-12">
+                                                <i class="tio-shield-outlined text-primary"></i> {{ translate('Contact_Protected') }}
+                                            </span>
                                         @else
                                             <label
                                                 class="badge badge-danger fs-12">{{translate('invalid_customer_data')}}</label>

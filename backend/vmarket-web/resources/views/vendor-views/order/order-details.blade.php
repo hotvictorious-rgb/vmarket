@@ -1157,7 +1157,7 @@
                                     <td class="px-0 py-2 text-nowrap">{{translate('contact')}}</td>
                                     <td class="px-3 py-2">:</td>
                                     <td class="px-0 py-2">
-                                        <strong>{{ $maskPhone($shippingAddress->phone ?? '') }}</strong>
+                                        <strong class="badge badge-soft-info">{{ translate('Protected_for_Privacy') }}</strong>
                                     </td>
                                 </tr>
                                 @if ($order->is_guest && ($shippingAddress->email ?? ''))
@@ -1165,7 +1165,7 @@
                                         <td class="px-0 py-2 text-nowrap">{{translate('email')}}</td>
                                         <td class="px-3 py-2">:</td>
                                         <td class="px-0 py-2">
-                                            <strong>{{ $maskEmail($shippingAddress->email ?? '') }}</strong>
+                                            <strong class="badge badge-soft-info">{{ translate('Protected_for_Privacy') }}</strong>
                                         </td>
                                     </tr>
                                 @endif
@@ -1251,7 +1251,7 @@
                                     <td class="px-0 py-2 text-nowrap">{{translate('contact')}}</td>
                                     <td class="px-3 py-2">:</td>
                                     <td class="px-0 py-2">
-                                        <strong>{{ $maskPhone($billing->phone ?? '') }}</strong>
+                                        <strong class="badge badge-soft-info">{{ translate('Protected_for_Privacy') }}</strong>
                                     </td>
                                 </tr>
                                 @if ($order->is_guest && ($billing->email ?? ''))
@@ -1259,7 +1259,7 @@
                                         <td class="px-0 py-2 text-nowrap">{{translate('email')}}</td>
                                         <td class="px-3 py-2">:</td>
                                         <td class="px-0 py-2">
-                                            <strong>{{ $maskEmail($billing->email ?? '') }}</strong>
+                                            <strong class="badge badge-soft-info">{{ translate('Protected_for_Privacy') }}</strong>
                                         </td>
                                     </tr>
                                 @endif
@@ -1323,10 +1323,9 @@
 
                                     @if($order?->customer?->email !== 'walking@customer.com')
                                         <span class="text-dark fs-12"> <span class="fw-bold">{{ $orderCount }}</span> {{translate('orders')}}</span>
-                                        <span
-                                            class="text-dark break-all fs-12"><span
-                                                class="fw-semibold">{{ $maskPhone($order->customer['phone']) }}</span></span>
-                                        <span class="text-dark break-all fs-12">{{ $maskEmail($order->customer['email']) }}</span>
+                                        <span class="badge badge-soft-info d-inline-flex align-items-center gap-1 mt-1 py-1 px-2 fs-12">
+                                            <i class="tio-shield-outlined"></i> {{ translate('Direct_Contact_Restricted_For_Privacy') }}
+                                        </span>
                                     @endif
                                 </div>
                             </div>

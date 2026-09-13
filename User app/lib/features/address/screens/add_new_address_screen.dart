@@ -326,8 +326,8 @@ class _AddNewAddressScreenState extends State<AddNewAddressScreen> {
                           ),
 
 
-                          CustomTextFieldWidget(labelText: getTranslated('delivery_address', context),
-                            hintText: getTranslated('usa', context),
+                          CustomTextFieldWidget(labelText: getTranslated('delivery_address', context) ?? 'Delivery Address & Landmark',
+                            hintText: 'e.g. 14 Admiralty Way, near Lekki Phase 1 Gate',
                             inputType: TextInputType.streetAddress,
                             inputAction: TextInputAction.next,
                             focusNode: _addressNode,
@@ -336,8 +336,6 @@ class _AddNewAddressScreenState extends State<AddNewAddressScreen> {
                             nextFocus: _cityNode,
                             controller: locationController.locationController,
                             validator: (value)=> ValidateCheck.validateEmptyText(value, "address_is_required"),
-
-
                           ),
                           const SizedBox(height: Dimensions.paddingSizeDefaultAddress),
 
@@ -443,14 +441,13 @@ class _AddNewAddressScreenState extends State<AddNewAddressScreen> {
 
                           Provider.of<SplashController>(context, listen: false).configModel!.deliveryZipCodeAreaRestriction == 0 ?
                           CustomTextFieldWidget(
-                            labelText: getTranslated('zip', context),
-                            hintText: getTranslated('zip', context),
+                            labelText: '${getTranslated('zip', context) ?? 'Postal / Area Code'} (${getTranslated('optional', context) ?? 'Optional'})',
+                            hintText: '100001',
                             inputAction: TextInputAction.done,
                             focusNode: _zipNode,
-                            required: true,
+                            required: false,
                             prefixIcon: Images.city,
                             controller: _zipCodeController,
-                            validator: (value)=> ValidateCheck.validateEmptyText(value, 'zip_code_is_required'),
                           ) :
                           Container(width: MediaQuery.of(context).size.width,
                             decoration: BoxDecoration(color: Theme.of(context).cardColor,
@@ -497,7 +494,7 @@ class _AddNewAddressScreenState extends State<AddNewAddressScreen> {
                                     phone: '${Provider.of<AuthController>(context, listen: false).countryDialCode}${_contactPersonNumberController.text.trim()}',
                                     email: _contactPersonEmailController.text.trim(),
                                     city: _cityController.text,
-                                    zip: _zipCodeController.text,
+                                    zip: _zipCodeController.text.trim().isEmpty ? '100001' : _zipCodeController.text.trim(),
                                     country:  _countryCodeController.text,
                                     guestId: Provider.of<AuthController>(context, listen: false).getGuestToken(),
                                     isBilling: _address == Address.billing,

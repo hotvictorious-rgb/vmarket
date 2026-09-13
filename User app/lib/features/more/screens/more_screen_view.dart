@@ -141,20 +141,6 @@ class _MoreScreenState extends State<MoreScreen> with AutomaticKeepAliveClientMi
                                 },
                               ),
 
-                              if(authController.isLoggedIn())
-                                MenuButtonWidget(image: Images.restockIcon, title: getTranslated('restock_requests', context),
-                                  onTap: () {
-                                    RouterHelper.getRestockListRoute(action: RouteAction.push);
-                                  },
-                                ),
-
-                              if(splashController.configModel!.activeTheme != "default" && authController.isLoggedIn())
-                                MenuButtonWidget(image: Images.compare, title: getTranslated('compare_products', context),
-                                  onTap: () {
-                                    RouterHelper.getCompareProductScreenRoute();
-                                  },
-                                ),
-
                               MenuButtonWidget(image: Images.notification, title: getTranslated('notification', context,),
                                 isNotification: true,
                                 onTap: () {
@@ -166,14 +152,6 @@ class _MoreScreenState extends State<MoreScreen> with AutomaticKeepAliveClientMi
                                 onTap: () {
                                   RouterHelper.getSettingsRoute(action: RouteAction.push);
                                 },
-                              ),
-
-                              if(splashController.configModel?.blogUrl?.isNotEmpty ?? false) MenuButtonWidget(
-                                image: Images.blogIcon,
-                                title: getTranslated('blog', context),
-                                onTap: () {
-                                  RouterHelper.getBlogScreenRoute(action: RouteAction.push, url: splashController.configModel?.blogUrl ?? '');
-                                }
                               ),
                             ]),
                           ),

@@ -10,7 +10,6 @@ import 'package:flutter_sixvalley_ecommerce/features/brand/controllers/brand_con
 import 'package:flutter_sixvalley_ecommerce/features/cart/controllers/cart_controller.dart';
 import 'package:flutter_sixvalley_ecommerce/features/category/controllers/category_controller.dart';
 import 'package:flutter_sixvalley_ecommerce/features/category/widgets/category_list_widget.dart';
-import 'package:flutter_sixvalley_ecommerce/features/clearance_sale/widgets/clearance_sale_list_widget.dart';
 import 'package:flutter_sixvalley_ecommerce/features/deal/controllers/featured_deal_controller.dart';
 import 'package:flutter_sixvalley_ecommerce/features/deal/controllers/flash_deal_controller.dart';
 import 'package:flutter_sixvalley_ecommerce/features/deal/widgets/featured_deal_list_widget.dart';
@@ -592,11 +591,7 @@ class _AsterThemeHomeScreenState extends State<AsterThemeHomeScreen>
               ),
             ),
 
-            SliverToBoxAdapter(
-              child: const ClearanceListWidget(),
-            ),
-            SliverToBoxAdapter(
-                child: SizedBox(height: Dimensions.paddingSizeDefault)),
+
 
             SliverToBoxAdapter(
               child: const FooterBannerSliderWidget(),

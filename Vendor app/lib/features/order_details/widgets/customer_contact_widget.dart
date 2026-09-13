@@ -1,13 +1,10 @@
 import 'package:flutter/material.dart';
-import 'package:sixvalley_vendor_app/common/basewidgets/custom_asset_image_widget.dart';
 import 'package:sixvalley_vendor_app/features/order/domain/models/order_model.dart';
 import 'package:sixvalley_vendor_app/helper/color_helper.dart';
 import 'package:sixvalley_vendor_app/localization/language_constrants.dart';
 import 'package:sixvalley_vendor_app/utill/dimensions.dart';
-import 'package:sixvalley_vendor_app/utill/images.dart';
 import 'package:sixvalley_vendor_app/utill/styles.dart';
 import 'package:sixvalley_vendor_app/common/basewidgets/custom_image_widget.dart';
-import 'package:url_launcher/url_launcher.dart';
 
 
 class CustomerContactWidget extends StatefulWidget {
@@ -106,60 +103,42 @@ class _CustomerContactWidgetState extends State<CustomerContactWidget> {
 
 
               const SizedBox(width: Dimensions.paddingSizeSmall),
-              Padding(
-                padding: EdgeInsets.only(top: Dimensions.paddingSizeSmall),
-                child: InkWell(
-                  onTap: () {
-                    if(email.isNotEmpty) {
-                      sendEmail(email);
-                    }
-                  },
-                  child: CustomAssetImageWidget(Images.cusotomerChatIcon, height: 35, width: 35)),
-              ),
-              const SizedBox(width: Dimensions.paddingSizeSmall),
-
-
-              InkWell(
-                onTap: () {
-                  if(phone.isNotEmpty) {
-                    callPhone(phone);
-                  }
-                },
-                child: CustomAssetImageWidget(Images.customerCallIcon, height: 30, width: 30,)
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: Dimensions.paddingSizeSmall, vertical: Dimensions.paddingSizeExtraSmall),
+                decoration: BoxDecoration(
+                  color: Theme.of(context).primaryColor.withValues(alpha: 0.1),
+                  borderRadius: BorderRadius.circular(Dimensions.radiusSmall),
+                  border: Border.all(color: Theme.of(context).primaryColor.withValues(alpha: 0.2)),
+                ),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Icon(Icons.shield_outlined, size: 16, color: Theme.of(context).primaryColor),
+                    const SizedBox(width: 4),
+                    Text(
+                      'Protected',
+                      style: robotoMedium.copyWith(fontSize: Dimensions.fontSizeSmall, color: Theme.of(context).primaryColor),
+                    ),
+                  ],
+                ),
               ),
             ],
+          ),
+        ),
+
+        Padding(
+          padding: const EdgeInsets.fromLTRB(Dimensions.paddingSizeDefault, 0, Dimensions.paddingSizeDefault, Dimensions.paddingSizeSmall),
+          child: Text(
+            'Delivery managed via Victorious Delivery logistics. Direct contact is restricted for customer privacy.',
+            style: titilliumRegular.copyWith(
+              fontSize: Dimensions.fontSizeExtraSmall,
+              color: Theme.of(context).hintColor,
+              fontStyle: FontStyle.italic,
+            ),
           ),
         ),
 
       ]),
     );
   }
-
-
-  Future<void> sendEmail(String email) async {
-    final Uri url = Uri(
-      scheme: 'mailto',
-      path: email,
-      query: Uri.encodeFull('subject=Support&body='),
-    );
-
-    if (await canLaunchUrl(url)) {
-      await launchUrl(url);
-    } else {
-      throw 'Could not launch $url';
-    }
-  }
-
-  Future<void> callPhone(String phoneNumber) async {
-    final Uri url = Uri(scheme: 'tel', path: phoneNumber);
-
-    if (await canLaunchUrl(url)) {
-      await launchUrl(url);
-    } else {
-      throw 'Could not launch $url';
-    }
-  }
-
-
-
 }
