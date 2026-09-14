@@ -16,20 +16,12 @@
             return substr($name, 0, 2) . str_repeat('*', min(8, $len - 2));
         };
         $maskPhone = function($phone) {
-            if (!$phone) return '';
-            $len = strlen($phone);
-            if ($len <= 4) return '****';
-            return substr($phone, 0, 3) . str_repeat('*', min(8, $len - 6)) . substr($phone, -3);
+            // [AI] Complete disintermediation: merchants must NOT receive customer phone numbers
+            return '';
         };
         $maskEmail = function($email) {
-            if (!$email) return '';
-            $parts = explode('@', $email);
-            if (count($parts) < 2) return '***';
-            $name = $parts[0];
-            $domain = $parts[1];
-            $len = strlen($name);
-            $maskedName = ($len <= 2) ? $name : substr($name, 0, 2) . str_repeat('*', min(6, $len - 2));
-            return $maskedName . '@' . $domain;
+            // [AI] Complete disintermediation: merchants must NOT receive customer email addresses
+            return '';
         };
         $maskAddress = function($address) {
             if (!$address) return '';
@@ -1135,14 +1127,6 @@
                                         alt="">
                                     {{translate('shipping_address')}}
                                 </h4>
-                                @if($order['order_status'] != 'delivered')
-                                    <button class="btn btn-outline-primary btn-sm square-btn"
-                                            title="{{translate('edit')}}"
-                                            data-toggle="modal"
-                                            data-target="#shippingAddressUpdateModal">
-                                        <i class="tio-edit" style="font-size: 15px;"></i>
-                                    </button>
-                                @endif
                             </div>
                             <table class="overflow-wrap-anywhere">
                                 <tbody>
@@ -1228,14 +1212,6 @@
                                         alt="">
                                     {{translate('billing_address')}}
                                 </h4>
-                                @if($order['order_status'] !== 'delivered')
-                                    <button class="btn btn-outline-primary btn-sm square-btn"
-                                            title="Edit"
-                                            data-toggle="modal"
-                                            data-target="#billingAddressUpdateModal">
-                                        <i class="tio-edit" style="font-size: 15px;"></i>
-                                    </button>
-                                @endif
                             </div>
 
                             <table class="overflow-wrap-anywhere">
@@ -1420,267 +1396,8 @@
             </div>
         </div>
     @endif
-    @if($order['order_status'] != 'delivered')
-        <div class="modal fade" id="shippingAddressUpdateModal" tabindex="-1"
-             aria-labelledby="shippingAddressUpdateModal"
-             aria-hidden="true">
-            <div class="modal-dialog modal-dialog-centered modal-lg">
-                <div class="modal-content">
-                    <div class="modal-header pb-4">
-                        <h3 class="mb-0 text-center w-100">{{translate('shipping_address')}}</h3>
-                        <button type="button" class="btn-close border-0" data-dismiss="modal" aria-label="Close"><i
-                                class="tio-clear"></i></button>
-                    </div>
-                    <div class="modal-body px-4 px-sm-5 pt-0">
-                        <form action="{{route('vendor.orders.address-update')}}" method="post">
-                            @csrf
-                            <div class="d-flex flex-column align-items-center gap-2">
-                                <input name="address_type" value="shipping" hidden>
-                                <input name="order_id" value="{{$order->id}}" hidden>
-                                <div class="row gx-2">
-                                    <div class="col-md-6">
-                                        <div class="form-group">
-                                            <label for="name"
-                                                   class="title-color">{{translate('contact_person_name')}}</label>
-                                            <input type="text" name="name" id="name" class="form-control"
-                                                   value="{{$shippingAddress->contact_person_name ?? ''}}"
-                                                   placeholder="{{ translate('ex').' '.':'.' '.translate('john_doe')}}"
-                                                   required>
-                                        </div>
-                                    </div>
-                                    <div class="col-md-6">
-                                        <div class="form-group">
-                                            <label for="phone_number"
-                                                   class="title-color">{{translate('phone_number')}}</label>
-                                            <input class="form-control form-control-user"
-                                                   type="tel"
-                                                   value="{{$shippingAddress->phone ?? ''}}"
-                                                   name="phone_number"
-                                                   placeholder="{{ translate('ex').': 017xxxxxxxx' }}" required>
-                                        </div>
-                                    </div>
-                                    <div class="col-md-6">
-                                        <div class="form-group">
-                                            <label for="country" class="title-color">{{translate('country')}}</label>
-                                            <select name="country" id="country" class="form-control">
-                                                @forelse($countries as $country)
-                                                    <option
-                                                        value="{{ $country['name'] }}" {{ isset($shippingAddress->country) && $country['name'] == $shippingAddress->country ? 'selected'  : ''}}>{{ $country['name'] }}</option>
-                                                @empty
-                                                    <option value="">{{ translate('No_country_to_deliver') }}</option>
-                                                @endforelse
-                                            </select>
+    {{-- [AI] Zero-Trust Vendor Privacy Boundary: Address editing modals removed. Customer delivery addresses are managed exclusively by Victorious Delivery. --}}
 
-                                        </div>
-                                    </div>
-                                    <div class="col-md-3">
-                                        <div class="form-group">
-                                            <label for="city" class="title-color">{{translate('city')}}</label>
-                                            <input type="text" name="city" id="city"
-                                                   value="{{$shippingAddress->city ?? ''}}"
-                                                   class="form-control"
-                                                   placeholder="{{ translate('ex').' '.':'.' '.translate('dhaka')}}"
-                                                   required>
-                                        </div>
-                                    </div>
-                                    <div class="col-md-3">
-                                        <div class="form-group">
-                                            <label for="zip_code" class="title-color">{{translate('zip')}}</label>
-                                            @if($zipRestrictStatus == 1)
-                                                <select name="zip" class="form-control" data-live-search="true"
-                                                        required>
-                                                    @forelse($zipCodes as $code)
-                                                        <option
-                                                            value="{{ $code->zipcode }}"{{isset($shippingAddress->zip) && $code->zipcode == $shippingAddress->zip ? 'selected'  : ''}}>{{ $code->zipcode }}</option>
-                                                    @empty
-                                                        <option value="">{{ translate('No_zip_to_deliver') }}</option>
-                                                    @endforelse
-                                                </select>
-                                            @else
-                                                <input type="text" class="form-control"
-                                                       value="{{$shippingAddress->zip ?? ''}}"
-                                                       id="zip"
-                                                       name="zip"
-                                                       placeholder="{{ translate('ex').' '.':'.' '.'1216'}}" {{$shippingAddress?'required':''}}>
-                                            @endif
-                                        </div>
-                                    </div>
-                                    <div class="col-12">
-                                        <div class="form-group">
-                                            <label for="address" class="title-color">{{translate('address')}}</label>
-                                            <textarea name="address" id="address" name="address" rows="3"
-                                                      class="form-control"
-                                                      placeholder="{{ translate('ex').' '.':'.' '.translate('street_1,_street_2,_street_3,_street_4')}}">{{$shippingAddress->address ?? ''}}</textarea>
-                                        </div>
-                                    </div>
-                                    <input type="hidden" id="latitude"
-                                           name="latitude" class="form-control d-inline"
-                                           placeholder="{{ translate('ex').' '.':'.' '.'-94.22213' }}"
-                                           value="{{$shippingAddress->latitude ?? 0}}" required readonly>
-                                    <input type="hidden"
-                                           name="longitude" class="form-control"
-                                           placeholder="{{ translate('ex').' '.':'.' '. '103.344322'}}" id="longitude"
-                                           value="{{$shippingAddress->longitude??0}}" required readonly>
-                                    @if(getWebConfig('map_api_status') ==1 )
-                                        <div class="col-12 ">
-                                            <input id="pac-input" class="form-control rounded __map-input mt-1"
-                                                   title="{{translate('search_your_location_here')}}" type="text"
-                                                   placeholder="{{translate('search_here')}}"/>
-                                            <div class="dark-support rounded w-100 __h-200px mb-5"
-                                                 id="location_map_canvas_shipping"></div>
-                                        </div>
-                                    @endif
-                                    <div class="col-12">
-                                        <div class="d-flex justify-content-end gap-3">
-                                            <button type="button" class="btn btn-secondary px-5"
-                                                    data-dismiss="modal">{{translate('cancel')}}</button>
-                                            <button type="submit"
-                                                    class="btn btn--primary px-5">{{translate('update')}}</button>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-                        </form>
-                    </div>
-                </div>
-            </div>
-        </div>
-        @if($billing)
-            <div class="modal fade" id="billingAddressUpdateModal" tabindex="-1"
-                 aria-labelledby="billingAddressUpdateModal"
-                 aria-hidden="true">
-                <div class="modal-dialog modal-dialog-centered modal-lg">
-                    <div class="modal-content">
-                        <div class="modal-header pb-4">
-                            <h3 class="mb-0 text-center w-100">{{translate('billing_address')}}</h3>
-                            <button type="button" class="btn-close border-0" data-dismiss="modal" aria-label="Close"><i
-                                    class="tio-clear"></i></button>
-                        </div>
-                        <div class="modal-body px-4 px-sm-5 pt-0">
-                            <div class="d-flex flex-column align-items-center gap-2">
-                                <form action="{{route('vendor.orders.address-update')}}" method="post">
-                                    @csrf
-                                    <div class="d-flex flex-column align-items-center gap-2">
-                                        <input name="address_type" value="billing" hidden>
-                                        <input name="order_id" value="{{$order->id}}" hidden>
-                                        <div class="row gx-2">
-                                            <div class="col-md-6">
-                                                <div class="form-group">
-                                                    <label for="name"
-                                                           class="title-color">{{translate('contact_person_name')}}</label>
-                                                    <input type="text" name="name" id="name" class="form-control"
-                                                           value="{{$billing->contact_person_name ?? ''}}"
-                                                           placeholder="{{ translate('ex') }}: {{translate('john_doe')}}"
-                                                           required>
-                                                </div>
-                                            </div>
-                                            <div class="col-md-6">
-                                                <div class="form-group">
-                                                    <label for="phone_number"
-                                                           class="title-color">{{translate('phone_number')}}</label>
-                                                    <input class="form-control form-control-user"
-                                                           type="tel" value="{{$billing->phone ?? ''}}"
-                                                           name="phone_number"
-                                                           placeholder="{{ translate('ex').': 017xxxxxxxx' }}" required>
-                                                </div>
-                                            </div>
-                                            <div class="col-md-6">
-                                                <div class="form-group">
-                                                    <label for="country"
-                                                           class="title-color">{{translate('country')}}</label>
-                                                    <select name="country" id="country" class="form-control">
-                                                        @forelse($countries as $country)
-                                                            <option
-                                                                value="{{ $country['name'] }}" {{ isset($billing->country) && $country['name'] == $billing->country ? 'selected'  : ''}}>{{ $country['name'] }}</option>
-                                                        @empty
-                                                            <option value="">
-                                                                {{ translate('No_country_to_deliver') }}
-                                                            </option>
-                                                        @endforelse
-                                                    </select>
-
-                                                </div>
-                                            </div>
-                                            <div class="col-md-3">
-                                                <div class="form-group">
-                                                    <label for="city" class="title-color">{{translate('city')}}</label>
-                                                    <input type="text" name="city" id="city"
-                                                           value="{{$billing->city ?? ''}}"
-                                                           class="form-control"
-                                                           placeholder="{{ translate('ex') .' '.':'.' '.translate('dhaka')}}"
-                                                           required>
-                                                </div>
-                                            </div>
-                                            <div class="col-md-3">
-                                                <div class="form-group">
-                                                    <label for="zip_code"
-                                                           class="title-color">{{translate('zip')}}</label>
-                                                    @if($zipRestrictStatus == 1)
-                                                        <select name="zip" class="form-control" data-live-search="true"
-                                                                required>
-                                                            @forelse($zipCodes as $code)
-                                                                <option
-                                                                    value="{{ $code->zipcode }}"{{isset($billing->zip) && $code->zipcode == $billing->zip ? 'selected'  : ''}}>{{ $code->zipcode }}</option>
-                                                            @empty
-                                                                <option
-                                                                    value="">{{ translate('no_zip_to_deliver') }}</option>
-                                                            @endforelse
-                                                        </select>
-                                                    @else
-                                                        <input type="text" class="form-control"
-                                                               value="{{$billing->zip ?? ''}}" id="zip"
-                                                               name="zip"
-                                                               placeholder="{{ translate('ex').' '.':'.' '.'1216' }}" {{$billing?'required':''}}>
-                                                    @endif
-                                                </div>
-                                            </div>
-                                            <div class="col-12">
-                                                <div class="form-group">
-                                                    <label for="address"
-                                                           class="title-color">{{translate('address')}}</label>
-                                                    <textarea name="address" id="billing_address" rows="3"
-                                                              class="form-control"
-                                                              placeholder="{{ translate('ex') .' '.':'.' '.translate('street_1,_street_2,_street_3,_street_4')}}">{{$billing->address ?? ''}}</textarea>
-                                                </div>
-                                            </div>
-                                            <input type="hidden" id="billing_latitude"
-                                                   name="latitude" class="form-control d-inline"
-                                                   placeholder="{{ translate('ex').' '.':'.' '.'-94.22213'}}"
-                                                   value="{{$billing->latitude ?? 0}}" required readonly>
-                                            <input type="hidden"
-                                                   name="longitude" class="form-control"
-                                                   placeholder="{{ translate('ex').' '.':'.' '. '103.344322'}}"
-                                                   id="billing_longitude"
-                                                   value="{{$billing->longitude ?? 0}}" required readonly>
-                                            @if(getWebConfig('map_api_status') ==1 )
-                                                <div class="col-12 ">
-                                                    <input id="billing-pac-input"
-                                                           class="form-control rounded __map-input mt-1"
-                                                           title="{{translate('search_your_location_here')}}"
-                                                           type="text"
-                                                           placeholder="{{translate('search_here')}}"/>
-                                                    <div class="rounded w-100 __h-200px mb-5"
-                                                         id="location_map_canvas_billing"></div>
-                                                </div>
-                                            @endif
-                                            <div class="col-12">
-                                                <div class="d-flex justify-content-end gap-3">
-                                                    <button type="button" class="btn btn-secondary px-5"
-                                                            data-dismiss="modal">{{translate('cancel')}}</button>
-                                                    <button type="submit"
-                                                            class="btn btn--primary px-5">{{translate('update')}}</button>
-                                                </div>
-                                            </div>
-                                        </div>
-                                    </div>
-                                </form>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        @endif
-    @endif
     <div class="modal fade" id="locationModal" tabindex="-1" role="dialog" aria-labelledby="locationModalLabel">
         <div class="modal-dialog modal-lg" role="document">
             <div class="modal-content">

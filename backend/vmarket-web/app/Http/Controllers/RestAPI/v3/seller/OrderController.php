@@ -494,46 +494,12 @@ class OrderController extends Controller
 
     public function address_update(Request $request)
     {
-        $seller = $request->seller;
-        // [AI] Ownership Guard: Only update address for own orders
-        $order = $this->order->where(['id' => $request->order_id, 'seller_id' => $seller['id']])->first();
-        if (!$order) {
-            return response()->json(['message' => translate('unauthorized_access')], 403);
-        }
-        $order = $order->toArray();
-        $shipping_address_data = $order['shipping_address_data'] ? json_decode(json_encode($order['shipping_address_data']), true) : [];
-        $billing_address_data = $order['billing_address_data'] ? json_decode(json_encode($order['billing_address_data']), true) : [];
-
-        $common_address_data = [
-            'contact_person_name' => $request->contact_person_name,
-            'phone' => $request->phone,
-            'city' => $request->city,
-            'zip' => $request->zip,
-            'email' => $request->email,
-            'address' => $request->address,
-            'latitude' => $request->latitude,
-            'longitude' => $request->longitude,
-            'updated_at' => now(),
-        ];
-
-        if ($request->address_type == 'shipping') {
-            $shipping_address_data = array_merge($shipping_address_data, $common_address_data);
-        } elseif ($request->address_type == 'billing') {
-            $billing_address_data = array_merge($billing_address_data, $common_address_data);
-        }
-        $update_data = [];
-
-        if ($request->address_type == 'shipping') {
-            $update_data['shipping_address_data'] = json_encode($shipping_address_data);
-        } elseif ($request->address_type == 'billing') {
-            $update_data['billing_address_data'] = json_encode($billing_address_data);
-        }
-
-        if (!empty($update_data)) {
-            DB::table('orders')->where('id', $request->order_id)->update($update_data);
-        }
-
-        return response()->json(['message' => 'Address updated successfully'], 200);
+        // [AI] Zero-Trust Vendor Privacy Boundary: Customer delivery addresses are managed exclusively by Victorious Delivery.
+        // Merchants are strictly forbidden from modifying customer delivery addresses.
+        return response()->json([
+            'status' => false,
+            'message' => translate('Customer delivery addresses are managed exclusively by Victorious Delivery. Merchants cannot modify customer addresses.')
+        ], 403);
     }
 
     public function updateOrderDetails(Request $request): JsonResponse
@@ -804,6 +770,9 @@ class OrderController extends Controller
             $order->customer->l_name = $this->maskName($order->customer->l_name);
             $order->customer->phone = $this->maskPhone($order->customer->phone);
             $order->customer->email = $this->maskEmail($order->customer->email);
+            unset($order->customer->street_address, $order->customer->house_no, $order->customer->apartment_no);
+            unset($order->customer->cm_firebase_token, $order->customer->wallet_balance, $order->customer->loyalty_point);
+            unset($order->customer->payment_card_last_four, $order->customer->payment_card_brand);
         }
         $order->verification_code = '****';
         

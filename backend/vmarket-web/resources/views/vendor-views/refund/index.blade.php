@@ -126,17 +126,11 @@
                                 @if ($refund->customer !=null)
                                     <div class="d-flex flex-column gap-1">
                                     <span class="title-color font-weight-bold" style="text-decoration: none;">
-                                        {{$refund->customer->f_name.' '.$refund->customer->l_name}}
+                                        {{ Str::mask($refund->customer->f_name ?? '', '*', 2) . ' ' . Str::mask($refund->customer->l_name ?? '', '*', 2) }}
                                     </span>
-                                        @if($refund->customer->phone)
-                                            <span class="title-color fs-12">
-                                                {{$refund->customer?->phone}}
-                                            </span>
-                                                @else
-                                            <span class="title-color fs-12">
-                                                {{$refund->customer?->email}}
-                                            </span>
-                                        @endif
+                                        <div>
+                                            <span class="badge badge-soft-info fs-12">{{ translate('Protected_Recipient') }}</span>
+                                        </div>
                                     </div>
                                 @else
                                     <a href="javascript:" class="title-color hover-c1">

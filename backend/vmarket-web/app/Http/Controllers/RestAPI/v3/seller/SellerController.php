@@ -104,7 +104,13 @@ class SellerController extends Controller
             $reviews = Review::whereHas('product', function ($query) use ($seller) {
                 $query->where('added_by', 'seller')->where('user_id', $seller->id);
             })
-                ->with(['product', 'reply'])
+                ->with([
+                    'product',
+                    'customer' => function ($query) {
+                        $query->select('id', 'f_name', 'l_name', 'image');
+                    },
+                    'reply'
+                ])
                 ->when($product_id, function ($query) use ($product_id, $customer_id) {
                     return $query->where(function ($query) use ($product_id, $customer_id) {
                         $query->whereIn('product_id', $product_id)->orWhereIn('customer_id', $customer_id);
@@ -123,7 +129,13 @@ class SellerController extends Controller
                     $query->whereBetween('created_at', [$request->from . ' 00:00:00', $request->to . ' 23:59:59']);
                 });
         } else {
-            $reviews = Review::with(['product', 'customer', 'reply'])->whereHas('product', function ($query) use ($seller) {
+            $reviews = Review::with([
+                'product',
+                'customer' => function ($query) {
+                    $query->select('id', 'f_name', 'l_name', 'image');
+                },
+                'reply'
+            ])->whereHas('product', function ($query) use ($seller) {
                 $query->where('user_id', $seller->id)->where('added_by', 'seller');
             })
                 ->when(($request['product_id'] != null && $request['product_id'] != 0), function ($query) use ($request) {
@@ -144,6 +156,10 @@ class SellerController extends Controller
         $reviewsFilters = $reviews->map(function ($data) {
             $data['attachment_full_url'] = $data->attachment_full_url;
             $data['product'] = Helpers::product_data_formatting($data['product']);
+            if ($data->customer) {
+                $data->customer->f_name = self::maskReviewCustomerName($data->customer->f_name);
+                $data->customer->l_name = self::maskReviewCustomerName($data->customer->l_name);
+            }
             return $data;
         });
 
@@ -837,5 +853,16 @@ class SellerController extends Controller
            'app_language' => $request['current_language'],
         ]);
         return response()->json(['message' => 'Successfully change'], 200);
+    }
+
+    /**
+     * [AI] Zero-Trust Vendor Privacy Boundary: Mask review customer name
+     */
+    private static function maskReviewCustomerName(?string $name): string
+    {
+        if (!$name) return translate('customer');
+        $len = mb_strlen($name);
+        if ($len <= 2) return $name;
+        return mb_substr($name, 0, 2) . str_repeat('*', min(6, $len - 2));
     }
 }

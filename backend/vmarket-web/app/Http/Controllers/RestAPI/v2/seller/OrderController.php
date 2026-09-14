@@ -378,21 +378,13 @@ class OrderController extends Controller
     }
 
     private function maskPhone($phone) {
-        if (!$phone) return '';
-        $len = strlen($phone);
-        if ($len <= 4) return '****';
-        return substr($phone, 0, 3) . str_repeat('*', min(8, $len - 6)) . substr($phone, -3);
+        // [AI] Complete disintermediation: merchants must NOT receive customer phone numbers
+        return '';
     }
 
     private function maskEmail($email) {
-        if (!$email) return '';
-        $parts = explode('@', $email);
-        if (count($parts) < 2) return '***';
-        $name = $parts[0];
-        $domain = $parts[1];
-        $len = strlen($name);
-        $maskedName = ($len <= 2) ? $name : substr($name, 0, 2) . str_repeat('*', min(6, $len - 2));
-        return $maskedName . '@' . $domain;
+        // [AI] Complete disintermediation: merchants must NOT receive customer email addresses
+        return '';
     }
 
     private function maskAddress($address) {
@@ -406,6 +398,9 @@ class OrderController extends Controller
             $order->customer->l_name = $this->maskName($order->customer->l_name);
             $order->customer->phone = $this->maskPhone($order->customer->phone);
             $order->customer->email = $this->maskEmail($order->customer->email);
+            unset($order->customer->street_address, $order->customer->house_no, $order->customer->apartment_no);
+            unset($order->customer->cm_firebase_token, $order->customer->wallet_balance, $order->customer->loyalty_point);
+            unset($order->customer->payment_card_last_four, $order->customer->payment_card_brand);
         }
         $order->verification_code = '****';
         

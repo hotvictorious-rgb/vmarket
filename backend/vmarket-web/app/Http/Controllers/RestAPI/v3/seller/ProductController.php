@@ -1921,9 +1921,23 @@ class ProductController extends Controller
     {
         $product = Product::withCount('reviews')->find($product_id);
         $average_rating = count($product->rating) > 0 ? number_format($product->rating[0]->average, 2, '.', ' ') : 0;
-        $reviews = Review::with(['customer', 'product', 'reply'])->where(['product_id' => $product_id])
+        $reviews = Review::with([
+            'customer' => function ($query) {
+                $query->select('id', 'f_name', 'l_name', 'image');
+            },
+            'product',
+            'reply'
+        ])->where(['product_id' => $product_id])
             ->latest('updated_at')
             ->paginate($request['limit'], ['*'], 'page', $request['offset']);
+
+        $reviews->getCollection()->transform(function ($review) {
+            if ($review->customer) {
+                $review->customer->f_name = self::maskReviewCustomerName($review->customer->f_name);
+                $review->customer->l_name = self::maskReviewCustomerName($review->customer->l_name);
+            }
+            return $review;
+        });
 
         $rating_group_count = Review::where(['product_id' => $product_id])
             ->select('rating', DB::raw('count(*) as total'))
@@ -2368,6 +2382,17 @@ class ProductController extends Controller
             'confirmed_count' => $count,
             'message' => "{$count} marketplace product(s) confirmed successfully",
         ], 200);
+    }
+
+    /**
+     * [AI] Zero-Trust Vendor Privacy Boundary: Mask review customer name
+     */
+    private static function maskReviewCustomerName(?string $name): string
+    {
+        if (!$name) return translate('customer');
+        $len = mb_strlen($name);
+        if ($len <= 2) return $name;
+        return mb_substr($name, 0, 2) . str_repeat('*', min(6, $len - 2));
     }
 }
 

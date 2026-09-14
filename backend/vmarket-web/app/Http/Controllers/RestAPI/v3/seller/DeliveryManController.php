@@ -193,10 +193,23 @@ class DeliveryManController extends Controller
             return response()->json(['message' => translate('invalid_deliveryman!')], 403);
         }
 
-        $reviews = Review::with(['customer', 'reply'])
+        $reviews = Review::with([
+            'customer' => function($query) {
+                $query->select('id', 'f_name', 'l_name', 'image');
+            },
+            'reply'
+        ])
             ->where(['delivery_man_id' => $id])
             ->latest('updated_at')
             ->paginate($request['limit'], ['*'], 'page', $request['offset']);
+
+        $reviews->getCollection()->transform(function ($review) {
+            if ($review->customer) {
+                $review->customer->f_name = self::maskReviewCustomerName($review->customer->f_name);
+                $review->customer->l_name = self::maskReviewCustomerName($review->customer->l_name);
+            }
+            return $review;
+        });
 
         $average_rating = Review::where(['delivery_man_id' => $id])->avg('rating');
 
@@ -219,6 +232,10 @@ class DeliveryManController extends Controller
             })
             ->latest('updated_at')
             ->paginate($request['limit'], ['*'], 'page', $request['offset']);
+
+        $orders->getCollection()->transform(function ($order) {
+            return self::sanitizeOrderLogisticsData($order);
+        });
 
         $data = array();
         $data['total_size'] = $orders->total();
@@ -281,5 +298,55 @@ class DeliveryManController extends Controller
         $delivery_man->is_active = $request->status;
         $delivery_man->save();
         return response()->json(['message' => translate('status_update_successfully')], 200);
+    }
+
+    /**
+     * [AI] Zero-Trust Vendor Privacy Boundary: Mask review customer name
+     */
+    private static function maskReviewCustomerName(?string $name): string
+    {
+        if (!$name) return translate('customer');
+        $len = mb_strlen($name);
+        if ($len <= 2) return $name;
+        return mb_substr($name, 0, 2) . str_repeat('*', min(6, $len - 2));
+    }
+
+    /**
+     * [AI] Zero-Trust Vendor Privacy Boundary: Strip customer PII from order logistics data
+     */
+    private static function sanitizeOrderLogisticsData($order)
+    {
+        if ($order->customer) {
+            $order->customer->f_name = self::maskReviewCustomerName($order->customer->f_name);
+            $order->customer->l_name = self::maskReviewCustomerName($order->customer->l_name);
+            $order->customer->phone = '';
+            $order->customer->email = '';
+            unset($order->customer->street_address, $order->customer->house_no, $order->customer->apartment_no);
+            unset($order->customer->cm_firebase_token, $order->customer->wallet_balance, $order->customer->loyalty_point);
+        }
+
+        $order->verification_code = '****';
+
+        foreach (['shipping_address_data', 'billing_address_data'] as $field) {
+            $addr = $order->{$field};
+            if (is_string($addr)) {
+                $addr = json_decode($addr);
+            }
+            if (is_object($addr)) {
+                if (isset($addr->contact_person_name)) {
+                    $addr->contact_person_name = self::maskReviewCustomerName($addr->contact_person_name);
+                }
+                $addr->phone = '';
+                $addr->email = '';
+                if (isset($addr->address)) {
+                    $addr->address = 'Detailed address hidden for privacy';
+                }
+                $addr->latitude = '-33.8688';
+                $addr->longitude = '151.2195';
+                $order->{$field} = $addr;
+            }
+        }
+
+        return $order;
     }
 }

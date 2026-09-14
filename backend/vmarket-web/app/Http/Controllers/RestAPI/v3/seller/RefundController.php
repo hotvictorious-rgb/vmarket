@@ -42,7 +42,13 @@ class RefundController extends Controller
             $endDate = $endDate->endOfDay();
         }
 
-        $refund_list = RefundRequest::with('customer', 'product', 'orderDetails')
+        $refund_list = RefundRequest::with([
+            'customer' => function ($query) {
+                $query->select('id', 'f_name', 'l_name', 'image');
+            },
+            'product',
+            'orderDetails'
+        ])
             ->with(['order' => function ($query) {
                 $query->select('id', 'payment_method');
             }])
@@ -72,13 +78,24 @@ class RefundController extends Controller
                 return $query->whereBetween('created_at', [$startDate, $endDate]);
             })
             ->latest()->get();
+
+        $refund_list?->map(function ($refund) {
+            return $this->sanitizeRefundCustomer($refund);
+        });
+
         return response()->json($refund_list);
     }
 
     public function getSingleItem(Request $request): JsonResponse
     {
         $seller = $request->seller;
-        $refundList = RefundRequest::with('customer', 'product', 'orderDetails')
+        $refundList = RefundRequest::with([
+            'customer' => function ($query) {
+                $query->select('id', 'f_name', 'l_name', 'image');
+            },
+            'product',
+            'orderDetails'
+        ])
             ->with(['order' => function ($query) {
                 $query->select('id', 'payment_method');
             }])
@@ -87,6 +104,10 @@ class RefundController extends Controller
             })
             ->where('id', $request['id'])
             ->first();
+
+        if ($refundList) {
+            $this->sanitizeRefundCustomer($refundList);
+        }
 
         return response()->json($refundList);
     }
@@ -198,5 +219,38 @@ class RefundController extends Controller
             return response()->json(['message' => 'refunded status can not be changed!!'], 403);
         }
 
+    }
+
+    /**
+     * [AI] Zero-Trust Privacy Boundary: Redact customer contact and personal information from refund records.
+     */
+    private function sanitizeRefundCustomer($refund)
+    {
+        if ($refund && $refund->customer) {
+            $name = trim(($refund->customer->f_name ?? '') . ' ' . ($refund->customer->l_name ?? ''));
+            $len = strlen($name);
+            $maskedName = ($len <= 2) ? $name : substr($name, 0, 2) . str_repeat('*', min(6, max(0, $len - 2)));
+
+            $refund->customer->f_name = $maskedName;
+            $refund->customer->l_name = '';
+            $refund->customer->phone = '';
+            $refund->customer->email = '';
+            unset(
+                $refund->customer->street_address,
+                $refund->customer->country,
+                $refund->customer->city,
+                $refund->customer->zip,
+                $refund->customer->house_no,
+                $refund->customer->apartment_no,
+                $refund->customer->cm_firebase_token,
+                $refund->customer->wallet_balance,
+                $refund->customer->loyalty_point,
+                $refund->customer->payment_card_last_four,
+                $refund->customer->payment_card_brand,
+                $refund->customer->payment_card_fawry_token,
+                $refund->customer->referral_code
+            );
+        }
+        return $refund;
     }
 }

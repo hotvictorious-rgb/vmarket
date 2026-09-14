@@ -11,20 +11,12 @@
         return substr($name, 0, 2) . str_repeat('*', min(8, $len - 2));
     };
     $maskPhone = function($phone) {
-        if (!$phone) return '';
-        $len = strlen($phone);
-        if ($len <= 4) return '****';
-        return substr($phone, 0, 3) . str_repeat('*', min(8, $len - 6)) . substr($phone, -3);
+        // [AI] Complete disintermediation: merchants must NOT receive customer phone numbers
+        return '';
     };
     $maskEmail = function($email) {
-        if (!$email) return '';
-        $parts = explode('@', $email);
-        if (count($parts) < 2) return '***';
-        $name = $parts[0];
-        $domain = $parts[1];
-        $len = strlen($name);
-        $maskedName = ($len <= 2) ? $name : substr($name, 0, 2) . str_repeat('*', min(6, $len - 2));
-        return $maskedName . '@' . $domain;
+        // [AI] Complete disintermediation: merchants must NOT receive customer email addresses
+        return '';
     };
     $maskAddress = function($address) {
         if (!$address) return '';
@@ -718,10 +710,10 @@ $orderTotalPriceSummary = \App\Utils\OrderManager::getOrderTotalPriceSummary(ord
                                          </td>
                                      </tr>
                                      <tr>
-                                         <td class="px-2 pt-1 pb-1">{{ translate('Phone') }}</td>
+                                         <td class="px-2 pt-1 pb-1">{{ translate('Contact') }}</td>
                                          <td class="pt-1 pb-1">:</td>
                                          <td class="px-2 pt-1 pb-1"><span
-                                                 class="text-dark">{{ $maskPhone($billingAddress->phone ?? '') }}</span></td>
+                                                 class="text-info fw-semibold">{{ translate('Protected_Recipient') }}</span></td>
                                      </tr>
                                      <tr>
                                          <td class="px-2 pt-1 pb-1 text-nowrap">{{ translate('City_/_Zip') }}</td>
@@ -758,9 +750,9 @@ $orderTotalPriceSummary = \App\Utils\OrderManager::getOrderTotalPriceSummary(ord
                                                  class="text-danger">{{ $maskName($shipping->contact_person_name ?? '') }}</span></td>
                                      </tr>
                                      <tr>
-                                         <td class="px-2 pt-1 pb-1">{{ translate('Phone') }}</td>
+                                         <td class="px-2 pt-1 pb-1">{{ translate('Contact') }}</td>
                                          <td class="pt-1 pb-1">:</td>
-                                         <td class="px-2 pt-1 pb-1"><span class="text-dark">{{ $maskPhone($shipping->phone ?? '') }}</span>
+                                         <td class="px-2 pt-1 pb-1"><span class="text-info fw-semibold">{{ translate('Protected_Recipient') }}</span>
                                          </td>
                                      </tr>
                                      <tr>
@@ -799,17 +791,10 @@ $orderTotalPriceSummary = \App\Utils\OrderManager::getOrderTotalPriceSummary(ord
                                      @endif
                                      @if (isset($order->customer) && $order->customer['id']!=0)
                                          <tr>
-                                             <td class="px-2 pt-1 pb-1">{{ translate('Email') }}</td>
+                                             <td class="px-2 pt-1 pb-1">{{ translate('Contact') }}</td>
                                              <td class="pt-1 pb-1">:</td>
                                              <td class="px-2 pt-1 pb-1"><span
-                                                     class="text-dark">{{$order->customer !=null? $maskEmail($order->customer['email']): translate('email_not_found')}}</span>
-                                             </td>
-                                         </tr>
-                                         <tr>
-                                             <td class="px-2 pt-1 pb-1">{{ translate('Phone') }}</td>
-                                             <td class="pt-1 pb-1">:</td>
-                                             <td class="px-2 pt-1 pb-1"><span
-                                                     class="text-dark">{{$order->customer !=null? $maskPhone($order->customer['phone']): translate('phone_not_found')}}</span>
+                                                     class="text-info fw-semibold">{{ translate('Protected_Recipient') }}</span>
                                              </td>
                                          </tr>
                                      @endif

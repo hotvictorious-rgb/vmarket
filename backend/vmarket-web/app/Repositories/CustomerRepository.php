@@ -173,19 +173,29 @@ class CustomerRepository implements CustomerRepositoryInterface
     public function getCustomerNameList(object $request, int|string $dataLimit = DEFAULT_DATA_LIMIT): object
     {
         $searchValue = explode(' ', $request['searchValue']);
+        $isVendor = auth('seller')->check();
         return $this->user->where('id', '!=', 0)
-            ->when($searchValue, function ($query) use ($searchValue) {
-                $query->where(function ($query) use ($searchValue) {
+            ->when($searchValue, function ($query) use ($searchValue, $isVendor) {
+                $query->where(function ($query) use ($searchValue, $isVendor) {
                     foreach ($searchValue as $value) {
                         $query->orWhere('f_name', 'like', "%$value%")
-                            ->orWhere('l_name', 'like', "%$value%")
-                            ->orWhere('phone', 'like', "%$value%");
+                            ->orWhere('l_name', 'like', "%$value%");
+                        // [AI] Zero-Trust Vendor Privacy Boundary: Merchants cannot search by customer phone number
+                        if (!$isVendor) {
+                            $query->orWhere('phone', 'like', "%$value%");
+                        }
                     }
                 });
             })
             ->when($dataLimit != "all", function ($query) use ($dataLimit) {
                 return $query->limit($dataLimit);
-            })->get([DB::raw('id, IF(id <> "0", CONCAT(f_name, " ", COALESCE(l_name, ""), " (", phone ,")"), CONCAT(f_name, " ", COALESCE(l_name, ""))) as text')]);
+            })->get([
+                DB::raw(
+                    $isVendor
+                        ? 'id, CONCAT(f_name, " ", COALESCE(l_name, "")) as text'
+                        : 'id, IF(id <> "0", CONCAT(f_name, " ", COALESCE(l_name, ""), " (", phone ,")"), CONCAT(f_name, " ", COALESCE(l_name, ""))) as text'
+                )
+            ]);
     }
 
     public function deleteAuthAccessTokens(string|int $id): bool

@@ -240,7 +240,7 @@
                     </div>
                 </div>
                 <div class="p-12 p-sm-20 bg-section rounded mb-3 mb-sm-4 overflow-wrap-anywhere">
-                    <label for="" class="title-color">{{ translate('Payment_Status') }}</label>
+                    <label for="" class="title-color">{{ translate('Customer') }}</label>
                     <input type="hidden" id='customer_id' name="customer_id"
                             value="{{request('customer_id') ? request('customer_id') : 'all'}}">
                     <select
@@ -249,7 +249,7 @@
                             @if($customer == 'all')
                                 {{translate('All_Customer')}}
                             @else
-                                {{$customer['name'] ?? $customer['f_name'].' '.$customer['l_name'].' '.'('.$customer['phone'].')'}}
+                                {{$customer['name'] ?? $customer['f_name'].' '.$customer['l_name']}}
                             @endif"
                             class="js-data-example-ajax form-control form-ellipsis"
                     >

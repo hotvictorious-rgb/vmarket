@@ -22,13 +22,6 @@ class _CustomerContactWidgetState extends State<CustomerContactWidget> {
     if (widget.orderModel == null) return const SizedBox();
 
     final bool isGuest = widget.orderModel?.isGuest ?? false;
-    final String phone = isGuest
-        ? (widget.orderModel?.shippingAddressData?.phone ?? widget.orderModel?.billingAddressData?.phone ?? '')
-        : (widget.orderModel?.customer?.phone ?? '');
-
-    final String email = isGuest
-        ? (widget.orderModel?.shippingAddressData?.email ?? widget.orderModel?.billingAddressData?.email ?? '')
-        : (widget.orderModel?.customer?.email ?? '');
 
     final String customerName = isGuest
         ? (widget.orderModel?.shippingAddressData?.contactPersonName ?? widget.orderModel?.billingAddressData?.contactPersonName ?? 'Guest Customer')

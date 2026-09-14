@@ -173,7 +173,12 @@ class TransactionReportController extends Controller
         $date_type = $request['date_type'] ?? 'this_year';
         $query_param = ['search' => $search, 'status' => $status, 'customer_id' => $customer_id, 'date_type' => $date_type, 'from' => $from, 'to' => $to];
 
-        $customers = User::whereNotIn('id', [0])->get();
+        // [AI] Zero-Trust Vendor Privacy Boundary: Restrict customer filter to customers who ordered from this merchant,
+        // and select only minimal non-PII identity (id, f_name, l_name) without dumping entire User records.
+        $vendorId = auth('seller')->id();
+        $customers = User::whereHas('orders', function ($query) use ($vendorId) {
+            $query->where('seller_id', $vendorId)->where('seller_is', 'seller');
+        })->select('id', 'f_name', 'l_name')->get();
 
         $transactions = self::order_transaction_table_data_filter($request);
         $transactions = $transactions->latest('created_at')->paginate(Helpers::pagination_limit())->appends($query_param);
@@ -377,8 +382,8 @@ class TransactionReportController extends Controller
         $seller_info = Shop::where('seller_id', auth('seller')->id())->first()->name;
         $customer_info = 'all';
         if ($customer_id != 'all') {
-            $customer = User::select()->find($customer_id);
-            $customer_info = $customer->f_name . ' ' . $customer->l_name;
+            $customer = User::select('id', 'f_name', 'l_name')->find($customer_id);
+            $customer_info = $customer ? ($customer->f_name . ' ' . $customer->l_name) : 'all';
         }
 
         $transactions = self::order_transaction_table_data_filter($request)->latest('created_at')->get();

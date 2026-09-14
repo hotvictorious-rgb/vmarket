@@ -765,49 +765,9 @@ class OrderController extends BaseController
 
     public function updateAddress(Request $request): RedirectResponse
     {
-        $vendorId = auth('seller')->id();
-        // [AI] Ownership Guard: Vendor can only update address for their own orders
-        $order = $this->orderRepo->getFirstWhere(params: ['id' => $request['order_id'], 'seller_id' => $vendorId, 'seller_is' => 'seller'], relations: ['deliveryMan']);
-        if (!$order) {
-            ToastMagic::error(translate('unauthorized_access'));
-            return back();
-        }
-        $shippingAddressData = json_decode(json_encode($order['shipping_address_data']), true) ?? [];
-        $billingAddressData = json_decode(json_encode($order['billing_address_data']), true) ?? [];
-        $commonAddressData = [
-            'contact_person_name' => $request['name'],
-            'phone' => $request['phone_number'],
-            'country' => $request['country'],
-            'city' => $request['city'],
-            'zip' => $request['zip'],
-            'address' => $request['address'],
-            'latitude' => $request['latitude'],
-            'longitude' => $request['longitude'],
-            'updated_at' => now(),
-        ];
-
-        if ($request['address_type'] == 'shipping') {
-            $shippingAddressData = array_merge($shippingAddressData, $commonAddressData);
-        } elseif ($request['address_type'] == 'billing') {
-            $billingAddressData = array_merge($billingAddressData, $commonAddressData);
-        }
-
-        $updateData = [];
-        if ($request['address_type'] == 'shipping') {
-            $updateData['shipping_address_data'] = json_encode($shippingAddressData);
-        } elseif ($request['address_type'] == 'billing') {
-            $updateData['billing_address_data'] = json_encode($billingAddressData);
-        }
-
-        if (!empty($updateData)) {
-            $this->orderRepo->update(id: $request['order_id'], data: $updateData);
-        }
-
-        if ($order->delivery_type == 'self_delivery' && $order->delivery_man_id) {
-            OrderStatusEvent::dispatch('order_edit_message', 'delivery_man', $order);
-        }
-
-        ToastMagic::success(translate('successfully_updated'));
+        // [AI] Zero-Trust Vendor Privacy Boundary: Customer delivery addresses are managed exclusively by Victorious Delivery.
+        // Merchants are strictly forbidden from modifying customer delivery addresses.
+        ToastMagic::error(translate('Customer delivery addresses are managed exclusively by Victorious Delivery. Merchants cannot modify customer addresses.'));
         return back();
     }
 
