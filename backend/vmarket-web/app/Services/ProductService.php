@@ -1257,9 +1257,17 @@ class ProductService
             return false;
         }
 
-        $product->marketplace_confirmed_at = now();
+        $confirmationDays = function_exists('getMarketplaceConfirmationDays') ? getMarketplaceConfirmationDays() : 7;
+        $now = now();
+
+        // [AI] Write both canonical lifecycle fields AND legacy backcompat field
+        $product->marketplace_confirmed_at  = $now;                              // legacy backcompat
+        $product->availability_confirmed_at = $now;                              // canonical
+        $product->availability_expires_at   = $now->copy()->addDays($confirmationDays); // runtime gate
         $product->marketplace_listing_status = 'listed';
-        $product->deactivation_reason = null;
+        $product->marketplace_availability   = 'in_stock';
+        $product->current_stock              = 1;                                // legacy mirror
+        $product->deactivation_reason        = null;
         $product->save();
 
         cacheRemoveByType(type: 'products');
@@ -1268,7 +1276,12 @@ class ProductService
 
     /**
      * [AI] Dedicated authorized transition: Toggle marketplace availability (in_stock / out_of_stock).
-     * Strictly preserves internal inventory current_stock completely untouched.
+     *
+     * in_stock: Renews the lifecycle fields (availability_confirmed_at, availability_expires_at)
+     *           and sets current_stock = 1 (legacy mirror only — never used for purchase authority).
+     * out_of_stock: Clears availability_expires_at (instant runtime block) and sets current_stock = 0.
+     *
+     * Strictly: internal POS or inventory current_stock management is NOT performed here.
      */
     public function updateMarketplaceAvailability(Product $product, int $sellerId, string $availability): bool
     {
@@ -1280,7 +1293,23 @@ class ProductService
             return false;
         }
 
+        $now = now();
         $product->marketplace_availability = $availability;
+
+        if ($availability === 'in_stock') {
+            $confirmationDays = function_exists('getMarketplaceConfirmationDays') ? getMarketplaceConfirmationDays() : 7;
+            // [AI] Renew both canonical lifecycle fields and legacy backcompat field
+            $product->marketplace_confirmed_at  = $now;                              // legacy backcompat
+            $product->availability_confirmed_at = $now;                              // canonical
+            $product->availability_expires_at   = $now->copy()->addDays($confirmationDays); // runtime gate
+            $product->current_stock             = 1;                                 // legacy mirror (never 999)
+        } else {
+            // [AI] out_of_stock: clear expiry so runtime gate immediately rejects; set legacy mirror to 0
+            $product->availability_confirmed_at = $now;
+            $product->availability_expires_at   = null;
+            $product->current_stock             = 0;                                 // legacy mirror
+        }
+
         $product->save();
 
         cacheRemoveByType(type: 'products');
@@ -1317,11 +1346,19 @@ class ProductService
             ->where('user_id', $sellerId)
             ->get();
 
+        $confirmationDays = function_exists('getMarketplaceConfirmationDays') ? getMarketplaceConfirmationDays() : 7;
+        $now = now();
         $count = 0;
+
         foreach ($products as $product) {
-            $product->marketplace_confirmed_at = now();
+            // [AI] Renew all lifecycle fields (canonical + legacy backcompat + current_stock mirror)
+            $product->marketplace_confirmed_at  = $now;                              // legacy backcompat
+            $product->availability_confirmed_at = $now;                              // canonical
+            $product->availability_expires_at   = $now->copy()->addDays($confirmationDays); // runtime gate
             $product->marketplace_listing_status = 'listed';
-            $product->deactivation_reason = null;
+            $product->marketplace_availability   = 'in_stock';
+            $product->current_stock              = 1;                                // legacy mirror
+            $product->deactivation_reason        = null;
             $product->save();
             $count++;
         }

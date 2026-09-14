@@ -775,259 +775,115 @@ class ProductController extends Controller
 
         $validator = Validator::make($request->all(), [
             'name' => 'required',
-            'category_id' => 'required',
-            'product_type' => 'required',
-            'unit' => 'required_if:product_type,==,physical',
+            'category_id' => 'required|exists:categories,id',
+            'unit_price' => 'required|numeric|gt:0',
             'images' => 'required',
-            'thumbnail' => 'required',
-            'discount_type' => 'required|in:percent,flat',
-            'lang' => 'required',
-            'unit_price' => 'required|min:1',
-            'discount' => 'required|gt:-1',
-            'shipping_cost' => 'required_if:product_type,==,physical|gt:-1',
-            'code' => 'required|min:6|max:20|regex:/^[a-zA-Z0-9]+$/|unique:products',
-            'minimum_order_qty' => 'required|numeric|min:1',
+            'code' => 'nullable|string|max:50',
         ], [
             'name.required' => translate('Product name is required!'),
-            'unit.required_if' => translate('Unit is required!'),
             'category_id.required' => translate('category is required!'),
-            'shipping_cost.required_if' => translate('Shipping Cost is required!'),
+            'category_id.exists' => translate('Selected category does not exist!'),
+            'unit_price.required' => translate('Product price is required!'),
+            'unit_price.gt' => translate('Product price must be greater than zero!'),
             'images.required' => translate('Product images is required!'),
-            'image.required' => translate('Product thumbnail is required!'),
-            'code.required' => translate('Code is required!'),
-            'minimum_order_qty.required' => translate('The minimum order quantity is required!'),
-            'minimum_order_qty.min' => translate('The minimum order quantity must be positive!'),
         ]);
 
-        $taxData = $this->getTaxSystemType();
-        $productWiseTax = $taxData['productWiseTax'] && !$taxData['is_included'];
-
-        if ($productWiseTax && (!isset($request['tax_ids']) || empty(json_decode($request['tax_ids'], true)))) {
+        $requestImages = is_array($request['images']) ? $request['images'] : json_decode($request['images'], true);
+        if (!is_array($requestImages) || count($requestImages) < 1) {
             $validator->after(function ($validator) {
-                $validator->errors()->add('tax', translate('Please_add_your_product_tax') . '!');
+                $validator->errors()->add('images', translate('Minimum 1 product image is required!'));
             });
-        }
-        $disallowedExtensions = getDisallowedExtensionsListArray();
-        if ($request['preview_file']) {
-            $extension = '';
-            if (is_string($request['preview_file'])) {
-                $extension = strtolower(pathinfo($request['preview_file'], PATHINFO_EXTENSION));
-            } elseif ($request['preview_file'] instanceof \Illuminate\Http\UploadedFile) {
-                $extension = strtolower($request['preview_file']->getClientOriginalExtension());
-            }
-            if (in_array($extension, $disallowedExtensions) &&  env('APP_MODE', 'dev') == 'demo') {
-                $validator->after(function ($validator) {
-                    $validator->errors()->add('files', translate('Uploading_ZIP_files_is_currently_unavailable_in_demo_mode') . '!');
-                });
-            }elseif (in_array($extension, $disallowedExtensions)) {
-                $validator->after(function ($validator) {
-                    $validator->errors()->add('files', translate('The_uploaded_file_type_is_not_supported') . '!');
-                });
-            }
-        }
-        if ($request['product_type'] == 'digital') {
-            $digitalFileOptions = self::getDigitalVariationOptions(request: $request);
-            $digitalFileCombinations = self::getDigitalVariationCombinations(arrays: $digitalFileOptions);
-            foreach ($digitalFileCombinations as $combinationKey => $combination) {
-                foreach ($combination as $item) {
-                    $string = $combinationKey . '-' . str_replace(' ', '', $item);
-                    $uniqueKey = strtolower(str_replace('-', '_', $string));
-                    $fileItem = $request->file('digital_files_' . $uniqueKey);
-
-                    if ($fileItem) {
-                        $extension = '';
-                        if (is_string($fileItem)) {
-                            $extension = strtolower(pathinfo($fileItem, PATHINFO_EXTENSION));
-                        } elseif ($fileItem instanceof \Illuminate\Http\UploadedFile) {
-                            $extension = strtolower($fileItem->getClientOriginalExtension());
-                        }
-                        if (in_array($extension, $disallowedExtensions) &&  env('APP_MODE', 'dev') == 'demo') {
-                            $validator->after(function ($validator) {
-                                $validator->errors()->add('digital_files', translate('Uploading_ZIP_files_is_currently_unavailable_in_demo_mode') . '!');
-                            });
-                        } elseif (in_array($extension, $disallowedExtensions)) {
-                            $validator->after(function ($validator) {
-                                $validator->errors()->add('digital_files', translate('The_uploaded_file_type_is_not_supported'). '!');
-                            });
-                        }
-                    }
-                }
-            }
-        }
-        $discount = $request['discount_type'] == 'percent' ? (($request['unit_price'] / 100) * $request['discount']) : $request['discount'];
-
-        if ($request['unit_price'] <= $discount) {
+        } elseif (count($requestImages) > 5) {
             $validator->after(function ($validator) {
-                $validator->errors()->add('unit_price', translate('Discount can not be more or equal to the price!'));
+                $validator->errors()->add('images', translate('Maximum 5 product images are allowed!'));
             });
-        }
-
-        $category = [];
-        if ($request['category_id'] != null) {
-            $category[] = ['id' => $request['category_id'], 'position' => 1];
-        }
-        if ($request['sub_category_id'] != null) {
-            $category[] = ['id' => $request['sub_category_id'], 'position' => 2];
-        }
-        if ($request['sub_sub_category_id'] != null) {
-            $category[] = ['id' => $request['sub_sub_category_id'], 'position' => 3];
-        }
-
-        $requestLanguage = json_decode($request['lang'], true);
-        $requestName = json_decode($request['name'], true);
-        $requestDescription = json_decode($request['description'], true);
-        $requestColors = json_decode($request['colors'], true);
-        $requestImages = json_decode($request['images'], true);
-        $requestColorImages = json_decode($request['color_image'], true);
-        $requestTags = json_decode($request['tags'], true);
-        $requestChoiceArray = json_decode($request['choice'], true);
-        $requestChoiceNo = json_decode($request['choice_no'], true);
-        $requestChoiceAttributes = json_decode($request['choice_attributes'], true);
-        $storage = config('filesystems.disks.default') ?? 'public';
-        $productArray = [
-            'user_id' => $seller->id,
-            'shop_id' => Shop::where('seller_id', $seller->id)->first()->id ?? null,
-            'added_by' => "seller",
-            'name' => $requestName[array_search(Helpers::default_lang(), $requestLanguage)],
-            'slug' => Str::slug($requestName[array_search(Helpers::default_lang(), $requestLanguage)], '-') . '-' . Str::random(6),
-            'category_ids' => json_encode($category),
-            'category_id' => $request['category_id'],
-            'sub_category_id' => $request['sub_category_id'],
-            'sub_sub_category_id' => $request['sub_sub_category_id'],
-            'brand_id' => $request['product_type'] == "physical" ? ( $request['brand_id'] ?? null) : null,
-            'unit' => $request['product_type'] == 'physical' ? $request['unit'] : null,
-            'product_type' => $request['product_type'],
-            'digital_product_type' => $request['product_type'] == 'digital' ? $request['digital_product_type'] : null,
-            'code' => $request['code'],
-            'minimum_order_qty' => $request['minimum_order_qty'],
-            'details' => $requestDescription[array_search(Helpers::default_lang(), $requestLanguage)],
-            'images' => json_encode($requestImages),
-            'color_image' => json_encode($requestColorImages),
-            'thumbnail' => $request['thumbnail'],
-            'thumbnail_storage_type' => $request['thumbnail'] ? $storage : null,
-        ];
-
-        if ($request['product_type'] == 'digital' && $request['digital_product_type'] == 'ready_product' && $request['digital_file_ready']) {
-            $digitalFileExtension = '';
-            if (is_string($request['digital_file_ready'])) {
-                $digitalFileExtension = strtolower(pathinfo($request['digital_file_ready'], PATHINFO_EXTENSION));
-            } elseif ($request['digital_file_ready'] instanceof \Illuminate\Http\UploadedFile) {
-                $digitalFileExtension = strtolower($request['digital_file_ready']->getClientOriginalExtension());
-            }
-            if (in_array($digitalFileExtension, $disallowedExtensions) && env('APP_MODE', 'dev') == 'demo') {
-                $validator->after(function ($validator) {
-                    $validator->errors()->add('files', translate('Uploading_ZIP_files_is_currently_unavailable_in_demo_mode') . '!');
-                });
-            }
-            if(in_array($digitalFileExtension, $disallowedExtensions)) {
-                $validator->after(function ($validator) {
-                    $validator->errors()->add('files', translate('The_uploaded_file_type_is_not_supported') . '!');
-                });
-            }
-            $productArray['digital_file_ready'] = $request['digital_file_ready'];
-            $productArray['digital_file_ready_storage_type'] = $storage;
-        }
-
-        if ($request->has('colors_active') && $request->has('colors') && count($requestColors) > 0) {
-            $productArray['colors'] = $request['product_type'] == 'physical' ? json_encode($requestColors) : json_encode([]);
-        } else {
-            $colors = [];
-            $productArray['colors'] = $request['product_type'] == 'physical' ? json_encode($colors) : json_encode([]);
-        }
-
-        $choiceOptions = [];
-        $requestChoiceNoIndex = 0;
-        if ($request->has('choice')) {
-            foreach ($requestChoiceNo as $key => $no) {
-                $str = 'choice_options_' . $no;
-                $item['name'] = 'choice_' . $no;
-                $item['title'] = $requestChoiceArray[$requestChoiceNoIndex];
-                $item['options'] = $request[$str];
-                $choiceOptions[] = $item;
-                $requestChoiceNoIndex++;
-            }
-        }
-        $productArray['choice_options'] = $request['product_type'] == 'physical' ? json_encode($choiceOptions) : json_encode([]);
-
-        //combinations start
-        $options = [];
-        if ($request->has('colors_active') && $request->has('colors') && count($requestColors) > 0) {
-            $colors_active = 1;
-            $options[] = $requestColors;
-        }
-        if ($request->has('choice_no')) {
-            foreach ($requestChoiceNo as $key => $no) {
-                $name = 'choice_options_' . $no;
-                $options[] = $request[$name];
-            }
-        }
-
-        //Generates the combinations of customer choice options
-        $combinations = Helpers::combinations($options);
-        $variations = [];
-        $stock_count = 0;
-        if (count($combinations[0]) > 0) {
-
-            foreach ($combinations as $combination) {
-                $str = '';
-                foreach ($combination as $k => $item) {
-                    if ($k > 0) {
-                        $str .= '-' . str_replace(' ', '', $item);
-                    } else {
-                        if ($request->has('colors_active') && $request->has('colors') && count($requestColors) > 0) {
-                            $color_name = Color::where('code', $item)->first()->name ?? '';
-                            $str .= $color_name;
-                        } else {
-                            $str .= str_replace(' ', '', $item);
-                        }
-                    }
-                }
-                $item = [];
-                $item['type'] = $str;
-                $item['price'] = Convert::usd(abs($request['price_' . str_replace('.', '_', $str)]));
-                $item['sku'] = $request['sku_' . str_replace('.', '_', $str)];
-                $item['qty'] = $request['qty_' . str_replace('.', '_', $str)];
-
-                $variations[] = $item;
-                $stock_count += $item['qty'];
-            }
-        } else {
-            $stock_count = (int)$request['current_stock'];
         }
 
         if ($validator->errors()->count() > 0) {
             return response()->json(['errors' => Helpers::validationErrorProcessor($validator)], 403);
         }
 
-        $digitalFileOptions = self::getDigitalVariationOptions(request: $request);
-        $digitalFileCombinations = self::getDigitalVariationCombinations(arrays: $digitalFileOptions);
-
-        $previewFile = '';
-        if ($request['product_type'] == 'digital' && $request->has('preview_file')) {
-            $previewFile = $this->fileUpload(dir: 'product/preview/', format: $request['preview_file']->getClientOriginalExtension(), file: $request['preview_file']);
+        $category = [];
+        if ($request['category_id'] != null) {
+            $category[] = ['id' => $request['category_id'], 'position' => 1];
+        }
+        if (!empty($request['sub_category_id'])) {
+            $category[] = ['id' => $request['sub_category_id'], 'position' => 2];
+        }
+        if (!empty($request['sub_sub_category_id'])) {
+            $category[] = ['id' => $request['sub_sub_category_id'], 'position' => 3];
         }
 
-        //combinations end
-        $productArray += [
-            'variation' => $request['product_type'] == 'physical' ? json_encode($variations) : json_encode([]),
+        $requestLanguage = is_string($request['lang']) ? json_decode($request['lang'], true) : ($request['lang'] ?? [Helpers::default_lang()]);
+        $requestName = is_string($request['name']) && str_starts_with(trim($request['name']), '[') ? json_decode($request['name'], true) : $request['name'];
+        $requestDescription = is_string($request['description'] ?? $request['details']) && str_starts_with(trim($request['description'] ?? $request['details']), '[') ? json_decode($request['description'] ?? $request['details'], true) : ($request['description'] ?? $request['details'] ?? '');
+        $requestTags = is_string($request['tags']) ? json_decode($request['tags'], true) : ($request['tags'] ?? []);
+        $storage = config('filesystems.disks.default') ?? 'public';
+
+        $productName = is_array($requestName) ? ($requestName[array_search(Helpers::default_lang(), $requestLanguage ?? [])] ?? ($requestName[0] ?? '')) : $requestName;
+        $productDesc = is_array($requestDescription) ? ($requestDescription[array_search(Helpers::default_lang(), $requestLanguage ?? [])] ?? ($requestDescription[0] ?? '')) : $requestDescription;
+
+        // [AI] Primary Thumbnail & Canonical SKU Auto-generation
+        $firstImage = is_array($requestImages) && count($requestImages) > 0 ? (is_array($requestImages[0]) ? ($requestImages[0]['image_name'] ?? '') : $requestImages[0]) : '';
+        $thumbnail = !empty($request['thumbnail']) ? $request['thumbnail'] : $firstImage;
+        $productCode = !empty($request['code']) ? $request['code'] : ('VM-' . strtoupper(Str::random(3)) . '-' . rand(1000, 9999));
+
+        // [AI] Marketplace Availability Control: vendor answers "Still available?"
+        // Accepts: is_available=true/1/yes OR marketplace_availability='in_stock'/'out_of_stock'
+        $isAvailable = true; // default in_stock for new listings
+        if ($request->has('marketplace_availability')) {
+            $isAvailable = $request['marketplace_availability'] === 'in_stock';
+        } elseif ($request->has('is_available')) {
+            $rawAvail = $request['is_available'];
+            $isAvailable = in_array($rawAvail, [true, 1, '1', 'true', 'yes', 'in_stock'], true);
+        }
+
+        $confirmationDays = function_exists('getMarketplaceConfirmationDays') ? getMarketplaceConfirmationDays() : 7;
+        $now = now();
+
+        $productArray = [
+            'user_id' => $seller->id,
+            'shop_id' => Shop::where('seller_id', $seller->id)->first()->id ?? null,
+            'added_by' => "seller",
+            'name' => $productName,
+            'slug' => Str::slug($productName, '-') . '-' . Str::random(6),
+            'category_ids' => json_encode($category),
+            'category_id' => $request['category_id'],
+            'sub_category_id' => $request['sub_category_id'] ?? null,
+            'sub_sub_category_id' => $request['sub_sub_category_id'] ?? null,
+            'brand_id' => $request['brand_id'] ?? null,
+            'unit' => $request['unit'] ?? 'pc',
+            'product_type' => 'physical',
+            'code' => $productCode,
+            'minimum_order_qty' => 1,
+            'details' => $productDesc,
+            'images' => json_encode($requestImages),
+            'color_image' => json_encode([]),
+            'thumbnail' => $thumbnail,
+            'thumbnail_storage_type' => $thumbnail ? $storage : null,
+            'colors' => json_encode([]),
+            'choice_options' => json_encode([]),
+            'attributes' => json_encode([]),
+            'variation' => json_encode([]),
             'unit_price' => Convert::usd($request['unit_price']),
             'purchase_price' => 0,
-            'discount' => $request['discount_type'] == 'flat' ? Convert::usd($request['discount']) : $request['discount'],
-            'discount_type' => $request['discount_type'],
-
-            'attributes' => $request['product_type'] == 'physical' ? json_encode($requestChoiceAttributes) : json_encode([]),
-            'current_stock' => $request['product_type'] == 'physical' ? abs($stock_count) : 999999999,
-
-            'video_provider' => 'youtube',
-            'video_url' => $request['video_url'],
+            'discount' => 0,
+            'discount_type' => 'flat',
+            // [AI] Marketplace Availability Control: canonical lifecycle fields
+            'marketplace_availability'  => $isAvailable ? 'in_stock' : 'out_of_stock',
+            'availability_confirmed_at' => $now,                                                      // canonical
+            'availability_expires_at'   => $isAvailable ? $now->copy()->addDays($confirmationDays) : null, // runtime gate
+            'marketplace_confirmed_at'  => $now,                                                      // legacy backcompat
+            'marketplace_listing_status' => 'listed',
+            'current_stock' => $isAvailable ? 1 : 0,                                                 // legacy mirror (never 999)
             'request_status' => getWebConfig(name: 'new_product_approval') == 1 ? 0 : 1,
-            'status' => 0,
-            'shipping_cost' => $request['product_type'] == 'physical' ? Convert::usd($request['shipping_cost']) : 0,
-            'multiply_qty' => ($request['product_type'] == 'physical') ? ($request['multiplyQTY'] == 1 ? 1 : 0) : 0,
-            'digital_product_file_types' => $request->has('extensions_type') ? json_decode($request['extensions_type'], true) : [],
-            'digital_product_extensions' => $digitalFileCombinations,
-            'preview_file' => $previewFile,
-            'preview_file_storage_type' => $request->has('preview_file') ? $storage : null,
+            'status' => $request->has('status') ? (int)$request['status'] : 1,
+            'shipping_cost' => 0,
+            'multiply_qty' => 0,
+            'digital_product_file_types' => [],
+            'digital_product_extensions' => [],
+            'preview_file' => '',
+            'preview_file_storage_type' => null,
         ];
 
         $product = Product::create($productArray);
@@ -1198,334 +1054,87 @@ class ProductController extends Controller
         $oldProductData = $product;
         $validator = Validator::make($request->all(), [
             'name' => 'required',
-            'category_id' => 'required',
-            'product_type' => 'required',
-            'unit' => 'required_if:product_type,==,physical',
-            'discount_type' => 'required|in:percent,flat',
-            'lang' => 'required',
-            'unit_price' => 'required|min:1',
-            'discount' => 'required|gt:-1',
-            'shipping_cost' => 'required_if:product_type,==,physical|gt:-1',
-            'minimum_order_qty' => 'required|numeric|min:1',
-            'code' => 'required|min:6|max:20|regex:/^[a-zA-Z0-9]+$/|unique:products,code,' . $product->id,
+            'category_id' => 'required|exists:categories,id',
+            'unit_price' => 'required|numeric|gt:0',
+            'code' => 'nullable|string|max:50|unique:products,code,' . $product->id,
         ], [
             'name.required' => 'Product name is required!',
-            'category_id.required' => 'category  is required!',
-            'unit.required_if' => 'Unit is required!',
-            'code.min' => 'The code must be positive!',
-            'code.digits_between' => 'The code must be minimum 6 digits!',
-            'code.required' => 'Product code sku is required!',
-            'minimum_order_qty.required' => 'The minimum order quantity is required!',
-            'minimum_order_qty.min' => 'The minimum order quantity must be positive!',
+            'category_id.required' => 'category is required!',
+            'category_id.exists' => 'Selected category does not exist!',
+            'unit_price.required' => 'Product price is required!',
+            'unit_price.gt' => 'Product price must be greater than zero!',
         ]);
 
-        $taxData = $this->getTaxSystemType();
-        $productWiseTax = $taxData['productWiseTax'] && !$taxData['is_included'];
-        if ($productWiseTax && (!isset($request['tax_ids']) || empty(json_decode($request['tax_ids'], true)))) {
-            $validator->after(function ($validator) {
-                $validator->errors()->add('tax', translate('Please_add_your_product_tax') . '!');
-            });
-        }
-
-        $disallowedExtensions = getDisallowedExtensionsListArray();
-        if ($request['preview_file']) {
-            $extension = '';
-            if (is_string($request['preview_file'])) {
-                $extension = strtolower(pathinfo($request['preview_file'], PATHINFO_EXTENSION));
-            } elseif ($request['preview_file'] instanceof \Illuminate\Http\UploadedFile) {
-                $extension = strtolower($request['preview_file']->getClientOriginalExtension());
-            }
-
-            if (in_array($extension, $disallowedExtensions) && env('APP_MODE', 'dev') == 'demo') {
+        if ($request->has('images')) {
+            $checkImages = is_array($request['images']) ? $request['images'] : json_decode($request['images'], true);
+            if (is_array($checkImages) && count($checkImages) > 5) {
                 $validator->after(function ($validator) {
-                    $validator->errors()->add('files', translate('Uploading_ZIP_files_is_currently_unavailable_in_demo_mode') . '!');
+                    $validator->errors()->add('images', translate('Maximum 5 product images are allowed!'));
                 });
             }
-            if (in_array($extension, $disallowedExtensions)) {
-                $validator->after(function ($validator) {
-                    $validator->errors()->add('files', translate('The_uploaded_file_type_is_not_supported') . '!');
-                });
-            }
-        }
-
-        // Digital files validation
-        if ($request['product_type'] == 'digital') {
-            $digitalFileOptions = self::getDigitalVariationOptions(request: $request);
-            $digitalFileCombinations = self::getDigitalVariationCombinations(arrays: $digitalFileOptions);
-            foreach ($digitalFileCombinations as $combinationKey => $combination) {
-                foreach ($combination as $item) {
-                    $string = $combinationKey . '-' . str_replace(' ', '', $item);
-                    $uniqueKey = strtolower(str_replace('-', '_', $string));
-                    $fileItem = $request->file('digital_files_' . $uniqueKey);
-                    if ($fileItem) {
-                        $extension = '';
-                        if (is_string($fileItem)) {
-                            $extension = strtolower(pathinfo($fileItem, PATHINFO_EXTENSION));
-                        } elseif ($fileItem instanceof \Illuminate\Http\UploadedFile) {
-                            $extension = strtolower($fileItem->getClientOriginalExtension());
-                        }
-                        if (in_array($extension, $disallowedExtensions) && env('APP_MODE', 'dev') == 'demo') {
-                            $validator->after(function ($validator) {
-                                $validator->errors()->add('digital_files', translate('Uploading_ZIP_files_is_currently_unavailable_in_demo_mode') . '!');
-                            });
-                        } elseif (in_array($extension, $disallowedExtensions)) {
-                            $validator->after(function ($validator) {
-                                $validator->errors()->add('digital_files', translate('The_uploaded_file_type_is_not_supported') . '!');
-                            });
-                        }
-                    }
-                }
-            }
-        }
-
-        if ($request['discount_type'] == 'percent') {
-            $discount = ($request['unit_price'] / 100) * $request['discount'];
-        } else {
-            $discount = $request['discount'];
-        }
-
-        if ($request['unit_price'] <= $discount) {
-            $validator->after(function ($validator) {
-                $validator->errors()->add(
-                    'unit_price',
-                    translate('Discount can not be more or equal to the price!')
-                );
-            });
-        }
-
-        $requestLanguage = json_decode($request['lang'], true);
-        $requestName = json_decode($request['name'], true);
-        $requestDescription = json_decode($request['description'], true);
-        $requestColors = json_decode($request['colors'], true);
-        $requestImages = json_decode($request['images'], true);
-        $requestColorImages = json_decode($request['color_image'], true);
-        $requestTags = json_decode($request['tags'], true);
-        $requestChoiceArray = json_decode($request['choice'], true);
-        $requestChoiceNo = json_decode($request['choice_no'], true);
-        $requestChoiceAttributes = json_decode($request['choice_attributes'], true);
-
-        $modifiedColors = [];
-        foreach ($requestColors as $color) {
-            $modifiedColors[] = str_replace('#', '', $color);
-        }
-
-        $modifiedColorImages = [];
-        $modifiedColorImagePath = [];
-        foreach ($requestColorImages as $colorImage) {
-            if ($colorImage['color'] !== null && !in_array($colorImage['color'], $modifiedColors)) {
-                $colorImage['color'] = null;
-            }
-            $modifiedColorImages[] = $colorImage;
-            $modifiedColorImagePath[] = $colorImage['image_name'];
-        }
-
-        foreach ($requestImages as $requestImage) {
-            if ($requestImage['image_name'] !== null && !in_array($requestImage['image_name'], $modifiedColorImagePath)) {
-                $modifiedColorImages[] = [
-                    'color' => null,
-                    'image_name' => $requestImage['image_name'],
-                    'storage' => $requestImage['storage'] ?? 'public',
-                ];
-            }
-        }
-
-        $allImagesData = [];
-        foreach ($modifiedColorImages as $image) {
-            $allImagesData[] = [
-                'image_name' => $image['image_name'],
-                'storage' => $image['storage'],
-            ];
-        }
-
-        $productArray = [
-            'user_id' => $seller->id,
-            'added_by' => 'seller',
-            'name' => $requestName[array_search(Helpers::default_lang(), $requestLanguage)]
-        ];
-        $category = [];
-
-        if ($request->category_id != null) {
-            $category[] = [
-                'id' => $request['category_id'],
-                'position' => 1,
-            ];
-        }
-        if ($request->sub_category_id != null) {
-            $category[] = [
-                'id' => $request->sub_category_id,
-                'position' => 2,
-            ];
-        }
-        if ($request->sub_sub_category_id != null) {
-            $category[] = [
-                'id' => $request->sub_sub_category_id,
-                'position' => 3,
-            ];
-        }
-
-        $productArray += [
-            'category_ids' => json_encode($category),
-            'category_id' => $request['category_id'],
-            'sub_category_id' => $request['sub_category_id'],
-            'sub_sub_category_id' => $request['sub_sub_category_id'],
-            'brand_id' => $request['product_type'] == "physical" ? ($request['brand_id'] ?? null) : null,
-            'unit' => $request['product_type'] == 'physical' ? $request['unit'] : null,
-            'product_type' => $request['product_type'],
-            'digital_product_type' => $request['product_type'] == 'digital' ? $request['digital_product_type'] : null,
-            'code' => $request->code,
-            'minimum_order_qty' => $request['minimum_order_qty'],
-            'details' => $requestDescription[array_search(Helpers::default_lang(), $requestLanguage)],
-            'images' => json_encode($allImagesData),
-            'color_image' => json_encode($modifiedColorImages),
-            'thumbnail' => $request->thumbnail,
-            'thumbnail_storage_type' => $product->thumbnail == $request->thumbnail ? $product->thumbnail_storage_type : $storage,
-        ];
-
-        if ($request->product_type == 'digital') {
-            if ($request->digital_product_type == 'ready_product' && $request->digital_file_ready) {
-                $digitalFileExtension = '';
-                if (is_string($request['digital_file_ready'])) {
-                    $digitalFileExtension = strtolower(pathinfo($request['digital_file_ready'], PATHINFO_EXTENSION));
-                } elseif ($request['digital_file_ready'] instanceof \Illuminate\Http\UploadedFile) {
-                    $digitalFileExtension = strtolower($request['digital_file_ready']->getClientOriginalExtension());
-                }
-
-                if (in_array($digitalFileExtension, $disallowedExtensions) && env('APP_MODE', 'dev') == 'demo') {
-                    $validator->after(function ($validator) {
-                        $validator->errors()->add('files', translate('Uploading_ZIP_files_is_currently_unavailable_in_demo_mode') . '!');
-                    });
-                }
-                if (in_array($digitalFileExtension, $disallowedExtensions)) {
-                    $validator->after(function ($validator) {
-                        $validator->errors()->add('files', translate('The_uploaded_file_type_is_not_supported'). '!');
-                    });
-                }
-                $productArray += [
-                    'digital_file_ready' => $request->digital_file_ready,
-                    'digital_file_ready_storage_type' => $storage,
-                ];
-            } elseif (($request->digital_product_type == 'ready_after_sell') && $product->digital_file_ready) {
-                $productArray += [
-                    'digital_file_ready' => null,
-                ];
-            }
-
-            if ($request->has('extensions_type') && $request->has('digital_product_variant_key')) {
-                $productArray += [
-                    'digital_file_ready' => null,
-                ];
-            }
-        } elseif ($request->product_type == 'physical' && $product->digital_file_ready) {
-            $productArray += [
-                'digital_file_ready' => null,
-            ];
-        }
-
-        if ($request->has('colors_active') && $request->has('colors') && count($requestColors) > 0) {
-            $productArray += [
-                'colors' => $request->product_type == 'physical' ? json_encode($requestColors) : json_encode([]),
-            ];
-        } else {
-            $colors = [];
-            $productArray += [
-                'colors' => $request->product_type == 'physical' ? json_encode($colors) : json_encode([]),
-            ];
-        }
-
-        $choice_options = [];
-        $requestChoiceNoIndex = 0;
-        if ($request->has('choice')) {
-            foreach ($requestChoiceNo as $key => $no) {
-                $str = 'choice_options_' . $no;
-                $item['name'] = 'choice_' . $no;
-                $item['title'] = $requestChoiceArray[$requestChoiceNoIndex];
-                $item['options'] = $request[$str];
-                $choice_options[] = $item;
-                $requestChoiceNoIndex++;
-            }
-        }
-        $productArray += [
-            'choice_options' => $request->product_type == 'physical' ? json_encode($choice_options) : json_encode([]),
-        ];
-
-        //combinations start
-        $options = [];
-        if ($request->has('colors_active') && $request->has('colors') && count($requestColors) > 0) {
-            $colors_active = 1;
-            $options[] = $requestColors;
-        }
-        if ($request->has('choice_no')) {
-            foreach ($requestChoiceNo as $key => $no) {
-                $name = 'choice_options_' . $no;
-                $options[] = $request[$name];
-            }
-        }
-
-        //Generates the combinations of customer choice options
-        $combinations = Helpers::combinations($options);
-
-        $variations = [];
-        $stock_count = 0;
-        if (count($combinations[0]) > 0) {
-
-            foreach ($combinations as $combination) {
-                $str = '';
-                foreach ($combination as $k => $item) {
-                    if ($k > 0) {
-                        $str .= '-' . str_replace(' ', '', $item);
-                    } else {
-                        if ($request->has('colors_active') && $request->has('colors') && count($requestColors) > 0) {
-                            $color_name = Color::where('code', $item)->first()->name ?? '';
-                            $str .= $color_name;
-                        } else {
-                            $str .= str_replace(' ', '', $item);
-                        }
-                    }
-                }
-                $item = [];
-                $item['type'] = $str;
-                $item['price'] = Convert::usd(abs($request['price_' . str_replace('.', '_', $str)]));
-                $item['sku'] = $request['sku_' . str_replace('.', '_', $str)];
-                $item['qty'] = $request['qty_' . str_replace('.', '_', $str)];
-
-                array_push($variations, $item);
-                $stock_count += $item['qty'];
-            }
-        } else {
-            $stock_count = (int)$request['current_stock'];
         }
 
         if ($validator->errors()->count() > 0) {
             return response()->json(['errors' => Helpers::validationErrorProcessor($validator)], 403);
         }
 
-        $digitalFileOptions = self::getDigitalVariationOptions(request: $request);
-        $digitalFileCombinations = self::getDigitalVariationCombinations(arrays: $digitalFileOptions);
+        $requestLanguage = is_string($request['lang']) ? json_decode($request['lang'], true) : ($request['lang'] ?? [Helpers::default_lang()]);
+        $requestName = is_string($request['name']) && str_starts_with(trim($request['name']), '[') ? json_decode($request['name'], true) : $request['name'];
+        $requestDescription = is_string($request['description'] ?? $request['details']) && str_starts_with(trim($request['description'] ?? $request['details']), '[') ? json_decode($request['description'] ?? $request['details'], true) : ($request['description'] ?? $request['details'] ?? $product->details);
+        $requestTags = is_string($request['tags']) ? json_decode($request['tags'], true) : ($request['tags'] ?? []);
 
-        $pricingService = app(\App\Services\PricingService::class);
-        $productService = app(\App\Services\ProductService::class);
+        $productName = is_array($requestName) ? ($requestName[array_search(Helpers::default_lang(), $requestLanguage ?? [])] ?? ($requestName[0] ?? $product->name)) : ($requestName ?? $product->name);
+        $productDesc = is_array($requestDescription) ? ($requestDescription[array_search(Helpers::default_lang(), $requestLanguage ?? [])] ?? ($requestDescription[0] ?? $product->details)) : ($requestDescription ?? $product->details);
 
-        $vendorCost = Convert::usd((float)($request['purchase_price'] ?? $request['unit_price'] ?? $product['purchase_price'] ?? 0));
-        $pricing = $pricingService->calculateRetailPrice($vendorCost, $request['category_id'] ?? $product['category_id'] ?? null);
-        $unitPrice = $pricing['unit_price'];
-        $purchasePrice = $vendorCost;
-        $variations = $pricingService->calculateVariationPrices($variations, $request['category_id'] ?? $product['category_id'] ?? null);
+        $category = [];
+        if ($request->category_id != null) {
+            $category[] = ['id' => $request['category_id'], 'position' => 1];
+        }
+        if (!empty($request->sub_category_id)) {
+            $category[] = ['id' => $request->sub_category_id, 'position' => 2];
+        }
+        if (!empty($request->sub_sub_category_id)) {
+            $category[] = ['id' => $request->sub_sub_category_id, 'position' => 3];
+        }
 
-        $productArray += [
-            'variation' => $request->product_type == 'physical' ? json_encode($variations) : json_encode([]),
-            'unit_price' => $unitPrice,
-            'purchase_price' => $purchasePrice,
-            'discount' => $request->discount_type == 'flat' ? Convert::usd($request->discount) : $request->discount,
-            'discount_type' => $request->discount_type,
-            'attributes' => $request->product_type == 'physical' ? json_encode($requestChoiceAttributes) : json_encode([]),
-            'current_stock' => $request->product_type == 'physical' ? $request->current_stock : 999999999,
+        $allImagesData = $request->has('images') ? (is_array($request['images']) ? $request['images'] : json_decode($request['images'], true)) : json_decode($product->images, true);
+        $thumbnail = $request->thumbnail ?? (is_array($allImagesData) && count($allImagesData) > 0 ? (is_array($allImagesData[0]) ? ($allImagesData[0]['image_name'] ?? $product->thumbnail) : $allImagesData[0]) : $product->thumbnail);
+
+        $productArray = [
+            'user_id' => $seller->id,
+            'added_by' => 'seller',
+            'name' => $productName,
+            'category_ids' => json_encode($category),
+            'category_id' => $request['category_id'],
+            'sub_category_id' => $request['sub_category_id'] ?? null,
+            'sub_sub_category_id' => $request['sub_sub_category_id'] ?? null,
+            'brand_id' => $request['brand_id'] ?? $product->brand_id,
+            'unit' => $request['unit'] ?? $product->unit ?? 'pc',
+            'product_type' => 'physical',
+            'code' => !empty($request->code) ? $request->code : $product->code,
+            'minimum_order_qty' => 1,
+            'details' => $productDesc,
+            'images' => is_array($allImagesData) ? json_encode($allImagesData) : $product->images,
+            'color_image' => json_encode([]),
+            'thumbnail' => $thumbnail,
+            'thumbnail_storage_type' => $product->thumbnail == $thumbnail ? $product->thumbnail_storage_type : $storage,
+            'colors' => json_encode([]),
+            'choice_options' => json_encode([]),
+            'attributes' => json_encode([]),
+            'variation' => json_encode([]),
+            'unit_price' => Convert::usd($request['unit_price']),
+            'purchase_price' => 0,
+            'discount' => 0,
+            'discount_type' => 'flat',
+            // [AI] Marketplace Availability Control: preserve existing availability state on update.
+            // current_stock is a legacy mirror only (1=in_stock, 0=out_of_stock). Never write 999.
+            'current_stock' => $product->marketplace_availability === 'in_stock' ? 1 : 0,
             'meta_title' => '',
             'meta_description' => '',
-            'shipping_cost' => $request->product_type == 'physical' ? (getWebConfig(name: 'product_wise_shipping_cost_approval') == 1 ? $product->shipping_cost : Convert::usd($request->shipping_cost)) : 0,
-            'multiply_qty' => ($request->product_type == 'physical') ? ($request->multiplyQTY == 1 ? 1 : 0) : 0,
-
-            'digital_product_file_types' => $request->has('extensions_type') ? json_decode($request['extensions_type'], true) : [],
-            'digital_product_extensions' => $digitalFileCombinations,
+            'shipping_cost' => 0,
+            'multiply_qty' => 0,
+            'digital_product_file_types' => [],
+            'digital_product_extensions' => [],
         ];
 
         if (getWebConfig(name: 'product_wise_shipping_cost_approval') == 1 && ($product->shipping_cost != Convert::usd($request->shipping_cost)) && ($request->product_type == 'physical')) {
@@ -2280,11 +1889,14 @@ class ProductController extends Controller
         $success = $this->productService->confirmMarketplaceListing($product, $sellerId);
 
         return response()->json([
-            'status' => $success,
-            'message' => 'Marketplace availability confirmed successfully',
-            'marketplace_listing_status' => $product->marketplace_listing_status,
-            'marketplace_confirmed_at' => $product->marketplace_confirmed_at?->toIso8601String(),
-            'days_until_expiry' => $product->days_until_marketplace_expiry,
+            'status'                     => $success,
+            'message'                    => 'Marketplace availability confirmed successfully',
+            'marketplace_listing_status' => $product->fresh()->marketplace_listing_status,
+            'marketplace_availability'   => $product->fresh()->marketplace_availability,
+            'availability_confirmed_at'  => $product->fresh()->availability_confirmed_at?->toIso8601String(),
+            'availability_expires_at'    => $product->fresh()->availability_expires_at?->toIso8601String(),
+            'marketplace_confirmed_at'   => $product->fresh()->marketplace_confirmed_at?->toIso8601String(),
+            'days_until_expiry'          => $product->fresh()->days_until_marketplace_expiry,
         ], 200);
     }
 

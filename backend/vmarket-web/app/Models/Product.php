@@ -127,6 +127,11 @@ class Product extends Model
         'gtin',
         'mpn',
         'google_category_id',
+        'marketplace_listing_status',
+        'marketplace_availability',
+        'marketplace_confirmed_at',
+        'availability_confirmed_at',
+        'availability_expires_at',
     ];
 
     /**
@@ -183,7 +188,10 @@ class Product extends Model
         'digital_product_extensions' => 'array',
         'thumbnail_storage_type' => 'string',
         'digital_file_ready_storage_type' => 'string',
-        'marketplace_confirmed_at' => 'datetime',
+        'marketplace_confirmed_at'  => 'datetime',
+        // [AI] Canonical availability lifecycle casts
+        'availability_confirmed_at' => 'datetime',
+        'availability_expires_at'   => 'datetime',
     ];
 
     protected $appends = ['is_shop_temporary_close', 'thumbnail_full_url', 'preview_file_full_url', 'color_images_full_url', 'meta_image_full_url', 'images_full_url', 'digital_file_ready_full_url'];
@@ -261,12 +269,25 @@ class Product extends Model
     }
 
     /**
-     * [AI] Marketplace Purchasability: Marketplace Eligible AND In Stock.
+     * [AI] Marketplace Purchasability: Marketplace Eligible AND In Stock AND Not Expired.
+     *
+     * Admin products are permanently exempt from availability expiry.
+     * Seller products must have availability_expires_at in the future (or
+     * fall back to marketplace_confirmed_at + configured days for backcompat).
      */
     public function scopeMarketplacePurchasable(Builder $query): Builder
     {
         return $query->marketplaceEligible()
-            ->where('marketplace_availability', 'in_stock');
+            ->where('marketplace_availability', 'in_stock')
+            ->where(function ($q) {
+                // [AI] Admin products: no expiry constraint
+                $q->where('added_by', 'admin')
+                  ->orWhere(function ($sellerQ) {
+                      // [AI] Seller products: pre-calculated expiry must be in the future
+                      $sellerQ->where('added_by', 'seller')
+                               ->where('availability_expires_at', '>', now());
+                  });
+            });
     }
 
     /**
@@ -309,29 +330,68 @@ class Product extends Model
     }
 
     /**
-     * [AI] Helper to check marketplace purchasability on loaded model.
+     * [AI] Authoritative runtime marketplace purchasability gate.
+     *
+     * INVARIANT: A product being displayed as available in the UI does NOT
+     * authorize purchase. This method is re-evaluated inside the database
+     * transaction at order generation time (see OrderManager::generateOrder).
+     *
+     * - Eligibility: status=1, request_status=1, marketplace_listing_status='listed',
+     *   seller approved+marketplace_approved.
+     * - In-stock: marketplace_availability = 'in_stock'.
+     * - Freshness: availability_expires_at is in the future (seller products only).
+     *   Admin products are permanently exempt from freshness expiry.
+     * - Fallback: If availability_expires_at is null but availability_confirmed_at
+     *   exists, compute on-the-fly (handles edge cases before backfill completes).
      */
     public function isMarketplacePurchasable(): bool
     {
-        return $this->isMarketplaceEligible()
-            && $this->marketplace_availability === 'in_stock';
+        if (!$this->isMarketplaceEligible()) {
+            return false;
+        }
+        if ($this->marketplace_availability !== 'in_stock') {
+            return false;
+        }
+        // [AI] Admin products are platform-owned — permanently purchasable if eligible
+        if ($this->added_by === 'admin') {
+            return true;
+        }
+        // [AI] Seller products: enforce freshness via pre-calculated availability_expires_at
+        if ($this->availability_expires_at) {
+            return $this->availability_expires_at->isFuture();
+        }
+        // [AI] Fallback: calculate expiry on-the-fly (handles pre-backfill rows)
+        if ($this->availability_confirmed_at) {
+            $days = function_exists('getMarketplaceConfirmationDays') ? getMarketplaceConfirmationDays() : 7;
+            return $this->availability_confirmed_at->copy()->addDays($days)->isFuture();
+        }
+        // [AI] No confirmation at all → reject purchase
+        return false;
     }
 
     /**
-     * [AI] Number of days remaining before confirmation expires.
+     * [AI] Days remaining until this product's marketplace availability expires.
+     * Admin products return 999 (exempt). Seller products use availability_expires_at
+     * (preferred) or fall back to marketplace_confirmed_at + N days.
      */
     public function getDaysUntilMarketplaceExpiryAttribute(): int
     {
         if ($this->added_by === 'admin') {
             return 999;
         }
-        if (empty($this->marketplace_confirmed_at)) {
-            return 0;
+        // [AI] Use pre-calculated expiry field (canonical)
+        if ($this->availability_expires_at) {
+            $diff = (int)now()->diffInDays($this->availability_expires_at, false);
+            return max(0, $diff);
         }
-        $confirmationDays = function_exists('getMarketplaceConfirmationDays') ? getMarketplaceConfirmationDays() : 7;
-        $expiryDate = $this->marketplace_confirmed_at->copy()->addDays($confirmationDays);
-        $diff = (int)now()->diffInDays($expiryDate, false);
-        return max(0, $diff);
+        // [AI] Fallback: legacy marketplace_confirmed_at + configured window
+        if (!empty($this->marketplace_confirmed_at)) {
+            $confirmationDays = function_exists('getMarketplaceConfirmationDays') ? getMarketplaceConfirmationDays() : 7;
+            $expiryDate = $this->marketplace_confirmed_at->copy()->addDays($confirmationDays);
+            $diff = (int)now()->diffInDays($expiryDate, false);
+            return max(0, $diff);
+        }
+        return 0;
     }
 
 

@@ -7,7 +7,197 @@ Always append your completed tasks here in chronological order at the top. Forma
 `### [YYYY-MM-DD HH:MM UTC] <Feature / Fix Title> [<Component Scope>]`
 Include the specific app/component modified and bullet points detailing the exact technical changes.
 
-### [2026-09-13 22:45 UTC] Zero-Trust Vendor Privacy Boundary & Complete Anti-Disintermediation Remediation [backend] [vendor-app] [ai-governance]
+### [2026-09-14 12:33 UTC] Marketplace Availability Control & Freshness Confirmation Architecture [backend] [ai-governance]
+* **Component:** Product Availability Domain (`backend/vmarket-web/`, `scratch/test_availability_confirmation_architecture.php`)
+* **Action:** Replaced the legacy `current_stock = 999` indicator pattern with the canonical **Marketplace Availability Control** architecture enforcing a single source of truth, real-time runtime freshness gating, and authoritative purchase-time race-condition protection:
+  - **1. Database Migration (`2026_09_14_000001_add_availability_lifecycle_columns_to_products_table.php`):**
+    - Added `availability_confirmed_at` (TIMESTAMP NULL) — canonical vendor confirmation timestamp.
+    - Added `availability_expires_at` (TIMESTAMP NULL) — pre-calculated runtime expiry gate enabling O(1) DB-level freshness filtering.
+    - Both columns indexed for query performance.
+    - Backfill SQL seeds lifecycle columns from existing `marketplace_confirmed_at` for all listed in-stock seller products (7-day default window), ensuring zero-disruption migration.
+  - **2. Product Model (`app/Models/Product.php`):**
+    - Added `'availability_confirmed_at' => 'datetime'` and `'availability_expires_at' => 'datetime'` to `$casts`.
+    - Rewrote `isMarketplacePurchasable()` as the authoritative runtime gate: checks `marketplace_availability === 'in_stock'`, then `availability_expires_at->isFuture()` (canonical), with fallback to `availability_confirmed_at + N days` for pre-backfill rows. Admin products permanently exempt.
+    - Updated `scopeMarketplacePurchasable()` to enforce `availability_expires_at > now()` at database level (seller products only; admin products bypass expiry constraint).
+    - Updated `getDaysUntilMarketplaceExpiryAttribute` to use `availability_expires_at` (preferred) with `marketplace_confirmed_at` fallback.
+  - **3. ProductService (`app/Services/ProductService.php`):**
+    - `confirmMarketplaceListing()`: Now writes `availability_confirmed_at = now()`, `availability_expires_at = now() + N days`, `marketplace_confirmed_at = now()` (legacy backcompat), `marketplace_availability = 'in_stock'`, `current_stock = 1` (legacy mirror, never 999).
+    - `updateMarketplaceAvailability()`: `in_stock` renews all lifecycle fields + `current_stock = 1`; `out_of_stock` sets `availability_expires_at = null` (instant runtime block) + `current_stock = 0`.
+    - `bulkConfirmMarketplaceListings()`: Updated to write all canonical lifecycle fields.
+  - **4. Seller ProductController v3 (`app/Http/Controllers/RestAPI/v3/seller/ProductController.php`):**
+    - `add_new()`: Reads vendor's `is_available` / `marketplace_availability` request field. Sets `availability_confirmed_at`, `availability_expires_at`, `marketplace_confirmed_at`, `marketplace_listing_status = 'listed'`, `current_stock = 1|0`. Never writes `current_stock = 999`.
+    - `updateProduct()`: Preserves existing availability state (`current_stock = $product->marketplace_availability === 'in_stock' ? 1 : 0`), eliminating the legacy `999` write.
+    - `confirmAvailability()` response: Now returns `availability_confirmed_at`, `availability_expires_at`, and `marketplace_availability` via fresh model read.
+  - **5. OrderManager Race-Condition Guard (`app/Utils/OrderManager.php`):**
+    - `generateOrder()`: Before any INSERT, performs authoritative purchase-time revalidation — fresh-reads all cart products in one query and calls `isMarketplacePurchasable()` on each. Throws `\Exception` if any item has expired or been toggled `out_of_stock` since the cart was loaded. This is the definitive security gate; UI/cart checks are advisory only.
+  - **6. FreshnessCommand Enhancement (`app/Console/Commands/CheckMarketplaceListingFreshnessCommand.php`):**
+    - Now uses `availability_expires_at <= now()` as the canonical expiry gate with legacy `marketplace_confirmed_at` fallback for pre-migration rows.
+    - Sets `marketplace_availability = 'out_of_stock'`, `availability_expires_at = null`, and `current_stock = 0` (legacy mirror) when unlisting.
+    - Sends vendor push notification (`marketplace_listing_expired` event) for each expired product requesting re-confirmation. Notification failures are caught and logged — never blocking the cleanup.
+  - **7. Mathematical & Systemic Verification ($\Delta = 0.00$):**
+    - Created and executed `scratch/test_availability_confirmation_architecture.php`: **17 / 17 assertions passed** (100% success rate, $\Delta = 0.00$).
+    - PHP syntax validation (`php -l`) passed cleanly on all 6 modified backend files (0 syntax errors).
+    - Zero financial field mutations — seller_wallets, admin_wallets, order totals, and commission splits untouched.
+
+### [2026-09-14 12:15 UTC] Marketplace Product Model Streamlining & Complete Variation Elimination [backend] [user-app] [vendor-app] [ai-governance]
+* **Component:** Product Catalog Domain, Cart Management, & Listing Lifecycle (`backend/vmarket-web/`, `User app/`, `Vendor app/`, `scratch/test_streamlined_product_model.php`)
+* **Action:** Completely eliminated product variations, multi-SKU pricing matrices, color pickers, choice option dropdowns, and vendor-controlled discounts across backend validation, services, controllers, Customer App (VM), and Vendor App (VV), enforcing an ultra-streamlined **6-field vendor marketplace listing model**:
+  - **1. Strict 6-Field Vendor Product Model:**
+    1. `Title` (Required, string): Product name.
+    2. `Category` (Required): Scoped strictly to Admin-created categories (`exists:categories,id`); vendors cannot create categories.
+    3. `Price` (Required): Single selling price in ₦ (`numeric|gt:0`). Vendor-controlled discounts, percentages, and sale prices are completely eliminated.
+    4. `Images` (Required): Strictly 1 to 5 images (`min:1|max:5`). Image 1 automatically serves as the primary storefront thumbnail (`$product->thumbnail`).
+    5. `Description` (Required, non-empty string).
+    6. `SKU` (Optional): Vendors can provide custom code; if omitted or empty, backend auto-generates a canonical SKU in the format `VM-{3 uppercase random}-{4 digit random}`.
+    - `Availability`: System-controlled binary status (`current_stock = 999` when In Stock, `0` when Out of Stock).
+  - **2. Backend API & Web Validation Hardening (`backend/vmarket-web`):**
+    - `API/v3/ProductAddRequest.php`: Stripped requirements for `discount`, `discount_type`, `unit`, `minimum_order_qty`, `shipping_cost`. Bypassed `sku_` and `price_` loops. Made `code` optional with regex `/^[a-zA-Z0-9-]+$/`. Enforced `images` array `min:1|max:5`.
+    - `API/v3/ProductUpdateRequest.php`: Updated update rules to 6-field model with max 5 images and optional unique SKU.
+    - `RestAPI/v3/seller/ProductController.php`: Streamlined `add_new()` to assign canonical SKU on omission, set Image 1 as thumbnail, and force default arrays `variation='[]'`, `choice_options='[]'`, `colors='[]'`, `attributes='[]'`, `discount=0`, `discount_type='flat'`, and `current_stock=999`.
+    - `Http/Requests/ProductAddRequest.php` & `ProductUpdateRequest.php`: Made `code` nullable with 3-50 char bounds, removed variation SKU and variation price errors in `after()`.
+  - **3. Cart & Pricing Services Simplification:**
+    - `app/Utils/CartManager.php`:
+      - `addToCartPhysicalProduct`: Eliminated variation and color extraction loops. Directly maps `$product->unit_price`, sets `variant = null`, `variations = '[]'`.
+      - Guarded stock and quantity checks with safe null-checking for non-variant products, eliminating PHP 8 `count(null)` TypeError crashes.
+      - Enforced `'product_variant_type' => 'single_variant'`.
+    - `app/Services/CartService.php`:
+      - Streamlined `getVariantData`: Returns base unit price and stock directly without variant iteration.
+      - Updated `makeVariation` with null-safety defaults.
+    - `app/Utils/product.php`:
+      - `getPriceRangeWithDiscount`: Added safe null-checking to eliminate unsafe iteration over null variation arrays.
+  - **4. Customer Mobile App (`User app` / VM):**
+    - `lib/helper/product_helper.dart`: `getProductPriceRange` returns single unit price `(start: product.unitPrice, end: null)`.
+    - `lib/features/product_details/widgets/product_title_widget.dart`: Removed hyphenated price ranges and deleted legacy variation color circles and attribute selection blocks.
+    - `lib/features/cart/controllers/cart_controller.dart`: Added `bool popModal = true` to `addToCartAPI` to support direct 1-tap cart operations.
+    - `lib/features/product_details/widgets/bottom_cart_widget.dart`: Implemented direct 1-Tap "Add to Cart" and direct 1-Tap "Buy Now" straight to cart/checkout without opening the 1,463-line `CartBottomSheetWidget`.
+    - `lib/features/cart/widgets/cart_widget.dart`: Variant chips remain safely hidden when `variant` is null.
+  - **5. Vendor Mobile App (`Vendor app` / VV):**
+    - `lib/features/addProduct/screens/add_product_screen.dart`: Removed the Variations section card, color picker, attribute pricing, and color variation image widgets. Hidden manual stock quantity and discount input widgets.
+    - Defaulted submission payload to `discount = 0.0`, `minimum_order_qty = 1`, `discount_type = 'flat'`, `current_stock = 999`, and `status = _publishToMarketplace ? 1 : 0`.
+    - `lib/features/addProduct/controllers/add_product_controller.dart`:
+      - `validateGeneralInfo`: Made SKU optional, defaulted unit to `pc`, allowed Image 1 to serve as thumbnail, and enforced max 5 images limit.
+      - `validateVariations`: Bypassed all physical variant price, quantity, and color image requirements.
+  - **6. Verification & Mathematical Invariants ($\Delta = 0.00$):**
+    - Created and executed `scratch/test_streamlined_product_model.php`: 17 / 17 checks passed (100% success).
+    - Executed `scratch/test_fulfillment_path_separation.php`: 36 / 36 checks passed (100% success).
+    - Executed `scratch/deep_system_scan.php`: 36 / 36 checks passed (100% success, zero defects).
+    - Validated PHP syntax across all modified backend files (`php -l`: 0 syntax errors detected).
+
+### [2026-09-14 11:55 UTC] Customer Wallet Decommissioning & Zero-Mutation Containment [backend] [user-app] [ai-governance]
+* **Component:** Customer Payment Architecture, Domain Boundaries & Wallet Containment (`backend/vmarket-web/`, `User app/`, `scratch/test_wallet_decommission.php`)
+* **Action:** Completely decommissioned and eliminated the Customer Wallet feature across backend domain models, services, repositories, controllers, web storefront, and Flutter mobile apps:
+  - **1. Domain Exceptions & HTTP Decoupling:**
+    - Created `App\Exceptions\InvalidPaymentMethodException` (DomainException) thrown by `OrderManager::generateOrder()` when any payment method outside `['paystack', 'opay', 'pay_at_pickup']` is passed.
+    - Created `App\Exceptions\CustomerWalletDecommissionedException` (DomainException) thrown on any invocation of wallet mutation methods (`createWalletTransaction`, `create_wallet_transaction`, `addWalletTransaction`, refund routing).
+    - Hardened `App\Exceptions\Handler.php` converting `InvalidPaymentMethodException` to 422 JSON / form errors and `CustomerWalletDecommissionedException` to 403 Forbidden.
+  - **2. Domain & Repository Fail-Closed Hardening:**
+    - `OrderManager::generateOrder`: Authoritative payment allowlist strictly restricted to `['paystack', 'opay', 'pay_at_pickup']`. Rejected `wallet`, `pay_by_wallet`, `cash_on_delivery`, `cod`, `customer_wallet`, `offline_payment`.
+    - `OrderManager::createWalletTransaction`: Throws `CustomerWalletDecommissionedException`.
+    - `CustomerManager::create_wallet_transaction`: Throws `CustomerWalletDecommissionedException`.
+    - `CustomerTrait::createWalletTransaction`: Throws `CustomerWalletDecommissionedException`.
+    - `WalletTransactionRepository::addWalletTransaction`: Throws `CustomerWalletDecommissionedException`.
+    - `OrderManager::generateReferBonusForFirstOrder`: Disabled wallet bonus crediting.
+  - **3. Controller & Route Containment (HTTP 403 / Controlled Redirect):**
+    - `RestAPI\v1\OrderController::placeOrderByWallet`: Returns 403 Forbidden with permanent decommission notice.
+    - `Web\WebController::checkout_complete_wallet`: Aborts with 403 Forbidden.
+    - `Customer\PaymentController::customer_add_to_fund_request`: Returns 403 Forbidden.
+    - `RestAPI\v1\OrderEditController::duePaymentByWallet`: Returns 403 Forbidden.
+    - `Traits\OrderEditManager::payEditOrderDueByCustomerWallet`: Returns `['status' => false]`.
+    - `RestAPI\v1\UserLoyaltyController::loyalty_exchange_currency`: Returns 403 Forbidden. Points tracking and rewards remain active.
+    - `Web\UserLoyaltyController::getLoyaltyExchangeCurrency`: Redirects with Toast error notice. Points tracking preserved.
+    - `Admin\Customer\CustomerWalletController::addFund`: Returns 403 Forbidden. Historical reports (`index`, `exportList`) preserved.
+    - `Admin\Customer\BlacklistController::approveWalletReceipt`: Returns 403 Forbidden.
+    - `RestAPI\v1\ConfigController`: Hardcodes `'wallet_status' => 0` and `'add_funds_to_wallet' => 0`.
+    - `RestAPI\v1\UserWalletController`: Returns 403 Forbidden on `list()` and `bonus_list()`.
+    - `Web\UserWalletController`: Controlled redirect from `/wallet` and `/my-wallet-account` to `/user-profile`.
+    - `Services\RefundStatusService`: Throws `CustomerWalletDecommissionedException` if `payment_method === 'customer_wallet'`. Preserved vendor settlement clawback and platform commissions.
+    - `Services\WhatsAppOrderService`: Decommissioned `payWithWallet()` and `generateWalletTopUpLink()` to fail closed with decommission notice.
+  - **4. Web Storefront UI Cleanup (`theme_aster`):**
+    - `checkout/payment.blade.php`: Removed wallet payment option button and `#wallet_submit_button` modal.
+    - `order/partials/_choose-payment-method-order-details.blade.php`: Removed customer wallet balance calculation and wallet radio button / info section.
+    - `order/partials/_choose-payment-method-modal.blade.php`: Removed wallet balance calculation and wallet payment option.
+    - `partials/_profile-aside.blade.php`: Removed wallet navigation link.
+    - `users-profile/profile/user-profile.blade.php`: Removed wallet balance display card.
+  - **5. Flutter Mobile App UI Cleanup (`User app`):**
+    - `payment_method_bottom_sheet_widget.dart`: Removed "Pay via Wallet" button.
+    - `order_payment_bottomsheet_widget.dart`: Removed "Pay via Wallet" button and wallet due payment dialog.
+    - `choose_payment_widget.dart`: Removed `orderProvider.isWalletChecked` from selection status and payment header.
+    - `checkout_screen.dart`: Removed `orderProvider.isWalletChecked` and `WalletPaymentWidget` dialog trigger.
+    - `checkout_controller.dart`: Removed wallet fallback, removed `wallet` branch in `setOfflineChecked`, and removed wallet payment branch in `placeOrder`.
+    - `order_details_controller.dart`: Removed `type == 'wallet'` from `setOfflineChecked`.
+    - `more_horizontal_section_widget.dart`: Removed `SquareButtonWidget` for wallet.
+  - **6. Verification & Systemic Invariants:**
+    - Created and executed `scratch/test_wallet_decommission.php` validating all 21 systemic checks with 100% pass rate.
+    - Confirmed AST/Code scan found 0 unblocked wallet balance mutation paths across the entire codebase.
+    - Proved settlement ledger isolation (`seller_wallets`, `delivery_man_wallets`, `admin_wallets`) remains untouched with zero drift ($\Delta = 0.00$).
+    - Full regression suites passed: Fulfillment Path Separation (36/36), Vendor Privacy (31/31), Deep System Scan (36/36), Clean POS Removal (14/14), Monorepo 100 Flows (100/100).
+
+### [2026-09-14 11:35 UTC] Operational & Business Architecture SSOT Integration [ai-governance]
+* **Component:** System Architecture & Operational Governance (`OPERATIONAL_AND_BUSINESS_ARCHITECTURE.md`)
+* **Action:** Formalized and documented the authoritative Victorious MARKET Operational & Business Architecture blueprint defining the 10 connected systems, the software-operations symmetry doctrine, the financial escrow & settlement model ($\Delta = 0.00$), standard operating procedures (SOPs), and the Uyo Pilot execution framework (10 vendors, 50-100 SKUs, VM, VV, VD, Admin control tower, and disciplined regional expansion).
+
+### [2026-09-14 11:15 UTC] Fulfillment Path Separation, Pay-at-Pickup Gate & OPay Authority Invariants [backend] [vendor-app] [user-app] [ai-governance]
+* **Component:** Architectural Fulfillment Separation & Financial Authority (`backend/vmarket-web/`, `Vendor app/`, `User app/`, `scratch/`)
+* **Action:** Implemented strict architectural and runtime separation between the two fulfillment paths (🚚 **Delivery** vs 🏪 **Customer Pickup**), machine-enforcing financial authority invariants, zero customer-vendor direct contact, and the 3 distinct physical OTP handshakes:
+  - **1. Backend Machine-Enforced 403 Invariants (`backend/vmarket-web`):**
+    - `app/Http/Controllers/RestAPI/v3/seller/OrderController.php`:
+      - `assign_delivery_man`: Machine-enforced rejection (`403 Forbidden`) if order is self-pickup (`order_type === 'pickup'` or `delivery_type === 'self_pickup'`).
+      - `order_detail_status`: Machine-enforced 5 distinct HTTP 403 invariants:
+        1. `pickup + out_for_delivery → 403 Forbidden` (customer pickup never enters transit).
+        2. `delivery + vendor -> delivered → 403 Forbidden` (delivery requires dispatch rider OTP handshake).
+        3. `delivery + vendor -> out_for_delivery → 403 Forbidden` (only rider pickup OTP can transit).
+        4. `unverified OPay / offline payment + fulfillment → 403 Forbidden` (Vmarket payment authority).
+        5. `pickup + delivered requires verifyPickupOtp handshake → 403 Forbidden` (direct transition only via verified OTP).
+      - Added support for `ready_for_pickup` status transition.
+    - `app/Http/Controllers/Vendor/Order/InShopHandoverController.php`:
+      - Added multi-auth context support for both web session (`auth('seller')`) and mobile REST API token (`$request->seller`).
+      - Enforced Pay-at-Pickup financial gate: if order is self-pickup and `payment_status !== 'paid'`, OTP verification is blocked with `403 Forbidden` ("Order_is_unpaid._Customer_payment_must_be_verified_by_Victorious_MARKET_before_handover.").
+      - Added JSON API response handling for mobile REST callers (`$request->is('api/*')` / `$request->wantsJson()`).
+    - `routes/rest_api/v3/seller.php`:
+      - Registered `Route::post('orders/verify-pickup-otp', [InShopHandoverController::class, 'verifyPickupOtp'])`.
+    - `app/Http/Controllers/RestAPI/v2/delivery_man/DeliveryManController.php`:
+      - Guarded `update_order_status` to strictly reject rider updates on customer self-pickup orders (`403 Forbidden`).
+  - **2. Vendor Mobile App (`Vendor app` / VV - In-Shop Pickup & Verification):**
+    - `lib/utill/app_constants.dart`: Added `verifyPickupOtpUri = '/api/v3/seller/orders/verify-pickup-otp'`.
+    - `lib/features/order_details/`: Added `verifyPickupOtp()` through repository, interface, service, and controller (`verifyCustomerPickupOtp()`).
+    - `lib/features/order_details/screens/order_details_screen.dart`:
+      - Added state-aware `ready_for_pickup` banner.
+      - Dynamic bottom quick action transitions: `pending → [ CONFIRM ORDER ]`, `confirmed → [ MARK AS PREPARING ]`, `processing → [ MARK READY FOR PICKUP ]`.
+      - When `ready_for_pickup`:
+        - Delivery orders: Amber "Ready for Rider" badge + guidance.
+        - Customer Pickup orders: If `isPaid`, enables `[ VERIFY PICKUP OTP ]` button; if `!isPaid`, displays locked button `[ Payment Pending (Locked) ]` with explanatory toast.
+      - Added `_showVerifyPickupOtpDialog()` with 6-digit OTP input and `[ VERIFY & HANDOVER ]` action.
+    - `assets/language/en.json`: Added 11 required localization keys (`ready_for_pickup`, `verify_pickup_otp`, `enter_customer_pickup_otp`, `payment_pending_locked`, `pay_at_pickup_unpaid_notice`, etc.).
+  - **3. Customer Mobile App (`User app` / VM - Approved Pickup Location Snapshot):**
+    - `lib/features/order_details/widgets/shipping_and_billing_widget.dart`: Added **Approved Pickup Location Card** for self-pickup orders, displaying verified store name and physical address while keeping vendor personal phone/email strictly hidden.
+    - `assets/language/en.json`: Added `approved_pickup_location` and `pickup_location_notice`.
+  - **4. Mathematical & Automated Suite Verification:**
+    - Ran `scratch/test_fulfillment_path_separation.php`: 36/36 checks passed (0 failures, $\Delta = 0.00$).
+    - Ran `test_all_100_flows_proof.php`: 100/100 flows passed (0 failures, $\Delta = 0.00$).
+    - Ran `scratch/deep_system_scan.php`: 36/36 checks passed (0 failures, $\Delta = 0.00$).
+
+### [2026-09-14 10:55 UTC] Tripartite Focused Operating Model Alignment [user-app] [vendor-app] [delivery-man]
+* **Component:** Tripartite Mobile App Focused Operating Model (`User app/`, `Vendor app/`, `Delivery Man App/`)
+* **Action:** Implemented the approved architectural and UI alignments for the tripartite focused operating model across the 3 mobile applications, maintaining strict separation of concerns, zero customer-vendor direct contact, and the customer app `Inbox` preservation invariant:
+  - **1. Customer App (`User app` / VM - Discovery & Buying):**
+    - `lib/features/dashboard/screens/dashboard_screen.dart`: Strictly preserved `Inbox` as Tab 2 (customer support/admin chat and active rider delivery tracking chat). Aligned Tab 5 label from `'more'` to `'account'` (`Account`).
+    - `assets/language/en.json`: Added `"account": "Account"` localization key.
+  - **2. Vendor App (`Vendor app` / VV - Catalog & Fulfillment):**
+    - `lib/features/order_details/controllers/order_details_controller.dart`: Added `updateQuickOrderStatus(int orderId, String newStatus)` helper for 1-click status transitions.
+    - `lib/features/order_details/screens/order_details_screen.dart`: Replaced generic single setup button with dynamic 1-click fulfillment quick actions: `[ CONFIRM ORDER ]` (pending -> confirmed), `[ MARK AS PREPARING ]` (confirmed -> processing), and `[ MARK READY FOR PICKUP ]` (processing -> out_for_delivery / ready for pickup), alongside secondary `[ Setup ]` action for legacy overrides and informational ready-for-pickup banner.
+    - `lib/features/addProduct/screens/add_product_screen.dart`: Added `_publishToMarketplace` state toggle and UI switch card ("Publish to Victorious MARKET"), cleanly mapping to `productModel.status = _publishToMarketplace ? 1 : 0`.
+    - `assets/language/en.json`: Added keys for `publish_to_vmarket`, `publish_to_vmarket_desc`, `confirm_order`, `mark_as_preparing`, `mark_ready_for_pickup`, `order_marked_ready_notice`, `more_options`, `ready_for_pickup`.
+  - **3. Delivery Rider App (`Delivery Man App` / VD - Custody & Dispatch):**
+    - `lib/features/wallet/screens/wallet_screen.dart`: Added `fromMenu` parameter and conditional `isBack` to embed seamlessly as a main bottom navigation tab without back arrow.
+    - `lib/features/dashboard/controllers/dashboard_controller.dart`: Integrated `WalletScreen(fromMenu: true)` at index 2 (`selectEarningsScreen()`), shifting Chat to index 3 and Profile to index 4.
+    - `lib/features/dashboard/screens/dashboard_screen.dart`: Added direct **Earnings** tab (`Images.money`, `'earnings'.tr`) at index 2 on the bottom navigation bar (`[ Home, Orders, Earnings, Chat, Profile ]`).
+    - `lib/features/order_details/controllers/order_details_controller.dart`: Standardized `reasonList` with 7 Nigerian operational failure reasons (`customer_unreachable_phone_off`, `wrong_address_landmark_not_found`, `customer_requested_reschedule`, `customer_refused_package`, `unable_to_reach_location_gate_closed`, `rider_vehicle_bike_issue`, `other`).
+    - `assets/language/en.json`: Added `earnings` and translations for all 7 failure reasons.
+  - **4. Mathematical & Systemic Verification:**
+    - Ran `scratch/deep_system_scan.php`: 36/36 checks passed (0 errors, $\Delta = 0.00$).
+    - Ran `test_all_100_flows_proof.php`: 100/100 flows passed (0 failures, $\Delta = 0.00$).
+    - Verified Dart syntax across all modified mobile controllers and widgets.
+
 * **Component:** Ecosystem-Wide Zero-Trust Customer Privacy & Anti-Disintermediation (`backend/vmarket-web/`, `Vendor app/`, `scratch/test_vendor_privacy_boundary.php`)
 * **Action:** Successfully executed the approved 4-phase Zero-Trust Vendor Privacy Hardening across all backend controllers, vendor web views, and Vendor mobile widgets:
   - **Phase 1: Backend Security Hardening**

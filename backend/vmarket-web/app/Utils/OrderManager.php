@@ -773,56 +773,8 @@ class OrderManager
 
     public static function generateReferBonusForFirstOrder(int|string $orderId): void
     {
-        $refEarningStatus = getWebConfig(name: 'ref_earning_status') ?? 0;
-        $refEarningExchangeRate = getWebConfig(name: 'ref_earning_exchange_rate') ?? 0;
-        $minOrderAmount = (float)(getWebConfig(name: 'ref_earning_min_order_amount') ?? 5000);
-        $order = Order::with(['customer', 'seller.shop', 'deliveryMan'])->where(['id' => $orderId])->first();
-
-        if ($order && !$order['is_guest'] && $refEarningStatus == 1 && $order['order_status'] == 'delivered') {
-            // Check minimum spend threshold to prevent penny-order bonus farming
-            if ((float)$order['order_amount'] < $minOrderAmount) {
-                return;
-            }
-
-            $customer = User::where(['id' => $order['customer_id']])->first();
-            if (!$customer || empty($customer->referred_by)) {
-                return;
-            }
-
-            $isFirstOrder = Order::where(['customer_id' => $order['customer_id'], 'order_status' => 'delivered', 'payment_status' => 'paid'])->count();
-            $referredByUser = User::where(['id' => $customer['referred_by']])->first();
-
-            // Anti-Fraud Checks: Referrer exists, first delivered order, and NOT self-referral
-            if ($isFirstOrder == 1 && isset($referredByUser)) {
-                // Prevent self-referral (same user, same phone, same email)
-                if ($referredByUser['id'] == $customer['id'] || 
-                    (!empty($referredByUser['phone']) && $referredByUser['phone'] == $customer['phone']) ||
-                    (!empty($referredByUser['email']) && strtolower($referredByUser['email']) == strtolower($customer['email']))) {
-                    return;
-                }
-
-                $bonusAmount = (float)$refEarningExchangeRate;
-                if ($bonusAmount <= 0) {
-                    return;
-                }
-
-                // Idempotency: Prevent double bonus for the same order
-                $reference = 'earned_by_referral_order_' . $order['id'];
-                $alreadyAwarded = \App\Models\WalletTransaction::where([
-                    'user_id' => $referredByUser['id'],
-                    'reference' => $reference
-                ])->exists();
-
-                if (!$alreadyAwarded) {
-                    self::createWalletTransaction(
-                        user_id: $referredByUser['id'],
-                        amount: $bonusAmount,
-                        transaction_type: 'add_fund_by_admin',
-                        reference: $reference
-                    );
-                }
-            }
-        }
+        // [AI] Customer Wallet Decommissioned: Referral bonuses credited to customer wallet are disabled
+        return;
     }
 
     public static function getVendorWiseCartList(array|object|null $data = []): array
@@ -1292,6 +1244,13 @@ class OrderManager
 
     public static function generateOrder(object|array|null $data = []): array
     {
+        // [AI] Authoritative Payment Authority Invariant: Only paystack, opay, pay_at_pickup permitted
+        $paymentMethod = $data['payment_method'] ?? '';
+        $authorizedMethods = ['paystack', 'opay', 'pay_at_pickup'];
+        if (!in_array($paymentMethod, $authorizedMethods, true)) {
+            throw new \App\Exceptions\InvalidPaymentMethodException($paymentMethod);
+        }
+
         $taxConfig = self::getTaxSystemType();
         $orderPlacedIds = [];
         $orderPlacedNotificationEvents = [];
@@ -1311,6 +1270,32 @@ class OrderManager
             'billing_address_id' => $data['billing_address_id'] ?? session('billing_address_id'),
             'requestObj' => $data['requestObj'] ?? null,
         ]);
+
+        // [AI] Authoritative Purchase-Time Revalidation (Race-Condition Guard)
+        // ─────────────────────────────────────────────────────────────────────
+        // A product being "available" in the customer's UI at browse time does NOT
+        // authorize order finalization. Products can expire or be toggled out_of_stock
+        // between cart load and order submission.
+        //
+        // We reload every product with a fresh DB read here — BEFORE any INSERT —
+        // and reject the entire order if any item fails isMarketplacePurchasable().
+        // This is the authoritative security gate; the UI/cart checks are advisory only.
+        $cartProductIds = [];
+        foreach ($vendorWiseCartList as $vendorWiseCart) {
+            foreach ($vendorWiseCart['cart_list'] as $cartItem) {
+                $cartProductIds[] = $cartItem['product_id'];
+            }
+        }
+        $freshProducts = \App\Models\Product::whereIn('id', array_unique($cartProductIds))->get()->keyBy('id');
+        foreach ($vendorWiseCartList as $vendorWiseCart) {
+            foreach ($vendorWiseCart['cart_list'] as $cartItem) {
+                $product = $freshProducts->get($cartItem['product_id']);
+                if (!$product || !$product->isMarketplacePurchasable()) {
+                    $productName = $product?->name ?? translate('Unknown_product');
+                    throw new \Exception(translate('One_or_more_products_in_your_cart_is_currently_unavailable') . ': ' . $productName);
+                }
+            }
+        }
 
         foreach ($vendorWiseCartList as $vendorWiseGroupId => $vendorWiseCart) {
             $order_id = OrderManager::generateNewOrderID();
@@ -1652,62 +1637,9 @@ class OrderManager
 
     public static function createWalletTransaction($user_id, float $amount, $transaction_type, $reference, $payment_data = []): bool|WalletTransaction
     {
-        if (BusinessSetting::where('type', 'wallet_status')->first()->value != 1) return false;
-
-        $debit = 0.0;
-        $credit = 0.0;
-        $addFundToWalletBonus = 0;
-
-        if (in_array($transaction_type, ['add_fund_by_admin', 'add_fund', 'order_refund', 'loyalty_point'])) {
-            $credit = $amount;
-            if ($transaction_type == 'add_fund') {
-                $addFundToWalletBonus = Helpers::add_fund_to_wallet_bonus(Convert::usd($amount ?? 0));
-            } else if ($transaction_type == 'loyalty_point') {
-                $credit = (($amount / BusinessSetting::where('type', 'loyalty_point_exchange_rate')->first()->value) * Convert::default(1));
-            }
-        } else if ($transaction_type == 'order_place') {
-            $debit = $amount;
-        }
-
-        $creditAmount = currencyConverter($credit);
-        $debitAmount = currencyConverter($debit);
-
-        try {
-            DB::beginTransaction();
-            // [AI] Wallet Race Condition Guard: Acquire lock on user row before reading/writing balance
-            $user = User::where('id', $user_id)->lockForUpdate()->first();
-            if (!$user) {
-                DB::rollback();
-                return false;
-            }
-            $currentBalance = $user->wallet_balance;
-
-            $walletTransaction = new WalletTransaction();
-            $walletTransaction->user_id = $user->id;
-            $walletTransaction->transaction_id = \Str::uuid();
-            $walletTransaction->reference = $reference;
-            $walletTransaction->transaction_type = $transaction_type;
-            $walletTransaction->payment_method = $payment_data['payment_method'] ?? null;
-            if ($transaction_type == 'add_fund') {
-                $walletTransaction->admin_bonus = $addFundToWalletBonus;
-            }
-            $walletTransaction->credit = $creditAmount;
-            $walletTransaction->debit = $debitAmount;
-            $walletTransaction->balance = $currentBalance + $creditAmount - $debitAmount;
-            $walletTransaction->created_at = now();
-            $walletTransaction->updated_at = now();
-
-            $user->wallet_balance = $currentBalance + $addFundToWalletBonus + $creditAmount - $debitAmount;
-            $user->save();
-            $walletTransaction->save();
-            DB::commit();
-            if (in_array($transaction_type, ['loyalty_point', 'order_place', 'add_fund_by_admin'])) return $walletTransaction;
-            return true;
-        } catch (Exception $ex) {
-            info($ex);
-            DB::rollback();
-            return false;
-        }
+        // [AI] Customer Wallet Decommissioned: Fail closed immediately with domain exception
+        \Log::warning("[AI][DECOMMISSIONED] Attempted createWalletTransaction for user_id {$user_id}, type: {$transaction_type}, ref: {$reference}");
+        throw new \App\Exceptions\CustomerWalletDecommissionedException($transaction_type, "Customer wallet capability is permanently decommissioned in Victorious MARKET. Cannot execute transaction type '{$transaction_type}'.");
     }
 
     public static function generateOrderAgain($request): array
