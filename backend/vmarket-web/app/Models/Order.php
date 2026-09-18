@@ -14,6 +14,7 @@ use Illuminate\Database\Eloquent\Relations\HasOne;
  * @property int $id
  * @property int $customer_id
  * @property bool $is_guest
+ * @property string|null $guest_access_token
  * @property string $customer_type
  * @property string $payment_status
  * @property string $order_status
@@ -75,6 +76,7 @@ class Order extends Model
         'id',
         'customer_id',
         'is_guest',
+        'guest_access_token',
         'customer_type',
         'payment_status',
         'order_status',

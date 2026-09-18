@@ -452,12 +452,9 @@ class WebController extends Controller
             $availablePaymentMethod = ['payment_gateways'];
         }
 
-        if ($offlinePaymentStatus && $offlinePaymentStatus['status'] == 1 && count($offlinePaymentMethods) > 0) {
-            $availablePaymentMethod = ['offline_payment'];
-        }
-        if (auth('customer')->check() && getWebConfig(name: 'wallet_status')) {
-            $availablePaymentMethod = ['wallet_status'];
-        }
+        // [AI] Victorious MARKET: Offline payments are completely decommissioned
+        $offlinePaymentStatus = ['status' => 0];
+        $offlinePaymentMethods = collect([]);
 
         if (session()->has('address_id') && session()->has('billing_address_id')) {
             return view(VIEW_FILE_NAMES['payment_details'], [
@@ -627,108 +624,14 @@ class WebController extends Controller
 
     public function getOfflinePaymentCheckoutComplete(Request $request): View|RedirectResponse
     {
-        if ($request['payment_method'] != 'offline_payment') {
-            return back()->with('error', 'Something went wrong!');
-        }
-
-        if (!session('address_id') && !session('billing_address_id')) {
-            Toastr::error(translate('Please_update_address_information'));
-            return redirect()->route('checkout-details');
-        }
-
-        $response = OrderManager::checkValidationForCheckoutPages($request);
-        if ($response['status'] == 0) {
-            foreach ($response['message'] as $message) {
-                Toastr::error($message);
-            }
-            return isset($response['redirect']) ? redirect($response['redirect']) : redirect('/');
-        }
-
-        $cartGroupIds = CartManager::get_cart_group_ids(request: $request, type: 'checked');
-        $carts = Cart::whereHas('product', function ($query) {
-            return $query->active();
-        })->with('product')->whereIn('cart_group_id', $cartGroupIds)->where(['is_checked' => 1])->get();
-
-        $productStockCheck = CartManager::product_stock_check($carts);
-        if (!$productStockCheck) {
-            Toastr::error(translate('the_following_items_in_your_cart_are_currently_out_of_stock'));
-            return redirect()->route('shop-cart');
-        }
-
-        $verifyStatus = OrderManager::verifyCartListMinimumOrderAmount($request);
-        if ($verifyStatus['status'] == 0) {
-            Toastr::info(translate('check_minimum_order_amount_requirement'));
-            return redirect()->route('shop-cart');
-        }
-
-        $offlinePaymentInfo = [];
-        $method = OfflinePaymentMethod::where(['id' => $request['method_id'], 'status' => 1])->first();
-
-        if (isset($method)) {
-            $fields = array_column($method->method_informations, 'customer_input');
-            $values = $request->all();
-
-            $offlinePaymentInfo['method_id'] = $request['method_id'];
-            $offlinePaymentInfo['method_name'] = $method->method_name;
-            foreach ($fields as $field) {
-                if (key_exists($field, $values)) {
-                    $offlinePaymentInfo[$field] = $values[$field];
-                }
-            }
-        }
-
-        if (session('newCustomerRegister')) {
-            $newCustomerRegister = session('newCustomerRegister');
-            if (User::where(['email' => $newCustomerRegister['email']])->orWhere(['phone' => $newCustomerRegister['phone']])->first()) {
-                Toastr::error(translate('Already_registered'));
-                return back();
-            }
-
-            $addCustomer = User::create([
-                'name' => $newCustomerRegister['name'],
-                'f_name' => $newCustomerRegister['name'],
-                'l_name' => $newCustomerRegister['l_name'],
-                'email' => $newCustomerRegister['email'],
-                'phone' => $newCustomerRegister['phone'],
-                'is_active' => 1,
-                'password' => bcrypt($newCustomerRegister['password']),
-                'referral_code' => $newCustomerRegister['referral_code'],
-            ]);
-            session()->put('newRegisterCustomerInfo', $addCustomer);
-
-            $customerID = session()->has('guest_id') ? session('guest_id') : 0;
-            ShippingAddress::where(['customer_id' => $customerID, 'is_guest' => 1, 'id' => session('address_id')])
-                ->update(['customer_id' => $addCustomer['id'], 'is_guest' => 0]);
-            ShippingAddress::where(['customer_id' => $customerID, 'is_guest' => 1, 'id' => session('billing_address_id')])
-                ->update(['customer_id' => $addCustomer['id'], 'is_guest' => 0]);
-        }
-
-        $orderIds = OrderManager::generateOrder(data: [
-            'order_status' => 'pending',
-            'payment_method' => 'offline_payment',
-            'payment_status' => 'unpaid',
-            'transaction_ref' => '',
-            'coupon_code' => session('coupon_code'),
-            'address_id' => session('address_id'),
-            'billing_address_id' => session('billing_address_id'),
-            'payment_note' => $request['payment_note'],
-            'offline_payment_info' => $offlinePaymentInfo,
-        ]);
-
-        $isNewCustomerInSession = session('newCustomerRegister');
-        session(['order_success_ids' => $orderIds, 'isNewCustomerInSession' => $isNewCustomerInSession]);
-        session()->forget('newCustomerRegister');
-        session()->forget('newRegisterCustomerInfo');
-        if(auth()->guard('customer')->check()) {
-            return redirect()->route('account-oder');
-        }
-        return redirect(route('home'));
+        // [AI] Victorious MARKET: Offline payment is permanently decommissioned.
+        throw new \App\Exceptions\InvalidPaymentMethodException('offline_payment');
     }
 
     public function checkout_complete_wallet(Request $request): View|RedirectResponse
     {
         // [AI] Customer Wallet Decommissioned: Block active web wallet checkout
-        abort(403, 'Customer wallet payment is permanently decommissioned in Victorious MARKET. Please pay online via Paystack, OPay, or select Pay at Pickup.');
+        abort(403, 'Customer wallet payment is permanently decommissioned in Victorious MARKET. Please pay online via Paystack, or select Pay at Pickup.');
     }
 
     public function order_placed(): View
@@ -1533,27 +1436,11 @@ class WebController extends Controller
 
     public function pay_offline_method_list(Request $request): JsonResponse
     {
-        $method = OfflinePaymentMethod::where(['id' => $request['method_id'], 'status' => 1])->first();
-
-        $vendorWiseCartList = \App\Utils\OrderManager::processOrderGenerateData(data: [
-            'coupon_code' => session('coupon_code') ?? '',
-            'address_id' => session('address_id'),
-            'billing_address_id' => session('billing_address_id'),
-        ]);
-
-        $vendorWiseCartListCollection = collect($vendorWiseCartList);
-        $referralDiscount = $vendorWiseCartListCollection?->sum('refer_and_earn_discount') ?? 0;
-        $grandTotal = $vendorWiseCartListCollection?->sum('grand_total') ?? 0;
-        $freeDeliveryDiscount = $vendorWiseCartListCollection?->sum('free_delivery_discount') ?? 0;
-        $couponDiscount = session()->has('coupon_discount') ? session('coupon_discount') : 0;
-        $totalTax = $vendorWiseCartListCollection?->sum('total_tax_amount') ?? 0;
-        $totalOfflineAmount = $grandTotal - $referralDiscount - $freeDeliveryDiscount - $couponDiscount + $totalTax;
-        if($request->filled('edit_due_amount')){
-            $totalOfflineAmount = $request->edit_due_amount;
-        }
+        // [AI] Victorious MARKET: Offline payments are permanently decommissioned.
         return response()->json([
-            'methodHtml' => view(VIEW_FILE_NAMES['pay_offline_method_list_partials'], compact('method', 'totalOfflineAmount'))->render(),
-        ]);
+            'status' => 0,
+            'message' => 'Offline payments are permanently decommissioned on Victorious MARKET.'
+        ], 403);
     }
 
 }

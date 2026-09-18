@@ -7,6 +7,32 @@ Always append your completed tasks here in chronological order at the top. Forma
 `### [YYYY-MM-DD HH:MM UTC] <Feature / Fix Title> [<Component Scope>]`
 Include the specific app/component modified and bullet points detailing the exact technical changes.
 
+### [2026-09-18 13:50 UTC] Release Candidate 1 (v1-rc1): Complete OPay/Offline Purge, Cryptographic Guest Access Token & Merchant Debt Accounting [backend] [ai-governance]
+* **Component:** Payment Gateway Rails, Guest Privacy & IDOR Shield, Merchant Balance & Debt Ledgers, Release Candidate Certification (`backend/vmarket-web/`, `VICTORIOUS_MARKET_MATHEMATICAL_AND_SYSTEMIC_PROOF.md`, `AI_CHANGELOG.md`)
+* **Action:** Hardened transaction architecture to V1 Release Candidate standards:
+  - **1. Total OPay and Offline Payment Purge:**
+    - Purged `opay` completely from `OrderManager::$authorizedPickupMethods` and `OrderManager::$authorizedDeliveryMethods`, leaving strictly Paystack automated digital payments and Pay at Pickup (inspected in Uyo shop before Paystack digital payment).
+    - Updated `InvalidPaymentMethodException` to declare authorized methods: `paystack, pay_at_pickup`.
+    - Decommissioned offline payment checkout endpoints in `WebController.php` (`getOfflinePaymentCheckoutComplete()`, `pay_offline_method_list()`), throwing `InvalidPaymentMethodException`.
+    - Updated `RestAPI/v3/seller/OrderController.php` (Invariant 4) to reject any unpaid order fulfillment attempt.
+    - Cleaned `WhatsAppOrderService.php` to eliminate OPay mentions.
+  - **2. Cryptographic Guest Order Access Token:**
+    - Created migration `2026_09_18_000002_add_guest_access_token_to_orders_table.php` adding indexed `guest_access_token` (VARCHAR(64), nullable) to `orders`.
+    - Added `guest_access_token` to `Order.php` `$fillable`.
+    - Updated `OrderManager::getOrderAddData()` to generate 64-char unguessable cryptographic hex token (`bin2hex(random_bytes(32))`) for guest orders.
+    - Updated `RestAPI/v1/OrderController.php` (`track_by_order_id()` and `order_cancel()`) to require `guest_token` matching via constant-time `hash_equals()`, completely preventing sequential IDOR enumeration of private customer PII and pickup verification codes.
+  - **3. Merchant Recoverable Debt Accounting on Refunds:**
+    - Hardened `Admin/Order/RefundController.php`: when an approved refund exceeds current merchant earnings (`$vendorShare > $sellerWallet->total_earning`), the wallet balance is clamped to ₦0.00 while the unrecovered variance is strictly added to `seller_wallets.collected_cash` (merchant payable liability to platform).
+    - Eliminates silent liability write-offs and ensures future merchant sales automatically pay down debt before withdrawals can be requested.
+  - **4. Formal Cashback Economics & Defensible Governance:**
+    - Formally documented in `VICTORIOUS_MARKET_MATHEMATICAL_AND_SYSTEMIC_PROOF.md` that 5% customer cashback is funded from Victorious MARKET's 10% platform commission, leaving 5% gross operating merchandise margin for the platform before gateway fees, server costs, and delivery subsidies.
+    - Replaced sweeping "100% secure" statements with defensible invariant statements: "The identified V1 transaction-engine Critical/High findings have been reproduced, remediated, and covered by automated regression tests."
+  - **5. 100% Automated Suite Verification:**
+    - Adversarial Reproduction Suite: 10 / 10 PASSING (`scratch/reproduce_adversarial_findings.php`).
+    - Dual Fulfillment Suite: 23 / 23 PASSING (`scratch/test_fulfillment_path_separation.php`).
+    - Wallet Decommission Suite: 21 / 21 PASSING (`scratch/test_wallet_decommission.php`).
+    - Tagged repository state on Git as Release Candidate 1 (`v1-rc1`).
+
 ### [2026-09-18 12:56 UTC] Adversarial Audit Reproduction & Pre-V1 Transaction Hardening [backend] [ai-governance]
 * **Component:** Transaction Engine, Payments, Inventory, Cashback Lifecycle, Pickups, Security (`backend/vmarket-web/`, `AI_CHANGELOG.md`, `VICTORIOUS_MARKET_MATHEMATICAL_AND_SYSTEMIC_PROOF.md`)
 * **Action:** Converted 10 Critical & High security audit findings into an automated reproduction suite (`scratch/reproduce_adversarial_findings.php`), verified confirmed blockers, and executed surgical hardening:

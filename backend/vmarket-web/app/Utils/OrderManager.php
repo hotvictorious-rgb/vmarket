@@ -972,6 +972,7 @@ class OrderManager
             'pickup_verification_code' => random_int(100000, 999999),
             'customer_id' => $customerData['customer_id'],
             'is_guest' => $customerData['is_guest'],
+            'guest_access_token' => (!empty($customerData['is_guest'])) ? bin2hex(random_bytes(32)) : null,
             'seller_id' => $cartData['seller_id'],
             'seller_is' => $cartData['seller_is'],
             'customer_type' => 'customer',
@@ -1260,16 +1261,16 @@ class OrderManager
         $paymentMethod = $data['payment_method'] ?? '';
 
         // [AI] Victorious MARKET Dual Fulfillment Logic:
-        // 1. Doorstep Delivery ('default_type' or 'delivery'): Upfront payment required via Paystack or OPay.
+        // 1. Doorstep Delivery ('default_type' or 'delivery'): Upfront digital payment required strictly via Paystack.
         // 2. Customer Pickup ('pickup'): Customer places order online for physical inspection at Uyo merchant shop.
-        //    Payment method can be paystack, opay, or pay_at_pickup (inspected before digital payment).
+        //    Payment method can be paystack or pay_at_pickup (inspected before digital payment).
         if ($orderType === 'pickup') {
-            $authorizedPickupMethods = ['paystack', 'opay', 'pay_at_pickup', 'pending_inspection'];
+            $authorizedPickupMethods = ['paystack', 'pay_at_pickup', 'pending_inspection'];
             if (!in_array($paymentMethod, $authorizedPickupMethods, true)) {
                 throw new \App\Exceptions\InvalidPaymentMethodException($paymentMethod);
             }
         } else {
-            $authorizedDeliveryMethods = ['paystack', 'opay'];
+            $authorizedDeliveryMethods = ['paystack'];
             if (!in_array($paymentMethod, $authorizedDeliveryMethods, true)) {
                 throw new \App\Exceptions\InvalidPaymentMethodException($paymentMethod);
             }

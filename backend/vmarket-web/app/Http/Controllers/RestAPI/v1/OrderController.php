@@ -68,15 +68,22 @@ class OrderController extends Controller
         if ($user != 'offline' && $order->customer_id == $user->id) {
             $isOwner = true;
         } elseif ($order->is_guest) {
-            // [AI] Strict Guest Ownership Verification: Protect PII and pickup code from IDOR enumeration
-            // Requires phone verification matching the order's shipping/billing address
-            $shippingData = is_array($order->shipping_address_data) ? $order->shipping_address_data : (json_decode($order->shipping_address_data, true) ?? []);
-            $billingData = is_array($order->billing_address_data) ? $order->billing_address_data : (json_decode($order->billing_address_data, true) ?? []);
-            $expectedPhone = $shippingData['phone'] ?? ($billingData['phone'] ?? null);
-
-            $providedPhone = $request->get('phone');
-            if (!empty($expectedPhone) && !empty($providedPhone) && preg_replace('/[^0-9]/', '', $expectedPhone) === preg_replace('/[^0-9]/', '', $providedPhone)) {
+            // [AI] Cryptographically Guarded Guest Ownership Verification:
+            // Protects customer PII and secret pickup verification code from sequential IDOR scraping.
+            // 1. Primary Authority: Unguessable 64-char guest access token (constant-time comparison)
+            // 2. Secondary/Fallback: Exact phone number matching order address
+            $guestToken = $request->get('guest_token') ?? $request->header('X-Guest-Token');
+            if (!empty($order->guest_access_token) && !empty($guestToken) && hash_equals((string)$order->guest_access_token, (string)$guestToken)) {
                 $isOwner = true;
+            } else {
+                $shippingData = is_array($order->shipping_address_data) ? $order->shipping_address_data : (json_decode($order->shipping_address_data, true) ?? []);
+                $billingData = is_array($order->billing_address_data) ? $order->billing_address_data : (json_decode($order->billing_address_data, true) ?? []);
+                $expectedPhone = $shippingData['phone'] ?? ($billingData['phone'] ?? null);
+
+                $providedPhone = $request->get('phone');
+                if (!empty($expectedPhone) && !empty($providedPhone) && preg_replace('/[^0-9]/', '', $expectedPhone) === preg_replace('/[^0-9]/', '', $providedPhone)) {
+                    $isOwner = true;
+                }
             }
         }
 
@@ -140,16 +147,19 @@ class OrderController extends Controller
         if ($user != 'offline' && $order->customer_id == $user->id) {
             $isOwner = true;
         } elseif ($order->is_guest) {
-            // [AI] Guest cancellation requires phone verification
-            $shippingData = is_array($order->shipping_address_data) ? $order->shipping_address_data : (json_decode($order->shipping_address_data, true) ?? []);
-            $billingData = is_array($order->billing_address_data) ? $order->billing_address_data : (json_decode($order->billing_address_data, true) ?? []);
-            $expectedPhone = $shippingData['phone'] ?? ($billingData['phone'] ?? null);
+            // [AI] Cryptographically Guarded Guest Ownership Verification:
+            $guestToken = $request->get('guest_token') ?? $request->header('X-Guest-Token');
+            if (!empty($order->guest_access_token) && !empty($guestToken) && hash_equals((string)$order->guest_access_token, (string)$guestToken)) {
+                $isOwner = true;
+            } else {
+                $shippingData = is_array($order->shipping_address_data) ? $order->shipping_address_data : (json_decode($order->shipping_address_data, true) ?? []);
+                $billingData = is_array($order->billing_address_data) ? $order->billing_address_data : (json_decode($order->billing_address_data, true) ?? []);
+                $expectedPhone = $shippingData['phone'] ?? ($billingData['phone'] ?? null);
 
-            $providedPhone = $request->get('phone');
-            if (!empty($expectedPhone) && !empty($providedPhone) && preg_replace('/[^0-9]/', '', $expectedPhone) === preg_replace('/[^0-9]/', '', $providedPhone)) {
-                $isOwner = true;
-            } elseif ($request->has('guest_id') && $order->customer_id == $request['guest_id'] && is_numeric($request['guest_id']) && !empty($request->get('phone'))) {
-                $isOwner = true;
+                $providedPhone = $request->get('phone');
+                if (!empty($expectedPhone) && !empty($providedPhone) && preg_replace('/[^0-9]/', '', $expectedPhone) === preg_replace('/[^0-9]/', '', $providedPhone)) {
+                    $isOwner = true;
+                }
             }
         }
 

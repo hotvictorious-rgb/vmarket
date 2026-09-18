@@ -144,14 +144,33 @@ class RefundController extends BaseController
                     $markupShare = ($refund['amount'] / $itemPrice) * $unitMarkup;
                     $vendorShare = max(0, $refund['amount'] - $markupShare);
 
-                    $newTotalEarning = max(0, ($sellerWallet['total_earning'] ?? 0) - $vendorShare);
-                    $this->vendorWalletRepo->updateWhere(params: ['seller_id' => $order['seller_id']], data: ['total_earning' => $newTotalEarning]);
+                    $currentEarning = (float)($sellerWallet['total_earning'] ?? 0);
+                    $newTotalEarning = max(0, $currentEarning - $vendorShare);
+                    $unrecoveredDebt = max(0, $vendorShare - $currentEarning);
+
+                    $walletUpdateData = ['total_earning' => $newTotalEarning];
+                    if ($unrecoveredDebt > 0) {
+                        // [AI] Merchant Recoverable Debt Accounting:
+                        // Prevent silent liability write-off when refund exceeds current wallet balance.
+                        // The unrecovered variance is added to collected_cash (merchant payable liability to platform)
+                        // ensuring future earnings automatically pay down this debt before withdrawals.
+                        $walletUpdateData['collected_cash'] = ($sellerWallet['collected_cash'] ?? 0) + $unrecoveredDebt;
+                    }
+                    $this->vendorWalletRepo->updateWhere(params: ['seller_id' => $order['seller_id']], data: $walletUpdateData);
                     if ($adminWallet) {
                         $this->adminWalletRepo->updateWhere(params: ['admin_id' => 1], data: ['commission_earned' => max(0, $adminWallet['commission_earned'] - $markupShare)]);
                     }
                 } else {
-                    $newTotalEarning = max(0, ($sellerWallet['total_earning'] ?? 0) - $refund['amount']);
-                    $this->vendorWalletRepo->updateWhere(params: ['seller_id' => $order['seller_id']], data: ['total_earning' => $newTotalEarning]);
+                    $currentEarning = (float)($sellerWallet['total_earning'] ?? 0);
+                    $newTotalEarning = max(0, $currentEarning - $refund['amount']);
+                    $unrecoveredDebt = max(0, $refund['amount'] - $currentEarning);
+
+                    $walletUpdateData = ['total_earning' => $newTotalEarning];
+                    if ($unrecoveredDebt > 0) {
+                        // [AI] Merchant Recoverable Debt Accounting:
+                        $walletUpdateData['collected_cash'] = ($sellerWallet['collected_cash'] ?? 0) + $unrecoveredDebt;
+                    }
+                    $this->vendorWalletRepo->updateWhere(params: ['seller_id' => $order['seller_id']], data: $walletUpdateData);
                 }
             }
             $this->refundTransactionRepo->add(data: $refundTransactionService->getData(request: $request, refund: $refund, order: $order));

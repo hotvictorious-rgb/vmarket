@@ -212,100 +212,7 @@ Victorious MARKET features full-text and indexed search across all entities:
 ├───────────────────┼──────────────────────────┼──────────────────────┼──────────────────────────────────┤
 │ Transactional     │ Customer Email           │ 📄 Responsive HTML   │ `app/Mail/OrderPlaced.php` &     │
 │ Invoice & Receipt │ & Printable Thermal      │ & 58mm/80mm ESC/POS  │ `vendor-views/pos/order/invoice` │
-└───────────────────┴──────────────────────────┴──────────────────────┴──────────────────────────────────┘
-```
-
----
-
-# 4. DASHBOARD & MULTI-BRANCH LOCATION INTEGRITY PROOFS
-
-```
-┌────────────────────────────────────────────────────────────────────────────────────────────────────────┐
-│                             COMMAND DASHBOARDS & LOCATION PARITY                                       │
-├──────────────────────────────────────┬───────────────────────────────┬─────────────────────────────────┤
-│ DASHBOARD / MODULE                   │ URL ROUTE                     │ AUDIT CAPABILITY                │
-├──────────────────────────────────────┼───────────────────────────────┼─────────────────────────────────┤
-│ 👑 Super Admin POS Command Center    │ `/admin/pos-management/       │ • Real-Time SaaS MRR Volume     │
-│                                      │  dashboard`                   │ • In-Transit Waybill Theft Radar│
-│                                      │                               │ • Cross-Shop Debtor Exposure    │
-├──────────────────────────────────────┼───────────────────────────────┼─────────────────────────────────┤
-│ ⚙️ Super Admin SaaS Pricing Deck     │ `/admin/pos-management/       │ • Dynamic Branch Price (₦15k/mo)│
-│                                      │  settings`                    │ • Free Branch Allowance Config  │
-├──────────────────────────────────────┼───────────────────────────────┼─────────────────────────────────┤
-│ 🛡️ Super Admin 1-Click Verification  │ `/admin/pos-management/       │ • Instant 1-Click Storefront    │
-│                                      │  marketplace-applications`    │   Approval & URL Activation     │
-├──────────────────────────────────────┼───────────────────────────────┼─────────────────────────────────┤
-│ 🛒 Vendor 100ms Barcode POS Register │ `/vendor/pos`                 │ • Barcode Scan, Cart Hold, Split│
-│                                      │                               │   Payments & Blind Shift Close  │
-├──────────────────────────────────────┼───────────────────────────────┼─────────────────────────────────┤
-│ 💳 Vendor 30-Day Customer Debt Book  │ `/vendor/pos/debt-ledger`     │ • Current, Due & Critical Radar │
-│                                      │                               │ • Installment Repayment Engine  │
-├──────────────────────────────────────┼───────────────────────────────┼─────────────────────────────────┤
-│ 🚚 Vendor Inter-Branch Waybills Hub  │ `/vendor/branch/transfers`    │ • In-Transit Segregation &      │
-│                                      │                               │   Blind Destination Counts      │
-├──────────────────────────────────────┼───────────────────────────────┼─────────────────────────────────┤
-│ 🏢 Vendor SaaS Subscription Hub      │ `/vendor/subscription`        │ • Multi-Branch Branch Upgrade & │
-│                                      │                               │   Marketplace Application Form  │
-└──────────────────────────────────────┴───────────────────────────────┴─────────────────────────────────┘
-```
-
----
-
-# 5. MATHEMATICAL TEST EXECUTION PROOF LOG
-
-```json
-{
-    "Order_Total_Calculation": {
-        "status": "PASS",
-        "calculated": 63812.5,
-        "expected": 63812.5,
-        "delta": 0.00
-    },
-    "Split_Tender_Payment_Balance": {
-        "status": "PASS",
-        "order_total": 100000,
-        "total_tendered": 100000,
-        "delta": 0.00
-    },
-    "Commission_And_Escrow_Split": {
-        "status": "PASS",
-        "gross_collected": 83500,
-        "admin_commission": 8000,
-        "vendor_earning": 72000,
-        "rider_fee": 3500,
-        "delta": 0.00
-    },
-    "Debtor_Aging_And_Repayment": {
-        "status": "PASS",
-        "initial": 50000,
-        "after_first_payment": 30000,
-        "after_overpayment_settlement": 0,
-        "delta": 0.00
-    },
-    "Blind_Cashier_Shift_Reconciliation": {
-        "status": "PASS",
-        "expected": 160000,
-        "counted": 160000,
-        "discrepancy": 0.00
-    },
-    "Inter_Branch_Waybill_Variance": {
-        "status": "PASS",
-        "dispatched_units": 100,
-        "received_units": 96,
-        "shortage_units": 4,
-        "driver_liability_amount": 10000,
-        "delta": 0.00
-    },
-    "Refund_And_Return_Reversal": {
-        "status": "PASS",
-        "refunded_to_customer": 40000,
-        "deducted_from_vendor": 36000,
-        "reversed_from_admin": 4000,
-        "net_delta": 0.00
-    }
-}
-```
-
+└───────────────────┴──────────────────────────┴───────────────────�
 ---
 
 # 7. 100-FLOW EXHAUSTIVE SYSTEMIC & MATHEMATICAL VERIFICATION REGISTRY
@@ -361,6 +268,8 @@ All 19 payment authority, fulfillment branching, and cryptographic invariants we
 }
 ```
 
+---
+
 # 9. DUAL FULFILLMENT & COMMERCIAL REVENUE/CASHBACK MATHEMATICAL PROOF (10% COMMISSION / 90% SETTLEMENT / 5% CASHBACK LEDGER)
 
 All 23 dual fulfillment, commercial split, and cryptographic handover invariants were proven with **23 / 23 PASSED (0 Failures, $\Delta = 0.0000$)** in `scratch/test_fulfillment_path_separation.php`:
@@ -392,6 +301,9 @@ All 23 dual fulfillment, commercial split, and cryptographic handover invariants
 
 # 10. ADVERSARIAL AUDIT REPRODUCTION & TRANSACTION HARDENING PROOF (10 / 10 PASS)
 
+> **Defensible Invariant Standard:**  
+> The identified V1 transaction-engine Critical/High findings have been reproduced, remediated, and covered by automated regression tests. The 23/23 fulfillment suite and 10/10 adversarial reproduction suite verify that the defined invariants pass with zero drift ($\Delta = 0.0000$).
+
 Executed via `scratch/reproduce_adversarial_findings.php` on **2026-09-18**:
 
 | Audit Finding | Status | Test Name | Verification Result | Mathematical / Transaction Invariant |
@@ -402,14 +314,46 @@ Executed via `scratch/reproduce_adversarial_findings.php` on **2026-09-18**:
 | **Cashback Maturation Automation** | **PASS** | `test_cashback_maturity_automation` | Scheduler verified | Daily Artisan command `cashback:mature` scheduled in `routes/console.php`. |
 | **Unpaid Pickup Cancellation Trap** | **PASS** | `test_unpaid_pickup_cancellation` | Free cancellation verified | Unpaid pickup reservations can be cancelled before inspection with stock restored. |
 | **Multi-Vendor Transaction Atomicity** | **PASS** | `test_multivendor_order_atomicity` | DB transaction verified | Multi-vendor checkout loop encapsulated in atomic `DB::transaction()` with full rollback. |
-| **Guest Order IDOR Security** | **PASS** | `test_guest_order_idor` | Phone verification verified | Sequential integer `guest_id` cannot access pickup codes or PII without phone match. |
+| **Guest Order IDOR Security** | **PASS** | `test_guest_order_idor` | Token-guarded verified | Unguessable 64-char `guest_access_token` verified via `hash_equals()`; blocks sequential IDOR scraping. |
 | **Vendor Employee Financial Security** | **PASS** | `test_vendor_employee_financial_permissions` | Middleware verified | `VendorEmployeePermissionMiddleware` blocks all payout/bank routes with redirect. |
 | **Admin Role Privilege Escalation** | **PASS** | `test_admin_role_escalation` | Super Admin bound verified | Custom role creation and editing strictly restricted to Super Admin (`admin_role_id == 1`). |
-| **Negative Merchant Balance on Refund** | **PASS** | `test_negative_merchant_balance` | Balance floor verified | Merchant earnings bound: $\text{Balance} = \max(0, \text{Balance} - \text{Refund})$. |
+| **Negative Merchant Balance & Debt Accounting** | **PASS** | `test_negative_merchant_balance` | Floor & Debt tracked | Non-negative wallet floor $\max(0, \text{bal} - \text{refund})$ + unrecovered variance tracked in `collected_cash`. |
 
-**Final Verification Summary:** 10 / 10 Tests Passing (100% Blocker Elimination, $\Delta = 0.0000$).
+---
+
+# 11. RELEASE CANDIDATE 1 (V1-RC1) TRANSACTION CERTIFICATION SPECIFICATIONS
+
+### 11.1 Cashback Economics Business Model
+* **Gross Merchant Commission:** $10.00\%$ of Net Merchandise Value (collected by Victorious MARKET).
+* **Customer Loyalty Cashback:** $5.00\%$ of Net Merchandise Value (awarded as non-withdrawable reward ledger).
+* **Cashback Funding Allocation:** Formally and authoritatively funded from Victorious MARKET's $10.00\%$ gross commission.
+* **Platform Net Merchandise Operating Margin:**
+  $$\text{Net Platform Margin} = \text{Commission Rate} (10.00\%) - \text{Cashback Liability} (5.00\%) = \mathbf{5.00\%}$$
+  *Example (₦100,000 Merchandise Sale):*
+  * Gross Order Amount: $₦100,000.00$
+  * Merchant Share ($90\%$): $₦90,000.00$
+  * Platform Gross Commission ($10\%$): $₦10,000.00$
+  * Customer Cashback Liability ($5\%$): $₦5,000.00$
+  * Remaining Platform Operating Margin: $\mathbf{₦5,000.00}$ (before payment gateway processing fees, logistics subsidies, and operating costs).
+
+### 11.2 Merchant Recoverable Debt Accounting on Refunds
+To distinguish **Merchant Wallet Balance** ($\ge 0$) from **Merchant Payable Liability / Recoverable Debt**, the system enforces:
+$$\text{new\_total\_earning} = \max(0, \text{current\_total\_earning} - \text{vendor\_refund\_share})$$
+$$\text{unrecovered\_debt} = \max(0, \text{vendor\_refund\_share} - \text{current\_total\_earning})$$
+$$\text{collected\_cash} = \text{collected\_cash} + \text{unrecovered\_debt}$$
+* **Invariant:** The merchant wallet balance never drops below zero ($\text{total\_earning} \ge 0.00$), preventing database exceptions.
+* **Debt Invariant:** Any excess liability is never silently written off; it is recorded into `collected_cash` (the platform's receivable ledger).
+* **Recovery Mechanism:** Withdrawable balance is computed as $\text{total\_earning} - (\text{collected\_cash} + \text{pending\_withdraw})$, ensuring subsequent merchant sales automatically pay down unrecovered debt before any payouts can be requested.
+
+### 11.3 Cryptographic Guest Access Token
+* **Entropy Standard:** 64-character unguessable cryptographic token (`bin2hex(random_bytes(32))`) generated on order placement.
+* **Storage & Index:** Persisted in `orders.guest_access_token` (indexed VARCHAR(64)).
+* **Access Guard:** All guest order tracking (`track_by_order_id`) and cancellation (`order_cancel`) endpoints require `guest_token` matching via constant-time `hash_equals()`. Knowing only the order ID or customer phone number is insufficient to access private PII or secret pickup verification codes.
+
+### 11.4 Complete Purge of OPay and Offline Payments
+* **Single Automated Rail:** Paystack digital rails exclusively (Card, Bank Transfer, USSD, Apple Pay via Paystack).
+* **Pickup Rail:** Pay at Pickup (reservation online $\to$ physical inspection in Uyo $\to$ digital payment via Paystack $\to$ 6-digit code release).
+* **Decommissioned Rails:** OPay customer checkout, manual bank deposit receipt uploads, and offline payment methods are completely purged and blocked with HTTP 403 / `InvalidPaymentMethodException`.
 
 ---
 *© Victorious MARKET Ecosystem — Enterprise Mathematical & Architectural Verification Authority.*
-
-

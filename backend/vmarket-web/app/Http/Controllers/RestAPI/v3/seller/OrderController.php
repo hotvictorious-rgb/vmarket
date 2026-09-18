@@ -354,11 +354,11 @@ class OrderController extends Controller
             ], 403);
         }
 
-        // [AI] Machine-Enforced Invariant 4: unverified OPay / offline payment + fulfillment -> 403 Forbidden
-        if (in_array($order['payment_method'], ['offline_payment', 'opay']) && $order['payment_status'] !== 'paid') {
+        // [AI] Machine-Enforced Invariant 4: unverified digital payment or decommissioned method + fulfillment -> 403 Forbidden
+        if ($order['payment_status'] !== 'paid' && in_array($order['payment_method'], ['offline_payment', 'opay', 'cash_on_delivery'])) {
             return response()->json([
                 'success' => 0,
-                'message' => translate('Unverified OPay or offline payment orders cannot be fulfilled until Admin verifies payment.')
+                'message' => translate('Unverified orders cannot be fulfilled until digital payment is confirmed.')
             ], 403);
         }
 

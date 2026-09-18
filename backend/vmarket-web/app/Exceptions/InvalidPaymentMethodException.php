@@ -7,8 +7,8 @@ use DomainException;
 /**
  * [AI] Thrown when an order or payment request attempts to use a payment method
  * not authorized under Victorious MARKET's authoritative payment model:
- * Allowed: paystack, opay, pay_at_pickup.
- * Disallowed: wallet, pay_by_wallet, cash_on_delivery, cod, customer_wallet, offline_payment.
+ * Allowed: paystack, pay_at_pickup.
+ * Disallowed: opay, wallet, pay_by_wallet, cash_on_delivery, cod, customer_wallet, offline_payment.
  */
 class InvalidPaymentMethodException extends DomainException
 {
@@ -18,7 +18,7 @@ class InvalidPaymentMethodException extends DomainException
     {
         $this->invalidMethod = $method;
         if (empty($message)) {
-            $message = "Payment method '{$method}' is not authorized on Victorious MARKET. Authorized methods: paystack, opay, pay_at_pickup.";
+            $message = "Payment method '{$method}' is not authorized on Victorious MARKET. Authorized methods: paystack, pay_at_pickup.";
         }
         parent::__construct($message, $code, $previous);
     }
