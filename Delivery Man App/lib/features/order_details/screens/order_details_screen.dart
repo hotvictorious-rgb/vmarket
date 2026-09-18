@@ -9,7 +9,6 @@ import 'package:sixvalley_delivery_boy/features/order_details/controllers/order_
 import 'package:sixvalley_delivery_boy/features/order_details/domain/models/order_details_model.dart';
 import 'package:sixvalley_delivery_boy/features/order_details/screens/order_delivered_screen.dart';
 import 'package:sixvalley_delivery_boy/features/order_details/widgets/camera_or_gallery_widget.dart';
-import 'package:sixvalley_delivery_boy/features/order_details/widgets/change_amount_widget.dart';
 import 'package:sixvalley_delivery_boy/features/order_details/widgets/delivery_info_widget.dart';
 import 'package:sixvalley_delivery_boy/features/order_details/widgets/order_info_with_customer_widget.dart';
 import 'package:sixvalley_delivery_boy/features/order_details/widgets/order_status_change_custom_button_widget.dart';
@@ -169,13 +168,6 @@ class _OrderDetailsScreenState extends State<OrderDetailsScreen> {
 
 
 
-                      Padding(
-                        padding: EdgeInsets.symmetric(horizontal: Dimensions.paddingSizeSmall),
-                        child: ChangeAmountWidget(
-                          changeAmount: orderModel?.bringChangeAmount ?? 0,
-                          currency: orderModel?.bringChangeAmountCurrency ?? '',
-                        ),
-                      ),
 
                       Padding(
                         padding: EdgeInsets.only(top: Dimensions.paddingSizeSmall),

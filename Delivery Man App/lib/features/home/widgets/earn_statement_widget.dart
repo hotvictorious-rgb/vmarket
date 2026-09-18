@@ -74,8 +74,8 @@ class EarnStatementWidget extends StatelessWidget {
                       child: Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
                         Expanded(
                           flex:1,
-                          child: CalculationWidget(title: 'cash_in_hand'.tr,
-                              amount: profileController.profileModel?.cashInHand ?? 0, isTotalAmount: true),
+                          child: CalculationWidget(title: 'total_earn'.tr,
+                              amount: profileController.profileModel?.totalEarn ?? 0, isTotalAmount: true),
                         ),
 
                         Expanded(
