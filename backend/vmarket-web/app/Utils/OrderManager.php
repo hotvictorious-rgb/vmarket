@@ -954,6 +954,7 @@ class OrderManager
 
     public static function getOrderAddData(int $orderId, string $orderGroupId, object|array $customerData = [], object|array $cartData = [], object|array $orderData = [], object|array $totalTax = []): array
     {
+        $taxConfig = self::getTaxSystemType();
         // [AI] Victorious MARKET Dual Fulfillment & Commercial Invariants
         $orderType = $orderData['order_type'] ?? 'default_type';
         $shippingCost = ($orderType === 'pickup') ? 0.00 : (float)($cartData['shipping_cost'] ?? 0.00);
