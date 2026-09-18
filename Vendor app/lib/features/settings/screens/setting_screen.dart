@@ -7,9 +7,7 @@ import 'package:sixvalley_vendor_app/utill/dimensions.dart';
 import 'package:sixvalley_vendor_app/utill/images.dart';
 import 'package:sixvalley_vendor_app/utill/styles.dart';
 import 'package:sixvalley_vendor_app/common/basewidgets/custom_app_bar_widget.dart';
-import 'package:sixvalley_vendor_app/common/basewidgets/custom_dialog_widget.dart';
 import 'package:sixvalley_vendor_app/features/language/screens/change_language_screen.dart';
-import 'package:sixvalley_vendor_app/features/settings/widgets/choose_shipping_dialog_widget.dart';
 
 class SettingsScreen extends StatelessWidget {
   const SettingsScreen({super.key});
@@ -29,13 +27,6 @@ class SettingsScreen extends StatelessWidget {
             title: getTranslated('choose_language', context),
             onTap: ()=> Navigator.of(context).push(MaterialPageRoute(builder: (_) => const ChooseLanguageScreen())),
           ),
-
-          Provider.of<SplashController>(context, listen: false).configModel!.shippingMethod == 'sellerwise_shipping'?
-          TitleButton(
-            icon: Images.ship,
-            title: '${getTranslated('shipping_setting', context)}',
-            onTap: () => showAnimatedDialogWidget(context, const ChooseShippingDialogWidget()),
-          ):const SizedBox(),
 
         ],
       ),

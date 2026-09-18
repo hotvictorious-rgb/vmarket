@@ -31,7 +31,7 @@ import 'package:sixvalley_vendor_app/features/auth/controllers/auth_controller.d
 import 'package:sixvalley_vendor_app/features/settings/controllers/business_controller.dart';
 import 'package:sixvalley_vendor_app/features/chat/controllers/chat_controller.dart';
 import 'package:sixvalley_vendor_app/features/coupon/controllers/coupon_controller.dart';
-import 'package:sixvalley_vendor_app/features/delivery_man/controllers/delivery_man_controller.dart';
+
 import 'package:sixvalley_vendor_app/features/emergency_contract/controllers/emergency_contact_controller.dart';
 import 'package:sixvalley_vendor_app/features/language/controllers/language_controller.dart';
 import 'package:sixvalley_vendor_app/localization/controllers/localization_controller.dart';
@@ -43,7 +43,7 @@ import 'package:sixvalley_vendor_app/features/review/controllers/product_review_
 import 'package:sixvalley_vendor_app/features/profile/controllers/profile_controller.dart';
 import 'package:sixvalley_vendor_app/features/refund/controllers/refund_controller.dart';
 import 'package:sixvalley_vendor_app/features/addProduct/controllers/add_product_controller.dart';
-import 'package:sixvalley_vendor_app/features/shipping/controllers/shipping_controller.dart';
+
 import 'package:sixvalley_vendor_app/features/shop/controllers/shop_controller.dart';
 import 'package:sixvalley_vendor_app/features/splash/controllers/splash_controller.dart';
 import 'package:sixvalley_vendor_app/notification/models/notification_body.dart';
@@ -128,8 +128,7 @@ Future<void> main() async {
       ChangeNotifierProvider(create: (context) => di.sl<AddProductController>()),
       ChangeNotifierProvider(create: (context) => di.sl<ProductController>()),
       ChangeNotifierProvider(create: (context) => di.sl<ProductReviewController>()),
-      ChangeNotifierProvider(create: (context) => di.sl<ShippingController>()),
-      ChangeNotifierProvider(create: (context) => di.sl<DeliveryManController>()),
+
       ChangeNotifierProvider(create: (context) => di.sl<RefundController>()),
       ChangeNotifierProvider(create: (context) => di.sl<BottomMenuController>()),
       ChangeNotifierProvider(create: (context) => di.sl<EmergencyContactController>()),

@@ -17,8 +17,6 @@ import 'package:sixvalley_vendor_app/utill/images.dart';
 import 'package:sixvalley_vendor_app/common/basewidgets/custom_bottom_sheet_widget.dart';
 import 'package:sixvalley_vendor_app/features/chat/screens/inbox_screen.dart';
 import 'package:sixvalley_vendor_app/features/coupon/screens/coupon_list_screen.dart';
-import 'package:sixvalley_vendor_app/features/dashboard/screens/nav_bar_screen.dart';
-import 'package:sixvalley_vendor_app/features/delivery_man/screens/delivery_man_setup_screen.dart';
 import 'package:sixvalley_vendor_app/features/menu/widgets/sign_out_confirmation_dialog_widget.dart';
 import 'package:sixvalley_vendor_app/features/more/screens/html_view_screen.dart';
 import 'package:sixvalley_vendor_app/features/product/screens/product_list_screen.dart';
@@ -68,18 +66,6 @@ class MenuBottomSheetWidget extends StatelessWidget {
           CustomBottomSheetWidget(image: Images.couponIcon, title: getTranslated('coupons', context),
             onTap: () => _handleMenuTap(context, const CouponListScreen()),
           ),
-
-          if(configModel?.shippingMethod == 'sellerwise_shipping')
-            CustomBottomSheetWidget(image: Images.deliveryManIcon, title: getTranslated('deliveryman', context),
-              onTap: () => _handleMenuTap(context, const DeliveryManSetupScreen()),
-            ),
-
-
-          // if(configModel?.posActive == 1 && Provider.of<ProfileController>(context, listen: false).userInfoModel?.posActive == 1)
-            CustomBottomSheetWidget(image: Images.pos, title: getTranslated('pos', context),
-              onTap: () => _handleMenuTap(context, const NavBarScreen()),
-            ),
-
 
           CustomBottomSheetWidget(image: Images.settings, title: getTranslated('settings', context),
             onTap: () => _handleMenuTap(context, const SettingsScreen()),
