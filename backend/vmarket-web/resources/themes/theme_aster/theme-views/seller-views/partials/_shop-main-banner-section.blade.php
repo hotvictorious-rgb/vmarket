@@ -129,27 +129,7 @@
                         </div>
                     </div>
                 </div>
-                <div class="d-flex flex-wrap flex-lg-column flex-lg-down-grow-1 justify-content-center gap-3">
-                    @if (auth('customer')->check())
-                        <button class="btn btn-primary flex-lg-down-grow-1 fs-16 d-none" data-bs-toggle="modal"
-                                data-bs-target="#contact_sellerModal"
-                            @if($shopInfoArray['id'] != 0 && checkVendorAbility(type: 'vendor', status: 'temporary_close', vendor: $shopInfoArray))
-                                    disabled
-                            @elseif($shopInfoArray['id'] == 0 && checkVendorAbility(type: 'inhouse', status: 'temporary_close'))
-                                    disabled
-                            @endif
-                        >
-                            <i class="bi bi-chat-square-fill text-capitalize"></i>
-                            {{ translate('chat_with_vendor') }}
-                        </button>
-                        @include('theme-views.layouts.partials.modal._chat-with-seller',['shop'=>$shopInfoArray, 'user_type' => ($shopInfoArray['id'] == 0 ? 'admin':'seller')])
-                    @else
-                        <button class="btn btn-primary flex-lg-down-grow-1 fs-16 d-none" data-bs-toggle="modal"
-                                data-bs-target="#loginModal">
-                            <i class="bi bi-chat-square-fill text-capitalize"></i> {{ translate('chat_with_vendor') }}
-                        </button>
-                    @endif
-                </div>
+
             </div>
         </div>
     </div>

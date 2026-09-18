@@ -876,22 +876,6 @@
                                                     </div>
                                                 </div>
                                             </div>
-                                            @if (auth('customer')->id() == '')
-                                                <div class="btn-circle chat-btn size-2-5rem d-none"
-                                                     data-bs-toggle="modal" data-bs-target="#loginModal">
-                                                    <i class="bi bi-chat-square-dots"></i>
-                                                </div>
-                                            @else
-                                                <div class="btn-circle chat-btn size-2-5rem d-none"
-                                                     data-bs-toggle="modal" data-bs-target="#contact_sellerModal"
-                                                     @if(checkVendorAbility(type: 'vendor', status: 'temporary_close', vendor: $product?->seller?->shop))
-                                                         disabled
-                                                    @endif>
-                                                    <i class="bi bi-chat-square-dots"></i>
-                                                </div>
-                                            @endif
-                                        </div>
-
                                         <a href="{{ route('vendor-shop',['slug' => $product->seller?->shop?->slug]) }}"
                                            class="btn btn-primary btn-block text-capitalize">
                                             {{ translate('visit_store') }}
@@ -899,8 +883,6 @@
                                     </div>
                                 </div>
                             </div>
-
-                            @include('theme-views.layouts.partials.modal._chat-with-seller',['shop' => $product->seller->shop, 'user_type' => 'seller'])
                         @endif
                     @else
                         <div class="card  order-0 order-sm-1">
@@ -963,21 +945,6 @@
                                             </div>
                                         </div>
 
-                                        @if (auth('customer')->id() == '')
-                                            <div class="btn-circle chat-btn size-2-5rem d-none"
-                                                 data-bs-toggle="modal" data-bs-target="#loginModal">
-                                                <i class="bi bi-chat-square-dots"></i>
-                                            </div>
-                                        @else
-                                            <div class="btn-circle chat-btn size-2-5rem d-none"
-                                                 data-bs-toggle="modal" data-bs-target="#contact_sellerModal"
-                                                 @if(checkVendorAbility(type: 'inhouse', status: 'temporary_close'))
-                                                     disabled
-                                                @endif>
-                                                <i class="bi bi-chat-square-dots"></i>
-                                            </div>
-                                        @endif
-                                    </div>
                                     <a href="{{ route('vendor-shop',['slug' => getInHouseShopConfig(key:'slug')]) }}"
                                        class="btn btn-primary btn-block text-capitalize">
                                         {{ translate('visit_store') }}
@@ -985,8 +952,6 @@
                                 </div>
                             </div>
                         </div>
-
-                        @include('theme-views.layouts.partials.modal._chat-with-seller',['shop'=>0, 'user_type' => 'admin'])
                     @endif
                 </div>
             </div>

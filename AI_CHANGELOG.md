@@ -7,6 +7,38 @@ Always append your completed tasks here in chronological order at the top. Forma
 `### [YYYY-MM-DD HH:MM UTC] <Feature / Fix Title> [<Component Scope>]`
 Include the specific app/component modified and bullet points detailing the exact technical changes.
 
+### [2026-09-18 10:40 UTC] Customer Privacy Shield, Chat Purge & 100% Motorized Delivery (Phase 2) [backend] [user-app] [ai-governance]
+* **Component:** Customer Privacy Shield, Anti-Contact Guard, Order Delivery Engine (`backend/vmarket-web/`, `User app/`, `scratch/test_fulfillment_path_separation.php`)
+* **Action:** Executed Phase 2 of the Nigerian marketplace transformation to protect merchant privacy, prevent platform disintermediation, and enforce a 100% motorized centralized delivery model:
+  - **1. Customer $\longleftrightarrow$ Vendor Direct Chat Complete Purge:**
+    - Modified `app/Http/Controllers/Web/ChattingController.php`:
+      - In `index()`, blocked `$type === 'vendor'` by redirecting to support tickets with warning notice.
+      - In `getMessageByUser()` and `addMessage()`, strictly blocked customer-to-vendor chat attempts with 403 Forbidden.
+      - Cleaned up unreachable dead code in `addMessage()`.
+    - In `resources/themes/theme_aster/theme-views/layouts/partials/modal/_chat-with-seller.blade.php`, purged modal body and forms.
+    - In `resources/themes/theme_aster/theme-views/product/details.blade.php`, removed all chat modal buttons and modal includes.
+    - In `resources/themes/theme_aster/theme-views/seller-views/partials/_shop-main-banner-section.blade.php`, deleted vendor chat button block.
+    - In `resources/themes/theme_aster/theme-views/users-profile/account-order-details/seller-info.blade.php`, deleted chat buttons and modal includes.
+  - **2. Customer Privacy Shield (Vendor Physical Address & Contact Protection):**
+    - In `app/Http/Controllers/RestAPI/v1/SellerController.php`:
+      - In `get_seller_info()`, stripped vendor personal phone number and masked physical shop address to the logistics dispatch hub (`Delivers from {City} Hub`). Contact phone set to null.
+      - In `getSellerList()`, unseated `$seller['phone']` and `$seller['email']`, masking shop address to general delivery hub.
+      - In `more_sellers()`, masked shop address to delivery hub zone and stripped phone.
+    - In `User app/lib/features/shop/widgets/seller_card.dart`:
+      - Replaced raw vendor street address display with logistics delivery zone ("Delivers from Uyo Central Hub" / "Delivers from Uyo Hub").
+    - In `User app/lib/features/order_details/widgets/shipping_and_billing_widget.dart`:
+      - Replaced fallback vendor pickup address with "Victorious MARKET Central Hub, Nigeria" and updated notice to 100% doorstep motorized delivery.
+  - **3. Customer Self-Pickup Elimination (100% Motorized Delivery Mandate):**
+    - In `app/Utils/OrderManager.php`:
+      - Removed `pay_at_pickup` from `$authorizedMethods`, leaving strictly Nigerian online rails (`paystack`, `opay`).
+      - Added strict invariant guard throwing `InvalidArgumentException` if `order_type === 'pickup'`.
+    - In `app/Http/Controllers/Vendor/Order/InShopHandoverController.php`:
+      - Purged customer self-pickup execution branch; handover in-shop now strictly requires an assigned delivery rider (`delivery_man_id`).
+      - In-shop handover exclusively executes the Rider Custody Handshake (`out_for_delivery` with rider pickup OTP).
+  - **4. Verification & Systemic Equilibrium ($\Delta = 0.0000$):**
+    - Passed PHP syntax lint (`php -l`) with 0 errors across all modified controllers and utilities.
+    - Updated and executed `scratch/test_fulfillment_path_separation.php`: **36 / 36 checks passed (100% success rate, $\Delta = 0.0000$)**.
+
 ### [2026-09-18 09:58 UTC] Complete Purge of Non-Nigerian 6Valley Features (Phase 1) [backend] [user-app] [vendor-app] [delivery-man] [ai-governance]
 * **Component:** Digital Products, Offline Payments, Multi-Language, Foreign SMS, Refer & Earn, Multi-Currency (`backend/vmarket-web/`, `User app/`, `Vendor app/`, `Delivery Man App/`)
 * **Action:** Executed Phase 1 of the 20-point strategic transformation from generic 6Valley template into a lean Nigerian physical marketplace:

@@ -61,27 +61,6 @@
                                                 </div>
                                             </div>
 
-                                            @if(isset($order->seller->shop) && $order->seller->shop['id'] != 0)
-                                                @php
-                                                    $isTemporaryClosed = checkVendorAbility(type: 'vendor', status: 'temporary_close', vendor: $order->seller->shop);
-                                                    $isVacationMode = checkVendorAbility(type: 'vendor', status: 'vacation_status', vendor: $order->seller->shop);
-                                                    $canChat = !$isTemporaryClosed;
-                                                @endphp
-
-                                                <div class="d-flex flex-column gap-3 d-none">
-                                                    <button class="btn btn-primary"
-                                                        {{ $canChat ? 'data-bs-toggle=modal data-bs-target=#contact_sellerModal' : 'disabled' }}>
-                                                        <i class="bi bi-chat-square-fill"></i>
-                                                        {{ translate('Chat_with_vendor') }}
-                                                    </button>
-                                                </div>
-
-                                                @if($canChat)
-                                                    @include('theme-views.layouts.partials.modal._chat-with-seller', [
-                                                        'shop' => $order->seller->shop,
-                                                        'user_type' => 'seller'
-                                                    ])
-                                                @endif
                                         </div>
                                     @endif
 
@@ -150,19 +129,7 @@
                                                 </div>
                                             </div>
 
-                                            <div class="d-flex flex-column gap-3 d-none">
-                                                <button class="btn btn-primary" data-bs-toggle="modal"
-                                                        data-bs-target="#contact_sellerModal">
-                                                    <i class="bi bi-chat-square-fill"></i>
-                                                    {{ translate('Chat_with_vendor') }}
-                                                </button>
-                                            </div>
                                         </div>
-
-                                        @include(
-                                            'theme-views.layouts.partials.modal._chat-with-seller',
-                                            ['shop' => 0, 'user_type' => 'admin']
-                                        )
 
                                         <div class="d-flex gap-3 flex-wrap mt-4">
                                             <div class="card flex-grow-1">

@@ -34,7 +34,11 @@ class SellerController extends Controller
     {
         $shop = Shop::where('slug', $request['slug'])->first();
         $data = [];
-        $seller = $shop['author_type'] != 'admin' ? Seller::with(['shop'])->where(['id' => $shop['seller_id']])->first(['id', 'f_name', 'l_name', 'phone', 'image', 'minimum_order_amount']) : null;
+        $seller = $shop['author_type'] != 'admin' ? Seller::with(['shop.deliveryCity'])->where(['id' => $shop['seller_id']])->first(['id', 'f_name', 'l_name', 'image', 'minimum_order_amount']) : null;
+        if ($seller && $seller->shop) {
+            $seller->shop->address = 'Delivers from ' . ($seller->shop->deliveryCity->name ?? 'Uyo Hub');
+            $seller->shop->contact = null;
+        }
 
         $productIds = Product::marketplaceEligible()
             ->when($shop && $shop['author_type'] == 'admin', function ($query) {
@@ -97,7 +101,7 @@ class SellerController extends Controller
         $sellers = $this->seller->when($type == 'top', function ($query) {
             return $query->whereHas('orders');
         })
-            ->approved()->with(['shop', 'orders', 'product.reviews' => function ($query) {
+            ->approved()->with(['shop.deliveryCity', 'orders', 'product.reviews' => function ($query) {
                 $query->active();
             }])
             ->withCount(['orders', 'product' => function ($query) {
@@ -105,6 +109,11 @@ class SellerController extends Controller
             }])
             ->get()
             ->each(function ($seller) {
+                if ($seller->shop) {
+                    $seller->shop->address = 'Delivers from ' . ($seller->shop->deliveryCity->name ?? 'Uyo Hub');
+                    $seller->shop->contact = null;
+                }
+                unset($seller['phone'], $seller['email']);
                 $seller['temporary_close'] = (int)$seller?->shop?->temporary_close ?? 0;
                 $seller->product?->map(function ($product) {
                     $product['rating'] = $product?->reviews?->where('status', 1)->pluck('rating')->sum();
@@ -177,7 +186,14 @@ class SellerController extends Controller
 
     public function more_sellers(): JsonResponse
     {
-        return response()->json(array_values($this->cacheHomePageMoreVendorsList()->pluck('shop')->toArray()));
+        $shops = $this->cacheHomePageMoreVendorsList()->pluck('shop')->filter()->map(function ($shop) {
+            if ($shop) {
+                $shop->address = 'Delivers from ' . ($shop->deliveryCity->name ?? 'Uyo Hub');
+                $shop->contact = null;
+            }
+            return $shop;
+        });
+        return response()->json(array_values($shops->toArray()));
     }
 
     public function get_seller_best_selling_products($slug, Request $request)

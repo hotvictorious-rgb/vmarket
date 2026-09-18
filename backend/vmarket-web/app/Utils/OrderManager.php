@@ -1244,11 +1244,16 @@ class OrderManager
 
     public static function generateOrder(object|array|null $data = []): array
     {
-        // [AI] Authoritative Payment Authority Invariant: Only paystack, opay, pay_at_pickup permitted
+        // [AI] Authoritative Payment Authority Invariant: Only authorized Nigerian online rails (paystack, opay) permitted
         $paymentMethod = $data['payment_method'] ?? '';
-        $authorizedMethods = ['paystack', 'opay', 'pay_at_pickup'];
+        $authorizedMethods = ['paystack', 'opay'];
         if (!in_array($paymentMethod, $authorizedMethods, true)) {
             throw new \App\Exceptions\InvalidPaymentMethodException($paymentMethod);
+        }
+
+        // [AI] 100% Motorized Delivery Mandate: Customer self-pickup is strictly prohibited
+        if (isset($data['order_type']) && $data['order_type'] === 'pickup') {
+            throw new \InvalidArgumentException('Customer self-pickup is disabled. All marketplace orders are dispatched via motorized delivery.');
         }
 
         $taxConfig = self::getTaxSystemType();
