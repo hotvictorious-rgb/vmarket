@@ -3,7 +3,6 @@ import 'package:flutter_sixvalley_ecommerce/common/basewidget/custom_asset_image
 import 'package:flutter_sixvalley_ecommerce/common/basewidget/show_custom_snakbar_widget.dart';
 import 'package:flutter_sixvalley_ecommerce/features/checkout/controllers/checkout_controller.dart';
 import 'package:flutter_sixvalley_ecommerce/features/checkout/widgets/shipping_details_widget.dart';
-import 'package:flutter_sixvalley_ecommerce/features/offline_payment/widgets/offline_payment_section_widget.dart';
 import 'package:flutter_sixvalley_ecommerce/features/order/controllers/order_controller.dart';
 import 'package:flutter_sixvalley_ecommerce/features/order_details/controllers/order_details_controller.dart';
 import 'package:flutter_sixvalley_ecommerce/features/order_details/widgets/cal_chat_widget.dart';
@@ -392,8 +391,7 @@ class _OrderDetailsScreenState extends State<OrderDetailsScreen> {
 
                                 if(orderProvider.orderDetails![0].order?.editedStatus == 1)...[
                                   if(orderProvider.orderDetails![0].order?.editedStatus == 1 && (orderProvider.orderDetails?[0].latestEditHistory?.orderDueAmount ?? 0) > 0
-                                    &&  orderProvider.orderDetails![0].latestEditHistory!.orderDuePaymentMethod != 'cash_on_delivery' && orderProvider.orderDetails?[0].latestEditHistory?.orderDuePaymentStatus != 'paid'
-                                      && !(orderProvider.orderDetails![0].latestEditHistory!.orderDuePaymentMethod == 'offline_payment' && orderProvider.orderDetails?[0].latestEditHistory?.orderDuePaymentStatus == 'unpaid'))
+                                    && orderProvider.orderDetails?[0].latestEditHistory?.orderDuePaymentStatus != 'paid')
                                   AmountDueCard(
                                     showButton: true,
                                     title: getTranslated('pay_due_bill', context)!,

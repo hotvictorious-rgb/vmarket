@@ -20,9 +20,7 @@ class ChoosePaymentWidget extends StatelessWidget {
       builder: (context, orderProvider, _) {
         return Consumer<SplashController>(
           builder: (context, configProvider, _) {
-            bool hasSelection = orderProvider.isCODChecked ||
-                orderProvider.isOfflineChecked ||
-                (orderProvider.paymentMethodIndex != -1);
+            bool hasSelection = orderProvider.paymentMethodIndex != -1;
 
             return Container(
               decoration: BoxDecoration(
@@ -138,26 +136,6 @@ class ChoosePaymentWidget extends StatelessWidget {
                                   fit: BoxFit.contain,
                                 ),
                               )
-                            else if (orderProvider.isCODChecked)
-                              Container(
-                                height: 38, width: 50,
-                                padding: const EdgeInsets.all(6),
-                                decoration: BoxDecoration(
-                                  color: const Color(0xFF6A1B9A).withValues(alpha: 0.1),
-                                  borderRadius: BorderRadius.circular(8),
-                                ),
-                                child: Image.asset(Images.cod, fit: BoxFit.contain),
-                              )
-                            else if (orderProvider.isOfflineChecked)
-                              Container(
-                                height: 38, width: 50,
-                                padding: const EdgeInsets.all(6),
-                                decoration: BoxDecoration(
-                                  color: const Color(0xFF6A1B9A).withValues(alpha: 0.1),
-                                  borderRadius: BorderRadius.circular(8),
-                                ),
-                                child: const Icon(Icons.account_balance, color: Color(0xFF6A1B9A), size: 24),
-                              )
                             else
                               Container(
                                 height: 38, width: 50,
@@ -178,11 +156,7 @@ class ChoosePaymentWidget extends StatelessWidget {
                                   Text(
                                     orderProvider.paymentMethodIndex != -1 && configProvider.configModel?.paymentMethods != null
                                         ? (configProvider.configModel!.paymentMethods![orderProvider.paymentMethodIndex].additionalDatas?.gatewayTitle ?? '')
-                                        : orderProvider.isCODChecked
-                                            ? (getTranslated('cash_on_delivery', context) ?? 'Cash On Delivery')
-                                            : orderProvider.isOfflineChecked
-                                                ? (getTranslated('offline_payment', context) ?? 'Offline Payment')
-                                                : (getTranslated('add_payment_method', context) ?? 'Choose Payment Method'),
+                                        : (getTranslated('add_payment_method', context) ?? 'Choose Payment Method'),
                                     style: textBold.copyWith(
                                       fontSize: Dimensions.fontSizeDefault,
                                       color: hasSelection

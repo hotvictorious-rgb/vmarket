@@ -29,13 +29,11 @@ import 'package:flutter_sixvalley_ecommerce/features/deal/screens/flash_deal_scr
 import 'package:flutter_sixvalley_ecommerce/features/home/screens/view_all_product_screen.dart';
 import 'package:flutter_sixvalley_ecommerce/features/location/screens/select_location_screen.dart';
 import 'package:flutter_sixvalley_ecommerce/features/more/screens/faq_screen_view.dart';
-import 'package:flutter_sixvalley_ecommerce/features/offline_payment/screens/offline_payment_screen.dart';
 import 'package:flutter_sixvalley_ecommerce/features/order/screens/order_screen.dart';
 import 'package:flutter_sixvalley_ecommerce/features/order_details/screens/order_details_screen.dart';
 import 'package:flutter_sixvalley_ecommerce/features/product/enums/product_type.dart';
 import 'package:flutter_sixvalley_ecommerce/features/product_details/screens/product_image_screen.dart';
 import 'package:flutter_sixvalley_ecommerce/features/product_details/screens/specification_screen.dart';
-import 'package:flutter_sixvalley_ecommerce/features/refer_and_earn/screens/refer_and_earn_screen.dart';
 import 'package:flutter_sixvalley_ecommerce/features/restock/screens/restock_list_screen.dart';
 import 'package:flutter_sixvalley_ecommerce/features/review/domain/models/review_model.dart';
 import 'package:flutter_sixvalley_ecommerce/features/review/screens/review_screen.dart';
@@ -66,7 +64,6 @@ import 'package:flutter_sixvalley_ecommerce/features/maintenance/maintenance_scr
 import 'package:flutter_sixvalley_ecommerce/features/splash/screens/splash_screen.dart';
 import 'package:flutter_sixvalley_ecommerce/features/auth/screens/login_screen.dart';
 import 'package:flutter_sixvalley_ecommerce/features/profile/screens/profile_screen1.dart';
-import 'package:flutter_sixvalley_ecommerce/features/blog/screens/blog_screen.dart';
 import 'package:flutter_sixvalley_ecommerce/features/product/screens/brand_and_category_product_screen.dart';
 import 'package:flutter_sixvalley_ecommerce/features/product_details/screens/product_details_screen.dart';
 import 'package:flutter_sixvalley_ecommerce/features/shop/screens/shop_screen.dart';
@@ -77,7 +74,6 @@ import 'package:flutter_sixvalley_ecommerce/features/auth/screens/reset_password
 import 'package:flutter_sixvalley_ecommerce/features/cart/screens/cart_screen.dart';
 import 'package:flutter_sixvalley_ecommerce/features/chat/screens/chat_screen.dart';
 import 'package:flutter_sixvalley_ecommerce/features/chat/screens/inbox_screen.dart';
-import 'package:flutter_sixvalley_ecommerce/features/order_details/widgets/order_offline_payment_screen.dart' as order_offline;
 import 'package:go_router/go_router.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:image_picker/image_picker.dart';
@@ -98,7 +94,6 @@ class RouterHelper {
   static const String dashboardScreen = '/dashboard';
   static const String loginScreen = '/login';
   static const String profileScreen1 = '/profile1';
-  static const String blogScreen = '/blog';
   static const String brandCategoryScreen = '/brand-category';
   static const String productDetailsScreen = '/product-details';
   static const String topSellerScreen = '/top-seller';
@@ -132,7 +127,6 @@ class RouterHelper {
   static const String viewAllProductScreen = '/view-all-product';
 
   static const String maintenanceScreen = '/maintenance';
-  static const String referAndEarnScreen = '/refer-and-earn';
   static const String restockListScreen = '/restock-list';
   static const String settingsScreen = '/settings';
   static const String notificationScreen = '/notification';
@@ -155,9 +149,7 @@ class RouterHelper {
   static const String addFundToWalletScreen = '/add-fund-wallet';
   static const String wishListScreen = '/wish-list';
   static const String selectLocationScreen = '/select-location-screen';
-  static const String offlinePaymentScreen = '/offline-payment-screen';
   static const String shopOverviewScreen = '/shop-overview-screen';
-  static const String orderOfflinePaymentScreen = '/order-offline-payment-screen';
 
 
 
@@ -181,7 +173,6 @@ class RouterHelper {
     );
   }
   static String getProfileScreen1Route({RouteAction? action}) => _navigateRoute(profileScreen1, route: action);
-  static String getBlogScreenRoute({RouteAction? action, required String url}) => _navigateRoute('$blogScreen?url=${Uri.encodeComponent(url)}', route: action);
   static String getAddressListScreen({RouteAction? action}) => _navigateRoute(addressScreen, route: action);
   static String getAddNewAddressRoute({
     RouteAction? action,
@@ -577,9 +568,7 @@ class RouterHelper {
     return _navigateRoute(maintenanceScreen, route: action);
   }
 
-  static String getReferAndEarnRoute({RouteAction? action}) {
-    return _navigateRoute(referAndEarnScreen, route: action);
-  }
+
 
   static String getRestockListRoute({RouteAction? action}) {
     return _navigateRoute(restockListScreen, route: action);
@@ -792,25 +781,7 @@ class RouterHelper {
   }
 
 
-  static String getOfflinePaymentScreen({
-    required double payableAmount,
-    required Function callback,
-    RouteAction? action,
-  }) {
-    final params = <String, String>{
-      'payableAmount': payableAmount.toString(),
-    };
 
-    final query = params.entries.map((e) => '${e.key}=${e.value}').join('&');
-
-    return _navigateRoute(
-      '$offlinePaymentScreen?$query',
-      route: action,
-      extra: {
-        'callback': callback,
-      },
-    );
-  }
 
 
   static String getShopOverviewScreen({
@@ -834,27 +805,7 @@ class RouterHelper {
   }
 
 
-  static String getOrderOfflinePaymentScreen({
-    required double payableAmount,
-    required Function callback,
-    required int orderId,
-    RouteAction? action,
-  }) {
-    final params = <String, String>{
-      'payableAmount': payableAmount.toString(),
-      'orderId': orderId.toString(),
-    };
 
-    final query = params.entries.map((e) => '${e.key}=${e.value}').join('&');
-
-    return _navigateRoute(
-      '$orderOfflinePaymentScreen?$query',
-      route: action,
-      extra: {
-        'callback': callback,
-      },
-    );
-  }
 
 
 
@@ -975,7 +926,6 @@ class RouterHelper {
         );
       }),
       GoRoute(path: profileScreen1, builder: (context, state) => const ProfileScreen1()),
-      GoRoute(path: blogScreen, builder: (context, state) => BlogScreen(url: state.uri.queryParameters['url'] ?? '')),
       GoRoute(path: addressScreen, builder: (context, state) => AddressListScreen()),
       GoRoute(
         path: addNewAddressScreen,
@@ -1331,10 +1281,7 @@ class RouterHelper {
         builder: (context, state) => const MaintenanceScreen(),
       ),
 
-      GoRoute(
-        path: referAndEarnScreen,
-        builder: (context, state) => const ReferAndEarnScreen(),
-      ),
+
 
       GoRoute(
         path: restockListScreen,
@@ -1571,16 +1518,6 @@ class RouterHelper {
       }),
 
 
-      GoRoute(path: offlinePaymentScreen, builder: (context, state) {
-        final extra = state.extra as Map<String, dynamic>?;
-        final ticketParam = state.uri.queryParameters['payableAmount'];
-
-        return OfflinePaymentScreen (
-          payableAmount: double.parse(ticketParam.toString()),
-          callback : extra!['callback'] as Function,
-        );
-      }),
-
       GoRoute(path: shopOverviewScreen, builder: (context, state) {
         final extra = state.extra as Map<String, dynamic>?;
         final slug = state.uri.queryParameters['slug'];
@@ -1588,17 +1525,6 @@ class RouterHelper {
         return ShopOverviewScreen (
           slug : slug.toString(),
           scrollController : extra!['scrollController'] as ScrollController,
-        );
-      }),
-
-      GoRoute(path: orderOfflinePaymentScreen, builder: (context, state) {
-        final extra = state.extra as Map<String, dynamic>?;
-        final qp = state.uri.queryParameters;
-
-        return order_offline.OrderOfflinePaymentScreen (
-          payableAmount: double.parse(qp['payableAmount'].toString()),
-          callback : extra!['callback'] as Function,
-          orderId: qp['orderId']!,
         );
       }),
 
