@@ -985,6 +985,6 @@
   "return_order_amount_by_admin": "Return order amount by admin",
   "return_order_amount_by_seller": "Return order amount by seller",
   "account": "Account",
-  "approved_pickup_location": "Approved Pickup Location",
-  "pickup_location_notice": "Please present your 6-digit Secret Pickup OTP to the merchant staff upon arrival."
+  "approved_pickup_location": "Customer Pickup — Pay After Inspection",
+  "pickup_location_notice": "Inspect the item at the merchant's location. Your Paystack payment will be processed by Victorious MARKET. Present your 6-digit Secret Pickup OTP to collect your order."
 }

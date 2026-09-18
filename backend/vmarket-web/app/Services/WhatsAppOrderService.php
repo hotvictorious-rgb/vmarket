@@ -374,7 +374,7 @@ class WhatsAppOrderService
     {
         return [
             'status' => false,
-            'message' => 'Customer wallet top-up is permanently decommissioned in Victorious MARKET. Please pay online via Paystack, or select Pay at Pickup.',
+            'message' => 'Customer wallet top-up is permanently decommissioned in Victorious MARKET. Please pay online via Paystack (Doorstep Delivery) or select Customer Pickup — Pay After Inspection.',
         ];
     }
 
@@ -385,7 +385,7 @@ class WhatsAppOrderService
     {
         return [
             'status' => false,
-            'message' => 'Customer wallet payment is permanently decommissioned in Victorious MARKET. Please pay online via Paystack, or select Pay at Pickup.',
+            'message' => 'Customer wallet payment is permanently decommissioned in Victorious MARKET. Please pay online via Paystack (Doorstep Delivery) or select Customer Pickup — Pay After Inspection.',
         ];
     }
 

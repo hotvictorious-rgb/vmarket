@@ -1277,10 +1277,10 @@
   "enter_customer_pickup_otp": "Enter Customer 6-Digit Pickup OTP",
   "pickup_otp_hint": "e.g. 123456",
   "verify_and_handover": "Verify & Handover",
-  "payment_pending_pickup": "Payment Pending (Locked)",
-  "customer_pickup_ready_title": "Ready for Customer In-Store Pickup",
+  "payment_pending_pickup": "Awaiting Customer Payment (Locked)",
+  "customer_pickup_ready_title": "Customer Pickup — Pay After Inspection",
   "customer_pickup_ready_paid_desc": "Customer payment is confirmed by Victorious MARKET. Collect the 6-digit Secret Pickup OTP from customer to finalize handover.",
-  "customer_pickup_ready_unpaid_desc": "Order is prepared. Handover OTP verification is locked until customer completes payment via Victorious MARKET.",
+  "customer_pickup_ready_unpaid_desc": "Order is prepared. Handover is locked until the customer completes their Paystack payment via Victorious MARKET after inspecting the item.",
   "rider_pickup_ready_title": "Ready for Victorious Delivery Pickup",
   "rider_pickup_ready_desc": "Order is packaged and awaiting Victorious Delivery rider. Custody will transfer upon Rider Pickup OTP verification."
 }

@@ -631,7 +631,7 @@ class WebController extends Controller
     public function checkout_complete_wallet(Request $request): View|RedirectResponse
     {
         // [AI] Customer Wallet Decommissioned: Block active web wallet checkout
-        abort(403, 'Customer wallet payment is permanently decommissioned in Victorious MARKET. Please pay online via Paystack, or select Pay at Pickup.');
+        abort(403, 'Customer wallet payment is permanently decommissioned in Victorious MARKET. Please pay online via Paystack (Doorstep Delivery) or select Customer Pickup \u2014 Pay After Inspection.');
     }
 
     public function order_placed(): View

@@ -1263,7 +1263,8 @@ class OrderManager
         // [AI] Victorious MARKET Dual Fulfillment Logic:
         // 1. Doorstep Delivery ('default_type' or 'delivery'): Upfront digital payment required strictly via Paystack.
         // 2. Customer Pickup ('pickup'): Customer places order online for physical inspection at Uyo merchant shop.
-        //    Payment method can be paystack or pay_at_pickup (inspected before digital payment).
+        //    Payment method can be paystack (paid before reservation) or pay_at_pickup
+        //    (Customer Pickup — Pay After Inspection: customer inspects at the Uyo shop, then pays via Paystack before receiving the item).
         if ($orderType === 'pickup') {
             $authorizedPickupMethods = ['paystack', 'pay_at_pickup', 'pending_inspection'];
             if (!in_array($paymentMethod, $authorizedPickupMethods, true)) {

@@ -53,7 +53,7 @@ class OrderEditController extends Controller
         // [AI] Customer Wallet Decommissioned: Reject active wallet due payment
         return response()->json([
             'status' => false,
-            'message' => 'Wallet payment is permanently decommissioned in Victorious MARKET. Please pay online via Paystack or select Pay at Pickup.',
+            'message' => 'Wallet payment is permanently decommissioned in Victorious MARKET. Please pay online via Paystack (Doorstep Delivery) or select Customer Pickup — Pay After Inspection.',
         ], 403);
     }
 
@@ -109,7 +109,7 @@ class OrderEditController extends Controller
         // from any legacy client that still calls this path. Route was already removed.
         return response()->json([
             'status' => false,
-            'message' => 'Offline payment is permanently decommissioned in Victorious MARKET. Please pay online via Paystack or select Pay at Pickup.',
+            'message' => 'Offline payment is permanently decommissioned in Victorious MARKET. Please pay online via Paystack (Doorstep Delivery) or select Customer Pickup — Pay After Inspection.',
         ], 403);
     }
 
