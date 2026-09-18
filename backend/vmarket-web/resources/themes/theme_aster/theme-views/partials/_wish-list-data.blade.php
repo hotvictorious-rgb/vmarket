@@ -46,13 +46,6 @@
                         </td>
                         <td>
                             <div class="d-flex justify-content-center gap-2 align-items-center">
-                                <a href="javascript:"
-                                    style="--size: 36px"
-                                   class="btn btn-outline-success btn-shadow rounded-circle btn-action add-to-compare compare_list-{{$product['id']}} {{ isProductInCompareList($product->id) ?'compare_list_icon_active':'' }}"
-                                   data-product-id ="{{$product['id']}}" data-action="{{route('product-compare.index')}}"
-                                   id="compare_list-{{$product['id']}}">
-                                    <img src="{{ theme_asset('assets/img/icons/compare.svg') }}" class="svg" alt="">
-                                </a>
                                 <a href="#" data-action="{{ route('cart.add') }}" data-id="{{$product['id']}}" data-quantity="{{$product['minimum_order_qty'] ?? 1}}" data-key="" data-product_variation_code="{{$wishlist['product_id']}}"
                                    style="--size: 36px"
                                    class="btn btn-outline-primary btn-shadow rounded-circle btn-action add-to-cart-from-wishlist"
@@ -131,11 +124,6 @@
                         </div>
 
                         <div class="d-flex gap-2 align-items-center mt-1">
-                            <a href="javascript:"
-                               class="btn btn-outline-success rounded-circle btn-action add-to-compare compare_list-{{$product['id']}} {{ isProductInCompareList($product->id) ?'compare_list_icon_active':'' }}"
-                               data-product-id ="{{$product['id']}}" data-action="{{route('product-compare.index')}}">
-                                <i class="bi bi-repeat"></i>
-                            </a>
                             <button type="button"
                                     data-bs-toggle="modal" data-bs-target="#wishlist-modal-{{ $product['id'] }}"
                                     class="btn btn-outline-danger rounded-circle btn-action" >

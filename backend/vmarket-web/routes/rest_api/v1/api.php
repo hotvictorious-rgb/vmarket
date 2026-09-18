@@ -12,7 +12,6 @@ use App\Http\Controllers\RestAPI\v1\BrandController;
 use App\Http\Controllers\RestAPI\v1\CartController;
 use App\Http\Controllers\RestAPI\v1\CategoryController;
 use App\Http\Controllers\RestAPI\v1\ChatController;
-use App\Http\Controllers\RestAPI\v1\CompareController;
 use App\Http\Controllers\RestAPI\v1\ConfigController;
 use App\Http\Controllers\RestAPI\v1\CouponController;
 use App\Http\Controllers\RestAPI\v1\CustomerController;
@@ -29,7 +28,6 @@ use App\Http\Controllers\RestAPI\v1\ProductController;
 use App\Http\Controllers\RestAPI\v1\ReviewController;
 use App\Http\Controllers\RestAPI\v1\SellerController;
 use App\Http\Controllers\RestAPI\v1\ShippingMethodController;
-use App\Http\Controllers\RestAPI\v1\UserLoyaltyController;
 use App\Http\Controllers\RestAPI\v1\UserWalletController;
 use App\Http\Controllers\RestAPI\v1\FeedSyncController;
 use App\Http\Controllers\RestAPI\v1\DeliveryHubApiController;
@@ -311,14 +309,7 @@ Route::group(['prefix' => 'v1', 'middleware' => ['api_lang']], function () {
             });
         });
 
-        Route::group(['prefix' => 'compare'], function () {
-            Route::controller(CompareController::class)->group(function () {
-                Route::get('list', 'list');
-                Route::post('product-store', 'compare_product_store');
-                Route::delete('clear-all', 'clear_all');
-                Route::get('product-replace', 'compare_product_replace');
-            });
-        });
+
 
         Route::group(['prefix' => 'wish-list'], function () {
             Route::controller(CustomerController::class)->group(function () {
@@ -373,24 +364,10 @@ Route::group(['prefix' => 'v1', 'middleware' => ['api_lang']], function () {
             });
         });
 
-        //loyalty
-        Route::group(['prefix' => 'loyalty'], function () {
-            Route::controller(UserLoyaltyController::class)->group(function () {
-                Route::get('list', 'list');
-                Route::post('loyalty-exchange-currency', 'loyalty_exchange_currency');
-            });
-        });
+
     });
 
-    Route::group(['prefix' => 'customer', 'middleware' => 'apiGuestCheck'], function () {
-        Route::group(['prefix' => 'order'], function () {
-            Route::controller(OrderController::class)->group(function () {
-                Route::get('digital-product-download/{id}', 'digital_product_download');
-                Route::get('digital-product-download-otp-verify', 'digital_product_download_otp_verify')->middleware('throttle:5,1');
-                Route::post('digital-product-download-otp-resend', 'digital_product_download_otp_resend')->middleware('throttle:5,1');
-            });
-        });
-    });
+
 
     Route::group(['prefix' => 'digital-payment', 'middleware' => 'apiGuestCheck'], function () {
         Route::post('/', [PaymentController::class, 'payment']);

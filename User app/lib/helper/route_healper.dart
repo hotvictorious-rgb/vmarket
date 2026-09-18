@@ -22,14 +22,12 @@ import 'package:flutter_sixvalley_ecommerce/features/checkout/screens/checkout_s
 import 'package:flutter_sixvalley_ecommerce/features/checkout/screens/digital_payment_order_place_screen.dart';
 import 'package:flutter_sixvalley_ecommerce/features/clearance_sale/screens/clearance_sale_all_product_screen.dart';
 import 'package:flutter_sixvalley_ecommerce/features/clearance_sale/screens/clearance_sale_shop_all_product_screen.dart';
-import 'package:flutter_sixvalley_ecommerce/features/compare/screens/compare_product_screen.dart';
 import 'package:flutter_sixvalley_ecommerce/features/contact_us/screens/contact_us_screen.dart';
 import 'package:flutter_sixvalley_ecommerce/features/coupon/screens/coupon_screen.dart';
 import 'package:flutter_sixvalley_ecommerce/features/deal/screens/featured_deal_screen_view.dart';
 import 'package:flutter_sixvalley_ecommerce/features/deal/screens/flash_deal_screen_view.dart';
 import 'package:flutter_sixvalley_ecommerce/features/home/screens/view_all_product_screen.dart';
 import 'package:flutter_sixvalley_ecommerce/features/location/screens/select_location_screen.dart';
-import 'package:flutter_sixvalley_ecommerce/features/loyaltyPoint/screens/loyalty_point_screen.dart';
 import 'package:flutter_sixvalley_ecommerce/features/more/screens/faq_screen_view.dart';
 import 'package:flutter_sixvalley_ecommerce/features/offline_payment/screens/offline_payment_screen.dart';
 import 'package:flutter_sixvalley_ecommerce/features/order/screens/order_screen.dart';
@@ -126,13 +124,13 @@ class RouterHelper {
   static const String digitalPaymentScreen = '/digital-payment';
   static const String clearanceSaleAllProductScreen = '/clearance-sale-all-product';
   static const String clearanceSaleShopProductScreen = '/clearance-sale-shop-product';
-  static const String compareProductScreen = '/compare-product';
+
   static const String contactUsScreen = '/contact-us';
   static const String couponListScreen = '/coupon-list';
   static const String featuredDealScreenView = '/featured-deal';
   static const String flashDealScreenView = '/flash-deal';
   static const String viewAllProductScreen = '/view-all-product';
-  static const String loyaltyPointScreen = '/loyalty-point';
+
   static const String maintenanceScreen = '/maintenance';
   static const String referAndEarnScreen = '/refer-and-earn';
   static const String restockListScreen = '/restock-list';
@@ -549,9 +547,7 @@ class RouterHelper {
     return _navigateRoute('$clearanceSaleShopProductScreen$query', route: action);
   }
 
-  static String getCompareProductScreenRoute({RouteAction? action}) {
-    return _navigateRoute(compareProductScreen, route: action);
-  }
+
 
   static String getContactUsScreenRoute({RouteAction? action}) {
     return _navigateRoute(contactUsScreen, route: action);
@@ -575,9 +571,7 @@ class RouterHelper {
     return _navigateRoute('$viewAllProductScreen$query', route: action);
   }
 
-  static String getLoyaltyPointScreenRoute({RouteAction? action}) {
-    return _navigateRoute(loyaltyPointScreen, route: action);
-  }
+
 
   static String getMaintenanceRoute({RouteAction? action}) {
     return _navigateRoute(maintenanceScreen, route: action);
@@ -1296,10 +1290,7 @@ class RouterHelper {
         },
       ),
 
-      GoRoute(
-        path: compareProductScreen,
-        builder: (context, state) => const CompareProductScreen(),
-      ),
+
 
       GoRoute(
         path: contactUsScreen,
@@ -1333,10 +1324,7 @@ class RouterHelper {
         },
       ),
 
-      GoRoute(
-        path: loyaltyPointScreen,
-        builder: (context, state) => const LoyaltyPointScreen(),
-      ),
+
 
       GoRoute(
         path: maintenanceScreen,

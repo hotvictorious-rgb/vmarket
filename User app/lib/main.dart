@@ -14,12 +14,10 @@ import 'package:flutter_sixvalley_ecommerce/features/auth/controllers/facebook_l
 import 'package:flutter_sixvalley_ecommerce/features/auth/controllers/google_login_controller.dart';
 import 'package:flutter_sixvalley_ecommerce/features/banner/controllers/banner_controller.dart';
 import 'package:flutter_sixvalley_ecommerce/features/checkout/controllers/checkout_controller.dart';
-import 'package:flutter_sixvalley_ecommerce/features/compare/controllers/compare_controller.dart';
 import 'package:flutter_sixvalley_ecommerce/features/contact_us/controllers/contact_us_controller.dart';
 import 'package:flutter_sixvalley_ecommerce/features/deal/controllers/featured_deal_controller.dart';
 import 'package:flutter_sixvalley_ecommerce/features/deal/controllers/flash_deal_controller.dart';
 import 'package:flutter_sixvalley_ecommerce/features/location/controllers/location_controller.dart';
-import 'package:flutter_sixvalley_ecommerce/features/loyaltyPoint/controllers/loyalty_point_controller.dart';
 import 'package:flutter_sixvalley_ecommerce/features/notification/controllers/notification_controller.dart';
 import 'package:flutter_sixvalley_ecommerce/features/onboarding/controllers/onboarding_controller.dart';
 import 'package:flutter_sixvalley_ecommerce/features/order/controllers/order_controller.dart';
@@ -142,9 +140,9 @@ Future<void> main() async {
       ChangeNotifierProvider(create: (context) => di.sl<FacebookLoginController>()),
       ChangeNotifierProvider(create: (context) => di.sl<AddressController>()),
       ChangeNotifierProvider(create: (context) => di.sl<WalletController>()),
-      ChangeNotifierProvider(create: (context) => di.sl<CompareController>()),
+
       ChangeNotifierProvider(create: (context) => di.sl<CheckoutController>()),
-      ChangeNotifierProvider(create: (context) => di.sl<LoyaltyPointController>()),
+
       ChangeNotifierProvider(create: (context) => di.sl<LocationController>()),
       ChangeNotifierProvider(create: (context) => di.sl<ContactUsController>()),
       ChangeNotifierProvider(create: (context) => di.sl<ShippingController>()),

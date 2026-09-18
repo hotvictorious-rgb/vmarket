@@ -25,13 +25,7 @@
                title="{{ translate('add_to_wishlist') }}">
                 <i class="bi bi-heart"></i>
             </a>
-            <a href="javascript:"
-               class="btn-compare stopPropagation add-to-compare compare_list-{{$product['id']}} {{ isProductInCompareList($product->id) ?'compare_list_icon_active':'' }}"
-               data-action="{{route('product-compare.index')}}"
-               data-product-id="{{$product['id']}}"
-               id="compare_list-{{$product['id']}}" title="{{translate('add_to_compare_list')}}">
-                <i class="bi bi-repeat"></i>
-            </a>
+
             <a href="javascript:" class="btn-quickview stopPropagation get-quick-view"
                data-action="{{route('quick-view')}}"
                data-product-id="{{$product['id']}}" title="{{ translate('quick_view') }}">

@@ -42,17 +42,6 @@ class MoreHorizontalSection extends StatelessWidget {
 
 
 
-            if(!isGuestMode && configModel?.loyaltyPointStatus == 1) SquareButtonWidget(
-              image: Images.loyaltyPoint,
-              title: getTranslated('loyalty_point', context),
-              onTap: () => RouterHelper.getLoyaltyPointScreenRoute(action: RouteAction.push),
-              count: 1,
-              hasCount: false,
-              isWallet: true,
-              subTitle: 'point',
-              balance: profileProvider.loyaltyPoint, isLoyalty: true,
-            ),
-
 
             if(!isGuestMode) SquareButtonWidget(
               image: Images.shoppingImage,

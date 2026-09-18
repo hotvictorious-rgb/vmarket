@@ -1,7 +1,7 @@
 
 import 'package:flutter/material.dart';
 import 'package:flutter_sixvalley_ecommerce/data/model/api_response.dart';
-import 'package:flutter_sixvalley_ecommerce/features/compare/controllers/compare_controller.dart';
+
 import 'package:flutter_sixvalley_ecommerce/features/product/domain/models/product_model.dart';
 import 'package:flutter_sixvalley_ecommerce/features/search_product/domain/models/author_model.dart';
 import 'package:flutter_sixvalley_ecommerce/features/search_product/domain/models/suggestion_product_model.dart';
@@ -246,18 +246,7 @@ class SearchProductController with ChangeNotifier {
     _historyList.addAll(searchProductServiceInterface!.getSavedSearchProductName());
   }
 
-  int selectedSearchedProductId = 0;
-  void setSelectedProductId(int index, int? compareId){
-    if(suggestionModel!.products!.isNotEmpty){
-      selectedSearchedProductId = suggestionModel!.products![index].id!;
-    }
-    if(compareId != null){
-      Provider.of<CompareController>(Get.context!, listen: false).replaceCompareList(compareId ,selectedSearchedProductId);
-    }else{
-      Provider.of<CompareController>(Get.context!, listen: false).addCompareList(selectedSearchedProductId);
-    }
-    notifyListeners();
-  }
+
 
   void saveSearchAddress(String searchAddress) async {
     searchProductServiceInterface!.saveSearchProductName(searchAddress);

@@ -12,9 +12,7 @@ import 'package:provider/provider.dart';
 import 'package:substring_highlight/substring_highlight.dart';
 
 class SearchSuggestion extends StatefulWidget{
-  final bool fromCompare;
-  final int? id;
-  const SearchSuggestion({super.key,  this.fromCompare = false, this.id});
+  const SearchSuggestion({super.key});
   @override
   State<SearchSuggestion> createState() => _SearchSuggestionState();
 }
@@ -56,13 +54,8 @@ class _SearchSuggestionState extends State<SearchSuggestion> {
                       itemBuilder: (context, index) {
                         final option = options.elementAt(index);
                         return InkWell(onTap: (){
-                            if(widget.fromCompare){
-                              searchProvider.setSelectedProductId(index, widget.id);
-                              Navigator.of(context).pop();
-                            }else{
                               searchProvider.searchProduct(query : option.toString(), offset: 1);
                               onSelected(option.toString());
-                            }
                           },
                           child: Padding(padding: const EdgeInsets.symmetric(vertical: Dimensions.paddingSizeSmall),
                             child: Row(crossAxisAlignment: CrossAxisAlignment.start, children: [

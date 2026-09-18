@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_sixvalley_ecommerce/common/basewidget/discount_tag_widget.dart';
-import 'package:flutter_sixvalley_ecommerce/features/compare/controllers/compare_controller.dart';
+
 import 'package:flutter_sixvalley_ecommerce/features/product_details/controllers/product_details_controller.dart';
 import 'package:flutter_sixvalley_ecommerce/features/product_details/domain/models/product_details_model.dart';
 import 'package:flutter_sixvalley_ecommerce/features/product_details/enums/preview_type.dart';
@@ -133,46 +133,7 @@ class ProductImageWidget extends StatelessWidget {
                               fromProductDetails: true,
                             ),
 
-                            if(splashController.configModel!.activeTheme != "default")
-                              const SizedBox(height: Dimensions.paddingSizeSmall,),
 
-                            if(splashController.configModel!.activeTheme != "default")
-                              InkWell(onTap: () {
-                                if(Provider.of<AuthController>(context, listen: false).isLoggedIn()) {
-                                  Provider.of<CompareController>(context, listen: false).addCompareList(productModel!.id!);
-                                } else {
-                                  showModalBottomSheet(backgroundColor: const Color(0x00FFFFFF),
-                                    context: context, builder: (_)=> const NotLoggedInBottomSheetWidget());
-                                }
-                              },
-                              child: Consumer<CompareController>(
-                                builder: (context, compare,_) {
-                                  return Card(
-                                    elevation: 2,
-                                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(50)),
-                                    child: Container(
-                                      width: 40,
-                                      height: 40,
-                                      decoration: BoxDecoration(
-                                        color: compare.compIds.contains(productModel!.id)
-                                            ? Theme.of(context).primaryColor
-                                            : Theme.of(context).cardColor,
-                                        shape: BoxShape.circle,
-                                      ),
-                                      child: Padding(
-                                        padding: const EdgeInsets.all(Dimensions.paddingSizeSmall),
-                                        child: Image.asset(
-                                          Images.compare,
-                                          color: compare.compIds.contains(productModel!.id)
-                                              ? Theme.of(context).cardColor
-                                              : Theme.of(context).primaryColor,
-                                        ),
-                                      ),
-                                    ),
-                                  );
-                                },
-                              ),
-                            ),
                             const SizedBox(height: Dimensions.paddingSizeSmall),
 
 

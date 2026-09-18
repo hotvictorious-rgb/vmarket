@@ -41,11 +41,7 @@ import 'package:flutter_sixvalley_ecommerce/features/checkout/domain/repositorie
 import 'package:flutter_sixvalley_ecommerce/features/checkout/domain/repositories/checkout_repository_interface.dart';
 import 'package:flutter_sixvalley_ecommerce/features/checkout/domain/services/checkout_service.dart';
 import 'package:flutter_sixvalley_ecommerce/features/checkout/domain/services/checkout_service_interface.dart';
-import 'package:flutter_sixvalley_ecommerce/features/compare/controllers/compare_controller.dart';
-import 'package:flutter_sixvalley_ecommerce/features/compare/domain/repositories/compare_repository.dart';
-import 'package:flutter_sixvalley_ecommerce/features/compare/domain/repositories/compare_repository_interface.dart';
-import 'package:flutter_sixvalley_ecommerce/features/compare/domain/services/compare_service.dart';
-import 'package:flutter_sixvalley_ecommerce/features/compare/domain/services/compare_service_interface.dart';
+
 import 'package:flutter_sixvalley_ecommerce/features/contact_us/controllers/contact_us_controller.dart';
 import 'package:flutter_sixvalley_ecommerce/features/contact_us/domain/repository/contact_us_repository.dart';
 import 'package:flutter_sixvalley_ecommerce/features/contact_us/domain/repository/contact_us_repository_interface.dart';
@@ -71,10 +67,7 @@ import 'package:flutter_sixvalley_ecommerce/features/location/domain/repositorie
 import 'package:flutter_sixvalley_ecommerce/features/location/domain/repositories/location_repository_interface.dart';
 import 'package:flutter_sixvalley_ecommerce/features/location/domain/services/location_service.dart';
 import 'package:flutter_sixvalley_ecommerce/features/location/domain/services/location_service_interface.dart';
-import 'package:flutter_sixvalley_ecommerce/features/loyaltyPoint/controllers/loyalty_point_controller.dart';
-import 'package:flutter_sixvalley_ecommerce/features/loyaltyPoint/domain/repositories/loyalty_point_repository_interface.dart';
-import 'package:flutter_sixvalley_ecommerce/features/loyaltyPoint/domain/services/loyalty_poin_service.dart';
-import 'package:flutter_sixvalley_ecommerce/features/loyaltyPoint/domain/services/loyalty_point_service_interface.dart';
+
 import 'package:flutter_sixvalley_ecommerce/features/notification/controllers/notification_controller.dart';
 import 'package:flutter_sixvalley_ecommerce/features/notification/domain/repositories/notification_repository.dart';
 import 'package:flutter_sixvalley_ecommerce/features/notification/domain/repositories/notification_repository_interface.dart';
@@ -183,7 +176,7 @@ import 'package:flutter_sixvalley_ecommerce/utill/app_constants.dart';
 import 'package:get_it/get_it.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'data/datasource/remote/dio/logging_interceptor.dart';
-import 'features/loyaltyPoint/domain/repositories/loyalty_point_repository.dart';
+
 import 'features/search_product/domain/repositories/search_product_repository.dart';
 
 final sl = GetIt.instance;
@@ -238,8 +231,7 @@ Future<void> init() async {
   sl.registerLazySingleton(() => SupportTicketRepository(dioClient: sl()));
   sl.registerLazySingleton(() => AddressRepository(dioClient: sl()));
   sl.registerLazySingleton(() => WalletRepository(dioClient: sl()));
-  sl.registerLazySingleton(() => CompareRepository(dioClient: sl()));
-  sl.registerLazySingleton(() => LoyaltyPointRepository(dioClient: sl()));
+
   sl.registerLazySingleton(() => CheckoutRepository(dioClient: sl()));
   sl.registerLazySingleton(() => LocationRepository(dioClient: sl()));
   sl.registerLazySingleton(() => ShippingRepository(dioClient: sl()));
@@ -278,8 +270,7 @@ Future<void> init() async {
   sl.registerFactory(() => FacebookLoginController());
   sl.registerFactory(() => AddressController(addressServiceInterface: sl()));
   sl.registerFactory(() => WalletController(walletServiceInterface: sl()));
-  sl.registerFactory(() => CompareController(compareServiceInterface: sl()));
-  sl.registerFactory(() => LoyaltyPointController(loyaltyPointServiceInterface: sl()));
+
   sl.registerFactory(() => CheckoutController(checkoutServiceInterface: sl()));
   sl.registerFactory(() => LocationController(locationServiceInterface: sl()));
   sl.registerFactory(() => ShippingController(shippingServiceInterface: sl()));
@@ -340,10 +331,7 @@ Future<void> init() async {
   CheckoutServiceInterface checkoutServiceInterface = CheckoutService(checkoutRepositoryInterface: sl());
   sl.registerLazySingleton(() => checkoutServiceInterface);
 
-  CompareRepositoryInterface compareRepositoryInterface = CompareRepository(dioClient: sl());
-  sl.registerLazySingleton(() => compareRepositoryInterface);
-  CompareServiceInterface compareServiceInterface = CompareService(compareRepositoryInterface: sl());
-  sl.registerLazySingleton(() => compareServiceInterface);
+
 
   ContactUsRepositoryInterface contactUsRepositoryInterface = ContactUsRepository(dioClient: sl());
   sl.registerLazySingleton(() => contactUsRepositoryInterface);
@@ -372,10 +360,7 @@ Future<void> init() async {
   LocationServiceInterface locationServiceInterface = LocationService(locationRepoInterface: sl());
   sl.registerLazySingleton(() => locationServiceInterface);
 
-  LoyaltyPointRepositoryInterface loyaltyPointRepositoryInterface = LoyaltyPointRepository(dioClient: sl());
-  sl.registerLazySingleton(() => loyaltyPointRepositoryInterface);
-  LoyaltyPointServiceInterface loyaltyPointServiceInterface = LoyaltyPointService(loyaltyPointRepositoryInterface: sl());
-  sl.registerLazySingleton(() => loyaltyPointServiceInterface);
+
 
   NotificationRepositoryInterface notificationRepositoryInterface = NotificationRepository(dioClient: sl());
   sl.registerLazySingleton(() => notificationRepositoryInterface);
@@ -488,13 +473,13 @@ Future<void> init() async {
   sl.registerLazySingleton(() => ChatService(chatRepositoryInterface : sl()));
   sl.registerLazySingleton(() => ShippingService(shippingRepositoryInterface : sl()));
   sl.registerLazySingleton(() => CheckoutService(checkoutRepositoryInterface : sl()));
-  sl.registerLazySingleton(() => CompareService(compareRepositoryInterface : sl()));
+
   sl.registerLazySingleton(() => ContactUsService(contactUsRepositoryInterface : sl()));
   sl.registerLazySingleton(() => CouponService(couponRepositoryInterface : sl()));
   sl.registerLazySingleton(() => FlashDealService(flashDealRepositoryInterface : sl()));
   sl.registerLazySingleton(() => FeaturedDealService(featuredDealRepositoryInterface : sl()));
   sl.registerLazySingleton(() => LocationService(locationRepoInterface : sl()));
-  sl.registerLazySingleton(() => LoyaltyPointService(loyaltyPointRepositoryInterface : sl()));
+
   sl.registerLazySingleton(() => NotificationService(notificationRepositoryInterface : sl()));
   sl.registerLazySingleton(() => OnBoardingService(onBoardingRepositoryInterface : sl()));
   sl.registerLazySingleton(() => OrderService(orderRepositoryInterface : sl()));

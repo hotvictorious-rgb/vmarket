@@ -29,14 +29,7 @@
                                             <i class="bi bi-heart fs-14 mt-2px"></i>
                                         </a>
 
-                                        <a id="compare_list-{{$product['id']}}"
-                                           class="btn-compare stopPropagation add-to-compare compare_list-{{$product['id']}} {{($compareList == 1?'compare_list_icon_active':'')}}"
-                                           style="--size: 35px;"
-                                           data-action="{{route('product-compare.index')}}"
-                                           data-product-id="{{$product['id']}}"
-                                           title="{{translate('add_to_compare_list')}}">
-                                            <i class="bi bi-repeat"></i>
-                                        </a>
+
 
                                         <div class="product-share-icons">
                                             <a href="javascript:" style="--size: 35px;" title="{{translate('Share')}}">

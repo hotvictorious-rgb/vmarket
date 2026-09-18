@@ -71,7 +71,6 @@ use App\Http\Controllers\Admin\Shipping\ShippingMethodController;
 use App\Http\Controllers\Admin\ThirdParty\GoogleMapAPIController;
 use App\Http\Controllers\Admin\Vendor\WithdrawalMethodController;
 use App\Http\Controllers\Admin\VendorProductSaleReportController;
-use App\Http\Controllers\Admin\Customer\CustomerLoyaltyController;
 use App\Http\Controllers\Admin\HelpAndSupport\HelpTopicController;
 use App\Http\Controllers\Admin\Report\RefundTransactionController;
 use App\Http\Controllers\Admin\Settings\DatabaseSettingController;
@@ -393,12 +392,7 @@ Route::group(['prefix' => 'admin', 'as' => 'admin.', 'middleware' => ['admin', '
             });
         });
 
-        Route::group(['prefix' => 'loyalty', 'as' => 'loyalty.'], function () {
-            Route::controller(CustomerLoyaltyController::class)->group(function () {
-                Route::get('report', 'index')->name('report');
-                Route::get('export', 'exportList')->name('export');
-            });
-        });
+
     });
 
     Route::group(['prefix' => 'report', 'as' => 'report.', 'middleware' => ['module:report']], function () {

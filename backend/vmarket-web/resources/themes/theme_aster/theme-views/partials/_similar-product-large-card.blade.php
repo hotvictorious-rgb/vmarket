@@ -28,14 +28,7 @@
                title="Add to wishlist">
                 <i class="bi bi-heart"></i>
             </a>
-            <a href="javascript:"
-               data-action="{{route('product-compare.index')}}"
-               data-product-id="{{$product['id']}}"
-               class="btn-compare stopPropagation add-to-compare compare_list-{{$product['id']}} {{ isProductInCompareList($product->id) ?'compare_list_icon_active':'' }}"
-               title="{{ translate('add_to_compare') }}"
-               id="compare_list-{{$product['id']}}">
-                <i class="bi bi-repeat"></i>
-            </a>
+
         </div>
 
         <div class="product__thumbnail align-items-center d-flex h-100 justify-content-center">

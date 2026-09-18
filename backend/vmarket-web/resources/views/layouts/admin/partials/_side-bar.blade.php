@@ -864,32 +864,7 @@
                                 </span>
                             </a>
                         </li>
-                        <li class="nav-item">
-                            <a class="nav-link {{ Request::is('admin/customer/wallet/report') ? 'active' : '' }}"
-                               title="{{ translate('wallet') }}" href="{{ route('admin.customer.wallet.report') }}">
-                                <span class="text-truncate">
-                                    {{ translate('wallet') }}
-                                </span>
-                            </a>
-                        </li>
-                        <li class="nav-item">
-                            <a class="nav-link {{ Request::is('admin/customer/wallet/bonus-setup') || Request::is('admin/customer/wallet/bonus-setup/edit/*')  ? 'active' : '' }}"
-                               title="{{ translate('wallet_Bonus_Setup') }}"
-                               href="{{ route('admin.customer.wallet.bonus-setup') }}">
-                                <span class="text-truncate">
-                                    {{ translate('wallet_Bonus_Setup') }}
-                                </span>
-                            </a>
-                        </li>
-                        <li class="nav-item">
-                            <a class="nav-link {{ Request::is('admin/customer/loyalty/report') ? 'active' : '' }}"
-                               title="{{ translate('loyalty_Points') }}"
-                               href="{{ route('admin.customer.loyalty.report') }}">
-                                <span class="text-truncate">
-                                    {{ translate('loyalty_Points') }}
-                                </span>
-                            </a>
-                        </li>
+
                     </ul>
                 </li>
 

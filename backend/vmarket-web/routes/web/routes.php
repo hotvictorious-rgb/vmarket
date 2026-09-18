@@ -1,6 +1,5 @@
 <?php
 
-use App\Enums\ViewPaths\Web\ProductCompare;
 use App\Enums\ViewPaths\Web\ShopFollower;
 use App\Http\Controllers\Customer\Auth\CustomerAuthController;
 use App\Http\Controllers\Customer\Auth\ForgotPasswordController;
@@ -17,13 +16,11 @@ use App\Http\Controllers\Web\ChattingController;
 use App\Http\Controllers\Web\CouponController;
 use App\Http\Controllers\Web\HomeController;
 use App\Http\Controllers\Web\PageController;
-use App\Http\Controllers\Web\ProductCompareController;
 use App\Http\Controllers\Web\ProductDetailsController;
 use App\Http\Controllers\Web\ProductListController;
 use App\Http\Controllers\Web\ReviewController;
 use App\Http\Controllers\Web\Shop\ShopFollowerController;
 use App\Http\Controllers\Web\ShopViewController;
-use App\Http\Controllers\Web\UserLoyaltyController;
 use App\Http\Controllers\Web\UserProfileController;
 use App\Http\Controllers\Web\UserWalletController;
 use App\Http\Controllers\Web\WebController;
@@ -90,14 +87,7 @@ Route::controller(WebController::class)->group(function () {
 });
 
 Route::group(['middleware' => ['maintenance_mode', 'guestCheck']], function () {
-    Route::group(['prefix' => 'product-compare', 'as' => 'product-compare.'], function () {
-        Route::controller(ProductCompareController::class)->group(function () {
-            Route::get(ProductCompare::INDEX[URI], 'index')->name('index')->middleware('customer');
-            Route::post(ProductCompare::INDEX[URI], 'add');
-            Route::get(ProductCompare::DELETE[URI], 'delete')->name('delete');
-            Route::get(ProductCompare::DELETE_ALL[URI], 'deleteAllCompareProduct')->name('delete-all');
-        });
-    });
+
     Route::post(ShopFollower::SHOP_FOLLOW[URI], [ShopFollowerController::class, 'followOrUnfollowShop'])->name('shop-follow');
 });
 
@@ -246,11 +236,7 @@ Route::group(['middleware' => ['maintenance_mode', 'guestCheck']], function () {
         Route::get('wallet', 'index')->name('wallet')->middleware('customer');
     });
 
-    Route::controller(UserLoyaltyController::class)->group(function () {
-        Route::get('loyalty', 'index')->name('loyalty')->middleware('customer');
-        Route::post('loyalty-exchange-currency', 'getLoyaltyExchangeCurrency')->name('loyalty-exchange-currency');
-        Route::get('ajax-loyalty-currency-amount', 'getLoyaltyCurrencyAmount')->name('ajax-loyalty-currency-amount');
-    });
+
 
 
 

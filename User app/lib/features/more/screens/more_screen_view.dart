@@ -125,15 +125,6 @@ class _MoreScreenState extends State<MoreScreen> with AutomaticKeepAliveClientMi
                                 },
                               ),
 
-                              if(authController.isLoggedIn())
-                                if(splashController.configModel?.refEarningStatus == "1")
-                                  MenuButtonWidget(image: Images.refIcon, title: getTranslated('refer_and_earn', context),
-                                    isProfile: true,
-                                    onTap: () {
-                                      RouterHelper.getReferAndEarnRoute(action: RouteAction.push);
-                                    },
-                                  ),
-
 
                               MenuButtonWidget(image: Images.category, title: getTranslated('CATEGORY', context),
                                 onTap: () {

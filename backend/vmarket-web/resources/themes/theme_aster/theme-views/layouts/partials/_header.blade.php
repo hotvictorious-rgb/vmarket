@@ -698,20 +698,7 @@
                             </div>
                         </li>
                     @endif
-                    <li class="d-none d-xl-block">
-                        @if(auth('customer')->check())
-                            <a href="{{ route('product-compare.index') }}" class="position-relative">
-                                <i class="bi bi-repeat fs-18"></i>
-                                <span
-                                    class="count compare_list_count_status">{{session()->has('compare_list')?count(session('compare_list')):0}}</span>
-                            </a>
-                        @else
-                            <a href="javascript:" class="position-relative" data-bs-toggle="modal"
-                               data-bs-target="#loginModal">
-                                <i class="bi bi-repeat fs-18"></i>
-                            </a>
-                        @endif
-                    </li>
+
                     <li class="d-none d-xl-block">
                         @if(auth('customer')->check())
                             <a href="{{ route('wishlists') }}" class="position-relative">

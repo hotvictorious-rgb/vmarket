@@ -8,6 +8,30 @@ Always append your completed tasks here in chronological order at the top. Forma
 Include the specific app/component modified and bullet points detailing the exact technical changes.
 
 
+### [2026-09-18 11:35 UTC] Phase 4: Purge Product Compare, Loyalty Points, and Navigation UI Bloat [backend] [user-app] [ai-governance]
+* **Component:** Product Comparison, Loyalty Points System, Navigation UI (`backend/vmarket-web/`, `User app/`, `AI_CHANGELOG.md`)
+* **Action:** Executed Phase 4 of the marketplace lean simplification, eliminating redundant product comparison and gamified loyalty point mechanisms:
+  - **1. Backend Controllers, Services & Views Purged:**
+    - Purged `RestAPI/v1/CompareController.php` and `RestAPI/v1/UserLoyaltyController.php`.
+    - Purged `Web/ProductCompareController.php`, `Web/CompareController.php`, and `Web/UserLoyaltyController.php`.
+    - Purged `Admin/Customer/CustomerLoyaltyController.php` and `Services/ProductCompareService.php`.
+    - Purged Aster theme compare and loyalty views (`account-compare-list.blade.php`, `user-loyalty.blade.php`).
+    - Purged route groups in `routes/web/routes.php`, `routes/rest_api/v1/api.php`, and `routes/admin/routes.php`.
+  - **2. Admin Navigation & Storefront UI Cleanup:**
+    - Removed `wallet`, `wallet_Bonus_Setup`, and `loyalty_Points` navigation items from Admin sidebar (`_side-bar.blade.php`).
+    - Updated Aster mobile bottom app bar (`_app-bar.blade.php`) to replace compare icon with **Orders** (`account-oder`), yielding a clean 4-tab bar: Home, Wishlist, Cart, Orders.
+    - Purged compare badges, desktop header icons, and profile aside links from Aster theme.
+    - Purged `btn-compare` buttons from all product card templates, similar product carousels, and quick-view modals.
+  - **3. User App Features & Registration Purged:**
+    - Deleted `User app/lib/features/compare/` (10 files) and `User app/lib/features/loyaltyPoint/` (13 files).
+    - Removed Compare and Loyalty controller registrations and imports from `main.dart` and `di_container.dart`.
+    - Removed compare and loyalty route definitions from `route_healper.dart`.
+    - Purged compare action button from `product_image_widget.dart` and search controllers.
+    - Purged loyalty and refer-and-earn buttons from `more_horizontal_section_widget.dart` and `more_screen_view.dart`.
+  - **4. Invariant Verification ($\Delta = 0.0000$):**
+    - All PHP syntax validations passed (`php -l`).
+    - Fulfillment and financial test suite passed 36 / 36 tests with zero drift.
+
 ### [2026-09-18 10:55 UTC] Phase 3: POS Separation, Merchant Onboarding KYC Guard, and Online Payment Simplification [backend] [ai-governance]
 * **Component:** Marketplace Architecture, Merchant Onboarding, Checkout Payment Rails (`backend/vmarket-web/`, `AI_CHANGELOG.md`)
 * **Action:** Executed Phase 3 of the Nigerian marketplace transformation to eliminate redundant features, secure merchant registration, and enforce pure digital prepayment:
