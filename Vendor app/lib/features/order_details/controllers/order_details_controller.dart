@@ -271,6 +271,39 @@ class OrderDetailsController extends ChangeNotifier{
     }
   }
 
+  Future<void> updateQuickOrderStatus(int orderId, String newStatus) async {
+    OrderSetupModel model = OrderSetupModel(orderId: orderId, orderStatus: newStatus);
+    await setUpOrder(orderSetupModel: model);
+  }
+
+  bool _isPickupVerifying = false;
+  bool get isPickupVerifying => _isPickupVerifying;
+
+  Future<bool> verifyCustomerPickupOtp({required int orderId, required String pickupOtp, required BuildContext context}) async {
+    _isPickupVerifying = true;
+    notifyListeners();
+    ApiResponse apiResponse = await orderDetailsServiceInterface.verifyPickupOtp(orderId, pickupOtp);
+    _isPickupVerifying = false;
+    notifyListeners();
+
+    if (apiResponse.response != null && apiResponse.response!.statusCode == 200) {
+      String message = apiResponse.response!.data['message'] ?? 'Customer pickup verified successfully!';
+      showCustomSnackBarWidget(message, context, isToaster: true, isError: false, sanckBarType: SnackBarType.success);
+      await getOrderDetails(orderId.toString());
+      Provider.of<OrderController>(context, listen: false).getOrderList(context, 1, 'all', Provider.of<OrderController>(context, listen: false).filterModel);
+      return true;
+    } else {
+      String errorMessage = 'Pickup verification failed';
+      if (apiResponse.response?.data != null && apiResponse.response!.data['message'] != null) {
+        errorMessage = apiResponse.response!.data['message'];
+      } else if (apiResponse.error != null) {
+        errorMessage = apiResponse.error.toString();
+      }
+      showCustomSnackBarWidget(errorMessage, context, isToaster: true, isError: true, sanckBarType: SnackBarType.error);
+      return false;
+    }
+  }
+
 
 
   void initializeOrderSetupModel({required Order? order}){

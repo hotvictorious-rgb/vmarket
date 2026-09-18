@@ -27,7 +27,8 @@ class WalletScreen extends StatefulWidget {
   final bool fromNotification;
   final int? selectedIndex;
   final bool fromProfile;
-  const WalletScreen({Key? key, required this.fromNotification, this.selectedIndex, this.fromProfile = false}) : super(key: key);
+  final bool fromMenu;
+  const WalletScreen({Key? key, required this.fromNotification, this.selectedIndex, this.fromProfile = false, this.fromMenu = false}) : super(key: key);
 
   @override
   State<WalletScreen> createState() => _WalletScreenState();
@@ -80,7 +81,7 @@ class _WalletScreenState extends State<WalletScreen> {
       child: Scaffold(
         resizeToAvoidBottomInset: false,
         appBar: CustomAppBarWidget(
-          title: 'my_wallet'.tr, isBack: true,
+          title: 'earnings'.tr, isBack: widget.fromMenu ? false : true,
           onTap: (){
             if(widget.fromNotification) {
               Get.to(()=> const DashboardScreen(pageIndex: 0));

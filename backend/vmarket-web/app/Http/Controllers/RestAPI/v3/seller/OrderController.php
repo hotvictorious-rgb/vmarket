@@ -215,6 +215,18 @@ class OrderController extends Controller
         $seller = $request->seller;
         $order = Order::with('deliveryMan')->where(['seller_id' => $seller['id'], 'id' => $request['order_id']])->first();
 
+        if (!$order) {
+            return response()->json(['success' => 0, 'message' => translate('order_not_found')], 404);
+        }
+
+        // [AI] Path Isolation Invariant: Customer self-pickup orders can NEVER be assigned to delivery riders
+        $isSelfPickup = ($order->order_type === 'pickup')
+            || ($order->delivery_type === 'self_pickup')
+            || ($order->shipping && stripos($order->shipping->title, 'pickup') !== false);
+        if ($isSelfPickup) {
+            return response()->json(['success' => 0, 'message' => translate('Customer self-pickup orders cannot be assigned to delivery riders.')], 403);
+        }
+
         if ($order['delivery_man_id'] != $request['delivery_man_id']) {
             $order->deliveryman_assigned_at = Carbon::now();
         }
@@ -312,16 +324,58 @@ class OrderController extends Controller
         $walletStatus = getWebConfig(name: 'wallet_status');
         $loyaltyPointStatus = getWebConfig(name: 'loyalty_point_status');
 
-        if ($order->order_status == 'delivered') {
-            return response()->json(['success' => 0, 'message' => translate('order is already delivered')], 200);
+        $isSelfPickup = ($order->order_type === 'pickup')
+            || ($order->delivery_type === 'self_pickup')
+            || ($order->shipping && stripos($order->shipping->title, 'pickup') !== false);
+
+        // [AI] Machine-Enforced Invariant 1: pickup + out_for_delivery -> 403 Forbidden
+        if ($isSelfPickup && $request['order_status'] === 'out_for_delivery') {
+            return response()->json([
+                'success' => 0,
+                'message' => translate('Customer self-pickup orders never enter out for delivery state.')
+            ], 403);
+        }
+
+        // [AI] Machine-Enforced Invariant 2: delivery + vendor -> delivered -> 403 Forbidden
+        // Delivery orders must be delivered and verified by the assigned delivery rider via customer delivery OTP
+        if (!$isSelfPickup && $request['order_status'] === 'delivered') {
+            return response()->json([
+                'success' => 0,
+                'message' => translate('Delivery orders must be delivered and verified by the assigned Victorious Delivery rider via customer delivery OTP.')
+            ], 403);
+        }
+
+        // [AI] Machine-Enforced Invariant 3: delivery + vendor -> out_for_delivery -> 403 Forbidden
+        // Delivery orders enter out_for_delivery ONLY when rider arrives and verifies pickup OTP
+        if (!$isSelfPickup && $request['order_status'] === 'out_for_delivery') {
+            return response()->json([
+                'success' => 0,
+                'message' => translate('Delivery orders transition to out for delivery only upon rider pickup OTP custody verification.')
+            ], 403);
+        }
+
+        // [AI] Machine-Enforced Invariant 4: unverified OPay / offline payment + fulfillment -> 403 Forbidden
+        if (in_array($order['payment_method'], ['offline_payment', 'opay']) && $order['payment_status'] !== 'paid') {
+            return response()->json([
+                'success' => 0,
+                'message' => translate('Unverified OPay or offline payment orders cannot be fulfilled until Admin verifies payment.')
+            ], 403);
+        }
+
+        // [AI] Machine-Enforced Invariant 5: pickup + delivered requires verifyPickupOtp handshake
+        if ($isSelfPickup && $request['order_status'] === 'delivered') {
+            return response()->json([
+                'success' => 0,
+                'message' => translate('Customer self-pickup orders must be completed via the Secret Pickup OTP handshake endpoint.')
+            ], 403);
         }
 
         if ($request['order_status'] == 'delivered') {
-            // [AI] Payment Authority Guard: An unpaid non-COD order CANNOT be marked as delivered by a vendor
-            if ($order['payment_status'] !== 'paid' && $order['payment_method'] !== 'cash_on_delivery') {
+            // [AI] Payment Authority Guard: An unpaid order CANNOT be marked as delivered
+            if ($order['payment_status'] !== 'paid') {
                 return response()->json([
                     'status' => false,
-                    'message' => translate('Unpaid_digital_or_offline_orders_cannot_be_marked_as_delivered_until_payment_is_confirmed_by_gateway_or_admin.'),
+                    'message' => translate('Unpaid orders cannot be marked as delivered until payment is confirmed by Victorious MARKET.'),
                 ], 403);
             }
         }

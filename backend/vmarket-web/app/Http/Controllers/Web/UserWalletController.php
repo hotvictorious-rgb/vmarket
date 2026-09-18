@@ -19,50 +19,16 @@ class UserWalletController extends Controller
 
     public function index(Request $request): View|RedirectResponse
     {
-        $walletStatus = getWebConfig(name: 'wallet_status');
-        if ($walletStatus == 1) {
-            $transactionTypes = $this->getSelectTransactionTypes(types: $request->get('types', []));
-            $totalWalletBalance = auth('customer')->user()->wallet_balance;
-
-            $walletTransactionList = $this->getWalletTransactionList(request: $request, types: $transactionTypes);
-            $paymentGatewayList = payment_gateways();
-            $addFundBonusList = $this->getAddFundBonusList();
-
-            $filterCount = count($request['types']??[]) + (int)!empty($request['transaction_range']) + (int)!empty($request['filter_by']);
-
-            if ($request->has('flag') && $request['flag'] == 'success') {
-                Toastr::success(translate('add_fund_to_wallet_success'));
-                return redirect()->route('wallet');
-            } else if ($request->has('flag') && $request['flag'] == 'fail') {
-                Toastr::error(translate('add_fund_to_wallet_unsuccessful'));
-                return redirect()->route('wallet');
-            }
-
-            $digitalPaymentStatus = getWebConfig(name: 'digital_payment');
-            $addFundsToWallet = getWebConfig(name: 'add_funds_to_wallet');
-            $addFundsToWalletStatus = $addFundsToWallet && count($paymentGatewayList) > 0 && ($digitalPaymentStatus['status'] ?? 0);
-
-            return view(VIEW_FILE_NAMES['user_wallet'], [
-                'addFundsToWalletStatus' => $addFundsToWalletStatus,
-                'totalWalletBalance' => $totalWalletBalance,
-                'walletTransactionList' => $walletTransactionList,
-                'paymentGatewayList' => $paymentGatewayList,
-                'addFundBonusList' => $addFundBonusList,
-                'transactionTypes' => $request->get('types', []),
-                'filterCount' => $filterCount,
-                'filterBy' => $request['filter_by'] ?? '',
-                'transactionRange' => $request['transaction_range'] ?? '',
-            ]);
-
-        } else {
-            Toastr::warning(translate('access_denied!'));
-            return redirect()->route('home');
-        }
+        // [AI] Customer Wallet Decommissioned: Controlled redirect with info notice
+        Toastr::info('Customer wallet feature is permanently decommissioned in Victorious MARKET.');
+        return redirect()->route('user-profile');
     }
 
-    public function myWalletAccount(): View
+    public function myWalletAccount(): View|RedirectResponse
     {
-        return view(VIEW_FILE_NAMES['wallet_account']);
+        // [AI] Customer Wallet Decommissioned: Controlled redirect with info notice
+        Toastr::info('Customer wallet feature is permanently decommissioned in Victorious MARKET.');
+        return redirect()->route('user-profile');
     }
 
     private function getWalletTransactionList(object|array $request, array $types)

@@ -147,6 +147,79 @@ class _OrderDetailsScreenState extends State<OrderDetailsScreen> {
                       Container(decoration: BoxDecoration(color: Theme.of(context).cardColor, boxShadow: ThemeShadow.getShadow(context)),
                         child: Column(crossAxisAlignment: CrossAxisAlignment.start,children: [
 
+                          (() {
+                            final String currentStatus = orderDetailsController.orderDetails?[0].order?.orderStatus ?? '';
+                            final bool isSelfPickupOrder = orderDetailsController.orderDetails?[0].order?.orderType == 'pickup'
+                                || orderDetailsController.orderDetails?[0].order?.deliveryType == 'self_pickup'
+                                || (orderDetailsController.orderDetails?[0].order?.shipping?.title?.toLowerCase().contains('pickup') ?? false);
+                            final bool isOrderPaid = orderDetailsController.orderDetails?[0].order?.paymentStatus == 'paid';
+
+                            if (currentStatus == 'ready_for_pickup') {
+                              return Container(
+                                margin: const EdgeInsets.symmetric(horizontal: Dimensions.paddingSizeDefault, vertical: Dimensions.paddingSizeExtraSmall),
+                                padding: const EdgeInsets.all(Dimensions.paddingSizeDefault),
+                                decoration: BoxDecoration(
+                                  color: isSelfPickupOrder
+                                      ? (isOrderPaid ? const Color(0xFFE0F2F1) : const Color(0xFFFFF3E0))
+                                      : const Color(0xFFFFF8E1),
+                                  borderRadius: BorderRadius.circular(12),
+                                  border: Border.all(
+                                    color: isSelfPickupOrder
+                                        ? (isOrderPaid ? const Color(0xFF00897B) : const Color(0xFFFB8C00))
+                                        : const Color(0xFFFFA000),
+                                    width: 1.2,
+                                  ),
+                                ),
+                                child: Row(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Icon(
+                                      isSelfPickupOrder
+                                          ? (isOrderPaid ? Icons.storefront_rounded : Icons.lock_clock_rounded)
+                                          : Icons.two_wheeler_rounded,
+                                      color: isSelfPickupOrder
+                                          ? (isOrderPaid ? const Color(0xFF00897B) : const Color(0xFFE65100))
+                                          : const Color(0xFFD97706),
+                                      size: 26,
+                                    ),
+                                    const SizedBox(width: 10),
+                                    Expanded(
+                                      child: Column(
+                                        crossAxisAlignment: CrossAxisAlignment.start,
+                                        children: [
+                                          Text(
+                                            isSelfPickupOrder
+                                                ? (isOrderPaid ? (getTranslated('customer_pickup_ready_title', context) ?? 'Ready for Customer In-Store Pickup') : (getTranslated('payment_pending_pickup', context) ?? 'Ready for Pickup (Payment Pending)'))
+                                                : (getTranslated('rider_pickup_ready_title', context) ?? 'Ready for Victorious Delivery Pickup'),
+                                            style: robotoBold.copyWith(
+                                              color: isSelfPickupOrder
+                                                  ? (isOrderPaid ? const Color(0xFF00695C) : const Color(0xFFE65100))
+                                                  : const Color(0xFFB45309),
+                                              fontSize: Dimensions.fontSizeDefault,
+                                            ),
+                                          ),
+                                          const SizedBox(height: 4),
+                                          Text(
+                                            isSelfPickupOrder
+                                                ? (isOrderPaid
+                                                    ? (getTranslated('customer_pickup_ready_paid_desc', context) ?? 'Customer payment confirmed. Handover requires customer 6-digit Secret Pickup OTP.')
+                                                    : (getTranslated('customer_pickup_ready_unpaid_desc', context) ?? 'Order prepared. Handover OTP verification is locked until payment is verified by Victorious MARKET.'))
+                                                : (getTranslated('rider_pickup_ready_desc', context) ?? 'Order packaged. Hand parcel to Victorious Delivery rider upon 6-digit Rider Pickup OTP verification.'),
+                                            style: robotoRegular.copyWith(
+                                              fontSize: Dimensions.fontSizeSmall,
+                                              color: Theme.of(context).textTheme.bodyMedium?.color?.withValues(alpha: 0.8),
+                                            ),
+                                          ),
+                                        ],
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              );
+                            }
+                            return const SizedBox();
+                          })(),
+
                           OrderPaymentInfoWidget(),
                           const SizedBox(height: Dimensions.paddingSizeSmall),
 
@@ -623,40 +696,217 @@ class _OrderDetailsScreenState extends State<OrderDetailsScreen> {
         ),
 
         bottomNavigationBar: Consumer<OrderDetailsController>(builder: (_, orderDetailsController, __) {
-          if(orderDetailsController.orderDetails?.isEmpty ?? true) return const SizedBox();
-          return orderDetailsController.orderDetails?[0].order?.orderType == 'POS'  ? const SizedBox() : Container(
+          if (orderDetailsController.orderDetails?.isEmpty ?? true) return const SizedBox();
+          final order = orderDetailsController.orderDetails?[0].order;
+          if (order?.orderType == 'POS') return const SizedBox();
+
+          final String status = order?.orderStatus ?? '';
+          final bool isTerminal = ['delivered', 'canceled', 'returned', 'failed'].contains(status);
+          final bool isCustomerSelfPickup = order?.orderType == 'pickup'
+              || order?.deliveryType == 'self_pickup'
+              || (order?.shipping?.title?.toLowerCase().contains('pickup') ?? false);
+          final bool isPaid = order?.paymentStatus == 'paid';
+
+          String? quickActionText;
+          Color actionBgColor = Theme.of(context).primaryColor;
+          VoidCallback? onActionTap;
+
+          if (status == 'pending') {
+            quickActionText = getTranslated('confirm_order', context) ?? 'Confirm Order';
+            onActionTap = () async {
+              if (order?.id != null) {
+                await orderDetailsController.updateQuickOrderStatus(order!.id!, 'confirmed');
+              }
+            };
+          } else if (status == 'confirmed') {
+            quickActionText = getTranslated('mark_as_preparing', context) ?? 'Mark as Preparing';
+            onActionTap = () async {
+              if (order?.id != null) {
+                await orderDetailsController.updateQuickOrderStatus(order!.id!, 'processing');
+              }
+            };
+          } else if (status == 'processing') {
+            quickActionText = getTranslated('mark_ready_for_pickup', context) ?? 'Mark Ready for Pickup';
+            actionBgColor = const Color(0xFF00897B);
+            onActionTap = () async {
+              if (order?.id != null) {
+                await orderDetailsController.updateQuickOrderStatus(order!.id!, 'ready_for_pickup');
+              }
+            };
+          } else if (status == 'ready_for_pickup') {
+            if (isCustomerSelfPickup) {
+              if (isPaid) {
+                quickActionText = getTranslated('verify_customer_pickup_otp', context) ?? 'Verify Pickup OTP';
+                actionBgColor = const Color(0xFF00897B);
+                onActionTap = () => _showVerifyPickupOtpDialog(context, order!.id!, orderDetailsController);
+              } else {
+                quickActionText = getTranslated('payment_pending_pickup', context) ?? 'Payment Pending (Locked)';
+                actionBgColor = Colors.grey.shade400;
+                onActionTap = () {
+                  showCustomSnackBarWidget(
+                    'Handover OTP verification is locked until customer payment is confirmed by Victorious MARKET.',
+                    context,
+                    isError: true,
+                  );
+                };
+              }
+            } else {
+              quickActionText = getTranslated('ready_for_pickup', context) ?? 'Ready for Rider';
+              actionBgColor = const Color(0xFFD97706);
+              onActionTap = () {
+                showCustomSnackBarWidget(
+                  getTranslated('rider_pickup_ready_desc', context) ?? 'Order packaged. Hand parcel to Victorious Delivery rider upon 6-digit Rider Pickup OTP verification.',
+                  context,
+                  isError: false,
+                  sanckBarType: SnackBarType.success,
+                );
+              };
+            }
+          }
+
+          return Container(
             decoration: BoxDecoration(color: Theme.of(context).cardColor, boxShadow: ThemeShadow.getShadow(context)),
             padding: const EdgeInsets.symmetric(horizontal: Dimensions.paddingSizeDefault, vertical: Dimensions.paddingSizeSmall),
-            child: CustomButtonWidget(
-              backgroundColor: (orderDetailsController.orderDetails == null ) ? Theme.of(context).hintColor : Theme.of(context).primaryColor,
-              borderRadius: Dimensions.paddingSizeExtraSmall,
-              btnTxt: getTranslated('order_setup', context),
-              onTap: (orderDetailsController.orderDetails == null ) ? null : () {
-
-                showModalBottomSheet(
-                  backgroundColor: Theme.of(context).cardColor,
-                  useSafeArea: true,
-                  shape: const RoundedRectangleBorder(
-                    borderRadius: BorderRadius.vertical(
-                      top: Radius.circular(20),
+            child: Row(
+              children: [
+                if (quickActionText != null && !isTerminal)
+                  Expanded(
+                    flex: 2,
+                    child: CustomButtonWidget(
+                      backgroundColor: actionBgColor,
+                      borderRadius: Dimensions.paddingSizeExtraSmall,
+                      btnTxt: quickActionText,
+                      onTap: onActionTap,
                     ),
                   ),
-                  isScrollControlled: true,
-                  context: context,
-                  builder: (BuildContext context){
-
-                    return OrderSetupBottomSheet(
-                      orderModel: orderDetailsController.orderDetails?[0].order,
-                      onlyDigital: _onlyDigital,
-                      bottomContext: context,
-                    );
-                  },
-                );
-              },
+                if (quickActionText != null && !isTerminal)
+                  const SizedBox(width: Dimensions.paddingSizeSmall),
+                Expanded(
+                  flex: (quickActionText != null && !isTerminal) ? 1 : 2,
+                  child: InkWell(
+                    onTap: () {
+                      showModalBottomSheet(
+                        backgroundColor: Theme.of(context).cardColor,
+                        useSafeArea: true,
+                        shape: const RoundedRectangleBorder(
+                          borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+                        ),
+                        isScrollControlled: true,
+                        context: context,
+                        builder: (BuildContext context) {
+                          return OrderSetupBottomSheet(
+                            orderModel: order,
+                            onlyDigital: _onlyDigital,
+                            bottomContext: context,
+                          );
+                        },
+                      );
+                    },
+                    child: Container(
+                      height: 45,
+                      alignment: Alignment.center,
+                      decoration: BoxDecoration(
+                        color: Theme.of(context).cardColor,
+                        borderRadius: BorderRadius.circular(Dimensions.paddingSizeExtraSmall),
+                        border: Border.all(color: Theme.of(context).primaryColor),
+                      ),
+                      child: Text(
+                        (quickActionText != null && !isTerminal) ? (getTranslated('more_options', context) ?? 'Setup') : (getTranslated('order_setup', context) ?? 'Order Setup'),
+                        style: robotoMedium.copyWith(
+                          color: Theme.of(context).primaryColor,
+                          fontSize: Dimensions.fontSizeDefault,
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
+              ],
             ),
           );
         }),
       ),
+    );
+  }
+
+  void _showVerifyPickupOtpDialog(BuildContext context, int orderId, OrderDetailsController controller) {
+    final TextEditingController otpController = TextEditingController();
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (ctx) {
+        return AlertDialog(
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+          title: Row(
+            children: [
+              const Icon(Icons.verified_user_rounded, color: Color(0xFF00897B), size: 28),
+              const SizedBox(width: 8),
+              Expanded(
+                child: Text(
+                  getTranslated('enter_customer_pickup_otp', ctx) ?? 'Enter Customer Pickup OTP',
+                  style: robotoBold.copyWith(fontSize: Dimensions.fontSizeLarge),
+                ),
+              ),
+            ],
+          ),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                getTranslated('customer_pickup_ready_paid_desc', ctx) ?? 'Customer payment is confirmed. Collect the 6-digit Secret Pickup OTP from customer to finalize handover.',
+                style: robotoRegular.copyWith(fontSize: Dimensions.fontSizeSmall, color: Theme.of(ctx).hintColor),
+              ),
+              const SizedBox(height: 16),
+              CustomTextFieldWidget(
+                controller: otpController,
+                hintText: getTranslated('pickup_otp_hint', ctx) ?? 'e.g. 123456',
+                textInputType: TextInputType.number,
+                isAmount: false,
+              ),
+            ],
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(ctx).pop(),
+              child: Text(getTranslated('cancel', ctx) ?? 'Cancel', style: robotoMedium.copyWith(color: Theme.of(ctx).hintColor)),
+            ),
+            Consumer<OrderDetailsController>(
+              builder: (_, detailsController, __) {
+                return detailsController.isPickupVerifying
+                    ? const Padding(
+                        padding: EdgeInsets.symmetric(horizontal: 16),
+                        child: SizedBox(width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 2)),
+                      )
+                    : ElevatedButton(
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: const Color(0xFF00897B),
+                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                        ),
+                        onPressed: () async {
+                          final String otp = otpController.text.trim();
+                          if (otp.length != 6) {
+                            showCustomSnackBarWidget('Please enter a valid 6-digit OTP', ctx, isError: true);
+                            return;
+                          }
+                          final bool success = await controller.verifyCustomerPickupOtp(
+                            orderId: orderId,
+                            pickupOtp: otp,
+                            context: ctx,
+                          );
+                          if (success && ctx.mounted) {
+                            Navigator.of(ctx).pop();
+                          }
+                        },
+                        child: Text(
+                          getTranslated('verify_and_handover', ctx) ?? 'Verify & Handover',
+                          style: robotoBold.copyWith(color: Colors.white),
+                        ),
+                      );
+              },
+            ),
+          ],
+        );
+      },
     );
   }
 

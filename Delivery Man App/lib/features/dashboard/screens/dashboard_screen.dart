@@ -29,11 +29,11 @@ class _DashboardScreenState extends State<DashboardScreen> {
     Get.find<DashboardController>().selectHomePage(first: false);
 
     if(widget.pageIndex == 2) {
-      Get.find<DashboardController>().selectConversationScreen(isUpdate: false, chatIndex: widget.chatIndex);
+      Get.find<DashboardController>().selectEarningsScreen();
     }
 
     if(widget.pageIndex == 3) {
-      Get.find<DashboardController>().selectNotificationScreen(isUpdate: false);
+      Get.find<DashboardController>().selectConversationScreen(isUpdate: false, chatIndex: widget.chatIndex);
     }
 
     if(widget.pageIndex == 4) {
@@ -69,8 +69,8 @@ class _DashboardScreenState extends State<DashboardScreen> {
             items: [
               _barItem(Images.homeIcon, 'home'.tr, 0, menuController),
               _barItem(Images.orderIcon, 'order_history'.tr, 1, menuController),
-              _barItem(Images.chatIcon, 'message'.tr, 2, menuController),
-              _barItem(Images.notificationMenuIcon, 'notification'.tr, 3, menuController),
+              _barItem(Images.money, 'earnings'.tr, 2, menuController),
+              _barItem(Images.chatIcon, 'message'.tr, 3, menuController),
               _barItem(Images.profileIcon, 'profile'.tr, 4, menuController),
             ],
             onItemSelected: (int index) {
@@ -79,9 +79,9 @@ class _DashboardScreenState extends State<DashboardScreen> {
               }else if(index == 1){
                 menuController.selectOrderHistoryScreen();
               }else if(index == 2){
-                menuController.selectConversationScreen();
+                menuController.selectEarningsScreen();
               }else if(index == 3){
-                menuController.selectNotificationScreen();
+                menuController.selectConversationScreen();
               }else if(index == 4){
                 menuController.selectProfileScreen();
               }

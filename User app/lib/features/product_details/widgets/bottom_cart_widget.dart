@@ -6,6 +6,7 @@ import 'package:flutter_sixvalley_ecommerce/helper/route_healper.dart';
 import 'package:flutter_sixvalley_ecommerce/helper/shop_helper.dart';
 import 'package:flutter_sixvalley_ecommerce/localization/language_constrants.dart';
 import 'package:flutter_sixvalley_ecommerce/features/cart/controllers/cart_controller.dart';
+import 'package:flutter_sixvalley_ecommerce/features/cart/domain/models/cart_model.dart';
 import 'package:flutter_sixvalley_ecommerce/theme/controllers/theme_controller.dart';
 import 'package:flutter_sixvalley_ecommerce/utill/custom_themes.dart';
 import 'package:flutter_sixvalley_ecommerce/utill/dimensions.dart';
@@ -116,7 +117,7 @@ class _BottomCartWidgetState extends State<BottomCartWidget> {
         ),
         const SizedBox(width: Dimensions.paddingSizeSmall),
 
-        // Add to Cart Button (Outlined)
+        // Add to Cart Button (Outlined) - Direct 1-Tap
         Expanded(
           flex: 1,
           child: InkWell(
@@ -124,16 +125,20 @@ class _BottomCartWidgetState extends State<BottomCartWidget> {
               if (vacationIsOn || temporaryClose) {
                 showCustomSnackBarWidget(getTranslated('this_shop_is_close_now', context), context, snackBarType: SnackBarType.error);
               } else {
-                showModalBottomSheet(
-                  context: context,
-                  isScrollControlled: true,
-                  backgroundColor: Colors.transparent,
-                  builder: (con) => CartBottomSheetWidget(
-                    product: widget.product,
-                    callback: () {
-                      showCustomSnackBarWidget(getTranslated('added_to_cart', context), context, snackBarType: SnackBarType.success);
-                    },
-                  ),
+                // [AI] Direct 1-tap Add to Cart without variation selection modal
+                CartModelBody cart = CartModelBody(
+                  productId: widget.product?.id,
+                  quantity: 1,
+                  variant: '',
+                  color: '',
+                );
+                Provider.of<CartController>(context, listen: false).addToCartAPI(
+                  cart,
+                  context,
+                  [],
+                  [],
+                  buyNow: 0,
+                  popModal: false,
                 );
               }
             },
@@ -157,25 +162,32 @@ class _BottomCartWidgetState extends State<BottomCartWidget> {
         ),
         const SizedBox(width: Dimensions.paddingSizeSmall),
 
-        // Buy Now Button (Solid Royal Purple)
+        // Buy Now Button (Solid Royal Purple) - Direct 1-Tap
         Expanded(
           flex: 1,
           child: InkWell(
-            onTap: () {
+            onTap: () async {
               if (vacationIsOn || temporaryClose) {
                 showCustomSnackBarWidget(getTranslated('this_shop_is_close_now', context), context, snackBarType: SnackBarType.error);
               } else {
-                showModalBottomSheet(
-                  context: context,
-                  isScrollControlled: true,
-                  backgroundColor: Colors.transparent,
-                  builder: (con) => CartBottomSheetWidget(
-                    product: widget.product,
-                    callback: () {
-                      RouterHelper.getCartScreenRoute(action: RouteAction.push);
-                    },
-                  ),
+                // [AI] Direct 1-tap Buy Now straight to cart & checkout
+                CartModelBody cart = CartModelBody(
+                  productId: widget.product?.id,
+                  quantity: 1,
+                  variant: '',
+                  color: '',
                 );
+                final res = await Provider.of<CartController>(context, listen: false).addToCartAPI(
+                  cart,
+                  context,
+                  [],
+                  [],
+                  buyNow: 1,
+                  popModal: false,
+                );
+                if (res.response != null && res.response!.statusCode == 200) {
+                  RouterHelper.getCartScreenRoute(action: RouteAction.push);
+                }
               }
             },
             child: Container(

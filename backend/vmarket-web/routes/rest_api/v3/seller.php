@@ -97,8 +97,6 @@ Route::group(['prefix' => 'v3/seller', 'middleware' => ['api_lang']], function (
             Route::group(['prefix' => 'products'], function () {
                 Route::get('list', 'getProductList');
                 Route::post('upload-images', 'upload_images');
-                Route::post('upload-digital-product', 'upload_digital_product');
-                Route::post('delete-digital-product', 'deleteDigitalProduct');
                 Route::post('add', 'add_new');
                 Route::get('details/{id}', 'details');
                 Route::get('stock-out-list', 'stock_out_list');
@@ -114,9 +112,6 @@ Route::group(['prefix' => 'v3/seller', 'middleware' => ['api_lang']], function (
                 Route::get('delete-image', 'deleteImage');
                 Route::get('get-product-images/{id}', 'getProductImages');
                 Route::get('stock-limit-status', 'getStockLimitStatus');
-                Route::get('delete-preview-file', 'deletePreviewFile');
-                Route::get('digital-author-list', 'getDigitalProductsAuthorList');
-                Route::get('digital-publishing-house-list', 'getDigitalPublishingHouseList');
                 Route::post('restock-request-list', 'getRestockRequestList');
                 Route::get('restock-request-delete', 'deleteRestockRequest');
                 Route::post('restock-request-stock-update', 'updateRestockQuantity');
@@ -142,6 +137,7 @@ Route::group(['prefix' => 'v3/seller', 'middleware' => ['api_lang']], function (
                 Route::post('update-payment-status', 'update_payment_status');
                 Route::post('address-update', 'address_update');
                 Route::post('order-detail-info-update', 'updateOrderDetails');
+                Route::post('verify-pickup-otp', [\App\Http\Controllers\Vendor\Order\InShopHandoverController::class, 'verifyPickupOtp']);
             });
 
             Route::controller(OrderEditController::class)->group(function () {

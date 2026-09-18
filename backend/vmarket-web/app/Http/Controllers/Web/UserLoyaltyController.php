@@ -106,64 +106,9 @@ class UserLoyaltyController extends Controller
 
     public function getLoyaltyExchangeCurrency(LoyaltyExchangeCurrencyRequest $request): RedirectResponse
     {
-        $loyaltyPointMinimumPoint = (int)(getWebConfig(name: 'loyalty_point_minimum_point') ?? 0);
-        if (getWebConfig(name: 'wallet_status') != 1 || getWebConfig(name: 'loyalty_point_status') != 1) {
-            Toastr::warning(translate('transfer_loyalty_point_to_currency_is_not_possible_at_this_moment!'));
-            return redirect()->route('home');
-        }
-
-        $userId = auth('customer')->id();
-        $requestedPoints = (int)$request['point'];
-
-        if ($requestedPoints < $loyaltyPointMinimumPoint) {
-            Toastr::warning(translate('Oops!_You_need_more_points_to_convert_to_your_wallet_balance'));
-            return back();
-        }
-
-        try {
-            $walletTransaction = \Illuminate\Support\Facades\DB::transaction(function () use ($userId, $requestedPoints) {
-                // Pessimistic row-level lock on user row to prevent race conditions
-                $lockedUser = \App\Models\User::where('id', $userId)->lockForUpdate()->first();
-
-                if (!$lockedUser || $requestedPoints > $lockedUser->loyalty_point) {
-                    return null;
-                }
-
-                $transaction = $this->createWalletTransaction(
-                    user_id: $lockedUser->id,
-                    amount: $requestedPoints,
-                    transaction_type: 'loyalty_point',
-                    reference: 'point_to_wallet'
-                );
-
-                if ($transaction) {
-                    $this->loyaltyPointTransactionRepo->addLoyaltyPointTransaction(
-                        userId: $lockedUser->id,
-                        reference: $transaction['transaction_id'],
-                        amount: $requestedPoints,
-                        transactionType: 'point_to_wallet'
-                    );
-                }
-
-                return $transaction;
-            });
-
-            if (!$walletTransaction) {
-                Toastr::warning(translate('conversion_is_limited_to_current_points_only'));
-                return back();
-            }
-
-            try {
-                Mail::to(auth('customer')->user()->email)->send(new AddFundToWallet($walletTransaction));
-            } catch (Exception $ex) {
-            }
-
-            Toastr::success(translate('point_to_wallet_transfer_successfully'));
-            return back();
-        } catch (Exception $e) {
-            Toastr::error(translate('something_went_wrong_please_try_again'));
-            return back();
-        }
+        // [AI] Customer Wallet Decommissioned: Exchange to wallet currency is permanently blocked.
+        Toastr::error('Exchanging loyalty points for wallet balance is permanently decommissioned in Victorious MARKET.');
+        return redirect()->route('home');
     }
 
     public function getLoyaltyCurrencyAmount(Request $request): JsonResponse

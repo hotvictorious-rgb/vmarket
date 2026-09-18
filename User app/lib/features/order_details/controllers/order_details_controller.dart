@@ -414,13 +414,7 @@ class OrderDetailsController with ChangeNotifier {
       isWalletChecked = false;
       _paymentMethodIndex = -1;
       Provider.of<CheckoutController>(Get.context!, listen: false).setOfflineChecked('cod');
-    }else if(type == 'wallet') {
-      isWalletChecked = !isWalletChecked;
-      isOfflineChecked = false;
-      isCODChecked = false;
-      _paymentMethodIndex = -1;
-      Provider.of<CheckoutController>(Get.context!, listen: false).setOfflineChecked('wallet');
-    }
+
 
     if(notify) {
       notifyListeners();

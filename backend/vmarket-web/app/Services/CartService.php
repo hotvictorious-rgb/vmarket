@@ -27,35 +27,13 @@ class CartService
      */
     public function getVariantData(object $request, object $product, ?string $colorName = null): array
     {
-        $quantity = 0;
-        $price = 0;
-        $unitPrice = 0;
-        $discount = 0;
-        $currentStock = 0;
-        $variations = json_decode($product->variation, true) ?? [];
-        $hasVariations = !empty($variations);
-        $variation = $this->makeVariation(
-            request: $request,
-            colorName: $colorName,
-            choiceOptions: json_decode($product['choice_options'])
-        );
-
-        if ($variation != null) {
-            $count = count(json_decode($product->variation));
-            for ($i = 0; $i < $count; $i++) {
-                if (json_decode($product->variation)[$i]->type == $variation) {
-                    $discount = getProductPriceByType(product: $product, type: 'discounted_amount', result: 'value', price: json_decode($product->variation)[$i]->price, from: 'panel');
-                    $price = json_decode($product->variation)[$i]->price - $discount;
-                    $unitPrice = json_decode($product->variation)[$i]->price;
-                    $quantity = json_decode($product->variation)[$i]->qty;
-                }
-            }
-        } else {
-            $discount = getProductPriceByType(product: $product, type: 'discounted_amount', result: 'value', price: $product['unit_price'], from: 'panel');
-            $price = $product['unit_price'] - $discount;
-            $unitPrice = $product['unit_price'];
-            $quantity = $product['current_stock'];
-        }
+        $quantity = (int)($product['current_stock'] ?? 0);
+        $unitPrice = (float)($product['unit_price'] ?? 0);
+        $discount = getProductPriceByType(product: $product, type: 'discounted_amount', result: 'value', price: $unitPrice, from: 'panel');
+        $price = $unitPrice - $discount;
+        $variations = [];
+        $hasVariations = false;
+        $variation = null;
 
         $requestQuantity = (int)$request['quantity'];
 
@@ -112,17 +90,21 @@ class CartService
         ];
     }
 
-    public function makeVariation(object $request, string|null $colorName, array $choiceOptions): string
+    public function makeVariation(object $request, string|null $colorName, ?array $choiceOptions = null): string
     {
         $variation = '';
         if ($colorName) {
             $variation = $colorName;
         }
-        foreach ($choiceOptions as $choice) {
-            if ($variation != null) {
-                $variation .= '-' . str_replace(' ', '', $request[$choice->name]);
-            } else {
-                $variation .= str_replace(' ', '', $request[$choice->name]);
+        if (!empty($choiceOptions)) {
+            foreach ($choiceOptions as $choice) {
+                if (isset($request[$choice->name])) {
+                    if ($variation != null) {
+                        $variation .= '-' . str_replace(' ', '', $request[$choice->name]);
+                    } else {
+                        $variation .= str_replace(' ', '', $request[$choice->name]);
+                    }
+                }
             }
         }
         return $variation;

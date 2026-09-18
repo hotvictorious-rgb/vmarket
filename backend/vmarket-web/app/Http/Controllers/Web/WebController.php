@@ -727,79 +727,8 @@ class WebController extends Controller
 
     public function checkout_complete_wallet(Request $request): View|RedirectResponse
     {
-        if (!session('address_id') && !session('billing_address_id')) {
-            Toastr::error(translate('Please_update_address_information'));
-            return redirect()->route('checkout-details');
-        }
-
-        $response = OrderManager::checkValidationForCheckoutPages($request);
-        if ($response['status'] == 0) {
-            foreach ($response['message'] as $message) {
-                Toastr::error($message);
-            }
-            return isset($response['redirect']) ? redirect($response['redirect']) : redirect('/');
-        }
-
-        $vendorWiseCartList = OrderManager::processOrderGenerateData(data: [
-            'coupon_code' => session('coupon_code') ?? '',
-            'requestObj' => $request,
-        ]);
-        $paymentAmount = collect($vendorWiseCartList)->sum('order_amount_with_tax');
-
-        $user = Helpers::getCustomerInformation($request);
-        if ($paymentAmount > $user->wallet_balance) {
-            Toastr::warning(translate('Inefficient_balance_in_your_wallet_to_pay_for_this_order') . '!!');
-            return back();
-        } else {
-            $cart_group_ids = CartManager::get_cart_group_ids(type: 'checked');
-            $carts = Cart::whereHas('product', function ($query) {
-                    return $query->active();
-                })->with('product')
-                ->whereIn('cart_group_id', $cart_group_ids)
-                ->where(['is_checked' => 1])->get();
-
-            $productStockCheck = CartManager::product_stock_check($carts);
-            if (!$productStockCheck) {
-                Toastr::error(translate('the_following_items_in_your_cart_are_currently_out_of_stock'));
-                return redirect()->route('shop-cart');
-            }
-
-            $verifyStatus = OrderManager::verifyCartListMinimumOrderAmount($request);
-            if ($verifyStatus['status'] == 0) {
-                Toastr::info(translate('check_minimum_order_amount_requirement'));
-                return redirect()->route('shop-cart');
-            }
-
-            $order_ids = OrderManager::generateOrder(data: [
-                'order_status' => 'confirmed',
-                'payment_method' => 'pay_by_wallet',
-                'payment_status' => 'paid',
-                'transaction_ref' => '',
-                'coupon_code' => session('coupon_code'),
-                'address_id' => session('address_id'),
-                'billing_address_id' => session('billing_address_id'),
-                'requestObj' => $request,
-            ]);
-
-            foreach ($order_ids as $order_id) {
-                OrderManager::generateReferBonusForFirstOrder(orderId: $order_id);
-            }
-
-            CustomerManager::create_wallet_transaction($user->id, Convert::default($paymentAmount), 'order_place', 'order payment');
-        }
-
-        if (session()->has('payment_mode') && session('payment_mode') == 'app') {
-            return redirect()->route('payment-success');
-        }
-
-        $isNewCustomerInSession = session('newCustomerRegister');
-        session(['order_success_ids' => $order_ids, 'isNewCustomerInSession' => $isNewCustomerInSession]);
-        session()->forget('newCustomerRegister');
-        session()->forget('coupon_discount');
-        if(auth()->guard('customer')->check()) {
-            return redirect()->route('account-oder');
-        }
-        return redirect()->route('home');
+        // [AI] Customer Wallet Decommissioned: Block active web wallet checkout
+        abort(403, 'Customer wallet payment is permanently decommissioned in Victorious MARKET. Please pay online via Paystack, OPay, or select Pay at Pickup.');
     }
 
     public function order_placed(): View

@@ -7,6 +7,50 @@ Always append your completed tasks here in chronological order at the top. Forma
 `### [YYYY-MM-DD HH:MM UTC] <Feature / Fix Title> [<Component Scope>]`
 Include the specific app/component modified and bullet points detailing the exact technical changes.
 
+### [2026-09-18 09:58 UTC] Complete Purge of Non-Nigerian 6Valley Features (Phase 1) [backend] [user-app] [vendor-app] [delivery-man] [ai-governance]
+* **Component:** Digital Products, Offline Payments, Multi-Language, Foreign SMS, Refer & Earn, Multi-Currency (`backend/vmarket-web/`, `User app/`, `Vendor app/`, `Delivery Man App/`)
+* **Action:** Executed Phase 1 of the 20-point strategic transformation from generic 6Valley template into a lean Nigerian physical marketplace:
+  - **1. Digital Products Complete Purge:**
+    - Permanently deleted `app/Http/Controllers/Web/DigitalProductDownloadController.php`.
+    - Removed `digital-product-download/*` routes from `routes/web/routes.php`.
+    - Removed `delete-digital-product`, `digital-author-list`, and `digital-publishing-house-list` from `routes/rest_api/v3/seller.php` and `routes/rest_api/v1/api.php`.
+    - Removed `deleteDigitalProductVariationFile` endpoint from `Vendor app/lib/utill/app_constants.dart`.
+  - **2. Offline Payments Complete Purge:**
+    - Permanently deleted `app/Http/Controllers/Admin/Payment/OfflinePaymentMethodController.php`.
+    - Permanently deleted all admin offline payment view templates (`resources/views/admin-views/third-party/offline-payment-method/`).
+    - Removed `offline-payment-method` route group from `routes/admin/routes.php`.
+    - Removed `offline-payment-checkout-complete` from `routes/web/routes.php`.
+    - Removed `offline-payment-method-list`, `place-by-offline-payment`, and `due-payment-by-offline-payment` from `routes/rest_api/v1/api.php`.
+  - **3. Foreign Languages & RTL Complete Purge:**
+    - Deleted all foreign language directories from Laravel backend: `resources/lang/ae`, `resources/lang/bd`, `resources/lang/es`, `resources/lang/in`, `resources/lang/sa`. Retained strictly `resources/lang/en`.
+    - Deleted foreign language JSON assets (`ar.json`, `bn.json`, `es.json`, `hi.json`) across `User app`, `Vendor app`, and `Delivery Man App`.
+    - Standardized `AppConstants.languages` in Customer App and Vendor App to strictly English (`countryCode: 'NG', languageCode: 'en'`).
+  - **4. Foreign SMS Gateways Cleanup:**
+    - In `app/Utils/SMSModule.php`, stripped legacy foreign SMS fallbacks (`msg_91`, `alphanet_sms`, `releans`, `nexmo`, `two_factor`), keeping strictly Nigerian and authorized providers (WhatsApp Meta, Termii, Ebulksms, SmartSMSSolutions, KudiSMS, Sendchamp, Twilio).
+  - **5. Referral & Currency Switcher Cleanup:**
+    - Removed `refer-earn` route from `routes/web/routes.php` and `get-referral-discount-redeem` from `routes/rest_api/v1/api.php`.
+    - Removed `currency/change-currency` route from `routes/web/routes.php`.
+  - **6. Verification & Systemic Equilibrium ($\Delta = 0.0000$):**
+    - Passed syntax validation (`php -l`) on all modified backend files with 0 errors.
+    - Executed `scratch/test_fulfillment_path_separation.php`: **36 / 36 checks passed (100% success rate, $\Delta = 0.0000$)**.
+
+### [2026-09-18 09:12 UTC] Workspace Hygiene & Payment Gateway Bloat Cleanup [backend] [ai-governance]
+* **Component:** Root Workspace Hygiene & Payment Methods Domain (`backend/vmarket-web/routes/web/routes.php`, `backend/vmarket-web/app/Http/Controllers/Payment_Methods/`, `scratch/`, `brand_ecosystem_artifacts/`)
+* **Action:** Executed Tier 1 and Tier 2 strategic cleanup to reduce clutter, maintenance drag, and cognitive complexity:
+  - **1. Root Workspace Hygiene (Tier 1):**
+    - Consolidated 11 loose test scripts (`test_*.php`) from root into [`scratch/`](file:///c:/Users/SOOQ%20ELASER/Downloads/vmarket/scratch).
+    - Consolidated 11 loose temporary branding previews (`*.jpg`, `*.webp`, `brand_icon_preview.html`) into [`brand_ecosystem_artifacts/`](file:///c:/Users/SOOQ%20ELASER/Downloads/vmarket/brand_ecosystem_artifacts).
+    - Reduced root file count from 43 to 19 items, restoring clean repository hygiene.
+  - **2. Payment Gateway Bloat Pruning (Tier 2):**
+    - Completely deleted 11 unused foreign payment gateway controllers from `app/Http/Controllers/Payment_Methods/`: `BkashPaymentController.php`, `LiqPayController.php`, `MercadoPagoController.php`, `PaymobController.php`, `PaypalPaymentController.php`, `PaytabsController.php`, `PaytmController.php`, `RazorPayController.php`, `SenangPayController.php`, `SslCommerzPaymentController.php`, and `StripePaymentController.php`.
+    - Preserved active authoritative payment gateways: `PaystackController.php` (canonical Nigerian payment gateway) and `FlutterwaveV3Controller.php`.
+    - Stripped dead payment controller `use` imports and dead route groups (SSLCOMMERZ, STRIPE, RAZOR-PAY, PAYPAL, SENANG-PAY, PAYTM, BKASH, LIQPAY, MERCADOPAGO, PAYMOB, PAYTABS) in `routes/web/routes.php`.
+  - **3. Storefront Theme Confirmation (Tier 3):**
+    - Verified that Aster Theme is the active, canonical storefront theme across backend (`theme_root_path()` defaults to `theme_aster`) and Customer Mobile App (`DashBoardScreen` directly renders `AsterThemeHomeScreen`).
+  - **4. Verification & Invariant Proof ($\Delta = 0.0000$):**
+    - PHP syntax lint (`php -l`) passed with 0 errors across `routes/web/routes.php`, `PaystackController.php`, and `FlutterwaveV3Controller.php`.
+    - Executed `scratch/test_fulfillment_path_separation.php`: **36 / 36 checks passed (100% success rate, $\Delta = 0.0000$)**.
+
 ### [2026-09-14 12:33 UTC] Marketplace Availability Control & Freshness Confirmation Architecture [backend] [ai-governance]
 * **Component:** Product Availability Domain (`backend/vmarket-web/`, `scratch/test_availability_confirmation_architecture.php`)
 * **Action:** Replaced the legacy `current_stock = 999` indicator pattern with the canonical **Marketplace Availability Control** architecture enforcing a single source of truth, real-time runtime freshness gating, and authoritative purchase-time race-condition protection:

@@ -78,15 +78,6 @@
                         </a>
                     </li>
 
-                    @if ($web_config['wallet_status'] == 1)
-                        <li class="{{Request::is('wallet') ? 'active' :''}}">
-                            <a href="{{route('wallet')}}">
-                                <img width="20" src="{{theme_asset('assets/img/icons/profile-icon5.png')}}"
-                                     class="dark-support" alt="">
-                                <span>{{translate('wallet')}}</span>
-                            </a>
-                        </li>
-                    @endif
                     @if ($web_config['loyalty_point_status'] == 1)
                         <li class="{{Request::is ('loyalty') ? 'active' : ''}}">
                             <a href="{{route('loyalty')}}">

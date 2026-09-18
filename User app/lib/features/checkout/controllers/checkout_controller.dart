@@ -77,9 +77,6 @@ class CheckoutController with ChangeNotifier {
     ApiResponseModel apiResponse;
     isfOffline?
     apiResponse = await checkoutServiceInterface.offlinePaymentPlaceOrder(addressID, couponCode, couponAmount, billingAddressId, orderNote, keyList, inputValueList, offlineMethodSelectedId, offlineMethodSelectedName, paymentNote, _isCheckCreateAccount, passwordController.text.trim()):
-    wallet?
-    apiResponse = await checkoutServiceInterface.walletPaymentPlaceOrder(addressID, couponCode, couponAmount, billingAddressId, orderNote, _isCheckCreateAccount, passwordController.text.trim()):
-
     apiResponse = await checkoutServiceInterface.cashOnDeliveryPlaceOrder(
       addressID: addressID,
       couponCode: couponCode,
@@ -164,13 +161,6 @@ class CheckoutController with ChangeNotifier {
       isWalletChecked = false;
       isOfflineChecked = false;
     }
-    // 3. Fallback to wallet if logged in and wallet enabled
-    else if (config.walletStatus == 1) {
-      isWalletChecked = true;
-      isCODChecked = false;
-      isOfflineChecked = false;
-      _paymentMethodIndex = -1;
-    }
 
     if (isUpdate) {
       notifyListeners();
@@ -214,12 +204,7 @@ class CheckoutController with ChangeNotifier {
       isOfflineChecked = false;
       isWalletChecked = false;
       _paymentMethodIndex = -1;
-    }else if(type == 'wallet'){
-      isWalletChecked = !isWalletChecked;
-      isOfflineChecked = false;
-      isCODChecked = false;
-      _paymentMethodIndex = -1;
-    }
+
 
     if(notify) {
       notifyListeners();

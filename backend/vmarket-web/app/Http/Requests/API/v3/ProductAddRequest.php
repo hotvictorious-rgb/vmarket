@@ -24,23 +24,16 @@ class ProductAddRequest extends FormRequest
     {
         return [
             'name' => 'required',
-            'category_id' => 'required',
-            'product_type' => 'required',
-            'unit' => 'required_if:product_type,==,physical',
+            'category_id' => 'required|exists:categories,id',
+            'unit_price' => 'required|numeric|gt:0',
             'images' => 'required',
-            'thumbnail' => getRulesStringForImageValidation(
-                rules: ['required'],
-                skipMimes: ['.svg'],
-                maxSize: getFileUploadMaxSize(unit: 'kb'),
-                isDisallowed: true
-            ),
-            'discount_type' => 'required|in:percent,flat',
-            'lang' => 'required',
-            'unit_price' => 'required|min:1',
-            'discount' => 'required|gt:-1',
-            'shipping_cost' => 'required_if:product_type,==,physical|gt:-1',
-            'code' => 'required|min:6|max:20|regex:/^[a-zA-Z0-9]+$/|unique:products',
-            'minimum_order_qty' => 'required|numeric|min:1',
+            'code' => 'nullable|string|max:50',
+            'thumbnail' => 'nullable',
+            'lang' => 'nullable',
+            'product_type' => 'nullable|string',
+            'unit' => 'nullable|string',
+            'minimum_order_qty' => 'nullable|numeric|min:1',
+            'shipping_cost' => 'nullable|numeric',
         ];
     }
     /**
@@ -50,16 +43,11 @@ class ProductAddRequest extends FormRequest
     {
         return [
             'name.required' => translate('Product name is required!'),
-            'unit.required_if' => translate('Unit is required!'),
             'category_id.required' => translate('category is required!'),
-            'shipping_cost.required_if' => translate('Shipping Cost is required!'),
+            'category_id.exists' => translate('Selected category does not exist!'),
+            'unit_price.required' => translate('Product price is required!'),
+            'unit_price.gt' => translate('Product price must be greater than zero!'),
             'images.required' => translate('Product images is required!'),
-            'image.required' => translate('Product thumbnail is required!'),
-            'thumbnail.max' => translate('Maximum image size cannot exceed getter then '). ' '.getFileUploadMaxSize().'MB',
-            'thumbnail.mimes' => translate('Only allowed image types are '). ' ' . getFileUploadFormats(skip: '.svg' , asMessage: 'true'),
-            'code.required' => translate('Code is required!'),
-            'minimum_order_qty.required' => translate('The minimum order quantity is required!'),
-            'minimum_order_qty.min' => translate('The minimum order quantity must be positive!'),
         ];
     }
     /**
@@ -68,12 +56,14 @@ class ProductAddRequest extends FormRequest
     public function withValidator($validator): void
     {
         $validator->after(function ($validator) {
-            $taxData = $this->getTaxSystemType();
-            $productWiseTax = $taxData['productWiseTax'] && !$taxData['is_included'];
-
-            if ($productWiseTax && (!isset($this->tax_ids) || empty(json_decode($this->tax_ids, true)))) {
-                $validator->errors()->add('tax', translate('Please_add_your_product_tax') . '!');
+            // [AI] Strict 1 to 5 images bound enforcement
+            $images = is_array($this->images) ? $this->images : json_decode($this->images, true);
+            if (!is_array($images) || count($images) < 1) {
+                $validator->errors()->add('images', translate('Minimum 1 product image is required!'));
+            } elseif (count($images) > 5) {
+                $validator->errors()->add('images', translate('Maximum 5 product images are allowed!'));
             }
+
             if ($this->preview_file) {
                 $disallowedExtensions = ['php', 'java', 'js', 'html', 'exe', 'sh'];
                 $maxFileSize = 10 * 1024 * 1024; // 10 MB in bytes
@@ -85,10 +75,6 @@ class ProductAddRequest extends FormRequest
                 } elseif (in_array($extension, $disallowedExtensions)) {
                     $validator->errors()->add('files', translate('Files_with_extensions_like') . (' .php,.java,.js,.html,.exe,.sh ') . translate('are_not_supported') . '!');
                 }
-            }
-            $discount = $this->discount_type == 'percent' ? (($this->unit_price / 100) * $this->discount) : $this->discount;
-            if ($this->unit_price <= $discount) {
-                $validator->errors()->add('unit_price', translate('Discount can not be more or equal to the price!'));
             }
         });
     }

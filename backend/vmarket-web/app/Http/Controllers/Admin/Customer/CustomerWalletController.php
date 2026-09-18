@@ -64,31 +64,11 @@ class CustomerWalletController extends BaseController
 
     public function addFund(AddFundRequest $request, CustomerWalletService $customerWalletService): JsonResponse
     {
-        $walletTransaction = $this->walletTransactionRepo->addWalletTransaction(
-            user_id: $request['customer_id'],
-            amount: $request['amount'],
-            transactionType: 'add_fund_by_admin',
-            reference: $request['reference']);
-
-        $customer = $this->customerRepo->getFirstWhere(params: ['id' => $request['customer_id']]);
-        $customerWalletService->sendPushNotificationMessage(request: $request, customer: $customer);
-
-        if ($walletTransaction) {
-            $data = [
-                'walletTransaction' => $walletTransaction,
-                'userName' => $customer['f_name'],
-                'userType' => 'customer',
-                'templateName' => 'add-fund-to-wallet',
-                'subject' => translate('add_fund_to_wallet'),
-                'title' => translate('add_fund_to_wallet'),
-            ];
-            event(new AddFundToWalletEvent(email: $customer['email'], data: $data));
-            return response()->json(['message' => translate('transaction_successful')], 200);
-        }
-
-        return response()->json(['errors' => [
-            'message' => translate('failed_to_create_transaction')
-        ]], 200);
+        // [AI] Customer Wallet Decommissioned: Admin cannot add funds to customer wallet
+        return response()->json([
+            'status' => false,
+            'message' => 'Adding funds to customer wallet is permanently decommissioned in Victorious MARKET.',
+        ], 403);
     }
 
     public function exportList(Request $request): BinaryFileResponse
@@ -127,19 +107,11 @@ class CustomerWalletController extends BaseController
 
     public function addBonusSetup(BonusSetupRequest $request): JsonResponse
     {
-        $data = [
-            'title' => $request['title'],
-            'description' => $request['description'],
-            'bonus_type' => $request['bonus_type'],
-            'bonus_amount' => $request['bonus_type'] == 'fixed' ? currencyConverter($request['bonus_amount']) : $request['bonus_amount'],
-            'min_add_money_amount' => currencyConverter($request['min_add_money_amount']),
-            'max_bonus_amount' => currencyConverter($request['max_bonus_amount']),
-            'start_date_time' => $request['start_date_time'],
-            'end_date_time' => $request['end_date_time'] ?? now()->addDay(7),
-            'created_at' => now(),
-        ];
-        $this->addFundBonusCategoriesRepo->add(data: $data);
-        return response()->json(['message' => translate('wallet_Bonus_added_Successfully')]);
+        // [AI] Customer Wallet Decommissioned: Wallet bonus setup is disabled
+        return response()->json([
+            'status' => false,
+            'message' => 'Wallet bonus setup is permanently decommissioned in Victorious MARKET.',
+        ], 403);
     }
 
     public function updateStatus(AddFundBonusCategoriesUpdateRequest $request): JsonResponse|RedirectResponse

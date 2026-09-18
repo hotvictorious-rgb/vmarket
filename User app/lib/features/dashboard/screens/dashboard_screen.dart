@@ -93,7 +93,7 @@ class DashBoardScreenState extends State<DashBoardScreen> {
           screen:
               const OrderScreen(isBacButtonExist: false, fromDashboard: true)),
       NavigationModel(
-          name: 'more', icon: Images.moreImage, screen: const MoreScreen()),
+          name: 'account', icon: Images.moreImage, screen: const MoreScreen()),
     ];
 
     NetworkInfo.checkConnectivity(context);

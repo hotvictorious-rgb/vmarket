@@ -376,84 +376,11 @@ class OrderController extends Controller
 
     public function placeOrderByWallet(Request $request): JsonResponse
     {
-        $cartGroupIds = CartManager::get_cart_group_ids(request: $request, type: 'checked');
-        $carts = Cart::whereHas('product', function ($query) {
-            return $query->active();
-        })->with('product')->whereIn('cart_group_id', $cartGroupIds)->where(['is_checked' => 1])->get();
-
-        $product_stock = CartManager::product_stock_check($carts);
-        if (!$product_stock) {
-            return response()->json(['message' => 'The following items in your cart are currently out of stock'], 403);
-        }
-
-        $verifyStatus = OrderManager::verifyCartListMinimumOrderAmount($request);
-        if ($verifyStatus['status'] == 0) {
-            return response()->json(['message' => 'Check minimum order amount requirement'], 403);
-        }
-
-        $vendorWiseCartList = OrderManager::processOrderGenerateData(data: [
-            'coupon_code' => $request['coupon_code'] ?? '',
-            'requestObj' => $request,
-        ]);
-        $paymentAmount = collect($vendorWiseCartList)->sum('order_amount_with_tax');
-
-        // [AI] Wallet Race Condition Guard: Re-read user with a pessimistic row lock
-        // inside a transaction so concurrent place-by-wallet requests cannot both
-        // read the same balance and both pass the sufficiency check (double-spend).
-        $user = Helpers::getCustomerInformation($request);
-        $lockedBalance = \DB::transaction(function () use ($user) {
-            return \App\Models\User::where('id', $user->id)->lockForUpdate()->value('wallet_balance');
-        });
-        if ($paymentAmount > $lockedBalance) {
-            return response()->json(['message' => 'inefficient balance in your wallet to pay for this order'], 403);
-        } else {
-            $physical_product = false;
-            foreach ($carts as $cart) {
-                if ($cart->product_type == 'physical') {
-                    $physical_product = true;
-                }
-            }
-
-            if ($physical_product) {
-                $zip_restrict_status = getWebConfig(name: 'delivery_zip_code_area_restriction');
-                $country_restrict_status = getWebConfig(name: 'delivery_country_restriction');
-
-                if ($request->has('billing_address_id') && $request['billing_address_id']) {
-                    $shipping_address = ShippingAddress::where(['customer_id' => $request->user()->id, 'id' => $request->input('billing_address_id')])->first();
-
-                    if (!$shipping_address) {
-                        return response()->json(['message' => translate('address_not_found')], 403);
-                    } elseif ($country_restrict_status && !self::delivery_country_exist_check($shipping_address->country)) {
-                        return response()->json(['message' => translate('Delivery_unavailable_for_this_country')], 403);
-
-                    } elseif ($zip_restrict_status && !self::delivery_zipcode_exist_check($shipping_address->zip)) {
-                        return response()->json(['message' => translate('Delivery_unavailable_for_this_zip_code_area')], 403);
-                    }
-                }
-            }
-
-            $orderIds = OrderManager::generateOrder(data: [
-                'is_guest' => 0,
-                'guest_id' => 0,
-                'customer_id' => $user['id'],
-                'order_status' => 'confirmed',
-                'payment_method' => 'pay_by_wallet',
-                'payment_status' => 'paid',
-                'transaction_ref' => '',
-                'address_id' => $request['address_id'],
-                'billing_address_id' => $request['billing_address_id'],
-                'payment_note' => $request['payment_note'],
-                'order_note' => $request['order_note'],
-                'coupon_code' => $request['coupon_code'],
-                'requestObj' => $request,
-            ]);
-
-            CustomerManager::create_wallet_transaction($user->id, Convert::default($paymentAmount), 'order_place', 'order payment');
-            return response()->json([
-                'messages' => translate('order_placed_successfully'),
-                'order_ids' => $orderIds,
-            ], 200);
-        }
+        // [AI] Customer Wallet Decommissioned: Reject active wallet order placement
+        return response()->json([
+            'status' => false,
+            'message' => 'Customer wallet payment is permanently decommissioned in Victorious MARKET. Please pay online via Paystack, OPay, or select Pay at Pickup.',
+        ], 403);
     }
 
     public function refund_request(Request $request): JsonResponse

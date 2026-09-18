@@ -1,0 +1,391 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Victorious Ecosystem - Stage 2 Icon Family Review</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      background: #0d091a;
+      color: #ffffff;
+      padding: 40px 24px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
+    .container {
+      max-width: 1200px;
+      width: 100%;
+    }
+    header {
+      text-align: center;
+      margin-bottom: 36px;
+    }
+    h1 {
+      font-size: 30px;
+      font-weight: 800;
+      color: #ffd700;
+      margin-bottom: 8px;
+      letter-spacing: -0.5px;
+    }
+    p.subtitle {
+      font-size: 15px;
+      color: #bfaee3;
+      max-width: 800px;
+      margin: 0 auto;
+      line-height: 1.5;
+    }
+
+    /* Master Banner */
+    .master-banner {
+      background: #181130;
+      border: 1px solid #3c2a6d;
+      border-radius: 16px;
+      padding: 24px;
+      margin-bottom: 36px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      box-shadow: 0 10px 30px rgba(0,0,0,0.4);
+    }
+    .badge {
+      font-size: 11px;
+      font-weight: 800;
+      letter-spacing: 1.5px;
+      padding: 4px 12px;
+      border-radius: 20px;
+      background: rgba(255, 215, 0, 0.15);
+      color: #ffd700;
+      margin-bottom: 16px;
+    }
+    .master-image-frame {
+      max-width: 600px;
+      width: 100%;
+      background: #110b24;
+      border: 1px dashed #4f388f;
+      border-radius: 12px;
+      padding: 20px;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+    }
+    .master-image-frame img {
+      max-width: 100%;
+      height: auto;
+    }
+
+    /* Ecosystem Grid */
+    .section-title {
+      font-size: 20px;
+      font-weight: 700;
+      color: #ffd700;
+      margin-bottom: 16px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+    .family-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 24px;
+      margin-bottom: 40px;
+    }
+    .card {
+      background: #1a1333;
+      border: 1px solid #3c2a6d;
+      border-radius: 16px;
+      padding: 22px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      box-shadow: 0 10px 24px rgba(0,0,0,0.3);
+    }
+    .card-title {
+      font-size: 17px;
+      font-weight: 700;
+      color: #ffffff;
+      margin-bottom: 4px;
+      text-align: center;
+    }
+    .card-badge {
+      font-size: 10px;
+      font-weight: 800;
+      letter-spacing: 1px;
+      padding: 3px 10px;
+      border-radius: 20px;
+      margin-bottom: 16px;
+    }
+    .badge-vm { background: rgba(94, 23, 235, 0.3); color: #c4a1ff; border: 1px solid #5e17eb; }
+    .badge-vv { background: rgba(255, 215, 0, 0.15); color: #ffd700; border: 1px solid #ffd700; }
+    .badge-vd { background: rgba(0, 210, 255, 0.15); color: #6be3ff; border: 1px solid #00d2ff; }
+
+    .icon-frame {
+      width: 100%;
+      aspect-ratio: 1;
+      background: #110b24;
+      border-radius: 12px;
+      border: 1px solid #2d1f52;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 16px;
+      margin-bottom: 16px;
+      overflow: hidden;
+    }
+    .icon-frame img {
+      max-width: 100%;
+      max-height: 100%;
+      border-radius: 10px;
+    }
+    .card-specs {
+      width: 100%;
+      font-size: 12px;
+      color: #d1c4e9;
+      line-height: 1.6;
+    }
+    .card-specs div {
+      display: flex;
+      justify-content: space-between;
+      padding: 4px 0;
+      border-bottom: 1px solid #281e4a;
+    }
+    .spec-label { color: #8e7bb5; }
+    .spec-val { font-weight: 600; color: #ffffff; }
+
+    /* Favicon Card */
+    .favicon-section {
+      background: #1a1333;
+      border: 1px solid #3c2a6d;
+      border-radius: 16px;
+      padding: 24px;
+      margin-bottom: 40px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
+    .favicon-showcase {
+      display: flex;
+      align-items: center;
+      gap: 40px;
+      margin-top: 16px;
+      flex-wrap: wrap;
+      justify-content: center;
+    }
+    .fav-item {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 10px;
+    }
+    .fav-item span {
+      font-size: 11px;
+      color: #8e7bb5;
+      font-weight: 600;
+    }
+
+    /* Scaling section */
+    .scale-card {
+      background: #1a1333;
+      border: 1px solid #3c2a6d;
+      border-radius: 16px;
+      padding: 26px;
+      margin-bottom: 40px;
+    }
+    .scale-table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 16px;
+    }
+    .scale-table th {
+      text-align: left;
+      font-size: 12px;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      color: #ffd700;
+      padding: 12px;
+      border-bottom: 2px solid #3c2a6d;
+    }
+    .scale-table td {
+      padding: 14px 12px;
+      border-bottom: 1px solid #281e4a;
+      vertical-align: middle;
+    }
+    .scale-cell-content {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+    }
+    .scale-img {
+      border-radius: 8px;
+      object-fit: cover;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+    }
+  </style>
+</head>
+<body>
+
+  <div class="container">
+    <header>
+      <h1>Victorious Ecosystem Icon Family & Scale Review</h1>
+      <p class="subtitle">Complete side-by-side visual audit of the authentic master logo (<code>vic.webp</code>), approved VM Customer Icon baseline, companion VV and VD icons, and the high-contrast Web Favicon across all standard resolutions.</p>
+    </header>
+
+    <!-- Master Logo -->
+    <div class="master-banner">
+      <div class="badge">1. IMMUTABLE SOURCE OF TRUTH</div>
+      <div class="master-image-frame">
+        <img src="vic.webp" alt="Authentic Master Logo vic.webp">
+      </div>
+      <p style="margin-top: 14px; font-size: 13px; color: #bfaee3;">
+        Master geometry: Royal Purple pill (#5E17EB) • Crisp white shopping cart • Purple <strong>VM</strong> monogram • Gold <em>VICTORIOUS</em> + White <em>MARKET</em>
+      </p>
+    </div>
+
+    <!-- 3-App Ecosystem Grid -->
+    <div class="section-title">2. Ecosystem Launcher Icon Family (1024×1024 Master Candidates)</div>
+    <div class="family-grid">
+
+      <!-- VM Card -->
+      <div class="card">
+        <div class="card-title">VM — Victorious MARKET</div>
+        <div class="card-badge badge-vm">APPROVED BASELINE • ONLINE MARKETPLACE</div>
+        <div class="icon-frame">
+          <img src="vm_cart_icon_preview.jpg" alt="VM Customer App Icon">
+        </div>
+        <div class="card-specs">
+          <div><span class="spec-label">Emblem:</span> <span class="spec-val">White Shopping Cart</span></div>
+          <div><span class="spec-label">Monogram:</span> <span class="spec-val">Royal Purple 'VM'</span></div>
+          <div><span class="spec-label">Field Color:</span> <span class="spec-val">Royal Purple (#5E17EB)</span></div>
+          <div><span class="spec-label">Design Style:</span> <span class="spec-val">Clean Flat Vector Squircle</span></div>
+          <div><span class="spec-label">Resolution:</span> <span class="spec-val">1024 × 1024 px</span></div>
+        </div>
+      </div>
+
+      <!-- VV Card -->
+      <div class="card">
+        <div class="card-title">VV — Victorious Vendor</div>
+        <div class="card-badge badge-vv">NEW COMPANION • MERCHANT COMMAND CENTER</div>
+        <div class="icon-frame">
+          <img src="vv_store_icon_preview.jpg" alt="VV Vendor App Icon">
+        </div>
+        <div class="card-specs">
+          <div><span class="spec-label">Emblem:</span> <span class="spec-val">White Storefront Canopy</span></div>
+          <div><span class="spec-label">Monogram:</span> <span class="spec-val">Royal Purple 'VV'</span></div>
+          <div><span class="spec-label">Field Color:</span> <span class="spec-val">Royal Purple (#5E17EB)</span></div>
+          <div><span class="spec-label">Design Style:</span> <span class="spec-val">Matched Line-Weight Squircle</span></div>
+          <div><span class="spec-label">Resolution:</span> <span class="spec-val">1024 × 1024 px</span></div>
+        </div>
+      </div>
+
+      <!-- VD Card -->
+      <div class="card">
+        <div class="card-title">VD — Victorious Delivery</div>
+        <div class="card-badge badge-vd">NEW COMPANION • DISPATCH & COURIER PARTNER</div>
+        <div class="icon-frame">
+          <img src="vd_parcel_icon_preview.jpg" alt="VD Delivery App Icon">
+        </div>
+        <div class="card-specs">
+          <div><span class="spec-label">Emblem:</span> <span class="spec-val">White Courier Parcel Cube</span></div>
+          <div><span class="spec-label">Monogram:</span> <span class="spec-val">Royal Purple 'VD'</span></div>
+          <div><span class="spec-label">Field Color:</span> <span class="spec-val">Royal Purple (#5E17EB)</span></div>
+          <div><span class="spec-label">Design Style:</span> <span class="spec-val">Matched Line-Weight Squircle</span></div>
+          <div><span class="spec-label">Resolution:</span> <span class="spec-val">1024 × 1024 px</span></div>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- Web Favicon Section -->
+    <div class="section-title">3. Web Storefront & Admin Favicon</div>
+    <div class="favicon-section">
+      <div class="badge">MAXIMUM SMALL-SCALE LEGIBILITY (VM EMBLEM)</div>
+      <p style="font-size: 13px; color: #bfaee3; text-align: center; max-width: 600px;">
+        Derived from the approved VM cart silhouette on a solid Royal Purple circular tile. No micro-text, 100% sharp contrast.
+      </p>
+      <div class="favicon-showcase">
+        <div class="fav-item">
+          <img src="vmarket_favicon_preview.jpg" style="width: 120px; height: 120px; border-radius: 50%;" alt="120px">
+          <span>120px Preview</span>
+        </div>
+        <div class="fav-item">
+          <img src="vmarket_favicon_preview.jpg" style="width: 64px; height: 64px; border-radius: 50%;" alt="64px">
+          <span>64px High-DPI</span>
+        </div>
+        <div class="fav-item">
+          <img src="vmarket_favicon_preview.jpg" style="width: 48px; height: 48px; border-radius: 50%;" alt="48px">
+          <span>48px Desktop Icon</span>
+        </div>
+        <div class="fav-item">
+          <img src="vmarket_favicon_preview.jpg" style="width: 32px; height: 32px; border-radius: 50%;" alt="32px">
+          <span>32px Browser Tab</span>
+        </div>
+        <div class="fav-item">
+          <img src="vmarket_favicon_preview.jpg" style="width: 16px; height: 16px; border-radius: 50%;" alt="16px">
+          <span>16px Mini Tab</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Multi-Resolution Launcher Scaling Matrix -->
+    <div class="section-title">4. Launcher Icon Multi-Resolution Scale Matrix</div>
+    <div class="scale-card">
+      <p style="font-size: 13px; color: #bfaee3; margin-bottom: 16px;">
+        Visual proof that all three icons remain individually distinguishable and razor-sharp across all Android & iOS display densities:
+      </p>
+
+      <table class="scale-table">
+        <thead>
+          <tr>
+            <th>Platform Context</th>
+            <th>Resolution</th>
+            <th>VM (Customer)</th>
+            <th>VV (Vendor)</th>
+            <th>VD (Delivery)</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><strong>App Store Master</strong></td>
+            <td><code>160 × 160 px</code></td>
+            <td><img class="scale-img" src="vm_cart_icon_preview.jpg" style="width: 160px; height: 160px;"></td>
+            <td><img class="scale-img" src="vv_store_icon_preview.jpg" style="width: 160px; height: 160px;"></td>
+            <td><img class="scale-img" src="vd_parcel_icon_preview.jpg" style="width: 160px; height: 160px;"></td>
+          </tr>
+          <tr>
+            <td><strong>Home Screen Launcher (xxxhdpi)</strong></td>
+            <td><code>100 × 100 px</code></td>
+            <td><img class="scale-img" src="vm_cart_icon_preview.jpg" style="width: 100px; height: 100px;"></td>
+            <td><img class="scale-img" src="vv_store_icon_preview.jpg" style="width: 100px; height: 100px;"></td>
+            <td><img class="scale-img" src="vd_parcel_icon_preview.jpg" style="width: 100px; height: 100px;"></td>
+          </tr>
+          <tr>
+            <td><strong>Standard Home Screen (xxhdpi)</strong></td>
+            <td><code>64 × 64 px</code></td>
+            <td><img class="scale-img" src="vm_cart_icon_preview.jpg" style="width: 64px; height: 64px;"></td>
+            <td><img class="scale-img" src="vv_store_icon_preview.jpg" style="width: 64px; height: 64px;"></td>
+            <td><img class="scale-img" src="vd_parcel_icon_preview.jpg" style="width: 64px; height: 64px;"></td>
+          </tr>
+          <tr>
+            <td><strong>Notification Tray (xhdpi)</strong></td>
+            <td><code>48 × 48 px</code></td>
+            <td><img class="scale-img" src="vm_cart_icon_preview.jpg" style="width: 48px; height: 48px;"></td>
+            <td><img class="scale-img" src="vv_store_icon_preview.jpg" style="width: 48px; height: 48px;"></td>
+            <td><img class="scale-img" src="vd_parcel_icon_preview.jpg" style="width: 48px; height: 48px;"></td>
+          </tr>
+          <tr>
+            <td><strong>Status Bar / Small Tile (mdpi)</strong></td>
+            <td><code>32 × 32 px</code></td>
+            <td><img class="scale-img" src="vm_cart_icon_preview.jpg" style="width: 32px; height: 32px;"></td>
+            <td><img class="scale-img" src="vv_store_icon_preview.jpg" style="width: 32px; height: 32px;"></td>
+            <td><img class="scale-img" src="vd_parcel_icon_preview.jpg" style="width: 32px; height: 32px;"></td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+  </div>
+
+</body>
+</html>

@@ -49,16 +49,16 @@ class ProductUpdateRequest extends FormRequest
             'product_type' => 'required',
             'digital_product_type' => 'required_if:product_type,==,digital',
             // 'digital_file_ready' => 'mimes:jpg,jpeg,png,gif,zip,pdf',
-            'unit' => 'required_if:product_type,==,physical',
+            'unit' => 'nullable',
             'unit_price' => 'required|numeric|gt:0',
-            'discount' => 'required|gt:-1',
-            'shipping_cost' => 'required_if:product_type,==,physical|gt:-1',
-            'minimum_order_qty' => 'required|numeric|min:1',
+            'discount' => 'nullable|numeric|gte:0',
+            'shipping_cost' => 'nullable|numeric|gte:0',
+            'minimum_order_qty' => 'nullable|numeric|min:1',
             'code' => [
-                'required',
-                'regex:/^[a-zA-Z0-9]+$/',
-                'min:6',
-                'max:20',
+                'nullable',
+                'regex:/^[a-zA-Z0-9-]+$/',
+                'min:3',
+                'max:50',
                 Rule::unique('products', 'code')->ignore($product->id, 'id'),
             ],
             'video_url' => 'nullable|url',
@@ -199,29 +199,8 @@ class ProductUpdateRequest extends FormRequest
                     }
                 }
 
-                if ($this['product_type'] == 'physical' && ($this->has('colors') || ($this->has('choice_attributes') && count($this['choice_attributes']) > 0))) {
-                    foreach ($this->all() as $requestKey => $requestValue) {
-                        if (str_contains($requestKey, 'sku_')) {
-                            if (empty($this[$requestKey])) {
-                                $validator->errors()->add(
-                                    'sku_error', translate('Variation_SKU_are_required') . '!'
-                                );
-                            }
-                        }
-
-                        if (str_contains($requestKey, 'price_')) {
-                            if (empty($this[$requestKey]) || $this[$requestKey] < 0) {
-                                $validator->errors()->add(
-                                    'variation_price', translate('Variation_price_are_required') . '!'
-                                );
-                            } else if ($this[$requestKey] <= $this->getDiscountAmount(price: $this[$requestKey] ?? 0, discount: $this['discount'], discountType: $this['discount_type'])) {
-                                $validator->errors()->add(
-                                    'variation_price', translate('discount_can_not_be_more_or_equal_to_the_variation_price') . '!'
-                                );
-                            }
-                        }
-                    }
-                }
+                // [AI] Product variations have been eliminated across Victorious MARKET.
+                // Legacy SKU and variation price enforcement is bypassed for 6-field single product model.
 
                 if ($this['product_type'] == 'digital') {
                     $allDigitalVariation = $product->digitalVariation->pluck('variant_key')->toArray();

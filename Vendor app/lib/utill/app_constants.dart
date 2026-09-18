@@ -132,7 +132,6 @@ class AppConstants {
   static const String seenNotification = '/api/v3/seller/notification/view?id=';
   static const String stockLimitStatus = '/api/v3/seller/products/stock-limit-status';
   static const String reviewReply = '/api/v3/seller/shop-product-reviews-reply';
-  static const String deleteDigitalProductVariationFile = '/api/v3/seller/products/delete-digital-product';
   static const String getSingleRefundModel = '/api/v3/seller/refund/single-item?id=';
   static const String getRestockList = '/api/v3/seller/products/restock-request-list';
   static const String restockUpdateProductQuantity = '/api/v3/seller/products/restock-request-stock-update';
@@ -148,6 +147,7 @@ class AppConstants {
   static const String clearanceSaleConfigDataUpdate = '/api/v3/seller/clearance-sale/config-data-update';
   static const String clearanceSaleProductAdd = '/api/v3/seller/clearance-sale/product-add';
   static const String setUpOrder = '/api/v3/seller/orders/order-detail-info-update';
+  static const String verifyPickupOtpUri = '/api/v3/seller/orders/verify-pickup-otp';
   static const String businessPagesUri = '/api/v1/business-pages?type=';
   static const String paymentWithdrawalMethodList = '/api/v3/seller/payment-information/withdrawal-method-list';
   static const String paymentInformationAdd = '/api/v3/seller/payment-information/add';
@@ -235,11 +235,7 @@ class AppConstants {
 
 
   static List<LanguageModel> languages = [
-    LanguageModel(imageUrl: Images.unitedKingdom, languageName: 'English', countryCode: 'US', languageCode: 'en'),
-    LanguageModel(imageUrl: Images.arabic, languageName: 'Arabic', countryCode: 'SA', languageCode: 'ar'),
-    LanguageModel(imageUrl: Images.hindi, languageName: 'Hindi', countryCode: 'IN', languageCode: 'hi'),
-    LanguageModel(imageUrl: Images.bd, languageName: 'Bangla', countryCode: 'BD', languageCode: 'bn'),
-    LanguageModel(imageUrl: Images.spanish, languageName: 'Spanish', countryCode: 'ES', languageCode: 'es'),
+    LanguageModel(imageUrl: Images.unitedKingdom, languageName: 'English', countryCode: 'NG', languageCode: 'en'),
   ];
 
   static const double maxSizeOfASingleFile = 10;

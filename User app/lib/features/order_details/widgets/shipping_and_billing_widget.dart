@@ -5,6 +5,7 @@ import 'package:flutter_sixvalley_ecommerce/localization/language_constrants.dar
 import 'package:flutter_sixvalley_ecommerce/theme/controllers/theme_controller.dart';
 import 'package:flutter_sixvalley_ecommerce/utill/custom_themes.dart';
 import 'package:flutter_sixvalley_ecommerce/utill/dimensions.dart';
+import 'package:flutter_sixvalley_ecommerce/features/splash/controllers/splash_controller.dart';
 import 'package:flutter_sixvalley_ecommerce/utill/images.dart';
 import 'package:provider/provider.dart';
 
@@ -105,7 +106,43 @@ class _ShippingAndBillingWidgetState extends State<ShippingAndBillingWidget> {
                     ))
                   ]
                 ),
-              ],):const SizedBox(),
+              ],) :
+              Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                Row(children: [
+                  Icon(Icons.storefront_rounded, color: Theme.of(context).primaryColor, size: 20),
+                  const SizedBox(width: 8),
+                  Text(getTranslated('approved_pickup_location', context) ?? 'Approved Pickup Location',
+                    style: titilliumSemiBold.copyWith(fontSize: Dimensions.fontSizeDefault, color: Theme.of(context).textTheme.bodyLarge?.color)),
+                ]),
+                const SizedBox(height: Dimensions.marginSizeSmall),
+                IconWithTextRowWidget(
+                  isBold: true,
+                  icon: Icons.business,
+                  text: (widget.orderProvider.orderDetails != null && widget.orderProvider.orderDetails!.isNotEmpty && widget.orderProvider.orderDetails![0].order?.sellerIs == 'admin')
+                      ? '${Provider.of<SplashController>(context, listen: false).configModel?.inHouseShop?.name ?? 'Victorious MARKET Central Hub'}'
+                      : '${widget.orderProvider.orderDetails?[0].seller?.shop?.name ?? 'Victorious MARKET Verified Merchant'}',
+                ),
+                const SizedBox(height: Dimensions.marginSizeSmall),
+                IconWithTextRowWidget(
+                  icon: Icons.location_on,
+                  text: (widget.orderProvider.orderDetails != null && widget.orderProvider.orderDetails!.isNotEmpty && widget.orderProvider.orderDetails![0].order?.sellerIs == 'admin')
+                      ? '${Provider.of<SplashController>(context, listen: false).configModel?.inHouseShop?.address ?? 'Victorious MARKET Central Hub, Nigeria'}'
+                      : '${widget.orderProvider.orderDetails?[0].seller?.shop?.address ?? 'Approved Pickup Station, Nigeria'}',
+                ),
+                const SizedBox(height: Dimensions.marginSizeSmall),
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                  decoration: BoxDecoration(
+                    color: Theme.of(context).primaryColor.withValues(alpha: 0.08),
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: Text(
+                    getTranslated('pickup_location_notice', context) ?? '⚠️ Please present your 6-digit Secret Pickup OTP to the merchant staff upon arrival.',
+                    style: titilliumRegular.copyWith(fontSize: Dimensions.fontSizeExtraSmall, color: Theme.of(context).primaryColor),
+                  ),
+                ),
+                const SizedBox(height: Dimensions.marginSizeSmall),
+              ]),
 
 
               if(widget.orderProvider.orders!.billingAddressData != null &&  widget.orderProvider.orders!.shippingAddressData != null)

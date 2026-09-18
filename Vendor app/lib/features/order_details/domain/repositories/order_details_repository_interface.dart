@@ -10,5 +10,5 @@ abstract class OrderDetailsRepositoryInterface implements RepositoryInterface{
   Future<ApiResponse> uploadAfterSellDigitalProduct(File? filePath, String token, String orderId);
   Future<HttpClientResponse> productDownload(String url);
   Future<dynamic> getOrderInvoice(String orderID);
-
+  Future<ApiResponse> verifyPickupOtp(int orderId, String otp);
 }

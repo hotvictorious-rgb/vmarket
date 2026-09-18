@@ -111,18 +111,6 @@ class OrderPaymentMethodBottomSheetWidgetState extends State<OrderPaymentMethodB
                                   onTap: () => orderDetailsController.setOfflineChecked('cod'),
                                   buttonText: '${getTranslated('cash_on_delivery', context)}',
                                 )),
-                                const SizedBox(width: Dimensions.paddingSizeDefault),
-
-                                if(configModel?.walletStatus == 1 && Provider.of<AuthController>(context, listen: false).isLoggedIn())
-                                  Expanded(child: CustomButton(
-                                    onTap: () => orderDetailsController.setOfflineChecked('wallet'),
-                                    isBorder: true,
-                                    leftIcon: Images.payWallet,
-                                    backgroundColor: orderDetailsController.isWalletChecked ? Theme.of(context).primaryColor : Theme.of(context).cardColor,
-                                    textColor:  orderDetailsController.isWalletChecked? Colors.white : Theme.of(context).textTheme.bodyLarge?.color,
-                                    fontSize: Dimensions.fontSizeSmall,
-                                    buttonText: '${getTranslated('pay_via_wallet', context)}',
-                                  )),
                               ]),
 
 
@@ -291,26 +279,6 @@ class OrderPaymentMethodBottomSheetWidgetState extends State<OrderPaymentMethodB
                             'cash_on_delivery',
                             ''
                           );
-                        } else if (orderDetailsController.isWalletChecked && (Provider.of<ProfileController>(context, listen: false).balance ?? 0) >= widget.payableAmount) {
-                          print('--->>122234');
-                          // Navigator.of(Get.context!).pop();
-
-                          showDialog(
-                            context: context,
-                            builder: (context) {
-                              return  WalletPaymentWidget(
-                              currentBalance: Provider.of<ProfileController>(context, listen: false).balance  ?? 0,
-                              orderAmount: widget.payableAmount,
-                              onTap: () async {
-                                Navigator.of(context).pop();
-
-                                await orderDetailsController.duePaymentByWallet(int.parse(widget.orderId), 'wallet');
-                                Navigator.of(Get.context!).pop();
-                              });
-                            }
-                          );
-                        } else if (orderDetailsController.isWalletChecked && (Provider.of<ProfileController>(context, listen: false).balance ?? 0) < widget.payableAmount) {
-                          showCustomSnackBarWidget('wallet_balance_is_insufficient_to_pay', context, snackBarType: SnackBarType.error);
                         } else if (orderDetailsController.isOfflineChecked) {
                           Navigator.of(context).pop();
 

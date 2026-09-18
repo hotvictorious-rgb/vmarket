@@ -28,7 +28,6 @@ import 'package:flutter_sixvalley_ecommerce/common/basewidget/custom_textfield_w
 import 'package:flutter_sixvalley_ecommerce/features/checkout/widgets/choose_payment_widget.dart';
 import 'package:flutter_sixvalley_ecommerce/features/checkout/widgets/coupon_apply_widget.dart';
 import 'package:flutter_sixvalley_ecommerce/features/checkout/widgets/shipping_details_widget.dart';
-import 'package:flutter_sixvalley_ecommerce/features/checkout/widgets/wallet_payment_widget.dart';
 import 'package:provider/provider.dart';
 
 
@@ -207,26 +206,6 @@ class CheckoutScreenState extends State<CheckoutScreen> {
                                         RouterHelper.getOfflinePaymentScreen(payableAmount: (_order + widget.shippingFee - widget.discount - (_referralDiscount ?? 0) - _couponDiscount! + _tax), callback: _callback);
                                       }
 
-                                      else if(orderProvider.isWalletChecked) {
-                                        setState(() => _isSubmitting = false);
-                                        showAnimatedDialog(context, WalletPaymentWidget(
-                                          currentBalance: profileProvider.balance ?? 0,
-                                          orderAmount: _order + widget.shippingFee - widget.discount - (_referralDiscount ?? 0) - _couponDiscount! + _tax,
-                                          onTap: (){if(profileProvider.balance! <
-                                              (_order + widget.shippingFee - widget.discount - (_referralDiscount ?? 0) - _couponDiscount! + _tax)) {
-                                            showCustomSnackBarWidget(getTranslated('insufficient_balance', context), context, snackBarType: SnackBarType.warning);
-                                          }else{
-                                            Navigator.pop(context);
-                                            setState(() => _isSubmitting = true);
-                                            orderProvider.placeOrder(callback: _callback,wallet: true,
-                                              addressID : addressId,
-                                              couponCode : couponCode,
-                                              couponAmount : couponCodeAmount,
-                                              billingAddressId : billingAddressId,
-                                              orderNote : orderNote);
-                                          }}), dismissible: false, willFlip: true
-                                        );
-                                      }
                                       else {
                                         setState(() => _isSubmitting = false);
                                         showModalBottomSheet(

@@ -84,7 +84,6 @@ use App\Http\Controllers\Admin\Settings\RobotsMetaContentController;
 use App\Http\Controllers\Admin\ThirdParty\SocialMediaChatController;
 use App\Http\Controllers\Admin\Deliveryman\EmergencyContactController;
 use App\Http\Controllers\Admin\HelpAndSupport\SupportTicketController;
-use App\Http\Controllers\Admin\Payment\OfflinePaymentMethodController;
 use App\Http\Controllers\Admin\Settings\DeliverymanSettingsController;
 use App\Http\Controllers\Admin\Settings\DeliveryRestrictionController;
 use App\Http\Controllers\Admin\Delivery\DeliveryHubController;
@@ -911,18 +910,6 @@ Route::group(['prefix' => 'admin', 'as' => 'admin.', 'middleware' => ['admin', '
                     Route::get('/', 'index')->name('index');
                     Route::put('addon-payment-set', 'UpdatePaymentConfig')->name('addon-payment-set');
                     Route::post('payment-status', 'UpdateStatus')->name('payment-status');
-                });
-            });
-
-            Route::group(['prefix' => 'offline-payment-method', 'as' => 'offline-payment-method.'], function () {
-                Route::controller(OfflinePaymentMethodController::class)->group(function () {
-                    Route::get('index', 'index')->name('index');
-                    Route::get('add', 'getAddView')->name('add');
-                    Route::post('add', 'add');
-                    Route::get('update/{id}', 'getUpdateView')->name('update');
-                    Route::post('update/{id}', 'update');
-                    Route::post('delete', 'delete')->name('delete');
-                    Route::post('update-status', 'updateStatus')->name('update-status');
                 });
             });
 

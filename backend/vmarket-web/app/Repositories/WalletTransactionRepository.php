@@ -94,62 +94,9 @@ class WalletTransactionRepository implements WalletTransactionRepositoryInterfac
 
     public function addWalletTransaction(string $user_id, float $amount, string $transactionType, ?string $reference = null, array $payment_data = []): bool|WalletTransaction
     {
-        if ($this->businessSetting->where('type', 'wallet_status')->first()->value != 1) return false;
-
-        $debit = 0.0;
-        $credit = 0.0;
-        $addFundToWalletBonus = 0;
-
-        if (in_array($transactionType, ['add_fund_by_admin', 'add_fund', 'order_refund', 'loyalty_point', 'return_order_amount_by_admin'])) {
-            $credit = $amount;
-            if ($transactionType == 'add_fund') {
-                $addFundToWalletBonus = $this->addFundToWalletBonus(amount: currencyConverter(amount: $amount ?? 0));
-            } else if ($transactionType == 'loyalty_point') {
-                $credit = (($amount / $this->businessSetting->where('type', 'loyalty_point_exchange_rate')->first()->value) * currencyConverter(1));
-            }
-        } else if ($transactionType == 'order_place') {
-            $debit = $amount;
-        }
-
-        $credit_amount = currencyConverter(amount: $credit);
-        $debit_amount = currencyConverter(amount: $debit);
-
-        try {
-            DB::beginTransaction();
-            // [AI] Wallet Race Condition Guard: Lock user row inside transaction before reading balance
-            $user = $this->user->where('id', $user_id)->lockForUpdate()->first();
-            if (!$user) {
-                DB::rollback();
-                return false;
-            }
-            $currentBalance = $user->wallet_balance;
-
-            $wallet_transaction = new WalletTransaction();
-            $wallet_transaction['user_id'] = $user->id;
-            $wallet_transaction['transaction_id'] = Str::uuid();
-            $wallet_transaction['reference'] = $reference;
-            $wallet_transaction['transaction_type'] = $transactionType;
-            $wallet_transaction['payment_method'] = $payment_data['payment_method'] ?? null;
-            if ($transactionType == 'add_fund') {
-                $wallet_transaction['admin_bonus'] = $addFundToWalletBonus;
-            }
-            $wallet_transaction['credit'] = $credit_amount;
-            $wallet_transaction['debit'] = $debit_amount;
-            $wallet_transaction['balance'] = $currentBalance + $credit_amount - $debit_amount;
-            $wallet_transaction['created_at'] = now();
-            $wallet_transaction['updated_at'] = now();
-
-            $this->user->where('id', $user_id)->update([
-                'wallet_balance' => $currentBalance + $addFundToWalletBonus + $credit_amount - $debit_amount,
-            ]);
-            $wallet_transaction->save();
-            DB::commit();
-            if (in_array($transactionType, ['loyalty_point', 'order_place', 'add_fund_by_admin'])) return $wallet_transaction;
-            return true;
-        } catch (\Exception $ex) {
-            DB::rollback();
-        }
-        return false;
+        // [AI] Customer Wallet Decommissioned: Fail closed immediately with domain exception
+        \Log::warning("[AI][DECOMMISSIONED] Attempted addWalletTransaction in repository for user_id {$user_id}, type: {$transactionType}, ref: {$reference}");
+        throw new \App\Exceptions\CustomerWalletDecommissionedException($transactionType, "Customer wallet capability is permanently decommissioned in Victorious MARKET. Cannot execute transaction type '{$transactionType}'.");
     }
 
     public function addFundToWalletBonus(float $amount): string|float

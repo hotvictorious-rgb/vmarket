@@ -602,30 +602,27 @@ class AddProductController extends ChangeNotifier {
       return false;
     }
 
-    // 4. Check Unit
+    // 4. Check Unit (defaults to pc if not specified)
     if ((unitValue == 'select_unit' || unitValue == null) && productTypeIndex == 0) {
-      showCustomSnackBarWidget(getTranslated('select_a_unit', context), context, sanckBarType: SnackBarType.warning);
+      unitValue = 'pc';
+    }
+
+    // 5. SKU is Optional in 6-field model (auto-generated canonical code VM-XXX-YYYY if omitted)
+    if (productCode.text.isNotEmpty && productCode.text.length < 3) {
+      showCustomSnackBarWidget('Product SKU must be at least 3 characters', context, sanckBarType: SnackBarType.warning);
       return false;
     }
 
-    // 5. Check Product Code
-    if (productCode.text.isEmpty) {
-      showCustomSnackBarWidget(getTranslated('product_code_is_required', context), context, sanckBarType: SnackBarType.warning);
-      return false;
-    }
-    if (productCode.text.length < 6 || productCode.text == '000000') {
-      showCustomSnackBarWidget(getTranslated('product_code_minimum_6_digit', context), context, sanckBarType: SnackBarType.warning);
-      return false;
-    }
-
-    // 6. Check Thumbnail
+    // 6. Check Thumbnail & Images (Image 1 serves as thumbnail if thumbnail omitted)
     bool hasExistingThumbnail = isUpdate && (existingProduct.thumbnailFullUrl?.path != null && existingProduct.thumbnailFullUrl?.path != '');
+    int newImageCount = imageController.imagesWithColor.length + imageController.withoutColor.length;
+    bool hasExistingImages = isUpdate && (existingProduct.imagesFullUrl != null && existingProduct.imagesFullUrl!.isNotEmpty);
 
-    if (!isUpdate && imageController.selectedLogoFile == null) {
-      showCustomSnackBarWidget(getTranslated('upload_thumbnail_image', context), context, sanckBarType: SnackBarType.warning);
+    if (!isUpdate && imageController.selectedLogoFile == null && newImageCount == 0) {
+      showCustomSnackBarWidget(getTranslated('upload_product_image', context), context, sanckBarType: SnackBarType.warning);
       return false;
-    } else if (isUpdate && imageController.selectedLogoFile == null && !hasExistingThumbnail) {
-      showCustomSnackBarWidget(getTranslated('upload_thumbnail_image', context), context, sanckBarType: SnackBarType.warning);
+    } else if (isUpdate && imageController.selectedLogoFile == null && !hasExistingThumbnail && newImageCount == 0 && !hasExistingImages) {
+      showCustomSnackBarWidget(getTranslated('upload_product_image', context), context, sanckBarType: SnackBarType.warning);
       return false;
     }
 
@@ -640,6 +637,9 @@ class AddProductController extends ChangeNotifier {
       return false;
     } else if (isUpdate && newImageCount == 0 && !hasExistingImages) {
       showCustomSnackBarWidget(getTranslated('upload_product_image', context), context, sanckBarType: SnackBarType.warning);
+      return false;
+    } else if (newImageCount > 5) {
+      showCustomSnackBarWidget('Maximum 5 images allowed for product', context, sanckBarType: SnackBarType.warning);
       return false;
     } else if(youtubeLink != null && youtubeLink.trim().isNotEmpty && !youtubeLink.contains('youtube.com/embed/')) {
       showCustomSnackBarWidget(getTranslated('provide_embedded_link', context), context, sanckBarType: SnackBarType.warning);
@@ -739,29 +739,10 @@ class AddProductController extends ChangeNotifier {
       }
     }
 
-    // 4. MAIN VALIDATIONS
+    // [AI] Product variations have been eliminated across Victorious MARKET.
+    // Physical variant checks, variant prices, and attribute validations bypassed.
     if (unitPrice.isEmpty) {
       showCustomSnackBarWidget(getTranslated('enter_unit_price', context), context, sanckBarType: SnackBarType.warning);
-      return false;
-    }
-    else if (currentStock.isEmpty && productTypeIndex == 0) {
-      showCustomSnackBarWidget(getTranslated('enter_total_quantity', context), context, sanckBarType: SnackBarType.warning);
-      return false;
-    }
-    else if (orderQuantity.isEmpty) {
-      showCustomSnackBarWidget(getTranslated('enter_minimum_order_quantity', context), context, sanckBarType: SnackBarType.warning);
-      return false;
-    }
-    else if (haveBlankVariant) {
-      showCustomSnackBarWidget(getTranslated('add_at_least_one_variant_for_every_attribute', context), context, sanckBarType: SnackBarType.warning);
-      return false;
-    }
-    else if (blankVariantPrice) {
-      showCustomSnackBarWidget(getTranslated('enter_price_for_every_variant', context), context, sanckBarType: SnackBarType.warning);
-      return false;
-    }
-    else if (blankVariantQuantity) {
-      showCustomSnackBarWidget(getTranslated('enter_quantity_for_every_variant', context), context, sanckBarType: SnackBarType.warning);
       return false;
     }
     else if((isUpdate || !isUpdate) && productTypeIndex == 1 && digitalProductController.digitalProductTypeIndex == 1 && isFileEmpty) {
@@ -789,10 +770,7 @@ class AddProductController extends ChangeNotifier {
       showCustomSnackBarWidget(getTranslated('please_add_your_product_tax', context), context, sanckBarType: SnackBarType.warning);
       return false;
     }
-    else if(!isUpdate && variationController.attributeList![0].active && variationController.attributeList![0].variants.isNotEmpty && isColorImageEmpty) {
-      showCustomSnackBarWidget(getTranslated('upload_product_color_image', context), context, sanckBarType: SnackBarType.warning);
-      return false;
-    }
+    // Variations and color image requirements removed.
 
     return true; // Validation Passed
   }

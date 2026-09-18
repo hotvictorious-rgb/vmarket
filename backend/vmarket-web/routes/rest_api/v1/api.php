@@ -130,7 +130,6 @@ Route::group(['prefix' => 'v1', 'middleware' => ['api_lang']], function () {
             Route::delete('remove-all', 'remove_all_from_cart');
             Route::post('select-cart-items', 'updateCheckedCartItems');
             Route::post('product-restock-request', 'addProductRestockRequest');
-            Route::post('get-referral-discount-redeem', 'getReferralDiscountRedeem');
             Route::post('get-merge-guest-cart', 'getMergeGuestCart');
         });
     });
@@ -206,8 +205,6 @@ Route::group(['prefix' => 'v1', 'middleware' => ['api_lang']], function () {
                 Route::get('shop-again-product', 'getShopAgainProduct')->middleware('auth:api');
                 Route::get('just-for-you', 'just_for_you');
                 Route::get('most-searching', 'getMostSearchingProductsList');
-                Route::get('digital-author-list', 'getDigitalProductsAuthorList');
-                Route::get('digital-publishing-house-list', 'getDigitalPublishingHouseList');
                 Route::get('clearance-sale', 'getClearanceSale');
             });
 
@@ -276,8 +273,6 @@ Route::group(['prefix' => 'v1', 'middleware' => ['api_lang']], function () {
             Route::group(['prefix' => 'order'], function () {
                 Route::controller(OrderController::class)->group(function () {
                     Route::get('place', 'place_order');
-                    Route::get('offline-payment-method-list', 'offline_payment_method_list');
-                    Route::post('place-by-offline-payment', 'placeOrderByOfflinePayment');
                 });
                 Route::controller(CustomerController::class)->group(function () {
                     Route::get('details', 'get_order_details');
@@ -416,9 +411,6 @@ Route::group(['prefix' => 'v1', 'middleware' => ['api_lang']], function () {
 
     Route::group(['prefix' => 'edit-order', 'middleware' => 'apiGuestCheck'], function () {
         Route::controller(OrderEditController::class)->group(function () {
-            Route::post('due-payment-by-offline-payment', 'duePaymentByOfflinePayment');
-            Route::post('due-payment-by-wallet', 'duePaymentByWallet');
-            Route::post('due-payment-by-cod', 'duePaymentByCod');
             Route::post('due-payment-by-digital-payment', 'duePaymentByDigitalPayment');
         });
     });

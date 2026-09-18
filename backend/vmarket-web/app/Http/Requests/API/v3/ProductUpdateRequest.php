@@ -28,22 +28,15 @@ class ProductUpdateRequest extends FormRequest
         $productId = $this->route('id');
         return [
             'name' => 'required',
-            'category_id' => 'required',
-            'product_type' => 'required',
-            'unit' => 'required_if:product_type,==,physical',
-            'discount_type' => 'required|in:percent,flat',
-            'lang' => 'required',
-            'thumbnail' => getRulesStringForImageValidation(
-                rules: ['nullable'],
-                skipMimes: ['.svg'],
-                maxSize: getFileUploadMaxSize(unit: 'kb'),
-                isDisallowed: true
-            ),
-            'unit_price' => 'required|min:1',
-            'discount' => 'required|gt:-1',
-            'shipping_cost' => 'required_if:product_type,==,physical|gt:-1',
-            'minimum_order_qty' => 'required|numeric|min:1',
-            'code' => 'required|min:6|max:20|regex:/^[a-zA-Z0-9]+$/|unique:products,code,' . $productId,
+            'category_id' => 'required|exists:categories,id',
+            'unit_price' => 'required|numeric|gt:0',
+            'code' => 'nullable|string|max:50|unique:products,code,' . $productId,
+            'thumbnail' => 'nullable',
+            'lang' => 'nullable',
+            'product_type' => 'nullable|string',
+            'unit' => 'nullable|string',
+            'minimum_order_qty' => 'nullable|numeric|min:1',
+            'shipping_cost' => 'nullable|numeric',
         ];
     }
 
@@ -55,12 +48,9 @@ class ProductUpdateRequest extends FormRequest
         return [
             'name.required' => 'Product name is required!',
             'category_id.required' => 'category is required!',
-            'unit.required_if' => 'Unit is required!',
-            'code.min' => 'The code must be positive!',
-            'code.digits_between' => 'The code must be minimum 6 digits!',
-            'code.required' => 'Product code sku is required!',
-            'minimum_order_qty.required' => 'The minimum order quantity is required!',
-            'minimum_order_qty.min' => 'The minimum order quantity must be positive!',
+            'category_id.exists' => 'Selected category does not exist!',
+            'unit_price.required' => 'Product price is required!',
+            'unit_price.gt' => 'Product price must be greater than zero!',
         ];
     }
 
@@ -70,11 +60,14 @@ class ProductUpdateRequest extends FormRequest
     public function withValidator($validator): void
     {
         $validator->after(function ($validator) {
-            $taxData = $this->getTaxSystemType();
-            $productWiseTax = $taxData['productWiseTax'] && !$taxData['is_included'];
-            if ($productWiseTax && (!isset($this->tax_ids) || empty(json_decode($this->tax_ids, true)))) {
-                $validator->errors()->add('tax', translate('Please_add_your_product_tax') . '!');
+            // [AI] Strict 1 to 5 images bound enforcement if images provided
+            if ($this->has('images')) {
+                $images = is_array($this->images) ? $this->images : json_decode($this->images, true);
+                if (is_array($images) && count($images) > 5) {
+                    $validator->errors()->add('images', translate('Maximum 5 product images are allowed!'));
+                }
             }
+
             // Preview file validation
             if ($this->preview_file) {
                 $disallowedExtensions = ['php', 'java', 'js', 'html', 'exe', 'sh'];
@@ -87,11 +80,6 @@ class ProductUpdateRequest extends FormRequest
                 } elseif (in_array($extension, $disallowedExtensions)) {
                     $validator->errors()->add('files', translate('Files_with_extensions_like') . (' .php,.java,.js,.html,.exe,.sh ') . translate('are_not_supported') . '!');
                 }
-            }
-            // Discount validation
-            $discount = $this->discount_type == 'percent' ? (($this->unit_price / 100) * $this->discount) : $this->discount;
-            if ($this->unit_price <= $discount) {
-                $validator->errors()->add('unit_price', translate('Discount can not be more or equal to the price!'));
             }
         });
     }

@@ -190,106 +190,12 @@ class ProductTitleWidget extends StatelessWidget {
                 }
               ),
 
-            if(_isVariationAvailable()) ...[
-              Text(
-                '${getTranslated('available', context)}',
-                style: titilliumRegular.copyWith(fontSize: Dimensions.fontSizeLarge),
-              ),
-              const SizedBox(height: Dimensions.paddingSizeSmall),
-            ],
-
-            /// Available color
-            productModel!.colors != null && productModel!.colors!.isNotEmpty ?
-            Row(children: [
-
-              Text('${getTranslated('color', context)} : ', style: titilliumRegular.copyWith(
-                fontSize: Dimensions.fontSizeLarge,
-                color: Theme.of(context).textTheme.bodyLarge?.color,
-              )),
-              const SizedBox(width: Dimensions.paddingSizeExtraSmall),
-
-              Expanded(child: SizedBox(height: Dimensions.paddingSizeLarge, child: ListView.separated(
-                itemCount: productModel!.colors!.length,
-                scrollDirection: Axis.horizontal,
-                itemBuilder: (context, index) {
-                  return Center(child: Container(
-                      decoration: BoxDecoration(borderRadius: BorderRadius.circular(Dimensions.paddingSizeExtraSmall)),
-                      child: Container(
-                        width: Dimensions.marginSizeAuthSmall,
-                        alignment: Alignment.center,
-                        decoration: BoxDecoration(
-                          color: ColorHelper.hexCodeToColor(productModel?.colors?[index].code),
-                          borderRadius: BorderRadius.circular(Dimensions.paddingSizeExtraExtraSmall)
-                        ),
-                      ),
-                  ));
-                },
-                separatorBuilder: (BuildContext context, int index) => const SizedBox(width: Dimensions.paddingSizeDefaultAddress),
-              ))),
-            ]) : const SizedBox(),
-
-            productModel!.colors != null &&  productModel!.colors!.isNotEmpty ?
-            const SizedBox(height: Dimensions.paddingSizeSmall) : const SizedBox(),
-
-            productModel!.choiceOptions != null && productModel!.choiceOptions!.isNotEmpty ?
-            ListView.builder(
-              shrinkWrap: true,
-              itemCount: productModel!.choiceOptions!.length,
-              physics: const NeverScrollableScrollPhysics(),
-              itemBuilder: (context, index) {
-                return Row(
-                  crossAxisAlignment: CrossAxisAlignment.center,
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-
-                    Text('${productModel!.choiceOptions![index].title?.toCapitalized()} : ', style: titilliumRegular.copyWith(
-                      fontSize: Dimensions.fontSizeLarge,
-                      color: Theme.of(context).textTheme.bodyLarge?.color,
-                    )),
-                    const SizedBox(width: Dimensions.paddingSizeExtraSmall),
-
-                    Expanded(child: Padding(
-                      padding: const EdgeInsets.symmetric(vertical: Dimensions.paddingSizeSmall),
-                      child: SizedBox(height: Dimensions.paddingSizeExtraLarge, child: ListView.separated(
-                        scrollDirection: Axis.horizontal,
-                        itemCount: productModel!.choiceOptions![index].options!.length,
-                        itemBuilder: (context, i) {
-                          return Container(
-                            alignment: Alignment.center,
-                            padding: const EdgeInsets.symmetric(
-                              vertical: Dimensions.paddingSizeExtraExtraSmall,
-                              horizontal: Dimensions.paddingSizeSmall
-                            ),
-                            decoration: BoxDecoration(
-                              color: Theme.of(context).hintColor.withValues(alpha: 0.125),
-                              borderRadius: BorderRadius.circular(Dimensions.paddingSizeExtraExtraSmall),
-                            ),
-                            child: Text(
-                                productModel!.choiceOptions![index].options![i].trim(),
-                                overflow: TextOverflow.ellipsis,
-                                maxLines: 1,
-                                style: textRegular.copyWith(
-                                  fontSize: Dimensions.fontSizeSmall,
-                                  color: Theme.of(context).textTheme.bodyLarge?.color,
-                                ),
-                              ),
-                          );
-                        },
-                        separatorBuilder: (BuildContext context, int index) => const SizedBox(width: Dimensions.paddingSizeDefaultAddress),
-                      )),
-                    )),
-
-                  ],
-                );
-              },
-            ) : const SizedBox(),
+            // [AI] Product variations eliminated across Victorious MARKET. Clean single-product display.
           ]);
         },
       ),
     ) : const SizedBox();
   }
-
-  bool _isVariationAvailable() => ((productModel!.colors != null && productModel!.colors!.isNotEmpty) && productModel!.choiceOptions != null && productModel!.choiceOptions!.isNotEmpty);
 }
 
 

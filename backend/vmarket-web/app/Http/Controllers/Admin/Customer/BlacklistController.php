@@ -174,43 +174,18 @@ class BlacklistController extends Controller
     }
 
     /**
-     * [AI] 1-Click Approve & Credit Customer Wallet from Verified Bank Transfer Receipt.
+     * [AI] Customer Wallet Decommissioned: Manual receipt wallet crediting is permanently blocked.
      */
     public function approveWalletReceipt(Request $request, $userId): JsonResponse|RedirectResponse
     {
-        $request->validate([
-            'amount' => 'required|numeric|min:1',
-        ]);
-
-        try {
-            $user = User::findOrFail($userId);
-            $amount = (float)$request->amount;
-
-            $newBalance = DB::transaction(function () use ($user, $amount) {
-                $lockedUser = User::where('id', $user->id)->lockForUpdate()->first();
-                $lockedUser->increment('wallet_balance', $amount);
-                return (float)$lockedUser->fresh()->wallet_balance;
-            });
-
-            if ($request->ajax() || $request->wantsJson()) {
-                return response()->json([
-                    'status' => true,
-                    'message' => 'Wallet successfully credited with ₦' . number_format($amount, 2) . '! New Balance: ₦' . number_format($newBalance, 2),
-                    'new_balance' => $newBalance,
-                ]);
-            }
-
-            Toastr::success('Wallet successfully credited with ₦' . number_format($amount, 2));
-            return back();
-
-        } catch (Exception $e) {
-            Log::error('[BlacklistController approveWalletReceipt Error] ' . $e->getMessage());
-            if ($request->ajax() || $request->wantsJson()) {
-                return response()->json(['status' => false, 'message' => $e->getMessage()], 500);
-            }
-            Toastr::error('Failed to credit wallet.');
-            return back();
+        if ($request->ajax() || $request->wantsJson()) {
+            return response()->json([
+                'status' => false,
+                'message' => 'Customer wallet crediting is permanently decommissioned in Victorious MARKET.',
+            ], 403);
         }
+        Toastr::error('Customer wallet crediting is permanently decommissioned.');
+        return back();
     }
 
     /**

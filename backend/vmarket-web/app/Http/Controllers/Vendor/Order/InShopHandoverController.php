@@ -38,28 +38,44 @@ class InShopHandoverController extends Controller
             'pickup_otp' => 'required|string|size:6',
         ]);
 
-        $seller = auth('seller')->user();
-        $sellerId = auth('seller')->id();
+        $seller = auth('seller')->user() ?? $request->seller;
+        $sellerId = auth('seller')->id() ?? (is_array($request->seller) ? ($request->seller['id'] ?? null) : ($request->seller->id ?? null));
+
+        if (!$sellerId) {
+            return response()->json(['status' => false, 'message' => translate('unauthorized_access')], 403);
+        }
 
         $order = Order::with(['shipping', 'deliveryMan'])
             ->where('id', $request->order_id)
             ->where('seller_id', $sellerId)
-            ->firstOrFail();
+            ->first();
+
+        if (!$order) {
+            return response()->json(['status' => false, 'message' => translate('order_not_found')], 404);
+        }
+
+        // [AI] Canonical Fulfillment Identification: Customer Self-Pickup vs Rider Delivery
+        $isCustomerSelfPickup = ($order->shipping && stripos($order->shipping->title, 'pickup') !== false)
+            || $order->order_type === 'pickup'
+            || $order->delivery_type === 'self_pickup'
+            || empty($order->delivery_man_id);
 
         // [AI] Guard: Order already completed or closed cannot be replayed
         if (in_array($order->order_status, ['delivered', 'canceled', 'returned', 'failed'])) {
             $message = translate('Order_is_already_completed_or_closed.');
-            if ($request->ajax()) {
+            if ($request->ajax() || $request->wantsJson() || $request->is('api/*')) {
                 return response()->json(['status' => false, 'message' => $message], 400);
             }
             ToastMagic::error($message);
             return back();
         }
 
-        // [AI] Guard: Unpaid non-COD order cannot be handed over. Payment must be confirmed by gateway/admin first.
-        if ($order->payment_status !== 'paid' && $order->payment_method !== 'cash_on_delivery') {
-            $message = translate('Unpaid_order_cannot_be_handed_over._Payment_must_be_confirmed_first.');
-            if ($request->ajax()) {
+        // [AI] Financial Authority Invariant: For Customer Self-Pickup, order MUST be paid first.
+        // Even for "Pay at Pickup", customer pays via Vmarket online rail (Paystack/OPay) and Vmarket confirms payment
+        // BEFORE the vendor can complete OTP handover. This prevents taking product with OTP without paying.
+        if ($isCustomerSelfPickup && $order->payment_status !== 'paid') {
+            $message = translate('Order_is_unpaid._Customer_payment_must_be_verified_by_Victorious_MARKET_before_handover.');
+            if ($request->ajax() || $request->wantsJson() || $request->is('api/*')) {
                 return response()->json(['status' => false, 'message' => $message], 403);
             }
             ToastMagic::error($message);
@@ -67,7 +83,11 @@ class InShopHandoverController extends Controller
         }
 
         if (!$order->pickup_verification_code) {
-            ToastMagic::error(translate('No_pickup_verification_code_assigned_to_this_order'));
+            $message = translate('No_pickup_verification_code_assigned_to_this_order');
+            if ($request->ajax() || $request->wantsJson() || $request->is('api/*')) {
+                return response()->json(['status' => false, 'message' => $message], 422);
+            }
+            ToastMagic::error($message);
             return back();
         }
 
@@ -76,7 +96,7 @@ class InShopHandoverController extends Controller
         $attempts = (int) Cache::get($lockKey, 0);
         if ($attempts >= 5) {
             $lockMessage = translate('Pickup_verification_locked_due_to_5_failed_attempts._Please_try_again_in_15_minutes.');
-            if ($request->ajax()) {
+            if ($request->ajax() || $request->wantsJson() || $request->is('api/*')) {
                 return response()->json(['status' => false, 'message' => $lockMessage], 429);
             }
             ToastMagic::error($lockMessage);
@@ -88,7 +108,7 @@ class InShopHandoverController extends Controller
             Cache::put($lockKey, $attempts + 1, now()->addMinutes(15));
             $remaining = 5 - ($attempts + 1);
             $failedMessage = translate('Invalid_6-digit_Secret_Pickup_OTP._Attempts_remaining: ') . $remaining;
-            if ($request->ajax()) {
+            if ($request->ajax() || $request->wantsJson() || $request->is('api/*')) {
                 return response()->json([
                     'status' => false,
                     'message' => $failedMessage,
@@ -101,14 +121,12 @@ class InShopHandoverController extends Controller
         // Clear attempt lock on success
         Cache::forget($lockKey);
 
-        $staffName = $seller->name ?? ($seller->f_name . ' ' . $seller->l_name . ' (Owner)');
-        $branchId = $seller->shop->id ?? null;
-
-        // [AI] Canonical Fulfillment Identification: Customer Self-Pickup vs Rider Delivery
-        // Matches canonical Store Pickup shipping method, pickup order type, or unassigned delivery man
-        $isCustomerSelfPickup = ($order->shipping && stripos($order->shipping->title, 'pickup') !== false)
-            || $order->order_type === 'pickup'
-            || empty($order->delivery_man_id);
+        $staffName = is_object($seller)
+            ? ($seller->name ?? ($seller->f_name . ' ' . $seller->l_name . ' (Owner)'))
+            : (($seller['name'] ?? ($seller['f_name'] . ' ' . $seller['l_name'] . ' (Owner)')) ?? 'Merchant');
+        $branchId = is_object($seller)
+            ? ($seller->shop->id ?? null)
+            : ($seller['shop']['id'] ?? null);
 
         DB::transaction(function () use ($order, $sellerId, $staffName, $branchId, $request, $isCustomerSelfPickup) {
             if ($isCustomerSelfPickup) {
@@ -204,7 +222,7 @@ class InShopHandoverController extends Controller
         $actionLabel = $isCustomerSelfPickup ? translate('Order_completed_and_handed_over_to_customer!') : translate('Custody_transferred_to_rider_successfully!');
         $successMessage = $actionLabel . ' ' . translate('Staff_') . $staffName . ' ' . translate('recorded_on_Audit_Log.');
 
-        if ($request->ajax()) {
+        if ($request->ajax() || $request->wantsJson() || $request->is('api/*')) {
             return response()->json([
                 'status' => true,
                 'message' => $successMessage,

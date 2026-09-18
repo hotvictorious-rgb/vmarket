@@ -149,14 +149,16 @@ class OrderDetailsRepository implements OrderDetailsRepositoryInterface{
 
 
   @override
-  Future getOrderInvoice(String orderID) async{
+  Future<ApiResponse> verifyPickupOtp(int orderId, String otp) async {
     try {
-      final response = await dioClient!.get('${AppConstants.generateInvoice}$orderID');
+      Response response = await dioClient!.post(
+        AppConstants.verifyPickupOtpUri,
+        data: {'order_id': orderId, 'pickup_otp': otp},
+      );
       return ApiResponse.withSuccess(response);
     } catch (e) {
       return ApiResponse.withError(ApiErrorHandler.getMessage(e));
     }
   }
-
 
 }

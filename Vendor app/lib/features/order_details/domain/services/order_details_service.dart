@@ -38,4 +38,9 @@ class OrderDetailsService implements OrderDetailsServiceInterface {
     return await orderDetailsRepositoryInterface.getOrderInvoice(orderID);
   }
 
+  @override
+  Future verifyPickupOtp(int orderId, String otp) {
+    return orderDetailsRepositoryInterface.verifyPickupOtp(orderId, otp);
+  }
+
 }

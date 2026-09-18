@@ -151,6 +151,14 @@ class DeliveryManController extends Controller
             return response()->json(['success' => 0, 'message' => translate('order_not_found')], 404);
         }
 
+        // [AI] Path Isolation Invariant: Customer self-pickup orders can NEVER be processed or modified by delivery riders
+        $isSelfPickup = ($order->order_type === 'pickup')
+            || ($order->delivery_type === 'self_pickup')
+            || ($order->shipping && stripos($order->shipping->title, 'pickup') !== false);
+        if ($isSelfPickup) {
+            return response()->json(['success' => 0, 'message' => translate('Customer self-pickup orders cannot be processed by delivery riders.')], 403);
+        }
+
         if ($order->order_status == 'delivered') {
             return response()->json(['success' => 0, 'message' => 'order is already delivered.'], 200);
         }

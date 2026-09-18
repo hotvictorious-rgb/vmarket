@@ -40,19 +40,6 @@ class MoreHorizontalSection extends StatelessWidget {
               },
             ),
 
-            if(!isGuestMode && configModel?.walletStatus == 1)SquareButtonWidget(
-              image: Images.wallet,
-              title: getTranslated('wallet', context),
-              navigateTo: null,
-              onTap: () {
-                RouterHelper.getWalletRoute(action: RouteAction.push, isBackButtonExist: true);
-              },
-              count: 1,
-              hasCount: false,
-              subTitle: 'amount',
-              isWallet: true,
-              balance: profileProvider.balance,
-            ),
 
 
             if(!isGuestMode && configModel?.loyaltyPointStatus == 1) SquareButtonWidget(

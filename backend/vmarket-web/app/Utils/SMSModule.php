@@ -60,32 +60,6 @@ class SMSModule
             return self::twilio($receiver, $otp);
         }
 
-        // Legacy Fallbacks
-        $config = self::get_settings('releans');
-        if (isset($config) && $config['status'] == 1) {
-            return self::releans($receiver, $otp);
-        }
-
-        $config = self::get_settings('nexmo');
-        if (isset($config) && $config['status'] == 1) {
-            return self::nexmo($receiver, $otp);
-        }
-
-        $config = self::get_settings('2factor');
-        if (isset($config) && $config['status'] == 1) {
-            return self::two_factor($receiver, $otp);
-        }
-
-        $config = self::get_settings('msg91');
-        if (isset($config) && $config['status'] == 1) {
-            return self::msg_91($receiver, $otp);
-        }
-
-        $config = self::get_settings('alphanet_sms');
-        if (isset($config) && $config['status'] == 1) {
-            return self::alphanet_sms($receiver, $otp);
-        }
-
         return 'not_found';
     }
 

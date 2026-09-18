@@ -407,50 +407,21 @@ class CartManager
             $isGuest = 0;
         }
 
-        if ($request->has('color')) {
-            $string .= Color::where(['code' => $request['color']])->first()->name;
-            $variations['color'] = $string;
-        }
-
+        // [AI] Product variations have been eliminated across Victorious MARKET.
+        // Single unit price and zero variant payload enforced.
         $choices = [];
-        foreach (json_decode($product->choice_options) as $choice) {
-            $choices[$choice->name] = $request[$choice->name];
-            $variations[$choice->title] = $request[$choice->name];
-            if ($string != null) {
-                $string .= '-' . str_replace(' ', '', $request[$choice->name]);
-            } else {
-                $string .= str_replace(' ', '', $request[$choice->name]);
-            }
-        }
-
-        if (!($request['buy_now'])) {
-            if ($request['shipping_method_exist'] && $request->has('product_variation_code') && $request['product_variation_code']) {
-                $string = str_replace(' ', '', $request['product_variation_code']);
-            }
-        }
+        $variations = [];
+        $string = null;
+        $price = (float)$product->unit_price;
 
         $cartArray = [
-            'color' => $request['color'] ?? null,
+            'color' => null,
             'product_id' => $product['id'],
             'product_type' => $product['product_type'],
             'choices' => json_encode($choices),
             'variations' => json_encode($variations),
-            'variant' => $string,
+            'variant' => null,
         ];
-
-        if ($string != null) {
-            $count = count(json_decode($product->variation));
-            for ($i = 0; $i < $count; $i++) {
-                if (json_decode($product->variation)[$i]->type == $string) {
-                    $price = json_decode($product->variation)[$i]->price;
-                    if (json_decode($product->variation)[$i]->qty < $request['quantity']) {
-                        return ['status' => 0, 'message' => translate('out_of_stock!')];
-                    }
-                }
-            }
-        } else {
-            $price = $product->unit_price;
-        }
 
         $getProductDiscount = getProductPriceByType(product: $product, type: 'discounted_amount', result: 'value', price: $price);
 
@@ -577,7 +548,7 @@ class CartManager
             'in_cart_key' => $cart['id'],
             'cart' => $cart,
             'message' => translate('successfully_added') . '!',
-            'product_variant_type' => count(json_decode($product['variation'], true)) > 0 ? 'multi_variant' : 'single_variant',
+            'product_variant_type' => 'single_variant',
         ];
     }
 
@@ -675,7 +646,7 @@ class CartManager
             'in_cart_key' => $cart['id'],
             'cart' => $cart,
             'message' => translate('successfully_added') . '!',
-            'product_variant_type' => count(json_decode($product['variation'], true)) > 0 ? 'multi_variant' : 'single_variant',
+            'product_variant_type' => 'single_variant',
         ];
     }
 
@@ -761,11 +732,11 @@ class CartManager
                 'message' => translate('Product_is_currently_out_of_stock_or_unavailable'),
             ];
         }
-        $count = count(json_decode($product->variation));
-        if ($count) {
-            for ($i = 0; $i < $count; $i++) {
-                if (json_decode($product->variation)[$i]->type == $cart['variant']) {
-                    if (json_decode($product->variation)[$i]->qty < $request->quantity) {
+        $productVariations = !empty($product->variation) ? (is_array($product->variation) ? $product->variation : json_decode($product->variation, true)) : [];
+        if (!empty($productVariations) && is_array($productVariations) && !empty($cart['variant'])) {
+            foreach ($productVariations as $var) {
+                if (isset($var['type']) && $var['type'] == $cart['variant']) {
+                    if (isset($var['qty']) && $var['qty'] < $request->quantity) {
                         $status = 0;
                         $qty = $cart['quantity'];
                     }
@@ -890,11 +861,11 @@ class CartManager
                 if (!$product->isMarketplacePurchasable()) {
                     return false;
                 }
-                $count = count(json_decode($product->variation));
-                if ($count) {
-                    for ($i = 0; $i < $count; $i++) {
-                        if (json_decode($product->variation)[$i]->type == $cart['variant']) {
-                            if (json_decode($product->variation)[$i]->qty < $cart->quantity) {
+                $productVariations = !empty($product->variation) ? (is_array($product->variation) ? $product->variation : json_decode($product->variation, true)) : [];
+                if (!empty($productVariations) && is_array($productVariations) && !empty($cart['variant'])) {
+                    foreach ($productVariations as $var) {
+                        if (isset($var['type']) && $var['type'] == $cart['variant']) {
+                            if (isset($var['qty']) && $var['qty'] < $cart->quantity) {
                                 $status = false;
                             }
                         }

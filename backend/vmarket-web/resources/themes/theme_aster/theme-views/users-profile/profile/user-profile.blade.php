@@ -41,19 +41,6 @@
                                 <div class="card border flex-grow-1">
                                     <div class="card-body grid-center">
                                         <div class="text-center">
-                                            <h3 class="mb-2">{{ webCurrencyConverter($totalWalletBalance ?? 0) }}</h3>
-                                            <div class="d-flex align-items-center gap-2">
-                                                <img width="16"
-                                                     src="{{theme_asset('assets/img/icons/profile-icon5.png')}}"
-                                                     class="dark-support" alt="">
-                                                <span>{{translate('wallet')}}</span>
-                                            </div>
-                                        </div>
-                                    </div>
-                                </div>
-                                <div class="card border flex-grow-1">
-                                    <div class="card-body grid-center">
-                                        <div class="text-center">
                                             <h3 class="mb-2">{{$total_loyalty_point ?? 0}}</h3>
                                             <div class="d-flex align-items-center gap-2">
                                                 <img width="16"

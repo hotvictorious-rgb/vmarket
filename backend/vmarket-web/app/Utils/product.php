@@ -82,9 +82,12 @@ if (!function_exists('getPriceRangeWithDiscount')) {
     function getPriceRangeWithDiscount(array|object $product, string|null $type = 'web'): float|string
     {
         $productUnitPrice = $product->unit_price;
-        foreach (json_decode($product->variation) as $key => $variation) {
-            if ($key == 0) {
-                $productUnitPrice = $variation->price;
+        $variations = !empty($product->variation) ? (is_array($product->variation) ? $product->variation : json_decode($product->variation)) : [];
+        if (!empty($variations) && is_iterable($variations)) {
+            foreach ($variations as $key => $variation) {
+                if ($key == 0 && isset($variation->price)) {
+                    $productUnitPrice = $variation->price;
+                }
             }
         }
 

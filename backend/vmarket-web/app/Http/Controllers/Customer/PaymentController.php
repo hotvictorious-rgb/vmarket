@@ -391,104 +391,15 @@ class PaymentController extends Controller
 
     public function customer_add_to_fund_request(Request $request): JsonResponse|Redirector|RedirectResponse
     {
-        if (getWebConfig(name: 'add_funds_to_wallet') != 1) {
-            if (in_array($request['payment_request_from'], ['app'])) {
-                return response()->json(['message' => 'Add funds to wallet is deactivated'], 403);
-            }
-            Toastr::error(translate('add_funds_to_wallet_is_deactivated'));
-            return back();
+        // [AI] Customer Wallet Decommissioned: Reject active wallet funding
+        if (in_array($request['payment_request_from'], ['app']) || $request->expectsJson()) {
+            return response()->json([
+                'status' => false,
+                'message' => 'Customer wallet funding is permanently decommissioned in Victorious MARKET.',
+            ], 403);
         }
-
-        $validator = Validator::make($request->all(), [
-            'amount' => 'required',
-            'payment_method' => 'required',
-            'payment_platform' => 'required',
-        ]);
-
-        if ($validator->fails()) {
-            $errors = Helpers::validationErrorProcessor($validator);
-            if (in_array($request->payment_request_from, ['app'])) {
-                return response()->json(['errors' => $errors]);
-            } else {
-                foreach ($errors as $value) {
-                    Toastr::error(translate($value['message']));
-                }
-                return back();
-            }
-        }
-
-        $paymentAmount = $request['amount'];
-        $currency_model = getWebConfig(name: 'currency_model');
-        if ($currency_model == 'multi_currency') {
-            $currentCurrency = $request['current_currency_code'] ?? session('currency_code');
-            $currency_code = $this->getPaymentGatewayCurrencyCode(key: $request['payment_method'], currentCurrency: $currentCurrency);
-            $paymentAmount = usdToAnotherCurrencyConverter(currencyCode: $currency_code, amount: Convert::usdPaymentModule($request['amount'], $currentCurrency));
-        } else {
-            $default = getWebConfig(name: 'system_default_currency');
-            $currency_code = Currency::find($default)->code;
-            $currentCurrency = $currency_code;
-        }
-
-        $minimumAddFundAmount = getWebConfig(name: 'minimum_add_fund_amount') ?? 0;
-        $maximumAddFundAmount = getWebConfig(name: 'maximum_add_fund_amount') ?? 0;
-
-        if (!(Convert::usdPaymentModule($request['amount'], $currentCurrency) >= Convert::usdPaymentModule($minimumAddFundAmount, 'USD')) || !(Convert::usdPaymentModule($request['amount'], $currentCurrency) <= Convert::usdPaymentModule($maximumAddFundAmount, 'USD'))) {
-            $errors = [
-                'minimum_amount' => $minimumAddFundAmount ?? 0,
-                'maximum_amount' => $maximumAddFundAmount ?? 1000,
-            ];
-            if (in_array($request->payment_request_from, ['app'])) {
-                return response()->json($errors, 202);
-            } else {
-                Toastr::error(translate('the_amount_needs_to_be_between') . ' ' . webCurrencyConverter($minimumAddFundAmount) . ' - ' . webCurrencyConverter($maximumAddFundAmount));
-                return back();
-            }
-        }
-
-        $additional_data = [
-            'business_name' => BusinessSetting::where(['type' => 'company_name'])->first()->value,
-            'business_logo' => getWebConfig('company_web_logo')['path'],
-            'payment_mode' => $request->has('payment_platform') ? $request->payment_platform : 'web',
-        ];
-
-        $customer = Helpers::getCustomerInformation($request);
-
-        if (in_array($request->payment_request_from, ['app'])) {
-            $additional_data['customer_id'] = $customer->id;
-            $additional_data['payment_request_from'] = $request->payment_request_from;
-        }
-
-        $payer = new Payer(
-            $customer->f_name . ' ' . $customer->l_name,
-            $customer['email'],
-            $customer->phone,
-            ''
-        );
-
-        $payment_info = new PaymentInfo(
-            success_hook: 'add_fund_to_wallet_success',
-            failure_hook: 'add_fund_to_wallet_fail',
-            currency_code: $currency_code,
-            payment_method: $request->payment_method,
-            payment_platform: $request->payment_platform,
-            payer_id: $customer->id,
-            receiver_id: '100',
-            additional_data: $additional_data,
-            payment_amount: $paymentAmount,
-            external_redirect_link: $request->payment_platform == 'web' ? $request->external_redirect_link : null,
-            attribute: 'add_funds_to_wallet',
-            attribute_id: idate("U")
-        );
-
-        $receiver_info = new Receiver('receiver_name', 'example.png');
-
-        $redirect_link = Payment::generate_link($payer, $payment_info, $receiver_info);
-
-        if (in_array($request['payment_request_from'], ['app'])) {
-            return response()->json(['redirect_link' => $redirect_link], 200);
-        } else {
-            return redirect($redirect_link);
-        }
+        Toastr::error('Customer wallet funding is permanently decommissioned.');
+        return back();
     }
 
     public function customerOrderEditPayDueAmount(Request $request)
@@ -540,18 +451,13 @@ class PaymentController extends Controller
         $orderEditHistory = OrderEditHistory::where('order_id', $validated['order_id'])->latest('created_at')->first();
 
         if ($validated['payment_method'] === 'wallet' && $customer != 'offline') {
-            if (getWebConfig('wallet_status') != 1 && $request['payment_method'] == 'wallet') {
-                Toastr::error(translate('wallet_is_deactivated'));
-                return back();
+            if ($request->payment_request_from === 'app' || $request->expectsJson()) {
+                return response()->json([
+                    'status' => false,
+                    'message' => 'Wallet payment is permanently decommissioned in Victorious MARKET.',
+                ], 403);
             }
-
-            $response = $this->payEditOrderDueByCustomerWallet(order: $order, customer: $customer);
-            if ($response['status']) {
-                OrderManager::sendPushNotificationAfterDuePayment(order: $order);
-                Toastr::success($response['message']);
-            } else {
-                Toastr::error($response['message']);
-            }
+            Toastr::error('Wallet payment is permanently decommissioned.');
             return back();
         }
 

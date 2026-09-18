@@ -50,46 +50,11 @@ class OrderEditController extends Controller
 
     public function duePaymentByWallet(Request $request): JsonResponse
     {
-        $validator = Validator::make($request->all(), [
-            'order_id' => 'required',
-            'payment_method' => 'required',
-        ]);
-
-        if ($validator->fails()) {
-            return response()->json(['errors' => Helpers::validationErrorProcessor($validator)], 403);
-        }
-
-        $order = Order::with(['latestEditHistory'])->where('id', $request['order_id'])->first();
-        if (!$order) {
-            return response()->json(['message' => translate('Order_not_found')], 404);
-        }
-
-        $user = Helpers::getCustomerInformation($request);
-
-        // [AI] Ownership Guard: Only order owner can pay edit due
-        $isOwner = false;
-        if ($user != 'offline' && $order->customer_id == $user->id) {
-            $isOwner = true;
-        } elseif ($order->is_guest && $request->has('guest_id') && $order->customer_id == $request['guest_id'] && is_numeric($request['guest_id'])) {
-            $isOwner = true;
-        }
-
-        if (!$isOwner) {
-            return response()->json(['message' => translate('unauthorized_access')], 403);
-        }
-
-        if (getWebConfig('wallet_status') != 1 && $request['payment_method'] == 'wallet') {
-            return response()->json(['message' => translate('wallet_is_deactivated')], 401);
-        }
-
-        if ($user != 'offline') {
-            $response = $this->payEditOrderDueByCustomerWallet(order: $order, customer: $user);
-            return response()->json([
-                'message' => $response['message'],
-            ], ($response['status'] ? 200 : 403));
-        }
-
-        return response()->json(['message' => 'Unauthorized'], 401);
+        // [AI] Customer Wallet Decommissioned: Reject active wallet due payment
+        return response()->json([
+            'status' => false,
+            'message' => 'Wallet payment is permanently decommissioned in Victorious MARKET. Please pay online via Paystack, OPay, or select Pay at Pickup.',
+        ], 403);
     }
 
     public function duePaymentByCod(Request $request): JsonResponse

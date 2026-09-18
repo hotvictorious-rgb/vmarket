@@ -378,5 +378,15 @@
   "days_ago": "Days ago",
   "already_paid": "Already Paid",
   "unpaid_payment_status": "Unpaid",
-  "make_sure_to_collect_cash_before_handover_the_product": "Make sure to collect cash before handover the product"
+  "make_sure_to_collect_cash_before_handover_the_product": "Make sure to collect cash before handover the product",
+  "earnings": "Earnings",
+  "customer_unreachable_phone_off": "Customer unreachable / phone switched off",
+  "wrong_address_landmark_not_found": "Wrong address / landmark not found",
+  "customer_requested_reschedule": "Customer requested reschedule",
+  "customer_refused_package": "Customer refused package",
+  "unable_to_reach_location_gate_closed": "Unable to access area / gate closed",
+  "rider_vehicle_bike_issue": "Rider vehicle / bike breakdown",
+  "could_not_contact_with_the_customer": "Could not contact customer",
+  "could_not_find_the_location": "Could not find delivery location",
+  "delivery_man_transport_broken": "Transport / vehicle breakdown"
 }

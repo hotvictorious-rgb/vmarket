@@ -983,6 +983,8 @@
   "unpaid": "Unpaid",
   "due_payment_for_order": "Due payment for order",
   "return_order_amount_by_admin": "Return order amount by admin",
-  "return_order_amount_by_seller": "Return order amount by seller"
-
+  "return_order_amount_by_seller": "Return order amount by seller",
+  "account": "Account",
+  "approved_pickup_location": "Approved Pickup Location",
+  "pickup_location_notice": "Please present your 6-digit Secret Pickup OTP to the merchant staff upon arrival."
 }

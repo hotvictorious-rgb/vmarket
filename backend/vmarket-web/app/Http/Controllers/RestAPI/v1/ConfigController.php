@@ -191,7 +191,7 @@ class ConfigController extends Controller
             'inhouse_selected_shipping_type' => $shippingType,
             'billing_input_by_customer' => (int)getWebConfig(name: 'billing_input_by_customer'),
             'minimum_order_limit' => (int)getWebConfig(name: 'minimum_order_limit'),
-            'wallet_status' => (int)getWebConfig(name: 'wallet_status'),
+            'wallet_status' => 0, // [AI] Customer Wallet Decommissioned
             'loyalty_point_status' => (int)getWebConfig(name: 'loyalty_point_status'),
             'loyalty_point_exchange_rate' => (int)getWebConfig(name: 'loyalty_point_exchange_rate'),
             'loyalty_point_minimum_point' => (int)getWebConfig(name: 'loyalty_point_minimum_point'),
@@ -209,7 +209,7 @@ class ConfigController extends Controller
             'user_app_version_control' => getWebConfig(name: 'user_app_version_control'),
             'seller_app_version_control' => getWebConfig(name: 'seller_app_version_control'),
             'delivery_man_app_version_control' => getWebConfig(name: 'delivery_man_app_version_control'),
-            'add_funds_to_wallet' => (int)getWebConfig(name: 'add_funds_to_wallet'),
+            'add_funds_to_wallet' => 0, // [AI] Customer Wallet Decommissioned
             'minimum_add_fund_amount' => getWebConfig(name: 'minimum_add_fund_amount'),
             'maximum_add_fund_amount' => getWebConfig(name: 'maximum_add_fund_amount'),
             'inhouse_temporary_close' => getWebConfig(name: 'temporary_close'),

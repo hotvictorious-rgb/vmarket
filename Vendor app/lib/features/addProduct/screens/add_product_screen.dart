@@ -87,6 +87,7 @@ class AddProductScreenState extends State<AddProductScreen> with TickerProviderS
   final TextEditingController _colorVariationController = TextEditingController();
   List<String> tagList = [];
   TextfieldTagsController? _controller;
+  bool _publishToMarketplace = true;
 
 
   Future<void> _load() async {
@@ -145,6 +146,7 @@ class AddProductScreenState extends State<AddProductScreen> with TickerProviderS
   void initState() {
     super.initState();
     _update = widget.product != null;
+    _publishToMarketplace = widget.product != null ? (widget.product?.status == 1) : true;
 
     AddProductController addProductController = Provider.of<AddProductController>(context,listen: false);
 
@@ -562,6 +564,50 @@ class AddProductScreenState extends State<AddProductScreen> with TickerProviderS
                                                 ],
                                               ),
                                               textAlign: TextAlign.justify,
+                                            ),
+                                          ),
+
+                                          const SizedBox(height: Dimensions.paddingSizeDefault),
+
+                                          // [AI] Deliberate Marketplace Publishing Switch
+                                          Container(
+                                            padding: const EdgeInsets.symmetric(horizontal: Dimensions.paddingSizeDefault, vertical: Dimensions.paddingSizeSmall),
+                                            decoration: BoxDecoration(
+                                              color: Theme.of(context).cardColor,
+                                              borderRadius: BorderRadius.circular(Dimensions.radiusDefault),
+                                              border: Border.all(color: Theme.of(context).primaryColor.withValues(alpha: 0.25)),
+                                              boxShadow: [BoxShadow(color: Theme.of(context).hintColor.withValues(alpha: 0.05), blurRadius: 4)],
+                                            ),
+                                            child: Row(
+                                              children: [
+                                                Icon(Icons.storefront_outlined, color: Theme.of(context).primaryColor, size: 24),
+                                                const SizedBox(width: Dimensions.paddingSizeSmall),
+                                                Expanded(
+                                                  child: Column(
+                                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                                    children: [
+                                                      Text(
+                                                        getTranslated('publish_to_vmarket', context) ?? 'Publish to Victorious MARKET',
+                                                        style: robotoMedium.copyWith(fontSize: Dimensions.fontSizeDefault, color: Theme.of(context).textTheme.bodyLarge?.color),
+                                                      ),
+                                                      const SizedBox(height: 2),
+                                                      Text(
+                                                        getTranslated('publish_to_vmarket_desc', context) ?? 'Make this product visible for online marketplace orders',
+                                                        style: titilliumRegular.copyWith(fontSize: Dimensions.fontSizeSmall, color: Theme.of(context).hintColor),
+                                                      ),
+                                                    ],
+                                                  ),
+                                                ),
+                                                Switch(
+                                                  value: _publishToMarketplace,
+                                                  activeColor: Theme.of(context).primaryColor,
+                                                  onChanged: (val) {
+                                                    setState(() {
+                                                      _publishToMarketplace = val;
+                                                    });
+                                                  },
+                                                ),
+                                              ],
                                             ),
                                           ),
 
@@ -1199,56 +1245,9 @@ class AddProductScreenState extends State<AddProductScreen> with TickerProviderS
                                                       }
                                                     ),
 
-                                                  ///Discount
-                                                  ProductDiscountTextFieldWidget(
-                                                    formProduct: true,
-                                                    focusNode: _discountNode,
-                                                    nextNode: _totalQuantityNode,
-                                                    border: true,
-                                                    borderColor: Theme.of(context).primaryColor.withOpacity(.25),
-                                                    focusBorder: true,
-                                                    controller: _discountController,
-                                                    textInputAction: TextInputAction.next,
-                                                    textInputType: TextInputType.number,
-                                                    isAmount: true,
-                                                    hintText: getTranslated('discount_amount', context)!,
-                                                    isPassword : false,
-                                                    isDiscountAmount : resProvider.discountTypeIndex != 0,
-                                                    onDiscountTypeChanged : (String? value) {
-                                                      resProvider.setDiscountTypeIndex(value == 'percent' ? 0 : 1, true);
-                                                    },
-                                                  ),
-                                                  const SizedBox(height: Dimensions.paddingSizeLarge),
-
-                                                  ///Stock Quantity
-                                                  resProvider.productTypeIndex == 0 ?
-                                                  CustomTextFieldWidget(
-                                                    idDate: variationController.variantTypeList.isNotEmpty,
-                                                    border: true,
-                                                    textInputType: TextInputType.number,
-                                                    focusNode: _totalQuantityNode,
-                                                    controller: variationController.totalQuantityController,
-                                                    textInputAction: TextInputAction.next,
-                                                    isAmount: true,
-                                                    hintText: getTranslated('current_stock', context)!,
-                                                    formProduct: true,
-                                                  ) : const SizedBox.shrink(),
-
-                                                  resProvider.productTypeIndex == 0 ?
-                                                  const SizedBox(height: Dimensions.iconSizeExtraLarge) : const SizedBox.shrink(),
-
-                                                  ///Min order quantity
-                                                  CustomTextFieldWidget(
-                                                    border: true,
-                                                    textInputType: TextInputType.number,
-                                                    focusNode: _minimumOrderQuantityNode,
-                                                    controller: resProvider.minimumOrderQuantityController,
-                                                    textInputAction: TextInputAction.next,
-                                                    isAmount: true,
-                                                    hintText: getTranslated('minimum_order_quantity', context)!,
-                                                    formProduct: true,
-                                                  ),
-                                                  const SizedBox(height: Dimensions.paddingSizeLarge),
+                                                   // [AI] Product variations & vendor discounts eliminated across Victorious MARKET.
+                                                   // Pricing is a single selling price; stock availability is binary (In Stock / Out of Stock).
+                                                   const SizedBox.shrink(),
 
 
                                                 ],
@@ -1259,50 +1258,8 @@ class AddProductScreenState extends State<AddProductScreen> with TickerProviderS
                                       }
                                     ),
                                     const SizedBox(height: Dimensions.paddingSizeDefault),
-
-                                    AddProductSectionWidget(
-                                      title: getTranslated('variations', context)!,
-                                      subTitle: getTranslated('enable_and_manage_different_variations', context)!,
-                                      button: Padding(
-                                        padding: const EdgeInsets.only(right: Dimensions.paddingSizeDefault),
-                                        child: FlutterSwitch(
-                                          width: 40.0, height: 20.0, toggleSize: 20.0,
-                                          value: resProvider.isAttributeActive,
-                                          borderRadius: 20.0,
-                                          activeColor: Theme.of(context).primaryColor,
-                                          padding: 1.0,
-                                          onToggle:(bool isActive) => resProvider.setIsAttributeActive(isActive, notify: true),
-                                        ),
-                                      ),
-                                      childrens: [
-                                        if(!resProvider.isAttributeActive)
-                                          const SizedBox(height: Dimensions.paddingSizeSmall),
-
-                                        resProvider.productTypeIndex == 0 && resProvider.isAttributeActive ?
-                                        Column(children: [
-                                          const SizedBox(height: Dimensions.paddingSizeDefault),
-                                          Padding(
-                                            padding: const EdgeInsets.symmetric(horizontal: Dimensions.paddingSizeSmall),
-                                            child: AttributeViewWidget(product: widget.product, colorOn: variationController.attributeList!.isNotEmpty ? variationController.attributeList![0].active : false),
-                                          ),
-                                          const SizedBox(height: Dimensions.paddingSizeSmall),
-
-                                          variationController.variantTypeList.isNotEmpty ? const SizedBox(height: Dimensions.paddingSizeDefault) : const SizedBox(),
-
-                                          variationController.variantTypeList.isNotEmpty ?
-                                          AttributePricingWidget(product: widget.product, colorOn: variationController.attributeList!.isNotEmpty ? variationController.attributeList![0].active : false) : const SizedBox(),
-
-                                          if(variationController.attributeList!.isNotEmpty && variationController.attributeList![0].active && variationController.attributeList![0].variants.isNotEmpty)
-                                            const SizedBox(height: Dimensions.paddingSizeDefault),
-
-                                          if(variationController.attributeList!.isNotEmpty && variationController.attributeList![0].active && variationController.attributeList![0].variants.isNotEmpty)
-                                            ColorVariationImageWidget(product: widget.product),
-
-                                          if(variationController.attributeList!.isNotEmpty && variationController.attributeList![0].active && variationController.attributeList![0].variants.isNotEmpty)
-                                            const SizedBox(height: Dimensions.paddingSizeDefault),
-                                        ]) : const SizedBox.shrink(),
-                                      ],
-                                    ),
+                                      // [AI] Product variations eliminated across Victorious MARKET.
+                                      // 6-field listing model does not use variations or multi-SKU matrices.
                                     const SizedBox(height: Dimensions.paddingSizeDefault),
 
                                     AddProductSectionWidget(
@@ -1482,9 +1439,7 @@ class AddProductScreenState extends State<AddProductScreen> with TickerProviderS
                                             productModel.taxIds = Provider.of<AddProductTaxController>(context, listen: false).selectedTaxList.map((tax) => tax.id).toList();
                                             productModel.taxModel = resProvider.taxTypeIndex == 0 ? 'include' : 'exclude';
                                             productModel.unitPrice = PriceConverter.systemCurrencyToDefaultCurrency(double.parse(resProvider.unitPriceController.text.trim()), context);
-                                            productModel.discount = resProvider.discountTypeIndex == 0
-                                                ? double.parse(_discountController.text.trim())
-                                                : PriceConverter.systemCurrencyToDefaultCurrency(double.parse(_discountController.text.trim()), context);
+                                            productModel.discount = 0.0;
                                             productModel.productType = resProvider.productTypeIndex == 0 ? 'physical' : 'digital';
                                             productModel.unit = resProvider.unitValue;
                                             productModel.code = resProvider.productCode.text.trim();
@@ -1498,9 +1453,11 @@ class AddProductScreenState extends State<AddProductScreen> with TickerProviderS
                                               }
                                             }
 
-                                            productModel.currentStock = resProvider.productTypeIndex == 0 ? int.parse(variationController.totalQuantityController.text.trim()) : 0;
-                                            productModel.minimumOrderQty = int.parse(resProvider.minimumOrderQuantityController.text.trim());
-                                            productModel.discountType = resProvider.discountType;
+                                            // [AI] System-controlled binary stock and single price model
+                                            productModel.currentStock = resProvider.productTypeIndex == 0 ? (_publishToMarketplace ? 999 : 0) : 0;
+                                            productModel.minimumOrderQty = 1;
+                                            productModel.discountType = 'flat';
+                                            productModel.status = _publishToMarketplace ? 1 : 0;
                                             productModel.digitalProductType = digitalProductController.digitalProductTypeIndex == 0 ? 'ready_after_sell' : 'ready_product';
                                             productModel.digitalFileReady = digitalProductController.digitalProductFileName;
 

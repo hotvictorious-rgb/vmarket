@@ -1,8 +1,5 @@
-@php($customer_balance = auth('customer')->user()?->wallet_balance ?? 0)
 @php($couponAmount = session()->has('coupon_discount') ? session('coupon_discount') : 0)
 @php($totalAmount = $order['order_amount'] - $couponAmount)
-@php($remain_balance = $customer_balance - $order['edit_due_amount'])
-@php($walletInsufficient = ($customer_balance ?? 0) < ($order['edit_due_amount'] ?? 0))
 @php($isPhysicalProduct = $order->details()->whereHas('product', fn ($q) => $q->where('product_type', 'physical'))->exists())
 <div class="modal fade z-1049 order-choose-payment-method-modal" id="choosePaymentMethodModal-{{ $order['id'] }}"
      tabindex="-1"
@@ -81,39 +78,6 @@
                                                     </div>
                                                 </div>
                                             </label>
-                                        </li>
-                                    @endif
-                                    @if(getWebConfig(name: 'wallet_status') == 1)
-                                        <li>
-                                            <label class="w-100 h-100 d-block cursor-pointer position-relative"
-                                                   for="wallet">
-                                                <input type="radio" class="payment-radio" name="payment_method"
-                                                       value="wallet" id="wallet">
-                                                <div
-                                                    class="payment-method payment-method_parent position-relative z-10 d-flex align-items-center gap-3 overflow-hidden w-100 pay-via-wallet  {{ $walletInsufficient ? 'wallet-disabled' : '' }}"
-                                                    {!! $walletInsufficient
-                                                        ? 'data-bs-toggle="tooltip" data-bs-placement="top" title="' . translate('Insufficient wallet balance') . '"'
-                                                        : '' !!}
-                                                    type="button">
-                                                    <img width="30"
-                                                         src="{{ theme_asset('assets/img/icons/wallet.png') }}"
-                                                         class="dark-support" alt="">
-                                                    <span class="fs-16">{{ translate('Wallet') }}</span>
-                                                </div>
-                                            </label>
-                                        </li>
-                                    @endif
-                                    @if(getWebConfig(name: 'wallet_status') == 1)
-                                        <li id="wallet-info-section" class="full-width mx-auto fs-12 text-primary d-none wallet-info-section">
-                                            <div class="">
-                                                {{ translate('You’re paying') }}
-                                                <strong>{{ webCurrencyConverter(amount: $order['edit_due_amount'] ?? 0) }}</strong>
-                                                {{ translate('from your wallet.') }}
-                                                {{ translate('Remaining wallet balance') }}
-                                                <strong>
-                                                    {{ webCurrencyConverter(amount: $remain_balance ?? 0) }}
-                                                </strong>
-                                            </div>
                                         </li>
                                     @endif
                                     @if (isset($offlinePaymentMethods) && $offlinePaymentStatus['status'])

@@ -53,9 +53,9 @@ class RefundStatusService
             $refundData['payment_info'] = $request['payment_info'];
             $refundStatus['message'] = $request['payment_info'];
 
-            $walletAddRefund = getWebConfig(name: 'wallet_add_refund');
-            if ($walletAddRefund == 1 && $request['payment_method'] == 'customer_wallet') {
-                $this->createWalletTransaction(user_id: $refund['customer_id'], amount: $refund['amount'], transaction_type: 'order_refund', reference: 'order_refund');
+            // [AI] Customer Wallet Decommissioned: Reject customer_wallet refund destination
+            if ($request['payment_method'] == 'customer_wallet') {
+                throw new \App\Exceptions\CustomerWalletDecommissionedException('order_refund', 'Customer wallet is decommissioned and cannot be used as a refund destination. Refunds must be routed through original payment rails.');
             }
         }
         $refundData['status'] = $request['refund_status'];

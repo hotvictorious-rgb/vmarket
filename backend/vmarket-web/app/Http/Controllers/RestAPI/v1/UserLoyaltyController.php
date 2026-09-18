@@ -72,68 +72,10 @@ class UserLoyaltyController extends Controller
 
     public function loyalty_exchange_currency(Request $request): JsonResponse
     {
-        $walletStatus = getWebConfig(name: 'wallet_status');
-        $loyaltyPointStatus = getWebConfig(name: 'loyalty_point_status');
-
-        if ($walletStatus != 1 || $loyaltyPointStatus != 1) {
-            return response()->json([
-                'message' => translate('transfer_loyalty_point_to_currency_is_not_possible_at_this_moment!')
-            ], 422);
-        }
-
-        $validator = Validator::make($request->all(), [
-            'point' => 'required|integer|min:1'
-        ]);
-
-        if ($validator->errors()->count() > 0) {
-            return response()->json(['errors' => Helpers::validationErrorProcessor($validator)]);
-        }
-
-        $user = $request->user();
-        $minPoints = (int)(getWebConfig(name: 'loyalty_point_minimum_point') ?? 0);
-        $requestedPoints = (int)$request['point'];
-
-        if ($requestedPoints < $minPoints) {
-            return response()->json([
-                'message' => translate('insufficient_point!')
-            ], 422);
-        }
-
-        try {
-            $walletTransaction = \Illuminate\Support\Facades\DB::transaction(function () use ($user, $requestedPoints) {
-                // Pessimistic row-level lock on user row
-                $lockedUser = \App\Models\User::where('id', $user->id)->lockForUpdate()->first();
-
-                if (!$lockedUser || $requestedPoints > $lockedUser->loyalty_point) {
-                    return null;
-                }
-
-                $walletTx = CustomerManager::create_wallet_transaction($lockedUser->id, $requestedPoints, 'loyalty_point', 'point_to_wallet');
-                if ($walletTx) {
-                    CustomerManager::create_loyalty_point_transaction($lockedUser->id, $walletTx->transaction_id, $requestedPoints, 'point_to_wallet');
-                }
-
-                return $walletTx;
-            });
-
-            if (!$walletTransaction) {
-                return response()->json([
-                    'message' => translate('insufficient_point!')
-                ], 422);
-            }
-
-            try {
-                Mail::to($user['email'])->send(new \App\Mail\AddFundToWallet($walletTransaction));
-            } catch (\Exception $ex) {
-            }
-
-            return response()->json([
-                'message' => translate('point_to_wallet_transfer_successfully!')
-            ], 200);
-        } catch (\Exception $e) {
-            return response()->json([
-                'message' => translate('something_went_wrong_please_try_again')
-            ], 500);
-        }
+        // [AI] Customer Wallet Decommissioned: Exchange to wallet currency is permanently blocked.
+        return response()->json([
+            'status' => false,
+            'message' => 'Exchanging loyalty points for wallet balance is permanently decommissioned in Victorious MARKET.',
+        ], 403);
     }
 }

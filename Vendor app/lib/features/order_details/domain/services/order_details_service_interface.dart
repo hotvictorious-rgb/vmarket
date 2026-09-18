@@ -10,5 +10,5 @@ abstract class OrderDetailsServiceInterface{
   Future<HttpClientResponse> productDownload(String url);
 
   Future <dynamic> getOrderInvoice(String orderID);
-
+  Future<dynamic> verifyPickupOtp(int orderId, String otp);
 }

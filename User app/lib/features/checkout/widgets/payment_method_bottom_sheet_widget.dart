@@ -103,18 +103,6 @@ class PaymentMethodBottomSheetWidgetState extends State<PaymentMethodBottomSheet
                                 onTap: () => checkoutController.setOfflineChecked('cod'),
                                 buttonText: '${getTranslated('cash_on_delivery', context)}',
                               )),
-                              const SizedBox(width: Dimensions.paddingSizeDefault),
-
-                              if(configModel?.walletStatus == 1 && Provider.of<AuthController>(context, listen: false).isLoggedIn())
-                                Expanded(child: CustomButton(
-                                  onTap: () => checkoutController.setOfflineChecked('wallet'),
-                                  isBorder: true,
-                                  leftIcon: Images.payWallet,
-                                  backgroundColor: checkoutController.isWalletChecked ? Theme.of(context).primaryColor : Theme.of(context).cardColor,
-                                  textColor:  checkoutController.isWalletChecked? Colors.white : Theme.of(context).textTheme.bodyLarge?.color,
-                                  fontSize: Dimensions.fontSizeSmall,
-                                  buttonText: '${getTranslated('pay_via_wallet', context)}',
-                                )),
                             ]),
 
 

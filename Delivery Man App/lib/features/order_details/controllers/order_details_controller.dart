@@ -36,8 +36,13 @@ class OrderDetailsController extends GetxController implements GetxService {
 
 
   final List<String> reasonList = [
+    'customer_unreachable_phone_off',
+    'wrong_address_landmark_not_found',
+    'customer_requested_reschedule',
+    'customer_refused_package',
+    'unable_to_reach_location_gate_closed',
+    'rider_vehicle_bike_issue',
     'could_not_contact_with_the_customer',
-    'customer_cant_collect_the_parcel_now_request_to_deliver_delay',
     'could_not_find_the_location',
     'delivery_man_transport_broken',
     'other'
