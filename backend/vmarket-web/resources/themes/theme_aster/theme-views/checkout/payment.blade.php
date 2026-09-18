@@ -39,80 +39,8 @@
 
                                 <div class="mb-30">
                                     <ul class="option-select-btn d-grid flex-wrap gap-3">
-                                        @if ($cashOnDeliveryBtnShow && $cash_on_delivery['status'])
+                                        @if ($digital_payment['status'] == 1 && count($payment_gateways_list) > 0)
                                             <li>
-                                                <form action="{{ route('checkout-complete') }}" method="get"
-                                                      class="checkout-payment-form payment-method-form checkout-cash-on-payment">
-                                                    <label class="w-100">
-                                                        <input type="radio" hidden name="payment_method" checked
-                                                               value="cash_on_delivery" data-form=".checkout-cash-on-payment">
-                                                        <button type="submit"
-                                                                class="payment-method payment-method_parent next-btn-enable d-flex align-items-center overflow-hidden flex-column p-0 w-100 border-selected">
-                                                            <div class="d-flex align-items-center gap-3 pt-1">
-                                                                <img width="30" class="dark-support" alt=""
-                                                                     src="{{ theme_asset('assets/img/icons/cash-on.png') }}">
-                                                                <span
-                                                                    class="text-capitalize fs-16">{{ translate('cash_on_delivery') }}</span>
-                                                            </div>
-
-                                                            <div class="w-100">
-                                                                <div class="collapse show" id="bring_change_amount"
-                                                                     data-more="{{ translate('See_More') }}"
-                                                                     data-less="{{ translate('See_Less') }}">
-                                                                    <div
-                                                                        class="bg-primary-op-05 border border-white rounded text-start p-3 mx-3 my-2">
-                                                                        <h6 class="fs-12 fw-semibold mb-1">
-                                                                            {{ translate('Change_Amount') }}
-                                                                            ({{ getCurrencySymbol(type: 'web') }})
-                                                                        </h6>
-                                                                        <p
-                                                                            class="mb-0 fs-12 opacity-75 fw-normal text-transform-none">
-                                                                            {{ translate('Insert_amount_if_you_need_deliveryman_to_bring') }}
-                                                                        </p>
-                                                                        <input type="text"
-                                                                               class="form-control mt-2 only-integer-input-field"
-                                                                               placeholder="{{ translate('Amount') }}"
-                                                                               name="bring_change_amount">
-                                                                    </div>
-                                                                </div>
-                                                                <div class="text-center">
-                                                                    <a id="bring_change_amount_btn"
-                                                                       class="btn primary-color border-0 fs-12 text-center text-capitalize shadow-none border-0 base-color p-0"
-                                                                       data-bs-toggle="collapse"
-                                                                       href="#bring_change_amount" role="button"
-                                                                       aria-expanded="false" aria-controls="change_amount">
-                                                                        {{ translate('See_Less') }}
-                                                                    </a>
-                                                                </div>
-                                                            </div>
-                                                        </button>
-                                                    </label>
-                                                </form>
-                                            </li>
-                                        @endif
-
-
-
-                                        @if (isset($offline_payment) && $offline_payment['status'] && count($offline_payment_methods) > 0)
-                                            <li>
-                                                <label class="w-100">
-                                                    <span
-                                                        class="payment-method payment-method_parent d-flex align-items-center gap-3 overflow-hidden disabled-proceed-to-payment"
-                                                        data-bs-toggle="modal"
-                                                        data-bs-target="#offline_payment_submit_button">
-                                                        <img width="30"
-                                                             src="{{ theme_asset('assets/img/icons/cash-payment.png') }}"
-                                                             class="dark-support" alt="">
-                                                        <span class="fs-16">{{ translate('offline_payment') }}</span>
-                                                    </span>
-                                                </label>
-                                            </li>
-                                        @endif
-
-                                        @if ($digital_payment['status'] == 1)
-                                            @if (count($payment_gateways_list) > 0 ||
-                                                    (isset($offline_payment) && $offline_payment['status'] && count($offline_payment_methods) > 0))
-                                                <li>
                                                     <label id="digital-payment-btn" class="w-100">
                                                         <span
                                                             class="payment-method payment-method_parent d-flex align-items-center gap-3">
@@ -184,59 +112,6 @@
 
 
 
-                                    @if (isset($offline_payment) && $offline_payment['status'])
-                                        <div class="modal fade" id="offline_payment_submit_button">
-                                            <div class="modal-dialog modal-dialog-centered modal-lg" role="document">
-                                                <div class="modal-content">
-                                                    <div class="modal-header">
-                                                        <h5 class="modal-title" id="exampleModalLongTitle">
-                                                            {{ translate('offline_Payment') }}</h5>
-                                                        <button type="button" class="btn-close" data-bs-dismiss="modal"
-                                                                aria-label="Close"></button>
-                                                    </div>
-                                                    <form action="{{ route('offline-payment-checkout-complete') }}"
-                                                          method="post" class="needs-validation form-loading-button-form">
-                                                        @csrf
-                                                        <div class="modal-body p-3 p-md-5">
-
-                                                            <div class="text-center px-5">
-                                                                <img src="{{ theme_asset('assets/img/offline-payments.png') }}"
-                                                                     alt="">
-                                                                <p class="py-2">
-                                                                    {{ translate('pay_your_bill_using_any_of_the_payment_method_below_and_input_the_required_information_in_the_form') }}
-                                                                </p>
-                                                            </div>
-
-                                                            <div class="">
-
-                                                                <select class="form-select" id="pay-offline-method"
-                                                                        name="payment_by" required>
-                                                                    <option value="">
-                                                                        {{ translate('select_Payment_Method') }}</option>
-                                                                    @foreach ($offline_payment_methods as $method)
-                                                                        <option value="{{ $method->id }}">
-                                                                            {{ translate('payment_Method') . ' : ' . $method->method_name }}
-                                                                        </option>
-                                                                    @endforeach
-                                                                </select>
-                                                            </div>
-
-                                                            <div class="" id="method-filed-div">
-                                                                <div class="text-center py-5">
-                                                                    <img class="pt-5"
-                                                                         src="{{ theme_asset('assets/img/offline-payments-vectors.png') }}"
-                                                                         alt="">
-                                                                    <p class="py-2 pb-5 text-muted">
-                                                                        {{ translate('select_a_payment_method first') }}
-                                                                    </p>
-                                                                </div>
-                                                            </div>
-                                                        </div>
-                                                    </form>
-                                                </div>
-                                            </div>
-                                        </div>
-                                    @endif
                                 </div>
                             @endif
 
@@ -247,7 +122,6 @@
             </div>
         </div>
     </main>
-    <span class="get-payment-method-list" data-action="{{ route('pay-offline-method-list') }}"></span>
 @endsection
 
 @push('script')

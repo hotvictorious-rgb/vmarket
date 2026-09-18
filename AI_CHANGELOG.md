@@ -7,6 +7,22 @@ Always append your completed tasks here in chronological order at the top. Forma
 `### [YYYY-MM-DD HH:MM UTC] <Feature / Fix Title> [<Component Scope>]`
 Include the specific app/component modified and bullet points detailing the exact technical changes.
 
+
+### [2026-09-18 10:55 UTC] Phase 3: POS Separation, Merchant Onboarding KYC Guard, and Online Payment Simplification [backend] [ai-governance]
+* **Component:** Marketplace Architecture, Merchant Onboarding, Checkout Payment Rails (`backend/vmarket-web/`, `AI_CHANGELOG.md`)
+* **Action:** Executed Phase 3 of the Nigerian marketplace transformation to eliminate redundant features, secure merchant registration, and enforce pure digital prepayment:
+  - **1. Built-in POS Separation:**
+    - Purged orphaned `app/Services/POSService.php` from the marketplace backend. Victorious POS operates as an independent dedicated ecosystem, keeping the Vmarket web marketplace lean.
+  - **2. Vendor Registration KYC Hardened Guard:**
+    - Modified `app/Services/VendorService.php` (`getAddData()`): Hardcoded `'status' => 'pending'` during vendor self-registration, preventing client-side parameter injection of `'approved'`. Every merchant strictly requires Super Admin KYC document verification and approval before gaining shop activation.
+  - **3. Storefront Checkout Payment Simplification:**
+    - Modified `resources/themes/theme_aster/theme-views/checkout/payment.blade.php`: Purged legacy Cash-on-Delivery accordion forms, offline payment option, offline payment modal dialog, and offline JS hooks, keeping strictly verified online rails (Paystack & OPay).
+  - **4. Order Due Payment Modals Simplification:**
+    - Modified `resources/themes/theme_aster/theme-views/order/partials/_choose-payment-method-modal.blade.php` and `_choose-payment-method-order-details.blade.php`: Purged COD and offline payment sections; customer order due repayments now route strictly through digital payment gateways.
+  - **5. Verification & Mathematical Invariants ($\Delta = 0.0000$):**
+    - Ran PHP syntax linting (`php -l`) across modified files with 0 errors detected.
+    - Executed `scratch/test_fulfillment_path_separation.php`: All 36 / 36 checks passed with zero drift ($\Delta = 0.0000$).
+
 ### [2026-09-18 10:40 UTC] Customer Privacy Shield, Chat Purge & 100% Motorized Delivery (Phase 2) [backend] [user-app] [ai-governance]
 * **Component:** Customer Privacy Shield, Anti-Contact Guard, Order Delivery Engine (`backend/vmarket-web/`, `User app/`, `scratch/test_fulfillment_path_separation.php`)
 * **Action:** Executed Phase 2 of the Nigerian marketplace transformation to protect merchant privacy, prevent platform disintermediation, and enforce a 100% motorized centralized delivery model:

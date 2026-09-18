@@ -12,73 +12,7 @@
 
         <div>
             <ul class="option-select-btn d-grid flex-wrap gap-3">
-                @if($isPhysicalProduct && $cashOnDeliveryStatus)
-                    <li>
-                        <label class="w-100 h-100 d-block cursor-pointer position-relative" for="cash_on_delivery">
-                            <input type="radio" class="payment-radio" name="payment_method" value="cash_on_delivery"
-                                   id="cash_on_delivery">
-                            <div type="button" id="cod-for-cart"
-                                 class="payment-method-active cod-for-cart position-relative z-10 payment-method payment-method_parent d-flex align-items-center overflow-hidden flex-column p-0 w-100">
-                                <div class="m-0">
-                                    <div class="d-flex align-items-center gap-3 pt-1">
-                                        <img width="30" class="dark-support" alt=""
-                                             src="{{ theme_asset('assets/img/icons/cash-on.png') }}">
-                                        <span
-                                            class="text-capitalize fs-16">{{ translate('Cash_on_delivery') }}</span>
-                                    </div>
-                                </div>
-                                <div class="bring_change_amount_section w-100">
-                                    <div class="collapse" id="bring_change_amount" data-more="See More"
-                                         data-less="See Less"
-                                         style="">
-                                        <div
-                                            class="bg-primary-op-05 border border-white rounded text-start p-3 mx-3 my-2">
-                                            <h6 class="fs-12 fw-semibold mb-1">
-                                                {{ translate('Change Amount') }} ($)
-                                            </h6>
-                                            <p class="mb-2 fs-12 opacity-75 fw-normal text-transform-none">
-                                                {{ translate('insert_amount_of_you_need_deliveryman_to_bring') }}
-                                            </p>
-                                            <input type="text" class="form-control only-integer-input-field"
-                                                   name="bring_change_amount_input"
-                                                   id="bring_change_amount_input" placeholder="Amount">
-                                        </div>
-                                    </div>
-                                </div>
-                                <div class="text-center">
-                                    <a id="bring_change_amount_btn"
-                                       class="btn primary-color border-0 fs-12 text-center text-capitalize shadow-none base-color p-0 collapsed"
-                                       data-bs-toggle="collapse" href="#bring_change_amount" role="button"
-                                       aria-expanded="false"
-                                       aria-controls="change_amount">{{ translate('See_More') }}</a>
-                                </div>
-                            </div>
-                        </label>
-                    </li>
-                @endif
-                @if (isset($offlinePaymentMethods) && $offlinePaymentStatus['status'])
-                    <li>
-                        <div class="bg-white w-100 h-100">
-                            <label
-                                class="payment-method payment-method_parent position-relative z-10 overflow-hidden w-100 h-100 position-relative"
-                                for="pay_offline"
-                                data-modal="#offline_payment_submit_button">
-                                <input type="radio" id="pay_offline" name="online_payment" data-theme="aster"
-                                       data-order-id="{{ $order['id'] }}"
-                                       data-method-id="{{ $offlinePaymentMethods->take(1)->first()->id }}"
-                                       data-edit-due-amount="{{ $order['edit_due_amount'] }}"
-                                       class="payment-radio pay_offline"
-                                       value="pay_offline">
-                                <div class="d-flex align-items-center gap-3 w-100 h-100">
-                                    <img width="30"
-                                         src="{{ theme_asset('assets/img/icons/cash-payment.png') }}"
-                                         class="dark-support" alt="">
-                                    <span class="fs-16">{{ translate('Offline_payment') }}</span>
-                                </div>
-                            </label>
-                        </div>
-                    </li>
-                @endif
+
 
 
                 @if(getWebConfig(name: 'digital_payment')['status'])

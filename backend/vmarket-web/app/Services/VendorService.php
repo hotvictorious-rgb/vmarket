@@ -136,7 +136,7 @@ class VendorService
             'email' => $request['email'],
             'image' => $request->file('image') ? $this->upload(dir: 'seller/', format: 'webp', image: $request->file('image')) : 'def.png',
             'password' => bcrypt($request['password']),
-            'status' => $request['status'] === 'approved' ? 'approved' : 'pending',
+            'status' => 'pending', // [AI] Mandatory Super Admin KYC Verification Invariant
         ];
     }
 }
