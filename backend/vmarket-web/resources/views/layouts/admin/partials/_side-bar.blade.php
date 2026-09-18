@@ -791,45 +791,7 @@
                 @endif
             @endif
 
-            @if (Helpers::module_permission_check('blog_management'))
-                @if(Route::has('admin.blog.view'))
-                    <li class="nav-item nav-item_title {{ Request::is('admin/blog*') ? 'scroll-here' : '' }}">
-                        <small class="nav-subtitle" title="">
-                            {{ translate('Blog_management') }}
-                        </small>
-                    </li>
 
-                    <li class="{{ Request::is('admin/blog/*') ? 'sub-menu-opened' : '' }}">
-                        <a class="nav-link nav-link-toggle {{ Request::is('admin/blog*') ? 'active' : '' }}"
-                           href="javascript:" title="{{ translate('blog') }}">
-                            <i class="fi fi-sr-layout-fluid"></i>
-                            <span
-                                class="aside-mini-hidden-element flex-grow-1 d-flex justify-content-between align-items-center">
-                                <span class="text-truncate max-w-180">
-                                    {{ translate('blog') }}
-                                </span>
-                                <i class="fi fi-sr-angle-down"></i>
-                            </span>
-                        </a>
-                        <ul class="aside-submenu navbar-nav">
-                            <li class="nav-item px-3 py-2 fw-semibold text-dark bg-section2 aside-mini-show-element">{{ translate('blog') }}</li>
-                            <li class="nav-item" title="{{ translate('add_new') }}">
-                                <a class="nav-link {{ Request::is('admin/blog/add') ? 'active' : '' }}"
-                                   href="{{ route('admin.blog.add') }}">
-                                    <span class="text-truncate">{{ translate('add_new') }}</span>
-                                </a>
-                            </li>
-                            <li class="nav-item "
-                                title="{{ translate('list') }}">
-                                <a class="nav-link {{ Request::is('admin/blog/view') || Request::is('admin/blog/app-download-setup') || Request::is('admin/blog/priority-setup')  ? 'active' : '' }}"
-                                   href="{{ route('admin.blog.view') }}">
-                                    <span class="text-truncate">{{ translate('list') }}</span>
-                                </a>
-                            </li>
-                        </ul>
-                    </li>
-                @endif
-            @endif
 
             @if(Helpers::module_permission_check('user_section'))
                 <li class="nav-item nav-item_title {{ (Request::is('admin/customer/list') || Request::is('admin/customer/view*') || Request::is('admin/customer/subscriber-list')||Request::is('admin/vendors/add') || Request::is('admin/vendors/list') || Request::is('admin/delivery-man*')) ? 'scroll-here' : '' }}">
@@ -1262,10 +1224,7 @@
                 </li>
 
                 <li>
-                    <a class="nav-link
-                {{ Request::is('admin/third-party/payment-method') ||
-                Request::is('admin/third-party/offline-payment-method/index')||
-                Request::is('admin/third-party/offline-payment-method*') ? 'active' : '' }}"
+                    <a class="nav-link {{ Request::is('admin/third-party/payment-method*') ? 'active' : '' }}"
                        href="{{ route('admin.third-party.payment-method.index') }}"
                        title="{{ translate('Payment_Methods') }}">
                         <i class="fi fi-sr-credit-card"></i>

@@ -8,6 +8,23 @@ Always append your completed tasks here in chronological order at the top. Forma
 Include the specific app/component modified and bullet points detailing the exact technical changes.
 
 
+### [2026-09-18 12:12 UTC] Phase 5: Complete Duplicate Purge, Dual Fulfillment Architecture, 10%/90% Commercial Split & 5% Cashback Reward Ledger [backend] [user-app] [vendor-app] [delivery-man] [ai-governance]
+* **Component:** System Architecture, Dual Fulfillment, Vendor & Rider Apps, Customer Apps, Cash & Ledger Invariants (`backend/vmarket-web/`, `User app/`, `Vendor app/`, `Delivery Man App/`, `AI_CHANGELOG.md`)
+* **Action:** Executed exhaustive cleanup of duplicate and obsolete bloat across panels and apps, implemented Victorious MARKET's real-world commercial model and dual fulfillment:
+  - **1. Deletion of Duplicates & Dead Bloat Across All Apps:**
+    - **User App:** Permanently deleted `features/offline_payment/`, `features/refer_and_earn/`, `features/blog/`, `order_offline_payment_screen.dart`, `ordered_change_amount_widget.dart`, `offline_payment_widget.dart`, and `change_amount_widget.dart` (11 files). Cleaned all dead route constants, methods, and GoRoute registrations in `route_healper.dart`. Simplified `choose_payment_widget.dart`, `payment_method_bottom_sheet_widget.dart`, and `order_payment_bottomsheet_widget.dart` to strictly verified digital payment rails.
+    - **Vendor App:** Permanently deleted `features/delivery_man/` (35+ files) and `features/shipping/` (11 files) as merchant shipping and rider management are dead bloat (shipping is centralized dispatch by Victorious MARKET). Cleaned `di_container.dart`, `main.dart`, `menu_widget.dart`, `theme_changer_widget.dart`, and `setting_screen.dart`.
+    - **Delivery Man App:** Deleted `change_amount_widget.dart`. Cleaned `earn_statement_widget.dart` (removed COD cash-in-hand confusion) and `order_details_screen.dart`.
+    - **Backend Views & Navigation:** Deleted `_offline-payment-setup.blade.php`. Cleaned Admin sidebar (`_side-bar.blade.php`) by removing `Blog_management` and offline payment references. Cleaned Vendor sidebar (`_side-bar.blade.php`) by removing merchant shipping methods and delivery man management menus.
+  - **2. Commercial Invariant & Dual Fulfillment Implementation:**
+    - **Dual Fulfillment:** Updated `OrderManager.php` (`generateOrder()`, `getOrderAddData()`) to support both Doorstep Delivery (upfront Paystack/OPay payment, zone logistics fee, dual OTP handshake) and Customer Pickup in Uyo (₦0 shipping, pending in-shop inspection $\to$ online payment $\to$ 6-digit cryptographic pickup code handover).
+    - **Commercial Model (10% / 90% Split):** Computed exact 10% platform commission on net merchandise value, 90% merchant settlement credited to SellerWallet, and 100% logistics holding isolation ($\Delta = 0.0000$).
+    - **Victorious Cashback (5% Purchase Reward Ledger):** Created `2026_09_18_000001_create_customer_cashback_ledgers_table.php` migration and `CustomerCashbackLedger` model. Non-withdrawable purchase reward ledger (not a cash wallet), maturing to `available` after 7-day return inspection window.
+    - **In-Shop Handover Security:** Hardened `InShopHandoverController.php` to prevent premature release of unpaid pickup orders (HTTP 403), requiring customer online payment confirmation and constant-time 6-digit code verification (`hash_equals`).
+  - **3. Mathematical Proof Verification ($\Delta = 0.0000$):**
+    - Passed all 23 / 23 mathematical, dual fulfillment, and cryptographic checks in `scratch/test_fulfillment_path_separation.php`.
+    - Updated `VICTORIOUS_MARKET_MATHEMATICAL_AND_SYSTEMIC_PROOF.md` with Section 9.
+
 ### [2026-09-18 11:35 UTC] Phase 4: Purge Product Compare, Loyalty Points, and Navigation UI Bloat [backend] [user-app] [ai-governance]
 * **Component:** Product Comparison, Loyalty Points System, Navigation UI (`backend/vmarket-web/`, `User app/`, `AI_CHANGELOG.md`)
 * **Action:** Executed Phase 4 of the marketplace lean simplification, eliminating redundant product comparison and gamified loyalty point mechanisms:

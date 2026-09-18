@@ -638,6 +638,24 @@ class OrderController extends BaseController
             ], 403);
         }
 
+        // [AI] Victorious MARKET In-Shop Handover Invariant:
+        // Customer Pickup orders require customer online payment confirmation AND 6-digit cryptographic pickup code verification.
+        if ($order['order_type'] === 'pickup' && $request['order_status'] === 'delivered') {
+            if ($order['payment_status'] !== 'paid') {
+                return response()->json([
+                    'status' => 0,
+                    'message' => translate('Cannot release item: Order is not paid. Customer must pay online through Victorious MARKET before handover.'),
+                ], 403);
+            }
+            $pickupCode = trim($request['pickup_code'] ?? $request['verification_code'] ?? '');
+            if (empty($pickupCode) || ((string)$pickupCode !== (string)$order['pickup_verification_code'] && (string)$pickupCode !== (string)$order['verification_code'])) {
+                return response()->json([
+                    'status' => 0,
+                    'message' => translate('Invalid 6-digit pickup verification code. Customer must present the code displayed on their paid order.'),
+                ], 422);
+            }
+        }
+
         if ($order['edit_due_amount'] > 0 && $order?->latestEditHistory?->order_due_payment_method == 'cash_on_delivery' && $order?->latestEditHistory?->order_due_payment_status == 'unpaid' && $order['shipping_responsibility'] == 'inhouse_shipping' && $request['order_status'] == 'delivered') {
             return response()->json([
                 'status' => 0,

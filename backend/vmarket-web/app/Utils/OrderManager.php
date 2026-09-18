@@ -141,6 +141,9 @@ class OrderManager
             return;
         }
 
+        // [AI] Victorious MARKET Customer Cashback: 5% on eligible merchandise value (Reward Ledger)
+        \App\Models\CustomerCashbackLedger::creditRewardForOrder($order);
+
         $order_summary = OrderManager::getOrderTotalAndSubTotalAmountSummary($order);
         $order_amount = $order_summary['subtotal'] - $order_summary['total_discount_on_product'] - $order['discount_amount'];
         $commission = $order['admin_commission'];
@@ -951,21 +954,17 @@ class OrderManager
 
     public static function getOrderAddData(int $orderId, string $orderGroupId, object|array $customerData = [], object|array $cartData = [], object|array $orderData = [], object|array $totalTax = []): array
     {
-        $totalOrderAmount = (float)($cartData['order_amount_with_tax'] - $cartData['refer_and_earn_discount']);
+        // [AI] Victorious MARKET Dual Fulfillment & Commercial Invariants
+        $orderType = $orderData['order_type'] ?? 'default_type';
+        $shippingCost = ($orderType === 'pickup') ? 0.00 : (float)($cartData['shipping_cost'] ?? 0.00);
+        $merchandiseSubtotal = (float)($cartData['order_amount'] ?? 0.00);
+        $merchandiseDiscount = (float)($cartData['coupon_discount'] ?? 0.00);
+        $netMerchandise = max(0.00, $merchandiseSubtotal - $merchandiseDiscount);
+        $adminCommission = round($netMerchandise * 0.10, 2);
+        $totalTaxAmount = (float)($cartData['total_tax_amount'] ?? 0.00);
+        $totalOrderAmount = (float)($netMerchandise + $totalTaxAmount + $shippingCost);
         $podDispatchFee = 0.00;
         $doorstepDueAmount = $totalOrderAmount;
-
-        // [AI] Pay-on-Delivery (POD) Upfront Dispatch Fee & Doorstep Due Breakdown
-        if ($orderData['payment_method'] === 'cash_on_delivery') {
-            $podStatus = (bool)(getWebConfig(name: 'pod_dispatch_fee_status') ?? 1);
-            if ($podStatus) {
-                $configuredFee = (float)(getWebConfig(name: 'pod_dispatch_fee_amount') ?? 1000.00);
-                if ($totalOrderAmount > $configuredFee) {
-                    $podDispatchFee = $configuredFee;
-                    $doorstepDueAmount = max(0.00, $totalOrderAmount - $podDispatchFee);
-                }
-            }
-        }
 
         return [
             'id' => $orderId,
@@ -997,12 +996,13 @@ class OrderManager
             'bring_change_amount' => $orderData['payment_method'] == 'cash_on_delivery' ? $orderData['bring_change_amount'] ?? 0 : null,
             'bring_change_amount_currency' => $orderData['bring_change_amount_currency'] ?? null,
             'admin_commission' => $adminCommission,
+            'order_type' => $orderType,
             'shipping_address' => $cartData['shipping_address_id'],
             'shipping_address_data' => ShippingAddress::find($cartData['shipping_address_id']),
             'billing_address' => getWebConfig('billing_input_by_customer') ? $cartData['billing_address_id'] : null,
             'billing_address_data' => getWebConfig('billing_input_by_customer') ? ShippingAddress::find($cartData['billing_address_id']) : null,
             'shipping_responsibility' => getWebConfig(name: 'shipping_method'),
-            'shipping_cost' => $cartData['shipping_cost'],
+            'shipping_cost' => $shippingCost,
             'extra_discount' => $cartData['free_delivery_discount'],
             'extra_discount_type' => $cartData['extra_discount_type'],
             'refer_and_earn_discount' => $cartData['refer_and_earn_discount'],
@@ -1244,16 +1244,23 @@ class OrderManager
 
     public static function generateOrder(object|array|null $data = []): array
     {
-        // [AI] Authoritative Payment Authority Invariant: Only authorized Nigerian online rails (paystack, opay) permitted
+        $orderType = $data['order_type'] ?? 'default_type';
         $paymentMethod = $data['payment_method'] ?? '';
-        $authorizedMethods = ['paystack', 'opay'];
-        if (!in_array($paymentMethod, $authorizedMethods, true)) {
-            throw new \App\Exceptions\InvalidPaymentMethodException($paymentMethod);
-        }
 
-        // [AI] 100% Motorized Delivery Mandate: Customer self-pickup is strictly prohibited
-        if (isset($data['order_type']) && $data['order_type'] === 'pickup') {
-            throw new \InvalidArgumentException('Customer self-pickup is disabled. All marketplace orders are dispatched via motorized delivery.');
+        // [AI] Victorious MARKET Dual Fulfillment Logic:
+        // 1. Doorstep Delivery ('default_type' or 'delivery'): Upfront payment required via Paystack or OPay.
+        // 2. Customer Pickup ('pickup'): Customer places order online for physical inspection at Uyo merchant shop.
+        //    Payment method can be paystack, opay, or pay_at_pickup (inspected before digital payment).
+        if ($orderType === 'pickup') {
+            $authorizedPickupMethods = ['paystack', 'opay', 'pay_at_pickup', 'pending_inspection'];
+            if (!in_array($paymentMethod, $authorizedPickupMethods, true)) {
+                throw new \App\Exceptions\InvalidPaymentMethodException($paymentMethod);
+            }
+        } else {
+            $authorizedDeliveryMethods = ['paystack', 'opay'];
+            if (!in_array($paymentMethod, $authorizedDeliveryMethods, true)) {
+                throw new \App\Exceptions\InvalidPaymentMethodException($paymentMethod);
+            }
         }
 
         $taxConfig = self::getTaxSystemType();
@@ -1354,10 +1361,6 @@ class OrderManager
                 orderData: $data
             );
             DB::table('orders')->insertGetId($ordersData);
-
-            if ($data['payment_method'] == 'offline_payment') {
-                OfflinePayments::insert(['order_id' => $order_id, 'payment_info' => json_encode($data['offline_payment_info']), 'created_at' => Carbon::now()]);
-            }
 
             self::add_order_status_history($order_id, $getCustomerInfo['customer_id'], $data['payment_status'] == 'paid' ? 'confirmed' : 'pending', 'customer');
 
