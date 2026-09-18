@@ -9,11 +9,11 @@
 <span id="get-place-holder-image" data-src="{{ theme_asset('assets/img/image-place-holder.png') }}"></span>
 <span id="authentication-status" data-auth="{{ auth('customer')->check() ? 'true' : 'false' }}"></span>
 <span id="set-shipping-url" data-url="{{url('/')}}/customer/set-shipping-method"></span>
-<span id="digital-product-download-otp-reset" data-route="{{ route('digital-product-download-otp-reset') }}"></span>
+<span id="digital-product-download-otp-reset" data-route="{{ Route::has('digital-product-download-otp-reset') ? route('digital-product-download-otp-reset') : '' }}"></span>
 <span id="order_again_url" data-action="{{ route('cart.order-again') }}"></span>
 <span id="route-product-restock-request" data-url="{{ route('cart.product-restock-request') }}"></span>
 <span id="route-get-session-recaptcha-code"
       data-route="{{ route('get-session-recaptcha-code') }}"
       data-mode="{{ env('APP_MODE') }}"
 ></span>
-<span id="route-pay-offline-method-list" data-url="{{ route('pay-offline-method-list') }}"></span>
+<span id="route-pay-offline-method-list" data-url="{{ Route::has('pay-offline-method-list') ? route('pay-offline-method-list') : '' }}"></span>

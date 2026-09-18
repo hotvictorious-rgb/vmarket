@@ -1,3 +1,19 @@
+### [2026-09-18 17:25 UTC] Local Environment Bootstrap & Multi-Actor Login Verification [backend] [ai-governance]
+* **Component:** Local Environment (DBngin MySQL, PHP 8.4, Composer Autoload, Artisan, Passport) (`backend/vmarket-web/`, `AI_CHANGELOG.md`)
+* **Action:** Successfully brought up Victorious MARKET locally with complete end-to-end authentication verified for all 4 primary actors:
+  - **Database Migration:** Imported base schema (130 tables) into local MySQL (`vmarket_local`) and executed all 32 post-v16 migrations (`php artisan migrate --force`).
+  - **Composer Windows Fix:** Fixed recursive root scan hang in `backend/vmarket-web/composer.json` by updating custom repository classmap path from `["/"]` to `["src/"]` and disabled optimize-autoloader for rapid local development.
+  - **Security & Cryptography:** Generated Laravel Passport encryption keys (`php artisan passport:keys --force`) and linked public storage (`php artisan storage:link`).
+  - **Storefront Theme Defensiveness:** Added defensive `Route::has()` checks in `theme_aster`'s `_route-for-js.blade.php` and `_digital-product-order-otp-verify.blade.php` to prevent unhandled routing exceptions on legacy/optional endpoints (`digital-product-download-otp-reset`, `pay-offline-method-list`).
+  - **Verified Login parities across all 4 actors (All HTTP 200 OK):**
+    1. Super Admin Web Portal: `http://127.0.0.1:8000/login/admin` (HTTP 200 OK)
+    2. Vendor / Seller Web Portal: `http://127.0.0.1:8000/vendor/auth/login` (HTTP 200 OK)
+    3. Customer Storefront (Home): `http://127.0.0.1:8000/` (HTTP 200 OK, full blade render)
+    4. Delivery Man API: `POST /api/v2/delivery-man/auth/login` (HTTP 200 OK, Bearer token returned)
+    5. Customer Mobile API: `POST /api/v1/auth/login` (HTTP 200 OK, Passport JWT token returned)
+    6. Vendor / Seller Mobile API: `POST /api/v2/seller/auth/login` (HTTP 200 OK, Bearer token returned)
+
+
 ### [2026-09-18 14:33 UTC] V1 Transaction Certification — 82/82 PASS (? = ?0.00) [backend] [ai-governance]
 * **Component:** Transaction Engine, Payment Security, Fulfillment Paths, Financial Invariants, Deliberate-Break Coverage (ackend/vmarket-web/, VICTORIOUS_MARKET_MATHEMATICAL_AND_SYSTEMIC_PROOF.md)
 * **Action:** Executed full V1 Transaction Certification across 5 sections (82 checks):

@@ -7,7 +7,7 @@
 <p class="text-center text-muted">
     {{ translate('an_OTP_has_been_sent_to_your_email_and_phone').' '.translate('please_enter_the_OTP_in_the_field_below_to_verify_for_this_download') }}
 </p>
-<form action="{{route('digital-product-download-otp-verify')}}" method="post" autocomplete="off" class="otp-form submit-digital-product-download-otp">
+<form action="{{ Route::has('digital-product-download-otp-verify') ? route('digital-product-download-otp-verify') : '' }}" method="post" autocomplete="off" class="otp-form submit-digital-product-download-otp">
     @csrf
     <p class="text-center text-primary lead">
         {{ translate('resend_code_within') }}
