@@ -109,25 +109,21 @@ class _ShippingAndBillingWidgetState extends State<ShippingAndBillingWidget> {
               ],) :
               Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
                 Row(children: [
-                  Icon(Icons.storefront_rounded, color: Theme.of(context).primaryColor, size: 20),
+                  Icon(Icons.local_shipping_rounded, color: Theme.of(context).primaryColor, size: 20),
                   const SizedBox(width: 8),
-                  Text(getTranslated('approved_pickup_location', context) ?? 'Approved Pickup Location',
+                  Text(getTranslated('dispatch_delivery_hub', context) ?? 'Central Logistics Dispatch Hub',
                     style: titilliumSemiBold.copyWith(fontSize: Dimensions.fontSizeDefault, color: Theme.of(context).textTheme.bodyLarge?.color)),
                 ]),
                 const SizedBox(height: Dimensions.marginSizeSmall),
                 IconWithTextRowWidget(
                   isBold: true,
                   icon: Icons.business,
-                  text: (widget.orderProvider.orderDetails != null && widget.orderProvider.orderDetails!.isNotEmpty && widget.orderProvider.orderDetails![0].order?.sellerIs == 'admin')
-                      ? '${Provider.of<SplashController>(context, listen: false).configModel?.inHouseShop?.name ?? 'Victorious MARKET Central Hub'}'
-                      : '${widget.orderProvider.orderDetails?[0].seller?.shop?.name ?? 'Victorious MARKET Verified Merchant'}',
+                  text: 'Victorious MARKET Logistics Network',
                 ),
                 const SizedBox(height: Dimensions.marginSizeSmall),
                 IconWithTextRowWidget(
                   icon: Icons.location_on,
-                  text: (widget.orderProvider.orderDetails != null && widget.orderProvider.orderDetails!.isNotEmpty && widget.orderProvider.orderDetails![0].order?.sellerIs == 'admin')
-                      ? '${Provider.of<SplashController>(context, listen: false).configModel?.inHouseShop?.address ?? 'Victorious MARKET Central Hub, Nigeria'}'
-                      : '${widget.orderProvider.orderDetails?[0].seller?.shop?.address ?? 'Approved Pickup Station, Nigeria'}',
+                  text: 'Victorious MARKET Central Hub, Nigeria',
                 ),
                 const SizedBox(height: Dimensions.marginSizeSmall),
                 Container(
@@ -137,7 +133,7 @@ class _ShippingAndBillingWidgetState extends State<ShippingAndBillingWidget> {
                     borderRadius: BorderRadius.circular(8),
                   ),
                   child: Text(
-                    getTranslated('pickup_location_notice', context) ?? '⚠️ Please present your 6-digit Secret Pickup OTP to the merchant staff upon arrival.',
+                    getTranslated('delivery_handover_notice', context) ?? '🚚 All orders are dispatched via motorized riders directly to your doorstep.',
                     style: titilliumRegular.copyWith(fontSize: Dimensions.fontSizeExtraSmall, color: Theme.of(context).primaryColor),
                   ),
                 ),

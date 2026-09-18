@@ -112,11 +112,18 @@ class _SellerCardState extends State<SellerCard> {
                             SizedBox(width: Dimensions.paddingSizeExtraSmall),
 
                             Expanded(
-                              child: Text("${widget.sellerModel?.shop?.address      }", style: textRegular.copyWith(
+                              child: Text(
+                                widget.sellerModel?.id == 0
+                                    ? "Delivers from Uyo Central Hub"
+                                    : (widget.sellerModel?.shop?.address?.isNotEmpty == true
+                                        ? widget.sellerModel!.shop!.address!
+                                        : "Delivers from Uyo Hub"),
+                                style: textRegular.copyWith(
                                   fontSize: Dimensions.fontSizeSmall,
                                   color: Theme.of(context).textTheme.bodyLarge?.color,
-                                  overflow: TextOverflow.ellipsis
-                              )),
+                                  overflow: TextOverflow.ellipsis,
+                                ),
+                              ),
                             ),
                           ],
                         ),
