@@ -8,7 +8,7 @@ use DomainException;
  * [AI] Thrown when an order or payment request attempts to use a payment method
  * not authorized under Victorious MARKET's authoritative payment model:
  * Allowed: paystack, pay_at_pickup.
- * Disallowed: opay, wallet, pay_by_wallet, cash_on_delivery, cod, customer_wallet, offline_payment.
+ * Disallowed: wallet, pay_by_wallet, cash_on_delivery, cod, customer_wallet, offline_payment.
  */
 class InvalidPaymentMethodException extends DomainException
 {

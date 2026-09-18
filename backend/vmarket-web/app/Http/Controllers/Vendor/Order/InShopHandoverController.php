@@ -22,7 +22,7 @@ use Illuminate\Support\Facades\DB;
 /**
  * [AI] Class InShopHandoverController
  * Implements the Staff-Attributed Handshake Protocol for:
- * 1. Customer In-Shop Pickup: Customer inspects goods, pays online (Paystack/OPay), and provides 6-digit Pickup Code.
+ * 1. Customer In-Shop Pickup: Customer inspects goods, pays online (Paystack), and provides 6-digit Pickup Code.
  * 2. Motorized Delivery Rider In-Shop Parcel Custody Transfer (Doorstep Delivery).
  */
 class InShopHandoverController extends Controller

@@ -817,8 +817,8 @@ class OrderController extends BaseController
             ]);
         }
 
-        // [AI] Payment Authority Invariant: Victorious MARKET backend / payment gateway / admin is the sole payment authority.
-        // Vendors CANNOT manually declare Paystack, OPay, bank transfer, or any other digital/offline payment as paid.
+        // [AI] Payment Authority Invariant: Victorious MARKET backend / Paystack payment gateway / admin is the sole payment authority.
+        // Vendors CANNOT manually declare Paystack, bank transfer, or any other digital payment as paid.
         if ($order['payment_method'] !== 'cash_on_delivery') {
             return response()->json([
                 'status' => 0,

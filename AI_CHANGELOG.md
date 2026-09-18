@@ -7,6 +7,34 @@ Always append your completed tasks here in chronological order at the top. Forma
 `### [YYYY-MM-DD HH:MM UTC] <Feature / Fix Title> [<Component Scope>]`
 Include the specific app/component modified and bullet points detailing the exact technical changes.
 
+### [2026-09-18 14:26 UTC] Release Candidate 2 (v1-rc2): Total OPay Elimination, Flutterwave Removal & Final Payment Rail Lockdown [backend] [ai-governance]
+* **Component:** Payment Gateway Rails, Error Messages, Dead Code Elimination (`backend/vmarket-web/`, `AI_CHANGELOG.md`)
+* **Action:** Executed the final surgical pass to achieve 100% OPay-free and offline-payment-free codebase across all active code paths in the Laravel backend:
+  - **1. OPay Removed from All Error Messages:**
+    - Updated `RestAPI/v1/OrderController.php` (`placeOrderByWallet()`): decommission message now says "Paystack or Pay at Pickup" — OPay removed.
+    - Updated `RestAPI/v1/OrderEditController.php` (`duePaymentByWallet()`): same fix.
+  - **2. `duePaymentByOfflinePayment()` Fully Decommissioned:**
+    - Replaced the 50-line live offline payment processing body with a 3-line fail-closed 403 stub.
+    - Removed unused `use App\Models\OfflinePaymentMethod;` import.
+  - **3. Flutterwave Completely Removed:**
+    - Deleted `app/Http/Controllers/Payment_Methods/FlutterwaveV3Controller.php`.
+    - Removed `use FlutterwaveV3Controller` import from `routes/web/routes.php`.
+    - Removed the Flutterwave route group (`flutterwave-v3.pay`, `flutterwave-v3.callback`) from `routes/web/routes.php`.
+  - **4. Comment Accuracy Pass:**
+    - `InShopHandoverController.php`: "Paystack/OPay" → "Paystack".
+    - `RestAPI/v3/seller/OrderController.php` Invariant 4: removed `'opay'` from guard array and comment.
+    - `Vendor/Order/OrderController.php`: removed OPay from payment authority comment.
+    - `InvalidPaymentMethodException.php`: removed `opay` from docblock disallowed list.
+  - **5. Test Suite Label Cleanup:**
+    - `tests/Unit/PaymentFulfillmentBoundarySecurityTest.php`: renamed `$opayOrder`/`$opayDue` → `$manualOrder`/`$manualDue` in descriptions. Logic and fixture values unchanged.
+  - **6. Final Verification — Zero OPay in Active Code:**
+    - Full `app/` directory scan (excluding `PaystackBankService.php` + `ReceiptOcrAiService.php` which legitimately reference OPay as a Nigerian settlement bank) → **CLEAN: 0 results**.
+    - PHP syntax lint 7/7: **0 errors**.
+    - Adversarial Reproduction Suite: **10/10 PASSING**.
+    - Dual Fulfillment Suite: **23/23 PASSING (Δ = 0.0000)**.
+    - Wallet Decommission Suite: **21/21 PASSING (Δ = 0.00)**.
+  - **7. Tagged repository state as `v1-rc2`.**
+
 ### [2026-09-18 13:50 UTC] Release Candidate 1 (v1-rc1): Complete OPay/Offline Purge, Cryptographic Guest Access Token & Merchant Debt Accounting [backend] [ai-governance]
 * **Component:** Payment Gateway Rails, Guest Privacy & IDOR Shield, Merchant Balance & Debt Ledgers, Release Candidate Certification (`backend/vmarket-web/`, `VICTORIOUS_MARKET_MATHEMATICAL_AND_SYSTEMIC_PROOF.md`, `AI_CHANGELOG.md`)
 * **Action:** Hardened transaction architecture to V1 Release Candidate standards:

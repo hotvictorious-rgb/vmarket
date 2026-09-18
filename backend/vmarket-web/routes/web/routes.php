@@ -9,7 +9,7 @@ use App\Http\Controllers\Customer\Auth\SocialAuthController;
 use App\Http\Controllers\Customer\PaymentController;
 use App\Http\Controllers\Customer\RewardPointController;
 use App\Http\Controllers\Customer\SystemController;
-use App\Http\Controllers\Payment_Methods\FlutterwaveV3Controller;
+// [AI] FlutterwaveV3Controller removed — Flutterwave is not an authorized payment gateway. Only Paystack is authorized.
 use App\Http\Controllers\Payment_Methods\PaystackController;
 use App\Http\Controllers\Web\CartController;
 use App\Http\Controllers\Web\ChattingController;
@@ -384,11 +384,7 @@ try {
 if (!$isGatewayPublished) {
     Route::group(['prefix' => 'payment'], function () {
 
-        //FLUTTERWAVE
-        Route::group(['prefix' => 'flutterwave-v3', 'as' => 'flutterwave-v3.'], function () {
-            Route::get('pay', [FlutterwaveV3Controller::class, 'initialize'])->name('pay');
-            Route::get('callback', [FlutterwaveV3Controller::class, 'callback'])->name('callback');
-        });
+        // [AI] FLUTTERWAVE routes removed — Flutterwave decommissioned. Only Paystack is authorized.
 
         //PAYSTACK
         Route::group(['prefix' => 'paystack', 'as' => 'paystack.'], function () {

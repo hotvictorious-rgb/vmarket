@@ -411,7 +411,7 @@ class OrderController extends Controller
         // [AI] Customer Wallet Decommissioned: Reject active wallet order placement
         return response()->json([
             'status' => false,
-            'message' => 'Customer wallet payment is permanently decommissioned in Victorious MARKET. Please pay online via Paystack, OPay, or select Pay at Pickup.',
+            'message' => 'Customer wallet payment is permanently decommissioned in Victorious MARKET. Please pay online via Paystack or select Pay at Pickup.',
         ], 403);
     }
 

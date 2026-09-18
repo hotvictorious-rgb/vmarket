@@ -354,8 +354,8 @@ class OrderController extends Controller
             ], 403);
         }
 
-        // [AI] Machine-Enforced Invariant 4: unverified digital payment or decommissioned method + fulfillment -> 403 Forbidden
-        if ($order['payment_status'] !== 'paid' && in_array($order['payment_method'], ['offline_payment', 'opay', 'cash_on_delivery'])) {
+        // [AI] Machine-Enforced Invariant 4: unverified decommissioned payment method + fulfillment -> 403 Forbidden
+        if ($order['payment_status'] !== 'paid' && in_array($order['payment_method'], ['offline_payment', 'cash_on_delivery'])) {
             return response()->json([
                 'success' => 0,
                 'message' => translate('Unverified orders cannot be fulfilled until digital payment is confirmed.')
@@ -518,7 +518,7 @@ class OrderController extends Controller
             }
 
             // [AI] Payment Authority Invariant: Victorious MARKET backend / payment gateway / admin is the sole payment authority.
-            // Vendors CANNOT manually declare Paystack, OPay, bank transfer, or any other digital/offline payment as paid.
+            // Vendors CANNOT manually declare Paystack, bank transfer, or any other digital payment as paid.
             if ($order['payment_method'] !== 'cash_on_delivery') {
                 return response()->json([
                     'errors' => [

@@ -6,12 +6,12 @@
  * 
  * Specifically tests the 16 required invariants:
  * 1. Vendor cannot mark unpaid Paystack order paid through order-detail-info-update.
- * 2. Vendor cannot mark unpaid OPay/manual order paid through order-detail-info-update.
+ * 2. Vendor cannot mark unpaid manual/unverified order paid through order-detail-info-update.
  * 3. Vendor cannot mark unpaid bank/digital order paid through order-detail-info-update.
  * 4. Vendor cannot mark unpaid non-COD order delivered in a way that causes payment to become paid or settlement to occur.
  * 5. Vendor can still perform legitimate COD flow at the permitted fulfillment point.
  * 6. Vendor cannot use customer-due-amount-mark-as-paid to verify Paystack.
- * 7. Vendor cannot use customer-due-amount-mark-as-paid to verify OPay.
+ * 7. Vendor cannot use customer-due-amount-mark-as-paid to verify a manual/unverified payment.
  * 8. Vendor cannot use customer-due-amount-mark-as-paid to verify another digital payment.
  * 9. Pickup secret shown to the authenticated customer is the same canonical pickup secret checked by InShopHandoverController.
  * 10. Delivery verification_code remains separate from pickup secret.
@@ -159,14 +159,14 @@ class PaymentFulfillmentSecurityTestSuite {
         $this->assert($res1['code'] === 403 && $paystackOrder->payment_status === 'unpaid',
             'Test 1: Vendor cannot mark unpaid Paystack order paid through order-detail-info-update (HTTP 403)');
 
-        // Test 2: Vendor cannot mark unpaid OPay/manual order paid through order-detail-info-update
-        $opayOrder = new MockOrder([
+        // Test 2: Vendor cannot mark unpaid manual/unverified order paid through order-detail-info-update
+        $manualOrder = new MockOrder([
             'id' => 102, 'seller_id' => 7, 'seller_is' => 'seller', 'payment_status' => 'unpaid',
             'payment_method' => 'offline_payment', 'order_status' => 'processing'
         ]);
-        $res2 = $apiUpdateOrderDetails($opayOrder, 7, ['order_id' => 102, 'payment_status' => 'paid']);
-        $this->assert($res2['code'] === 403 && $opayOrder->payment_status === 'unpaid',
-            'Test 2: Vendor cannot mark unpaid OPay/manual order paid through order-detail-info-update (HTTP 403)');
+        $res2 = $apiUpdateOrderDetails($manualOrder, 7, ['order_id' => 102, 'payment_status' => 'paid']);
+        $this->assert($res2['code'] === 403 && $manualOrder->payment_status === 'unpaid',
+            'Test 2: Vendor cannot mark unpaid manual/unverified order paid through order-detail-info-update (HTTP 403)');
 
         // Test 3: Vendor cannot mark unpaid bank/digital order paid through order-detail-info-update
         $bankOrder = new MockOrder([
@@ -242,14 +242,14 @@ class PaymentFulfillmentSecurityTestSuite {
         $this->assert($res6['code'] === 403 && $paystackDue->payment_status === 'unpaid',
             'Test 6: Vendor cannot use customer-due-amount-mark-as-paid to verify Paystack (HTTP 403)');
 
-        // Test 7: Vendor cannot use customer-due-amount-mark-as-paid to verify OPay
-        $opayDue = new MockOrder([
+        // Test 7: Vendor cannot use customer-due-amount-mark-as-paid to verify a manual/unverified payment
+        $manualDue = new MockOrder([
             'id' => 302, 'seller_id' => 12, 'seller_is' => 'seller', 'payment_status' => 'unpaid',
             'payment_method' => 'offline_payment', 'order_status' => 'delivered'
         ]);
-        $res7 = $webVendorMarkDuePaid($opayDue, 12);
-        $this->assert($res7['code'] === 403 && $opayDue->payment_status === 'unpaid',
-            'Test 7: Vendor cannot use customer-due-amount-mark-as-paid to verify OPay (HTTP 403)');
+        $res7 = $webVendorMarkDuePaid($manualDue, 12);
+        $this->assert($res7['code'] === 403 && $manualDue->payment_status === 'unpaid',
+            'Test 7: Vendor cannot use customer-due-amount-mark-as-paid to verify a manual/unverified payment (HTTP 403)');
 
         // Test 8: Vendor cannot use customer-due-amount-mark-as-paid to verify another digital payment
         $stripeDue = new MockOrder([

@@ -10,7 +10,7 @@ use App\Models\AdminWallet;
 use App\Models\Cart;
 use App\Models\Currency;
 use App\Models\DigitalProductOtpVerification;
-use App\Models\OfflinePaymentMethod;
+// [AI] OfflinePaymentMethod import removed — offline payment permanently decommissioned in Victorious MARKET.
 use App\Models\Order;
 use App\Models\OrderDetail;
 use App\Models\OrderDetailsRewards;
@@ -53,7 +53,7 @@ class OrderEditController extends Controller
         // [AI] Customer Wallet Decommissioned: Reject active wallet due payment
         return response()->json([
             'status' => false,
-            'message' => 'Wallet payment is permanently decommissioned in Victorious MARKET. Please pay online via Paystack, OPay, or select Pay at Pickup.',
+            'message' => 'Wallet payment is permanently decommissioned in Victorious MARKET. Please pay online via Paystack or select Pay at Pickup.',
         ], 403);
     }
 
@@ -104,55 +104,13 @@ class OrderEditController extends Controller
 
     public function duePaymentByOfflinePayment(Request $request): JsonResponse
     {
-        $validator = Validator::make($request->all(), [
-            'order_id' => 'required',
-            'payment_method' => 'required',
-            'order_due_payment_note' => 'nullable|string',
-            'method_id' => 'required_if:payment_method,offline_payment',
-        ]);
-
-        if ($validator->fails()) {
-            return response()->json(['errors' => Helpers::validationErrorProcessor($validator)], 403);
-        }
-
-        $order = Order::with(['latestEditHistory'])->where('id', $request['order_id'])->first();
-        if (!$order) {
-            return response()->json(['message' => translate('Order_not_found')], 404);
-        }
-
-        $user = Helpers::getCustomerInformation($request);
-        $isOwner = false;
-        if ($user != 'offline' && $order->customer_id == $user->id) {
-            $isOwner = true;
-        } elseif ($order->is_guest && $request->has('guest_id') && $order->customer_id == $request['guest_id'] && is_numeric($request['guest_id'])) {
-            $isOwner = true;
-        }
-
-        if (!$isOwner) {
-            return response()->json(['message' => translate('unauthorized_access')], 403);
-        }
-
-        $offlinePaymentInfo = [];
-        $method = OfflinePaymentMethod::where(['id' => $request['method_id'], 'status' => 1])->first();
-
-        if (isset($method)) {
-            $fields = array_column($method->method_informations, 'customer_input');
-            $values = (array)json_decode(base64_decode($request['method_informations']));
-            $offlinePaymentInfo['method_id'] = $request['method_id'];
-            $offlinePaymentInfo['method_name'] = $method->method_name;
-            foreach ($fields as $field) {
-                if (key_exists($field, $values)) {
-                    $offlinePaymentInfo[$field] = $values[$field];
-                }
-            }
-        }
-
-        OrderEditHistory::where('id', $order?->latestEditHistory?->id)->update([
-            'order_due_payment_method' => 'offline_payment',
-            'order_due_payment_info' => $offlinePaymentInfo,
-            'order_due_payment_note' => $request['order_due_payment_note'] ?? '',
-        ]);
-        return response()->json(['message' => translate('Payment_Method_Updated')], 200);
+        // [AI] Offline payment permanently decommissioned in Victorious MARKET.
+        // This endpoint is preserved as a fail-closed stub to prevent 500 errors
+        // from any legacy client that still calls this path. Route was already removed.
+        return response()->json([
+            'status' => false,
+            'message' => 'Offline payment is permanently decommissioned in Victorious MARKET. Please pay online via Paystack or select Pay at Pickup.',
+        ], 403);
     }
 
     public function duePaymentByDigitalPayment(Request $request): JsonResponse
