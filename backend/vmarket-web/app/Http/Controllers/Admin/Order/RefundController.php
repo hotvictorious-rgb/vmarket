@@ -144,15 +144,25 @@ class RefundController extends BaseController
                     $markupShare = ($refund['amount'] / $itemPrice) * $unitMarkup;
                     $vendorShare = max(0, $refund['amount'] - $markupShare);
 
-                    $this->vendorWalletRepo->updateWhere(params: ['seller_id' => $order['seller_id']], data: ['total_earning' => $sellerWallet['total_earning'] - $vendorShare]);
+                    $newTotalEarning = max(0, ($sellerWallet['total_earning'] ?? 0) - $vendorShare);
+                    $this->vendorWalletRepo->updateWhere(params: ['seller_id' => $order['seller_id']], data: ['total_earning' => $newTotalEarning]);
                     if ($adminWallet) {
                         $this->adminWalletRepo->updateWhere(params: ['admin_id' => 1], data: ['commission_earned' => max(0, $adminWallet['commission_earned'] - $markupShare)]);
                     }
                 } else {
-                    $this->vendorWalletRepo->updateWhere(params: ['seller_id' => $order['seller_id']], data: ['total_earning' => $sellerWallet['total_earning'] - $refund['amount']]);
+                    $newTotalEarning = max(0, ($sellerWallet['total_earning'] ?? 0) - $refund['amount']);
+                    $this->vendorWalletRepo->updateWhere(params: ['seller_id' => $order['seller_id']], data: ['total_earning' => $newTotalEarning]);
                 }
             }
             $this->refundTransactionRepo->add(data: $refundTransactionService->getData(request: $request, refund: $refund, order: $order));
+
+            // [AI] Cashback Lifecycle Guard: Revoke pending cashback reward upon approved order refund
+            \App\Models\CustomerCashbackLedger::where('order_id', $refund['order_id'])
+                ->where('status', 'pending')
+                ->update([
+                    'status' => 'cancelled',
+                    'description' => 'Revoked due to approved refund for Order #' . $refund['order_id']
+                ]);
         }
 
         if ($refund['status'] != 'refunded') {

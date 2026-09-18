@@ -17,6 +17,16 @@ if (!function_exists('digital_payment_success')) {
     function digital_payment_success($paymentData): void
     {
         if (isset($paymentData) && $paymentData['is_paid'] == 1) {
+            // [AI] Authoritative Idempotency Guard: Prevent duplicate order generation on concurrent webhook + browser callback
+            $transactionRef = $paymentData['transaction_id'] ?? null;
+            if (!empty($transactionRef)) {
+                $alreadyProcessed = Order::where('transaction_ref', $transactionRef)->exists();
+                if ($alreadyProcessed) {
+                    \Illuminate\Support\Facades\Log::info("Idempotency guard: Order already generated for transaction ref '{$transactionRef}'. Skipping duplicate order generation.");
+                    return;
+                }
+            }
+
             $additionalData = json_decode($paymentData['additional_data'], true);
 
             $addCustomer = null;

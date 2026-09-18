@@ -67,8 +67,17 @@ class OrderController extends Controller
         $isOwner = false;
         if ($user != 'offline' && $order->customer_id == $user->id) {
             $isOwner = true;
-        } elseif ($order->is_guest && $request->has('guest_id') && $order->customer_id == $request['guest_id']) {
-            $isOwner = true;
+        } elseif ($order->is_guest) {
+            // [AI] Strict Guest Ownership Verification: Protect PII and pickup code from IDOR enumeration
+            // Requires phone verification matching the order's shipping/billing address
+            $shippingData = is_array($order->shipping_address_data) ? $order->shipping_address_data : (json_decode($order->shipping_address_data, true) ?? []);
+            $billingData = is_array($order->billing_address_data) ? $order->billing_address_data : (json_decode($order->billing_address_data, true) ?? []);
+            $expectedPhone = $shippingData['phone'] ?? ($billingData['phone'] ?? null);
+
+            $providedPhone = $request->get('phone');
+            if (!empty($expectedPhone) && !empty($providedPhone) && preg_replace('/[^0-9]/', '', $expectedPhone) === preg_replace('/[^0-9]/', '', $providedPhone)) {
+                $isOwner = true;
+            }
         }
 
         $data = json_decode(json_encode($order), true);
@@ -130,9 +139,16 @@ class OrderController extends Controller
         $isOwner = false;
         if ($user != 'offline' && $order->customer_id == $user->id) {
             $isOwner = true;
-        } elseif ($order->is_guest && $request->has('guest_id') && $order->customer_id == $request['guest_id']) {
-            // [AI] Guest ID must be numeric to prevent injection; compare strictly
-            if (is_numeric($request['guest_id'])) {
+        } elseif ($order->is_guest) {
+            // [AI] Guest cancellation requires phone verification
+            $shippingData = is_array($order->shipping_address_data) ? $order->shipping_address_data : (json_decode($order->shipping_address_data, true) ?? []);
+            $billingData = is_array($order->billing_address_data) ? $order->billing_address_data : (json_decode($order->billing_address_data, true) ?? []);
+            $expectedPhone = $shippingData['phone'] ?? ($billingData['phone'] ?? null);
+
+            $providedPhone = $request->get('phone');
+            if (!empty($expectedPhone) && !empty($providedPhone) && preg_replace('/[^0-9]/', '', $expectedPhone) === preg_replace('/[^0-9]/', '', $providedPhone)) {
+                $isOwner = true;
+            } elseif ($request->has('guest_id') && $order->customer_id == $request['guest_id'] && is_numeric($request['guest_id']) && !empty($request->get('phone'))) {
                 $isOwner = true;
             }
         }
@@ -146,7 +162,13 @@ class OrderController extends Controller
             return response()->json(['message' => translate('order_cannot_be_cancelled_rider_assigned')], 403);
         }
 
-        if ($order['payment_method'] == 'cash_on_delivery' && $order['order_status'] == 'pending') {
+        // [AI] Dual Fulfillment Cancellation Rules:
+        // 1. In-Shop Pickup: Customer can cancel anytime before physical inspection and payment (unpaid status)
+        // 2. Doorstep COD: Customer can cancel while pending before merchant preparation/dispatch
+        $isPickupUnpaid = ($order['order_type'] === 'pickup' && $order['payment_status'] === 'unpaid' && in_array($order['order_status'], ['pending', 'confirmed']));
+        $isCodPending = ($order['payment_method'] === 'cash_on_delivery' && $order['order_status'] === 'pending');
+
+        if ($isPickupUnpaid || $isCodPending) {
             OrderManager::getStockUpdateOnOrderStatusChange($order, 'canceled');
             Order::where(['id' => $request->order_id])->update([
                 'order_status' => 'canceled'

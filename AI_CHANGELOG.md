@@ -7,6 +7,19 @@ Always append your completed tasks here in chronological order at the top. Forma
 `### [YYYY-MM-DD HH:MM UTC] <Feature / Fix Title> [<Component Scope>]`
 Include the specific app/component modified and bullet points detailing the exact technical changes.
 
+### [2026-09-18 12:56 UTC] Adversarial Audit Reproduction & Pre-V1 Transaction Hardening [backend] [ai-governance]
+* **Component:** Transaction Engine, Payments, Inventory, Cashback Lifecycle, Pickups, Security (`backend/vmarket-web/`, `AI_CHANGELOG.md`, `VICTORIOUS_MARKET_MATHEMATICAL_AND_SYSTEMIC_PROOF.md`)
+* **Action:** Converted 10 Critical & High security audit findings into an automated reproduction suite (`scratch/reproduce_adversarial_findings.php`), verified confirmed blockers, and executed surgical hardening:
+  - **1. Payment Idempotency Guard:** Hardened `digital_payment_success()` in `app/Utils/module-helper.php` with an authoritative `Order::where('transaction_ref', $ref)->exists()` guard to prevent duplicate order generation on concurrent Paystack webhooks and browser callbacks.
+  - **2. Inventory Concurrency & Overselling Protection:** Hardened `OrderManager.php` (`addOrderDetailsData()`) with atomic stock decrement checking `where('current_stock', '>=', $qty)` and pessimistic row locks (`lockForUpdate()`) to prevent overselling race conditions.
+  - **3. Multi-Vendor Transaction Atomicity:** Encapsulated multi-vendor order and detail creation loops inside `DB::transaction()` with full rollback on exception in `OrderManager.php`.
+  - **4. Cashback Refund Lifecycle Integration:** Updated `RefundController.php` to automatically cancel pending `CustomerCashbackLedger` entries upon refund approval, eliminating the refund-and-keep-cashback exploit.
+  - **5. Cashback Maturation Automation:** Created Artisan command `MatureCustomerCashbackCommand.php` (`cashback:mature`) and scheduled it daily in `routes/console.php` to transition pending cashback to `available` once the 7-day inspection window has elapsed.
+  - **6. In-Shop Pickup Cancellation Enablement:** Updated `OrderController::order_cancel()` to permit customer cancellation of unpaid in-shop pickup reservations anytime before inspection/payment, releasing held inventory.
+  - **7. Guest Order Privacy Guard:** Enforced phone verification on `track_by_order_id()` and `order_cancel()` in `OrderController.php`, eliminating IDOR exposure of pickup verification codes and customer PII via guessable numeric `guest_id`.
+  - **8. Admin Role Privilege Escalation Bound:** Enforced that only primary Super Admin (`admin_role_id == 1` or `admin_id == 1`) can create or modify custom roles in `CustomRoleController.php`.
+  - **9. Merchant Wallet Non-Negative Floor:** Enforced non-negative floor on merchant total earnings (`max(0, ...)`) upon refund in `RefundController.php`.
+  - **10. 100% Blocker Elimination:** Re-ran reproduction suite with 10 / 10 tests PASSING, and verified dual fulfillment separation with 23 / 23 tests PASSING ($\Delta = 0.0000$).
 
 ### [2026-09-18 12:12 UTC] Phase 5: Complete Duplicate Purge, Dual Fulfillment Architecture, 10%/90% Commercial Split & 5% Cashback Reward Ledger [backend] [user-app] [vendor-app] [delivery-man] [ai-governance]
 * **Component:** System Architecture, Dual Fulfillment, Vendor & Rider Apps, Customer Apps, Cash & Ledger Invariants (`backend/vmarket-web/`, `User app/`, `Vendor app/`, `Delivery Man App/`, `AI_CHANGELOG.md`)

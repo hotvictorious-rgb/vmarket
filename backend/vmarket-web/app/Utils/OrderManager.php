@@ -1119,8 +1119,20 @@ class OrderManager
                 }
                 $productUpdateData['variation'] = json_encode($variationData);
             }
-            
-            Product::where(['id' => $product['id']])->update($productUpdateData);
+
+            // [AI] Atomic Inventory Deduction Guard: Prevent simultaneous checkouts from overselling
+            if (isset($product['product_type']) && $product['product_type'] === 'physical') {
+                $affected = Product::where(['id' => $product['id']])
+                    ->where('current_stock', '>=', $cartSingleItem['quantity'])
+                    ->update($productUpdateData);
+
+                if ($affected === 0) {
+                    $productName = $product['name'] ?? 'Item';
+                    throw new \Exception(translate('One_or_more_products_in_your_cart_is_currently_unavailable') . ': ' . $productName . ' (' . translate('insufficient_stock') . ')');
+                }
+            } else {
+                Product::where(['id' => $product['id']])->update($productUpdateData);
+            }
             $orderDetailsId = DB::table('order_details')->insertGetId($orderDetails);
 
             foreach ($vendorCart['applied_tax_cart_list'] as $cartItem) {
@@ -1298,7 +1310,7 @@ class OrderManager
                 $cartProductIds[] = $cartItem['product_id'];
             }
         }
-        $freshProducts = \App\Models\Product::whereIn('id', array_unique($cartProductIds))->get()->keyBy('id');
+        $freshProducts = \App\Models\Product::whereIn('id', array_unique($cartProductIds))->lockForUpdate()->get()->keyBy('id');
         foreach ($vendorWiseCartList as $vendorWiseCart) {
             foreach ($vendorWiseCart['cart_list'] as $cartItem) {
                 $product = $freshProducts->get($cartItem['product_id']);
@@ -1309,108 +1321,117 @@ class OrderManager
             }
         }
 
-        foreach ($vendorWiseCartList as $vendorWiseGroupId => $vendorWiseCart) {
-            $order_id = OrderManager::generateNewOrderID();
-            $orderPlacedIds[] = $order_id;
+        // [AI] Atomic Transaction Encapsulation: Ensure all vendor packages, status histories, and line items commit atomically
+        DB::beginTransaction();
+        try {
+            foreach ($vendorWiseCartList as $vendorWiseGroupId => $vendorWiseCart) {
+                $order_id = OrderManager::generateNewOrderID();
+                $orderPlacedIds[] = $order_id;
 
-            $appliedTaxAmount = 0;
-            $appliedTaxRate = 0;
-            foreach ($vendorWiseCart['applied_tax_cart_list'] as $cartItem) {
-                if ($cartItem['seller_id'] == $vendorWiseCart['seller_id'] && $cartItem['seller_is'] == $vendorWiseCart['seller_is']) {
-                    $appliedTaxAmount = collect($vendorWiseCart['applied_tax_cart_list'])->where('cart_id', $cartItem['cart_id'])->sum('applied_shipping_cost_tax') ?? 0;
-                    foreach ($cartItem['applied_shipping_cost_tax_ids'] as $taxIdGroup) {
-                        foreach ($taxIdGroup['tax_ids'] as $taxId) {
-                            $taxItem = $taxConfig['taxVats']->firstWhere('id', $taxId);
-                            if ($taxItem) {
-                                $appliedTaxRate += $taxItem['tax_rate'];
+                $appliedTaxAmount = 0;
+                $appliedTaxRate = 0;
+                foreach ($vendorWiseCart['applied_tax_cart_list'] as $cartItem) {
+                    if ($cartItem['seller_id'] == $vendorWiseCart['seller_id'] && $cartItem['seller_is'] == $vendorWiseCart['seller_is']) {
+                        $appliedTaxAmount = collect($vendorWiseCart['applied_tax_cart_list'])->where('cart_id', $cartItem['cart_id'])->sum('applied_shipping_cost_tax') ?? 0;
+                        foreach ($cartItem['applied_shipping_cost_tax_ids'] as $taxIdGroup) {
+                            foreach ($taxIdGroup['tax_ids'] as $taxId) {
+                                $taxItem = $taxConfig['taxVats']->firstWhere('id', $taxId);
+                                if ($taxItem) {
+                                    $appliedTaxRate += $taxItem['tax_rate'];
+                                }
                             }
                         }
                     }
                 }
-            }
 
-            foreach (collect($vendorWiseCart['applied_tax_cart_list'])->pluck('applied_shipping_cost_tax_ids')->toArray() as $taxGroups) {
-                foreach ($taxGroups as $taxGroup) {
-                    foreach ($taxGroup['tax_ids'] as $taxId) {
-                        $taxItem = $taxConfig['taxVats']->firstWhere('id', $taxId);
-                        if ($taxItem) {
-                            self::getAddOrderTaxDetails(
-                                systemTaxVat: $taxConfig['SystemTaxVat'],
-                                taxRate: $taxItem,
-                                orderId: $order_id,
-                                data: [
-                                    'tax_amount' => ($appliedTaxAmount > 0 && $appliedTaxRate > 0) ? ($appliedTaxAmount * $taxItem['tax_rate']) / $appliedTaxRate : 0,
-                                    'before_tax_amount' => $vendorWiseCart['order_amount_with_tax'] - $vendorWiseCart['total_tax_amount'],
-                                    'after_tax_amount' => $vendorWiseCart['order_amount_with_tax'],
-                                    'quantity' => 0,
-                                    'seller_id' => $vendorWiseCart['seller_id'],
-                                    'seller_type' => $vendorWiseCart['seller_is'],
-                                ],
-                                taxOn: $taxGroup['name'],
-                            );
+                foreach (collect($vendorWiseCart['applied_tax_cart_list'])->pluck('applied_shipping_cost_tax_ids')->toArray() as $taxGroups) {
+                    foreach ($taxGroups as $taxGroup) {
+                        foreach ($taxGroup['tax_ids'] as $taxId) {
+                            $taxItem = $taxConfig['taxVats']->firstWhere('id', $taxId);
+                            if ($taxItem) {
+                                self::getAddOrderTaxDetails(
+                                    systemTaxVat: $taxConfig['SystemTaxVat'],
+                                    taxRate: $taxItem,
+                                    orderId: $order_id,
+                                    data: [
+                                        'tax_amount' => ($appliedTaxAmount > 0 && $appliedTaxRate > 0) ? ($appliedTaxAmount * $taxItem['tax_rate']) / $appliedTaxRate : 0,
+                                        'before_tax_amount' => $vendorWiseCart['order_amount_with_tax'] - $vendorWiseCart['total_tax_amount'],
+                                        'after_tax_amount' => $vendorWiseCart['order_amount_with_tax'],
+                                        'quantity' => 0,
+                                        'seller_id' => $vendorWiseCart['seller_id'],
+                                        'seller_type' => $vendorWiseCart['seller_is'],
+                                    ],
+                                    taxOn: $taxGroup['name'],
+                                );
+                            }
                         }
                     }
                 }
+
+                $ordersData = OrderManager::getOrderAddData(
+                    orderId: $order_id,
+                    orderGroupId: $orderGroupId,
+                    customerData: $getCustomerInfo,
+                    cartData: $vendorWiseCart,
+                    orderData: $data
+                );
+                DB::table('orders')->insertGetId($ordersData);
+
+                self::add_order_status_history($order_id, $getCustomerInfo['customer_id'], $data['payment_status'] == 'paid' ? 'confirmed' : 'pending', 'customer');
+
+                OrderManager::addOrderDetailsData(
+                    orderId: $order_id,
+                    vendorCart: $vendorWiseCart
+                );
+
+                $order = Order::with('customer', 'seller.shop', 'details')->find($order_id);
+                OrderManager::getAddOrderTransactionsOnGenerateOrder(order: $order, ordersData: $ordersData);
+
+                $orderPlacedNotificationEvents[] = OrderManager::getGenerateOrderNotificationInfo(
+                    vendorType: $vendorWiseCart['seller_is'],
+                    vendorId: $vendorWiseCart['seller_id'],
+                    order: $order,
+                    customer: $getCustomerInfo['customer'],
+                );
+
+                $orderPlacedMailEvents[] = OrderManager::getGenerateOrderMailInfo(
+                    vendorType: $vendorWiseCart['seller_is'],
+                    vendorId: $vendorWiseCart['seller_id'],
+                    vendorWiseCart: $vendorWiseCart,
+                    order: $order,
+                    customer: $getCustomerInfo['customer'],
+                );
             }
 
-            $ordersData = OrderManager::getOrderAddData(
-                orderId: $order_id,
-                orderGroupId: $orderGroupId,
-                customerData: $getCustomerInfo,
-                cartData: $vendorWiseCart,
-                orderData: $data
-            );
-            DB::table('orders')->insertGetId($ordersData);
+            $user = Helpers::getCustomerInformation(($data['requestObj'] ?? request()->all()));
 
-            self::add_order_status_history($order_id, $getCustomerInfo['customer_id'], $data['payment_status'] == 'paid' ? 'confirmed' : 'pending', 'customer');
-
-            OrderManager::addOrderDetailsData(
-                orderId: $order_id,
-                vendorCart: $vendorWiseCart
-            );
-
-            $order = Order::with('customer', 'seller.shop', 'details')->find($order_id);
-            OrderManager::getAddOrderTransactionsOnGenerateOrder(order: $order, ordersData: $ordersData);
-
-            $orderPlacedNotificationEvents[] = OrderManager::getGenerateOrderNotificationInfo(
-                vendorType: $vendorWiseCart['seller_is'],
-                vendorId: $vendorWiseCart['seller_id'],
-                order: $order,
-                customer: $getCustomerInfo['customer'],
-            );
-
-            $orderPlacedMailEvents[] = OrderManager::getGenerateOrderMailInfo(
-                vendorType: $vendorWiseCart['seller_is'],
-                vendorId: $vendorWiseCart['seller_id'],
-                vendorWiseCart: $vendorWiseCart,
-                order: $order,
-                customer: $getCustomerInfo['customer'],
-            );
-        }
-
-        $user = Helpers::getCustomerInformation(($data['requestObj'] ?? request()->all()));
-
-        $notificationSent = false;
-        foreach ($orderPlacedIds as $orderPlacedId) {
-            if (!$notificationSent && $user != 'offline') {
-                $getOrder = Order::where('id', $orderPlacedId)->first();
-                $referralUser = ReferralCustomer::where('user_id', $user['id'])->first();
-                if ($referralUser && $referralUser->is_used != 1 && $referralUser->ordered_notify != 1) {
-                    $orderPlacedNotificationEvents[] = [
-                        'notification' => true,
-                        'notificationData' => (object)[
-                            'key' => 'your_referred_customer_has_been_place_order',
-                            'type' => 'promoter',
-                            'order' => $getOrder,
-                        ],
-                    ];
+            $notificationSent = false;
+            foreach ($orderPlacedIds as $orderPlacedId) {
+                if (!$notificationSent && $user != 'offline') {
+                    $getOrder = Order::where('id', $orderPlacedId)->first();
+                    $referralUser = ReferralCustomer::where('user_id', $user['id'])->first();
+                    if ($referralUser && $referralUser->is_used != 1 && $referralUser->ordered_notify != 1) {
+                        $orderPlacedNotificationEvents[] = [
+                            'notification' => true,
+                            'notificationData' => (object)[
+                                'key' => 'your_referred_customer_has_been_place_order',
+                                'type' => 'promoter',
+                                'order' => $getOrder,
+                            ],
+                        ];
+                    }
+                    $notificationSent = true;
                 }
-                $notificationSent = true;
             }
-        }
 
-        if ($user != 'offline') {
-            ReferralCustomer::where('user_id', $user['id'])->update(['is_used' => 1]);
+            if ($user != 'offline') {
+                ReferralCustomer::where('user_id', $user['id'])->update(['is_used' => 1]);
+            }
+
+            DB::commit();
+        } catch (\Throwable $e) {
+            DB::rollBack();
+            throw $e;
         }
 
 

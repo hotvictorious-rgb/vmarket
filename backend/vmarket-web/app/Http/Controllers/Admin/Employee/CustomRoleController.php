@@ -49,6 +49,13 @@ class CustomRoleController extends BaseController
 
     public function add(CustomRoleRequest $request): RedirectResponse
     {
+        // [AI] Privilege Escalation Guard: Only primary Super Admin can create custom roles
+        $currentAdmin = auth('admin')->user();
+        if ($currentAdmin && $currentAdmin->id != 1 && ($currentAdmin->admin_role_id ?? 0) != 1) {
+            ToastMagic::error(translate('Access Denied: Custom role creation is restricted strictly to the Super Admin.'));
+            return back();
+        }
+
         $data = [
             'name' => $request['name'],
             'module_access' => json_encode($request['modules']),
@@ -70,6 +77,13 @@ class CustomRoleController extends BaseController
 
     public function update(CustomRoleRequest $request): RedirectResponse
     {
+        // [AI] Privilege Escalation Guard: Only primary Super Admin can update custom roles
+        $currentAdmin = auth('admin')->user();
+        if ($currentAdmin && $currentAdmin->id != 1 && ($currentAdmin->admin_role_id ?? 0) != 1) {
+            ToastMagic::error(translate('Access Denied: Custom role editing is restricted strictly to the Super Admin.'));
+            return back();
+        }
+
         $data = [
             'name' => $request['name'],
             'module_access' => json_encode($request['modules']),
