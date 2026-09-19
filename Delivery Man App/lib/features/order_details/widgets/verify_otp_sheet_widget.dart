@@ -104,47 +104,27 @@ class _VerifyDeliverySheetWidgetState extends State<VerifyDeliverySheetWidget> {
             Column(
               children: [
                 CustomButtonWidget(
-                  btnTxt: orderController.otpVerified ? 'cash_collected'.tr : 'submit'.tr,
+                  btnTxt: 'submit'.tr,
                   onTap: () async {
-                  if(orderController.otpVerified){
-                    orderController.updatePaymentStatus(orderId: widget.orderModel!.id, status: 'paid').then((value) {
-                      if (value?.statusCode == 200) {
-                        orderController.updateOrderStatus(orderId: widget.orderModel!.id,
-                            context: context, status: 'delivered').then((value) {
-                          Navigator.of(context).pushReplacement(MaterialPageRoute(
-                              builder: (_) => OrderDeliveredScreen(
-                                orderID: widget.orderModel!.id.toString(), orderModel: widget.orderModel)));
-                            });}});
-                  }else{
-                    if(otp.length == 6){
-                     orderController.otpVerificationForOrderVerification(orderId: widget.orderModel!.id, otp: otp).then((value){
-                       if(value?.statusCode == 200){
-                         if(widget.orderModel?.paymentStatus != 'paid'){
-                           orderController.toggleProceedToNext();
-                         }else{
-                           orderController.updateOrderStatus(orderId: widget.orderModel!.id,context: context,
-                               status: 'delivered').then((value) {
-                             Navigator.of(context).push(MaterialPageRoute(
-                                 builder: (_) => OrderDeliveredScreen(orderID: widget.orderModel!.id.toString(),
-                                   orderModel: widget.orderModel,)));
-                           });}
-                       }else{setState(() {invalidOtp = true;});}
-                     });
-                    }else{showCustomSnackBarWidget('input_valid_otp'.tr);}}}
-                ),
-                
-                if (orderController.otpVerified) ...[
-                  SizedBox(height: Dimensions.paddingSizeSmall),
-                  CustomButtonWidget(
-                    btnTxt: 'Pay via Paystack',
-                    onTap: () async {
-                      String? authUrl = await orderController.generatePaystackPaymentLink(widget.orderModel!.id!);
-                      if(authUrl != null) {
-                         _showPaystackPaymentSheet(context, authUrl);
-                      }
+                    if (otp.length == 6) {
+                      orderController.otpVerificationForOrderVerification(orderId: widget.orderModel!.id, otp: otp).then((value) {
+                        if (value?.statusCode == 200) {
+                          orderController.updateOrderStatus(orderId: widget.orderModel!.id, context: context, status: 'delivered').then((value) {
+                            Navigator.of(context).pushReplacement(MaterialPageRoute(
+                                builder: (_) => OrderDeliveredScreen(
+                                  orderID: widget.orderModel!.id.toString(),
+                                  orderModel: widget.orderModel,
+                                )));
+                          });
+                        } else {
+                          setState(() { invalidOtp = true; });
+                        }
+                      });
+                    } else {
+                      showCustomSnackBarWidget('input_valid_otp'.tr);
                     }
-                  ),
-                ]
+                  }
+                ),
               ],
             ),
 

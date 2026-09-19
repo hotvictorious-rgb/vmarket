@@ -6,7 +6,7 @@ import 'package:sixvalley_delivery_boy/features/order_details/widgets/camera_or_
 import 'package:sixvalley_delivery_boy/features/order_details/widgets/slider_button_widget.dart';
 import 'package:sixvalley_delivery_boy/features/order_details/widgets/verify_otp_sheet_widget.dart';
 import 'package:sixvalley_delivery_boy/features/order_details/widgets/verify_pickup_sheet_widget.dart';
-import 'package:sixvalley_delivery_boy/features/order_details/widgets/interstate_handover_sheet_widget.dart';
+// [AI] interstate_handover_sheet_widget removed for V1 compliance
 import 'package:sixvalley_delivery_boy/features/splash/controllers/splash_controller.dart';
 import 'package:sixvalley_delivery_boy/features/order/domain/models/order_model.dart';
 import 'package:flutter/cupertino.dart';
@@ -58,52 +58,13 @@ class OrderStatusChangeCustomButtonWidget extends StatelessWidget {
               baseColor: Theme.of(context).primaryColor),
           ),
 
-          if (orderModel!.orderStatus == 'out_for_delivery') ...[
-            const SizedBox(height: 8),
-            InkWell(
-              onTap: () => _showInterstateHandoverSheet(context),
-              child: Container(
-                width: MediaQuery.of(context).size.width - 55,
-                padding: const EdgeInsets.symmetric(vertical: 10),
-                decoration: BoxDecoration(
-                  color: const Color(0xFFE8F5E9),
-                  borderRadius: BorderRadius.circular(100),
-                  border: Border.all(color: const Color(0xFF4CAF50), width: 1.5),
-                ),
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    const Icon(Icons.directions_bus_rounded, color: Color(0xFF2E7D32), size: 18),
-                    const SizedBox(width: 8),
-                    Text(
-                      'Interstate Park Handover to Bus Driver'.tr,
-                      style: rubikBold.copyWith(color: const Color(0xFF1B5E20), fontSize: Dimensions.fontSizeSmall),
-                    ),
-                  ],
-                ),
-              ),
-            ),
-          ],
+          // [AI] Victorious MARKET V1 Directive 57321: Interstate driver handover bypass decommissioned.
         ],
       ),
     ):const SizedBox();
   }
 
-  void _showInterstateHandoverSheet(BuildContext context) {
-    showModalBottomSheet<void>(
-      backgroundColor: Colors.transparent,
-      isScrollControlled: true,
-      context: context,
-      builder: (BuildContext context) {
-        return Padding(
-          padding: EdgeInsets.only(bottom: MediaQuery.of(context).viewInsets.bottom),
-          child: InterstateHandoverSheetWidget(
-            orderModel: orderModel,
-          ),
-        );
-      },
-    );
-  }
+  // [AI] Victorious MARKET V1: _showInterstateHandoverSheet decommissioned
 
   void _handleProcessingStatus(BuildContext context) {
     _showVerifyPickupSheet(context);

@@ -114,10 +114,10 @@ class PaymentInfoWidget extends StatelessWidget {
                         borderRadius: BorderRadius.circular(8),
                       ),
                       child: Text(
-                        isPrepaid ? 'Prepaid (₦0)'.tr : 'Collect Cash / Paystack'.tr,
+                        'Prepaid (Online Paystack)'.tr,
                         style: rubikMedium.copyWith(
                           fontSize: Dimensions.fontSizeSmall,
-                          color: isPrepaid ? const Color(0xFF00A884) : const Color(0xFF6A1B9A),
+                          color: const Color(0xFF00A884),
                         ),
                       ),
                     ),
@@ -125,9 +125,7 @@ class PaymentInfoWidget extends StatelessWidget {
                 ),
                 const SizedBox(height: 8),
                 Text(
-                  isPrepaid
-                      ? '🔒 This order is fully paid online. Do NOT collect any money from the customer.'.tr
-                      : '⚠️ Collect exact cash before handover, or have customer pay via Paystack QR code at the door.'.tr,
+                  '🔒 This order is fully paid online. Do NOT collect any cash from the customer. Customer must provide 6-digit delivery OTP for handover.'.tr,
                   style: rubikRegular.copyWith(
                     fontSize: Dimensions.fontSizeSmall,
                     color: isDark ? Colors.white60 : Colors.grey[700],
