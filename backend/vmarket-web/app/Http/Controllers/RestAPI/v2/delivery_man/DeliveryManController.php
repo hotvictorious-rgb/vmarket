@@ -237,47 +237,19 @@ class DeliveryManController extends Controller
             }
 
             if (isset($deliveryMan['id']) && $request['status'] == 'delivered') {
-                Order::where(['id' => $request['order_id']])->update([
-                    'order_amount' => $order['order_amount'] + $order['edit_due_amount'],
-                    'payment_status' => 'paid',
-                    'edit_due_amount' => 0,
-                ]);
-                if ($order?->latestEditHistory) {
-                    OrderEditHistory::where(['id' => $order?->latestEditHistory?->id])->update([
-                        'order_due_payment_status' => 'paid',
-                        'order_due_payment_note' => 'Marked as paid by Delivery Man',
-                    ]);
-                }
-
-                $order = Order::with(['customer', 'deliveryMan', 'latestEditHistory'])
-                    ->where(['delivery_man_id' => $deliveryMan['id'], 'id' => $request['order_id']])->first();
                 $deliveryManWallet = DeliverymanWallet::where('delivery_man_id', $deliveryMan['id'])->first();
-
-                $cashInHand = 0;
-                if ($order->payment_method == 'cash_on_delivery') {
-                    // [AI] POD Dispatch Precision: Deduct any upfront dispatch fee already paid online from doorstep cash collection
-                    $cashInHand = (float)($order->doorstep_due_amount > 0 ? $order->doorstep_due_amount : ($order->order_amount - ($order->pod_dispatch_fee ?? 0)));
-                } else {
-                    if (
-                        $order?->latestEditHistory &&
-                        $order?->latestEditHistory?->order_due_payment_status == 'paid' &&
-                        $order?->latestEditHistory?->order_due_payment_method == 'cash_on_delivery'
-                    ) {
-                        $cashInHand += $order?->latestEditHistory?->order_due_amount ?? 0;
-                    }
-                }
+                $charge = $order->deliveryman_charge ?? 0;
 
                 if (empty($deliveryManWallet)) {
                     DeliverymanWallet::create([
                         'delivery_man_id' => $deliveryMan['id'],
-                        'current_balance' => $order?->deliveryman_charge ?? 0,
-                        'cash_in_hand' => $cashInHand,
+                        'current_balance' => $charge,
+                        'cash_in_hand' => 0,
                         'pending_withdraw' => 0,
                         'total_withdraw' => 0,
                     ]);
                 } else {
-                    $deliveryManWallet->cash_in_hand += $cashInHand;
-                    $deliveryManWallet->current_balance += $order->deliveryman_charge ?? 0;
+                    $deliveryManWallet->current_balance += $charge;
                     $deliveryManWallet->save();
                 }
             }

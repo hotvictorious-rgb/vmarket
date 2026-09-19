@@ -9,7 +9,6 @@ use App\Http\Requests\API\v1\RefundStoreRequest;
 use App\Models\Cart;
 use App\Models\Currency;
 use App\Models\DigitalProductOtpVerification;
-use App\Models\OfflinePaymentMethod;
 use App\Models\Order;
 use App\Models\OrderDetail;
 use App\Models\OrderDetailsRewards;
@@ -172,13 +171,11 @@ class OrderController extends Controller
             return response()->json(['message' => translate('order_cannot_be_cancelled_rider_assigned')], 403);
         }
 
-        // [AI] Dual Fulfillment Cancellation Rules:
-        // 1. In-Shop Pickup: Customer can cancel anytime before physical inspection and payment (unpaid status)
-        // 2. Doorstep COD: Customer can cancel while pending before merchant preparation/dispatch
+        // [AI] In-Shop Pickup Cancellation Rule:
+        // Customer can cancel anytime before physical inspection and payment (unpaid status)
         $isPickupUnpaid = ($order['order_type'] === 'pickup' && $order['payment_status'] === 'unpaid' && in_array($order['order_status'], ['pending', 'confirmed']));
-        $isCodPending = ($order['payment_method'] === 'cash_on_delivery' && $order['order_status'] === 'pending');
 
-        if ($isPickupUnpaid || $isCodPending) {
+        if ($isPickupUnpaid) {
             OrderManager::getStockUpdateOnOrderStatusChange($order, 'canceled');
             Order::where(['id' => $request->order_id])->update([
                 'order_status' => 'canceled'
@@ -683,11 +680,6 @@ class OrderController extends Controller
         return response()->json(['message' => 'All items were not added to cart as they are currently unavailable for purchase'], 403);
     }
 
-    public function offline_payment_method_list(Request $request): JsonResponse
-    {
-        $data = OfflinePaymentMethod::where('status', 1)->get();
-        return response()->json(['offline_methods' => $data], 200);
-    }
 
     public function track_order(Request $request): JsonResponse
     {

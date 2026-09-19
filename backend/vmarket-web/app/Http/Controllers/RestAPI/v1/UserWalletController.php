@@ -13,23 +13,7 @@ use Illuminate\Support\Facades\Validator;
 
 class UserWalletController extends Controller
 {
-    public function list(Request $request): JsonResponse
-    {
-        // [AI] Customer Wallet Decommissioned: Return 403 Forbidden
-        return response()->json([
-            'status' => false,
-            'message' => 'Customer wallet is permanently decommissioned in Victorious MARKET.',
-        ], 403);
-    }
 
-    public function bonus_list(Request $request): JsonResponse
-    {
-        // [AI] Customer Wallet Decommissioned: Return 403 Forbidden
-        return response()->json([
-            'status' => false,
-            'message' => 'Customer wallet bonuses are permanently decommissioned in Victorious MARKET.',
-        ], 403);
-    }
 
     public function getSelectTransactionTypes($types): array
     {

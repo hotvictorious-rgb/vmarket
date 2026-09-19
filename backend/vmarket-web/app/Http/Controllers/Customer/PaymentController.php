@@ -389,18 +389,6 @@ class PaymentController extends Controller
         return $this->generate_link($payer, $paymentInfo, $receiverInfo);
     }
 
-    public function customer_add_to_fund_request(Request $request): JsonResponse|Redirector|RedirectResponse
-    {
-        // [AI] Customer Wallet Decommissioned: Reject active wallet funding
-        if (in_array($request['payment_request_from'], ['app']) || $request->expectsJson()) {
-            return response()->json([
-                'status' => false,
-                'message' => 'Customer wallet funding is permanently decommissioned in Victorious MARKET.',
-            ], 403);
-        }
-        Toastr::error('Customer wallet funding is permanently decommissioned.');
-        return back();
-    }
 
     public function customerOrderEditPayDueAmount(Request $request)
     {

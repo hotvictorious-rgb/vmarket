@@ -29,7 +29,6 @@ use App\Http\Controllers\RestAPI\v1\ProductController;
 use App\Http\Controllers\RestAPI\v1\ReviewController;
 use App\Http\Controllers\RestAPI\v1\SellerController;
 use App\Http\Controllers\RestAPI\v1\ShippingMethodController;
-use App\Http\Controllers\RestAPI\v1\UserWalletController;
 use App\Http\Controllers\RestAPI\v1\FeedSyncController;
 use App\Http\Controllers\RestAPI\v1\DeliveryHubApiController;
 use App\Http\Controllers\RestAPI\v1\WhatsAppWebhookController;
@@ -352,13 +351,6 @@ Route::group(['prefix' => 'v1', 'middleware' => ['api_lang']], function () {
             });
         });
 
-        //wallet
-        Route::group(['prefix' => 'wallet'], function () {
-            Route::controller(UserWalletController::class)->group(function () {
-                Route::get('list', 'list');
-                Route::get('bonus-list', 'bonus_list');
-            });
-        });
 
         // Cashback Reward Ledger
         Route::group(['prefix' => 'cashback'], function () {
