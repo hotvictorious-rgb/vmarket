@@ -411,9 +411,13 @@ class DeliveryOrderSettlementService
             $verificationCode = random_int(100000, 999999);
             $pickupCode = random_int(100000, 999999);
 
-            $merchandiseSubtotal = (float) ($vendor['subtotal'] ?? 0.00);
-            $adminCommission = round($merchandiseSubtotal * 0.10, 2);
-            $orderAmount = (float) ($vendor['total'] ?? 0.00);
+            // Exact Integer / Decimal String via BCMath (zero float, zero drift, Δ = ₦0.00)
+            $subtotal = bcadd((string) ($vendor['subtotal'] ?? '0.00'), '0', 2);
+            $shippingCost = bcadd((string) ($vendor['shipping_cost'] ?? '0.00'), '0', 2);
+            $orderAmount = bcadd((string) ($vendor['total'] ?? '0.00'), '0', 2);
+            $rawCommission = bcdiv(bcmul($subtotal, '10', 4), '100', 4);
+            $adminCommission = bcadd($rawCommission, '0', 2);
+            $sellerAmount = bcsub($subtotal, $adminCommission, 2);
 
             $ordersData = [
                 'id' => $orderId,
@@ -427,6 +431,7 @@ class DeliveryOrderSettlementService
                 'customer_type' => 'customer',
                 'payment_status' => 'paid',
                 'order_status' => 'confirmed',
+                'vendor_settlement_status' => ($vendor['seller_is'] === 'seller') ? 'held' : null,
                 'payment_method' => 'paystack',
                 'transaction_ref' => $internalTxRef, // strictly internal ID; NEVER the Paystack reference
                 'order_group_id' => $intent->order_group_id,
@@ -446,7 +451,7 @@ class DeliveryOrderSettlementService
                 'billing_address' => $billingAddressData['id'] ?? null,
                 'billing_address_data' => $billingAddressData ? json_encode($billingAddressData) : null,
                 'shipping_responsibility' => 'inhouse_shipping',
-                'shipping_cost' => (float) ($vendor['shipping_cost'] ?? 0.00),
+                'shipping_cost' => $shippingCost,
                 'shipping_method_id' => (int) ($vendor['shipping_method_id'] ?? 0),
                 'created_at' => now(),
                 'updated_at' => now(),

@@ -141,6 +141,21 @@ class OrderManager
             return;
         }
 
+        // [AI] Commit 7 settlement hold gate.
+        // Blocks automatic disbursement for third-party seller orders not yet cleared for payout.
+        // 'settled'      → already paid (legacy backfill or V1 manual settlement) → pass through.
+        // null           → VMarket-owned (seller_is guard above prevents reaching here).
+        // 'held'         → Commit 7 lifecycle; 24h window in progress → BLOCK.
+        // 'disputed'     → active refund dispute → BLOCK.
+        // 'legacy_hold'  → unresolvable historical receipt; manual review required → BLOCK.
+        if (
+            $order->seller_is === 'seller'
+            && $order->order_status === 'delivered'
+            && in_array($order->vendor_settlement_status, ['held', 'disputed', 'legacy_hold'], true)
+        ) {
+            return; // [AI] Hold: do NOT disburse vendor earnings
+        }
+
         // [AI] Victorious MARKET Customer Cashback: 5% on eligible merchandise value (Reward Ledger)
         \App\Models\CustomerCashbackLedger::creditRewardForOrder($order);
 
@@ -388,6 +403,88 @@ class OrderManager
             $wallet->total_tax_collected += $order_summary['total_tax'];
             $wallet->save();
         }
+    }
+
+    /**
+     * [AI] Authoritative manual settlement execution method for Commit 7 post-receipt lifecycle.
+     * Called only by VendorSettlementService when Super Admin disburses an eligible third-party order.
+     */
+    public static function disburseSettledVendorOrder(Order $order, string $adminReference, int $adminId): void
+    {
+        if ($order->seller_is !== 'seller') {
+            throw new \InvalidArgumentException("In-house VMarket orders do not undergo vendor settlement.");
+        }
+
+        if (in_array($order->vendor_settlement_status, ['refunded', 'legacy_hold'], true)) {
+            throw new \RuntimeException("Cannot disburse vendor earnings for order in status '{$order->vendor_settlement_status}'.");
+        }
+
+        DB::transaction(function () use ($order, $adminReference, $adminId) {
+            $lockedOrder = Order::where('id', $order->id)->lockForUpdate()->first();
+            if (!$lockedOrder || $lockedOrder->vendor_settlement_status === 'settled') {
+                return;
+            }
+
+            if (in_array($lockedOrder->vendor_settlement_status, ['refunded', 'legacy_hold'], true)) {
+                throw new \RuntimeException("Cannot disburse vendor earnings for order in status '{$lockedOrder->vendor_settlement_status}'.");
+            }
+
+            $order_summary = OrderManager::getOrderTotalAndSubTotalAmountSummary($lockedOrder);
+            $subtotal = bcadd((string)($order_summary['subtotal'] ?? '0.00'), '0', 2);
+            if (bccomp($subtotal, '0.00', 2) <= 0) {
+                $subtotal = bcsub((string)($lockedOrder->order_amount ?? '0.00'), (string)($lockedOrder->shipping_cost ?? '0.00'), 2);
+            }
+            $rawCommission = bcdiv(bcmul($subtotal, '10', 4), '100', 4);
+            $commission = bcadd($rawCommission, '0', 2);
+            $vendorAmount = bcsub($subtotal, $commission, 2);
+
+            // Update transaction status to disburse
+            $transaction = OrderTransaction::where('order_id', $lockedOrder->id)
+                ->where('status', 'hold')
+                ->lockForUpdate()
+                ->first();
+
+            if ($transaction) {
+                $transaction->status = 'disburse';
+                $transaction->save();
+            }
+
+            // Decrement AdminWallet pending_amount
+            $adminWallet = AdminWallet::where('admin_id', 1)->lockForUpdate()->first();
+            if ($adminWallet) {
+                $orderAmountStr = bcadd((string)($lockedOrder->order_amount ?? '0.00'), '0', 2);
+                $adminWallet->pending_amount = max(0.00, (float)bcsub((string)$adminWallet->pending_amount, $orderAmountStr, 2));
+                $adminWallet->save();
+            }
+
+            // Increment SellerWallet total_earning
+            if (!SellerWallet::where('seller_id', $lockedOrder->seller_id)->exists()) {
+                DB::table('seller_wallets')->insert([
+                    'seller_id' => $lockedOrder->seller_id,
+                    'withdrawn' => 0,
+                    'commission_given' => 0,
+                    'total_earning' => 0,
+                    'pending_withdraw' => 0,
+                    'delivery_charge_earned' => 0,
+                    'collected_cash' => 0,
+                    'created_at' => now(),
+                    'updated_at' => now(),
+                ]);
+            }
+            $sellerWallet = SellerWallet::where('seller_id', $lockedOrder->seller_id)->lockForUpdate()->first();
+            if ($sellerWallet) {
+                $sellerWallet->total_earning = (float)bcadd((string)$sellerWallet->total_earning, $vendorAmount, 2);
+                $sellerWallet->commission_given = (float)bcadd((string)$sellerWallet->commission_given, $commission, 2);
+                $sellerWallet->save();
+            }
+
+            // Update Order record
+            $lockedOrder->vendor_settlement_status = 'settled';
+            $lockedOrder->settled_at = now();
+            $lockedOrder->settlement_reference = $adminReference;
+            $lockedOrder->settled_by_id = $adminId;
+            $lockedOrder->save();
+        });
     }
 
     public static function getOrderAddressId(string|null $type = 'shipping_address', int|null $id = null): int|null
@@ -979,6 +1076,7 @@ class OrderManager
             'customer_type' => 'customer',
             'payment_status' => $orderData['payment_status'],
             'order_status' => $orderData['order_status'],
+            'vendor_settlement_status' => ($cartData['seller_is'] === 'seller') ? 'held' : null,
             'payment_method' => $orderData['payment_method'],
             'transaction_ref' => $orderData['transaction_ref'] ?? null,
             'payment_by' => $orderData['payment_by'] ?? NULL,

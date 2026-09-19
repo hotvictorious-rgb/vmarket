@@ -141,14 +141,18 @@ class InShopHandoverController extends Controller
 
         DB::transaction(function () use ($order, $sellerId, $staffName, $branchId, $request, $isCustomerPickup) {
             if ($isCustomerPickup) {
-                // [AI] Customer Pickup Complete Handover:
-                // Order transitions directly to 'delivered'.
-                // Merchant 90% settlement and 5% Customer Cashback are settled.
+                $now = now();
+                $handedOverAt = $order->handed_over_at ?? $now;
+                $receivedAt = $order->received_at ?? $handedOverAt;
+                $expiresAt = $order->refund_window_expires_at ?? (clone $receivedAt)->addHours(24);
+
                 $order->order_status = 'delivered';
                 $order->payment_status = 'paid';
                 $order->handed_over_by_id = $sellerId;
                 $order->handed_over_by_name = $staffName;
-                $order->handed_over_at = now();
+                $order->handed_over_at = $handedOverAt;
+                $order->received_at = $receivedAt;
+                $order->refund_window_expires_at = $expiresAt;
                 $order->handover_branch_id = $branchId;
                 $order->save();
 
@@ -166,7 +170,7 @@ class InShopHandoverController extends Controller
                     'delivery_man_id' => null,
                     'delivery_man_name' => 'Customer In-Person Pickup',
                     'pickup_otp_used' => $request->pickup_otp,
-                    'handed_over_at' => now(),
+                    'handed_over_at' => $handedOverAt,
                     'notes' => $request->notes ?? 'In-shop customer pickup verified and released via 6-digit cryptographic code',
                 ]);
 
@@ -179,7 +183,7 @@ class InShopHandoverController extends Controller
                 $this->orderStatusHistoryRepo->add($historyData);
                 OrderManager::removeOldStatusHistory(orderId: $order->id, orderStatus: 'delivered');
 
-                // Settle merchant wallet (90%) and admin commission (10%)
+                // Settle merchant wallet (90%) and admin commission (10%) - subject to Commit 7 hold gate
                 OrderManager::getWalletManageOnOrderStatusChange($order, 'delivered');
 
                 // Credit 5% Customer Cashback Reward Ledger
@@ -190,11 +194,14 @@ class InShopHandoverController extends Controller
                 // [AI] Vendor -> Rider Delivery Handshake:
                 // Order ready -> rider arrives with pickup OTP -> order becomes OUT_FOR_DELIVERY.
                 // Final settlement is deferred until customer delivery OTP is verified at doorstep.
+                $now = now();
                 $order->order_status = 'out_for_delivery';
                 $order->handed_over_by_id = $sellerId;
                 $order->handed_over_by_name = $staffName;
-                $order->handed_over_at = now();
+                $order->handed_over_at = $now;
                 $order->handover_branch_id = $branchId;
+                $order->rider_picked_up_at = $order->rider_picked_up_at ?? $now;
+                $order->rider_picked_up_by = $order->delivery_man_id;
                 $order->save();
 
                 OrderDetail::where('order_id', $order->id)->update([

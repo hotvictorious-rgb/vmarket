@@ -43,7 +43,8 @@ class WhatsAppAutomationWorkflow
      */
     public static function triggerOrderDeliveredNotification(Order $order): void
     {
-        $phone = $order->customer?->phone ?? $order->billing_address_data['phone'] ?? null;
+        $billing = is_array($order->billing_address_data) ? $order->billing_address_data : (array)($order->billing_address_data ?? []);
+        $phone = $order->customer?->phone ?? ($billing['phone'] ?? null);
         if (empty($phone)) return;
 
         $customerName = $order->customer ? $order->customer->f_name : 'Customer';

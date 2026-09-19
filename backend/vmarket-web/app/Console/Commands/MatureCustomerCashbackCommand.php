@@ -40,10 +40,17 @@ class MatureCustomerCashbackCommand extends Command
 
         $now = Carbon::now();
 
-        // 1. Fetch count of pending rewards ready for maturity
+        // 1. Fetch unresolved refund order IDs
+        $unresolvedOrderIds = \App\Models\RefundRequest::whereNotIn('status', ['rejected', 'refunded'])
+            ->pluck('order_id')
+            ->unique()
+            ->toArray();
+
+        // 2. Fetch count of pending rewards ready for maturity (no open disputes)
         $query = CustomerCashbackLedger::where('status', 'pending')
             ->whereNotNull('available_at')
-            ->where('available_at', '<=', $now);
+            ->where('available_at', '<=', $now)
+            ->whereNotIn('order_id', $unresolvedOrderIds);
 
         $count = $query->count();
 
@@ -52,10 +59,11 @@ class MatureCustomerCashbackCommand extends Command
             return Command::SUCCESS;
         }
 
-        // 2. Perform atomic batch update
+        // 3. Perform atomic batch update
         $affected = CustomerCashbackLedger::where('status', 'pending')
             ->whereNotNull('available_at')
             ->where('available_at', '<=', $now)
+            ->whereNotIn('order_id', $unresolvedOrderIds)
             ->update([
                 'status' => 'available',
                 'updated_at' => $now,

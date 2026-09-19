@@ -268,6 +268,7 @@ graph TD
 
 ## 📜 Governance & Authoritative Documentation
 
+* **V1 Master Business Rulebook (42 Rules):** [`V1_BUSINESS_RULEBOOK.md`](file:///c:/Users/SOOQ%20ELASER/Downloads/vmarket/V1_BUSINESS_RULEBOOK.md)
 * **Operating Company Model Blueprint:** [`OPERATING_COMPANY_MODEL.md`](file:///c:/Users/SOOQ%20ELASER/Downloads/vmarket/OPERATING_COMPANY_MODEL.md)
 * **Mathematical & Systemic Proof Invariants:** [`VICTORIOUS_MARKET_MATHEMATICAL_AND_SYSTEMIC_PROOF.md`](file:///c:/Users/SOOQ%20ELASER/Downloads/vmarket/VICTORIOUS_MARKET_MATHEMATICAL_AND_SYSTEMIC_PROOF.md)
 * **Engineering Directives & Architecture:** [`AI_ENGINEERING_RULES.md`](file:///c:/Users/SOOQ%20ELASER/Downloads/vmarket/AI_ENGINEERING_RULES.md) \| [`ARCHITECTURE.md`](file:///c:/Users/SOOQ%20ELASER/Downloads/vmarket/ARCHITECTURE.md)

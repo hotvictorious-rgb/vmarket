@@ -164,12 +164,32 @@ class DeliveryManController extends Controller
         }
 
         if ($request['status'] == 'out_for_delivery') {
+            // [AI] Phase 1 Idempotency Guard: same rider retrying already collected order
+            if ($order->order_status === 'out_for_delivery') {
+                if ($order->delivery_man_id === $deliveryMan['id']) {
+                    return response()->json(['success' => 1, 'message' => translate('Already collected')], 200);
+                }
+                return response()->json(['success' => 0, 'message' => translate('Order already collected by another rider')], 409);
+            }
+
+            if ($order->order_status === 'delivered') {
+                return response()->json(['success' => 0, 'message' => translate('Order is already delivered.')], 422);
+            }
+
+            if (!in_array($order->order_status, ['processing', 'confirmed'], true)) {
+                return response()->json(['success' => 0, 'message' => translate('Order is not in a collectible state')], 422);
+            }
+
             if (!isset($request['pickup_verification_code']) || !hash_equals((string)$order->pickup_verification_code, (string)$request['pickup_verification_code'])) {
                 return response()->json(['success' => 0, 'message' => translate('invalid_pickup_otp')], 403);
             }
         }
 
         if ($request['status'] == 'delivered') {
+            if ($order->order_status !== 'out_for_delivery') {
+                return response()->json(['success' => 0, 'message' => translate('Order must be out for delivery before customer receipt can be verified.')], 422);
+            }
+
             $order_verification = getWebConfig(name: 'order_verification');
             if ($order_verification == 1) {
                 if (isset($request['verification_code']) && hash_equals((string)$order->verification_code, (string)$request['verification_code'])) {
@@ -183,12 +203,27 @@ class DeliveryManController extends Controller
 
         DB::beginTransaction();
         try {
+            $now = now();
+            $updatePayload = [
+                'order_status' => $request['status'],
+                'cause' => $cause
+            ];
+
+            if ($request['status'] == 'out_for_delivery') {
+                $updatePayload['rider_picked_up_at'] = $order->rider_picked_up_at ?? $now;
+                $updatePayload['rider_picked_up_by'] = $deliveryMan['id'];
+            }
+
+            if ($request['status'] == 'delivered') {
+                $receivedAt = $order->received_at ?? $now;
+                $expiresAt = $order->refund_window_expires_at ?? (clone $receivedAt)->addHours(24);
+                $updatePayload['received_at'] = $receivedAt;
+                $updatePayload['refund_window_expires_at'] = $expiresAt;
+            }
+
             $affected = Order::where(['id' => $request['order_id'], 'delivery_man_id' => $deliveryMan['id']])
                 ->where('order_status', '!=', 'delivered')
-                ->update([
-                    'order_status' => $request['status'],
-                    'cause' => $cause
-                ]);
+                ->update($updatePayload);
 
             if ($affected == 0 && $request['status'] == 'delivered') {
                 DB::rollBack();
@@ -246,6 +281,10 @@ class DeliveryManController extends Controller
                 OrderDetail::where('order_id', $order->id)->update(
                     ['delivery_status' => 'delivered']
                 );
+            }
+
+            if ($request['status'] == 'delivered') {
+                \App\Models\CustomerCashbackLedger::creditRewardForOrder($order->fresh());
             }
 
             DB::commit();
@@ -837,6 +876,13 @@ class DeliveryManController extends Controller
 
         if (!$order) {
             return response()->json(['message' => translate('order_not_found_or_not_assigned_to_you')], 404);
+        }
+
+        $isSelfPickup = ($order->order_type === 'pickup')
+            || ($order->delivery_type === 'self_pickup')
+            || ($order->shipping && stripos($order->shipping->title, 'pickup') !== false);
+        if ($isSelfPickup) {
+            return response()->json(['message' => translate('Customer self-pickup orders cannot be processed by delivery riders.')], 403);
         }
 
         if (hash_equals((string)$order->verification_code, (string)$request['verification_code'])) {

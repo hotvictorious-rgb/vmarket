@@ -152,6 +152,15 @@ class Order extends Model
         'receipt_verified_by',
         'receipt_verified_at',
         'edited_status',
+        'received_at',
+        'refund_window_expires_at',
+        'vendor_settlement_status',
+        'rider_picked_up_at',
+        'rider_picked_up_by',
+        'settled_at',
+        'settled_by_id',
+        'settlement_reference',
+        'is_delivery_fee_refunded',
         'updated_at'
     ];
 
@@ -168,6 +177,15 @@ class Order extends Model
         'receipt_metadata' => 'array',
         'receipt_verified_by' => 'integer',
         'receipt_verified_at' => 'datetime',
+        'received_at' => 'datetime',
+        'refund_window_expires_at' => 'datetime',
+        'rider_picked_up_at' => 'datetime',
+        'rider_picked_up_by' => 'integer',
+        'settled_at' => 'datetime',
+        'settled_by_id' => 'integer',
+        'vendor_settlement_status' => 'string',
+        'settlement_reference' => 'string',
+        'is_delivery_fee_refunded' => 'boolean',
         'payment_by' => 'string',
         'payment_note' => 'string',
         'order_amount' => 'float',
@@ -218,6 +236,37 @@ class Order extends Model
         'third_party_delivery_tracking_id' => 'string',
         'edited_status' => 'integer'
     ];
+
+    /**
+     * [AI] Check if order is currently within its 24-hour return window after customer receipt.
+     */
+    public function isWithinRefundWindow(): bool
+    {
+        return $this->received_at !== null
+            && $this->refund_window_expires_at !== null
+            && now()->lessThanOrEqualTo($this->refund_window_expires_at);
+    }
+
+    /**
+     * [AI] Check if the 24-hour return window after customer receipt has expired.
+     */
+    public function isRefundWindowExpired(): bool
+    {
+        return $this->received_at !== null
+            && $this->refund_window_expires_at !== null
+            && now()->greaterThan($this->refund_window_expires_at);
+    }
+
+    /**
+     * [AI] Check if there is an active (unresolved) refund request for this order.
+     * Terminal statuses are strictly 'rejected' and 'refunded'.
+     */
+    public function hasUnresolvedRefund(): bool
+    {
+        return \App\Models\RefundRequest::where('order_id', $this->id)
+            ->whereNotIn('status', ['rejected', 'refunded'])
+            ->exists();
+    }
 
 
     public function details(): HasMany

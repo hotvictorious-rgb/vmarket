@@ -100,7 +100,7 @@ class CustomerCashbackLedger extends Model
             'cashback_rate' => $cashbackRate,
             'cashback_amount' => $cashbackAmount,
             'status' => 'pending',
-            'available_at' => now()->addDays(7), // 7-day return inspection window
+            'available_at' => $order->refund_window_expires_at ?? now()->addHours(24), // 24-hour return inspection window
             'description' => "5% Victorious Cashback Reward for Order #{$order->id}",
         ]);
     }

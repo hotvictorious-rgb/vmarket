@@ -463,10 +463,10 @@ class OrderController extends Controller
 
             $expired = false;
             $already_requested = false;
-            if ($order_details->refund_request != 0) {
+            if ($orderDetails->refund_request != 0) {
                 $already_requested = true;
             }
-            if (!is_null($order_details?->refund_started_at) && $order_details?->refund_started_at?->diffInDays(Carbon::now()) > getWebConfig(name: 'refund_day_limit')) {
+            if (!$order->isWithinRefundWindow()) {
                 $expired = true;
             }
             return response()->json(['already_requested' => $already_requested, 'expired' => $expired, 'refund' => $data], 200);
@@ -487,6 +487,15 @@ class OrderController extends Controller
             ->first();
         if (!$parentOrder) {
             return response()->json(['message' => translate('unauthorized_access')], 403);
+        }
+
+        // [AI] Receipt-first guard: merchandise return requires confirmed customer receipt.
+        // An order with received_at = NULL has no 24-hour window and cannot enter this path.
+        // Undelivered orders follow the separate executeUndeliveredOrderRefund() path only.
+        if (!$parentOrder->isWithinRefundWindow()) {
+            return response()->json([
+                'message' => translate('refund_not_available_order_must_be_received_and_within_24_hour_return_window')
+            ], 403);
         }
 
         // [AI] Delivery status guard: refund only allowed after delivery
@@ -535,6 +544,13 @@ class OrderController extends Controller
 
         $refund_request->save();
         $orderDetails->update(['refund_request' => 1]);
+
+        // [AI] Transition third-party order to disputed during refund dispute window
+        if ($parentOrder->seller_is === 'seller') {
+            $parentOrder->vendor_settlement_status = 'disputed';
+            $parentOrder->save();
+        }
+
         $order = Order::find($orderDetails->order_id);
 
         event(new RefundEvent(

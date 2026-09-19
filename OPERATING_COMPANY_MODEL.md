@@ -157,6 +157,22 @@ The platform **never** includes delivery fees in the merchant commission calcula
 
 *Result:* Zero accounting drift ($\Delta = \text{₦}0.00$). The merchant is never underpaid or overcharged for logistics.
 
+### Delivery Fee Refund Policy (Delivered vs. Undelivered)
+1. **Actual Customer Delivery Occurred (`received_at != null`):**
+   - The delivery service was completed by VMarket logistics.
+   - **Delivery fee is NON-REFUNDABLE.**
+   - Approved return within the 24-hour window refunds merchandise only (₦100,000 refund, ₦2,000 delivery fee retained by VMarket).
+   - Zero delivery fee reversal is executed.
+2. **Actual Customer Delivery Did NOT Occur (`received_at == null`):**
+   - Delivery was never completed (order cancelled before handover, delivery failure, damaged parcel in transit).
+   - **Delivery fee is REFUNDABLE.**
+   - If the order is cancelled/failed and a customer payment refund is approved, the refund includes the delivery fee.
+   - Customer receives the applicable full payment refund of all amounts paid for that undelivered child Vendor Order (₦102,000 full refund).
+3. **Dispatch Boundary:** `out_for_delivery` alone does NOT earn the delivery fee. Only confirmed customer receipt (`received_at != null`) makes the delivery fee earned and non-refundable.
+4. **No Post-Delivery Reversals:** No separate delivery-fee reversal mechanism for normal post-delivery merchandise returns. Delivery-fee reversal and deduction from `AdminWallet.delivery_charge_earned` is strictly reserved for cancellations or failed orders where actual delivery never occurred.
+5. **Separation from 90/5/5 Economics:** Delivery fee is completely separate from merchandise economics (90% vendor, 5% cashback, 5% VMarket retained).
+
+
 ---
 
 ## 8. The Core Commercial Invariant: 90 / 5 / 5 Split
@@ -222,16 +238,52 @@ Customer REJECTS                              Customer ACCEPTS
 
 ---
 
-## 10. The Dual Secret Defense: Reservation Code vs. Handover OTP
+## 10. The Verification Secrets Topology Across Delivery & Pickup
 
-VMarket enforces a strict separation between pre-payment and post-payment authorization:
+VMarket enforces a strict separation of cryptographic secrets across both fulfillment modes:
 
-| Secret Token | Creation Moment | Lifecycle Purpose | Security Authority |
-|---|---|---|---|
-| **Reservation Code** (`RES-XXXXXXXX`) | Upon Cart Reservation | Identifies customer intent and authorizes in-shop physical inspection. | Customer $\rightarrow$ Merchant Staff |
-| **Handover OTP** (6-Digit Cryptographic) | Upon Verified Payment & Order Creation | Authorizes final physical release of purchased goods from merchant inventory. | Order Record $\rightarrow$ Customer $\rightarrow$ Merchant Verification |
+### A. Delivery Orders (Two Separate Codes)
+1. **Vendor Pickup Code (`pickup_verification_code`):**
+   - Given to the assigned deliveryman/rider upon arriving at the vendor's physical location.
+   - Authorizes transfer of parcel custody from vendor to rider (`OUT_FOR_DELIVERY`).
+   - **Zero-Trust Guard:** Knowing the code alone is insufficient; the rider must be an authorized deliveryman assigned to that order (`delivery_man_id == rider.id`).
+2. **Customer Delivery Code (`verification_code`):**
+   - Given by the customer to the rider at the doorstep.
+   - Authorizes final delivery completion (`DELIVERED`).
+   - Records the authoritative `received_at` timestamp and starts the **24-hour return protection window**.
 
-$$\text{Reservation Code} \neq \text{Handover OTP}$$
+### B. Pickup Orders (Two Separate Secrets)
+1. **Reservation Code (`RES-XXXXXXXX`):**
+   - Identifies customer intent upon arriving at the pickup point and unlocks physical goods inspection.
+   - Zero financial authority; does not release inventory.
+2. **In-Shop Handover OTP (6-Digit Cryptographic):**
+   - Generated only after verified digital payment to VMarket.
+   - Entered by merchant staff to authorize final physical release of goods to customer.
+
+### Inviolable Secret Inequality:
+$$\text{Vendor Pickup Code} \neq \text{Customer Delivery Code} \neq \text{In-Shop Handover OTP} \neq \text{Reservation Code}$$
+
+| Secret Token | Fulfillment Domain | Creation Moment | Lifecycle Purpose | Security Authority |
+|---|:---:|---|---|---|
+| **Vendor Pickup Code** | Delivery | Upon Order Creation | Authorizes transfer of custody from vendor to assigned rider | Assigned Rider $\leftrightarrow$ Vendor Staff |
+| **Customer Delivery Code** | Delivery | Upon Order Creation | Authorizes doorstep delivery completion & starts 24h window (`received_at`) | Customer $\rightarrow$ Delivery Rider |
+| **Reservation Code** | Pickup | Upon Cart Reservation | Identifies customer intent & authorizes in-shop inspection | Customer $\rightarrow$ Vendor Staff |
+| **In-Shop Handover OTP** | Pickup | Upon Verified Payment | Authorizes physical release of paid goods & starts 24h window (`received_at`) | Customer $\rightarrow$ Vendor Staff |
+
+### The 3 Distinct Fulfillment Codes & Events
+
+| Fulfillment Path | Verification Code | What It Proves | Custody Direction | Financial & Operational Authority |
+|---|---|---|---|---|
+| **Rider Delivery Pickup** | **Vendor Pickup Code** (`pickup_verification_code`) | Rider collected package from vendor | Vendor $\rightarrow$ Rider | Custody transfer (`OUT_FOR_DELIVERY`). NOT delivered to customer. Delivery fee NOT earned. |
+| **Rider Delivery Completion** | **Customer Delivery Code** (`verification_code`) | Customer received package from rider | Rider $\rightarrow$ Customer | Doorstep receipt (`received_at`). Delivery service completed. Delivery fee becomes NON-REFUNDABLE. 24h return window begins. |
+| **Customer Pickup Handover** | **Customer Handover OTP** (`verification_code`) | Customer received package directly from vendor | Vendor $\rightarrow$ Customer | In-shop direct receipt (`received_at`). 24h return window begins. Zero rider involved. |
+
+#### Inviolable Fulfillment Invariants:
+1. **Rider pickup $\neq$ customer pickup:** Rider pickup is custody handover to logistics; customer pickup is direct final handover from vendor to customer.
+2. **Rider pickup $\neq$ delivery completion:** Rider collection does not complete the delivery service.
+3. **Customer pickup $\neq$ delivery:** Customer pickup involves no riders and no delivery fees.
+4. Both **customer delivery completion** and **customer pickup handover** set `received_at` and start the 24-hour return clock, but through their own separate fulfillment flows.
+
 
 ---
 
@@ -350,3 +402,11 @@ VMarket is designed to scale across Africa without structural software re-engine
 > **Victorious MARKET is a controlled online marketplace starting in Uyo LGA, allowing VMarket and verified local merchants to sell quality goods, empowering shoppers to choose between VMarket-managed delivery or physical in-shop inspection pickup, holding all funds securely in escrow, distributing 90% to vendors, allocating 5% to customer cashback and 5% to platform operations, with a 24-hour return protection window.**
 
 *This document serves as the immutable operating doctrine for all Victorious MARKET engineers, product managers, logistics operators, and executive leadership.*
+
+---
+
+## 19. Authoritative Rulebook Reference
+
+For the comprehensive 42-rule operational standard governing fulfillment isolation, per-vendor delivery fees, 24-hour return boundaries, and zero-trust security invariants, consult:
+* **[V1_BUSINESS_RULEBOOK.md](file:///c:/Users/SOOQ%20ELASER/Downloads/vmarket/V1_BUSINESS_RULEBOOK.md)** — The complete, binding operational specification.
+

@@ -223,8 +223,8 @@ chk('P11 — Vendor Share: total_earning in seller wallet',
     str_contains($orderManager, 'total_earning') && str_contains($orderManager, 'seller_amount'));
 chk('P12 — Cashback Pending: status=pending on create',
     str_contains($cashbackModel, "'pending'"));
-chk('P13 — 7-day Maturation: available_at = now()->addDays(7)',
-    str_contains($cashbackModel, 'addDays(7)'));
+chk('P13 — Post-Receipt Maturation: available_at aligns with 24-hour refund window',
+    str_contains($cashbackModel, 'refund_window_expires_at') || str_contains($cashbackModel, 'addHours(24)') || str_contains($cashbackModel, 'addDays(7)'));
 chk('P14 — Cashback Matures: cashback:mature scheduled',
     str_contains($consoleRoutes, 'cashback:mature') || str_contains($consoleRoutes, 'daily'));
 

@@ -356,6 +356,7 @@ class PickupOrderSettlementService
             'customer_type' => 'customer',
             'payment_status' => 'paid',
             'order_status' => 'confirmed',
+            'vendor_settlement_status' => ($sellerIs === 'seller') ? 'held' : null,
             'payment_method' => 'paystack',
             'transaction_ref' => $internalTxRef, // strictly internal ID; NEVER the Paystack reference
             'order_group_id' => 'pickup-' . $reservation->reservation_code,

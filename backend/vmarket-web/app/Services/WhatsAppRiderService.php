@@ -125,6 +125,30 @@ class WhatsAppRiderService
             return ['status' => false, 'message' => "Order #{$orderId} is not assigned to your route."];
         }
 
+        $isSelfPickup = ($order->order_type === 'pickup')
+            || ($order->delivery_type === 'self_pickup')
+            || ($order->shipping && stripos($order->shipping->title, 'pickup') !== false);
+        if ($isSelfPickup) {
+            return ['status' => false, 'message' => 'Pickup orders cannot be processed by delivery riders.'];
+        }
+
+        // [AI] Phase 1 Idempotency Guard: same rider retrying already collected order
+        if ($order->order_status === 'out_for_delivery') {
+            return [
+                'status' => true,
+                'order_id' => $orderId,
+                'message' => "Order #{$orderId} was already collected and is Out for Delivery.",
+            ];
+        }
+
+        if ($order->order_status === 'delivered') {
+            return ['status' => false, 'message' => "Order #{$orderId} is already delivered."];
+        }
+
+        if (!in_array($order->order_status, ['processing', 'confirmed'], true)) {
+            return ['status' => false, 'message' => "Order #{$orderId} is not in a collectible state."];
+        }
+
         $lockKey = "rider_pickup_attempts_{$orderId}";
         $attempts = (int)\Illuminate\Support\Facades\Cache::get($lockKey, 0);
         if ($attempts >= 5) {
@@ -148,8 +172,11 @@ class WhatsAppRiderService
 
         \Illuminate\Support\Facades\Cache::forget($lockKey);
 
+        $now = now();
         $order->update([
             'order_status' => 'out_for_delivery',
+            'rider_picked_up_at' => $order->rider_picked_up_at ?? $now,
+            'rider_picked_up_by' => $rider->id,
         ]);
 
         return [
@@ -177,8 +204,19 @@ class WhatsAppRiderService
             return ['status' => false, 'message' => "Order #{$orderId} is not assigned to your delivery route."];
         }
 
+        $isSelfPickup = ($order->order_type === 'pickup')
+            || ($order->delivery_type === 'self_pickup')
+            || ($order->shipping && stripos($order->shipping->title, 'pickup') !== false);
+        if ($isSelfPickup) {
+            return ['status' => false, 'message' => 'Pickup orders cannot be processed by delivery riders.'];
+        }
+
         if ($order->order_status === 'delivered') {
             return ['status' => false, 'message' => "Order #{$orderId} has already been marked delivered."];
+        }
+
+        if ($order->order_status !== 'out_for_delivery') {
+            return ['status' => false, 'message' => "Order #{$orderId} must be out for delivery before customer receipt can be verified."];
         }
 
         // [AI] Brute-Force Rate Limiter: Max 5 attempts per order (15-min lockout)
@@ -208,12 +246,23 @@ class WhatsAppRiderService
 
         // OTP Matches! Complete delivery atomically
         DB::transaction(function () use ($order) {
+            $now = now();
+            $receivedAt = $order->received_at ?? $now;
+            $expiresAt = $order->refund_window_expires_at ?? (clone $receivedAt)->addHours(24);
             $order->update([
                 'order_status' => 'delivered',
                 'payment_status' => 'paid',
-                'delivered_at' => now(),
+                'received_at' => $receivedAt,
+                'refund_window_expires_at' => $expiresAt,
+            ]);
+
+            \App\Utils\OrderManager::getWalletManageOnOrderStatusChange($order, 'delivery man');
+            \App\Models\OrderDetail::where('order_id', $order->id)->update([
+                'delivery_status' => 'delivered',
             ]);
         });
+
+        \App\Models\CustomerCashbackLedger::creditRewardForOrder($order->fresh());
 
         // Trigger customer delivery confirmation
         \App\Services\WhatsAppAutomationWorkflow::triggerOrderDeliveredNotification($order);

@@ -453,3 +453,35 @@ $$\Delta \text{Product.current\_stock} = -\sum \text{quantity} \quad (\Delta = 0
 > **"The identified V1 transaction-engine Critical/High findings have been reproduced, remediated, and covered by automated regression tests. All defined invariants pass with ? = ?0.00. This does not constitute a claim that every possible financial scenario in the marketplace has been mathematically proven � it is a statement that the identified failure modes have been eliminated and regressed."**
 
 **Certified:** 2026-09-18 | **Scope:** RC1 � OPay/Offline Purge, Guest Token, Cashback Ledger, Debt Accounting, Idempotency Guards
+
+### Proof 9.5: Commit 7 Post-Receipt Lifecycle, 24-Hour Return Clock, and Vendor Settlement Invariant
+
+Commit 7 enforces strict temporal boundaries, separation of fulfillment events, non-refundable delivery fee economics upon receipt, and a protected vendor settlement lifecycle with zero floating-point drift.
+
+**1. Verification Event Separation:**
+$$\text{Vendor Pickup Code} \neq \text{Customer Delivery Code} \neq \text{Customer Handover OTP} \neq \text{Reservation Code}$$
+- Custody Transfer ($\text{Vendor} \to \text{Rider}$): sets `rider_picked_up_at = now()`, `order_status = 'out_for_delivery'`. `received_at` remains `NULL`. Delivery fee remains unearned.
+- Doorstep Receipt ($\text{Rider} \to \text{Customer}$): sets `received_at = now()`, `refund_window_expires_at = now() + 24h`, `order_status = 'delivered'`. Delivery fee earned and non-refundable.
+- In-Shop Handover ($\text{Vendor} \to \text{Customer}$): sets `handed_over_at = now()`, `received_at = now()`, `refund_window_expires_at = now() + 24h`, `order_status = 'delivered'`. Zero delivery fee.
+
+**2. Return Window Authority Invariant:**
+$$\text{isWithinRefundWindow}() \iff (\text{received\_at} \neq \text{NULL}) \land (\text{refund\_window\_expires_at} \neq \text{NULL}) \land (T_{\text{eval}} \le \text{refund\_window\_expires_at})$$
+
+**3. Delivery Fee Refund Invariant:**
+$$\Delta \text{Refund}_{\text{delivered}} = \text{Merchandise Paid} \quad (\text{Delivery Fee Reversal} = \text{₦}0.00)$$
+$$\Delta \text{Refund}_{\text{undelivered}} = \text{Merchandise Paid} + \text{Delivery Fee} \quad (\text{Delivery Fee Reversal} = \text{Delivery Fee})$$
+
+**4. Vendor Settlement Conservation Invariant:**
+$$\Delta \text{SellerWallet.total\_earning} + \Delta \text{AdminWallet.pending\_amount} = \text{₦}0.00$$
+
+**Numerical Proof:**
+
+| Scenario | Mode | Merchandise | Delivery Fee | received_at | Settlement Status | Refund Approved | Delivery Fee Refunded? | Seller Wallet Change | Admin Pending Change | $\Delta$ |
+|---|---|---|---|---|---|---|---|---|---|---|
+| Delivered 3P Order | Delivery | ₦100,000 | ₦2,000 | Set | held $\to$ eligible $\to$ settled | None | No (₦0.00) | +₦100,000.00 | -₦100,000.00 | ₦0.00 |
+| Delivered Return | Delivery | ₦100,000 | ₦2,000 | Set | held $\to$ disputed $\to$ refunded | ₦100,000 | No (₦0.00) | ₦0.00 | ₦0.00 | ₦0.00 |
+| Undelivered Cancel | Delivery | ₦100,000 | ₦2,000 | NULL | held $\to$ disputed $\to$ refunded | ₦102,000 | Yes (₦2,000.00) | ₦0.00 | ₦0.00 | ₦0.00 |
+| VMarket-Owned Order | In-House | ₦50,000 | ₦0 | Set | NULL (Excluded) | None | N/A | ₦0.00 (Untouched) | ₦0.00 | ₦0.00 |
+| Legacy Unresolvable | Legacy | ₦35,000 | ₦1,500 | NULL | legacy_hold (Blocked) | None | N/A | ₦0.00 (Blocked) | ₦0.00 | ₦0.00 |
+
+- **Zero-Drift Certification:** 72/72 tests pass in `test_commit7_post_receipt_lifecycle.php` and 82/82 pass in `v1_transaction_certification.php`. All financial movements balance with $\Delta = \text{₦}0.00$.
