@@ -293,7 +293,7 @@ class PickupOrderSettlementService
             if (($result['status'] ?? '') === 'CLAIMED') {
                 $customerId = (int) ($result['customer_id'] ?? 0);
                 $snapshot = $result['snapshot'] ?? [];
-                $this->pruneSnapshotCartItems($customerId, $snapshot);
+                $this->pruneSnapshotCartItems($customerId, $snapshot, $result['payment_request'] ?? null);
             }
 
             return $result;
@@ -350,23 +350,23 @@ class PickupOrderSettlementService
             'payment_method' => 'paystack',
             'transaction_ref' => $internalTxRef, // strictly internal ID; NEVER the Paystack reference
             'order_group_id' => 'pickup-' . $reservation->reservation_code,
-            'discount_amount' => 0.00,
+            'discount_amount' => '0.00',
             'discount_type' => null,
             'coupon_code' => null,
             'coupon_discount_bearer' => 'inhouse',
-            'order_amount' => (float) $orderAmount,
-            'init_order_amount' => (float) $orderAmount,
-            'total_tax_amount' => 0.00,
+            'order_amount' => $orderAmount,
+            'init_order_amount' => $orderAmount,
+            'total_tax_amount' => '0.00',
             'tax_type' => 'percent',
             'tax_model' => 'exclude',
-            'admin_commission' => (float) $adminCommission,
+            'admin_commission' => $adminCommission,
             'order_type' => 'pickup',
             'shipping_address' => 0,
             'shipping_address_data' => null,
             'billing_address' => null,
             'billing_address_data' => null,
             'shipping_responsibility' => 'inhouse_shipping',
-            'shipping_cost' => 0.00,
+            'shipping_cost' => '0.00',
             'shipping_method_id' => 0,
             'created_at' => now(),
             'updated_at' => now(),
@@ -383,15 +383,45 @@ class PickupOrderSettlementService
             $qty = (int) $item['quantity'];
             $product = Product::find($productId);
 
-            // Atomic Physical Inventory Deduction Guard:
+            // Atomic Physical Inventory Deduction Guard with Ownership Scoping:
             if ($product && $product->product_type === 'physical') {
-                $affected = Product::where('id', $productId)
-                    ->where('current_stock', '>=', $qty)
-                    ->decrement('current_stock', $qty);
+                $stockQuery = Product::where('id', $productId)
+                    ->where('current_stock', '>=', $qty);
+
+                if ($reservation->seller_type === 'seller') {
+                    $stockQuery->where('user_id', $reservation->seller_id);
+                } elseif ($reservation->seller_type === 'admin') {
+                    $stockQuery->where('added_by', 'admin');
+                }
+
+                if (!empty($reservation->shop_id)) {
+                    $stockQuery->where('shop_id', $reservation->shop_id);
+                }
+
+                $affected = $stockQuery->decrement('current_stock', $qty);
 
                 if ($affected === 0) {
                     $prodName = $product->name ?? "Product #{$productId}";
-                    $currentStock = $product->fresh()?->current_stock ?? 0;
+                    $freshProd = Product::find($productId);
+                    $currentStock = $freshProd?->current_stock ?? 0;
+
+                    // Verify if failure is due to ownership mismatch vs insufficient stock
+                    if ($freshProd) {
+                        $sellerMatch = ($reservation->seller_type === 'seller')
+                            ? ((int) $freshProd->user_id === (int) $reservation->seller_id)
+                            : ($freshProd->added_by === 'admin');
+                        $shopMatch = empty($reservation->shop_id) || ((int) $freshProd->shop_id === (int) $reservation->shop_id);
+
+                        if (!$sellerMatch || !$shopMatch) {
+                            throw new PostPaymentStockFailureException(
+                                "{$prodName} [Ownership mismatch: product belongs to seller #{$freshProd->user_id} shop #{$freshProd->shop_id}, expected seller #{$reservation->seller_id} shop #{$reservation->shop_id}]",
+                                $productId,
+                                $qty,
+                                $currentStock
+                            );
+                        }
+                    }
+
                     throw new PostPaymentStockFailureException($prodName, $productId, $qty, $currentStock);
                 }
             }
@@ -402,9 +432,9 @@ class PickupOrderSettlementService
                 'seller_id' => $reservation->seller_id,
                 'product_details' => json_encode($product ? $product->toArray() : ['name' => $item['product_name'] ?? 'Item']),
                 'qty' => $qty,
-                'price' => (float) ($item['unit_price'] ?? 0.00),
-                'discount' => (float) ($item['discount'] ?? 0.00),
-                'tax' => (float) ($item['tax'] ?? 0.00),
+                'price' => bcadd((string) ($item['unit_price'] ?? '0.00'), '0', 2),
+                'discount' => bcadd((string) ($item['discount'] ?? '0.00'), '0', 2),
+                'tax' => bcadd((string) ($item['tax'] ?? '0.00'), '0', 2),
                 'discount_type' => 'discount_on_product',
                 'variant' => $item['variant'] ?? null,
                 'delivery_status' => 'pending',
@@ -605,23 +635,97 @@ class PickupOrderSettlementService
 
     /**
      * Prunes only the cart items present in the immutable reservation snapshot.
+     * Quantity-Safe: Decrements cart quantity by snapshot quantity; deletes row only if
+     * remaining quantity is <= 0. Unrelated or subsequent cart items are preserved.
+     * Idempotent & Retry-Safe: Tracks cleanup in payment_requests.additional_data.
      */
-    public function pruneSnapshotCartItems(int $customerId, array $snapshot): int
+    public function pruneSnapshotCartItems(int $customerId, array $snapshot, ?PaymentRequest $paymentRequest = null): int
     {
-        $cartIds = [];
-        foreach ($snapshot['items'] ?? [] as $item) {
-            if (!empty($item['cart_id'])) {
-                $cartIds[] = (int) $item['cart_id'];
+        if ($paymentRequest) {
+            $add = is_array($paymentRequest->additional_data)
+                ? $paymentRequest->additional_data
+                : json_decode($paymentRequest->additional_data ?? '{}', true);
+
+            if (!empty($add['cart_cleaned_at'])) {
+                // Idempotent: cart cleanup has already run for this settled payment request
+                return 0;
             }
         }
 
-        if (empty($cartIds)) {
+        $items = $snapshot['items'] ?? [];
+        if (empty($items)) {
             return 0;
         }
 
-        return Cart::where('customer_id', $customerId)
-            ->whereIn('id', $cartIds)
-            ->delete();
+        $affectedCount = 0;
+        $prunedSummary = [];
+
+        foreach ($items as $item) {
+            $targetCartId = (int) ($item['cart_id'] ?? 0);
+            $targetProdId = (int) ($item['product_id'] ?? 0);
+            $snapshotQty = max(1, (int) ($item['quantity'] ?? 1));
+
+            if ($targetCartId <= 0) {
+                continue;
+            }
+
+            // Lookup existing cart row for this customer under exact ID & Product scoping
+            $cartRow = Cart::where('id', $targetCartId)
+                ->where('customer_id', $customerId)
+                ->first();
+
+            if (!$cartRow) {
+                // Cart line was already removed or expired
+                continue;
+            }
+
+            // Verify identity matches snapshot product
+            if ((int) $cartRow->product_id !== $targetProdId) {
+                // Cart line identity changed (recreated with different product); do not touch
+                continue;
+            }
+
+            $currentCartQty = (int) $cartRow->quantity;
+
+            if ($currentCartQty <= $snapshotQty) {
+                // Entire quantity consumed by reservation -> delete cart row
+                $cartRow->delete();
+                $affectedCount++;
+                $prunedSummary[] = [
+                    'cart_id' => $targetCartId,
+                    'action' => 'deleted',
+                    'snapshot_qty' => $snapshotQty,
+                    'previous_qty' => $currentCartQty,
+                ];
+            } else {
+                // Customer added more quantity after reservation -> decrement only snapshot quantity
+                $newCartQty = $currentCartQty - $snapshotQty;
+                $cartRow->update(['quantity' => $newCartQty]);
+                $affectedCount++;
+                $prunedSummary[] = [
+                    'cart_id' => $targetCartId,
+                    'action' => 'decremented',
+                    'snapshot_qty' => $snapshotQty,
+                    'previous_qty' => $currentCartQty,
+                    'remaining_qty' => $newCartQty,
+                ];
+            }
+        }
+
+        // Record cleanup timestamp to ensure safe idempotency on retry
+        if ($paymentRequest) {
+            $add = is_array($paymentRequest->additional_data)
+                ? $paymentRequest->additional_data
+                : json_decode($paymentRequest->additional_data ?? '{}', true);
+
+            $add['cart_cleaned_at'] = now()->toIso8601String();
+            $add['cart_prune_summary'] = $prunedSummary;
+            $paymentRequest->update([
+                'additional_data' => json_encode($add),
+            ]);
+        }
+
+        return $affectedCount;
     }
 
     /**

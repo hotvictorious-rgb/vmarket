@@ -1507,7 +1507,12 @@ class OrderManager
     {
         if ($ordersData['payment_method'] != 'cash_on_delivery' && $ordersData['payment_method'] != 'offline_payment') {
             $orderSummary = OrderManager::getOrderTotalAndSubTotalAmountSummary($order);
-            $orderAmount = $orderSummary['subtotal'] + $orderSummary['total_tax'] - $orderSummary['total_discount_on_product'] - $order['discount'];
+            $orderAmount = ($order['order_type'] ?? '') === 'pickup'
+                ? bcadd((string)$order['order_amount'], '0', 2)
+                : bcadd((string)($orderSummary['subtotal'] + $orderSummary['total_tax'] - $orderSummary['total_discount_on_product'] - $order['discount']), '0', 2);
+
+            $adminCommission = bcadd((string)($ordersData['admin_commission'] ?? '0.00'), '0', 2);
+            $sellerAmount = bcsub($orderAmount, $adminCommission, 2);
 
             $shop = Shop::when($order['seller_is'] == 'admin', function ($query) {
                 return $query->where(['author_type' => 'admin']);
@@ -1523,8 +1528,8 @@ class OrderManager
                 'seller_is' => $order['seller_is'],
                 'order_id' => $order['id'],
                 'order_amount' => $orderAmount,
-                'seller_amount' => $orderAmount - $ordersData['admin_commission'],
-                'admin_commission' => $ordersData['admin_commission'],
+                'seller_amount' => $sellerAmount,
+                'admin_commission' => $adminCommission,
                 'received_by' => 'admin',
                 'status' => 'hold',
                 'delivery_charge' => $order['shipping_cost'] - $order['extra_discount'],

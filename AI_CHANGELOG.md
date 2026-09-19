@@ -1,3 +1,26 @@
+### [2026-09-19 10:55 UTC] Commit 6.1: Hardening & Invariant Defenses for Pickup Payment and Settlement [backend] [ai-governance]
+* **Component:** Pickup Payment Initialization & Settlement Services (`backend/vmarket-web/app/Services/PickupPaymentInitializationService.php`, `backend/vmarket-web/app/Services/PickupOrderSettlementService.php`, `backend/vmarket-web/app/Utils/OrderManager.php`)
+* **Action:** Resolved 4 critical implementation/architectural edge cases to complete certification readiness:
+  - **Issue 1 (Paystack In-Flight Initialization Claim/Lease):**
+    * Implemented an explicit, crash-recoverable initialization lease (`INITIALIZATION_LEASE_SECONDS = 45`) via `payment_requests.additional_data` (`init_claimed_at`, `init_claim_expires_at`, `init_claim_token`).
+    * Concurrent requests arriving while an initialization is in-flight detect the active lease, execute bounded polling (up to 2.4s) for `authorization_url`, and return `initialization_in_progress` without prematurely querying `verifyExistingTransaction` or rotating the reference.
+    * Only demonstrably stale claims (`now() >= init_claim_expires_at`) acquire recovery leases and can declare `REFERENCE_NOT_FOUND` to rotate references.
+  - **Issue 2 (Quantity-Safe Targeted Cart Cleanup):**
+    * Replaced bulk row deletion with snapshot-quantity-aware decrementing in `pruneSnapshotCartItems()`.
+    * If `cartRow->quantity <= snapshotQty`, deletes the row; if `cartRow->quantity > snapshotQty` (customer added items post-reservation), decrements only `snapshotQty` and preserves remainder.
+    * Validates `product_id` match to prevent touching lines recreated with different items; unrelated cart rows are completely preserved.
+    * Idempotent retry protection: logs `cart_cleaned_at` in `payment_requests.additional_data` so repeated calls execute zero additional deletions.
+  - **Issue 3 (Exact Money & Zero Floats):**
+    * Eliminated all PHP `(float)` casts across `PickupOrderSettlementService` and `OrderManager::getAddOrderTransactionsOnGenerateOrder()`.
+    * Passed pure BCMath exact decimal strings into `orders`, `order_details`, `order_transactions`, and `admin_wallets` columns.
+    * Added awkward decimal tests (₦1,000.01, ₦25,450.50, ₦99,999.99) proving zero floating-point drift ($\Delta = \text{₦}0.00$) across `order_amount`, `admin_commission`, and `seller_amount`.
+  - **Issue 4 (Inventory Ownership Scoping Guard):**
+    * Scoped physical inventory deduction query explicitly to `seller_id` and `shop_id` (`Product::where('id', $productId)->where('user_id', $sellerId)->where('shop_id', $shopId)`).
+    * Products reassigned to different vendors or branches cannot be decremented; mismatches fail-closed and route to reconciliation quarantine.
+* **Verification & Regression:**
+  - Expanded test suite `scratch/test_commit6_pickup_settlement_service.php` passed 97/97 tests (+32 new focused tests covering leases, cart quantity safety, awkward decimals, and inventory ownership).
+  - Full transaction certification suite `scratch/v1_transaction_certification.php` passed 82/82 tests ($\Delta = \text{₦}0.00$).
+
 ### [2026-09-19 10:35 UTC] Commit 6: Pickup Payment, Verification, and Atomic Single-Order Settlement [backend] [ai-governance]
 * **Component:** In-Shop Pickup Payment & Single-Order Settlement Engine (`backend/vmarket-web/app/Services/PickupPaymentInitializationService.php`, `backend/vmarket-web/app/Services/PickupOrderSettlementService.php`, `backend/vmarket-web/app/Http/Controllers/Payment_Methods/PaystackController.php`, `backend/vmarket-web/app/Http/Controllers/Customer/PickupReservationController.php`, `backend/vmarket-web/routes/web/routes.php`)
 * **Action:** Implemented and certified the full end-to-end pickup payment, verification, and single-order settlement architecture complying with all 10 strict user mandates:

@@ -29,6 +29,12 @@ use Illuminate\Support\Str;
  */
 class PickupPaymentInitializationService
 {
+    /**
+     * Duration in seconds an external initialization attempt holds the active lease.
+     * Prevents concurrent requests from rotating the reference while an external call is in flight.
+     */
+    public const INITIALIZATION_LEASE_SECONDS = 45;
+
     public function __construct(
         protected PaystackInitializationClient $paystackClient
     ) {
@@ -222,7 +228,32 @@ class PickupPaymentInitializationService
                         ];
                     }
 
-                    // Ambiguous attempt exists without authorization_url -> recover in Phase B
+                    // Ambiguous attempt exists without authorization_url
+                    // Check initialization lease: Is another external initialization in-flight?
+                    $claimExpiresAtStr = $additional['init_claim_expires_at'] ?? null;
+                    $claimExpiresAt = $claimExpiresAtStr ? Carbon::parse($claimExpiresAtStr) : null;
+                    $isLeaseActive = $claimExpiresAt && now()->isBefore($claimExpiresAt);
+
+                    if ($isLeaseActive) {
+                        // Gateway initialization is currently IN-FLIGHT by another request!
+                        // Do NOT rotate reference. Do NOT query gateway verify yet.
+                        return [
+                            'action' => 'WAIT_IN_FLIGHT',
+                            'payment_request' => $existingActive,
+                            'gateway_reference' => $existingActive->gateway_reference,
+                            'lease_expires_at' => $claimExpiresAt,
+                        ];
+                    }
+
+                    // Lease is demonstrably STALE or missing! Acquire recovery lease under lock:
+                    $now = now();
+                    $additional['init_claimed_at'] = $now->toIso8601String();
+                    $additional['init_claim_expires_at'] = $now->copy()->addSeconds(self::INITIALIZATION_LEASE_SECONDS)->toIso8601String();
+                    $additional['init_claim_token'] = Str::random(32);
+                    $existingActive->update([
+                        'additional_data' => json_encode($additional),
+                    ]);
+
                     return [
                         'action' => 'RECOVER_EXISTING',
                         'payment_request' => $existingActive,
@@ -234,13 +265,14 @@ class PickupPaymentInitializationService
                 }
             }
 
-            // Step 6: Create Fresh PaymentRequest Attempt
+            // Step 6: Create Fresh PaymentRequest Attempt with Initial Claim Lease
             $now = now();
             $ttlTarget = $now->copy()->addMinutes($ttlMinutes);
             $resExpiry = Carbon::parse($reservation->expires_at);
             $boundedExpiry = $ttlTarget->isBefore($resExpiry) ? $ttlTarget : $resExpiry;
 
             $gatewayReference = 'VM-' . Str::orderedUuid()->toString();
+            $claimExpiresAt = $now->copy()->addSeconds(self::INITIALIZATION_LEASE_SECONDS);
 
             $newPaymentRequest = PaymentRequest::create([
                 'id' => Str::orderedUuid()->toString(),
@@ -265,6 +297,9 @@ class PickupPaymentInitializationService
                     'shop_id' => $reservation->shop_id,
                     'amount_kobo' => $amountKobo,
                     'created_at' => $now->toIso8601String(),
+                    'init_claimed_at' => $now->toIso8601String(),
+                    'init_claim_expires_at' => $claimExpiresAt->toIso8601String(),
+                    'init_claim_token' => Str::random(32),
                 ]),
             ]);
 
@@ -294,6 +329,38 @@ class PickupPaymentInitializationService
                 'payment_request' => $phaseAResult['payment_request'],
                 'authorization_url' => $phaseAResult['authorization_url'],
                 'gateway_reference' => $phaseAResult['gateway_reference'],
+            ];
+        }
+
+        if ($action === 'WAIT_IN_FLIGHT') {
+            $paymentRequest = $phaseAResult['payment_request'];
+            $gatewayReference = $phaseAResult['gateway_reference'];
+
+            // Bounded poll: up to 2.5 seconds (8 iterations x 300ms) for in-flight initialization to complete
+            for ($i = 0; $i < 8; $i++) {
+                usleep(300000); // 300ms
+                $freshPR = PaymentRequest::where('id', $paymentRequest->id)->first();
+                if ($freshPR) {
+                    $add = json_decode($freshPR->additional_data ?? '{}', true);
+                    if (!empty($add['authorization_url'])) {
+                        return [
+                            'status' => 'success',
+                            'is_replayed' => true,
+                            'payment_request' => $freshPR,
+                            'authorization_url' => $add['authorization_url'],
+                            'gateway_reference' => $gatewayReference,
+                        ];
+                    }
+                }
+            }
+
+            // Still in flight after bounded wait -> return status indicating initialization is in progress
+            return [
+                'status' => 'initialization_in_progress',
+                'is_in_flight' => true,
+                'message' => 'Paystack gateway initialization is currently in progress for this reservation. Please retry in a moment.',
+                'payment_request' => $paymentRequest->fresh(),
+                'gateway_reference' => $gatewayReference,
             ];
         }
 
@@ -335,6 +402,7 @@ class PickupPaymentInitializationService
             $additional = json_decode($paymentRequest->additional_data ?? '{}', true);
             $additional['authorization_url'] = $initData['authorization_url'];
             $additional['access_code'] = $initData['access_code'] ?? null;
+            $additional['init_claim_expires_at'] = null; // Release lease upon success
             $paymentRequest->update([
                 'additional_data' => json_encode($additional),
             ]);
@@ -352,6 +420,7 @@ class PickupPaymentInitializationService
             $additional = json_decode($paymentRequest->additional_data ?? '{}', true);
             $additional['failure_reason'] = $initData['message'] ?? 'Gateway rejected initialization';
             $additional['closed_at'] = now()->toIso8601String();
+            $additional['init_claim_expires_at'] = null;
             $paymentRequest->update([
                 'attempt_status' => 'failed',
                 'active_pickup_reservation_id' => null,
@@ -438,6 +507,9 @@ class PickupPaymentInitializationService
                             'amount_kobo' => $amountKobo,
                             'supersedes_attempt_id' => $paymentRequest->id,
                             'created_at' => $now->toIso8601String(),
+                            'init_claimed_at' => $now->toIso8601String(),
+                            'init_claim_expires_at' => $now->copy()->addSeconds(self::INITIALIZATION_LEASE_SECONDS)->toIso8601String(),
+                            'init_claim_token' => Str::random(32),
                         ]),
                     ]);
                 });
@@ -463,6 +535,8 @@ class PickupPaymentInitializationService
                 if ($initData['status'] === 'SUCCESS') {
                     $add = json_decode($newAttempt->additional_data ?? '{}', true);
                     $add['authorization_url'] = $initData['authorization_url'];
+                    $add['access_code'] = $initData['access_code'] ?? null;
+                    $add['init_claim_expires_at'] = null; // Release lease upon success
                     $newAttempt->update(['additional_data' => json_encode($add)]);
 
                     return [
