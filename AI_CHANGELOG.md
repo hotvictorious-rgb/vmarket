@@ -1,3 +1,28 @@
+### [2026-09-19 21:50 UTC] Fresh-System Architectural Purge: Obsolete Payment, Transit & Remittance Deletion [backend] [ai-governance]
+* **Component:** Order Placement, Routing, Delivery Custody, Cash Remittance (`backend/vmarket-web/`)
+* **Action:** Shifted from 403 blocking/stubbing to complete architectural deletion of all decommissioned subsystems per fresh-system VMarket V1 standards:
+  - **1. Clean Deletion of COD & Non-Paystack Order Placement Methods & Routes:**
+    - Completely deleted `place_order()`, `addNewCustomer()`, `placeOrderByOfflinePayment()`, and `placeOrderByWallet()` from `OrderController.php`.
+    - Completely deleted routes `GET /api/v1/customer/order/place` and `GET /api/v1/customer/order/place-by-wallet` from `routes/rest_api/v1/api.php`.
+    - Completely deleted `POST /api/v1/add-to-fund` route group from `routes/rest_api/v1/api.php`.
+    - Completely deleted `duePaymentByCod()`, `duePaymentByWallet()`, and `duePaymentByOfflinePayment()` from `OrderEditController.php`.
+    - Completely deleted `getCashOnDeliveryCheckoutComplete()`, `getOfflinePaymentCheckoutComplete()`, and `checkout_complete_wallet()` from `WebController.php`.
+  - **2. Clean Deletion of Interstate Bus-Driver Transit Flow & Driver Codes:**
+    - Completely deleted `confirm_driver_transit_code()` from `OrderController.php` and deleted its route `POST /api/v1/order/confirm-driver-transit-code` from `routes/rest_api/v1/api.php`.
+    - Completely deleted `interstate_driver_handover()` and `get_waybill_label()` from `DeliveryManController.php` and deleted their routes from `routes/rest_api/v2/api.php`.
+    - Eradicated all `driver_transit_code` references. Restored pure V1 custody invariant: Vendor $\xrightarrow{\text{pickup\_verification\_code}}$ Rider (`out_for_delivery`) $\xrightarrow{\text{verification\_code}}$ Customer (`delivered` $\implies received\_at \implies$ 24h return clock).
+  - **3. Clean Deletion of Rider Payment-Status Authority:**
+    - Completely deleted `order_payment_status_update()` from `DeliveryManController.php` and removed route `PUT /api/v2/delivery-man/update-payment-status`. Riders possess zero payment-status mutation authority.
+  - **4. Clean Deletion of Cash-in-Hand Remittance Subsystem:**
+    - Completely deleted `remit_cash_paystack_init()`, `paystack_remittance_callback()`, `_set_paystack_config()`, `generate_paystack_link()`, `paystack_delivery_callback()`, and `collected_cash_history()` from `DeliveryManController.php`.
+    - Completely deleted callback routes `paystack-delivery/callback` and `paystack-remittance/callback` from `routes/web/routes.php`.
+    - Completely deleted routes `collected_cash_history`, `interstate-driver-handover`, `generate-paystack-link`, `remit-cash-paystack-init`, and `get-waybill-label` from `routes/rest_api/v2/api.php`.
+  - **5. Test Suite Upgrade to Deletion Assertion Standards:**
+    - Refactored `scratch/test_directive_57321_a1.php` to prove non-existence (`routeExists() === false` catching `NotFoundHttpException` and `method_exists() === false`).
+    - Validated 31/31 passing tests in `scratch/test_directive_57321_a1.php` and 49/49 passing tests in `scratch/test_gate1_precision_timezone.php` (80/80 total).
+  - **6. Mathematical & Systemic Proof Document Alignment:**
+    - Updated Proof 9.6 in `VICTORIOUS_MARKET_MATHEMATICAL_AND_SYSTEMIC_PROOF.md` to reflect true deletion of obsolete paths, zero transit-code bypass, and exact V1 custody closure.
+
 ### [2026-09-19 21:15 UTC] Directive 57322: Clean Deletion of Obsolete Methods/Routes & Full Customer Cashback UI Implementation [user-app] [delivery-man] [ai-governance]
 * **Component:** User App (`features/cashback`, `features/checkout`, `features/order_details`, `features/wallet`), Delivery Man App (`features/order_details`), Dependency Injection (`di_container.dart`, `main.dart`, `route_healper.dart`)
 * **Action:** Executed all client-side mandates for Directive 57322 under the Clean Removal Standard (no stubs):

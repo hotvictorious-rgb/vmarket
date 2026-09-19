@@ -486,44 +486,48 @@ $$\Delta \text{SellerWallet.total\_earning} + \Delta \text{AdminWallet.pending\_
 
 - **Zero-Drift Certification:** 72/72 tests pass in `test_commit7_post_receipt_lifecycle.php` and 82/82 pass in `v1_transaction_certification.php`. All financial movements balance with $\Delta = \text{₦}0.00$.
 
-### Proof 9.6: Directive 57321 COD Blockade, Delivery Custody Closure, Fail-Closed Refund Proof, and Exact-Money Remediation
+### Proof 9.6: Directive 57321 Architectural Purge — Complete Deletion of Obsolete Subsystems, Custody Model Invariant, Fail-Closed Refund Proof, and Exact-Money Remediation
 
-Directive 57321 enforces authoritative closure of COD order placement, decommission of non-Paystack order-payment paths, elimination of delivery completion bypasses, non-optional customer receipt verification, pure BCMath exact-money calculations without float conversions, and strict fail-closed refund provider proof.
+Directive 57321 enforces complete architectural deletion (not mere 403 stubs) of COD order placement, non-Paystack order-payment paths, interstate bus-driver transit delivery, rider payment-status authorities, and cash remittance subsystems. Furthermore, it enforces the exact V1 delivery custody model, non-optional customer receipt verification, pure BCMath exact-money calculations without float conversions, and strict fail-closed refund provider proof.
 
-**1. COD and Offline Order Blockade Invariant:**
-\forall \text{order creation attempts with } (\text{payment\_method} \in \{\text{cash\_on\_delivery}, \text{offline\_payment}, \text{wallet}\}) \implies \text{HTTP 403 Rejection}
-\Delta \text{Unpaid COD Orders} = 0
-- place_order() decommissioned at backend: returns 403 fail-closed JSON response.
-- placeOrderByOfflinePayment() decommissioned: returns 403 fail-closed JSON response.
-- getCashOnDeliveryCheckoutComplete() in WebController: returns 403 fail-closed response.
-- OrderManager::generateOrder(): throws \InvalidArgumentException if payment method is COD or offline payment.
+**1. Complete Deletion of COD and Non-Paystack Order Paths:**
+$$\forall \text{Obsolete Endpoint } e \in \{\text{place}, \text{place-by-wallet}, \text{add-to-fund}\}, \quad \text{Router}(e) = \emptyset \quad (\text{NotFoundHttpException})$$
+$$\forall m \in \{\text{place\_order}, \text{placeOrderByOfflinePayment}, \text{placeOrderByWallet}, \text{getCashOnDeliveryCheckoutComplete}, \text{duePaymentByCod}\}, \quad \text{method\_exists}(m) = \text{false}$$
+$$\Delta \text{Unpaid COD Orders} = 0$$
+- Completely eradicated `place_order()`, `addNewCustomer()`, `placeOrderByOfflinePayment()`, and `placeOrderByWallet()` from `OrderController`.
+- Completely removed `GET /api/v1/customer/order/place`, `GET /api/v1/customer/order/place-by-wallet`, and `POST /api/v1/add-to-fund` from `routes/rest_api/v1/api.php`.
+- Completely eradicated `duePaymentByCod()`, `duePaymentByWallet()`, and `duePaymentByOfflinePayment()` from `OrderEditController`.
+- Completely eradicated `getCashOnDeliveryCheckoutComplete()`, `getOfflinePaymentCheckoutComplete()`, and `checkout_complete_wallet()` from `WebController`.
+- `OrderManager::generateOrder()`: throws `\InvalidArgumentException` if payment method is COD or offline payment.
 
-**2. Authoritative Delivery Custody Closure:**
-\text{Delivery Completion} \iff (\text{Order is } \text{'out\_for\_delivery'}) \land (\text{Valid Customer Receipt Proof Verified})
-\text{Payment Confirmation} \neq \text{Customer Receipt}
-- paystack_delivery_callback() decommissioned: returns 403. Payment verification can never mutate order status to delivered or stamp eceived_at.
-- generate_paystack_link() decommissioned: returns 403.
-- interstate_driver_handover(): if order is not already out_for_delivery, strictly requires vendor pickup_verification_code matching $order->pickup_verification_code. Generates 6-digit cryptographic transit code TR-XXXXXX (and(100000, 999999)).
-- confirm_driver_transit_code(): requires out_for_delivery, constant-time hash_equals(), stamps eceived_at exactly once, and derives efund_window_expires_at = received_at + 24\text{h}.
+**2. Authoritative V1 Delivery Custody Model (Interstate Transit Deletion):**
+$$\text{Delivery Completion} \iff (\text{Order is } \text{'out\_for\_delivery'}) \land (\text{Valid Customer Delivery OTP Verified})$$
+$$\text{Custody Handover Chain: } \text{Vendor} \xrightarrow{\text{pickup\_verification\_code}} \text{Rider ('out\_for\_delivery')} \xrightarrow{\text{verification\_code}} \text{Customer ('delivered')} \implies \text{received\_at} \implies \text{24h Window}$$
+$$\text{Transit Code Authority} = \emptyset, \quad \text{Rider Payment Authority} = \emptyset, \quad \text{Cash Remittance} = \emptyset$$
+- Completely deleted `confirm_driver_transit_code()` from `OrderController` and removed route `POST /api/v1/order/confirm-driver-transit-code`.
+- Completely deleted `interstate_driver_handover()` and `get_waybill_label()` from `DeliveryManController` and removed routes from `routes/rest_api/v2/api.php`.
+- Completely deleted `order_payment_status_update()` from `DeliveryManController` and removed route `PUT /api/v2/delivery-man/update-payment-status` (rider has zero payment-status authority).
+- Completely deleted `remit_cash_paystack_init()`, `paystack_remittance_callback()`, `_set_paystack_config()`, `generate_paystack_link()`, `paystack_delivery_callback()`, and `collected_cash_history()` from `DeliveryManController`, and deleted routes `paystack-delivery/callback` and `paystack-remittance/callback` from `routes/web/routes.php`.
+- There is NO interstate transit code bypass or payment-driven delivery status mutation in the codebase. Delivery completion strictly and exclusively requires verified customer receipt proof (`verification_code`).
 
 **3. Non-Optional Customer Delivery Verification:**
-\forall \text{Marketplace Orders}, \quad \text{Customer Delivery OTP is Mandatory} \quad (\text{regardless of } \text{config('order\_verification')})
-- Even when getWebConfig('order_verification') == 0, marketplace delivery requires valid 6-digit customer erification_code.
+$$\forall \text{Marketplace Orders}, \quad \text{Customer Delivery OTP is Mandatory} \quad (\text{regardless of } \text{config('order\_verification')})$$
+- Even when `getWebConfig('order_verification') == 0`, marketplace delivery requires valid 6-digit customer `verification_code`.
 
 **4. Exact-Money Residual BCMath Invariant ($\Delta_{\text{float}} = 0.00$):**
-\forall \text{Money Reads in Refund Pipeline}, \quad \text{Read} \equiv \text{getRawOriginal}() \to \text{BCMath}(\text{scale}=2 \lor 4)
-- VendorSettlementService::executeUndeliveredOrderRefund(): removed (float) casts on ullAmount and shippingCost. Pure DECIMAL strings and BCMath comparisons (ccomp > 0).
-- PaystackRefundService::finalizeRefundAccounting(): replaced $order->order_amount and $order->shipping_cost fallback reads with getRawOriginal() strings and BCMath subtotal subtraction.
-- OrderManager::getRefundDetailsForSingleOrderDetails(): converted completely to BCMath with 4-decimal precision using getRawOriginal() attributes.
+$$\forall \text{Money Reads in Refund Pipeline}, \quad \text{Read} \equiv \text{getRawOriginal}() \to \text{BCMath}(\text{scale}=2 \lor 4)$$
+- `VendorSettlementService::executeUndeliveredOrderRefund()`: removed `(float)` casts on fullAmount and shippingCost. Pure DECIMAL strings and BCMath comparisons (`bccomp > 0`).
+- `PaystackRefundService::finalizeRefundAccounting()`: replaced `$order->order_amount` and `$order->shipping_cost` fallback reads with `getRawOriginal()` strings and BCMath subtotal subtraction.
+- `OrderManager::getRefundDetailsForSingleOrderDetails()`: converted completely to BCMath with 4-decimal precision using `getRawOriginal()` attributes.
 
 **5. Fail-Closed Refund Provider Proof:**
-\text{Financial Mutation} \iff (\text{Status} \in \{\text{processed}, \text{success}\}) \land (\text{Currency} \equiv \text{'NGN'}) \land (\text{Amount}_{\text{kobo}} \equiv \text{Expected}_{\text{kobo}}) \land (\text{TxRef} \equiv \text{OrderTxRef}) \land (\text{ExecutionRef Valid})
-- Missing or mismatched identity immediately flags execution_status = 'reconciliation_required' with zero financial mutations ($\Delta \text{Wallets} = 0.00$).
+$$\text{Financial Mutation} \iff (\text{Status} \in \{\text{processed}, \text{success}\}) \land (\text{Currency} \equiv \text{'NGN'}) \land (\text{Amount}_{\text{kobo}} \equiv \text{Expected}_{\text{kobo}}) \land (\text{TxRef} \equiv \text{OrderTxRef}) \land (\text{ExecutionRef Valid})$$
+- Missing or mismatched identity immediately flags `execution_status = 'reconciliation_required'` with zero financial mutations ($\Delta \text{Wallets} = 0.00$).
 
 **6. Customer Cashback Ledger API Scoping:**
-\forall c_1 \neq c_2, \quad \text{Cashback}(c_1) \cap \text{Cashback}(c_2) = \emptyset
-- Customer-scoped via uth('api')->id().
-- Monetary values returned as exact DECIMAL strings formatted via CAST(COALESCE(SUM(...), 0.00) AS CHAR).
-- Status vocabulary strictly partitioned into: pending, vailable, edeemed, cancelled.
+$$\forall c_1 \neq c_2, \quad \text{Cashback}(c_1) \cap \text{Cashback}(c_2) = \emptyset$$
+- Customer-scoped via `auth('api')->id()`.
+- Monetary values returned as exact DECIMAL strings formatted via `CAST(COALESCE(SUM(...), 0.00) AS CHAR)`.
+- Status vocabulary strictly partitioned into: `pending`, `available`, `redeemed`, `cancelled`.
 
-- **Test Suite Verification:** 27/27 tests pass in 	est_directive_57321_a1.php and 49/49 pass in 	est_gate1_precision_timezone.php. Zero floating-point drift ($\Delta = \text{?}0.00$).
+- **Test Suite Verification:** 31/31 tests pass in `test_directive_57321_a1.php` and 49/49 pass in `test_gate1_precision_timezone.php` (80/80 total). Zero floating-point drift ($\Delta = \text{₦}0.00$).

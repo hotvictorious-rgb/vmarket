@@ -479,20 +479,6 @@ class WebController extends Controller
         return back();
     }
 
-    public function getCashOnDeliveryCheckoutComplete(Request $request): View|RedirectResponse|JsonResponse
-    {
-        // [AI] V1 Authority Invariant: Cash on delivery is permanently decommissioned in Victorious MARKET.
-        // All marketplace orders require online payment via Paystack.
-        if ($request->ajax()) {
-            return response()->json([
-                'status' => 0,
-                'message' => 'Cash on delivery is permanently decommissioned in Victorious MARKET. Please pay online via Paystack.',
-            ], 403);
-        }
-        Toastr::error('Cash on delivery is permanently decommissioned in Victorious MARKET. Please pay online via Paystack.');
-        return redirect()->route('checkout-payment');
-    }
-
     public function getOrderPlaceView(Request $request): View
     {
         $isNewCustomerInSession = session('newCustomerRegister');
@@ -505,18 +491,6 @@ class WebController extends Controller
             'order_ids' => $orderIds,
             'isNewCustomerInSession' => $isNewCustomerInSession,
         ]);
-    }
-
-    public function getOfflinePaymentCheckoutComplete(Request $request): View|RedirectResponse
-    {
-        // [AI] Victorious MARKET: Offline payment is permanently decommissioned.
-        throw new \App\Exceptions\InvalidPaymentMethodException('offline_payment');
-    }
-
-    public function checkout_complete_wallet(Request $request): View|RedirectResponse
-    {
-        // [AI] Customer Wallet Decommissioned: Block active web wallet checkout
-        abort(403, 'Customer wallet payment is permanently decommissioned in Victorious MARKET. Please pay online via Paystack (Doorstep Delivery) or select Customer Pickup \u2014 Pay After Inspection.');
     }
 
     public function order_placed(): View

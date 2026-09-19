@@ -190,48 +190,6 @@ class OrderController extends Controller
         return response()->json(['message' => translate('status_not_changeable_now')], 403);
     }
 
-    public function place_order(Request $request): JsonResponse
-    {
-        // [AI] V1 Authority Invariant: Cash on delivery is permanently decommissioned in Victorious MARKET.
-        // All marketplace delivery orders require upfront online payment via Paystack.
-        return response()->json([
-            'status' => false,
-            'message' => 'Cash on delivery is permanently decommissioned in Victorious MARKET. Please pay online via Paystack.',
-        ], 403);
-    }
-
-    function addNewCustomer($request, $address): User
-    {
-        return User::create([
-            'name' => $address['contact_person_name'],
-            'f_name' => $address['contact_person_name'],
-            'l_name' => '',
-            'email' => $address['email'],
-            'phone' => $address['phone'],
-            'is_active' => 1,
-            'password' => bcrypt($request['password']),
-            'referral_code' => Helpers::generate_referer_code(),
-        ]);
-    }
-
-    public function placeOrderByOfflinePayment(Request $request): JsonResponse
-    {
-        // [AI] V1 Authority Invariant: Offline payment is permanently decommissioned in Victorious MARKET.
-        return response()->json([
-            'status' => false,
-            'message' => 'Offline payment is permanently decommissioned in Victorious MARKET. Please pay online via Paystack.',
-        ], 403);
-    }
-
-    public function placeOrderByWallet(Request $request): JsonResponse
-    {
-        // [AI] Customer Wallet Decommissioned: Reject active wallet order placement
-        return response()->json([
-            'status' => false,
-            'message' => 'Customer wallet payment is permanently decommissioned in Victorious MARKET. Please pay online via Paystack (Doorstep Delivery) or select Customer Pickup \u2014 Pay After Inspection.',
-        ], 403);
-    }
-
     public function refund_request(Request $request): JsonResponse
     {
         $orderDetails = OrderDetail::find($request->order_details_id);
@@ -814,86 +772,6 @@ class OrderController extends Controller
         }
 
         return response()->json(['message' => 'Invalid Order Id or Phone Number'], 403);
-    }
-
-    /**
-     * Customer confirms Interstate Park Waybill receipt via Driver Transit Code
-     */
-    public function confirm_driver_transit_code(Request $request): JsonResponse
-    {
-        $validator = Validator::make($request->all(), [
-            'order_id' => 'required',
-            'driver_transit_code' => 'required|string',
-        ]);
-
-        if ($validator->fails()) {
-            return response()->json(['errors' => Helpers::validationErrorProcessor($validator)], 403);
-        }
-
-        $user = Helpers::getCustomerInformation($request);
-        $orderQuery = Order::where('id', $request->order_id);
-        if ($user && $user != 'offline') {
-            $orderQuery->where('customer_id', $user->id);
-        }
-
-        $order = $orderQuery->first();
-        if (!$order) {
-            return response()->json(['message' => translate('Order not found')], 404);
-        }
-
-        if ($order->order_status !== 'out_for_delivery') {
-            return response()->json(['message' => translate('Order must be out for delivery before customer receipt can be confirmed.')], 422);
-        }
-
-        if (empty($order->driver_transit_code)) {
-            return response()->json(['message' => translate('This order does not require driver transit code verification')], 400);
-        }
-
-        if (!hash_equals(strtoupper(trim((string)$order->driver_transit_code)), strtoupper(trim((string)$request->driver_transit_code)))) {
-            return response()->json(['message' => translate('Invalid Driver Transit Code. Please check the code with your bus driver.')], 403);
-        }
-
-        $now = now();
-        $receivedAt = $order->received_at ?? $now;
-        $expiresAt = $order->refund_window_expires_at ?? (clone $receivedAt)->addHours(24);
-
-        $order->order_status = 'delivered';
-        $order->verification_status = 1;
-        $order->received_at = $receivedAt;
-        $order->refund_window_expires_at = $expiresAt;
-        if ($order->payment_status != 'paid') {
-            $order->payment_status = 'paid';
-        }
-        $order->save();
-
-        OrderDetail::where('order_id', $order->id)->update([
-            'delivery_status' => 'delivered',
-            'refund_started_at' => $order->received_at ?? $now,
-        ]);
-
-        // Credit rider wallet if assigned
-        if ($order->delivery_man_id && $order->deliveryman_charge > 0) {
-            $dmWallet = \App\Models\DeliverymanWallet::where('delivery_man_id', $order->delivery_man_id)->first();
-            if ($dmWallet) {
-                $dmWallet->current_balance += $order->deliveryman_charge;
-                $dmWallet->save();
-            }
-        }
-
-        try {
-            OrderManager::getWalletManageOnOrderStatusChange($order, 'customer');
-        } catch (\Exception $e) {
-        }
-
-        try {
-            event(new \App\Events\OrderStatusEvent(key: 'delivered', type: 'customer', order: $order));
-        } catch (\Exception $e) {
-        }
-
-        return response()->json([
-            'status' => 'success',
-            'message' => translate('Parcel delivery successfully confirmed! Thank you for shopping with Victorious Market.'),
-        ], 200);
     }
 }
 

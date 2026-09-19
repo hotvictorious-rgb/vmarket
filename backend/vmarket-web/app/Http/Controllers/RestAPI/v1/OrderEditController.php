@@ -48,35 +48,6 @@ class OrderEditController extends Controller
     {
     }
 
-    public function duePaymentByWallet(Request $request): JsonResponse
-    {
-        // [AI] Customer Wallet Decommissioned: Reject active wallet due payment
-        return response()->json([
-            'status' => false,
-            'message' => 'Wallet payment is permanently decommissioned in Victorious MARKET. Please pay online via Paystack (Doorstep Delivery) or select Customer Pickup — Pay After Inspection.',
-        ], 403);
-    }
-
-    public function duePaymentByCod(Request $request): JsonResponse
-    {
-        // [AI] V1 Authority Invariant: Cash on delivery is permanently decommissioned in Victorious MARKET.
-        return response()->json([
-            'status' => false,
-            'message' => 'Cash on delivery is permanently decommissioned in Victorious MARKET. Please pay online via Paystack.',
-        ], 403);
-    }
-
-    public function duePaymentByOfflinePayment(Request $request): JsonResponse
-    {
-        // [AI] Offline payment permanently decommissioned in Victorious MARKET.
-        // This endpoint is preserved as a fail-closed stub to prevent 500 errors
-        // from any legacy client that still calls this path. Route was already removed.
-        return response()->json([
-            'status' => false,
-            'message' => 'Offline payment is permanently decommissioned in Victorious MARKET. Please pay online via Paystack (Doorstep Delivery) or select Customer Pickup — Pay After Inspection.',
-        ], 403);
-    }
-
     public function duePaymentByDigitalPayment(Request $request): JsonResponse
     {
         $validator = Validator::make($request->all(), [

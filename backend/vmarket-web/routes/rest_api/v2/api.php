@@ -151,7 +151,6 @@ Route::group(['prefix' => 'v2', 'middleware' => ['api_lang']], function () {
                 Route::get('order-delivery-history', 'get_order_history');
                 Route::put('update-order-status', 'update_order_status');
                 Route::put('update-expected-delivery', 'update_expected_delivery');
-                Route::put('update-payment-status', 'order_payment_status_update');
                 Route::put('order-update-is-pause', 'order_update_is_pause');
                 Route::get('order-item', 'getOrderItem');
                 Route::get('order-details', 'get_order_details');
@@ -166,15 +165,10 @@ Route::group(['prefix' => 'v2', 'middleware' => ['api_lang']], function () {
                 Route::put('bank-info', 'bank_info');
                 Route::get('review-list', 'review_list');
                 Route::put('save-review', 'is_saved');
-                Route::get('collected_cash_history', 'collected_cash_history');
                 Route::get('emergency-contact-list', 'emergency_contact_list');
                 Route::get('notifications', 'get_all_notification');
                 Route::post('resend-verification-code', 'resend_verification_code');
                 Route::post('order-delivery-verification', 'order_delivery_verification');
-                Route::post('interstate-driver-handover', 'interstate_driver_handover');
-                Route::post('generate-paystack-link', 'generate_paystack_link');
-                Route::post('remit-cash-paystack-init', 'remit_cash_paystack_init');
-                Route::get('get-waybill-label', 'get_waybill_label');
             });
 
             // [AI] OTP brute-force protection: 5 attempts per minute per IP

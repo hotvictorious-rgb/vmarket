@@ -401,9 +401,5 @@ if (!$isGatewayPublished) {
             Route::get('cancel', [PaystackController::class, 'cancel'])->name('cancel');
             Route::post('webhook', [PaystackController::class, 'webhook'])->name('webhook');
         });
-
-        //PAYSTACK DELIVERY CALLBACK
-        Route::get('paystack-delivery/callback', [\App\Http\Controllers\RestAPI\v2\delivery_man\DeliveryManController::class, 'paystack_delivery_callback'])->name('paystack-delivery.callback');
-        Route::get('paystack-remittance/callback', [\App\Http\Controllers\RestAPI\v2\delivery_man\DeliveryManController::class, 'paystack_remittance_callback'])->name('paystack-remittance.callback');
     });
 }
