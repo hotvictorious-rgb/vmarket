@@ -1,3 +1,29 @@
+### [2026-09-19 08:45 UTC] Commit 4: Verified Paystack Payment to Atomic Multi-Vendor Delivery Order Settlement [backend] [ai-governance]
+* **Component:** Delivery Order Settlement Engine (`backend/vmarket-web/app/Services/DeliveryOrderSettlementService.php`, `backend/vmarket-web/app/Models/PaymentReconciliation.php`, `backend/vmarket-web/app/Exceptions/PostPaymentStockFailureException.php`, `backend/vmarket-web/app/Http/Controllers/Payment_Methods/PaystackController.php`, `backend/vmarket-web/database/migrations/2026_09_19_000005_add_stock_failure_to_payment_reconciliations_table.php`)
+* **Action:** Built and certified the atomic multi-vendor delivery order settlement engine for verified Paystack payments:
+  - **Prerequisite Migration (000005):** Added `'post_payment_stock_failure'` to `payment_reconciliations.initial_anomaly_type` enum to natively support captured payments where physical inventory is exhausted before order completion.
+  - **Canonical Lock Ordering (Zero Deadlocks):** Strictly enforces `CheckoutIntent` -> `PaymentRequest` lock sequence, matching Commit 3 to eliminate lock-inversion deadlocks between payment initialization and webhook/callback settlement.
+  - **Two-Phase Post-Payment Stock Failure:**
+    * Phase 1: If physical stock is insufficient during post-payment settlement, the entire order creation transaction rolls back completely (0 orders, 0 stock changes, 0 financial effects).
+    * Phase 2: A clean independent transaction locks `PaymentRequest`, sets `attempt_status = 'reconciliation_required'`, `is_paid = 1`, `active_order_group_id = NULL`, creates a persistent `payment_reconciliations` case (`post_payment_stock_failure`), and COMMITS (returns HTTP 200 to prevent retry storms).
+  - **Separation of Payment vs Checkout Anomalies:**
+    * Payment-attempt anomalies (`amount_mismatch`, `currency_mismatch`, `post_payment_stock_failure`) quarantine only `PaymentRequest` (`reconciliation_required`).
+    * `CheckoutIntent` remains `pending` and is ONLY transitioned to `expired` if it actually expired (`late_capture_expired`).
+  - **Reference & Field Isolation:** Paystack reference is stored strictly in `payment_requests.gateway_reference`. `orders.transaction_ref` receives the internal `OrderManager::generateUniqueOrderID()` (strictly <= 21 chars, respecting `VARCHAR(30)`), never the Paystack reference.
+  - **Full OrderManager Parity:**
+    * Generates multi-vendor child orders with 6-digit random `verification_code` and `pickup_verification_code`.
+    * Creates `order_details` records with atomic `current_stock` reduction (`where('current_stock', '>=', $qty)`).
+    * Inserts `order_status_history` (`confirmed`, `customer`).
+    * Inserts `order_transactions` with status `'hold'` and `received_by = 'admin'`.
+    * Increments `AdminWallet.pending_amount` per vendor child order without double-counting (sum of `orders.order_amount` = `total_amount`, Δ = ₦0.00).
+    * Seller wallet balance is NOT credited at payment time (escrow hold active until delivery).
+  - **Idempotency & Convergence:** Both callback and webhook converge on the verified Paystack reference. Replays return `ALREADY_PAID` with 0 duplicate orders and Δ = ₦0.00.
+  - **Post-Commit Targeted Cart Pruning:** Only snapshot cart items are pruned after transaction commit; unrelated cart items are preserved.
+  - **Legacy Isolation:** Payments with `payment_domain IS NULL` run legacy handlers completely untouched.
+* **Verification & Zero Drift:**
+  - 35/35 automated tests passed in `scratch/test_commit4_delivery_settlement_service.php` covering single/multi-vendor settlement, atomic rollback, two-phase stock failure, permanent reconciliation commit, idempotency replay, IDOR, VARCHAR(30) isolation, AdminWallet hold, and OrderManager parity.
+  - Full regression certification suite `scratch/v1_transaction_certification.php` passed 82/82 (Δ = ₦0.00).
+
 ### [2026-09-19 08:15 UTC] Commit 3.1: Paystack Compatibility and Ambiguous Recovery Correction [backend] [ai-governance]
 * **Component:** Payment Initialization Pipeline (`backend/vmarket-web/app/Services/DeliveryPaymentInitializationService.php`, `backend/vmarket-web/app/Services/PaystackInitializationClient.php`)
 * **Action:** Corrected Paystack character contract compatibility, ambiguous initialization recovery state machine, and TTL bounding:

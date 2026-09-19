@@ -157,6 +157,16 @@ class PaystackController extends Controller
                     return $this->payment_response($paymentRequest, 'fail');
                 }
 
+                // [AI] Commit 4 Delivery Order Settlement Routing
+                if ($paymentRequest->payment_domain === 'marketplace_delivery') {
+                    $settlementService = app(\App\Services\DeliveryOrderSettlementService::class);
+                    $settlementResult = $settlementService->settleVerifiedPayment($verifiedReference, $txData);
+                    if (in_array($settlementResult['status'] ?? '', ['CLAIMED', 'ALREADY_PAID'], true)) {
+                        return $this->payment_response($settlementResult['payment_request'] ?? $paymentRequest, 'success');
+                    }
+                    return $this->payment_response($settlementResult['payment_request'] ?? $paymentRequest, 'fail');
+                }
+
                 // Exact Integer Amount Equality in Smallest Currency Unit (Step 2 - L)
                 $expectedKobo = (int) round($paymentRequest->payment_amount * 100);
                 $paidKobo = (int) ($txData['amount'] ?? 0);
@@ -542,13 +552,30 @@ class PaystackController extends Controller
 
             // A. Check standard e-commerce PaymentRequest
             $paymentId = $metadata['payment_id'] ?? null;
+            $paymentRequest = null;
             if ($paymentId) {
                 $paymentRequest = $this->payment::where('id', $paymentId)->first();
-                if ($paymentRequest && $paymentRequest->is_paid == 0) {
+            } elseif ($reference) {
+                $paymentRequest = $this->payment::where('gateway_reference', $reference)->first();
+            }
+
+            if ($paymentRequest) {
+                // [AI] Commit 4 Delivery Order Settlement Routing
+                if ($paymentRequest->payment_domain === 'marketplace_delivery') {
+                    $settlementService = app(\App\Services\DeliveryOrderSettlementService::class);
+                    $settlementResult = $settlementService->settleVerifiedPayment($reference, $data);
+                    Log::info("Paystack Webhook: Delivery settlement for reference '{$reference}' returned: " . ($settlementResult['status'] ?? 'unknown'));
+                    return response()->json([
+                        'status' => true,
+                        'settlement' => $settlementResult['status'] ?? 'unknown',
+                    ], 200);
+                }
+
+                if ($paymentRequest->is_paid == 0) {
                     $expectedAmount = (int) round(($paymentRequest->payment_amount ?? 0) * 100);
                     $amountPaid = (int) ($data['amount'] ?? 0);
                     if ($amountPaid === $expectedAmount) {
-                        $affected = $this->payment::where('id', $paymentId)
+                        $affected = $this->payment::where('id', $paymentRequest->id)
                             ->where('is_paid', 0)
                             ->update([
                                 'payment_method' => 'paystack',
@@ -557,11 +584,11 @@ class PaystackController extends Controller
                             ]);
 
                         if ($affected > 0) {
-                            $updatedPayment = $this->payment::where('id', $paymentId)->first();
+                            $updatedPayment = $this->payment::where('id', $paymentRequest->id)->first();
                             if (!empty($updatedPayment->success_hook) && function_exists($updatedPayment->success_hook)) {
                                 call_user_func($updatedPayment->success_hook, $updatedPayment);
                             }
-                            Log::info("Paystack Webhook: Successfully processed PaymentRequest #{$paymentId} with ref {$reference}.");
+                            Log::info("Paystack Webhook: Successfully processed PaymentRequest #{$paymentRequest->id} with ref {$reference}.");
                         }
                     }
                 }
