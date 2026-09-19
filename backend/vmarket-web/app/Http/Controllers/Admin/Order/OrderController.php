@@ -616,15 +616,17 @@ class OrderController extends BaseController
             ]);
         }
 
-        if ($request['order_status'] == 'delivered') {
-            // [AI] Receipt Authority Guard: Marketplace orders require physical customer receipt verification
-            if (\App\Utils\OrderManager::isVictoriousMarketplaceOrder($order) && empty($order->received_at)) {
-                return response()->json([
-                    'status' => 0,
-                    'message' => translate('Marketplace orders require physical customer receipt verification (doorstep delivery code or in-shop handover OTP) to be marked as delivered.'),
-                ], 403);
-            }
+        // [AI] Strict Completion Authority Invariant:
+        // Generic status endpoints do not have delivery completion authority for marketplace orders.
+        // Delivery orders require verified doorstep customer OTP, and pickup orders require verified in-shop handover OTP.
+        if (\App\Utils\OrderManager::isVictoriousMarketplaceOrder($order) && $request['order_status'] === 'delivered') {
+            return response()->json([
+                'status' => 0,
+                'message' => translate('Generic admin status endpoint cannot mark marketplace orders delivered. Delivery orders require doorstep customer OTP verification, and pickup orders require in-shop handover OTP verification.'),
+            ], 403);
+        }
 
+        if ($request['order_status'] == 'delivered') {
             foreach ($order['details'] as $orderDetail) {
                 $productDetails = json_decode($orderDetail?->product_details ?? '', true) ?? [];
                 if (

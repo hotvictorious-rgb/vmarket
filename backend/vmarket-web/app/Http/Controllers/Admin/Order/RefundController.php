@@ -130,18 +130,22 @@ class RefundController extends BaseController
             throw new \App\Exceptions\CustomerWalletDecommissionedException('order_refund', 'Customer wallet is decommissioned and cannot be used as a refund destination. Refunds must be routed through original payment rails.');
         }
 
-        // [AI] Distributed Asynchronous Refund Execution
-        if ($request['refund_status'] == 'approved') {
+        // [AI] Distributed Asynchronous Refund Execution:
+        // Internal financial finalization is strictly prohibited from administrative status endpoints.
+        // Financial movement occurs exclusively upon verified Paystack completion (refund.processed webhook).
+        if ($request['refund_status'] === 'refunded' && $refund['status'] !== 'refunded') {
+            return response()->json([
+                'error' => translate('Manual transition to refunded is disabled. Refunds transition to refunded automatically upon authoritative Paystack completion confirmation.'),
+            ], 403);
+        }
+
+        if ($request['refund_status'] === 'approved') {
             $refundRequestModel = RefundRequest::find($refund['id']);
             if ($order && $order['payment_method'] === 'paystack' && !empty($order['transaction_ref'])) {
                 $paystackRefundService = app(\App\Services\PaystackRefundService::class);
                 $initResult = $paystackRefundService->initiateRefund($refundRequestModel, $order['transaction_ref']);
                 Log::info("[AI] Paystack refund initiated for RefundRequest #{$refund['id']}: " . ($initResult['message'] ?? ''));
             }
-        } elseif ($request['refund_status'] == 'refunded' && $refund['status'] != 'refunded') {
-            $refundRequestModel = RefundRequest::find($refund['id']);
-            $paystackRefundService = app(\App\Services\PaystackRefundService::class);
-            $paystackRefundService->finalizeRefundAccounting($refundRequestModel);
         }
 
         if ($refund['status'] != 'refunded') {

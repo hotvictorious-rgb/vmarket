@@ -202,8 +202,14 @@ class OrderController extends Controller
         $wallet_status = getWebConfig(name: 'wallet_status');
         $loyalty_point_status = getWebConfig(name: 'loyalty_point_status');
 
-        if ($request->order_status == 'delivered' && $order->payment_status != 'paid') {
-            return response()->json(['success' => 0, 'message' => translate('Before delivered you need to make payment status paid!')], 200);
+        // [AI] Strict Completion Authority Invariant:
+        // Generic seller REST endpoints do not have delivery completion authority for marketplace orders.
+        // Delivery orders require verified doorstep customer OTP, and pickup orders require verified in-shop handover OTP.
+        if (\App\Utils\OrderManager::isVictoriousMarketplaceOrder($order) && $request->order_status === 'delivered') {
+            return response()->json([
+                'success' => 0,
+                'message' => translate('Generic seller status endpoints cannot mark marketplace orders delivered. Delivery orders require doorstep customer OTP verification, and pickup orders require in-shop handover OTP verification.'),
+            ], 403);
         }
 
         if ($order->order_status == 'delivered') {

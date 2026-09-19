@@ -94,11 +94,11 @@ echo "\n\033[1m[A2] Cashback Economics — 5% from 10% commission (documented)\0
 chk('A2.1 — Proof doc: 5% cashback funded from 10% platform commission (Section 9)',
     str_contains($proofDoc, '5%') && str_contains($proofDoc, '10%') && str_contains($proofDoc, 'cashback'));
 chk('A2.2 — Cashback rate hardcoded at 5.00% in model',
-    str_contains($cashbackModel, '$cashbackRate = 5.00'));
+    str_contains($cashbackModel, '$cashbackRate = 5.00') || str_contains($cashbackModel, "\$cashbackRate = '0.05'") || str_contains($cashbackModel, "\$cashbackRate = '5.00'"));
 chk('A2.3 — Cashback is non-withdrawable reward ledger (annotated)',
     str_contains($cashbackModel, 'Non-withdrawable') || str_contains($cashbackModel, 'Reward Ledger'));
 chk('A2.4 — Cashback base excludes shipping cost',
-    str_contains($cashbackModel, 'shipping_cost') && str_contains($cashbackModel, 'max(0.00,'));
+    str_contains($cashbackModel, 'shipping_cost') && (str_contains($cashbackModel, 'max(0.00,') || str_contains($cashbackModel, 'bcsub(')));
 chk('A2.5 — Cashback credit is idempotent (existing entry check)',
     str_contains($cashbackModel, 'return $existing'));
 chk('A2.6 — Guest orders excluded from cashback',
@@ -106,9 +106,10 @@ chk('A2.6 — Guest orders excluded from cashback',
 
 echo "\n\033[1m[A3] Refund Debt Accounting — Unrecovered variance tracked in collected_cash\033[0m\n";
 
-chk('A3.1 — Vendor balance floored at ₦0 via max(0, ...)',
+chk('A3.1 — Vendor balance floored at ₦0 via max(0, ...) or BCMath floor',
     str_contains($refundCtrl, 'max(0, $currentEarning - $vendorShare)') ||
-    str_contains($refundCtrl, 'max(0, $currentEarning - $refund'));
+    str_contains($refundCtrl, 'max(0, $currentEarning - $refund') ||
+    str_contains($refundCtrl, 'bccomp($currentEarning, $vendorShare'));
 chk('A3.2 — Unrecovered debt computed as max(0, share - earned)',
     str_contains($refundCtrl, '$unrecoveredDebt'));
 chk('A3.3 — Unrecovered debt posted to collected_cash',
@@ -116,7 +117,7 @@ chk('A3.3 — Unrecovered debt posted to collected_cash',
 chk('A3.4 — [AI] audit comment in RefundController',
     str_contains($refundCtrl, '[AI] Merchant Recoverable Debt Accounting'));
 chk('A3.5 — Admin commission reversed proportionally',
-    str_contains($refundCtrl, 'commission_earned') && str_contains($refundCtrl, 'max(0,'));
+    str_contains($refundCtrl, 'commission_earned') && (str_contains($refundCtrl, 'max(0,') || str_contains($refundCtrl, "bccomp(\$adminCommDiff, '0.00'")));
 
 // Math proof: ₦10,000 refund on ₦2,000 wallet
 // [AI] Conservation identity: wallet_reduction + debt = refund

@@ -370,14 +370,14 @@ class OrderController extends Controller
             ], 403);
         }
 
-        if ($request['order_status'] == 'delivered') {
-            // [AI] Payment Authority Guard: An unpaid order CANNOT be marked as delivered
-            if ($order['payment_status'] !== 'paid') {
-                return response()->json([
-                    'status' => false,
-                    'message' => translate('Unpaid orders cannot be marked as delivered until payment is confirmed by Victorious MARKET.'),
-                ], 403);
-            }
+        // [AI] Strict Completion Authority Invariant:
+        // Generic seller REST endpoints do not have delivery completion authority for marketplace orders.
+        // Delivery orders require verified doorstep customer OTP, and pickup orders require verified in-shop handover OTP.
+        if (\App\Utils\OrderManager::isVictoriousMarketplaceOrder($order) && $request['order_status'] === 'delivered') {
+            return response()->json([
+                'status' => false,
+                'message' => translate('Generic seller status endpoints cannot mark marketplace orders delivered. Delivery orders require doorstep customer OTP verification, and pickup orders require in-shop handover OTP verification.'),
+            ], 403);
         }
 
         event(new OrderStatusEvent(key: $request['order_status'], type: 'customer', order: $order));
@@ -680,6 +680,15 @@ class OrderController extends Controller
 
                 $walletStatus = getWebConfig(name: 'wallet_status');
                 $loyaltyPointStatus = getWebConfig(name: 'loyalty_point_status');
+
+                // [AI] Strict Completion Authority Invariant:
+                // Generic seller REST endpoints do not have delivery completion authority for marketplace orders.
+                if (\App\Utils\OrderManager::isVictoriousMarketplaceOrder($order) && $request['order_status'] === 'delivered') {
+                    return response()->json([
+                        'success' => 0,
+                        'message' => translate('Generic seller status endpoints cannot mark marketplace orders delivered. Delivery orders require doorstep customer OTP verification, and pickup orders require in-shop handover OTP verification.'),
+                    ], 403);
+                }
 
                 if ($order['order_status'] == 'delivered' && !in_array($request['order_status'], ['returned', 'failed', 'canceled'])) {
                     return response()->json(['success' => 0, 'message' => translate('order_is_already_delivered')], 200);

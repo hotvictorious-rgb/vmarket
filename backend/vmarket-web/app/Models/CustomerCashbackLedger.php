@@ -101,22 +101,22 @@ class CustomerCashbackLedger extends Model
         $taxAmount = bcadd((string)($order->total_tax_amount ?? '0.00'), '0', 2);
         
         $merchandiseAmountStr = bcsub(bcsub($totalOrderAmount, $shippingCost, 2), $taxAmount, 2);
-        $merchandiseAmount = max(0.00, (float)$merchandiseAmountStr);
+        $merchandiseAmount = (bccomp($merchandiseAmountStr, '0.00', 2) < 0) ? '0.00' : $merchandiseAmountStr;
 
-        if (bccomp((string)$merchandiseAmount, '0.00', 2) <= 0) {
+        if (bccomp($merchandiseAmount, '0.00', 2) <= 0) {
             return null;
         }
 
         // 5% Cashback Reward calculated via BCMath string arithmetic
-        $cashbackRate = 5.00;
-        $cashbackAmount = bcmul((string)$merchandiseAmount, '0.05', 2);
+        $cashbackRate = '5.00';
+        $cashbackAmount = bcmul($merchandiseAmount, '0.05', 2);
 
         return self::create([
             'customer_id' => $order->customer_id,
             'order_id' => $order->id,
-            'merchandise_amount' => (float)$merchandiseAmount,
+            'merchandise_amount' => $merchandiseAmount,
             'cashback_rate' => $cashbackRate,
-            'cashback_amount' => (float)$cashbackAmount,
+            'cashback_amount' => $cashbackAmount,
             'status' => 'pending',
             'available_at' => $order->refund_window_expires_at,
             'description' => "5% Victorious Cashback Reward for Order #{$order->id}",
@@ -141,8 +141,8 @@ class CustomerCashbackLedger extends Model
         }
 
         $adjustedCashback = bcmul($remainingMerchandise, '0.05', 2);
-        $this->merchandise_amount = (float)$remainingMerchandise;
-        $this->cashback_amount = (float)$adjustedCashback;
+        $this->merchandise_amount = $remainingMerchandise;
+        $this->cashback_amount = $adjustedCashback;
         $this->description = "5% Victorious Cashback Reward for Order #{$this->order_id} (Adjusted for partial refund)";
         $this->save();
     }

@@ -54,10 +54,24 @@ class PaystackRefundService
         if (!empty($paystackRefundId)) {
             $fetched = $this->fetchRefundById($paystackRefundId);
             if ($fetched['status'] && isset($fetched['data'])) {
+                $refData = $fetched['data'];
+                // Safety verification layer: verify provider record against local request expectations
+                $refTx = (string)($refData['transaction_reference'] ?? ($refData['transaction']['reference'] ?? ''));
+                $refCurrency = strtoupper((string)($refData['currency'] ?? ''));
+
+                if ($refCurrency === 'NGN' && (empty($refTx) || $refTx === $transactionReference)) {
+                    return [
+                        'found' => true,
+                        'exact_match' => true,
+                        'refund' => $refData,
+                    ];
+                }
+
                 return [
                     'found' => true,
-                    'exact_match' => true,
-                    'refund' => $fetched['data'],
+                    'exact_match' => false,
+                    'has_ambiguous_refunds' => true,
+                    'status' => 'reconciliation_required',
                 ];
             }
         }
@@ -447,6 +461,7 @@ class PaystackRefundService
                 break;
 
             case 'refund.processed':
+                $fullRefund['status'] = $fullRefund['status'] ?? 'processed';
                 $this->finalizeRefundAccounting($refundRequest, $fullRefund);
                 break;
         }
@@ -480,10 +495,57 @@ class PaystackRefundService
                 return;
             }
 
+            // [AI] Strict Provider Proof Verification Invariant:
+            // Internal financial finalization is ONLY permitted with authoritative Paystack proof.
+            // Reject any execution without verified providerData or with contradictory provider fields.
+            if (empty($providerData)) {
+                Log::error("[AI] Paystack finalizeRefundAccounting blocked: Missing authoritative provider data for RefundRequest #{$lockedRequest->id}");
+                return;
+            }
+
+            $providerStatus = strtolower((string)($providerData['status'] ?? 'processed'));
+            if (!in_array($providerStatus, ['processed', 'success', 'succeeded'])) {
+                Log::warning("[AI] Paystack finalizeRefundAccounting blocked: Provider status is '{$providerStatus}', not 'processed', for RefundRequest #{$lockedRequest->id}");
+                return;
+            }
+
+            $providerCurrency = strtoupper((string)($providerData['currency'] ?? ''));
+            if (!empty($providerCurrency) && $providerCurrency !== 'NGN') {
+                Log::warning("[AI] Paystack finalizeRefundAccounting blocked: Non-NGN currency '{$providerCurrency}' for RefundRequest #{$lockedRequest->id}");
+                $lockedRequest->execution_status = 'reconciliation_required';
+                $lockedRequest->save();
+                return;
+            }
+
+            $expectedKobo = (int) bcmul((string)$lockedRequest->amount, '100', 0);
+            $providerKobo = (int)($providerData['amount'] ?? 0);
+            if ($providerKobo > 0 && $providerKobo !== $expectedKobo) {
+                Log::warning("[AI] Paystack finalizeRefundAccounting blocked: Amount mismatch for RefundRequest #{$lockedRequest->id}. Expected {$expectedKobo}, got {$providerKobo}");
+                $lockedRequest->execution_status = 'reconciliation_required';
+                $lockedRequest->save();
+                return;
+            }
+
+            $providerTxRef = (string)($providerData['transaction_reference'] ?? ($providerData['transaction']['reference'] ?? ''));
+            if (!empty($providerTxRef) && !empty($order->transaction_ref) && $providerTxRef !== $order->transaction_ref) {
+                Log::warning("[AI] Paystack finalizeRefundAccounting blocked: Transaction reference mismatch for RefundRequest #{$lockedRequest->id}");
+                $lockedRequest->execution_status = 'reconciliation_required';
+                $lockedRequest->save();
+                return;
+            }
+
+            $providerNote = (string)($providerData['merchant_note'] ?? ($providerData['customer_note'] ?? ''));
+            if (!empty($providerNote) && !empty($lockedRequest->execution_ref) && $providerNote !== $lockedRequest->execution_ref && str_starts_with($providerNote, 'vmarket_refund_')) {
+                Log::warning("[AI] Paystack finalizeRefundAccounting blocked: Execution reference mismatch for RefundRequest #{$lockedRequest->id}");
+                $lockedRequest->execution_status = 'reconciliation_required';
+                $lockedRequest->save();
+                return;
+            }
+
             $refundAmount = bcadd((string)$lockedRequest->amount, '0', 2);
             $isSettled = ($order->vendor_settlement_status === 'settled');
 
-            // 3. Financial Reversals: Pre-Settlement Escrow vs Post-Settlement
+            // 3. Financial Reversals: Pre-Settlement Escrow vs Post-Settlement (Pure BCMath Precision)
             if (!$isSettled) {
                 // Pre-Settlement Reversal:
                 // Full funds still sit in platform escrow (AdminWallet.pending_amount).
@@ -492,7 +554,9 @@ class PaystackRefundService
                 // SellerWallet: 0.00 movement; Admin commission: 0.00 movement.
                 $adminWallet = AdminWallet::where('admin_id', 1)->lockForUpdate()->first();
                 if ($adminWallet) {
-                    $adminWallet->pending_amount = max(0.00, (float)bcsub((string)$adminWallet->pending_amount, $refundAmount, 2));
+                    $currentPending = bcadd((string)$adminWallet->pending_amount, '0', 2);
+                    $newPendingDiff = bcsub($currentPending, $refundAmount, 2);
+                    $adminWallet->pending_amount = (bccomp($newPendingDiff, '0.00', 2) < 0) ? '0.00' : $newPendingDiff;
                     $adminWallet->save();
                 }
             } else {
@@ -504,23 +568,30 @@ class PaystackRefundService
 
                 $sellerWallet = SellerWallet::where('seller_id', $order->seller_id)->lockForUpdate()->first();
                 if ($sellerWallet) {
-                    $currentEarning = (float)$sellerWallet->total_earning;
+                    $currentEarning = bcadd((string)$sellerWallet->total_earning, '0', 2);
                     // [AI] Merchant Recoverable Debt Accounting:
                     // If vendor earnings are insufficient to cover vendorShare,
                     // floor wallet balance at 0.00 and post unrecovered variance to collected_cash.
-                    $newEarning = max(0, $currentEarning - $vendorShare);
-                    $unrecoveredDebt = max(0, $vendorShare - $currentEarning);
-                    $sellerWallet->total_earning = $newEarning;
-                    if ($unrecoveredDebt > 0) {
-                        $sellerWallet->collected_cash = $sellerWallet->collected_cash + $unrecoveredDebt; // unrecovered debt posted to 'collected_cash' (+ $unrecoveredDebt)
+                    if (bccomp($currentEarning, $vendorShare, 2) >= 0) {
+                        $newEarning = bcsub($currentEarning, $vendorShare, 2);
+                        $unrecoveredDebt = '0.00';
+                    } else {
+                        $newEarning = '0.00';
+                        $unrecoveredDebt = bcsub($vendorShare, $currentEarning, 2);
                     }
-                    $sellerWallet->commission_given = max(0, (float)bcsub((string)$sellerWallet->commission_given, $commissionShare, 2));
+                    $sellerWallet->total_earning = $newEarning;
+                    if (bccomp($unrecoveredDebt, '0.00', 2) > 0) {
+                        $sellerWallet->collected_cash = bcadd((string)$sellerWallet->collected_cash, $unrecoveredDebt, 2); // unrecovered debt posted to 'collected_cash' (+ $unrecoveredDebt)
+                    }
+                    $commDiff = bcsub((string)$sellerWallet->commission_given, $commissionShare, 2);
+                    $sellerWallet->commission_given = (bccomp($commDiff, '0.00', 2) < 0) ? '0.00' : $commDiff;
                     $sellerWallet->save();
                 }
 
                 $adminWallet = AdminWallet::where('admin_id', 1)->lockForUpdate()->first();
                 if ($adminWallet) {
-                    $adminWallet->commission_earned = max(0, (float)bcsub((string)$adminWallet->commission_earned, $commissionShare, 2));
+                    $adminCommDiff = bcsub((string)$adminWallet->commission_earned, $commissionShare, 2);
+                    $adminWallet->commission_earned = (bccomp($adminCommDiff, '0.00', 2) < 0) ? '0.00' : $adminCommDiff;
                     $adminWallet->save();
                 }
             }
@@ -565,7 +636,7 @@ class PaystackRefundService
                 }
             }
 
-            // 5. Create Auditable RefundTransaction
+            // 5. Create Auditable RefundTransaction (Exact Decimal String)
             $paystackId = $providerData['id'] ?? ($lockedRequest->paystack_refund_id ?? '');
             RefundTransaction::create([
                 'order_id' => $lockedRequest->order_id,
@@ -576,7 +647,7 @@ class PaystackRefundService
                 'paid_to' => 'customer',
                 'payment_method' => 'paystack',
                 'payment_status' => 'paid',
-                'amount' => (float)$refundAmount,
+                'amount' => $refundAmount,
                 'transaction_type' => 'Refund',
                 'order_details_id' => $lockedRequest->order_details_id,
                 'refund_id' => $lockedRequest->id,

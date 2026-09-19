@@ -89,9 +89,21 @@ class InShopHandoverController extends Controller
             return back();
         }
 
-        $expectedCode = (string)($order->pickup_verification_code ?: $order->verification_code);
-        if (!$expectedCode) {
-            $message = translate('No_pickup_verification_code_assigned_to_this_order');
+        // [AI] Strict Custody-Code Separation Invariant:
+        // Determine fulfillment mode FIRST, then select the exclusive verification secret.
+        // Customer In-Shop Pickup: verification_code ONLY (Customer Handover OTP).
+        // Delivery Vendor -> Rider: pickup_verification_code ONLY (Rider Collection OTP).
+        // Never accept both codes interchangeably!
+        if ($isCustomerPickup) {
+            $expectedCode = (string)$order->verification_code;
+            $codeType = 'customer_handover_otp';
+        } else {
+            $expectedCode = (string)$order->pickup_verification_code;
+            $codeType = 'rider_pickup_otp';
+        }
+
+        if (empty($expectedCode)) {
+            $message = translate('No_' . $codeType . '_assigned_to_this_order');
             if ($request->ajax() || $request->wantsJson() || $request->is('api/*')) {
                 return response()->json(['status' => false, 'message' => $message], 422);
             }
@@ -103,7 +115,7 @@ class InShopHandoverController extends Controller
         $lockKey = "pickup_attempts_{$order->id}";
         $attempts = (int) Cache::get($lockKey, 0);
         if ($attempts >= 5) {
-            $lockMessage = translate('Pickup_verification_locked_due_to_5_failed_attempts._Please_try_again_in_15_minutes.');
+            $lockMessage = translate('Verification_locked_due_to_5_failed_attempts._Please_try_again_in_15_minutes.');
             if ($request->ajax() || $request->wantsJson() || $request->is('api/*')) {
                 return response()->json(['status' => false, 'message' => $lockMessage], 429);
             }
@@ -111,9 +123,9 @@ class InShopHandoverController extends Controller
             return back();
         }
 
-        // [AI] Constant-time OTP comparison to prevent timing attacks
-        $validOtp = hash_equals($expectedCode, (string)$request->pickup_otp)
-            || ($order->verification_code && hash_equals((string)$order->verification_code, (string)$request->pickup_otp));
+        // [AI] Strict Constant-Time OTP Comparison:
+        // Must match the EXACT designated custody code. Cross-code matching is strictly rejected.
+        $validOtp = hash_equals($expectedCode, (string)$request->pickup_otp);
 
         if (!$validOtp) {
             Cache::put($lockKey, $attempts + 1, now()->addMinutes(15));
