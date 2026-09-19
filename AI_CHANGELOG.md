@@ -1,3 +1,25 @@
+### [2026-09-19 07:58 UTC] Commit 2: Delivery Checkout Intent and Immutable Snapshot Service [backend] [ai-governance]
+* **Component:** Delivery Checkout Engine (`backend/vmarket-web/app/Services/DeliveryCheckoutIntentService.php`, `backend/vmarket-web/app/Models/CheckoutIntent.php`, `backend/vmarket-web/app/Exceptions/`)
+* **Action:** Implemented the delivery CheckoutIntent creation pipeline and immutable snapshot builder:
+  - `App\Models\CheckoutIntent`: Eloquent model mapping to `checkout_intents` table with ``, casted `checkout_snapshot` JSON, and `pending` / `isExpired` scopes.
+  - `App\Exceptions\IdempotencyConflictException`: Custom domain exception for HTTP 409 conflict when an existing idempotency key is submitted with different payload parameters.
+  - `App\Exceptions\ProductUnavailableException`: Custom domain exception for HTTP 422 when a product fails `isMarketplacePurchasable()`.
+  - `App\Exceptions\InvalidCartException`: Custom domain exception for HTTP 422 on cart ownership, empty cart, or foreign address IDOR violations.
+  - `App\Services\DeliveryCheckoutIntentService`:
+    * Enforces authenticated customer identity and IDOR boundary checking on cart items and shipping addresses.
+    * Re-evaluates authoritative runtime marketplace eligibility for every cart item via `Product::isMarketplacePurchasable()`.
+    * Performs 100% decimal-safe monetary arithmetic via BCMath (`bcmul()`, `bcadd()`, `bcsub()`); completely bans `float` and `round()`.
+    * Groups line items by vendor/seller with exact line totals, shipping fees, and allocated discounts.
+    * Formats and computes deterministic canonical SHA-256 `cart_fingerprint` covering customer, addresses, coupon, currency, vendors, and line items.
+    * Constructs complete immutable `checkout_snapshot` containing all data required for eventual multi-vendor Order creation without reading mutable cart state.
+    * Handles race-safe concurrency: graceful replay for identical key + payload, HTTP 409 conflict for identical key + modified payload, and MySQL Error 1062 duplicate active cart token resolution.
+    * Implements lazy expiration under row lock: transitions stale intents (`expires_at <= now()`) to `expired` and releases `active_cart_token`.
+    * Strictly isolates checkout construction: zero Orders, zero PaymentRequests, and zero cart deletions executed.
+* **Verification & Zero Drift:**
+  - 15/15 automated tests passed in `scratch/test_commit2_delivery_checkout_intent_service.php` covering single/multi-vendor, exact snapshots, deterministic fingerprints, replay, 409 conflict, lazy expiry, IDOR, and decimal serialization.
+  - Regression certification suite `scratch/v1_transaction_certification.php` passed 82/82 (Δ = ₦0.00).
+  - Zero controller, route, payment gateway, or UI files modified.
+
 ### [2026-09-19 07:45 UTC] Commit 1: Schema Migrations for Hybrid Delivery and Pickup Engine [backend] [ai-governance]
 * **Component:** Database Schema Migrations (`backend/vmarket-web/database/migrations/`)
 * **Action:** Implemented and executed strictly the 4 approved Commit 1 database migrations on MySQL 8.4.2:
