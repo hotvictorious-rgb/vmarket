@@ -481,131 +481,16 @@ class WebController extends Controller
 
     public function getCashOnDeliveryCheckoutComplete(Request $request): View|RedirectResponse|JsonResponse
     {
-        if ($request['payment_method'] != 'cash_on_delivery') {
-            if ($request->ajax()) {
-                return response()->json([
-                    'status' => 0, 'message' => translate('Something_went_wrong'),
-                ]);
-            }
-            return back()->with('error', 'Something_went_wrong');
-        }
-
-        $response = OrderManager::checkValidationForCheckoutPages($request);
-        if ($response['status'] == 0) {
-            if ($request->ajax()) {
-                return response()->json([
-                    'status' => 0,
-                    'message' => $response['message'][0] ?? translate('Something went_wrong'),
-                ]);
-            }
-            foreach ($response['message'] as $message) {
-                Toastr::error($message);
-            }
-            return isset($response['redirect']) ? redirect($response['redirect']) : redirect('/');
-        }
-
-        $cartListQuery = CartManager::getCartListQuery(type: 'checked');
-        $productStockCheck = CartManager::product_stock_check($cartListQuery);
-        $physicalProductExist = (bool)$cartListQuery->where('product_type', 'physical')->first();
-
-        if (!$physicalProductExist) {
-            if ($request->ajax()) {
-                return response()->json([
-                    'status' => 0,
-                    'message' => translate('Something_went_wrong'),
-                ]);
-            }
-            return back()->with('error', translate('Something_went_wrong'));
-        }
-
-        if (!$productStockCheck) {
-            if ($request->ajax()) {
-                return response()->json([
-                    'status' => 0,
-                    'message' => translate('the_following_items_in_your_cart_are_currently_out_of_stock'),
-                ]);
-            }
-            Toastr::error(translate('the_following_items_in_your_cart_are_currently_out_of_stock'));
-            return redirect()->route('shop-cart');
-        }
-
-        $verifyStatus = OrderManager::verifyCartListMinimumOrderAmount($request);
-        if ($verifyStatus['status'] == 0) {
-            if ($request->ajax()) {
-                return response()->json([
-                    'status' => 0,
-                    'message' => translate('check_minimum_order_amount_requirement'),
-                    'redirect' => route('shop-cart'),
-                ]);
-            }
-
-            Toastr::info(translate('check_minimum_order_amount_requirement'));
-            return redirect()->route('shop-cart');
-        }
-
-        if (session('newCustomerRegister')) {
-            $newCustomerRegister = session('newCustomerRegister');
-            if (User::where(['email' => $newCustomerRegister['email']])->orWhere(['phone' => $newCustomerRegister['phone']])->first()) {
-                if ($request->ajax()) {
-                    return response()->json([
-                        'status' => 0,
-                        'message' => translate('Already_registered'),
-                    ]);
-                }
-                Toastr::error(translate('Already_registered'));
-                return back();
-            }
-
-            $addCustomer = User::create([
-                'name' => $newCustomerRegister['name'],
-                'f_name' => $newCustomerRegister['name'],
-                'l_name' => $newCustomerRegister['l_name'],
-                'email' => $newCustomerRegister['email'],
-                'phone' => $newCustomerRegister['phone'],
-                'is_active' => 1,
-                'password' => bcrypt($newCustomerRegister['password']),
-                'referral_code' => $newCustomerRegister['referral_code'],
-            ]);
-            session()->put('newRegisterCustomerInfo', $addCustomer);
-
-            $guestID = session()->has('guest_id') ? session('guest_id') : 0;
-            OrderManager::updateCustomerShippingAddressForOrder($guestID, $addCustomer['id'], session('address_id'));
-            OrderManager::updateCustomerShippingAddressForOrder($guestID, $addCustomer['id'], session('billing_address_id'));
-        }
-
-        $orderIds = OrderManager::generateOrder(data: [
-            'order_status' => 'pending',
-            'payment_method' => 'cash_on_delivery',
-            'payment_status' => 'unpaid',
-            'transaction_ref' => '',
-            'coupon_code' => session('coupon_code'),
-            'address_id' => session('address_id'),
-            'billing_address_id' => session('billing_address_id'),
-            'bring_change_amount' => $request['bring_change_amount'] ?? 0,
-            'bring_change_amount_currency' => session('currency_code'),
-        ]);
-
-        $isNewCustomerInSession = session('newCustomerRegister');
-        session(['order_success_ids' => $orderIds, 'isNewCustomerInSession' => $isNewCustomerInSession]);
-        session()->forget('newCustomerRegister');
-        session()->forget('newRegisterCustomerInfo');
+        // [AI] V1 Authority Invariant: Cash on delivery is permanently decommissioned in Victorious MARKET.
+        // All marketplace orders require online payment via Paystack.
         if ($request->ajax()) {
-            if (auth()->guard('customer')->check()) {
-                $redirectUrl = route('account-oder');
-            } else {
-                $redirectUrl = route('home');
-            }
             return response()->json([
-                'status' => 1,
-                'message' => translate('Order_Placed_Successfully'),
-                'redirect' => $redirectUrl
-
-            ]);
+                'status' => 0,
+                'message' => 'Cash on delivery is permanently decommissioned in Victorious MARKET. Please pay online via Paystack.',
+            ], 403);
         }
-        if(auth()->guard('customer')->check()) {
-            return redirect()->route('account-oder');
-        }
-        return redirect(route('home'));
+        Toastr::error('Cash on delivery is permanently decommissioned in Victorious MARKET. Please pay online via Paystack.');
+        return redirect()->route('checkout-payment');
     }
 
     public function getOrderPlaceView(Request $request): View

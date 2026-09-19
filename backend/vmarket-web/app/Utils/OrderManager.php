@@ -2174,25 +2174,57 @@ class OrderManager
     public static function getRefundDetailsForSingleOrderDetails($orderDetailsId): array
     {
         $orderDetails = OrderDetail::where(['id' => $orderDetailsId])->first();
+        if (!$orderDetails) {
+            return [
+                'product_price' => '0.00',
+                'product_discount' => '0.00',
+                'tax' => '0.00',
+                'sub_total' => '0.00',
+                'coupon_discount' => '0.00',
+                'referral_discount' => '0.00',
+                'total_refundable_amount' => '0.00',
+            ];
+        }
         $order = Order::where(['id' => $orderDetails['order_id']])->with('details')->first();
 
-        $totalProductPrice = 0;
+        $totalProductPrice = '0.00';
         foreach ($order->details as $key => $orderDetail) {
-            $totalProductPrice += ($orderDetail->qty * $orderDetail->price) + $orderDetail->tax - $orderDetail->discount;
+            $qty = (string)($orderDetail->getRawOriginal('qty') ?? '1');
+            $price = (string)($orderDetail->getRawOriginal('price') ?? '0.00');
+            $tax = (string)($orderDetail->getRawOriginal('tax') ?? '0.00');
+            $discount = (string)($orderDetail->getRawOriginal('discount') ?? '0.00');
+            $itemTotal = bcsub(bcadd(bcmul($qty, $price, 4), $tax, 4), $discount, 4);
+            $totalProductPrice = bcadd($totalProductPrice, $itemTotal, 4);
         }
-        $subtotal = ($orderDetails->price * $orderDetails->qty) - $orderDetails->discount + $orderDetails->tax;
 
-        $couponDiscount = $totalProductPrice > 0 ? (($order->discount_amount * $subtotal) / $totalProductPrice) : 0;
-        $referAndEarnDiscount = OrderManager::getReferDiscountAmountForSingleOrderDetails(orderDetailsId: $orderDetailsId);
+        $detailQty = (string)($orderDetails->getRawOriginal('qty') ?? '1');
+        $detailPrice = (string)($orderDetails->getRawOriginal('price') ?? '0.00');
+        $detailTax = (string)($orderDetails->getRawOriginal('tax') ?? '0.00');
+        $detailDiscount = (string)($orderDetails->getRawOriginal('discount') ?? '0.00');
+        $subtotal = bcsub(bcadd(bcmul($detailQty, $detailPrice, 4), $detailTax, 4), $detailDiscount, 4);
+
+        $orderDiscountAmount = (string)($order->getRawOriginal('discount_amount') ?? '0.00');
+        if (bccomp($totalProductPrice, '0.00', 4) > 0) {
+            $couponDiscount = bcdiv(bcmul($orderDiscountAmount, $subtotal, 4), $totalProductPrice, 4);
+        } else {
+            $couponDiscount = '0.00';
+        }
+
+        $referAndEarnDiscount = (string)OrderManager::getReferDiscountAmountForSingleOrderDetails(orderDetailsId: $orderDetailsId);
+
+        $refundable = bcsub(bcsub($subtotal, $couponDiscount, 4), $referAndEarnDiscount, 4);
+        if (bccomp($refundable, '0.00', 2) < 0) {
+            $refundable = '0.00';
+        }
 
         return [
-            'product_price' => $orderDetails->price,
-            'product_discount' => $orderDetails->discount,
-            'tax' => $orderDetails->tax,
-            'sub_total' => $subtotal,
-            'coupon_discount' => $couponDiscount,
-            'referral_discount' => $referAndEarnDiscount,
-            'total_refundable_amount' => $subtotal - $couponDiscount - $referAndEarnDiscount,
+            'product_price' => bcadd($detailPrice, '0', 2),
+            'product_discount' => bcadd($detailDiscount, '0', 2),
+            'tax' => bcadd($detailTax, '0', 2),
+            'sub_total' => bcadd($subtotal, '0', 2),
+            'coupon_discount' => bcadd($couponDiscount, '0', 2),
+            'referral_discount' => bcadd($referAndEarnDiscount, '0', 2),
+            'total_refundable_amount' => bcadd($refundable, '0', 2),
         ];
     }
 

@@ -192,98 +192,12 @@ class OrderController extends Controller
 
     public function place_order(Request $request): JsonResponse
     {
-        $user = Helpers::getCustomerInformation($request);
-        $newCustomerRegister = null;
-        $cartGroupIds = CartManager::get_cart_group_ids(request: $request, type: 'checked');
-        $carts = Cart::whereHas('product', function ($query) {
-            return $query->active();
-        })->with('product')->whereIn('cart_group_id', $cartGroupIds)->where(['is_checked' => 1])->get();
-
-        $productStockCheck = CartManager::product_stock_check($carts);
-        if (!$productStockCheck) {
-            return response()->json(['message' => translate('The_following_items_in_your_cart_are_currently_out_of_stock')], 403);
-        }
-
-        $verifyStatus = OrderManager::verifyCartListMinimumOrderAmount($request);
-        if ($verifyStatus['status'] == 0) {
-            return response()->json(['message' => translate('Check_minimum_order_amount_requirement')], 403);
-        }
-
-        if ($user == 'offline' && $request->has('address_id') && $request['address_id']) {
-            $shippingAddress = ShippingAddress::where(['customer_id' => $request['guest_id'], 'is_guest' => 1, 'id' => $request->input('address_id')])->first();
-            if ($request['is_check_create_account'] && $shippingAddress) {
-                if (User::where(['email' => $shippingAddress['email']])->orWhere(['phone' => $shippingAddress['phone']])->first()) {
-                    return response()->json(['message' => translate('Already_registered ')], 403);
-                } else {
-                    $newCustomerRegister = self::addNewCustomer(request: $request, address: $shippingAddress);
-                }
-            }
-        }
-
-        $physicalProduct = false;
-        foreach ($carts as $cart) {
-            if ($cart->product_type == 'physical') {
-                $physicalProduct = true;
-            }
-        }
-
-        if ($physicalProduct) {
-            $zipRestrictStatus = getWebConfig(name: 'delivery_zip_code_area_restriction');
-            $countryRestrictStatus = getWebConfig(name: 'delivery_country_restriction');
-
-            if ($request->has('billing_address_id') && $request['billing_address_id']) {
-                if ($user == 'offline') {
-                    $billingAddress = ShippingAddress::where(['customer_id' => $request['guest_id'], 'is_guest' => 1, 'id' => $request->input('billing_address_id')])->first();
-                    if ($request['is_check_create_account'] && $billingAddress && $request['address_id'] == null) {
-                        if (User::where(['email' => $billingAddress['email']])->orWhere(['phone' => $billingAddress['phone']])->first()) {
-                            return response()->json(['message' => translate('Already_registered ')], 403);
-                        } else {
-                            $newCustomerRegister = self::addNewCustomer(request: $request, address: $billingAddress);
-                        }
-                    }
-                } else {
-                    $billingAddress = ShippingAddress::where(['customer_id' => $user->id, 'is_guest' => '0', 'id' => $request->input('billing_address_id')])->first();
-                }
-
-                if (!$billingAddress) {
-                    return response()->json(['message' => translate('address_not_found')], 403);
-                } elseif ($countryRestrictStatus && !self::delivery_country_exist_check($billingAddress->country)) {
-                    return response()->json(['message' => translate('Delivery_unavailable_for_this_country')], 403);
-                } elseif ($zipRestrictStatus && !self::delivery_zipcode_exist_check($billingAddress->zip)) {
-                    return response()->json(['message' => translate('Delivery_unavailable_for_this_zip_code_area')], 403);
-                }
-            }
-        }
-
-        $currency_model = getWebConfig(name: 'currency_model');
-        if ($currency_model == 'multi_currency') {
-            $currencyCode = $request->current_currency_code ?? Currency::find(getWebConfig(name: 'system_default_currency'))->code;
-        } else {
-            $currencyCode = Currency::find(getWebConfig(name: 'system_default_currency'))->code;
-        }
-
-        $orderIds = OrderManager::generateOrder(data: [
-            'is_guest' => $user == 'offline' ? 1 : 0,
-            'guest_id' => $request['guest_id'],
-            'customer_id' => $user == 'offline' ? $request['guest_id'] : $user['id'],
-            'order_status' => 'pending',
-            'payment_method' => 'cash_on_delivery',
-            'payment_status' => 'unpaid',
-            'transaction_ref' => '',
-            'address_id' => $request['address_id'],
-            'billing_address_id' => $request['billing_address_id'],
-            'coupon_code' => $request['coupon_code'],
-            'newCustomerRegister' => $newCustomerRegister,
-            'bring_change_amount' => $request['bring_change_amount'] ?? 0,
-            'bring_change_amount_currency' => $currencyCode,
-            'requestObj' => $request,
-            'order_note' => $request['order_note'] ?? '',
-        ]);
-
+        // [AI] V1 Authority Invariant: Cash on delivery is permanently decommissioned in Victorious MARKET.
+        // All marketplace delivery orders require upfront online payment via Paystack.
         return response()->json([
-            'order_ids' => $orderIds,
-            'new_user' => (bool)$newCustomerRegister
-        ], 200);
+            'status' => false,
+            'message' => 'Cash on delivery is permanently decommissioned in Victorious MARKET. Please pay online via Paystack.',
+        ], 403);
     }
 
     function addNewCustomer($request, $address): User
@@ -302,108 +216,11 @@ class OrderController extends Controller
 
     public function placeOrderByOfflinePayment(Request $request): JsonResponse
     {
-        $user = Helpers::getCustomerInformation($request);
-        $newCustomerRegister = null;
-        $cartGroupIds = CartManager::get_cart_group_ids(request: $request, type: 'checked');
-        $carts = Cart::whereHas('product', function ($query) {
-            return $query->active();
-        })->with('product')->whereIn('cart_group_id', $cartGroupIds)->where(['is_checked' => 1])->get();
-
-        $productStockCheck = CartManager::product_stock_check($carts);
-        if (!$productStockCheck) {
-            return response()->json(['message' => 'The following items in your cart are currently out of stock'], 403);
-        }
-
-        $verifyStatus = OrderManager::verifyCartListMinimumOrderAmount($request);
-        if ($verifyStatus['status'] == 0) {
-            return response()->json(['message' => 'Check minimum order amount requirement'], 403);
-        }
-
-        if ($user == 'offline' && $request->has('address_id') && $request['address_id']) {
-            $shippingAddress = ShippingAddress::where(['customer_id' => $request['guest_id'], 'is_guest' => 1, 'id' => $request->input('address_id')])->first();
-            if ($request['is_check_create_account'] && $shippingAddress) {
-                if (User::where(['email' => $shippingAddress['email']])->orWhere(['phone' => $shippingAddress['phone']])->first()) {
-                    return response()->json(['message' => translate('Already_registered ')], 403);
-                } else {
-                    $newCustomerRegister = self::addNewCustomer(request: $request, address: $shippingAddress);
-                }
-            }
-        }
-
-        $physicalProductExist = false;
-        foreach ($carts as $cart) {
-            if ($cart->product_type == 'physical') {
-                $physicalProductExist = true;
-            }
-        }
-
-        if ($physicalProductExist) {
-            $zipRestrictStatus = getWebConfig(name: 'delivery_zip_code_area_restriction');
-            $countryRestrictStatus = getWebConfig(name: 'delivery_country_restriction');
-
-            if ($request->has('billing_address_id') && $request['billing_address_id']) {
-                if ($user == 'offline') {
-                    $billingAddress = ShippingAddress::where(['customer_id' => $request['guest_id'], 'is_guest' => 1, 'id' => $request->input('billing_address_id')])->first();
-                    if ($request['is_check_create_account'] && $billingAddress && $request['address_id'] == null) {
-                        if (User::where(['email' => $billingAddress['email']])->orWhere(['phone' => $billingAddress['phone']])->first()) {
-                            return response()->json(['message' => translate('Already_registered ')], 403);
-                        } else {
-                            $newCustomerRegister = self::addNewCustomer(request: $request, address: $billingAddress);
-                        }
-                    }
-                } else {
-                    $billingAddress = ShippingAddress::where(['customer_id' => $user->id, 'is_guest' => '0', 'id' => $request->input('billing_address_id')])->first();
-                }
-
-                if (!$billingAddress) {
-                    return response()->json(['message' => translate('address_not_found')], 200);
-                } elseif ($countryRestrictStatus && !self::delivery_country_exist_check($billingAddress->country)) {
-                    return response()->json(['message' => translate('Delivery_unavailable_for_this_country')], 403);
-
-                } elseif ($zipRestrictStatus && !self::delivery_zipcode_exist_check($billingAddress->zip)) {
-                    return response()->json(['message' => translate('Delivery_unavailable_for_this_zip_code_area')], 403);
-                }
-            }
-        }
-
-        $offlinePaymentInfo = [];
-        $method = OfflinePaymentMethod::where(['id' => $request['method_id'], 'status' => 1])->first();
-
-        if (isset($method)) {
-            $fields = array_column($method->method_informations, 'customer_input');
-            $values = (array)json_decode(base64_decode($request['method_informations']));
-            $offlinePaymentInfo['method_id'] = $request['method_id'];
-            $offlinePaymentInfo['method_name'] = $method->method_name;
-            foreach ($fields as $field) {
-                if (key_exists($field, $values)) {
-                    $offlinePaymentInfo[$field] = $values[$field];
-                }
-            }
-        }
-
-        $orderIds = OrderManager::generateOrder(data: [
-            'is_guest' => $user == 'offline' ? 1 : 0,
-            'guest_id' => $request['guest_id'],
-            'customer_id' => $user == 'offline' ? $request['guest_id'] : $user['id'],
-            'order_status' => 'pending',
-            'payment_method' => 'offline_payment',
-            'payment_status' => 'unpaid',
-            'transaction_ref' => '',
-            'address_id' => $request['address_id'],
-            'billing_address_id' => $request['billing_address_id'],
-            'newCustomerRegister' => $newCustomerRegister,
-            'offline_payment_info' => $offlinePaymentInfo,
-            'payment_note' => $request['payment_note'],
-            'order_note' => $request['order_note'],
-            'coupon_code' => $request['coupon_code'],
-            'requestObj' => $request,
-        ]);
-
+        // [AI] V1 Authority Invariant: Offline payment is permanently decommissioned in Victorious MARKET.
         return response()->json([
-            'messages' => translate('order_placed_successfully'),
-            'new_user' => (bool)$newCustomerRegister,
-            'order_ids' => $orderIds,
-        ], 200);
+            'status' => false,
+            'message' => 'Offline payment is permanently decommissioned in Victorious MARKET. Please pay online via Paystack.',
+        ], 403);
     }
 
     public function placeOrderByWallet(Request $request): JsonResponse
@@ -1024,26 +841,35 @@ class OrderController extends Controller
             return response()->json(['message' => translate('Order not found')], 404);
         }
 
-        if ($order->order_status == 'delivered') {
-            return response()->json(['message' => translate('Order is already marked as delivered')], 200);
+        if ($order->order_status !== 'out_for_delivery') {
+            return response()->json(['message' => translate('Order must be out for delivery before customer receipt can be confirmed.')], 422);
         }
 
         if (empty($order->driver_transit_code)) {
             return response()->json(['message' => translate('This order does not require driver transit code verification')], 400);
         }
 
-        if (strtoupper(trim($order->driver_transit_code)) !== strtoupper(trim($request->driver_transit_code))) {
+        if (!hash_equals(strtoupper(trim((string)$order->driver_transit_code)), strtoupper(trim((string)$request->driver_transit_code)))) {
             return response()->json(['message' => translate('Invalid Driver Transit Code. Please check the code with your bus driver.')], 403);
         }
 
+        $now = now();
+        $receivedAt = $order->received_at ?? $now;
+        $expiresAt = $order->refund_window_expires_at ?? (clone $receivedAt)->addHours(24);
+
         $order->order_status = 'delivered';
         $order->verification_status = 1;
+        $order->received_at = $receivedAt;
+        $order->refund_window_expires_at = $expiresAt;
         if ($order->payment_status != 'paid') {
             $order->payment_status = 'paid';
         }
         $order->save();
 
-        OrderDetail::where('order_id', $order->id)->update(['delivery_status' => 'delivered']);
+        OrderDetail::where('order_id', $order->id)->update([
+            'delivery_status' => 'delivered',
+            'refund_started_at' => $order->received_at ?? $now,
+        ]);
 
         // Credit rider wallet if assigned
         if ($order->delivery_man_id && $order->deliveryman_charge > 0) {

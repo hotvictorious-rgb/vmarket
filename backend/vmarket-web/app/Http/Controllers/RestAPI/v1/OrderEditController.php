@@ -59,47 +59,11 @@ class OrderEditController extends Controller
 
     public function duePaymentByCod(Request $request): JsonResponse
     {
-        $validator = Validator::make($request->all(), [
-            'order_id' => 'required',
-            'payment_method' => 'required',
-        ]);
-
-        if ($validator->fails()) {
-            return response()->json(['errors' => Helpers::validationErrorProcessor($validator)], 403);
-        }
-
-        $order = Order::with(['latestEditHistory'])->where('id', $request['order_id'])->first();
-        if (!$order) {
-            return response()->json(['message' => translate('Order_not_found')], 404);
-        }
-
-        $user = Helpers::getCustomerInformation($request);
-        $isOwner = false;
-        if ($user != 'offline' && $order->customer_id == $user->id) {
-            $isOwner = true;
-        } elseif ($order->is_guest && $request->has('guest_id') && $order->customer_id == $request['guest_id'] && is_numeric($request['guest_id'])) {
-            $isOwner = true;
-        }
-
-        if (!$isOwner) {
-            return response()->json(['message' => translate('unauthorized_access')], 403);
-        }
-
-        OrderEditHistory::where('id', $order?->latestEditHistory?->id)->update([
-            'order_due_payment_method' => 'cash_on_delivery',
-        ]);
-        if ($request['bring_change_amount']) {
-            if (getWebConfig(name: 'currency_model') == 'multi_currency') {
-                $currencyCode = $request->current_currency_code ?? Currency::find(getWebConfig(name: 'system_default_currency'))->code;
-            } else {
-                $currencyCode = Currency::find(getWebConfig(name: 'system_default_currency'))->code;
-            }
-            Order::where('id', $order['id'])->update([
-                'bring_change_amount' => $request['bring_change_amount'] ?? 0,
-                'bring_change_amount_currency' => $currencyCode,
-            ]);
-        }
-        return response()->json(['message' => translate('payment_method_updated')], 200);
+        // [AI] V1 Authority Invariant: Cash on delivery is permanently decommissioned in Victorious MARKET.
+        return response()->json([
+            'status' => false,
+            'message' => 'Cash on delivery is permanently decommissioned in Victorious MARKET. Please pay online via Paystack.',
+        ], 403);
     }
 
     public function duePaymentByOfflinePayment(Request $request): JsonResponse

@@ -462,46 +462,24 @@ class PaymentController extends Controller
         }
 
         if ($validated['payment_method'] === 'offline_payment') {
-            $offlinePaymentInfo = [];
-            $method = OfflinePaymentMethod::where(['id' => $validated['method_id'], 'status' => 1])->first();
-
-            if (isset($method)) {
-                $fields = array_column($method->method_informations, 'customer_input');
-                $values = $request->all();
-
-                $offlinePaymentInfo['method_id'] = $request['method_id'];
-                $offlinePaymentInfo['method_name'] = $method->method_name;
-                $offlinePaymentInfo['payment_note'] = $validated['payment_note'] ?? '';
-                foreach ($fields as $field) {
-                    if (key_exists($field, $values)) {
-                        $offlinePaymentInfo[$field] = $values[$field];
-                    }
-                }
+            if ($request->payment_request_from === 'app' || $request->expectsJson()) {
+                return response()->json([
+                    'status' => false,
+                    'message' => 'Offline payment is permanently decommissioned in Victorious MARKET.',
+                ], 403);
             }
-            $orderEditHistory->update([
-                'order_due_payment_method' => 'offline_payment',
-                'order_due_payment_info' => $offlinePaymentInfo,
-            ]);
-            OrderManager::sendPushNotificationAfterDuePayment(order: $order);
-            Toastr::success(translate('payment_successful'));
+            Toastr::error('Offline payment is permanently decommissioned in Victorious MARKET.');
             return back();
         }
 
         if ($validated['payment_method'] === 'cash_on_delivery') {
-            if ($request->filled('bring_change_amount_input')) {
-                $order->bring_change_amount = $request['bring_change_amount_input'];
-                if (getWebConfig('currency_model') === 'multi_currency') {
-                    $currentCurrency = $request->current_currency_code ?? session('currency_code');
-                    $order->bring_change_amount_currency = $this->getPaymentGatewayCurrencyCode('cash_on_delivery', $currentCurrency);
-                } else {
-                    $defaultCurrency = Currency::find(getWebConfig('system_default_currency'))->code;
-                    $order->bring_change_amount_currency = $defaultCurrency;
-                }
-                $order->save();
+            if ($request->payment_request_from === 'app' || $request->expectsJson()) {
+                return response()->json([
+                    'status' => false,
+                    'message' => 'Cash on delivery is permanently decommissioned in Victorious MARKET.',
+                ], 403);
             }
-            $orderEditHistory->update(['order_due_payment_method' => 'cash_on_delivery']);
-            OrderManager::sendPushNotificationAfterDuePayment(order: $order);
-            Toastr::success(translate('payment_method_updated'));
+            Toastr::error('Cash on delivery is permanently decommissioned in Victorious MARKET.');
             return back();
         }
 

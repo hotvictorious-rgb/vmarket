@@ -190,7 +190,11 @@ class DeliveryManController extends Controller
                 return response()->json(['success' => 0, 'message' => translate('Order must be out for delivery before customer receipt can be verified.')], 422);
             }
 
-            $order_verification = getWebConfig(name: 'order_verification');
+            // [AI] V1 Invariant: Customer receipt verification OTP is MANDATORY for all marketplace deliveries.
+            // Admin configuration toggle getWebConfig('order_verification') MUST NEVER disable verification for marketplace orders.
+            $isMarketplace = \App\Utils\OrderManager::isVictoriousMarketplaceOrder($order);
+            $order_verification = $isMarketplace ? 1 : getWebConfig(name: 'order_verification');
+
             if ($order_verification == 1) {
                 if (isset($request['verification_code']) && hash_equals((string)$order->verification_code, (string)$request['verification_code'])) {
                     $order->verification_status = 1;
@@ -198,6 +202,8 @@ class DeliveryManController extends Controller
                 } elseif ($order->verification_status != 1) {
                     return response()->json(['success' => 0, 'message' => translate('order_is_not_verified_by_customer_delivery_otp')], 403);
                 }
+            } else {
+                return response()->json(['success' => 0, 'message' => translate('order_is_not_verified_by_customer_delivery_otp')], 403);
             }
         }
 
@@ -936,12 +942,27 @@ class DeliveryManController extends Controller
             return response()->json(['message' => translate('Order not found or not assigned to you')], 404);
         }
 
-        $transitCode = 'TR-' . rand(1000, 9999);
+        // [AI] Custody State Machine Invariant:
+        // A delivery rider CANNOT hand over an order to an interstate bus driver unless
+        // vendor->rider pickup has ALREADY occurred via verified pickup_verification_code.
+        // If the order is not yet out_for_delivery, setting out_for_delivery requires the vendor pickup code!
+        if ($order->order_status !== 'out_for_delivery') {
+            if (empty($request['pickup_verification_code']) || !hash_equals((string)$order->pickup_verification_code, (string)$request['pickup_verification_code'])) {
+                return response()->json([
+                    'status' => 'error',
+                    'message' => translate('Cannot record interstate driver handover: order has not been picked up from vendor with verified pickup OTP.'),
+                ], 403);
+            }
+            $order->order_status = 'out_for_delivery';
+            $order->rider_picked_up_at = $order->rider_picked_up_at ?? now();
+            $order->rider_picked_up_by = $deliveryMan['id'];
+        }
+
+        $transitCode = 'TR-' . rand(100000, 999999);
         $order->driver_phone = $request->driver_phone;
         $order->driver_vehicle_no = $request->driver_vehicle_no;
         $order->waybill_slip_no = $request->waybill_slip_no;
         $order->driver_transit_code = $transitCode;
-        $order->order_status = 'out_for_delivery';
         $order->save();
 
         // Send push notification & SMS to Customer
@@ -1065,178 +1086,22 @@ class DeliveryManController extends Controller
 
     public function generate_paystack_link(Request $request): JsonResponse
     {
-        $validator = Validator::make($request->all(), [
-            'order_id' => 'required',
-        ]);
-
-        if ($validator->fails()) {
-            return response()->json(['errors' => Helpers::validationErrorProcessor($validator)], 403);
-        }
-
-        $deliveryMan = $request['delivery_man'];
-        $order = Order::with(['customer'])->where(['delivery_man_id' => $deliveryMan['id'], 'id' => $request['order_id']])->first();
-
-        if (!$order) {
-            return response()->json(['success' => 0, 'message' => 'Order not found or not assigned to you.'], 200);
-        }
-
-        if ($order->payment_status == 'paid') {
-            return response()->json(['success' => 0, 'message' => 'Order is already paid.'], 200);
-        }
-
-        $this->_set_paystack_config();
-        
-        $amount = $order->order_amount + $order->edit_due_amount;
-
-        $url = "https://api.paystack.co/transaction/initialize";
-
-        $fields = [
-            'email' => $order->customer->email ?? "customer@email.com",
-            'amount' => $amount * 100,
-            'currency' => \App\Utils\Helpers::currency_code() ?? 'NGN',
-            'reference' => (string)('REF' . time() . 'RANDOM'),
-            'callback_url' => route('paystack-delivery.callback', ['order_id' => $order->id]),
-            'metadata' => [
-                'order_id' => $order->id,
-            ]
-        ];
-
-        $fields_string = http_build_query($fields);
-        $ch = curl_init();
-
-        curl_setopt($ch, CURLOPT_URL, $url);
-        curl_setopt($ch, CURLOPT_POST, true);
-        curl_setopt($ch, CURLOPT_POSTFIELDS, $fields_string);
-        curl_setopt($ch, CURLOPT_HTTPHEADER, array(
-            "Authorization: Bearer " . \Illuminate\Support\Facades\Config::get('paystack.secretKey'),
-            "Cache-Control: no-cache",
-        ));
-
-        curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
-        $response = json_decode(curl_exec($ch), true);
-
-        if ($response['status'] && isset($response['data']['authorization_url'])) {
-            return response()->json([
-                'success' => 1,
-                'authorization_url' => $response['data']['authorization_url']
-            ], 200);
-        }
-
-        return response()->json(['success' => 0, 'message' => 'Paystack integration error'], 403);
+        // [AI] Doorstep Paystack Link Generation is permanently decommissioned in Victorious MARKET V1.
+        // All marketplace deliveries require upfront online payment via Paystack at checkout.
+        return response()->json([
+            'success' => 0,
+            'message' => 'Payment link generation at delivery is permanently decommissioned. Delivery orders must be paid online via Paystack prior to dispatch.',
+        ], 403);
     }
 
     public function paystack_delivery_callback(Request $request)
     {
-        $this->_set_paystack_config();
-        
-        $reference = $request->query('reference');
-        $order_id = $request->query('order_id');
-        
-        if(!$reference || !$order_id) {
-             return response()->json(['message' => 'Invalid callback'], 400);
-        }
-
-        $curl = curl_init();
-
-        curl_setopt_array($curl, array(
-            CURLOPT_URL => "https://api.paystack.co/transaction/verify/$reference",
-            CURLOPT_RETURNTRANSFER => true,
-            CURLOPT_ENCODING => "",
-            CURLOPT_MAXREDIRS => 10,
-            CURLOPT_TIMEOUT => 30,
-            CURLOPT_HTTP_VERSION => CURL_HTTP_VERSION_1_1,
-            CURLOPT_CUSTOMREQUEST => "GET",
-            CURLOPT_HTTPHEADER => array(
-                "Authorization: Bearer " . \Illuminate\Support\Facades\Config::get('paystack.secretKey'),
-                "Cache-Control: no-cache",
-            ),
-        ));
-
-        $response = curl_exec($curl);
-        curl_close($curl);
-        
-        $paymentDetails = json_decode($response, true);
-        
-        if ($paymentDetails['status'] == true && $paymentDetails['data']['status'] == 'success') {
-            $order = Order::with(['customer', 'deliveryMan', 'latestEditHistory'])->find($order_id);
-            if ($order && $order->order_status != 'delivered') {
-                $expected_amount = round(($order['order_amount'] + $order['edit_due_amount']) * 100);
-                $paid_amount = $paymentDetails['data']['amount'];
-
-                if ($paid_amount >= $expected_amount) {
-                    DB::beginTransaction();
-                    try {
-                        $affected = Order::where(['id' => $order_id])
-                            ->where('order_status', '!=', 'delivered')
-                            ->where('payment_status', '!=', 'paid')
-                            ->update([
-                                'order_status' => 'delivered',
-                                'order_amount' => $order['order_amount'] + $order['edit_due_amount'],
-                                'payment_status' => 'paid',
-                                'edit_due_amount' => 0,
-                                'payment_method' => 'paystack'
-                            ]);
-
-                        if ($affected > 0) {
-                            if ($order?->latestEditHistory) {
-                                OrderEditHistory::where(['id' => $order?->latestEditHistory?->id])->update([
-                                    'order_due_payment_status' => 'paid',
-                                    'order_due_payment_note' => 'Marked as paid by Paystack at Door',
-                                ]);
-                            }
-                            
-                            $deliveryMan = $order->deliveryMan;
-                            if ($deliveryMan) {
-                                $deliveryManWallet = \App\Models\DeliverymanWallet::where('delivery_man_id', $deliveryMan['id'])->first();
-                                
-                                if (empty($deliveryManWallet)) {
-                                    \App\Models\DeliverymanWallet::create([
-                                        'delivery_man_id' => $deliveryMan['id'],
-                                        'current_balance' => $order?->deliveryman_charge ?? 0,
-                                        'cash_in_hand' => 0,
-                                        'pending_withdraw' => 0,
-                                        'total_withdraw' => 0,
-                                    ]);
-                                } else {
-                                    $deliveryManWallet->current_balance += $order->deliveryman_charge ?? 0;
-                                    $deliveryManWallet->save();
-                                }
-                            }
-
-                            if ($order['seller_id'] != null) {
-                                OrderManager::getWalletManageOnOrderStatusChange($order, 'delivery man');
-                                OrderDetail::where('order_id', $order->id)->update(['delivery_status' => 'delivered']);
-                            }
-                            
-                            DB::commit();
-
-                            event(new \App\Events\OrderStatusEvent(key: 'delivered', type: 'customer', order: $order));
-                            OrderManager::getStockUpdateOnOrderStatusChange($order, 'delivered');
-                            OrderManager::generateReferBonusForFirstOrder(orderId: $order['id']);
-
-                            if(isset($deliveryMan->fcm_token)) {
-                                $data = [
-                                    'title' => 'Payment Received!',
-                                    'description' => 'Customer paid via Paystack. Order automatically marked as delivered.',
-                                    'order_id' => $order->id,
-                                    'image' => '',
-                                    'type' => 'order_status'
-                                ];
-                                Helpers::send_push_notif_to_device($deliveryMan->fcm_token, $data);
-                            }
-                        } else {
-                            DB::rollBack();
-                        }
-
-                        return response("<div style='text-align:center; padding: 50px; font-family: sans-serif;'><h2>Payment Successful!</h2><p>Your order has been marked as paid and delivered. You can close this window.</p></div>");
-                    } catch (\Exception $e) {
-                        DB::rollBack();
-                        return response()->json(['message' => 'Callback processing error', 'error' => $e->getMessage()], 500);
-                    }
-                }
-            }
-        }
-        return response()->json(['message' => 'Payment failed or already delivered'], 400);
+        // [AI] V1 Invariant: Payment confirmation MUST NOT itself stamp received_at or mark customer receipt complete.
+        // Doorstep payment callback is permanently decommissioned.
+        return response()->json([
+            'status' => false,
+            'message' => 'Delivery payment callback is decommissioned. Payment events alone cannot certify customer receipt.',
+        ], 403);
     }
 
     public function remit_cash_paystack_init(Request $request): JsonResponse

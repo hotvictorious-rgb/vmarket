@@ -208,11 +208,8 @@ class VendorSettlementService
         // getRawOriginal() bypasses float casts on Order.order_amount and Order.shipping_cost
         $fullAmountStr = bcadd((string)($order->getRawOriginal('order_amount') ?? '0.00'), '0', 2);
         $shippingCostStr = bcadd((string)($order->getRawOriginal('shipping_cost') ?? '0.00'), '0', 2);
-        // Preserve legacy float values for transaction amount columns where float precision is acceptable
-        $fullAmount = (float)$fullAmountStr;
-        $shippingCost = (float)$shippingCostStr;
 
-        DB::transaction(function () use ($order, $shippingCostStr, $shippingCost, $fullAmountStr, $fullAmount) {
+        DB::transaction(function () use ($order, $shippingCostStr, $fullAmountStr) {
             // Reverse delivery fee from AdminWallet if shipping cost > 0
             if (bccomp($shippingCostStr, '0.00', 2) > 0) {
                 $adminWallet = AdminWallet::where('admin_id', 1)->lockForUpdate()->first();
@@ -232,13 +229,13 @@ class VendorSettlementService
                 $tx->paid_by = 'admin';
                 $tx->paid_to = 'customer';
                 $tx->payment_status = 'disburse';
-                $tx->amount = $shippingCost;
+                $tx->amount = $shippingCostStr;
                 $tx->transaction_type = 'refund';
                 $tx->save();
             }
 
             // Record customer refund transaction (Customer cash wallet is decommissioned in Victorious MARKET)
-            if ($order->customer_id && $fullAmount > 0) {
+            if ($order->customer_id && bccomp($fullAmountStr, '0.00', 2) > 0) {
                 $custTx = new Transaction();
                 $custTx->order_id = $order->id;
                 $custTx->payment_for = 'order_refund';
@@ -247,7 +244,7 @@ class VendorSettlementService
                 $custTx->paid_by = 'admin';
                 $custTx->paid_to = 'customer';
                 $custTx->payment_status = 'disburse';
-                $custTx->amount = $fullAmount;
+                $custTx->amount = $fullAmountStr;
                 $custTx->transaction_type = 'refund';
                 $custTx->save();
             }
@@ -266,7 +263,7 @@ class VendorSettlementService
         return [
             'status' => true,
             'message' => 'Undelivered order full refund processed successfully.',
-            'refunded_amount' => $fullAmount,
+            'refunded_amount' => $fullAmountStr,
             'is_delivery_fee_refunded' => 1,
         ];
     }

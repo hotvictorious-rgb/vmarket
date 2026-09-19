@@ -497,6 +497,7 @@ class PaystackRefundService
             }
 
             // [AI] Strict Provider Proof Verification Invariant:
+            // [AI] Strict Provider Proof Verification Invariant:
             // Internal financial finalization is ONLY permitted with authoritative Paystack proof.
             // Reject any execution without verified providerData or with contradictory provider fields.
             if (empty($providerData)) {
@@ -504,41 +505,66 @@ class PaystackRefundService
                 return;
             }
 
-            $providerStatus = strtolower((string)($providerData['status'] ?? 'processed'));
-            if (!in_array($providerStatus, ['processed', 'success', 'succeeded'])) {
+            // 1. Authoritative provider status must be an accepted processed/success state
+            $providerStatus = strtolower((string)($providerData['status'] ?? ''));
+            if (!in_array($providerStatus, ['processed', 'success', 'succeeded'], true)) {
                 Log::warning("[AI] Paystack finalizeRefundAccounting blocked: Provider status is '{$providerStatus}', not 'processed', for RefundRequest #{$lockedRequest->id}");
-                return;
-            }
-
-            $providerCurrency = strtoupper((string)($providerData['currency'] ?? ''));
-            if (!empty($providerCurrency) && $providerCurrency !== 'NGN') {
-                Log::warning("[AI] Paystack finalizeRefundAccounting blocked: Non-NGN currency '{$providerCurrency}' for RefundRequest #{$lockedRequest->id}");
                 $lockedRequest->execution_status = 'reconciliation_required';
                 $lockedRequest->save();
                 return;
             }
 
-            // Raw DB decimal string: bypass float cast on RefundRequest.amount before BCMath
+            // 2. Currency must be present and exactly NGN
+            $providerCurrency = strtoupper((string)($providerData['currency'] ?? ''));
+            if ($providerCurrency !== 'NGN') {
+                Log::warning("[AI] Paystack finalizeRefundAccounting blocked: Missing or non-NGN currency '{$providerCurrency}' for RefundRequest #{$lockedRequest->id}");
+                $lockedRequest->execution_status = 'reconciliation_required';
+                $lockedRequest->save();
+                return;
+            }
+
+            // 3. Provider refund amount must be present, positive, and exactly equal expected kobo
             $expectedKobo = (int) bcmul((string)($lockedRequest->getRawOriginal('amount') ?? '0.00'), '100', 0);
             $providerKobo = (int)($providerData['amount'] ?? 0);
-            if ($providerKobo > 0 && $providerKobo !== $expectedKobo) {
+            if ($providerKobo <= 0 || $providerKobo !== $expectedKobo) {
                 Log::warning("[AI] Paystack finalizeRefundAccounting blocked: Amount mismatch for RefundRequest #{$lockedRequest->id}. Expected {$expectedKobo}, got {$providerKobo}");
                 $lockedRequest->execution_status = 'reconciliation_required';
                 $lockedRequest->save();
                 return;
             }
 
+            // 4. Provider transaction reference must be present and exactly match order transaction reference
+            $orderTxRef = (string)($order->getRawOriginal('transaction_ref') ?? '');
             $providerTxRef = (string)($providerData['transaction_reference'] ?? ($providerData['transaction']['reference'] ?? ''));
-            if (!empty($providerTxRef) && !empty($order->transaction_ref) && $providerTxRef !== $order->transaction_ref) {
-                Log::warning("[AI] Paystack finalizeRefundAccounting blocked: Transaction reference mismatch for RefundRequest #{$lockedRequest->id}");
+            if (empty($providerTxRef) || empty($orderTxRef) || $providerTxRef !== $orderTxRef) {
+                Log::warning("[AI] Paystack finalizeRefundAccounting blocked: Missing or mismatched transaction reference for RefundRequest #{$lockedRequest->id}. Expected '{$orderTxRef}', got '{$providerTxRef}'");
                 $lockedRequest->execution_status = 'reconciliation_required';
                 $lockedRequest->save();
                 return;
             }
 
+            // 5. Provider refund/execution correlation must be present and uniquely identify this RefundRequest
             $providerNote = (string)($providerData['merchant_note'] ?? ($providerData['customer_note'] ?? ''));
-            if (!empty($providerNote) && !empty($lockedRequest->execution_ref) && $providerNote !== $lockedRequest->execution_ref && str_starts_with($providerNote, 'vmarket_refund_')) {
-                Log::warning("[AI] Paystack finalizeRefundAccounting blocked: Execution reference mismatch for RefundRequest #{$lockedRequest->id}");
+            $providerRefundId = (string)($providerData['id'] ?? ($providerData['refund_reference'] ?? ''));
+            $expectedNote = (string)($lockedRequest->execution_ref ?? ('vmarket_refund_' . $lockedRequest->id));
+
+            $hasValidCorrelation = false;
+            if (!empty($providerNote) && ($providerNote === $expectedNote || $providerNote === 'vmarket_refund_' . $lockedRequest->id)) {
+                $hasValidCorrelation = true;
+            } elseif (!empty($providerRefundId) && !empty($lockedRequest->paystack_refund_id) && $providerRefundId === (string)$lockedRequest->paystack_refund_id) {
+                $hasValidCorrelation = true;
+            }
+
+            if (!$hasValidCorrelation) {
+                Log::warning("[AI] Paystack finalizeRefundAccounting blocked: Missing or ambiguous provider execution correlation for RefundRequest #{$lockedRequest->id}. Note: '{$providerNote}', ProviderId: '{$providerRefundId}'");
+                $lockedRequest->execution_status = 'reconciliation_required';
+                $lockedRequest->save();
+                return;
+            }
+
+            // 6. Local order/request relationship must be valid
+            if ((int)$lockedRequest->order_id !== (int)$order->id) {
+                Log::warning("[AI] Paystack finalizeRefundAccounting blocked: Order ID mismatch on RefundRequest #{$lockedRequest->id}");
                 $lockedRequest->execution_status = 'reconciliation_required';
                 $lockedRequest->save();
                 return;
@@ -614,10 +640,20 @@ class PaystackRefundService
             $totalRefundedSoFar = (string)(isset($totalRefundedSoFarResult[0]) ? $totalRefundedSoFarResult[0]->total : '0.00');
             $cumulativeRefunded = bcadd($totalRefundedSoFar, $refundAmount, 2);
 
-            $orderSummary = OrderManager::getOrderTotalAndSubTotalAmountSummary($order);
-            $orderSubtotal = bcadd((string)($orderSummary['subtotal'] ?? '0.00'), '0', 2);
+            // Calculate merchandise subtotal using BCMath on raw original attributes — no float reads
+            $orderSubtotal = '0.00';
+            if ($order->details && $order->details->count() > 0) {
+                foreach ($order->details as $detail) {
+                    $itemPrice = (string)($detail->getRawOriginal('price') ?? '0.00');
+                    $itemQty = (string)($detail->getRawOriginal('qty') ?? '1');
+                    $lineTotal = bcmul($itemPrice, $itemQty, 2);
+                    $orderSubtotal = bcadd($orderSubtotal, $lineTotal, 2);
+                }
+            }
             if (bccomp($orderSubtotal, '0.00', 2) <= 0) {
-                $orderSubtotal = bcsub((string)($order->order_amount ?? '0.00'), (string)($order->shipping_cost ?? '0.00'), 2);
+                $rawOrderAmount = (string)($order->getRawOriginal('order_amount') ?? '0.00');
+                $rawShippingCost = (string)($order->getRawOriginal('shipping_cost') ?? '0.00');
+                $orderSubtotal = bcsub($rawOrderAmount, $rawShippingCost, 2);
             }
             $remainingMerchandise = bcsub($orderSubtotal, $cumulativeRefunded, 2);
 

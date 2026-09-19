@@ -14,6 +14,7 @@ use App\Http\Controllers\RestAPI\v1\CategoryController;
 use App\Http\Controllers\RestAPI\v1\ChatController;
 use App\Http\Controllers\RestAPI\v1\ConfigController;
 use App\Http\Controllers\RestAPI\v1\CouponController;
+use App\Http\Controllers\RestAPI\v1\CustomerCashbackController;
 use App\Http\Controllers\RestAPI\v1\CustomerController;
 use App\Http\Controllers\RestAPI\v1\CustomerRestockRequestController;
 use App\Http\Controllers\RestAPI\v1\DealController;
@@ -361,6 +362,14 @@ Route::group(['prefix' => 'v1', 'middleware' => ['api_lang']], function () {
             Route::controller(UserWalletController::class)->group(function () {
                 Route::get('list', 'list');
                 Route::get('bonus-list', 'bonus_list');
+            });
+        });
+
+        // Cashback Reward Ledger
+        Route::group(['prefix' => 'cashback'], function () {
+            Route::controller(CustomerCashbackController::class)->group(function () {
+                Route::get('summary', 'getCashbackSummary');
+                Route::get('list', 'getCashbackList');
             });
         });
 
