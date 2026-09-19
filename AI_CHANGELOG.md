@@ -1,3 +1,22 @@
+### [2026-09-19 08:05 UTC] Commit 3: PaymentRequest Creation and Paystack Initialization Bridge [backend] [ai-governance]
+* **Component:** Payment Initialization Pipeline (`backend/vmarket-web/app/Services/DeliveryPaymentInitializationService.php`, `backend/vmarket-web/app/Services/PaystackInitializationClient.php`, `backend/vmarket-web/app/Exceptions/`)
+* **Action:** Built the bridge from durable CheckoutIntent to Paystack payment initialization:
+  - `App\Services\PaystackInitializationClient`: Dedicated initialization client classifying responses into `SUCCESS`, `GATEWAY_REJECTED`, and ambiguous `TRANSPORT_ERROR`. Reuses the frozen Step 1 normalized verification contract (`PaystackController::getPayStackPaymentData()`) for transport recovery without modifying Step 1.
+  - `App\Services\DeliveryPaymentInitializationService`:
+    * Derives payment amounts strictly from the frozen `CheckoutIntent.total_amount`; never re-queries live cart or trusts client-supplied figures.
+    * Enforces exact integer kobo conversion using BCMath (`bcmul()`, `bcadd()`); rejects non-zero sub-kobo fractions; strictly requires NGN.
+    * Enforces single active attempt invariant under row locks (`lockForUpdate()`): respects database unique constraint `uq_pr_active_order_group`.
+    * Reuses existing active non-expired attempt if already confirmed (graceful replay, preventing duplicate Paystack transactions).
+    * Implements lazy expiration: marks expired active attempts (`attempt_expires_at <= now()`) and clears `active_order_group_id` under lock.
+    * Generates canonical gateway reference (`'VM_' . Str::orderedUuid()`, 39 chars) stored in `payment_requests.gateway_reference`.
+    * Enforces transport safety: network timeouts/drops retain `attempt_status = 'pending'` with the original reference, providing deterministic recovery without rotating references.
+    * Strictly isolates legacy flows: legacy `payment_requests` rows (with `payment_domain IS NULL`) remain untouched.
+    * Zero Orders created, zero OrderTransactions created, zero cart items deleted in this commit.
+* **Verification & Zero Drift:**
+  - 15/15 automated tests passed in `scratch/test_commit3_payment_initialization_service.php` covering intent-to-request creation, exact kobo conversion, NGN currency, unique references, active attempt locks, replay, lazy expiry, IDOR, gateway rejection, ambiguous transport recovery, and legacy isolation.
+  - Regression certification suite `scratch/v1_transaction_certification.php` passed 82/82 (Δ = ₦0.00).
+  - Zero OrderManager, wallet, fulfillment, or pickup code modified.
+
 ### [2026-09-19 07:58 UTC] Commit 2: Delivery Checkout Intent and Immutable Snapshot Service [backend] [ai-governance]
 * **Component:** Delivery Checkout Engine (`backend/vmarket-web/app/Services/DeliveryCheckoutIntentService.php`, `backend/vmarket-web/app/Models/CheckoutIntent.php`, `backend/vmarket-web/app/Exceptions/`)
 * **Action:** Implemented the delivery CheckoutIntent creation pipeline and immutable snapshot builder:
