@@ -1,3 +1,40 @@
+### [2026-09-19 11:45 UTC] Commit 6.2: Final Blocker Fixes for Inventory Ownership Scoping and Atomic Cart Cleanup [backend] [ai-governance]
+* **Component:** Pickup Payment Settlement & Cart Pruning Engine (`backend/vmarket-web/app/Services/PickupOrderSettlementService.php`)
+* **Action:** Remediated both blockers identified during the final read-only audit of Commit 6.1:
+  - **Blocker 1 (Correct Inventory Seller Ownership Scoping):**
+    * Eliminated all references to non-existent `$reservation->seller_type`.
+    * Sourced authoritative seller type from immutable reservation snapshot `$sellerIs = $snapshot['seller_is'] ?? ($shopAuthor === 'admin' ? 'admin' : 'seller')`.
+    * Explicitly set `orders.seller_is` to `$sellerIs` in order creation data.
+    * Enforced strict 3-way scoping on vendor stock decrement: `where('added_by', 'seller')->where('user_id', $reservation->seller_id)->where('shop_id', $reservation->shop_id)`.
+    * Enforced established 6Valley admin ownership on VMarket in-house products: `where('added_by', 'admin')` and matching `shop_id`.
+    * Scoped diagnostic mismatch checks to prevent `correct shop + wrong seller` and `correct seller + wrong shop` decrements, immediately entering reconciliation quarantine on ownership drift.
+  - **Blocker 2 (Crash-Safe Atomic Cart Cleanup):**
+    * Enclosed the entire multi-line cart cleanup operation inside a single, short database transaction (`DB::transaction()`).
+    * Pessimistically locked `PaymentRequest` as the transaction idempotency anchor (`->lockForUpdate()`).
+    * Verified `cart_cleaned_at` within the transaction lock, guaranteeing idempotent replay across retry attempts.
+    * Deterministically sorted target cart IDs numerically (`sort($targetCartIds, SORT_NUMERIC)`) to prevent concurrent deadlocks.
+    * Pessimistically locked matching cart rows (`Cart::where('customer_id', $customerId)->whereIn('id', $targetCartIds)->lockForUpdate()`).
+    * Verified customer ownership, `product_id` identity, and variant string identity against reservation snapshot items.
+    * Consumed exact snapshot quantities: deleted rows reaching quantity 0, decremented rows with surplus quantity, and preserved variant mismatches or replaced products.
+    * Persisted `cart_cleaned_at` timestamp and `cart_prune_summary` atomically inside the transaction prior to commit.
+    * Guaranteed atomic rollback across all lines: if line 2 fails, line 1 rolls back; prevents partial degradation `5 -> 3 -> crash -> retry -> 1` and guarantees `5 -> 3 -> retry -> 3`.
+* **Verification & Regression:**
+  - Syntax check: `php -l app/Services/PickupOrderSettlementService.php` passed with 0 errors.
+  - Focused test suite: `scratch/test_commit6_pickup_settlement_service.php` passed 121/121 tests (100% pass across all 14 sections, including 5 ownership scoping tests and 10 cart cleanup crash/concurrency tests).
+  - Full regression suite: `scratch/v1_transaction_certification.php` passed 82/82 tests ($\Delta = \text{₦}0.00$).
+
+### [2026-09-19 11:15 UTC] Governance: Authoritative Operating Company Model Blueprint & README Architecture Rewrite [ai-governance]
+* **Component:** Ecosystem Governance & Operating Architecture (`OPERATING_COMPANY_MODEL.md`, `README.md`)
+* **Action:** Codified the authoritative institutional blueprint defining Victorious MARKET as an operating company, not just an application:
+  - **Operating Company Core Definition:** Formulated VMarket as a controlled marketplace + in-house merchant + delivery operator + settlement platform, launching locally in Uyo LGA and expanding systematically LGA by LGA.
+  - **The 5 Unified Business Domains:** Articulated the 5 core businesses under one system: Marketplace Operator, In-House Merchant, Logistics & Delivery Operator, Payment & Settlement Platform, and Customer Loyalty System.
+  - **90 / 5 / 5 Commercial Model & Financial Segregation:** Formally codified the 90% Vendor / 5% Customer Cashback / 5% VMarket Retained merchandise model with complete separation between Merchandise Money and Delivery Operations Money ($\Delta = \text{₦}0.00$).
+  - **The Dual-Fulfillment Architecture:** Captured the operational and technical dichotomy between Centralized Doorstep Delivery and In-Shop Pay-After-Inspection Pickup (`Reservation Code != Handover OTP`, zero pre-payment inventory holds).
+  - **24-Hour Return Window & Cashback Maturation:** Defined the 4 immutable order audit timestamps (`paid_at`, `received_at`, `refund_window_expires_at`, `cashback_eligible_at`).
+  - **Vendor & Employee Segregation:** Defined the LGA-anchored vendor model with approved pickup points and strict RBAC separation between Vendor staff and VMarket platform personnel.
+  - **Geographic Scaling Blueprint:** Mapped the 4-phase expansion path: Uyo LGA $\rightarrow$ Akwa Ibom Transit Parks $\rightarrow$ Regional Inter-State Parks $\rightarrow$ Sequential LGA Rollout.
+  - **Repository README Rewrite:** Completely overhauled `README.md` to reflect this operating company paradigm, incorporating topology diagrams, mathematical invariants, and surface mappings.
+
 ### [2026-09-19 10:55 UTC] Commit 6.1: Hardening & Invariant Defenses for Pickup Payment and Settlement [backend] [ai-governance]
 * **Component:** Pickup Payment Initialization & Settlement Services (`backend/vmarket-web/app/Services/PickupPaymentInitializationService.php`, `backend/vmarket-web/app/Services/PickupOrderSettlementService.php`, `backend/vmarket-web/app/Utils/OrderManager.php`)
 * **Action:** Resolved 4 critical implementation/architectural edge cases to complete certification readiness:

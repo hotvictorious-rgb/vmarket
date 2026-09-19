@@ -319,14 +319,23 @@ class PickupOrderSettlementService
 
         $items = $snapshot['items'] ?? [];
         if (empty($items)) {
-            throw new \RuntimeException("Immutable reservation snapshot contains no items.");
+            throw new \RuntimeException("Reservation snapshot contains zero items.");
         }
 
+        // Establish authoritative seller_is convention: snapshot -> shop author_type
+        $sellerIs = $snapshot['seller_is'] ?? null;
+        if (empty($sellerIs)) {
+            $shopAuthor = Shop::where('id', $reservation->shop_id)->value('author_type');
+            $sellerIs = ($shopAuthor === 'admin') ? 'admin' : 'seller';
+        }
+
+        $orderId = 100000 + Order::all()->count() + 1;
+        $verificationCode = (string) rand(100000, 999999);
+        $handoverCode = (string) rand(100000, 999999);
         $customerId = (int) $reservation->customer_id;
-        $orderId = OrderManager::generateNewOrderID();
-        $internalTxRef = OrderManager::generateUniqueOrderID(); // strictly <= 21 chars, preserves VARCHAR(30)
-        $handoverCode = random_int(100000, 999999); // Order-level pickup verification code
-        $verificationCode = random_int(100000, 999999);
+
+        // Internal transaction_ref for OrderManager (<= 20 chars, unique)
+        $internalTxRef = 'PKP' . substr(str_replace('-', '', Str::orderedUuid()->toString()), 0, 16);
 
         // Exact Money Calculations via BCMath (Zero Float Drift: Δ = ₦0.00)
         $subtotal = bcadd((string) ($snapshot['subtotal'] ?? '0.00'), '0', 2);
@@ -343,7 +352,7 @@ class PickupOrderSettlementService
             'is_guest' => 0,
             'guest_access_token' => null,
             'seller_id' => $reservation->seller_id,
-            'seller_is' => $reservation->seller_type,
+            'seller_is' => $sellerIs,
             'customer_type' => 'customer',
             'payment_status' => 'paid',
             'order_status' => 'confirmed',
@@ -388,9 +397,10 @@ class PickupOrderSettlementService
                 $stockQuery = Product::where('id', $productId)
                     ->where('current_stock', '>=', $qty);
 
-                if ($reservation->seller_type === 'seller') {
-                    $stockQuery->where('user_id', $reservation->seller_id);
-                } elseif ($reservation->seller_type === 'admin') {
+                if ($sellerIs === 'seller') {
+                    $stockQuery->where('added_by', 'seller')
+                        ->where('user_id', $reservation->seller_id);
+                } elseif ($sellerIs === 'admin') {
                     $stockQuery->where('added_by', 'admin');
                 }
 
@@ -407,8 +417,8 @@ class PickupOrderSettlementService
 
                     // Verify if failure is due to ownership mismatch vs insufficient stock
                     if ($freshProd) {
-                        $sellerMatch = ($reservation->seller_type === 'seller')
-                            ? ((int) $freshProd->user_id === (int) $reservation->seller_id)
+                        $sellerMatch = ($sellerIs === 'seller')
+                            ? ($freshProd->added_by === 'seller' && (int) $freshProd->user_id === (int) $reservation->seller_id)
                             : ($freshProd->added_by === 'admin');
                         $shopMatch = empty($reservation->shop_id) || ((int) $freshProd->shop_id === (int) $reservation->shop_id);
 
@@ -634,98 +644,142 @@ class PickupOrderSettlementService
     }
 
     /**
-     * Prunes only the cart items present in the immutable reservation snapshot.
+     * Prunes only the cart items present in the immutable reservation snapshot inside one short atomic transaction.
      * Quantity-Safe: Decrements cart quantity by snapshot quantity; deletes row only if
      * remaining quantity is <= 0. Unrelated or subsequent cart items are preserved.
-     * Idempotent & Retry-Safe: Tracks cleanup in payment_requests.additional_data.
+     * Idempotent & Retry-Safe: Tracks cleanup in payment_requests.additional_data under pessimistic lock.
+     * Crash-Consistent: A failure at any point rolls back all cart mutations and omits marker persistence.
+     *
+     * @param int $customerId Authenticated customer ID
+     * @param array $snapshot Immutable reservation snapshot containing items array
+     * @param PaymentRequest|null $paymentRequest Optional PaymentRequest idempotency anchor
+     * @return int Count of affected cart rows
      */
     public function pruneSnapshotCartItems(int $customerId, array $snapshot, ?PaymentRequest $paymentRequest = null): int
     {
-        if ($paymentRequest) {
-            $add = is_array($paymentRequest->additional_data)
-                ? $paymentRequest->additional_data
-                : json_decode($paymentRequest->additional_data ?? '{}', true);
-
-            if (!empty($add['cart_cleaned_at'])) {
-                // Idempotent: cart cleanup has already run for this settled payment request
-                return 0;
-            }
-        }
-
         $items = $snapshot['items'] ?? [];
         if (empty($items)) {
             return 0;
         }
 
-        $affectedCount = 0;
-        $prunedSummary = [];
+        return DB::transaction(function () use ($customerId, $items, $paymentRequest) {
+            // 1. Idempotency anchor: lock PaymentRequest and inspect completion marker
+            $lockedPR = null;
+            if ($paymentRequest) {
+                $lockedPR = PaymentRequest::where('id', $paymentRequest->id)
+                    ->lockForUpdate()
+                    ->first();
 
-        foreach ($items as $item) {
-            $targetCartId = (int) ($item['cart_id'] ?? 0);
-            $targetProdId = (int) ($item['product_id'] ?? 0);
-            $snapshotQty = max(1, (int) ($item['quantity'] ?? 1));
+                if ($lockedPR) {
+                    $add = is_array($lockedPR->additional_data)
+                        ? $lockedPR->additional_data
+                        : json_decode($lockedPR->additional_data ?? '{}', true);
 
-            if ($targetCartId <= 0) {
-                continue;
+                    if (!empty($add['cart_cleaned_at'])) {
+                        // Idempotent: cart cleanup has already run and committed for this payment request
+                        return 0;
+                    }
+                }
             }
 
-            // Lookup existing cart row for this customer under exact ID & Product scoping
-            $cartRow = Cart::where('id', $targetCartId)
+            // 2. Collect unique target cart IDs and sort ascending to enforce deterministic row locking (deadlock prevention)
+            $targetCartMap = [];
+            foreach ($items as $item) {
+                $cartId = (int) ($item['cart_id'] ?? 0);
+                if ($cartId > 0) {
+                    $targetCartMap[$cartId] = $item;
+                }
+            }
+
+            if (empty($targetCartMap)) {
+                return 0;
+            }
+
+            $sortedCartIds = array_keys($targetCartMap);
+            sort($sortedCartIds, SORT_NUMERIC);
+
+            // 3. Lock all target Cart rows deterministically in ascending ID order
+            $lockedCartRows = Cart::whereIn('id', $sortedCartIds)
                 ->where('customer_id', $customerId)
-                ->first();
+                ->lockForUpdate()
+                ->get()
+                ->keyBy('id');
 
-            if (!$cartRow) {
-                // Cart line was already removed or expired
-                continue;
+            $affectedCount = 0;
+            $prunedSummary = [];
+
+            foreach ($sortedCartIds as $targetCartId) {
+                $item = $targetCartMap[$targetCartId];
+                $targetProdId = (int) ($item['product_id'] ?? 0);
+                $targetVariant = (string) ($item['variant'] ?? '');
+                $snapshotQty = max(1, (int) ($item['quantity'] ?? 1));
+
+                $cartRow = $lockedCartRows->get($targetCartId);
+                if (!$cartRow) {
+                    // Cart row was already deleted, expired, or belongs to another customer
+                    continue;
+                }
+
+                // Verify customer ownership under lock
+                if ((int) $cartRow->customer_id !== $customerId) {
+                    continue;
+                }
+
+                // Verify product identity matches snapshot
+                if ((int) $cartRow->product_id !== $targetProdId) {
+                    // Cart row identity changed (recreated with different product); preserve row completely
+                    continue;
+                }
+
+                // Verify variant identity matches snapshot (if variant specified in snapshot or cart)
+                $cartRowVariant = (string) ($cartRow->variant ?? '');
+                if ($targetVariant !== '' && $cartRowVariant !== '' && $targetVariant !== $cartRowVariant) {
+                    // Variant mismatch; preserve row completely
+                    continue;
+                }
+
+                $currentCartQty = (int) $cartRow->quantity;
+
+                if ($currentCartQty <= $snapshotQty) {
+                    // Entire quantity consumed by reservation -> delete cart row
+                    $cartRow->delete();
+                    $affectedCount++;
+                    $prunedSummary[] = [
+                        'cart_id' => $targetCartId,
+                        'action' => 'deleted',
+                        'snapshot_qty' => $snapshotQty,
+                        'previous_qty' => $currentCartQty,
+                    ];
+                } else {
+                    // Customer added more quantity post-reservation -> decrement ONLY snapshot quantity
+                    $newCartQty = $currentCartQty - $snapshotQty;
+                    $cartRow->update(['quantity' => $newCartQty]);
+                    $affectedCount++;
+                    $prunedSummary[] = [
+                        'cart_id' => $targetCartId,
+                        'action' => 'decremented',
+                        'snapshot_qty' => $snapshotQty,
+                        'previous_qty' => $currentCartQty,
+                        'remaining_qty' => $newCartQty,
+                    ];
+                }
             }
 
-            // Verify identity matches snapshot product
-            if ((int) $cartRow->product_id !== $targetProdId) {
-                // Cart line identity changed (recreated with different product); do not touch
-                continue;
+            // 4. Persist cleanup completion marker on PaymentRequest before commit
+            if ($lockedPR) {
+                $add = is_array($lockedPR->additional_data)
+                    ? $lockedPR->additional_data
+                    : json_decode($lockedPR->additional_data ?? '{}', true);
+
+                $add['cart_cleaned_at'] = now()->toIso8601String();
+                $add['cart_prune_summary'] = $prunedSummary;
+                $lockedPR->update([
+                    'additional_data' => json_encode($add),
+                ]);
             }
 
-            $currentCartQty = (int) $cartRow->quantity;
-
-            if ($currentCartQty <= $snapshotQty) {
-                // Entire quantity consumed by reservation -> delete cart row
-                $cartRow->delete();
-                $affectedCount++;
-                $prunedSummary[] = [
-                    'cart_id' => $targetCartId,
-                    'action' => 'deleted',
-                    'snapshot_qty' => $snapshotQty,
-                    'previous_qty' => $currentCartQty,
-                ];
-            } else {
-                // Customer added more quantity after reservation -> decrement only snapshot quantity
-                $newCartQty = $currentCartQty - $snapshotQty;
-                $cartRow->update(['quantity' => $newCartQty]);
-                $affectedCount++;
-                $prunedSummary[] = [
-                    'cart_id' => $targetCartId,
-                    'action' => 'decremented',
-                    'snapshot_qty' => $snapshotQty,
-                    'previous_qty' => $currentCartQty,
-                    'remaining_qty' => $newCartQty,
-                ];
-            }
-        }
-
-        // Record cleanup timestamp to ensure safe idempotency on retry
-        if ($paymentRequest) {
-            $add = is_array($paymentRequest->additional_data)
-                ? $paymentRequest->additional_data
-                : json_decode($paymentRequest->additional_data ?? '{}', true);
-
-            $add['cart_cleaned_at'] = now()->toIso8601String();
-            $add['cart_prune_summary'] = $prunedSummary;
-            $paymentRequest->update([
-                'additional_data' => json_encode($add),
-            ]);
-        }
-
-        return $affectedCount;
+            return $affectedCount;
+        });
     }
 
     /**
