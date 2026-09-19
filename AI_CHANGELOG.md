@@ -1,3 +1,19 @@
+### [2026-09-19 08:15 UTC] Commit 3.1: Paystack Compatibility and Ambiguous Recovery Correction [backend] [ai-governance]
+* **Component:** Payment Initialization Pipeline (`backend/vmarket-web/app/Services/DeliveryPaymentInitializationService.php`, `backend/vmarket-web/app/Services/PaystackInitializationClient.php`)
+* **Action:** Corrected Paystack character contract compatibility, ambiguous initialization recovery state machine, and TTL bounding:
+  - **Paystack Reference Character Set Enforcement:** Replaced `'VM_' . orderedUuid` with `'VM-' . orderedUuid` (`VM-01920a3b-...`). Paystack's Transaction Initialize API strictly permits only alphanumeric characters and `-, ., =` (regex: `^[a-zA-Z0-9.\-=]+$`), strictly forbidding underscores (`_`).
+  - **Non-Repeating Reference Recovery State Machine:**
+    * Ambiguous transport errors preserve the original `PaymentRequest`, preserve its original `gateway_reference`, retain status as `pending`, and perform server-side Step 1 verification (`verifyExistingTransaction()`) using that same reference.
+    * If gateway responds `SUCCESS` or `NON_FINAL`, the existing attempt is reused with zero new gateway transactions.
+    * If verification confirms `REFERENCE_NOT_FOUND`, Paystack has no record of the reference. To avoid duplicate-reference errors on Paystack, the system transitions the original attempt to terminal `failed`, records `failure_reason = 'REFERENCE_NOT_FOUND_ON_GATEWAY'`, clears `active_order_group_id`, creates a NEW `PaymentRequest` attempt with a NEW canonical reference (`VM-...`), and initializes Paystack with the new reference. The original attempt is permanently preserved for auditability.
+  - **CheckoutIntent vs PaymentAttempt TTL Reconciliation:** Enforced bounded attempt TTL:
+    `attempt_expires_at = min(now + ttl, CheckoutIntent.expires_at)`.
+    Ensures a payment attempt can NEVER outlive or remain payable beyond its parent checkout agreement, eliminating independent clock drift.
+  - **Zero Orders, Settlement, or Legacy Mutation:** No orders created, no OrderManager modified, legacy `payment_requests` fixtures preserved.
+* **Verification & Zero Drift:**
+  - 21/21 unit tests passed in `scratch/test_commit3_payment_initialization_service.php` covering Paystack character set contract, non-repeating references on recovery, bounded TTL clamping, IDOR, idempotency replay, lazy expiry, and legacy isolation.
+  - Full 82/82 regression certification suite passed in `scratch/v1_transaction_certification.php` (Δ = ₦0.00).
+
 ### [2026-09-19 08:05 UTC] Commit 3: PaymentRequest Creation and Paystack Initialization Bridge [backend] [ai-governance]
 * **Component:** Payment Initialization Pipeline (`backend/vmarket-web/app/Services/DeliveryPaymentInitializationService.php`, `backend/vmarket-web/app/Services/PaystackInitializationClient.php`, `backend/vmarket-web/app/Exceptions/`)
 * **Action:** Built the bridge from durable CheckoutIntent to Paystack payment initialization:

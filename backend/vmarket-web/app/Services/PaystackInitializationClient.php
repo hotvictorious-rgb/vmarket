@@ -24,7 +24,7 @@ class PaystackInitializationClient
      *
      * @param string $email Customer email address
      * @param int $amountKobo Exact integer kobo amount
-     * @param string $reference Canonical gateway reference (VM_...)
+     * @param string $reference Canonical gateway reference (VM-...)
      * @param string $callbackUrl Callback URL
      * @param array $metadata Custom metadata
      * @return array

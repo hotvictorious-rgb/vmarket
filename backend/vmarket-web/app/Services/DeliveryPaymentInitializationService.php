@@ -9,6 +9,7 @@ use App\Exceptions\PaymentInitializationException;
 use App\Models\CheckoutIntent;
 use App\Models\PaymentRequest;
 use App\Models\User;
+use Carbon\Carbon;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Str;
@@ -23,10 +24,14 @@ use InvalidArgumentException;
  * 2. Enforces exact integer kobo via BCMath; zero float, zero round().
  * 3. Enforces NGN currency.
  * 4. Respects uq_pr_active_order_group: at most one active attempt per order group.
- * 5. Generates canonical unique reference: 'VM_' + orderedUuid.
- * 6. Transport safety: ambiguous network timeouts do NOT mark attempts failed or rotate references.
- * 7. Reuses existing Step 1 verification contract (PaystackController::getPayStackPaymentData) for recovery.
- * 8. Zero Order, OrderDetail, OrderTransaction, or Cart mutation in this phase.
+ * 5. Generates canonical unique Paystack reference: 'VM-' + orderedUuid (Paystack allowed: alphanumeric, -, ., =; zero underscores).
+ * 6. Ambiguous transport failure: network timeouts preserve original PaymentRequest and reference as pending/recoverable.
+ * 7. Definitive REFERENCE_NOT_FOUND recovery: transitions ambiguous attempt to terminal 'failed', clears active_order_group_id,
+ *    and generates a clean NEW attempt with a NEW valid Paystack reference ('VM-...'). Old reference is NEVER initialized again.
+ * 8. TTL Reconciliation: PaymentAttempt payable window is strictly bounded by CheckoutIntent expiration:
+ *    attempt_expires_at = min(now + ttl, CheckoutIntent.expires_at). A payment attempt cannot outlive its parent checkout intent.
+ * 9. Reuses existing Step 1 verification contract (PaystackController::getPayStackPaymentData) for recovery.
+ * 10. Zero Order, OrderDetail, OrderTransaction, or Cart mutation in this phase.
  */
 class DeliveryPaymentInitializationService
 {
@@ -157,188 +162,73 @@ class DeliveryPaymentInitializationService
                     }
 
                     // Ambiguous attempt exists without authorization_url -> perform safe recovery
-                    return $this->recoverAmbiguousAttempt($existingActive, $intent, $customerRecord, $amountKobo);
+                    return $this->recoverAmbiguousAttempt($existingActive, $intent, $customerRecord, $amountKobo, $ttlMinutes);
                 }
             }
 
-            // 5. Generate Canonical Gateway Reference
-            $gatewayReference = 'VM_' . Str::orderedUuid()->toString();
-            $paymentRequestId = (string) Str::uuid();
-
-            // 6. Insert New PaymentRequest in Pending State
-            $payerInfo = [
-                'name' => $customerRecord->name ?? ($customerRecord->f_name . ' ' . $customerRecord->l_name),
-                'email' => $customerRecord->email,
-                'phone' => $customerRecord->phone,
-            ];
-
-            $initialAdditional = [
-                'checkout_intent_id' => $intent->id,
-                'order_group_id' => $intent->order_group_id,
-                'created_at' => now()->toIso8601String(),
-            ];
-
-            $paymentRequest = PaymentRequest::create([
-                'id' => $paymentRequestId,
-                'payer_id' => (string) $customerId,
-                'payment_amount' => $intent->total_amount,
-                'currency_code' => 'NGN',
-                'payment_method' => 'paystack',
-                'payment_domain' => 'marketplace_delivery',
-                'order_group_id' => $intent->order_group_id,
-                'gateway_reference' => $gatewayReference,
-                'attempt_status' => 'pending',
-                'active_order_group_id' => $intent->order_group_id,
-                'attempt_expires_at' => now()->addMinutes($ttlMinutes),
-                'is_paid' => 0,
-                'attribute' => 'order',
-                'attribute_id' => (string) now()->timestamp,
-                'payer_information' => json_encode($payerInfo),
-                'additional_data' => json_encode($initialAdditional),
-            ]);
-
-            // 7. Initialize Transaction with Paystack
-            $callbackUrl = route('paystack.callback', ['payment_id' => $paymentRequestId]);
-            $metadata = [
-                'payment_id' => $paymentRequestId,
-                'order_group_id' => $intent->order_group_id,
-                'customer_id' => $customerId,
-            ];
-
-            $initResult = $this->paystackClient->initializeTransaction(
-                email: $customerRecord->email,
-                amountKobo: $amountKobo,
-                reference: $gatewayReference,
-                callbackUrl: $callbackUrl,
-                metadata: $metadata
+            // 5. Create Fresh Attempt and Initialize Paystack
+            return $this->createNewAttemptAndInitialize(
+                $intent,
+                $customerRecord,
+                $amountKobo,
+                $ttlMinutes
             );
-
-            // 8. Handle Paystack Initialization Response Deterministically
-            if ($initResult['status'] === 'SUCCESS') {
-                $initialAdditional['authorization_url'] = $initResult['authorization_url'];
-                $initialAdditional['access_code'] = $initResult['access_code'];
-
-                $paymentRequest->update([
-                    'additional_data' => json_encode($initialAdditional),
-                ]);
-
-                return [
-                    'status' => 'success',
-                    'is_replayed' => false,
-                    'payment_request' => $paymentRequest,
-                    'authorization_url' => $initResult['authorization_url'],
-                    'gateway_reference' => $gatewayReference,
-                ];
-            }
-
-            if ($initResult['status'] === 'GATEWAY_REJECTED') {
-                // Confirmed gateway rejection (e.g. invalid credentials or blocked merchant)
-                $initialAdditional['gateway_rejection'] = $initResult['message'];
-                $paymentRequest->update([
-                    'attempt_status' => 'failed',
-                    'active_order_group_id' => null, // Release active constraint so user can re-try after fixing
-                    'additional_data' => json_encode($initialAdditional),
-                ]);
-
-                return [
-                    'status' => 'failed',
-                    'is_replayed' => false,
-                    'message' => "Paystack initialization rejected: {$initResult['message']}",
-                    'payment_request' => $paymentRequest,
-                    'gateway_reference' => $gatewayReference,
-                ];
-            }
-
-            // Ambiguous Transport Failure: Timeout / Connection Drop
-            // CRITICAL: Do NOT mark failed. Do NOT generate new reference. Retain attempt_status='pending'.
-            $initialAdditional['last_transport_error'] = $initResult['message'];
-            $paymentRequest->update([
-                'additional_data' => json_encode($initialAdditional),
-            ]);
-
-            return [
-                'status' => 'ambiguous_transport',
-                'is_replayed' => false,
-                'message' => 'Paystack network timeout. The payment attempt has been safely preserved as pending.',
-                'payment_request' => $paymentRequest,
-                'gateway_reference' => $gatewayReference,
-            ];
         });
     }
 
     /**
      * Recovers an existing pending attempt that encountered an ambiguous transport failure.
-     * Uses the Step 1 normalized verification contract without rotating references.
+     * Uses the Step 1 normalized verification contract.
+     *
+     * State Machine:
+     * - SUCCESS / NON_FINAL: Gateway has the transaction. Retain existing attempt with original reference.
+     * - REFERENCE_NOT_FOUND: Definitive confirmation that Paystack has no record of this reference.
+     *   Transition old attempt to 'failed', clear active token, generate NEW attempt with NEW 'VM-...' reference.
+     *   NEVER re-initialize Paystack with the original reference.
+     * - GATEWAY_FAILURE: Terminal failure on gateway. Mark attempt 'failed', clear active token.
+     * - Ambiguous / Transport Error during verification: Preserve attempt as 'pending' for retry.
      */
     public function recoverAmbiguousAttempt(
         PaymentRequest $paymentRequest,
         CheckoutIntent $intent,
         User $customerRecord,
-        int $amountKobo
+        int $amountKobo,
+        int $ttlMinutes = 30
     ): array {
         $reference = $paymentRequest->gateway_reference;
         $additional = is_array($paymentRequest->additional_data) 
             ? $paymentRequest->additional_data 
             : json_decode($paymentRequest->additional_data ?? '{}', true);
 
-        // Check if Paystack actually created the transaction
+        // Check if Paystack actually created the transaction using Step 1 verification helper
         $verifyData = $this->paystackClient->verifyExistingTransaction($reference);
 
         switch ($verifyData['class']) {
             case 'REFERENCE_NOT_FOUND':
-                // Paystack never received or processed it. Safe to re-initialize with Paystack using the SAME reference!
-                $callbackUrl = route('paystack.callback', ['payment_id' => $paymentRequest->id]);
-                $metadata = [
-                    'payment_id' => $paymentRequest->id,
-                    'order_group_id' => $intent->order_group_id,
-                    'customer_id' => $paymentRequest->payer_id,
-                ];
+                // Paystack definitively confirms this reference does not exist on the gateway.
+                // Invariant: Do NOT re-initialize Paystack with the same reference (prevents duplicate-reference collisions).
+                // 1. Mark original attempt terminal 'failed' for historical auditability.
+                // 2. Clear active_order_group_id so the active attempt constraint is released.
+                $additional['failure_reason'] = 'REFERENCE_NOT_FOUND_ON_GATEWAY';
+                $additional['closed_at'] = now()->toIso8601String();
+                $paymentRequest->update([
+                    'attempt_status' => 'failed',
+                    'active_order_group_id' => null,
+                    'additional_data' => json_encode($additional),
+                ]);
 
-                $initResult = $this->paystackClient->initializeTransaction(
-                    email: $customerRecord->email,
-                    amountKobo: $amountKobo,
-                    reference: $reference,
-                    callbackUrl: $callbackUrl,
-                    metadata: $metadata
+                // 3. Create a clean NEW payment attempt with a NEW Paystack reference
+                return $this->createNewAttemptAndInitialize(
+                    $intent,
+                    $customerRecord,
+                    $amountKobo,
+                    $ttlMinutes,
+                    supersedesAttemptId: $paymentRequest->id
                 );
-
-                if ($initResult['status'] === 'SUCCESS') {
-                    $additional['authorization_url'] = $initResult['authorization_url'];
-                    $additional['access_code'] = $initResult['access_code'];
-                    $paymentRequest->update([
-                        'additional_data' => json_encode($additional),
-                    ]);
-
-                    return [
-                        'status' => 'success',
-                        'is_replayed' => false,
-                        'is_recovered' => true,
-                        'payment_request' => $paymentRequest,
-                        'authorization_url' => $initResult['authorization_url'],
-                        'gateway_reference' => $reference,
-                    ];
-                }
-
-                if ($initResult['status'] === 'GATEWAY_REJECTED') {
-                    $paymentRequest->update([
-                        'attempt_status' => 'failed',
-                        'active_order_group_id' => null,
-                        'additional_data' => json_encode(array_merge($additional, ['gateway_rejection' => $initResult['message']])),
-                    ]);
-                    throw new PaymentInitializationException("Paystack re-initialization rejected: {$initResult['message']}");
-                }
-
-                // Still ambiguous
-                return [
-                    'status' => 'ambiguous_transport',
-                    'message' => 'Paystack network timeout during recovery.',
-                    'payment_request' => $paymentRequest,
-                    'gateway_reference' => $reference,
-                ];
 
             case 'NON_FINAL':
             case 'SUCCESS':
-                // Transaction exists on Paystack!
+                // Transaction exists on Paystack! Safely reuse existing attempt without rotating reference.
                 return [
                     'status' => 'pending_on_gateway',
                     'is_replayed' => true,
@@ -348,14 +238,17 @@ class DeliveryPaymentInitializationService
                 ];
 
             case 'GATEWAY_FAILURE':
+                $additional['failure_reason'] = 'GATEWAY_TERMINAL_FAILURE';
+                $additional['closed_at'] = now()->toIso8601String();
                 $paymentRequest->update([
                     'attempt_status' => 'failed',
                     'active_order_group_id' => null,
+                    'additional_data' => json_encode($additional),
                 ]);
                 throw new PaymentInitializationException("Paystack reports transaction failed on gateway.");
 
             default:
-                // Ambiguous / Transport error during verification -> preserve pending state
+                // Ambiguous / Transport error during verification -> preserve pending state and original reference
                 return [
                     'status' => 'ambiguous_transport',
                     'message' => 'Paystack verification ambiguous: ' . ($verifyData['class'] ?? 'UNKNOWN'),
@@ -363,5 +256,129 @@ class DeliveryPaymentInitializationService
                     'gateway_reference' => $reference,
                 ];
         }
+    }
+
+    /**
+     * Creates a new PaymentRequest and initializes it with Paystack.
+     * Generates a valid Paystack reference ('VM-' + orderedUuid) and enforces bounded TTL.
+     */
+    protected function createNewAttemptAndInitialize(
+        CheckoutIntent $intent,
+        User $customerRecord,
+        int $amountKobo,
+        int $ttlMinutes,
+        ?string $supersedesAttemptId = null
+    ): array {
+        $now = now();
+        $ttlTarget = $now->copy()->addMinutes($ttlMinutes);
+        $intentExpiresAt = Carbon::parse($intent->expires_at);
+
+        // Bounded TTL Invariant: attempt_expires_at = min(now + ttl, CheckoutIntent.expires_at)
+        $boundedExpiry = $ttlTarget->isBefore($intentExpiresAt) ? $ttlTarget : $intentExpiresAt;
+
+        // Canonical Gateway Reference: 'VM-' + orderedUuid (Alphanumeric and hyphen; zero underscores)
+        $gatewayReference = 'VM-' . Str::orderedUuid()->toString();
+        $paymentRequestId = (string) Str::uuid();
+
+        $payerInfo = [
+            'name' => $customerRecord->name ?? ($customerRecord->f_name . ' ' . $customerRecord->l_name),
+            'email' => $customerRecord->email,
+            'phone' => $customerRecord->phone,
+        ];
+
+        $initialAdditional = [
+            'checkout_intent_id' => $intent->id,
+            'order_group_id' => $intent->order_group_id,
+            'created_at' => $now->toIso8601String(),
+        ];
+
+        if ($supersedesAttemptId !== null) {
+            $initialAdditional['supersedes_attempt_id'] = $supersedesAttemptId;
+        }
+
+        $paymentRequest = PaymentRequest::create([
+            'id' => $paymentRequestId,
+            'payer_id' => (string) $customerRecord->id,
+            'payment_amount' => $intent->total_amount,
+            'currency_code' => 'NGN',
+            'payment_method' => 'paystack',
+            'payment_domain' => 'marketplace_delivery',
+            'order_group_id' => $intent->order_group_id,
+            'gateway_reference' => $gatewayReference,
+            'attempt_status' => 'pending',
+            'active_order_group_id' => $intent->order_group_id,
+            'attempt_expires_at' => $boundedExpiry,
+            'is_paid' => 0,
+            'attribute' => 'order',
+            'attribute_id' => (string) $now->timestamp,
+            'payer_information' => json_encode($payerInfo),
+            'additional_data' => json_encode($initialAdditional),
+        ]);
+
+        $callbackUrl = route('paystack.callback', ['payment_id' => $paymentRequestId]);
+        $metadata = [
+            'payment_id' => $paymentRequestId,
+            'order_group_id' => $intent->order_group_id,
+            'customer_id' => (int) $customerRecord->id,
+        ];
+
+        $initResult = $this->paystackClient->initializeTransaction(
+            email: $customerRecord->email,
+            amountKobo: $amountKobo,
+            reference: $gatewayReference,
+            callbackUrl: $callbackUrl,
+            metadata: $metadata
+        );
+
+        if ($initResult['status'] === 'SUCCESS') {
+            $initialAdditional['authorization_url'] = $initResult['authorization_url'];
+            $initialAdditional['access_code'] = $initResult['access_code'];
+
+            $paymentRequest->update([
+                'additional_data' => json_encode($initialAdditional),
+            ]);
+
+            return [
+                'status' => 'success',
+                'is_replayed' => false,
+                'is_recovered' => ($supersedesAttemptId !== null),
+                'payment_request' => $paymentRequest,
+                'authorization_url' => $initResult['authorization_url'],
+                'gateway_reference' => $gatewayReference,
+                'superseded_attempt_id' => $supersedesAttemptId,
+            ];
+        }
+
+        if ($initResult['status'] === 'GATEWAY_REJECTED') {
+            $initialAdditional['gateway_rejection'] = $initResult['message'];
+            $paymentRequest->update([
+                'attempt_status' => 'failed',
+                'active_order_group_id' => null,
+                'additional_data' => json_encode($initialAdditional),
+            ]);
+
+            return [
+                'status' => 'failed',
+                'is_replayed' => false,
+                'message' => "Paystack initialization rejected: {$initResult['message']}",
+                'payment_request' => $paymentRequest,
+                'gateway_reference' => $gatewayReference,
+            ];
+        }
+
+        // Ambiguous Transport Failure: Timeout / Connection Drop
+        // Retain attempt_status='pending' and active_order_group_id
+        $initialAdditional['last_transport_error'] = $initResult['message'];
+        $paymentRequest->update([
+            'additional_data' => json_encode($initialAdditional),
+        ]);
+
+        return [
+            'status' => 'ambiguous_transport',
+            'is_replayed' => false,
+            'message' => 'Paystack network timeout. The payment attempt has been safely preserved as pending.',
+            'payment_request' => $paymentRequest,
+            'gateway_reference' => $gatewayReference,
+        ];
     }
 }
