@@ -81,38 +81,16 @@ class OrderDetailsService implements OrderDetailsServiceInterface{
 
   }
 
-  @override
-  Future<Response> updatePaymentStatus({int? orderId, String? status}) async{
-    Response response = await orderDetailsRepositoryInterface.updatePaymentStatus(orderId: orderId, status: status);
-    if (response.statusCode == 200) {
-    } else {
-      ApiChecker.checkApi(response);
-    }
-    return response;
-  }
 
   @override
   Future<Response?> uploadOrderVerificationImage(String orderId, List<MultipartBody>? verificationImage) {
     return orderDetailsRepositoryInterface.uploadOrderVerificationImage(orderId, verificationImage);
   }
 
-  @override
-  Future<Response> interstateDriverHandover({int? orderId, String? driverPhone, String? driverVehicleNo, String? waybillSlipNo}) async {
-    return await orderDetailsRepositoryInterface.interstateDriverHandover(
-      orderId: orderId,
-      driverPhone: driverPhone,
-      driverVehicleNo: driverVehicleNo,
-      waybillSlipNo: waybillSlipNo,
-    );
-  }
 
   @override
   Future<Response> verifyOrderDeliveryOtp({int? orderId, String? verificationCode}) {
      return orderDetailsRepositoryInterface.verifyOrderDeliveryOtp(orderId: orderId, verificationCode: verificationCode);
   }
 
-  @override
-  Future<Response> generatePaystackLink({int? orderId}) async {
-    return await orderDetailsRepositoryInterface.generatePaystackLink(orderId: orderId);
-  }
 }

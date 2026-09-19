@@ -53,20 +53,7 @@ class OrderDetailsRepository implements OrderDetailsRepositoryInterface{
 
   }
 
-  @override
-  Future<Response> updatePaymentStatus({int? orderId, String? status}) async {
-    Response response = await apiClient.postData(AppConstants.updatePaymentStatusUri,
-        {"order_id": orderId, "payment_status": status, "_method": 'put'});
-      return response;
 
-  }
-
-  @override
-  Future<Response> generatePaystackLink({int? orderId}) async {
-    Response response = await apiClient.postData(AppConstants.generatePaystackLinkUri,
-        {"order_id": orderId});
-    return response;
-  }
 
 
   @override
@@ -126,15 +113,6 @@ class OrderDetailsRepository implements OrderDetailsRepositoryInterface{
     throw UnimplementedError();
   }
 
-  @override
-  Future<Response> interstateDriverHandover({int? orderId, String? driverPhone, String? driverVehicleNo, String? waybillSlipNo}) async {
-    return await apiClient.postData(AppConstants.interstateDriverHandoverUri, {
-      'order_id': orderId,
-      'driver_phone': driverPhone,
-      'driver_vehicle_no': driverVehicleNo,
-      'waybill_slip_no': waybillSlipNo,
-    });
-  }
 
   @override
   Future update(Map<String, dynamic> body, int? id) {

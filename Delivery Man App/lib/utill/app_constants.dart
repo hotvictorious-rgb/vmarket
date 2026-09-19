@@ -20,11 +20,8 @@ class AppConstants {
   static const String allOrderHistoryUri = '/api/v2/delivery-man/all-orders';
   static const String recordLocationUri = '/api/v2/delivery-man/record-location-data';
   static const String updateOrderStatusUri = '/api/v2/delivery-man/update-order-status';
-  static const String generatePaystackLinkUri = '/api/v2/delivery-man/generate-paystack-link';
-  static const String remitCashPaystackInitUri = '/api/v2/delivery-man/remit-cash-paystack-init';
   static const String rescheduleOrderStatusUri = '/api/v2/delivery-man/update-expected-delivery';
   static const String pauseAndResumeOrderStatusUri = '/api/v2/delivery-man/order-update-is-pause';
-  static const String updatePaymentStatusUri = '/api/v2/delivery-man/update-payment-status';
   static const String tokenUri = '/api/v2/delivery-man/update-fcm-token';
   // [AI] Corrected searchConversationListUri endpoint to messages/search
   static const String searchConversationListUri = '/api/v2/delivery-man/messages/search/';
@@ -56,7 +53,6 @@ class AppConstants {
   static const String setCurrentLanguageUri = '/api/v2/delivery-man/language-change';
   static const String singleOrderHistoryUri = '/api/v2/delivery-man/order-item';
   static const String businessPagesUri = '/api/v1/business-pages?type=';
-  static const String interstateDriverHandoverUri = '/api/v2/delivery-man/interstate-driver-handover';
 
 
   // Shared Key

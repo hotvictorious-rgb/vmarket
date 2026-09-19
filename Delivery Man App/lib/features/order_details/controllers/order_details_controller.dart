@@ -106,31 +106,6 @@ class OrderDetailsController extends GetxController implements GetxService {
     return _isSuccess;
   }
 
-  Future<String?> interstateDriverHandover({int? orderId, String? driverPhone, String? driverVehicleNo, String? waybillSlipNo, BuildContext? context}) async {
-    _isLoading = true;
-    update();
-    Response response = await orderDetailsServiceInterface.interstateDriverHandover(
-      orderId: orderId,
-      driverPhone: driverPhone,
-      driverVehicleNo: driverVehicleNo,
-      waybillSlipNo: waybillSlipNo,
-    );
-    String? transitCode;
-    if (response.statusCode == 200) {
-      transitCode = response.body['driver_transit_code'];
-      showCustomSnackBarWidget(response.body['message'] ?? 'Handover recorded successfully', isError: false);
-      Get.find<OrderController>().getCurrentOrders();
-      Get.find<OrderController>().getAllOrderHistory('', '', '', '', 0);
-      if (context != null) {
-        getOrderDetails(orderId.toString(), context);
-      }
-    } else {
-      ApiChecker.checkApi(response);
-    }
-    _isLoading = false;
-    update();
-    return transitCode;
-  }
 
 
 
@@ -172,26 +147,7 @@ class OrderDetailsController extends GetxController implements GetxService {
     return _isSuccess;
   }
 
-  Future<Response?> updatePaymentStatus({int? orderId, String? status}) async {
-    Response apiResponse = await orderDetailsServiceInterface.updatePaymentStatus(orderId: orderId, status: status);
-    update();
-    return apiResponse;
-  }
 
-  Future<String?> generatePaystackPaymentLink(int orderId) async {
-    _isLoading = true;
-    update();
-    Response response = await orderDetailsServiceInterface.generatePaystackLink(orderId: orderId);
-    _isLoading = false;
-    update();
-    
-    if(response.statusCode == 200 && response.body['success'] == 1) {
-       return response.body['authorization_url'];
-    } else {
-       ApiChecker.checkApi(response);
-       return null;
-    }
-  }
 
 
   void setEarningFilterIndex(int index) {

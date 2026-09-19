@@ -9,10 +9,7 @@ abstract class OrderDetailsRepositoryInterface implements RepositoryInterface{
   Future<Response> rescheduleOrder({int? orderId, String? deliveryDate, String? cause});
   Future<Response> pauseAndResumeOrder({int? orderId, int? isPos, String? cause});
   Future<dynamic> cancelOrderStatus({int? orderId, String? cause});
-  Future<dynamic> updatePaymentStatus({int? orderId, String? status});
   Future<Response> uploadOrderVerificationImage(String orderId, List<MultipartBody>? verificationImage);
   Future<Response> verifyOrderDeliveryOtp({int? orderId, String? verificationCode});
   Future<dynamic> resendOtpForOrderVerification({int? orderId});
-  Future<Response> generatePaystackLink({int? orderId});
-  Future<Response> interstateDriverHandover({int? orderId, String? driverPhone, String? driverVehicleNo, String? waybillSlipNo});
 }

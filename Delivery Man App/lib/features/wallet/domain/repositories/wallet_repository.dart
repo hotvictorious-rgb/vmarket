@@ -20,9 +20,7 @@ class WalletRepository implements WalletRepositoryInterface{
   }
 
   @override
-  Future<Response> remitCashViaPaystack({required double amount}) async {
-    return apiClient.postData(AppConstants.remitCashPaystackInitUri, {'amount': amount});
-  }
+  
 
   @override
   Future add(value) {
