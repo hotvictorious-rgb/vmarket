@@ -101,7 +101,6 @@ import 'package:flutter_sixvalley_ecommerce/common/enums/local_caches_type_enum.
   static const String cancelOrderUri = '/api/v1/order/cancel-order';
   static const String getSelectedShippingTypeUri = '/api/v1/shipping-method/check-shipping-type';
   static const String dealOfTheDay = '/api/v1/dealsoftheday/deal-of-the-day';
-  static const String walletTransactionUri = '/api/v1/customer/wallet/list';
   static const String loyaltyPointUri = '/api/v1/customer/loyalty/list';
   static const String loyaltyPointConvert = '/api/v1/customer/loyalty/loyalty-exchange-currency';
   static const String deleteCustomerAccount = '/api/v1/customer/account-delete';
@@ -244,10 +243,6 @@ import 'package:flutter_sixvalley_ecommerce/common/enums/local_caches_type_enum.
 
   static const List<String> loyaltyEarnTypeList = [
     'order_place', 'point_to_wallet', 'refund_order'
-  ];
-
-  static const List<String> walletEarnTypeList = [
-    'add_fund_by_admin', 'loyalty_point', 'order_place', 'order_refund', 'added_via_payment_method', 'earned_by_referral', 'due_payment_for_order', 'return_order_amount_by_admin', 'return_order_amount_by_seller'
   ];
 
 

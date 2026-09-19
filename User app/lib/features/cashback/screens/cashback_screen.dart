@@ -31,7 +31,7 @@ class _CashbackScreenState extends State<CashbackScreen> {
         backgroundColor: Theme.of(context).cardColor,
         leading: IconButton(
           icon: Icon(Icons.arrow_back_ios, color: Theme.of(context).textTheme.bodyLarge?.color, size: 20),
-          onTap: () => Navigator.of(context).pop(),
+          onPressed: () => Navigator.of(context).pop(),
         ),
         title: Text(
           'Cashback Rewards',

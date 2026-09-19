@@ -56,7 +56,6 @@ import 'package:flutter_sixvalley_ecommerce/features/support/screens/support_tic
 import 'package:flutter_sixvalley_ecommerce/features/support/widgets/support_ticket_type_widget.dart';
 import 'package:flutter_sixvalley_ecommerce/features/tracking/screens/tracking_result_screen.dart';
 import 'package:flutter_sixvalley_ecommerce/features/update/screen/update_screen.dart';
-import 'package:flutter_sixvalley_ecommerce/features/wallet/screens/wallet_screen.dart';
 import 'package:flutter_sixvalley_ecommerce/features/wishlist/screens/wishlist_screen.dart';
 import 'package:flutter_sixvalley_ecommerce/main.dart';
 import 'package:flutter_sixvalley_ecommerce/features/dashboard/screens/dashboard_screen.dart';
@@ -145,7 +144,6 @@ class RouterHelper {
   static const String supportConversationScreen = '/support-conversation';
   static const String trackingResultScreen = '/tracking-result';
   static const String updateScreen = '/update';
-  static const String walletScreen = '/wallet';
   static const String cashbackScreen = '/cashback';
   static const String wishListScreen = '/wish-list';
   static const String selectLocationScreen = '/select-location-screen';
@@ -750,23 +748,9 @@ class RouterHelper {
   }
 
     static String getCashbackRoute({RouteAction? action}) {
-    return _navigateRoute(cashbackScreen, routeAction: action);
-  }
-  static String getWalletRoute({RouteAction? action, bool? isBackButtonExist}) {
-    final params = <String, String>{};
-    if (isBackButtonExist != null) params['isBackButtonExist'] = isBackButtonExist.toString();
-
-    final query = params.entries.map((e) => '${e.key}=${e.value}').join('&');
-    return _navigateRoute('$walletScreen${query.isNotEmpty ? '?$query' : ''}', route: action);
+    return _navigateRoute(cashbackScreen, route: action);
   }
 
-  static String getAddFundToWalletRoute({RouteAction? action, required String url}) {
-    final params = <String, String>{};
-    params['url'] = Uri.encodeComponent(url);
-
-    final query = params.entries.map((e) => '${e.key}=${e.value}').join('&');
-    return _navigateRoute('$addFundToWalletScreen${query.isNotEmpty ? '?$query' : ''}', route: action);
-  }
 
 
 
@@ -1491,14 +1475,6 @@ class RouterHelper {
         path: cashbackScreen,
         builder: (BuildContext context, GoRouterState state) {
           return const CashbackScreen();
-        },
-      ),
-
-      GoRoute(
-        path: walletScreen,
-        builder: (context, state) {
-          final isBackButtonExist = state.uri.queryParameters['isBackButtonExist']?.toLowerCase() == 'true';
-          return WalletScreen(isBacButtonExist: isBackButtonExist);
         },
       ),
 

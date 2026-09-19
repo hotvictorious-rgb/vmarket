@@ -155,11 +155,6 @@ import 'package:flutter_sixvalley_ecommerce/features/support/domain/repositories
 import 'package:flutter_sixvalley_ecommerce/features/support/domain/repositories/support_ticket_repository_interface.dart';
 import 'package:flutter_sixvalley_ecommerce/features/support/domain/services/support_ticket_service.dart';
 import 'package:flutter_sixvalley_ecommerce/features/support/domain/services/support_ticket_service_interface.dart';
-import 'package:flutter_sixvalley_ecommerce/features/wallet/controllers/wallet_controller.dart';
-import 'package:flutter_sixvalley_ecommerce/features/wallet/domain/repositories/wallet_repository.dart';
-import 'package:flutter_sixvalley_ecommerce/features/wallet/domain/repositories/wallet_repository_interface.dart';
-import 'package:flutter_sixvalley_ecommerce/features/wallet/domain/services/wallet_service.dart';
-import 'package:flutter_sixvalley_ecommerce/features/wallet/domain/services/wallet_service_interface.dart';
 import 'package:flutter_sixvalley_ecommerce/features/wishlist/controllers/wishlist_controller.dart';
 import 'package:flutter_sixvalley_ecommerce/features/wishlist/domain/repositories/wishlist_repository.dart';
 import 'package:flutter_sixvalley_ecommerce/features/wishlist/domain/repositories/wishlist_repository_interface.dart';
@@ -235,7 +230,6 @@ Future<void> init() async {
   sl.registerLazySingleton(() => SplashRepository(sharedPreferences: sl(), dioClient: sl()));
   sl.registerLazySingleton(() => SupportTicketRepository(dioClient: sl()));
   sl.registerLazySingleton(() => AddressRepository(dioClient: sl()));
-  sl.registerLazySingleton(() => WalletRepository(dioClient: sl()));
 
   sl.registerLazySingleton(() => CheckoutRepository(dioClient: sl()));
   sl.registerLazySingleton(() => LocationRepository(dioClient: sl()));
@@ -274,7 +268,6 @@ Future<void> init() async {
   sl.registerFactory(() => GoogleSignInController());
   sl.registerFactory(() => FacebookLoginController());
   sl.registerFactory(() => AddressController(addressServiceInterface: sl()));
-  sl.registerFactory(() => WalletController(walletServiceInterface: sl()));
   // [AI] Cashback Feature Registration
   sl.registerLazySingleton<CashbackRepositoryInterface>(() => CashbackRepository(dioClient: sl()));
   sl.registerLazySingleton<CashbackServiceInterface>(() => CashbackService(cashbackRepositoryInterface: sl()));
@@ -448,10 +441,6 @@ Future<void> init() async {
   WishlistServiceInterface wishlistServiceInterface = WishListService(wishListRepositoryInterface: sl());
   sl.registerLazySingleton(() => wishlistServiceInterface);
 
-  WalletRepositoryInterface walletRepositoryInterface = WalletRepository(dioClient: sl());
-  sl.registerLazySingleton(() => walletRepositoryInterface);
-  WalletServiceInterface walletServiceInterface = WalletService(walletRepositoryInterface: sl());
-  sl.registerLazySingleton(() => walletServiceInterface);
 
   SearchProductRepositoryInterface searchProductRepositoryInterface = SearchProductRepository(dioClient: sl(), sharedPreferences: sl());
   sl.registerLazySingleton(() => searchProductRepositoryInterface);
@@ -504,7 +493,6 @@ Future<void> init() async {
   sl.registerLazySingleton(() => SplashService(splashRepositoryInterface : sl()));
   sl.registerLazySingleton(() => SupportTicketService(supportTicketRepositoryInterface : sl()));
   sl.registerLazySingleton(() => WishListService(wishListRepositoryInterface : sl()));
-  sl.registerLazySingleton(() => WalletService(walletRepositoryInterface : sl()));
   sl.registerLazySingleton(() => SearchProductService(searchProductRepositoryInterface : sl()));
   sl.registerLazySingleton(() => RestockService(restockRepositoryInterface : sl()));
 }

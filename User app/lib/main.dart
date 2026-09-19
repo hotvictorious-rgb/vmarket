@@ -4,7 +4,6 @@ import 'dart:io';
 import 'package:app_links/app_links.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
-import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/scheduler.dart';
 import 'package:flutter_downloader/flutter_downloader.dart';
@@ -35,7 +34,6 @@ import 'package:flutter_sixvalley_ecommerce/features/shipping/controllers/shippi
 import 'package:flutter_sixvalley_ecommerce/features/splash/controllers/splash_controller.dart';
 import 'package:flutter_sixvalley_ecommerce/features/splash/screens/splash_screen.dart';
 import 'package:flutter_sixvalley_ecommerce/features/support/controllers/support_ticket_controller.dart';
-import 'package:flutter_sixvalley_ecommerce/features/wallet/controllers/wallet_controller.dart';
 import 'package:flutter_sixvalley_ecommerce/features/wishlist/controllers/wishlist_controller.dart';
 import 'package:flutter_sixvalley_ecommerce/helper/route_healper.dart';
 import 'package:flutter_sixvalley_ecommerce/localization/controllers/localization_controller.dart';
@@ -140,7 +138,6 @@ Future<void> main() async {
       ChangeNotifierProvider(create: (context) => di.sl<GoogleSignInController>()),
       ChangeNotifierProvider(create: (context) => di.sl<FacebookLoginController>()),
       ChangeNotifierProvider(create: (context) => di.sl<AddressController>()),
-      ChangeNotifierProvider(create: (context) => di.sl<WalletController>()),
         ChangeNotifierProvider(create: (context) => di.sl<CashbackController>()),
 
       ChangeNotifierProvider(create: (context) => di.sl<CheckoutController>()),

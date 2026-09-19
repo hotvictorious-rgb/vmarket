@@ -12,7 +12,6 @@ import 'package:flutter_sixvalley_ecommerce/features/restock/controllers/restock
 import 'package:flutter_sixvalley_ecommerce/features/restock/widgets/restock_bottom_sheet.dart';
 import 'package:flutter_sixvalley_ecommerce/features/splash/controllers/splash_controller.dart';
 import 'package:flutter_sixvalley_ecommerce/features/splash/domain/models/config_model.dart';
-import 'package:flutter_sixvalley_ecommerce/features/wallet/controllers/wallet_controller.dart';
 import 'package:flutter_sixvalley_ecommerce/helper/route_healper.dart';
 import 'package:flutter_sixvalley_ecommerce/main.dart';
 import 'package:flutter_sixvalley_ecommerce/push_notification/models/notification_body.dart';
@@ -48,7 +47,7 @@ class NotificationHelper {
               isNotification: true
             );
           } else if(payload.type == 'wallet') {
-            RouterHelper.getWalletRoute(action: RouteAction.pushReplacement, isBackButtonExist: true);
+            RouterHelper.getCashbackRoute(action: RouteAction.pushReplacement);
           } else if(payload.type == 'chatting') {
             RouterHelper.getInboxScreenRoute(
               action: RouteAction.pushReplacement,
@@ -80,7 +79,7 @@ class NotificationHelper {
       }
 
       if(message.data['type'] == 'referral_code_used'){
-        await Provider.of<WalletController>(Get.context!, listen: false).getTransactionList(1);
+        // [AI] Wallet transaction list removed
       }
 
       if(message.data['type'] == 'maintenance_mode') {
@@ -137,7 +136,7 @@ class NotificationHelper {
             );
 
           } else if(notificationBody.type == 'wallet') {
-            RouterHelper.getWalletRoute(action: RouteAction.pushReplacement, isBackButtonExist: true);
+            RouterHelper.getCashbackRoute(action: RouteAction.pushReplacement);
           } else if(notificationBody.type == 'notification') {
             RouterHelper.getNotificationRoute(action: RouteAction.pushReplacement, fromNotification: true);
           } else if(notificationBody.type == 'chatting') {

@@ -95,7 +95,7 @@ class SplashScreenState extends State<SplashScreen> {
                 } else if(widget.body!.type == 'notification') {
                   RouterHelper.getNotificationRoute(action: RouteAction.pushReplacement);
                 } else if(widget.body!.type == 'wallet') {
-                  RouterHelper.getWalletRoute(action: RouteAction.pushReplacement, isBackButtonExist: true);
+                  RouterHelper.getCashbackRoute(action: RouteAction.pushReplacement);
                 } else  if (widget.body!.type == 'chatting') {
                   RouterHelper.getInboxScreenRoute(
                     action: RouteAction.pushReplacement,
@@ -194,7 +194,7 @@ class SplashScreenState extends State<SplashScreen> {
               } else if(widget.body!.type == 'notification') {
                 RouterHelper.getNotificationRoute(action: RouteAction.pushReplacement);
               } else if(widget.body!.type == 'wallet') {
-                RouterHelper.getWalletRoute(action: RouteAction.pushReplacement, isBackButtonExist: true);
+                RouterHelper.getCashbackRoute(action: RouteAction.pushReplacement);
               } else  if (widget.body!.type == 'chatting') {
                 RouterHelper.getInboxScreenRoute(
                   action: RouteAction.push,

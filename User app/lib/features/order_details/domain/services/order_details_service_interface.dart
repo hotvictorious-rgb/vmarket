@@ -20,10 +20,7 @@ abstract class OrderDetailsServiceInterface {
 
   Future<HttpClientResponse> productDownload(String url);
 
-Future<dynamic> duePaymentByDigitalPayment(int orderId, String paymentMethod, String? guestId, String? orderDuePaymentNote, String? currencyCode);
 
-Future<dynamic> duePaymentByOfflinePayment(int orderId, String paymentMethod, String? orderDueNote, String? methodId);
 
-  Future<dynamic> confirmDriverTransitCode(String orderId, String transitCode);
-
+  
 }

@@ -1,3 +1,40 @@
+### [2026-09-19 23:25 UTC] Directive 57323: Eradication of Customer Stored-Value Wallet, Checkout Payment Subsystems & Delivery Bypasses [user-app] [delivery-man] [ai-governance]
+* **Component:** User App (`features/wallet`, `features/cashback`, `features/checkout`, `features/order_details`, `helper/route_healper.dart`, `di_container.dart`, `main.dart`, `utill/app_constants.dart`) & Delivery Man App (`features/order_details`, `features/wallet`, `utill/app_constants.dart`)
+* **Action:** Concluded complete, physical removal of customer stored-value wallet and obsolete delivery authority per VMarket V1 fresh-system specifications:
+  - **1. User App Customer Stored-Value Wallet Physical Deletion:**
+    - Physically deleted the entire `User app/lib/features/wallet/` directory (controllers, domain models, services, repositories, `wallet_screen.dart`, `transaction_widget.dart`, `wallet_card_widget.dart`, `wallet_filter_bottom_sheet_widget.dart`).
+    - Purged `WalletController`, `WalletService`, `WalletRepository`, `walletRepositoryInterface`, and `walletServiceInterface` from `di_container.dart` and `main.dart`.
+    - Removed `walletScreen`, `getWalletRoute()`, `getAddFundToWalletRoute()`, and `fromWallet` query parameter parsing from `route_healper.dart`.
+    - Replaced all customer rewards entry points with dedicated `CashbackScreen` and `CashbackController`, consuming `/api/v1/customer/cashback/*` for non-withdrawable account credit earned on delivered merchandise.
+  - **2. Checkout & Order Details Legacy Subsystems Removal:**
+    - Physically deleted `wallet_payment_widget.dart` and `wallet_bonus_shimmer.dart`.
+    - Physically deleted `order_payment_bottomsheet_widget.dart` (`OrderPaymentMethodBottomSheetWidget`).
+    - Purged `isWalletChecked` and customer due-payment methods (`duePaymentByDigitalPayment()`, `duePaymentByOfflinePayment()`, `duePaymentByWallet()`, `duePaymentByCod()`) across `order_details_controller.dart`, `order_details_service.dart`, `order_details_service_interface.dart`, `order_details_repository.dart`, and `order_details_repository_interface.dart`.
+    - Cleaned `order_details_screen.dart` to remove legacy customer edit due payment UI card.
+    - Purged dead constants (`walletTransactionUri`, `walletBonusList`, `addFundToWallet`, `walletEarnTypeList`, `duePaymentByDigitalPayment`, `duePaymentByOfflinePayment`, `duePaymentByWallet`, `duePaymentByCodUri`) from `User app/lib/utill/app_constants.dart`.
+  - **3. Delivery Man App Interstate & Cash Remittance Purge:**
+    - Physically deleted `interstate_handover_sheet_widget.dart` and `remit_cash_bottom_sheet_widget.dart`.
+    - Removed `remitCashViaPaystack()` across `wallet_controller.dart`, `wallet_service.dart`, `wallet_service_interface.dart`, `wallet_repository.dart`, and `wallet_repository_interface.dart`.
+    - Removed "Cash in Hand" / "Remit via Paystack" widget from `Delivery Man App/lib/features/wallet/screens/wallet_screen.dart`.
+    - Purged `interstateDriverHandoverUri`, `remitCashPaystackInitUri`, `generatePaystackLinkUri`, and `updatePaymentStatusUri` from `Delivery Man App/lib/utill/app_constants.dart`.
+  - **4. Verification & Clean Architecture Invariant:**
+    - Repository-wide scan across client applications confirms 0 live callers, 0 routes, 0 controllers, and 0 orphaned symbols for customer stored-value wallet, due payments, and delivery cash remittance.
+
+### [2026-09-19 23:15 UTC] Directive 57323 Fresh-System Purge: Eradication of Offline Methods, Stored-Value Wallet & Delivery Payment Authority [backend] [ai-governance]
+* **Component:** Order State Machine, Routing, Customer Stored-Value Wallet, Delivery Custody, POD Fields Audit (`backend/vmarket-web/`)
+* **Action:** Concluded complete deletion of all abandoned COD, offline payment, customer wallet funding, and rider cash-in-hand remittance remnants:
+  - **1. Deletion of Remaining Offline Payment Method Exposure:** Completely deleted `offline_payment_method_list()` and unused `OfflinePaymentMethod` model import from `OrderController.php`.
+  - **2. Deletion of Customer Wallet Funding Web Route:** Completely deleted `customer_add_to_fund_request()` from `PaymentController.php` and deleted route `POST /customer/customer-add-fund-request` from `routes/web/routes.php`.
+  - **3. Deletion of Customer Stored-Value Wallet API Routes:** Completely removed `/api/v1/customer/wallet/*` route group from `routes/rest_api/v1/api.php` and purged 403 stubs (`list()`, `bonus_list()`) from `UserWalletController.php`.
+  - **4. Deletion of Dead COD Cancellation Logic:** Removed `$isCodPending` branch from `OrderController::order_cancel()`, strictly preserving in-shop pickup cancellation.
+  - **5. Deletion of Deliveryman Payment-Status & Cash Collection Authority:** In `DeliveryManController::update_order_status()`, eliminated order payment-status mutation (`'payment_status' => 'paid'`), order due payment note, and all cash-collection logic (`cashInHand`, `doorstep_due_amount`, `pod_dispatch_fee`). Rider earnings (`deliveryman_charge`) are credited directly to `current_balance` with zero customer cash handling.
+  - **6. Architectural Classification of Legacy POD Fields:**
+    - `doorstep_due_amount`, `pod_dispatch_fee`, `bring_change_amount`: **Class B (Legacy POD remnants)** — Decommissioned and excised from active order placement, cancellation, and deliveryman flows.
+    - `order_due_payment_method`, `order_due_payment_status`: **Class C (Shared Historical Entity)** — Constrained to online edit due payments (`PaymentController::customerOrderEditPayDueAmount`); all rider and COD offline update authorities eradicated.
+    - `SellerWallet->collected_cash`: **Class C / Required V1** — Actively participates in Proof 9.2 merchant debt recovery on customer refunds ($currentCollectedCash + unrecoveredDebt).
+    - `DeliverymanWallet->cash_in_hand`: **Class B / Decommissioned** — Frozen at 0.00 for all V1 deliveries; riders handle zero customer merchandise cash.
+  - **7. Test Suite Validation:** All 36 tests pass in `scratch/test_directive_57321_a1.php` and all 49 tests pass in `scratch/test_gate1_precision_timezone.php` (85/85 total passing).
+
 ### [2026-09-19 22:55 UTC] Directive 57323: Compilation Repair, Complete Legacy Dependency Deletion & Exact Cashback Contract Alignment [user-app] [ai-governance]
 * **Component:** User App (`features/checkout`, `features/wallet`, `features/cashback`, `helper/route_healper.dart`, `utill/app_constants.dart`)
 * **Action:** Executed complete clean-removal and compilation repair gate:

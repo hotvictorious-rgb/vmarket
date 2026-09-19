@@ -54,19 +54,4 @@ class OrderDetailsService implements OrderDetailsServiceInterface{
     return await orderDetailsRepositoryInterface.productDownload(url);
   }
 
-@override
-  Future duePaymentByDigitalPayment(int orderId, String paymentMethod, String? guestId, String? orderDuePaymentNote, String? currencyCode) async {
-    return await orderDetailsRepositoryInterface.duePaymentByDigitalPayment(orderId,  paymentMethod, guestId, orderDuePaymentNote, currencyCode);
-  }
-
-
-@override
-  Future duePaymentByOfflinePayment(int orderId, String paymentMethod, String? orderDueNote, String? methodId) async {
-    return await orderDetailsRepositoryInterface.duePaymentByOfflinePayment(orderId, paymentMethod, orderDueNote, methodId);
-  }
-
-  @override
-  Future confirmDriverTransitCode(String orderId, String transitCode) async {
-    return await orderDetailsRepositoryInterface.confirmDriverTransitCode(orderId, transitCode);
-  }
 }

@@ -2,16 +2,12 @@ import 'dart:io';
 import 'package:flutter_downloader/flutter_downloader.dart';
 import 'package:flutter_sixvalley_ecommerce/common/basewidget/show_custom_snakbar_widget.dart';
 import 'package:flutter_sixvalley_ecommerce/data/model/api_response.dart';
-import 'package:flutter_sixvalley_ecommerce/features/checkout/controllers/checkout_controller.dart';
-import 'package:flutter_sixvalley_ecommerce/features/offline_payment/domain/models/offline_payment_model.dart';
 import 'package:flutter_sixvalley_ecommerce/features/order/domain/models/order_model.dart';
 import 'package:flutter_sixvalley_ecommerce/features/order_details/domain/models/order_details_model.dart';
 import 'package:flutter_sixvalley_ecommerce/features/order_details/domain/models/track_order_details_model.dart';
 import 'package:flutter_sixvalley_ecommerce/features/order_details/domain/services/order_details_service_interface.dart';
 import 'package:flutter_sixvalley_ecommerce/features/review/controllers/review_controller.dart';
-import 'package:flutter_sixvalley_ecommerce/features/splash/controllers/splash_controller.dart';
 import 'package:flutter_sixvalley_ecommerce/helper/api_checker.dart';
-import 'package:flutter_sixvalley_ecommerce/helper/route_healper.dart';
 import 'package:flutter_sixvalley_ecommerce/localization/language_constrants.dart';
 import 'package:flutter_sixvalley_ecommerce/main.dart';
 import 'dart:async';
@@ -395,69 +391,12 @@ class OrderDetailsController with ChangeNotifier {
 
   bool isOfflineChecked = false;
   bool isCODChecked = false;
-  bool isWalletChecked = false;
-
+  
   int _paymentMethodIndex = -1;
   int get paymentMethodIndex => _paymentMethodIndex;
 
 
-  void setOfflineChecked(String type, {bool notify = true}) {
-    if(type == 'offline') {
-      isOfflineChecked = !isOfflineChecked;
-      isCODChecked = false;
-      isWalletChecked = false;
-      _paymentMethodIndex = -1;
-      setOfflinePaymentMethodSelectedIndex(0, Provider.of<CheckoutController>(Get.context!, listen: false).offlinePaymentModel, notify: false);
-    }else if(type == 'cod') {
-      isCODChecked = !isCODChecked;
-      isOfflineChecked = false;
-      isWalletChecked = false;
-      _paymentMethodIndex = -1;
-      Provider.of<CheckoutController>(Get.context!, listen: false).setOfflineChecked('cod');
-
-
-    if(notify) {
-      notifyListeners();
-    }
-  }
-
-
-  String selectedDigitalPaymentMethodName = '';
-
-  void setDigitalPaymentMethodName(int index, String name) {
-    _paymentMethodIndex = index;
-    selectedDigitalPaymentMethodName = name;
-    isCODChecked = false;
-    isWalletChecked = false;
-    isOfflineChecked = false;
-    notifyListeners();
-  }
-
-  List<TextEditingController> inputFieldControllerList = [];
-  List <String?> keyList = [];
-  int offlineMethodSelectedIndex = -1;
-  int offlineMethodSelectedId = 0;
-  String offlineMethodSelectedName = '';
-
-  void setOfflinePaymentMethodSelectedIndex(int index, OfflinePaymentModel? offlinePaymentModel, {bool notify = true}) {
-    keyList = [];
-    inputFieldControllerList = [];
-    offlineMethodSelectedIndex = index;
-    if(offlinePaymentModel != null && offlinePaymentModel.offlineMethods!= null && offlinePaymentModel.offlineMethods!.isNotEmpty){
-      offlineMethodSelectedId = offlinePaymentModel.offlineMethods![offlineMethodSelectedIndex].id!;
-      offlineMethodSelectedName = offlinePaymentModel.offlineMethods![offlineMethodSelectedIndex].methodName!;
-    }
-
-    if(offlinePaymentModel!.offlineMethods != null && offlinePaymentModel.offlineMethods!.isNotEmpty && offlinePaymentModel.offlineMethods![index].methodInformations!.isNotEmpty){
-      for (int i= 0; i< offlinePaymentModel.offlineMethods![index].methodInformations!.length; i++) {
-        inputFieldControllerList.add(TextEditingController());
-        keyList.add(offlinePaymentModel.offlineMethods![index].methodInformations![i].customerInput);
-      }
-    }
-    if(notify) {
-      notifyListeners();
-    }
-  }
+  
 
 
 
@@ -468,22 +407,7 @@ class OrderDetailsController with ChangeNotifier {
 
 
 
-  Future<ApiResponseModel> confirmDriverTransitCode(String orderId, String transitCode, BuildContext context) async {
-    _isLoading = true;
-    notifyListeners();
-    ApiResponseModel apiResponse = await orderDetailsServiceInterface.confirmDriverTransitCode(orderId, transitCode);
-    _isLoading = false;
-    if (apiResponse.response != null && apiResponse.response!.statusCode == 200) {
-      showCustomSnackBar(apiResponse.response!.data['message'] ?? 'Delivery successfully confirmed!', context, isError: false);
-      getOrderDetails(orderId);
-      getOrderFromOrderId(orderId);
-    } else {
-      String errorMessage = apiResponse.error is String ? apiResponse.error : (apiResponse.response?.data['message'] ?? 'Invalid Driver Transit Code');
-      showCustomSnackBar(errorMessage, context, isError: true);
-    }
-    notifyListeners();
-    return apiResponse;
-  }
+  
 
 }
 

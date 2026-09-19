@@ -1,17 +1,14 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_sixvalley_ecommerce/common/basewidget/custom_asset_image_widget.dart';
 import 'package:flutter_sixvalley_ecommerce/common/basewidget/show_custom_snakbar_widget.dart';
-import 'package:flutter_sixvalley_ecommerce/features/checkout/controllers/checkout_controller.dart';
 import 'package:flutter_sixvalley_ecommerce/features/checkout/widgets/shipping_details_widget.dart';
 import 'package:flutter_sixvalley_ecommerce/features/order/controllers/order_controller.dart';
 import 'package:flutter_sixvalley_ecommerce/features/order_details/controllers/order_details_controller.dart';
 import 'package:flutter_sixvalley_ecommerce/features/order_details/widgets/cal_chat_widget.dart';
 import 'package:flutter_sixvalley_ecommerce/features/order_details/widgets/cancel_and_support_center_widget.dart';
 import 'package:flutter_sixvalley_ecommerce/features/order_details/widgets/delivery_man_review_dialog_widget.dart';
-import 'package:flutter_sixvalley_ecommerce/features/order_details/widgets/due_amount_card.dart';
 import 'package:flutter_sixvalley_ecommerce/features/order_details/widgets/order_amount_calculation.dart';
 import 'package:flutter_sixvalley_ecommerce/features/order_details/widgets/order_details_status_widget.dart';
-import 'package:flutter_sixvalley_ecommerce/features/order_details/widgets/order_payment_bottomsheet_widget.dart';
 import 'package:flutter_sixvalley_ecommerce/features/order_details/widgets/order_payment_info_widget.dart';
 import 'package:flutter_sixvalley_ecommerce/features/order_details/widgets/ordered_product_list_widget.dart';
 import 'package:flutter_sixvalley_ecommerce/features/order_details/widgets/seller_section_widget.dart';
@@ -21,7 +18,6 @@ import 'package:flutter_sixvalley_ecommerce/features/review/controllers/review_c
 import 'package:flutter_sixvalley_ecommerce/features/splash/controllers/splash_controller.dart';
 import 'package:flutter_sixvalley_ecommerce/helper/color_helper.dart';
 import 'package:flutter_sixvalley_ecommerce/helper/date_converter.dart';
-import 'package:flutter_sixvalley_ecommerce/helper/price_converter.dart';
 import 'package:flutter_sixvalley_ecommerce/helper/route_healper.dart';
 import 'package:flutter_sixvalley_ecommerce/main.dart';
 import 'package:flutter_sixvalley_ecommerce/features/auth/controllers/auth_controller.dart';
@@ -56,8 +52,7 @@ class _OrderDetailsScreenState extends State<OrderDetailsScreen> {
       await Provider.of<OrderDetailsController>(Get.context!, listen: false).trackOrder(orderId: widget.orderId.toString(), phoneNumber: widget.phone, isUpdate: false);
       await Provider.of<OrderDetailsController>(Get.context!, listen: false).getOrderFromOrderId(widget.orderId.toString());
     }
-    Provider.of<CheckoutController>(Get.context!, listen: false).getOfflinePaymentList();
-    await Provider.of<OrderDetailsController>(Get.context!, listen: false).getTrackOrderDetailsId(orderId: widget.orderId.toString());
+        await Provider.of<OrderDetailsController>(Get.context!, listen: false).getTrackOrderDetailsId(orderId: widget.orderId.toString());
   }
 
   @override
@@ -252,11 +247,7 @@ class _OrderDetailsScreenState extends State<OrderDetailsScreen> {
 
 
 
-                                  if(orderProvider.orderDetails?[0].order?.offlinePayments != null)...[
-                                    SizedBox(height: Dimensions.paddingSizeSmall),
-
-                                    OfflinePaymentSection(orderProvider: orderProvider),
-                                  ],
+                                  
 
 
 
@@ -380,49 +371,12 @@ class _OrderDetailsScreenState extends State<OrderDetailsScreen> {
                                   ],
 
 
-                                  if (orderProvider.orderDetails?[0].latestEditHistory?.orderDuePaymentInfo != null)...[
-                                    SizedBox(height: Dimensions.paddingSizeSmall),
-
-                                    CustomerPaymentSection(orderProvider: orderProvider),
-                                  ],
+                                  
                                 ],
                                   
 
 
-                                if(orderProvider.orderDetails![0].order?.editedStatus == 1)...[
-                                  if(orderProvider.orderDetails![0].order?.editedStatus == 1 && (orderProvider.orderDetails?[0].latestEditHistory?.orderDueAmount ?? 0) > 0
-                                    && orderProvider.orderDetails?[0].latestEditHistory?.orderDuePaymentStatus != 'paid')
-                                  AmountDueCard(
-                                    showButton: true,
-                                    title: getTranslated('pay_due_bill', context)!,
-                                    price: PriceConverter.convertPrice(context, orderProvider.orderDetails![0].latestEditHistory!.orderDueAmount!),
-                                    description: getTranslated('after_editing_your_product_list', context)!,
-                                    buttonText:  getTranslated('pay_now', context)!,
-                                    onTap: () {
-                                      showModalBottomSheet(
-                                        context: context, isScrollControlled: true, backgroundColor: Colors.transparent,
-                                        builder: (c) {
-                                          return OrderPaymentMethodBottomSheetWidget(
-                                            onlyDigital: false,
-                                            orderId: orderProvider.orderDetails![0].orderId.toString(),
-                                            payableAmount : orderProvider.orderDetails![0].latestEditHistory!.orderDueAmount!,
-                                          );
-                                        },
-                                      );
-                                    },
-                                  ),
-
-                                  if(orderProvider.orderDetails![0].order?.editedStatus == 1 && (orderProvider.orderDetails?[0].latestEditHistory?.orderReturnAmount ?? 0) > 0 && orderProvider.orderDetails?[0].latestEditHistory?.orderReturnPaymentStatus != 'returned' )
-                                  AmountDueCard(
-                                    showButton: false,
-                                    title: getTranslated('amount_to_be_returned', context)!,
-                                    price: PriceConverter.convertPrice(context, orderProvider.orderDetails![0].latestEditHistory!.orderReturnAmount!),
-                                    description: getTranslated('after_editing_your_product_list_you_will_receive_this', context)!, buttonText: '',
-                                    onTap: null,
-                                  ),
-                                ],
-
-                                  SizedBox(height: Dimensions.paddingSizeSmall),
+                                SizedBox(height: Dimensions.paddingSizeSmall),
                                 ],
                               ),
                             ),
