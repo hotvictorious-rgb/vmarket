@@ -1,3 +1,29 @@
+### [2026-09-19 04:55 UTC] Step 2: Canonical Verified Reference, Fail-Closed NGN, Exact Amount, and Normalized Callback Consumer [backend] [ai-governance]
+* **Component:** Paystack Gateway Engine (`backend/vmarket-web/app/Http/Controllers/Payment_Methods/PaystackController.php`, `AI_CHANGELOG.md`)
+* **Action:** Implemented Step 2 hardening according to the approved specification and preconditions A through N:
+  - **Precondition B (Verified vs Requested Reference Separation):** In `getPayStackPaymentData()`, separated `'requested_reference' => $reference` (untrusted caller input) and `'reference' => $verifiedRef` (authoritative gateway-verified reference, or `null`). Eliminated the ambiguous fallback `$verifiedRef ?: $reference`.
+  - **Precondition C (REQUEST_ERROR HTTP Code):** Set `'http_code' => 0` for `REQUEST_ERROR` because no Paystack HTTP request occurred.
+  - **Precondition D (HTTP 404 Consistency):** Mapped HTTP 404 deterministically to `REFERENCE_NOT_FOUND` regardless of whether the body contains JSON.
+  - **Preconditions G & H (Signature & Path Encoding):** Typed signature as `Request|array $request`, URL path segment uses `rawurlencode($reference)`.
+  - **Precondition K (Normalized Class Consumption):** Hardened `handleGatewayCallback()` to explicitly consume all 8 normalized contract classes via `switch`:
+    * `SUCCESS`: proceeds to shape validation, route-vs-metadata identity match, fail-closed NGN validation, exact kobo integer comparison, and atomic update.
+    * `NON_FINAL`: redirects customer to pending payment screen with informational status; never marks paid or invokes success hook.
+    * `GATEWAY_FAILURE`: logs warning and redirects to failure screen; never fulfills.
+    * `REFERENCE_NOT_FOUND`: logs warning, safe non-fulfillment, redirects to failure.
+    * `TRANSPORT_ERROR`: logs error, redirects to pending/retry-safe screen, never fulfills.
+    * `HTTP_ERROR`: logs error, redirects to pending/retry-safe screen, never fulfills.
+    * `MALFORMED_GATEWAY_RESPONSE`: logs error, redirects to failure, never fulfills.
+    * `REQUEST_ERROR`: logs warning, redirects to failure, never fulfills.
+  - **Precondition L (Load-Bearing Payment Fixes):**
+    * **Canonical Reference Enforcement:** Callback updates `payment_requests.transaction_id` using strictly the verified reference (`$paymentDetails['reference']`), eliminating the browser `trxref` asymmetry.
+    * **High-Entropy Payment References:** In `index()`, replaced collision-prone `REF . time() . RANDOM` with `'VM_' . Str::orderedUuid()->toString()`.
+    * **Fail-Closed NGN Currency:** In `index()`, enforced strict `strtoupper($currency_code) === 'NGN'` (HTTP 400 rejection otherwise); in callback, validated both `payment_request.currency_code` and gateway `data.currency === 'NGN'`.
+    * **Exact Smallest-Unit (Kobo) Integer Equality:** Replaced loose `>=` comparisons with strict integer equality `===` across all three payment confirmation paths (callback marketplace, webhook marketplace, webhook delivery payment).
+    * **Pre-Lookup Shape Validation:** Validated `data.metadata.payment_id` existence and exact identity match against route parameter before querying `PaymentRequest`.
+  - **Preconditions M & Scope Limits:** Preserved architectural distinction between verification, confirmation, and post-success reconciliation. Kept Step 2 isolated without introducing outer transactions (Step 10), UNIQUE constraints (Step 13), or delivery atomicity modifications.
+  - **Tests & Invariants:** Step 2 isolated suite 18/18 PASS (`scratch/test_step2_isolated_suite.php`); Step 1 isolated contract suite 20/20 PASS (`scratch/test_step1_isolated_contract.php`); V1 Certification regression suite 82/82 PASS (`scratch/v1_transaction_certification.php`). Database mutation $\Delta = \text{₦}0.00$. Orphan failure fixtures preserved 100% intact.
+
+
 ### [2026-09-19 04:35 UTC] Step 1: Isolated Paystack Verification Contract Hardening [backend] [ai-governance]
 * **Component:** Paystack Gateway Verification Engine (`backend/vmarket-web/app/Http/Controllers/Payment_Methods/PaystackController.php`, `AI_CHANGELOG.md`)
 * **Action:** Hardened `getPayStackPaymentData()` with an isolated 8-class normalized verification contract, strict timeouts, and sanitized diagnostics:
