@@ -146,15 +146,31 @@ class PaystackController extends Controller
 
     protected function getPayStackPaymentData(object|array $request): array
     {
-        $reference = $request->query('reference');
-        $curl = curl_init();
+        $reference = $request instanceof Request ? $request->query('reference') : ($request['reference'] ?? ($request['trxref'] ?? null));
 
+        // 1. REQUEST_ERROR: Missing or invalid callback reference / malformed input
+        if (empty($reference) || !is_string($reference)) {
+            $errorMsg = 'Missing or invalid transaction reference.';
+            Log::warning("Paystack verify request error: {$errorMsg}");
+            return [
+                'class' => 'REQUEST_ERROR',
+                'status' => false,
+                'http_code' => 400,
+                'error_code' => 0,
+                'error_msg' => $errorMsg,
+                'reference' => null,
+                'data' => [],
+            ];
+        }
+
+        $curl = curl_init();
         curl_setopt_array($curl, array(
-            CURLOPT_URL => "https://api.paystack.co/transaction/verify/$reference",
+            CURLOPT_URL => "https://api.paystack.co/transaction/verify/" . urlencode($reference),
             CURLOPT_RETURNTRANSFER => true,
             CURLOPT_ENCODING => "",
-            CURLOPT_MAXREDIRS => 10,
-            CURLOPT_TIMEOUT => 30,
+            CURLOPT_MAXREDIRS => 5,
+            CURLOPT_CONNECTTIMEOUT => 3,
+            CURLOPT_TIMEOUT => 6,
             CURLOPT_HTTP_VERSION => CURL_HTTP_VERSION_1_1,
             CURLOPT_CUSTOMREQUEST => "GET",
             CURLOPT_HTTPHEADER => array(
@@ -165,9 +181,214 @@ class PaystackController extends Controller
 
         $response = curl_exec($curl);
         $err = curl_error($curl);
-
+        $errno = curl_errno($curl);
+        $httpCode = curl_getinfo($curl, CURLINFO_HTTP_CODE);
         curl_close($curl);
-        return json_decode($response, true);
+
+        // 2. TRANSPORT_ERROR: cURL connection failure, DNS failure, timeout, socket failure
+        if ($response === false) {
+            $errorMsg = $err ?: 'Transport communication failure.';
+            Log::warning("Paystack verify transport failure [errno: {$errno}]: {$errorMsg}", [
+                'reference' => $reference,
+            ]);
+            return [
+                'class' => 'TRANSPORT_ERROR',
+                'status' => false,
+                'http_code' => $httpCode ?: 0,
+                'error_code' => $errno,
+                'error_msg' => $errorMsg,
+                'reference' => $reference,
+                'data' => [],
+            ];
+        }
+
+        $decoded = json_decode($response, true);
+
+        // 3. Decode handling: JSON decode failure
+        if (!is_array($decoded)) {
+            // Upstream HTTP 5xx / 4xx non-JSON body
+            if ($httpCode >= 400) {
+                $errorMsg = "Gateway returned HTTP {$httpCode} with non-JSON body.";
+                Log::warning("Paystack verify returned HTTP error: {$errorMsg}", [
+                    'reference' => $reference,
+                    'http_code' => $httpCode,
+                ]);
+                return [
+                    'class' => 'HTTP_ERROR',
+                    'status' => false,
+                    'http_code' => $httpCode,
+                    'error_code' => $errno,
+                    'error_msg' => $errorMsg,
+                    'reference' => $reference,
+                    'data' => [],
+                ];
+            }
+
+            // HTTP 200 with malformed JSON body
+            $errorMsg = 'Malformed JSON response from gateway: ' . json_last_error_msg();
+            Log::warning("Paystack verify returned malformed gateway response: {$errorMsg}", [
+                'reference' => $reference,
+            ]);
+            return [
+                'class' => 'MALFORMED_GATEWAY_RESPONSE',
+                'status' => false,
+                'http_code' => $httpCode,
+                'error_code' => json_last_error(),
+                'error_msg' => $errorMsg,
+                'reference' => $reference,
+                'data' => [],
+            ];
+        }
+
+        $message = (string)($decoded['message'] ?? '');
+        $topStatus = $decoded['status'] ?? null;
+        $txData = $decoded['data'] ?? null;
+
+        // 4. REFERENCE_NOT_FOUND: HTTP 404 or explicit "Transaction reference not found"
+        $isNotFoundMessage = (stripos($message, 'not found') !== false || stripos($message, 'invalid reference') !== false);
+        if ($httpCode === 404 || ($topStatus === false && $isNotFoundMessage)) {
+            $errorMsg = $message ?: 'Transaction reference not found.';
+            Log::info("Paystack verify: Transaction reference not found on gateway.", [
+                'reference' => $reference,
+                'http_code' => $httpCode,
+            ]);
+            return [
+                'class' => 'REFERENCE_NOT_FOUND',
+                'status' => false,
+                'http_code' => $httpCode,
+                'error_code' => 0,
+                'error_msg' => $errorMsg,
+                'reference' => $reference,
+                'data' => is_array($txData) ? $txData : [],
+            ];
+        }
+
+        // 5. HTTP_ERROR: Upstream HTTP failure (400, 401, 429, 500, 502, 503)
+        if ($httpCode >= 400) {
+            $errorMsg = $message ?: "Gateway returned HTTP {$httpCode}.";
+            Log::warning("Paystack verify returned HTTP error: {$errorMsg}", [
+                'reference' => $reference,
+                'http_code' => $httpCode,
+            ]);
+            return [
+                'class' => 'HTTP_ERROR',
+                'status' => false,
+                'http_code' => $httpCode,
+                'error_code' => 0,
+                'error_msg' => $errorMsg,
+                'reference' => $reference,
+                'data' => is_array($txData) ? $txData : [],
+            ];
+        }
+
+        // 6. Top-level status false without "not found"
+        if ($topStatus === false) {
+            $errorMsg = $message ?: 'Gateway returned false status.';
+            Log::warning("Paystack verify gateway failure: {$errorMsg}", [
+                'reference' => $reference,
+            ]);
+            return [
+                'class' => 'GATEWAY_FAILURE',
+                'status' => false,
+                'http_code' => $httpCode,
+                'error_code' => 0,
+                'error_msg' => $errorMsg,
+                'reference' => $reference,
+                'data' => is_array($txData) ? $txData : [],
+            ];
+        }
+
+        // 7. Structural validation of success responses (missing data array)
+        if (!is_array($txData)) {
+            $errorMsg = 'Response body missing transaction data object.';
+            Log::warning("Paystack verify returned malformed gateway response: {$errorMsg}", [
+                'reference' => $reference,
+            ]);
+            return [
+                'class' => 'MALFORMED_GATEWAY_RESPONSE',
+                'status' => false,
+                'http_code' => $httpCode,
+                'error_code' => 0,
+                'error_msg' => $errorMsg,
+                'reference' => $reference,
+                'data' => [],
+            ];
+        }
+
+        $txStatus = strtolower((string)($txData['status'] ?? ''));
+        $verifiedRef = !empty($txData['reference']) ? (string)$txData['reference'] : null;
+
+        // 8. SUCCESS: valid response, status true, data.status == success, valid data.reference present
+        if ($topStatus === true && $txStatus === 'success') {
+            if (empty($verifiedRef)) {
+                $errorMsg = 'Success response missing authoritative data.reference.';
+                Log::warning("Paystack verify returned malformed gateway response: {$errorMsg}", [
+                    'reference' => $reference,
+                ]);
+                return [
+                    'class' => 'MALFORMED_GATEWAY_RESPONSE',
+                    'status' => false,
+                    'http_code' => $httpCode,
+                    'error_code' => 0,
+                    'error_msg' => $errorMsg,
+                    'reference' => null,
+                    'data' => $txData,
+                ];
+            }
+
+            return [
+                'class' => 'SUCCESS',
+                'status' => true,
+                'http_code' => $httpCode,
+                'error_code' => 0,
+                'error_msg' => '',
+                'reference' => $verifiedRef,
+                'data' => $txData,
+            ];
+        }
+
+        // 9. NON_FINAL: pending, ongoing, processing, queued
+        if (in_array($txStatus, ['pending', 'ongoing', 'processing', 'queued'], true)) {
+            return [
+                'class' => 'NON_FINAL',
+                'status' => false,
+                'http_code' => $httpCode,
+                'error_code' => 0,
+                'error_msg' => "Transaction status is {$txStatus}.",
+                'reference' => $verifiedRef ?: $reference,
+                'data' => $txData,
+            ];
+        }
+
+        // 10. GATEWAY_FAILURE: failed, abandoned
+        if (in_array($txStatus, ['failed', 'abandoned'], true)) {
+            $gatewayResponse = (string)($txData['gateway_response'] ?? '');
+            $errorMsg = "Transaction failed with status '{$txStatus}'." . ($gatewayResponse ? " Reason: {$gatewayResponse}" : "");
+            return [
+                'class' => 'GATEWAY_FAILURE',
+                'status' => false,
+                'http_code' => $httpCode,
+                'error_code' => 0,
+                'error_msg' => $errorMsg,
+                'reference' => $verifiedRef ?: $reference,
+                'data' => $txData,
+            ];
+        }
+
+        // 11. MALFORMED_GATEWAY_RESPONSE: unexpected payload shape or unknown data.status
+        $errorMsg = "Unexpected transaction status: '{$txStatus}'.";
+        Log::warning("Paystack verify returned malformed gateway response: {$errorMsg}", [
+            'reference' => $reference,
+        ]);
+        return [
+            'class' => 'MALFORMED_GATEWAY_RESPONSE',
+            'status' => false,
+            'http_code' => $httpCode,
+            'error_code' => 0,
+            'error_msg' => $errorMsg,
+            'reference' => $verifiedRef ?: $reference,
+            'data' => $txData,
+        ];
     }
 
     /**
