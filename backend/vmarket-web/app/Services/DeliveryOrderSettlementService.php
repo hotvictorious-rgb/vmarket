@@ -482,7 +482,7 @@ class DeliveryOrderSettlementService
                     'seller_id' => $vendor['seller_id'],
                     'product_details' => json_encode($product ? $product->toArray() : ['name' => $item['product_name'] ?? 'Item']),
                     'qty' => $qty,
-                    'price' => $item['unit_price'],
+                    'price' => (float) ($item['unit_price'] ?? $item['price'] ?? 0.00),
                     'discount' => $item['discount'] ?? 0.00,
                     'tax' => $item['tax'] ?? 0.00,
                     'discount_type' => 'discount_on_product',

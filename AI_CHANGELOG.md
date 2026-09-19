@@ -1,3 +1,16 @@
+### [2026-09-19 09:10 UTC] Commit 4.1: Restore All Reconciliation Anomaly Types and Schema Hardening [backend] [ai-governance]
+* **Component:** Payment Reconciliation Schema & Settlement Service (`backend/vmarket-web/database/migrations/2026_09_19_000006_restore_payment_reconciliation_anomaly_types.php`, `backend/vmarket-web/app/Services/DeliveryOrderSettlementService.php`)
+* **Action:** Corrected schema migration lineage and confirmed runtime column and query bindings:
+  - **Corrective Migration (000006):** Executed `2026_09_19_000006_restore_payment_reconciliation_anomaly_types.php` to establish the complete, backward-compatible, superset ENUM for `payment_reconciliations.initial_anomaly_type`:
+    `'amount_mismatch'`, `'currency_mismatch'`, `'late_capture_expired'`, `'stale_order_group'`, `'stale_reservation_state'`, `'charge_reversed'`, `'duplicate_capture'`, `'stale_superseded_attempt'`, `'invalid_snapshot'`, `'post_payment_stock_failure'`, `'other'`.
+  - **Schema & Data Preservation:** Verified in live MySQL that all historical values remain valid and that `charge_reversed`, `duplicate_capture`, and `post_payment_stock_failure` can be persisted without data truncation.
+  - **Authoritative CheckoutIntent Lookup Verification:** Verified that `DeliveryOrderSettlementService` authoritatively locks by `where('order_group_id', $unlockedPR->order_group_id)` (not numeric `id`). Added verification proving numeric primary key (`id`) differing from `order_group_id` string correctly resolves the intent.
+  - **Active Token Column Verification:** Confirmed that `DeliveryOrderSettlementService` writes strictly to the schema column `active_cart_token = NULL` upon order conversion and expiry. Added automated test proving `active_cart_token` is cleared upon settlement.
+  - **Resilient Item Pricing:** Enhanced `order_details` insertion in `DeliveryOrderSettlementService` to safely support both `unit_price` and `price` array keys.
+* **Verification & Regression:**
+  - Automated test suite passed 14/14 covering `charge_reversed`, `duplicate_capture`, `post_payment_stock_failure`, string `order_group_id` query binding, and `active_cart_token` clearing.
+  - Full regression suite `scratch/v1_transaction_certification.php` passed 82/82 (Δ = ₦0.00).
+
 ### [2026-09-19 08:45 UTC] Commit 4: Verified Paystack Payment to Atomic Multi-Vendor Delivery Order Settlement [backend] [ai-governance]
 * **Component:** Delivery Order Settlement Engine (`backend/vmarket-web/app/Services/DeliveryOrderSettlementService.php`, `backend/vmarket-web/app/Models/PaymentReconciliation.php`, `backend/vmarket-web/app/Exceptions/PostPaymentStockFailureException.php`, `backend/vmarket-web/app/Http/Controllers/Payment_Methods/PaystackController.php`, `backend/vmarket-web/database/migrations/2026_09_19_000005_add_stock_failure_to_payment_reconciliations_table.php`)
 * **Action:** Built and certified the atomic multi-vendor delivery order settlement engine for verified Paystack payments:
