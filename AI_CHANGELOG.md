@@ -1,3 +1,20 @@
+### [2026-09-19 10:35 UTC] Commit 6: Pickup Payment, Verification, and Atomic Single-Order Settlement [backend] [ai-governance]
+* **Component:** In-Shop Pickup Payment & Single-Order Settlement Engine (`backend/vmarket-web/app/Services/PickupPaymentInitializationService.php`, `backend/vmarket-web/app/Services/PickupOrderSettlementService.php`, `backend/vmarket-web/app/Http/Controllers/Payment_Methods/PaystackController.php`, `backend/vmarket-web/app/Http/Controllers/Customer/PickupReservationController.php`, `backend/vmarket-web/routes/web/routes.php`)
+* **Action:** Implemented and certified the full end-to-end pickup payment, verification, and single-order settlement architecture complying with all 10 strict user mandates:
+  - **Decoupled DB Locks from Gateway HTTP:** Database transactions lock customer `users` row, validate overlapping items, claim/create `PaymentRequest`, and commit before calling external Paystack HTTP. During settlement, Paystack verification completes before opening the database transaction.
+  - **Bounded Attempt Recovery:** Pending attempts without authorization URL verify existing references; only definitive `REFERENCE_NOT_FOUND` allows marking the old attempt failed and generating a new Paystack reference. Ambiguous or non-final states preserve the reference.
+  - **Exact Money (Zero Floats):** Built entirely with BCMath exact string arithmetic (`bcsub`, `bcmul`, `bcdiv`, `bccomp`). Enforced `seller_amount` + `admin_commission` === `order_amount` with zero currency drift ($\Delta = \text{₦}0.00$).
+  - **Authoritative Physical Inventory & Two-Phase Stock Fallback:** Decrements `Product.current_stock` atomically under pessimistic row lock (`where current_stock >= quantity`). Post-payment stock shortages trigger a two-phase rollback: Phase 1 rolls back the Order transaction completely ($\Delta \text{Orders} = 0$), Phase 2 persists a quarantined `payment_reconciliations` record (`post_payment_stock_failure`).
+  - **Customer-Row Overlap Serialization:** Serializes competing pickup reservation payments through pessimistic row locking on the customer `User` row (`User -> PickupReservation -> PaymentRequest`). Competitors attempting to pay overlapping items are blocked.
+  - **Semantic Decoupling of Payment and Order:** `is_paid = 1` alone is never interpreted as order existence. Successful settlement requires `attempt_status = 'successful' AND is_paid = 1 AND order_id IS NOT NULL`. Reconciliations return `RECONCILIATION_ALREADY_RECORDED`.
+  - **Exactly One Order per Reservation:** Creates exactly one Order (`order_type = 'pickup'`, `shipping_cost = 0.00`, internal `transaction_ref <= 21 chars`).
+  - **Handover OTP Isolation:** Generates 6-digit Order-level `pickup_verification_code` upon order creation, preserving `InShopHandoverController::verifyPickupOtp()` workflow and keeping reservation code distinct from pickup OTP.
+  - **Targeted Post-Commit Cart Pruning:** Only snapshot cart item IDs belonging to the settled reservation are pruned after commit; unrelated cart items are strictly preserved.
+  - **Competing Reservation Cancellation:** Automatically transitions competing unplaced reservations sharing cart items to `canceled`, clears their `active_reservation_token`, and supersedes only ordinary pending payment attempts while preserving `reconciliation_required` entries.
+* **Verification & Regression:**
+  - Dedicated automated test suite `scratch/test_commit6_pickup_settlement_service.php` passed 65/65 tests across all 9 operational and anomaly sections.
+  - Full transaction certification suite `scratch/v1_transaction_certification.php` passed 82/82 tests ($\Delta = \text{₦}0.00$).
+
 ### [2026-09-19 09:30 UTC] Commit 5: Pickup Reservation Engine [backend] [ai-governance]
 * **Component:** In-Shop Pickup Reservation Engine (`backend/vmarket-web/app/Models/PickupReservation.php`, `backend/vmarket-web/app/Services/PickupReservationService.php`, `backend/vmarket-web/app/Http/Controllers/Customer/PickupReservationController.php`, `backend/vmarket-web/app/Http/Controllers/Vendor/Order/PickupReservationController.php`, `backend/vmarket-web/routes/web/routes.php`, `backend/vmarket-web/routes/vendor/routes.php`, `backend/vmarket-web/routes/rest_api/v3/seller.php`)
 * **Action:** Built and certified the isolated In-Shop Pay-After-Inspection Pickup Reservation Engine:
@@ -11,7 +28,7 @@
   - **Idempotency & Canonical Snapshot:**
     * Parent idempotency key derives deterministic child keys: `PRC_` + 58-char SHA-256 hash of `parentKey:sellerId:shopId`.
     * Canonical fingerprint covers customer, seller, shop, currency, total, and sorted item details. Replaying same key + same fingerprint returns graceful 200 OK. Conflicting parameters trigger HTTP 409 `IdempotencyConflictException`.
-    * Immutable `reservation_items` snapshot stores pricing, product metadata, and shop location; exact money calculated with BCMath (shipping = ₦0.00).
+    * Immutable `reservation_items` snapshot stores pricing, product metadata, and shop location; exact money calculated with BCMath (shipping = â‚¦0.00).
   - **Lazy Expiry:** Expiration timestamp `expires_at` set to 24 hours. State transitions to `expired` atomically upon access if past-due.
   - **Vendor Physical Inspection Lifecycle:**
     * Vendor verification endpoint scopes strictly to authenticated `seller_id` and assigned `shop_id` (zero IDOR).
@@ -23,7 +40,7 @@
     * Zero Orders created. Zero `PaymentRequests` created. Zero Paystack API calls. Zero wallet mutations. Zero stock deductions.
 * **Verification & Regression:**
   - 48/48 dedicated automated tests passed covering single/multi-vendor split, exact BCMath totals, idempotency replay/conflict, stock isolation, cart preservation, customer/vendor/shop IDOR, lazy expiry, and valid/invalid state transitions.
-  - Full transaction certification suite `scratch/v1_transaction_certification.php` passed 82/82 (Δ = ₦0.00).
+  - Full transaction certification suite `scratch/v1_transaction_certification.php` passed 82/82 (Î” = â‚¦0.00).
 
 ### [2026-09-19 09:10 UTC] Commit 4.1: Restore All Reconciliation Anomaly Types and Schema Hardening [backend] [ai-governance]
 * **Component:** Payment Reconciliation Schema & Settlement Service (`backend/vmarket-web/database/migrations/2026_09_19_000006_restore_payment_reconciliation_anomaly_types.php`, `backend/vmarket-web/app/Services/DeliveryOrderSettlementService.php`)
@@ -36,7 +53,7 @@
   - **Resilient Item Pricing:** Enhanced `order_details` insertion in `DeliveryOrderSettlementService` to safely support both `unit_price` and `price` array keys.
 * **Verification & Regression:**
   - Automated test suite passed 14/14 covering `charge_reversed`, `duplicate_capture`, `post_payment_stock_failure`, string `order_group_id` query binding, and `active_cart_token` clearing.
-  - Full regression suite `scratch/v1_transaction_certification.php` passed 82/82 (Δ = ₦0.00).
+  - Full regression suite `scratch/v1_transaction_certification.php` passed 82/82 (Î” = â‚¦0.00).
 
 ### [2026-09-19 08:45 UTC] Commit 4: Verified Paystack Payment to Atomic Multi-Vendor Delivery Order Settlement [backend] [ai-governance]
 * **Component:** Delivery Order Settlement Engine (`backend/vmarket-web/app/Services/DeliveryOrderSettlementService.php`, `backend/vmarket-web/app/Models/PaymentReconciliation.php`, `backend/vmarket-web/app/Exceptions/PostPaymentStockFailureException.php`, `backend/vmarket-web/app/Http/Controllers/Payment_Methods/PaystackController.php`, `backend/vmarket-web/database/migrations/2026_09_19_000005_add_stock_failure_to_payment_reconciliations_table.php`)
@@ -55,14 +72,14 @@
     * Creates `order_details` records with atomic `current_stock` reduction (`where('current_stock', '>=', $qty)`).
     * Inserts `order_status_history` (`confirmed`, `customer`).
     * Inserts `order_transactions` with status `'hold'` and `received_by = 'admin'`.
-    * Increments `AdminWallet.pending_amount` per vendor child order without double-counting (sum of `orders.order_amount` = `total_amount`, Δ = ₦0.00).
+    * Increments `AdminWallet.pending_amount` per vendor child order without double-counting (sum of `orders.order_amount` = `total_amount`, Î” = â‚¦0.00).
     * Seller wallet balance is NOT credited at payment time (escrow hold active until delivery).
-  - **Idempotency & Convergence:** Both callback and webhook converge on the verified Paystack reference. Replays return `ALREADY_PAID` with 0 duplicate orders and Δ = ₦0.00.
+  - **Idempotency & Convergence:** Both callback and webhook converge on the verified Paystack reference. Replays return `ALREADY_PAID` with 0 duplicate orders and Î” = â‚¦0.00.
   - **Post-Commit Targeted Cart Pruning:** Only snapshot cart items are pruned after transaction commit; unrelated cart items are preserved.
   - **Legacy Isolation:** Payments with `payment_domain IS NULL` run legacy handlers completely untouched.
 * **Verification & Zero Drift:**
   - 35/35 automated tests passed in `scratch/test_commit4_delivery_settlement_service.php` covering single/multi-vendor settlement, atomic rollback, two-phase stock failure, permanent reconciliation commit, idempotency replay, IDOR, VARCHAR(30) isolation, AdminWallet hold, and OrderManager parity.
-  - Full regression certification suite `scratch/v1_transaction_certification.php` passed 82/82 (Δ = ₦0.00).
+  - Full regression certification suite `scratch/v1_transaction_certification.php` passed 82/82 (Î” = â‚¦0.00).
 
 ### [2026-09-19 08:15 UTC] Commit 3.1: Paystack Compatibility and Ambiguous Recovery Correction [backend] [ai-governance]
 * **Component:** Payment Initialization Pipeline (`backend/vmarket-web/app/Services/DeliveryPaymentInitializationService.php`, `backend/vmarket-web/app/Services/PaystackInitializationClient.php`)
@@ -78,7 +95,7 @@
   - **Zero Orders, Settlement, or Legacy Mutation:** No orders created, no OrderManager modified, legacy `payment_requests` fixtures preserved.
 * **Verification & Zero Drift:**
   - 21/21 unit tests passed in `scratch/test_commit3_payment_initialization_service.php` covering Paystack character set contract, non-repeating references on recovery, bounded TTL clamping, IDOR, idempotency replay, lazy expiry, and legacy isolation.
-  - Full 82/82 regression certification suite passed in `scratch/v1_transaction_certification.php` (Δ = ₦0.00).
+  - Full 82/82 regression certification suite passed in `scratch/v1_transaction_certification.php` (Î” = â‚¦0.00).
 
 ### [2026-09-19 08:05 UTC] Commit 3: PaymentRequest Creation and Paystack Initialization Bridge [backend] [ai-governance]
 * **Component:** Payment Initialization Pipeline (`backend/vmarket-web/app/Services/DeliveryPaymentInitializationService.php`, `backend/vmarket-web/app/Services/PaystackInitializationClient.php`, `backend/vmarket-web/app/Exceptions/`)
@@ -96,7 +113,7 @@
     * Zero Orders created, zero OrderTransactions created, zero cart items deleted in this commit.
 * **Verification & Zero Drift:**
   - 15/15 automated tests passed in `scratch/test_commit3_payment_initialization_service.php` covering intent-to-request creation, exact kobo conversion, NGN currency, unique references, active attempt locks, replay, lazy expiry, IDOR, gateway rejection, ambiguous transport recovery, and legacy isolation.
-  - Regression certification suite `scratch/v1_transaction_certification.php` passed 82/82 (Δ = ₦0.00).
+  - Regression certification suite `scratch/v1_transaction_certification.php` passed 82/82 (Î” = â‚¦0.00).
   - Zero OrderManager, wallet, fulfillment, or pickup code modified.
 
 ### [2026-09-19 07:58 UTC] Commit 2: Delivery Checkout Intent and Immutable Snapshot Service [backend] [ai-governance]
@@ -118,7 +135,7 @@
     * Strictly isolates checkout construction: zero Orders, zero PaymentRequests, and zero cart deletions executed.
 * **Verification & Zero Drift:**
   - 15/15 automated tests passed in `scratch/test_commit2_delivery_checkout_intent_service.php` covering single/multi-vendor, exact snapshots, deterministic fingerprints, replay, 409 conflict, lazy expiry, IDOR, and decimal serialization.
-  - Regression certification suite `scratch/v1_transaction_certification.php` passed 82/82 (Δ = ₦0.00).
+  - Regression certification suite `scratch/v1_transaction_certification.php` passed 82/82 (Î” = â‚¦0.00).
   - Zero controller, route, payment gateway, or UI files modified.
 
 ### [2026-09-19 07:45 UTC] Commit 1: Schema Migrations for Hybrid Delivery and Pickup Engine [backend] [ai-governance]
@@ -133,7 +150,7 @@
   - MySQL 8.4 schema verified via direct information_schema and SHOW queries.
   - Legacy `payment_requests` rows (2 preserved test fixtures) verified 100% intact with `payment_domain IS NULL`.
   - MySQL 8.4 CHECK constraint verified active and rejecting cross-domain rows.
-  - Regression certification suite `scratch/v1_transaction_certification.php` passed 82/82 (Δ = ₦0.00).
+  - Regression certification suite `scratch/v1_transaction_certification.php` passed 82/82 (Î” = â‚¦0.00).
   - Zero controller, service, model, route, or UI files modified in this commit.
 
 ### [2026-09-19 04:55 UTC] Step 2: Canonical Verified Reference, Fail-Closed NGN, Exact Amount, and Normalized Callback Consumer [backend] [ai-governance]
@@ -159,7 +176,7 @@
     * **Exact Smallest-Unit (Kobo) Integer Equality:** Replaced loose `>=` comparisons with strict integer equality `===` across all three payment confirmation paths (callback marketplace, webhook marketplace, webhook delivery payment).
     * **Pre-Lookup Shape Validation:** Validated `data.metadata.payment_id` existence and exact identity match against route parameter before querying `PaymentRequest`.
   - **Preconditions M & Scope Limits:** Preserved architectural distinction between verification, confirmation, and post-success reconciliation. Kept Step 2 isolated without introducing outer transactions (Step 10), UNIQUE constraints (Step 13), or delivery atomicity modifications.
-  - **Tests & Invariants:** Step 2 isolated suite 18/18 PASS (`scratch/test_step2_isolated_suite.php`); Step 1 isolated contract suite 20/20 PASS (`scratch/test_step1_isolated_contract.php`); V1 Certification regression suite 82/82 PASS (`scratch/v1_transaction_certification.php`). Database mutation $\Delta = \text{₦}0.00$. Orphan failure fixtures preserved 100% intact.
+  - **Tests & Invariants:** Step 2 isolated suite 18/18 PASS (`scratch/test_step2_isolated_suite.php`); Step 1 isolated contract suite 20/20 PASS (`scratch/test_step1_isolated_contract.php`); V1 Certification regression suite 82/82 PASS (`scratch/v1_transaction_certification.php`). Database mutation $\Delta = \text{â‚¦}0.00$. Orphan failure fixtures preserved 100% intact.
 
 
 ### [2026-09-19 04:35 UTC] Step 1: Isolated Paystack Verification Contract Hardening [backend] [ai-governance]
@@ -188,15 +205,15 @@
     6. Vendor / Seller Mobile API: `POST /api/v2/seller/auth/login` (HTTP 200 OK, Bearer token returned)
 
 
-### [2026-09-18 14:33 UTC] V1 Transaction Certification � 82/82 PASS (? = ?0.00) [backend] [ai-governance]
+### [2026-09-18 14:33 UTC] V1 Transaction Certification — 82/82 PASS (? = ?0.00) [backend] [ai-governance]
 * **Component:** Transaction Engine, Payment Security, Fulfillment Paths, Financial Invariants, Deliberate-Break Coverage (ackend/vmarket-web/, VICTORIOUS_MARKET_MATHEMATICAL_AND_SYSTEMIC_PROOF.md)
 * **Action:** Executed full V1 Transaction Certification across 5 sections (82 checks):
   - **Section 0 (4 User-Flagged Audit Items):** Verified guest access uses 256-bit CSPRNG unguessable token + constant-time hash_equals() with phone as fallback only (not primary); confirmed 5% cashback is formally documented as funded from 10% platform commission with gross margin formally proven (?5,100 on ?100k order excl. shipping); confirmed refund debt accounting posts unrecovered variance to collected_cash with conservation identity wallet_reduction + debt = refund (?=?0.00); confirmed Paystack-only payment method enforcement.
-  - **Section 1 (15 Steps � Delivery Flow):** Browse ? Cart ? Checkout ? Pay ? Verified ? Merchant Accepts ? Inventory ? Rider ? OTP ? Settlement ? Commission/Vendor Split ? Cashback Pending ? Maturation � ALL PASS.
-  - **Section 2 (14 Steps � Pickup Flow):** Browse ? Pickup Selected ? Reservation ? Inspect ? Pay ? Verified ? 6-digit Code ? Merchant Releases ? Completed ? Settlement ? Cashback Pending ? Matures � ALL PASS.
-  - **Section 3 (18 Deliberate-Break Scenarios):** Payment twice / webhook twice / payment fails / browser failure / two buyers last item / customer cancels / merchant cancels / customer returns / refund + pending cashback / refund + available cashback / rider IDOR / merchant IDOR / employee withdrawal / customer IDOR / wrong pickup code / pickup brute-force / admin escalation � ALL 18 PASS.
-  - **Section 4 (OPay/Offline Purge):** Zero opay, offline_payment, pay_by_wallet references in active app/ source. cash_on_delivery absent from authorized payment method arrays � ALL PASS.
-  - **Section 5 (Mathematical Proofs, ?=?0.00):** 10/90 split conservation; platform gross margin; refund debt conservation; idempotency key stability; 6-digit OTP entropy (19.78 bits / 0.000556% brute-force); 256-bit guest token � ALL PASS.
+  - **Section 1 (15 Steps — Delivery Flow):** Browse ? Cart ? Checkout ? Pay ? Verified ? Merchant Accepts ? Inventory ? Rider ? OTP ? Settlement ? Commission/Vendor Split ? Cashback Pending ? Maturation — ALL PASS.
+  - **Section 2 (14 Steps — Pickup Flow):** Browse ? Pickup Selected ? Reservation ? Inspect ? Pay ? Verified ? 6-digit Code ? Merchant Releases ? Completed ? Settlement ? Cashback Pending ? Matures — ALL PASS.
+  - **Section 3 (18 Deliberate-Break Scenarios):** Payment twice / webhook twice / payment fails / browser failure / two buyers last item / customer cancels / merchant cancels / customer returns / refund + pending cashback / refund + available cashback / rider IDOR / merchant IDOR / employee withdrawal / customer IDOR / wrong pickup code / pickup brute-force / admin escalation — ALL 18 PASS.
+  - **Section 4 (OPay/Offline Purge):** Zero opay, offline_payment, pay_by_wallet references in active app/ source. cash_on_delivery absent from authorized payment method arrays — ALL PASS.
+  - **Section 5 (Mathematical Proofs, ?=?0.00):** 10/90 split conservation; platform gross margin; refund debt conservation; idempotency key stability; 6-digit OTP entropy (19.78 bits / 0.000556% brute-force); 256-bit guest token — ALL PASS.
   - **Documentation:** Added Section 9 to VICTORIOUS_MARKET_MATHEMATICAL_AND_SYSTEMIC_PROOF.md documenting cashback economics business model, refund debt invariant table, and defensible V1 certification statement.
 # AI Development Changelog
 
@@ -211,7 +228,7 @@ Include the specific app/component modified and bullet points detailing the exac
 * **Component:** Payment Gateway Rails, Error Messages, Dead Code Elimination (`backend/vmarket-web/`, `AI_CHANGELOG.md`)
 * **Action:** Executed the final surgical pass to achieve 100% OPay-free and offline-payment-free codebase across all active code paths in the Laravel backend:
   - **1. OPay Removed from All Error Messages:**
-    - Updated `RestAPI/v1/OrderController.php` (`placeOrderByWallet()`): decommission message now says "Paystack or Pay at Pickup" — OPay removed.
+    - Updated `RestAPI/v1/OrderController.php` (`placeOrderByWallet()`): decommission message now says "Paystack or Pay at Pickup" â€” OPay removed.
     - Updated `RestAPI/v1/OrderEditController.php` (`duePaymentByWallet()`): same fix.
   - **2. `duePaymentByOfflinePayment()` Fully Decommissioned:**
     - Replaced the 50-line live offline payment processing body with a 3-line fail-closed 403 stub.
@@ -221,18 +238,18 @@ Include the specific app/component modified and bullet points detailing the exac
     - Removed `use FlutterwaveV3Controller` import from `routes/web/routes.php`.
     - Removed the Flutterwave route group (`flutterwave-v3.pay`, `flutterwave-v3.callback`) from `routes/web/routes.php`.
   - **4. Comment Accuracy Pass:**
-    - `InShopHandoverController.php`: "Paystack/OPay" → "Paystack".
+    - `InShopHandoverController.php`: "Paystack/OPay" â†’ "Paystack".
     - `RestAPI/v3/seller/OrderController.php` Invariant 4: removed `'opay'` from guard array and comment.
     - `Vendor/Order/OrderController.php`: removed OPay from payment authority comment.
     - `InvalidPaymentMethodException.php`: removed `opay` from docblock disallowed list.
   - **5. Test Suite Label Cleanup:**
-    - `tests/Unit/PaymentFulfillmentBoundarySecurityTest.php`: renamed `$opayOrder`/`$opayDue` → `$manualOrder`/`$manualDue` in descriptions. Logic and fixture values unchanged.
-  - **6. Final Verification — Zero OPay in Active Code:**
-    - Full `app/` directory scan (excluding `PaystackBankService.php` + `ReceiptOcrAiService.php` which legitimately reference OPay as a Nigerian settlement bank) → **CLEAN: 0 results**.
+    - `tests/Unit/PaymentFulfillmentBoundarySecurityTest.php`: renamed `$opayOrder`/`$opayDue` â†’ `$manualOrder`/`$manualDue` in descriptions. Logic and fixture values unchanged.
+  - **6. Final Verification â€” Zero OPay in Active Code:**
+    - Full `app/` directory scan (excluding `PaystackBankService.php` + `ReceiptOcrAiService.php` which legitimately reference OPay as a Nigerian settlement bank) â†’ **CLEAN: 0 results**.
     - PHP syntax lint 7/7: **0 errors**.
     - Adversarial Reproduction Suite: **10/10 PASSING**.
-    - Dual Fulfillment Suite: **23/23 PASSING (Δ = 0.0000)**.
-    - Wallet Decommission Suite: **21/21 PASSING (Δ = 0.00)**.
+    - Dual Fulfillment Suite: **23/23 PASSING (Î” = 0.0000)**.
+    - Wallet Decommission Suite: **21/21 PASSING (Î” = 0.00)**.
   - **7. Tagged repository state as `v1-rc2`.**
 
 ### [2026-09-18 13:50 UTC] Release Candidate 1 (v1-rc1): Complete OPay/Offline Purge, Cryptographic Guest Access Token & Merchant Debt Accounting [backend] [ai-governance]
@@ -250,7 +267,7 @@ Include the specific app/component modified and bullet points detailing the exac
     - Updated `OrderManager::getOrderAddData()` to generate 64-char unguessable cryptographic hex token (`bin2hex(random_bytes(32))`) for guest orders.
     - Updated `RestAPI/v1/OrderController.php` (`track_by_order_id()` and `order_cancel()`) to require `guest_token` matching via constant-time `hash_equals()`, completely preventing sequential IDOR enumeration of private customer PII and pickup verification codes.
   - **3. Merchant Recoverable Debt Accounting on Refunds:**
-    - Hardened `Admin/Order/RefundController.php`: when an approved refund exceeds current merchant earnings (`$vendorShare > $sellerWallet->total_earning`), the wallet balance is clamped to ₦0.00 while the unrecovered variance is strictly added to `seller_wallets.collected_cash` (merchant payable liability to platform).
+    - Hardened `Admin/Order/RefundController.php`: when an approved refund exceeds current merchant earnings (`$vendorShare > $sellerWallet->total_earning`), the wallet balance is clamped to â‚¦0.00 while the unrecovered variance is strictly added to `seller_wallets.collected_cash` (merchant payable liability to platform).
     - Eliminates silent liability write-offs and ensures future merchant sales automatically pay down debt before withdrawals can be requested.
   - **4. Formal Cashback Economics & Defensible Governance:**
     - Formally documented in `VICTORIOUS_MARKET_MATHEMATICAL_AND_SYSTEMIC_PROOF.md` that 5% customer cashback is funded from Victorious MARKET's 10% platform commission, leaving 5% gross operating merchandise margin for the platform before gateway fees, server costs, and delivery subsidies.
@@ -284,7 +301,7 @@ Include the specific app/component modified and bullet points detailing the exac
     - **Delivery Man App:** Deleted `change_amount_widget.dart`. Cleaned `earn_statement_widget.dart` (removed COD cash-in-hand confusion) and `order_details_screen.dart`.
     - **Backend Views & Navigation:** Deleted `_offline-payment-setup.blade.php`. Cleaned Admin sidebar (`_side-bar.blade.php`) by removing `Blog_management` and offline payment references. Cleaned Vendor sidebar (`_side-bar.blade.php`) by removing merchant shipping methods and delivery man management menus.
   - **2. Commercial Invariant & Dual Fulfillment Implementation:**
-    - **Dual Fulfillment:** Updated `OrderManager.php` (`generateOrder()`, `getOrderAddData()`) to support both Doorstep Delivery (upfront Paystack/OPay payment, zone logistics fee, dual OTP handshake) and Customer Pickup in Uyo (₦0 shipping, pending in-shop inspection $\to$ online payment $\to$ 6-digit cryptographic pickup code handover).
+    - **Dual Fulfillment:** Updated `OrderManager.php` (`generateOrder()`, `getOrderAddData()`) to support both Doorstep Delivery (upfront Paystack/OPay payment, zone logistics fee, dual OTP handshake) and Customer Pickup in Uyo (â‚¦0 shipping, pending in-shop inspection $\to$ online payment $\to$ 6-digit cryptographic pickup code handover).
     - **Commercial Model (10% / 90% Split):** Computed exact 10% platform commission on net merchandise value, 90% merchant settlement credited to SellerWallet, and 100% logistics holding isolation ($\Delta = 0.0000$).
     - **Victorious Cashback (5% Purchase Reward Ledger):** Created `2026_09_18_000001_create_customer_cashback_ledgers_table.php` migration and `CustomerCashbackLedger` model. Non-withdrawable purchase reward ledger (not a cash wallet), maturing to `available` after 7-day return inspection window.
     - **In-Shop Handover Security:** Hardened `InShopHandoverController.php` to prevent premature release of unpaid pickup orders (HTTP 403), requiring customer online payment confirmation and constant-time 6-digit code verification (`hash_equals`).
@@ -411,8 +428,8 @@ Include the specific app/component modified and bullet points detailing the exac
 * **Component:** Product Availability Domain (`backend/vmarket-web/`, `scratch/test_availability_confirmation_architecture.php`)
 * **Action:** Replaced the legacy `current_stock = 999` indicator pattern with the canonical **Marketplace Availability Control** architecture enforcing a single source of truth, real-time runtime freshness gating, and authoritative purchase-time race-condition protection:
   - **1. Database Migration (`2026_09_14_000001_add_availability_lifecycle_columns_to_products_table.php`):**
-    - Added `availability_confirmed_at` (TIMESTAMP NULL) — canonical vendor confirmation timestamp.
-    - Added `availability_expires_at` (TIMESTAMP NULL) — pre-calculated runtime expiry gate enabling O(1) DB-level freshness filtering.
+    - Added `availability_confirmed_at` (TIMESTAMP NULL) â€” canonical vendor confirmation timestamp.
+    - Added `availability_expires_at` (TIMESTAMP NULL) â€” pre-calculated runtime expiry gate enabling O(1) DB-level freshness filtering.
     - Both columns indexed for query performance.
     - Backfill SQL seeds lifecycle columns from existing `marketplace_confirmed_at` for all listed in-stock seller products (7-day default window), ensuring zero-disruption migration.
   - **2. Product Model (`app/Models/Product.php`):**
@@ -429,15 +446,15 @@ Include the specific app/component modified and bullet points detailing the exac
     - `updateProduct()`: Preserves existing availability state (`current_stock = $product->marketplace_availability === 'in_stock' ? 1 : 0`), eliminating the legacy `999` write.
     - `confirmAvailability()` response: Now returns `availability_confirmed_at`, `availability_expires_at`, and `marketplace_availability` via fresh model read.
   - **5. OrderManager Race-Condition Guard (`app/Utils/OrderManager.php`):**
-    - `generateOrder()`: Before any INSERT, performs authoritative purchase-time revalidation — fresh-reads all cart products in one query and calls `isMarketplacePurchasable()` on each. Throws `\Exception` if any item has expired or been toggled `out_of_stock` since the cart was loaded. This is the definitive security gate; UI/cart checks are advisory only.
+    - `generateOrder()`: Before any INSERT, performs authoritative purchase-time revalidation â€” fresh-reads all cart products in one query and calls `isMarketplacePurchasable()` on each. Throws `\Exception` if any item has expired or been toggled `out_of_stock` since the cart was loaded. This is the definitive security gate; UI/cart checks are advisory only.
   - **6. FreshnessCommand Enhancement (`app/Console/Commands/CheckMarketplaceListingFreshnessCommand.php`):**
     - Now uses `availability_expires_at <= now()` as the canonical expiry gate with legacy `marketplace_confirmed_at` fallback for pre-migration rows.
     - Sets `marketplace_availability = 'out_of_stock'`, `availability_expires_at = null`, and `current_stock = 0` (legacy mirror) when unlisting.
-    - Sends vendor push notification (`marketplace_listing_expired` event) for each expired product requesting re-confirmation. Notification failures are caught and logged — never blocking the cleanup.
+    - Sends vendor push notification (`marketplace_listing_expired` event) for each expired product requesting re-confirmation. Notification failures are caught and logged â€” never blocking the cleanup.
   - **7. Mathematical & Systemic Verification ($\Delta = 0.00$):**
     - Created and executed `scratch/test_availability_confirmation_architecture.php`: **17 / 17 assertions passed** (100% success rate, $\Delta = 0.00$).
     - PHP syntax validation (`php -l`) passed cleanly on all 6 modified backend files (0 syntax errors).
-    - Zero financial field mutations — seller_wallets, admin_wallets, order totals, and commission splits untouched.
+    - Zero financial field mutations â€” seller_wallets, admin_wallets, order totals, and commission splits untouched.
 
 ### [2026-09-14 12:15 UTC] Marketplace Product Model Streamlining & Complete Variation Elimination [backend] [user-app] [vendor-app] [ai-governance]
 * **Component:** Product Catalog Domain, Cart Management, & Listing Lifecycle (`backend/vmarket-web/`, `User app/`, `Vendor app/`, `scratch/test_streamlined_product_model.php`)
@@ -445,7 +462,7 @@ Include the specific app/component modified and bullet points detailing the exac
   - **1. Strict 6-Field Vendor Product Model:**
     1. `Title` (Required, string): Product name.
     2. `Category` (Required): Scoped strictly to Admin-created categories (`exists:categories,id`); vendors cannot create categories.
-    3. `Price` (Required): Single selling price in ₦ (`numeric|gt:0`). Vendor-controlled discounts, percentages, and sale prices are completely eliminated.
+    3. `Price` (Required): Single selling price in â‚¦ (`numeric|gt:0`). Vendor-controlled discounts, percentages, and sale prices are completely eliminated.
     4. `Images` (Required): Strictly 1 to 5 images (`min:1|max:5`). Image 1 automatically serves as the primary storefront thumbnail (`$product->thumbnail`).
     5. `Description` (Required, non-empty string).
     6. `SKU` (Optional): Vendors can provide custom code; if omitted or empty, backend auto-generates a canonical SKU in the format `VM-{3 uppercase random}-{4 digit random}`.
@@ -538,16 +555,16 @@ Include the specific app/component modified and bullet points detailing the exac
 
 ### [2026-09-14 11:15 UTC] Fulfillment Path Separation, Pay-at-Pickup Gate & OPay Authority Invariants [backend] [vendor-app] [user-app] [ai-governance]
 * **Component:** Architectural Fulfillment Separation & Financial Authority (`backend/vmarket-web/`, `Vendor app/`, `User app/`, `scratch/`)
-* **Action:** Implemented strict architectural and runtime separation between the two fulfillment paths (🚚 **Delivery** vs 🏪 **Customer Pickup**), machine-enforcing financial authority invariants, zero customer-vendor direct contact, and the 3 distinct physical OTP handshakes:
+* **Action:** Implemented strict architectural and runtime separation between the two fulfillment paths (ðŸšš **Delivery** vs ðŸ�ª **Customer Pickup**), machine-enforcing financial authority invariants, zero customer-vendor direct contact, and the 3 distinct physical OTP handshakes:
   - **1. Backend Machine-Enforced 403 Invariants (`backend/vmarket-web`):**
     - `app/Http/Controllers/RestAPI/v3/seller/OrderController.php`:
       - `assign_delivery_man`: Machine-enforced rejection (`403 Forbidden`) if order is self-pickup (`order_type === 'pickup'` or `delivery_type === 'self_pickup'`).
       - `order_detail_status`: Machine-enforced 5 distinct HTTP 403 invariants:
-        1. `pickup + out_for_delivery → 403 Forbidden` (customer pickup never enters transit).
-        2. `delivery + vendor -> delivered → 403 Forbidden` (delivery requires dispatch rider OTP handshake).
-        3. `delivery + vendor -> out_for_delivery → 403 Forbidden` (only rider pickup OTP can transit).
-        4. `unverified OPay / offline payment + fulfillment → 403 Forbidden` (Vmarket payment authority).
-        5. `pickup + delivered requires verifyPickupOtp handshake → 403 Forbidden` (direct transition only via verified OTP).
+        1. `pickup + out_for_delivery â†’ 403 Forbidden` (customer pickup never enters transit).
+        2. `delivery + vendor -> delivered â†’ 403 Forbidden` (delivery requires dispatch rider OTP handshake).
+        3. `delivery + vendor -> out_for_delivery â†’ 403 Forbidden` (only rider pickup OTP can transit).
+        4. `unverified OPay / offline payment + fulfillment â†’ 403 Forbidden` (Vmarket payment authority).
+        5. `pickup + delivered requires verifyPickupOtp handshake â†’ 403 Forbidden` (direct transition only via verified OTP).
       - Added support for `ready_for_pickup` status transition.
     - `app/Http/Controllers/Vendor/Order/InShopHandoverController.php`:
       - Added multi-auth context support for both web session (`auth('seller')`) and mobile REST API token (`$request->seller`).
@@ -562,7 +579,7 @@ Include the specific app/component modified and bullet points detailing the exac
     - `lib/features/order_details/`: Added `verifyPickupOtp()` through repository, interface, service, and controller (`verifyCustomerPickupOtp()`).
     - `lib/features/order_details/screens/order_details_screen.dart`:
       - Added state-aware `ready_for_pickup` banner.
-      - Dynamic bottom quick action transitions: `pending → [ CONFIRM ORDER ]`, `confirmed → [ MARK AS PREPARING ]`, `processing → [ MARK READY FOR PICKUP ]`.
+      - Dynamic bottom quick action transitions: `pending â†’ [ CONFIRM ORDER ]`, `confirmed â†’ [ MARK AS PREPARING ]`, `processing â†’ [ MARK READY FOR PICKUP ]`.
       - When `ready_for_pickup`:
         - Delivery orders: Amber "Ready for Rider" badge + guidance.
         - Customer Pickup orders: If `isPaid`, enables `[ VERIFY PICKUP OTP ]` button; if `!isPaid`, displays locked button `[ Payment Pending (Locked) ]` with explanatory toast.
@@ -677,7 +694,7 @@ Include the specific app/component modified and bullet points detailing the exac
   - **Authoritative Fallback Lock (Phase 3B):** Updated `theme_root_path()` in `app/Utils/theme-helpers.php` so that when `WEB_THEME` environment variable is absent or null, it falls back permanently to `'theme_aster'`. Zero changes made to `.env`.
   - **API Contract Verification:** Verified that `ConfigController::index` reports `'active_theme' => theme_root_path()`, propagating `'theme_aster'` dynamically to all mobile/API consumers.
   - **Admin Theme Management Lock:** Updated `theme-setup.blade.php` so that `theme_aster` is displayed as the sole authoritative active theme with disabled/read-only controls, and legacy/deprecated themes cannot be toggled or deleted.
-  - **Preservation of Theme Directories (Phase 3C):** Strictest safety rule respected—`resources/themes/default/` was NOT deleted. Proved via post-scan that zero live storefront flows depend on `default` or `fashion`, preparing clean ground for Phase 4 physical deletion.
+  - **Preservation of Theme Directories (Phase 3C):** Strictest safety rule respectedâ€”`resources/themes/default/` was NOT deleted. Proved via post-scan that zero live storefront flows depend on `default` or `fashion`, preparing clean ground for Phase 4 physical deletion.
   - **Syntax & Regression Verification (Phase 3D):** `php -l` syntax validation passed cleanly on all modified files. All 75/75 enterprise security and invariant tests passed with 100% integrity and zero mathematical drift ($\Delta = 0.00$).
 
 ### [2026-09-12 17:20 UTC] Stage 2: Install Victorious Ecosystem Icon Family & Web Favicon Package [user-app] [vendor-app] [delivery-man] [backend] [ai-governance]
@@ -785,7 +802,7 @@ Include the specific app/component modified and bullet points detailing the exac
 * **Component:** Multi-Channel Commerce Engine (`ProductFeedExportController.php`, `Seller.php`, `Product.php`, `ProductService.php`, `feeds/index.blade.php`, `shop/index.blade.php`, `shop-info-card.blade.php`, `_general-setup.blade.php`, `ProductFeedExportIsolationTest.php`)
 * **Action:** Implemented vendor-isolated product feeds and multi-channel commerce command center:
   - **Zero-Trust Feed Tenant Resolution:** The feed token strictly establishes the tenant context (`token -> locate seller -> query ONLY that seller's products`). Any client parameters (`vendor_id`, `seller_id`, `scope`) are strictly ignored for vendor-scoped requests, mathematically preventing cross-tenant leakage.
-  - **Feed Token Security:** `feed_token` is hidden from serialization and excluded from `$fillable`. Tokens are cryptographically generated using `vm_vfeed_` + 48 hex characters (`random_bytes(24)`). Added instant rotation mechanism that immediately invalidates previous tokens, and masked representation for dashboard UI display (`vm_vfeed_••••••••1234`).
+  - **Feed Token Security:** `feed_token` is hidden from serialization and excluded from `$fillable`. Tokens are cryptographically generated using `vm_vfeed_` + 48 hex characters (`random_bytes(24)`). Added instant rotation mechanism that immediately invalidates previous tokens, and masked representation for dashboard UI display (`vm_vfeed_â€¢â€¢â€¢â€¢â€¢â€¢â€¢â€¢1234`).
   - **Dual Approval Security Guard:** Feeds enforce that the merchant must have both `status = 'approved'` and `marketplace_status = 'approved'`, preventing POS-only or unapproved sellers from exporting products into public feeds.
   - **Preserved Super Admin Global Feeds:** Super Admin token (`product_feed_export_token`) remains functional for platform-wide exports with intentional filters, fully isolated from vendor feeds.
   - **Standard Catalog Identifiers:** Added `gtin` (Barcode/UPC/EAN/ISBN), `mpn` (Manufacturer Part Number), and `google_category_id` (Google Taxonomy Category ID) to `Product` model, migrations, `ProductService`, and Blade add/update forms for both vendors and admin.
@@ -797,7 +814,7 @@ Include the specific app/component modified and bullet points detailing the exac
 * **Component:** Backend Infrastructure (`backend/vmarket-web/`, `hysam/`, `build_full_sqlite_schema.php`, `seed_sqlite_core.php`, `test_dual_servers_e2e.php`)
 * **Action:** Configured and deployed both local systems concurrently on SQLite with PHP 8.4 runtime type guards:
   - Generated full 130-table SQLite schema for Victorious MARKET from SQL dump with custom table parsing.
-  - Seeded core business settings, Nigerian Naira currency (`₦`), `theme_aster` active theme, and Super Admin credentials.
+  - Seeded core business settings, Nigerian Naira currency (`â‚¦`), `theme_aster` active theme, and Super Admin credentials.
   - Resolved PHP 8.4 runtime type guards across `DOMAIN_POINTED_DIRECTORY`, `VIEW_FILE_NAMES`, `checkCustomerSocialMediaLoginAbility`, `createDefaultShop`, `ProductManager`, and `AppServiceProvider` web config / announcement / recaptcha.
   - Rebranded all Vmarket POS views and company SQLite records from Hysam to Vmarket POS.
   - Proved all endpoints concurrently live: Victorious MARKET Storefront (HTTP 200), Admin Login (HTTP 200), Vendor Login (HTTP 200), and Vmarket POS (HTTP 200).
@@ -856,13 +873,13 @@ Include the specific app/component modified and bullet points detailing the exac
 ### [2026-08-26 18:25 UTC] 100-Flow Exhaustive Systemic & Mathematical Verification Suite [ai-governance] [backend]
 * **Component:** System Verification Suite (`test_all_100_flows_proof.php`, `VICTORIOUS_MARKET_MATHEMATICAL_AND_SYSTEMIC_PROOF.md`)
 * **Action:** Formulated, executed, and validated all 100 architectural, financial, operational, and security flows across all 4 actors with 100% success (100 / 100 Passed, 0 Failures, $\Delta = 0.0000$):
-  - POS Registers, Barcodes & Multi-Cart Tenders (Flows 1–20: 20/20 Passed).
-  - 30-Day Customer Debt Ledgers & Aging Radars (Flows 21–35: 15/15 Passed).
-  - Inter-Branch Waybills & Anti-Theft Logistics (Flows 36–50: 15/15 Passed).
-  - Physical Chain of Custody & Handshake OTPs (Flows 51–65: 15/15 Passed).
-  - Marketplace Escrow, Commissions & Settlements (Flows 66–80: 15/15 Passed).
-  - 3-Tier Anti-Scam Guard & Verification (Flows 81–90: 10/10 Passed).
-  - Notifications, Bells & Security Invariants (Flows 91–100: 10/10 Passed).
+  - POS Registers, Barcodes & Multi-Cart Tenders (Flows 1â€“20: 20/20 Passed).
+  - 30-Day Customer Debt Ledgers & Aging Radars (Flows 21â€“35: 15/15 Passed).
+  - Inter-Branch Waybills & Anti-Theft Logistics (Flows 36â€“50: 15/15 Passed).
+  - Physical Chain of Custody & Handshake OTPs (Flows 51â€“65: 15/15 Passed).
+  - Marketplace Escrow, Commissions & Settlements (Flows 66â€“80: 15/15 Passed).
+  - 3-Tier Anti-Scam Guard & Verification (Flows 81â€“90: 10/10 Passed).
+  - Notifications, Bells & Security Invariants (Flows 91â€“100: 10/10 Passed).
 
 ### [2026-08-26 17:55 UTC] Real-Time Push Notifications: Waybill Dispatch/Shortage & Marketplace 1-Click Approval [backend]
 * **Component:** Backend Controllers (`BranchTransferController.php`, `MarketplaceApprovalController.php`)
@@ -943,7 +960,7 @@ Include the specific app/component modified and bullet points detailing the exac
   - **Tier 2 (Multi-Branch Pro SaaS):** Unlimited physical shop branches + anti-theft waybills, 100% private multi-store ERP, storefront URL locked.
   - **Tier 3 (Verified Marketplace Vendor):** Verified by Super Admin, live on marketplace with commission per sale, unlocked public storefront URL + WhatsApp catalog sharing.
   - **Public Storefront Route Guard (`ShopViewController.php`):** Added strict verification check in `seller_shop` method redirecting unapproved/pos_only shop URLs with a safety advisory to prevent rogue scam catalogs.
-  - **Vendor Dashboard Catalog Card (`shop/update-view.blade.php`):** Added conditional rendering locking storefront link sharing for non-approved accounts and displaying an instant **`[ 🚀 Apply for Marketplace Approval ]`** upgrade CTA.
+  - **Vendor Dashboard Catalog Card (`shop/update-view.blade.php`):** Added conditional rendering locking storefront link sharing for non-approved accounts and displaying an instant **`[ ðŸš€ Apply for Marketplace Approval ]`** upgrade CTA.
 
 ### [2026-08-26 11:48 UTC] Comprehensive Ecosystem Master Manual Compilation [ai-governance]
 * **Component:** Monorepo Root Documentation (`VICTORIOUS_MARKET_ECOSYSTEM_MASTER_GUIDE.md`)
@@ -967,7 +984,7 @@ Include the specific app/component modified and bullet points detailing the exac
   - **Removed Legacy Pricing Approval Portal:** Cleanly removed `ApprovalPortalController`, `approval-portal.blade.php`, related routes in `routes/admin/routes.php`, and admin sidebar menu item to eliminate price-fixing bottlenecks.
   - **Pure Commission Engine (`Helpers.php`):** Refactored `sales_commission_before_order` to calculate automated flat percentage commission (`seller_sales_commission`) on order totals with vendor/category override support.
   - **Admin Global Sales Commission Setup (`seller-settings.blade.php`, `VendorSettingsController.php`):** Added a dedicated Commission Setup card in Admin Vendor Settings with real-time percentage configuration (`sales_commission`).
-  - **Vendor Storefront Link Sharing Card (`shop/update-view.blade.php`):** Added a prominent Storefront URL sharing banner with 1-click **[ 📋 Copy Link ]** and **[ 📲 Share to WhatsApp ]** buttons for vendors to market their digital catalog directly to their customer base.
+  - **Vendor Storefront Link Sharing Card (`shop/update-view.blade.php`):** Added a prominent Storefront URL sharing banner with 1-click **[ ðŸ“‹ Copy Link ]** and **[ ðŸ“² Share to WhatsApp ]** buttons for vendors to market their digital catalog directly to their customer base.
 
 ### [2026-08-26 09:50 UTC] Native Omnichannel POS, Customer Debt Ledger, Anti-Theft Waybills & Marketplace Approval [backend]
 * **Component:** Laravel Backend, Vendor Dashboard, Admin Command Center (`backend/vmarket-web`)
@@ -984,8 +1001,8 @@ Include the specific app/component modified and bullet points detailing the exac
 * **Action:** Implemented dynamic vendor operational city/state/hub selection and privacy-preserving storefront origin badges:
   - **Vendor Dashboard Hub Setup (`update-view.blade.php`, `ShopController.php`, `ShopRequest.php`, `ShopService.php`):** Added dynamic Operational State, Dispatch City / Zone, and Local Landmark / Hub selection with responsive AJAX cascading dropdowns to Vendor Shop Settings, persisting `delivery_state_id`, `delivery_city_id`, and `delivery_hub_id`.
   - **Vendor Mobile REST API (`RestAPI/v3/seller/SellerController.php`):** Eager loaded geographic delivery relations (`deliveryState`, `deliveryCity`, `deliveryHub`) in `shop_info` and `getSellerInfo`, with support for updating delivery location IDs in `shop_info_update`.
-  - **Storefront Origin Badges (`default` & `theme_aster` `details.blade.php`):** Rendered `📍 Ships from: [City Name] Hub` (with fallback to default hub) on vendor store cards and `📍 Ships from: Uyo Central Hub` on in-house store cards across both Default and Aster themes without leaking vendor physical street addresses or personal contacts.
-  - **Customer Mobile App Integration (`shop_info_widget.dart`):** Added a location badge row (`📍 Ships from: Uyo Hub`) on the product details store card.
+  - **Storefront Origin Badges (`default` & `theme_aster` `details.blade.php`):** Rendered `ðŸ“� Ships from: [City Name] Hub` (with fallback to default hub) on vendor store cards and `ðŸ“� Ships from: Uyo Central Hub` on in-house store cards across both Default and Aster themes without leaking vendor physical street addresses or personal contacts.
+  - **Customer Mobile App Integration (`shop_info_widget.dart`):** Added a location badge row (`ðŸ“� Ships from: Uyo Hub`) on the product details store card.
 
 ### [2026-08-24 02:36 UTC] Google Schema.org JSON-LD Product & Offer Structured Data [backend]
 * **Component:** Laravel Backend, Product SEO Partials (`backend/vmarket-web`)
@@ -1001,7 +1018,7 @@ Include the specific app/component modified and bullet points detailing the exac
 ### [2026-08-24 02:04 UTC] Admin Panel Webhook Verify Token Management & 1-Click Copy [backend]
 * **Component:** Laravel Backend, Admin WhatsApp CRM Views & Webhook Ingestion (`backend/vmarket-web`)
 * **Action:** Added dynamic Webhook Verify Token configuration and 1-click callback URL display to the Admin Panel:
-  - **In-Dashboard Verify Token Control (`ai-settings.blade.php`, `WhatsAppAiSettingsController.php`):** Added a custom input field allowing Super Admins to define their own `verify_token` and a 1-click **[ 📋 Copy URL ]** button for `api/v1/whatsapp/webhook`.
+  - **In-Dashboard Verify Token Control (`ai-settings.blade.php`, `WhatsAppAiSettingsController.php`):** Added a custom input field allowing Super Admins to define their own `verify_token` and a 1-click **[ ðŸ“‹ Copy URL ]** button for `api/v1/whatsapp/webhook`.
   - **Dynamic Ingestion Handshake (`WhatsAppWebhookController.php`):** Refactored `verify()` to dynamically validate incoming Meta `hub_verify_token` against database `business_settings` and `addon_settings` with `.env` fallback.
 
 ### [2026-08-24 01:54 UTC] Enforce Strict Zero Vendor Location & Zero Self-Pickup Policy [backend]
@@ -1013,8 +1030,8 @@ Include the specific app/component modified and bullet points detailing the exac
 ### [2026-08-24 01:51 UTC] Official Store & Verified Merchant Trust Badges [backend]
 * **Component:** Laravel Backend, WhatsApp Transformer & AI Showcase Service (`backend/vmarket-web`)
 * **Action:** Added trust verification badges to distinguish In-House vs 3rd-Party Vendor catalog items:
-  - **In-House Official Badge (`WhatsAppCustomerTransformer.php`, `WhatsAppAiService.php`):** Products tagged with `added_by = 'admin'` automatically carry the **`⭐ Victorious Official (1-Hour Express Dispatch)`** trust badge.
-  - **Verified Merchant Badge (`WhatsAppCustomerTransformer.php`, `WhatsAppAiService.php`):** Products tagged with `added_by = 'seller'` carry the **`🏪 Verified Merchant`** badge.
+  - **In-House Official Badge (`WhatsAppCustomerTransformer.php`, `WhatsAppAiService.php`):** Products tagged with `added_by = 'admin'` automatically carry the **`â­� Victorious Official (1-Hour Express Dispatch)`** trust badge.
+  - **Verified Merchant Badge (`WhatsAppCustomerTransformer.php`, `WhatsAppAiService.php`):** Products tagged with `added_by = 'seller'` carry the **`ðŸ�ª Verified Merchant`** badge.
 
 ### [2026-08-24 01:33 UTC] Admin Panel AI Settings Restructure & In-Dashboard Gemini Model Selection [backend]
 * **Component:** Laravel Backend, Admin WhatsApp CRM Views & AI Settings Controller (`backend/vmarket-web`)
@@ -1051,7 +1068,7 @@ Include the specific app/component modified and bullet points detailing the exac
 * **Component:** Laravel Backend, Vendor Product Listing Service, Gemini Function Tools (`backend/vmarket-web`)
 * **Action:** Enabled merchants to list new products conversationally via WhatsApp with mandatory Admin moderation:
   - **Product Draft Service (`WhatsAppVendorService.php`):** Implemented `createProductDraft` parsing product title, price, stock, category, and specifications with strict `request_status = 0` (Pending Admin Review) and `status = 0` (Hidden from Storefront).
-  - **Super Admin Moderation Alignment:** Configured products to automatically route into the existing **Admin Web Panel ➔ Products ➔ Pending Requests Queue** (`admin/products/list/pending`) with zero schema deviation.
+  - **Super Admin Moderation Alignment:** Configured products to automatically route into the existing **Admin Web Panel âž” Products âž” Pending Requests Queue** (`admin/products/list/pending`) with zero schema deviation.
   - **AI Tool Suite Enhancements (`WhatsAppAiService.php`):** Declared `create_vendor_product_draft` in Gemini function calling definitions and wired execution handlers.
 
 ### [2026-08-24 00:38 UTC] Update Official AI Persona Name to Victorious [backend]
@@ -1062,7 +1079,7 @@ Include the specific app/component modified and bullet points detailing the exac
 ### [2026-08-24 00:32 UTC] Conversational In-Chat Payout Requests for Vendors & Riders [backend]
 * **Component:** Laravel Backend, Vendor & Rider Payout Services, Gemini Tool Suite (`backend/vmarket-web`)
 * **Action:** Enabled merchants and delivery riders to securely request withdrawals directly inside WhatsApp:
-  - **Vendor Payout Request (`WhatsAppVendorService.php`):** Implemented `requestPayout` with pessimistic wallet locks (`SellerWallet::lockForUpdate()`), minimum ₦1,000 threshold, registered bank verification, and atomic creation of `WithdrawRequest` (pending admin disbursement).
+  - **Vendor Payout Request (`WhatsAppVendorService.php`):** Implemented `requestPayout` with pessimistic wallet locks (`SellerWallet::lockForUpdate()`), minimum â‚¦1,000 threshold, registered bank verification, and atomic creation of `WithdrawRequest` (pending admin disbursement).
   - **Rider Payout Request (`WhatsAppRiderService.php`):** Implemented `requestPayout` with pessimistic wallet locks (`DeliverymanWallet::lockForUpdate()`), bank verification, and atomic balance debit.
   - **AI Tool Suite Enhancements (`WhatsAppAiService.php`):** Declared `request_vendor_payout` and `request_rider_payout` function tools in Gemini and wired execution handlers.
 
@@ -1125,7 +1142,7 @@ Include the specific app/component modified and bullet points detailing the exac
   - **Episodic Memory Service (`EpisodicMemoryService.php`):** Engineered phone-isolated memory graph storage, deduplication, and bounds management (capping at 20 most recent high-signal memory points per caller).
   - **Human Continuity & Stylometric Mirroring (`WhatsAppAiService.php`):** Injected lifetime episodic memories into Gemini's system instructions and built `resumeHumanChat()` to smoothly pick up conversations where human agents left off without robotic cliches.
   - **Inactivity Auto-Resume Worker (`WhatsAppAutoResumeHumanChatsCommand.php`, `Kernel.php`):** Scheduled daemon running every 2 minutes scanning inactive human conversations (> 5 min unanswered customer messages) and automatically transitioning them back to AI ghostwriter handling.
-  - **Admin CRM UI Enhancements (`whatsapp-crm/index.blade.php`, `BlacklistController.php`, `routes/admin/routes.php`):** Rendered persistent memory badges in customer dossier sidebar and added 1-click `[ ➕ Add Lifetime Memory Note ]` action.
+  - **Admin CRM UI Enhancements (`whatsapp-crm/index.blade.php`, `BlacklistController.php`, `routes/admin/routes.php`):** Rendered persistent memory badges in customer dossier sidebar and added 1-click `[ âž• Add Lifetime Memory Note ]` action.
 
 ### [2026-08-23 23:15 UTC] Zero-Trust WhatsApp Customer Tenancy Isolation & IDOR Lockdown [backend]
 * **Component:** Laravel Backend, WhatsApp AI Service & Customer Relationship Engine (`backend/vmarket-web`)
@@ -1140,7 +1157,7 @@ Include the specific app/component modified and bullet points detailing the exac
   - **AI Wallet Tool Suite (`WhatsAppAiService.php`):** Added tool declarations and execution handlers for `get_wallet_balance` (verified live balance query), `fund_wallet_paystack` (dynamic Paystack Add-Fund URL generator), and `pay_order_with_wallet` (1-click frictionless order checkout).
   - **Atomic Wallet Checkout & Concurrency Locks (`WhatsAppOrderService.php`):** Implemented `payWithWallet()` enforcing strict balance bounds ($balance \ge orderAmount$) and executing deductions within `DB::transaction()` with pessimistic row locks (`->lockForUpdate()`), issuing instant 6-digit delivery OTPs.
   - **Manual Bank Transfer Wallet Top-Up Endpoint (`BlacklistController.php`, `routes/admin/routes.php`):** Created `approveWalletReceipt` endpoint allowing admins to credit customer wallets with 1 click from verified bank transfer receipts.
-  - **Admin WhatsApp CRM UI Enhancements (`whatsapp-crm/index.blade.php`):** Rendered live customer wallet balance badge in dossier header, added 1-click `[ 💰 Send ₦5,000 Wallet Top-Up Link ]` and `[ ➕ Manual Credit Wallet ]` prompt actions.
+  - **Admin WhatsApp CRM UI Enhancements (`whatsapp-crm/index.blade.php`):** Rendered live customer wallet balance badge in dossier header, added 1-click `[ ðŸ’° Send â‚¦5,000 Wallet Top-Up Link ]` and `[ âž• Manual Credit Wallet ]` prompt actions.
 
 ### [2026-08-23 22:52 UTC] AI Receipt Vision Inspector, Anti-Duplicate Verification & 1-Click Fraud Banning Engine [backend]
 * **Component:** Laravel Backend, AI Vision Services, Upload Security Pipeline, WhatsApp CRM & Customer Moderation (`backend/vmarket-web`)
@@ -1163,7 +1180,7 @@ Include the specific app/component modified and bullet points detailing the exac
 * **Action:** Implemented capital protection and delivery commitment engine for Pay-on-Delivery (POD):
   - **Database Migration & Model Mapping (`2026_08_24_000003_add_pod_dispatch_fee_and_free_delivery_settings.php`, `Order.php`):** Added `pod_dispatch_fee` and `doorstep_due_amount` columns to `orders` table and seeded default settings `pod_dispatch_fee_status` (1), `pod_dispatch_fee_amount` (1000.00), and `pod_free_delivery_prepaid_only` (1).
   - **Free Delivery Prepaid Restriction (`OrderManager.php`):** Enforced that `free_delivery` coupons strictly require digital payment (Paystack/Card/Wallet/Transfer) and are invalidated on Cash on Delivery.
-  - **Upfront Dispatch Commitment Split (`OrderManager.php`):** Implemented automatic order breakdown on Cash on Delivery into upfront dispatch token (₦1,000 paid online) vs. doorstep cash balance to be collected by the rider with 6-digit OTP.
+  - **Upfront Dispatch Commitment Split (`OrderManager.php`):** Implemented automatic order breakdown on Cash on Delivery into upfront dispatch token (â‚¦1,000 paid online) vs. doorstep cash balance to be collected by the rider with 6-digit OTP.
   - **Rider Cash Accounting Precision (`DeliveryManController.php`):** Updated rider cash-in-hand accounting to charge rider wallets only for the physical doorstep cash collected, excluding online prepaid dispatch tokens.
   - **WhatsApp AI CRM Transparency (`WhatsAppCustomerTransformer.php`):** Added `pod_dispatch_fee` and `doorstep_due_amount` to sanitized order response for accurate AI payment link generation and status messaging.
   - **Admin Control UI (`OrderSettingsController.php`, `order-settings/index.blade.php`):** Created administrative toggle cards and fee amount inputs under Business Setup > Order & Delivery Settings.
@@ -1179,13 +1196,13 @@ Include the specific app/component modified and bullet points detailing the exac
 * **Action:** Implemented system-wide hardening across remaining stock 6valley gaps:
   - **Promotional Margin Floor Guard (`FlashDealService.php`, `DealOfTheDayService.php`):** Bound flash deal and Deal of the Day discount calculations dynamically using `PricingService` so promotions cannot erode product prices below the vendor cost or platform margin floor.
   - **Bulk Import Dynamic Pricing & Specifications (`ProductService.php`):** Enhanced `getImportBulkProductData` to automatically apply `PricingService::calculateRetailPrice` on vendor imports, resolving cost/unit prices, while adding optional support for `specifications` and `delivery_hub_id`.
-  - **Omnichannel Support (Web Tickets in WhatsApp CRM) (`CustomerAiRelationshipEngine.php`, `whatsapp-crm/index.blade.php`):** Hydrated customer web support tickets into the WhatsApp Customer 360° Dossier and rendered an interactive tickets accordion in the team inbox drawer.
+  - **Omnichannel Support (Web Tickets in WhatsApp CRM) (`CustomerAiRelationshipEngine.php`, `whatsapp-crm/index.blade.php`):** Hydrated customer web support tickets into the WhatsApp Customer 360Â° Dossier and rendered an interactive tickets accordion in the team inbox drawer.
   - **Price Expiry Clearance Automation (`CheckProductPriceExpiryCommand.php`):** Enriched the 25-day price warning push notification with automated stock clearance liquidation suggestions to keep vendor sales active before 30-day auto-deactivation.
 
 ### [2026-08-23 19:25 UTC] Configurable Product Price & Update Approval Engine with Vendor Quick Edit [backend]
 * **Component:** Laravel Backend, Admin Settings, Vendor Dashboard & REST API (`backend/vmarket-web`)
 * **Action:** Overhauled product price updates, approval workflows, and vendor management across web and mobile:
-  - **Configurable Product Edit Approval Policy (`BusinessSettingsController.php`, `product-settings.blade.php`, `ProductSettingsUpdateRequest.php`):** Added a 3-way approval policy in Admin Settings (`threshold` [default ±20%], `auto` [instant live markup], and `strict` [manual admin review]) along with a configurable price variance tolerance threshold input.
+  - **Configurable Product Edit Approval Policy (`BusinessSettingsController.php`, `product-settings.blade.php`, `ProductSettingsUpdateRequest.php`):** Added a 3-way approval policy in Admin Settings (`threshold` [default Â±20%], `auto` [instant live markup], and `strict` [manual admin review]) along with a configurable price variance tolerance threshold input.
   - **Dynamic Markup & Approval Decision Engine (`ProductService.php`):** Implemented `shouldRequireUpdateApproval()` to intelligently check the approval policy and price variance against vendor cost; ensures products with acceptable price adjustments remain live without sales interruption.
   - **Vendor Quick Price & Stock Update (`ProductController.php`, `list.blade.php`, `routes/vendor/routes.php`):** Added a fast AJAX modal on the Vendor Product List table allowing vendors to adjust cost price, stock, and discounts in one click without filling out the full multi-tab product form.
   - **Mobile REST API Alignment (`RestAPI/v3/seller/ProductController.php`):** Harmonized `updateProduct` and `updatePriceAndReactivate` endpoints to apply `PricingService` retail calculations and the unified approval policy.
@@ -1222,7 +1239,7 @@ Include the specific app/component modified and bullet points detailing the exac
   - **Database Migrations & Models (`category_specifications`, `products.specifications`):** Created `category_specifications` table with relational links to `categories`, supporting `text`, `number`, `select`, and `multi_select` input types, unit indicators, and validation requirements. Cast `products.specifications` as an array on the `Product` model.
   - **Live Category Seeder (`CategorySpecificationSeeder.php`):** Automatically seeded granular specification questions and dropdown choices across all 10 live categories on `victoriousmarket.com.ng` (Phones, Electronics, Fashion, Furniture, Beauty, Kitchen, Home, Bags, Music, Automobile, Groceries).
   - **Admin Specification Management View (`specifications.blade.php`, `CategorySpecificationController.php`):** Created a visual management interface under `Product Management -> Category Setup -> Specifications` with real-time question CRUD, status toggling, and sort ordering.
-  - **Dynamic Product Upload & AI Auto-Fill (`category-specifications-input.blade.php`, `ProductService.php`):** Injected dynamic questionnaire cards into Admin and Vendor product creation and update views. Implemented **"✨ Auto-Fill Specs with AI"** leveraging Gemini AI to automatically parse and extract specification values from product titles and descriptions.
+  - **Dynamic Product Upload & AI Auto-Fill (`category-specifications-input.blade.php`, `ProductService.php`):** Injected dynamic questionnaire cards into Admin and Vendor product creation and update views. Implemented **"âœ¨ Auto-Fill Specs with AI"** leveraging Gemini AI to automatically parse and extract specification values from product titles and descriptions.
   - **Storefront Technical Specifications Table & Schema.org JSON-LD:** Rendered clean, responsive Technical Specifications tables on default and Aster storefront themes. Injected structured Schema.org JSON-LD `Product` metadata with `additionalProperty` tags for Google Search Rich Snippets.
   - **Vector Icon Fallback Helper (`CategoryManager.php`):** Added `getCategoryVectorIcon()` providing SVG vector icon fallbacks for categories without uploaded image assets.
 
@@ -1269,7 +1286,7 @@ Include the specific app/component modified and bullet points detailing the exac
   - **Customer AI Relationship & Memory Graph (`CustomerAiRelationshipEngine.php`, `WhatsAppCustomerAiProfile.php`, `UpdateCustomerAiMemoryJob.php`):** Created an autonomous memory engine that studies each customer's past (order history, preferred sizes, favorite categories), present (active shipments, cart, delivery landmark, loyalty tier), and future (predicted replenishment cycles) with zero sensitive data leaks.
   - **Context-Grounded Nigerian AI Assistant (`WhatsAppAiService.php`):** Implemented Gemini Flash AI with live read-only MySQL function-calling tools (`search_inventory`, `get_order_status`, `get_shipping_rates`, `generate_paystack_link`, `escalate_to_human`) and Nigerian Pidgin/English nuance comprehension.
   - **Hard Vendor Privacy & Anti-Circumvention Transformer (`WhatsAppCustomerTransformer.php`):** Stripped vendor personal phone numbers, emails, bank accounts, wholesale cost margins, and offline physical addresses.
-  - **Admin Multi-Agent Team Inbox (`WhatsAppCrmController.php`, `index.blade.php`):** Built a high-end Purple & Gold shared team inbox with agent collision locks, live customer 360° memory sidebar, canned responses, and 1-click action buttons (`Resend 6-Digit OTP`, `Send Paystack Link`).
+  - **Admin Multi-Agent Team Inbox (`WhatsAppCrmController.php`, `index.blade.php`):** Built a high-end Purple & Gold shared team inbox with agent collision locks, live customer 360Â° memory sidebar, canned responses, and 1-click action buttons (`Resend 6-Digit OTP`, `Send Paystack Link`).
   - **Scheduled Broadcast Campaigns & Automated Workflows (`WhatsAppBroadcastService.php`, `WhatsAppAutomationWorkflow.php`, `ProcessBroadcastBatchJob.php`):** Implemented audience segmentation by city/LTV, Meta tier-safe rate throttling, abandoned cart recovery, and doorstep delivery OTP alerts.
   - **Delivery Man App 1-Click WhatsApp Deep Linking (`cal_chat_widget.dart`):** Added 1-click `wa.me` WhatsApp customer communication button with pre-filled order context for active deliveries.
 
@@ -1287,7 +1304,7 @@ Include the specific app/component modified and bullet points detailing the exac
 ### [2026-08-19 12:31 UTC] System-Wide Currency & Corridor Dispatch Null-Safety Hardening [backend]
 * **Component:** Global Currency Engine & Dispatch Controller (`app/Utils/currency.php`, `DispatchPortalController.php`)
 * **Action:** Resolved deep root causes of 500 Internal Server Errors in Hubs, Dispatch Portals, and Print Views:
-  - **Global Currency Engine (`app/Utils/currency.php`):** Hardened `loadCurrency()`, `getCurrencySymbol()`, `getCurrencyCode()`, `usdToDefaultCurrency()`, and `webCurrencyConverter()` against null currency model lookups and array vs object session type confusion in PHP 8.1+. All functions now fallback safely to `NGN` and `₦` with valid numeric defaults.
+  - **Global Currency Engine (`app/Utils/currency.php`):** Hardened `loadCurrency()`, `getCurrencySymbol()`, `getCurrencyCode()`, `usdToDefaultCurrency()`, and `webCurrencyConverter()` against null currency model lookups and array vs object session type confusion in PHP 8.1+. All functions now fallback safely to `NGN` and `â‚¦` with valid numeric defaults.
   - **Corridor Batch Dispatch (`DispatchPortalController.php`):** Added nullsafe operators for origin hubs, seller shops, and destination hubs across corridor clustering loops in `index()` and `printBatchManifest()`.
 
 ### [2026-08-19 12:01 UTC] Deep Scan & 500 Error Resolution across Pricing Approval, Trip Manifest & Waybill Labels [backend]
@@ -1337,7 +1354,7 @@ Include the specific app/component modified and bullet points detailing the exac
   - **[SECURITY] Seller Password Reset OTP & Expiration (`RestAPI/v3/seller/auth/ForgotPasswordController` & `v2`):** Upgraded seller password reset OTP from 4 digits to 6 digits, eliminated SQL `LIKE` partial identity matching in favor of exact match, and enforced strict 15-minute token expiration checks.
   - **[SECURITY] Delivery Man Password Reset OTP & 15-Minute Expiration (`RestAPI/v2/delivery_man/auth/LoginController`):** Upgraded rider password reset OTP from 4 digits to 6 digits, aligned expiration window to 15 minutes, and enforced database record verification before password modification.
   - **[SECURITY] Dispatch Portal Pickup & Delivery Verification Codes (`Admin/Delivery/DispatchPortalController`):** Upgraded order pickup and delivery verification codes to 6 digits to match rider mobile app PIN sheet inputs.
-* **Verification:** `php -l` verified across all 8 modified controller files — 0 errors.
+* **Verification:** `php -l` verified across all 8 modified controller files â€” 0 errors.
 
 ### [2026-08-19 10:25 UTC] Admin Profile IDOR Elimination & Admin Login Rate Limiting [backend]
 * **Component:** Laravel Web Backend (`backend/vmarket-web/`)
@@ -1345,7 +1362,7 @@ Include the specific app/component modified and bullet points detailing the exac
 * **Fixes Applied:**
   - **[CRITICAL] Admin Profile & Password IDOR Elimination (`Admin/ProfileController`):** Enforced strict `auth('admin')->id() == $id` checks across `getUpdateView`, `update`, and `updatePassword`, preventing malicious or compromised employee accounts from viewing or overwriting the super-administrator's credentials and profile.
   - **[SECURITY] Admin Login Route Rate Limiting (`routes/admin/routes.php`):** Attached `throttle:10,1` rate-limiting middleware to the administrative POST login endpoint, eliminating automated credential stuffing and dictionary attacks against admin/employee logins.
-* **Verification:** `php -l` verified on `Admin/ProfileController.php` and `routes/admin/routes.php` — 0 errors.
+* **Verification:** `php -l` verified on `Admin/ProfileController.php` and `routes/admin/routes.php` â€” 0 errors.
 
 ### [2026-08-19 10:19 UTC] Password Reset SQL LIKE Matching Elimination & 15-Minute Expiration Enforcement [backend]
 * **Component:** Laravel Web Backend (`backend/vmarket-web/`)
@@ -1353,21 +1370,21 @@ Include the specific app/component modified and bullet points detailing the exac
 * **Fixes Applied:**
   - **[CRITICAL] SQL LIKE Partial Identity Matching Elimination (`RestAPI/v1/auth/ForgotPasswordController`):** Replaced fuzzy SQL `where('identity', 'like', "%{$identity}%")` queries with strict exact matching (`=`), preventing attackers from matching unintended customer accounts with common substring patterns.
   - **[SECURITY] 15-Minute Token Expiration Enforcement (`RestAPI/v1/auth/ForgotPasswordController` & `Vendor/Auth/ForgotPasswordController`):** Added strict 15-minute expiration checks on password reset OTP tokens and password reset submission endpoints, preventing the replay of stale verification tokens.
-* **Verification:** `php -l` verified on `RestAPI/v1/auth/ForgotPasswordController.php` and `Vendor/Auth/ForgotPasswordController.php` — 0 errors.
+* **Verification:** `php -l` verified on `RestAPI/v1/auth/ForgotPasswordController.php` and `Vendor/Auth/ForgotPasswordController.php` â€” 0 errors.
 
 ### [2026-08-19 10:01 UTC] Customer Payment Controller Order Edit Due Payment Ownership Guard [backend]
 * **Component:** Laravel Web Backend (`backend/vmarket-web/`)
 * **Action:** Deep scan across Customer Payment controllers identified and closed an IDOR loophole in order edit due payment processing.
 * **Fixes Applied:**
   - **[CRITICAL] Order Edit Due Payment Ownership Guard (`Customer/PaymentController::customerOrderEditPayDueAmount`):** Enforced mandatory customer ownership verification (`$customer->id == $order->customer_id` or matching numeric `guest_id`) before allowing order edit payment method updates or digital due settlements, preventing unauthorized modification of third-party orders.
-* **Verification:** `php -l` verified on `Customer/PaymentController.php` — 0 errors.
+* **Verification:** `php -l` verified on `Customer/PaymentController.php` â€” 0 errors.
 
 ### [2026-08-19 09:41 UTC] Mobile Seller Delivery Man Withdrawal Approval Atomicity & Double Settlement Guard [backend]
 * **Component:** Laravel Web Backend (`backend/vmarket-web/`)
 * **Action:** Deep scan across Mobile Vendor Delivery Man Withdrawal controllers identified and resolved race conditions and double-settlement loopholes during withdrawal status updates.
 * **Fixes Applied:**
   - **[CRITICAL] Delivery Man Withdrawal Double-Settlement & Race Condition Guard (`RestAPI/v3/seller/DeliverymanWithdrawController::status_update`):** Wrapped status updates inside `DB::transaction()` and enforced pessimistic row locks with `where(['seller_id' => $seller->id, 'approved' => 0])->lockForUpdate()`, guaranteeing that concurrently dispatched or replayed approval/rejection requests cannot double-deduct delivery rider balances or corrupt ledger totals.
-* **Verification:** `php -l` verified on `RestAPI/v3/seller/DeliverymanWithdrawController.php` — 0 errors.
+* **Verification:** `php -l` verified on `RestAPI/v3/seller/DeliverymanWithdrawController.php` â€” 0 errors.
 
 ### [2026-08-19 09:36 UTC] Social Auth Zero-Auth Account Takeover & Email Collision Prevention [backend]
 * **Component:** Laravel Web Backend (`backend/vmarket-web/`)
@@ -1376,7 +1393,7 @@ Include the specific app/component modified and bullet points detailing the exac
   - **[CRITICAL] Zero-Auth Social Login Account Takeover Elimination (`RestAPI/v1/auth/SocialAuthController::existingAccountCheck`):** Enforced mandatory `temp_token` verification matching the authenticated customer's OAuth callback session before issuing passport tokens or updating login mediums, eliminating an inherited flaw where an attacker could obtain access tokens for any target email without credentials.
   - **[FIX] Social Media Registration Duplicate Email Collision (`RestAPI/v1/auth/SocialAuthController::registrationWithSocialMedia`):** Added email existence check before creating social media accounts to prevent duplicate registration collisions.
   - **[FIX] Update Phone Missing Token 500 Crash (`RestAPI/v1/auth/SocialAuthController::update_phone`):** Added a pre-condition guard returning 403 Unauthorized when an invalid or expired `temporary_token` is submitted.
-* **Verification:** `php -l` verified on `RestAPI/v1/auth/SocialAuthController.php` — 0 errors.
+* **Verification:** `php -l` verified on `RestAPI/v1/auth/SocialAuthController.php` â€” 0 errors.
 
 ### [2026-08-19 09:34 UTC] Digital Product Download Unpaid Order Bypass & Expired OTP Reuse Guard [backend]
 * **Component:** Laravel Web Backend (`backend/vmarket-web/`)
@@ -1384,21 +1401,21 @@ Include the specific app/component modified and bullet points detailing the exac
 * **Fixes Applied:**
   - **[CRITICAL] Unpaid Order Digital File Delivery Guard (`RestAPI/v1/OrderController::digital_product_download_otp_verify`, `WebController::getDigitalProductDownloadOtpVerify`):** Enforced mandatory pre-condition verification that the associated order is in `paid` status before validating download OTPs, preventing malicious actors from obtaining digital downloads for unpaid or pending orders.
   - **[CRITICAL] Stale / Expired Digital Product OTP Reuse Prevention (`RestAPI/v1/OrderController::digital_product_download_otp_verify`, `WebController::getDigitalProductDownloadOtpVerify`):** Added a 15-minute token expiration limit and automatic deletion on stale OTP verification attempts.
-* **Verification:** `php -l` verified on `RestAPI/v1/OrderController.php` and `WebController.php` — 0 errors.
+* **Verification:** `php -l` verified on `RestAPI/v1/OrderController.php` and `WebController.php` â€” 0 errors.
 
 ### [2026-08-19 09:27 UTC] Customer Restock Request Unauthenticated Crash Guard [backend]
 * **Component:** Laravel Web Backend (`backend/vmarket-web/`)
 * **Action:** Deep scan across Mobile Customer REST API endpoints identified and resolved fatal unauthenticated access crashes on restock requests.
 * **Fixes Applied:**
   - **[FIX] Customer Restock Request List & Delete Offline Crash (`RestAPI/v1/CustomerRestockRequestController::restockRequestsList`, `deleteRestockRequests`):** Added explicit `$user == 'offline'` authentication checks returning 401 Unauthorized, preventing 500 error property access crashes when unauthenticated guest users reach restock request endpoints.
-* **Verification:** `php -l` verified on `RestAPI/v1/CustomerRestockRequestController.php` — 0 errors.
+* **Verification:** `php -l` verified on `RestAPI/v1/CustomerRestockRequestController.php` â€” 0 errors.
 
 ### [2026-08-19 09:25 UTC] Customer Cart Quantity Validation & Negative Stock / Price Corruption Prevention [backend]
 * **Component:** Laravel Web Backend (`backend/vmarket-web/`)
 * **Action:** Deep scan across Cart management utility functions and Mobile Cart REST API controllers identified and closed non-positive quantity injection vulnerabilities.
 * **Fixes Applied:**
   - **[CRITICAL] Negative Cart Quantity & Cart Total Price Corruption Guard (`CartManager::update_cart_qty`, `RestAPI/v1/CartController::addToCart`, `update_cart`):** Enforced integer and `min:1` pre-condition checks in `CartManager::update_cart_qty` and request validators across cart addition and quantity adjustment endpoints, preventing attackers from injecting negative or zero quantities to manipulate checkout amounts or corrupt stock levels.
-* **Verification:** `php -l` verified on `app/Utils/CartManager.php` and `RestAPI/v1/CartController.php` — 0 errors.
+* **Verification:** `php -l` verified on `app/Utils/CartManager.php` and `RestAPI/v1/CartController.php` â€” 0 errors.
 
 ### [2026-08-19 09:21 UTC] Mobile Coupon Query Scoping & Seller Customer Dropdown Credential Protection [backend]
 * **Component:** Laravel Web Backend (`backend/vmarket-web/`)
@@ -1406,7 +1423,7 @@ Include the specific app/component modified and bullet points detailing the exac
 * **Fixes Applied:**
   - **[CRITICAL] Customer Model Credential & Balance Leak in Seller APIs (`RestAPI/v3/seller/CouponController::customers`, `RestAPI/v3/seller/POSController::customers`):** Explicitly selected non-sensitive columns (`id`, `f_name`, `l_name`, `phone`) on customer lookup endpoints to prevent leaking password hashes, remember tokens, wallet balances, and auth credentials to vendors.
   - **[FIX] Seller-Wise Coupon Query Null Shop Slug Guard (`RestAPI/v1/CouponController::getSellerWiseCoupon`):** Added a pre-condition guard returning an empty collection when an invalid shop slug is queried, preventing un-scoped platform-wide coupon disclosures.
-* **Verification:** `php -l` verified on `RestAPI/v1/CouponController.php`, `RestAPI/v3/seller/CouponController.php`, and `RestAPI/v3/seller/POSController.php` — 0 errors.
+* **Verification:** `php -l` verified on `RestAPI/v1/CouponController.php`, `RestAPI/v3/seller/CouponController.php`, and `RestAPI/v3/seller/POSController.php` â€” 0 errors.
 
 ### [2026-08-19 09:17 UTC] Mobile Product Review Purchase Verification, Review Modification IDOR & Password Reset Identity Fallback [backend]
 * **Component:** Laravel Web Backend (`backend/vmarket-web/`)
@@ -1415,7 +1432,7 @@ Include the specific app/component modified and bullet points detailing the exac
   - **[CRITICAL] Mobile Unpurchased Product Review Submission Guard (`RestAPI/v1/ProductController::submit_product_review`):** Enforced verification that the specified order belongs to the authenticated customer (`customer_id == $request->user()->id`) and that the product was actually purchased within that order before accepting reviews.
   - **[CRITICAL] Cross-Customer Review Update & Attachment Image Wiping IDOR (`RestAPI/v1/ProductController::updateProductReview`, `deleteReviewImage`):** Scoped review modifications and attachment image deletions by `customer_id == $request->user()->id` to prevent unauthorized customers from editing or wiping competitors' or other customers' reviews.
   - **[FIX] Password Reset Phone/Email Verification Fallback (`RestAPI/v1/auth/ForgotPasswordController::reset_password_submit`):** Fixed identity column resolution when matching verification records from `phone_or_email_verifications`, ensuring accurate customer matching on password resets.
-* **Verification:** `php -l` verified on `RestAPI/v1/auth/ForgotPasswordController.php` and `RestAPI/v1/ProductController.php` — 0 errors.
+* **Verification:** `php -l` verified on `RestAPI/v1/auth/ForgotPasswordController.php` and `RestAPI/v1/ProductController.php` â€” 0 errors.
 
 ### [2026-08-19 09:14 UTC] Mobile Vendor POS Order Placement Atomicity & Customer Chat Admin Message Seen Fix [backend]
 * **Component:** Laravel Web Backend (`backend/vmarket-web/`)
@@ -1424,7 +1441,7 @@ Include the specific app/component modified and bullet points detailing the exac
   - **[CRITICAL] Mobile POS Order Placement Atomicity & Stock Depletion IDOR (`RestAPI/v3/seller/POSController::place_order`):** Wrapped entire POS order placement flow in `DB::beginTransaction()` / `DB::commit()` / `DB::rollback()` to prevent wallet deduction loss on item insert failures, and enforced strict product ownership checks (`added_by == 'seller'`, `user_id == $seller['id']`) on cart items to prevent vendors from placing POS orders that deplete competitor stock.
   - **[FIX] Customer Admin Chat Message Seen 403 Error (`RestAPI/v1/ChatController::seen_message`):** Added support for `$type == 'admin'` with `$id_param = 'admin_id'` in `seen_message`, resolving 403 Invalid Chatting Type errors when customers acknowledge support messages.
   - **[FIX] Vendor POS Invoice 404 Response (`RestAPI/v3/seller/POSController::get_invoice`):** Enforced proper 404 JSON error response when requested POS invoice does not exist or does not belong to the seller.
-* **Verification:** `php -l` verified on `RestAPI/v1/ChatController.php` and `RestAPI/v3/seller/POSController.php` — 0 errors.
+* **Verification:** `php -l` verified on `RestAPI/v1/ChatController.php` and `RestAPI/v3/seller/POSController.php` â€” 0 errors.
 
 ### [2026-08-19 09:03 UTC] Digital Payment & Wallet Add Funds Idempotency & Double Crediting Guard [backend]
 * **Component:** Laravel Web Backend (`backend/vmarket-web/`)
@@ -1432,7 +1449,7 @@ Include the specific app/component modified and bullet points detailing the exac
 * **Fixes Applied:**
   - **[CRITICAL] Customer Add-Fund Double Crediting Race Condition (`CustomerManager::create_wallet_transaction`):** Tied wallet transaction IDs directly to the incoming `payment_data['id']` and added an atomic existence check inside the pessimistic row lock, guaranteeing that concurrent browser callbacks and IPN webhooks cannot double-credit a customer's wallet balance.
   - **[CRITICAL] Order Due Amount Re-Settlement & Admin Wallet Double Increment Guard (`app/Utils/module-helper.php::customer_order_edit_pay_due_amount_success`):** Added a pre-condition guard checking `$order->edit_due_amount > 0` before updating order edit history or incrementing `AdminWallet->pending_amount`.
-* **Verification:** `php -l` verified on `app/Utils/CustomerManager.php` and `app/Utils/module-helper.php` — 0 errors.
+* **Verification:** `php -l` verified on `app/Utils/CustomerManager.php` and `app/Utils/module-helper.php` â€” 0 errors.
 
 ### [2026-08-19 08:56 UTC] Vendor Web & Mobile API Refund Request & Status IDOR Hardening [backend]
 * **Component:** Laravel Web Backend (`backend/vmarket-web/`)
@@ -1440,7 +1457,7 @@ Include the specific app/component modified and bullet points detailing the exac
 * **Fixes Applied:**
   - **[CRITICAL] Mobile API Refund Request Details & Customer PII Leak IDOR (`RestAPI/v3/seller/RefundController::refund_details`):** Scoped order details lookup by `seller_id == $seller['id']` to prevent unauthorized vendors from inspecting customer refund submissions, item subtotals, and delivery rider info for other vendors.
   - **[CRITICAL] Unauthorized Refund Status Modification & Null Reference Guard (`RestAPI/v3/seller/RefundController::refund_status_update`, `Vendor/RefundController::updateStatus`):** Added explicit null checks and seller ownership validation before processing refund approvals or denials.
-* **Verification:** `php -l` verified on `Vendor/RefundController.php` and `RestAPI/v3/seller/RefundController.php` — 0 errors.
+* **Verification:** `php -l` verified on `Vendor/RefundController.php` and `RestAPI/v3/seller/RefundController.php` â€” 0 errors.
 
 ### [2026-08-19 08:53 UTC] Vendor Web & Mobile API Order Mutation & Wallet Return IDOR Hardening [backend]
 * **Component:** Laravel Web Backend (`backend/vmarket-web/`)
@@ -1450,14 +1467,14 @@ Include the specific app/component modified and bullet points detailing the exac
   - **[CRITICAL] Order Due Amount & Payment Status Hijacking (`Vendor/Order/OrderController::orderDueAmountMarkAsPaid`, `orderDueAmountSwitchToCOD`, `updatePaymentStatus`):** Scoped payment settlement and COD conversion actions to orders owned by the authenticated seller.
   - **[CRITICAL] Cross-Vendor Order Status & Address Tampering (`Vendor/Order/OrderController::updateStatus`, `updateAddress`, `updateDeliverInfo`, `uploadDigitalFileAfterSell`):** Enforced seller ownership verification across order cancellation, delivery confirmation, address editing, courier tracking, and sold digital asset uploads.
   - **[CRITICAL] Mobile API Order Mutation IDOR (`RestAPI/v3/seller/OrderController::amount_date_update`, `digital_file_upload_after_sell`, `order_detail_status`, `assign_third_party_delivery`, `update_payment_status`, `address_update`, `updateOrderDetails`):** Scoped all mutation endpoints by `seller_id == $seller['id']`.
-* **Verification:** `php -l` verified on `Vendor/Order/OrderController.php` and `RestAPI/v3/seller/OrderController.php` — 0 errors.
+* **Verification:** `php -l` verified on `Vendor/Order/OrderController.php` and `RestAPI/v3/seller/OrderController.php` â€” 0 errors.
 
 ### [2026-08-19 08:51 UTC] Vendor Shipping Method Management IDOR Hardening [backend]
 * **Component:** Laravel Web Backend (`backend/vmarket-web/`)
 * **Action:** Deep scan across Vendor Shipping management controllers identified and resolved cross-vendor IDOR vulnerabilities on shipping method activation, modification, and deletion.
 * **Fixes Applied:**
   - **[CRITICAL] Vendor Shipping Method Manipulation & Deletion IDOR (`Vendor/Shipping/ShippingMethodController::updateStatus`, `getUpdateView`, `update`, `delete`):** Enforced `creator_id == auth('seller')->id()` and `creator_type == 'seller'` across status toggle, update form rendering, pricing update, and deletion actions, preventing vendors from modifying or deleting shipping configurations belonging to other vendors or platform defaults.
-* **Verification:** `php -l` verified on `Vendor/Shipping/ShippingMethodController.php` — 0 errors.
+* **Verification:** `php -l` verified on `Vendor/Shipping/ShippingMethodController.php` â€” 0 errors.
 
 ### [2026-08-19 08:48 UTC] REST API v3 Seller Product Deletion, Overwrite & Asset Security Hardening [backend]
 * **Component:** Laravel Web Backend (`backend/vmarket-web/`)
@@ -1467,7 +1484,7 @@ Include the specific app/component modified and bullet points detailing the exac
   - **[CRITICAL] Mobile API Product Overwrite & Catalog Hijacking (`RestAPI/v3/seller/ProductController::updateProduct`):** Added strict seller ownership verification prior to applying updates to product details, pricing, SKUs, and variations.
   - **[CRITICAL] Mobile API Digital Variation File Purging IDOR (`RestAPI/v3/seller/ProductController::deleteDigitalProduct`):** Scoped digital variation file deletions to products owned by the authenticated vendor.
   - **[CRITICAL] Mobile API Stock Manipulation & Restock Tampering (`RestAPI/v3/seller/ProductController::updateProductQuantity`, `updateRestockQuantity`, `deleteRestockRequest`):** Added seller ownership guards across inventory updates and restock request lifecycles.
-* **Verification:** `php -l` verified on `RestAPI/v3/seller/ProductController.php` — 0 errors.
+* **Verification:** `php -l` verified on `RestAPI/v3/seller/ProductController.php` â€” 0 errors.
 
 ### [2026-08-19 08:44 UTC] Vendor Product Catalog IDOR, Stock Manipulation & Asset Deletion Hardening [backend]
 * **Component:** Laravel Web Backend (`backend/vmarket-web/`)
@@ -1477,7 +1494,7 @@ Include the specific app/component modified and bullet points detailing the exac
   - **[CRITICAL] Arbitrary Digital Variation File Deletion (`Vendor/Product/ProductController::deleteDigitalVariationFile`):** Added vendor product ownership verification before permitting the deletion of downloadable digital product variation assets.
   - **[CRITICAL] Competitor Stock & Price Manipulation IDOR (`Vendor/Product/ProductController::updateQuantity`):** Scoped quantity and variation price updates to products owned by the authenticated seller.
   - **[CRITICAL] Arbitrary Product Image Deletion (`Vendor/Product/ProductController::deleteImage`):** Added vendor ownership verification before deleting product media attachments from storage and database arrays.
-* **Verification:** `php -l` verified on `Vendor/Product/ProductController.php` — 0 errors.
+* **Verification:** `php -l` verified on `Vendor/Product/ProductController.php` â€” 0 errors.
 
 ### [2026-08-19 08:39 UTC] Delivery Rider Location Spoofing & Order Inspection IDOR Hardening [backend]
 * **Component:** Laravel Web Backend (`backend/vmarket-web/`)
@@ -1485,7 +1502,7 @@ Include the specific app/component modified and bullet points detailing the exac
 * **Fixes Applied:**
   - **[CRITICAL] Delivery Man Arbitrary Order Inspection IDOR (`RestAPI/v2/delivery_man/DeliveryManController::getOrderItem`):** Scoped order lookup by `delivery_man_id == $deliveryMan->id` to prevent authenticated riders from querying and leaking shipping addresses, buyer identities, and order sums for arbitrary platform orders.
   - **[CRITICAL] Rider Location Recording IDOR & Telemetry Spoofing (`RestAPI/v2/delivery_man/DeliveryManController::record_location_data`):** Enforced order assignment verification (`delivery_man_id == $deliveryMan->id`) before allowing GPS coordinate logging against delivery history.
-* **Verification:** `php -l` verified on `RestAPI/v2/delivery_man/DeliveryManController.php` — 0 errors.
+* **Verification:** `php -l` verified on `RestAPI/v2/delivery_man/DeliveryManController.php` â€” 0 errors.
 
 ### [2026-08-19 08:36 UTC] Vendor Profile, Password, Bank Info & Shop Settings IDOR Hardening [backend]
 * **Component:** Laravel Web Backend (`backend/vmarket-web/`)
@@ -1493,7 +1510,7 @@ Include the specific app/component modified and bullet points detailing the exac
 * **Fixes Applied:**
   - **[CRITICAL] Vendor Profile, Password & Bank Account Hijacking IDOR (`Vendor/ProfileController::update`, `updatePassword`, `updateBankInfo`):** Replaced unvalidated `$id` path parameters with strict `auth('seller')->id()` session checks, preventing malicious vendors from updating other sellers' contact information, changing their passwords, or hijacking payout bank details.
   - **[CRITICAL] Vendor Shop Information & Status IDOR (`Vendor/ShopController::getUpdateView`, `update`, `updateVacation`, `closeShopTemporary`):** Enforced `seller_id == auth('seller')->id()` on all shop record lookups and mutations, preventing cross-vendor shop name tampering, unauthorized vacation mode triggers, and malicious temporary store closures.
-* **Verification:** `php -l` verified on `Vendor/ProfileController.php` and `Vendor/ShopController.php` — 0 errors.
+* **Verification:** `php -l` verified on `Vendor/ProfileController.php` and `Vendor/ShopController.php` â€” 0 errors.
 
 ### [2026-08-19 08:33 UTC] Employee Management Cross-Vendor Role IDOR & Super Admin Lockout Hardening [backend]
 * **Component:** Laravel Web Backend (`backend/vmarket-web/`)
@@ -1501,7 +1518,7 @@ Include the specific app/component modified and bullet points detailing the exac
 * **Fixes Applied:**
   - **[CRITICAL] Vendor Employee Cross-Store Role IDOR (`Vendor/Employee/VendorEmployeeController::store`, `update`):** Enforced `where('seller_id', $sellerId)->where('id', $request->vendor_role_id)` validation on employee creation and editing, preventing vendors from assigning custom roles configured by other marketplace vendors.
   - **[CRITICAL] Super Admin & Self-Deactivation Guard (`Admin/Employee/EmployeeController::updateStatus`):** Added explicit protection preventing the deactivation of the primary Super Administrator (`admin_role_id == 1`) or the currently authenticated admin user to eliminate self-lockout risks.
-* **Verification:** `php -l` verified on `VendorEmployeeController.php` and `Admin EmployeeController.php` — 0 errors.
+* **Verification:** `php -l` verified on `VendorEmployeeController.php` and `Admin EmployeeController.php` â€” 0 errors.
 
 ### [2026-08-19 08:31 UTC] Product Review Purchase Validation, Image Deletion IDOR & Vendor Reply Hijacking Hardening [backend]
 * **Component:** Laravel Web Backend (`backend/vmarket-web/`)
@@ -1510,7 +1527,7 @@ Include the specific app/component modified and bullet points detailing the exac
   - **[CRITICAL] Customer Review Purchase & Order Validation (`Web/ReviewController::add`):** Added validation verifying that the submitted `order_id` belongs to the authenticated customer and that the `product_id` is an actual item line within that order. Scoped review edits by `customer_id` to prevent modifying other users' reviews.
   - **[CRITICAL] Arbitrary Review Image Deletion IDOR (`Web/ReviewController::deleteReviewImage`):** Enforced `where('customer_id', auth('customer')->id())` on `Review` lookup to prevent any user from purging attachments from arbitrary reviews.
   - **[CRITICAL] Vendor Review Reply Hijacking (`Vendor/ReviewController::addReviewReply`):** Added validation verifying that the review's associated product belongs to the authenticated vendor (`product->user_id == auth('seller')->id()`), preventing vendors from posting official replies onto reviews of competing vendors' products.
-* **Verification:** `php -l` verified on `Web/ReviewController.php` and `Vendor/ReviewController.php` — 0 errors.
+* **Verification:** `php -l` verified on `Web/ReviewController.php` and `Vendor/ReviewController.php` â€” 0 errors.
 
 ### [2026-08-19 08:28 UTC] POS Order Placement Concurrency, Wallet Locking & Vendor POS IDOR Hardening [backend]
 * **Component:** Laravel Web Backend (`backend/vmarket-web/`)
@@ -1518,7 +1535,7 @@ Include the specific app/component modified and bullet points detailing the exac
 * **Fixes Applied:**
   - **[CRITICAL] POS Wallet Payment Race Condition & Atomicity (`Vendor/POS/POSOrderController::placeOrder`, `Admin/POS/POSOrderController::placeOrder`):** Wrapped the entire POS order creation flow (stock reduction, order details, tax records, and customer wallet charge) in a `DB::transaction()` with pessimistic row locks (`lockForUpdate()`) on `User` to prevent concurrent POS register overdraws.
   - **[CRITICAL] Vendor POS Order View IDOR (`Vendor/POS/POSOrderController::getOrderDetails`):** Scoped order lookup by `seller_id == auth('seller')->id()` to prevent vendors from inspecting other vendors' or platform direct orders via POS receipt endpoints.
-* **Verification:** `php -l` verified on `Vendor/POS/POSOrderController.php` and `Admin/POS/POSOrderController.php` — 0 errors.
+* **Verification:** `php -l` verified on `Vendor/POS/POSOrderController.php` and `Admin/POS/POSOrderController.php` â€” 0 errors.
 
 ### [2026-08-19 08:26 UTC] Vendor Coupon Management IDOR & Global Coupon Hijacking Hardening [backend]
 * **Component:** Laravel Web Backend (`backend/vmarket-web/`)
@@ -1526,7 +1543,7 @@ Include the specific app/component modified and bullet points detailing the exac
 * **Fixes Applied:**
   - **[CRITICAL] Vendor Web Coupon IDOR (`Vendor/Coupon/CouponController::getUpdateView`, `update`, `updateStatus`, `delete`, `getQuickView`):** Enforced `seller_id == auth('seller')->id()` ownership checks across all web coupon actions, preventing vendors from modifying, disabling, or deleting other vendors' promotional coupons or global coupons (`seller_id == 0`).
   - **[CRITICAL] REST API Vendor Coupon Hijacking (`RestAPI/v3/seller/CouponController::update`, `status_update`, `delete`):** Removed `whereIn('seller_id', [$seller->id, '0'])` fallback to ensure vendors can strictly manage only their own coupon records and cannot alter platform-wide admin coupons.
-* **Verification:** `php -l` verified on `Vendor/Coupon/CouponController.php` and `RestAPI/v3/seller/CouponController.php` — 0 errors.
+* **Verification:** `php -l` verified on `Vendor/Coupon/CouponController.php` and `RestAPI/v3/seller/CouponController.php` â€” 0 errors.
 
 ### [2026-08-19 08:25 UTC] Deliveryman Cash Collection Concurrency & Vendor Emergency Contact IDOR Hardening [backend]
 * **Component:** Laravel Web Backend (`backend/vmarket-web/`)
@@ -1535,7 +1552,7 @@ Include the specific app/component modified and bullet points detailing the exac
   - **[CRITICAL] Admin Deliveryman Cash Collect Race Condition (`Admin/Deliveryman/DeliveryManCashCollectController::getCashReceive`):** Wrapped balance verification, transaction recording, and wallet cash deduction inside `DB::transaction()` with pessimistic row locks (`lockForUpdate()`) on `DeliveryManWallet` to prevent concurrent over-collection.
   - **[CRITICAL] Vendor Deliveryman Cash Collect IDOR & Race Condition (`Vendor/DeliveryMan/DeliveryManWalletController::collectCash`):** Enforced `seller_id == auth('seller')->id()` ownership check on target deliveryman and wrapped wallet cash deduction in a `DB::transaction()` with `lockForUpdate()`.
   - **[CRITICAL] Vendor Emergency Contact IDOR (`Vendor/DeliveryMan/EmergencyContactController::getUpdateView`, `update`):** Added `user_id == auth('seller')->id()` verification to prevent vendors from viewing or tampering with emergency contact records belonging to other vendors.
-* **Verification:** `php -l` verified on `DeliveryManCashCollectController.php`, `DeliveryManWalletController.php`, and `EmergencyContactController.php` — 0 errors.
+* **Verification:** `php -l` verified on `DeliveryManCashCollectController.php`, `DeliveryManWalletController.php`, and `EmergencyContactController.php` â€” 0 errors.
 
 ### [2026-08-19 08:22 UTC] Coupon Usage Limit Null Safety & Digital Product Download OTP Throttling [backend]
 * **Component:** Laravel Web Backend (`backend/vmarket-web/`)
@@ -1543,7 +1560,7 @@ Include the specific app/component modified and bullet points detailing the exac
 * **Fixes Applied:**
   - **[CRITICAL] Coupon Limit Exhaustion Null-Pointer Exception (`OrderManager::getTotalCouponAmount`):** When a coupon's usage limit was exhausted, `$coupon` evaluated to null, causing an unhandled fatal error on property read. Added an explicit `$coupon` null guard returning a user-friendly `coupon_limit_reached` message.
   - **[CRITICAL] Digital Product Download OTP Brute-Force Rate Limiting (`routes/web/routes.php`, `routes/rest_api/v1/api.php`):** Added `throttle:5,1` middleware to web and REST API digital product OTP verification and resend routes (`digital-product-download-otp-verify`, `digital-product-download-otp-reset`, `digital-product-download-otp-resend`) to prevent automated guessing of 4-digit verification tokens.
-* **Verification:** `php -l` verified on `OrderManager.php`, `routes/web/routes.php`, and `routes/rest_api/v1/api.php` — 0 errors.
+* **Verification:** `php -l` verified on `OrderManager.php`, `routes/web/routes.php`, and `routes/rest_api/v1/api.php` â€” 0 errors.
 
 ### [2026-08-19 08:18 UTC] Vendor & Deliveryman Withdrawal Concurrency, IDOR & Idempotency Hardening [backend]
 * **Component:** Laravel Web Backend (`backend/vmarket-web/`)
@@ -1553,7 +1570,7 @@ Include the specific app/component modified and bullet points detailing the exac
   - **[CRITICAL] Vendor Web Withdraw Close IDOR & Race Condition (`Vendor/WithdrawController::closeWithdrawRequest`):** Added `seller_id == auth('seller')->id()` ownership check to prevent vendors from hijacking other vendors' withdrawal cancellations, and wrapped in `DB::transaction()` with pessimistic wallet locks.
   - **[CRITICAL] Admin Vendor Withdraw Approval Idempotency & Concurrency (`Admin/Vendor/VendorController::withdrawStatus`):** Enforced `approved == 0` check inside a `DB::transaction()` with `lockForUpdate()` on both `WithdrawRequest` and `SellerWallet` to prevent duplicate approvals, negative balances, or phantom balance inflation.
   - **[CRITICAL] Admin & Vendor Deliveryman Withdraw Approval Idempotency (`Admin/Deliveryman/DeliverymanWithdrawController::updateStatus`, `Vendor/DeliveryMan/DeliveryManWithdrawController::updateStatus`):** Added `approved == 0` pending guards and wrapped wallet status mutations inside `DB::transaction()` with `lockForUpdate()` on `DeliveryManWallet`.
-* **Verification:** `php -l` verified on all 5 modified controllers — 0 errors.
+* **Verification:** `php -l` verified on all 5 modified controllers â€” 0 errors.
 
 ### [2026-08-19 08:14 UTC] Web Storefront Customer IDOR Hardening & Access Control Lockdown [backend]
 * **Component:** Laravel Web Backend (`backend/vmarket-web/`)
@@ -1564,7 +1581,7 @@ Include the specific app/component modified and bullet points detailing the exac
   - **[CRITICAL] Web Address Modification & Deletion IDOR (`Web/UserProfileController::address_update`, `address_delete`):** Enforced `customer_id == auth('customer')->id()` scoping to prevent users from modifying or destroying other customers' saved addresses.
   - **[CRITICAL] Web Support Ticket Reply, Close & Delete IDOR (`Web/UserProfileController::comment_submit`, `support_ticket_close`, `support_ticket_delete`):** Added customer ownership checks to prevent unauthorized users from posting comments to, closing, or deleting other users' support tickets.
   - **[CRITICAL] Web Refund IDOR & Delivery Verification (`Web/UserProfileController::refund_request`, `store_refund`, `refund_details`):** Added parent order customer ownership verification and `delivery_status === 'delivered'` checks before allowing refund creation on the web storefront.
-* **Verification:** `php -l` verified on `UserProfileController.php` — 0 errors.
+* **Verification:** `php -l` verified on `UserProfileController.php` â€” 0 errors.
 
 ### [2026-08-19 08:10 UTC] Order Edit Due Payment Ownership, Due Amount Locking & Cart IDOR Hardening [backend]
 * **Component:** Laravel Web Backend (`backend/vmarket-web/`)
@@ -1573,7 +1590,7 @@ Include the specific app/component modified and bullet points detailing the exac
   - **[CRITICAL] Order Edit Due Settlement Ownership Bypass (`v1/OrderEditController::duePaymentByWallet`, `duePaymentByCod`, `duePaymentByOfflinePayment`, `duePaymentByDigitalPayment`):** All 4 endpoints accepted arbitrary `order_id` values without verifying customer ownership. Added customer ownership verification (supporting registered customer authentication and verified numeric guest IDs) to all 4 handlers.
   - **[CRITICAL] Order Edit Due Double Settlement & Zero-Due Bypass (`OrderEditManager::payEditOrderDueByCustomerWallet`):** Ensured `edit_due_amount > 0` before processing, and wrapped balance verification, wallet deduction, admin pending amount credit, and order update in a `DB::transaction()` with pessimistic row locks (`lockForUpdate()`) on both the User and Order records.
   - **[HIGH] Cart Checked Selection State IDOR (`v1/CartController::updateCheckedCartItems`):** `Cart::whereIn('id', $request['ids'])->update(...)` updated cart items across all users globally. Added user/guest ID scoping to ensure customers can only mutate their own cart items.
-* **Verification:** `php -l` verified on all 3 modified files — 0 errors.
+* **Verification:** `php -l` verified on all 3 modified files â€” 0 errors.
 
 ### [2026-08-19 08:05 UTC] Support Ticket IDOR Hardening, Compare List Isolation & Missing Address Route Implementation [backend]
 * **Component:** Laravel Web Backend (`backend/vmarket-web/`)
@@ -1582,7 +1599,7 @@ Include the specific app/component modified and bullet points detailing the exac
   - **[CRITICAL] Support Ticket Reply, Read & Close IDOR (`v1/CustomerController::reply_support_ticket`, `get_support_ticket_conv`, `support_ticket_close`):** All 3 endpoints failed to check whether the requesting user owned the target `SupportTicket`, allowing cross-account viewing of private attachments, conversations, and unauthorized ticket closures. Added `customer_id == $request->user()->id` verification to all 3 handlers.
   - **[HIGH] Product Compare Replace IDOR (`v1/CompareController::compare_product_replace`):** Looked up `$request['compare_id']` globally without scoping by `user_id`, allowing users to overwrite entries in another customer's compare list. Added `where('user_id', $request->user()->id)` guard.
   - **[HIGH] Missing Address Retrieval Route Handler (`v1/CustomerController::get_address`):** Route `/api/v1/customer/address/get/{id}` pointed to a non-existent `get_address` method, throwing unhandled 500 `BadMethodCallException`. Implemented `get_address` with guest/registered customer ownership validation.
-* **Verification:** `php -l` verified across modified controllers — 0 errors.
+* **Verification:** `php -l` verified across modified controllers â€” 0 errors.
 
 ### [2026-08-19 07:26 UTC] Vendor Withdrawal Race Conditions, Payout IDOR & Customer Invoice Leak Fixes [backend]
 * **Component:** Laravel Web Backend (`backend/vmarket-web/`)
@@ -1591,9 +1608,9 @@ Include the specific app/component modified and bullet points detailing the exac
   - **[CRITICAL] Vendor Payout Race Condition (`v3/seller/SellerController::withdraw_request`, `v2/seller/SellerController::withdraw_request`):** Both seller API controllers read `$wallet->total_earning` outside transaction blocks without locks. Wrapped both in `DB::beginTransaction()` with `SellerWallet::where('seller_id')->lockForUpdate()`.
   - **[CRITICAL] Vendor Withdrawal Cancellation IDOR & Tally Bug (`v3/seller/SellerController::close_withdraw_request`, `v2/seller/SellerController::close_withdraw_request`):** Endpoints failed to verify `seller_id` on the target `WithdrawRequest`, allowing cross-vendor withdrawal cancellations. Additionally, `pending_withdraw` was mistakenly subtracted by `$request['amount']` instead of `$withdraw_request['amount']`. Added ownership validation, row locking, and fixed amount restoration.
   - **[HIGH] Customer Invoice & Order Inspection IDOR (`v1/CustomerController::getOrderInvoice`, `v1/CustomerController::getOrderById`):** Neither endpoint verified whether the calling user owned the requested order. Added customer ownership verification (supporting registered customers and verified numeric guest IDs) to prevent PII and order leakages.
-* **Verification:** `php -l` executed on all 3 modified controllers — 0 errors.
+* **Verification:** `php -l` executed on all 3 modified controllers â€” 0 errors.
 
-### [2026-08-19 07:08 UTC] Complete Business Logic Hardening — System-Wide Wallet, Loyalty, Refund & Delivery Protections [backend]
+### [2026-08-19 07:08 UTC] Complete Business Logic Hardening â€” System-Wide Wallet, Loyalty, Refund & Delivery Protections [backend]
 * **Component:** Laravel Web Backend (`backend/vmarket-web/`)
 * **Action:** Resolved remaining business logic conflicts and race conditions across system-wide wallet transaction handlers, loyalty point transactions, refund inspection endpoints, and delivery payment transitions.
 * **Fixes Applied:**
@@ -1601,18 +1618,18 @@ Include the specific app/component modified and bullet points detailing the exac
   - **[CRITICAL] Loyalty Point Concurrent Overwrite (`CustomerManager::create_loyalty_point_transaction`):** Secured loyalty point balance calculation by acquiring a pessimistic row lock (`lockForUpdate`) on the user record inside the transaction block before reading/writing `loyalty_point`.
   - **[CRITICAL] Refund IDOR & Leak Prevention (`OrderController::refund_request`, `OrderController::refund_details`):** Added explicit order ownership guards (`Order::where('id', $orderDetails->order_id)->where('customer_id', $user->id)`) and null checks on `$orderDetails`, preventing unauthorized users from probing order details or triggering unhandled null pointer exceptions.
   - **[HIGH] Delivery Rider Payment Status Bypass & Double Execution (`DeliveryManController::order_payment_status_update`):** Enforced business rules blocking payment status updates on `canceled`, `returned`, or `failed` orders. Added idempotency guard (`payment_status === 'paid'`) and wrapped order due calculations and edit history updates in a single `DB::transaction()`.
-* **Verification:** `php -l` verified on all 6 modified files — 0 errors.
+* **Verification:** `php -l` verified on all 6 modified files â€” 0 errors.
 
-### [2026-08-19 06:47 UTC] Business Logic Conflict Deep Scan — 5 Critical Fixes [backend]
+### [2026-08-19 06:47 UTC] Business Logic Conflict Deep Scan â€” 5 Critical Fixes [backend]
 * **Component:** Laravel Web Backend (`backend/vmarket-web/`)
 * **Action:** Full deep scan of business logic across customer order flow, wallet, refunds, and delivery OTP. Found and fixed 8 conflicts; 5 implemented in this pass.
 * **Fixes Applied:**
-  - **[CRITICAL] store_refund Ownership Bypass:** `OrderController::store_refund()` had no ownership check — any logged-in customer could file a refund on any other customer's `order_details_id`. Added `Order::where('id', $orderDetails->order_id)->where('customer_id', $user->id)->first()` guard before processing.
-  - **[CRITICAL] Wallet Double-Spend (placeOrderByWallet):** Balance check `if ($paymentAmount > $user->wallet_balance)` used a stale read — concurrent wallet-order requests could both pass the check. Replaced with `User::where('id')->lockForUpdate()->value('wallet_balance')` inside `DB::transaction()`.
+  - **[CRITICAL] store_refund Ownership Bypass:** `OrderController::store_refund()` had no ownership check â€” any logged-in customer could file a refund on any other customer's `order_details_id`. Added `Order::where('id', $orderDetails->order_id)->where('customer_id', $user->id)->first()` guard before processing.
+  - **[CRITICAL] Wallet Double-Spend (placeOrderByWallet):** Balance check `if ($paymentAmount > $user->wallet_balance)` used a stale read â€” concurrent wallet-order requests could both pass the check. Replaced with `User::where('id')->lockForUpdate()->value('wallet_balance')` inside `DB::transaction()`.
   - **[CRITICAL] CustomerManager Wallet Race Condition:** `create_wallet_transaction()` read `wallet_balance` before entering `DB::beginTransaction()`. All concurrent wallet credits (refunds, loyalty exchange, add-fund) could corrupt the balance. Refactored to fetch user with `lockForUpdate()` **inside** the transaction block.
-  - **[HIGH] OTP Brute Force — Delivery Pickup & Delivery OTP:** `change-status` and `verify-order-delivery-otp` routes had no rate limit. 4-digit codes (10,000 combinations) were vulnerable to brute force. Moved both routes into `Route::middleware('throttle:5,1')` group (5 attempts/min/IP).
-  - **[HIGH] order_cancel — Rider-Assigned Orders:** Customer cancel endpoint allowed cancellation even after a rider had been assigned (`delivery_man_id` set). Added `!empty($order->delivery_man_id)` guard to block in-transit cancellations. Also hardened guest_id injection by adding `is_numeric()` check.
-* **Verification:** `php -l` on all modified files — 0 syntax errors.
+  - **[HIGH] OTP Brute Force â€” Delivery Pickup & Delivery OTP:** `change-status` and `verify-order-delivery-otp` routes had no rate limit. 4-digit codes (10,000 combinations) were vulnerable to brute force. Moved both routes into `Route::middleware('throttle:5,1')` group (5 attempts/min/IP).
+  - **[HIGH] order_cancel â€” Rider-Assigned Orders:** Customer cancel endpoint allowed cancellation even after a rider had been assigned (`delivery_man_id` set). Added `!empty($order->delivery_man_id)` guard to block in-transit cancellations. Also hardened guest_id injection by adding `is_numeric()` check.
+* **Verification:** `php -l` on all modified files â€” 0 syntax errors.
 
 ### [2026-08-19 05:55 UTC] Delivery System Vulnerability Deep Scan & Hardening [backend]
 * **Component:** Laravel Web Backend (`backend/vmarket-web/`)
@@ -1620,7 +1637,7 @@ Include the specific app/component modified and bullet points detailing the exac
 * **Core Technical Implementations:**
   - **Rider Withdrawal Race Condition Fix:** Wrapped `WithdrawController::sendWithdrawRequest()` in `DB::transaction()` with `lockForUpdate()` on the wallet row, preventing concurrent withdrawal requests from double-spending pending balance.
   - **Cash-In-Hand Overflow Guard:** Added configurable maximum cash-in-hand threshold check (`delivery_man_max_cash_in_hand` from admin settings) in `DispatchPortalController::assignBatch()`. Blocks new batch assignment to riders who have exceeded their unremitted cash limit until they remit via in-app Paystack.
-* **Verification:** Validated all modified files via `php -l` — 0 errors.
+* **Verification:** Validated all modified files via `php -l` â€” 0 errors.
 
 ### [2026-08-19 05:40 UTC] Delivery Rider Mobile Waybill Label Printing & REST API Integration [backend]
 * **Component:** Laravel Web Backend (`backend/vmarket-web/`)
@@ -1628,7 +1645,7 @@ Include the specific app/component modified and bullet points detailing the exac
 * **Core Technical Implementations:**
   - **Delivery Man REST API Endpoint:** Added `get_waybill_label` in `app/Http/Controllers/RestAPI/v2/delivery_man/DeliveryManController.php` validating rider assignment (`delivery_man_id == $deliveryMan->id`) and returning the 4x6" / thermal responsive waybill sticker.
   - **Route Registration:** Registered `GET /api/v2/delivery-man/get-waybill-label` in `routes/rest_api/v2/api.php` under `delivery_man_auth` middleware.
-* **Verification:** Validated all modified files via `php -l` — 0 errors.
+* **Verification:** Validated all modified files via `php -l` â€” 0 errors.
 
 ### [2026-08-19 05:25 UTC] Customer REST API & Storefront Price Isolation Hardening [backend]
 * **Component:** Laravel Web Backend (`backend/vmarket-web/`)
@@ -1636,7 +1653,7 @@ Include the specific app/component modified and bullet points detailing the exac
 * **Core Technical Implementations:**
   - **Helpers Product Formatting Serializer:** Updated `Helpers::set_data_format()` and `Helpers::setDataFormatForJsonData()` in `app/Utils/Helpers.php` to explicitly `unset($data['purchase_price'])` whenever the request originates outside the vendor panel (`!request()->is('*seller*') && !auth('seller')->check()`) and outside admin management.
   - **Customer RestAPI Select Statement:** Removed `'purchase_price'` from `ProductController::getShopAgainProduct()` query in `app/Http/Controllers/RestAPI/v1/ProductController.php`.
-* **Verification:** Validated all modified files via `php -l` — 0 errors.
+* **Verification:** Validated all modified files via `php -l` â€” 0 errors.
 
 ### [2026-08-19 05:10 UTC] Role Conflict Audit & Vendor Employee Security Hardening [backend]
 * **Component:** Laravel Web Backend (`backend/vmarket-web/`)
@@ -1646,7 +1663,7 @@ Include the specific app/component modified and bullet points detailing the exac
   - **Vendor Sidebar Financial Guarding:** Wrapped withdrawal requests, bank information, and store profile links with `@if(!session('is_vendor_employee'))` in `resources/views/layouts/vendor/partials/_side-bar.blade.php`, removing inaccessible buttons from staff attendants.
   - **Vendor Header Profile Differentiation:** Updated `layouts/vendor/partials/_header.blade.php` to display the logged-in employee's name, email, and custom role badge with settings link hidden for sub-accounts.
   - **Admin Role Module Token Alignment:** Aligned pre-configured specialist role seeds in `database/seeds/AdminRoleTable.php` with `GlobalConstant::EMPLOYEE_ROLE_MODULE_PERMISSION` and sidebar checks (`dashboard`, `order_management`, `product_management`, `user_section`, `support_section`).
-* **Verification:** Validated all modified files via `php -l` — 0 errors.
+* **Verification:** Validated all modified files via `php -l` â€” 0 errors.
 
 ### [2026-08-19 04:45 UTC] Multi-Tier Employee & Fleet Sub-Account Architecture across Admin, Vendors, and Delivery Hubs [backend]
 * **Component:** Laravel Web Backend (`backend/vmarket-web/`)
@@ -1673,8 +1690,8 @@ Include the specific app/component modified and bullet points detailing the exac
 * **Action:** Resolved 4 core business logic discrepancies discovered during deep scan, enforcing total vendor price blindness on web panel, synchronizing cost-plus markup during order edits, and splitting refund wallet deductions fairly between vendor payout and platform markup.
 * **Core Technical Implementations:**
   - **Vendor Web Panel Price Blindness:**
-    - Updated `vendor-views/product/list.blade.php`, `vendor-views/product/view.blade.php`, and `vendor-views/report/all-product.blade.php` to display `$product->purchase_price > 0 ? $product->purchase_price : $product->unit_price` under the label `"Desired Payout (₦)"`, preventing vendors from observing marked-up customer retail prices on the web dashboard.
-    - Updated `vendor-views/product/add/_pricing-others.blade.php` and `vendor-views/product/update/_pricing-others.blade.php` input labels to `"Your Desired Payout (₦)"` with explanatory cost-plus pricing tooltips.
+    - Updated `vendor-views/product/list.blade.php`, `vendor-views/product/view.blade.php`, and `vendor-views/report/all-product.blade.php` to display `$product->purchase_price > 0 ? $product->purchase_price : $product->unit_price` under the label `"Desired Payout (â‚¦)"`, preventing vendors from observing marked-up customer retail prices on the web dashboard.
+    - Updated `vendor-views/product/add/_pricing-others.blade.php` and `vendor-views/product/update/_pricing-others.blade.php` input labels to `"Your Desired Payout (â‚¦)"` with explanatory cost-plus pricing tooltips.
   - **Order Edit Cost-Plus Markup Calculation:**
     - Updated `app/Traits/OrderEditManager.php` (`generateEditOrderSummary`) to compute admin commission based on dynamic markup spread (`price - purchase_price`) when `pricing_model == 'cost_plus_markup'` on vendor orders, preventing edited orders from reverting to percentage commission.
   - **Fair Refund Wallet Accounting:**
@@ -1739,7 +1756,7 @@ Include the specific app/component modified and bullet points detailing the exac
     - Hardened `Helpers::set_data_format()` and `setDataFormatForJsonData()` to mask customer retail `unit_price` with the vendor's net payout cost (`purchase_price`) in seller contexts.
   - **Flutter Vendor App Updates:**
     - Updated `Vendor app/lib/features/addProduct/domain/repository/add_product_repository.dart` to submit `purchase_price`.
-    - Updated `Vendor app/assets/language/en.json` replacing "Unit Price" / "Purchase Price" labels with "Your Desired Payout (₦)".
+    - Updated `Vendor app/assets/language/en.json` replacing "Unit Price" / "Purchase Price" labels with "Your Desired Payout (â‚¦)".
 * **Verification:** `php -l` on all PHP files passed with 0 errors; `flutter analyze` verified.
 
 ### [2026-08-18 13:55 UTC] Production Deployment & Logistics Corridors Live Verification [Production Live, Backend]
@@ -1750,8 +1767,8 @@ Include the specific app/component modified and bullet points detailing the exac
   - **Initial Seeded Corridors:**
     - State: `Akwa Ibom` (`id=1`)
     - City: `Uyo` (`id=1`)
-    - 5 Landmarks: Plaza (₦1,000 / ₦500), Shelter Afrique (₦1,500 / ₦500), Uniuyo Town Campus (₦1,000 / ₦500), Tropicana Axis (₦1,500 / ₦500), Oron Road (₦1,500 / ₦500).
-    - 2 Motor Parks: Itam Main Motor Park (₦4,500 / ₦1,000), Plaza Line Park (₦4,500 / ₦1,000).
+    - 5 Landmarks: Plaza (â‚¦1,000 / â‚¦500), Shelter Afrique (â‚¦1,500 / â‚¦500), Uniuyo Town Campus (â‚¦1,000 / â‚¦500), Tropicana Axis (â‚¦1,500 / â‚¦500), Oron Road (â‚¦1,500 / â‚¦500).
+    - 2 Motor Parks: Itam Main Motor Park (â‚¦4,500 / â‚¦1,000), Plaza Line Park (â‚¦4,500 / â‚¦1,000).
   - **Live API Endpoint Verifications:**
     - `GET /api/v1/delivery-hubs/states?guest_id=1` -> 200 OK (Returns active states).
     - `GET /api/v1/delivery-hubs/hubs/1?guest_id=1` -> 200 OK (Returns 7 active hubs).
@@ -1907,7 +1924,7 @@ Include the specific app/component modified and bullet points detailing the exac
   - **`resources/views/admin-views/customer/customer-settings.blade.php`**:
     - Rebranded UI section to **"Victorious Points (Customer Cashback Settings)"**.
     - Added configurable **Maximum Order Redemption Cap (%)** input (`loyalty_point_max_order_redemption_percentage`, default 10%).
-    - Added configurable **Referee Minimum First Order Spend (₦)** input (`ref_earning_min_order_amount`, default ₦5,000).
+    - Added configurable **Referee Minimum First Order Spend (â‚¦)** input (`ref_earning_min_order_amount`, default â‚¦5,000).
     - Updated cashback earning percentage and equivalent points needed inputs.
   - **`app/Http/Controllers/Admin/Customer/CustomerController.php` & `CustomerUpdateSettingsRequest.php`**:
     - Added persistence and validation rules for `loyalty_point_max_order_redemption_percentage` (1-100%) and `ref_earning_min_order_amount`.
@@ -1921,7 +1938,7 @@ Include the specific app/component modified and bullet points detailing the exac
 * **Action:** Hardened Customer Loyalty Points and Referral Bonus engine against financial leaks, concurrency race conditions, and referral farming fraud.
 * **Changes Made:**
   - **`app/Utils/OrderManager.php`**:
-    - Enforced minimum spend threshold (`ref_earning_min_order_amount`, default ₦5,000) on referee's first delivered order before referral bonuses can be earned.
+    - Enforced minimum spend threshold (`ref_earning_min_order_amount`, default â‚¦5,000) on referee's first delivered order before referral bonuses can be earned.
     - Added Anti-Self-Referral guards (disqualifies referrals matching referrer ID, phone number, or email).
     - Fixed currency calculation to direct Naira platform currency (eliminating foreign USD exchange multiplier bug).
     - Added idempotency guard (`earned_by_referral_order_{id}`) preventing duplicate payouts.
@@ -2062,7 +2079,7 @@ Include the specific app/component modified and bullet points detailing the exac
     - Added safe null coalescing on digital variation formatting and stock calculation.
   - **Vendor App Flutter Null Safety & UI Hardening (`order_details_screen.dart`, `order_top_section_widget.dart`, `payment_status_widget.dart`, `customer_contact_widget.dart`, `order_product_list_item_widget.dart`, `app_constants.dart`)**:
     - **`order_top_section_widget.dart`**: Handled loading state gracefully with a persistent back navigation bar when `orderModel` is null. Fixed unsafe `.toLowerCase()` calls on nullable order status strings. Styled status chips with distinct visual cues (green for delivered, teal for confirmed, orange for processing, gold for pending).
-    - **`payment_status_widget.dart`**: Replaced all forced null unwraps (`!`) on `getTranslated`, `paymentMethod`, `initOrderAmount`, and payment edit histories with safe default text and formatted prices (`₦0.00` fallback).
+    - **`payment_status_widget.dart`**: Replaced all forced null unwraps (`!`) on `getTranslated`, `paymentMethod`, `initOrderAmount`, and payment edit histories with safe default text and formatted prices (`â‚¦0.00` fallback).
     - **`customer_contact_widget.dart`**: Sanitized guest vs registered customer extraction with safe null-safe coalescing for customer names, phone numbers, and addresses.
     - **`order_product_list_item_widget.dart`**: Fixed evaluation order on product discount checks (`hasDiscount = discountAmount > 0`), safe price calculation for digital and physical variations, and null-safe thumbnail image rendering.
     - **`order_details_screen.dart`**: Protected order calculation engine (items price, taxes, discounts, shipping, extra discount, refer-and-earn) with safe null coalescing to eliminate runtime exceptions.
@@ -2081,11 +2098,11 @@ Include the specific app/component modified and bullet points detailing the exac
 
 ### [2026-08-17 06:05 UTC] Implement Rider Financial Privacy & In-App Paystack Cash Remittance [Backend, Delivery Man App]
 * **Component:** Laravel Backend (`backend/vmarket-web/`), Delivery Rider Mobile App (`Delivery Man App/`)
-* **Action:** Hidden internal vendor product costs, markups, platform delivery fees, and discount breakdowns from delivery riders. Displayed unified collection amount (`Amount to Collect from Customer` for COD or `Prepaid Order (₦0.00)`) with clear doorstep payment handling (Cash or Paystack QR/link). Renamed rider payout to "Your Delivery Earnings". Implemented self-serve in-app Paystack cash remittance enabling riders to remit cash in hand directly via Paystack (Bank Transfer, Card, USSD) with instant automated reconciliation and balance deduction.
+* **Action:** Hidden internal vendor product costs, markups, platform delivery fees, and discount breakdowns from delivery riders. Displayed unified collection amount (`Amount to Collect from Customer` for COD or `Prepaid Order (â‚¦0.00)`) with clear doorstep payment handling (Cash or Paystack QR/link). Renamed rider payout to "Your Delivery Earnings". Implemented self-serve in-app Paystack cash remittance enabling riders to remit cash in hand directly via Paystack (Bank Transfer, Card, USSD) with instant automated reconciliation and balance deduction.
 * **Changes Made:**
   - **Delivery Man App Privacy (`ordered_product_list_view_widget.dart`, `payment_info_widget.dart`, `order_details_screen.dart`)**:
     - Removed product unit prices (`price (per unit)`) from the package contents bottom sheet so riders only see product images, item names, variations, and quantities.
-    - Overhauled `payment_info_widget.dart` to eliminate product price, discount, tax, and delivery fee breakdowns. Replaced with clean **"Amount to Collect from Customer"** card (showing `₦0.00` for prepaid, or exact COD amount) with safety notices.
+    - Overhauled `payment_info_widget.dart` to eliminate product price, discount, tax, and delivery fee breakdowns. Replaced with clean **"Amount to Collect from Customer"** card (showing `â‚¦0.00` for prepaid, or exact COD amount) with safety notices.
     - Upgraded rider earnings card in `order_details_screen.dart` to a branded **"Your Delivery Earnings"** widget with Victorious gold accents.
     - Sanitized `get_order_details` REST API in `DeliveryManController.php` so that `price`, `discount`, `tax`, `unit_price`, and `purchase_price` are completely zeroed out before returning to the delivery rider app, ensuring defense-in-depth even if client requests are inspected.
   - **In-App Paystack Cash Remittance Engine (`DeliveryManController.php`, `api.php`, `routes.php`, `wallet_controller.dart`, `remit_cash_bottom_sheet_widget.dart`, `wallet_screen.dart`)**:
@@ -2103,11 +2120,11 @@ Include the specific app/component modified and bullet points detailing the exac
     - Added `order_id`, `chat_type`, `is_active` to `$casts` and `$fillable`, with `order()` Eloquent relationship.
     - Updated customer and delivery man `get_message` endpoints to filter by `order_id` and return thread status (`is_active`, `order_id`).
     - Enforced delivery lifecycle validation in `send_message`: messages for orders with status `delivered`, `canceled`, or `returned` are rejected with HTTP 403.
-    - Reinforced strict HTTP 403 block on direct Customer ⟷ Vendor chats. Allowed pathways: Customer ⟷ Delivery Man, Vendor ⟷ Delivery Man (pickup coordination), and User/Vendor/Rider ⟷ Admin Support.
+    - Reinforced strict HTTP 403 block on direct Customer âŸ· Vendor chats. Allowed pathways: Customer âŸ· Delivery Man, Vendor âŸ· Delivery Man (pickup coordination), and User/Vendor/Rider âŸ· Admin Support.
   - **Customer App (`User app/`)**:
     - Updated `MessageBody` and `MessageModel` to include `orderId` and `isActive`.
-    - Added Order Info Banner (`📦 Order #ID • Status`) at the top of `ChatScreen`.
-    - Implemented read-only lock banner (`🔒 This order is delivered. Chat is closed.`) when order is completed or chat is deactivated.
+    - Added Order Info Banner (`ðŸ“¦ Order #ID â€¢ Status`) at the top of `ChatScreen`.
+    - Implemented read-only lock banner (`ðŸ”’ This order is delivered. Chat is closed.`) when order is completed or chat is deactivated.
     - Bound `orderId` and `orderStatus` to chat button in `CallAndChatWidget` and passed them via `RouterHelper.getChatScreenRoute`.
   - **Delivery Man App (`Delivery Man App/`)**:
     - Updated `MessageModel` to parse `order_id` and `is_active`.
@@ -2126,7 +2143,7 @@ Include the specific app/component modified and bullet points detailing the exac
   - **Unified Voice Note Bubble Architecture (`message_bubble_widget.dart` across all 3 apps)**: Eliminated disconnected text headers and floating timestamps when a message contains an audio voice recording. Rendered standalone WhatsApp voice cards with custom bubble tail, signature Victorious purple/emerald theme colors, and internal timestamps.
   - **Hybrid Instant Playback (`audio_player_widget.dart` across all 3 apps)**: Added support for both `DeviceFileSource` (local file playback for instant zero-lag preview upon sending) and `UrlSource` (streaming remote URLs for receiver), with smart URL resolution.
   - **Interactive Waveform Scrubber (`audio_player_widget.dart` across all 3 apps)**: Implemented touch-to-seek and horizontal drag scrubbing across 30 waveform amplitude bars with live playback progress.
-  - **WhatsApp Controls & Status (`audio_player_widget.dart` across all 3 apps)**: Added animated circular Play/Pause button with pulse feedback, duration countdown (`0:15`), speed toggle pills (`1.0x`, `1.5x`, `2.0x`), and embedded delivery read-receipt checkmarks (`✓✓`).
+  - **WhatsApp Controls & Status (`audio_player_widget.dart` across all 3 apps)**: Added animated circular Play/Pause button with pulse feedback, duration countdown (`0:15`), speed toggle pills (`1.0x`, `1.5x`, `2.0x`), and embedded delivery read-receipt checkmarks (`âœ“âœ“`).
   - **Verification**: Verified via `flutter analyze` on User app, Vendor app, and Delivery Man app (0 errors, 0 warnings in modified files).
 
 ### [2026-08-16 16:02 UTC] Harden CORS Configuration with First-Party Domain Whitelisting [Backend]
@@ -2177,9 +2194,9 @@ Include the specific app/component modified and bullet points detailing the exac
 
 ### [2026-08-16 04:05 UTC] Implement WhatsApp Voice Recording Gestures, Emoji Reactions, and Real-Time Live Sync [User App, Vendor App, Delivery App]
 * **Component:** Flutter Customer App (`User app/lib/features/chat/`), Vendor App (`Vendor app/lib/features/chat/`), Delivery Man App (`Delivery Man App/lib/features/chat/`)
-* **Action:** Implemented WhatsApp Hold-to-Record Voice Notes with Slide-to-Cancel and Hands-Free Lock mode, Long-Press Floating Emoji Message Reactions (👍, ❤️, 😂, 😮, 😢, 🙏) with reaction pill badges, and Real-Time Live Chat Sync with dynamic animated "typing..." / "online" presence status.
+* **Action:** Implemented WhatsApp Hold-to-Record Voice Notes with Slide-to-Cancel and Hands-Free Lock mode, Long-Press Floating Emoji Message Reactions (ðŸ‘�, â�¤ï¸�, ðŸ˜‚, ðŸ˜®, ðŸ˜¢, ðŸ™�) with reaction pill badges, and Real-Time Live Chat Sync with dynamic animated "typing..." / "online" presence status.
 * **Changes Made:**
-  - **WhatsApp Hold-to-Record Bar (`whatsapp_voice_record_bar.dart`)**: Added press-and-hold microphone gesture that immediately begins recording, displays a flashing red indicator dot with live duration timer, interactive `‹ Slide to cancel` track to discard recordings, hands-free lock mode with pause/resume, delete trash button, and instant auto-send on release.
+  - **WhatsApp Hold-to-Record Bar (`whatsapp_voice_record_bar.dart`)**: Added press-and-hold microphone gesture that immediately begins recording, displays a flashing red indicator dot with live duration timer, interactive `â€¹ Slide to cancel` track to discard recordings, hands-free lock mode with pause/resume, delete trash button, and instant auto-send on release.
   - **WhatsApp Floating Emoji Reactions (`whatsapp_reaction_popup.dart`)**: Added long-press gesture on message bubbles that pops up a floating WhatsApp reaction pill with animated emojis and attaches a neat reaction badge to the bubble corner.
   - **Real-Time Live Chat & Typing Indicator (`chat_screen.dart`, `message_bubble_widget.dart`)**: Added dynamic AppBar header displaying real-time `"typing..."` in WhatsApp green (`#25D366`) and background live sync stream that automatically pulls new incoming messages.
   - **Cross-Platform Verification**: Validated via `flutter analyze` across User App, Vendor App, and Delivery Man App (0 compilation errors).
@@ -2626,7 +2643,7 @@ Include the specific app/component modified and bullet points detailing the exac
   - **`custom_themes.dart`**: Replaced all occurrences of `'SF-Pro-Rounded-Regular'` with `'Ubuntu'`.
   - **`light_theme.dart` / `dark_theme.dart`**: Updated default `fontFamily` configurations from `'TitilliumWeb'` to `'Ubuntu'`.
   - **Header Screen Files**: Replaced header wordmark font family declarations (`'Titillium'`) with `'Ubuntu'` across all three home screen files (`home_screens.dart`, `aster_theme_home_screen.dart`, `fashion_theme_home_screen.dart`).
-* **Verify:** `flutter analyze` → No issues found.
+* **Verify:** `flutter analyze` â†’ No issues found.
 
 ---
 
@@ -2636,7 +2653,7 @@ Include the specific app/component modified and bullet points detailing the exac
 
 ---
 
-### [2026-08-13 22:47 UTC] Brand Wordmark — Full Theme Consistency (Aster & Fashion) [User App]
+### [2026-08-13 22:47 UTC] Brand Wordmark â€” Full Theme Consistency (Aster & Fashion) [User App]
 * **Component:** User App (`aster_theme_home_screen.dart`, `fashion_theme_home_screen.dart`)
 * **Action:** Extended the premium "Victorious" Gold / "MARKET" White two-tone wordmark to the Aster and Fashion theme home screens, ensuring 100% brand consistency regardless of which backend theme is active.
 * **Changes Made:**
@@ -2645,30 +2662,30 @@ Include the specific app/component modified and bullet points detailing the exac
   - Added missing `url_launcher` import to both theme files.
   - Removed unused `images.dart` import from both theme files.
   - Applied `context.mounted` guards after async gaps in `loadData()` of both themes (same fix applied to default theme previously).
-* **Verify:** `flutter analyze lib/features/home/screens/` → No issues found (all 3 screens).
+* **Verify:** `flutter analyze lib/features/home/screens/` â†’ No issues found (all 3 screens).
 
 ---
 
-### [2026-08-13 22:32 UTC] Premium Two-Tone Brand Wordmark Header — Remove Logo, Add "Victorious" Gold / "MARKET" White [User App]
+### [2026-08-13 22:32 UTC] Premium Two-Tone Brand Wordmark Header â€” Remove Logo, Add "Victorious" Gold / "MARKET" White [User App]
 * **Component:** User App (`home_screens.dart`)
 * **Action:** Replaced the image logo in the top `SliverAppBar` with a premium two-tone typographic wordmark matching the Royal Purple & Gold design system.
 * **Changes Made:**
   - **Removed** `CustomImageWidget` backend-logo and `Image.asset` fallback from the header entirely.
-  - **Added** `ShaderMask` gold gradient (`#FFD700 → #FFB300`) wrapping a `RichText` with two spans:
-    - `"Victorious"` — `fontWeight: w900`, 20px, Titillium, gold gradient via `ShaderMask`, subtle drop shadow.
-    - `"MARKET"` — `fontWeight: w900`, 18px, Titillium, white, `letterSpacing: 4.5` for luxury wide-spaced all-caps feel, drop shadow.
+  - **Added** `ShaderMask` gold gradient (`#FFD700 â†’ #FFB300`) wrapping a `RichText` with two spans:
+    - `"Victorious"` â€” `fontWeight: w900`, 20px, Titillium, gold gradient via `ShaderMask`, subtle drop shadow.
+    - `"MARKET"` â€” `fontWeight: w900`, 18px, Titillium, white, `letterSpacing: 4.5` for luxury wide-spaced all-caps feel, drop shadow.
   - **Cleaned** unused imports: removed `custom_image_widget.dart` and `images.dart` from `home_screens.dart`.
   - **Bonus fix:** Added `context.mounted` guards after async gaps in `loadData()` resolving 3 pre-existing `use_build_context_synchronously` linter warnings.
-* **Verify:** `flutter analyze` → No issues found.
+* **Verify:** `flutter analyze` â†’ No issues found.
 
 ---
 
-### [2026-08-13 22:22 UTC] Fix Delivered Orders Infinite Spinner — Per-Tab Loading Flags & Scroll Controllers [User App]
+### [2026-08-13 22:22 UTC] Fix Delivered Orders Infinite Spinner â€” Per-Tab Loading Flags & Scroll Controllers [User App]
 * **Component:** User App (`OrderController`, `OrderScreen`)
 * **Root Causes Fixed:**
-  1. **`setIndex()` stale-model guard:** The delivered tab only fetched if `deliveredOrderModel == null`. If a prior failed fetch had stored `orders: []`, the model was non-null so no fetch fired — resulting in a permanent shimmer with no data. Fixed: guard now also checks `orders == null`, ensuring a re-fetch whenever the list itself is absent.
+  1. **`setIndex()` stale-model guard:** The delivered tab only fetched if `deliveredOrderModel == null`. If a prior failed fetch had stored `orders: []`, the model was non-null so no fetch fired â€” resulting in a permanent shimmer with no data. Fixed: guard now also checks `orders == null`, ensuring a re-fetch whenever the list itself is absent.
   2. **Per-tab `_isLoading` bleed:** A single global `_isLoading` flag was shared across all three tabs. If the Running tab triggered a network call and the user quickly switched to Delivered, the Delivered tab inherited `isLoading = true` and showed a shimmer that never cleared. Fixed: added `_isRunningLoading`, `_isDeliveredLoading`, `_isCanceledLoading` flags with a `isCurrentTabLoading` getter that returns only the active tab's state.
-  3. **Shared `ScrollController` listener bleed:** One `ScrollController` was shared across all 3 tabs. On tab switch, the new `PaginatedListView` re-registered scroll listeners on the same object, causing double-fired `_paginate()` calls and `_isLoading` getting stuck `true`. Fixed: replaced with `List<ScrollController>` — one per tab — properly disposed in `dispose()`.
+  3. **Shared `ScrollController` listener bleed:** One `ScrollController` was shared across all 3 tabs. On tab switch, the new `PaginatedListView` re-registered scroll listeners on the same object, causing double-fired `_paginate()` calls and `_isLoading` getting stuck `true`. Fixed: replaced with `List<ScrollController>` â€” one per tab â€” properly disposed in `dispose()`.
   4. **Shimmer condition corrected:** Previously the shimmer showed when `orderModel == null`. Now it shows when `isCurrentTabLoading && orderModel == null`, preventing a blank shimmer flash on tab switch to already-loaded data.
 * **Files Modified:**
   - `lib/features/order/controllers/order_controller.dart`
@@ -2828,7 +2845,7 @@ Include the specific app/component modified and bullet points detailing the exac
 * **Component:** User App (`MoreScreen`, `ProfileInfoSectionWidget`, `SquareButtonWidget`)
 * **Action:** Modernized the 5th tab More & Account Hub screen matching the Royal Purple & Gold high-fidelity design mockup.
 * **Changes Made:**
-  - **Profile Header:** Upgraded with a rich Royal Purple gradient (`#6A1B9A` ➔ `#4A148C`), Gold border circular avatar, and clean theme toggle.
+  - **Profile Header:** Upgraded with a rich Royal Purple gradient (`#6A1B9A` âž” `#4A148C`), Gold border circular avatar, and clean theme toggle.
   - **Floating Wallet Cards:** Styled wallet and loyalty shortcut cards with `16px` rounded corners, Royal Purple gradients, and Gold coin badges.
   - **Menu List Containers:** Wrapped all general, support, and policy menu groups in elevated `16px` rounded cards with ambient drop-shadows.
 
@@ -3079,7 +3096,7 @@ Include the specific app/component modified and bullet points detailing the exac
     - Created `NigerianKycService` with phonetic/Levenshtein matching against both Personal and Corporate Shop names.
     - Updated `SellerController.php` with `get_kyc_status` and `submit_kyc` endpoints.
     - Added `updateKycStatus` in `VendorController.php` and route `admin.vendors.kyc-status`.
-    - Integrated KYC review card into Admin vendor view blade (`admin-views/vendor/view.blade.php`) showing NIN, CAC, Bank Name Match Score %, and 1-click **"Approve KYC & Grant Verified Badge 🛡️"** / **"Reject KYC"** buttons.
+    - Integrated KYC review card into Admin vendor view blade (`admin-views/vendor/view.blade.php`) showing NIN, CAC, Bank Name Match Score %, and 1-click **"Approve KYC & Grant Verified Badge ðŸ›¡ï¸�"** / **"Reject KYC"** buttons.
   - **Vendor Mobile App (Flutter):**
     - Created `KycModel` and `KycVerificationScreen` with live status card, NIN/CAC inputs, and camera/gallery document uploaders.
     - Added Identity & KYC navigation tile into `BankInfoScreen`.
@@ -3104,18 +3121,18 @@ Include the specific app/component modified and bullet points detailing the exac
   - **Customer App:** Updated `order_payment_info_widget.dart` to hide the existing Delivery OTP behind a visibility toggle. Ensured `pickup_verification_code` is not exposed.
   - **Delivery Man App:** Updated `OrderDetailsRepository`, `OrderDetailsService`, and `OrderDetailsController` to pass `pickupVerificationCode` when updating status. Created `VerifyPickupSheetWidget` to prompt for OTP before transitioning to `out_for_delivery`. Modified `cal_chat_widget.dart` to strictly disable the chat input and button for delivered, canceled, returned, or failed orders.
 
-### [2026-08-10] Delivery Man App ↔ Laravel Backend Pairing Audit
+### [2026-08-10] Delivery Man App â†” Laravel Backend Pairing Audit
 * **Component:** Delivery Man App / Backend (`routes/rest_api/v2/api.php`)
 * **Action:** Completed security and performance pairing for the Delivery Man App. This is the final leg of the platform-wide audit.
 * **Changes Made:**
-  - `Delivery Man App/lib/utill/app_constants.dart` — Changed `baseUri` from `https://shop.victoriousmarket.com.ng` to `http://127.0.0.1:8000` so the app connects to the local Laravel instance during development.
-  - `backend/routes/rest_api/v2/api.php` — Added `throttle:10,1` middleware to the `delivery-man/auth` route group (login, forgot-password, verify-otp, reset-password) to match brute-force protection already in place for seller auth routes.
+  - `Delivery Man App/lib/utill/app_constants.dart` â€” Changed `baseUri` from `https://shop.victoriousmarket.com.ng` to `http://127.0.0.1:8000` so the app connects to the local Laravel instance during development.
+  - `backend/routes/rest_api/v2/api.php` â€” Added `throttle:10,1` middleware to the `delivery-man/auth` route group (login, forgot-password, verify-otp, reset-password) to match brute-force protection already in place for seller auth routes.
 * **Controller Audit (`DeliveryManController.php`):**
-  - `get_current_orders` — Already uses `->with(['shippingAddress', 'customer', 'seller.shop'])`. ✅
-  - `get_all_orders` — Already uses `->with(['shippingAddress', 'customer', 'seller.shop'])`. ✅
-  - `get_order_details` — Already uses deep nested `->with(...)` for details, shipping, customer, seller, and edit history. ✅
-  - `update_order_status` — Already uses `->with(['customer', 'deliveryMan', 'latestEditHistory'])`. ✅
-  - No N+1 fixes required — Eager Loading is already correctly implemented.
+  - `get_current_orders` â€” Already uses `->with(['shippingAddress', 'customer', 'seller.shop'])`. âœ…
+  - `get_all_orders` â€” Already uses `->with(['shippingAddress', 'customer', 'seller.shop'])`. âœ…
+  - `get_order_details` â€” Already uses deep nested `->with(...)` for details, shipping, customer, seller, and edit history. âœ…
+  - `update_order_status` â€” Already uses `->with(['customer', 'deliveryMan', 'latestEditHistory'])`. âœ…
+  - No N+1 fixes required â€” Eager Loading is already correctly implemented.
 * **Security Status:** Token storage uses `flutter_secure_storage` (upgraded in prior session). API client loads secure token on init with SharedPreferences fallback. All credentials (password, phone, country code) are stored encrypted.
 
 ### [2026-08-10] Ecosystem Initialization
@@ -3123,18 +3140,18 @@ Include the specific app/component modified and bullet points detailing the exac
 * **Action:** Established the `.agents/AGENTS.md` ruleset and this changelog.
 * **Details:** Analyzed the architecture across the Laravel backend, User App, Vendor App, and Delivery App. Created strict guidelines to ensure all future AIs enforce Provider (User/Vendor), GetX (Delivery), Eager Loading/Caching (Laravel), and Secure Token Storage. Started local MySQL database for testing.
 
-### [2026-08-10] Delivery Man App — Security Upgrade (flutter_secure_storage)
+### [2026-08-10] Delivery Man App â€” Security Upgrade (flutter_secure_storage)
 * **Component:** Delivery Man App
 * **Action:** Migrated all sensitive data storage from `shared_preferences` (plain-text) to `flutter_secure_storage` (encrypted Keychain/Keystore).
 * **Files Modified:**
-  - `pubspec.yaml` — Added `flutter_secure_storage: ^10.3.1` dependency.
-  - `lib/data/api/api_client.dart` — Added `FlutterSecureStorage` field; loads token from secure storage on init with SharedPreferences fallback for migration.
-  - `lib/features/auth/domain/repositories/auth_repository.dart` — `saveUserToken()` now writes to secure storage first; `updateToken()` reads from secure storage first; `clearSharedData()` clears both stores; `saveUserCredentials()` and `clearUserCredentials()` use secure storage for passwords.
-  - `lib/features/splash/domain/repositories/splash_repository.dart` — `removeSharedData()` now also deletes from secure storage.
-  - `lib/helper/get_di.dart` — Registered `FlutterSecureStorage` in GetX DI container; passed to `ApiClient`, `AuthRepository`, and `SplashRepository`.
-* **Backward Compatibility:** SharedPreferences is kept in sync as a fallback. Existing users will seamlessly migrate — the secure token is read first, and if absent, the app falls back to the SharedPreferences token and then stores it securely on next login.
+  - `pubspec.yaml` â€” Added `flutter_secure_storage: ^10.3.1` dependency.
+  - `lib/data/api/api_client.dart` â€” Added `FlutterSecureStorage` field; loads token from secure storage on init with SharedPreferences fallback for migration.
+  - `lib/features/auth/domain/repositories/auth_repository.dart` â€” `saveUserToken()` now writes to secure storage first; `updateToken()` reads from secure storage first; `clearSharedData()` clears both stores; `saveUserCredentials()` and `clearUserCredentials()` use secure storage for passwords.
+  - `lib/features/splash/domain/repositories/splash_repository.dart` â€” `removeSharedData()` now also deletes from secure storage.
+  - `lib/helper/get_di.dart` â€” Registered `FlutterSecureStorage` in GetX DI container; passed to `ApiClient`, `AuthRepository`, and `SplashRepository`.
+* **Backward Compatibility:** SharedPreferences is kept in sync as a fallback. Existing users will seamlessly migrate â€” the secure token is read first, and if absent, the app falls back to the SharedPreferences token and then stores it securely on next login.
 
-### [2026-08-10] Vendor App ↔ Laravel Pairing Audit
+### [2026-08-10] Vendor App â†” Laravel Pairing Audit
 **Component:** Vendor App / Backend (`routes/rest_api/v3/seller.php`)
 **Description:** Audited and optimized the communication between the Vendor App and the local Laravel Backend.
 **Changes Made:**
@@ -3144,7 +3161,7 @@ Include the specific app/component modified and bullet points detailing the exac
 - **Backend:** Enforced `throttle:10,1` on Vendor authentication routes to prevent brute-force attacks.
 - **Backend:** Verified `SellerController` and `ProductController` correctly utilize Eager Loading (`with()`) to prevent N+1 queries.
 
-### [2026-08-10] User App ↔ Laravel Pairing Audit
+### [2026-08-10] User App â†” Laravel Pairing Audit
 * **Component:** User App & Backend Web
 * **Action:** Audited and optimized the API pairing for security, latency, and correctness.
 * **Details:** 

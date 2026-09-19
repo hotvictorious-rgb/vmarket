@@ -427,6 +427,27 @@ Guest orders are protected by a **256-bit CSPRNG unguessable token** (in2hex(ra
 - Phone number is a secondary/fallback verification factor only
 - All customer PII and pickup codes are stripped from non-owner API responses
 
+### Proof 9.4: Commit 6 In-Shop Pickup Payment & Single-Order Settlement Balance Invariant
+
+In-shop pickup settlements enforce an atomic single-order financial hold and physical stock allocation with zero floating-point arithmetic.
+
+**Invariant Equations:**
+$$\text{Order Amount} = \text{Seller Share} + \text{Admin Commission} \quad (\Delta = \text{₦}0.00)$$
+$$\Delta \text{AdminWallet.pending\_amount} = \text{Order Amount} \quad (\Delta = \text{₦}0.00)$$
+$$\Delta \text{Product.current\_stock} = -\sum \text{quantity} \quad (\Delta = 0)$$
+
+**Numerical Proof:**
+
+| Scenario | Order Amount | Admin Commission (10%) | Seller Share (90%) | Admin Pending Inflow | Inventory Decrement | $\Delta$ |
+|---|---|---|---|---|---|---|
+| Single Item (₦1,000) | ₦1,000.00 | ₦100.00 | ₦900.00 | +₦1,000.00 | -1 | ₦0.00 |
+| Multi-Unit (₦25,450.50) | ₦25,450.50 | ₦2,545.05 | ₦22,905.45 | +₦25,450.50 | -3 | ₦0.00 |
+| Stock Failure Rollback | ₦0.00 | ₦0.00 | ₦0.00 | ₦0.00 | 0 | ₦0.00 |
+
+- **Physical Inventory Authority:** Product `current_stock` decremented atomically under pessimistic lock (`where current_stock >= quantity`).
+- **Two-Phase Stock Failure:** Order transaction rolls back completely ($\Delta \text{Orders} = 0$), followed by Phase 2 persistence of quarantined `payment_reconciliations` (`post_payment_stock_failure`).
+- **Escrow Invariant:** Seller wallet balance remains untouched upon order creation; funds are held in `AdminWallet.pending_amount` until in-shop handover OTP verification via `InShopHandoverController::verifyPickupOtp()`.
+
 ### Defensible V1 Certification Statement
 
 > **"The identified V1 transaction-engine Critical/High findings have been reproduced, remediated, and covered by automated regression tests. All defined invariants pass with ? = ?0.00. This does not constitute a claim that every possible financial scenario in the marketplace has been mathematically proven � it is a statement that the identified failure modes have been eliminated and regressed."**

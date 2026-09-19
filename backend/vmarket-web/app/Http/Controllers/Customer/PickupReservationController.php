@@ -18,11 +18,18 @@ use Illuminate\Http\Request;
  * - Idempotent re-execution via parent idempotency key.
  * - Does NOT alter cart, decrement stock, or initiate payment.
  */
+use App\Exceptions\InvalidPaymentStateException;
+use App\Exceptions\InvalidCartException;
+use App\Exceptions\PaymentInitializationException;
+use App\Services\PickupPaymentInitializationService;
+
 class PickupReservationController extends Controller
 {
     public function __construct(
-        protected PickupReservationService $reservationService
+        protected PickupReservationService $reservationService,
+        protected ?PickupPaymentInitializationService $paymentInitService = null
     ) {
+        $this->paymentInitService = $paymentInitService ?: app(PickupPaymentInitializationService::class);
     }
 
     /**
@@ -129,5 +136,57 @@ class PickupReservationController extends Controller
             'status' => true,
             'reservation' => $reservation,
         ]);
+    }
+
+    /**
+     * Initiates Paystack payment for an inspected and accepted pickup reservation.
+     */
+    public function pay(Request $request, string $reservationCode): JsonResponse
+    {
+        $customerId = auth('customer')->id() ?? (int) ($request->user('customer')?->id ?? 0);
+        if (!$customerId && auth('api')->check()) {
+            $customerId = (int) auth('api')->id();
+        }
+
+        if (!$customerId) {
+            return response()->json(['status' => false, 'message' => 'Unauthenticated.'], 401);
+        }
+
+        $ttlMinutes = (int) ($request->input('ttl_minutes', 30));
+        $callbackUrl = $request->input('callback_url');
+
+        try {
+            $result = $this->paymentInitService->initializePayment(
+                $customerId,
+                $reservationCode,
+                $ttlMinutes,
+                $callbackUrl
+            );
+
+            return response()->json(array_merge($result, [
+                'status' => true,
+                'init_status' => $result['status'] ?? 'success',
+            ]), 200);
+        } catch (InvalidPaymentStateException $e) {
+            return response()->json([
+                'status' => false,
+                'message' => $e->getMessage(),
+            ], 409);
+        } catch (InvalidCartException $e) {
+            return response()->json([
+                'status' => false,
+                'message' => $e->getMessage(),
+            ], 422);
+        } catch (PaymentInitializationException $e) {
+            return response()->json([
+                'status' => false,
+                'message' => $e->getMessage(),
+            ], 502);
+        } catch (\Throwable $e) {
+            return response()->json([
+                'status' => false,
+                'message' => 'Payment initialization failed: ' . $e->getMessage(),
+            ], 500);
+        }
     }
 }

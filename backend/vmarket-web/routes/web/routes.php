@@ -109,11 +109,12 @@ Route::group(['middleware' => ['maintenance_mode', 'guestCheck']], function () {
             Route::post('review-delete-image', 'deleteReviewImage')->name('delete-review-image');
         });
 
-        /* [AI] In-Shop Pickup Reservations (Commit 5) */
+        /* [AI] In-Shop Pickup Reservations (Commit 5 & 6) */
         Route::controller(\App\Http\Controllers\Customer\PickupReservationController::class)->group(function () {
             Route::post('pickup-reservations', 'create')->name('pickup-reservations.create');
             Route::get('pickup-reservations', 'index')->name('pickup-reservations.index');
             Route::get('pickup-reservations/{code}', 'show')->name('pickup-reservations.show');
+            Route::post('pickup-reservations/{code}/pay', 'pay')->name('pickup-reservations.pay');
         });
     });
 

@@ -157,11 +157,18 @@ class PaystackController extends Controller
                     return $this->payment_response($paymentRequest, 'fail');
                 }
 
-                // [AI] Commit 4 Delivery Order Settlement Routing
+                // [AI] Commit 4 & Commit 6 Order Settlement Routing
                 if ($paymentRequest->payment_domain === 'marketplace_delivery') {
                     $settlementService = app(\App\Services\DeliveryOrderSettlementService::class);
                     $settlementResult = $settlementService->settleVerifiedPayment($verifiedReference, $txData);
                     if (in_array($settlementResult['status'] ?? '', ['CLAIMED', 'ALREADY_PAID'], true)) {
+                        return $this->payment_response($settlementResult['payment_request'] ?? $paymentRequest, 'success');
+                    }
+                    return $this->payment_response($settlementResult['payment_request'] ?? $paymentRequest, 'fail');
+                } elseif ($paymentRequest->payment_domain === 'marketplace_pickup') {
+                    $settlementService = app(\App\Services\PickupOrderSettlementService::class);
+                    $settlementResult = $settlementService->settleVerifiedPayment($verifiedReference, $txData);
+                    if (in_array($settlementResult['status'] ?? '', ['CLAIMED', 'ALREADY_SETTLED', 'ALREADY_PAID'], true)) {
                         return $this->payment_response($settlementResult['payment_request'] ?? $paymentRequest, 'success');
                     }
                     return $this->payment_response($settlementResult['payment_request'] ?? $paymentRequest, 'fail');
@@ -560,11 +567,19 @@ class PaystackController extends Controller
             }
 
             if ($paymentRequest) {
-                // [AI] Commit 4 Delivery Order Settlement Routing
+                // [AI] Commit 4 & Commit 6 Order Settlement Routing
                 if ($paymentRequest->payment_domain === 'marketplace_delivery') {
                     $settlementService = app(\App\Services\DeliveryOrderSettlementService::class);
                     $settlementResult = $settlementService->settleVerifiedPayment($reference, $data);
                     Log::info("Paystack Webhook: Delivery settlement for reference '{$reference}' returned: " . ($settlementResult['status'] ?? 'unknown'));
+                    return response()->json([
+                        'status' => true,
+                        'settlement' => $settlementResult['status'] ?? 'unknown',
+                    ], 200);
+                } elseif ($paymentRequest->payment_domain === 'marketplace_pickup') {
+                    $settlementService = app(\App\Services\PickupOrderSettlementService::class);
+                    $settlementResult = $settlementService->settleVerifiedPayment($reference, $data);
+                    Log::info("Paystack Webhook: Pickup settlement for reference '{$reference}' returned: " . ($settlementResult['status'] ?? 'unknown'));
                     return response()->json([
                         'status' => true,
                         'settlement' => $settlementResult['status'] ?? 'unknown',
