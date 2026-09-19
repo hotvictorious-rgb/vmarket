@@ -1,3 +1,18 @@
+### [2026-09-19 07:45 UTC] Commit 1: Schema Migrations for Hybrid Delivery and Pickup Engine [backend] [ai-governance]
+* **Component:** Database Schema Migrations (`backend/vmarket-web/database/migrations/`)
+* **Action:** Implemented and executed strictly the 4 approved Commit 1 database migrations on MySQL 8.4.2:
+  - `2026_09_19_000001_create_checkout_intents_table.php`: Created `checkout_intents` as durable concurrency anchor and snapshot repository for delivery checkout prior to order generation. Primary key `id`, unique constraints `uq_ci_order_group_id`, `uq_ci_idempotency_key`, and compound unique constraint `uq_ci_customer_active_cart` (`customer_id`, `active_cart_token`), indexing `idx_ci_customer_status` and `idx_ci_expires_at`.
+  - `2026_09_19_000002_create_pickup_reservations_table.php`: Created `pickup_reservations` for Pay-After-Inspection pickup workflows referencing real `sellers.id` (`seller_id`) and `shops.id` (`shop_id`). Unique constraints `uq_pr_reservation_code`, `uq_pr_idempotency_key`, and compound unique constraint `uq_pr_customer_active_res` (`customer_id`, `active_reservation_token`), indexing `idx_pr_customer_status`, `idx_pr_seller_status`, `idx_pr_shop_id`, `idx_pr_order_id`, and `idx_pr_expires_at`.
+  - `2026_09_19_000003_add_marketplace_fields_to_payment_requests_table.php`: Added nullable columns (`payment_domain`, `order_group_id`, `pickup_reservation_id`, `gateway_reference`, `attempt_status`, `active_order_group_id`, `active_pickup_reservation_id`, `attempt_expires_at`), unique constraints `uq_pr_gateway_reference`, `uq_pr_active_order_group`, `uq_pr_active_pickup_res`, indexes, and enforced MySQL 8.4 SQL CHECK constraint `chk_pr_domain_integrity` preventing malformed cross-domain data.
+  - `2026_09_19_000004_create_payment_reconciliations_table.php`: Created `payment_reconciliations` implementing the Single-Case-per-Payment anomaly and reversal tracking model with unique constraints `uq_prec_case_number` and `uq_prec_gateway_ref`.
+* **Verification & Zero Drift:**
+  - Migrations executed successfully (`php artisan migrate --force`, exit code 0).
+  - MySQL 8.4 schema verified via direct information_schema and SHOW queries.
+  - Legacy `payment_requests` rows (2 preserved test fixtures) verified 100% intact with `payment_domain IS NULL`.
+  - MySQL 8.4 CHECK constraint verified active and rejecting cross-domain rows.
+  - Regression certification suite `scratch/v1_transaction_certification.php` passed 82/82 (Δ = ₦0.00).
+  - Zero controller, service, model, route, or UI files modified in this commit.
+
 ### [2026-09-19 04:55 UTC] Step 2: Canonical Verified Reference, Fail-Closed NGN, Exact Amount, and Normalized Callback Consumer [backend] [ai-governance]
 * **Component:** Paystack Gateway Engine (`backend/vmarket-web/app/Http/Controllers/Payment_Methods/PaystackController.php`, `AI_CHANGELOG.md`)
 * **Action:** Implemented Step 2 hardening according to the approved specification and preconditions A through N:
