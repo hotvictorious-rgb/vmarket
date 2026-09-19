@@ -60,7 +60,7 @@ $orderModel   = probe('app/Models/Order.php');
 $orderManager = probe('app/Utils/OrderManager.php');
 $moduleHelper = probe('app/Utils/module-helper.php');
 $cashbackModel = probe('app/Models/CustomerCashbackLedger.php');
-$refundCtrl   = probe('app/Http/Controllers/Admin/Order/RefundController.php');
+$refundCtrl   = probe('app/Http/Controllers/Admin/Order/RefundController.php') . probe('app/Services/PaystackRefundService.php');
 $proofDoc     = probe('../../VICTORIOUS_MARKET_MATHEMATICAL_AND_SYSTEMIC_PROOF.md');
 $webCtrl      = probe('app/Http/Controllers/Web/WebController.php');
 

@@ -264,4 +264,67 @@ class VendorSettlementService
             'is_delivery_fee_refunded' => 1,
         ];
     }
+
+    /**
+     * [AI] Resolves a legacy hold on an order based on verified administrative evidence.
+     * Decisions:
+     * - 'release_to_vendor': Releases hold, making order 'eligible' for manual settlement.
+     * - 'return_to_platform': Closes hold as 'refunded', retaining funds in platform escrow.
+     * Emits a neutral audit log with [AUDIT] tag.
+     */
+    public function resolveLegacyHold(
+        Order $order,
+        string $decision,
+        int $adminId,
+        string $reference,
+        string $notes = ''
+    ): array {
+        if ($order->vendor_settlement_status !== 'legacy_hold') {
+            return [
+                'status' => false,
+                'message' => "Order #{$order->id} is not on legacy hold (current status: {$order->vendor_settlement_status}).",
+            ];
+        }
+
+        if (!in_array($decision, ['release_to_vendor', 'return_to_platform'], true)) {
+            throw new \InvalidArgumentException("Invalid resolution decision '{$decision}'. Must be 'release_to_vendor' or 'return_to_platform'.");
+        }
+
+        DB::transaction(function () use ($order, $decision, $adminId, $reference, $notes) {
+            $lockedOrder = Order::where('id', $order->id)->lockForUpdate()->first();
+
+            if ($decision === 'release_to_vendor') {
+                $lockedOrder->vendor_settlement_status = 'eligible';
+                $lockedOrder->save();
+
+                Log::info("[AUDIT] Super Admin resolved legacy hold on order #{$lockedOrder->id} -> 'release_to_vendor'", [
+                    'order_id' => $lockedOrder->id,
+                    'admin_id' => $adminId,
+                    'reference' => $reference,
+                    'notes' => $notes,
+                    'new_status' => 'eligible',
+                    'timestamp' => now()->toIso8601String(),
+                ]);
+            } elseif ($decision === 'return_to_platform') {
+                $lockedOrder->vendor_settlement_status = 'refunded';
+                $lockedOrder->save();
+
+                Log::info("[AUDIT] Super Admin resolved legacy hold on order #{$lockedOrder->id} -> 'return_to_platform'", [
+                    'order_id' => $lockedOrder->id,
+                    'admin_id' => $adminId,
+                    'reference' => $reference,
+                    'notes' => $notes,
+                    'new_status' => 'refunded',
+                    'timestamp' => now()->toIso8601String(),
+                ]);
+            }
+        });
+
+        return [
+            'status' => true,
+            'message' => "Legacy hold for order #{$order->id} resolved successfully ({$decision}).",
+            'decision' => $decision,
+            'order_id' => $order->id,
+        ];
+    }
 }

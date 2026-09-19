@@ -46,13 +46,19 @@ class MatureCustomerCashbackCommand extends Command
             ->unique()
             ->toArray();
 
-        // 2. Fetch count of pending rewards ready for maturity (no open disputes)
-        $query = CustomerCashbackLedger::where('status', 'pending')
+        // 2. Fetch pending rewards ready for maturity (verified customer receipt + no open disputes)
+        $eligibleLedgerIds = CustomerCashbackLedger::where('status', 'pending')
             ->whereNotNull('available_at')
             ->where('available_at', '<=', $now)
-            ->whereNotIn('order_id', $unresolvedOrderIds);
+            ->whereNotIn('order_id', $unresolvedOrderIds)
+            ->whereHas('order', function ($q) {
+                $q->whereNotNull('received_at')
+                  ->whereNotNull('refund_window_expires_at');
+            })
+            ->pluck('id')
+            ->toArray();
 
-        $count = $query->count();
+        $count = count($eligibleLedgerIds);
 
         if ($count === 0) {
             $this->info('No pending cashback rewards are currently due for maturity.');
@@ -60,10 +66,8 @@ class MatureCustomerCashbackCommand extends Command
         }
 
         // 3. Perform atomic batch update
-        $affected = CustomerCashbackLedger::where('status', 'pending')
-            ->whereNotNull('available_at')
-            ->where('available_at', '<=', $now)
-            ->whereNotIn('order_id', $unresolvedOrderIds)
+        $affected = CustomerCashbackLedger::whereIn('id', $eligibleLedgerIds)
+            ->where('status', 'pending')
             ->update([
                 'status' => 'available',
                 'updated_at' => $now,

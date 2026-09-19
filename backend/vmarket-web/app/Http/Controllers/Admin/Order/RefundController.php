@@ -124,64 +124,24 @@ class RefundController extends BaseController
         }
 
         $order = $this->orderRepo->getFirstWhere(params: ['id' => $refund['order_id']]);
-        if ($request['refund_status'] == 'refunded' && $refund['status'] != 'refunded') {
-            $pricingModel = getWebConfig(name: 'pricing_model') ?? 'cost_plus_markup';
-            if ($order['seller_is'] == 'admin') {
-                $adminWallet = $this->adminWalletRepo->getFirstWhere(params: ['admin_id' => $order['seller_id']]);
-                $this->adminWalletRepo->updateWhere(params: ['admin_id' => $order['seller_id']], data: ['inhouse_earning' => $adminWallet['inhouse_earning'] - $refund['amount']]);
-            } else {
-                $sellerWallet = $this->vendorWalletRepo->getFirstWhere(params: ['seller_id' => $order['seller_id']]);
-                $adminWallet = $this->adminWalletRepo->getFirstWhere(params: ['admin_id' => 1]);
-                $orderDetails = $this->orderDetailRepo->getFirstWhere(params: ['id' => $refund['order_details_id']]);
-                $productDetails = $orderDetails ? (is_array($orderDetails['product_details']) ? $orderDetails['product_details'] : json_decode($orderDetails['product_details'], true)) : [];
-                $vendorCost = isset($productDetails['purchase_price']) && (float)$productDetails['purchase_price'] > 0
-                    ? (float)$productDetails['purchase_price']
-                    : (float)($orderDetails['price'] ?? $refund['amount']);
 
-                $itemPrice = (float)($orderDetails['price'] ?? 0);
-                if ($pricingModel == 'cost_plus_markup' && $itemPrice > 0 && $itemPrice > $vendorCost) {
-                    $unitMarkup = $itemPrice - $vendorCost;
-                    $markupShare = ($refund['amount'] / $itemPrice) * $unitMarkup;
-                    $vendorShare = max(0, $refund['amount'] - $markupShare);
+        // [AI] Reject Customer Wallet Refund Destination
+        if ($request['payment_method'] === 'customer_wallet') {
+            throw new \App\Exceptions\CustomerWalletDecommissionedException('order_refund', 'Customer wallet is decommissioned and cannot be used as a refund destination. Refunds must be routed through original payment rails.');
+        }
 
-                    $currentEarning = (float)($sellerWallet['total_earning'] ?? 0);
-                    $newTotalEarning = max(0, $currentEarning - $vendorShare);
-                    $unrecoveredDebt = max(0, $vendorShare - $currentEarning);
-
-                    $walletUpdateData = ['total_earning' => $newTotalEarning];
-                    if ($unrecoveredDebt > 0) {
-                        // [AI] Merchant Recoverable Debt Accounting:
-                        // Prevent silent liability write-off when refund exceeds current wallet balance.
-                        // The unrecovered variance is added to collected_cash (merchant payable liability to platform)
-                        // ensuring future earnings automatically pay down this debt before withdrawals.
-                        $walletUpdateData['collected_cash'] = ($sellerWallet['collected_cash'] ?? 0) + $unrecoveredDebt;
-                    }
-                    $this->vendorWalletRepo->updateWhere(params: ['seller_id' => $order['seller_id']], data: $walletUpdateData);
-                    if ($adminWallet) {
-                        $this->adminWalletRepo->updateWhere(params: ['admin_id' => 1], data: ['commission_earned' => max(0, $adminWallet['commission_earned'] - $markupShare)]);
-                    }
-                } else {
-                    $currentEarning = (float)($sellerWallet['total_earning'] ?? 0);
-                    $newTotalEarning = max(0, $currentEarning - $refund['amount']);
-                    $unrecoveredDebt = max(0, $refund['amount'] - $currentEarning);
-
-                    $walletUpdateData = ['total_earning' => $newTotalEarning];
-                    if ($unrecoveredDebt > 0) {
-                        // [AI] Merchant Recoverable Debt Accounting:
-                        $walletUpdateData['collected_cash'] = ($sellerWallet['collected_cash'] ?? 0) + $unrecoveredDebt;
-                    }
-                    $this->vendorWalletRepo->updateWhere(params: ['seller_id' => $order['seller_id']], data: $walletUpdateData);
-                }
+        // [AI] Distributed Asynchronous Refund Execution
+        if ($request['refund_status'] == 'approved') {
+            $refundRequestModel = RefundRequest::find($refund['id']);
+            if ($order && $order['payment_method'] === 'paystack' && !empty($order['transaction_ref'])) {
+                $paystackRefundService = app(\App\Services\PaystackRefundService::class);
+                $initResult = $paystackRefundService->initiateRefund($refundRequestModel, $order['transaction_ref']);
+                Log::info("[AI] Paystack refund initiated for RefundRequest #{$refund['id']}: " . ($initResult['message'] ?? ''));
             }
-            $this->refundTransactionRepo->add(data: $refundTransactionService->getData(request: $request, refund: $refund, order: $order));
-
-            // [AI] Cashback Lifecycle Guard: Revoke pending cashback reward upon approved order refund
-            \App\Models\CustomerCashbackLedger::where('order_id', $refund['order_id'])
-                ->where('status', 'pending')
-                ->update([
-                    'status' => 'cancelled',
-                    'description' => 'Revoked due to approved refund for Order #' . $refund['order_id']
-                ]);
+        } elseif ($request['refund_status'] == 'refunded' && $refund['status'] != 'refunded') {
+            $refundRequestModel = RefundRequest::find($refund['id']);
+            $paystackRefundService = app(\App\Services\PaystackRefundService::class);
+            $paystackRefundService->finalizeRefundAccounting($refundRequestModel);
         }
 
         if ($refund['status'] != 'refunded') {

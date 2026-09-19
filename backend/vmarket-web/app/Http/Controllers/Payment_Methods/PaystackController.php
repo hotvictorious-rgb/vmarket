@@ -614,12 +614,14 @@ class PaystackController extends Controller
             $type = $metadata['type'] ?? null;
             if ($orderId && $type === 'delivery_payment') {
                 $order = Order::with(['customer', 'deliveryMan', 'latestEditHistory'])->find($orderId);
-                if ($order && $order->order_status != 'delivered') {
+                if ($order) {
                     $expectedAmount = (int) round(($order['order_amount'] + $order['edit_due_amount']) * 100);
                     $amountPaid = (int) ($data['amount'] ?? 0);
                     if ($amountPaid === $expectedAmount) {
+                        // [AI] Receipt Authority Invariant:
+                        // Payment confirmation marks payment_status = 'paid', but NEVER marks order_status = 'delivered'.
+                        // Customer receipt requires physical OTP code verification at the doorstep.
                         $order->update([
-                            'order_status' => 'delivered',
                             'order_amount' => $order['order_amount'] + $order['edit_due_amount'],
                             'payment_status' => 'paid',
                             'edit_due_amount' => 0,
@@ -634,10 +636,17 @@ class PaystackController extends Controller
                             ]);
                         }
 
-                        Log::info("Paystack Webhook: Successfully processed Delivery Order #{$orderId} with ref {$reference}.");
+                        Log::info("Paystack Webhook: Successfully processed Payment for Delivery Order #{$orderId} with ref {$reference}.");
                     }
                 }
             }
+        }
+
+        // 3. Process Refund Lifecycle Events (refund.pending, refund.processing, refund.needs-attention, refund.failed, refund.processed)
+        if (str_starts_with($event['event'], 'refund.')) {
+            $refundService = app(\App\Services\PaystackRefundService::class);
+            $result = $refundService->handleRefundWebhook($event, $paystackSignature, $payload);
+            return response()->json($result, $result['code'] ?? 200);
         }
 
         // Paystack requires a 200 OK HTTP response

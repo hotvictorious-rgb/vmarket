@@ -617,6 +617,14 @@ class OrderController extends BaseController
         }
 
         if ($request['order_status'] == 'delivered') {
+            // [AI] Receipt Authority Guard: Marketplace orders require physical customer receipt verification
+            if (\App\Utils\OrderManager::isVictoriousMarketplaceOrder($order) && empty($order->received_at)) {
+                return response()->json([
+                    'status' => 0,
+                    'message' => translate('Marketplace orders require physical customer receipt verification (doorstep delivery code or in-shop handover OTP) to be marked as delivered.'),
+                ], 403);
+            }
+
             foreach ($order['details'] as $orderDetail) {
                 $productDetails = json_decode($orderDetail?->product_details ?? '', true) ?? [];
                 if (

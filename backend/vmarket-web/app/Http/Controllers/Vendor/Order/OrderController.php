@@ -638,6 +638,14 @@ class OrderController extends BaseController
             ], 403);
         }
 
+        // [AI] Receipt Authority Guard: Doorstep delivery orders require physical rider verification with customer delivery code
+        if ($order['order_type'] === 'default_type' && $request['order_status'] === 'delivered') {
+            return response()->json([
+                'status' => 0,
+                'message' => translate('Doorstep delivery orders require physical rider verification with customer delivery code upon receipt.'),
+            ], 403);
+        }
+
         // [AI] Victorious MARKET In-Shop Handover Invariant:
         // Customer Pickup orders require customer online payment confirmation AND 6-digit cryptographic pickup code verification.
         if ($order['order_type'] === 'pickup' && $request['order_status'] === 'delivered') {

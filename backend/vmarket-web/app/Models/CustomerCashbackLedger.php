@@ -65,43 +65,85 @@ class CustomerCashbackLedger extends Model
     }
 
     /**
-     * [AI] Helper to credit 5% cashback reward on eligible order merchandise
+     * [AI] Helper to credit 5% cashback reward on eligible order merchandise.
+     * Enforces strict lifetime order uniqueness across ALL statuses (pending, available, redeemed, cancelled).
+     * Strictly requires authoritative customer receipt (received_at and refund_window_expires_at).
      */
     public static function creditRewardForOrder(Order $order): ?self
     {
-        // Must have customer
+        // Must have authenticated registered customer
         if (!$order->customer_id || $order->is_guest) {
             return null;
         }
 
-        // Check if ledger entry already exists (Idempotency)
-        $existing = self::where('order_id', $order->id)->first();
-        if ($existing) {
-            return $existing;
-        }
-
-        // Calculate merchandise net amount (excluding shipping cost)
-        $shippingCost = (float)($order->shipping_cost ?? 0.00);
-        $totalOrderAmount = (float)($order->order_amount ?? 0.00);
-        $taxAmount = (float)($order->total_tax_amount ?? 0.00);
-        $merchandiseAmount = max(0.00, $totalOrderAmount - $shippingCost - $taxAmount);
-
-        if ($merchandiseAmount <= 0) {
+        // Must have verified customer receipt and active return window
+        if (
+            $order->order_status !== 'delivered'
+            || empty($order->received_at)
+            || empty($order->refund_window_expires_at)
+        ) {
             return null;
         }
 
-        $cashbackRate = 5.00; // 5%
-        $cashbackAmount = round($merchandiseAmount * ($cashbackRate / 100.0), 2);
+        // Lifetime Order Uniqueness Guard:
+        // A single child order can have only ONE base cashback issuance across its entire lifecycle.
+        $existing = self::where('order_id', $order->id)
+            ->lockForUpdate()
+            ->first();
+
+        if ($existing) {
+            return $existing; // Idempotent discovery: never create a duplicate row
+        }
+
+        // Calculate merchandise net amount using exact BCMath string arithmetic
+        $totalOrderAmount = bcadd((string)($order->order_amount ?? '0.00'), '0', 2);
+        $shippingCost = bcadd((string)($order->shipping_cost ?? '0.00'), '0', 2);
+        $taxAmount = bcadd((string)($order->total_tax_amount ?? '0.00'), '0', 2);
+        
+        $merchandiseAmountStr = bcsub(bcsub($totalOrderAmount, $shippingCost, 2), $taxAmount, 2);
+        $merchandiseAmount = max(0.00, (float)$merchandiseAmountStr);
+
+        if (bccomp((string)$merchandiseAmount, '0.00', 2) <= 0) {
+            return null;
+        }
+
+        // 5% Cashback Reward calculated via BCMath string arithmetic
+        $cashbackRate = 5.00;
+        $cashbackAmount = bcmul((string)$merchandiseAmount, '0.05', 2);
 
         return self::create([
             'customer_id' => $order->customer_id,
             'order_id' => $order->id,
-            'merchandise_amount' => $merchandiseAmount,
+            'merchandise_amount' => (float)$merchandiseAmount,
             'cashback_rate' => $cashbackRate,
-            'cashback_amount' => $cashbackAmount,
+            'cashback_amount' => (float)$cashbackAmount,
             'status' => 'pending',
-            'available_at' => $order->refund_window_expires_at ?? now()->addHours(24), // 24-hour return inspection window
+            'available_at' => $order->refund_window_expires_at,
             'description' => "5% Victorious Cashback Reward for Order #{$order->id}",
         ]);
+    }
+
+    /**
+     * [AI] Adjust pending cashback proportionally upon partial refund
+     */
+    public function adjustForPartialRefund(string $remainingMerchandise): void
+    {
+        if ($this->status !== 'pending') {
+            return;
+        }
+
+        $remainingMerchandise = bcadd($remainingMerchandise, '0', 2);
+        if (bccomp($remainingMerchandise, '0.00', 2) <= 0) {
+            $this->status = 'cancelled';
+            $this->description = "Cancelled due to full merchandise refund for Order #{$this->order_id}";
+            $this->save();
+            return;
+        }
+
+        $adjustedCashback = bcmul($remainingMerchandise, '0.05', 2);
+        $this->merchandise_amount = (float)$remainingMerchandise;
+        $this->cashback_amount = (float)$adjustedCashback;
+        $this->description = "5% Victorious Cashback Reward for Order #{$this->order_id} (Adjusted for partial refund)";
+        $this->save();
     }
 }

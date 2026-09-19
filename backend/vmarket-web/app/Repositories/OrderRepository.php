@@ -458,6 +458,22 @@ class OrderRepository implements OrderRepositoryInterface
     public function manageWalletOnOrderStatusChange(object $order, string $receivedBy): bool
     {
         $order = $this->order->find($order['id']);
+        if (!$order) {
+            return false;
+        }
+
+        // [AI] Financial Idempotency Guard: Prevent duplicate vendor earnings or commission crediting
+        if (\App\Models\OrderTransaction::where(['order_id' => $order->id, 'status' => 'disburse'])->exists()) {
+            return true;
+        }
+
+        // [AI] Strict Third-Party Marketplace Settlement Boundary:
+        // Automatic vendor earnings disbursement on order status change is COMPLETELY BLOCKED for third-party marketplace orders.
+        // Third-party vendor disbursement must strictly execute via VendorSettlementService::executeManualSettlement().
+        if (\App\Utils\OrderManager::isThirdPartyMarketplaceOrder($order)) {
+            return true; // [AI] Block: do NOT disburse vendor earnings automatically
+        }
+
         $orderSummary = getOrderSummary(order: $order);
         $orderAmount = $orderSummary['subtotal'] - $orderSummary['total_discount_on_product'] - $order['discount_amount'];
         $commission = $order['admin_commission'];

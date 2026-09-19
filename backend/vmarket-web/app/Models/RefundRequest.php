@@ -26,6 +26,10 @@ class RefundRequest extends Model
         'approved_note',
         'rejected_note',
         'payment_info',
+        'execution_ref',
+        'execution_status',
+        'paystack_refund_id',
+        'paystack_processed_at',
         'change_by',
     ];
     protected $casts = [
@@ -39,6 +43,10 @@ class RefundRequest extends Model
         'approved_note'=>'string',
         'rejected_note'=>'string',
         'payment_info'=>'string',
+        'execution_ref'=>'string',
+        'execution_status'=>'string',
+        'paystack_refund_id'=>'string',
+        'paystack_processed_at'=>'datetime',
         'change_by'=>'string',
         'images' => 'array'
     ];

@@ -49,6 +49,52 @@ class OrderManager
     use CustomerTrait;
     use VatTaxManagement;
 
+    /**
+     * [AI] Marketplace Order Predicates (V1 Governance Standard)
+     * Note: Customer cashback is credited upon verified customer receipt:
+     * \App\Models\CustomerCashbackLedger::creditRewardForOrder($order)
+     */
+    public static function isVictoriousMarketplaceOrder(Order|array $order): bool
+    {
+        $orderType = is_array($order) ? ($order['order_type'] ?? '') : ($order->order_type ?? '');
+        return in_array($orderType, ['default_type', 'pickup'], true);
+    }
+
+    public static function isThirdPartyMarketplaceOrder(Order|array $order): bool
+    {
+        $sellerIs = is_array($order) ? ($order['seller_is'] ?? '') : ($order->seller_is ?? '');
+        $sellerId = is_array($order) ? ($order['seller_id'] ?? null) : ($order->seller_id ?? null);
+
+        return self::isVictoriousMarketplaceOrder($order)
+            && $sellerIs === 'seller'
+            && !empty($sellerId);
+    }
+
+    public static function isHistoricalPOSOrder(Order|array $order): bool
+    {
+        $orderType = is_array($order) ? ($order['order_type'] ?? '') : ($order->order_type ?? '');
+        return $orderType === 'POS';
+    }
+
+    /**
+     * [AI] Delivery Fee Recognition upon Customer Receipt
+     * Moves delivery fee from escrow (pending_amount) to logistics earned revenue (delivery_charge_earned).
+     */
+    public static function recognizeDeliveryFeeUponCustomerReceipt(Order $order): void
+    {
+        $shippingCost = bcadd((string)($order->shipping_cost ?? '0.00'), '0', 2);
+        if (bccomp($shippingCost, '0.00', 2) <= 0) {
+            return;
+        }
+
+        $adminWallet = AdminWallet::where('admin_id', 1)->lockForUpdate()->first();
+        if ($adminWallet) {
+            $adminWallet->pending_amount = max(0.00, (float)bcsub((string)$adminWallet->pending_amount, $shippingCost, 2));
+            $adminWallet->delivery_charge_earned = (float)bcadd((string)$adminWallet->delivery_charge_earned, $shippingCost, 2);
+            $adminWallet->save();
+        }
+    }
+
     public static function generateUniqueOrderID(): string
     {
         return rand(1000, 9999) . '-' . Str::random(5) . '-' . time();
@@ -141,23 +187,12 @@ class OrderManager
             return;
         }
 
-        // [AI] Commit 7 settlement hold gate.
-        // Blocks automatic disbursement for third-party seller orders not yet cleared for payout.
-        // 'settled'      → already paid (legacy backfill or V1 manual settlement) → pass through.
-        // null           → VMarket-owned (seller_is guard above prevents reaching here).
-        // 'held'         → Commit 7 lifecycle; 24h window in progress → BLOCK.
-        // 'disputed'     → active refund dispute → BLOCK.
-        // 'legacy_hold'  → unresolvable historical receipt; manual review required → BLOCK.
-        if (
-            $order->seller_is === 'seller'
-            && $order->order_status === 'delivered'
-            && in_array($order->vendor_settlement_status, ['held', 'disputed', 'legacy_hold'], true)
-        ) {
-            return; // [AI] Hold: do NOT disburse vendor earnings
+        // [AI] Strict Third-Party Marketplace Settlement Boundary:
+        // Automatic vendor earnings disbursement on order status change is COMPLETELY BLOCKED for third-party marketplace orders.
+        // Third-party vendor disbursement must strictly execute via VendorSettlementService::executeManualSettlement().
+        if (self::isThirdPartyMarketplaceOrder($order)) {
+            return; // [AI] Block: do NOT disburse vendor earnings automatically
         }
-
-        // [AI] Victorious MARKET Customer Cashback: 5% on eligible merchandise value (Reward Ledger)
-        \App\Models\CustomerCashbackLedger::creditRewardForOrder($order);
 
         $order_summary = OrderManager::getOrderTotalAndSubTotalAmountSummary($order);
         $order_amount = $order_summary['subtotal'] - $order_summary['total_discount_on_product'] - $order['discount_amount'];
