@@ -156,30 +156,6 @@ String selectedDigitalPaymentMethodName = '';
 
 
   List<TextEditingController> inputFieldControllerList = [];
-  List <String?> keyList = [];
-  int offlineMethodSelectedIndex = -1;
-  int offlineMethodSelectedId = 0;
-  String offlineMethodSelectedName = '';
-
-  void setOfflinePaymentMethodSelectedIndex(int index, {bool notify = true}){
-    keyList = [];
-    inputFieldControllerList = [];
-    offlineMethodSelectedIndex = index;
-    if(offlinePaymentModel != null && offlinePaymentModel!.offlineMethods!= null && offlinePaymentModel!.offlineMethods!.isNotEmpty){
-      offlineMethodSelectedId = offlinePaymentModel!.offlineMethods![offlineMethodSelectedIndex].id!;
-      offlineMethodSelectedName = offlinePaymentModel!.offlineMethods![offlineMethodSelectedIndex].methodName!;
-    }
-
-    if(offlinePaymentModel!.offlineMethods != null && offlinePaymentModel!.offlineMethods!.isNotEmpty && offlinePaymentModel!.offlineMethods![index].methodInformations!.isNotEmpty){
-      for(int i= 0; i< offlinePaymentModel!.offlineMethods![index].methodInformations!.length; i++){
-        inputFieldControllerList.add(TextEditingController());
-        keyList.add(offlinePaymentModel!.offlineMethods![index].methodInformations![i].customerInput);
-      }
-    }
-    if(notify){
-      notifyListeners();
-    }
-  }
 
   Future<ApiResponseModel> digitalPaymentPlaceOrder({String? orderNote, String? customerId,
     String? addressId, String? billingAddressId,

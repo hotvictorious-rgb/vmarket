@@ -51,33 +51,8 @@ class WalletRepository implements WalletRepositoryInterface{
   // }
 
 
-  @override
-  Future<ApiResponseModel> addFundToWallet(String amount, String paymentMethod) async {
-    try {
-      final response = await dioClient!.post(AppConstants.addFundToWallet,
-          data: {'payment_platform': 'app',
-            'payment_method' : paymentMethod,
-            'payment_request_from': 'app',
-            'amount': amount,
-            'current_currency_code': Provider.of<SplashController>(Get.context!, listen: false).myCurrency!.code
-
-          });
-      return ApiResponseModel.withSuccess(response);
-    } catch (e) {
-      return ApiResponseModel.withError(ApiErrorHandler.getMessage(e));
-    }
-  }
 
 
-  @override
-  Future<ApiResponseModel> getWalletBonusBannerList() async {
-    try {
-      Response response = await dioClient!.get(AppConstants.walletBonusList);
-      return ApiResponseModel.withSuccess(response);
-    } catch (e) {
-      return ApiResponseModel.withError(ApiErrorHandler.getMessage(e));
-    }
-  }
 
   @override
   Future add(value) {

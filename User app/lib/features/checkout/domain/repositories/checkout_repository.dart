@@ -17,100 +17,12 @@ class CheckoutRepository implements CheckoutRepositoryInterface{
   CheckoutRepository({required this.dioClient});
 
 
-  @override
-  Future<ApiResponseModel> cashOnDeliveryPlaceOrder(
-      {String? addressID,
-        String? couponCode,
-        String? couponDiscountAmount,
-        String? billingAddressId,
-        String? orderNote,
-        bool? isCheckCreateAccount,
-        String? password,
-        double? cashChangeAmount,
-        String? currentCurrencyCode,
-      }) async {
-    try {
-      // Build query parameters map
-      final Map<String, dynamic> queryParams = {
-        'address_id': addressID,
-        'coupon_code': couponCode,
-        'coupon_discount': couponDiscountAmount.toString(),
-        'billing_address_id': billingAddressId,
-        'order_note': orderNote,
-        'guest_id': Provider.of<AuthController>(Get.context!, listen: false).getGuestToken(),
-        'is_guest': '${Provider.of<AuthController>(Get.context!, listen: false).isLoggedIn() ? 0 : 1}',
-        'is_check_create_account': (isCheckCreateAccount ?? false) ? 1 : 0,
-        'password': password,
-        'bring_change_amount' : cashChangeAmount,
-        'current_currency_code': currentCurrencyCode,
-      };
-
-      debugPrint('----------(order_place)-----$queryParams');
-
-      final response = await dioClient!.get(AppConstants.orderPlaceUri, queryParameters: queryParams);
-      return ApiResponseModel.withSuccess(response);
-    } catch (e) {
-      return ApiResponseModel.withError(ApiErrorHandler.getMessage(e));
-    }
-  }
 
 
-  @override
-  Future<ApiResponseModel> offlinePaymentPlaceOrder(String? addressID, String? couponCode, String? couponDiscountAmount, String? billingAddressId, String? orderNote, List <String?> typeKey, List<String> typeValue, int? id, String name, String? paymentNote, bool? isCheckCreateAccount, String? password) async {
-    try {
-      Map<String?, String> fields = {};
-      Map<String?, String> info = {};
-      for(var i = 0; i < typeKey.length; i++){
-        info.addAll(<String?, String>{
-          typeKey[i] : typeValue[i]
-        });
-      }
-
-      int isCheckAccount = isCheckCreateAccount! ? 1: 0;
-      fields.addAll(<String, String>{
-        "method_informations" : base64.encode(utf8.encode(jsonEncode(info))),
-        'method_name': name,
-        'method_id': id.toString(),
-        'payment_note' : paymentNote??'',
-        'address_id': addressID??'',
-        'coupon_code' : couponCode??"",
-        'coupon_discount' : couponDiscountAmount??'',
-        'billing_address_id' : billingAddressId??'',
-        'order_note' : orderNote??'',
-        'guest_id': Provider.of<AuthController>(Get.context!, listen: false).getGuestToken()??'',
-        'is_guest' : Provider.of<AuthController>(Get.context!, listen: false).isLoggedIn()? '0':'1',
-        'is_check_create_account' : isCheckAccount.toString(),
-        'password' : password ?? '',
-      });
-      Response response = await dioClient!.post(AppConstants.offlinePayment, data: fields);
-      return ApiResponseModel.withSuccess(response);
-    } catch (e) {
-      return ApiResponseModel.withError(ApiErrorHandler.getMessage(e));
-    }
-  }
 
 
-  @override
-  Future<ApiResponseModel> walletPaymentPlaceOrder(String? addressID, String? couponCode,String? couponDiscountAmount, String? billingAddressId, String? orderNote, bool? isCheckCreateAccount, String? password) async {
-    int isCheckAccount = isCheckCreateAccount! ? 1: 0;
-    try {
-      final response = await dioClient!.get('${AppConstants.walletPayment}?address_id=$addressID&coupon_code=$couponCode&coupon_discount=$couponDiscountAmount&billing_address_id=$billingAddressId&order_note=$orderNote&guest_id=${Provider.of<AuthController>(Get.context!, listen: false).getGuestToken()}&is_guest=${Provider.of<AuthController>(Get.context!, listen: false).isLoggedIn()? 0 :1}&is_check_create_account=$isCheckAccount&password=$password',);
-      return ApiResponseModel.withSuccess(response);
-    } catch (e) {
-      return ApiResponseModel.withError(ApiErrorHandler.getMessage(e));
-    }
-  }
 
 
-  @override
-  Future<ApiResponseModel> offlinePaymentList() async {
-    try {
-      final response = await dioClient!.get('${AppConstants.offlinePaymentList}?guest_id=${Provider.of<AuthController>(Get.context!, listen: false).getGuestToken()}&is_guest=${!Provider.of<AuthController>(Get.context!, listen: false).isLoggedIn()}');
-      return ApiResponseModel.withSuccess(response);
-    } catch (e) {
-      return ApiResponseModel.withError(ApiErrorHandler.getMessage(e));
-    }
-  }
 
   @override
   Future<ApiResponseModel> digitalPaymentPlaceOrder(

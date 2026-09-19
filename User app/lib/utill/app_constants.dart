@@ -51,7 +51,6 @@ import 'package:flutter_sixvalley_ecommerce/common/enums/local_caches_type_enum.
   static const String relatedProductUri = '/api/v1/products/related-products/';
   static const String orderUri = '/api/v1/customer/order/list?limit=10&offset=';
   static const String orderDetailsUri = '/api/v1/customer/order/details?order_id=';
-  static const String orderPlaceUri = '/api/v1/customer/order/place';
   static const String sellerUri = '/api/v1/seller?slug=';
   static const String sellerProductUri = '/api/v1/seller/';
   static const String sellerList = '/api/v1/seller/list/';
@@ -109,13 +108,10 @@ import 'package:flutter_sixvalley_ecommerce/common/enums/local_caches_type_enum.
   static const String deliveryRestrictedCountryList = '/api/v1/customer/get-restricted-country-list';
   static const String deliveryRestrictedZipList = '/api/v1/customer/get-restricted-zip-list';
   static const String getOrderFromOrderId = '/api/v1/customer/order/get-order-by-id?order_id=';
-  static const String offlinePayment = '/api/v1/customer/order/place-by-offline-payment';
-  static const String walletPayment = '/api/v1/customer/order/place-by-wallet';
   static const String couponListApi = '/api/v1/coupon/list?limit=100&offset=';
   static const String sellerWiseCouponListApi = '/api/v1/coupons/';
   static const String sellerWiseBestSellingProduct = '/api/v1/seller/';
   static const String digitalPayment = '/api/v1/digital-payment';
-  static const String offlinePaymentList = '/api/v1/customer/order/offline-payment-method-list';
   static const String sellerWiseCategoryList = '/api/v1/categories?shop_slug=';
   static const String sellerWiseBrandList = '/api/v1/brands?shop_slug=';
   static const String getDigitalAuthorList = '/api/v1/products/digital-author-list?guest_id=1';
@@ -132,7 +128,6 @@ import 'package:flutter_sixvalley_ecommerce/common/enums/local_caches_type_enum.
   static const String deliveryStatesUri = '/api/v1/delivery-hubs/states';
   static const String deliveryCitiesUri = '/api/v1/delivery-hubs/cities/';
   static const String deliveryHubsUri = '/api/v1/delivery-hubs/hubs/';
-  static const String confirmDriverTransitCodeUri = '/api/v1/customer/order/confirm-driver-transit-code';
   static const String getDeliveryManReview = '/api/v1/customer/order/deliveryman-review?order_id=';
   static const String submitDeliveryManReview = '/api/v1/customer/order/deliveryman-review/update?order_id=';
   static const String mergeGuestCart = '/api/v1/cart/get-merge-guest-cart';
@@ -152,9 +147,7 @@ import 'package:flutter_sixvalley_ecommerce/common/enums/local_caches_type_enum.
   static const String shopAgainFromRecentStore = '/api/v1/products/shop-again-product';
   static const String findWhatYouNeed = '/api/v1/categories/find-what-you-need';
   static const String orderTrack = '/api/v1/order/track-order';
-  static const String addFundToWallet = '/api/v1/add-to-fund';
   static const String reorder = '/api/v1/customer/order/again';
-  static const String walletBonusList = '/api/v1/customer/wallet/bonus-list';
   static const String moreStore = '/api/v1/seller/more';
   static const String justForYou = '/api/v1/products/just-for-you?guest_id=1';
   static const String mostSearching = '/api/v1/products/most-searching';

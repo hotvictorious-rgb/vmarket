@@ -19,7 +19,7 @@ class _CashbackScreenState extends State<CashbackScreen> {
     WidgetsBinding.instance.addPostFrameCallback((_) {
       final controller = Provider.of<CashbackController>(context, listen: false);
       controller.getCashbackSummary(reload: true);
-      controller.getCashbackList(1, reload: true);
+      controller.getCashbackList(0, reload: true);
     });
   }
 
@@ -43,7 +43,7 @@ class _CashbackScreenState extends State<CashbackScreen> {
           return RefreshIndicator(
             onRefresh: () async {
               await cashbackController.getCashbackSummary(reload: true);
-              await cashbackController.getCashbackList(1, reload: true);
+              await cashbackController.getCashbackList(0, reload: true);
             },
             child: SingleChildScrollView(
               physics: const AlwaysScrollableScrollPhysics(),

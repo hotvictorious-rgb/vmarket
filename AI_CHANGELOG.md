@@ -1,3 +1,12 @@
+### [2026-09-19 22:55 UTC] Directive 57323: Compilation Repair, Complete Legacy Dependency Deletion & Exact Cashback Contract Alignment [user-app] [ai-governance]
+* **Component:** User App (`features/checkout`, `features/wallet`, `features/cashback`, `helper/route_healper.dart`, `utill/app_constants.dart`)
+* **Action:** Executed complete clean-removal and compilation repair gate:
+  - **Route & UI Syntax Repair:** Fixed malformed nested `GoRoute` in `route_healper.dart`. Completely removed `WalletBonusWidget` reference and import in `wallet_screen.dart`, cleanly displaying `CashbackCardWidget`.
+  - **Checkout Dependency Clean Deletion:** Completely removed `setOfflinePaymentMethodSelectedIndex()`, `offlineMethodSelectedIndex`, `offlineMethodSelectedId`, `offlineMethodSelectedName`, `offlinePaymentModel`, and orphaned fields from `checkout_controller.dart`. Completely deleted `cashOnDeliveryPlaceOrder()`, `offlinePaymentPlaceOrder()`, `walletPaymentPlaceOrder()`, and `offlinePaymentList()` across `CheckoutServiceInterface`, `CheckoutService`, `CheckoutRepositoryInterface`, and `CheckoutRepository`.
+  - **Wallet Stored-Value Subsystem Deletion:** Physically deleted `add_fund_dialogue_widget.dart`, `wallet_bonus_widget.dart`, `add_fund_to_wallet_screen.dart`, and `wallet_bonus_model.dart`. Completely removed `addFundToWallet()` and `getWalletBonusBannerList()` from `WalletController`, `WalletServiceInterface`, `WalletService`, `WalletRepositoryInterface`, and `WalletRepository`. Removed `addFundToWalletScreen` route from `route_healper.dart`.
+  - **AppConstants Pruning:** Deleted legacy endpoints `orderPlaceUri`, `offlinePayment`, `walletPayment`, `offlinePaymentList`, `addFundToWallet`, `walletBonusList`, and `confirmDriverTransitCodeUri`.
+  - **Cashback Alignment & Copy Integrity:** Aligned `CashbackScreen` initial fetch to 0-indexed offset (`getCashbackList(0, reload: true)`) matching backend `skip()`. Updated `CashbackCardWidget` copy to exact V1 specification: non-withdrawable account credit held during the 24h inspection window.
+
 ### [2026-09-19 21:50 UTC] Fresh-System Architectural Purge: Obsolete Payment, Transit & Remittance Deletion [backend] [ai-governance]
 * **Component:** Order Placement, Routing, Delivery Custody, Cash Remittance (`backend/vmarket-web/`)
 * **Action:** Shifted from 403 blocking/stubbing to complete architectural deletion of all decommissioned subsystems per fresh-system VMarket V1 standards:

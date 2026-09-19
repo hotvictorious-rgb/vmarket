@@ -56,7 +56,6 @@ import 'package:flutter_sixvalley_ecommerce/features/support/screens/support_tic
 import 'package:flutter_sixvalley_ecommerce/features/support/widgets/support_ticket_type_widget.dart';
 import 'package:flutter_sixvalley_ecommerce/features/tracking/screens/tracking_result_screen.dart';
 import 'package:flutter_sixvalley_ecommerce/features/update/screen/update_screen.dart';
-import 'package:flutter_sixvalley_ecommerce/features/wallet/screens/add_fund_to_wallet_screen.dart';
 import 'package:flutter_sixvalley_ecommerce/features/wallet/screens/wallet_screen.dart';
 import 'package:flutter_sixvalley_ecommerce/features/wishlist/screens/wishlist_screen.dart';
 import 'package:flutter_sixvalley_ecommerce/main.dart';
@@ -148,7 +147,6 @@ class RouterHelper {
   static const String updateScreen = '/update';
   static const String walletScreen = '/wallet';
   static const String cashbackScreen = '/cashback';
-  static const String addFundToWalletScreen = '/add-fund-wallet';
   static const String wishListScreen = '/wish-list';
   static const String selectLocationScreen = '/select-location-screen';
   static const String shopOverviewScreen = '/shop-overview-screen';
@@ -1490,26 +1488,17 @@ class RouterHelper {
       ),
 
       GoRoute(
-              GoRoute(
         path: cashbackScreen,
         builder: (BuildContext context, GoRouterState state) {
           return const CashbackScreen();
         },
       ),
+
+      GoRoute(
         path: walletScreen,
         builder: (context, state) {
           final isBackButtonExist = state.uri.queryParameters['isBackButtonExist']?.toLowerCase() == 'true';
           return WalletScreen(isBacButtonExist: isBackButtonExist);
-        },
-      ),
-
-      GoRoute(
-        path: RouterHelper.addFundToWalletScreen,
-        builder: (context, state) {
-          final url = state.uri.queryParameters['url'] != null
-              ? Uri.decodeComponent(state.uri.queryParameters['url']!)
-              : '';
-          return AddFundToWalletScreen(url: url);
         },
       ),
 

@@ -111,7 +111,7 @@ class CashbackCardWidget extends StatelessWidget {
                   borderRadius: BorderRadius.circular(8),
                 ),
                 child: Text(
-                  '💡 5% cashback is earned on delivered merchandise and available 24 hours after confirmed receipt. Automatically discounts future marketplace checkout. Non-withdrawable.',
+                  '💡 5% cashback reward earned on delivered merchandise, available after the 24-hour customer inspection window. Non-withdrawable account credit.',
                   style: textRegular.copyWith(color: Colors.white70, fontSize: 11),
                 ),
               ),

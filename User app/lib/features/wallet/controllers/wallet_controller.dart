@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_sixvalley_ecommerce/data/model/api_response.dart';
 import 'package:flutter_sixvalley_ecommerce/features/wallet/domain/models/wallet_transaction_model.dart';
-import 'package:flutter_sixvalley_ecommerce/features/wallet/domain/models/wallet_bonus_model.dart';
 import 'package:flutter_sixvalley_ecommerce/features/wallet/domain/services/wallet_service_interface.dart';
 import 'package:flutter_sixvalley_ecommerce/helper/api_checker.dart';
 import 'package:flutter_sixvalley_ecommerce/helper/price_converter.dart';
@@ -88,39 +87,6 @@ class WalletController extends ChangeNotifier {
 
   void removeFirstLoading() {
     _firstLoading = true;
-    notifyListeners();
-  }
-  Future <void> addFundToWallet(String amount, String paymentMethod) async {
-    _isConvert = true;
-    notifyListeners();
-    ApiResponseModel apiResponse = await walletServiceInterface.addFundToWallet(amount, paymentMethod);
-    if (apiResponse.response != null && apiResponse.response!.statusCode == 200) {
-      _isConvert = false;
-
-      RouterHelper.getAddFundToWalletRoute(
-        action: RouteAction.push,
-        url: apiResponse.response?.data['redirect_link']
-      );
-
-    }else if (apiResponse.response?.statusCode == 202){
-      showCustomSnackBarWidget("Minimum= ${PriceConverter.convertPrice(Get.context!, double.tryParse('${apiResponse.response?.data['minimum_amount']}') )} and Maximum=${PriceConverter.convertPrice(Get.context!, double.tryParse('${apiResponse.response?.data['maximum_amount']}'))}", Get.context!, snackBarType: SnackBarType.warning);
-    }else{
-      _isConvert = false;
-      ApiChecker.checkApi(apiResponse);
-    }
-    notifyListeners();
-  }
-
-
-
-  WalletBonusModel? walletBonusModel;
-  Future<void> getWalletBonusBannerList() async {
-    ApiResponseModel apiResponse = await walletServiceInterface.getWalletBonusBannerList();
-    if (apiResponse.response != null && apiResponse.response!.statusCode == 200) {
-      walletBonusModel = WalletBonusModel.fromJson(apiResponse.response?.data);
-    } else {
-      ApiChecker.checkApi( apiResponse);
-    }
     notifyListeners();
   }
 

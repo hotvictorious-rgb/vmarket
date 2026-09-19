@@ -154,11 +154,7 @@ class _WalletScreenState extends State<WalletScreen> {
                               ),
                             ));
                       }),
-                      if (Provider.of<SplashController>(context, listen: false)
-                              .configModel
-                              ?.addFundsToWallet ==
-                          1)
-                        const WalletBonusWidget()
+                      const Padding(padding: EdgeInsets.only(top: Dimensions.paddingSizeSmall), child: CashbackCardWidget())
                     ]),
             ])),
             SliverPersistentHeader(
