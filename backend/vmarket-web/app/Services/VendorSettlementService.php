@@ -205,16 +205,22 @@ class VendorSettlementService
             ];
         }
 
-        $fullAmount = (float)($order->order_amount ?? 0.00);
-        $shippingCost = (float)($order->shipping_cost ?? 0.00);
+        // getRawOriginal() bypasses float casts on Order.order_amount and Order.shipping_cost
+        $fullAmountStr = bcadd((string)($order->getRawOriginal('order_amount') ?? '0.00'), '0', 2);
+        $shippingCostStr = bcadd((string)($order->getRawOriginal('shipping_cost') ?? '0.00'), '0', 2);
+        // Preserve legacy float values for transaction amount columns where float precision is acceptable
+        $fullAmount = (float)$fullAmountStr;
+        $shippingCost = (float)$shippingCostStr;
 
-        DB::transaction(function () use ($order, $shippingCost, $fullAmount) {
+        DB::transaction(function () use ($order, $shippingCostStr, $shippingCost, $fullAmountStr, $fullAmount) {
             // Reverse delivery fee from AdminWallet if shipping cost > 0
-            if ($shippingCost > 0) {
+            if (bccomp($shippingCostStr, '0.00', 2) > 0) {
                 $adminWallet = AdminWallet::where('admin_id', 1)->lockForUpdate()->first();
                 if ($adminWallet) {
-                    $shippingStr = bcadd((string)$shippingCost, '0', 2);
-                    $adminWallet->delivery_charge_earned = max(0.00, (float)bcsub((string)$adminWallet->delivery_charge_earned, $shippingStr, 2));
+                    // getRawOriginal() bypasses float cast on AdminWallet.delivery_charge_earned
+                    $currentDeliveryEarned = bcadd((string)($adminWallet->getRawOriginal('delivery_charge_earned') ?? '0.00'), '0', 2);
+                    $newDeliveryEarned = bcsub($currentDeliveryEarned, $shippingCostStr, 2);
+                    $adminWallet->delivery_charge_earned = (bccomp($newDeliveryEarned, '0.00', 2) < 0) ? '0.00' : $newDeliveryEarned;
                     $adminWallet->save();
                 }
 

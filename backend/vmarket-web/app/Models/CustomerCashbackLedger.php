@@ -95,10 +95,11 @@ class CustomerCashbackLedger extends Model
             return $existing; // Idempotent discovery: never create a duplicate row
         }
 
-        // Calculate merchandise net amount using exact BCMath string arithmetic
-        $totalOrderAmount = bcadd((string)($order->order_amount ?? '0.00'), '0', 2);
-        $shippingCost = bcadd((string)($order->shipping_cost ?? '0.00'), '0', 2);
-        $taxAmount = bcadd((string)($order->total_tax_amount ?? '0.00'), '0', 2);
+        // Calculate merchandise net amount using exact BCMath string arithmetic.
+        // getRawOriginal() bypasses float casts on Order.order_amount, Order.shipping_cost, Order.total_tax_amount
+        $totalOrderAmount = bcadd((string)($order->getRawOriginal('order_amount') ?? '0.00'), '0', 2);
+        $shippingCost = bcadd((string)($order->getRawOriginal('shipping_cost') ?? '0.00'), '0', 2);
+        $taxAmount = bcadd((string)($order->getRawOriginal('total_tax_amount') ?? '0.00'), '0', 2);
         
         $merchandiseAmountStr = bcsub(bcsub($totalOrderAmount, $shippingCost, 2), $taxAmount, 2);
         $merchandiseAmount = (bccomp($merchandiseAmountStr, '0.00', 2) < 0) ? '0.00' : $merchandiseAmountStr;

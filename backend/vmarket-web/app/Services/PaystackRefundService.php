@@ -218,7 +218,8 @@ class PaystackRefundService
             ];
         }
 
-        $amountInKobo = (int) round(bcmul((string)$refundRequest->amount, '100', 2));
+        // Raw DB decimal string bypass: getRawOriginal() avoids the float cast on RefundRequest.amount
+        $amountInKobo = (int) round(bcmul((string)($refundRequest->getRawOriginal('amount') ?? '0.00'), '100', 2));
         $postData = [
             'transaction' => $transactionReference,
             'amount' => $amountInKobo,
@@ -381,7 +382,7 @@ class PaystackRefundService
                     ->get();
                 if ($candidates->count() === 1) {
                     $candidate = $candidates->first();
-                    $expectedCandidateKobo = (int) round(bcmul((string)$candidate->amount, '100', 2));
+                    $expectedCandidateKobo = (int) round(bcmul((string)($candidate->getRawOriginal('amount') ?? '0.00'), '100', 2));
                     if ($amountInKobo === 0 || $amountInKobo === $expectedCandidateKobo) {
                         $refundRequest = $candidate;
                     }
@@ -423,7 +424,7 @@ class PaystackRefundService
         }
 
         // Amount validation
-        $expectedKobo = (int) round(bcmul((string)$refundRequest->amount, '100', 2));
+        $expectedKobo = (int) round(bcmul((string)($refundRequest->getRawOriginal('amount') ?? '0.00'), '100', 2));
         if ($amountInKobo > 0 && $amountInKobo !== $expectedKobo) {
             Log::warning("[AI] Paystack Refund Webhook: Amount mismatch for RefundRequest #{$refundRequest->id}. Expected {$expectedKobo}, got {$amountInKobo}.");
             $refundRequest->execution_status = 'reconciliation_required';
@@ -517,7 +518,8 @@ class PaystackRefundService
                 return;
             }
 
-            $expectedKobo = (int) bcmul((string)$lockedRequest->amount, '100', 0);
+            // Raw DB decimal string: bypass float cast on RefundRequest.amount before BCMath
+            $expectedKobo = (int) bcmul((string)($lockedRequest->getRawOriginal('amount') ?? '0.00'), '100', 0);
             $providerKobo = (int)($providerData['amount'] ?? 0);
             if ($providerKobo > 0 && $providerKobo !== $expectedKobo) {
                 Log::warning("[AI] Paystack finalizeRefundAccounting blocked: Amount mismatch for RefundRequest #{$lockedRequest->id}. Expected {$expectedKobo}, got {$providerKobo}");
@@ -542,7 +544,8 @@ class PaystackRefundService
                 return;
             }
 
-            $refundAmount = bcadd((string)$lockedRequest->amount, '0', 2);
+            // Seed BCMath from raw DB decimal string — bypasses the float cast on RefundRequest.amount
+            $refundAmount = bcadd((string)($lockedRequest->getRawOriginal('amount') ?? '0.00'), '0', 2);
             $isSettled = ($order->vendor_settlement_status === 'settled');
 
             // 3. Financial Reversals: Pre-Settlement Escrow vs Post-Settlement (Pure BCMath Precision)
@@ -554,7 +557,8 @@ class PaystackRefundService
                 // SellerWallet: 0.00 movement; Admin commission: 0.00 movement.
                 $adminWallet = AdminWallet::where('admin_id', 1)->lockForUpdate()->first();
                 if ($adminWallet) {
-                    $currentPending = bcadd((string)$adminWallet->pending_amount, '0', 2);
+                    // getRawOriginal() bypasses the float cast on AdminWallet.pending_amount
+                    $currentPending = bcadd((string)($adminWallet->getRawOriginal('pending_amount') ?? '0.00'), '0', 2);
                     $newPendingDiff = bcsub($currentPending, $refundAmount, 2);
                     $adminWallet->pending_amount = (bccomp($newPendingDiff, '0.00', 2) < 0) ? '0.00' : $newPendingDiff;
                     $adminWallet->save();
@@ -568,8 +572,9 @@ class PaystackRefundService
 
                 $sellerWallet = SellerWallet::where('seller_id', $order->seller_id)->lockForUpdate()->first();
                 if ($sellerWallet) {
-                    $currentEarning = bcadd((string)$sellerWallet->total_earning, '0', 2);
-                    // [AI] Merchant Recoverable Debt Accounting:
+                    // getRawOriginal() bypasses float casts on all SellerWallet monetary columns
+                    $currentEarning = bcadd((string)($sellerWallet->getRawOriginal('total_earning') ?? '0.00'), '0', 2);
+                    // Merchant Recoverable Debt Accounting:
                     // If vendor earnings are insufficient to cover vendorShare,
                     // floor wallet balance at 0.00 and post unrecovered variance to collected_cash.
                     if (bccomp($currentEarning, $vendorShare, 2) >= 0) {
@@ -581,26 +586,32 @@ class PaystackRefundService
                     }
                     $sellerWallet->total_earning = $newEarning;
                     if (bccomp($unrecoveredDebt, '0.00', 2) > 0) {
-                        $sellerWallet->collected_cash = bcadd((string)$sellerWallet->collected_cash, $unrecoveredDebt, 2); // unrecovered debt posted to 'collected_cash' (+ $unrecoveredDebt)
+                        $currentCollectedCash = bcadd((string)($sellerWallet->getRawOriginal('collected_cash') ?? '0.00'), '0', 2);
+                        $sellerWallet->collected_cash = bcadd($currentCollectedCash, $unrecoveredDebt, 2);
                     }
-                    $commDiff = bcsub((string)$sellerWallet->commission_given, $commissionShare, 2);
+                    $currentCommissionGiven = bcadd((string)($sellerWallet->getRawOriginal('commission_given') ?? '0.00'), '0', 2);
+                    $commDiff = bcsub($currentCommissionGiven, $commissionShare, 2);
                     $sellerWallet->commission_given = (bccomp($commDiff, '0.00', 2) < 0) ? '0.00' : $commDiff;
                     $sellerWallet->save();
                 }
 
                 $adminWallet = AdminWallet::where('admin_id', 1)->lockForUpdate()->first();
                 if ($adminWallet) {
-                    $adminCommDiff = bcsub((string)$adminWallet->commission_earned, $commissionShare, 2);
+                    // getRawOriginal() bypasses float cast on AdminWallet.commission_earned
+                    $currentCommissionEarned = bcadd((string)($adminWallet->getRawOriginal('commission_earned') ?? '0.00'), '0', 2);
+                    $adminCommDiff = bcsub($currentCommissionEarned, $commissionShare, 2);
                     $adminWallet->commission_earned = (bccomp($adminCommDiff, '0.00', 2) < 0) ? '0.00' : $adminCommDiff;
                     $adminWallet->save();
                 }
             }
 
             // 4. Proportional Partial Refund vs Full 100% Refund
-            $totalRefundedSoFar = (string)RefundRequest::where('order_id', $order->id)
-                ->where('status', 'refunded')
-                ->where('id', '!=', $lockedRequest->id)
-                ->sum('amount');
+            // Raw SQL CAST(SUM AS CHAR) avoids PHP float aggregation from Eloquent sum()
+            $totalRefundedSoFarResult = DB::select(
+                'SELECT CAST(COALESCE(SUM(amount), 0.00) AS CHAR) AS total FROM refund_requests WHERE order_id = ? AND status = ? AND id != ?',
+                [$order->id, 'refunded', $lockedRequest->id]
+            );
+            $totalRefundedSoFar = (string)(isset($totalRefundedSoFarResult[0]) ? $totalRefundedSoFarResult[0]->total : '0.00');
             $cumulativeRefunded = bcadd($totalRefundedSoFar, $refundAmount, 2);
 
             $orderSummary = OrderManager::getOrderTotalAndSubTotalAmountSummary($order);
