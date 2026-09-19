@@ -108,6 +108,13 @@ Route::group(['middleware' => ['maintenance_mode', 'guestCheck']], function () {
             Route::post('submit-deliveryman-review', 'addDeliveryManReview')->name('submit-deliveryman-review');
             Route::post('review-delete-image', 'deleteReviewImage')->name('delete-review-image');
         });
+
+        /* [AI] In-Shop Pickup Reservations (Commit 5) */
+        Route::controller(\App\Http\Controllers\Customer\PickupReservationController::class)->group(function () {
+            Route::post('pickup-reservations', 'create')->name('pickup-reservations.create');
+            Route::get('pickup-reservations', 'index')->name('pickup-reservations.index');
+            Route::get('pickup-reservations/{code}', 'show')->name('pickup-reservations.show');
+        });
     });
 
     Route::controller(WebController::class)->group(function () {

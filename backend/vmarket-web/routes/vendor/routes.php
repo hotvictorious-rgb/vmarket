@@ -388,6 +388,13 @@ Route::group(['middleware' => ['maintenance_mode', 'actch:admin_panel']], functi
 
             /* [AI] In-Shop Staff-Attributed Handover Protocol */
             Route::post('orders/verify-pickup-otp', [\App\Http\Controllers\Vendor\Order\InShopHandoverController::class, 'verifyPickupOtp'])->name('orders.verify-pickup-otp')->middleware('throttle:10,1');
+
+            /* [AI] In-Shop Pickup Reservations (Commit 5) */
+            Route::group(['prefix' => 'pickup-reservations', 'as' => 'pickup-reservations.'], function () {
+                Route::post('verify', [\App\Http\Controllers\Vendor\Order\PickupReservationController::class, 'verify'])->name('verify');
+                Route::post('accept', [\App\Http\Controllers\Vendor\Order\PickupReservationController::class, 'accept'])->name('accept');
+                Route::post('reject', [\App\Http\Controllers\Vendor\Order\PickupReservationController::class, 'reject'])->name('reject');
+            });
         });
     });
 

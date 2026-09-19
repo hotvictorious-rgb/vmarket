@@ -1,3 +1,30 @@
+### [2026-09-19 09:30 UTC] Commit 5: Pickup Reservation Engine [backend] [ai-governance]
+* **Component:** In-Shop Pickup Reservation Engine (`backend/vmarket-web/app/Models/PickupReservation.php`, `backend/vmarket-web/app/Services/PickupReservationService.php`, `backend/vmarket-web/app/Http/Controllers/Customer/PickupReservationController.php`, `backend/vmarket-web/app/Http/Controllers/Vendor/Order/PickupReservationController.php`, `backend/vmarket-web/routes/web/routes.php`, `backend/vmarket-web/routes/vendor/routes.php`, `backend/vmarket-web/routes/rest_api/v3/seller.php`)
+* **Action:** Built and certified the isolated In-Shop Pay-After-Inspection Pickup Reservation Engine:
+  - **Single Source of Truth & Zero-Inventory-Hold Invariant:**
+    * Implemented `PickupReservationService` to handle `Cart -> Pickup Reservation(s) -> Physical Inspection -> Accept/Reject`.
+    * A pickup reservation is strictly NOT an inventory hold. Product `current_stock` is completely untouched. Physical merchant inventory remains quantity authority.
+  - **Authenticated Customers Only:** Requires authenticated customer (`customer_id > 0`); rejects unauthenticated/guest users.
+  - **Cart Splitting by Seller + Shop:**
+    * Groups cart items strictly by `seller_id + shop_id`. Each group produces exactly one `PickupReservation`.
+    * Generates a unique, collision-safe human-friendly `reservation_code` (e.g. `RES-XXXXXXXX`, separate from eventual Order pickup OTP).
+  - **Idempotency & Canonical Snapshot:**
+    * Parent idempotency key derives deterministic child keys: `PRC_` + 58-char SHA-256 hash of `parentKey:sellerId:shopId`.
+    * Canonical fingerprint covers customer, seller, shop, currency, total, and sorted item details. Replaying same key + same fingerprint returns graceful 200 OK. Conflicting parameters trigger HTTP 409 `IdempotencyConflictException`.
+    * Immutable `reservation_items` snapshot stores pricing, product metadata, and shop location; exact money calculated with BCMath (shipping = ₦0.00).
+  - **Lazy Expiry:** Expiration timestamp `expires_at` set to 24 hours. State transitions to `expired` atomically upon access if past-due.
+  - **Vendor Physical Inspection Lifecycle:**
+    * Vendor verification endpoint scopes strictly to authenticated `seller_id` and assigned `shop_id` (zero IDOR).
+    * `acceptInspection()` transitions state to `inspected_accepted` with `inspected_at` timestamp.
+    * `rejectInspection()` transitions state to `inspected_rejected` with reason tracking.
+    * Invalid state transitions strictly rejected (cannot accept rejected, cannot reject accepted, cannot act on expired).
+  - **Cart & Financial Scope Gate:**
+    * Customer cart remains 100% intact across creation, inspection, rejection, and expiry.
+    * Zero Orders created. Zero `PaymentRequests` created. Zero Paystack API calls. Zero wallet mutations. Zero stock deductions.
+* **Verification & Regression:**
+  - 48/48 dedicated automated tests passed covering single/multi-vendor split, exact BCMath totals, idempotency replay/conflict, stock isolation, cart preservation, customer/vendor/shop IDOR, lazy expiry, and valid/invalid state transitions.
+  - Full transaction certification suite `scratch/v1_transaction_certification.php` passed 82/82 (Δ = ₦0.00).
+
 ### [2026-09-19 09:10 UTC] Commit 4.1: Restore All Reconciliation Anomaly Types and Schema Hardening [backend] [ai-governance]
 * **Component:** Payment Reconciliation Schema & Settlement Service (`backend/vmarket-web/database/migrations/2026_09_19_000006_restore_payment_reconciliation_anomaly_types.php`, `backend/vmarket-web/app/Services/DeliveryOrderSettlementService.php`)
 * **Action:** Corrected schema migration lineage and confirmed runtime column and query bindings:
