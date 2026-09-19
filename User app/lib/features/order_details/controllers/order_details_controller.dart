@@ -461,83 +461,12 @@ class OrderDetailsController with ChangeNotifier {
 
 
 
-  Future<ApiResponseModel> duePaymentByCod(int orderId, String paymentMethod, String? bringChangeAmount) async {
-    _isLoading = true;
-    notifyListeners();
-    ApiResponseModel apiResponse = await orderDetailsServiceInterface.duePaymentByCod(orderId, paymentMethod, bringChangeAmount);
-    if (apiResponse.response != null && apiResponse.response!.statusCode == 200) {
-      getOrderDetails(orderId.toString());
-      getOrderFromOrderId(orderId.toString());
-      _isLoading = false;
-    } else {
-      _isLoading = false;
-      ApiChecker.checkApi(apiResponse);
-    }
-    notifyListeners();
-    return apiResponse;
-  }
-
-
-  Future<ApiResponseModel> duePaymentByDigitalPayment(int orderId, String paymentMethod, String? guestId, String? orderDuePaymentNote) async {
-    _isLoading = true;
-    notifyListeners();
-    ApiResponseModel apiResponse = await orderDetailsServiceInterface.duePaymentByDigitalPayment(
-        orderId,  paymentMethod, guestId, orderDuePaymentNote,
-        Provider.of<SplashController>(Get.context!, listen: false).myCurrency?.code
-    );
-    if (apiResponse.response != null && apiResponse.response!.statusCode == 200) {
-
-      RouterHelper.getDigitalPaymentScreenRoute(
-        url: apiResponse.response?.data['redirect_link'] ?? '',
-        fromWallet: false,
-        orderId: orderId.toString(),
-        action: RouteAction.pushReplacement,
-      );
-
-      getOrderDetails(orderId.toString());
-      getOrderFromOrderId(orderId.toString());
-      _isLoading = false;
-    } else {
-      _isLoading = false;
-      ApiChecker.checkApi(apiResponse);
-    }
-    notifyListeners();
-    return apiResponse;
-  }
 
 
 
-  Future<ApiResponseModel> duePaymentByWallet(int orderId, String paymentMethod) async {
-    _isLoading = true;
-    notifyListeners();
-    ApiResponseModel apiResponse = await orderDetailsServiceInterface.duePaymentByWallet(orderId, paymentMethod);
-    if (apiResponse.response != null && apiResponse.response!.statusCode == 200) {
-      getOrderDetails(orderId.toString());
-      getOrderFromOrderId(orderId.toString());
-      _isLoading = false;
-    } else {
-      _isLoading = false;
-      ApiChecker.checkApi(apiResponse);
-    }
-    notifyListeners();
-    return apiResponse;
-  }
 
-  Future<ApiResponseModel> duePaymentByOfflinePayment(int orderId, String paymentMethod, String? orderDueNote, String? methodId) async {
-    _isLoading = true;
-    notifyListeners();
-    ApiResponseModel apiResponse = await orderDetailsServiceInterface.duePaymentByOfflinePayment(orderId, paymentMethod, orderDueNote, methodId);
-    if (apiResponse.response != null && apiResponse.response!.statusCode == 200) {
-      getOrderDetails(orderId.toString());
-      getOrderFromOrderId(orderId.toString());
-      _isLoading = false;
-    } else {
-      _isLoading = false;
-      ApiChecker.checkApi(apiResponse);
-    }
-    notifyListeners();
-    return apiResponse;
-  }
+
+
 
   Future<ApiResponseModel> confirmDriverTransitCode(String orderId, String transitCode, BuildContext context) async {
     _isLoading = true;

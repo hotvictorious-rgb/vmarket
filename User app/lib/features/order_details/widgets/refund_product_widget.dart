@@ -359,12 +359,20 @@ class _RefundProductWidgetState extends State<RefundProductWidget> {
         && (widget.orderDetailsModel.id == refundController.getSelectedOrderDetailsId);
   }
 
-  bool _canRefundRequest(ConfigModel? configModel) => widget.orderDetailsModel.order?.status == 'delivered'
-      && widget.orderDetailsModel.refundReq == 0
-      && widget.orderType != "POS"
-      && widget.orderDetailsModel.refundStartedAt != null
-      && DateTime.parse(widget.orderDetailsModel.refundStartedAt!).difference(DateTime.now()).inDays.abs() <= (configModel?.refundDayLimit ?? 0)
-      && (configModel?.refundDayLimit != 0);
+  bool _canRefundRequest(ConfigModel? configModel) {
+    if (widget.orderDetailsModel.order?.status != 'delivered') return false;
+    if (widget.orderDetailsModel.refundReq != 0) return false;
+    if (widget.orderType == "POS") return false;
+    final startedAtStr = widget.orderDetailsModel.refundStartedAt;
+    if (startedAtStr == null) return false;
+    try {
+      final startedAt = DateTime.parse(startedAtStr);
+      // [AI] Victorious MARKET V1 Directive 57321: Exact 24-hour return window from actual customer receipt
+      return DateTime.now().difference(startedAt).inHours.abs() < 24;
+    } catch (_) {
+      return false;
+    }
+  }
 
   void _downloadProduct(){
     String url = widget.orderDetailsModel.productDetails!.digitalProductType == 'ready_after_sell'?

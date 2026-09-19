@@ -1,3 +1,8 @@
+import 'package:flutter_sixvalley_ecommerce/features/cashback/controllers/cashback_controller.dart';
+import 'package:flutter_sixvalley_ecommerce/features/cashback/domain/repositories/cashback_repository.dart';
+import 'package:flutter_sixvalley_ecommerce/features/cashback/domain/repositories/cashback_repository_interface.dart';
+import 'package:flutter_sixvalley_ecommerce/features/cashback/domain/services/cashback_service.dart';
+import 'package:flutter_sixvalley_ecommerce/features/cashback/domain/services/cashback_service_interface.dart';
 import 'package:connectivity_plus/connectivity_plus.dart';
 import 'package:dio/dio.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
@@ -270,6 +275,10 @@ Future<void> init() async {
   sl.registerFactory(() => FacebookLoginController());
   sl.registerFactory(() => AddressController(addressServiceInterface: sl()));
   sl.registerFactory(() => WalletController(walletServiceInterface: sl()));
+  // [AI] Cashback Feature Registration
+  sl.registerLazySingleton<CashbackRepositoryInterface>(() => CashbackRepository(dioClient: sl()));
+  sl.registerLazySingleton<CashbackServiceInterface>(() => CashbackService(cashbackRepositoryInterface: sl()));
+  sl.registerFactory(() => CashbackController(cashbackServiceInterface: sl()));
 
   sl.registerFactory(() => CheckoutController(checkoutServiceInterface: sl()));
   sl.registerFactory(() => LocationController(locationServiceInterface: sl()));

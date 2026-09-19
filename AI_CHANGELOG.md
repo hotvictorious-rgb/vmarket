@@ -1,3 +1,17 @@
+### [2026-09-19 21:15 UTC] Directive 57322: Clean Deletion of Obsolete Methods/Routes & Full Customer Cashback UI Implementation [user-app] [delivery-man] [ai-governance]
+* **Component:** User App (`features/cashback`, `features/checkout`, `features/order_details`, `features/wallet`), Delivery Man App (`features/order_details`), Dependency Injection (`di_container.dart`, `main.dart`, `route_healper.dart`)
+* **Action:** Executed all client-side mandates for Directive 57322 under the Clean Removal Standard (no stubs):
+  - **A2-2 — Clean Deletion of Obsolete Due-Payment & COD Methods:** Completely deleted `duePaymentByCod()`, `duePaymentByDigitalPayment()`, `duePaymentByWallet()`, and `duePaymentByOfflinePayment()` from `OrderDetailsController`, `OrderDetailsServiceInterface`, `OrderDetailsService`, `OrderDetailsRepositoryInterface`, and `OrderDetailsRepository`. Removed all corresponding endpoint constants (`duePaymentBy...Uri`) from `AppConstants`. Completely deleted `placeOrder()` (legacy COD), `getOfflinePaymentList()`, and related offline selection methods from `CheckoutController`.
+  - **A2-3 — Clean Deletion of Stored-Value Wallet Deposits:** Cleanly deleted `AddFundDialogueWidget` import, add-fund action button, and deposit tooltip from `WalletCardWidget`. Cleanly removed `WalletBonusWidget` from `WalletScreen`. The customer wallet is now strictly an informational display without any stored-value deposit prompts.
+  - **A2-4 — Customer Cashback Feature Implementation:** Built complete end-to-end customer cashback feature:
+    - Domain Models: `CashbackSummaryModel` and `CashbackLedgerItem` (`features/cashback/domain/models/cashback_model.dart`) supporting exact DECIMAL strings for `pending_cashback_amount`, `available_cashback_amount`, `redeemed_cashback_amount`, and `cancelled_cashback_amount`.
+    - Repositories & Services: `CashbackRepository` and `CashbackService` connecting to `/api/v1/customer/cashback/summary` and `/api/v1/customer/cashback/list`.
+    - Controller: `CashbackController` (`features/cashback/controllers/cashback_controller.dart`) registered in `di_container.dart` via GetIt and `main.dart` via `ChangeNotifierProvider`.
+    - UI: `CashbackCardWidget` displaying Victorious MARKET Purple & Gold themed card with Available Balance (₦), Pending Balance (₦, held during 24h receipt window), and policy notice. `CashbackScreen` providing refreshable ledger history.
+    - Navigation: Added `RouterHelper.cashbackScreen` (`/cashback`) and linked directly from Profile/Account menu in `MoreScreen` and inside `WalletScreen`.
+  - **A2-5 — Delivery App Clean Custody Verification:** Confirmed Interstate Driver Handover button/sheet and door Paystack link button are completely deleted; `VerifyDeliverySheetWidget` transitions to `delivered` exclusively upon valid 6-digit customer receipt OTP verification.
+  - **A2-6 — Refund 24-Hour Return Window & Status Display:** Added `executionStatus` to `RefundRequest`. Set cautionary amber (`#D97706`) for Approved refund status. Replaced legacy day limit with exact 24-hour return window calculation from `refundStartedAt` in `OrderDetailsWidget` and `RefundProductWidget`.
+
 ### [2026-09-19 19:50 UTC] Directive 57321: COD Backend Blockade, Delivery Custody Closure, Fail-Closed Refund Proof & Customer Cashback API [backend] [ai-governance]
 * **Component:** Order Placement, Custody State Machine, Financial Precision, Refund Settlement, Cashback Ledger (`backend/vmarket-web/`)
 * **Action:** Executed all backend mandates for Directive 57321:

@@ -1,3 +1,4 @@
+import 'package:flutter_sixvalley_ecommerce/features/cashback/screens/cashback_screen.dart';
 import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:flutter_sixvalley_ecommerce/data/model/image_full_url.dart';
@@ -146,6 +147,7 @@ class RouterHelper {
   static const String trackingResultScreen = '/tracking-result';
   static const String updateScreen = '/update';
   static const String walletScreen = '/wallet';
+  static const String cashbackScreen = '/cashback';
   static const String addFundToWalletScreen = '/add-fund-wallet';
   static const String wishListScreen = '/wish-list';
   static const String selectLocationScreen = '/select-location-screen';
@@ -749,6 +751,9 @@ class RouterHelper {
     return _navigateRoute(updateScreen, route: action);
   }
 
+    static String getCashbackRoute({RouteAction? action}) {
+    return _navigateRoute(cashbackScreen, routeAction: action);
+  }
   static String getWalletRoute({RouteAction? action, bool? isBackButtonExist}) {
     final params = <String, String>{};
     if (isBackButtonExist != null) params['isBackButtonExist'] = isBackButtonExist.toString();
@@ -1485,6 +1490,12 @@ class RouterHelper {
       ),
 
       GoRoute(
+              GoRoute(
+        path: cashbackScreen,
+        builder: (BuildContext context, GoRouterState state) {
+          return const CashbackScreen();
+        },
+      ),
         path: walletScreen,
         builder: (context, state) {
           final isBackButtonExist = state.uri.queryParameters['isBackButtonExist']?.toLowerCase() == 'true';

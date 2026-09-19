@@ -84,11 +84,7 @@ class CheckoutScreenState extends State<CheckoutScreen> {
       isUpdate: false,
     );
     Provider.of<ShippingController>(context, listen: false).getChosenShippingMethod(context);
-    if(splashController.configModel != null &&
-        splashController.configModel!.offlinePayment != null)
-    {
-      Provider.of<CheckoutController>(context, listen: false).getOfflinePaymentList();
-    }
+    // [AI] Victorious MARKET V1 Directive 57321: Offline payment decommissioned
 
     if(Provider.of<AuthController>(context, listen: false).isLoggedIn()){
       Provider.of<CouponController>(context, listen: false).getAvailableCouponList();
@@ -190,23 +186,7 @@ class CheckoutScreenState extends State<CheckoutScreen> {
                                             couponCode: couponCode,
                                             couponDiscount: couponCodeAmount,
                                             paymentMethod: orderProvider.selectedDigitalPaymentMethodName);
-
-                                      } else if (orderProvider.isCODChecked && !widget.onlyDigital){
-                                        orderProvider.placeOrder(callback: _callback,
-                                            addressID : addressId,
-                                            couponCode : couponCode,
-                                            couponAmount : couponCodeAmount,
-                                            billingAddressId : billingAddressId,
-                                            orderNote : orderNote);
-                                      }
-
-                                      else if(orderProvider.isOfflineChecked){
-                                        setState(() => _isSubmitting = false);
-                                        // Navigator.of(context).push(MaterialPageRoute(builder: (_)=> OfflinePaymentScreen(payableAmount: _order + widget.shippingFee - widget.discount - (_referralDiscount ?? 0) - _couponDiscount! + _tax, callback: _callback)));
-                                        RouterHelper.getOfflinePaymentScreen(payableAmount: (_order + widget.shippingFee - widget.discount - (_referralDiscount ?? 0) - _couponDiscount! + _tax), callback: _callback);
-                                      }
-
-                                      else {
+                                      } else {
                                         setState(() => _isSubmitting = false);
                                         showModalBottomSheet(
                                           context: context, isScrollControlled: true, backgroundColor: Colors.transparent,

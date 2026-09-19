@@ -11,7 +11,8 @@ import 'package:flutter_sixvalley_ecommerce/features/splash/controllers/splash_c
 import 'package:flutter_sixvalley_ecommerce/features/wallet/controllers/wallet_controller.dart';
 import 'package:flutter_sixvalley_ecommerce/features/wallet/domain/models/wallet_transaction_model.dart';
 import 'package:flutter_sixvalley_ecommerce/features/wallet/widgets/transaction_widget.dart';
-import 'package:flutter_sixvalley_ecommerce/features/wallet/widgets/wallet_bonus_widget.dart';
+import 'package:flutter_sixvalley_ecommerce/features/cashback/controllers/cashback_controller.dart';
+import 'package:flutter_sixvalley_ecommerce/features/cashback/widgets/cashback_card_widget.dart';
 import 'package:flutter_sixvalley_ecommerce/features/wallet/widgets/wallet_card_widget.dart';
 import 'package:flutter_sixvalley_ecommerce/features/wallet/widgets/wallet_filter_bottom_sheet_widget.dart';
 import 'package:flutter_sixvalley_ecommerce/helper/route_healper.dart';

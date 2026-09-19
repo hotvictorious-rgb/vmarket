@@ -2,7 +2,6 @@ import 'package:flutter_sixvalley_ecommerce/data/model/api_response.dart';
 import 'package:flutter_sixvalley_ecommerce/features/auth/controllers/auth_controller.dart';
 import 'package:flutter_sixvalley_ecommerce/features/cart/domain/models/cart_model.dart';
 import 'package:flutter_sixvalley_ecommerce/features/checkout/domain/services/checkout_service_interface.dart';
-import 'package:flutter_sixvalley_ecommerce/features/offline_payment/domain/models/offline_payment_model.dart';
 import 'package:flutter_sixvalley_ecommerce/features/splash/controllers/splash_controller.dart';
 import 'package:flutter_sixvalley_ecommerce/helper/api_checker.dart';
 import 'package:flutter_sixvalley_ecommerce/helper/route_healper.dart';
@@ -62,51 +61,6 @@ class CheckoutController with ChangeNotifier {
 
 
 
-  Future<void> placeOrder({required Function callback, String? addressID,
-        String? couponCode, String? couponAmount,
-        String? billingAddressId, String? orderNote, String? transactionId,
-        String? paymentNote, int? id, String? name,bool isfOffline = false, bool wallet = false}) async {
-    for(TextEditingController textEditingController in inputFieldControllerList) {
-      inputValueList.add(textEditingController.text.trim());
-
-    }
-
-    _isLoading = true;
-    _newUser = false;
-    notifyListeners();
-    ApiResponseModel apiResponse;
-    isfOffline?
-    apiResponse = await checkoutServiceInterface.offlinePaymentPlaceOrder(addressID, couponCode, couponAmount, billingAddressId, orderNote, keyList, inputValueList, offlineMethodSelectedId, offlineMethodSelectedName, paymentNote, _isCheckCreateAccount, passwordController.text.trim()):
-    apiResponse = await checkoutServiceInterface.cashOnDeliveryPlaceOrder(
-      addressID: addressID,
-      couponCode: couponCode,
-      couponDiscountAmount: couponAmount,
-      billingAddressId: billingAddressId,
-      orderNote: orderNote,
-      isCheckCreateAccount: _isCheckCreateAccount,
-      password: passwordController.text.trim(),
-      cashChangeAmount: _cashChangesAmount,
-      currentCurrencyCode: Provider.of<SplashController>(Get.context!, listen: false).myCurrency?.code,
-    );
-
-    if (apiResponse.response != null && apiResponse.response!.statusCode == 200) {
-      _isCheckCreateAccount = false;
-      _isLoading = false;
-      _addressIndex = null;
-      _billingAddressIndex = null;
-      sameAsBilling = false;
-      if(!Provider.of<AuthController>(Get.context!, listen: false).isLoggedIn()){
-        _newUser = apiResponse.response!.data['new_user'];
-      }
-
-      String message = apiResponse.response!.data.toString();
-      callback(true, message, extractId(apiResponse.response!.data['order_ids'].toString()), _newUser);
-    } else {
-      _isLoading = false;
-     ApiChecker.checkApi(apiResponse);
-    }
-    notifyListeners();
-  }
 
 
   String? extractId(String idsString) {
@@ -137,29 +91,22 @@ class CheckoutController with ChangeNotifier {
 
   void resetPaymentMethod(){
     _paymentMethodIndex = -1;
-    isCODChecked = false;
-    isWalletChecked = false;
-    isOfflineChecked = false;
+    selectedDigitalPaymentMethodName = '';
   }
 
   void initDefaultPaymentMethod(SplashController splashController, {bool onlyDigital = false, bool isUpdate = true}) {
     final config = splashController.configModel;
     if (config == null) return;
 
-    // 1. If Cash on Delivery is available and order contains physical items, default to COD
-    if ((config.cashOnDelivery ?? false) && !onlyDigital) {
-      isCODChecked = true;
-      isWalletChecked = false;
-      isOfflineChecked = false;
-      _paymentMethodIndex = -1;
-    }
-    // 2. Otherwise, if digital payment methods exist, select the first digital gateway
-    else if ((config.digitalPayment ?? false) && (config.paymentMethods != null && config.paymentMethods!.isNotEmpty)) {
+    // [AI] Victorious MARKET V1 Directive 57321: COD and offline payments are decommissioned.
+    // Digital payment (Paystack) is authoritative for delivery checkout.
+            
+    if ((config.digitalPayment ?? false) && (config.paymentMethods != null && config.paymentMethods!.isNotEmpty)) {
       _paymentMethodIndex = 0;
       selectedDigitalPaymentMethodName = config.paymentMethods![0].keyName ?? '';
-      isCODChecked = false;
-      isWalletChecked = false;
-      isOfflineChecked = false;
+    } else {
+      _paymentMethodIndex = -1;
+      selectedDigitalPaymentMethodName = '';
     }
 
     if (isUpdate) {
@@ -188,40 +135,12 @@ class CheckoutController with ChangeNotifier {
   }
 
 
-  bool isOfflineChecked = false;
-  bool isCODChecked = false;
-  bool isWalletChecked = false;
-
-  void setOfflineChecked(String type, {bool notify = true}) {
-    if(type == 'offline'){
-      isOfflineChecked = !isOfflineChecked;
-      isCODChecked = false;
-      isWalletChecked = false;
-      _paymentMethodIndex = -1;
-      setOfflinePaymentMethodSelectedIndex(0);
-    }else if(type == 'cod'){
-      isCODChecked = !isCODChecked;
-      isOfflineChecked = false;
-      isWalletChecked = false;
-      _paymentMethodIndex = -1;
-
-
-    if(notify) {
-      notifyListeners();
-    }
-  }
-
-
-
-  String selectedDigitalPaymentMethodName = '';
+String selectedDigitalPaymentMethodName = '';
 
   void setDigitalPaymentMethodName(int index, String name) {
     _paymentMethodIndex = index;
     selectedDigitalPaymentMethodName = name;
-    isCODChecked = false;
-    isWalletChecked = false;
-    isOfflineChecked = false;
-    notifyListeners();
+                notifyListeners();
   }
 
 
@@ -235,19 +154,6 @@ class CheckoutController with ChangeNotifier {
 
 
 
-  OfflinePaymentModel? offlinePaymentModel;
-  Future<ApiResponseModel> getOfflinePaymentList() async {
-    ApiResponseModel apiResponse = await checkoutServiceInterface.offlinePaymentList();
-    if (apiResponse.response != null && apiResponse.response!.statusCode == 200) {
-      offlineMethodSelectedIndex = 0;
-      offlinePaymentModel = OfflinePaymentModel.fromJson(apiResponse.response?.data);
-    }
-    else {
-      ApiChecker.checkApi( apiResponse);
-    }
-    notifyListeners();
-    return apiResponse;
-  }
 
   List<TextEditingController> inputFieldControllerList = [];
   List <String?> keyList = [];

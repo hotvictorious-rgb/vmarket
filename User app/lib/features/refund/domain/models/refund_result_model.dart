@@ -70,6 +70,7 @@ class RefundRequest {
   String? rejectedNote;
   String? paymentInfo;
   String? changeBy;
+  String? executionStatus;
   List<RefundStatus>? refundStatus;
 
   RefundRequest(
@@ -111,6 +112,7 @@ class RefundRequest {
     rejectedNote = json['rejected_note'];
     paymentInfo = json['payment_info'];
     changeBy = json['change_by'];
+    executionStatus = json['execution_status'];
     if (json['images_full_url'] != null) {
       imagesFullUrl = <ImageFullUrl>[];
       json['images_full_url'].forEach((v) {
@@ -143,6 +145,7 @@ class RefundRequest {
     data['rejected_note'] = rejectedNote;
     data['payment_info'] = paymentInfo;
     data['change_by'] = changeBy;
+    data['execution_status'] = executionStatus;
     return data;
   }
 }

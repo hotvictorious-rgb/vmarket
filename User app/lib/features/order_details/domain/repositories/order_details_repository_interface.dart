@@ -19,13 +19,9 @@ abstract class OrderDetailsRepositoryInterface<T> extends RepositoryInterface{
 
   Future<HttpClientResponse> productDownload(String url);
 
-  Future<dynamic> duePaymentByCod(int orderId, String paymentMethod, String? bringChangeAmount);
+Future<dynamic> duePaymentByDigitalPayment(int orderId, String paymentMethod, String? guestId, String? orderDuePaymentNote, String? currencyCode);
 
-  Future<dynamic> duePaymentByDigitalPayment(int orderId, String paymentMethod, String? guestId, String? orderDuePaymentNote, String? currencyCode);
-
-  Future<dynamic> duePaymentByWallet(int orderId, String paymentMethod);
-
-  Future<dynamic> duePaymentByOfflinePayment(int orderId, String paymentMethod, String? orderDueNote, String? methodId);
+Future<dynamic> duePaymentByOfflinePayment(int orderId, String paymentMethod, String? orderDueNote, String? methodId);
 
   Future<dynamic> confirmDriverTransitCode(String orderId, String transitCode);
 

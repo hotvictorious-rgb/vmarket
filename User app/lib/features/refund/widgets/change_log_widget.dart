@@ -87,7 +87,7 @@ class ItemWidget extends StatelessWidget {
           style: style ??  titilliumRegular.copyWith(color: Theme.of(context).hintColor,
               fontSize: Dimensions.fontSizeDefault)),
       Expanded(
-        child: Text(rightValue?.capitalize() ?? '', style: robotoBold.copyWith(color: rightValue! == 'Pending'? Theme.of(context).primaryColor : rightValue! == 'Refunded'? Theme.of(context).colorScheme.onTertiaryContainer : rightValue! == 'Rejected'? Theme.of(context).colorScheme.error : rightValue! == 'Approved'? Theme.of(context).colorScheme.onTertiaryContainer : isPayment? Theme.of(context).colorScheme.onTertiaryContainer : Theme.of(context).hintColor,
+        child: Text(rightValue?.capitalize() ?? '', style: robotoBold.copyWith(color: rightValue! == 'Pending'? Theme.of(context).primaryColor : rightValue! == 'Refunded'? Theme.of(context).colorScheme.onTertiaryContainer : rightValue! == 'Rejected'? Theme.of(context).colorScheme.error : rightValue! == 'Approved'? const Color(0xFFD97706) : isPayment? Theme.of(context).colorScheme.onTertiaryContainer : Theme.of(context).hintColor,
             fontSize: Dimensions.fontSizeDefault), maxLines: 2, overflow: TextOverflow.ellipsis),
       )]);
   }

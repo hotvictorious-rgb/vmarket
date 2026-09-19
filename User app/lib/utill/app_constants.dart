@@ -175,10 +175,10 @@ import 'package:flutter_sixvalley_ecommerce/common/enums/local_caches_type_enum.
   static const String existingAccountCheck = '/api/v1/auth/existing-account-check';
   static const String referralAmountUri = '/api/v1/cart/get-referral-discount-redeem';
 
-  static const String duePaymentByCodUri = '/api/v1/edit-order/due-payment-by-cod';
-  static const String duePaymentByDigitalPayment = '/api/v1/edit-order/due-payment-by-digital-payment';
-  static const String duePaymentByWallet = '/api/v1/edit-order/due-payment-by-wallet';
-  static const String duePaymentByOfflinePayment = '/api/v1/edit-order/due-payment-by-offline-payment';
+  // [AI] Victorious MARKET V1 Directive 57322: Customer Cashback 5% Reward Ledger API
+  static const String customerCashbackSummaryUri = '/api/v1/customer/cashback/summary';
+  static const String customerCashbackListUri = '/api/v1/customer/cashback/list';
+
 
 
 

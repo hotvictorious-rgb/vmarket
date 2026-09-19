@@ -1,3 +1,4 @@
+import 'package:flutter_sixvalley_ecommerce/features/cashback/controllers/cashback_controller.dart';
 import 'dart:async';
 import 'dart:io';
 import 'package:app_links/app_links.dart';
@@ -140,6 +141,7 @@ Future<void> main() async {
       ChangeNotifierProvider(create: (context) => di.sl<FacebookLoginController>()),
       ChangeNotifierProvider(create: (context) => di.sl<AddressController>()),
       ChangeNotifierProvider(create: (context) => di.sl<WalletController>()),
+        ChangeNotifierProvider(create: (context) => di.sl<CashbackController>()),
 
       ChangeNotifierProvider(create: (context) => di.sl<CheckoutController>()),
 
