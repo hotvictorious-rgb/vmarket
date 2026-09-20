@@ -703,15 +703,6 @@ trait OrderEditManager
         return $data;
     }
 
-    public function payEditOrderDueByCustomerWallet(object|array $order, object|array $customer): array
-    {
-        // [AI] Customer Wallet Decommissioned: Reject active wallet due payment
-        return [
-            'status' => false,
-            'message' => 'Wallet payment is permanently decommissioned in Victorious MARKET.',
-        ];
-    }
-
     public function payEditOrderDueByDigitalPayment(object|array $request, object|array $order, object|array|string $customer): array
     {
         $guestId = session('guest_id') ?? ($request->guest_id ?? 0);

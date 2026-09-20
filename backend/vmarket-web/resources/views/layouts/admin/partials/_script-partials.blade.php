@@ -43,9 +43,6 @@
 <script src="{{ dynamicAsset(path: 'public/assets/backend/admin/js/common/custom-modal-plugin.js') }}"></script>
 <script src="{{ dynamicAsset(path: 'public/assets/backend/admin/js/auto-load-func.js') }}"></script>
 <script src="{{ dynamicAsset(path: 'public/assets/backend/admin/js/advance-search/keyword-highlight.js') }}"></script>
-<script src="{{ dynamicAsset(path: 'public/assets/backend/admin/js/AI/products/ai-sidebar.js') }}"></script>
-<script src="{{ dynamicAsset(path: 'public/assets/backend/admin/js/AI/image-compressor/image-compressor.js') }}"></script>
-<script src="{{ dynamicAsset(path: 'public/assets/backend/admin/js/AI/image-compressor/compressor.min.js') }}"></script>
 
 <script src="{{ dynamicAsset(path: 'public/assets/backend/file-validation/polyfills.js') }}"></script>
 <script src="{{ dynamicAsset(path: 'public/assets/backend/file-validation/just-validate.min.js') }}"></script>

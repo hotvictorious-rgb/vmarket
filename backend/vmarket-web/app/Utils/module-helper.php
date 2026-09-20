@@ -1,6 +1,5 @@
 <?php
 
-use App\Events\AddFundToWalletEvent;
 use App\Models\AdminWallet;
 use App\Models\Order;
 use App\Models\OrderEditHistory;
@@ -164,44 +163,7 @@ if (!function_exists('customer_order_edit_pay_due_amount_failed')) {
     }
 }
 
-// Add Fund To Wallet - Success
-if (!function_exists('add_fund_to_wallet_success')) {
-    function add_fund_to_wallet_success($payment_data): void
-    {
-        if (isset($payment_data) && $payment_data['is_paid'] == 1) {
-            $additional_data = json_decode($payment_data['additional_data'], true);
-            session()->put('payment_mode', ($additional_data['payment_mode'] ?? 'web'));
 
-            $paymentAmount = Convert::usdPaymentModule(floatval($payment_data['payment_amount']), $payment_data['currency_code']);
-            $paymentAmount = usdToDefaultCurrency(amount: $paymentAmount);
-            $wallet_transaction = CustomerManager::create_wallet_transaction($payment_data['payer_id'], $paymentAmount, 'add_fund', 'add_funds_to_wallet', $payment_data);
-
-            if ($wallet_transaction) {
-                try {
-                    $data = [
-                        'walletTransaction' => $wallet_transaction,
-                        'userName' => $wallet_transaction->user['f_name'],
-                        'userType' => 'customer',
-                        'templateName' => 'add-fund-to-wallet',
-                        'subject' => translate('add_fund_to_wallet'),
-                        'title' => translate('add_fund_to_wallet'),
-                    ];
-                    event(new AddFundToWalletEvent(email: $wallet_transaction->user['email'], data: $data));
-                } catch (Exception $ex) {
-                    info($ex);
-                }
-            }
-        }
-    }
-}
-
-// Add Fund To Wallet - Fail
-if (!function_exists('add_fund_to_wallet_fail')) {
-    function add_fund_to_wallet_fail($payment_data)
-    {
-
-    }
-}
 
 if (!function_exists('config_settings')) {
     function config_settings($key, $settings_type)

@@ -127,7 +127,7 @@ class RefundController extends BaseController
 
         // [AI] Reject Customer Wallet Refund Destination
         if ($request['payment_method'] === 'customer_wallet') {
-            throw new \App\Exceptions\CustomerWalletDecommissionedException('order_refund', 'Customer wallet is decommissioned and cannot be used as a refund destination. Refunds must be routed through original payment rails.');
+            return response()->json(['error' => translate('Customer wallet is not a supported refund method.')], 400);
         }
 
         // [AI] Distributed Asynchronous Refund Execution:

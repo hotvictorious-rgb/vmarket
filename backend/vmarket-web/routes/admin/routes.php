@@ -63,7 +63,6 @@ use App\Http\Controllers\Admin\Promotion\FeaturedDealController;
 use App\Http\Controllers\Admin\Promotion\MostDemandedController;
 use App\Http\Controllers\Admin\Settings\OrderSettingsController;
 use App\Http\Controllers\Admin\Settings\PrioritySetupController;
-use App\Http\Controllers\Admin\Customer\CustomerWalletController;
 use App\Http\Controllers\Admin\Deliveryman\DeliveryManController;
 use App\Http\Controllers\Admin\Settings\SoftwareUpdateController;
 use App\Http\Controllers\Admin\Settings\VendorSettingsController;
@@ -356,22 +355,6 @@ Route::group(['prefix' => 'admin', 'as' => 'admin.', 'middleware' => ['admin', '
             Route::post('unban', 'unbanCustomer')->name('unban');
             Route::post('verify-receipt/{id}', 'verifyReceipt')->name('verify-receipt');
             Route::post('reject-receipt/{id}', 'rejectReceipt')->name('reject-receipt');
-            Route::post('credit-wallet/{id}', 'approveWalletReceipt')->name('credit-wallet');
-            Route::post('add-memory', 'addCustomerMemoryPoint')->name('add-memory');
-        });
-
-        Route::group(['prefix' => 'wallet', 'as' => 'wallet.'], function () {
-            Route::controller(CustomerWalletController::class)->group(function () {
-                Route::get('report', 'index')->name('report');
-                Route::post('add-fund', 'addFund')->name('add-fund');
-                Route::get('export', 'exportList')->name('export');
-                Route::get('bonus-setup', 'getBonusSetupView')->name('bonus-setup');
-                Route::post('bonus-setup', 'addBonusSetup');
-                Route::post('bonus-setup-update', 'update')->name('bonus-setup-update');
-                Route::post('bonus-setup-status', 'updateStatus')->name('bonus-setup-status');
-                Route::get('bonus-setup/edit/{id}', 'getUpdateView')->name('bonus-setup-edit');
-                Route::delete('bonus-setup-delete', 'deleteBonus')->name('bonus-setup-delete');
-            });
         });
 
 

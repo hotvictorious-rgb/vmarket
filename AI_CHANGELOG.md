@@ -1,3 +1,40 @@
+### [2026-09-20 04:30 UTC] Directive 57324: Complete Fresh-System Architectural Purge of WhatsApp, AI & Customer Stored-Value Wallet [backend] [ai-governance]
+* **Component:** Backend (`backend/vmarket-web/`: `Modules/AI/`, `app/Services/`, `app/Models/`, `app/Http/Controllers/`, `app/Repositories/`, `resources/views/`, `routes/`)
+* **Action:** Concluded the complete, repository-wide fresh-system architectural purge per Directive 57324, physically deleting all residual modules, views, controllers, commands, and routes with zero stubbing, zero 403s, and zero dead code:
+  - **1. AI Subsystem Complete Physical Deletion:**
+    - Physically deleted the entire `Modules/AI/` directory (~80 files) including all providers (Claude, OpenAI), prompt templates, controllers, requests, migrations, and seeders.
+    - Physically deleted AI Blade components (`resources/views/admin-views/product/partials/ai-sidebar.blade.php`, `resources/views/vendor-views/product/partials/ai-sidebar.blade.php`, `Modules/Blog/resources/views/admin-views/blog/partials/ai-sidebar.blade.php`).
+    - Physically deleted all AI JS assets (`public/assets/backend/admin/js/AI/`, `public/assets/backend/vendor/js/AI/`).
+    - Excised `AIModuleManager` and `is_ai_features_enabled` from `ConfigController.php`.
+    - Excised `AIUsageManagerService` and `aiRemainingCount` from Vendor `ProductController.php`.
+    - Excised `ai-sidebar` `@include` directives from admin/vendor product add & update Blade views.
+    - Excised AI script tags from admin/vendor `_script-partials.blade.php`.
+    - Excised AI Setup menu item from admin `_side-bar.blade.php`.
+    - Decoupled `getActiveAIProviderConfigCache()` in `app/Utils/settings.php` to safely return `null`.
+  - **2. WhatsApp Subsystem Physical Deletion:**
+    - Physically deleted remaining WhatsApp services (`EpisodicMemoryService.php`, `CustomerAiRelationshipEngine.php`, `VendorAiReportService.php`).
+    - Physically deleted WhatsApp console command `SendVendorAiPerformanceReportCommand.php`.
+    - Physically deleted `resources/views/admin-views/whatsapp-crm/` directory and WhatsApp migrations.
+    - Excised WhatsApp CRM menu item from admin `_side-bar.blade.php` and purged `whatsapp-crm` route group.
+  - **3. Customer Stored-Value Wallet Physical Deletion & Route Cleansing:**
+    - Physically deleted `WalletTransactionRepository.php` and `WalletTransactionRepositoryInterface.php`.
+    - Physically deleted `CustomerWalletController.php` (Admin), `CustomerWallet.php` enum, and `CustomerWalletDecommissionedException.php`.
+    - Physically deleted `RewardPointController.php` and purged `reward-points/convert` from `routes/web/routes.php`.
+    - Physically deleted admin customer wallet Blade views (`resources/views/admin-views/customer/wallet/`, `user-wallet.blade.php`, `add-fund-to-wallet.blade.php`, `wallet-bonus.blade.php`).
+    - Excised `credit-wallet`, `add-memory`, and `wallet/*` route groups from `routes/admin/routes.php`.
+    - Removed `CustomerWalletDecommissionedException` from `Handler.php`, `RefundController.php` (converted to 400 JSON error), and `RefundStatusService.php` (converted to `\InvalidArgumentException`).
+    - Hidden `wallet_balance` attribute on `User` Eloquent model to prevent API serialization.
+    - Excised dead stub `payEditOrderDueByCustomerWallet` from `OrderEditManager.php`.
+    - Purged `AddFundToWalletEvent` and functions `add_fund_to_wallet_success`/`fail` from `module-helper.php`.
+  - **4. Offline Payment Methods Clean Deletion:**
+    - Physically deleted `OfflinePaymentMethodService.php`.
+    - Replaced redundant `OfflinePaymentMethod::where('status', 1)->get()` queries with empty collections across `WebController.php` and `UserProfileController.php` (7 occurrences).
+  - **5. Strict Preservation of Core Financial Engines:**
+    - Verified strict preservation of `SellerWallet` (vendor settlement), `AdminWallet` (platform commissions), `DeliverymanWallet` (rider earnings), `PaystackController`, `PaystackRefundService`, and `CustomerCashbackLedger`.
+  - **6. Automated Invariant Verification:**
+    - Executed `scratch/test_directive_57324_a1.php` with 93/93 PASS (0 failures).
+    - Executed PHP syntax checks (`php -l`) on all modified files with 0 syntax errors.
+
 ### [2026-09-20 04:20 UTC] Directive 57324: Complete Architecture Purge — AI Subsystem, WhatsApp CRM & Customer Stored-Value Wallet [vendor-app] [user-app] [backend] [ai-governance]
 * **Component:** Vendor App (`features/ai`, `features/addProduct`, `features/dashboard`, `features/product`, `features/splash`, `di_container.dart`, `main.dart`, `utill/app_constants.dart`), User App (`features/more`, `features/profile`), Backend (`app/Console/Commands`, `app/Http/Controllers`, `app/Services`, `app/Models`, `app/Repositories`, `routes/admin`, `routes/rest_api/v1`, `routes/web`)
 * **Action:** Executed repository-wide fresh-system purge per Directive 57324, physically deleting all obsolete subsystems rather than stubbing:

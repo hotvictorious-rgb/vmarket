@@ -65,15 +65,6 @@ class Handler extends ExceptionHandler
             return back()->withErrors(['payment_method' => $e->getMessage()]);
         }
 
-        if ($e instanceof \App\Exceptions\CustomerWalletDecommissionedException) {
-            if ($request->expectsJson() || $request->is('api/*')) {
-                return response()->json([
-                    'status' => false,
-                    'message' => $e->getMessage(),
-                ], 403);
-            }
-            abort(403, $e->getMessage());
-        }
 
         if ($this->isHttpException($e) && $e?->getStatusCode() == 404) {
             $redirectUrl = $this->storeErrorLogsUrl(url: $request->fullUrl(), statusCode: $e->getStatusCode());

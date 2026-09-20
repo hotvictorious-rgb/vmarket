@@ -45,8 +45,6 @@
             @include("vendor-views.product.add._product-video")
             @include("vendor-views.product.add._seo-section")
 
-            @include('vendor-views.product.partials.ai-sidebar')
-
             <div class="d-flex justify-content-end trans3 mt-4">
                 <div class="d-flex justify-content-sm-end justify-content-center gap-3 flex-grow-1 flex-grow-sm-0 bg-white action-btn-wrapper trans3">
                     <button type="reset" id="reset-btn" class="btn btn-secondary min-w-120">

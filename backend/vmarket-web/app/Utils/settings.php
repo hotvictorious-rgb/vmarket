@@ -214,12 +214,7 @@ if (!function_exists('getLoginConfig')) {
 if (!function_exists('getActiveAIProviderConfigCache')) {
     function getActiveAIProviderConfigCache()
     {
-        return Cache::remember('active_ai_provider', 60, function () {
-            return \Modules\AI\app\Models\AISetting::where('status', 1)
-                ->whereNotNull('api_key')
-                ->where('api_key', '!=', '')
-                ->first();
-        });
+        return null;
     }
 }
 

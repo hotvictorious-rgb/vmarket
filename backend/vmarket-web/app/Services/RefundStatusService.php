@@ -53,9 +53,9 @@ class RefundStatusService
             $refundData['payment_info'] = $request['payment_info'];
             $refundStatus['message'] = $request['payment_info'];
 
-            // [AI] Customer Wallet Decommissioned: Reject customer_wallet refund destination
+            // Reject customer_wallet refund destination
             if ($request['payment_method'] == 'customer_wallet') {
-                throw new \App\Exceptions\CustomerWalletDecommissionedException('order_refund', 'Customer wallet is decommissioned and cannot be used as a refund destination. Refunds must be routed through original payment rails.');
+                throw new \InvalidArgumentException('Customer wallet is not a supported refund method.');
             }
         }
         $refundData['status'] = $request['refund_status'];

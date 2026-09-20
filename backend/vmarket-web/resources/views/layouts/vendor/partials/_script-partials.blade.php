@@ -26,16 +26,6 @@
 <script src="{{ dynamicAsset(path: 'public/assets/new/back-end/js/select-2-init.js') }}"></script>
 
 
-<script src="{{ dynamicAsset(path: 'public/assets/backend/vendor/js/AI/products/product-title-autofill.js') }}"></script>
-<script src="{{ dynamicAsset(path: 'public/assets/backend/vendor/js/AI/products/product-description-autofill.js') }}"></script>
-<script src="{{ dynamicAsset(path: 'public/assets/backend/vendor/js/AI/products/general-setup.js') }}"></script>
-<script src="{{ dynamicAsset(path: 'public/assets/backend/vendor/js/AI/products/product-pricing.js') }}"></script>
-    <script src="{{ dynamicAsset(path: 'public/assets/backend/vendor/js/AI/products/product-variation-setup.js') }}"></script>
-<script src="{{ dynamicAsset(path: 'public/assets/backend/vendor/js/AI/products/seo-section-auto-fill.js') }}"></script>
-<script src="{{ dynamicAsset(path: 'public/assets/backend/vendor/js/AI/products/ai-sidebar.js') }}"></script>
-<script src="{{ dynamicAsset(path: 'public/assets/backend/vendor/js/AI/image-compressor/image-compressor.js') }}"></script>
-<script src="{{ dynamicAsset(path: 'public/assets/backend/vendor/js/AI/image-compressor/compressor.min.js') }}"></script>
-
 <script src="{{ dynamicAsset(path: 'public/assets/backend/file-validation/polyfills.js') }}"></script>
 <script src="{{ dynamicAsset(path: 'public/assets/backend/file-validation/just-validate.min.js') }}"></script>
 <script src="{{ dynamicAsset(path: 'public/assets/backend/file-validation/form-advance-validation.js') }}"></script>

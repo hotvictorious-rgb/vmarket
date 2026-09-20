@@ -30,7 +30,6 @@
             </div>
             @include("admin-views.product.add._product-video")
             @include("admin-views.product.add._seo-section")
-            @include("admin-views.product.partials.ai-sidebar")
 
             <div class="d-flex justify-content-end trans3 mt-4">
                 <div class="d-flex justify-content-sm-end justify-content-center gap-3 flex-grow-1 flex-grow-sm-0 bg-white action-btn-wrapper trans3">

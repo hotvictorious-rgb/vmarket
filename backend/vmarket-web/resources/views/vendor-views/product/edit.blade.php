@@ -42,8 +42,6 @@
             @include("vendor-views.product.update._product-video")
             @include("vendor-views.product.update._seo-section")
 
-            @include('vendor-views.product.partials.ai-sidebar')
-
             @if(getActiveAIProviderConfigCache())
             <div class="floating-ai-button">
                 <button type="button" class="btn btn-lg rounded-circle shadow-lg" data-toggle="modal" data-target="#aiAssistantModal"

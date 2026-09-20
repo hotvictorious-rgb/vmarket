@@ -28,7 +28,6 @@
             </div>
             @include("admin-views.product.update._product-video")
             @include("admin-views.product.update._seo-section")
-            @include("admin-views.product.partials.ai-sidebar")
 
             <div class="d-flex justify-content-end flex-wrap gap-3 mt-3 mx-1">
                 <button type="button" class="btn btn-primary px-5 product-add-requirements-check">

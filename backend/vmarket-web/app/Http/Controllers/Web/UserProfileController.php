@@ -11,7 +11,6 @@ use App\Contracts\Repositories\RobotsMetaContentRepositoryInterface;
 use App\Enums\WebConfigKey;
 use App\Events\RefundEvent;
 use App\Http\Requests\Web\CustomerProfileUpdateRequest;
-use App\Models\OfflinePaymentMethod;
 use App\Models\OrderEditHistory;
 use App\Models\OrderStatusHistory;
 use App\Models\SupportTicketConv;
@@ -358,7 +357,7 @@ class UserProfileController extends Controller
     {
         $order_by = $request->order_by ?? 'desc';
         $paymentGatewayList = payment_gateways();
-        $offlinePaymentMethods = OfflinePaymentMethod::where('status', 1)->get();
+        $offlinePaymentMethods = collect([]);
         $offlinePaymentStatus = getWebConfig(name: 'offline_payment');
         $cashOnDeliveryStatus = getWebConfig(name: 'cash_on_delivery');
         if (theme_root_path() == 'theme_fashion') {
@@ -399,7 +398,7 @@ class UserProfileController extends Controller
         $order = $this->order->with(['deliveryManReview', 'customer', 'offlinePayments', 'details.productAllStatus', 'details.refundRequest'])->where(['id' => $request['id'], 'customer_id' => auth('customer')->id(), 'is_guest' => '0'])->first();
 
         if ($order) {
-            $offlinePaymentMethods = OfflinePaymentMethod::where('status', 1)->get();
+            $offlinePaymentMethods = collect([]);
             $offlinePaymentStatus = getWebConfig(name: 'offline_payment');
             $paymentGatewayList = payment_gateways();
             $isPhysicalProduct = $order->details()->whereHas('product', fn($q) => $q->where('product_type', 'physical'))->exists();;
@@ -455,7 +454,7 @@ class UserProfileController extends Controller
     public function account_order_details_seller_info(Request $request)
     {
         $paymentGatewayList = payment_gateways();
-        $offlinePaymentMethods = OfflinePaymentMethod::where('status', 1)->get();
+        $offlinePaymentMethods = collect([]);
         $offlinePaymentStatus = getWebConfig(name: 'offline_payment');
         $cashOnDeliveryStatus = getWebConfig(name: 'cash_on_delivery');
 
@@ -489,7 +488,7 @@ class UserProfileController extends Controller
     public function account_order_details_delivery_man_info(Request $request)
     {
         $paymentGatewayList = payment_gateways();
-        $offlinePaymentMethods = OfflinePaymentMethod::where('status', 1)->get();
+        $offlinePaymentMethods = collect([]);
         $offlinePaymentStatus = getWebConfig(name: 'offline_payment');
         $cashOnDeliveryStatus = getWebConfig(name: 'cash_on_delivery');
 
@@ -526,7 +525,7 @@ class UserProfileController extends Controller
     public function getAccountOrderDetailsReviewsView(Request $request): View|RedirectResponse
     {
         $paymentGatewayList = payment_gateways();
-        $offlinePaymentMethods = OfflinePaymentMethod::where('status', 1)->get();
+        $offlinePaymentMethods = collect([]);
         $offlinePaymentStatus = getWebConfig(name: 'offline_payment');
         $cashOnDeliveryStatus = getWebConfig(name: 'cash_on_delivery');
 
@@ -755,7 +754,7 @@ class UserProfileController extends Controller
     {
         if (auth('customer')->check()) {
             $paymentGatewayList = payment_gateways();
-            $offlinePaymentMethods = OfflinePaymentMethod::where('status', 1)->get();
+            $offlinePaymentMethods = collect([]);
             $offlinePaymentStatus = getWebConfig(name: 'offline_payment');
             $cashOnDeliveryStatus = getWebConfig(name: 'cash_on_delivery');
 
@@ -797,7 +796,7 @@ class UserProfileController extends Controller
         $cashOnDeliveryStatus = getWebConfig(name: 'cash_on_delivery');
         $isPhysicalProduct = false;
         $offlinePaymentStatus = getWebConfig(name: 'offline_payment');
-        $offlinePaymentMethods = OfflinePaymentMethod::where('status', 1)->get();
+        $offlinePaymentMethods = collect([]);
         $paymentGatewayList = payment_gateways();
         $availablePaymentMethod = [];
         $walletStatus = getWebConfig(name: 'wallet_status');

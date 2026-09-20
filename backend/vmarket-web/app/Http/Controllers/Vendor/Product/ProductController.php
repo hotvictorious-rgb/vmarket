@@ -46,7 +46,6 @@ use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Pagination\LengthAwarePaginator;
 use Maatwebsite\Excel\Facades\Excel;
-use Modules\AI\app\Services\AIUsageManagerService;
 use Modules\TaxModule\app\Traits\VatTaxManagement;
 use Symfony\Component\HttpFoundation\BinaryFileResponse;
 
@@ -85,8 +84,7 @@ class ProductController extends BaseController
         private readonly DealOfTheDayRepositoryInterface            $dealOfTheDayRepo,
         private readonly VendorRepositoryInterface                  $vendorRepo,
         private readonly ShopRepositoryInterface                    $shopRepo,
-        private readonly ProductService                             $productService,
-        private readonly AIUsageManagerService                      $AIUsageManagerService
+        private readonly ProductService                             $productService
     )
     {
     }
@@ -201,8 +199,7 @@ class ProductController extends BaseController
         $digitalProductFileTypes = ['audio', 'video', 'document', 'software'];
         $digitalProductAuthors = $this->authorRepo->getListWhere(dataLimit: 'all');
         $publishingHouseList = $this->publishingHouseRepo->getListWhere(dataLimit: 'all');
-        $aiRemainingCount = $this->AIUsageManagerService->getGenerateRemainingCount();
-        return view('vendor-views.product.add-new', compact('languages', 'aiRemainingCount', 'categories', 'brands', 'brandSetting', 'digitalProductSetting', 'colors', 'attributes', 'languages', 'defaultLanguage', 'digitalProductFileTypes', 'digitalProductAuthors', 'publishingHouseList', 'productWiseTax', 'taxVats'));
+        return view('vendor-views.product.add-new', compact('languages', 'categories', 'brands', 'brandSetting', 'digitalProductSetting', 'colors', 'attributes', 'languages', 'defaultLanguage', 'digitalProductFileTypes', 'digitalProductAuthors', 'publishingHouseList', 'productWiseTax', 'taxVats'));
     }
 
     public function add(ProductAddRequest $request, ProductService $service): JsonResponse|RedirectResponse
@@ -263,8 +260,7 @@ class ProductController extends BaseController
         $digitalProductAuthors = $this->authorRepo->getListWhere(dataLimit: 'all');
         $publishingHouseList = $this->publishingHouseRepo->getListWhere(dataLimit: 'all');
         $taxVatIds = $product?->taxVats?->pluck('tax_id')->toArray() ?? [];
-        $aiRemainingCount = $this->AIUsageManagerService->getGenerateRemainingCount();
-        return view('vendor-views.product.edit', compact('product', 'categories', 'aiRemainingCount', 'brands', 'brandSetting', 'digitalProductSetting', 'colors', 'attributes', 'languages', 'defaultLanguage', 'digitalProductFileTypes', 'digitalProductAuthors', 'publishingHouseList', 'productAuthorIds', 'productPublishingHouseIds', 'productWiseTax', 'taxVats', 'taxVatIds'));
+        return view('vendor-views.product.edit', compact('product', 'categories', 'brands', 'brandSetting', 'digitalProductSetting', 'colors', 'attributes', 'languages', 'defaultLanguage', 'digitalProductFileTypes', 'digitalProductAuthors', 'publishingHouseList', 'productAuthorIds', 'productPublishingHouseIds', 'productWiseTax', 'taxVats', 'taxVatIds'));
     }
 
     public function update(ProductUpdateRequest $request, ProductService $service, string|int $id): JsonResponse|RedirectResponse

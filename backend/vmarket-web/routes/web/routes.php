@@ -7,7 +7,6 @@ use App\Http\Controllers\Customer\Auth\LoginController;
 use App\Http\Controllers\Customer\Auth\RegisterController;
 use App\Http\Controllers\Customer\Auth\SocialAuthController;
 use App\Http\Controllers\Customer\PaymentController;
-use App\Http\Controllers\Customer\RewardPointController;
 use App\Http\Controllers\Customer\SystemController;
 // [AI] FlutterwaveV3Controller removed — Flutterwave is not an authorized payment gateway. Only Paystack is authorized.
 use App\Http\Controllers\Payment_Methods\PaystackController;
@@ -356,9 +355,7 @@ Route::group(['prefix' => 'customer', 'as' => 'customer.'], function () {
         Route::post('choose-billing-address', 'getChooseShippingAddress')->name('choose-billing-address');
     });
 
-    Route::group(['prefix' => 'reward-points', 'as' => 'reward-points.', 'middleware' => ['auth:customer']], function () {
-        Route::get('convert', [RewardPointController::class, 'convert'])->name('convert');
-    });
+
 });
 
 Route::group(['prefix' => 'customer', 'as' => 'customer.'], function () {

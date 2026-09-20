@@ -619,16 +619,7 @@
                         </span>
                     </a>
                 </li>
-                <li>
-                    <a class="nav-link {{ Request::is('admin/whatsapp-crm*') ? 'active' : '' }}"
-                       title="{{ translate('WhatsApp_CRM') }}"
-                       href="{{ route('admin.whatsapp-crm.index') }}">
-                        <i class="fi fi-sr-comment-alt-middle"></i>
-                        <span class="aside-mini-hidden-element text-truncate">
-                            {{ translate('WhatsApp_CRM') }}
-                        </span>
-                    </a>
-                </li>
+
                 <li>
                     <a class="nav-link {{ Request::is('admin/contact*') ? 'active' : '' }}"
                        href="{{ route('admin.contact.list') }}" title="{{ translate('messages') }}">
@@ -1258,21 +1249,7 @@
                     </a>
                 </li>
 
-                @if(getCheckAddonPublishedStatus(moduleName: 'AI'))
-                    <li>
-                        <a class="nav-link nav-link-toggle {{
-                                Request::is('admin/third-party/ai-setting') || Request::is('admin/third-party/ai-setting/vendors-usage-limits') ? 'active' : '' }}"
-                           href="{{ route('admin.third-party.ai-setting.index') }}" title="{{ translate('AI_Setup') }}">
-                            <i class="fi fi-rr-microchip-ai"></i>
-                            <span class="aside-mini-hidden-element flex-grow-1 d-flex justify-content-between
-                            align-items-center">
-                                <span class="text-truncate max-w-180">
-                                    {{ translate('AI_Setup') }}
-                                </span>
-                            </span>
-                        </a>
-                    </li>
-                @endif
+
 
                 <li>
                     <a class="nav-link {{ Request::is('admin/third-party/mail') ||

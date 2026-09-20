@@ -16,7 +16,6 @@ use App\Utils\CategoryManager;
 use App\Utils\Helpers;
 use App\Events\DigitalProductOtpVerificationEvent;
 use App\Http\Controllers\Controller;
-use App\Models\OfflinePaymentMethod;
 use App\Models\ShippingAddress;
 use App\Models\ShippingMethod;
 use App\Models\ShippingType;
@@ -437,7 +436,6 @@ class WebController extends Controller
         $usd = Currency::where(['code' => 'USD'])->first();
         $myr = Currency::where(['code' => 'MYR'])->first();
 
-        $offlinePaymentMethods = OfflinePaymentMethod::where('status', 1)->get();
         $paymentGatewayPublishedStatus = config('get_payment_publish_status') ?? 0;
         $offlinePaymentStatus = getWebConfig(name: 'offline_payment');
 

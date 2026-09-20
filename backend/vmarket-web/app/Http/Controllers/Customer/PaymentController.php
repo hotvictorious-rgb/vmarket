@@ -5,8 +5,6 @@ namespace App\Http\Controllers\Customer;
 use App\Events\OrderEditDuePaymentEvent;
 use App\Models\AdminWallet;
 use App\Models\Cart;
-use App\Models\CustomerWallet;
-use App\Models\OfflinePaymentMethod;
 use App\Models\Order;
 use App\Models\OrderEditHistory;
 use App\Models\Seller;

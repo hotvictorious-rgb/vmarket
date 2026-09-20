@@ -12,14 +12,12 @@ use App\Utils\ProductManager;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Route;
-use Modules\AI\app\Traits\AIModuleManager;
 use Modules\TaxModule\app\Models\SystemTaxSetup;
 use function App\Utils\payment_gateways;
 
 class ConfigController extends Controller
 {
     use SettingsTrait, MaintenanceModeTrait, CacheManagerTrait;
-    use AIModuleManager;
 
     public function configuration(): JsonResponse
     {
@@ -242,7 +240,6 @@ class ConfigController extends Controller
 
             'system_tax_type' => $systemTax?->tax_type ?? 'order_wise',
             'system_tax_include_status' => (int)$systemTax?->is_included,
-            'is_ai_features_enabled' => (int)$this->getActiveAIProviderConfig()?->status ?? 0,
             'server_upload_max_filesize' => ini_get('upload_max_filesize'),
             'server_post_max_size' => ini_get('post_max_size'),
             'system_image_file_upload_max_size' => getFileUploadMaxSize(type: 'image'),
