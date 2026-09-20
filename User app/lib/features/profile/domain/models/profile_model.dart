@@ -13,8 +13,7 @@ class ProfileModel {
   String? emailVerifiedAt;
   String? createdAt;
   String? updatedAt;
-  double? walletBalance;
-  double? loyaltyPoint;
+    double? loyaltyPoint;
   String? referCode;
   int? referCount;
   double? totalOrder;
@@ -33,8 +32,7 @@ class ProfileModel {
         this.emailVerifiedAt,
         this.createdAt,
         this.updatedAt,
-        this.walletBalance,
-        this.loyaltyPoint,
+                this.loyaltyPoint,
         this.referCode,
         this.referCount,
         this.totalOrder,
@@ -55,8 +53,7 @@ class ProfileModel {
     emailVerifiedAt = json['email_verified_at'];
     createdAt = json['created_at'];
     updatedAt = json['updated_at'];
-    walletBalance = double.tryParse(json['wallet_balance']?.toString() ?? '') ?? 0.0;
-    loyaltyPoint = double.tryParse(json['loyalty_point']?.toString() ?? '') ?? 0.0;
+        loyaltyPoint = double.tryParse(json['loyalty_point']?.toString() ?? '') ?? 0.0;
     if(json['referral_code'] != null){
       referCode = json['referral_code'];
     }
@@ -88,8 +85,7 @@ class ProfileModel {
     data['email_verified_at'] = emailVerifiedAt;
     data['created_at'] = createdAt;
     data['updated_at'] = updatedAt;
-    data['wallet_balance'] = walletBalance;
-    data['loyalty_point'] = loyaltyPoint;
+        data['loyalty_point'] = loyaltyPoint;
     return data;
   }
 }

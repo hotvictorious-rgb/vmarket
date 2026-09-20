@@ -35,8 +35,7 @@ class ProfileController extends ChangeNotifier {
     if (apiResponse.response != null && apiResponse.response!.statusCode == 200) {
       _userInfoModel = ProfileModel.fromJson(apiResponse.response!.data);
       userID = _userInfoModel!.id.toString();
-      _balance = _userInfoModel?.walletBalance?? 0;
-      loyaltyPoint = _userInfoModel?.loyaltyPoint?? 0;
+            loyaltyPoint = _userInfoModel?.loyaltyPoint?? 0;
     } else {
       ApiChecker.checkApi( apiResponse);
     }

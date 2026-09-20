@@ -112,6 +112,13 @@ class _MoreScreenState extends State<MoreScreen> with AutomaticKeepAliveClientMi
                                   },
                                 ),
 
+                              if(authController.isLoggedIn())
+                                MenuButtonWidget(image: Images.loyaltyPoint, title: getTranslated('cashback', context) ?? 'Cashback',
+                                  onTap: () {
+                                    RouterHelper.getCashbackRoute(action: RouteAction.push);
+                                  },
+                                ),
+
                               MenuButtonWidget(image: Images.address, title: getTranslated('addresses', context),
                                 onTap: () {
                                   RouterHelper.getAddressListScreen(action: RouteAction.push);
