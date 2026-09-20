@@ -22,7 +22,6 @@ use App\Http\Controllers\Web\ReviewController;
 use App\Http\Controllers\Web\Shop\ShopFollowerController;
 use App\Http\Controllers\Web\ShopViewController;
 use App\Http\Controllers\Web\UserProfileController;
-use App\Http\Controllers\Web\UserWalletController;
 use App\Http\Controllers\Web\WebController;
 use App\Http\Middleware\VerifyCsrfToken;
 use Illuminate\Support\Facades\Http;
@@ -239,11 +238,7 @@ Route::group(['middleware' => ['maintenance_mode', 'guestCheck']], function () {
         Route::post('message', 'addMessage');
     });
 
-    Route::controller(UserWalletController::class)->group(function () {
-        Route::get('wallet-account', 'myWalletAccount')->name('wallet-account'); //theme fashion
-        Route::get('wallet', 'index')->name('wallet')->middleware('customer');
-    });
-
+    
 
 
 
