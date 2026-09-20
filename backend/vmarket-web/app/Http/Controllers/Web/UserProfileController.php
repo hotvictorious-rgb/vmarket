@@ -11,7 +11,6 @@ use App\Contracts\Repositories\RobotsMetaContentRepositoryInterface;
 use App\Enums\WebConfigKey;
 use App\Events\RefundEvent;
 use App\Http\Requests\Web\CustomerProfileUpdateRequest;
-use App\Models\OrderEditHistory;
 use App\Models\OrderStatusHistory;
 use App\Models\SupportTicketConv;
 use App\Services\OrderStatusHistoryService;
@@ -365,7 +364,7 @@ class UserProfileController extends Controller
 
             $array = ['pending', 'confirmed', 'out_for_delivery', 'processing'];
             $orders = $this->order->withSum('orderDetails', 'qty')
-                ->with('orderEditHistory', 'details')
+                ->with('details')
                 ->where(['customer_id' => auth('customer')->id(), 'is_guest' => '0'])
                 ->when($show_order == 'ongoing', function ($query) use ($array) {
                     $query->whereIn('order_status', $array);
@@ -395,7 +394,7 @@ class UserProfileController extends Controller
     public function account_order_details(Request $request): View|RedirectResponse
     {
         $availablePaymentMethod = [];
-        $order = $this->order->with(['deliveryManReview', 'customer', 'offlinePayments', 'details.productAllStatus', 'details.refundRequest'])->where(['id' => $request['id'], 'customer_id' => auth('customer')->id(), 'is_guest' => '0'])->first();
+        $order = $this->order->with(['deliveryManReview', 'customer', 'details.productAllStatus', 'details.refundRequest'])->where(['id' => $request['id'], 'customer_id' => auth('customer')->id(), 'is_guest' => '0'])->first();
 
         if ($order) {
             $offlinePaymentMethods = collect([]);
@@ -529,7 +528,7 @@ class UserProfileController extends Controller
         $offlinePaymentStatus = getWebConfig(name: 'offline_payment');
         $cashOnDeliveryStatus = getWebConfig(name: 'cash_on_delivery');
 
-        $order = $this->order->with(['deliveryManReview', 'customer', 'offlinePayments', 'details'])
+        $order = $this->order->with(['deliveryManReview', 'customer', 'details'])
             ->where(['id' => $request['id'], 'customer_id' => auth('customer')->id(), 'is_guest' => '0'])
             ->first();
         if ($order) {
@@ -801,10 +800,10 @@ class UserProfileController extends Controller
         $availablePaymentMethod = [];
         $walletStatus = getWebConfig(name: 'wallet_status');
         $digitalPayment = getWebConfig(name: 'digital_payment')['status'];
-        $orderEditPaymentHistory = OrderEditHistory::where('order_id', $request['order_id'])->get();
+        $orderEditPaymentHistory = collect([]);
 
         $orderExist = null;
-        $order = Order::with('shippingAddress', 'billingAddress', 'details', 'latestEditHistory')
+        $order = Order::with('shippingAddress', 'billingAddress', 'details')
             ->where(['id' => $request['order_id'], 'order_type' => 'default_type'])
             ->first();
 
@@ -826,7 +825,7 @@ class UserProfileController extends Controller
                 }
 
             } elseif ($userInfo) {
-                $orderExist = Order::with('latestEditHistory')->where('id', $request['order_id'])->whereHas('details', function ($query) use ($userInfo) {
+                $orderExist = Order::where('id', $request['order_id'])->whereHas('details', function ($query) use ($userInfo) {
                     $query->where('customer_id', $userInfo->id);
                 })->first();
             } else {
@@ -834,7 +833,7 @@ class UserProfileController extends Controller
                 return redirect()->route('track-order.index', ['order_id' => $request['order_id'], 'phone_number' => $request['phone_number']]);
             }
         } else {
-            $order = Order::with('details', 'latestEditHistory')->where('id', $request['order_id'])->first();
+            $order = Order::with('details')->where('id', $request['order_id'])->first();
             if ($order && $order->is_guest) {
 
                 $shippingAddress = (array)($order['shipping_address_data'] ?? []);
@@ -850,13 +849,13 @@ class UserProfileController extends Controller
                 }
 
             } elseif ($user->phone == $request['phone_number']) {
-                $orderExist = Order::with('details', 'latestEditHistory')->where('id', $request['order_id'])->whereHas('details', function ($query) {
+                $orderExist = Order::with('details')->where('id', $request['order_id'])->whereHas('details', function ($query) {
                     $query->where('customer_id', auth('customer')->id());
                 })->first();
             }
 
             if ($request['from_order_details'] == 1) {
-                $orderExist = Order::with('details', 'latestEditHistory')->where('id', $request['order_id'])->whereHas('details', function ($query) {
+                $orderExist = Order::with('details')->where('id', $request['order_id'])->whereHas('details', function ($query) {
                     $query->where('customer_id', auth('customer')->id());
                 })->first();
             }
@@ -1051,7 +1050,7 @@ class UserProfileController extends Controller
     public function generate_invoice($id)
     {
         // [AI] Ownership Guard: Only allow customer to download their own invoice
-        $order = Order::with('seller', 'latestEditHistory')
+        $order = Order::with('seller')
             ->with('shipping')
             ->where('id', $id)
             ->where('customer_id', auth('customer')->id())

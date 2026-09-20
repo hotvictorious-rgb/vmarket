@@ -12,23 +12,6 @@
                     </h3>
                     <p class="fs-12 mb-0">{{ translate('add_meta_titles_descriptions_and_images_for_blog._this_will_help_more_people_to_find_them_on_search_engines.') }}</p>
                 </div>
-                @if(getActiveAIProviderConfigCache())
-                <button type="button"
-                    class="btn bg-white text-primary bg-transparent shadow-none border-0 opacity-1 generate_btn_wrapper p-0 blog_seo_section_auto_fill"
-                    id="seo_section_auto_fill"
-                    data-route="{{ route('admin.blog.seo-section-auto-fill') }}"
-                    data-lang="en">
-                    <div class="btn-svg-wrapper">
-                        <img width="18" height="18"
-                            src="{{ dynamicAsset(path: 'public/assets/back-end/img/ai/blink-right-small.svg') }}"
-                            alt="">
-                    </div>
-                    <span class="ai-text-animation d-none" role="status">
-                        {{ translate('Just_a_second') }}
-                    </span>
-                    <span class="btn-text">{{ translate('Generate') }}</span>
-                </button>
-                @endif
             </div>
             <div class="row g-3">
                 <div class="col-xl-8">

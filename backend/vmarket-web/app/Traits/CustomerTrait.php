@@ -3,12 +3,10 @@
 namespace App\Traits;
 
 use App\Contracts\Repositories\CustomerRepositoryInterface;
-use App\Contracts\Repositories\LoyaltyPointTransactionRepositoryInterface;
 use App\Contracts\Repositories\OrderDetailRepositoryInterface;
 use App\Contracts\Repositories\PhoneOrEmailVerificationRepositoryInterface;
 use App\Models\BusinessSetting;
 use App\Models\User;
-use App\Models\WalletTransaction;
 use Carbon\CarbonInterval;
 use Exception;
 use Illuminate\Support\Carbon;
@@ -21,29 +19,9 @@ trait CustomerTrait
     public function __construct(
         private readonly OrderDetailRepositoryInterface              $orderDetailRepo,
         private readonly CustomerRepositoryInterface                 $customerRepo,
-        private readonly LoyaltyPointTransactionRepositoryInterface  $loyaltyPointTransactionRepo,
         private readonly PhoneOrEmailVerificationRepositoryInterface $phoneOrEmailVerificationRepo,
     )
     {
-    }
-
-    protected function convertAmountToLoyaltyPoint(object $orderDetails): int
-    {
-        $loyaltyPointStatus = getWebConfig('loyalty_point_status');
-        $loyaltyPoint = 0;
-        if ($loyaltyPointStatus == 1) {
-            $getLoyaltyPointOnPurchase = getWebConfig('loyalty_point_item_purchase_point');
-            $subtotal = ($orderDetails['price'] * $orderDetails['qty']) - $orderDetails['discount'] + $orderDetails['tax'];
-            $loyaltyPoint = (int)(usdToDefaultCurrency(amount: $subtotal) * $getLoyaltyPointOnPurchase / 100);
-        }
-        return $loyaltyPoint;
-    }
-
-    protected function createWalletTransaction($user_id, float $amount, $transaction_type, $reference, $payment_data = []): bool|WalletTransaction
-    {
-        // [AI] Customer Wallet Decommissioned: Fail closed immediately with domain exception
-        \Log::warning("[AI][DECOMMISSIONED] Attempted createWalletTransaction on CustomerTrait for user_id {$user_id}, type: {$transaction_type}, ref: {$reference}");
-        throw new \App\Exceptions\CustomerWalletDecommissionedException($transaction_type, "Customer wallet capability is permanently decommissioned in Victorious MARKET. Cannot execute transaction type '{$transaction_type}'.");
     }
 
     public function checkCustomerOTPBlockTimeOrInvalid(object|array|null $verificationData, string|null $identity): array

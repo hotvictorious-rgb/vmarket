@@ -27,8 +27,6 @@ class ChatController extends Controller
         if ($type == 'delivery-man') {
             $id_param = 'delivery_man_id';
             $with = 'deliveryMan';
-        } elseif ($type == 'seller') {
-            return response()->json(['message' => 'Customer-to-Vendor chat is disabled.'], 403);
         } elseif ($type == 'admin') {
             $id_param = 'admin_id';
             $with = 'admin';
@@ -96,8 +94,7 @@ class ChatController extends Controller
     public function search(Request $request, $type):JsonResponse
     {
         $terms = explode(" ", $request->input('search'));
-        if ($type == 'seller') {
-            return response()->json(['message' => 'Customer-to-Vendor chat is disabled.'], 403);        } elseif ($type == 'delivery-man') {
+        if ($type == 'delivery-man') {
             $with_param = 'deliveryMan';
             $id_param = 'delivery_man_id';
             $users = DeliveryMan::when($request->search, function ($query) use ($terms) {
@@ -154,8 +151,6 @@ class ChatController extends Controller
             $id_param = 'delivery_man_id';
             $sent_by = 'sent_by_delivery_man';
             $with = 'deliveryMan';
-        } elseif ($type == 'seller') {
-            return response()->json(['message' => 'Customer-to-Vendor chat is disabled.'], 403);
         } elseif ($type == 'admin') {
             $id_param = 'admin_id';
             $sent_by = 'sent_by_admin';
@@ -258,9 +253,7 @@ class ChatController extends Controller
             $chatting->is_active = 1;
         }
 
-        if ($type == 'seller') {
-            return response()->json(['message' => 'Customer-to-Vendor chat is disabled.'], 403);
-        } elseif ($type == 'admin') {
+        if ($type == 'admin') {
             $chatting->admin_id = 0;
             $chatting->seller_id = null;
             $chatting->shop_id = null;
@@ -308,8 +301,6 @@ class ChatController extends Controller
 
         if ($type == 'delivery-man') {
             $id_param = 'delivery_man_id';
-        } elseif ($type == 'seller') {
-            return response()->json(['message' => 'Customer-to-Vendor chat is disabled.'], 403);
         } elseif ($type == 'admin') {
             $id_param = 'admin_id';
         } else {

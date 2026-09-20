@@ -5,8 +5,6 @@ namespace App\Repositories;
 use App\Contracts\Repositories\OrderRepositoryInterface;
 use App\Models\AdminWallet;
 use App\Models\Order;
-use App\Models\OrderDetail;
-use App\Models\OrderEditHistory;
 use App\Models\OrderExpectedDeliveryHistory;
 use App\Models\OrderTransaction;
 use App\Models\Product;
@@ -33,7 +31,6 @@ class OrderRepository implements OrderRepositoryInterface
         private readonly Transaction                  $transaction,
         private readonly OrderTransaction             $orderTransaction,
         private readonly Shop                         $shop,
-        private readonly OrderEditHistory             $orderEditHistory,
     )
     {
     }
@@ -474,6 +471,7 @@ class OrderRepository implements OrderRepositoryInterface
             return true; // [AI] Block: do NOT disburse vendor earnings automatically
         }
 
+        // [AI] V1 Pure Digital Accounting: Only admin in-house orders are processed here
         $orderSummary = getOrderSummary(order: $order);
         $orderAmount = $orderSummary['subtotal'] - $orderSummary['total_discount_on_product'] - $order['discount_amount'];
         $commission = $order['admin_commission'];
@@ -492,275 +490,58 @@ class OrderRepository implements OrderRepositoryInterface
                 'updated_at' => now(),
             ];
 
-            $this->adminWallet->create($adminWalletData);
+            $adminWallet = $this->adminWallet->create($adminWalletData);
         }
 
-        $sellerWallet = $this->sellerWallet->where('seller_id', $order['seller_id'])->first();
-        if (!$sellerWallet) {
-            $sellerWalletData = [
-                'seller_id' => $order['seller_id'],
-                'withdrawn' => 0,
-                'commission_given' => 0,
-                'total_earning' => 0,
-                'pending_withdraw' => 0,
-                'delivery_charge_earned' => 0,
-                'collected_cash' => 0,
-                'created_at' => now(),
-                'updated_at' => now(),
-            ];
-            $this->sellerWallet->create($sellerWalletData);
-        }
-
-        // coupon transaction start
-        if ($order['coupon_code'] && $order['coupon_code'] != '0' && $order['seller_is'] == 'seller' && $order['discount_type'] == 'coupon_discount') {
-            if ($order['coupon_discount_bearer'] == 'inhouse') {
-                $sellerWallet = $this->sellerWallet->where('seller_id', $order['seller_id'])->first();
-                $sellerWallet['total_earning'] += $order['discount_amount'];
-                $sellerWallet->save();
-
-                $paidBy = 'admin';
-                $payerId = 1;
-                $paymentReceiverId = $order['seller_id'];
-                $paidTo = 'seller';
-
-            } elseif ($order->coupon_discount_bearer == 'seller') {
-                $paidBy = 'seller';
-                $payerId = $order['seller_id'];
-                $paymentReceiverId = $order['seller_id'];
-                $paidTo = 'admin';
-            }
-
+        // Coupon expense transaction
+        if ($order['coupon_code'] && $order['coupon_code'] != '0' && $order['discount_type'] == 'coupon_discount') {
             $transaction = [
                 'order_id' => $order->id,
                 'payment_for' => 'coupon_discount',
-                'payer_id' => $payerId,
-                'payment_receiver_id' => $paymentReceiverId,
-                'paid_by' => $paidBy,
-                'paid_to' => $paidTo,
+                'payer_id' => 1,
+                'payment_receiver_id' => 1,
+                'paid_by' => 'admin',
+                'paid_to' => 'admin',
                 'payment_status' => 'disburse',
                 'amount' => $order['discount_amount'],
                 'transaction_type' => 'expense',
             ];
             $this->transaction->create($transaction);
         }
-        // coupon transaction end
 
-
-        // Referral transaction Start
+        // Referral discount expense transaction
         if ($order['refer_and_earn_discount'] > 0) {
-            $paidBy = 'admin';
-            $payerId = 1;
-            $paymentReceiverId = $order['seller_id'];
-            $paidTo = 'seller';
-
             $transaction = [
                 'order_id' => $order->id,
                 'payment_for' => 'referral_discount',
-                'payer_id' => $payerId,
-                'payment_receiver_id' => $paymentReceiverId,
-                'paid_by' => $paidBy,
-                'paid_to' => $paidTo,
+                'payer_id' => 1,
+                'payment_receiver_id' => 1,
+                'paid_by' => 'admin',
+                'paid_to' => 'admin',
                 'payment_status' => 'disburse',
                 'amount' => $order['refer_and_earn_discount'],
                 'transaction_type' => 'expense',
             ];
             $this->transaction->create($transaction);
         }
-        // Referral transaction end
 
-        // free delivery over amount transaction start
-        if ($order['is_shipping_free'] && $order['seller_is'] == 'seller') {
-
-            $sellerWallet = $this->sellerWallet->where('seller_id', $order['seller_id'])->first();
-            $adminWallet = $this->adminWallet->where('admin_id', 1)->first();
-
-            if ($order['free_delivery_bearer'] == 'admin' && $order['shipping_responsibility'] == 'sellerwise_shipping') {
-                $sellerWallet->delivery_charge_earned += $order->extra_discount;
-                $sellerWallet->total_earning += $order->extra_discount;
-
-                $adminWallet->delivery_charge_earned -= $order->extra_discount;
-                // $adminWallet->inhouse_earning -= $order->extra_discount;
-
-                $paidBy = 'admin';
-                $payerId = 1;
-                $paymentReceiverId = $order->seller_id;
-                $paidTo = 'seller';
-
-            } elseif ($order->free_delivery_bearer == 'seller' && $order->shipping_responsibility == 'inhouse_shipping') {
-                $sellerWallet->delivery_charge_earned -= $order->extra_discount;
-                $sellerWallet->total_earning -= $order->extra_discount;
-
-                $adminWallet->delivery_charge_earned += $order->extra_discount;
-                // $adminWallet->inhouse_earning += $order->extra_discount;
-
-                $paidBy = 'seller';
-                $payerId = $order->seller_id;
-                $paymentReceiverId = $order->seller_id;
-                $paidTo = 'admin';
-            } elseif ($order['free_delivery_bearer'] == 'admin' && $order['shipping_responsibility'] == 'inhouse_shipping') {
-                $paidBy = 'admin';
-                $payerId = 1;
-                $paymentReceiverId = $order->seller_id;
-                $paidTo = 'admin';
-            } elseif ($order->free_delivery_bearer == 'seller' && $order->shipping_responsibility == 'sellerwise_shipping') {
-                $paidBy = 'seller';
-                $payerId = $order->seller_id;
-                $paymentReceiverId = $order->seller_id;
-                $paidTo = 'seller';
-            }
-
-
-            $sellerWallet->save();
-            $adminWallet->save();
-
-            $transaction = [
-                'order_id' => $order->id,
-                'payment_for' => 'free_shipping_over_order_amount',
-                'payer_id' => $payerId,
-                'payment_receiver_id' => $paymentReceiverId,
-                'paid_by' => $paidBy,
-                'paid_to' => $paidTo,
-                'payment_status' => 'disburse',
-                'amount' => $order['discount_amount'],
-                'transaction_type' => 'expense',
-            ];
-            $this->transaction->create($transaction);
-        }
-        // free delivery over amount transaction end
-
-        if ($order['seller_is'] == 'seller' &&
-            $shippingModel == 'sellerwise_shipping'
-        ) {
-            $editHistoryAmount = $this->orderEditHistory->where([
-                'order_id' => $order->id,
-                'order_due_payment_status' => 'paid',
-                'order_due_payment_method' => 'cash_on_delivery',
-            ])?->sum('order_due_amount') ?? 0;
-            $wallet = $this->sellerWallet->where('seller_id', $order['seller_id'])->first();
-            $wallet->collected_cash += $editHistoryAmount;
-            $wallet->save();
-        }
-
-        if ($order['payment_method'] == 'cash_on_delivery' || $order['payment_method'] == 'offline_payment') {
-            $shop = $this->shop->when($order['seller_is'] == 'admin', function ($query) {
-                return $query->where(['author_type' => 'admin']);
-            })->when($order['seller_is'] == 'seller', function ($query) use ($order) {
-                return $query->where(['author_type' => 'vendor', 'seller_id' => $order['seller_id']]);
-            })->first();
-
-            $transaction = [
-                'transaction_id' => getUniqueId(),
-                'customer_id' => $order['customer_id'],
-                'seller_id' => $order['seller_id'],
-                'shop_id' => $shop['id'],
-                'seller_is' => $order['seller_is'],
-                'order_id' => $order['id'],
-                'order_amount' => $order['order_amount'],
-                'seller_amount' => $orderAmount - $commission,
-                'admin_commission' => $commission,
-                'received_by' => $receivedBy,
-                'status' => 'disburse',
-                'delivery_charge' => $order['shipping_cost'] - ($order['is_shipping_free'] ? $order['extra_discount'] : 0),
-                'tax' => $orderSummary['total_tax'],
-                'delivered_by' => $receivedBy,
-                'payment_method' => $order['payment_method'],
-                'created_at' => now(),
-                'updated_at' => now(),
-            ];
-            $this->orderTransaction->create($transaction);
-
-            $wallet = $this->adminWallet->where('admin_id', 1)->first();
-            $wallet->commission_earned += $commission;
-            if ($shippingModel == 'inhouse_shipping' && !$order['is_shipping_free']) {
-                $wallet->delivery_charge_earned += $order['shipping_cost'];
-            }
-            $wallet->save();
-
-            if ($order['seller_is'] == 'admin') {
-                $wallet = $this->adminWallet->where('admin_id', 1)->first();
-                $wallet->inhouse_earning += $orderAmount;
-                if ($shippingModel == 'sellerwise_shipping' && !$order['is_shipping_free']) {
-                    $wallet->delivery_charge_earned += $order['shipping_cost'];
-                }
-                $wallet->total_tax_collected += $orderSummary['total_tax'];
-            } else {
-                $wallet = $this->sellerWallet->where('seller_id', $order['seller_id'])->first();
-                $wallet->commission_given += $commission;
-                $wallet->total_tax_collected += $orderSummary['total_tax'];
-                if ($shippingModel == 'sellerwise_shipping') {
-                    if (!$order['is_shipping_free']) {
-                        $wallet->delivery_charge_earned += $order['shipping_cost'];
-                    }
-
-                    $currentOrderAmount = $order['order_amount'];
-                    if ($order['payment_method'] == 'offline_payment') {
-                        $editHistoryAmount = $this->orderEditHistory->where([
-                            'order_id' => $order->id,
-                            'order_due_payment_status' => 'paid',
-                            'order_due_payment_method' => 'cash_on_delivery',
-                        ])?->sum('order_due_amount') ?? 0;
-                        $currentOrderAmount -= $editHistoryAmount;
-                    }
-
-                    $wallet->collected_cash += $currentOrderAmount; // Total order amount
-                } else {
-                    $wallet->total_earning += ($orderAmount - $commission) + $orderSummary['total_tax'];
-                }
-            }
-            $wallet->save();
-        } else {
-            $transaction = $this->orderTransaction->where(['order_id' => $order['id']])->first();
+        // Update OrderTransaction status to disburse
+        $transaction = $this->orderTransaction->where(['order_id' => $order['id']])->first();
+        if ($transaction) {
             $transaction->status = 'disburse';
             $transaction->save();
-
-            $wallet = $this->adminWallet->where('admin_id', 1)->first();
-            $wallet->commission_earned += $commission;
-
-            $currentOrderAmount = $order['order_amount'];
-            if (
-                $order?->latestEditHistory &&
-                $order?->latestEditHistory?->order_due_payment_status == 'paid' &&
-                $order?->latestEditHistory?->order_due_payment_method == 'cash_on_delivery'
-            ) {
-                $currentOrderAmount -= $order?->latestEditHistory?->order_due_amount ?? 0;
-            }
-            $wallet->pending_amount -= $currentOrderAmount;
-
-            if ($shippingModel == 'inhouse_shipping' && !$order['is_shipping_free']) {
-                $wallet->delivery_charge_earned += $order['shipping_cost'];
-            }
-            $wallet->save();
-
-            if ($order['seller_is'] == 'admin') {
-                $wallet = $this->adminWallet->where('admin_id', 1)->first();
-                $wallet->inhouse_earning += $orderAmount;
-                if ($shippingModel == 'sellerwise_shipping' && !$order['is_shipping_free']) {
-                    $wallet->delivery_charge_earned += $order['shipping_cost'];
-                }
-            } else {
-                $wallet = $this->sellerWallet->where('seller_id', $order['seller_id'])->first();
-                $wallet->commission_given += $commission;
-                if ($shippingModel == 'sellerwise_shipping') {
-                    if (!$order['is_shipping_free']) {
-                        $wallet->delivery_charge_earned += $order['shipping_cost'];
-                    }
-
-                    $currentOrderAmount = ($orderAmount - $commission) + $orderSummary['total_tax'] + ($order['is_shipping_free'] ? 0 : $order['shipping_cost']);
-                    $editHistoryAmount = $this->orderEditHistory->where([
-                        'order_id' => $order->id,
-                        'order_due_payment_status' => 'paid',
-                        'order_due_payment_method' => 'cash_on_delivery',
-                    ])?->sum('order_due_amount') ?? 0;
-                    $currentOrderAmount -= $editHistoryAmount;
-
-                    $wallet->total_earning += $currentOrderAmount;
-                } else {
-                    $wallet->total_earning += ($orderAmount - $commission) + $orderSummary['total_tax'];
-                }
-            }
-            $wallet->total_tax_collected += $orderSummary['total_tax'];
-            $wallet->save();
         }
+
+        // Update Admin Wallet for in-house orders
+        $adminWallet->commission_earned += $commission;
+        $adminWallet->inhouse_earning += $orderAmount;
+        $adminWallet->total_tax_collected += $orderSummary['total_tax'];
+        $adminWallet->pending_amount = max(0, $adminWallet->pending_amount - $order['order_amount']);
+
+        if (!$order['is_shipping_free'] && $order['shipping_cost'] > 0) {
+            $adminWallet->delivery_charge_earned += $order['shipping_cost'];
+        }
+        $adminWallet->save();
 
         return true;
     }

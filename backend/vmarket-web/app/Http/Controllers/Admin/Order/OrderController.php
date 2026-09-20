@@ -4,24 +4,14 @@ namespace App\Http\Controllers\Admin\Order;
 
 use App\Contracts\Repositories\AdminWalletRepositoryInterface;
 use App\Contracts\Repositories\AuthorRepositoryInterface;
-use App\Contracts\Repositories\OrderDetailsRewardsRepositoryInterface;
-use App\Contracts\Repositories\OrderEditHistoryRepositoryInterface;
 use App\Contracts\Repositories\ProductRepositoryInterface;
 use App\Contracts\Repositories\PublishingHouseRepositoryInterface;
 use App\Contracts\Repositories\VendorWalletRepositoryInterface;
-use App\Contracts\Repositories\WalletTransactionRepositoryInterface;
-use App\Events\AddFundToWalletEvent;
-use App\Events\OrderEditReturnPaymentEvent;
 use App\Events\RefundEvent;
 use App\Http\Requests\Admin\RefundStatusRequest;
-use App\Models\OrderEditHistory;
-use App\Services\CustomerWalletService;
-use App\Services\OrderEditReturnAmountService;
-use App\Services\OrderEditService;
 use App\Services\ProductService;
 use App\Services\RefundStatusService;
 use App\Services\RefundTransactionService;
-use App\Traits\OrderEditManager;
 use App\Utils\CustomerManager;
 use App\Utils\Helpers;
 use Carbon\Carbon;
@@ -67,14 +57,12 @@ use App\Contracts\Repositories\DeliveryManWalletRepositoryInterface;
 use App\Contracts\Repositories\OrderStatusHistoryRepositoryInterface;
 use App\Contracts\Repositories\DeliveryCountryCodeRepositoryInterface;
 use App\Contracts\Repositories\DeliveryManTransactionRepositoryInterface;
-use App\Contracts\Repositories\LoyaltyPointTransactionRepositoryInterface;
 use App\Contracts\Repositories\OrderExpectedDeliveryHistoryRepositoryInterface;
 
 class OrderController extends BaseController
 {
     use CustomerTrait;
     use PdfGenerator;
-    use OrderEditManager;
     use FileManagerTrait {
         delete as deleteFile;
         update as updateFile;
@@ -95,17 +83,12 @@ class OrderController extends BaseController
         private readonly DeliveryManWalletRepositoryInterface            $deliveryManWalletRepo,
         private readonly ProductRepositoryInterface                      $productRepo,
         private readonly ProductService                                  $productService,
-        private readonly OrderEditService                                $orderEditService,
         private readonly PublishingHouseRepositoryInterface              $publishingHouseRepo,
         private readonly DeliveryManTransactionRepositoryInterface       $deliveryManTransactionRepo,
         private readonly OrderStatusHistoryRepositoryInterface           $orderStatusHistoryRepo,
         private readonly OrderTransactionRepository                      $orderTransactionRepo,
-        private readonly LoyaltyPointTransactionRepositoryInterface      $loyaltyPointTransactionRepo,
-        private readonly OrderDetailsRewardsRepositoryInterface          $orderDetailsRewardsRepo,
         private readonly AdminWalletRepositoryInterface                  $adminWalletRepo,
         private readonly VendorWalletRepositoryInterface                 $vendorWalletRepo,
-        private readonly WalletTransactionRepositoryInterface            $walletTransactionRepo,
-        private readonly OrderEditHistoryRepositoryInterface             $orderEditHistoryRepo,
     )
     {
     }
@@ -188,7 +171,7 @@ class OrderController extends BaseController
             'failed_order' => $allOrders->where('order_status', 'failed')->count(),
         ];
 
-        $orders = $this->orderRepo->getListWhereIn(orderBy: ['id' => 'desc'], searchValue: $request['searchValue'], filters: $filters, whereIn: $filterWhereIn, relations: ['customer', 'seller.shop', 'orderEditHistory'], dataLimit: getWebConfig(name: WebConfigKey::PAGINATION_LIMIT));
+        $orders = $this->orderRepo->getListWhereIn(orderBy: ['id' => 'desc'], searchValue: $request['searchValue'], filters: $filters, whereIn: $filterWhereIn, relations: ['customer', 'seller.shop'], dataLimit: getWebConfig(name: WebConfigKey::PAGINATION_LIMIT));
         $sellers = $this->vendorRepo->getByStatusExcept(status: 'pending', relations: ['shop'], paginateBy: 999999);
 
         $customer = "all";
@@ -223,142 +206,6 @@ class OrderController extends BaseController
             'customers',
             'orderTypes',
         ));
-    }
-
-    public function orderReturnAmountToCustomer(Request $request, CustomerWalletService $customerWalletService, OrderEditReturnAmountService $orderEditReturnAmountService): RedirectResponse
-    {
-        $validated = $request->validate([
-            'order_id' => 'required|exists:orders,id',
-            'amount' => 'required|numeric|min:1',
-            'order_return_payment_method' => 'required|string|in:wallet,manually',
-            'order_return_payment_note' => 'required|string|max:255',
-        ]);
-        try {
-            $order = $this->orderRepo->getFirstWhere(params: ['id' => $validated['order_id']], relations: ['latestEditHistory']);
-            if ($validated['amount'] !== $order['edit_return_amount']) {
-                ToastMagic::error(translate('Return amount must be equal to return amount'));
-                return redirect()->back();
-            }
-            DB::beginTransaction();
-            if ($validated['order_return_payment_method'] == "wallet" && $order['is_guest'] != 1) {
-                if (getWebConfig(name: 'wallet_status') != 1) {
-                    ToastMagic::error(translate('Amount_returned_currently_not_possible_to_wallet'));
-                    return redirect()->back();
-                }
-                CustomerManager::create_wallet_transaction($order['customer_id'], $order['edit_return_amount'], 'return_order_amount_by_admin', 'add_wallet_amount', ['payment_method' => 'wallet']);
-            }
-
-            $adminWallet = $this->adminWalletRepo->getFirstWhere(params: ['admin_id' => 1]);
-            $this->adminWalletRepo->updateWhere(
-                params: ['admin_id' => $order['seller_id']],
-                data: ['pending_amount' => $adminWallet['pending_amount'] - $order['edit_return_amount']]
-            );
-
-            $data = $orderEditReturnAmountService->getReturnAmountData($validated, $order['edit_return_amount']);
-            $data += [
-                'edit_by' => 'admin',
-                'edited_user_id' => auth('admin')->id(),
-                'edited_user_name' => auth('admin')->user()?->name,
-            ];
-
-            $this->orderEditHistoryRepo->updateWhere(params: ['id' => $order?->latestEditHistory['id']], data: $data);
-            $this->orderRepo->updateWhere(params: ['id' => $validated['order_id']], data: [
-                'order_amount' => ($order['order_amount'] - $order['edit_return_amount']),
-                'edit_return_amount' => 0
-            ]);
-            DB::commit();
-
-            if (!$order['is_guest']) {
-                $orderEditNotificationEvent[] = [
-                    'notification' => true,
-                    'notificationData' => (object)[
-                        'key' => 'order_edit_return_amount_message',
-                        'type' => 'customer',
-                        'order' => $order,
-                    ],
-                ];
-
-                foreach ($orderEditNotificationEvent as $orderEditDuePaymentEvent) {
-                    if (!empty($orderEditDuePaymentEvent)) {
-                        event(new OrderEditReturnPaymentEvent(notification: $orderEditDuePaymentEvent['notificationData']));
-                    }
-                }
-            }
-
-            ToastMagic::success(translate('Amount_returned_successfully'));
-            return redirect()->back();
-
-        } catch (\Throwable $exception) {
-            DB::rollBack();
-            ToastMagic::error(translate('Failed_to_return_amount_') . $exception->getMessage());
-            return redirect()->back();
-        }
-
-    }
-
-    public function orderDueAmountSwitchToCOD(Request $request)
-    {
-        $validated = $request->validate([
-            'order_id' => 'required|exists:orders,id',
-            'order_due_amount' => 'required',
-        ]);
-        $order = $this->orderRepo->getFirstWhere(params: ['id' => $validated['order_id']]);
-        if ($validated['order_due_amount'] != $order['edit_due_amount']) {
-            ToastMagic::error(translate('Due_amount_must_be_equal_to_due_amount'));
-            return redirect()->back();
-        }
-        $history = OrderEditHistory::where('order_id', $validated['order_id'])->latest('id')->first();
-        if (!$history) {
-            ToastMagic::error(translate('No_edit_history_found'));
-            return back();
-        }
-        $history->update([
-            'edit_by' => 'admin',
-            'edited_user_id' => auth('admin')->id(),
-            'edited_user_name' => auth('admin')->user()->name,
-            'order_due_payment_method' => 'cash_on_delivery',
-            'order_due_payment_note' => 'Switched to COD by admin',
-        ]);
-        ToastMagic::success(translate('Switched_to_COD_successfully'));
-        return redirect()->back();
-    }
-
-    public function orderDueAmountMarkAsPaid(Request $request)
-    {
-        $validated = $request->validate([
-            'order_id' => 'required|exists:orders,id',
-        ]);
-        $order = $this->orderRepo->getFirstWhere(['id' => $validated['order_id']], relations: ['latestEditHistory']);
-        if (!$order) {
-            ToastMagic::error(translate('Order_not_found'));
-            return back();
-        }
-        if ($order->payment_status === 'paid' && ($order?->latestEditHistory && $order?->latestEditHistory?->order_due_payment_status == 'paid')) {
-            ToastMagic::error(translate('Order_already_paid'));
-            return back();
-        }
-        try {
-            DB::transaction(function () use ($order, $validated) {
-                $order->update([
-                    'order_amount' => $order['order_amount'] + $order['edit_due_amount'],
-                    'payment_status' => 'paid',
-                    'edit_due_amount' => 0,
-                ]);
-
-                if ($order?->latestEditHistory) {
-                    $this->orderEditHistoryRepo->updateWhere(params: ['id' => $order?->latestEditHistory?->id], data: [
-                        'order_due_payment_status' => 'paid',
-                        'order_due_payment_method' => $order?->latestEditHistory?->order_due_payment_method,
-                        'order_due_transaction_ref' => '',
-                        'order_due_payment_note' => 'Marked as paid by admin',
-                    ]);
-                }
-            });
-            ToastMagic::success(translate('Mark_as_paid_successfully'));
-        } catch (\Throwable $e) {
-            ToastMagic::error($e->getMessage());
-        }
-        return redirect()->back();
     }
 
     public function exportList(Request $request, $status): BinaryFileResponse|RedirectResponse
@@ -482,9 +329,7 @@ class OrderController extends BaseController
         $zipCodes = $zipRestrictStatus ? $this->deliveryZipCodeRepo->getList(dataLimit: 'all') : 0;
         $companyName = getWebConfig(name: 'company_name');
         $companyWebLogo = getWebConfig(name: 'company_web_logo');
-        $order = $this->orderRepo->getFirstWhere(params: ['id' => $id], relations: ['details.productAllStatus', 'latestEditHistory', 'verificationImages', 'shipping', 'seller.shop', 'offlinePayments', 'deliveryMan', 'orderEditHistory' => function ($query) {
-            return $query->orderBy('id', 'desc');
-        }]);
+        $order = $this->orderRepo->getFirstWhere(params: ['id' => $id], relations: ['details.productAllStatus', 'verificationImages', 'shipping', 'seller.shop', 'deliveryMan']);
 
         if ($order) {
 
@@ -527,17 +372,10 @@ class OrderController extends BaseController
             $nextOrder = $this->orderRepo->getNextFirstOrderWhere(id: $id);
 
             $allProductsList = $this->productRepo->getListWhere(filters: ['added_by' => 'in_house'], dataLimit: 'all');
-            $isOrderEditable = $this->orderEditService->checkIsOrderEditable(order: $order, type: 'admin');
-            Session::forget($this->orderEditService->getOrderEditSessionKey(orderId: $order['id']));
-
-            $orderProductsSession = $this->orderEditService->getOrderEditSession(order: $order);
-            $editOrderSummary = $this->generateEditOrderSummary(order: $order, editedOrder: ($orderProductsSession['product_list'] ?? []), data: [
-                'edit_by' => 'admin',
-                'edited_user_id' => auth()->guard('admin')->id(),
-                'edited_user_name' => auth()->guard('admin')->user()->name,
-            ]);
-
-            $orderEditPaymentHistory = $this->orderEditHistoryRepo->getListWhere(filters: ['order_id' => $order['id']], dataLimit: 'all');
+            $isOrderEditable = false;
+            $orderProductsSession = [];
+            $editOrderSummary = [];
+            $orderEditPaymentHistory = [];
 
             if ($order['order_type'] == 'default_type') {
                 $orderCount = $this->orderRepo->getListWhereCount(filters: ['customer_id' => $order['customer_id']]);
@@ -580,7 +418,7 @@ class OrderController extends BaseController
         OrderStatusHistoryService     $orderStatusHistoryService,
     ): JsonResponse
     {
-        $order = $this->orderRepo->getFirstWhere(params: ['id' => $request['id']], relations: ['customer', 'seller.shop', 'deliveryMan', 'latestEditHistory']);
+        $order = $this->orderRepo->getFirstWhere(params: ['id' => $request['id']], relations: ['customer', 'seller.shop', 'deliveryMan']);
 
         if (!$order['is_guest'] && !isset($order['customer'])) {
             return response()->json([
@@ -592,27 +430,7 @@ class OrderController extends BaseController
         if ($order['payment_method'] == 'offline_payment' && $order['payment_status'] == 'unpaid') {
             return response()->json([
                 'status' => 0,
-                'message' => translate('Please confirm the offline payment information before changing the order status.'),
-            ]);
-        }
-
-        if ($order['payment_method'] !== 'cash_on_delivery' && $order['edit_due_amount'] > 0 && $order?->latestEditHistory?->order_due_payment_method !== 'cash_on_delivery' && $order?->latestEditHistory?->order_due_payment_status == 'unpaid') {
-            return response()->json([
-                'status' => 0,
-                'message' => translate('Please confirm the due payment has been paid before changing the order status.'),
-            ]);
-        }
-
-        if ($order['payment_method'] !== 'cash_on_delivery' && $order['edit_return_amount'] > 0 && $order?->latestEditHistory?->order_due_payment_method !== 'cash_on_delivery' && $order?->latestEditHistory?->order_return_payment_status == 'pending') {
-            return response()->json([
-                'status' => 0,
-                'message' => translate('Please return the amount first before changing the order status.'),
-            ]);
-        }
-        if ($order['edit_due_amount'] > 0 && $order?->latestEditHistory?->order_due_payment_method == 'cash_on_delivery' && $order?->latestEditHistory?->order_due_payment_status == 'unpaid' && $request['order_status'] == 'delivered') {
-            return response()->json([
-                'status' => 0,
-                'message' => translate('Please mark as paid before delivered this order.'),
+                'message' => translate('Please confirm the offline payment information before changing the order status'),
             ]);
         }
 
@@ -660,28 +478,14 @@ class OrderController extends BaseController
             }
         }
 
-        $loyaltyPointStatus = getWebConfig(name: 'loyalty_point_status');
-        $loyaltyPointEachOrder = getWebConfig(name: 'loyalty_point_for_each_order');
-        $loyaltyPointEachOrder = !is_null($loyaltyPointEachOrder) ? $loyaltyPointEachOrder : $loyaltyPointStatus;
-        $orderDetailsRewards = $this->orderDetailsRewardsRepo->getFirstWhere(params: ['order_id' => $order['id'], 'reward_type' => 'loyalty_point']);
-
-        if ($orderDetailsRewards && $orderDetailsRewards['reward_delivered'] != 1 && $orderDetailsRewards['reward_amount'] > 0 && $loyaltyPointStatus == 1 && $loyaltyPointEachOrder == 1 && !$order['is_guest'] && $request['order_status'] == 'delivered') {
-            $this->loyaltyPointTransactionRepo->addLoyaltyPointTransaction(userId: $order['customer_id'], reference: $order['id'], amount: usdToDefaultCurrency(amount: $order['order_amount'] - $order['shipping_cost']), transactionType: 'order_place');
-            $this->orderDetailsRewardsRepo->update(id: $orderDetailsRewards['id'], data: ['reward_delivered' => 1]);
-        }
-
-        OrderManager::generateReferBonusForFirstOrder(orderId: $order['id']);
-
         if ($order['delivery_man_id'] && $request->order_status == 'delivered') {
             $deliverymanWallet = $this->deliveryManWalletRepo->getFirstWhere(params: ['delivery_man_id' => $order['delivery_man_id']]);
-            $cashInHand = $order['payment_method'] == 'cash_on_delivery' ? $order['order_amount'] : 0;
             if (empty($deliverymanWallet)) {
-                $deliverymanWalletData = $deliveryManWalletService->getDeliveryManData(id: $order['delivery_man_id'], deliverymanCharge: $order['deliveryman_charge'], cashInHand: $cashInHand);
+                $deliverymanWalletData = $deliveryManWalletService->getDeliveryManData(id: $order['delivery_man_id'], deliverymanCharge: $order['deliveryman_charge'], cashInHand: 0);
                 $this->deliveryManWalletRepo->add(data: $deliverymanWalletData);
             } else {
                 $deliverymanWalletData = [
-                    'current_balance' => $deliverymanWallet['current_balance'] + $order['deliveryman_charge'] ?? 0,
-                    'cash_in_hand' => $deliverymanWallet['cash_in_hand'] + $cashInHand ?? 0,
+                    'current_balance' => $deliverymanWallet['current_balance'] + ($order['deliveryman_charge'] ?? 0),
                 ];
                 $this->deliveryManWalletRepo->updateWhere(params: ['delivery_man_id' => $order['delivery_man_id']], data: $deliverymanWalletData);
             }
@@ -804,11 +608,6 @@ class OrderController extends BaseController
         $order = $this->orderRepo->getFirstWhere(params: ['id' => $order_id], relations: ['seller.shop', 'deliveryMan']);
 
         event(new OrderStatusEvent(key: 'new_order_assigned_message', type: 'delivery_man', order: $order));
-
-        // [AI] Trigger WhatsApp Automated Assignment Alert to Delivery Rider
-        if (!empty($order->deliveryMan)) {
-            \App\Services\WhatsAppAutomationWorkflow::triggerDeliveryManAssignmentAlert($order, $order->deliveryMan);
-        }
 
         /** For Seller Product Send Notification */
         if ($order['seller_is'] == 'seller') {

@@ -361,7 +361,6 @@ Route::group(['prefix' => 'customer', 'as' => 'customer.'], function () {
 Route::group(['prefix' => 'customer', 'as' => 'customer.'], function () {
     Route::controller(PaymentController::class)->group(function () {
         Route::post('web-payment-request', 'payment')->name('web-payment-request');
-        Route::post('customer-order-edit-pay-amount', 'customerOrderEditPayDueAmount')->name('customer-order-edit-pay-amount');
     });
 });
 

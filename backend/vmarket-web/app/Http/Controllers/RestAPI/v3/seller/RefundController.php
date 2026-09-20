@@ -169,15 +169,7 @@ class RefundController extends Controller
 
         $user = User::find($refund->customer_id);
 
-        $loyalty_point_status = getWebConfig(name: 'loyalty_point_status');
 
-        if ($loyalty_point_status == 1) {
-            $loyalty_point = CustomerManager::countLoyaltyPointForAmount($refund->order_details_id);
-
-            if ($user->loyalty_point < $loyalty_point && $request->refund_status == 'approved') {
-                return response()->json(['message' => 'Customer has not sufficient loyalty point to take refund for this order'], 403);
-            }
-        }
 
         if ($refund->change_by == 'admin') {
 

@@ -686,7 +686,7 @@ class OrderController extends Controller
         $user = Helpers::getCustomerInformation($request);
 
         $orderExist = null;
-        $order = Order::with('shippingAddress', 'billingAddress', 'details', 'latestEditHistory')
+        $order = Order::with('shippingAddress', 'billingAddress', 'details')
             ->where(['id' => $request['order_id'], 'order_type' => 'default_type'])
             ->first();
 
@@ -740,7 +740,7 @@ class OrderController extends Controller
         }
 
         if (isset($orderExist)) {
-            $details = OrderDetail::with(['order.deliveryMan', 'order.latestEditHistory', 'order.orderEditHistory', 'verificationImages', 'seller.shop', 'product', 'latestEditHistory'])
+            $details = OrderDetail::with(['order.deliveryMan', 'verificationImages', 'seller.shop', 'product'])
                 ->where(['order_id' => $orderExist['id']])
                 ->get();
 

@@ -3,7 +3,6 @@
 use App\Http\Controllers\Admin\AdvancedSearchController;
 use App\Http\Controllers\Admin\BusinessSettings\WebsiteSetupController;
 use App\Http\Controllers\Admin\ExpenseTransactionReportController;
-use App\Http\Controllers\Admin\Order\OrderEditController;
 use App\Http\Controllers\Admin\Promotion\ClearanceSaleController;
 use App\Http\Controllers\Admin\Promotion\ClearanceSalePrioritySetupController;
 use App\Http\Controllers\Admin\Promotion\ClearanceSaleVendorOfferController;
@@ -92,7 +91,6 @@ use App\Http\Controllers\Admin\SystemSetup\SystemLoginSetupController;
 use App\Http\Controllers\Admin\ThirdParty\SocialLoginSettingsController;
 use App\Http\Controllers\Admin\Deliveryman\DeliverymanWithdrawController;
 use App\Http\Controllers\Admin\Settings\VendorRegistrationReasonController;
-use App\Http\Controllers\Admin\Deliveryman\DeliveryManCashCollectController;
 use App\Http\Controllers\Admin\Settings\StorageConnectionSettingsController;
 use App\Http\Controllers\Admin\Settings\VendorRegistrationSettingController;
 use App\Http\Controllers\Admin\Notification\PushNotificationSettingsController;
@@ -228,19 +226,6 @@ Route::group(['prefix' => 'admin', 'as' => 'admin.', 'middleware' => ['admin', '
             Route::get('inhouse-order-filter', 'filterInHouseOrder')->name('inhouse-order-filter');
             Route::post('digital-file-upload-after-sell', 'uploadDigitalFileAfterSell')->name('digital-file-upload-after-sell');
             Route::post('status', 'updateStatus')->name('status');
-            Route::post('customer-return-amount', 'orderReturnAmountToCustomer')->name('customer-return-amount');
-            Route::post('customer-due-amount', 'orderDueAmountSwitchToCOD')->name('customer-due-amount');
-            Route::post('customer-due-amount-mark-as-paid', 'orderDueAmountMarkAsPaid')->name('customer-due-amount-mark-as-paid');
-        });
-
-        Route::controller(OrderEditController::class)->group(function () {
-            Route::get('search-for-edit-order-product', 'getSearchEditOrderProductsView')->name('search-for-edit-order-product');
-            Route::post('edit-order-product-modal-view', 'getEditOrderProductModalView')->name('edit-order-product-modal-view');
-            Route::post('edit-order-product-add', 'addEditOrderProduct')->name('edit-order-product-add');
-            Route::post('edit-order-product-variant-price', 'checkProductVariantPrice')->name('edit-order-product-variant-price');
-            Route::post('edit-order-product-list-update', 'updateEditOrderProductList')->name('edit-order-product-list-update');
-            Route::post('edit-order-product-remove', 'removeEditOrderProduct')->name('edit-order-product-remove');
-            Route::post('edit-order-generate', 'generateEditOrderByProductList')->name('edit-order-generate');
         });
     });
 
@@ -317,7 +302,6 @@ Route::group(['prefix' => 'admin', 'as' => 'admin.', 'middleware' => ['admin', '
             Route::delete('delete/{id}', 'delete')->name('delete');
             Route::post('status', 'status')->name('status');
             Route::get('get-by-category/{category_id}', 'getByCategoryAjax')->name('get-by-category');
-            Route::post('ai-suggest-specs', 'aiSuggestSpecs')->name('ai-suggest-specs');
         });
     });
 
@@ -349,12 +333,10 @@ Route::group(['prefix' => 'admin', 'as' => 'admin.', 'middleware' => ['admin', '
             Route::post('profile-update', 'updateProfile')->name('profile-update');
         });
 
-        // [AI] 1-Click Ban & Manual Receipt Verification Routes
+        // [AI] 1-Click Ban Customer Routes
         Route::controller(BlacklistController::class)->group(function () {
             Route::post('ban', 'banCustomer')->name('ban');
             Route::post('unban', 'unbanCustomer')->name('unban');
-            Route::post('verify-receipt/{id}', 'verifyReceipt')->name('verify-receipt');
-            Route::post('reject-receipt/{id}', 'rejectReceipt')->name('reject-receipt');
         });
 
 
@@ -479,7 +461,6 @@ Route::group(['prefix' => 'admin', 'as' => 'admin.', 'middleware' => ['admin', '
             Route::get('pdf-order-wise-transaction', 'pdf_order_wise_transaction')->name('pdf-order-wise-transaction');
             Route::get('order-transaction-export-excel', 'orderTransactionExportExcel')->name('order-transaction-export-excel');
             Route::get('order-transaction-summary-pdf', 'order_transaction_summary_pdf')->name('order-transaction-summary-pdf');
-            Route::get('wallet-bonus', 'wallet_bonus')->name('wallet-bonus');
         });
 
         Route::controller(ExpenseTransactionReportController::class)->group(function () {
@@ -661,11 +642,6 @@ Route::group(['prefix' => 'admin', 'as' => 'admin.', 'middleware' => ['admin', '
             Route::get('order-history-log-export/{id}', 'getOrderHistoryListExport')->name('order-history-log-export');
             Route::get('rating/{id}', 'getRatingView')->name('rating');
             Route::get( 'ajax-order-status-history/{order}', 'getOrderStatusHistory')->name('ajax-order-status-history');
-        });
-
-        Route::controller(DeliveryManCashCollectController::class)->group(function () {
-            Route::get('collect-cash/{id}', 'index')->name('collect-cash');
-            Route::post('cash-receive/{id}', 'getCashReceive')->name('cash-receive');
         });
 
         Route::controller(DeliverymanWithdrawController::class)->group(function () {

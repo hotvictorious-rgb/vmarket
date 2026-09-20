@@ -24,7 +24,6 @@ use App\Http\Controllers\RestAPI\v1\GeneralController;
 use App\Http\Controllers\RestAPI\v1\MapApiController;
 use App\Http\Controllers\RestAPI\v1\NotificationController;
 use App\Http\Controllers\RestAPI\v1\OrderController;
-use App\Http\Controllers\RestAPI\v1\OrderEditController;
 use App\Http\Controllers\RestAPI\v1\ProductController;
 use App\Http\Controllers\RestAPI\v1\ReviewController;
 use App\Http\Controllers\RestAPI\v1\SellerController;
@@ -370,12 +369,6 @@ Route::group(['prefix' => 'v1', 'middleware' => ['api_lang']], function () {
             Route::get('track-order-details', 'track_order_details_history');
             Route::get('cancel-order', 'order_cancel');
             Route::post('track-order', 'track_order');
-        });
-    });
-
-    Route::group(['prefix' => 'edit-order', 'middleware' => 'apiGuestCheck'], function () {
-        Route::controller(OrderEditController::class)->group(function () {
-            Route::post('due-payment-by-digital-payment', 'duePaymentByDigitalPayment');
         });
     });
 

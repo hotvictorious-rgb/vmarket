@@ -2,7 +2,6 @@
 
 use App\Models\AdminWallet;
 use App\Models\Order;
-use App\Models\OrderEditHistory;
 use App\Models\ShippingAddress;
 use App\Models\User;
 use App\Utils\Convert;
@@ -105,63 +104,7 @@ if (!function_exists('digital_payment_fail')) {
 
     }
 }
-if (!function_exists('customer_order_edit_pay_due_amount_success')) {
-    /**
-     * @throws Throwable
-     */
-    function customer_order_edit_pay_due_amount_success($payment_data): void
-    {
-        if (!isset($payment_data) || ($payment_data['is_paid'] ?? 0) != 1) {
-            return;
-        }
-        $additionalData = json_decode($payment_data['additional_data'] ?? '{}', true);
-        if (empty($additionalData['order_id'])) {
-            return;
-        }
-        $order = Order::where('id', $additionalData['order_id'])->first();
-        // [AI] Double Execution Guard: If order not found or due amount is already 0, do not re-process
-        if (!$order || $order->edit_due_amount <= 0) {
-            return;
-        }
-        DB::transaction(function () use ($additionalData, $payment_data, $order) {
-            $order->update([
-                'edit_due_amount' => 0,
-                'order_amount' => $additionalData['order_amount'] ?? 0,
-                'payment_status' => 'paid',
-            ]);
-            OrderEditHistory::where('order_id', $additionalData['order_id'])
-                ->latest('id')
-                ->limit(1)
-                ->update([
-                    'order_due_payment_status' => 'paid',
-                    'order_due_payment_method' => $payment_data['payment_method'] ?? null,
-                    'order_due_transaction_ref' => $payment_data['transaction_id'] ?? '',
-                    'order_due_payment_note' => $payment_data['order_due_payment_note'] ?? '',
-                ]);
-        });
-        OrderManager::sendPushNotificationAfterDuePayment(order: $order);
-        AdminWallet::where(['admin_id' => 1])->increment('pending_amount', $additionalData['order_amount']);
-    }
-}
-if (!function_exists('customer_order_edit_pay_due_amount_failed')) {
-    function customer_order_edit_pay_due_amount_failed($payment_data): void
-    {
-        if (!isset($payment_data)) {
-            return;
-        }
-        $additionalData = json_decode($payment_data['additional_data'] ?? '', true);
-        if (empty($additionalData['order_id'])) {
-            return;
-        }
-        OrderEditHistory::where('order_id', $additionalData['order_id'])
-            ->latest('id')
-            ->limit(1)
-            ->update([
-                'order_due_payment_status' => 'unpaid',
-                'order_due_transaction_ref' => $payment_data['transaction_id'] ?? '',
-            ]);
-    }
-}
+
 
 
 

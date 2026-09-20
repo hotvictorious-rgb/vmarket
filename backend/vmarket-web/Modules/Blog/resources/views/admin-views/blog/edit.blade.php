@@ -172,104 +172,66 @@
                                 }
                             }
                         ?>
-                        @foreach($languages as $lang)
-                            <div class="{{$lang != $defaultLanguage ? 'd-none':''}} form-system-language-form" id="{{$lang}}-form">
-                                <div class="form-group mb-4">
-                                    <div class="d-flex justify-content-between align-items-center gap-2 mb-2">
-                                       <label for="name" class="form-label mb-0">
-                                            {{ translate('title')}}
-                                            ({{strtoupper($lang)}})
-                                            <span class="input-required-icon">*</span>
-                                        </label>
-                                        @if(getActiveAIProviderConfigCache())
-                                        <button type="button"
-                                            class="btn bg-white text-primary bg-transparent shadow-none border-0 opacity-1 generate_btn_wrapper p-0 blog_title_auto_fill"
-                                            id="title-{{ $lang }}-action-btn"
-                                            data-lang="{{  getLanguageCode(country_code: $lang) }}"
-                                            data-route="{{ route('admin.blog.title-auto-fill') }}"
-                                            data-item='@json(["title" => $defaultLanguage == $lang ? $blog->title :  $translate[$lang]['
-                                            title'] ?? '' ])'>
-                                            <div class="btn-svg-wrapper">
-                                                <img width="18" height="18" class=""
-                                                    src="{{ dynamicAsset(path: 'public/assets//back-end/img/ai/blink-right-small.svg') }}"
-                                                    alt="">
+                                @foreach($languages as $lang)
+                                    <div class="{{$lang != $defaultLanguage ? 'd-none':''}} form-system-language-form" id="{{$lang}}-form">
+                                        <div class="form-group mb-4">
+                                            <div class="d-flex justify-content-between align-items-center gap-2 mb-2">
+                                                <label for="name" class="form-label mb-0">
+                                                    {{ translate('title')}}
+                                                    ({{strtoupper($lang)}})
+                                                    <span class="input-required-icon">*</span>
+                                                </label>
                                             </div>
-                                            <span class="ai-text-animation d-none" role="status">
-                                                {{ translate('Just_a_second') }}
-                                            </span>
-                                            <span class="btn-text">{{ translate('Generate') }}</span>
-                                        </button>
-                                        @endif
-                                    </div>
 
-                                    <div class="outline-wrapper" id="title-container-{{ getLanguageCode(country_code: $lang )}}">
-                                        <input type="text" name="title[{{$lang}}]" class="form-control" id="{{getLanguageCode(country_code: $lang)}}_title"
-                                            data-required-msg="{{ translate('title_field_is_required') }}"
-                                            value="{{ $defaultLanguage == $lang ? $blog->title :  $translate[$lang]['title'] ?? ''}}"
-                                            placeholder="{{translate('ex').':'.translate('LUX')}}"
-                                            {{$lang == $defaultLanguage ? 'required':''}}>
-                                    </div>
-                                </div>
-                            </div>
-                            <input type="hidden" name="lang[{{$lang}}]" value="{{$lang}}" id="lang-{{$lang}}">
-                            <div class="form-group mb-0 {{$lang != $defaultLanguage ? 'd-none':''}} form-system-description-language-form" id="{{ $lang}}-description-form">
-                                <div class="d-flex justify-content-between align-items-center gap-2 mb-2">
-                                    <label class="form-label mb-0">{{ translate('Description') }}({{strtoupper($lang)}}) <span class="input-required-icon">*</span></label>
-                                    @if(getActiveAIProviderConfigCache())
-                                   <button type="button"
-                                        class="btn bg-white text-primary bg-transparent shadow-none border-0 opacity-1 generate_btn_wrapper p-0 blog_description_auto_fill"
-                                        id="description-{{ $lang }}-action-btn" data-lang="{{getLanguageCode($lang) }}"
-                                        data-route="{{ route('admin.blog.description-auto-fill') }}"
-                                        data-item='@json(["description" => $defaultLanguage == $lang ? $blog->description :  $translate[$lang]['
-                                        description'] ?? '' ])'>
-                                        <div class="btn-svg-wrapper">
-                                            <img width="18" height="18" class=""
-                                                src="{{ dynamicAsset(path: 'public/assets//back-end/img/ai/blink-right-small.svg') }}"
-                                                alt="">
+                                            <div class="outline-wrapper" id="title-container-{{ getLanguageCode(country_code: $lang )}}">
+                                                <input type="text" name="title[{{$lang}}]" class="form-control" id="{{getLanguageCode(country_code: $lang)}}_title"
+                                                    data-required-msg="{{ translate('title_field_is_required') }}"
+                                                    value="{{ $defaultLanguage == $lang ? $blog->title :  $translate[$lang]['title'] ?? ''}}"
+                                                    placeholder="{{translate('ex').':'.translate('LUX')}}"
+                                                    {{$lang == $defaultLanguage ? 'required':''}}>
+                                            </div>
                                         </div>
-                                        <span class="ai-text-animation d-none" role="status">
-                                            {{ translate('Just_a_second') }}
-                                        </span>
-                                        <span class="btn-text">{{ translate('Generate') }}</span>
-                                    </button>
-                                    @endif
-                                </div>
-
-                                <div class="outline-wrapper" id="editor-container-{{ getLanguageCode($lang)}}">
-                                    <div id="description-{{ getLanguageCode($lang)}}-editor" class="quill-editor">{!! $defaultLanguage == $lang ?
-                                        $blog->description : $translate[$lang]['description'] ?? '' !!}</div>
-                                    <textarea name="description[{{$lang}}]" id="description-{{ getLanguageCode($lang)}}" style="display:none;"
-                                        data-required-msg="{{ translate('description_field_is_required') }}"
-                                        {{ $lang == $defaultLanguage ? 'required' : '' }}>{!! $defaultLanguage == $lang ? $blog->description :  $translate[$lang]['description'] ?? '' !!}</textarea>
-                                </div>
+                                    </div>
+                                    <input type="hidden" name="lang[{{$lang}}]" value="{{$lang}}" id="lang-{{$lang}}">
+                                    <div class="form-group mb-0 {{$lang != $defaultLanguage ? 'd-none':''}} form-system-description-language-form" id="{{ $lang}}-description-form">
+                                        <div class="d-flex justify-content-between align-items-center gap-2 mb-2">
+                                            <label class="form-label mb-0">{{ translate('Description') }}({{strtoupper($lang)}}) <span class="input-required-icon">*</span></label>
+                                        </div>
+                                        <div class="outline-wrapper" id="description-container-{{ getLanguageCode(country_code: $lang) }}">
+                                            <div class="quill-editor" id="{{ getLanguageCode(country_code: $lang) }}_description">
+                                                {!! $defaultLanguage == $lang ? $blog->description :  $translate[$lang]['description'] ?? '' !!}
+                                            </div>
+                                            <textarea name="description[{{$lang}}]" style="display:none" id="hidden-{{ getLanguageCode(country_code: $lang) }}_description"
+                                                data-required-msg="{{ translate('description_field_is_required') }}"
+                                                {{$lang == $defaultLanguage ? 'required':''}}>{!! $defaultLanguage == $lang ? $blog->description :  $translate[$lang]['description'] ?? '' !!}</textarea>
+                                        </div>
+                                    </div>
+                                @endforeach
                             </div>
-                        @endforeach
+                        </div>
                     </div>
-                </div>
-            </div>
-            @include('blog::admin-views.blog.partials._edit-seo-section')
 
-            <input type="hidden" name="status" id="status" value="1">
-            <input type="hidden" name="is_draft" id="is_draft" value="0">
-           <input type="hidden" name="page" id="page" value="edit">
-            <div class="d-flex flex-wrap gap-3 justify-content-end mt-4">
-                <button type="reset" id="reset" class="btn btn-secondary min-w-120 reset-form">
-                    {{ translate('reset') }}
-                </button>
-                <a class="btn btn-outline-primary min-w-120 save-draft">
-                    {{ translate('Save_to_Draft') }}
-                </a>
-                <button type="button" class="btn btn-primary min-w-120 publish" data-bs-toggle="modal" data-bs-target="#toggle-status-publish-modal">
-                    {{ translate('Publish') }}
-                </button>
+                    @include('blog::admin-views.blog.partials._edit-seo-section', ['languages' => $languages, 'defaultLanguage' => $defaultLanguage, 'translate' => $translate, 'blog' => $blog])
+                </div>
+                <div class="col-lg-4">
+                    @include('blog::admin-views.blog.partials._edit-side-section', ['languages' => $languages, 'defaultLanguage' => $defaultLanguage, 'translate' => $translate, 'blog' => $blog, 'categories' => $categories])
+                </div>
+                <div class="col-12 d-flex justify-content-end gap-3">
+                    <a href="{{ route('admin.blog.index') }}" class="btn btn-secondary min-w-120">
+                        {{ translate('Back') }}
+                    </a>
+                    <a class="btn btn-outline-primary min-w-120 save-as-draft" data-bs-toggle="modal" data-bs-target="#toggle-status-draft-modal">
+                        {{ translate('Save_to_Draft') }}
+                    </a>
+                    <button type="button" class="btn btn-primary min-w-120 publish" data-bs-toggle="modal" data-bs-target="#toggle-status-publish-modal">
+                        {{ translate('Publish') }}
+                    </button>
+                </div>
             </div>
         </form>
     </div>
     @include('blog::admin-views.blog.partials._publish-modal')
     @include('blog::admin-views.blog.category.index')
-    @if(getActiveAIProviderConfigCache())
-    @include("blog::admin-views.blog.partials.ai-sidebar")
-    @endif
 @endsection
 
 @push('script')

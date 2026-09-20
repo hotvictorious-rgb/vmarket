@@ -240,50 +240,11 @@ class TransactionReportController extends Controller
         $offlinePaymentQuery = Order::where(['payment_method' => 'offline_payment']);
         $offlinePayment = self::order_transaction_piechart_query($request, $offlinePaymentQuery)->sum('init_order_amount');
 
-        $orderEditHistory = self::order_transaction_piechart_query($request, Order::with(['orderEditHistory']))->get();
         $orderEditDigitalPayment = 0;
         $orderEditCashPayment = 0;
         $orderEditWalletPayment = 0;
         $orderEditOfflinePayment = 0;
         $orderEditReturnAmount = 0;
-
-        foreach ($orderEditHistory as $editHistory) {
-
-            $orderEditDigitalPayment += $editHistory?->orderEditHistory?->filter(function ($item) use ($request) {
-                if ($item?->order_due_payment_method != null && $item?->order_due_payment_status == 'paid' && !in_array($item->order_due_payment_method, ['cash_on_delivery', 'wallet', 'offline_payment'])) {
-                    return $item;
-                }
-                return null;
-            })->sum('order_due_amount');
-
-            $orderEditCashPayment += $editHistory?->orderEditHistory?->filter(function ($item) use ($request) {
-                if ($item?->order_due_payment_method == 'cash_on_delivery' && $item?->order_due_payment_status == 'paid') {
-                    return $item;
-                }
-                return null;
-            })->sum('order_due_amount');
-
-            $orderEditWalletPayment += $editHistory?->orderEditHistory?->filter(function ($item) use ($request) {
-                if ($item?->order_due_payment_method == 'wallet' && $item?->order_due_payment_status == 'paid') {
-                    return $item;
-                }
-                return null;
-            })->sum('order_due_amount');
-
-            $orderEditOfflinePayment += $editHistory?->orderEditHistory?->filter(function ($item) use ($request) {
-                if ($item?->order_due_payment_method == 'offline_payment' && $item?->order_due_payment_status == 'paid') {
-                    return $item;
-                }
-                return null;
-            })->sum('order_due_amount');
-
-            $orderEditReturnAmount += $editHistory?->orderEditHistory?->filter(function ($item) use ($request) {
-                if ($item?->order_return_payment_status == 'returned') {
-                    return $item;
-                }
-                return null;
-            })->sum('order_return_amount');
-        }
 
         $editTotalPayment = $orderEditCashPayment + $orderEditWalletPayment + $orderEditDigitalPayment + $orderEditOfflinePayment;
         $totalPayment = $cashPayment + $walletPayment + $digitalPayment + $offlinePayment;

@@ -7,9 +7,7 @@ use App\Contracts\Repositories\DeliveryManTransactionRepositoryInterface;
 use App\Contracts\Repositories\OrderRepositoryInterface;
 use App\Enums\ViewPaths\Vendor\Dashboard;
 use App\Enums\ViewPaths\Vendor\DeliveryManWallet;
-use App\Events\CashCollectEvent;
 use App\Http\Controllers\BaseController;
-use App\Http\Requests\Vendor\DeliveryManWalletRequest;
 use App\Repositories\DeliveryManWalletRepository;
 use App\Repositories\OrderStatusHistoryRepository;
 use App\Services\DeliveryManService;
@@ -133,77 +131,4 @@ class DeliveryManWalletController extends BaseController
         return view(DeliveryManWallet::EARNING[VIEW], compact('deliveryMan', 'orders', 'totalEarn', 'withdrawableBalance', 'searchValue'));
     }
 
-    /**
-     * @param string|int $id
-     * @return View
-     *
-     */
-    public function getCashCollectView(string|int $id): View
-    {
-        $vendorId = auth('seller')->id();
-        $deliveryMan = $this->deliveryManRepo->getFirstWhere(
-            params: ['seller_id' => $vendorId, 'id' => $id],
-            relations: ['wallet']
-        );
-        $transactions = $this->deliveryManTransactionRepo->getListWhere(
-            orderBy:['id'=>'desc'],
-            filters: ['delivery_man_id' =>$deliveryMan['id']],
-            dataLimit:getWebConfig(name: 'pagination_limit'),
-        );
-        return view(DeliveryManWallet::CASH_COLLECT[VIEW], compact('deliveryMan', 'transactions'));
-    }
-
-    /**
-     * @param DeliveryManWalletRequest $request
-     * @param string|int $id
-     * @return RedirectResponse
-     * @function receiveCashAdd ,receiving cash from delivery man
-     */
-    public function collectCash(DeliveryManWalletRequest $request, string|int $id): RedirectResponse
-    {
-        $vendorId = auth('seller')->id();
-        // [AI] Ownership Guard: Deliveryman must belong to the authenticated vendor
-        $deliveryMan = $this->deliveryManRepo->getFirstWhere(params: ['id' => $id, 'seller_id' => $vendorId]);
-        if (!$deliveryMan) {
-            ToastMagic::error(translate('unauthorized_access'));
-            return redirect()->back();
-        }
-
-        try {
-            $amount = currencyConverter($request->get('amount', 0));
-            $status = \Illuminate\Support\Facades\DB::transaction(function () use ($id, $amount) {
-                // [AI] Pessimistic lock on delivery man wallet to prevent concurrent over-collection
-                $wallet = \App\Models\DeliveryManWallet::where('delivery_man_id', $id)->lockForUpdate()->first();
-                if (!$wallet || $amount > $wallet->cash_in_hand) {
-                    return false;
-                }
-
-                $wallet->cash_in_hand -= $amount;
-                $wallet->save();
-
-                $this->deliveryManTransactionRepo->add(
-                    $this->deliveryManTransactionService->getDeliveryManTransactionData(
-                        amount: $amount,
-                        addedBy: 'seller',
-                        id: $id,
-                        transactionType: 'cash_in_hand')
-                );
-                return true;
-            });
-
-            if (!$status) {
-                ToastMagic::warning(translate('receive_amount_can_not_be_more_than_cash_in_hand') . '!');
-                return redirect()->back();
-            }
-
-            if (!empty($deliveryMan['fcm_token'])) {
-                CashCollectEvent::dispatch('cash_collect_by_seller_message', 'delivery_man', $deliveryMan['app_language'] ?? getDefaultLanguage(), $amount, $deliveryMan['fcm_token']);
-            }
-            ToastMagic::success(translate('amount_receive_successfully') . '!');
-            return back();
-        } catch (\Exception $e) {
-            ToastMagic::error(translate('amount_receive_failed') . '!');
-            return back();
-        }
-    }
 }

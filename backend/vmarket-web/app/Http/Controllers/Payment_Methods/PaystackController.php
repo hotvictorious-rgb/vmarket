@@ -3,7 +3,6 @@
 namespace App\Http\Controllers\Payment_Methods;
 
 use App\Models\Order;
-use App\Models\OrderEditHistory;
 use App\Models\PaymentRequest;
 use App\Models\User;
 use App\Services\PaystackBankService;
@@ -613,28 +612,19 @@ class PaystackController extends Controller
             $orderId = $metadata['order_id'] ?? null;
             $type = $metadata['type'] ?? null;
             if ($orderId && $type === 'delivery_payment') {
-                $order = Order::with(['customer', 'deliveryMan', 'latestEditHistory'])->find($orderId);
+                $order = Order::with(['customer', 'deliveryMan'])->find($orderId);
                 if ($order) {
-                    $expectedAmount = (int) round(($order['order_amount'] + $order['edit_due_amount']) * 100);
+                    $expectedAmount = (int) round($order['order_amount'] * 100);
                     $amountPaid = (int) ($data['amount'] ?? 0);
                     if ($amountPaid === $expectedAmount) {
                         // [AI] Receipt Authority Invariant:
                         // Payment confirmation marks payment_status = 'paid', but NEVER marks order_status = 'delivered'.
                         // Customer receipt requires physical OTP code verification at the doorstep.
                         $order->update([
-                            'order_amount' => $order['order_amount'] + $order['edit_due_amount'],
                             'payment_status' => 'paid',
-                            'edit_due_amount' => 0,
                             'payment_method' => 'paystack',
                             'transaction_ref' => $reference,
                         ]);
-
-                        if ($order->latestEditHistory) {
-                            OrderEditHistory::where('id', $order->latestEditHistory->id)->update([
-                                'order_due_payment_status' => 'paid',
-                                'order_due_payment_note' => 'Marked as paid by Paystack Webhook',
-                            ]);
-                        }
 
                         Log::info("Paystack Webhook: Successfully processed Payment for Delivery Order #{$orderId} with ref {$reference}.");
                     }

@@ -12,7 +12,6 @@ use App\Models\DeliverymanWallet;
 use App\Models\DeliveryZipCode;
 use App\Models\Order;
 use App\Models\OrderDetail;
-use App\Models\OrderEditHistory;
 use App\Models\ReferralCustomer;
 use App\Traits\CommonTrait;
 use App\Models\User;
@@ -120,24 +119,11 @@ class OrderController extends Controller
     public function details(Request $request, $id): JsonResponse
     {
         $seller = $request->seller;
-        $detailsList = OrderDetail::with(['order.offlinePayments', 'order.customer', 'order.deliveryMan', 'order.shippingAddress', 'order.billingAddress', 'verificationImages', 'latestEditHistory', 'orderEditHistory' => function ($query) {
-            return $query->orderBy('updated_at', 'desc');
-        }])->where(['seller_id' => $seller['id'], 'order_id' => $id])->get();
+        $detailsList = OrderDetail::with(['order.offlinePayments', 'order.customer', 'order.deliveryMan', 'order.shippingAddress', 'order.billingAddress', 'verificationImages'])->where(['seller_id' => $seller['id'], 'order_id' => $id])->get();
 
         $productList = $this->getProductListWithAllDetails(ids: $detailsList?->pluck('product_id')->toArray());
 
-        $orderEditPaymentHistory = OrderEditHistory::where('order_id', $id)->orderBy('id', 'asc')->get();
-        $filteredEditPaymentHistory = $orderEditPaymentHistory->filter(function ($item) {
-            return $item->order_due_payment_status === 'paid'
-                || $item->order_return_payment_status === 'returned';
-        });
-
-        $latestHistory = $orderEditPaymentHistory->sortByDesc('updated_at')->first();
-        $unpaidDue = [];
-        if ($latestHistory && $latestHistory->order_due_payment_status !== 'paid' && $latestHistory->order_due_amount > 0) {
-            $unpaidDue[] = $latestHistory;
-        }
-        $paymentInfo = collect()->merge($filteredEditPaymentHistory)->merge($unpaidDue)->values();
+        $paymentInfo = collect();
 
         $firstDetails = $detailsList->first();
         if ($firstDetails?->init_order_amount <= 0 && $firstDetails?->order) {
@@ -297,28 +283,12 @@ class OrderController extends Controller
     {
         $seller = $request->seller;
         // [AI] Ownership Guard: Only update order status for seller's own orders
-        $order = Order::with(['customer', 'seller.shop', 'deliveryMan', 'latestEditHistory'])->where(['id' => $request['id'], 'seller_id' => $seller['id']])->first();
+        $order = Order::with(['customer', 'seller.shop', 'deliveryMan'])->where(['id' => $request['id'], 'seller_id' => $seller['id']])->first();
         if (!$order) {
             return response()->json(['success' => 0, 'message' => translate('unauthorized_access')], 403);
         }
         if (!$order->is_guest && empty($order->customer)) {
             return response()->json(['success' => 0, 'message' => translate("Customer_account_has_been_deleted") . ' ' . translate("you_cant_update_status")], 202);
-        }
-
-        if ($order['payment_method'] == 'offline_payment' && $order['payment_status'] == 'unpaid') {
-            return response()->json(['status' => 0, 'message' => translate('Please confirm the offline payment information before changing the order status.')], 202);
-        }
-
-        if ($order['payment_method'] !== 'cash_on_delivery' && $order['edit_due_amount'] > 0 && $order?->latestEditHistory?->order_due_payment_method !== 'cash_on_delivery' && $order?->latestEditHistory?->order_due_payment_status == 'unpaid') {
-            return response()->json(['status' => 0, 'message' => translate('After admin confirm the due amount payment as paid then you can change this status.')], 202);
-        }
-
-        if ($order['payment_method'] !== 'cash_on_delivery' && $order['edit_return_amount'] > 0 && $order?->latestEditHistory?->order_due_payment_method !== 'cash_on_delivery' && $order?->latestEditHistory?->order_return_payment_status == 'pending') {
-            return response()->json(['status' => 0, 'message' => translate('After admin confirm the return amount payment as returned then you can change this status.')], 202);
-        }
-
-        if ($order['edit_due_amount'] > 0 && $order?->latestEditHistory?->order_due_payment_method == 'cash_on_delivery' && $order?->latestEditHistory?->order_due_payment_status == 'unpaid' && $order['shipping_responsibility'] == 'inhouse_shipping' && $request['order_status'] == 'delivered') {
-            return response()->json(['status' => 0, 'message' => translate('Please mark as paid before delivered this order.')], 202);
         }
 
         $walletStatus = getWebConfig(name: 'wallet_status');
@@ -407,19 +377,17 @@ class OrderController extends Controller
 
         if ($order->delivery_man_id && $request->order_status == 'delivered') {
             $deliverymanWallet = DeliverymanWallet::where('delivery_man_id', $order->delivery_man_id)->first();
-            $cashInHand = $order->payment_method == 'cash_on_delivery' ? $order->order_amount : 0;
 
             if (empty($deliverymanWallet)) {
                 DeliverymanWallet::create([
                     'delivery_man_id' => $order->delivery_man_id,
                     'current_balance' => $order?->deliveryman_charge ?? 0,
-                    'cash_in_hand' => $cashInHand,
+                    'cash_in_hand' => 0,
                     'pending_withdraw' => 0,
                     'total_withdraw' => 0,
                 ]);
             } else {
                 $deliverymanWallet->current_balance += $order?->deliveryman_charge ?? 0;
-                $deliverymanWallet->cash_in_hand += $cashInHand;
                 $deliverymanWallet->save();
             }
 
@@ -435,27 +403,6 @@ class OrderController extends Controller
             }
         }
 
-        if (!$order->is_guest && $walletStatus == 1 && $loyaltyPointStatus == 1) {
-            if ($request->order_status == 'delivered') {
-                CustomerManager::create_loyalty_point_transaction($order->customer_id, $order->id, Convert::default($order->order_amount - $order->shipping_cost), 'order_place');
-            }
-        }
-
-        $refEarningStatus = BusinessSetting::where('type', 'ref_earning_status')->first()->value ?? 0;
-        $refEarningExchangeRate = BusinessSetting::where('type', 'ref_earning_exchange_rate')->first()->value ?? 0;
-
-        if (!$order->is_guest && $walletStatus == 1 && $refEarningStatus == 1 && $request->order_status == 'delivered') {
-
-            $customer = User::find($order->customer_id);
-            $isFirstOrder = Order::where(['customer_id' => $order->customer_id, 'order_status' => 'delivered', 'payment_status' => 'paid'])->count();
-            $referredByUser = User::find($customer->referred_by);
-
-            if ($isFirstOrder == 1 && isset($customer->referred_by) && isset($referredByUser)) {
-                CustomerManager::create_wallet_transaction($referredByUser->id, floatval($refEarningExchangeRate), 'add_fund_by_admin', 'earned_by_referral');
-            }
-        }
-
-        OrderManager::generateReferBonusForFirstOrder(orderId: $order['id']);
         if ($request['order_status'] == 'delivered') {
             $referredUser = ReferralCustomer::where('user_id', $order?->customer?->id)->first();
             if ($referredUser?->delivered_notify != 1) {
@@ -569,7 +516,7 @@ class OrderController extends Controller
 
         $seller = $request->seller;
         // [AI] Ownership Guard: Only update order details for own orders
-        $order = Order::with(['customer', 'seller.shop', 'deliveryMan', 'latestEditHistory'])->where(['id' => $request['order_id'], 'seller_id' => $seller['id']])->first();
+        $order = Order::with(['customer', 'seller.shop', 'deliveryMan'])->where(['id' => $request['order_id'], 'seller_id' => $seller['id']])->first();
 
         if (isset($order)) {
             if ($order['payment_status'] == 'paid' && $request['payment_status'] != 'paid') {
@@ -584,25 +531,6 @@ class OrderController extends Controller
                         'message' => translate('Only_platform_administrators_or_payment_gateways_can_verify_digital_payments._Vendors_cannot_manually_mark_non-COD_orders_as_paid.'),
                     ], 403);
                 }
-            }
-
-            if ($order['payment_method'] == 'offline_payment' && $order['payment_status'] == 'unpaid') {
-                return response()->json(['status' => 0, 'message' => translate('Please confirm the offline payment information before changing the order status.')], 403);
-            }
-
-            if ($order['payment_method'] !== 'cash_on_delivery' && $order['edit_due_amount'] > 0 && $order?->latestEditHistory?->order_due_payment_method !== 'cash_on_delivery' && $order?->latestEditHistory?->order_due_payment_status == 'unpaid') {
-                return response()->json(['status' => 0, 'message' => translate('After admin confirm the due amount payment as paid then you can change this status.')], 403);
-            }
-
-            if ($order['payment_method'] !== 'cash_on_delivery' && $order['edit_return_amount'] > 0 && $order?->latestEditHistory?->order_due_payment_method !== 'cash_on_delivery' && $order?->latestEditHistory?->order_return_payment_status == 'pending') {
-                return response()->json(['status' => 0, 'message' => translate('After admin confirm the return amount payment as returned then you can change this status.')], 403);
-            }
-
-            if ($order['edit_due_amount'] > 0 && $order?->latestEditHistory?->order_due_payment_method == 'cash_on_delivery' && $order?->latestEditHistory?->order_due_payment_status == 'unpaid' && $order['shipping_responsibility'] == 'inhouse_shipping' && $request['order_status'] == 'delivered') {
-                return response()->json([
-                    'status' => 0,
-                    'message' => translate('Please mark as paid before delivered this order.'),
-                ], 403);
             }
 
 
@@ -723,20 +651,18 @@ class OrderController extends Controller
 
                 if ($order['delivery_man_id'] && $request['order_status'] == 'delivered') {
                     $deliverymanWallet = DeliverymanWallet::where('delivery_man_id', $order['delivery_man_id'])->first();
-                    $cashInHand = $order['payment_method'] == 'cash_on_delivery' ? $order['order_amount'] : 0;
 
                     if (empty($deliverymanWallet)) {
                         DeliverymanWallet::create([
                             'delivery_man_id' => $order['delivery_man_id'],
                             'current_balance' => $order?->deliveryman_charge ?? 0,
-                            'cash_in_hand' => $cashInHand,
+                            'cash_in_hand' => 0,
                             'pending_withdraw' => 0,
                             'total_withdraw' => 0,
                         ]);
                     } else {
                         DeliverymanWallet::where('delivery_man_id', $order['delivery_man_id'])->update([
-                            'current_balance' => $order?->deliveryman_charge ?? 0,
-                            'cash_in_hand' => $cashInHand,
+                            'current_balance' => $deliverymanWallet->current_balance + ($order?->deliveryman_charge ?? 0),
                         ]);
                     }
 
@@ -749,25 +675,6 @@ class OrderController extends Controller
                             'transaction_id' => Uuid::uuid4(),
                             'transaction_type' => 'deliveryman_charge'
                         ]);
-                    }
-                }
-
-                if (!$order['is_guest'] && $walletStatus == 1 && $loyaltyPointStatus == 1) {
-                    if ($request['order_status'] == 'delivered') {
-                        CustomerManager::create_loyalty_point_transaction($order['customer_id'], $order['id'], Convert::default($order['order_amount'] - $order['shipping_cost']), 'order_place');
-                    }
-                }
-
-                $refEarningStatus = BusinessSetting::where('type', 'ref_earning_status')->first()->value ?? 0;
-                $refEarningExchangeRate = BusinessSetting::where('type', 'ref_earning_exchange_rate')->first()->value ?? 0;
-
-                if (!$order['is_guest'] && $walletStatus == 1 && $refEarningStatus == 1 && $request['order_status'] == 'delivered') {
-                    $customer = User::find($order['customer_id']);
-                    $isFirstOrder = Order::where(['customer_id' => $order['customer_id'], 'order_status' => 'delivered', 'payment_status' => 'paid'])->count();
-                    $referredByUser = User::find($customer->referred_by);
-
-                    if ($isFirstOrder == 1 && isset($customer->referred_by) && isset($referredByUser)) {
-                        CustomerManager::create_wallet_transaction($referredByUser->id, floatval($refEarningExchangeRate), 'add_fund_by_admin', 'earned_by_referral');
                     }
                 }
 

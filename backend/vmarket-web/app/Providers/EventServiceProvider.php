@@ -2,23 +2,14 @@
 
 namespace App\Providers;
 
-use App\Events\OrderEditDuePaymentEvent;
-use App\Events\OrderEditEvent;
-use App\Events\OrderEditReturnPaymentEvent;
 use App\Events\RefundEvent;
 use App\Events\ChattingEvent;
-use App\Events\CashCollectEvent;
 use App\Events\OrderPlacedEvent;
 use App\Events\OrderStatusEvent;
-use App\Listeners\OrderEditDuePaymentListener;
-use App\Listeners\OrderEditListener;
-use App\Listeners\OrderEditReturnPaymentListener;
 use App\Listeners\RefundListener;
 use App\Events\PasswordResetEvent;
 use App\Listeners\ChattingListener;
-use App\Events\AddFundToWalletEvent;
 use App\Events\EmailVerificationEvent;
-use App\Listeners\CashCollectListener;
 use App\Listeners\OrderPlacedListener;
 use App\Listeners\OrderStatusListener;
 use App\Events\VendorRegistrationEvent;
@@ -27,7 +18,6 @@ use App\Events\CustomerRegistrationEvent;
 use App\Events\CustomerStatusUpdateEvent;
 use App\Events\WithdrawStatusUpdateEvent;
 use App\Events\RequestProductRestockEvent;
-use App\Listeners\AddFundToWalletListener;
 use App\Events\DigitalProductDownloadEvent;
 use App\Listeners\EmailVerificationListener;
 use App\Events\DeliverymanPasswordResetEvent;
@@ -58,9 +48,6 @@ class EventServiceProvider extends ServiceProvider
      * @var array
      */
     protected $listen = [
-        AddFundToWalletEvent::class => [
-            AddFundToWalletListener::class,
-        ],
         DigitalProductOtpVerificationEvent::class => [
             DigitalProductOtpVerificationListener::class,
         ],
@@ -75,15 +62,6 @@ class EventServiceProvider extends ServiceProvider
         ],
         OrderPlacedEvent::class => [
             OrderPlacedListener::class,
-        ],
-        OrderEditEvent::class => [
-            OrderEditListener::class,
-        ],
-        OrderEditDuePaymentEvent::class => [
-            OrderEditDuePaymentListener::class,
-        ],
-        OrderEditReturnPaymentEvent::class => [
-            OrderEditReturnPaymentListener::class,
         ],
         OrderStatusEvent::class => [
             OrderStatusListener::class,
@@ -108,9 +86,6 @@ class EventServiceProvider extends ServiceProvider
         ],
         WithdrawStatusUpdateEvent::class => [
             WithdrawStatusUpdateListener::class,
-        ],
-        CashCollectEvent::class => [
-            CashCollectListener::class,
         ],
         ProductRequestStatusUpdateEvent::class => [
             ProductRequestStatusUpdateListener::class,

@@ -171,20 +171,7 @@
                                             ({{strtoupper($lang)}})
                                             <span class="input-required-icon">*</span>
                                         </label>
-                                        @if(getActiveAIProviderConfigCache())
-                                        <button type="button"
-                                                class="btn bg-white text-primary bg-transparent shadow-none border-0 opacity-1 generate_btn_wrapper p-0 blog_title_auto_fill"
-                                                id="seo_section_auto_fill" data-lang="{{  getLanguageCode(country_code: $lang) }}" data-route="{{ route('admin.blog.title-auto-fill') }}" data-item='@json(["title" => $defaultLanguage == $lang ? $blog->title :  $translate[$lang]['title'] ?? ''])'>
-                                            <div class="btn-svg-wrapper">
-                                                <img width="18" height="18" class=""
-                                                     src="{{ dynamicAsset(path: 'public/assets//back-end/img/ai/blink-right-small.svg') }}" alt="">
-                                            </div>
-                                            <span class="ai-text-animation d-none" role="status">
-                                            {{ translate('Just_a_second') }}
-                                        </span>
-                                            <span class="btn-text">{{ translate('Generate') }}</span>
-                                        </button>
-                                        @endif
+
                                     </div>
                                     <div class="outline-wrapper" id="title-container-{{ getLanguageCode(country_code: $lang )}}">
                                         <input type="text" name="title[{{$lang}}]" class="form-control" id="{{ getLanguageCode(country_code: $lang) }}_title" value="{{ $defaultLanguage == $lang ?($draftData['title'] ?? $blog->title) :  $translate[$lang]['title'] ?? ''}}" placeholder="{{translate('ex').':'.translate('LUX')}}" {{$lang == $defaultLanguage ? 'required':''}}>
@@ -198,20 +185,7 @@
                                         ({{strtoupper($lang)}})
                                         <span class="input-required-icon">*</span>
                                     </label>
-                                    @if(getActiveAIProviderConfigCache())
-                                    <button type="button"
-                                            class="btn bg-white text-primary bg-transparent shadow-none border-0 opacity-1 generate_btn_wrapper p-0 blog_description_auto_fill"
-                                            id="seo_section_auto_fill" data-lang="{{  getLanguageCode(country_code: $lang) }}" data-route="{{ route('admin.blog.description-auto-fill') }}" data-item='@json(["description" => $defaultLanguage == $lang ? $blog->description :  $translate[$lang]['description'] ?? ''])'>
-                                        <div class="btn-svg-wrapper">
-                                            <img width="18" height="18" class=""
-                                                 src="{{ dynamicAsset(path: 'public/assets//back-end/img/ai/blink-right-small.svg') }}" alt="">
-                                        </div>
-                                        <span class="ai-text-animation d-none" role="status">
-                                            {{ translate('Just_a_second') }}
-                                        </span>
-                                        <span class="btn-text">{{ translate('Generate') }}</span>
-                                    </button>
-                                    @endif
+
                                 </div>
                                 <div class="outline-wrapper" id="editor-container-{{ getLanguageCode($lang)}}">
                                     <div id="description-{{getLanguageCode($lang)}}-editor" class="quill-editor">{!! $defaultLanguage == $lang ? ($draftData['description'] ?? $blog->description)  :  $translate[$lang]['description'] ?? '' !!}</div>
@@ -238,9 +212,7 @@
     </div>
     @include('blog::admin-views.blog.partials._publish-modal')
     @include('blog::admin-views.blog.category.index')
-    @if(getActiveAIProviderConfigCache())
-    @include("blog::admin-views.blog.partials.ai-sidebar")
-    @endif
+
 @endsection
 
 @push('script')

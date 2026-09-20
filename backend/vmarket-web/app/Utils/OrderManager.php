@@ -2,9 +2,7 @@
 
 namespace App\Utils;
 
-use App\Events\OrderEditDuePaymentEvent;
 use App\Models\OrderDetailsRewards;
-use App\Models\OrderEditHistory;
 use App\Models\OrderStatusHistory;
 use App\Models\ShippingMethod;
 use Carbon\Carbon;
@@ -31,12 +29,10 @@ use App\Models\ShippingType;
 use App\Traits\PdfGenerator;
 use App\Traits\CustomerTrait;
 use App\Models\BusinessSetting;
-use App\Models\OfflinePayments;
 use App\Models\ShippingAddress;
 use App\Events\OrderPlacedEvent;
 use App\Models\OrderTransaction;
 use App\Models\ReferralCustomer;
-use App\Models\WalletTransaction;
 use Illuminate\Support\Facades\DB;
 use App\Models\DigitalProductVariation;
 use App\Models\DeliveryHub;
@@ -304,18 +300,6 @@ class OrderManager
         }
         // free delivery over amount transaction end
 
-        if ($order['seller_is'] == 'seller' &&
-            $shipping_model == 'sellerwise_shipping'
-        ) {
-            $editHistoryAmount = OrderEditHistory::where([
-                'order_id' => $order->id,
-                'order_due_payment_status' => 'paid',
-                'order_due_payment_method' => 'cash_on_delivery',
-            ])?->sum('order_due_amount') ?? 0;
-            $wallet = SellerWallet::where('seller_id', $order['seller_id'])->first();
-            $wallet->collected_cash += $editHistoryAmount;
-            $wallet->save();
-        }
 
         if ($order['payment_method'] == 'cash_on_delivery' || $order['payment_method'] == 'offline_payment') {
             $shop = Shop::when($order['seller_is'] == 'admin', function ($query) {
@@ -368,14 +352,6 @@ class OrderManager
                         $wallet->delivery_charge_earned += $order['shipping_cost'];
                     }
                     $currentOrderAmount = $order['order_amount'];
-                    if ($order['payment_method'] == 'offline_payment' || $order['payment_method'] == 'cash_on_delivery') {
-                        $editHistoryAmount = OrderEditHistory::where([
-                            'order_id' => $order->id,
-                            'order_due_payment_status' => 'paid',
-                            'order_due_payment_method' => 'cash_on_delivery',
-                        ])?->sum('order_due_amount') ?? 0;
-                        $currentOrderAmount -= $editHistoryAmount;
-                    }
 
                     $wallet->collected_cash += $currentOrderAmount;
                 } else {
@@ -423,12 +399,6 @@ class OrderManager
                         $wallet->delivery_charge_earned += $order['shipping_cost'];
                     }
                     $currentOrderAmount = ($order_amount - $commission) + $order_summary['total_tax'] + ($order['is_shipping_free'] ? 0 : $order['shipping_cost']);
-                    $editHistoryAmount = OrderEditHistory::where([
-                        'order_id' => $order->id,
-                        'order_due_payment_status' => 'paid',
-                        'order_due_payment_method' => 'cash_on_delivery',
-                    ])?->sum('order_due_amount') ?? 0;
-                    $currentOrderAmount -= $editHistoryAmount;
 
                     $wallet->total_earning += $currentOrderAmount;
                 } else {
@@ -1804,14 +1774,6 @@ class OrderManager
         return $orderPlacedNotificationEvents;
     }
 
-
-    public static function createWalletTransaction($user_id, float $amount, $transaction_type, $reference, $payment_data = []): bool|WalletTransaction
-    {
-        // [AI] Customer Wallet Decommissioned: Fail closed immediately with domain exception
-        \Log::warning("[AI][DECOMMISSIONED] Attempted createWalletTransaction for user_id {$user_id}, type: {$transaction_type}, ref: {$reference}");
-        throw new \App\Exceptions\CustomerWalletDecommissionedException($transaction_type, "Customer wallet capability is permanently decommissioned in Victorious MARKET. Cannot execute transaction type '{$transaction_type}'.");
-    }
-
     public static function generateOrderAgain($request): array
     {
         $orderProducts = OrderDetail::where('order_id', $request->order_id)->get();
@@ -2706,28 +2668,6 @@ class OrderManager
             $duplicates = $records->slice(1);
             foreach ($duplicates as $duplicate) {
                 $duplicate->delete();
-            }
-        }
-    }
-    public static function sendPushNotificationAfterDuePayment($order):void{
-        $orderEditNotificationEvent = [];
-        if ($order['seller_is'] == 'seller') {
-            $seller = Seller::find($order['seller_id']);
-            if ($seller) {
-                $orderEditNotificationEvent[] = [
-                    'notification' => true,
-                    'notificationData' => (object)[
-                        'key' => 'order_edit_due_payment_message',
-                        'type' => 'seller',
-                        'order' => $order,
-                    ],
-                ];
-            }
-        }
-
-        foreach ($orderEditNotificationEvent as $orderEditDuePaymentEvent) {
-            if (!empty($orderEditDuePaymentEvent)) {
-                event(new OrderEditDuePaymentEvent(notification: $orderEditDuePaymentEvent['notificationData']));
             }
         }
     }

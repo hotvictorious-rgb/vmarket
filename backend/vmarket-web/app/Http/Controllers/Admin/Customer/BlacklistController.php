@@ -4,15 +4,12 @@ namespace App\Http\Controllers\Admin\Customer;
 
 use App\Http\Controllers\Controller;
 use App\Models\BlacklistedCustomer;
-use App\Models\Order;
 use App\Models\User;
-use App\Services\ReceiptUploadService;
 use Brian2694\Toastr\Facades\Toastr;
 use Exception;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 
 class BlacklistController extends Controller
@@ -96,115 +93,5 @@ class BlacklistController extends Controller
             Toastr::error('Failed to restore customer.');
             return back();
         }
-    }
-
-    /**
-     * [AI] 1-Click Approve & Confirm Bank Transfer Receipt for an Order.
-     */
-    public function verifyReceipt(Request $request, $orderId): JsonResponse|RedirectResponse
-    {
-        try {
-            $order = Order::findOrFail($orderId);
-
-            DB::transaction(function () use ($order) {
-                $order->payment_status = 'paid';
-                $order->order_status = 'confirmed';
-                $order->receipt_verified_by = auth('admin')->id() ?? 1;
-                $order->receipt_verified_at = now();
-                $order->save();
-            });
-
-            // Trigger WhatsApp delivery notification with 6-digit OTP
-            WhatsAppAutomationWorkflow::triggerOrderConfirmedNotification($order);
-
-            if ($request->ajax() || $request->wantsJson()) {
-                return response()->json([
-                    'status' => true,
-                    'message' => 'Receipt verified! Order #'.$order->id.' is confirmed and OTP issued.',
-                ]);
-            }
-
-            Toastr::success('Receipt verified! Order confirmed.');
-            return back();
-
-        } catch (Exception $e) {
-            Log::error('[BlacklistController Verify Error] ' . $e->getMessage());
-            if ($request->ajax() || $request->wantsJson()) {
-                return response()->json(['status' => false, 'message' => $e->getMessage()], 500);
-            }
-            Toastr::error('Verification failed.');
-            return back();
-        }
-    }
-
-    /**
-     * [AI] Reject Bank Transfer Receipt with optional WhatsApp feedback.
-     */
-    public function rejectReceipt(Request $request, $orderId): JsonResponse|RedirectResponse
-    {
-        $request->validate([
-            'reason' => 'required|string',
-        ]);
-
-        try {
-            $order = Order::findOrFail($orderId);
-            $order->update([
-                'payment_note' => 'Receipt rejected: ' . $request->reason,
-            ]);
-
-            if ($request->ajax() || $request->wantsJson()) {
-                return response()->json([
-                    'status' => true,
-                    'message' => 'Receipt rejected for Order #' . $order->id,
-                ]);
-            }
-
-            Toastr::info('Receipt rejected.');
-            return back();
-
-        } catch (Exception $e) {
-            if ($request->ajax() || $request->wantsJson()) {
-                return response()->json(['status' => false, 'message' => $e->getMessage()], 500);
-            }
-            Toastr::error('Failed to reject receipt.');
-            return back();
-        }
-    }
-
-    /**
-     * [AI] Customer Wallet Decommissioned: Manual receipt wallet crediting is permanently blocked.
-     */
-    public function approveWalletReceipt(Request $request, $userId): JsonResponse|RedirectResponse
-    {
-        if ($request->ajax() || $request->wantsJson()) {
-            return response()->json([
-                'status' => false,
-                'message' => 'Customer wallet crediting is permanently decommissioned in Victorious MARKET.',
-            ], 403);
-        }
-        Toastr::error('Customer wallet crediting is permanently decommissioned.');
-        return back();
-    }
-
-    /**
-     * [AI] Add persistent episodic memory point for customer profile.
-     */
-    public function addCustomerMemoryPoint(Request $request): JsonResponse
-    {
-        $request->validate([
-            'phone' => 'required|string',
-            'fact' => 'required|string',
-        ]);
-
-        $success = \App\Services\EpisodicMemoryService::addMemoryPoint(
-            $request->phone,
-            $request->fact,
-            $request->category ?? 'staff_note'
-        );
-
-        return response()->json([
-            'status' => $success,
-            'message' => $success ? 'Memory point added to AI profile!' : 'Failed to add memory point.',
-        ]);
     }
 }

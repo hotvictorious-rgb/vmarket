@@ -11,9 +11,7 @@ use App\Models\ProductCompare;
 use App\Models\RestockProduct;
 use App\Models\BusinessSetting;
 use App\Models\ReferralCustomer;
-use App\Models\WalletTransaction;
 use Illuminate\Support\Facades\DB;
-use App\Models\LoyaltyPointTransaction;
 
 class CustomerManager
 {
@@ -30,79 +28,6 @@ class CustomerManager
         $support->save();
 
         return $support;
-    }
-
-    /**create_wallet_transaction -> function on Customer trait -> createWalletTransaction*/
-    public static function create_wallet_transaction($user_id, float $amount, $transaction_type, $reference, $payment_data = [])
-    {
-        // [AI] Customer Wallet Decommissioned: Fail closed immediately with domain exception
-        \Log::warning("[AI][DECOMMISSIONED] Attempted create_wallet_transaction for user_id {$user_id}, type: {$transaction_type}, ref: {$reference}");
-        throw new \App\Exceptions\CustomerWalletDecommissionedException($transaction_type, "Customer wallet capability is permanently decommissioned in Victorious MARKET. Cannot execute transaction type '{$transaction_type}'.");
-    }
-
-    public static function create_loyalty_point_transaction($user_id, $reference, $amount, $transaction_type): bool
-    {
-        $settings = array_column(BusinessSetting::whereIn('type', ['loyalty_point_status', 'loyalty_point_exchange_rate', 'loyalty_point_item_purchase_point'])->get()->toArray(), 'value', 'type');
-        if (($settings['loyalty_point_status'] ?? 0) != 1) {
-            return true;
-        }
-
-        $credit = 0;
-        $debit = 0;
-
-        if ($transaction_type == 'order_place') {
-            $credit = (int)($amount * ($settings['loyalty_point_item_purchase_point'] ?? 0) / 100);
-        } else if ($transaction_type == 'point_to_wallet') {
-            $debit = $amount;
-        } else if ($transaction_type == 'refund_order') {
-            $debit = $amount;
-        }
-
-        try {
-            DB::beginTransaction();
-            // [AI] Loyalty Race Condition Guard: Acquire a pessimistic row lock before reading/writing loyalty_point
-            $user = User::where('id', $user_id)->lockForUpdate()->first();
-            if (!$user) {
-                DB::rollback();
-                return false;
-            }
-
-            $current_balance = $user->loyalty_point + $credit - $debit;
-
-            $loyalty_point_transaction = new LoyaltyPointTransaction();
-            $loyalty_point_transaction->user_id = $user->id;
-            $loyalty_point_transaction->transaction_id = \Str::uuid();
-            $loyalty_point_transaction->reference = $reference;
-            $loyalty_point_transaction->transaction_type = $transaction_type;
-            $loyalty_point_transaction->balance = $current_balance;
-            $loyalty_point_transaction->credit = $credit;
-            $loyalty_point_transaction->debit = $debit;
-            $loyalty_point_transaction->created_at = now();
-            $loyalty_point_transaction->updated_at = now();
-
-            $user->loyalty_point = $current_balance;
-            $user->save();
-            $loyalty_point_transaction->save();
-            DB::commit();
-            return true;
-        } catch (\Exception $ex) {
-            info($ex);
-            DB::rollback();
-            return false;
-        }
-    }
-
-    public static function countLoyaltyPointForAmount($id): int
-    {
-        $orderDetails = OrderDetail::find($id);
-        $loyaltyPointStatus = getWebConfig(name: 'loyalty_point_status');
-        $loyaltyPoint = 0;
-        if ($loyaltyPointStatus == 1) {
-            $loyaltyPointItemPurchasePoint = getWebConfig(name: 'loyalty_point_item_purchase_point');
-            $subtotal = ($orderDetails->price * $orderDetails->qty) - $orderDetails->discount + $orderDetails->tax;
-            return (int)(Convert::default($subtotal) * $loyaltyPointItemPurchasePoint / 100);
-        }
-        return $loyaltyPoint;
     }
 
     public static function updateCustomerSessionData($userId): void

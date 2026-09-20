@@ -17,7 +17,6 @@ use App\Http\Controllers\Vendor\DeliveryMan\DeliveryManWalletController;
 use App\Http\Controllers\Vendor\DeliveryMan\DeliveryManWithdrawController;
 use App\Http\Controllers\Vendor\DeliveryMan\EmergencyContactController;
 use App\Http\Controllers\Vendor\NotificationController;
-use App\Http\Controllers\Vendor\Order\OrderEditController;
 
 use App\Http\Controllers\Vendor\Product\ProductController;
 use App\Http\Controllers\Admin\Product\CategorySpecificationController;
@@ -119,7 +118,6 @@ Route::group(['middleware' => ['maintenance_mode', 'actch:admin_panel']], functi
                     Route::get('export-restock', 'exportRestockList')->name('restock-export');
                     Route::delete('delete-restock/{id}', 'deleteRestock')->name('restock-delete');
                     Route::get('get-category-specifications/{category_id}', [CategorySpecificationController::class, 'getByCategoryAjax'])->name('get-category-specifications');
-                    Route::post('ai-suggest-specs', [CategorySpecificationController::class, 'aiSuggestSpecs'])->name('ai-suggest-specs');
 
                     Route::post('load-more-brands', 'loadMoreBrands')->name('load-more-brands');
                     Route::get('feeds', [\App\Http\Controllers\ProductFeedExportController::class, 'vendorIndex'])->name('feeds');
@@ -147,18 +145,6 @@ Route::group(['middleware' => ['maintenance_mode', 'actch:admin_panel']], functi
                     Route::post('amount-date-update', 'updateAmountDate')->name('amount-date-update');
                     Route::post('digital-file-upload-after-sell', 'uploadDigitalFileAfterSell')->name('digital-file-upload-after-sell');
                     Route::post('status', 'updateStatus')->name('status');
-                    Route::post('customer-return-amount', 'orderReturnAmountToCustomer')->name('customer-return-amount');
-                    Route::post('customer-due-amount', 'orderDueAmountSwitchToCOD')->name('customer-due-amount');
-                    Route::post('customer-due-amount-mark-as-paid', 'orderDueAmountMarkAsPaid')->name('customer-due-amount-mark-as-paid');
-                });
-                Route::controller(OrderEditController::class)->group(function () {
-                    Route::get('search-for-edit-order-product', 'getSearchEditOrderProductsView')->name('search-for-edit-order-product');
-                    Route::post('edit-order-product-modal-view', 'getEditOrderProductModalView')->name('edit-order-product-modal-view');
-                    Route::post('edit-order-product-add', 'addEditOrderProduct')->name('edit-order-product-add');
-                    Route::post('edit-order-product-variant-price', 'checkProductVariantPrice')->name('edit-order-product-variant-price');
-                    Route::post('edit-order-product-list-update', 'updateEditOrderProductList')->name('edit-order-product-list-update');
-                    Route::post('edit-order-product-remove', 'removeEditOrderProduct')->name('edit-order-product-remove');
-                    Route::post('edit-order-generate', 'generateEditOrderByProductList')->name('edit-order-generate');
                 });
             });
 
@@ -240,8 +226,6 @@ Route::group(['middleware' => ['maintenance_mode', 'actch:admin_panel']], functi
                         Route::get('order-history/{id}', 'getOrderHistory')->name('order-history');
                         Route::get('order-history-status/{order}', 'getOrderStatusHistory')->name('order-status-history');
                         Route::get('earning/{id}', 'getEarningListView')->name('earning');
-                        Route::get('cash-collect/{id}', 'getCashCollectView')->name('cash-collect');
-                        Route::post('cash-collect/{id}', 'collectCash');
                     });
                 });
 

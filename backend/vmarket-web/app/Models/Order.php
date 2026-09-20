@@ -86,8 +86,6 @@ class Order extends Model
         'payment_note',
         'order_amount',
         'init_order_amount',
-        'edit_due_amount',
-        'edit_return_amount',
         'total_tax_amount',
         'tax_type',
         'tax_model',
@@ -139,19 +137,12 @@ class Order extends Model
         'house_street_note',
         'recipient_name',
         'recipient_phone',
-        'driver_transit_code',
         'driver_phone',
         'driver_vehicle_no',
         'waybill_slip_no',
         'batch_dispatch_id',
         'pod_dispatch_fee',
-        'doorstep_due_amount',
         'bank_session_id',
-        'receipt_image',
-        'receipt_metadata',
-        'receipt_verified_by',
-        'receipt_verified_at',
-        'edited_status',
         'received_at',
         'refund_window_expires_at',
         'vendor_settlement_status',
@@ -173,10 +164,6 @@ class Order extends Model
         'payment_method' => 'string',
         'transaction_ref' => 'string',
         'bank_session_id' => 'string',
-        'receipt_image' => 'string',
-        'receipt_metadata' => 'array',
-        'receipt_verified_by' => 'integer',
-        'receipt_verified_at' => 'datetime',
         'received_at' => 'datetime',
         'refund_window_expires_at' => 'datetime',
         'rider_picked_up_at' => 'datetime',
@@ -190,7 +177,6 @@ class Order extends Model
         'payment_note' => 'string',
         'order_amount' => 'float',
         'pod_dispatch_fee' => 'float',
-        'doorstep_due_amount' => 'float',
         'init_order_amount' => 'float',
         'total_tax_amount' => 'float',
         'tax_type' => 'string',
@@ -353,29 +339,6 @@ class Order extends Model
     public function verificationImages(): HasMany
     {
         return $this->hasMany(OrderDeliveryVerification::class, 'order_id');
-    }
-
-    public function orderEditHistory()
-    {
-        return $this->hasMany(OrderEditHistory::class, 'order_id');
-    }
-
-    public function latestEditHistory(): HasOne
-    {
-        return $this->hasOne(OrderEditHistory::class, 'order_id')
-            ->where(function ($query) {
-                $query->where('order_due_amount', '>', 0)
-                    ->orWhere('order_return_amount', '>', 0);
-            })
-            ->when(($this->edit_due_amount <= 0) || ($this->edit_return_amount <= 0),
-                function ($query) {
-                    $query->where(function ($q) {
-                        $q->whereIn('order_due_payment_status', ['paid', 'unpaid'])
-                            ->orWhereIn('order_return_payment_status', ['pending', 'returned']);
-                    });
-                }
-            )
-            ->latest('id');
     }
 
     public function originHub(): BelongsTo

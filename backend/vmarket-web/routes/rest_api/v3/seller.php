@@ -7,12 +7,10 @@ use App\Http\Controllers\RestAPI\v3\seller\BrandController;
 use App\Http\Controllers\RestAPI\v3\seller\ChatController;
 use App\Http\Controllers\RestAPI\v3\seller\ClearanceSaleController;
 use App\Http\Controllers\RestAPI\v3\seller\CouponController;
-use App\Http\Controllers\RestAPI\v3\seller\DeliveryManCashCollectController;
 use App\Http\Controllers\RestAPI\v3\seller\DeliveryManController;
 use App\Http\Controllers\RestAPI\v3\seller\DeliverymanWithdrawController;
 use App\Http\Controllers\RestAPI\v3\seller\EmergencyContactController;
 use App\Http\Controllers\RestAPI\v3\seller\OrderController;
-use App\Http\Controllers\RestAPI\v3\seller\OrderEditController;
 use App\Http\Controllers\RestAPI\v3\seller\ProductController;
 use App\Http\Controllers\RestAPI\v3\seller\RefundController;
 use App\Http\Controllers\RestAPI\v3\seller\SellerController;
@@ -140,11 +138,6 @@ Route::group(['prefix' => 'v3/seller', 'middleware' => ['api_lang']], function (
                 Route::post('verify-pickup-otp', [\App\Http\Controllers\Vendor\Order\InShopHandoverController::class, 'verifyPickupOtp']);
             });
 
-            Route::controller(OrderEditController::class)->group(function () {
-                Route::post('edit-order-submit', 'submitEditOrder');
-                Route::post('edit-order-validation', 'checkEditOrderValidation');
-                Route::post('assign-order-in-cod', 'assignOrderInCOD');
-            });
         });
 
         Route::group(['prefix' => 'clearance-sale'], function () {
@@ -225,11 +218,6 @@ Route::group(['prefix' => 'v3/seller', 'middleware' => ['api_lang']], function (
                 Route::get('order-list/{id}', 'order_list');
                 Route::get('order-status-history/{id}', 'order_status_history');
                 Route::get('earning/{id}', 'earning');
-            });
-
-            Route::controller(DeliveryManCashCollectController::class)->group(function () {
-                Route::post('cash-receive', 'cash_receive');
-                Route::get('collect-cash-list/{id}', 'list');
             });
 
             Route::group(['prefix' => 'withdraw'], function () {

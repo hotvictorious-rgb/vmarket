@@ -773,26 +773,6 @@ class Helpers
         return $refCode;
     }
 
-    public static function add_fund_to_wallet_bonus($amount)
-    {
-        $bonuses = AddFundBonusCategories::where('is_active', 1)
-            ->whereDate('start_date_time', '<=', now())
-            ->whereDate('end_date_time', '>=', now())
-            ->where('min_add_money_amount', '<=', $amount)
-            ->get();
-
-        $bonuses = $bonuses->where('min_add_money_amount', $bonuses->max('min_add_money_amount'));
-
-        foreach ($bonuses as $key => $item) {
-            $item->applied_bonus_amount = $item->bonus_type == 'percentage' ? ($amount * $item->bonus_amount) / 100 : $item->bonus_amount;
-            if ($item->bonus_type == 'percentage' && $item->applied_bonus_amount > $item->max_bonus_amount) {
-                $item->applied_bonus_amount = $item->max_bonus_amount;
-            }
-        }
-
-        return $bonuses->max('applied_bonus_amount') ?? 0;
-    }
-
     public static function inHouseBannerUpdateFromConfig($key): void
     {
         try {

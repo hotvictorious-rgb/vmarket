@@ -152,19 +152,7 @@
                                             ({{strtoupper($lang)}})
                                             <span class="input-required-icon">*</span>
                                         </label>
-                                        @if(getActiveAIProviderConfigCache())
-                                        <button type="button" class="btn bg-white text-primary bg-transparent shadow-none border-0 opacity-1 generate_btn_wrapper p-0 blog_title_auto_fill"
-                                                id="title-{{  getLanguageCode(country_code: $lang) }}-action-btn"  data-lang="{{  getLanguageCode(country_code: $lang) }}" data-route="{{ route('admin.blog.title-auto-fill') }}" >
-                                            <div class="btn-svg-wrapper">
-                                                <img width="18" height="18" class=""
-                                                src="{{ dynamicAsset(path: 'public/assets//back-end/img/ai/blink-right-small.svg') }}" alt="">
-                                            </div>
-                                            <span class="ai-text-animation d-none" role="status">
-                                                {{ translate('Just_a_second') }}
-                                            </span>
-                                            <span class="btn-text">{{ translate('Generate') }}</span>
-                                        </button>
-                                        @endif
+
                                     </div>
 
                                     <div class="outline-wrapper" id="title-container-{{ $lang }}">
@@ -179,18 +167,7 @@
                             <div class="form-group mb-0 {{$lang != $defaultLanguage ? 'd-none':''}} form-system-description-language-form" id="{{ $lang}}-description-form">
                                 <div class="d-flex justify-content-between align-items-center gap-2 mb-2">
                                     <label class="form-label mb-0">{{ translate('Description') }}({{strtoupper($lang)}}) <span class="input-required-icon">*</span></label>
-                                    @if(getActiveAIProviderConfigCache())
-                                   <button type="button" class="btn bg-white text-primary bg-transparent shadow-none border-0 opacity-1 generate_btn_wrapper p-0 blog_description_auto_fill"   id="description-{{ $lang }}-action-btn"  data-lang="{{getLanguageCode($lang) }}" data-route="{{ route('admin.blog.description-auto-fill') }}">
-                                        <div class="btn-svg-wrapper">
-                                            <img width="18" height="18" class=""
-                                            src="{{ dynamicAsset(path: 'public/assets//back-end/img/ai/blink-right-small.svg') }}" alt="">
-                                        </div>
-                                        <span class="ai-text-animation d-none" role="status">
-                                            {{ translate('Just_a_second') }}
-                                        </span>
-                                        <span class="btn-text">{{ translate('Generate') }}</span>
-                                    </button>
-                                    @endif
+
                                 </div>
 
                                 <div class="outline-wrapper" id="editor-container-{{ getLanguageCode($lang)}}">
@@ -223,9 +200,7 @@
     </div>
     @include('blog::admin-views.blog.partials._publish-modal')
     @include('blog::admin-views.blog.category.index')
-    @if(getActiveAIProviderConfigCache())
-    @include("blog::admin-views.blog.partials.ai-sidebar")
-    @endif
+
 @endsection
 
 @push('script')

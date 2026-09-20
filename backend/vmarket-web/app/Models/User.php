@@ -43,7 +43,6 @@ use Laravel\Passport\HasApiTokens;
  * @property string|null $temporary_token
  * @property bool $is_email_verified
  * @property float $wallet_balance
- * @property float $loyalty_point
  * @property int $login_hit_count
  * @property bool $is_temp_blocked
  * @property $temp_block_time
@@ -91,7 +90,6 @@ class User extends Authenticatable
         'temporary_token',
         'is_email_verified',
         'wallet_balance',
-        'loyalty_point',
         'login_hit_count',
         'is_temp_blocked',
         'temp_block_time',
@@ -143,7 +141,6 @@ class User extends Authenticatable
         'temporary_token' => 'string',
         'is_email_verified' => 'boolean',
         'wallet_balance' => 'float',
-        'loyalty_point' => 'float',
         'login_hit_count' => 'integer',
         'is_temp_blocked' => 'boolean',
         'temp_block_time' => 'datetime',

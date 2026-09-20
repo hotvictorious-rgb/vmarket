@@ -16,7 +16,6 @@ use App\Models\EmergencyContact;
 use App\Models\Order;
 use App\Models\OrderDeliveryVerification;
 use App\Models\OrderDetail;
-use App\Models\OrderEditHistory;
 use App\Models\Review;
 use App\Traits\CommonTrait;
 use App\Models\User;
@@ -145,7 +144,7 @@ class DeliveryManController extends Controller
             $cause = $request['cause'];
         }
 
-        $order = Order::with(['customer', 'deliveryMan', 'latestEditHistory'])->where(['delivery_man_id' => $deliveryMan['id'], 'id' => $request['order_id']])->first();
+        $order = Order::with(['customer', 'deliveryMan'])->where(['delivery_man_id' => $deliveryMan['id'], 'id' => $request['order_id']])->first();
 
         if (!$order) {
             return response()->json(['success' => 0, 'message' => translate('order_not_found')], 404);
@@ -279,23 +278,6 @@ class DeliveryManController extends Controller
             event(new OrderStatusEvent(key: 'canceled', type: 'delivery_man', order: $order));
         }
 
-        OrderManager::getStockUpdateOnOrderStatusChange($order, $request['status']);
-        OrderManager::generateReferBonusForFirstOrder(orderId: $order['id']);
-
-        $refEarningStatus = BusinessSetting::where('type', 'ref_earning_status')->first()->value ?? 0;
-        $refEarningExchangeRate = BusinessSetting::where('type', 'ref_earning_exchange_rate')->first()->value ?? 0;
-
-        $walletStatus = getWebConfig(name: 'wallet_status');
-        if (!$order->is_guest && $walletStatus == 1 && $refEarningStatus == 1 && $request['status'] == 'delivered' && $order->payment_status == 'paid') {
-
-            $customer = User::find($order->customer_id);
-            $isFirstOrder = Order::where(['customer_id' => $order->customer_id, 'order_status' => 'delivered', 'payment_status' => 'paid'])->count();
-            $referredByUser = User::find($customer->referred_by);
-
-            if ($isFirstOrder == 1 && isset($customer->referred_by) && isset($referredByUser)) {
-                CustomerManager::create_wallet_transaction($referredByUser->id, floatval($refEarningExchangeRate), 'add_fund_by_admin', 'earned_by_referral');
-            }
-        }
         self::add_order_status_history($order->id, $deliveryMan['id'], $request['status'], 'delivery_man', $request['cause']);
         return response()->json(['message' => 'Order status updated successfully!'], 200);
     }
@@ -359,8 +341,8 @@ class DeliveryManController extends Controller
         $order = Order::with(['details' => function ($query) {
             return $query->with(['order' => function ($query) {
                 return $query->with(['shippingAddress', 'customer', 'seller.shop']);
-            }, 'latestEditHistory']);
-        }, 'shippingAddress', 'customer', 'seller.shop', 'latestEditHistory'])
+            }]);
+        }, 'shippingAddress', 'customer', 'seller.shop'])
             ->where(['delivery_man_id' => $deliveryMan['id'], 'id' => $request['order_id']])->first();
 
         $details = $order?->details?->map(function ($detail) use ($order) {

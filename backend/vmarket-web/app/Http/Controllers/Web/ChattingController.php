@@ -82,7 +82,7 @@ class ChattingController extends BaseController
             $relation = ['admin'];
             $type = 'admin';
         } else {
-            return response()->json(['message' => translate('Customer-to-Vendor chat is disabled.')], 403);
+            return response()->json(['message' => translate('Invalid_chat_request')], 400);
         }
         $this->updateAllUnseenMessageStatus(requestColumn: $requestColumn, requestId: $requestId);
         $chattingMessages = $this->getMessage(requestColumn: $requestColumn, requestId: $requestId, whereNotNull: $whereNotNull, relation: $relation);
@@ -158,7 +158,7 @@ class ChattingController extends BaseController
             $relation = ['admin'];
             $type = 'admin';
         } else {
-            return response()->json(['message' => translate('Customer-to-Vendor chat is disabled.')], 403);
+            return response()->json(['message' => translate('Invalid_chat_request')], 400);
         }
         $chattingMessages = $this->getMessage(requestColumn: $requestColumn, requestId: $requestId, whereNotNull: $whereNotNull, relation: $relation);
         $data = self::getRenderMessagesView(user: $getUser, message: $chattingMessages, type: $type);

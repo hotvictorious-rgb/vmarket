@@ -444,7 +444,7 @@ class CustomerController extends Controller
 
             $user = Helpers::getCustomerInformation($request);
 
-            $detailsList = OrderDetail::with(['productAllStatus', 'order.offlinePayments', 'order.deliveryMan', 'order.deliveryManReview', 'verificationImages', 'seller.shop', 'latestEditHistory'])
+            $detailsList = OrderDetail::with(['productAllStatus', 'order.offlinePayments', 'order.deliveryMan', 'order.deliveryManReview', 'verificationImages', 'seller.shop'])
                 ->whereHas('order', function ($query) use ($request, $user) {
                     $query->where([
                         'customer_id' => $user == 'offline' ? $request->guest_id : $user->id,
@@ -541,7 +541,7 @@ class CustomerController extends Controller
         }
 
         $user = Helpers::getCustomerInformation($request);
-        $order = Order::withCount('orderDetails')->with(['deliveryMan', 'offlinePayments', 'verificationImages', 'latestEditHistory', 'orderEditHistory'])->where(['id' => $request['order_id']])->first();
+        $order = Order::withCount('orderDetails')->with(['deliveryMan', 'verificationImages'])->where(['id' => $request['order_id']])->first();
         if (!$order) {
             return response()->json(['message' => translate('order_not_found')], 404);
         }
@@ -558,9 +558,7 @@ class CustomerController extends Controller
             return response()->json(['message' => translate('unauthorized_access')], 403);
         }
 
-        if (isset($order['offlinePayments'])) {
-            $order['offlinePayments']->payment_info = $order->offlinePayments->payment_info;
-        }
+
         $order = json_decode(json_encode($order), true);
         return response()->json($order, 200);
     }

@@ -21,8 +21,4 @@ enum DeliveryManWallet
         URI => 'earning',
         VIEW => 'vendor-views.delivery-man.wallet.earning'
     ];
-    const CASH_COLLECT = [
-        URI => 'cash-collect',
-        VIEW => 'vendor-views.delivery-man.wallet.cash-collect'
-    ];
 }

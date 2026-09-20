@@ -1,3 +1,44 @@
+### [2026-09-20 05:45 UTC] Directive 57325: Second-Pass Deep Architectural Purge of Legacy Residue [backend] [ai-governance]
+* **Component:** Backend (`backend/vmarket-web/`: `app/`, `routes/`, `resources/`, `config/`, `composer.json`)
+* **Action:** Concluded Directive 57325 second-pass deep architectural purge across the backend, enforcing the fresh-system deletion standard (physical deletion, zero stubbing, zero dead code, zero 403 endpoints):
+  - **A. Deleted Wallet Classes & Repositories References Purged:**
+    - Purged dead imports and references to `WalletTransactionRepositoryInterface`, `CustomerWalletService`, `AddFundToWalletEvent`, and `CustomerWalletDecommissionedException` from `OrderController.php`, `CustomerManager.php`, and `EventServiceProvider.php`.
+  - **B. WhatsApp Remnants Cleaned:**
+    - Excised `WhatsAppAutomationWorkflow::triggerDeliveryManAssignmentAlert()` call in `Admin/Order/OrderController::addDeliveryMan()` and all related WhatsApp workflow stubs.
+  - **C & M. Gemini AI Remaining Endpoints & Views Purged:**
+    - Physically deleted `config/openai.php` and `app/Jobs/UpdateCustomerAiMemoryJob.php`.
+    - Removed `openai-php/laravel` from `composer.json`.
+    - Purged `aiSuggestSpecs` from `CategorySpecificationController.php`, removed route `ai-suggest-specs` from `routes/admin/routes.php`, removed AI buttons from `resources/views/shared-views/product/category-specifications-input.blade.php`, and cleaned Blog views (`create.blade.php`, `draft-edit.blade.php`, `edit.blade.php`, `_seo-section.blade.php`, `_edit-seo-section.blade.php`).
+    - Standardized `getActiveAIProviderConfigCache()` in `app/Utils/settings.php` to null-safe helper.
+  - **D. Rider Cash Collection Subsystem Complete Physical Deletion:**
+    - Physically deleted `DeliveryManCashCollectController.php` (Admin & RestAPI v3 Seller), `DeliveryManCashCollectService.php`, `DeliveryManCashCollectRequest.php`, `CashCollectEvent.php`, `CashCollectListener.php`, and Blade views `collect-cash.blade.php` (Admin & Vendor).
+    - Excised `getCashCollectView` and `collectCash` from `Vendor/DeliveryMan/DeliveryManWalletController.php`.
+    - Purged `cash-collect` routes from `routes/admin/routes.php` and `routes/rest_api/v3/seller.php`, and removed collect cash buttons from admin and vendor overview/index views.
+  - **E. Cleaned In-House Admin Order Wallet Processing:**
+    - Rewrote `OrderRepository::manageWalletOnOrderStatusChange()` to pure V1 digital accounting for in-house admin orders, eliminating obsolete COD, offline_payment, and collected_cash adjustments.
+  - **F. Purged Customer-to-Vendor Direct Chat:**
+    - Purged customer-to-vendor direct chat branches across `RestAPI/v1/ChatController.php`, `RestAPI/v2/seller/ChatController.php`, `RestAPI/v3/seller/ChatController.php`, and `Web/ChattingController.php`.
+  - **G & K. Manual Receipt Verification Purged:**
+    - Physically deleted `app/Services/ReceiptUploadService.php`.
+    - Purged `verifyReceipt`, `rejectReceipt`, `approveWalletReceipt`, and `addCustomerMemoryPoint` from `BlacklistController.php` and removed their routes from `routes/admin/routes.php`.
+  - **H. OrderEdit Subsystem Complete Physical Deletion:**
+    - Physically deleted all 16 OrderEdit files: `OrderEditController` (Admin, Vendor, RestAPI v1, RestAPI v3), `OrderEditService`, `OrderEditReturnAmountService`, `OrderEditHistoryRepositoryInterface`, `OrderEditHistoryRepository`, `OrderEditHistory` model, `OrderEditManager` trait, events (`OrderEditEvent`, `OrderEditDuePaymentEvent`, `OrderEditReturnPaymentEvent`), and listeners (`OrderEditListener`, `OrderEditDuePaymentListener`, `OrderEditReturnPaymentListener`).
+    - Purged OrderEdit routes from `routes/admin/routes.php`, `routes/vendor/routes.php`, `routes/rest_api/v1/api.php`, `routes/rest_api/v3/seller.php`, and `routes/web/routes.php`.
+    - Excised `customerOrderEditPayDueAmount` from `PaymentController.php`, and removed `customer_order_edit_pay_due_amount_success`/`failed` from `module-helper.php`.
+    - Purged `orderEditHistory` and `latestEditHistory` relations and queries from `Order.php`, `OrderDetail.php`, `UserProfileController.php`, `PaystackController.php`, `DeliveryManController.php`, `Admin/Order/OrderController.php`, `Vendor/Order/OrderController.php`, `Admin/OrderReportController.php`, `Admin/TransactionReportController.php`, `Admin/ReportController.php`, `Vendor/OrderReportController.php`, `Vendor/TransactionReportController.php`, `RestAPI/v1/OrderController.php`, `RestAPI/v1/CustomerController.php`, and `RestAPI/v3/seller/OrderController.php`.
+    - Purged `sendPushNotificationAfterDuePayment` from `OrderManager.php`.
+    - Removed `edit_due_amount`, `edit_return_amount`, `driver_transit_code`, `doorstep_due_amount`, `receipt_image`, `receipt_metadata`, `receipt_verified_by`, `receipt_verified_at`, and `edited_status` from `Order.php` fillable and casts.
+  - **I. Customer Loyalty Points Eradicated:**
+    - Physically deleted `LoyaltyPointTransactionRepositoryInterface.php`, `LoyaltyPointTransaction.php` model, and `LoyaltyPointTransactionRepository.php`.
+    - Removed `loyalty_point` attribute from `User.php` fillable, casts, and docblock.
+    - Removed loyalty point transaction additions and balance checks from `Admin/Order/RefundController.php`, `Vendor/RefundController.php`, `RestAPI/v2/seller/RefundController.php`, and `RestAPI/v3/seller/RefundController.php`.
+    - Physically deleted obsolete `DeliveryManWalletRequest.php`.
+  - **J. Wallet Bonus Deprecations Removed:**
+    - Removed `wallet-bonus` routes from `routes/admin/routes.php`, excised `wallet_bonus` query in `Admin/TransactionReportController.php`, and deleted `Helpers::add_fund_to_wallet_bonus` from `Helpers.php`.
+  - **Verification:**
+    - All 48 modified/cleaned PHP and Blade files validated with `php -l` (0 syntax errors).
+    - Target purged symbols verified with 0 executable occurrences across the repository.
+
 ### [2026-09-20 04:30 UTC] Directive 57324: Complete Fresh-System Architectural Purge of WhatsApp, AI & Customer Stored-Value Wallet [backend] [ai-governance]
 * **Component:** Backend (`backend/vmarket-web/`: `Modules/AI/`, `app/Services/`, `app/Models/`, `app/Http/Controllers/`, `app/Repositories/`, `resources/views/`, `routes/`)
 * **Action:** Concluded the complete, repository-wide fresh-system architectural purge per Directive 57324, physically deleting all residual modules, views, controllers, commands, and routes with zero stubbing, zero 403s, and zero dead code:

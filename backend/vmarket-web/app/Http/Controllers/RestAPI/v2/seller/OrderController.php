@@ -235,19 +235,17 @@ class OrderController extends Controller
 
         if ($order->delivery_man_id && $request->order_status == 'delivered') {
             $dm_wallet = DeliverymanWallet::where('delivery_man_id', $order->delivery_man_id)->first();
-            $cash_in_hand = $order->payment_method == 'cash_on_delivery' ? $order->order_amount : 0;
 
             if (empty($dm_wallet)) {
                 DeliverymanWallet::create([
                     'delivery_man_id' => $order->delivery_man_id,
                     'current_balance' => BackEndHelper::currency_to_usd($order->deliveryman_charge) ?? 0,
-                    'cash_in_hand' => BackEndHelper::currency_to_usd($cash_in_hand),
+                    'cash_in_hand' => 0,
                     'pending_withdraw' => 0,
                     'total_withdraw' => 0,
                 ]);
             } else {
                 $dm_wallet->current_balance += BackEndHelper::currency_to_usd($order->deliveryman_charge) ?? 0;
-                $dm_wallet->cash_in_hand += BackEndHelper::currency_to_usd($cash_in_hand);
                 $dm_wallet->save();
             }
 
@@ -263,13 +261,6 @@ class OrderController extends Controller
             }
         }
 
-        if ($wallet_status == 1 && $loyalty_point_status == 1) {
-            if ($request->order_status == 'delivered' && $order->payment_status == 'paid') {
-                CustomerManager::create_loyalty_point_transaction($order->customer_id, $order->id, Convert::default($order->order_amount - $order->shipping_cost), 'order_place');
-            }
-        }
-
-        OrderManager::generateReferBonusForFirstOrder(orderId: $order['id']);
         if ($request['order_status'] == 'delivered') {
             $referredUser = ReferralCustomer::where('user_id', $order?->customer?->id)->first();
             if ($referredUser?->delivered_notify != 1) {

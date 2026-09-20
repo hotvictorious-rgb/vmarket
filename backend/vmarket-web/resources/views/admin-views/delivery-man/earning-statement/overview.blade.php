@@ -29,11 +29,8 @@
                             <div class="card-body d-flex flex-column gap-2 align-items-center justify-content-center">
                                 <img width="48" src="{{dynamicAsset(path: 'public/assets/back-end/img/cc.png')}}" alt="">
                                 <h3 class="for-card-count mb-0 h1">{{ $deliveryMan->wallet ? setCurrencySymbol(amount: usdToDefaultCurrency(amount: $deliveryMan->wallet->cash_in_hand), currencyCode: getCurrencyCode()) : setCurrencySymbol(amount: 0, currencyCode: getCurrencyCode()) }}</h3>
-                                <div class="fw-bold text-capitalize mb-30">
-                                    {{translate('cash_in_hand')}}
                                 </div>
                             </div>
-                            <a href="{{ route('admin.delivery-man.collect-cash', ['id' => $deliveryMan->id]) }}" class="btn btn-primary mb-4">{{translate('collect_Cash')}}</a>
                         </div>
                     </div>
                     <div class="col-lg-8">

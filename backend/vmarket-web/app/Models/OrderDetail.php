@@ -137,15 +137,6 @@ class OrderDetail extends Model
         return $this->hasMany(OrderStatusHistory::class, 'order_id', 'order_id');
     }
 
-    public function orderEditHistory()
-    {
-        return $this->hasMany(OrderEditHistory::class, 'order_id', 'order_id');
-    }
-
-    public function latestEditHistory()
-    {
-        return $this->hasOne(OrderEditHistory::class, 'order_id', 'order_id')->latestOfMany();
-    }
 
     public function getDigitalFileAfterSellFullUrlAttribute(): string|null|array
     {

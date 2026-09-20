@@ -212,7 +212,7 @@ if (!function_exists('getLoginConfig')) {
 }
 
 if (!function_exists('getActiveAIProviderConfigCache')) {
-    function getActiveAIProviderConfigCache()
+    function getActiveAIProviderConfigCache(): ?object
     {
         return null;
     }

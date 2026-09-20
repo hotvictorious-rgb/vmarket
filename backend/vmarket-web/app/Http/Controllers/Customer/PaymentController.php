@@ -2,15 +2,12 @@
 
 namespace App\Http\Controllers\Customer;
 
-use App\Events\OrderEditDuePaymentEvent;
 use App\Models\AdminWallet;
 use App\Models\Cart;
 use App\Models\Order;
-use App\Models\OrderEditHistory;
 use App\Models\Seller;
 use App\Models\User;
 use App\Library\Payer;
-use App\Traits\OrderEditManager;
 use App\Utils\Convert;
 use App\Utils\CustomerManager;
 use App\Utils\Helpers;
@@ -36,7 +33,7 @@ use Illuminate\Support\Facades\Validator;
 
 class PaymentController extends Controller
 {
-    use Payment, PaymentGatewayTrait, OrderEditManager;
+    use Payment, PaymentGatewayTrait;
 
     public function payment(Request $request): JsonResponse|Redirector|RedirectResponse
     {
@@ -386,101 +383,5 @@ class PaymentController extends Controller
         $receiverInfo = new Receiver('receiver_name', 'example.png');
         return $this->generate_link($payer, $paymentInfo, $receiverInfo);
     }
-
-
-    public function customerOrderEditPayDueAmount(Request $request)
-    {
-        $validator = Validator::make($request->all(), [
-            'order_id' => 'required',
-            'payment_method' => 'required',
-            'payment_platform' => 'required',
-            'order_due_payment_note' => 'nullable|string',
-            'method_id' => 'required_if:payment_method,offline_payment',
-            'payment_note' => 'nullable|string',
-        ]);
-        if ($validator->fails()) {
-            $errors = Helpers::validationErrorProcessor($validator);
-            if ($request->payment_request_from === 'app') {
-                return response()->json(['errors' => $errors]);
-            }
-            foreach ($errors as $error) {
-                Toastr::error(translate($error['message']));
-            }
-            return back();
-        }
-
-        $validated = $validator->validated();
-        $order = Order::find($validated['order_id']);
-        if (!$order) {
-            Toastr::error(translate('Order_not_found'));
-            return back();
-        }
-
-        $customer = Helpers::getCustomerInformation($request);
-
-        // [AI] Ownership Guard: Only the order owner can pay or update due payment method
-        $isOwner = false;
-        if ($customer != 'offline' && $order->customer_id == $customer->id) {
-            $isOwner = true;
-        } elseif ($order->is_guest && $request->has('guest_id') && $order->customer_id == $request['guest_id'] && is_numeric($request['guest_id'])) {
-            $isOwner = true;
-        }
-
-        if (!$isOwner) {
-            if ($request->payment_request_from === 'app') {
-                return response()->json(['message' => translate('unauthorized_access')], 403);
-            }
-            Toastr::error(translate('unauthorized_access'));
-            return back();
-        }
-
-        $orderEditHistory = OrderEditHistory::where('order_id', $validated['order_id'])->latest('created_at')->first();
-
-        if ($validated['payment_method'] === 'wallet' && $customer != 'offline') {
-            if ($request->payment_request_from === 'app' || $request->expectsJson()) {
-                return response()->json([
-                    'status' => false,
-                    'message' => 'Wallet payment is permanently decommissioned in Victorious MARKET.',
-                ], 403);
-            }
-            Toastr::error('Wallet payment is permanently decommissioned.');
-            return back();
-        }
-
-        if ($validated['payment_method'] === 'offline_payment') {
-            if ($request->payment_request_from === 'app' || $request->expectsJson()) {
-                return response()->json([
-                    'status' => false,
-                    'message' => 'Offline payment is permanently decommissioned in Victorious MARKET.',
-                ], 403);
-            }
-            Toastr::error('Offline payment is permanently decommissioned in Victorious MARKET.');
-            return back();
-        }
-
-        if ($validated['payment_method'] === 'cash_on_delivery') {
-            if ($request->payment_request_from === 'app' || $request->expectsJson()) {
-                return response()->json([
-                    'status' => false,
-                    'message' => 'Cash on delivery is permanently decommissioned in Victorious MARKET.',
-                ], 403);
-            }
-            Toastr::error('Cash on delivery is permanently decommissioned in Victorious MARKET.');
-            return back();
-        }
-
-        $response = $this->payEditOrderDueByDigitalPayment(request: $request, order: $order, customer: $customer);
-        if ($response['status'] && isset($response['message'])) {
-            Toastr::success($response['message']);
-        } elseif (!$response['status'] && isset($response['message'])) {
-            Toastr::error($response['message']);
-        }
-
-        if ($response['redirect_link']) {
-            return $request->payment_request_from === 'app' ? response()->json(['redirect_link' => $response['redirect_link']]) : redirect($response['redirect_link']);
-        }
-        return back();
-    }
-
 
 }

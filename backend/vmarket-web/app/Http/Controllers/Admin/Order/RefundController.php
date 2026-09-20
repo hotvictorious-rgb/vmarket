@@ -4,7 +4,6 @@ namespace App\Http\Controllers\Admin\Order;
 
 use App\Contracts\Repositories\AdminWalletRepositoryInterface;
 use App\Contracts\Repositories\CustomerRepositoryInterface;
-use App\Contracts\Repositories\LoyaltyPointTransactionRepositoryInterface;
 use App\Contracts\Repositories\OrderDetailRepositoryInterface;
 use App\Contracts\Repositories\OrderDetailsRewardsRepositoryInterface;
 use App\Contracts\Repositories\OrderRepositoryInterface;
@@ -43,7 +42,6 @@ class RefundController extends BaseController
         private readonly VendorWalletRepositoryInterface            $vendorWalletRepo,
         private readonly RefundStatusRepositoryInterface            $refundStatusRepos,
         private readonly RefundTransactionRepositoryInterface       $refundTransactionRepo,
-        private readonly LoyaltyPointTransactionRepositoryInterface $loyaltyPointTransactionRepo,
         private readonly OrderDetailsRewardsRepositoryInterface     $orderDetailsRewardsRepo,
     )
     {
@@ -152,9 +150,6 @@ class RefundController extends BaseController
             $orderDetails = $this->orderDetailRepo->getFirstWhere(params: ['id' => $refund['order_details_id']]);
             $dataArray = $refundStatusService->getRefundStatusProcessData(request: $request, orderDetails: $orderDetails, refund: $refund, loyaltyPoint: $loyaltyPoint);
 
-            if ($request['refund_status'] == 'refunded' && $loyaltyPoint > 0 && getWebConfig(name: 'loyalty_point_status') == 1) {
-                $this->loyaltyPointTransactionRepo->addLoyaltyPointTransaction(userId: $refund['customer_id'], reference: $refund['order_id'], amount: $loyaltyPoint, transactionType: 'refund_order');
-            }
 
             $this->orderDetailRepo->update(id: $refund['order_details_id'], data: ['refund_request' => $dataArray['orderDetails']['refund_request']]);
             $this->refundRequestRepo->update(id: $request['id'], data: $dataArray['refund']);

@@ -1,7 +1,6 @@
 @php
     $isAdmin = auth('admin')->check();
     $fetchSpecsUrl = $isAdmin ? route('admin.category-specifications.get-by-category', ['category_id' => ':cat_id']) : route('vendor.products.get-category-specifications', ['category_id' => ':cat_id']);
-    $aiSpecsUrl = $isAdmin ? route('admin.category-specifications.ai-suggest-specs') : route('vendor.products.ai-suggest-specs');
     $existingSpecs = isset($product) && !empty($product->specifications) ? (is_array($product->specifications) ? $product->specifications : json_decode($product->specifications, true)) : [];
 @endphp
 
@@ -17,11 +16,6 @@
                     {{ translate('Tailored questions for the selected category. Complete these specifications to boost Google SEO and search ranking.') }}
                 </p>
             </div>
-            <button type="button" class="btn btn-sm btn-outline-primary d-flex align-items-center gap-1" id="btn-ai-auto-fill-specs" style="border-color: #4A154B; color: #4A154B;">
-                <i class="tio-flash" style="color: #D4AF37;"></i>
-                <span id="ai-auto-fill-text">{{ translate('✨ Auto-Fill Specs with AI') }}</span>
-                <span id="ai-auto-fill-spinner" class="spinner-border spinner-border-sm text-primary d-none" role="status"></span>
-            </button>
         </div>
         <div class="card-body p-3 p-md-4">
             <div class="row g-3" id="dynamic-specs-fields-container">
@@ -34,7 +28,6 @@
 <script>
 document.addEventListener('DOMContentLoaded', function () {
     const fetchUrlTemplate = "{{ $fetchSpecsUrl }}";
-    const aiUrl = "{{ $aiSpecsUrl }}";
     const existingSpecs = @json($existingSpecs ?? []);
 
     function loadCategorySpecifications(catId) {
@@ -140,65 +133,5 @@ document.addEventListener('DOMContentLoaded', function () {
             }
         }
     }, 500);
-
-    // AI Auto-Fill Specs Button
-    $('#btn-ai-auto-fill-specs').on('click', function () {
-        const selected = $('#category_id_selector, select[name="category_id"]').find(':selected');
-        let catId = selected.data('sub-sub-category') || selected.data('sub-category') || selected.data('category') || $('#category_id_selector, select[name="category_id"]').val();
-        
-        let productName = $('input[name="name[]"], input[name="name"]').first().val();
-        let productDetails = $('textarea[name="details[]"], textarea[name="details"]').first().val() || '';
-
-        if (!productName || productName.trim() === '') {
-            if (typeof toastr !== 'undefined') {
-                toastr.warning("{{ translate('Please enter the Product Name / Title first so AI can analyze it.') }}");
-            } else {
-                alert("{{ translate('Please enter the Product Name / Title first.') }}");
-            }
-            return;
-        }
-
-        $('#ai-auto-fill-text').text("{{ translate('Extracting...') }}");
-        $('#ai-auto-fill-spinner').removeClass('d-none');
-        $('#btn-ai-auto-fill-specs').prop('disabled', true);
-
-        $.post(aiUrl, {
-            _token: '{{ csrf_token() }}',
-            category_id: catId,
-            product_name: productName,
-            product_details: productDetails
-        }, function (res) {
-            $('#ai-auto-fill-text').text("{{ translate('✨ Auto-Fill Specs with AI') }}");
-            $('#ai-auto-fill-spinner').addClass('d-none');
-            $('#btn-ai-auto-fill-specs').prop('disabled', false);
-
-            if (res && res.status && res.suggestions) {
-                let filledCount = 0;
-                Object.keys(res.suggestions).forEach(function (specKey) {
-                    const val = res.suggestions[specKey];
-                    if (val) {
-                        const input = $(`.spec-input-field[data-spec-name="${specKey}"]`);
-                        if (input.length) {
-                            input.val(val).trigger('change');
-                            input.css('background-color', '#E8F5E9').animate({backgroundColor: '#FFFFFF'}, 1500);
-                            filledCount++;
-                        }
-                    }
-                });
-
-                if (typeof toastr !== 'undefined') {
-                    toastr.success(`{{ translate('AI auto-filled') }} ${filledCount} {{ translate('specifications from product info!') }}`);
-                }
-            } else {
-                if (typeof toastr !== 'undefined') {
-                    toastr.info("{{ translate('AI could not determine additional specs for this item.') }}");
-                }
-            }
-        }).fail(function() {
-            $('#ai-auto-fill-text').text("{{ translate('✨ Auto-Fill Specs with AI') }}");
-            $('#ai-auto-fill-spinner').addClass('d-none');
-            $('#btn-ai-auto-fill-specs').prop('disabled', false);
-        });
-    });
 });
 </script>
