@@ -4,7 +4,6 @@ namespace App\Enums;
 
 enum EmailTemplateKey
 {
-    const ADD_FUND_TO_WALLET = 'add-fund-to-wallet';
     const REGISTRATION = 'registration';
     const REGISTRATION_APPROVED = 'registration-approved';
     const REGISTRATION_DENIED = 'registration-denied';
@@ -45,7 +44,7 @@ enum EmailTemplateKey
         EmailTemplateKey::ACCOUNT_UNBLOCK,
         EmailTemplateKey::DIGITAL_PRODUCT_DOWNLOAD,
         EmailTemplateKey::DIGITAL_PRODUCT_OTP,
-        EmailTemplateKey::ADD_FUND_TO_WALLET,
+        // [AI] Directive 57326: ADD_FUND_TO_WALLET removed — no customer stored-value wallet in V1.
     ];
 
     const DELIVERY_MAN_EMAIL_LIST = [

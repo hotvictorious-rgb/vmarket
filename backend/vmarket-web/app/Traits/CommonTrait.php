@@ -53,7 +53,8 @@ trait CommonTrait
         $wallet = DeliverymanWallet::where('delivery_man_id', $delivery_man_id)->first();
         $withdrawalBalance = 0;
         if ($wallet) {
-            $withdrawalBalance = ($wallet->current_balance ?? 0) - (($wallet->cash_in_hand ?? 0) + ($wallet->pending_withdraw ?? 0));
+            // [AI] Directive 57326: cash_in_hand removed — V1 riders never collect cash; all payments are Paystack digital.
+            $withdrawalBalance = ($wallet->current_balance ?? 0) - ($wallet->pending_withdraw ?? 0);
         }
         return $withdrawalBalance > 0 ? $withdrawalBalance : 0;
     }

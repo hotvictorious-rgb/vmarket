@@ -362,12 +362,7 @@
 
     @include('vendor-views.order.partials._filter-offcanvas')
 
-    {{-- return due amount modal --}}
-    @if($orders->isNotEmpty())
-        @foreach($orders as $order)
-            @include('vendor-views.order.partials.modal.order-edit-return-amount-modal', ['order' => $order])
-        @endforeach
-    @endif
+    {{-- [AI] Directive 57326: order-edit-return-amount-modal removed — modal blade deleted in Phase 2. --}}
 @endsection
 
 @push('script')

@@ -102,7 +102,7 @@ class OrderReportController extends Controller
 
     public function getAdminOrderListPaymentFormattedData(object|array $request): array
     {
-        $digitalPaymentQuery = Order::where(['order_status' => 'delivered'])->whereNotIn('payment_method', ['cash', 'cash_on_delivery', 'pay_by_wallet', 'offline_payment']);
+        $digitalPaymentQuery = Order::where(['order_status' => 'delivered'])->whereNotIn('payment_method', ['cash', 'cash_on_delivery', 'pay_by_wallet']);
         $digitalPayment = self::pie_chart_common_query($request, $digitalPaymentQuery)->sum('init_order_amount');
 
         $cashPaymentQuery = Order::where(['order_status' => 'delivered'])->whereIn('payment_method', ['cash', 'cash_on_delivery']);
@@ -111,25 +111,25 @@ class OrderReportController extends Controller
         $walletPaymentQuery = Order::where(['order_status' => 'delivered'])->where(['payment_method' => 'pay_by_wallet']);
         $walletPayment = self::pie_chart_common_query($request, $walletPaymentQuery)->sum('init_order_amount');
 
-        $offlinePaymentQuery = Order::where(['order_status' => 'delivered'])->where(['payment_method' => 'offline_payment']);
-        $offlinePayment = self::pie_chart_common_query($request, $offlinePaymentQuery)->sum('init_order_amount');
+        // [AI] Directive 57326: offline_payment DB query removed — V1 accepts no offline orders; always 0.
+        $offlinePayment = 0;
 
         $orderEditDigitalPayment = 0;
-        $orderEditCashPayment = 0;
-        $orderEditWalletPayment = 0;
-        $orderEditOfflinePayment = 0;
-        $orderEditReturnAmount = 0;
+        $orderEditCashPayment    = 0;
+        $orderEditWalletPayment  = 0;
+        $orderEditOfflinePayment = 0; // [AI] Directive 57326: order-edit decommissioned.
+        $orderEditReturnAmount   = 0;
 
         $editTotalPayment = $orderEditCashPayment + $orderEditWalletPayment + $orderEditDigitalPayment + $orderEditOfflinePayment;
         $totalPayment = $cashPayment + $walletPayment + $digitalPayment + $offlinePayment;
 
         return [
-            'cash_payment' => $cashPayment + $orderEditCashPayment,
-            'wallet_payment' => $walletPayment + $orderEditWalletPayment,
-            'offline_payment' => $offlinePayment + $orderEditOfflinePayment,
+            'cash_payment'    => $cashPayment + $orderEditCashPayment,
+            'wallet_payment'  => $walletPayment + $orderEditWalletPayment,
+            'offline_payment' => 0, // [AI] Directive 57326: always 0 in V1.
             'digital_payment' => $digitalPayment + $orderEditDigitalPayment,
-            'total_payment' => ($totalPayment + $editTotalPayment) - $orderEditReturnAmount,
-            'return_amount' => $orderEditReturnAmount,
+            'total_payment'   => ($totalPayment + $editTotalPayment) - $orderEditReturnAmount,
+            'return_amount'   => $orderEditReturnAmount,
         ];
     }
 

@@ -1,3 +1,23 @@
+### [2026-09-20 07:48 UTC] Directive 57326: Phase 3-5 Legacy Residue Purge — PHP, Blade & Report Controllers [backend]
+* **Component:** Backend (`backend/vmarket-web/`)
+* **Scope:** PHP class modifications, Blade view cleanup, report controller offline_payment purge
+* **Changes:**
+  - **Phase 3A — PaymentMethodUpdateRequest:** Stripped to Paystack-only validation (`gateway` must be `paystack`); removed all non-Paystack gateway branches.
+  - **Phase 3B — EmailTemplateKey:** Removed `ADD_FUND_TO_WALLET` constant and its reference in `CUSTOMER_EMAIL_LIST`.
+  - **Phase 3C — settings.php:** Removed dead cache keys (`offline_payment`, `seller_pos`, `cash_on_delivery`) from `getWebConfigCacheKeys()`; removed always-null `getActiveAIProviderConfigCache()` stub.
+  - **Phase 3D — Helpers.php:** Removed orphaned `use App\Models\AddFundBonusCategories` import (model deleted in Phase 2).
+  - **Phase 3E — CommonTrait.php:** Removed `cash_in_hand` deduction from `delivery_man_withdrawable_balance()` formula (V1 riders never collect cash).
+  - **Phase 3F — v2 DeliveryManController:** Removed `cash_in_hand` DB transaction query; hardcoded `cash_in_hand => 0` and `total_deposit => 0` in API response (always 0 in V1).
+  - **Phase 3G — v2 WithdrawController:** Removed `cash_in_hand` from withdrawable balance guard formula.
+  - **Phase 4A — _third-party-payment-method-menu.blade.php:** Removed offline payment tab from admin third-party payment nav.
+  - **Phase 4B — admin order-details.blade.php:** Removed all 5 order-edit modal/offcanvas `@include` statements, the `order-edit.js` script tag, edit-order route spans, and `openOffcanvasAfterModal` call.
+  - **Phase 4C — vendor order-details.blade.php:** Same order-edit cleanup as 4B for vendor panel.
+  - **Phase 4D — admin order/list.blade.php:** Removed `order-edit-return-amount-modal` include loop.
+  - **Phase 4E — vendor order/list.blade.php:** Same as 4D for vendor panel.
+  - **Phase 4F — vendor subscription/index.blade.php:** Removed `offline_payment` option from payment method selector.
+  - **Phase 5 — 5 Report Controllers:** Eliminated live `offline_payment` DB queries from `getOrderTransactionPaymentFormattedData`, `getAdminOrderListPaymentFormattedData`, `getAdminEarningPaymentFormattedData`, `getVendorOrderReportPaymentFormattedData`, `getVendorOrderTransactionPaymentFormattedData`. Trimmed `whereNotIn` exclusion lists, zeroed `$offlinePayment` to avoid dead DB hits. Return key `offline_payment` preserved as `0` to avoid blade array-access errors.
+* **Verification:** `php -l` syntax check: 12/12 PASS. BOM stripped from `PaymentMethodUpdateRequest.php`.
+
 ### [2026-09-20 05:45 UTC] Directive 57325: Second-Pass Deep Architectural Purge of Legacy Residue [backend] [ai-governance]
 * **Component:** Backend (`backend/vmarket-web/`: `app/`, `routes/`, `resources/`, `config/`, `composer.json`)
 * **Action:** Concluded Directive 57325 second-pass deep architectural purge across the backend, enforcing the fresh-system deletion standard (physical deletion, zero stubbing, zero dead code, zero 403 endpoints):

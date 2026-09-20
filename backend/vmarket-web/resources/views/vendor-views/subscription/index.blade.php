@@ -95,7 +95,7 @@
                                 <select name="payment_method" class="form-select" required>
                                     <option value="wallet">💰 {{ translate('Pay_from_Vendor_Wallet_Balance') }} ({{ setCurrencySymbol(amount: $walletBalance, currencyCode: getCurrencyCode()) }})</option>
                                     <option value="paystack">💳 {{ translate('Pay_with_Paystack_(Card_/_Bank_Transfer_/_USSD)') }}</option>
-                                    <option value="offline_payment">🏦 {{ translate('Offline_Direct_Bank_Deposit') }}</option>
+                                    {{-- [AI] Directive 57326: offline_payment option removed — V1 supports Paystack + wallet only. --}}
                                 </select>
                             </div>
 

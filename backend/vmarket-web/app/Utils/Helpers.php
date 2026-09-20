@@ -2,7 +2,7 @@
 
 namespace App\Utils;
 
-use App\Models\AddFundBonusCategories;
+// [AI] Directive 57326: AddFundBonusCategories model removed.
 use App\Models\OrderStatusHistory;
 use App\Models\ShippingMethod;
 use App\Models\Shop;

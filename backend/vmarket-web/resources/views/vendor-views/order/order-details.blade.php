@@ -1748,12 +1748,7 @@
         </div>
     </div>
 
-    @include('vendor-views.order.partials.modal.order-edit-due-amount-mark-as-paid',['order' => $order])
-    @include('vendor-views.order.partials.modal.order-edit-due-amount-switch-to-cod',['order' => $order])
-{{--    @include('vendor-views.order.partials.modal.order-edit-return-amount-modal',['order' => $order])--}}
-
-    @include('vendor-views.order.partials.modal._confirm-edit-order')
-    @include('vendor-views.order.partials.offcanvas._edit-products-offcanvas')
+    {{-- [AI] Directive 57326: order-edit modal/offcanvas includes removed — order editing decommissioned in V1. --}}
 
     <span id="payment-status-message" data-title="{{ translate('confirm_payments_before_change_the_status.') }}"
           data-message="{{ translate('Change the status to Paid only when you receive the customers payment and have verified it.') }}"></span>
@@ -1804,11 +1799,7 @@
           data-message="{{translate('when_order_status_delivered_you_can`t_update_the_delivery_man_incentive').'.'}}"></span>
     <span id="payment-status-alert-message"
           data-message="{{translate('when_payment_status_paid_then_you_can`t_change_payment_status_paid_to_unpaid').'.'}}"></span>
-    <span id="get-search-product-for-edit-order"
-          data-action="{{ route('vendor.orders.search-for-edit-order-product') }}"
-          data-order-id="{{ $order['id'] }}"></span>
-    <span id="edit-order-product-modal-view"
-          data-action="{{ route('vendor.orders.edit-order-product-modal-view') }}"></span>
+    {{-- [AI] Directive 57326: edit-order route spans removed — order editing decommissioned in V1. --}}
 @endsection
 @push('script')
     @if(getWebConfig('map_api_status') ==1 )
@@ -1818,9 +1809,9 @@
         </script>
     @endif
     <script src="{{dynamicAsset(path: 'public/assets/back-end/js/vendor/order.js')}}"></script>
-    <script src="{{ dynamicAsset(path: 'public/assets/backend/vendor/js/order-edit.js') }}"></script>
+    {{-- [AI] Directive 57326: order-edit.js removed — deleted in Phase 2. --}}
     <script>
-        openOffcanvasAfterModal('#confirm-edit-order', '#confirm-edit-order-modal', '#offcanvasEditProducts');
+        // openOffcanvasAfterModal removed — depended on deleted order-edit.js
 
         document.addEventListener('DOMContentLoaded', function () {
             const toggleBtn = document.getElementById('paymentInfoCollapse');

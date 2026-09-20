@@ -37,7 +37,8 @@ class WithdrawController extends Controller
                 return response()->json(['message' => translate('Wallet not found')], 404);
             }
 
-            $withdrawable = ($wallet->current_balance ?? 0) - (($wallet->cash_in_hand ?? 0) + ($wallet->pending_withdraw ?? 0));
+            // [AI] Directive 57326: cash_in_hand removed — V1 riders do not collect cash.
+            $withdrawable = ($wallet->current_balance ?? 0) - ($wallet->pending_withdraw ?? 0);
             if ($withdrawable < $requestedAmount) {
                 return response()->json(['message' => translate('withdraw_request_amount_can_not_be_more_than_withdrawable_balance')], 403);
             }

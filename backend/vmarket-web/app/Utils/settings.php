@@ -81,10 +81,10 @@ if (!function_exists('getWebConfigCacheKeys')) {
             'company_name', 'decimal_point_settings', 'product_brand', 'company_email',
             'business_mode', 'storage_connection_type', 'company_web_logo', 'digital_product', 'storage_connection_type', 'recaptcha',
             'language', 'pagination_limit', 'company_phone', 'stock_limit',
-            'social_login', 'apple_login', 'offline_payment', 'firebase_otp_verification',
+            'social_login', 'apple_login', 'firebase_otp_verification',
             'maintenance_system_setup', 'maintenance_message_setup', 'maintenance_duration_setup',
-            'seller_registration', 'seller_pos', 'delivery_country_restriction',
-            'delivery_zip_code_area_restriction', 'colors', 'digital_payment', 'cash_on_delivery',
+            'seller_registration', 'delivery_country_restriction',
+            'delivery_zip_code_area_restriction', 'colors', 'digital_payment',
             'company_mobile_logo', 'company_footer_logo', 'company_fav_icon', 'shop_banner', 'colors'
         ];
     }
@@ -211,12 +211,8 @@ if (!function_exists('getLoginConfig')) {
     }
 }
 
-if (!function_exists('getActiveAIProviderConfigCache')) {
-    function getActiveAIProviderConfigCache(): ?object
-    {
-        return null;
-    }
-}
+// [AI] Directive 57326: getActiveAIProviderConfigCache() stub removed — it always returned null
+// and was only referenced from deleted product Blade views that rendered AI-config cards.
 
 if (!function_exists('getCustomerFromQuery')) {
     function getCustomerFromQuery()

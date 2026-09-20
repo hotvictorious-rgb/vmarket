@@ -52,11 +52,11 @@ class DeliveryManController extends Controller
         $completed_delivery = $order->where('order_status', 'delivered')->count();
         $pause_delivery = $order->where('is_pause', 1)->count();
         $pending_delivery = $order->where('order_status', 'pending')->count();
-        $total_deposit = DeliveryManTransaction::where(['delivery_man_id' => $request['delivery_man']['id'], 'transaction_type' => 'cash_in_hand'])->sum('credit');
+        // [AI] Directive 57326: cash_in_hand / total_deposit removed — V1 riders do not collect cash.
 
         $request['delivery_man']['withdrawable_balance'] = $withdrawable_balance;
         $request['delivery_man']['current_balance'] = $wallet->current_balance ?? 0;
-        $request['delivery_man']['cash_in_hand'] = $wallet->cash_in_hand ?? 0;
+        $request['delivery_man']['cash_in_hand'] = 0; // always 0 in V1
         $request['delivery_man']['pending_withdraw'] = $wallet->pending_withdraw ?? 0;
         $request['delivery_man']['total_withdraw'] = $wallet->total_withdraw ?? 0;
         $request['delivery_man']['total_earn'] = $total_earn;
@@ -64,7 +64,7 @@ class DeliveryManController extends Controller
         $request['delivery_man']['pending_delivery'] = $pending_delivery;
         $request['delivery_man']['total_delivery'] = $order->count();
         $request['delivery_man']['pause_delivery'] = $pause_delivery;
-        $request['delivery_man']['total_deposit'] = $total_deposit;
+        $request['delivery_man']['total_deposit'] = 0; // always 0 in V1
         $request['delivery_man']['average_rating'] = count($delivery_man->rating) > 0 ? number_format($delivery_man->rating[0]->average, 2, '.', ' ') : 0;
 
         return response()->json($request['delivery_man'], 200);
