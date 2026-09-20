@@ -5,7 +5,6 @@ import 'package:provider/provider.dart';
 import 'package:sixvalley_vendor_app/common/basewidgets/confirmation_dialog_widget.dart';
 import 'package:sixvalley_vendor_app/common/basewidgets/custom_dialog_widget.dart';
 import 'package:sixvalley_vendor_app/features/addProduct/controllers/digital_product_controller.dart';
-import 'package:sixvalley_vendor_app/features/ai/controllers/ai_controller.dart';
 
 import 'package:sixvalley_vendor_app/features/product/controllers/category_controller.dart';
 import 'package:sixvalley_vendor_app/features/shop/controllers/shop_controller.dart';
@@ -53,9 +52,7 @@ class DashboardScreenState extends State<DashboardScreen> {
     Provider.of<TransactionController>(context, listen: false).getTransactionList(context,'all','','');
     Provider.of<WalletController>(context, listen: false).getPaymentInfoList();
 
-    if(Provider.of<SplashController>(context,listen: false).configModel?.isAiFeatureActive == 1) {
-      Provider.of<AiController>(context,listen: false).generateLimitCheck();
-    }
+    
 
     _screens = [
       HomePageScreen(callback: () {

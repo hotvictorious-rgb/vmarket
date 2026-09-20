@@ -6,11 +6,6 @@ import 'package:sixvalley_vendor_app/features/addProduct/controllers/add_product
 import 'package:sixvalley_vendor_app/features/addProduct/controllers/add_product_tax_controller.dart';
 import 'package:sixvalley_vendor_app/features/addProduct/controllers/digital_product_controller.dart';
 import 'package:sixvalley_vendor_app/features/addProduct/controllers/variation_controller.dart';
-import 'package:sixvalley_vendor_app/features/ai/controllers/ai_controller.dart';
-import 'package:sixvalley_vendor_app/features/ai/domain/repositories/ai_repository.dart';
-import 'package:sixvalley_vendor_app/features/ai/domain/repositories/ai_repository_interface.dart';
-import 'package:sixvalley_vendor_app/features/ai/domain/services/ai_service.dart';
-import 'package:sixvalley_vendor_app/features/ai/domain/services/ai_service_interface.dart';
 import 'package:sixvalley_vendor_app/features/auth/domain/repositories/auth_repository.dart';
 import 'package:sixvalley_vendor_app/features/auth/domain/repositories/auth_repository_interface.dart';
 import 'package:sixvalley_vendor_app/features/auth/domain/services/auth_service.dart';
@@ -228,8 +223,6 @@ Future<void> init() async {
   sl.registerLazySingleton(() => categoryRepositoryInterface);
   VatRepositoryInterface vatRepositoryInterface = VatRepository(dioClient: sl());
   sl.registerLazySingleton(() => vatRepositoryInterface);
-  AiRepositoryInterface aiRepositoryInterface = AiRepository(dioClient: sl());
-  sl.registerLazySingleton(() => aiRepositoryInterface);
   OrderEditRepositoryInterface orderEditRepositoryInterface = OrderEditRepository(dioClient: sl());
   sl.registerLazySingleton(() => orderEditRepositoryInterface);
 
@@ -286,8 +279,6 @@ Future<void> init() async {
   sl.registerLazySingleton(() => categoryServiceInterface);
   VatServiceInterface vatServiceInterface = VatService(vatRepoInterface: sl());
   sl.registerLazySingleton(() => vatServiceInterface);
-  AiServiceInterface aiServiceInterface = AiService(aiRepositoryInterface: sl());
-  sl.registerLazySingleton(() => aiServiceInterface);
   OrderEditServiceInterface orderEditServiceInterface = OrderEditService(orderEditRepositoryInterface: sl());
   sl.registerLazySingleton(() => orderEditServiceInterface);
 
@@ -319,7 +310,6 @@ Future<void> init() async {
   sl.registerLazySingleton(() => ClearanceSaleRepository(dioClient: sl()));
   sl.registerLazySingleton(() => CategoryRepository(dioClient: sl(), sharedPreferences: sl()));
   sl.registerLazySingleton(() => VatRepository(dioClient: sl()));
-  sl.registerLazySingleton(() => AiRepository(dioClient: sl()));
   sl.registerLazySingleton(() => OrderEditRepository(dioClient: sl()));
 
   // Controller
@@ -362,6 +352,5 @@ Future<void> init() async {
   sl.registerFactory(() => CategoryController(categoryServiceInterface: sl()));
   sl.registerFactory(() => AddProductTaxController(addProductServiceInterface: sl()));
   sl.registerFactory(() => VatController(vatServiceInterface: sl()));
-  sl.registerFactory(() => AiController(aiServiceInterface: sl()));
   sl.registerFactory(() => OrderEditController(orderEditServiceInterface: sl()));
 }

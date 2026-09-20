@@ -3,7 +3,6 @@ import 'package:provider/provider.dart';
 import 'package:shimmer/shimmer.dart';
 import 'package:sixvalley_vendor_app/common/basewidgets/custom_snackbar_widget.dart';
 import 'package:sixvalley_vendor_app/common/basewidgets/textfeild/custom_text_feild_widget.dart';
-import 'package:sixvalley_vendor_app/features/ai/controllers/ai_controller.dart';
 import 'package:sixvalley_vendor_app/features/splash/controllers/splash_controller.dart';
 import 'package:sixvalley_vendor_app/localization/language_constrants.dart';
 import 'package:sixvalley_vendor_app/features/addProduct/controllers/add_product_controller.dart';
@@ -34,9 +33,6 @@ class _TitleAndDescriptionWidgetState extends State<TitleAndDescriptionWidget> {
           // ),
           // const SizedBox(height: Dimensions.paddingSizeSmall,),
 
-        if(Provider.of<SplashController>(context,listen: false).configModel?.isAiFeatureActive == 1)
-        Consumer<AiController>(
-          builder: (context, aiController, child){
               return Row(
                 mainAxisAlignment: MainAxisAlignment.end,
                 children: [
@@ -45,27 +41,18 @@ class _TitleAndDescriptionWidgetState extends State<TitleAndDescriptionWidget> {
                       if(widget.resProvider.titleControllerList[widget.index].text.isEmpty) {
                         showCustomSnackBarWidget('${getTranslated('product_name_required', context)}', context);
                       }else{
-                        aiController.generateTitle(
                           title: widget.resProvider.titleControllerList[widget.index].text.trim(),
                           langCode: widget.langCode,
                         ).then((value) {
-                          if(aiController.titleModel != null) {
-                            widget.resProvider.titleControllerList[widget.index].text = aiController.titleModel?.data ?? '';
                             setState(() {});
-                          }
                         });
-                      }
                     },
-                    child: !aiController.titleLoading ? Icon(Icons.auto_awesome, color: Colors.blue) : Shimmer.fromColors(
                       baseColor: Theme.of(context).primaryColor,
                       highlightColor: Colors.grey[100]!,
                       child: Row(children: [
-                        Icon(Icons.auto_awesome, color: Colors.blue),
                         const SizedBox(width: Dimensions.paddingSizeExtraSmall),
 
-                        Text(getTranslated('generating', context) ?? '', style: robotoBold.copyWith(color: Colors.blue)),
                       ]),
-                    ),
                   ),
                 ],
               );
@@ -99,9 +86,6 @@ class _TitleAndDescriptionWidgetState extends State<TitleAndDescriptionWidget> {
           //   ],
           // ),
 
-          if(Provider.of<SplashController>(context,listen: false).configModel?.isAiFeatureActive == 1)
-          Consumer<AiController>(
-            builder: (context, aiController, child){
               return Row(
                 mainAxisAlignment: MainAxisAlignment.end,
                 children: [
@@ -110,27 +94,18 @@ class _TitleAndDescriptionWidgetState extends State<TitleAndDescriptionWidget> {
                       if(widget.resProvider.titleControllerList[widget.index].text.isEmpty) {
                         showCustomSnackBarWidget('${getTranslated('product_name_required', context)}', context);
                       }else{
-                        aiController.generateDescription (
                           title: widget.resProvider.titleControllerList[widget.index].text.trim(),
                           langCode: widget.langCode,
                         ).then((value) {
-                          if(aiController.description?.data != null && aiController.description!.data!.isNotEmpty) {
-                            widget.resProvider.descriptionControllerList[widget.index].text = aiController.description?.data ?? '';
                             setState(() {});
-                          }
                         });
-                      }
                     },
-                    child: !aiController.descLoading ? Icon(Icons.auto_awesome, color: Colors.blue) : Shimmer.fromColors(
                       baseColor: Theme.of(context).primaryColor,
                       highlightColor: Colors.grey[100]!,
                       child: Row(children: [
-                        Icon(Icons.auto_awesome, color: Colors.blue),
                         const SizedBox(width: Dimensions.paddingSizeExtraSmall),
 
-                        Text(getTranslated('generating', context) ?? '', style: robotoBold.copyWith(color: Colors.blue)),
                       ]),
-                    ),
                   ),
                 ],
               );

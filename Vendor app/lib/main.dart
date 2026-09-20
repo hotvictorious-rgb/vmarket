@@ -1,3 +1,4 @@
+import 'package:sixvalley_vendor_app/features/dashboard/widgets/custom_tutorial_dialog.dart';
 import 'dart:async';
 import 'dart:io';
 import 'package:firebase_core/firebase_core.dart';
@@ -15,7 +16,6 @@ import 'package:sixvalley_vendor_app/features/addProduct/controllers/add_product
 import 'package:sixvalley_vendor_app/features/addProduct/controllers/add_product_tax_controller.dart';
 import 'package:sixvalley_vendor_app/features/addProduct/controllers/digital_product_controller.dart';
 import 'package:sixvalley_vendor_app/features/addProduct/controllers/variation_controller.dart';
-import 'package:sixvalley_vendor_app/features/ai/controllers/ai_controller.dart';
 import 'package:sixvalley_vendor_app/features/clearance_sale/controllers/clearance_sale_controller.dart';
 import 'package:sixvalley_vendor_app/features/notification/controllers/notification_controller.dart';
 import 'package:sixvalley_vendor_app/features/order_details/controllers/order_details_controller.dart';
@@ -148,7 +148,6 @@ Future<void> main() async {
       ChangeNotifierProvider(create: (context) => di.sl<TutorialController>()),
       ChangeNotifierProvider(create: (context) => di.sl<AddProductTaxController>()),
       ChangeNotifierProvider(create: (context) => di.sl<VatController>()),
-      ChangeNotifierProvider(create: (context) => di.sl<AiController>()),
       ChangeNotifierProvider(create: (context) => di.sl<OrderEditController>())
     ],
     child: _GlobalScrollListener(

@@ -11,8 +11,6 @@ import 'package:sixvalley_vendor_app/features/addProduct/domain/models/attr.dart
 import 'package:sixvalley_vendor_app/features/addProduct/domain/models/attribute_model.dart';
 import 'package:sixvalley_vendor_app/features/addProduct/domain/models/variant_type_model.dart';
 import 'package:sixvalley_vendor_app/features/addProduct/domain/services/add_product_service_interface.dart';
-import 'package:sixvalley_vendor_app/features/ai/controllers/ai_controller.dart';
-import 'package:sixvalley_vendor_app/features/ai/domain/models/ai_variation_model.dart';
 import 'package:sixvalley_vendor_app/features/product/domain/models/product_model.dart';
 import 'package:sixvalley_vendor_app/helper/api_checker.dart';
 import 'package:sixvalley_vendor_app/helper/price_converter.dart';
@@ -153,7 +151,7 @@ class VariationController extends ChangeNotifier {
 
   void removeVariant(BuildContext context,int mainIndex, int index, Product? product) {
     _attributeList![mainIndex].variants.removeAt(index);
-    generateVariantTypes(context, product, genereateVariation:  Provider.of<AiController>(context, listen: false).aiVariationModel?.data?.genereateVariation);
+    generateVariantTypes(context, product);
     notifyListeners();
   }
 
@@ -344,45 +342,10 @@ void onClearColorVariations(AddProductModel addProduct) {
 
 
 
-  void addAiAttribute(List<ChoiceAttributes>? choiceAttribute, Product? product, List<GenereateVariation>? genereateVariation) {
-    for(ChoiceAttributes attribute in choiceAttribute ?? []) {
-      for(int i = 0; i< _attributeList!.length; i++) {
-        if(attribute.id == _attributeList?[i].attribute.id) {
-          if(!_attributeList![i].active) {
-            _attributeList![i].active = true;
-          }
-
-          if(product != null) {
-            generateVariantTypes(Get.context!, product);
-          }
-
-          for(String option in attribute.values ?? []) {
-            if(!checkExistVariant(_attributeList![i].variants,  option)) {
-              addVariant(Get.context!, i, option, product, true, genereateVariation: genereateVariation);
-            }
-          }
+  
 
 
-        }
-      }
-    }
-    notifyListeners();
-  }
-
-
-  void addAiColorVariation(int? isColorActive, List<AiColors> aiColors, Product? product) {
-    if((isColorActive == 0 ? false : true) != _attributeList![0].active) {
-      toggleAttribute(Get.context!, 0, product);
-    }
-
-    for(AiColors aiColor in aiColors) {
-      if(!checkExistVariant(_attributeList![0].variants, aiColor.name!)) {
-        addVariant(Get.context!, 0, aiColor.name, product, true);
-        addColorCode(aiColor.code);
-      }
-    }
-    notifyListeners();
-  }
+  
 
   bool checkExistVariant(List<String?> variants, String value) {
     for(int index = 0; index< (variants.length); index++) {

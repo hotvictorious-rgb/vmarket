@@ -3,7 +3,6 @@ import 'package:sixvalley_vendor_app/common/basewidgets/custom_app_bar_widget.da
 import 'package:sixvalley_vendor_app/features/addProduct/domain/models/add_product_model.dart';
 import 'package:sixvalley_vendor_app/features/addProduct/domain/models/edt_product_model.dart';
 import 'package:sixvalley_vendor_app/features/addProduct/screens/add_product_screen.dart';
-import 'package:sixvalley_vendor_app/features/ai/widgets/genertate_count_widget.dart';
 import 'package:sixvalley_vendor_app/features/product/domain/models/product_model.dart';
 import 'package:sixvalley_vendor_app/localization/language_constrants.dart';
 
@@ -25,8 +24,7 @@ class _AddProductTabViewState extends State<AddProductTabView> {
       appBar: CustomAppBarWidget(
         centerTitle: false,
         title: widget.product != null ? getTranslated('update_product', context) : getTranslated('add_product', context),
-        widget: GeneratesLeftCount(),
-        isFilter: true,
+                isFilter: true,
         isAction: true,
         onBackPressed: () {
           Navigator.of(context).pop();

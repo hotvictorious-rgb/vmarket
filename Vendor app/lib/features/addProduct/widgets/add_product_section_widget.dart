@@ -12,11 +12,9 @@ class AddProductSectionWidget extends StatelessWidget {
   final List<Widget> childrens;
   final TextStyle? titleStyle;
   final bool isDecoration;
-  final bool? isAiGenerating;
-  final Widget? aiWidget;
-  final Widget? button;
+      final Widget? button;
   final double? childrenPadding;
-  const AddProductSectionWidget({super.key, this.title, required this.childrens, this.titleStyle, this.isDecoration = true, this.aiWidget, this.isAiGenerating, this.childrenPadding, this.subTitle, this.button});
+  const AddProductSectionWidget({super.key, this.title, required this.childrens, this.titleStyle, this.isDecoration = true,  this.childrenPadding, this.subTitle, this.button});
 
   @override
   Widget build(BuildContext context) {
@@ -56,8 +54,7 @@ class AddProductSectionWidget extends StatelessWidget {
               ),
 
 
-              if(Provider.of<SplashController>(context,listen: false).configModel?.isAiFeatureActive == 1 && aiWidget != null)
-              aiWidget ?? SizedBox(),
+              
             ],
           ),
         ),
@@ -84,7 +81,7 @@ class AddProductSectionWidget extends StatelessWidget {
 
 
         ShimmerOverlayWrapper(
-          isActive: (isAiGenerating ?? false),
+          isActive: false,
           opacity: 0.3,
           baseColor: Theme.of(context).primaryColor.withValues(alpha: 0.7),
           highlightColor : Theme.of(context).primaryColor.withValues(alpha: 0.3),

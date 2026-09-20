@@ -12,9 +12,6 @@ import 'package:sixvalley_vendor_app/features/addProduct/domain/models/attribute
 import 'package:sixvalley_vendor_app/features/addProduct/domain/models/product_image_model.dart';
 import 'package:sixvalley_vendor_app/features/addProduct/domain/models/variant_type_model.dart';
 import 'package:sixvalley_vendor_app/features/addProduct/domain/services/add_product_service_interface.dart';
-import 'package:sixvalley_vendor_app/features/ai/controllers/ai_controller.dart';
-import 'package:sixvalley_vendor_app/features/ai/domain/models/ai_meta_seo_model.dart';
-import 'package:sixvalley_vendor_app/features/ai/domain/models/genara_setup_model.dart';
 import 'package:sixvalley_vendor_app/features/auth/controllers/auth_controller.dart';
 import 'package:sixvalley_vendor_app/features/product/controllers/category_controller.dart';
 import 'package:sixvalley_vendor_app/features/restock/controllers/restock_controller.dart';
@@ -504,68 +501,10 @@ class AddProductController extends ChangeNotifier {
 
 
 
-  Future<void> generateAndSetOtherData({String? title, String? description, String? langCode}) async {
-    AiController aiController = Provider.of<AiController>(Get.context!, listen: false);
-
-    await aiController.generateGeneralSetup(
-      title: title ?? '',
-      description: description ?? '',
-      langCode: langCode ?? '',
-    ).then((value) {
-      GeneralSetupModel? generalSetupModel = aiController.generalSetupModel;
-
-      //Set brand
-      if(generalSetupModel != null) {
-        ProductController productController = Provider.of<ProductController>(Get.context!, listen: false);
-        productController.setAiBrandIndex(generalSetupModel.data?.brandId ?? 0);
-      }
-
-      //Set category
-      if(generalSetupModel != null) {
-        CategoryController categoryController = Provider.of<CategoryController>(Get.context!, listen: false);
-        categoryController.setAiCategoryIndex(generalSetupModel.data?.categoryId, generalSetupModel.data?.subCategoryId, generalSetupModel.data?.subSubCategoryId);
-      }
+  
 
 
-      // print('---UnitValue---${generalSetupModel?.data?.unitName}--');
-
-      //print('---UnitValue--01--${generalSetupModel != null && generalSetupModel.data?.unitName != null && generalSetupModel.data!.unitName!.isNotEmpty}--');
-
-      if(generalSetupModel != null && generalSetupModel.data?.unitName != null && generalSetupModel.data!.unitName!.isNotEmpty ) {
-        _unitValue = generalSetupModel.data?.unitName;
-      }
-
-      if(generalSetupModel != null && generalSetupModel.data?.productType != null) {
-        _productTypeIndex = generalSetupModel.data?.productType == 'physical' ? 0 : 1;
-      }
-
-      if(generalSetupModel != null && generalSetupModel.data?.productType != null && generalSetupModel.data?.productType == 'digital' && generalSetupModel.data?.deliveryType != null) {
-        Provider.of<DigitalProductController>(Get.context!, listen: false).setDigitalProductTypeIndex(
-          generalSetupModel.data?.deliveryType == 'ready_product' ? 1 : 0, true
-        );
-      }
-      notifyListeners();
-    });
-  }
-
-
-  void updateMetaSeoInfo(AiMetaSEOModel? aiMetaSeoModel) {
-    if(aiMetaSeoModel != null) {
-      _metaSeoInfo?.metaIndex = aiMetaSeoModel.data?.metaIndex == '0' ? '0' : '1';
-      _metaSeoInfo?.metaNoFollow = aiMetaSeoModel.data?.metaNoFollow == 0 ? '0' : 'nofollow';
-      _metaSeoInfo?.metaNoIndex = aiMetaSeoModel.data?.metaNoImageIndex == 0 ? '0' : '1';
-      _metaSeoInfo?.metaNoArchive = aiMetaSeoModel.data?.metaNoArchive == 0 ? '0' : '1';
-      _metaSeoInfo?.metaNoSnippet = aiMetaSeoModel.data?.metaNoSnippet == 0 ? '0' : '1';
-      _metaSeoInfo?.metaMaxSnippet = aiMetaSeoModel.data?.metaMaxSnippet == 0 ? '0' : '1';
-      _metaSeoInfo?.metaMaxVideoPreview = aiMetaSeoModel.data?.metaMaxVideoPreview == 0 ? '0' : '1';
-      _metaSeoInfo?.metaMaxImagePreview = aiMetaSeoModel.data?.metaMaxImagePreview == 0 ? '0' : '1';
-
-      _metaSeoInfo?.metaMaxSnippetValue = aiMetaSeoModel.data?.metaMaxSnippetValue.toString();
-      _metaSeoInfo?.metaMaxVideoPreviewValue = aiMetaSeoModel.data?.metaMaxVideoPreviewValue.toString();
-      _metaSeoInfo?.metaMaxImagePreviewValue = aiMetaSeoModel.data?.metaMaxImagePreviewValue.toString();
-      notifyListeners();
-    }
-  }
+  
 
   void setIsAttributeActive(bool isActive, {bool notify = false}) {
     _isAttributeActive = isActive;

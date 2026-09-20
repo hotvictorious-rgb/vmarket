@@ -171,17 +171,7 @@ class AppConstants {
   static const String editOrderAllProducts = '/api/v3/seller/products/';
 
 
-  ///AI
-  static const String productTitleGenerate = '/api/v3/seller/product/title-auto-fill';
-  static const String productDescriptionGenerate = '/api/v3/seller/product/description-auto-fill';
-  static const String productGeneralSetupGenerate = '/api/v3/seller/product/general-setup-auto-fill';
-  static const String productPricingGenerate = '/api/v3/seller/product/price-others-auto-fill';
-  static const String productVariationSetupGenerate = '/api/v3/seller/product/variation-setup-auto-fill';
-  static const String productSeoSectionGenerate = '/api/v3/seller/product/seo-section-auto-fill';
-  static const String productGenerateTitleGenerate = '/api/v3/seller/product/generate-title-suggestions';
-  static const String productAnalyzeImageAutoGenerate = '/api/v3/seller/product/analyze-images-auto-fill';
-  static const String generateLimitCheck = '/api/v3/seller/product/generate-limit-check';
-
+  
 
 
   ///address

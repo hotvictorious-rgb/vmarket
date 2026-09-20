@@ -242,34 +242,7 @@ class CategoryController extends ChangeNotifier {
   }
 
 
-  void setAiCategoryIndex(int? categoryId, int? subCategoryId, int? subSubCategoryId) {
-
-    if(_categoryIds.isNotEmpty && categoryId != null) {
-      for(int i =0; i< _categoryIds.length; i++) {
-        if(_categoryIds[i] == categoryId) {
-          setCategoryIndex(i, true);
-          getSubCategoryList(Get.context!, _categorySelectedIndex , true, null);
-        }
-      }
-    }
-
-    if(_subCategoryIds.isNotEmpty && subCategoryId != null) {
-      for(int i =0; i< _subCategoryIds.length; i++) {
-        if(_subCategoryIds[i] == subCategoryId) {
-          setSubCategoryIndex(i, true);
-          getSubSubCategoryList(_subCategorySelectedIndex, true);
-        }
-      }
-    }
-
-    if(_subSubCategoryIds.isNotEmpty) {
-      for(int i =0; i< _subSubCategoryIds.length; i++) {
-        if(_subSubCategoryIds[i] == subSubCategoryId) {
-          setSubSubCategoryIndex(i, true);
-        }
-      }
-    }
-  }
+  
 
 
 

@@ -49,8 +49,7 @@ class ConfigModel {
   SellerAppVersionControl? _sellerAppVersionControl;
   String? systemTaxType;
   int? systemTaxIncludeStatus;
-  int? isAiFeatureActive;
-  String? vendorForgotPasswordSmsMethod;
+    String? vendorForgotPasswordSmsMethod;
   int? systemImageFileUploadMaxSize;
   int? systemGeneralFileUploadMaxSize;
   int? canVendorEditOrder;
@@ -166,7 +165,6 @@ class ConfigModel {
 
     systemTaxType;
     systemTaxIncludeStatus;
-    isAiFeatureActive;
     vendorForgotPasswordSmsMethod;
     systemImageFileUploadMaxSize;
     systemGeneralFileUploadMaxSize;
@@ -293,8 +291,7 @@ class ConfigModel {
 
     systemTaxType = json['system_tax_type'];
     systemTaxIncludeStatus = json['system_tax_include_status'];
-    isAiFeatureActive = json['is_ai_features_enabled'];
-    vendorForgotPasswordSmsMethod = json['vendor_forgot_password_sms_method'];
+        vendorForgotPasswordSmsMethod = json['vendor_forgot_password_sms_method'];
     systemImageFileUploadMaxSize = json['system_image_file_upload_max_size'];
     systemGeneralFileUploadMaxSize = json['system_general_file_upload_max_size'];
 

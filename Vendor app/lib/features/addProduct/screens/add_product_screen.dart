@@ -18,8 +18,6 @@ import 'package:sixvalley_vendor_app/features/addProduct/domain/models/add_produ
 import 'package:sixvalley_vendor_app/features/addProduct/domain/models/edt_product_model.dart';
 import 'package:sixvalley_vendor_app/features/addProduct/domain/models/product_general_info_data_model.dart';
 import 'package:sixvalley_vendor_app/features/addProduct/widgets/add_product_section_widget.dart';
-import 'package:sixvalley_vendor_app/features/ai/controllers/ai_controller.dart';
-import 'package:sixvalley_vendor_app/features/ai/widgets/ai_generator_bottom_sheet.dart';
 import 'package:sixvalley_vendor_app/features/product/controllers/category_controller.dart';
 import 'package:sixvalley_vendor_app/features/product/controllers/product_controller.dart';
 import 'package:sixvalley_vendor_app/features/product/domain/models/product_model.dart';
@@ -226,12 +224,9 @@ class AddProductScreenState extends State<AddProductScreen> with TickerProviderS
         publishingHouses.add(author.name!);
       }
     }
-    Provider.of<AiController>(Get.context!,listen: false).setRequestType(false, willUpdate: false);
     Provider.of<TutorialController>(Get.context!,listen: false).setVisibility(false, isUpdate: false);
 
-    if(Provider.of<SplashController>(context,listen: false).configModel?.isAiFeatureActive == 1) {
-      Provider.of<AiController>(Get.context!,listen: false).generateLimitCheck();
-    }
+    
   }
 
   Future<void> _loadData() async {
@@ -265,20 +260,7 @@ class AddProductScreenState extends State<AddProductScreen> with TickerProviderS
     double keyboardHeight = MediaQuery.of(context).viewInsets.bottom;
 
      return Scaffold(
-       floatingActionButton: (Provider.of<SplashController>(context,listen: false).configModel?.isAiFeatureActive == 1) ? Padding(
-         padding: const EdgeInsets.only(bottom: 70),
-         child: FloatingActionButton(
-           backgroundColor: Colors.transparent,
-           shape: const CircleBorder(),
-           child: CustomAssetImageWidget(Images.useAi, height: 56, width: 56),
-           onPressed: () {
-             showModalBottomSheet(
-               backgroundColor: Theme.of(context).cardColor,
-               useSafeArea: true,
-               shape: const RoundedRectangleBorder(
-                 borderRadius: BorderRadius.vertical(
-                   top: Radius.circular(20),
-                 ),
+       floatingActionButton: null,
                ),
                isScrollControlled: true,
                context: context,
@@ -313,13 +295,10 @@ class AddProductScreenState extends State<AddProductScreen> with TickerProviderS
                         child: SingleChildScrollView(
                           controller: _scrollController,
                           child: Column(crossAxisAlignment: CrossAxisAlignment.start, mainAxisAlignment: MainAxisAlignment.start, children: [
-                            Consumer<AiController>(
-                              builder: (context, aiController, _) {
-                                return AddProductSectionWidget(
+                            AddProductSectionWidget(
                                   title: getTranslated('basic_info', context)!,
                                   subTitle: getTranslated('here_you_can_setup_the_product', context)! ,
-                                  isAiGenerating: (aiController.titleLoading || aiController.descLoading),
-                                  childrens: [
+                                                                    childrens: [
                                     Container(
                                       margin: const EdgeInsets.all(Dimensions.paddingSizeSmall),
                                       decoration: BoxDecoration(
@@ -622,152 +601,10 @@ class AddProductScreenState extends State<AddProductScreen> with TickerProviderS
                             const SizedBox(height: Dimensions.paddingSizeDefault),
 
 
-                            Consumer<AiController>(
-                              builder: (context, aiController, child){
-                                return AddProductSectionWidget(
+                            AddProductSectionWidget(
                                   title: getTranslated('general_setup', context)!,
                                   subTitle: getTranslated('here_you_can_set_up_the_foundational_details', context)!,
-                                  isAiGenerating: (aiController.generalSetupLoading),
-                                  aiWidget: Consumer<AiController>(
-                                    builder: (context, aiController, child){
-                                      return Row(
-                                        mainAxisAlignment: MainAxisAlignment.end,
-                                        children: [
-                                          InkWell(
-                                            onTap: () {
-                                              if(resProvider.titleControllerList[_tabController?.index ?? 0].text.isEmpty) {
-                                                showCustomSnackBarWidget('${getTranslated('product_name_required', context)}', context);
-                                              } else if (resProvider.descriptionControllerList[_tabController?.index ?? 0].text.isEmpty) {
-                                                showCustomSnackBarWidget('${getTranslated('product_description_required', context)}', context);
-                                              } else{
-                                                resProvider.generateAndSetOtherData(
-                                                  title: resProvider.titleControllerList[_tabController?.index ?? 0].text.trim(),
-                                                  description: resProvider.descriptionControllerList[_tabController?.index ?? 0].text.trim(),
-                                                  langCode: Provider.of<SplashController>(context, listen: false).configModel?.languageList?[_tabController?.index ?? 0].code ?? 'en',
-                                                );
-                                              }
-                                            },
-                                            child: !aiController.generalSetupLoading ? Icon(Icons.auto_awesome, color: Colors.blue) : Shimmer.fromColors(
-                                              baseColor: Theme.of(context).primaryColor,
-                                              highlightColor: Colors.grey[100]!,
-                                              child: Row(children: [
-                                                Icon(Icons.auto_awesome, color: Colors.blue),
-                                                const SizedBox(width: Dimensions.paddingSizeExtraSmall),
-
-                                                Text(getTranslated('generating', context) ?? '', style: robotoBold.copyWith(color: Colors.blue)),
-                                              ]),
-                                            ),
-                                          ),
-                                        ],
-                                      );
-                                    }
-                                  ),
-                                  childrens: <Widget>[
-                                    const SizedBox(height: Dimensions.paddingSizeSmall),
-                                    Padding(
-                                      padding: const EdgeInsets.symmetric(horizontal: Dimensions.paddingSizeMedium),
-                                      child: SelectCategoryWidget(product: widget.product),
-                                    ),
-
-                                    Provider.of<SplashController>(context, listen: false).configModel?.brandSetting == "1"  && resProvider.productTypeIndex != 1 ?
-                                    Padding(
-                                      padding: const EdgeInsets.symmetric(horizontal: Dimensions.paddingSizeMedium),
-                                      child: Column(
-                                        children: [
-                                          Consumer<ProductController>(
-                                            builder: (context, productController, _) {
-                                              brandIds = [];
-                                              brandIds.add(-1);
-                                              brandIds.add(0);
-                                              if(productController.brandList != null) {
-                                                for(int index = 0; index<productController.brandList!.length; index++) {
-                                                  brandIds.add(productController.brandList![index].id);
-                                                }
-                                                if(_update && widget.product!.brandId != null) {
-                                                  if(brand == 0){
-                                                    productController.setBrandIndex(brandIds.indexOf(widget.product!.brandId), false);
-                                                    brand++;
-                                                  }
-                                                }
-                                              }
-
-                                              return DropdownDecoratorWidget(
-                                                child: DropdownButton<int>(
-                                                  value: productController.brandIndex,
-                                                  icon: const Icon(Icons.keyboard_arrow_down_outlined),
-                                                  borderRadius: const BorderRadius.all(Radius.circular(Dimensions.paddingEye)),
-                                                  items: brandIds.map((int? value) {
-                                                    return DropdownMenuItem<int>(
-                                                      value: brandIds.indexOf(value),
-                                                      child: Text(
-                                                        value == 0 ? getTranslated('no_brand', context)! : value == -1
-                                                          ? getTranslated('select_brand', context)!
-                                                          : productController.brandList![(brandIds.indexOf(value)-2)].name!,
-                                                        style: robotoMedium.copyWith(color: value == -1 ? Theme.of(context).hintColor : null),
-                                                      ),
-                                                    );
-                                                  }).toList(),
-                                                  onChanged: (int? value) {
-                                                    productController.setBrandIndex(value, true);
-                                                    // resProvider.changeBrandSelectedIndex(value);
-                                                  },
-                                                  isExpanded: true,
-                                                  underline: const SizedBox(),
-                                                ),
-                                              );
-                                            }
-                                          ),
-                                          const SizedBox(height: Dimensions.paddingSizeMedium),
-                                        ],
-                                      ),
-                                    ) : const SizedBox(),
-
-                                    resProvider.productTypeIndex == 0 ?
-                                    Padding(
-                                      padding: const EdgeInsets.symmetric(horizontal: Dimensions.paddingSizeMedium),
-                                      child: Column(
-                                        children: [
-                                          DropdownDecoratorWidget(
-                                            child: DropdownButton<String>(
-                                              icon: const Icon(Icons.keyboard_arrow_down_outlined),
-                                              borderRadius: const BorderRadius.all(Radius.circular(Dimensions.paddingEye)),
-                                              hint: (resProvider.unitValue == null || resProvider.unitValue == 'select_unit' || resProvider.unitValue == 'null')
-                                                  ? Text(getTranslated('select_unit', context)!, style: robotoMedium.copyWith(color: Theme.of(context).hintColor))
-                                                  : Text(resProvider.unitValue!, style: robotoMedium.copyWith(
-                                                color: Theme.of(context).textTheme.bodyLarge?.color,
-                                                fontSize: Dimensions.fontSizeExtraLarge,
-                                              )),
-                                              items: Provider.of<SplashController>(context,listen: false).configModel!.unit!.map((String value) {
-                                                return DropdownMenuItem<String>(
-                                                  value: value,
-                                                  child: Text(value, style: robotoMedium),
-                                                );}).toList(),
-                                              onChanged: (val) {
-                                                unitValue = val;
-                                                setState(() {resProvider.setValueForUnit(val);},);},
-                                              isExpanded: true,
-                                              underline: const SizedBox(),
-                                            ),
-                                          ),
-                                        ],
-                                      ),
-                                    ) : const SizedBox(),
-
-
-                                    Container(padding: const EdgeInsets.fromLTRB(Dimensions.paddingSizeMedium, 0, Dimensions.paddingSizeMedium, 0),
-                                      child: Column(children: [
-                                        Row(
-                                          children: [
-                                            const Spacer(),
-                                            InkWell(
-                                              splashColor: Colors.transparent,
-                                              onTap: (){
-                                                resProvider.productCode.text = _generateSKU();
-                                              },
-                                              child: Padding(
-                                                padding: const EdgeInsets.symmetric(horizontal: Dimensions.paddingSizeExtraSmall),
-                                                child: Text(getTranslated('generate_code', context)!, style: robotoMedium.copyWith(fontSize: Dimensions.fontSizeDefault, color: Theme.of(context).primaryColor)),
-                                              ),
+                                                                    
                                             ),
                                           ],
                                         ),
@@ -1378,8 +1215,7 @@ class AddProductScreenState extends State<AddProductScreen> with TickerProviderS
                             return !resProvider.isLoading? SizedBox(height: 50,
                               child: Consumer<CategoryController>(
                                 builder: (context, categoryController, _) {
-                                  return Consumer<AiController>(
-                                    builder: (context, aiController, _) {
+                                  return Builder(builder: (context) {
                                       return InkWell(
                                         onTap: categoryController.categoryList == null ? null : () async {
                                           AddProductImageController addProductImageController = Provider.of<AddProductImageController>(context, listen: false);
@@ -1533,37 +1369,7 @@ class AddProductScreenState extends State<AddProductScreen> with TickerProviderS
                                         },
 
 
-                                        child: aiController.addProductSetupLoading ?
-                                        Container(width: MediaQuery.of(context).size.width, height: 40,
-                                          padding: EdgeInsets.symmetric(horizontal: Dimensions.paddingSizeDefault),
-                                          decoration: BoxDecoration(
-                                            color: Theme.of(context).primaryColor.withValues(alpha: 0.30),
-                                            borderRadius: BorderRadius.circular(Dimensions.paddingSizeExtraSmall),
-                                          ),
-                                          child: Row(
-                                            children: [
-                                              Expanded(
-                                                child: Text(
-                                                  getTranslated('ai_is_generating_product_details', context) ?? '',
-                                                  style: robotoMedium.copyWith(color: Theme.of(context).textTheme.bodyLarge?.color, fontSize: Dimensions.fontSizeSmall),
-                                                  maxLines: 2,
-                                                )
-                                              ),
-
-                                              SizedBox(width: Dimensions.paddingSizeExtraSmall),
-                                              Shimmer.fromColors(
-                                                baseColor: Theme.of(context).primaryColor,
-                                                highlightColor: Colors.grey[100]!,
-                                                child: Row(children: [
-                                                  Icon(Icons.auto_awesome, color: Theme.of(context).primaryColor),
-                                                  const SizedBox(width: Dimensions.paddingSizeExtraSmall),
-
-                                                  Text(getTranslated('generating', context) ?? '', style: robotoBold.copyWith(color: Theme.of(context).primaryColor)),
-                                                ]),
-                                              ),
-                                            ],
-                                          )
-                                        ) : Container(
+                                        child: Container(
                                           width: MediaQuery.of(context).size.width, height: 40,
                                           decoration: BoxDecoration(
                                             color: categoryController.categoryList == null ? Theme.of(context).hintColor : Theme.of(context).primaryColor,

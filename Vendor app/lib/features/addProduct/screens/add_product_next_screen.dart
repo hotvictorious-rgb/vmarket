@@ -22,7 +22,6 @@ import 'package:sixvalley_vendor_app/features/addProduct/widgets/add_product_sec
 import 'package:sixvalley_vendor_app/features/addProduct/widgets/color_variation_image_widget.dart';
 import 'package:sixvalley_vendor_app/features/addProduct/widgets/digital_product_widget.dart';
 import 'package:sixvalley_vendor_app/features/addProduct/widgets/upload_preview_file_widget.dart';
-import 'package:sixvalley_vendor_app/features/ai/controllers/ai_controller.dart';
 import 'package:sixvalley_vendor_app/features/product/controllers/category_controller.dart';
 import 'package:sixvalley_vendor_app/features/product/domain/models/product_model.dart';
 import 'package:sixvalley_vendor_app/features/splash/domain/models/config_model.dart';
@@ -149,24 +148,7 @@ class AddProductNextScreenState extends State<AddProductNextScreen> with Automat
 
   Future<void> _loadData() async {
     await _load();
-    if(Provider.of<AiController>(Get.context!,listen: false).requestTypeImage) {
-      Provider.of<AiController>(Get.context!,listen: false).setNextProductNextScreen(true);
-      await Provider.of<AiController>(Get.context!,listen: false).generatePricing(
-        title: widget.title ?? '',
-        langCode: widget.description ?? '',
-        uniPriceController: resProvider.unitPriceController,
-        discountController: _discountController,
-        stockQuantityController: Provider.of<VariationController>(Get.context!,listen: false).totalQuantityController,
-        minQuantityController: resProvider.minimumOrderQuantityController,
-        shippingCostController: resProvider.shippingCostController
-      );
-
-      await Provider.of<AiController>(Get.context!,listen: false).generateVariationSetup(
-        title: widget.title ?? '',
-        description: widget.description ?? '',
-        product: widget.product
-      );
-      Provider.of<AiController>(Get.context!,listen: false).setNextProductNextScreen(false);
+    
       showCustomSnackBarWidget(getTranslated('tap_next_to_automatically_generate', Get.context!), Get.context!, sanckBarType: SnackBarType.warning);
     }
   }
@@ -282,133 +264,11 @@ class AddProductNextScreenState extends State<AddProductNextScreen> with Automat
                                 crossAxisAlignment: CrossAxisAlignment.start,
                                 mainAxisAlignment: MainAxisAlignment.center,
                                 children: [
-                                  Consumer<AiController>(
-                                    builder: (context, aiController, child){
+                                  Builder(builder: (context) {
                                       return AddProductSectionWidget(
-                                        isAiGenerating: aiController.pricingLoading,
-                                        title: getTranslated('pricing_and_others', context)!,
+                                                                                title: getTranslated('pricing_and_others', context)!,
                                         subTitle: getTranslated('here_you_can_setup_the_price', context)! ,
-                                        aiWidget: Consumer<AiController>(
-                                          builder: (context, aiController, child){
-                                            return Row(
-                                              mainAxisAlignment: MainAxisAlignment.end,
-                                              children: [
-                                                InkWell(
-                                                  onTap: () {
-                                                    if(widget.title == null) {
-                                                      showCustomSnackBarWidget('${getTranslated('product_name_required', context)}', context);
-                                                    } else if (widget.description == null) {
-                                                      showCustomSnackBarWidget('${getTranslated('product_description_required', context)}', context);
-                                                    } else{
-                                                      aiController.generatePricing(
-                                                        title: widget.title ?? '',
-                                                        langCode: widget.description ?? '',
-                                                        uniPriceController: resProvider.unitPriceController,
-                                                        discountController: _discountController,
-                                                        stockQuantityController: variationController.totalQuantityController,
-                                                        minQuantityController: resProvider.minimumOrderQuantityController,
-                                                        shippingCostController: resProvider.shippingCostController
-                                                      );
-                                                    }
-                                                  },
-                                                  child: !aiController.pricingLoading ? Icon(Icons.auto_awesome, color: Colors.blue) : Shimmer.fromColors(
-                                                    baseColor: Theme.of(context).primaryColor,
-                                                    highlightColor: Colors.grey[100]!,
-                                                    child: Row(children: [
-                                                      Icon(Icons.auto_awesome, color: Colors.blue),
-                                                      const SizedBox(width: Dimensions.paddingSizeExtraSmall),
-
-                                                      Text(getTranslated('generating', context) ?? '', style: robotoBold.copyWith(color: Colors.blue)),
-                                                    ]),
-                                                  ),
-                                                ),
-                                              ],
-                                            );
-                                          }
-                                        ),
-                                        childrens: [
-                                          Padding(
-                                            padding: const EdgeInsets.symmetric(horizontal: Dimensions.paddingSizeMedium),
-                                            child: Column(
-                                              crossAxisAlignment: CrossAxisAlignment.start,
-                                              children: [
-                                                const SizedBox(height: Dimensions.paddingSizeLarge),
-                                                CustomTextFieldWidget(
-                                                  border: true,
-                                                  controller: resProvider.unitPriceController,
-                                                  focusNode: _unitPriceNode,
-                                                  textInputAction: TextInputAction.done,
-                                                  textInputType: TextInputType.number,
-                                                  isAmount: true,
-                                                  hintText: getTranslated('unit_price', context)!,
-                                                  formProduct: true,
-                                                ),
-                                                const SizedBox(height: Dimensions.paddingSizeLarge),
-
-                                               if(configModel?.systemTaxType == 'product_wise' && configModel?.systemTaxIncludeStatus == 0)
-                                                Consumer<AddProductTaxController>(
-                                                  builder: (context, addProductTaxController, child) {
-                                                    return Column(
-                                                      crossAxisAlignment: CrossAxisAlignment.start,
-                                                      children: [
-                                                        DropdownDecoratorWidget(
-                                                          child: DropdownButton<TaxVatModel>(
-                                                            icon: const Icon(Icons.keyboard_arrow_down_outlined),
-                                                            borderRadius: const BorderRadius.all(Radius.circular(Dimensions.paddingEye)),
-                                                            hint: Text(getTranslated('select_tax_rate', context)!,
-                                                              style: robotoRegular.copyWith(
-                                                                color: themeProvider.darkTheme ?
-                                                                Theme.of(context).textTheme.bodyLarge?.color : Theme.of(context).hintColor,
-                                                                fontSize: Dimensions.fontSizeExtraLarge
-                                                              )
-                                                            ),
-                                                            items: addProductTaxController.taxVatList.map((TaxVatModel? value) {
-                                                              bool isSelected = addProductTaxController.isSelected(value!);
-                                                              return DropdownMenuItem<TaxVatModel>(
-                                                                enabled: !isSelected,
-                                                                value: value,
-                                                                child: Row(
-                                                                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                                                                  children: [
-                                                                    Text('${value.name} (${value.taxRate}%)'),
-                                                                    if (isSelected)
-                                                                      Icon(Icons.check, color: Theme.of(context).primaryColor, size: 18),
-                                                                  ],
-                                                                ),
-                                                              );
-                                                            }).toList(),
-                                                            onChanged: (TaxVatModel? value) {
-                                                              addProductTaxController.addToSelectedTaxList(value!);
-                                                            },
-                                                            isExpanded: true,
-                                                            underline: const SizedBox(),
-                                                          ),
-                                                        ),
-
-                                                        !addProductTaxController.selectedTaxList.isNotEmpty ?
-                                                        const SizedBox(height: Dimensions.paddingSizeSmall) : const SizedBox.shrink(),
-
-                                                        addProductTaxController.selectedTaxList.isNotEmpty ?
-                                                        SizedBox(
-                                                          height: addProductTaxController.selectedTaxList.isNotEmpty ? 40 : 0,
-                                                          child: ListView.builder(
-                                                            itemCount: addProductTaxController.selectedTaxList.length,
-                                                            scrollDirection: Axis.horizontal,
-                                                            itemBuilder: (context, index) {
-                                                              return Padding(
-                                                                padding: const EdgeInsets.all(Dimensions.paddingSizeVeryTiny),
-                                                                child: Container(
-                                                                  padding: const EdgeInsets.symmetric(horizontal : Dimensions.paddingSizeMedium),
-                                                                  margin: const EdgeInsets.only(right: Dimensions.paddingSizeExtraSmall),
-                                                                  decoration: BoxDecoration(color: Theme.of(context).primaryColor.withValues(alpha:.20),
-                                                                    borderRadius: BorderRadius.circular(Dimensions.paddingSizeDefault),
-                                                                  ),
-                                                                  child: Row(children: [
-                                                                    Consumer<SplashController>(builder: (ctx, colorP,child){
-                                                                      return Text(
-                                                                        '${addProductTaxController.selectedTaxList[index].name} (${addProductTaxController.selectedTaxList[index].taxRate}%)',
-                                                                        style: robotoRegular.copyWith(color: ColorHelper.blendColors(Colors.white, Theme.of(context).textTheme.bodyLarge!.color!, 0.7)),
-                                                                      );
+                                        ;
                                                                     }),
                                                                     const SizedBox(width: Dimensions.paddingSizeSmall),
 
@@ -549,37 +409,11 @@ class AddProductNextScreenState extends State<AddProductNextScreen> with Automat
                                   SizedBox(height: Dimensions.paddingSizeDefault),
 
 
-                                  Consumer<AiController>(
-                                    builder: (context, aiController, child) {
+                                  Builder(builder: (context) {
                                       return AddProductSectionWidget(
-                                        isAiGenerating: aiController.variationLoading,
-                                        title: getTranslated('variations', context)!,
+                                                                                title: getTranslated('variations', context)!,
                                         subTitle: getTranslated('enable_and_manage_different_variations', context)! ,
-                                        aiWidget: InkWell(
-                                          onTap: () {
-                                            if(widget.title == null) {
-                                              showCustomSnackBarWidget('${getTranslated('product_name_required', context)}', context);
-                                            } else if (widget.description == null) {
-                                              showCustomSnackBarWidget('${getTranslated('product_description_required', context)}', context);
-                                            } else{
-                                              aiController.generateVariationSetup(
-                                                title: widget.title ?? '',
-                                                description: widget.description ?? '',
-                                                product: widget.product
-                                              );
-                                            }
-                                          },
-                                          child: !aiController.variationLoading ? Icon(Icons.auto_awesome, color: Colors.blue) : Shimmer.fromColors(
-                                            baseColor: Theme.of(context).primaryColor,
-                                            highlightColor: Colors.grey[100]!,
-                                            child: Row(children: [
-                                              Icon(Icons.auto_awesome, color: Colors.blue),
-                                              const SizedBox(width: Dimensions.paddingSizeExtraSmall),
-
-                                              Text(getTranslated('generating', context) ?? '', style: robotoBold.copyWith(color: Colors.blue)),
-                                            ]),
-                                          ),
-                                        ),
+                                        
                                         button: Padding(
                                           padding: EdgeInsets.only(right: Dimensions.paddingSizeDefault),
                                           child: FlutterSwitch(width: 40.0, height: 20.0, toggleSize: 20.0,
@@ -640,8 +474,7 @@ class AddProductNextScreenState extends State<AddProductNextScreen> with Automat
                                                       ],
                                                     ),
 
-                                                    Consumer<AiController>(
-                                                      builder: (context, aiController, child) {
+                                                    Builder(builder: (context) {
                                                         TextEditingController? _autoController;
                                                         FocusNode? _autoFocusNode;
 
@@ -1326,9 +1159,7 @@ class AddProductNextScreenState extends State<AddProductNextScreen> with Automat
 
 
 
-                      Consumer<AiController>(
-                        builder: (context, aiController, _) {
-                          return Container(
+                      Container(
                             padding: const EdgeInsets.symmetric(horizontal: Dimensions.paddingSizeDefault),
                             decoration: BoxDecoration(
                               color: Theme.of(context).cardColor,
@@ -1337,15 +1168,7 @@ class AddProductNextScreenState extends State<AddProductNextScreen> with Automat
                             ),
                             height: 80,
 
-                            child: aiController.addProductNextScreenLoading ?
-                            Container(width: MediaQuery.of(context).size.width, height: 40,
-                                margin: EdgeInsets.symmetric(vertical: Dimensions.paddingSizeSmall),
-                                padding: EdgeInsets.symmetric(horizontal: Dimensions.paddingSizeDefault),
-                                decoration: BoxDecoration(
-                                  color: Theme.of(context).primaryColor.withValues(alpha: 0.30),
-                                  borderRadius: BorderRadius.circular(Dimensions.paddingSizeExtraSmall),
-                                ),
-                                child: Row(
+                            child: Row(
                                   children: [
                                     Expanded(
                                       child: Text(
@@ -1388,8 +1211,7 @@ class AddProductNextScreenState extends State<AddProductNextScreen> with Automat
 
                             Expanded(child: Consumer<VariationController>(
                               builder: (context, variationController, _) {
-                              return Consumer<AiController>(
-                                builder: (context, aiController, _) {
+                              return Builder(builder: (context) {
                                   return Consumer<AddProductController>(
                                     builder: (context,resProvider, _) {
                                         return resProvider.isLoading ? const Center(child: SizedBox(height: 35, width: 35, child: CircularProgressIndicator())) : CustomButtonWidget(

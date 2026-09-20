@@ -617,15 +617,7 @@ class ProductController extends ChangeNotifier {
   }
 
 
-  void setAiBrandIndex(int? brandId) {
-    if(_brandList != null && _brandList!.isNotEmpty && brandId != null) {
-      for(int i =0; i< _brandList!.length; i++) {
-        if(brandList?[i].id == brandId) {
-          _brandIndex = i+2;
-        }
-      }
-    }
-  }
+  
 
 
   void clearFilterData(){
