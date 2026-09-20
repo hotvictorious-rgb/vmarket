@@ -1,3 +1,24 @@
+### [2026-09-20 04:20 UTC] Directive 57324: Complete Architecture Purge — AI Subsystem, WhatsApp CRM & Customer Stored-Value Wallet [vendor-app] [user-app] [backend] [ai-governance]
+* **Component:** Vendor App (`features/ai`, `features/addProduct`, `features/dashboard`, `features/product`, `features/splash`, `di_container.dart`, `main.dart`, `utill/app_constants.dart`), User App (`features/more`, `features/profile`), Backend (`app/Console/Commands`, `app/Http/Controllers`, `app/Services`, `app/Models`, `app/Repositories`, `routes/admin`, `routes/rest_api/v1`, `routes/web`)
+* **Action:** Executed repository-wide fresh-system purge per Directive 57324, physically deleting all obsolete subsystems rather than stubbing:
+  - **1. Vendor App AI Subsystem Complete Physical Deletion:**
+    - Physically deleted all 16 files in `Vendor app/lib/features/ai/` (`ai_controller.dart`, `ai_meta_seo_model.dart`, `ai_variation_model.dart`, `genara_setup_model.dart`, `image_response_model.dart`, `pricing_model.dart`, `title_model.dart`, `title_suggestion_model.dart`, `ai_repository.dart`, `ai_repository_interface.dart`, `ai_service.dart`, `ai_service_interface.dart`, `ai_generator_bottom_sheet.dart`, `generate_title_bottom_sheet.dart`, `genertate_count_widget.dart`, `image_analyze_bottom_sheet.dart`).
+    - Purged `aiRepositoryInterface`, `aiServiceInterface`, and AI registrations from `di_container.dart` and `main.dart`.
+    - Removed AI auto-generation buttons, bottom sheets, and logic from `add_product_screen.dart`, `add_product_next_screen.dart`, `add_product_seo_screen.dart`, `add_product_tab_view_screen.dart`, `title_and_description_widget.dart`, `add_product_section_widget.dart`, `add_product_controller.dart`, and `variation_controller.dart`.
+    - Cleaned `dashboard_screen.dart`, `category_controller.dart`, `product_controller.dart`, and `config_model.dart`.
+    - Purged 10 AI endpoints from `Vendor app/lib/utill/app_constants.dart`.
+  - **2. User App Profile Wallet Balance Eradication & Cashback Navigation Integration:**
+    - Eradicated `walletBalance` and `wallet_balance` serialization/parsing from `profile_model.dart`.
+    - Removed `_balance = _userInfoModel?.walletBalance ?? 0;` from `profile_contrroller.dart`.
+    - Integrated direct Cashback menu item in `more_screen_view.dart` leading to `RouterHelper.getCashbackRoute()`, ensuring customer rewards visibility without stored-value wallet dependency.
+  - **3. Backend WhatsApp Subsystem & Customer Wallet Physical Deletion:**
+    - Physically deleted all WhatsApp admin controllers (`WhatsAppAiSettingsController.php`, `WhatsAppBroadcastController.php`, `WhatsAppCrmController.php`), REST controllers (`WhatsAppWebhookController.php`), commands (`WhatsAppAutoResumeHumanChatsCommand.php`), jobs (`SendWhatsAppJob.php`), models (`WhatsAppAiCorrection`, `WhatsAppBroadcast`, `WhatsAppBroadcastLog`, `WhatsAppConversation`, `WhatsAppCustomerAiProfile`, `WhatsAppFaq`, `WhatsAppMessage`), and services (`WhatsAppAiService`, `WhatsAppAutomationWorkflow`, `WhatsAppBroadcastService`, `WhatsAppCrmService`, `WhatsAppCustomerTransformer`, `WhatsAppOrderService`, `WhatsAppRiderService`, `WhatsAppRoleRouter`, `WhatsAppVendorService`, `ReceiptOcrAiService`).
+    - Physically deleted all Customer Stored-Value Wallet backend classes: `CustomerWallet.php`, `CustomerWalletHistory.php`, `WalletTransaction.php`, `CustomerWalletRepository.php`, `CustomerWalletRepositoryInterface.php`, `CustomerWalletService.php`, `UserWalletController.php` (RestAPI), `UserWalletController.php` (Web), `AddFundToWalletEvent.php`, `AddFundToWalletListener.php`, `AddFundToWallet.php`.
+    - Excised all WhatsApp and Customer Wallet routes from `routes/admin/routes.php`, `routes/rest_api/v1/api.php`, and `routes/web/routes.php`.
+  - **4. Zero-Regression & Integrity Verification:**
+    - Directive 57324 acceptance test suite (`test_v1_architecture_purge.php`) executed with 24/24 PASS (0 failures).
+    - PHP lint (`php -l`) passed with 0 syntax errors on all modified backend route and controller files.
+
 ### [2026-09-19 23:25 UTC] Directive 57323: Eradication of Customer Stored-Value Wallet, Checkout Payment Subsystems & Delivery Bypasses [user-app] [delivery-man] [ai-governance]
 * **Component:** User App (`features/wallet`, `features/cashback`, `features/checkout`, `features/order_details`, `helper/route_healper.dart`, `di_container.dart`, `main.dart`, `utill/app_constants.dart`) & Delivery Man App (`features/order_details`, `features/wallet`, `utill/app_constants.dart`)
 * **Action:** Concluded complete, physical removal of customer stored-value wallet and obsolete delivery authority per VMarket V1 fresh-system specifications:
