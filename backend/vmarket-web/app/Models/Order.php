@@ -329,11 +329,6 @@ class Order extends Model
         return $this->hasOne(RefundRequest::class, 'order_id');
     }
 
-    /* offline_payments -> offlinePayments */
-    public function offlinePayments(): BelongsTo
-    {
-        return $this->belongsTo(OfflinePayments::class, 'id', 'order_id');
-    }
 
     /* verification_images -> verificationImages */
     public function verificationImages(): HasMany

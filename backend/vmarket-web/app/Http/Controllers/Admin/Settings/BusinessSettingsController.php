@@ -4,7 +4,6 @@ namespace App\Http\Controllers\Admin\Settings;
 
 use App\Contracts\Repositories\AnalyticScriptRepositoryInterface;
 use App\Contracts\Repositories\DeliveryManRepositoryInterface;
-use App\Contracts\Repositories\OfflinePaymentMethodRepositoryInterface;
 use App\Contracts\Repositories\SettingRepositoryInterface;
 use App\Contracts\Repositories\SocialMediaRepositoryInterface;
 use App\Contracts\Repositories\VendorRepositoryInterface;
@@ -49,7 +48,6 @@ class BusinessSettingsController extends BaseController
         private readonly BusinessSettingService                  $businessSettingService,
         private readonly SettingService                          $settingService,
         private readonly SettingRepositoryInterface              $settingRepo,
-        private readonly OfflinePaymentMethodRepositoryInterface $offlinePaymentMethodRepo,
     )
     {
     }
@@ -117,9 +115,7 @@ class BusinessSettingsController extends BaseController
             'selectedMaintenanceDuration' => $selectedMaintenanceDuration,
             'maintenanceSystemSetup' => $maintenanceSystemSetup,
             'selectedMaintenanceMessage' => $selectedMaintenanceMessage,
-            'cashOnDelivery' => getWebConfig(name: 'cash_on_delivery'),
             'digitalPayment' => getWebConfig(name: 'digital_payment'),
-            'offlinePayment' => getWebConfig(name: 'offline_payment'),
             'cookieSetting' => getWebConfig(name: 'cookie_setting'),
             'systemCurrency' => $systemCurrency,
             'checkMinimumOneDigitalPayment' => $this->checkMinimumOneDigitalPayment()
@@ -554,21 +550,15 @@ class BusinessSettingsController extends BaseController
         return !(count($paymentGatewaysList) == 0);
     }
 
+    // [AI] Directive 57326: COD, offline_payment guards removed — V1 only supports digital payment via Paystack.
     private function updatePaymentOption(mixed $request): ?RedirectResponse
     {
-        if ($request['digital_payment'] == 1 && !$this->checkMinimumOneDigitalPayment() && $request['offline_payment'] != 1) {
+        if ($request['digital_payment'] == 1 && !$this->checkMinimumOneDigitalPayment()) {
             ToastMagic::warning(translate('you_must_active_one_of_digital_payment_methods'));
             return redirect()->back();
         }
 
-        if ($request['offline_payment'] == 1 && $this->offlinePaymentMethodRepo->getListWhere(filters: ['status' => 'active'])->count() <= 0) {
-            ToastMagic::warning(translate('you_must_active_one_of_offline_payment_methods'));
-            return redirect()->back();
-        }
-
-        $this->businessSettingRepo->updateOrInsert(type: 'cash_on_delivery', value: json_encode(['status' => $request->get('cash_on_delivery', 0)]));
         $this->businessSettingRepo->updateOrInsert(type: 'digital_payment', value: json_encode(['status' => $request->get('digital_payment', 0)]));
-        $this->businessSettingRepo->updateOrInsert(type: 'offline_payment', value: json_encode(['status' => $request->get('offline_payment', 0)]));
 
         return null;
     }

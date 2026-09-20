@@ -4,7 +4,6 @@ namespace App\Http\Controllers\Admin\ThirdParty;
 
 use App\Contracts\Repositories\BusinessSettingRepositoryInterface;
 use App\Contracts\Repositories\CurrencyRepositoryInterface;
-use App\Contracts\Repositories\OfflinePaymentMethodRepositoryInterface;
 use App\Contracts\Repositories\SettingRepositoryInterface;
 use App\Enums\GlobalConstant;
 use App\Http\Controllers\BaseController;
@@ -29,7 +28,6 @@ class PaymentMethodController extends BaseController
         private readonly BusinessSettingRepositoryInterface      $businessSettingRepo,
         private readonly SettingService                          $settingService,
         private readonly CurrencyRepositoryInterface             $currencyRepo,
-        private readonly OfflinePaymentMethodRepositoryInterface $offlinePaymentMethodRepo,
     )
     {
     }
@@ -69,9 +67,7 @@ class PaymentMethodController extends BaseController
             'paymentGatewaysList' => $paymentGatewaysList,
             'paymentGatewayPublishedStatus' => $paymentGatewayPublishedStatus,
             'paymentUrl' => $paymentUrl,
-            'cashOnDelivery' => getWebConfig(name: 'cash_on_delivery'),
             'digitalPayment' => getWebConfig(name: 'digital_payment'),
-            'offlinePayment' => getWebConfig(name: 'offline_payment'),
         ]);
     }
 
