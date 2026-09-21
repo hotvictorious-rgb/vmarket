@@ -1,3 +1,22 @@
+### [2026-09-21 18:40 UTC] Decommissioning of Cash-In-Hand & COD Vestiges Across Rider App and Web Backend [delivery-man] [backend] [ai-governance] [AI]
+* **Component:** Delivery Rider App (`Delivery Man App`), Laravel Backend (`backend/vmarket-web`)
+* **Scope:** Elimination of all remaining legacy cash-in-hand, cash collection, and Cash on Delivery (COD) UI vestiges, notification branches, and controller checks across mobile apps and admin/vendor web panels in accordance with V1 100% digital prepaid policy
+* **Changes:**
+  - **Delivery Man Mobile App (`Delivery Man App`):**
+    - `lib/features/order_details/widgets/payment_info_widget.dart`: Removed all COD conditional branches and fallbacks (`isPrepaid ? ... : ...`). Enforced 100% Prepaid (Online Paystack) display with explicit security banner: "This order is fully paid online. Do NOT collect any cash from the customer."
+    - `lib/features/earning_statement/widgets/earning_statement_card_widget.dart`: Replaced legacy cash image (`Images.cash`) and "by cash" text with `Images.paymentInfo` and "Online (Prepaid)".
+    - `lib/features/splash/screens/splash_screen.dart` & `lib/helper/notification_helper.dart`: Removed obsolete notification handlers for `cash_collect_by_seller_message` and `cash_collect_by_admin_message`. Simplified wallet notification routing to `WalletScreen(selectedIndex: 0)`.
+  - **Laravel Web Backend (`backend/vmarket-web`):**
+    - `app/Http/Controllers/Admin/Delivery/DispatchPortalController.php`: Removed obsolete `delivery_man_max_cash_in_hand` remittance guard check that blocked batch dispatch based on non-existent cash.
+    - `app/Http/Controllers/RestAPI/v3/seller/SellerController.php`: Removed legacy `cash_in_hand != 0` filter from `getCountOfDeliveryManTransactionNotClearWithSeller()`.
+    - `resources/views/admin-views/delivery-man/earning-statement/earning.blade.php`: Replaced obsolete `cash_in_hand` card with `pending_withdraw` (Pending Withdrawal) metric card, providing accurate financial tracking.
+    - `resources/views/admin-views/delivery-man/earning-statement/overview.blade.php`: Streamlined wallet overview grid from 2-column split (with dead cash-in-hand card) into a clean 4-card grid (`current_balance`, `total_withdrawn`, `pending_withdraw`, `withdrawable_balance`). Removed obsolete `exampleModal` cash collect modal.
+    - `resources/views/vendor-views/delivery-man/wallet/index.blade.php`: Streamlined vendor rider wallet grid to 4 core financial cards and removed obsolete cash collect modal.
+* **Verification:**
+  - Executed `flutter analyze --no-pub` on `Delivery Man App`: Exactly **0 issues found** (ran in 324.1s).
+  - Executed PHP syntax validation (`php -l`): 0 syntax errors detected in `DispatchPortalController.php` and `SellerController.php`.
+  - Executed 27-point automated lifecycle integration test suite: **100% PASS (27 passed, 0 failed)**.
+
 ### [2026-09-21 18:05 UTC] Delivery Flow End-to-End Test Suite & Settlement Invariant Verification [backend] [ai-governance] [AI]
 * **Component:** Laravel Backend (`backend/vmarket-web`), AI Governance & Mathematical Proof
 * **Scope:** End-to-end integration testing and invariant verification of the entire delivery lifecycle: rider creation, authentication, vendor pickup handover, doorstep delivery, rider wallet credit, zero-COD enforcement, and post-24h vendor settlement
