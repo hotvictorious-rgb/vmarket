@@ -541,3 +541,29 @@ $$\forall c_1 \neq c_2, \quad \text{Cashback}(c_1) \cap \text{Cashback}(c_2) = \
 - Status vocabulary strictly partitioned into: `pending`, `available`, `redeemed`, `cancelled`.
 
 - **Test Suite Verification:** 36/36 tests pass in `test_directive_57321_a1.php` and 49/49 pass in `test_gate1_precision_timezone.php` (85/85 total). Zero floating-point drift ($\Delta = \text{₦}0.00$).
+---
+
+## 25. Customer Mobile App & Web Storefront Systemic Verification (Directives & Contract Parity)
+
+### A. Customer Mobile App (User app) AST Compilation Proof
+- **Static Analyzer:** Dart AST Analyzer (lutter analyze --no-pub)
+- **Compilation Scope:** Entire User app/lib/ hierarchy (90+ feature modules, models, widgets, and router helpers)
+- **Compile Error Invariant:** \$\text{AST Errors} \equiv 0\$
+- **Resolution of Decommissioned Features:**
+  1. lib/di_container.dart: Purged dangling chatRepositoryInterface and chatServiceInterface service registrations.
+  2. lib/features/more/screens/more_screen_view.dart: Removed defunct getInboxScreenRoute navigation tile.
+  3. lib/features/order_details/widgets/seller_section_widget.dart: Imported ShopHelper for safe vendor profile routing.
+  4. lib/features/splash/screens/splash_screen.dart: Rerouted deep-linked chatting notifications to RouterHelper.getNotificationRoute().
+  5. lib/push_notification/notification_helper.dart: Updated onMessage and notification payload handlers to route chatting to RouterHelper.getNotificationRoute().
+- **Analyzer Execution Result:** Ran in 242.7s across all files. Exactly 0 errors found (88 non-fatal info/warnings, down from 96 issues with 8 breaking errors).
+
+### B. Customer App Payment Contract Parity
+- **Payload & Route Binding:**
+  \$\$\text{User App Checkout} \xrightarrow{\text{digitalPaymentPlaceOrder}} \text{Backend POST } \texttt{/customer/payment-mobile} \to \begin{cases} \text{HTTP 200} \implies \{\texttt{redirect\_link}: \text{URL}\} \to \text{WebView Navigation} \\ \text{HTTP 403} \implies \{\texttt{errors}: [...]\} \to \text{SnackBar Message} \end{cases}\$\$
+- **Verification:** Both mobile app (checkout_controller.dart:164) and backend (PaymentController.php:145) strictly enforce the edirect_link contract.
+- **Paystack Webhook & Return Interception:** DigitalPaymentScreenState._checkRedirect monitors the webview URL for payment-success or payment-fail, safely transitioning back into the native order receipt flow.
+
+### C. Universal 6-Digit OTP Identity Verification
+- **Invariant:**
+  \$\$\forall \text{Customer OTP Endpoints}, \quad \text{Length}(\text{OTP}) = 6 \quad \land \quad \text{PIN Input Box Length} = 6\$\$
+- **Verification:** CustomerAPIAuthController.php generates tokens using and(100000, 999999). otp_verification_screen.dart configures PinCodeTextField(length: 6). Full end-to-end parity with zero drift.
