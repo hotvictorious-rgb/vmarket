@@ -187,14 +187,6 @@ class _MoreScreenState extends State<MoreScreen> with AutomaticKeepAliveClientMi
                       child: Consumer<SplashController>(
                         builder: (context, splashController, _){
                           return Column(children: [
-
-                            singleVendor?const SizedBox():
-                            MenuButtonWidget(image: Images.chats, title: getTranslated('inbox', context),
-                              onTap: () {
-                                RouterHelper.getInboxScreenRoute(action: RouteAction.push);
-                              },
-                            ),
-
                             MenuButtonWidget(image: Images.callIcon, title: getTranslated('contact_us', context),
                               onTap: () {
                                 RouterHelper.getContactUsScreenRoute();

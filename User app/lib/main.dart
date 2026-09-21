@@ -43,7 +43,6 @@ import 'package:flutter_sixvalley_ecommerce/features/auth/controllers/auth_contr
 import 'package:flutter_sixvalley_ecommerce/features/brand/controllers/brand_controller.dart';
 import 'package:flutter_sixvalley_ecommerce/features/cart/controllers/cart_controller.dart';
 import 'package:flutter_sixvalley_ecommerce/features/category/controllers/category_controller.dart';
-import 'package:flutter_sixvalley_ecommerce/features/chat/controllers/chat_controller.dart';
 import 'package:flutter_sixvalley_ecommerce/features/coupon/controllers/coupon_controller.dart';
 import 'package:flutter_sixvalley_ecommerce/features/search_product/controllers/search_product_controller.dart';
 import 'package:flutter_sixvalley_ecommerce/features/shop/controllers/shop_controller.dart';
@@ -125,7 +124,6 @@ Future<void> main() async {
       ChangeNotifierProvider(create: (context) => di.sl<AuthController>()),
       ChangeNotifierProvider(create: (context) => di.sl<SearchProductController>()),
       ChangeNotifierProvider(create: (context) => di.sl<CouponController>()),
-      ChangeNotifierProvider(create: (context) => di.sl<ChatController>()),
       ChangeNotifierProvider(create: (context) => di.sl<OrderController>()),
       ChangeNotifierProvider(create: (context) => di.sl<NotificationController>()),
       ChangeNotifierProvider(create: (context) => di.sl<ProfileController>()),

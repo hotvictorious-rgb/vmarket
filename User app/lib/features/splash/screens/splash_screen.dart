@@ -92,17 +92,10 @@ class SplashScreenState extends State<SplashScreen> {
                     action: RouteAction.pushReplacement,
                     orderId: widget.body!.orderId!,
                   );
-                } else if(widget.body!.type == 'notification') {
-                  RouterHelper.getNotificationRoute(action: RouteAction.pushReplacement);
+                } else if(widget.body!.type == 'notification' || widget.body!.type == 'chatting') {
+                  RouterHelper.getNotificationRoute(action: RouteAction.pushReplacement, fromNotification: true);
                 } else if(widget.body!.type == 'wallet') {
                   RouterHelper.getCashbackRoute(action: RouteAction.pushReplacement);
-                } else  if (widget.body!.type == 'chatting') {
-                  RouterHelper.getInboxScreenRoute(
-                    action: RouteAction.pushReplacement,
-                    isBackButtonExist: true,
-                    fromNotification: true,
-                    initIndex: widget.body!.messageKey == 'message_from_delivery_man' ? 0 : 1,
-                  );
                 } else if(widget.body!.type == 'product_restock_update') {
                   RouterHelper.getProductDetailsRoute(action: RouteAction.pushReplacement, productId: int.parse(widget.body!.productId!), slug: widget.body!.slug, isNotification: true);
                 } else {
@@ -191,17 +184,10 @@ class SplashScreenState extends State<SplashScreen> {
                   action: RouteAction.pushReplacement,
                   orderId: widget.body!.orderId!,
                 );
-              } else if(widget.body!.type == 'notification') {
-                RouterHelper.getNotificationRoute(action: RouteAction.pushReplacement);
+              } else if(widget.body!.type == 'notification' || widget.body!.type == 'chatting') {
+                RouterHelper.getNotificationRoute(action: RouteAction.pushReplacement, fromNotification: true);
               } else if(widget.body!.type == 'wallet') {
                 RouterHelper.getCashbackRoute(action: RouteAction.pushReplacement);
-              } else  if (widget.body!.type == 'chatting') {
-                RouterHelper.getInboxScreenRoute(
-                  action: RouteAction.push,
-                  isBackButtonExist: true,
-                  fromNotification: true,
-                  initIndex: widget.body!.messageKey == 'message_from_delivery_man' ? 0 : 1,
-                );
               } else if(widget.body!.type == 'product_restock_update') {
                 RouterHelper.getProductDetailsRoute(action: RouteAction.push, productId: int.parse(widget.body!.productId!), slug: widget.body!.slug, isNotification: true);
               } else {

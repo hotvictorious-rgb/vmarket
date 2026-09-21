@@ -16,7 +16,6 @@ import 'package:flutter_sixvalley_ecommerce/helper/route_healper.dart';
 import 'package:flutter_sixvalley_ecommerce/main.dart';
 import 'package:flutter_sixvalley_ecommerce/push_notification/models/notification_body.dart';
 import 'package:flutter_sixvalley_ecommerce/utill/app_constants.dart';
-import 'package:flutter_sixvalley_ecommerce/features/chat/screens/inbox_screen.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:http/http.dart' as http;
 import 'package:provider/provider.dart';
@@ -47,10 +46,6 @@ class NotificationHelper {
               orderId: payload.orderId!,
               isNotification: true
             );
-          } else if(payload.type == 'wallet') {
-            RouterHelper.getWalletRoute(action: RouteAction.pushReplacement, isBackButtonExist: true);
-          } else if(payload.type == 'chatting') {
-            Navigator.of(Get.context!).pushReplacement(MaterialPageRoute(builder: (BuildContext context) =>  InboxScreen(isBackButtonExist: true, initIndex: payload.messageKey ==  'message_from_delivery_man' ? 0 : 1, fromNotification: true)));
           } else if(payload.type == 'product_restock_update') {
             RouterHelper.getProductDetailsRoute(action: RouteAction.pushReplacement, productId: int.parse(payload.productId!),  slug: payload.slug, isNotification: true);
           } else{
@@ -126,12 +121,8 @@ class NotificationHelper {
               orderId: notificationBody.orderId!,
               isNotification: true
             );
-          } else if(notificationBody.type == 'wallet') {
-            RouterHelper.getWalletRoute(action: RouteAction.pushReplacement, isBackButtonExist: true);
           } else if(notificationBody.type == 'notification') {
             RouterHelper.getNotificationRoute(action: RouteAction.pushReplacement, fromNotification: true);
-          } else if(notificationBody.type == 'chatting') {
-            Navigator.of(Get.context!).pushReplacement(MaterialPageRoute(builder: (BuildContext context) =>  InboxScreen(isBackButtonExist: true, fromNotification: true, initIndex: notificationBody.messageKey ==  'message_from_delivery_man' ? 0 : 1)));
           } else if(notificationBody.type == 'product_restock_update') {
             RouterHelper.getProductDetailsRoute(action: RouteAction.pushReplacement, productId: int.parse(notificationBody.productId!), slug: notificationBody.slug, isNotification: true);
           } else {

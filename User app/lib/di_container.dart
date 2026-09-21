@@ -37,10 +37,6 @@ import 'package:flutter_sixvalley_ecommerce/features/category/domain/repositorie
 import 'package:flutter_sixvalley_ecommerce/features/category/domain/repositories/category_repo_interface.dart';
 import 'package:flutter_sixvalley_ecommerce/features/category/domain/services/category_service.dart';
 import 'package:flutter_sixvalley_ecommerce/features/category/domain/services/category_service_interface.dart';
-import 'package:flutter_sixvalley_ecommerce/features/chat/domain/repositories/chat_repository.dart';
-import 'package:flutter_sixvalley_ecommerce/features/chat/domain/repositories/chat_repository_interface.dart';
-import 'package:flutter_sixvalley_ecommerce/features/chat/domain/services/chat_service.dart';
-import 'package:flutter_sixvalley_ecommerce/features/chat/domain/services/chat_service_interface.dart';
 import 'package:flutter_sixvalley_ecommerce/features/checkout/controllers/checkout_controller.dart';
 import 'package:flutter_sixvalley_ecommerce/features/checkout/domain/repositories/checkout_repository.dart';
 import 'package:flutter_sixvalley_ecommerce/features/checkout/domain/repositories/checkout_repository_interface.dart';
@@ -165,7 +161,6 @@ import 'package:flutter_sixvalley_ecommerce/features/auth/controllers/auth_contr
 import 'package:flutter_sixvalley_ecommerce/features/brand/controllers/brand_controller.dart';
 import 'package:flutter_sixvalley_ecommerce/features/cart/controllers/cart_controller.dart';
 import 'package:flutter_sixvalley_ecommerce/features/category/controllers/category_controller.dart';
-import 'package:flutter_sixvalley_ecommerce/features/chat/controllers/chat_controller.dart';
 import 'package:flutter_sixvalley_ecommerce/features/coupon/controllers/coupon_controller.dart';
 import 'package:flutter_sixvalley_ecommerce/localization/controllers/localization_controller.dart';
 import 'package:flutter_sixvalley_ecommerce/features/address/controllers/address_controller.dart';
@@ -222,7 +217,6 @@ Future<void> init() async {
   sl.registerLazySingleton(() => OrderRepository(dioClient: sl()));
   sl.registerLazySingleton(() => ShopRepository(dioClient: sl(), dataSyncRepoInterface: sl()));
   sl.registerLazySingleton(() => CouponRepository(dioClient: sl()));
-  sl.registerLazySingleton(() => ChatRepository(dioClient: sl()));
   sl.registerLazySingleton(() => NotificationRepository(dioClient: sl()));
   sl.registerLazySingleton(() => ProfileRepository(dioClient: sl(), sharedPreferences: sl()));
   sl.registerLazySingleton(() => WishListRepository(dioClient: sl()));
@@ -256,7 +250,6 @@ Future<void> init() async {
   sl.registerFactory(() => SearchProductController(searchProductServiceInterface: sl()));
   sl.registerFactory(() => OrderController(orderServiceInterface: sl()));
   sl.registerFactory(() => CouponController(couponRepo: sl()));
-  sl.registerFactory(() => ChatController(chatServiceInterface: sl()));
   sl.registerFactory(() => NotificationController(notificationServiceInterface: sl()));
   sl.registerFactory(() => ProfileController(profileServiceInterface: sl()));
   sl.registerFactory(() => WishListController(wishlistServiceInterface: sl()));
@@ -315,12 +308,6 @@ Future<void> init() async {
   sl.registerLazySingleton(() => categoryRepoInterface);
   CategoryServiceInterface categoryServiceInterface = CategoryService(categoryRepoInterface: sl());
   sl.registerLazySingleton(() => categoryServiceInterface);
-
-
-  ChatRepositoryInterface chatRepositoryInterface = ChatRepository(dioClient: sl());
-  sl.registerLazySingleton(() => chatRepositoryInterface);
-  ChatServiceInterface chatServiceInterface = ChatService(chatRepositoryInterface: sl());
-  sl.registerLazySingleton(() => chatServiceInterface);
 
   ShippingRepositoryInterface shippingRepositoryInterface = ShippingRepository(dioClient: sl());
   sl.registerLazySingleton(() => shippingRepositoryInterface);
@@ -468,7 +455,6 @@ Future<void> init() async {
   sl.registerLazySingleton(() => BrandService(brandRepoInterface : sl()));
   sl.registerLazySingleton(() => CartService(cartRepositoryInterface : sl()));
   sl.registerLazySingleton(() => CategoryService(categoryRepoInterface : sl()));
-  sl.registerLazySingleton(() => ChatService(chatRepositoryInterface : sl()));
   sl.registerLazySingleton(() => ShippingService(shippingRepositoryInterface : sl()));
   sl.registerLazySingleton(() => CheckoutService(checkoutRepositoryInterface : sl()));
 

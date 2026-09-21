@@ -1,12 +1,10 @@
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_sixvalley_ecommerce/common/basewidget/custom_asset_image_widget.dart';
-import 'package:flutter_sixvalley_ecommerce/features/chat/controllers/chat_controller.dart';
 import 'package:flutter_sixvalley_ecommerce/features/order/domain/models/order_model.dart';
 import 'package:flutter_sixvalley_ecommerce/features/order_details/controllers/order_details_controller.dart';
 import 'package:flutter_sixvalley_ecommerce/features/tracking/widgets/line_dashed_widget.dart';
 import 'package:flutter_sixvalley_ecommerce/helper/date_converter.dart';
-import 'package:flutter_sixvalley_ecommerce/helper/route_healper.dart';
 import 'package:flutter_sixvalley_ecommerce/theme/controllers/theme_controller.dart';
 import 'package:flutter_sixvalley_ecommerce/utill/custom_themes.dart';
 import 'package:flutter_sixvalley_ecommerce/utill/dimensions.dart';
@@ -120,9 +118,6 @@ class StatusStepperWidget extends StatelessWidget {
             builder: (context, orderProvider, child) {
               Orders? orderModel = orderProvider.orders;
               String? phone =  orderModel?.deliveryMan?.phone;
-              String? name = '${orderModel?.deliveryMan?.fName!} ${orderModel?.deliveryMan?.lName}';
-              int? id =   orderModel?.deliveryMan?.id;
-              String? image =  orderModel?.deliveryMan?.imageFullUrl?.path;
 
               return Container(
                 padding: EdgeInsets.all(Dimensions.paddingSizeSmall),
@@ -132,31 +127,11 @@ class StatusStepperWidget extends StatelessWidget {
                 ),
                 child: Row(
                   children: [
-                    InkWell(
-                      onTap: () {
-                        Provider.of<ChatController>(context, listen: false).setUserTypeIndex(context, 0);
-                        RouterHelper.getChatScreenRoute(
-                          action: RouteAction.push,
-                          image: image,
-                          id: id,
-                          name: name,
-                          userType: 0,
-                          isShopTemporaryClosed: false,
-                          isShopOnVacation: false,
-                        );
-                      },
-                      child: CustomAssetImageWidget(Images.storeChatIcon, height: 20, width: 20)
-                    ),
-                    SizedBox(width: Dimensions.paddingSizeSmall),
-
-                    Container(height: 20, width: 1, color: Theme.of(context).colorScheme.onPrimary.withValues(alpha: 0.35) ),
-
-                    SizedBox(width: Dimensions.paddingSizeSmall),
-                    InkWell(
-                      onTap: ()=> _launchUrl("tel:$phone"),
-                      child: CustomAssetImageWidget(Images.deliverymanCallIcon, height: 20, width: 20)
-                    ),
-
+                    if (phone != null && phone.isNotEmpty)
+                      InkWell(
+                        onTap: ()=> _launchUrl("tel:$phone"),
+                        child: CustomAssetImageWidget(Images.deliverymanCallIcon, height: 20, width: 20)
+                      ),
                   ],
                 ),
               );

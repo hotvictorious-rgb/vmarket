@@ -1,3 +1,20 @@
+### [2026-09-21 17:15 UTC] Customer App Compilation & Route Integrity Remediation [user-app] [AI]
+* **Component:** Customer Mobile App (`User app`)
+* **Scope:** Elimination of all static Dart analysis compiler breaks, orphaned references to decommissioned chat/digital products, and push notification routing alignment
+* **Changes:**
+  - **Dependency Injection Cleanup (`lib/di_container.dart`):**
+    - Removed dangling `chatRepositoryInterface` and `chatServiceInterface` service registrations in `init()`.
+  - **Account/More Menu Decommissioned Route (`lib/features/more/screens/more_screen_view.dart`):**
+    - Removed defunct Inbox (`getInboxScreenRoute`) menu tile from the customer more screen navigation list.
+  - **Order Details Vendor Profile Navigation (`lib/features/order_details/widgets/seller_section_widget.dart`):**
+    - Added missing `ShopHelper` import (`package:flutter_sixvalley_ecommerce/helper/shop_helper.dart`) to enable safe customer navigation to vendor storefronts.
+  - **Splash Screen Push Routing (`lib/features/splash/screens/splash_screen.dart`):**
+    - Rerouted legacy `chatting` push notification deep links at lines 100 and 199 to `RouterHelper.getNotificationRoute()` to prevent runtime crash and compile error.
+  - **Push Notification Dispatcher (`lib/push_notification/notification_helper.dart` and `push_notification/notification_helper.dart`):**
+    - Updated notification payload handler and `FirebaseMessaging.onMessage` listener to redirect `chatting` type notifications directly to notifications view, removing undefined `getInboxScreenRoute`.
+* **Verification:**
+  - Executed full AST Dart static analysis (`flutter analyze --no-pub`) across the entire `User app`. Verified 0 errors across all 90+ modules (88 non-fatal info/warnings remaining, down from 96 issues with 8 breaking errors).
+
 ### [2026-09-21 10:25 UTC] Fresh Installation & Whogohost/cPanel Multi-Client Production Audit & Hardening [backend] [ai-governance] [AI]
 * **Component:** Laravel Backend (`backend/vmarket-web`), Deployment Architecture, Multi-Client APIs
 * **Scope:** Fresh server deployment readiness (Whogohost/cPanel), multi-app communication parity, and automated installer migration execution

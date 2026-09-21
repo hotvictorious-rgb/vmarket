@@ -17,8 +17,6 @@ import 'package:flutter_sixvalley_ecommerce/features/brand/screens/brands_screen
 import 'package:flutter_sixvalley_ecommerce/features/cart/domain/models/cart_model.dart';
 import 'package:flutter_sixvalley_ecommerce/features/category/domain/models/category_model.dart';
 import 'package:flutter_sixvalley_ecommerce/features/category/screens/category_screen.dart';
-import 'package:flutter_sixvalley_ecommerce/features/chat/domain/models/message_model.dart';
-import 'package:flutter_sixvalley_ecommerce/features/chat/screens/media_viewer_screen.dart';
 import 'package:flutter_sixvalley_ecommerce/features/checkout/screens/checkout_screen.dart';
 import 'package:flutter_sixvalley_ecommerce/features/checkout/screens/digital_payment_order_place_screen.dart';
 import 'package:flutter_sixvalley_ecommerce/features/clearance_sale/screens/clearance_sale_all_product_screen.dart';
@@ -71,8 +69,6 @@ import 'package:flutter_sixvalley_ecommerce/features/auth/screens/auth_screen.da
 import 'package:flutter_sixvalley_ecommerce/features/auth/screens/forget_password_screen.dart';
 import 'package:flutter_sixvalley_ecommerce/features/auth/screens/reset_password_screen.dart';
 import 'package:flutter_sixvalley_ecommerce/features/cart/screens/cart_screen.dart';
-import 'package:flutter_sixvalley_ecommerce/features/chat/screens/chat_screen.dart';
-import 'package:flutter_sixvalley_ecommerce/features/chat/screens/inbox_screen.dart';
 import 'package:go_router/go_router.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:image_picker/image_picker.dart';
@@ -111,9 +107,6 @@ class RouterHelper {
   static const String brandsView = '/brands';
   static const String cartScreen = '/cart';
   static const String categoryScreen = '/category';
-  static const String chatScreen = '/chat';
-  static const String inboxScreen = '/inbox';
-  static const String mediaViewerScreen = '/media-viewer';
   static const String checkoutScreen = '/checkout';
   static const String digitalPaymentScreen = '/digital-payment';
   static const String clearanceSaleAllProductScreen = '/clearance-sale-all-product';
@@ -402,77 +395,6 @@ class RouterHelper {
     if (showBackButton != null) params['showBackButton'] = showBackButton.toString();
     final query = params.entries.map((e) => '${e.key}=${e.value}').join('&');
     return _navigateRoute('$cartScreen${query.isNotEmpty ? '?$query' : ''}', route: action);
-  }
-
-  static String getChatScreenRoute({
-    RouteAction? action,
-    int? id,
-    String? name,
-    bool? isDelivery,
-    String? image,
-    String? phone,
-    int? userType,
-    bool? isShopOnVacation,
-    bool? isShopTemporaryClosed,
-    int? orderId,
-    String? orderStatus,
-  }) {
-    final params = <String, String>{};
-    if (id != null) params['id'] = id.toString();
-    if (name != null) params['name'] = Uri.encodeComponent(name);
-    if (isDelivery != null) params['isDelivery'] = isDelivery.toString();
-    if (image != null) params['image'] = Uri.encodeComponent(image);
-    if (phone != null) params['phone'] = Uri.encodeComponent(phone);
-    if (userType != null) params['userType'] = userType.toString();
-    if (isShopOnVacation != null) params['isShopOnVacation'] = isShopOnVacation.toString();
-    if (isShopTemporaryClosed != null) params['isShopTemporaryClosed'] = isShopTemporaryClosed.toString();
-    if (orderId != null) params['orderId'] = orderId.toString();
-    if (orderStatus != null) params['orderStatus'] = Uri.encodeComponent(orderStatus);
-
-    final query = params.isNotEmpty ? '?${params.entries.map((e) => '${e.key}=${e.value}').join('&')}' : '';
-    return _navigateRoute('$chatScreen$query', route: action);
-  }
-
-  static String getInboxScreenRoute({
-    RouteAction? action,
-    bool? isBackButtonExist,
-    bool? fromNotification,
-    int? initIndex,
-  }) {
-    final params = <String, String>{};
-    if (isBackButtonExist != null) params['isBackButtonExist'] = isBackButtonExist.toString();
-    if (fromNotification != null) params['fromNotification'] = fromNotification.toString();
-    if (initIndex != null) params['initIndex'] = initIndex.toString();
-
-    final query = params.isNotEmpty ? '?${params.entries.map((e) => '${e.key}=${e.value}').join('&')}' : '';
-    return _navigateRoute('$inboxScreen$query', route: action);
-  }
-
-
-  static String getMediaViewerScreenRoute({
-    RouteAction? action,
-    required int clickedIndex,
-    List<Attachment>? serverMedia,
-    List<XFile>? localMedia,
-  }) {
-    final params = <String, String>{};
-
-    params['clickedIndex'] = clickedIndex.toString();
-
-    if (serverMedia != null) {
-      params['serverMedia'] = Uri.encodeComponent(
-        jsonEncode(serverMedia.map((e) => e.toJson()).toList()),
-      );
-    }
-
-    if (localMedia != null) {
-      params['localMedia'] = Uri.encodeComponent(
-        jsonEncode(localMedia.map((e) => e.path).toList()), // just store paths
-      );
-    }
-
-    final query = '?${params.entries.map((e) => '${e.key}=${e.value}').join('&')}';
-    return _navigateRoute('$mediaViewerScreen$query', route: action);
   }
 
   static String getCheckoutScreenRoute({
@@ -1092,68 +1014,6 @@ class RouterHelper {
         },
       ),
       GoRoute(path: categoryScreen, builder: (context, state) => const CategoryScreen()),
-      GoRoute(
-        path: chatScreen,
-        builder: (context, state) {
-          final qp = state.uri.queryParameters;
-          return ChatScreen(
-            id: qp['id'] != null ? int.tryParse(qp['id']!) : null,
-            name: qp['name'] != null ? Uri.decodeComponent(qp['name']!) : '',
-            isDelivery: qp['isDelivery'] == 'true',
-            image: qp['image'] != null ? Uri.decodeComponent(qp['image']!) : null,
-            phone: qp['phone'] != null ? Uri.decodeComponent(qp['phone']!) : null,
-            userType: qp['userType'] != null ? int.tryParse(qp['userType']!) : null,
-            isShopOnVacation: qp['isShopOnVacation'] == 'true',
-            isShopTemporaryClosed: qp['isShopTemporaryClosed'] == 'true',
-            orderId: qp['orderId'] != null ? int.tryParse(qp['orderId']!) : null,
-            orderStatus: qp['orderStatus'] != null ? Uri.decodeComponent(qp['orderStatus']!) : null,
-          );
-        },
-      ),
-
-      GoRoute(
-        path: inboxScreen,
-        builder: (context, state) {
-          final qp = state.uri.queryParameters;
-          return InboxScreen(
-            isBackButtonExist: qp['isBackButtonExist'] == 'true',
-            fromNotification: qp['fromNotification'] == 'true',
-            initIndex: int.tryParse(qp['initIndex'] ?? '0') ?? 0,
-          );
-        },
-      ),
-
-      GoRoute(
-        path: mediaViewerScreen,
-        builder: (context, state) {
-          final qp = state.uri.queryParameters;
-
-          int clickedIndex = int.tryParse(qp['clickedIndex'] ?? '0') ?? 0;
-
-          List<Attachment>? serverMedia;
-          if (qp['serverMedia'] != null) {
-            try {
-              final decoded = jsonDecode(Uri.decodeComponent(qp['serverMedia']!)) as List;
-              serverMedia = decoded.map((e) => Attachment.fromJson(e)).toList();
-            } catch (_) {}
-          }
-
-          List<XFile>? localMedia;
-          if (qp['localMedia'] != null) {
-            try {
-              final decoded = jsonDecode(Uri.decodeComponent(qp['localMedia']!)) as List;
-              localMedia = decoded.map((e) => XFile(e.toString())).toList();
-            } catch (_) {}
-          }
-
-          return MediaViewerScreen(
-            clickedIndex: clickedIndex,
-            serverMedia: serverMedia,
-            localMedia: localMedia,
-          );
-        },
-      ),
-
       GoRoute(
         path: checkoutScreen,
         builder: (context, state) {
