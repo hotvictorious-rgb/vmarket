@@ -5,6 +5,7 @@ import 'package:sixvalley_vendor_app/features/coupon/controllers/coupon_controll
 import 'package:sixvalley_vendor_app/features/coupon/domain/models/customer_model.dart';
 import 'package:sixvalley_vendor_app/localization/language_constrants.dart';
 import 'package:sixvalley_vendor_app/utill/dimensions.dart';
+import 'package:sixvalley_vendor_app/utill/images.dart';
 import 'package:sixvalley_vendor_app/utill/styles.dart';
 
 class CouponCustomerSearchDialog extends StatefulWidget {
@@ -47,7 +48,7 @@ class _CouponCustomerSearchDialogState extends State<CouponCustomerSearchDialog>
             CustomSearchFieldWidget(
               controller: _searchController,
               hint: getTranslated('search_customer', context),
-              prefix: Icons.search,
+              prefix: Images.iconsSearch,
               iconPressed: () => () {},
               onSubmit: (text) => () {},
               onChanged: (value) {

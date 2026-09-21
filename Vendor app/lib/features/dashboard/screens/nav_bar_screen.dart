@@ -48,7 +48,7 @@ class _NavBarScreenState extends State<NavBarScreen> {
 
           child: FloatingActionButton(backgroundColor: Theme.of(context).primaryColor, elevation: 1,
             onPressed: (){
-              Navigator.push(context, MaterialPageRoute(builder: (_) => const AddProductScreen()));
+              Navigator.push(context, MaterialPageRoute(builder: (_) => AddProductScreen(onTabChanged: (index) {},)));
             },
             child: Padding(padding: const EdgeInsets.all(15.0),
               child: Image.asset(Images.addProduct)))),

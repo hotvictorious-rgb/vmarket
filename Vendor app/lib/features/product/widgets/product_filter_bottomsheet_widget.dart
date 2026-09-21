@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:sixvalley_vendor_app/common/basewidgets/custom_button_widget.dart';
-import 'package:sixvalley_vendor_app/features/addProduct/controllers/digital_product_controller.dart';
 import 'package:sixvalley_vendor_app/features/addProduct/domain/models/category_model.dart';
 import 'package:sixvalley_vendor_app/features/product/controllers/category_controller.dart';
 import 'package:sixvalley_vendor_app/features/product/controllers/product_controller.dart';
@@ -136,44 +135,21 @@ class _ProductFilterBottomSheetState extends State<ProductFilterBottomSheet> {
                               ),
                               child: Column(
                                 children: [
-                                  Row(
-                                    children: [
-                                      Expanded(
-                                        child: _CheckboxItem(
-                                          isStart: true,
-                                          title: getTranslated('physical', context),
-                                          checked: productProvider.filterModel.productType!.contains('physical'),
-                                          onTap: () {
-                                            if(productProvider.filterModel.productType!.contains('physical')) {
-                                              productProvider.filterModel.productType!.remove('physical');
-                                            } else{
-                                              productProvider.filterModel.productType!.add('physical');
-                                            }
-                                            _onCloseKeyboard(minPriceController, maxPriceController);
-                                            productProvider.setSelectedProductType(type: ProductTypeEnum.physical);
-                                            productProvider.onClearAuthorIds();
-                                            productProvider.onClearPublisherIds();
-                                          },
-                                        ),
-                                      ),
-                                      Expanded(
-                                        child: _CheckboxItem(
-                                          isStart: true,
-                                          title: getTranslated('digital', context),
-                                          checked: productProvider.filterModel.productType!.contains('digital'),
-                                          onTap: () {
-                                            if(productProvider.filterModel.productType!.contains('digital')) {
-                                              productProvider.filterModel.productType!.remove('digital');
-                                            } else{
-                                              productProvider.filterModel.productType!.add('digital');
-                                            }
-                                            _onCloseKeyboard(minPriceController, maxPriceController);
-                                            productProvider.setSelectedProductType(type: ProductTypeEnum.digital);
-                                            productProvider.onClearBrandIds();
-                                          },
-                                        ),
-                                      ),
-                                    ],
+                                  _CheckboxItem(
+                                    isStart: true,
+                                    title: getTranslated('physical', context),
+                                    checked: productProvider.filterModel.productType!.contains('physical'),
+                                    onTap: () {
+                                      if(productProvider.filterModel.productType!.contains('physical')) {
+                                        productProvider.filterModel.productType!.remove('physical');
+                                      } else{
+                                        productProvider.filterModel.productType!.add('physical');
+                                      }
+                                      _onCloseKeyboard(minPriceController, maxPriceController);
+                                      productProvider.setSelectedProductType(type: ProductTypeEnum.physical);
+                                      productProvider.onClearAuthorIds();
+                                      productProvider.onClearPublisherIds();
+                                    },
                                   ),
 
                                   SizedBox(height: Dimensions.paddingSizeSmall),
@@ -303,95 +279,83 @@ class _ProductFilterBottomSheetState extends State<ProductFilterBottomSheet> {
 
 
 
-                      if(!productProvider.filterModel.productType!.contains('digital'))...[
-                        Container(
-                          padding: const EdgeInsets.symmetric(vertical: Dimensions.paddingSizeSmall, horizontal: Dimensions.paddingSizeMedium),
-                          decoration: BoxDecoration(
-                            color: Theme.of(context).primaryColor.withValues(alpha: 0.05),
-                            borderRadius: BorderRadius.circular(Dimensions.radiusDefault),
-                          ),
-                          child: Consumer<ProductController>(builder: (context, productController, _) {
-                              return Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  TitleWidget(title: getTranslated('brand', context)!),
+                      Container(
+                        padding: const EdgeInsets.symmetric(vertical: Dimensions.paddingSizeSmall, horizontal: Dimensions.paddingSizeMedium),
+                        decoration: BoxDecoration(
+                          color: Theme.of(context).primaryColor.withValues(alpha: 0.05),
+                          borderRadius: BorderRadius.circular(Dimensions.radiusDefault),
+                        ),
+                        child: Consumer<ProductController>(builder: (context, productController, _) {
+                            return Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                TitleWidget(title: getTranslated('brand', context)!),
 
-                                  Container(
-                                    padding: const EdgeInsets.all(Dimensions.paddingSizeSmall),
-                                    decoration: BoxDecoration(
-                                      color: Theme.of(context).cardColor,
-                                      borderRadius: BorderRadius.circular(Dimensions.radiusDefault),
-                                    ),
-                                    child: Column(
-                                          children: [
-                                            _CheckboxItem(
-                                              title: getTranslated('all', context),
-                                              checked: productProvider.selectedBrandIds.isEmpty,
-                                              onTap: () => productProvider.onClearBrandIds(),
-                                            ),
+                                Container(
+                                  padding: const EdgeInsets.all(Dimensions.paddingSizeSmall),
+                                  decoration: BoxDecoration(
+                                    color: Theme.of(context).cardColor,
+                                    borderRadius: BorderRadius.circular(Dimensions.radiusDefault),
+                                  ),
+                                  child: Column(
+                                        children: [
+                                          _CheckboxItem(
+                                            title: getTranslated('all', context),
+                                            checked: productProvider.selectedBrandIds.isEmpty,
+                                            onTap: () => productProvider.onClearBrandIds(),
+                                          ),
 
-                                            Consumer<ProductController>(builder: (context, productController, _) {
-                                              return Column(
-                                                children: [
-                                                  ListView.builder(
-                                                    itemCount: productController.brandList?.length ?? 0,
-                                                    shrinkWrap: true,
-                                                    physics: const NeverScrollableScrollPhysics(),
-                                                    itemBuilder: (context, index){
-                                                      if (!productController.brandSeeMore && index > 3) return const SizedBox.shrink();
-                                                      if(productController.brandList?[index].id == null) return const SizedBox.shrink();
+                                          Consumer<ProductController>(builder: (context, productController, _) {
+                                            return Column(
+                                              children: [
+                                                ListView.builder(
+                                                  itemCount: productController.brandList?.length ?? 0,
+                                                  shrinkWrap: true,
+                                                  physics: const NeverScrollableScrollPhysics(),
+                                                  itemBuilder: (context, index){
+                                                    if (!productController.brandSeeMore && index > 3) return const SizedBox.shrink();
+                                                    if(productController.brandList?[index].id == null) return const SizedBox.shrink();
 
-                                                      return _CheckboxItem(
-                                                        title: productController.brandList?[index].name,
-                                                        checked: productProvider.selectedBrandIds.contains(productController.brandList?[index].id),
-                                                        onTap: () {
-                                                          // _onCloseKeyboard(minPriceController, maxPriceController);
-                                                          productProvider.onChangeBrandIds(productController.brandList![index].id!);
-                                                        },
-                                                      );
-                                                    },
-                                                  ),
+                                                    return _CheckboxItem(
+                                                      title: productController.brandList?[index].name,
+                                                      checked: productProvider.selectedBrandIds.contains(productController.brandList?[index].id),
+                                                      onTap: () {
+                                                        // _onCloseKeyboard(minPriceController, maxPriceController);
+                                                        productProvider.onChangeBrandIds(productController.brandList![index].id!);
+                                                      },
+                                                    );
+                                                  },
+                                                ),
 
 
-                                                ],
-                                              );
-                                            }),
+                                              ],
+                                            );
+                                          }),
 
-                                            SizedBox(height: Dimensions.paddingSizeSmall),
-                                          ],
+                                          SizedBox(height: Dimensions.paddingSizeSmall),
+                                        ],
 
-                                    ),
+                                  ),
+                                ),
+
+
+
+                                if((productController.brandList?.length ?? 0) > 4)
+                                  _ViewMoreWidget(
+                                    count: ((productController.brandList!.length) - 4).toString(),
+                                    onTap: () {
+                                      productProvider.toggleBrandSeeMore();
+                                    },
+                                    isMore: productProvider.brandSeeMore,
+                                    isActive: true,
                                   ),
 
-
-
-                                  if((productController.brandList?.length ?? 0) > 4)
-                                    _ViewMoreWidget(
-                                      count: ((productController.brandList!.length) - 4).toString(),
-                                      onTap: () {
-                                        productProvider.toggleBrandSeeMore();
-                                      },
-                                      isMore: productProvider.brandSeeMore,
-                                      isActive: true,
-                                    ),
-
-                                ],
-                              );
-                            }
-                          ),
+                              ],
+                            );
+                          }
                         ),
-                        const SizedBox(height: Dimensions.paddingSizeMedium),
-                      ],
-
-
-
-                      if(!productProvider.filterModel.productType!.contains('physical')) ...[
-                        _PublisherFilterItemWidget(minPriceController, maxPriceController),
-                        const SizedBox(height: Dimensions.paddingSizeMedium),
-                        _AuthorFilterItemWidget(minPriceController, maxPriceController),
-                        const SizedBox(height: Dimensions.paddingSizeMedium),
-                      ],
-
+                      ),
+                      const SizedBox(height: Dimensions.paddingSizeMedium),
 
                       // 8. Category
                       Consumer<CategoryController>(builder: (context, addProductProvider, _) {
@@ -666,160 +630,6 @@ class _CheckboxItem extends StatelessWidget {
         ),
       ),
     );
-  }
-}
-
-class _PublisherFilterItemWidget extends StatelessWidget {
-  final TextEditingController minPriceController;
-  final TextEditingController maxPriceController;
-  const _PublisherFilterItemWidget(this.minPriceController, this.maxPriceController);
-
-  @override
-  Widget build(BuildContext context) {
-    return Consumer<ProductController>(builder: (context, productController, _) {
-      return Consumer<DigitalProductController>(builder: (context, digitalProductController, _) {
-        return Container(
-            padding: const EdgeInsets.symmetric(vertical: Dimensions.paddingSizeSmall, horizontal: Dimensions.paddingSizeMedium),
-            decoration: BoxDecoration(
-              color: Theme.of(context).primaryColor.withValues(alpha: 0.05),
-              borderRadius: BorderRadius.circular(Dimensions.radiusDefault),
-            ),
-            child: Consumer<ProductController>(builder: (context, productController, _) {
-              return Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  TitleWidget(title: getTranslated('publisher', context)!),
-
-                  Container(
-                    padding: const EdgeInsets.all(Dimensions.paddingSizeSmall),
-                    decoration: BoxDecoration(
-                      color: Theme.of(context).cardColor,
-                      borderRadius: BorderRadius.circular(Dimensions.radiusDefault),
-                    ),
-                    child: Column(
-                      children: [
-                        Consumer<ProductController>(builder: (context, productController, _) {
-                          return Column(
-                            children: [
-                              ListView.builder(
-                                shrinkWrap: true,
-                                physics: const NeverScrollableScrollPhysics(),
-                                itemCount: digitalProductController.publishingHouseList?.length ?? 0,
-                                itemBuilder: (context, index){
-                                  if (!productController.publishingHouseSeeMore && index > 3) return const SizedBox.shrink();
-                                  if(digitalProductController.publishingHouseList?[index].id == null) return const SizedBox.shrink();
-
-                                  return _CheckboxItem(
-                                    title: digitalProductController.publishingHouseList?[index].name,
-                                    checked: productController.selectedPublishingHouseIds.contains(digitalProductController.publishingHouseList?[index].id),
-                                    onTap: () => productController.onChangePublisherIds(digitalProductController.publishingHouseList![index].id!),
-                                  );
-                                },
-                              ),
-                            ],
-                          );
-                        }),
-
-                        SizedBox(height: Dimensions.paddingSizeSmall),
-                      ],
-
-                    ),
-                  ),
-
-                  if((digitalProductController.publishingHouseList?.length ?? 0) > 4)
-                    _ViewMoreWidget(
-                      count: ((digitalProductController.publishingHouseList!.length) - 4).toString(),
-                      onTap: () {
-                        _onCloseKeyboard(minPriceController, maxPriceController);
-                        productController.onTogglePublishingHouseSeeMore();
-                      },
-                      isMore: productController.publishingHouseSeeMore,
-                      isActive: true,
-                    ),
-
-                ],
-              );
-            }
-            ),
-          );
-
-      });
-    }
-    );
-  }
-}
-
-class _AuthorFilterItemWidget extends StatelessWidget {
-  final TextEditingController minPriceController;
-  final TextEditingController maxPriceController;
-  const _AuthorFilterItemWidget(this.minPriceController, this.maxPriceController);
-
-  @override
-  Widget build(BuildContext context) {
-    return Consumer<ProductController>(builder: (context, productController, _) {
-      return Consumer<DigitalProductController>(builder: (context, digitalProductController, _) {
-        return
-          Container(
-            padding: const EdgeInsets.symmetric(vertical: Dimensions.paddingSizeSmall, horizontal: Dimensions.paddingSizeMedium),
-            decoration: BoxDecoration(
-              color: Theme.of(context).primaryColor.withValues(alpha: 0.05),
-              borderRadius: BorderRadius.circular(Dimensions.radiusDefault),
-            ),
-            child: Consumer<ProductController>(builder: (context, productController, _) {
-              return Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  TitleWidget(title: getTranslated('author', context)!),
-
-                  Container(
-                    padding: const EdgeInsets.all(Dimensions.paddingSizeSmall),
-                    decoration: BoxDecoration(
-                      color: Theme.of(context).cardColor,
-                      borderRadius: BorderRadius.circular(Dimensions.radiusDefault),
-                    ),
-                    child: Column(
-                      children: [
-                        ListView.builder(
-                          shrinkWrap: true,
-                          physics: const NeverScrollableScrollPhysics(),
-                          itemCount: digitalProductController.authorsList?.length ?? 0,
-                          itemBuilder: (context, index){
-                            if (!productController.authorSeeMore && index > 3) return const SizedBox.shrink();
-                            if(digitalProductController.authorsList?[index].id == null) return const SizedBox.shrink();
-
-                            return _CheckboxItem(
-                              title: digitalProductController.authorsList?[index].name,
-                              checked: productController.selectedAuthorIds.contains(digitalProductController.authorsList?[index].id),
-                              onTap: () => productController.onChangeAuthorIds(digitalProductController.authorsList![index].id!),
-                            );
-                          },
-                        ),
-
-                        SizedBox(height: Dimensions.paddingSizeSmall),
-                      ],
-
-                    ),
-                  ),
-
-                  if((digitalProductController.authorsList?.length ?? 0) > 4)
-                    _ViewMoreWidget(
-                      count: ((digitalProductController.authorsList?.length ?? 0) - 4).toString(),
-                      onTap: (){
-                        _onCloseKeyboard(minPriceController, maxPriceController);
-                        productController.onToggleAuthorSeeMore();
-                      },
-                      isMore: productController.authorSeeMore,
-                      isActive: true,
-                    ),
-
-                ],
-              );
-            }
-            ),
-          );
-
-      });
-    });
   }
 }
 
@@ -1133,7 +943,6 @@ class _ButtonWidget extends StatelessWidget {
   }
 
   bool _areBrandsEqual(Set<int> brandIds, Set<int> currentBrandIds, ProductTypeEnum? type) {
-    if(type == ProductTypeEnum.digital) return true;
     return brandIds.length == currentBrandIds.length && brandIds.containsAll(currentBrandIds);
   }
 }

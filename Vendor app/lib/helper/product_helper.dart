@@ -1,6 +1,5 @@
 import 'dart:math' as math;
 import 'package:sixvalley_vendor_app/features/product/domain/models/product_model.dart';
-import 'package:sixvalley_vendor_app/features/product_details/enums/preview_type.dart';
 import 'package:html/parser.dart';
 import 'package:html/dom.dart';
 
@@ -36,28 +35,6 @@ class ProductHelper {
       sku += chars[random.nextInt(chars.length)];
     }
     return sku;
-  }
-
-
-  static PreviewType getFileType(String url) {
-    if(url.contains('.pdf')) {
-      return PreviewType.pdf;
-    } else if(url.contains('.jpg') || url.contains('.jpeg') || url.contains('.png')) {
-      return  PreviewType.image;
-    } else if(url.contains('.mp4') || url.contains('.mkv') || url.contains('.avi') || url.contains('.flv') || url.contains('.mov') || url.contains('.wmv') || url.contains('.webm')) {
-      return PreviewType.video;
-    } else if ( url.contains('.mp3') || url.contains('.wav') || url.contains('.aac') || url.contains('.wma') || url.contains('.amr')) {
-      return PreviewType.audio;
-    }else {
-      return PreviewType.others;
-    }
-  }
-
-  static String getFileExtension(String fileName) {
-    if (fileName.contains('.')) {
-      return '.${fileName.split('.').last}';
-    }
-    return '';
   }
 
 

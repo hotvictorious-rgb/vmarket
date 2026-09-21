@@ -4,8 +4,9 @@ import 'package:get_it/get_it.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:sixvalley_vendor_app/features/addProduct/controllers/add_product_image_controller.dart';
 import 'package:sixvalley_vendor_app/features/addProduct/controllers/add_product_tax_controller.dart';
-import 'package:sixvalley_vendor_app/features/addProduct/controllers/digital_product_controller.dart';
 import 'package:sixvalley_vendor_app/features/addProduct/controllers/variation_controller.dart';
+import 'package:sixvalley_vendor_app/features/addProduct/domain/repository/add_product_repository.dart';
+import 'package:sixvalley_vendor_app/features/addProduct/domain/repository/add_product_repository_interface.dart';
 import 'package:sixvalley_vendor_app/features/auth/domain/repositories/auth_repository.dart';
 import 'package:sixvalley_vendor_app/features/auth/domain/repositories/auth_repository_interface.dart';
 import 'package:sixvalley_vendor_app/features/auth/domain/services/auth_service.dart';
@@ -26,6 +27,8 @@ import 'package:sixvalley_vendor_app/features/coupon/domain/repositories/coupon_
 import 'package:sixvalley_vendor_app/features/coupon/domain/services/coupon_service.dart';
 import 'package:sixvalley_vendor_app/features/coupon/domain/services/coupon_service_interface.dart';
 
+import 'package:sixvalley_vendor_app/features/emergency_contract/domain/repositories/emergency_contact_repository.dart';
+import 'package:sixvalley_vendor_app/features/emergency_contract/domain/repositories/emergency_contract_repository_interface.dart';
 import 'package:sixvalley_vendor_app/features/emergency_contract/domain/services/emergency_contruct_service_interface.dart';
 import 'package:sixvalley_vendor_app/features/emergency_contract/domain/services/emergency_service.dart';
 import 'package:sixvalley_vendor_app/features/notification/controllers/notification_controller.dart';
@@ -44,11 +47,6 @@ import 'package:sixvalley_vendor_app/features/order_details/domain/repositories/
 import 'package:sixvalley_vendor_app/features/order_details/domain/repositories/order_details_repository_interface.dart';
 import 'package:sixvalley_vendor_app/features/order_details/domain/services/order_details_service.dart';
 import 'package:sixvalley_vendor_app/features/order_details/domain/services/order_details_service_interface.dart';
-import 'package:sixvalley_vendor_app/features/order_edit/controllers/order_edit_controller.dart';
-import 'package:sixvalley_vendor_app/features/order_edit/domain/repositories/order_edit_repository.dart';
-import 'package:sixvalley_vendor_app/features/order_edit/domain/repositories/order_edit_repository_interface.dart';
-import 'package:sixvalley_vendor_app/features/order_edit/domain/services/order_edit_service.dart';
-import 'package:sixvalley_vendor_app/features/order_edit/domain/services/order_edit_service_interface.dart';
 
 import 'package:sixvalley_vendor_app/features/product/controllers/category_controller.dart';
 import 'package:sixvalley_vendor_app/features/product/domain/repositories/category_repository.dart';
@@ -173,7 +171,7 @@ Future<void> init() async {
   // Interface
   AuthRepositoryInterface authRepoInterface = AuthRepository(dioClient: sl(), sharedPreferences: sl(), secureStorage: sl());
   sl.registerLazySingleton(() => authRepoInterface);
-  BankInfoRepositoryInterface bankInfoRepoInterface = BankInfoRepository(dioClient: sl(), sharedPreferences: sl());
+  BankInfoRepositoryInterface bankInfoRepoInterface = BankInfoRepository(dioClient: sl(), sharedPreferences: sl(), secureStorage: sl());
   sl.registerLazySingleton(() => bankInfoRepoInterface);
   ChatRepositoryInterface chatRepoInterface = ChatRepository(dioClient: sl());
   sl.registerLazySingleton(() => chatRepoInterface);
@@ -223,8 +221,6 @@ Future<void> init() async {
   sl.registerLazySingleton(() => categoryRepositoryInterface);
   VatRepositoryInterface vatRepositoryInterface = VatRepository(dioClient: sl());
   sl.registerLazySingleton(() => vatRepositoryInterface);
-  OrderEditRepositoryInterface orderEditRepositoryInterface = OrderEditRepository(dioClient: sl());
-  sl.registerLazySingleton(() => orderEditRepositoryInterface);
 
   // Services
   AuthServiceInterface authServiceInterface = AuthService(authRepoInterface: sl());
@@ -279,8 +275,6 @@ Future<void> init() async {
   sl.registerLazySingleton(() => categoryServiceInterface);
   VatServiceInterface vatServiceInterface = VatService(vatRepoInterface: sl());
   sl.registerLazySingleton(() => vatServiceInterface);
-  OrderEditServiceInterface orderEditServiceInterface = OrderEditService(orderEditRepositoryInterface: sl());
-  sl.registerLazySingleton(() => orderEditServiceInterface);
 
   // Repository
   sl.registerLazySingleton(() => AuthRepository(sharedPreferences: sl(), dioClient: sl(), secureStorage: sl()));
@@ -310,7 +304,6 @@ Future<void> init() async {
   sl.registerLazySingleton(() => ClearanceSaleRepository(dioClient: sl()));
   sl.registerLazySingleton(() => CategoryRepository(dioClient: sl(), sharedPreferences: sl()));
   sl.registerLazySingleton(() => VatRepository(dioClient: sl()));
-  sl.registerLazySingleton(() => OrderEditRepository(dioClient: sl()));
 
   // Controller
   sl.registerFactory(() => AuthController(authServiceInterface: sl()));
@@ -348,9 +341,7 @@ Future<void> init() async {
   sl.registerFactory(() => TutorialController());
   sl.registerFactory(() => AddProductImageController(shopServiceInterface: sl()));
   sl.registerFactory(() => VariationController(addProductServiceInterface: sl()));
-  sl.registerFactory(() => DigitalProductController(addProductServiceInterface: sl()));
   sl.registerFactory(() => CategoryController(categoryServiceInterface: sl()));
   sl.registerFactory(() => AddProductTaxController(addProductServiceInterface: sl()));
   sl.registerFactory(() => VatController(vatServiceInterface: sl()));
-  sl.registerFactory(() => OrderEditController(orderEditServiceInterface: sl()));
 }

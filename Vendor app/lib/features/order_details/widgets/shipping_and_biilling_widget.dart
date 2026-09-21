@@ -17,9 +17,8 @@ import 'package:sixvalley_vendor_app/features/order_details/widgets/show_on_map_
 
 class ShippingAndBillingWidget extends StatefulWidget {
   final Order? orderModel;
-  final bool? onlyDigital;
   final String orderType;
-  const ShippingAndBillingWidget({super.key, this.orderModel, this.onlyDigital, required this.orderType});
+  const ShippingAndBillingWidget({super.key, this.orderModel, required this.orderType});
 
   @override
   State<ShippingAndBillingWidget> createState() => _ShippingAndBillingWidgetState();
@@ -34,7 +33,6 @@ class _ShippingAndBillingWidgetState extends State<ShippingAndBillingWidget> {
   Widget build(BuildContext context) {
     return  widget.orderModel?.orderType == 'POS' ? SizedBox() :
     CollapsibleAddressSection(
-      onlyDigital: widget.onlyDigital,
       orderType: widget.orderType,
       orderModel: widget.orderModel,
       addressContent: Column(
@@ -276,10 +274,9 @@ class _ShippingAndBillingWidgetState extends State<ShippingAndBillingWidget> {
 
 class CollapsibleAddressSection extends StatefulWidget {
   final Widget addressContent;
-  final bool? onlyDigital;
   final String orderType;
   final Order? orderModel;
-  const CollapsibleAddressSection({super.key, required this.addressContent, this.onlyDigital, required this.orderType, this.orderModel});
+  const CollapsibleAddressSection({super.key, required this.addressContent, required this.orderType, this.orderModel});
 
   @override
   State<CollapsibleAddressSection> createState() => _CollapsibleAddressSectionState();
@@ -311,7 +308,7 @@ class _CollapsibleAddressSectionState extends State<CollapsibleAddressSection>
                 ),
 
 
-                widget.orderType != 'POS' || !widget.onlyDigital!?
+                widget.orderType != 'POS'?
                 Provider.of<SplashController>(context, listen: false).configModel!.mapApiStatus == 1 ?
                 Consumer<OrderDetailsController>(
                   builder:  (context, resProvider, child) {

@@ -1,1 +1,1 @@
-enum ProductTypeEnum { all, physical, digital }
+enum ProductTypeEnum { all, physical }

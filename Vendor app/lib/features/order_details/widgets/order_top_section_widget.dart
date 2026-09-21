@@ -2,20 +2,14 @@ import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:sixvalley_vendor_app/common/basewidgets/custom_asset_image_widget.dart';
-import 'package:sixvalley_vendor_app/common/basewidgets/custom_confirmation_dialog_widget.dart';
-import 'package:sixvalley_vendor_app/common/basewidgets/custom_dialog_widget.dart';
-import 'package:sixvalley_vendor_app/common/basewidgets/custom_snackbar_widget.dart';
 import 'package:sixvalley_vendor_app/features/dashboard/screens/dashboard_screen.dart';
 import 'package:sixvalley_vendor_app/features/order/domain/models/order_model.dart';
 import 'package:sixvalley_vendor_app/features/order_details/controllers/order_details_controller.dart';
-import 'package:sixvalley_vendor_app/features/order_edit/screens/edit_product_screen.dart';
-import 'package:sixvalley_vendor_app/features/splash/controllers/splash_controller.dart';
 import 'package:sixvalley_vendor_app/localization/language_constrants.dart';
 import 'package:sixvalley_vendor_app/utill/app_constants.dart';
 import 'package:sixvalley_vendor_app/utill/dimensions.dart';
 import 'package:sixvalley_vendor_app/utill/images.dart';
 import 'package:sixvalley_vendor_app/utill/styles.dart';
-import '../../../main.dart';
 
 
 class OrderTopSectionWidget extends StatelessWidget {
@@ -133,44 +127,8 @@ class OrderTopSectionWidget extends StatelessWidget {
         right: 0,
         child: Consumer<OrderDetailsController>(
           builder: (context, orderProvider, _) {
-            final String orderStatus = orderModel?.orderStatus?.toLowerCase() ?? '';
-            bool canEdit = (Provider.of<SplashController>(Get.context!, listen: false).configModel?.canVendorEditOrder == 1
-              && (orderStatus == 'pending' || orderStatus == 'confirmed'));
-
-            bool onlyDigitalProduct = (orderProvider.orderDetails != null && orderProvider.orderDetails?.length == 1 && orderProvider.orderDetails?[0].productDetails?.productType  == 'digital') ;
-
-            bool isPaymentVerified = (orderModel?.paymentStatus != 'paid' && orderModel?.paymentMethod == 'offline_payment');
-
-            return Row(
-              children: [
-                InkWell(
-                  onTap: () {
-                    if(isPaymentVerified) {
-                      showCustomSnackBarWidget(getTranslated('please_confirm_offline_payment', context) ?? '', context, sanckBarType: SnackBarType.warning);
-                    } else if(onlyDigitalProduct) {
-                      showCustomSnackBarWidget(getTranslated('order_containing_only_digital', context) ?? '', context, sanckBarType: SnackBarType.warning);
-                    } else if(canEdit) {
-                      showAnimatedDialogWidget(
-                        context,
-                        CustomConfirmationDialogWidget(
-                          icon: Images.editOrderWarningIcon,
-                          title: getTranslated('edit_this_order', context) ?? '',
-                          description: getTranslated('make_sure_you_have_saved_all_changes', context) ?? '',
-                          onYesPressed: () {
-                            Navigator.of(context).pop();
-                            Navigator.push(context, MaterialPageRoute(builder: (_) => EditProductScreen(orderDetails: orderProvider.orderDetails ?? [])));
-                          },
-                        )
-                      );
-                    } else {
-                      showCustomSnackBarWidget(getTranslated('vendors_are_not_allowed_to_edit', context) ?? '', context, sanckBarType: SnackBarType.warning);
-                    }
-                  },
-                  child: CustomAssetImageWidget(Images.editOrderIcon, height: 20, width: 20,
-                    color: (canEdit && !onlyDigitalProduct && !isPaymentVerified) ? Theme.of(context).primaryColor : Theme.of(context).primaryColor.withValues(alpha: 0.4)
-                  )
-                ),
-
+                return Row(
+                  children: [
                 InkWell(
                   onTap: () {
                     if (orderModel?.id != null) {

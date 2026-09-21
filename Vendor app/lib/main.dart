@@ -14,12 +14,10 @@ import 'package:provider/provider.dart';
 import 'package:sixvalley_vendor_app/common/basewidgets/custom_asset_image_widget.dart';
 import 'package:sixvalley_vendor_app/features/addProduct/controllers/add_product_image_controller.dart';
 import 'package:sixvalley_vendor_app/features/addProduct/controllers/add_product_tax_controller.dart';
-import 'package:sixvalley_vendor_app/features/addProduct/controllers/digital_product_controller.dart';
 import 'package:sixvalley_vendor_app/features/addProduct/controllers/variation_controller.dart';
 import 'package:sixvalley_vendor_app/features/clearance_sale/controllers/clearance_sale_controller.dart';
 import 'package:sixvalley_vendor_app/features/notification/controllers/notification_controller.dart';
 import 'package:sixvalley_vendor_app/features/order_details/controllers/order_details_controller.dart';
-import 'package:sixvalley_vendor_app/features/order_edit/controllers/order_edit_controller.dart';
 import 'package:sixvalley_vendor_app/features/product/controllers/category_controller.dart';
 import 'package:sixvalley_vendor_app/features/product/widgets/cookies_widget.dart';
 import 'package:sixvalley_vendor_app/features/product_details/controllers/product_details_controller.dart';
@@ -142,13 +140,11 @@ Future<void> main() async {
       ChangeNotifierProvider(create: (context) => di.sl<ClearanceSaleController>()),
       ChangeNotifierProvider(create: (context) => di.sl<AddProductImageController>()),
       ChangeNotifierProvider(create: (context) => di.sl<VariationController>()),
-      ChangeNotifierProvider(create: (context) => di.sl<DigitalProductController>()),
       ChangeNotifierProvider(create: (context) => di.sl<CategoryController>()),
       ChangeNotifierProvider(create: (context) => di.sl<ShowBottomSheetController>()),
       ChangeNotifierProvider(create: (context) => di.sl<TutorialController>()),
       ChangeNotifierProvider(create: (context) => di.sl<AddProductTaxController>()),
-      ChangeNotifierProvider(create: (context) => di.sl<VatController>()),
-      ChangeNotifierProvider(create: (context) => di.sl<OrderEditController>())
+      ChangeNotifierProvider(create: (context) => di.sl<VatController>())
     ],
     child: _GlobalScrollListener(
       child: MyApp(body: body)

@@ -1,6 +1,5 @@
 
- import 'dart:io';
-import 'package:flutter/cupertino.dart';
+ import 'package:flutter/cupertino.dart';
 import 'package:sixvalley_vendor_app/features/addProduct/domain/models/add_product_model.dart';
 import 'package:sixvalley_vendor_app/features/product/domain/models/product_model.dart';
 import 'package:sixvalley_vendor_app/features/addProduct/domain/models/image_model.dart';
@@ -17,8 +16,8 @@ class AddProductService implements AddProductServiceInterface{
   }
 
   @override
-  Future addProduct(Product product, AddProductModel addProduct, Map<String, dynamic> attributes, List<Map<String, dynamic>>? productImages, String? thumbnail, String? metaImage, bool isAdd, bool isActiveColor, List<ColorImage> colorImageObject, List<String?> tags, String? digitalFileReady, DigitalVariationModel? digitalVariationModel, bool? isDigitalVariationActive, String? token) async{
-    return await shopRepoInterface.addProduct(product, addProduct, attributes, productImages, thumbnail, metaImage, isAdd, isActiveColor, colorImageObject, tags, digitalFileReady, digitalVariationModel, isDigitalVariationActive, token);
+  Future addProduct(Product product, AddProductModel addProduct, Map<String, dynamic> attributes, List<Map<String, dynamic>>? productImages, String? thumbnail, String? metaImage, bool isAdd, bool isActiveColor, List<ColorImage> colorImageObject, List<String?> tags, String? token) async{
+    return await shopRepoInterface.addProduct(product, addProduct, attributes, productImages, thumbnail, metaImage, isAdd, isActiveColor, colorImageObject, tags, token);
   }
 
   @override
@@ -60,11 +59,6 @@ class AddProductService implements AddProductServiceInterface{
 
 
   @override
-  Future uploadDigitalProduct(File? filePath, String token) {
-   return shopRepoInterface.uploadDigitalProduct(filePath, token);
-  }
-
-  @override
   Future deleteProductImage(String id, String name, String? color) {
     return shopRepoInterface.deleteProductImage(id, name, color);
   }
@@ -74,25 +68,9 @@ class AddProductService implements AddProductServiceInterface{
     return shopRepoInterface.getProductImage(id);
   }
 
-  @override
-  Future deleteDigitalVariationFile(int? productId, String variantKey) {
-   return shopRepoInterface.deleteDigitalVariationFile(productId, variantKey);
-  }
-
- @override
+@override
  Future deleteProductPreview(int? id) {
   return shopRepoInterface.deleteProductPreview(id);
- }
-
-
- @override
- Future getDigitalAuthor() {
-  return shopRepoInterface.getDigitalAuthor();
- }
-
- @override
- Future getPublishingHouse() {
-  return shopRepoInterface.getPublishingHouse();
  }
 
  @override

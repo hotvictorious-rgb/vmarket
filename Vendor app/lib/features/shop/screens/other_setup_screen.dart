@@ -289,7 +289,7 @@ class _OtherSetupScreenState extends State<OtherSetupScreen> {
                                                     shopController.removeTinCertificateFile();
                                                   }
                                                 } ,
-                                                child: shopController.isLoading ? const Center(child: SizedBox(height: 25, width: 25, child: SizedBox())) : Image.asset(width:25, Images.digitalPreviewDeleteIcon))
+                                                child: shopController.isLoading ? const Center(child: SizedBox(height: 25, width: 25, child: SizedBox())) : Image.asset(width:25, Images.delete))
                                             ),
 
 
@@ -304,27 +304,6 @@ class _OtherSetupScreenState extends State<OtherSetupScreen> {
                                                 fileName: shopController.shopModel?.tinCertificateFullUrl?.key ?? '');
                                               },
                                               child: const CustomAssetImageWidget(Images.tinDownloadIcon, width: 25, height: 25)
-                                            ),
-                                          ),
-
-
-
-                                          if(shopController.tinCertificateFile == null && shopController.shopModel?.tinCertificateFullUrl?.path != null && shopController.shopModel?.tinCertificateFullUrl?.path != '')
-                                          Positioned(
-                                            top: 0, right: 35,
-                                            child: shopController.isDownloadLoading ?
-                                            const SizedBox(height: 25, width: 25) :
-                                            InkWell(
-                                              onTap: () {
-                                                showPreview(
-                                                  shopController.shopModel?.tinCertificateFullUrl?.path ?? '', '',
-                                                  shopController.shopModel?.tinCertificateFullUrl?.key ?? '', context
-                                                );
-                                              },
-                                              child: const Padding(
-                                                padding: EdgeInsets.all(Dimensions.paddingSizeSmall),
-                                                child: Icon(Icons.remove_red_eye)
-                                              )
                                             ),
                                           ),
 

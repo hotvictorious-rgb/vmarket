@@ -21,8 +21,6 @@ class OrderDetailsModel {
   String? shippingMethodId;
   String? variant;
   List<ModifiedVariation>? variation;
-  List<OrderEditHistory>?  orderEditHistory;
-  OrderEditHistory? latestEditHistory;
   String? discountType;
   int? refundRequest;
   List<VerificationImages>? verificationImages;
@@ -62,8 +60,6 @@ class OrderDetailsModel {
         this.currentProductStock,
         this.currentProductPrice,
         this.productAllStatus,
-        this.orderEditHistory,
-        this.latestEditHistory,
         this.editOrderPaymentHistory
       });
 
@@ -92,13 +88,6 @@ class OrderDetailsModel {
       });
     }
 
-    if (json['order_edit_history'] != null) {
-      orderEditHistory = <OrderEditHistory>[];
-      json['order_edit_history'].forEach((v) {
-        orderEditHistory!.add(OrderEditHistory.fromJson(v));
-      });
-    }
-
     discountType = json['discount_type'];
     refundRequest = json['refund_request'];
     if (json['verification_images'] != null) {
@@ -114,7 +103,6 @@ class OrderDetailsModel {
     currentProductStock = json['current_stock'];
     currentProductPrice = json['current_price'] != null ? double.tryParse(json['current_price'].toString()) : 0;
     productAllStatus = (json['product_all_status'] != null && json['product_all_status'] is !String) ? Product.fromJson(json['product_all_status']) : null;
-    latestEditHistory = json['latest_edit_history'] != null ? OrderEditHistory.fromJson(json['latest_edit_history']) : null;
 
     editOrderPaymentHistory = json['edit_order_payment_histories'] != null ?
     (json['edit_order_payment_histories'] as List)
@@ -597,102 +585,6 @@ class ModifiedVariation {
   }
 }
 
-class OrderEditHistory {
-  int? id;
-  int? uId;
-  int? orderId;
-  String? editBy;
-  int? editedUserId;
-  String? editedUserName;
-  double? orderAmount;
-  double? orderDueAmount;
-  String? orderDuePaymentStatus;
-  OfflinePaymentsEdit? orderDuePaymentInfo;
-  String? orderDuePaymentMethod;
-  String? orderDueTransactionRef;
-  String? orderDuePaymentNote;
-  double? orderReturnAmount;
-  String? orderReturnPaymentStatus;
-  String? orderReturnPaymentMethod;
-  OfflinePaymentsEdit? orderReturnPaymentInfo;
-  String? orderReturnTransactionRef;
-  String? orderReturnPaymentNote;
-  String? createdAt;
-  String? updatedAt;
-
-  OrderEditHistory(
-      {this.id,
-        this.uId,
-        this.orderId,
-        this.editBy,
-        this.editedUserId,
-        this.editedUserName,
-        this.orderAmount,
-        this.orderDueAmount,
-        this.orderDuePaymentStatus,
-        this.orderDuePaymentInfo,
-        this.orderDuePaymentMethod,
-        this.orderDueTransactionRef,
-        this.orderDuePaymentNote,
-        this.orderReturnAmount,
-        this.orderReturnPaymentStatus,
-        this.orderReturnPaymentMethod,
-        this.orderReturnPaymentInfo,
-        this.orderReturnTransactionRef,
-        this.orderReturnPaymentNote,
-        this.createdAt,
-        this.updatedAt});
-
-  OrderEditHistory.fromJson(Map<String, dynamic> json) {
-    id = json['id'];
-    uId = json['u_id'];
-    orderId = json['order_id'];
-    editBy = json['edit_by'];
-    editedUserId = json['edited_user_id'];
-    editedUserName = json['edited_user_name'];
-    orderAmount = json['order_amount'] != null ? double.tryParse(json['order_amount'].toString()) : 0;
-    orderDueAmount =  json['order_due_amount'] != null ? double.tryParse(json['order_due_amount'].toString()) : 0;
-    orderDuePaymentStatus = json['order_due_payment_status'];
-    orderDuePaymentInfo = json['order_due_payment_info'] != null ? OfflinePaymentsEdit.fromJson(json['order_due_payment_info']) : null;
-    orderDuePaymentMethod = json['order_due_payment_method'];
-    orderDueTransactionRef = json['order_due_transaction_ref'];
-    orderDuePaymentNote = json['order_due_payment_note'];
-    orderReturnAmount = json['order_return_amount'] != null ? double.tryParse(json['order_return_amount'].toString()) : 0;
-    orderReturnPaymentStatus = json['order_return_payment_status'];
-    orderReturnPaymentMethod = json['order_return_payment_method'];
-    orderReturnPaymentInfo = json['order_return_payment_info'];
-    orderReturnTransactionRef = json['order_return_transaction_ref'];
-    orderReturnPaymentNote = json['order_return_payment_note'];
-    createdAt = json['created_at'];
-    updatedAt = json['updated_at'];
-  }
-
-  Map<String, dynamic> toJson() {
-    final Map<String, dynamic> data = Map<String, dynamic>();
-    data['id'] = id;
-    data['u_id'] = uId;
-    data['order_id'] = orderId;
-    data['edit_by'] = editBy;
-    data['edited_user_id'] = editedUserId;
-    data['edited_user_name'] = editedUserName;
-    data['order_amount'] = orderAmount;
-    data['order_due_amount'] = orderDueAmount;
-    data['order_due_payment_status'] = orderDuePaymentStatus;
-    data['order_due_payment_info'] = orderDuePaymentInfo;
-    data['order_due_payment_method'] = orderDuePaymentMethod;
-    data['order_due_transaction_ref'] = orderDueTransactionRef;
-    data['order_due_payment_note'] = orderDuePaymentNote;
-    data['order_return_amount'] = orderReturnAmount;
-    data['order_return_payment_status'] = orderReturnPaymentStatus;
-    data['order_return_payment_method'] = orderReturnPaymentMethod;
-    data['order_return_payment_info'] = orderReturnPaymentInfo;
-    data['order_return_transaction_ref'] = orderReturnTransactionRef;
-    data['order_return_payment_note'] = orderReturnPaymentNote;
-    data['created_at'] = createdAt;
-    data['updated_at'] = updatedAt;
-    return data;
-  }
-}
 
 
 

@@ -130,10 +130,6 @@ class ProductModel {
       case 'physical': {
         return ProductTypeEnum.physical;
       }
-      case 'digital': {
-        return ProductTypeEnum.digital;
-
-      }
       default: {
         return ProductTypeEnum.all;
       }

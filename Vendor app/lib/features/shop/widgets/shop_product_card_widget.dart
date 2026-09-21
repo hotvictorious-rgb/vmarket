@@ -5,14 +5,7 @@ import 'package:sixvalley_vendor_app/features/addProduct/screens/add_product_tab
 
 import 'package:sixvalley_vendor_app/features/product/domain/models/filter_model.dart';
 import 'package:sixvalley_vendor_app/features/product/domain/models/product_model.dart';
-import 'package:sixvalley_vendor_app/features/product_details/enums/preview_type.dart';
-import 'package:sixvalley_vendor_app/features/product_details/widgets/audio_preview.dart';
-import 'package:sixvalley_vendor_app/features/product_details/widgets/download_preview_file.dart';
-import 'package:sixvalley_vendor_app/features/product_details/widgets/image_preview.dart';
-import 'package:sixvalley_vendor_app/features/product_details/widgets/pdf_preview_flutter.dart';
-import 'package:sixvalley_vendor_app/features/product_details/widgets/video_preview.dart';
 import 'package:sixvalley_vendor_app/helper/price_converter.dart';
-import 'package:sixvalley_vendor_app/helper/product_helper.dart';
 import 'package:sixvalley_vendor_app/localization/language_constrants.dart';
 import 'package:sixvalley_vendor_app/localization/controllers/localization_controller.dart';
 import 'package:sixvalley_vendor_app/features/product/controllers/product_controller.dart';
@@ -296,20 +289,6 @@ class _ShopProductWidgetState extends State<ShopProductWidget> {
                         ),
 
 
-                        if(widget.isDetails && widget.productModel?.productType == 'digital' && widget.productModel?.previewFileFullUrl != null && widget.productModel?.previewFileFullUrl?.path != '')
-                        Padding(
-                          padding: const EdgeInsets.only(top: Dimensions.paddingSizeSmall),
-                          child: InkWell(
-                            onTap: () => _showPreview(widget.productModel?.previewFileFullUrl?.path ?? '', widget.productModel?.name ?? '', widget.productModel?.previewFileFullUrl?.key ?? ''),
-                            child: Text(
-                              getTranslated('see_preview', context)!,
-                              style: robotoRegular.copyWith(color: Theme.of(context).primaryColor, decoration: TextDecoration.underline,
-                                decorationColor: Theme.of(context).primaryColor),
-                            ),
-                          ),
-                        ),
-
-
                         if(widget.isDetails && widget.productModel!.deniedNote != null)
                           Padding(
                             padding: const EdgeInsets.only(top: Dimensions.paddingSizeExtraSmall),
@@ -499,23 +478,6 @@ class _ShopProductWidgetState extends State<ShopProductWidget> {
 
       ],
     );
-  }
-
-  void _showPreview(String url, String productName, String fileName) {
-    PreviewType type = ProductHelper.getFileType(url);
-    showDialog(context: context, builder: (BuildContext context){
-      return Dialog(
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(Dimensions.radiusDefault)),
-        insetPadding: const EdgeInsets.all(Dimensions.paddingSizeSmall),
-        child: (type == PreviewType.pdf) ?
-        PdfPreview(url: url, fileName: productName) : (type == PreviewType.image) ?
-        ImagePreview(url: url, fileName: productName) : (type == PreviewType.video) ?
-        VideoPreview(url: url, fileName: productName) : (type == PreviewType.audio)  ?
-        AudioPreview(url: url, fileName: productName) : (type == PreviewType.others) ?
-        DownloadPreview(url: url, fileName: fileName) :
-        const SizedBox(),
-      );
-    });
   }
 }
 

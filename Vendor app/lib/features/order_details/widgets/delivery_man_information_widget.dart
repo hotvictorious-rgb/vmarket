@@ -14,8 +14,7 @@ import 'package:sixvalley_vendor_app/common/basewidgets/custom_image_widget.dart
 class DeliveryManContactInformationWidget extends StatelessWidget {
   final String? orderType;
   final Order? orderModel;
-  final bool? onlyDigital;
-  const DeliveryManContactInformationWidget({super.key, this.orderModel, this.orderType, this.onlyDigital});
+  const DeliveryManContactInformationWidget({super.key, this.orderModel, this.orderType});
 
   @override
   Widget build(BuildContext context) {

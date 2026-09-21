@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:sixvalley_vendor_app/common/basewidgets/custom_dialog_widget.dart';
+import 'package:sixvalley_vendor_app/common/basewidgets/custom_snackbar_widget.dart';
+import 'package:sixvalley_vendor_app/common/basewidgets/textfeild/custom_text_feild_widget.dart';
 import 'package:sixvalley_vendor_app/features/dashboard/screens/dashboard_screen.dart';
 import 'package:sixvalley_vendor_app/features/order/domain/models/order_model.dart';
 import 'package:sixvalley_vendor_app/features/order_details/controllers/order_details_controller.dart';
@@ -10,7 +12,6 @@ import 'package:sixvalley_vendor_app/features/order_details/widgets/order_detail
 import 'package:sixvalley_vendor_app/features/order_details/widgets/order_payment_info_widget.dart';
 import 'package:sixvalley_vendor_app/features/order_details/widgets/order_setup_bottom_sheet.dart';
 import 'package:sixvalley_vendor_app/features/order_details/widgets/product_list_widget.dart';
-import 'package:sixvalley_vendor_app/features/order_edit/controllers/order_edit_controller.dart';
 import 'package:sixvalley_vendor_app/helper/color_helper.dart';
 import 'package:sixvalley_vendor_app/helper/date_converter.dart';
 import 'package:sixvalley_vendor_app/helper/price_converter.dart';
@@ -57,8 +58,6 @@ class _OrderDetailsScreenState extends State<OrderDetailsScreen> {
     );
   }
 
-
-  bool _onlyDigital = true;
 
   @override
   void initState() {
@@ -115,9 +114,6 @@ class _OrderDetailsScreenState extends State<OrderDetailsScreen> {
                     shipping = firstOrder?.shippingCost ?? 0;
                     isFreeShipping = firstOrder?.isShippingFree ?? false;
                     for (var orderDetails in orderDetailsController.orderDetails!) {
-                      if(orderDetails.productDetails?.productType == "physical") {
-                        _onlyDigital =  false;
-                      }
                       itemsPrice += (orderDetails.price ?? 0) * (orderDetails.qty ?? 0);
                       discount += orderDetails.discount ?? 0;
                     }
@@ -223,50 +219,8 @@ class _OrderDetailsScreenState extends State<OrderDetailsScreen> {
                           OrderPaymentInfoWidget(),
                           const SizedBox(height: Dimensions.paddingSizeSmall),
 
-                          if(orderDetailsController.orderDetails![0].order?.editedStatus == 1 && (orderDetailsController.orderDetails?[0].latestEditHistory?.orderDueAmount ?? 0) > 0 &&  orderDetailsController.orderDetails![0].latestEditHistory!.orderDuePaymentMethod != 'cash_on_delivery')
-                          AmountDueCard(
-                            showButton: true,
-                            title: getTranslated('amount_due', context)!,
-                            price: PriceConverter.convertPrice(context, orderDetailsController.orderDetails![0].latestEditHistory!.orderDueAmount!),
-                            description: getTranslated('after_editing_the_order_amount_has_increased', context)!,
-                            buttonText:  getTranslated('switch_to_cod', context)!,
-                            onTap: () {
-                              showAnimatedDialogWidget( context,
-                                Consumer<OrderEditController>(
-                                  builder: (context, orderEditController, child) {
-                                  return CustomConfirmationDialogWidget(
-                                    icon: Images.switchToCodIcon,
-                                    title: getTranslated('switch_to_cash_on_delivery', context) ?? '',
-                                    description: getTranslated('before_switching_this_order_to_cash_on_delivery', context) ?? '',
-                                    highlightTexts: [getTranslated('cash_on_delivery_cod', context) ?? ''],
-                                    isLoading: orderEditController.isLoading,
-                                    onYesPressed: () {
-                                      orderEditController.switchToCod(orderDetailsController.orderDetails![0].order!.id!).then((response) {
-                                        if(response.response?.statusCode == 200) {
-                                          Navigator.of(Get.context!).pop();
-                                        }
-                                      });
-                                    },
-                                  );
-                                })
-                              );
-                            },
-                          ),
-
-                          if(orderDetailsController.orderDetails![0].order?.editedStatus == 1 && (orderDetailsController.orderDetails?[0].latestEditHistory?.orderReturnAmount ?? 0) > 0 &&  orderDetailsController.orderDetails![0].latestEditHistory!.orderReturnPaymentStatus != 'returned')
-                          AmountDueCard(
-                            showButton: false,
-                            title: getTranslated('need_to_return', context)!,
-                            price: PriceConverter.convertPrice(context, orderDetailsController.orderDetails![0].latestEditHistory!.orderReturnAmount!),
-                            description: getTranslated('the_order_amount_was_reduced_after_editing', context)!, buttonText: '',
-                            onTap: null,
-                          ),
-
-                          if(orderDetailsController.orderDetails![0].order?.editedStatus == 1 &&  (orderDetailsController.orderDetails?[0].latestEditHistory?.orderDueAmount ?? 0) > 0 &&  orderDetailsController.orderDetails![0].latestEditHistory!.orderDuePaymentMethod != 'cash_on_delivery')
-                          const SizedBox(height: Dimensions.paddingSizeSmall),
-
                           orderDetailsController.orderDetails![0].order!.orderType == 'POS' ? const SizedBox():
-                          ShippingAndBillingWidget(orderModel: orderDetailsController.orderDetails![0].order!, onlyDigital: _onlyDigital, orderType: orderDetailsController.orderDetails![0].order!.orderType!),
+                          ShippingAndBillingWidget(orderModel: orderDetailsController.orderDetails![0].order!, orderType: orderDetailsController.orderDetails![0].order!.orderType!),
 
                           if(orderDetailsController.orderDetails![0].order!.orderType != 'POS')
                           const SizedBox(height: Dimensions.paddingSizeSmall),
@@ -281,7 +235,7 @@ class _OrderDetailsScreenState extends State<OrderDetailsScreen> {
 
                             orderDetailsController.orderDetails![0].order!.deliveryMan != null?
                             Padding(padding: const EdgeInsets.only(bottom: Dimensions.paddingSizeSmall),
-                              child: DeliveryManContactInformationWidget(orderModel: orderDetailsController.orderDetails![0].order, orderType: orderDetailsController.orderDetails![0].order!.orderType, onlyDigital: _onlyDigital),
+                              child: DeliveryManContactInformationWidget(orderModel: orderDetailsController.orderDetails![0].order, orderType: orderDetailsController.orderDetails![0].order!.orderType),
                             ):const SizedBox(),
 
                             // Container(padding: const EdgeInsets.fromLTRB(Dimensions.paddingSizeDefault,
@@ -449,7 +403,7 @@ class _OrderDetailsScreenState extends State<OrderDetailsScreen> {
                                       const SizedBox(height: Dimensions.paddingSizeSmall,),
 
 
-                                      if(!_onlyDigital)Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
+                                      Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
                                         Text(getTranslated('shipping_fee', context)! + _shippingFreeText(orderDetailsController.orderDetails![0].order),
                                             style: titilliumRegular.copyWith(
                                                 color: ColorHelper.blendColors(Colors.white, Theme.of(context).textTheme.bodyLarge!.color!, 0.7))),
@@ -538,104 +492,6 @@ class _OrderDetailsScreenState extends State<OrderDetailsScreen> {
 
                           PaymentStatusWidget(order: orderController, orderModel: orderDetailsController.orderDetails![0].order!, orderDetailsModel: orderDetailsController.orderDetails![0]),
 
-                          if(orderDetailsController.orderDetails![0].orderEditHistory != null && orderDetailsController.orderDetails![0].orderEditHistory!.isNotEmpty)...[
-                            SizedBox(height: Dimensions.paddingSizeSmall),
-                            Container(
-                              padding: EdgeInsetsGeometry.symmetric(vertical: Dimensions.paddingSizeSmall),
-                              decoration: BoxDecoration(
-                                boxShadow: [BoxShadow(color: Theme.of(context).hintColor.withValues(alpha:0.2), spreadRadius:1.5, blurRadius: 3)],
-                                color: Theme.of(context).cardColor,
-                              ),
-                              child: Column(children: [
-                                Padding(
-                                  padding: EdgeInsets.symmetric(horizontal: Dimensions.paddingSizeDefault),
-                                  child: Row(
-                                    children: [
-                                      Text(
-                                        getTranslated('edit_log', context)!,
-                                        style: robotoBold.copyWith(fontSize: Dimensions.fontSizeLarge,
-                                            color: Theme.of(context).textTheme.bodyLarge?.color
-                                        ),
-                                      ),
-                                    ],
-                                  ),
-                                ),
-                                SizedBox(height: Dimensions.paddingSizeSmall),
-
-                                Divider(thickness: 0.2, height: 1, color: Theme.of(context).hintColor.withValues(alpha: .65)),
-                                SizedBox(height: Dimensions.paddingSizeSmall),
-
-                                ListView.separated(
-                                  itemCount: orderDetailsController.orderDetails![0].orderEditHistory!.length,
-                                  shrinkWrap: true,
-                                  physics: const NeverScrollableScrollPhysics(),
-                                  itemBuilder:  (context, index) {
-                                    return Container(
-                                      padding: EdgeInsets.symmetric(horizontal: Dimensions.paddingSizeDefault),
-                                      child: Column(
-                                        children: [
-                                          Row(
-                                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                                            children: [
-                                              Text(
-                                                getTranslated('edit_by', context)!,
-                                                style: robotoRegular.copyWith(
-                                                  fontSize: Dimensions.fontSizeDefault,
-                                                  color: ColorHelper.blendColors(Colors.white, Theme.of(context).textTheme.headlineLarge!.color!, 0.7),
-                                                )
-                                              ),
-
-                                              Text(
-                                                "${orderDetailsController.orderDetails![0].orderEditHistory![index].editBy} (${orderDetailsController.orderDetails![0].orderEditHistory![index].editedUserName})",
-                                                style: robotoRegular.copyWith(fontSize: Dimensions.fontSizeDefault,
-                                                  color: Theme.of(context).textTheme.bodyLarge?.color
-                                                ),
-                                              ),
-                                            ],
-                                          ),
-                                          SizedBox(height: Dimensions.paddingSizeExtraSmall),
-
-                                          Row(
-                                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                                            children: [
-                                              Text(
-                                                getTranslated('date', context)!,
-                                                style: robotoRegular.copyWith(
-                                                  fontSize: Dimensions.fontSizeDefault,
-                                                  color: ColorHelper.blendColors(Colors.white, Theme.of(context).textTheme.headlineLarge!.color!, 0.7),
-                                                )
-                                              ),
-
-                                              Text(
-                                                DateConverter.formatDateWithCommaAnd24Hour(DateTime.parse(orderDetailsController.orderDetails![0].orderEditHistory![index].createdAt!)),
-                                                style: robotoRegular.copyWith(fontSize: Dimensions.fontSizeDefault,
-                                                  color: Theme.of(context).textTheme.bodyLarge?.color
-                                                ),
-                                              ),
-
-                                            ],
-                                          ),
-
-                                        ],
-                                      ),
-                                    );
-                                  },
-
-                                  separatorBuilder: (BuildContext context, int index) {
-                                    return Padding(
-                                      padding: EdgeInsets.symmetric(horizontal: Dimensions.paddingSizeDefault),
-                                      child: Divider(
-                                        color: Theme.of(context).hintColor.withValues(alpha: 0.5),
-                                      ),
-                                    );
-                                  },
-                                ),
-
-                              ],
-                              ),
-                            ),
-                            SizedBox(height: Dimensions.paddingSizeSmall),
-                          ],
 
                           ChangeAmountWidget(
                             amount: orderDetailsController.orderDetails![0].order?.bringCashAmount ?? 0,
@@ -715,14 +571,14 @@ class _OrderDetailsScreenState extends State<OrderDetailsScreen> {
             quickActionText = getTranslated('confirm_order', context) ?? 'Confirm Order';
             onActionTap = () async {
               if (order?.id != null) {
-                await orderDetailsController.updateQuickOrderStatus(order!.id!, 'confirmed');
+                await orderDetailsController.updateQuickOrderStatus(order!.id!, 'confirmed', paymentStatus: order?.paymentStatus);
               }
             };
           } else if (status == 'confirmed') {
             quickActionText = getTranslated('mark_as_preparing', context) ?? 'Mark as Preparing';
             onActionTap = () async {
               if (order?.id != null) {
-                await orderDetailsController.updateQuickOrderStatus(order!.id!, 'processing');
+                await orderDetailsController.updateQuickOrderStatus(order!.id!, 'processing', paymentStatus: order?.paymentStatus);
               }
             };
           } else if (status == 'processing') {
@@ -730,7 +586,7 @@ class _OrderDetailsScreenState extends State<OrderDetailsScreen> {
             actionBgColor = const Color(0xFF00897B);
             onActionTap = () async {
               if (order?.id != null) {
-                await orderDetailsController.updateQuickOrderStatus(order!.id!, 'ready_for_pickup');
+                await orderDetailsController.updateQuickOrderStatus(order!.id!, 'ready_for_pickup', paymentStatus: order?.paymentStatus);
               }
             };
           } else if (status == 'ready_for_pickup') {
@@ -796,7 +652,6 @@ class _OrderDetailsScreenState extends State<OrderDetailsScreen> {
                         builder: (BuildContext context) {
                           return OrderSetupBottomSheet(
                             orderModel: order,
-                            onlyDigital: _onlyDigital,
                             bottomContext: context,
                           );
                         },

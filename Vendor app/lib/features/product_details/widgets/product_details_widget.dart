@@ -1,28 +1,16 @@
-import 'dart:isolate';
-import 'dart:ui';
 import 'package:flutter/material.dart';
-import 'package:flutter_downloader/flutter_downloader.dart';
 import 'package:flutter_html/flutter_html.dart';
 import 'package:provider/provider.dart';
 import 'package:sixvalley_vendor_app/common/basewidgets/custom_button_widget.dart';
 import 'package:sixvalley_vendor_app/common/basewidgets/custom_image_widget.dart';
-import 'package:sixvalley_vendor_app/data/model/image_full_url.dart';
 import 'package:sixvalley_vendor_app/features/addProduct/screens/add_product_tab_view_screen.dart';
-import 'package:sixvalley_vendor_app/features/order_details/controllers/order_details_controller.dart';
 import 'package:sixvalley_vendor_app/features/product/controllers/category_controller.dart';
 import 'package:sixvalley_vendor_app/features/product/domain/models/product_model.dart';
 import 'package:sixvalley_vendor_app/features/product_details/controllers/product_details_controller.dart';
-import 'package:sixvalley_vendor_app/features/product_details/enums/preview_type.dart';
-import 'package:sixvalley_vendor_app/features/product_details/widgets/audio_preview.dart';
-import 'package:sixvalley_vendor_app/features/product_details/widgets/download_preview_file.dart';
-import 'package:sixvalley_vendor_app/features/product_details/widgets/image_preview.dart';
-import 'package:sixvalley_vendor_app/features/product_details/widgets/pdf_preview_flutter.dart';
-import 'package:sixvalley_vendor_app/features/product_details/widgets/video_preview.dart';
 import 'package:sixvalley_vendor_app/features/splash/controllers/splash_controller.dart';
 import 'package:sixvalley_vendor_app/features/splash/domain/models/config_model.dart';
 import 'package:sixvalley_vendor_app/helper/color_helper.dart';
 import 'package:sixvalley_vendor_app/helper/price_converter.dart';
-import 'package:sixvalley_vendor_app/helper/product_helper.dart';
 import 'package:sixvalley_vendor_app/localization/controllers/localization_controller.dart';
 import 'package:sixvalley_vendor_app/localization/language_constrants.dart';
 import 'package:sixvalley_vendor_app/theme/controllers/theme_controller.dart';
@@ -123,8 +111,7 @@ class _ProductDetailsWidgetState extends State<ProductDetailsWidget> {
 
                           _InformationElementWidget(
                             labelText: getTranslated('product_type', context)!,
-                            infoText: '${getTranslated('${widget.productModel?.productType}', context)} ${widget.productModel?.productType == 'digital' ?
-                            '(${getTranslated('${widget.productModel?.digitalProductType}', context)})' : ''}',
+                            infoText: '${getTranslated('${widget.productModel?.productType}', context)}',
                           ),
 
                           widget.productModel!.productType == 'physical' ?
@@ -201,7 +188,7 @@ class _ProductDetailsWidgetState extends State<ProductDetailsWidget> {
                       const SizedBox(height: Dimensions.paddingSizeSmall),
 
                       /// Variation
-                      if((widget.productModel?.variation?.isNotEmpty ?? false) || (widget.productModel?.digitalVariation?.isNotEmpty ?? false))...[
+                      if((widget.productModel?.variation?.isNotEmpty ?? false))...[
                         Container(
                           padding: const EdgeInsets.all(Dimensions.paddingSizeMedium).copyWith(bottom: Dimensions.paddingSizeExtraSmall),
                           decoration: BoxDecoration(
@@ -216,28 +203,15 @@ class _ProductDetailsWidgetState extends State<ProductDetailsWidget> {
                             _InformationTitleWidget(title: getTranslated('variation', context)!),
                             const SizedBox(height: Dimensions.paddingSizeExtraSmall),
 
-                            if((widget.productModel?.variation?.isNotEmpty ?? false))
-                              ListView.separated(
+                            ListView.separated(
                                 padding: EdgeInsets.zero,
                                 shrinkWrap: true,
                                 physics: const NeverScrollableScrollPhysics(),
                                 itemBuilder: (context, index){
-                                  return _VariationWidget(physicalProduct: widget.productModel!.variation![index], productModel: widget.productModel);
+                                  return _VariationWidget(physicalProduct: widget.productModel!.variation![index]);
                                 },
                                 separatorBuilder: (context, index) => Divider(height: 1, color: Theme.of(context).hintColor.withValues(alpha: 0.3), thickness: 1),
                                 itemCount: widget.productModel!.variation!.length,
-                              ),
-
-                            if((widget.productModel?.digitalVariation?.isNotEmpty ?? false))
-                              ListView.separated(
-                                padding: EdgeInsets.zero,
-                                shrinkWrap: true,
-                                physics: const NeverScrollableScrollPhysics(),
-                                itemBuilder: (context, index){
-                                  return _VariationWidget(digitalProduct: widget.productModel!.digitalVariation![index], productModel: widget.productModel, index: index);
-                                },
-                                separatorBuilder: (context, index) => Divider(height: 1, color: Theme.of(context).hintColor.withValues(alpha: 0.3), thickness: 1),
-                                itemCount: widget.productModel!.digitalVariation!.length,
                               ),
                           ]),
                         ),
@@ -569,22 +543,6 @@ class _ProductWidget extends StatelessWidget {
               ),
             ),
             const SizedBox(height: Dimensions.paddingSizeSmall),
-
-            (productModel?.productType == 'digital' && productModel?.previewFileFullUrl != null && productModel?.previewFileFullUrl?.path != '') ? InkWell(
-              onTap: () => showPreview(productModel?.previewFileFullUrl?.path ?? '', productModel?.name ?? '', productModel?.previewFileFullUrl?.key ?? '', context),
-              child: Text(
-                getTranslated('see_preview', context)!,
-                style: robotoRegular.copyWith(
-                  color: Colors.transparent,
-                  decoration: TextDecoration.underline,
-                  decorationColor: Theme.of(context).primaryColor,
-                  shadows: [Shadow(
-                    color: Theme.of(context).primaryColor,
-                    offset: const Offset(0, -5),
-                  )],
-                ),
-              ),
-            ) : const SizedBox(),
           ]),
           const SizedBox(width: Dimensions.paddingSizeSmall),
 
@@ -595,27 +553,6 @@ class _ProductWidget extends StatelessWidget {
                   child: Text(productModel!.name ?? '', style: robotoRegular.copyWith(
                       fontSize: Dimensions.fontSizeSmall, color: Theme.of(context).textTheme.bodyLarge?.color
                   ), maxLines: 2, overflow: TextOverflow.ellipsis),
-                ),
-
-
-                if(productModel?.digitalProductType == 'ready_product' && productModel?.digitalFileReady != null && productModel!.digitalVariation!.isEmpty)
-                  Consumer<OrderDetailsController>(
-                    builder: (context, orderDetails, _) {
-                      return InkWell(
-                        onTap: () {
-                          _downloadProduct(1, productModel!.digitalFileReadyFullUrl!);
-                        },
-                        child: Container(
-                          decoration: BoxDecoration(
-                            borderRadius: BorderRadius.circular(Dimensions.radiusDefault),
-                            border: Border.all(color: Theme.of(context).primaryColor.withValues(alpha:0.15)),
-                          ),
-                          padding: const EdgeInsets.all(Dimensions.paddingSizeSmall),
-                          child:  (orderDetails.isDownloadLoading &&  orderDetails.downloadIndex == 1)  ? const SizedBox(height: 20, width: 20, child: CircularProgressIndicator()) :
-                          Image.asset(Images.downloadIcon, height: 15, width: 15),
-                        ),
-                      );
-                    }
                 ),
               ],
             ),
@@ -734,18 +671,6 @@ class _ProductWidget extends StatelessWidget {
     );
   }
 
-  void _downloadProduct (int index,  ImageFullUrl digitalProduct) {
-    String url = digitalProduct.path ?? '';
-
-    String filename = digitalProduct.key ?? '';
-
-    Provider.of<OrderDetailsController>(Get.context!, listen: false).productDownload(
-        url: url,
-        fileName: filename,
-        index: index
-    );
-  }
-
 }
 
 class ImagePreviewDesign extends StatelessWidget {
@@ -810,70 +735,18 @@ class _ProductImageWidget extends StatelessWidget {
   }
 }
 
-void showPreview(String url, String productName, String fileName, BuildContext context) {
-  PreviewType type = ProductHelper.getFileType(url);
-
-  showDialog(context: context, builder: (BuildContext context){
-    return Dialog(
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(Dimensions.radiusDefault)),
-      insetPadding: const EdgeInsets.all(Dimensions.paddingSizeSmall),
-      child: (type == PreviewType.pdf) ?
-      PdfPreview(url: url, fileName: productName) : (type == PreviewType.image) ?
-      ImagePreview(url: url, fileName: productName) : (type == PreviewType.video) ?
-      VideoPreview(url: url, fileName: productName) : (type == PreviewType.audio)  ?
-      AudioPreview(url: url, fileName: productName) : (type == PreviewType.others) ?
-      DownloadPreview(url: url, fileName: fileName) :
-      const SizedBox(),
-    );
-  });
-}
-
-class _VariationWidget extends StatefulWidget {
-  final Variation? physicalProduct;
-  final DigitalVariation? digitalProduct;
-  final Product? productModel;
-  final int? index;
-
-  const _VariationWidget({ this.physicalProduct, this.digitalProduct, this.productModel, this.index});
-
-  @override
-  State<_VariationWidget> createState() => _VariationWidgetState();
-}
-
-class _VariationWidgetState extends State<_VariationWidget> {
-
-
-  final ReceivePort _port = ReceivePort();
-
-  @override
-  void initState() {
-    super.initState();
-
-    IsolateNameServer.registerPortWithName(_port.sendPort, 'downloader_send_port');
-    _port.listen((dynamic data) {
-      setState((){ });
-    });
-
-    FlutterDownloader.registerCallback(downloadCallback);
-
-    super.initState();
-  }
-
-  static void downloadCallback(String id, int status, int progress) {
-    final SendPort? send = IsolateNameServer.lookupPortByName('downloader_send_port');
-    send?.send([id, status, progress]);
-  }
-
+class _VariationWidget extends StatelessWidget {
+  final Variation physicalProduct;
+  const _VariationWidget({required this.physicalProduct});
 
   @override
   Widget build(BuildContext context) {
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: Dimensions.paddingSizeSmall),
-      child: (widget.physicalProduct != null ) ?
-      Column(children: [
+      child: Column(children: [
 
         Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
-          Flexible(child: Text(widget.physicalProduct?.type ?? '', style: robotoMedium.copyWith(
+          Flexible(child: Text(physicalProduct.type ?? '', style: robotoMedium.copyWith(
               fontSize: Dimensions.fontSizeSmall,
               color: Theme.of(context).textTheme.bodyLarge?.color
           ),maxLines: 1, overflow: TextOverflow.ellipsis)),
@@ -888,7 +761,7 @@ class _VariationWidgetState extends State<_VariationWidget> {
 
         Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
           Flexible(child: Text(
-              PriceConverter.convertPrice(context, widget.physicalProduct?.price),
+              PriceConverter.convertPrice(context, physicalProduct.price),
 
               style: robotoMedium.copyWith(
                   fontSize: Dimensions.fontSizeSmall,
@@ -896,80 +769,12 @@ class _VariationWidgetState extends State<_VariationWidget> {
               ),maxLines: 1, overflow: TextOverflow.ellipsis)),
           const SizedBox(width: Dimensions.paddingSizeDefault),
 
-          Text(widget.physicalProduct?.qty.toString() ?? '0', style: robotoMedium.copyWith(
+          Text(physicalProduct.qty.toString(), style: robotoMedium.copyWith(
             fontSize: Dimensions.fontSizeSmall,
             color: Theme.of(context).textTheme.bodyLarge?.color,
           )),
         ])
-      ]) :
-      Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
-        // productModel.digitalProductType == 'ready_product'
-
-        Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-          Text(widget.digitalProduct?.variantKey ?? '', style: robotoMedium.copyWith(
-              fontSize: Dimensions.fontSizeSmall,
-              color: Theme.of(context).textTheme.bodyLarge?.color
-          ),maxLines: 1, overflow: TextOverflow.ellipsis),
-
-          if(widget.productModel?.digitalProductType == 'ready_product')...[
-            const SizedBox(height: Dimensions.paddingSizeSmall),
-
-            Text(PriceConverter.convertPrice(context, widget.digitalProduct?.price),
-                style: robotoMedium.copyWith(
-                  fontSize: Dimensions.fontSizeSmall,
-                  color: Theme.of(context).textTheme.bodyLarge?.color,
-                )
-            ),
-          ]
-        ],
-        ),
-
-
-        if(widget.productModel?.digitalProductType != 'ready_product')...[
-          const SizedBox(width: Dimensions.paddingSizeDefault),
-          Text(PriceConverter.convertPrice(context, widget.digitalProduct?.price),
-              style: robotoMedium.copyWith(
-                fontSize: Dimensions.fontSizeSmall,
-                color: Theme.of(context).textTheme.bodyLarge?.color,
-              )
-          ),
-        ],
-
-
-        if(widget.productModel?.digitalProductType == 'ready_product')
-          Consumer<OrderDetailsController>(
-              builder: (context, orderDetails, _) {
-                return InkWell(
-                  onTap: () {
-                    _downloadProduct(widget.index!, widget.digitalProduct!);
-                  },
-                  child: Container(
-                    decoration: BoxDecoration(
-                      borderRadius: BorderRadius.circular(Dimensions.radiusDefault),
-                      border: Border.all(color: Theme.of(context).primaryColor.withValues(alpha:0.15)),
-                    ),
-                    padding: const EdgeInsets.all(Dimensions.paddingSizeSmall),
-                    child:  (orderDetails.isDownloadLoading &&  orderDetails.downloadIndex == widget.index)  ? const SizedBox(height: 20, width: 20, child: CircularProgressIndicator()) :
-                    Image.asset(Images.downloadIcon, height: 15, width: 15),
-                  ),
-                );
-              }
-          ),
-
-
       ]),
-    );
-  }
-
-  void _downloadProduct (int index,  DigitalVariation digitalProduct) {
-    String url = digitalProduct.fileFullUrl?.path ?? '';
-
-    String filename = digitalProduct.file ?? '';
-
-    Provider.of<OrderDetailsController>(context, listen: false).productDownload(
-        url: url,
-        fileName: filename,
-        index: index
     );
   }
 }

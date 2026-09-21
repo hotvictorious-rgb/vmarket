@@ -141,9 +141,9 @@ class VariationController extends ChangeNotifier {
     notifyListeners();
   }
 
-  void addVariant(BuildContext context, int index, String? variant, Product? product, bool notify, {List<GenereateVariation>? genereateVariation}) {
+  void addVariant(BuildContext context, int index, String? variant, Product? product, bool notify) {
     _attributeList![index].variants.add(variant);
-    generateVariantTypes(context,product, genereateVariation: genereateVariation);
+    generateVariantTypes(context,product);
     if(notify) {
       notifyListeners();
     }
@@ -169,7 +169,7 @@ class VariationController extends ChangeNotifier {
 
 
 
-  void generateVariantTypes(BuildContext context, Product? product, {List<GenereateVariation>? genereateVariation}) {
+  void generateVariantTypes(BuildContext context, Product? product) {
     List<List<String?>> mainList = [];
     int length = 1;
     bool hasData = false;
@@ -194,7 +194,7 @@ class VariationController extends ChangeNotifier {
       for(int j=0; j<mainList.length; j++) {
         value = value + (value.isEmpty ? '' : '-') + mainList[j][indexList[j]]!.trim();
       }
-      if(product != null && genereateVariation == null) {
+      if(product != null) {
         double? price = 0;
         int? quantity = 0;
         for(Variation variation in product.variation!) {
@@ -211,16 +211,8 @@ class VariationController extends ChangeNotifier {
 
         
         // _variationTotalQuantity
-      }else {
-        if (genereateVariation != null) {
-          for(GenereateVariation gVariation in genereateVariation) {
-            if(value == gVariation.option) {
-              _variantTypeList.add(VariantTypeModel(variantType: value, controller: TextEditingController(text: gVariation.price.toString()), node: FocusNode(),qtyController: TextEditingController(text: gVariation.stock.toString()),qtyNode: FocusNode()));
-            }
-          }
-        } else {
-          _variantTypeList.add(VariantTypeModel(variantType: value, controller: TextEditingController(), node: FocusNode(),qtyController: TextEditingController(),qtyNode: FocusNode()));
-        }
+      } else {
+        _variantTypeList.add(VariantTypeModel(variantType: value, controller: TextEditingController(), node: FocusNode(), qtyController: TextEditingController(), qtyNode: FocusNode()));
       }
 
       for(int j=0; j<mainList.length; j++) {

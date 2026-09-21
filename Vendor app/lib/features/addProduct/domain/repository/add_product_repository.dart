@@ -145,20 +145,17 @@ class AddProductRepository implements AddProductRepositoryInterface{
     required bool isActiveColor,
     required List<ColorImage> colorImageObject,
     required List<String?> tags,
-    String? digitalFileReady,
-    DigitalVariationModel? digitalVariationModel,
-    bool? isDigitalVariationActive,
   }) async {
     final fields = <String, dynamic>{};
 
     // Add basic product fields
-    _addBasicProductFields(fields, product, addProduct, productImages, thumbnail, metaImage, isActiveColor, tags, digitalFileReady, digitalVariationModel);
+    _addBasicProductFields(fields, product, addProduct, productImages, thumbnail, metaImage, isActiveColor, tags);
 
     // Add color images if needed
-    if (!(product.productType == 'digital' || (addProduct.colorCodeList != null && addProduct.colorCodeList!.isEmpty))) {
-      fields['color_image'] = jsonEncode(_prepareColorImages(colorImageObject));
-    } else {
+    if (addProduct.colorCodeList != null && addProduct.colorCodeList!.isEmpty) {
       fields['color_image'] = jsonEncode([]);
+    } else {
+      fields['color_image'] = jsonEncode(_prepareColorImages(colorImageObject));
     }
 
     // Add meta SEO info if available
@@ -177,11 +174,6 @@ class AddProductRepository implements AddProductRepositoryInterface{
     // Add attributes if present
     if (attributes.isNotEmpty) {
       fields.addAll(attributes);
-    }
-
-    // Add digital variation data if active
-    if (isDigitalVariationActive == true) {
-      _addDigitalVariationFields(fields, digitalVariationModel!);
     }
 
     return fields;
@@ -205,9 +197,7 @@ class AddProductRepository implements AddProductRepositoryInterface{
       String? thumbnail,
       String? metaImage,
       bool isActiveColor,
-      List<String?> tags,
-      String? digitalFileReady,
-      DigitalVariationModel? digitalVariationModel
+      List<String?> tags
       ) {
     fields.addAll({
       'name': jsonEncode(addProduct.titleList),
@@ -238,11 +228,7 @@ class AddProductRepository implements AddProductRepositoryInterface{
       'code': product.code,
       'minimum_order_qty': product.minimumOrderQty,
       'product_type': product.productType,
-      'digital_product_type': product.digitalProductType,
-      'digital_file_ready': digitalFileReady ?? product.digitalFileReady,
       'tags': jsonEncode(tags),
-      'publishing_house': jsonEncode(digitalVariationModel?.publishingHouse ?? []),
-      'authors': jsonEncode(digitalVariationModel?.authors ?? []),
     });
   }
 
@@ -271,32 +257,15 @@ class AddProductRepository implements AddProductRepositoryInterface{
     }
   }
 
-  void _addDigitalVariationFields(Map<String, dynamic> fields, DigitalVariationModel digitalVariationModel) {
-    fields.addAll({
-      'extensions_type': jsonEncode(digitalVariationModel.variationType),
-      'digital_product_variant_key': jsonEncode(digitalVariationModel.digitalVariantKeyMap),
-      'digital_product_sku': jsonEncode(digitalVariationModel.digitalVariantSku),
-      'digital_product_price': jsonEncode(digitalVariationModel.digitalVariantPrice),
-    });
-
-    if (digitalVariationModel.variationType != null) {
-      for (int i = 0; i < digitalVariationModel.variationType!.length; i++) {
-        fields['extensions_options_${digitalVariationModel.variationType![i]}'] =
-            jsonEncode(digitalVariationModel.variationKeys![i]);
-      }
-    }
-  }
-
-
   @override
-  Future<ApiResponse> addProduct(Product product, AddProductModel addProduct, Map<String, dynamic> attributes, List<Map<String,dynamic>>? productImages, String? thumbnail, String? metaImage, bool isAdd, bool isActiveColor, List<ColorImage> colorImageObject, List<String?> tags, String? digitalFileReady, DigitalVariationModel? digitalVariationModel, bool? isDigitalVariationActive, String? token) async {
+  Future<ApiResponse> addProduct(Product product, AddProductModel addProduct, Map<String, dynamic> attributes, List<Map<String,dynamic>>? productImages, String? thumbnail, String? metaImage, bool isAdd, bool isActiveColor, List<ColorImage> colorImageObject, List<String?> tags, String? token) async {
 
     _setRequestHeaders(token);
 
     final requestData = await _prepareRequestData(
       product: product,
       addProduct: addProduct,
-      attributes: product.productType == 'digital' ? {} : attributes,
+      attributes: attributes,
       productImages: productImages,
       thumbnail: thumbnail,
       metaImage: metaImage,
@@ -304,115 +273,36 @@ class AddProductRepository implements AddProductRepositoryInterface{
       isActiveColor: isActiveColor,
       colorImageObject: colorImageObject,
       tags: tags,
-      digitalFileReady: digitalFileReady,
-      digitalVariationModel: digitalVariationModel,
-      isDigitalVariationActive: isDigitalVariationActive,
     );
 
+    try {
+      Response response;
+      if (addProduct.productVideo != null) {
+        List<MultipartWithKey> multiPartFiles = [];
+        MultipartFile multiPartFile = MultipartFile.fromBytes(
+          await addProduct.productVideo!.readAsBytes(),
+          filename: basename(addProduct.productVideo!.name),
+        );
+        multiPartFiles.add(MultipartWithKey(key: 'product_video', multipartFile: multiPartFile));
 
-    if(product.productType == 'digital') {
-      try {
-        List<MultipartWithKey> multiPartFiles = await processItems(digitalVariationModel);
-
-        Response response = await dioClient!.postMultipart('${AppConstants.baseUrl}${isAdd ? AppConstants.addProductUri : '${AppConstants.updateProductUri}/${product.id}'}',
+        response = await dioClient!.postMultipart(
+          '${AppConstants.baseUrl}${isAdd ? AppConstants.addProductUri : '${AppConstants.updateProductUri}/${product.id}'}',
           data: requestData,
           files: multiPartFiles,
         );
-
-        return ApiResponse.withSuccess(response);
-      } catch (e) {
-        return ApiResponse.withError(ApiErrorHandler.getMessage(e));
+      } else {
+        response = await dioClient!.post(
+          '${AppConstants.baseUrl}${isAdd ? AppConstants.addProductUri : '${AppConstants.updateProductUri}/${product.id}'}',
+          data: requestData,
+        );
       }
-    } else {
-      try {
-        Response response;
-        if (addProduct.productVideo != null) {
-          List<MultipartWithKey> multiPartFiles = [];
-          MultipartFile multiPartFile = MultipartFile.fromBytes(
-            await addProduct.productVideo!.readAsBytes(),
-            filename: basename(addProduct.productVideo!.name),
-          );
-          multiPartFiles.add(MultipartWithKey(key: 'product_video', multipartFile: multiPartFile));
-
-          response = await dioClient!.postMultipart(
-            '${AppConstants.baseUrl}${isAdd ? AppConstants.addProductUri : '${AppConstants.updateProductUri}/${product.id}'}',
-            data: requestData,
-            files: multiPartFiles,
-          );
-        } else {
-          response = await dioClient!.post(
-            '${AppConstants.baseUrl}${isAdd ? AppConstants.addProductUri : '${AppConstants.updateProductUri}/${product.id}'}',
-            data: requestData,
-          );
-        }
-        return ApiResponse.withSuccess(response);
-      } catch (e) {
-        return ApiResponse.withError(ApiErrorHandler.getMessage(e));
-      }
-    }
-  }
-
-
-
-
-  Future<List<MultipartWithKey>> processItems(DigitalVariationModel? digitalVariationModel) async {
-    List<MultipartWithKey> multipartBody = [];
-
-    if(digitalVariationModel?.digitalVariantFiles != null) {
-      await Future.forEach(digitalVariationModel!.digitalVariantFiles!.keys, (key) async {
-        if(digitalVariationModel.digitalVariantFiles![key] != null) {
-          MultipartFile multiPartFile = MultipartFile.fromBytes(
-            await digitalVariationModel.digitalVariantFiles![key].readAsBytes(),
-            filename: basename(digitalVariationModel.digitalVariantFiles![key].name),
-          );
-          multipartBody.add(MultipartWithKey(key: 'digital_files_$key', multipartFile: multiPartFile));
-        }
-      });
-    }
-
-     if(digitalVariationModel?.digitalProductPreview != null) {
-       MultipartFile multiPartFile = MultipartFile.fromBytes(
-         await digitalVariationModel!.digitalProductPreview!.readAsBytes(),
-         filename: basename(digitalVariationModel.digitalProductPreview!.name),
-       );
-       multipartBody.add(MultipartWithKey(key: 'preview_file', multipartFile: multiPartFile));
-     }
-
-    return multipartBody;
-  }
-
-
-  @override
-  Future<ApiResponse> uploadDigitalProduct(File? filePath, String token) async {
-    http.MultipartRequest request = http.MultipartRequest('POST', Uri.parse('${AppConstants.baseUrl}${AppConstants.digitalProductUpload}'));
-    request.headers.addAll(<String,String>{'Authorization': 'Bearer $token'});
-    if(filePath != null) {
-      final fileName = filePath.path.split(RegExp(r'[/\\]')).last;
-      request.files.add(http.MultipartFile.fromBytes('digital_file_ready', filePath.readAsBytesSync(), filename: fileName));
-    }
-
-    Map<String, String> fields = {};
-    fields.addAll(<String, String>{
-    });
-
-    request.fields.addAll(fields);
-    if (kDebugMode) {
-      print('=====> ${request.url.path}\n${request.fields}');
-    }
-
-    http.StreamedResponse response = await request.send();
-    var res = await http.Response.fromStream(response);
-    if (kDebugMode) {
-      print('=====Response body is here==>${res.body}');
-    }
-
-    try {
-      return ApiResponse.withSuccess(Response(statusCode: response.statusCode,
-          requestOptions: RequestOptions(path: ''), statusMessage: response.reasonPhrase, data: res.body));
+      return ApiResponse.withSuccess(response);
     } catch (e) {
       return ApiResponse.withError(ApiErrorHandler.getMessage(e));
     }
   }
+
+
 
 
   @override
@@ -483,44 +373,6 @@ class AddProductRepository implements AddProductRepositoryInterface{
       return ApiResponse.withError(ApiErrorHandler.getMessage(e));
     }
   }
-
-
-  @override
-  Future<ApiResponse> deleteDigitalVariationFile(int? productId, String variantKey) async {
-    try {
-      final response = await dioClient!.post(AppConstants.deleteDigitalProductVariationFile,
-          data: {
-            "product_id": productId,
-            "variant_key": variantKey
-          }
-      );
-      return ApiResponse.withSuccess(response);
-    } catch (e) {
-      return ApiResponse.withError(ApiErrorHandler.getMessage(e));
-    }
-  }
-
-
-  @override
-  Future<ApiResponse> getDigitalAuthor() async {
-    try {
-      final response = await dioClient!.get(AppConstants.digitalAuthorList);
-      return ApiResponse.withSuccess(response);
-    } catch (e) {
-      return ApiResponse.withError(ApiErrorHandler.getMessage(e));
-    }
-  }
-
-  @override
-  Future<ApiResponse> getPublishingHouse() async {
-    try {
-      final response = await dioClient!.get(AppConstants.digitalPublishingHouse);
-      return ApiResponse.withSuccess(response);
-    } catch (e) {
-      return ApiResponse.withError(ApiErrorHandler.getMessage(e));
-    }
-  }
-
 
 
   @override

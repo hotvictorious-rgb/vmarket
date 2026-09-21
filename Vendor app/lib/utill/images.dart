@@ -180,9 +180,6 @@ class Images {
   static const String maintenance = 'assets/images/maintenance.png';
   static const String infoIcon = 'assets/images/info_icon.png';
   static const String uploadIcon = 'assets/images/upload_icon.png';
-  static const String digitalPreviewFileIcon = 'assets/images/digital_preview_file_icon.png';
-  static const String digitalPreviewDeleteIcon = 'assets/images/delete_preview_icon.png';
-  static const String downloadPreviewIcon = 'assets/images/download_preview_icon.png';
   static const String updateQuantityIcon = 'assets/images/update_quantity_icon.png';
   static const String dropdown = 'assets/images/dropdown.png';
   static const String reset = 'assets/images/reset.png';
@@ -200,7 +197,6 @@ class Images {
   static const String alertCircle = 'assets/images/alert_circle.png';
   static const String productFilter = 'assets/images/product_filter.png';
   static const String calendarIconFilter = 'assets/images/calendar_icon_filter.png';
-  static const String downloadIcon = 'assets/images/download_icon.png';
   static const String totalProducts = 'assets/images/total_products.png';
   static const String totalOrders = 'assets/images/total_orders.png';
   static const String totalEarningIcon = 'assets/images/total_earning_icon.png';
@@ -253,8 +249,6 @@ class Images {
   static const String totalOrderIcon = 'assets/svg/total_order_icon.svg';
   static const String totalAmountIcon = 'assets/svg/total_amount_icon.svg';
   static const String downloadInvoice = 'assets/svg/download_invoice.svg';
-  static const String editOrderIcon = 'assets/images/edit_order_icon.svg';
-  static const String switchToCodIcon = 'assets/svg/switch_to_cod_icon.svg';
 
   static const String orderDueAmountIcon = 'assets/svg/order_due_amount_icon.svg';
   static const String orderReturnAmountIcon = 'assets/svg/order_return_amount_icon.svg';
@@ -266,7 +260,6 @@ class Images {
   static const String addAttribuiteIcon = 'assets/svg/add_attribuite_icon.svg';
   static const String copyIcon = 'assets/svg/copy_icon.svg';
   static const String billingSummeryIcon = 'assets/svg/billing_summery_icon.svg';
-  static const String editOrderWarningIcon = 'assets/svg/edit_order_warning_icon.svg';
 
   static const String homeIconAddress = 'assets/images/home_icon_address.png';
   static const String countryIconAddress = 'assets/images/country_icon_address.png';

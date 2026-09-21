@@ -32,11 +32,14 @@ class AppConstants {
   static const String seenMessageUri = '/api/v3/seller/messages/seen/';
   static const String orderListUri = '/api/v3/seller/orders/list';
   static const String orderDetails = '/api/v3/seller/orders/';
+  static const String orderInvoice = '/api/v3/seller/orders/invoice/';
   static const String updateOrderStatus = '/api/v3/seller/orders/order-detail-status/';
   static const String balanceWithdraw = '/api/v3/seller/balance-withdraw';
   static const String cancelBalanceRequest = '/api/v3/seller/close-withdraw-request';
   static const String transactionUri = '/api/v3/seller/transactions?status=';
   static const String sellerProductUri = '/api/v3/seller/products/';
+  static const String posProductList = '/api/v3/seller/products/search';
+  static const String searchPosProductList = '/api/v3/seller/products/search';
   static const String stockOutProductUri = '/api/v3/seller/products/stock-out-list?limit=10&offset=';
   static const String productReviewUri = '/api/v3/seller/shop-product-reviews';
   static const String productReviewStatusOnOff = '/api/v3/seller/shop-product-reviews-status';
@@ -76,13 +79,9 @@ class AppConstants {
   static const String resetPasswordUri = '/api/v3/seller/auth/reset-password';
   static const String paymentStatusUpdate = '/api/v3/seller/orders/update-payment-status';
 
-  static const String digitalProductUpload = '/api/v3/seller/products/upload-digital-product';
-  static const String digitalProductUploadAfterSell = '/api/v3/seller/orders/order-wise-product-upload';
   static const String registration = '/api/v3/seller/registration';
   static const String deleteAccount = '/api/v3/seller/account-delete';
   static const String deliveryChargeForDelivery = '/api/v3/seller/orders/delivery-charge-date-update';
-  static const String digitalAuthorList = '/api/v3/seller/products/digital-author-list';
-  static const String digitalPublishingHouse = '/api/v3/seller/products/digital-publishing-house-list';
 
   static const String getCouponDiscount = '/api/v3/seller/coupon/check-coupon';
 

@@ -801,7 +801,6 @@ class _ButtonWidget extends StatelessWidget {
   }
 
   bool _areBrandsEqual(Set<int> brandIds, Set<int> currentBrandIds, ProductTypeEnum? type) {
-    if(type == ProductTypeEnum.digital) return true;
     return brandIds.length == currentBrandIds.length && brandIds.containsAll(currentBrandIds);
   }
 }

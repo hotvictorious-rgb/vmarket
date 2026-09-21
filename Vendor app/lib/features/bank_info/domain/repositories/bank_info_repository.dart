@@ -1,3 +1,4 @@
+import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:sixvalley_vendor_app/data/datasource/remote/dio/dio_client.dart';
 import 'package:sixvalley_vendor_app/data/datasource/remote/exception/api_error_handler.dart';
@@ -12,7 +13,8 @@ class BankInfoRepository implements BankInfoRepositoryInterface{
 
   final DioClient? dioClient;
   final SharedPreferences? sharedPreferences;
-  BankInfoRepository({required this.dioClient, required this.sharedPreferences});
+  final FlutterSecureStorage? secureStorage;
+  BankInfoRepository({required this.dioClient, required this.sharedPreferences, this.secureStorage});
 
   @override
   Future<ApiResponse> chartFilterData(String? type) async {
@@ -92,7 +94,7 @@ class BankInfoRepository implements BankInfoRepositoryInterface{
 
   @override
   String getBankToken() {
-    return sharedPreferences!.getString(AppConstants.token) ?? "";
+    return dioClient?.token ?? sharedPreferences?.getString(AppConstants.token) ?? "";
   }
 
   @override

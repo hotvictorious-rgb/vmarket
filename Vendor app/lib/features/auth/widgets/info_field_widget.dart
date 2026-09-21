@@ -820,7 +820,7 @@ class _InfoFieldVIewWidgetState extends State<InfoFieldVIewWidget> {
                                                         shopController.removeTinCertificateFile();
                                                       }
                                                     } ,
-                                                    child: shopController.isLoading ? const Center(child: SizedBox(height: 25, width: 25, child: CircularProgressIndicator())) : Image.asset(width:25, Images.digitalPreviewDeleteIcon)
+                                                    child: shopController.isLoading ? const Center(child: SizedBox(height: 25, width: 25, child: CircularProgressIndicator())) : Image.asset(width:25, Images.delete)
                                                   )
                                                 ),
 
@@ -854,7 +854,7 @@ class _InfoFieldVIewWidgetState extends State<InfoFieldVIewWidget> {
                                                         ...[
                                                           Column(
                                                             children: [
-                                                              SizedBox(width: 30, child: Image.asset(Images.digitalPreviewFileIcon) ),
+                                                              SizedBox(width: 30, child: Image.asset(Images.fileIcon) ),
                                                               const SizedBox(height: Dimensions.paddingSizeExtraSmall),
                                                               Text(shopController.tinCertificateFile?.name ?? '',
                                                                   style: robotoRegular.copyWith(fontSize: Dimensions.fontSizeDefault, color: Theme.of(context).textTheme.bodyLarge?.color), overflow: TextOverflow.ellipsis)

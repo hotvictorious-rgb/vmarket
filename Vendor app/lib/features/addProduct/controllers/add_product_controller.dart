@@ -4,7 +4,6 @@ import 'package:image_picker/image_picker.dart';
 import 'package:provider/provider.dart';
 import 'package:sixvalley_vendor_app/features/addProduct/controllers/add_product_image_controller.dart';
 import 'package:sixvalley_vendor_app/features/addProduct/controllers/add_product_tax_controller.dart';
-import 'package:sixvalley_vendor_app/features/addProduct/controllers/digital_product_controller.dart';
 import 'package:sixvalley_vendor_app/features/addProduct/controllers/variation_controller.dart';
 import 'package:sixvalley_vendor_app/features/addProduct/domain/models/add_product_model.dart';
 import 'package:sixvalley_vendor_app/data/model/response/base/api_response.dart';
@@ -276,7 +275,6 @@ class AddProductController extends ChangeNotifier {
       }
 
       getTitleAndDescriptionList(Provider.of<SplashController>(Get.context!,listen: false).configModel!.languageList!, _editProduct);
-      Provider.of<DigitalProductController>(Get.context!,listen: false).initDigitalProductVariation(_editProduct!);
     } else {
       ApiChecker.checkApi(response);
     }
@@ -323,11 +321,8 @@ class AddProductController extends ChangeNotifier {
   Future<void> addProduct(BuildContext context, Product product, AddProductModel addProduct, String? thumbnail, String? metaImage, bool isAdd, List<String?> tags) async {
     _isLoading = true;
     notifyListeners();
+final addProductImageController = Provider.of<AddProductImageController>(context, listen: false);
 
-    final addProductImageController = Provider.of<AddProductImageController>(context, listen: false);
-    bool isDigitalVariationEmpty =  Provider.of<DigitalProductController>(context, listen: false).selectedDigitalVariation.isNotEmpty;
-
-    DigitalVariationModel? digitalVariationModel;
     String? token;
 
     List<AttributeModel>? attributeList = Provider.of<VariationController>(context, listen: false).attributeList;
@@ -340,21 +335,13 @@ class AddProductController extends ChangeNotifier {
 
     List<ColorImage> colorImageObjects = addProductImageController.colorImageObject;
 
-    String? digitalProductFileName = Provider.of<DigitalProductController>(context, listen: false).digitalProductFileName;
-
-    if(_productTypeIndex == 1) {
-      digitalVariationModel = Provider.of<DigitalProductController>(context, listen: false).getDigitalVariationModel();
-    } else {
-      digitalVariationModel =  DigitalVariationModel();
-    }
-
     token = Provider.of<AuthController>(context,listen: false).getUserToken();
 
     setMetaSeoData(product);
 
 
 
-    ApiResponse response = await shopServiceInterface.addProduct(product, addProduct ,variationFields, productReturnImages, thumbnail, metaImage, isAdd, attributeList![0].active, colorImageObjects, tags, digitalProductFileName, digitalVariationModel, isDigitalVariationEmpty, token);
+    ApiResponse response = await shopServiceInterface.addProduct(product, addProduct ,variationFields, productReturnImages, thumbnail, metaImage, isAdd, attributeList![0].active, colorImageObjects, tags, token);
     if(response.response != null && response.response?.statusCode == 200) {
 
     await addProductImageController.onDeleteColorImages(product);
@@ -365,7 +352,6 @@ class AddProductController extends ChangeNotifier {
        titleControllerList.clear();
       descriptionControllerList.clear();
       Provider.of<AddProductImageController>(Get.context!, listen: false).removeProductImage();
-      emptyDigitalProductData();
       _isLoading = false;
       _metaSeoInfo = MetaSeoInfo();
      }else {
@@ -486,25 +472,11 @@ class AddProductController extends ChangeNotifier {
     return inputList.map((str) => str.toLowerCase().trim()).toList();
   }
 
-
-
-  void updateState(){
+void updateState(){
     notifyListeners();
   }
 
 
-  void emptyDigitalProductData() {
-    Provider.of<DigitalProductController>(Get.context!, listen: false).emptyDigitalProductData();
-  }
-
-
-
-
-
-  
-
-
-  
 
   void setIsAttributeActive(bool isActive, {bool notify = false}) {
     _isAttributeActive = isActive;
@@ -543,7 +515,7 @@ class AddProductController extends ChangeNotifier {
 
     // 4. Check Unit (defaults to pc if not specified)
     if ((unitValue == 'select_unit' || unitValue == null) && productTypeIndex == 0) {
-      unitValue = 'pc';
+      _unitValue = 'pc';
     }
 
     // 5. SKU is Optional in 6-field model (auto-generated canonical code VM-XXX-YYYY if omitted)
@@ -565,19 +537,7 @@ class AddProductController extends ChangeNotifier {
       return false;
     }
 
-    // 7. Check Product Images
-    bool hasExistingImages = isUpdate && (existingProduct.imagesFullUrl != null && existingProduct.imagesFullUrl!.isNotEmpty);
-    // Optional: Add logic to check if existing images are valid (not null path) if needed
-
-    int newImageCount = imageController.imagesWithColor.length + imageController.withoutColor.length;
-
-    if (!isUpdate && newImageCount == 0) {
-      showCustomSnackBarWidget(getTranslated('upload_product_image', context), context, sanckBarType: SnackBarType.warning);
-      return false;
-    } else if (isUpdate && newImageCount == 0 && !hasExistingImages) {
-      showCustomSnackBarWidget(getTranslated('upload_product_image', context), context, sanckBarType: SnackBarType.warning);
-      return false;
-    } else if (newImageCount > 5) {
+    if (newImageCount > 5) {
       showCustomSnackBarWidget('Maximum 5 images allowed for product', context, sanckBarType: SnackBarType.warning);
       return false;
     } else if(youtubeLink != null && youtubeLink.trim().isNotEmpty && !youtubeLink.contains('youtube.com/embed/')) {
@@ -593,7 +553,6 @@ class AddProductController extends ChangeNotifier {
   // Inside AddProductController class
 
   bool validateVariations(BuildContext context, {
-    required DigitalProductController digitalProductController,
     required VariationController variationController,
     required AddProductTaxController taxController,
     required AddProductImageController imageController,
@@ -606,103 +565,10 @@ class AddProductController extends ChangeNotifier {
     required bool isUpdate,
   }) {
 
-    bool digitalProductVariationEmpty = false;
-    bool isTitleEmpty = false;
-    bool isFileEmpty = false;
-    bool isPriceEmpty = false;
-    bool isSKUEmpty = false;
-
-    // 1. Digital Product Checks
-    for (int index = 0; index < digitalProductController.selectedDigitalVariation.length; index++) {
-      if(digitalProductController.digitalVariationExtantion[index].isEmpty) {
-        digitalProductVariationEmpty = true;
-        break;
-      }
-    }
-
-    for (int index = 0; index < digitalProductController.selectedDigitalVariation.length; index++) {
-      for(int i =0; i< digitalProductController.variationFileList[index].length; i++) {
-        if(digitalProductController.variationFileList[index][i].fileName == null) {
-          isFileEmpty = true;
-          break;
-        }
-        if(digitalProductController.variationFileList[index][i].priceController?.text.trim() == ''){
-          isPriceEmpty = true;
-          break;
-        }
-        if(digitalProductController.variationFileList[index][i].skuController?.text.trim() == ''){
-          isSKUEmpty = true;
-          break;
-        }
-        if(digitalProductController.variationFileList[index][i].fileName == null){
-          isTitleEmpty = true;
-          break;
-        }
-      }
-    }
-
-    // 2. Physical Variant Checks
-    bool haveBlankVariant = false;
-    bool blankVariantPrice = false;
-    bool blankVariantQuantity = false;
-
-    if (variationController.attributeList != null) {
-      for (AttributeModel attr in variationController.attributeList!) {
-        if (attr.active && attr.variants.isEmpty) {
-          haveBlankVariant = true;
-          break;
-        }
-      }
-    }
-
-    for (VariantTypeModel variantType in variationController.variantTypeList) {
-      if (variantType.controller.text.isEmpty) {
-        blankVariantPrice = true;
-        break;
-      }
-      if (variantType.qtyController.text.isEmpty) {
-        blankVariantQuantity = true;
-        break;
-      }
-    }
-
-    // 3. Color Image Checks
-    bool isColorImageEmpty = false;
-    if(imageController.imagesWithColor.isNotEmpty) {
-      for (int i=0; i<imageController.imagesWithColor.length; i++) {
-        if (!isUpdate && imageController.imagesWithColor[i].image == null && !isColorImageEmpty) {
-          isColorImageEmpty = true;
-        } else if (isUpdate && imageController.imagesWithColor[i].colorImage?.imageName == null && !isColorImageEmpty){
-          isColorImageEmpty = true;
-        }
-      }
-    }
-
     // [AI] Product variations have been eliminated across Victorious MARKET.
     // Physical variant checks, variant prices, and attribute validations bypassed.
     if (unitPrice.isEmpty) {
       showCustomSnackBarWidget(getTranslated('enter_unit_price', context), context, sanckBarType: SnackBarType.warning);
-      return false;
-    }
-    else if((isUpdate || !isUpdate) && productTypeIndex == 1 && digitalProductController.digitalProductTypeIndex == 1 && isFileEmpty) {
-      showCustomSnackBarWidget(getTranslated('digital_product_file_empty', context), context, sanckBarType: SnackBarType.warning);
-      return false;
-    }
-    else if(productTypeIndex == 1 && isPriceEmpty) {
-      showCustomSnackBarWidget(getTranslated('digital_product_price_empty', context), context, sanckBarType: SnackBarType.warning);
-      return false;
-    }
-    else if(productTypeIndex == 1 && isSKUEmpty) {
-      showCustomSnackBarWidget(getTranslated('digital_product_sku_empty', context), context, sanckBarType: SnackBarType.warning);
-      return false;
-    }
-    else if(productTypeIndex == 1 && digitalProductVariationEmpty) {
-      showCustomSnackBarWidget(getTranslated('digital_product_variation_empty', context), context, sanckBarType: SnackBarType.warning);
-      return false;
-    }
-    else if (!isUpdate && (productTypeIndex == 1 && digitalProductController.digitalProductTypeIndex == 1 &&
-        digitalProductController.selectedFileForImport == null) && digitalProductController.selectedDigitalVariation.isEmpty) {
-      showCustomSnackBarWidget(getTranslated('please_choose_digital_product', context), context, sanckBarType: SnackBarType.warning);
       return false;
     }
     else if(configModel?.systemTaxType == 'product_wise' && configModel?.systemTaxIncludeStatus == 0 && taxController.selectedTaxList.isEmpty) {

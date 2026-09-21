@@ -33,31 +33,7 @@ class _TitleAndDescriptionWidgetState extends State<TitleAndDescriptionWidget> {
           // ),
           // const SizedBox(height: Dimensions.paddingSizeSmall,),
 
-              return Row(
-                mainAxisAlignment: MainAxisAlignment.end,
-                children: [
-                  InkWell(
-                    onTap: () {
-                      if(widget.resProvider.titleControllerList[widget.index].text.isEmpty) {
-                        showCustomSnackBarWidget('${getTranslated('product_name_required', context)}', context);
-                      }else{
-                          title: widget.resProvider.titleControllerList[widget.index].text.trim(),
-                          langCode: widget.langCode,
-                        ).then((value) {
-                            setState(() {});
-                        });
-                    },
-                      baseColor: Theme.of(context).primaryColor,
-                      highlightColor: Colors.grey[100]!,
-                      child: Row(children: [
-                        const SizedBox(width: Dimensions.paddingSizeExtraSmall),
-
-                      ]),
-                  ),
-                ],
-              );
-            }
-          ),
+              
 
 
           const SizedBox(height: Dimensions.paddingSizeSmall),
@@ -86,31 +62,7 @@ class _TitleAndDescriptionWidgetState extends State<TitleAndDescriptionWidget> {
           //   ],
           // ),
 
-              return Row(
-                mainAxisAlignment: MainAxisAlignment.end,
-                children: [
-                  InkWell(
-                    onTap: () {
-                      if(widget.resProvider.titleControllerList[widget.index].text.isEmpty) {
-                        showCustomSnackBarWidget('${getTranslated('product_name_required', context)}', context);
-                      }else{
-                          title: widget.resProvider.titleControllerList[widget.index].text.trim(),
-                          langCode: widget.langCode,
-                        ).then((value) {
-                            setState(() {});
-                        });
-                    },
-                      baseColor: Theme.of(context).primaryColor,
-                      highlightColor: Colors.grey[100]!,
-                      child: Row(children: [
-                        const SizedBox(width: Dimensions.paddingSizeExtraSmall),
-
-                      ]),
-                  ),
-                ],
-              );
-            }
-          ),
+              
           const SizedBox(height: Dimensions.paddingSizeSmall),
 
           CustomTextFieldWidget(

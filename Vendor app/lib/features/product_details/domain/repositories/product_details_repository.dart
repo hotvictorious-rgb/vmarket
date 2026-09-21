@@ -1,7 +1,5 @@
 
 
-import 'dart:io';
-
 import 'package:sixvalley_vendor_app/data/datasource/remote/dio/dio_client.dart';
 import 'package:sixvalley_vendor_app/data/datasource/remote/exception/api_error_handler.dart';
 import 'package:sixvalley_vendor_app/data/model/response/base/api_response.dart';
@@ -38,17 +36,6 @@ class ProductDetailsRepository implements ProductDetailsRepositoryInterface{
     } catch (e) {
       return ApiResponse.withError(ApiErrorHandler.getMessage(e));
     }
-  }
-
-
-  @override
-  Future<HttpClientResponse> previewDownload(String? url) async {
-    HttpClient client = HttpClient();
-    final response = await client.getUrl(Uri.parse(url!)).then((HttpClientRequest request) {
-      return request.close();
-    },
-    );
-    return response;
   }
 
 

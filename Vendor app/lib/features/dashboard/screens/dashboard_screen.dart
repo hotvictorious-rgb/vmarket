@@ -4,7 +4,6 @@ import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:provider/provider.dart';
 import 'package:sixvalley_vendor_app/common/basewidgets/confirmation_dialog_widget.dart';
 import 'package:sixvalley_vendor_app/common/basewidgets/custom_dialog_widget.dart';
-import 'package:sixvalley_vendor_app/features/addProduct/controllers/digital_product_controller.dart';
 
 import 'package:sixvalley_vendor_app/features/product/controllers/category_controller.dart';
 import 'package:sixvalley_vendor_app/features/shop/controllers/shop_controller.dart';
@@ -43,8 +42,6 @@ class DashboardScreenState extends State<DashboardScreen> {
     String languageCode = Provider.of<LocalizationController>(context, listen: false).locale.countryCode == 'US'?
     'en':Provider.of<LocalizationController>(context, listen: false).locale.countryCode!.toLowerCase();
     Provider.of<ProfileController>(context, listen: false).getSellerInfo();
-    Provider.of<DigitalProductController>(context, listen: false).getDigitalAuthor();
-    Provider.of<DigitalProductController>(context, listen: false).getPublishingHouse();
     Provider.of<CategoryController>(context,listen: false).getCategoryList(context, null, languageCode);
 
     Provider.of<ShopController>(context, listen: false).getShopInfo();

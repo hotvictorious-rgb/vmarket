@@ -16,9 +16,8 @@ import 'package:sixvalley_vendor_app/utill/styles.dart';
 
 class OrderSetupBottomSheet extends StatefulWidget {
   final Order? orderModel;
-  final bool onlyDigital;
   final BuildContext bottomContext;
-  const OrderSetupBottomSheet({super.key, this.orderModel, this.onlyDigital = false, required this.bottomContext});
+  const OrderSetupBottomSheet({super.key, this.orderModel, required this.bottomContext});
 
   @override
   State<OrderSetupBottomSheet> createState() => _OrderSetupBottomSheetState();
@@ -299,6 +298,6 @@ class _OrderSetupBottomSheetState extends State<OrderSetupBottomSheet> {
     //     : true : false;
   }
 
-  bool _deliverySetUpExist() => isSellerWiseShipping && !widget.onlyDigital && widget.orderModel?.orderType != 'POS';
+  bool _deliverySetUpExist() => isSellerWiseShipping && widget.orderModel?.orderType != 'POS';
 
 }
