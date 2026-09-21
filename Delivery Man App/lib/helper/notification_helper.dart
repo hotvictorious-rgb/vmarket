@@ -35,7 +35,7 @@ class NotificationHelper {
         if(data.payload != null && data.payload!.isNotEmpty) {
           payload = NotificationBody.fromJson(jsonDecode(data.payload!));
           if(payload.type == 'chatting') {
-            Navigator.of(Get.context!).pushReplacement(MaterialPageRoute(builder: (_) => DashboardScreen(pageIndex: 2, chatIndex: payload.messageKey == 'message_from_customer' ? 1 : payload.messageKey == 'message_from_seller' ? 0 : 3)));
+            Navigator.of(Get.context!).pushReplacement(MaterialPageRoute(builder: (_) => const NotificationScreen(fromNotification: true)));
           } else if(payload.type == 'Theme') {
             Navigator.of(Get.context!).pushReplacement(MaterialPageRoute(builder: (_) => const NotificationScreen(fromNotification: true)));
           } else if(payload.type == 'order') {
@@ -128,7 +128,7 @@ class NotificationHelper {
       }
 
       if(payload?.type == 'chatting') {
-        Navigator.of(Get.context!).pushReplacement(MaterialPageRoute(builder: (_) => DashboardScreen(pageIndex: 2, chatIndex: payload?.messageKey == 'message_from_customer' ? 1 : payload?.messageKey == 'message_from_seller' ? 0 : 3)));
+        Navigator.of(Get.context!).pushReplacement(MaterialPageRoute(builder: (_) => const NotificationScreen(fromNotification: true)));
       } else if(payload?.type == 'Theme') {
         Navigator.of(Get.context!).pushReplacement(MaterialPageRoute(builder: (_) => const NotificationScreen(fromNotification: true)));
       } else if(payload?.type == 'order'){

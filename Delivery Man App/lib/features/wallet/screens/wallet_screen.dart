@@ -70,7 +70,7 @@ class _WalletScreenState extends State<WalletScreen> {
         }
 
         if(widget.fromProfile){
-          Get.to(()=> const DashboardScreen(pageIndex: 4));
+          Get.to(()=> const DashboardScreen(pageIndex: 3));
         }
       },
       child: Scaffold(

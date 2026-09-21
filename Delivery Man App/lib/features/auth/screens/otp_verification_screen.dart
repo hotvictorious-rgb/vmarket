@@ -27,12 +27,12 @@ class VerificationScreen extends StatelessWidget {
             crossAxisAlignment: CrossAxisAlignment.center, children: [
 
               Padding(padding:  EdgeInsets.only(bottom: Dimensions.paddingSizeDefault),
-                child: Text('please_enter_4_digit_code'.tr,style: rubikMedium.copyWith(fontSize: Dimensions.fontSizeDefault),
+                child: Text('enter_otp_number'.tr,style: rubikMedium.copyWith(fontSize: Dimensions.fontSizeDefault),
                 textAlign: TextAlign.center)),
 
-              Padding(padding: EdgeInsets.symmetric(horizontal: Get.width/7, vertical: Dimensions.paddingSizeDefault),
+              Padding(padding: EdgeInsets.symmetric(horizontal: Dimensions.paddingSizeDefault, vertical: Dimensions.paddingSizeDefault),
                 child: PinCodeTextField(
-                  length: 4,
+                  length: 6,
                   appContext: context,
                   obscureText: false,
                   showCursor: true,
@@ -40,8 +40,8 @@ class VerificationScreen extends StatelessWidget {
                   animationType: AnimationType.fade,
                   pinTheme: PinTheme(
                     shape: PinCodeFieldShape.circle,
-                    fieldHeight: 50,
-                    fieldWidth: 50,
+                    fieldHeight: 45,
+                    fieldWidth: 40,
                     borderWidth: 1,
                     borderRadius: BorderRadius.circular(Dimensions.paddingSizeExtraLarge),
                     selectedColor: ColorHelper.darken(Theme.of(context).colorScheme.secondary, 0.2),

@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
-import 'package:sixvalley_delivery_boy/features/chat/screens/conversation_screen.dart';
 import 'package:sixvalley_delivery_boy/features/home/screens/home_screen.dart';
 import 'package:sixvalley_delivery_boy/features/notification/screens/notification_screen.dart';
 import 'package:sixvalley_delivery_boy/features/order/screens/order_history_screen.dart';
@@ -35,7 +34,6 @@ class DashboardController extends GetxController implements GetxService{
       }),
       const OrderHistoryScreen(fromMenu: true),
       const WalletScreen(fromNotification: false, fromMenu: true),
-      const ConversationScreen(fromNotification: false),
       const ProfileScreen(),
     ];
     _currentScreen = screen[0];
@@ -55,14 +53,6 @@ class DashboardController extends GetxController implements GetxService{
     update();
   }
 
-  void selectConversationScreen({bool isUpdate = true, int? chatIndex}) {
-    _currentScreen = ConversationScreen(fromNotification: !isUpdate, chatIndex: chatIndex);
-    _currentTab = 3;
-    if(isUpdate){
-      update();
-    }
-  }
-
 
   void selectNotificationScreen({bool isUpdate = true}) {
     Get.to(() => const NotificationScreen(fromNotification: true));
@@ -71,7 +61,7 @@ class DashboardController extends GetxController implements GetxService{
 
   void selectProfileScreen({bool isUpdate = true}) {
     _currentScreen = const ProfileScreen();
-    _currentTab = 4;
+    _currentTab = 3;
     if(isUpdate){
       update();
     }

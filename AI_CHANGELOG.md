@@ -1,3 +1,27 @@
+### [2026-09-21 17:45 UTC] Delivery Man App & Backend End-to-End Alignment & Screen Streamlining [delivery-man] [backend] [AI]
+* **Component:** Delivery Rider App (`Delivery Man App`), Laravel Backend (`backend/vmarket-web`)
+* **Scope:** Password reset OTP 6-digit synchronization, decommissioning orphaned chat subsystem, streamlining rider dashboard to 4 core functional tabs, and end-to-end logistics contract verification
+* **Changes:**
+  - **Password Reset OTP 6-Digit Invariant (`lib/features/auth/screens/otp_verification_screen.dart`):**
+    - Corrected `PinCodeTextField` from `length: 4` to `length: 6` and updated instruction label from `please_enter_4_digit_code` to `enter_otp_number` to match backend 6-digit cryptographic OTP generation (`LoginController::reset_password_request`).
+  - **Rider Navigation & Screen Relevance Streamlining (`lib/features/dashboard/screens/dashboard_screen.dart` & `dashboard_controller.dart`):**
+    - Removed decommissioned `ConversationScreen` tab from bottom navigation bar.
+    - Streamlined bottom navigation bar to 4 core operational tabs: Home (0), Order History (1), Earnings (2), Profile (3).
+    - Updated `onItemSelected`, `pageIndex` router mappings, and controller methods to reflect 4-tab structure.
+  - **Profile Navigation Alignment (`lib/features/wallet/screens/wallet_screen.dart`):**
+    - Updated line 73 return-to-profile navigation from `DashboardScreen(pageIndex: 4)` to `DashboardScreen(pageIndex: 3)`.
+  - **Order Coordination Optimization (`lib/features/order_details/widgets/cal_chat_widget.dart`):**
+    - Removed defunct in-app chat SMS icon button connecting to non-existent backend endpoints.
+    - Retained 1-Click Direct Phone Calling (`tel:$phone`) and 1-Click WhatsApp Coordination (`wa.me/$nigerianPhone`) for active doorstep delivery.
+  - **Notification & Deep Link Redirection (`lib/helper/notification_helper.dart` & `lib/features/splash/screens/splash_screen.dart`):**
+    - Rerouted legacy `chatting` push notification payloads and app launches to `NotificationScreen(fromNotification: true)`.
+  - **Decommissioned Chat Subsystem Purged (`lib/features/chat/` & `lib/helper/get_di.dart`):**
+    - Removed unused `ChatRepositoryInterface`, `ChatServiceInterface`, `ChatRepository`, `ChatService`, and `ChatController` registrations from `get_di.dart`.
+    - Purged decommissioned `lib/features/chat/` directory to eliminate dead code.
+* **Verification:**
+  - Executed Dart static analysis (`flutter analyze --no-pub`) across the entire `Delivery Man App`. Confirmed **0 ISSUES FOUND (0 errors, 0 warnings, 0 infos)** in 133.2s.
+  - Verified backend controllers with `php -l`: `DeliveryManController.php` (0 syntax errors), `LoginController.php` (0 syntax errors), `WithdrawController.php` (0 syntax errors).
+
 ### [2026-09-21 17:15 UTC] Customer App Compilation & Route Integrity Remediation [user-app] [AI]
 * **Component:** Customer Mobile App (`User app`)
 * **Scope:** Elimination of all static Dart analysis compiler breaks, orphaned references to decommissioned chat/digital products, and push notification routing alignment

@@ -33,10 +33,6 @@ class _DashboardScreenState extends State<DashboardScreen> {
     }
 
     if(widget.pageIndex == 3) {
-      Get.find<DashboardController>().selectConversationScreen(isUpdate: false, chatIndex: widget.chatIndex);
-    }
-
-    if(widget.pageIndex == 4) {
       Get.find<DashboardController>().selectProfileScreen(isUpdate: false);
     }
 
@@ -70,8 +66,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
               _barItem(Images.homeIcon, 'home'.tr, 0, menuController),
               _barItem(Images.orderIcon, 'order_history'.tr, 1, menuController),
               _barItem(Images.money, 'earnings'.tr, 2, menuController),
-              _barItem(Images.chatIcon, 'message'.tr, 3, menuController),
-              _barItem(Images.profileIcon, 'profile'.tr, 4, menuController),
+              _barItem(Images.profileIcon, 'profile'.tr, 3, menuController),
             ],
             onItemSelected: (int index) {
               if(index == 0){
@@ -81,8 +76,6 @@ class _DashboardScreenState extends State<DashboardScreen> {
               }else if(index == 2){
                 menuController.selectEarningsScreen();
               }else if(index == 3){
-                menuController.selectConversationScreen();
-              }else if(index == 4){
                 menuController.selectProfileScreen();
               }
             },

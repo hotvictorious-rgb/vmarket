@@ -81,7 +81,7 @@ class _SplashScreenState extends State<SplashScreen> {
               String notificationType = widget.body?.type??"";
               switch(notificationType.toLowerCase()) {
                 case 'chatting' : {
-                  Get.offAll(DashboardScreen(pageIndex: 2, chatIndex: widget.body?.messageKey == 'message_from_customer' ? 1 : widget.body?.messageKey == 'message_from_seller' ? 0 : 3));
+                  Get.offAll(const NotificationScreen(fromNotification: true));
                 }
                 break;
 

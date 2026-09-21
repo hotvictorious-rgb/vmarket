@@ -7,10 +7,6 @@ import 'package:sixvalley_delivery_boy/features/auth/controllers/auth_controller
 import 'package:sixvalley_delivery_boy/features/auth/domain/repositories/auth_repository_interface.dart';
 import 'package:sixvalley_delivery_boy/features/auth/domain/services/auth_service.dart';
 import 'package:sixvalley_delivery_boy/features/auth/domain/services/auth_service_interface.dart';
-import 'package:sixvalley_delivery_boy/features/chat/controllers/chat_controller.dart';
-import 'package:sixvalley_delivery_boy/features/chat/domain/repositories/chat_repository_interface.dart';
-import 'package:sixvalley_delivery_boy/features/chat/domain/services/chat_service.dart';
-import 'package:sixvalley_delivery_boy/features/chat/domain/services/chat_service_interface.dart';
 import 'package:sixvalley_delivery_boy/features/emergency_contact/controllers/emergency_contruct_controller.dart';
 import 'package:sixvalley_delivery_boy/features/emergency_contact/domain/repositories/emergency_contruct_repository.dart';
 import 'package:sixvalley_delivery_boy/features/emergency_contact/domain/repositories/emergency_contruct_repository_interface.dart';
@@ -64,7 +60,6 @@ import 'package:sixvalley_delivery_boy/data/api/api_client.dart';
 import 'package:sixvalley_delivery_boy/features/language/domain/models/language_model.dart';
 import 'package:sixvalley_delivery_boy/data/repository/rider_repository.dart';
 import 'package:sixvalley_delivery_boy/features/auth/domain/repositories/auth_repository.dart';
-import 'package:sixvalley_delivery_boy/features/chat/domain/repositories/chat_repository.dart';
 import 'package:sixvalley_delivery_boy/features/language/domain/repositories/language_repository.dart';
 import 'package:sixvalley_delivery_boy/features/notification/domain/repositories/notification_repository.dart';
 import 'package:sixvalley_delivery_boy/features/onboard/domain/repositories/onboarding_repository.dart';
@@ -91,8 +86,6 @@ Future<Map<String, Map<String, String>>> init() async {
   ///Interface
   AuthRepositoryInterface authRepoInterface = AuthRepository(apiClient: Get.find(), sharedPreferences: Get.find(), secureStorage: secureStorage);
   Get.lazyPut(() => authRepoInterface);
-  ChatRepositoryInterface chatRepoInterface = ChatRepository(apiClient: Get.find(), sharedPreferences: Get.find());
-  Get.lazyPut(()=> chatRepoInterface);
   NotificationRepositoryInterface notificationRepoInterface = NotificationRepository(apiClient: Get.find(), sharedPreferences: Get.find());
   Get.lazyPut(()=> notificationRepoInterface);
   OnboardRepositoryInterface onboardRepoInterface = OnBoardingRepository();
@@ -117,8 +110,6 @@ Future<Map<String, Map<String, String>>> init() async {
 
   AuthServiceInterface authServiceInterface = AuthService(authRepoInterface: Get.find());
   Get.lazyPut(() => authServiceInterface);
-  ChatServiceInterface chatServiceInterface = ChatService(chatRepoInterface: Get.find());
-  Get.lazyPut(()=> chatServiceInterface);
   NotificationServiceInterface notificationServiceInterface = NotificationService(notificationRepoInterfcace: Get.find());
   Get.lazyPut(()=> notificationServiceInterface);
   OnboardServiceInterface onboardServiceInterface = OnboardService(onboardRepoInterface: Get.find());
@@ -142,7 +133,6 @@ Future<Map<String, Map<String, String>>> init() async {
 
   ///service
   Get.lazyPut(() => AuthService(authRepoInterface: Get.find()));
-  Get.lazyPut(() => ChatService(chatRepoInterface: Get.find()));
   Get.lazyPut(() => NotificationService(notificationRepoInterfcace: Get.find()));
   Get.lazyPut(()=> OnboardService(onboardRepoInterface: Get.find()));
   Get.lazyPut(()=> OrderService(orderRepoInterface: Get.find()));
@@ -163,7 +153,6 @@ Future<Map<String, Map<String, String>>> init() async {
   Get.lazyPut(() => ProfileRepository(apiClient: Get.find(), sharedPreferences: sharedPreferences));
   Get.lazyPut(() => AuthRepository(apiClient: Get.find(), sharedPreferences: Get.find(), secureStorage: secureStorage));
   Get.lazyPut(() => OrderRepository(apiClient: Get.find(), sharedPreferences: Get.find()));
-  Get.lazyPut(() => ChatRepository(apiClient: Get.find(), sharedPreferences:  Get.find()));
   Get.lazyPut(() => NotificationRepository(apiClient: Get.find(), sharedPreferences:  Get.find()));
   Get.lazyPut(() => WalletRepository(apiClient: Get.find()));
   Get.lazyPut(() => RiderRepository(apiClient: Get.find()));
@@ -176,7 +165,6 @@ Future<Map<String, Map<String, String>>> init() async {
   /// Controller
 
   Get.lazyPut(() => AuthController(authServiceInterface: AuthService(authRepoInterface: Get.find())));
-  Get.lazyPut(() => ChatController(chatServiceInterFace: Get.find()));
   Get.lazyPut(() => NotificationController(notificationServiceInterface: Get.find()));
   Get.lazyPut(() => OnBoardingController(onboardServiceInterface: Get.find()));
   Get.lazyPut(() => OrderController(orderServiceInterface: Get.find()));
