@@ -6,11 +6,12 @@ class PriceConverter {
 
   static String convertPrice(double? price, {double? discount, String? discountType,
     int asFixed = 2}) {
+    price ??= 0.0;
     if(discount != null && discountType != null){
       if(discountType == 'amount') {
-        price = price! - discount;
+        price = price - discount;
       }else if(discountType == 'percent') {
-        price = price! - ((discount / 100) * price);
+        price = price - ((discount / 100) * price);
       }
     }
     final bool _singleCurrency = Get.find<SplashController>().configModel!.currencyModel == 'single_currency';
@@ -18,16 +19,17 @@ class PriceConverter {
 
 
     return '${inRight ? '' : Get.find<SplashController>().myCurrency!.symbol} '
-      '${(_singleCurrency ? price: price! * Get.find<SplashController>().myCurrency!.exchangeRate!
-      * (1/Get.find<SplashController>().usdCurrency!.exchangeRate!))!.toStringAsFixed(Get.find<SplashController>().configModel!.decimalPointSetting??1).replaceAllMapped(RegExp(r'(\d{1,3})(?=(\d{3})+(?!\d))'), (Match m) => '${m[1]},')} ${inRight ? Get.find<SplashController>().myCurrency!.symbol : ''}';
+      '${(_singleCurrency ? price: price * Get.find<SplashController>().myCurrency!.exchangeRate!
+      * (1/Get.find<SplashController>().usdCurrency!.exchangeRate!)).toStringAsFixed(Get.find<SplashController>().configModel!.decimalPointSetting??1).replaceAllMapped(RegExp(r'(\d{1,3})(?=(\d{3})+(?!\d))'), (Match m) => '${m[1]},')} ${inRight ? Get.find<SplashController>().myCurrency!.symbol : ''}';
   }
 
   static String convertPriceWithoutSymbol(BuildContext context, double? price, {double? discount, String? discountType}) {
+    price ??= 0.0;
     if(discount != null && discountType != null){
       if(discountType == 'amount' || discountType == 'flat') {
-        price = price! - discount;
+        price = price - discount;
       }else if(discountType == 'percent' || discountType == 'percentage') {
-        price = price! - ((discount / 100) * price);
+        price = price - ((discount / 100) * price);
       }
     }
     final splashProvider = Get.find<SplashController>();
