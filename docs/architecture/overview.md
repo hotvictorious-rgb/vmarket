@@ -10,4 +10,4 @@ Vmarket is designed as a centralized monolith backend serving multiple client in
 - **Mobile Clients:** 3 Flutter native applications (Customer, Vendor, Delivery Man).
 
 ## 2. Shared Domain Models
-All models live under `backend/Admin and web new install V16.1/app/Models` and are replicated as typed Dart models in the Flutter applications.
+All models live under `backend/vmarket-web/app/Models` and are replicated as typed Dart models in the Flutter applications.

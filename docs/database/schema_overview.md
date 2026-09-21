@@ -1,7 +1,7 @@
 # 🗄️ Vmarket Schema Overview
 
 ## 1. Migrations Directory
-All migrations reside in `backend/Admin and web new install V16.1/database/migrations`.
+All migrations reside in `backend/vmarket-web/database/migrations`.
 
 ## 2. Specialized Columns
 - `sellers.bank_updated_at`: Controls the 48-hour security cooldown.

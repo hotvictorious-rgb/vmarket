@@ -1,3 +1,49 @@
+### [2026-09-21 06:10 UTC] Document Synchronization: V1 Fresh-System Architecture Alignment [governance] [AI]
+* **Component:** Documentation Ecosystem (`*.md`, `docs/`, `.agents/`)
+* **Scope:** Synchronized all governance, architecture, API, logistics, and reference documents to align with V1 fresh-system architecture after Directives 57321-57326 purge cycles
+* **Action:** Comprehensive document review and correction to eliminate contradictions, stale references, and legacy feature descriptions incompatible with current V1 codebase state:
+  - **LOGISTICS_POLICY.md:** Complete V1 rewrite. Removed all COD/cash-on-delivery references, rider cash collection, cash-in-hand remittance, "Transfer on Delivery," and Paystack doorstep payment links. Clarified delivery prepaid model, pickup pay-after-inspection model, two-factor OTP custody chain (Vendor Pickup OTP, Customer Delivery OTP, Customer Pickup Handover OTP), zero rider payment authority, delivery fee refund policy (non-refundable if `received_at != null`, refundable if delivery never occurred), and V1 architecture boundaries (no mixed fulfillment, no rider payment authority, no interstate transit codes, no customer-vendor direct chat, no partial pickup acceptance).
+  - **DATABASE_ARCHITECTURE.md:** Updated `orders` table documentation to clarify `pickup_verification_code` (4-digit Vendor Pickup OTP for rider-vendor handover), `verification_code` (6-digit Customer Delivery OTP OR Customer Pickup Handover OTP), `received_at` (actual customer receipt timestamp starting 24-hour return window), and `payment_method` (V1 supports `paystack`/`digital_payment` only; COD decommissioned). Added `delivery_man_wallets.cash_in_hand` decommissioned note (always 0.00 in V1; riders handle zero customer merchandise cash).
+  - **README.md:** Changed "30-Day Price Freshness" to "7-Day Marketplace Freshness" (configurable by Admin; default 7 days per `BUSINESS_RULES.md` section 11-12). Updated Delivery Rider App description from "Paystack cash remittance" to "vendor pickup OTP verification, doorstep delivery OTP validation."
+  - **OPERATING_COMPANY_MODEL.md:** Changed "30-Day Price Freshness" to "7-Day Marketplace Freshness" with automated daily cron (`products:check-marketplace-freshness`).
+  - **API_CONTRACT.md:** Updated Logistics & Orders endpoint descriptions to clarify Vendor Pickup OTP (rider collects package from vendor, records vendor-to-rider custody transfer) and Customer Delivery OTP (rider verifies at doorstep, records `received_at`, completes delivery, starts 24-hour return window, credits rider earnings). Removed `generate-paystack-link` endpoint reference (V1 riders do not collect cash).
+  - **docs/architecture/overview.md:** Fixed backend path from `backend/Admin and web new install V16.1/app/Models` to `backend/vmarket-web/app/Models`.
+  - **docs/api/endpoints_summary.md:** Comprehensive V1 endpoint audit. Added `/api/v1/digital-payment`, `/api/v1/cashback`, `/api/v3/seller/orders/verify-pickup-otp`, `/api/v2/delivery-man/order/verify-order-delivery-otp`. Created "V1 Decommissioned Endpoints" section listing removed COD/offline placement, rider `generate-paystack-link`, customer stored-value wallet routes, and rider cash remittance.
+  - **docs/database/schema_overview.md:** Fixed migrations path from `backend/Admin and web new install V16.1/database/migrations` to `backend/vmarket-web/database/migrations`.
+  - **docs/decisions/ADR-005-paystack-webhook-cryptographic-verification.md:** Added V1 scope note clarifying webhook fulfills only prepaid digital payment requests; COD payment fulfillment path (previously handled via rider Paystack links) removed; all V1 delivery orders are prepaid.
+  - **.agents/AGENTS.md:** Fixed backend path reference from `backend/Admin and web new install V16.1` to `backend/vmarket-web`.
+  - **VICTORIOUS_MARKET_ECOSYSTEM_MASTER_GUIDE.md:** Complete V1 fresh-system rewrite. Replaced extensive legacy POS ERP, AI concierge, WhatsApp sales agent, digital products, customer debt ledger, inter-branch waybills, COD scenarios, and customer wallet top-up documentation with authoritative V1 scope definition, 90/5/5 commercial model, dual fulfillment paths (delivery prepaid vs pickup pay-after-inspection), OTP custody invariants, 7-day marketplace freshness, 24-hour return window, cashback maturity, manual vendor settlement, and V1-compliant end-to-end scenarios.
+* **Verification:** Cross-referenced all updated documents against `V1_BUSINESS_RULEBOOK.md`, `BUSINESS_RULES.md`, `AI_ENGINEERING_RULES.md`, `CHANGE_IMPACT_PROTOCOL.md`, and `AI_CHANGELOG.md` (Directives 57321-57326) to ensure zero contradictions and full V1 architectural alignment.
+
+### [2026-09-20 15:52 UTC] Storefront Asset Symlink & Local Development Serving Fix [backend]
+* **Component:** Backend Local Dev & Storefront Asset Pipeline (`public/`, `server.php`)
+* **Scope:** Static asset delivery for themes, webfonts, and local development server
+* **Issue:** Homepage loaded without CSS/stylesheets (causing unstyled HTML layout dump with modals and menus vertically unrolled). All theme assets (`/themes/theme_aster/...`, `/resources/themes/...`) and `/public/assets/...` returned HTTP 404 because on Windows, the Linux symlink `ln -s ../resources/themes themes` was missing from `public/`, and `server.php` mod_rewrite was rejecting URIs outside `public/`.
+* **Fixes:**
+  - Created NTFS directory junctions in `backend/vmarket-web/public/`:
+    - `public/themes` -> `resources/themes`
+    - `public/resources` -> `resources`
+    - `public/public` -> `public` (for `/public/assets/` path requests)
+  - Updated `server.php` to serve static assets from both `public/` and project root before falling back to Laravel.
+* **Verification:**
+  - `curl -I http://127.0.0.1:8000/themes/theme_aster/public/assets/css/bootstrap.min.css`: 200 OK (257 KB).
+  - `curl -I http://127.0.0.1:8000/themes/theme_aster/public/assets/css/style.css`: 200 OK (144 KB).
+  - `curl -I http://127.0.0.1:8000/public/assets/backend/webfonts/uicons-regular-rounded.css`: 200 OK (255 KB).
+  - Homepage full HTTP response: 200 OK.
+
+### [2026-09-20 14:07 UTC] Storefront Homepage Layout & Visual Styling Remediation [backend]
+* **Component:** Backend Storefront Web Theme (`resources/themes/theme_aster/`)
+* **Scope:** Blade layout templates, Hero banner grid system, Swiper navigation scoping, CSS contrast rules
+* **Changes:**
+  - **app.blade.php:** Fixed contrast override bugs where `.btn-primary` text was forced to black (`#000000`), restoring crisp white (`#ffffff`); corrected `text-primary` from hardcoded muddy brown (`#904b00`) back to brand purple (`var(--bs-primary) !important`); restored white text for `.media.absolute-white` elements in footer hotline and badges.
+  - **_main-banner.blade.php:** Made middle banner column dynamically responsive (`col-xl-6 col-lg-8` when coupons exist, `col-xl-9 col-lg-12` when no coupons exist) to permanently eliminate the 3-column (25%) empty whitespace gap on the hero card; scoped coupon sidebar to `col-xl-3 col-lg-4 d-none d-lg-block`; eliminated redundant dummy placeholder cards when `bannerTypeFooterBanner` is empty.
+  - **_find-what-you-need.blade.php:** Removed 554px tall `top-side-banner-placeholder.png` upload-graphic fallback; dynamically expanded categories grid to full width (`w-100`) when no sidebar banner or recent orders exist.
+  - **_more-stores.blade.php:** Eliminated duplicate 554px tall `top-side-banner-placeholder.png` image on mobile viewport.
+  - **_clearance-sale.blade.php & _featured-deals.blade.php:** Scoped carousel navigation classes to `.clearance-sale-nav-prev`/`.clearance-sale-nav-next` and `.featured-deals-nav-prev`/`.featured-deals-nav-next` to prevent cross-carousel control collisions with `.top-rated-nav-*`.
+  - **_recommended-product.blade.php:** Dynamically synchronized active tab button state with whichever tab is first displayed (`featured_product`, `best_selling`, or `latest_product`).
+  - **_header.blade.php:** Removed `.svg` class from web logo `<img>` tag to prevent erroneous AJAX XML parsing of raster images by `main.js`.
+* **Verification:** `php -l` lint syntax check: 8/8 PASS with 0 errors.
+
 ### [2026-09-20 07:48 UTC] Directive 57326: Phase 3-5 Legacy Residue Purge — PHP, Blade & Report Controllers [backend]
 * **Component:** Backend (`backend/vmarket-web/`)
 * **Scope:** PHP class modifications, Blade view cleanup, report controller offline_payment purge

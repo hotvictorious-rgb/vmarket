@@ -104,8 +104,10 @@ All requests to `/api/v1/...` must include:
 * **Route:** `POST /api/v1/delivery-man/order/verify-pickup-otp`
 * **Request:** `{ "order_id": 100045, "pickup_otp": "4920" }`
 * **Response:** `{ "status": true, "order_status": "out_for_delivery" }`
+* **Description:** Rider verifies 4-digit Vendor Pickup OTP to collect package from vendor shop. Records vendor-to-rider custody transfer.
 
-#### 2. Generate Paystack Dynamic Payment Link
-* **Route:** `POST /api/v1/delivery-man/order/generate-paystack-link`
-* **Request:** `{ "order_id": 100045 }`
-* **Response:** `{ "status": true, "payment_url": "https://checkout.paystack.com/..." }`
+#### 2. Verify Delivery OTP
+* **Route:** `POST /api/v2/delivery-man/order/verify-order-delivery-otp`
+* **Request:** `{ "order_id": 100045, "verification_code": "940281" }`
+* **Response:** `{ "status": true, "order_status": "delivered", "received_at": "2026-09-21T10:30:00Z" }`
+* **Description:** Rider verifies 6-digit Customer Delivery OTP at doorstep. Records `received_at`, completes delivery, starts 24-hour return window, and credits rider earnings.

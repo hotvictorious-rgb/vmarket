@@ -358,7 +358,7 @@ VMarket strictly segregates institutional personnel:
 Victorious MARKET upholds a premium commercial reputation:
 * **No Unverified Sellers:** Anyone wanting to sell must pass business registration, physical premises verification, and NUBAN bank account resolution.
 * **Fixed, Non-Negotiable Pricing:** Products have clearly displayed prices. No "DM for price," no WhatsApp haggling, no opaque surcharges.
-* **30-Day Price Freshness:** Automated schedulers require vendors to confirm prices every 30 days to prevent inflation-driven cancellations.
+* **7-Day Marketplace Freshness:** Merchants must confirm marketplace listing freshness every 7 days (configurable by Admin). Automated daily cron (`products:check-marketplace-freshness`) checks for stale listings and marks them unlisted.
 
 ---
 

@@ -48,6 +48,13 @@ erDiagram
 * `customer_id`, `seller_id`, `delivery_man_id` (BIGINT)
 * `order_status` (ENUM: `pending`, `confirmed`, `processing`, `out_for_delivery`, `delivered`, `returned`, `failed`, `canceled`)
 * `payment_status` (ENUM: `paid`, `unpaid`)
-* `pickup_verification_code` (VARCHAR) — Secret 4-digit Pickup OTP for store handoffs.
-* `verification_code` (VARCHAR) — Customer delivery OTP.
-* `paystack_payment_url` (TEXT) — Dynamic payment link for rider cash-on-delivery collection.
+* `pickup_verification_code` (VARCHAR) — Secret 4-digit Vendor Pickup OTP (rider collects package from vendor).
+* `verification_code` (VARCHAR) — 6-digit Customer Delivery OTP (customer confirms doorstep receipt) OR Customer Pickup Handover OTP (customer receives goods at vendor shop after payment).
+* `received_at` (TIMESTAMP) — Records actual customer receipt timestamp; starts 24-hour return window.
+* `payment_method` (VARCHAR) — V1 supports: `paystack`, `digital_payment` (prepaid online). COD/offline payment methods decommissioned in V1.
+
+### D. `delivery_man_wallets` Table
+* `delivery_man_id` (BIGINT, Foreign Key)
+* `current_balance` (DECIMAL 24, 2) — Rider earnings from completed deliveries.
+* `cash_in_hand` (DECIMAL 24, 2) — **Decommissioned in V1 (always 0.00)**. Riders handle zero customer merchandise cash in V1.
+* `total_withdrawn` (DECIMAL 24, 2)

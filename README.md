@@ -157,7 +157,7 @@ Every order tracks four immutable audit timestamps:
 * **Approved Pickup Points:** Pre-inspected physical retail locations where shoppers can collect orders. In V1, pickup points do not require independent accounting branch complexity, keeping financial auditing lean and reliable.
 * **Vendor Privacy:** Vendors' private residences are strictly protected; only accredited, customer-accessible pickup points are displayed.
 * **Fixed, Non-Negotiable Pricing:** Products must have clear, visible prices. No "DM for price," no WhatsApp haggling.
-* **30-Day Price Freshness:** Automated daily cron checks require vendors to re-confirm product pricing every 30 days, protecting customers against inflation-driven cancellations.
+* **7-Day Marketplace Freshness:** Merchants must confirm marketplace listing freshness every 7 days (configurable by Admin). Stale listings become unlisted automatically.
 
 ---
 
@@ -244,7 +244,7 @@ graph TD
 | **Backend & Web Panels** | [`backend/vmarket-web/`](file:///c:/Users/SOOQ%20ELASER/Downloads/vmarket/backend/vmarket-web) | Laravel 10, PHP 8.1+, MySQL | MVC, Repository Pattern, Eloquent | Core REST API, Super Admin Command Center, Vendor Web Portal, and Storefront views. |
 | **Customer App** | [`User app/`](file:///c:/Users/SOOQ%20ELASER/Downloads/vmarket/User%20app) | Flutter 3.x, Dart | **Provider** + `flutter_secure_storage` | B2C shopping: search, cart, pickup reservation, Paystack checkout, live order tracking. |
 | **Vendor App** | [`Vendor app/`](file:///c:/Users/SOOQ%20ELASER/Downloads/vmarket/Vendor%20app) | Flutter 3.x, Dart | **Provider** + `flutter_secure_storage` | Merchant POS & operations: reservation verification, physical inspection sign-off, order fulfillment. |
-| **Delivery Rider App** | [`Delivery Man App/`](file:///c:/Users/SOOQ%20ELASER/Downloads/vmarket/Delivery%20Man%20App) | Flutter 3.x, Dart | **GetX** + `flutter_secure_storage` | Dispatch rider terminal: turn-by-turn navigation, doorstep delivery OTP validation, Paystack cash remittance. |
+| **Delivery Rider App** | [`Delivery Man App/`](file:///c:/Users/SOOQ%20ELASER/Downloads/vmarket/Delivery%20Man%20App) | Flutter 3.x, Dart | **GetX** + `flutter_secure_storage` | Dispatch rider terminal: turn-by-turn navigation, vendor pickup OTP verification, doorstep delivery OTP validation. |
 
 ---
 
