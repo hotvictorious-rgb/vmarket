@@ -1,3 +1,46 @@
+### [2026-09-21 10:25 UTC] Fresh Installation & Whogohost/cPanel Multi-Client Production Audit & Hardening [backend] [ai-governance] [AI]
+* **Component:** Laravel Backend (`backend/vmarket-web`), Deployment Architecture, Multi-Client APIs
+* **Scope:** Fresh server deployment readiness (Whogohost/cPanel), multi-app communication parity, and automated installer migration execution
+* **Changes:**
+  - **Fresh Installation Migration Execution (`InstallController.php`):**
+    - Integrated `Artisan::call('migrate', ['--force' => true])` into `importSQL()` and `forceImportSQL()` right after `DB::unprepared(database.sql)`, ensuring all 35+ recent migrations (including `orders.vendor_settlement_status`, `orders.pickup_verification_code`, `checkout_intents`, `pickup_reservations`, `customer_cashback_ledgers`, `payment_reconciliations`, `order_handover_logs`) are automatically applied during fresh web setup.
+    - Added secondary migration execution and `Artisan::call('optimize:clear')` in `updateSystemSettings()` (Step 6) to ensure schema completion and create `storage/installed`.
+    - Made `storage:link` in `step5()` independent of `shell_exec` (safe on cPanel/Whogohost shared hosting where `shell_exec` is disabled).
+  - **Dynamic Installation Route Provider (`RouteServiceProvider.php`):**
+    - Configured conditional installer route mapping so that if a system is uninstalled, if database credentials are not configured, or if `/step*` installation routes are requested, `mapInstallRoutes()` is automatically loaded; once installed, it seamlessly delegates to the storefront and dashboards.
+  - **CORS Host Domain Support (`config/cors.php`):**
+    - Injected `env('APP_URL')` dynamically into `allowed_origins` alongside `shop.victoriousmarket.com.ng` to prevent any cross-origin browser rejection on new server hosts or subdomains.
+  - **Environment Documentation (`.env.example`):**
+    - Added explicit documentation for `PAYSTACK_PUBLIC_KEY`, `PAYSTACK_SECRET_KEY`, `PAYSTACK_PAYMENT_URL`, `MERCHANT_EMAIL`, and `DB_TIMEZONE=+01:00`.
+  - **Multi-App End-to-End Audit Completed:**
+    - Verified all 3 mobile apps (`User app`, `Vendor app`, `Delivery Man App`) point consistently to `https://shop.victoriousmarket.com.ng`.
+    - Verified `Authorization` header pass-through in both root and public `.htaccess` for mobile API bearer tokens on Apache/cPanel.
+    - Verified Paystack webhooks are excluded from CSRF verification in `VerifyCsrfToken.php`.
+    - Verified employee role-based access control and login routes (`/login/admin` vs `/login/employee`).
+* **Verification:** `php -l` static syntax check passed on all modified files with 0 errors.
+
+### [2026-09-21 09:15 UTC] End-to-End Production Readiness Remediation: Admin, Vendor, Customer & Delivery Journeys [backend] [user-app] [vendor-app] [AI]
+* **Component:** Laravel Backend (`backend/vmarket-web`), Customer App (`User app`), Vendor App (`Vendor app`)
+* **Scope:** Critical operational blockers and systemic journey flaws identified during end-to-end audit
+* **Changes:**
+  - **Vendor Settlement Engine Wired (Admin/Backend):**
+    - Created `ProcessSettlementEligibilityCommand` (`orders:process-settlement-eligibility`) to evaluate delivered third-party orders after the 24-hour customer return window and promote them to `eligible`.
+    - Scheduled `orders:process-settlement-eligibility` hourly and `cashback:mature` daily in `Kernel.php`.
+    - Implemented `settleVendorOrder` in `Admin/Order/OrderController.php` and registered route `admin.orders.settle-vendor-order` for manual payout disbursement with bank reference recording.
+    - Added Vendor Settlement Status card and Disburse Vendor Share (90%) modal in `order-details.blade.php`.
+    - Disabled `<option value="delivered">` for marketplace orders in generic admin status dropdown and added robust error handling to `order.js`.
+  - **Customer Pickup OTP Inversion Resolved (Customer App):**
+    - Updated `order_payment_info_widget.dart` to display `verificationCode` (6-digit Customer Handover OTP) for self-pickup orders, matching backend hash verification in `InShopHandoverController.php`.
+  - **Vendor Mobile App Quick Status Update 403 Resolved (Vendor App & Backend):**
+    - Made `payment_status` optional (`nullable|in:paid,unpaid`) in `/api/v3/seller/orders/order-detail-info-update` (`RestAPI/v3/seller/OrderController.php`), preserving existing payment status when omitted.
+    - Updated `updateQuickOrderStatus` in `order_details_controller.dart` and `order_details_screen.dart` to pass existing `paymentStatus`.
+  - **Vendor Mobile App Bank Details Token Migration (Vendor App):**
+    - Injected `FlutterSecureStorage` into `BankInfoRepository` and updated `getBankToken()` to retrieve the bearer token from `dioClient.token` with fallback, eliminating 401 Unauthorized errors on bank details and NUBAN updates.
+    - Updated `di_container.dart` to pass `secureStorage: sl()` to `BankInfoRepository`.
+  - **Customer Refund on Coupon Orders Unblocked (Backend):**
+    - Removed decommissioned loyalty points check from `store_refund` in `RestAPI/v1/OrderController.php`, `Admin/Order/RefundController.php`, `Vendor/RefundController.php`, and `UserProfileController.php`, preventing false 403 blocks on orders where discount coupons were applied.
+* **Verification:** `php -l` static syntax analysis passed across all modified backend PHP files with 0 errors.
+
 ### [2026-09-21 06:10 UTC] Document Synchronization: V1 Fresh-System Architecture Alignment [governance] [AI]
 * **Component:** Documentation Ecosystem (`*.md`, `docs/`, `.agents/`)
 * **Scope:** Synchronized all governance, architecture, API, logistics, and reference documents to align with V1 fresh-system architecture after Directives 57321-57326 purge cycles
