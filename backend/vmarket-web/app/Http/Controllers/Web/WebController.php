@@ -581,8 +581,6 @@ class WebController extends Controller
         $countWishlist = count($wishlists);
         $relatedProducts = Product::marketplaceEligible()->with(['reviews'])->withCount('reviews')->where('category_ids', $product->category_ids)->where('id', '!=', $product->id)->limit(12)->get();
         $currentDate = date('Y-m-d');
-        $productAuthorsInfo = $this->productService->getProductAuthorsInfo(product: $product);
-        $productPublishingHouseInfo = $this->productService->getProductPublishingHouseInfo(product: $product);
 
         $temporary_close = getWebConfig(name: 'temporary_close');
         $inhouse_vacation = getWebConfig(name: 'vacation_add');
@@ -600,7 +598,7 @@ class WebController extends Controller
             'success' => 1,
             'product' => $product,
             'view' => view(VIEW_FILE_NAMES['product_quick_view_partials'], compact('product', 'countWishlist', 'countOrder', 'initialProductConfig',
-                'relatedProducts', 'currentDate', 'productAuthorsInfo', 'productPublishingHouseInfo', 'wishlist_status', 'overallRating', 'rating', 'firstVariationQuantity', 'compareList'))->render(),
+                'relatedProducts', 'currentDate', 'wishlist_status', 'overallRating', 'rating', 'firstVariationQuantity', 'compareList'))->render(),
         ]);
     }
 

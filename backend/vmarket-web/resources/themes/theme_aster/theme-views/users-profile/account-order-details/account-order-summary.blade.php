@@ -21,17 +21,6 @@
                             <div class="mt-4 card">
                                 <div class="card-body">
                                     <div class="table-responsive">
-                                        @php($digitalProduct = false)
-                                        @foreach ($order->details as $key=>$detail)
-                                            @if(isset($detail->product->digital_product_type))
-                                                @php($digitalProduct = $detail->product->product_type === 'digital' ? true : false)
-                                                @if($digitalProduct === true)
-                                                    @break
-                                                @else
-                                                    @continue
-                                                @endif
-                                            @endif
-                                        @endforeach
                                         <table class="table m-0 align-middle table-borderless order-details-table">
                                             <thead class="table-light">
                                             <tr>
@@ -96,7 +85,7 @@
 
                                                         <td>
                                                             @if(
-                                                                ($order->order_type == 'default_type' && ($order->order_status=='delivered' || ($order->payment_status == 'paid' && $digitalProduct))) ||
+                                                                ($order->order_type == 'default_type' && $order->order_status=='delivered') ||
                                                                 ($order->order_type != 'default_type' && $order->order_status=='delivered')
                                                             )
                                                                 <div class="d-flex justify-content-center gap-2">
@@ -117,33 +106,6 @@
                                                                     @else
                                                                         <label
                                                                             class="badge bg-info rounded-pill text-capitalize">{{ translate('POS_order') }}</label>
-                                                                    @endif
-                                                                    @if($detail?->product && $order->payment_status == 'paid' && $detail?->product->digital_product_type == 'ready_product')
-                                                                        <a href="javascript:"
-                                                                           class="btn bg-icon p-0 d-center w-30 h-30 rounded-1 text-primary digital-product-download"
-                                                                           data-action="{{ route('digital-product-download', $detail->id) }}">
-                                                                            <i class="bi bi-download fs-18"></i>
-                                                                        </a>
-                                                                    @elseif($detail?->product && $order->payment_status == 'paid' && $detail?->product->digital_product_type == 'ready_after_sell')
-                                                                        @if($detail->digital_file_after_sell)
-                                                                            <a href="javascript:"
-                                                                               data-action="{{ route('digital-product-download', $detail->id) }}"
-                                                                               class="btn bg-icon p-0 d-center w-30 h-30 rounded-1 text-primary digital-product-download"
-                                                                               data-bs-toggle="tooltip"
-                                                                               data-bs-placement="bottom"
-                                                                               data-bs-custom-class="custom-tooltip"
-                                                                               data-bs-title="{{ translate('download') }}">
-                                                                                <i class="bi bi-download fs-18"></i>
-                                                                            </a>
-                                                                        @else
-                                                                            <a href="javascript:"
-                                                                               class="btn bg-icon p-0 d-center w-30 h-30 rounded-1 text-primary"
-                                                                               data-bs-toggle="tooltip"
-                                                                               data-bs-placement="bottom"
-                                                                               data-bs-title="{{ translate('Admin hasn’t uploaded it yet') }}">
-                                                                                <i class="bi bi-download fs-18"></i>
-                                                                            </a>
-                                                                        @endif
                                                                     @endif
                                                                 </div>
                                                             @else

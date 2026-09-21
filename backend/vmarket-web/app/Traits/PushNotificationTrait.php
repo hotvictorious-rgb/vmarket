@@ -126,60 +126,6 @@ trait PushNotificationTrait
         }
     }
 
-    /**
-     * chatting related push notification
-     * @param string $key
-     * @param string $type
-     * @param object $userData
-     * @param object $messageForm
-     * @return void
-     */
-    protected function chattingNotification(string $key, string $type, object $userData, object $messageForm): void
-    {
-        try {
-            $fcm_token = $type == 'delivery_man' ? $userData?->fcm_token : $userData?->cm_firebase_token;
-            if ($fcm_token) {
-                $lang = $userData?->app_language ?? getDefaultLanguage();
-                $value = $this->pushNotificationMessage($key, $type, $lang);
-                if ($value) {
-                    $value = $this->textVariableDataFormat(
-                        value: $value,
-                        key: $key,
-                        userName: "{$messageForm?->f_name} ",
-                        shopName: "{$messageForm?->shop?->name}",
-                        deliveryManName: "{$messageForm?->f_name}",
-                        time: now()->diffForHumans()
-                    );
-                    if ($key == 'message_from_admin') {
-                        $messageFromType = 'admin';
-                    } elseif ($key == 'message_from_customer') {
-                        $messageFromType = 'customer';
-                    } elseif ($key == 'message_from_seller') {
-                        $messageFromType = 'seller';
-                    } elseif ($key == 'message_from_delivery_man') {
-                        $messageFromType = 'delivery_man';
-                    } else {
-                        $messageFromType = '';
-                    }
-                    $data = [
-                        'title' => translate('message'),
-                        'description' => $value,
-                        'order_id' => '',
-                        'image' => '',
-                        'type' => 'chatting',
-                        'message_key' => $key,
-                        'notification_key' => $key,
-                        'notification_from' => $messageFromType,
-                    ];
-                    $this->sendChattingPushNotificationToDevice($fcm_token, $data);
-                }
-            }
-        } catch (Exception $exception) {
-
-        }
-
-    }
-
     protected function withdrawStatusUpdateNotification(string $key, string $type, string $lang, int $status, string $fcmToken): void
     {
         $value = $this->pushNotificationMessage($key, $type, $lang);
@@ -378,51 +324,6 @@ trait PushNotificationTrait
         ];
         return $this->sendNotificationToHttp($postData);
     }
-
-    /**
-     * Device wise notification send
-     * @param string $fcmToken
-     * @param array $data
-     * @return bool|string
-     */
-
-    protected function sendChattingPushNotificationToDevice(string $fcmToken, array $data): bool|string
-    {
-        $postData = [
-            'message' => [
-                'token' => $fcmToken,
-                'data' => [
-                    'title' => (string)$data['title'],
-                    'body' => (string)$data['description'],
-                    'image' => $data['image'],
-                    'order_id' => (string)($data['order_id'] ?? ''),
-                    'refund_id' => (string)($data['refund_id'] ?? ''),
-                    'deliveryman_charge' => (string)($data['deliveryman_charge'] ?? ''),
-                    'expected_delivery_date' => (string)($data['expected_delivery_date'] ?? ''),
-                    'is_read' => '0',
-                    'type' => (string)$data['type'],
-                    'message_key' => (string)($data['message_key'] ?? ''),
-                    'notification_key' => (string)($data['notification_key'] ?? ''),
-                    'notification_from' => (string)($data['notification_from'] ?? ''),
-                ],
-                'notification' => [
-                    'title' => (string)$data['title'],
-                    'body' => (string)$data['description'],
-//                    'type' => (string)$data['type'],
-//                    'message_key' => (string)($data['message_key'] ?? ''),
-                ],
-                'apns' => [
-                    'payload' => [
-                        'aps' => [
-                            'sound' => 'default',
-                        ]
-                    ]
-                ]
-            ]
-        ];
-        return $this->sendNotificationToHttp($postData);
-    }
-
 
     /**
      * Device wise notification send

@@ -62,8 +62,7 @@ class ProductDetailsController extends Controller
     {
         $product = $this->productRepo->getWebFirstWhereActive(
             params: ['slug' => $slug, 'customer_id' => Auth::guard('customer')->user()->id ?? 0],
-            relations: ['seoInfo', 'digitalVariation' => 'digitalVariation', 'reviews', 'seller.shop', 'digitalProductAuthors.author',
-                'digitalProductPublishingHouse.publishingHouse', 'clearanceSale' => 'clearanceSale']
+            relations: ['seoInfo', 'reviews', 'seller.shop', 'clearanceSale' => 'clearanceSale']
         );
 
         if ($product) {
@@ -73,8 +72,6 @@ class ProductDetailsController extends Controller
             $initialProductPrice = $initialProductConfig['price'];
 
             $productDetailsMeta = $product?->seoInfo;
-            $productAuthorsInfo = $this->productService->getProductAuthorsInfo(product: $product);
-            $productPublishingHouseInfo = $this->productService->getProductPublishingHouseInfo(product: $product);
 
             $overallRating = getOverallRating(reviews: $product?->reviews);
             $wishlistStatus = $this->wishlistRepo->getListWhereCount(filters: ['product_id' => $product['id'], 'customer_id' => auth('customer')->id()]);
@@ -130,10 +127,8 @@ class ProductDetailsController extends Controller
             $dealOfTheDay = $this->dealOfTheDayRepo->getFirstWhere(['product_id' => $product['id'], 'status' => 1]);
             $currentDate = date('Y-m-d');
 
-            $previewFileInfo = getFileInfoFromURL(url: $product?->preview_file_full_url['path']);
-
             return view(VIEW_FILE_NAMES['products_details'], compact('product', 'initialProductConfig', 'initialProductQuantity','initialProductPrice','countWishlist', 'countOrder', 'relatedProducts',
-                'dealOfTheDay', 'currentDate', 'overallRating', 'wishlistStatus', 'productReviews', 'rating', 'totalReviews', 'productsForReview', 'moreProductFromSeller', 'decimalPointSettings', 'previewFileInfo', 'productAuthorsInfo', 'productPublishingHouseInfo', 'firstVariationQuantity', 'productDetailsMeta'));
+                'dealOfTheDay', 'currentDate', 'overallRating', 'wishlistStatus', 'productReviews', 'rating', 'totalReviews', 'productsForReview', 'moreProductFromSeller', 'decimalPointSettings', 'firstVariationQuantity', 'productDetailsMeta'));
         }
 
         Toastr::error(translate('not_found'));
@@ -144,15 +139,13 @@ class ProductDetailsController extends Controller
     {
         $product = $this->productRepo->getWebFirstWhereActive(
             params: ['slug' => $slug, 'customer_id' => Auth::guard('customer')->user()->id ?? 0],
-            relations: ['seoInfo', 'digitalVariation', 'reviews' => 'reviews', 'seller.shop' => 'seller.shop', 'wishList' => 'wishList', 'compareList' => 'compareList', 'digitalProductAuthors.author', 'digitalProductPublishingHouse.publishingHouse', 'clearanceSale' => 'clearanceSale'],
+            relations: ['seoInfo', 'reviews' => 'reviews', 'seller.shop' => 'seller.shop', 'wishList' => 'wishList', 'compareList' => 'compareList', 'clearanceSale' => 'clearanceSale'],
             withCount: ['orderDetails' => 'orderDetails', 'wishList' => 'wishList']
         );
 
         if ($product ) {
             $initialProductConfig = ProductManager::getInitialProductQuantity($product);
             $productDetailsMeta = $product?->seoInfo;
-            $productAuthorsInfo = $this->productService->getProductAuthorsInfo(product: $product);
-            $productPublishingHouseInfo = $this->productService->getProductPublishingHouseInfo(product: $product);
             $currentDate = date('Y-m-d H:i:s');
 
             $countOrder = $product['order_details_count'];
@@ -242,11 +235,10 @@ class ProductDetailsController extends Controller
             }
 
             $positiveReview = $ratingCount != 0 ? ($vendorRattingStatusPositive * 100) / $ratingCount : 0;
-            $previewFileInfo = getFileInfoFromURL(url: $product?->preview_file_full_url['path']);
 
             return view(VIEW_FILE_NAMES['products_details'], compact('product', 'wishlistStatus','initialProductConfig', 'countWishlist',
                 'countOrder', 'relatedProducts', 'dealOfTheDay', 'currentDate', 'overallRating', 'decimalPointSettings', 'moreProductFromSeller', 'productsForReview', 'totalReviews', 'rating', 'productReviews',
-                'avgRating', 'compareList', 'positiveReview', 'previewFileInfo', 'productAuthorsInfo', 'productPublishingHouseInfo', 'firstVariationQuantity', 'productDetailsMeta'));
+                'avgRating', 'compareList', 'positiveReview', 'firstVariationQuantity', 'productDetailsMeta'));
         }
 
         Toastr::error(translate('not_found'));
@@ -258,14 +250,12 @@ class ProductDetailsController extends Controller
     {
         $product = $this->productRepo->getWebFirstWhereActive(
             params: ['slug' => $slug, 'customer_id' => Auth::guard('customer')->user()->id ?? 0],
-            relations: ['seoInfo', 'digitalVariation', 'reviews' => 'reviews', 'seller.shop' => 'seller.shop', 'wishList' => 'wishList', 'compareList' => 'compareList', 'digitalProductAuthors' => 'digitalProductAuthors', 'digitalProductPublishingHouse' => 'digitalProductPublishingHouse', 'clearanceSale' => 'clearanceSale'],
+            relations: ['seoInfo', 'reviews' => 'reviews', 'seller.shop' => 'seller.shop', 'wishList' => 'wishList', 'compareList' => 'compareList', 'clearanceSale' => 'clearanceSale'],
             withCount: ['orderDetails' => 'orderDetails', 'wishList' => 'wishList']
         );
 
         if ($product != null) {
             $productDetailsMeta = $product?->seoInfo;
-            $productAuthorsInfo = $this->productService->getProductAuthorsInfo(product: $product);
-            $productPublishingHouseInfo = $this->productService->getProductPublishingHouseInfo(product: $product);
             $tags = $this->productTagRepo->getIds(fieldName: 'tag_id', filters: ['product_id' => $product['id']]);
             $this->tagRepo->incrementVisitCount(whereIn: ['id' => $tags]);
 
@@ -422,7 +412,7 @@ class ProductDetailsController extends Controller
 
             return view(VIEW_FILE_NAMES['products_details'], compact('product', 'wishlistStatus', 'countWishlist',
                 'relatedProducts', 'currentDate', 'rattingStatus', 'productsLatest',
-                 'positiveReview', 'overallRating', 'decimalPointSettings', 'moreProductFromSeller', 'productsForReview', 'productsCount', 'totalReviews', 'rating', 'productReviews', 'avgRating', 'topRatedShops', 'newSellers', 'deliveryInfo', 'productsTopRated', 'productsThisStoreTopRated', 'previewFileInfo', 'productAuthorsInfo', 'productPublishingHouseInfo', 'firstVariationQuantity', 'productDetailsMeta'));
+                 'positiveReview', 'overallRating', 'decimalPointSettings', 'moreProductFromSeller', 'productsForReview', 'productsCount', 'totalReviews', 'rating', 'productReviews', 'avgRating', 'topRatedShops', 'newSellers', 'deliveryInfo', 'productsTopRated', 'productsThisStoreTopRated', 'previewFileInfo', 'firstVariationQuantity', 'productDetailsMeta'));
         }
 
         Toastr::error(translate('not_found'));

@@ -79,7 +79,7 @@ if (!function_exists('getWebConfigCacheKeys')) {
         return [
             'currency_model', 'currency_symbol_position', 'system_default_currency', 'language',
             'company_name', 'decimal_point_settings', 'product_brand', 'company_email',
-            'business_mode', 'storage_connection_type', 'company_web_logo', 'digital_product', 'storage_connection_type', 'recaptcha',
+            'business_mode', 'storage_connection_type', 'company_web_logo', 'storage_connection_type', 'recaptcha',
             'language', 'pagination_limit', 'company_phone', 'stock_limit',
             'social_login', 'apple_login', 'firebase_otp_verification',
             'maintenance_system_setup', 'maintenance_message_setup', 'maintenance_duration_setup',

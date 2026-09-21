@@ -15,7 +15,6 @@ use Illuminate\Database\Eloquent\Relations\HasOne;
  * @property string $cart_group_id
  * @property int $product_id
  * @property string $product_type
- * @property string $digital_product_type
  * @property string $color
  * @property array $choices
  * @property array $variations
@@ -67,7 +66,6 @@ class Cart extends Model
         'cart_group_id',
         'product_id',
         'product_type',
-        'digital_product_type',
         'color',
         'choices',
         'variations',

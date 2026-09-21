@@ -141,8 +141,7 @@ function cartQuantityInitialize() {
                 }
             } else if (type === "plus") {
                 if (
-                    currentVal < input.attr("max") ||
-                    productType === "digital"
+                    currentVal < input.attr("max")
                 ) {
                     input.val(currentVal + 1).change();
                 }
@@ -164,7 +163,6 @@ function cartQuantityInitialize() {
     });
 
     inputNumber.change(function () {
-        const productType = $(this).attr("product-type");
         const minValue = parseInt($(this).attr("min"));
         const maxValue = parseInt($(this).attr("max"));
         const valueCurrent = parseInt($(this).val());
@@ -182,7 +180,7 @@ function cartQuantityInitialize() {
             });
             $(this).val($(this).data("oldValue"));
         }
-        if (productType === "digital" || valueCurrent <= maxValue) {
+        if (valueCurrent <= maxValue) {
             $(
                 ".btn-number[data-type='plus'][data-field='" + name + "']"
             ).removeAttr("disabled");
@@ -1643,28 +1641,6 @@ $(".remove-mask-img").on("click", function () {
 
 $(window).on("load", function () {
     getViewByOnclick();
-});
-
-$(".digital-product-download").on("click", function () {
-    $.ajax({
-        type: "GET",
-        url: $(this).data("action"),
-        responseType: "blob",
-        beforeSend: function () {
-            $("#loading").addClass("d-grid");
-        },
-        success: function (data) {
-            if (data.status === 1 && data.file_path) {
-                downloadFileUsingFileUrl(data.file_path);
-            } else if (data.status === 0) {
-                toastr.error(data.message);
-            }
-        },
-        error: function () {},
-        complete: function () {
-            $("#loading").removeClass("d-grid");
-        },
-    });
 });
 
 function renderCustomImagePopup() {

@@ -103,11 +103,6 @@ class DeliveryMan extends Model
         return $this->hasMany(DeliveryManTransaction::class);
     }
 
-    public function chats(): HasMany
-    {
-        return $this->hasMany(Chatting::class);
-    }
-
     public function review(): HasMany
     {
         return $this->hasMany(Review::class, 'delivery_man_id');

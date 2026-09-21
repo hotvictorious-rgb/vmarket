@@ -119,8 +119,7 @@ class OrderController extends Controller
         if (!$order) {
             return response()->json(['message' => translate('order_not_found')], 404);
         }
-        $isOrderOnlyDigital = $this->orderService->getCheckIsOrderOnlyDigital(order: $order);
-        $getTrackOrderHistory = OrderManager::getTrackOrderStatusHistory(orderId: $orderId, isOrderOnlyDigital: $isOrderOnlyDigital);
+        $getTrackOrderHistory = OrderManager::getTrackOrderStatusHistory(orderId: $orderId);
         return response()->json($getTrackOrderHistory, 200);
     }
 
@@ -275,16 +274,7 @@ class OrderController extends Controller
             return response()->json(['message' => translate('You_can_request_for_refund_after_order_delivered')], 403);
         }
 
-        $orderDetailsReward = OrderDetailsRewards::where('order_details_id', $request->order_details_id)
-            ->where('reward_type', '!=', 'loyalty_point')
-            ->first();
-
-        if ($orderDetailsReward && $user->loyalty_point < $orderDetailsReward['reward_amount']) {
-            return response()->json(
-                translate('you have not sufficient loyalty point to refund this order!!'),
-                200
-            );
-        }
+        // [AI] Loyalty points decommissioned in V1 - customer refund check removed.
 
         if ($orderDetails->refund_request != 0) {
             return response()->json(

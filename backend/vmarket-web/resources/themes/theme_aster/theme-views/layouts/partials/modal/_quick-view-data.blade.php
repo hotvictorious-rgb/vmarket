@@ -14,11 +14,6 @@
                                            class="border text-warning d-inline-flex align-items-center justify-content-center" data-bs-toggle="tooltip" data-bs-title="{{ translate('Physical_Product') }}" data-bs-placement="left">
                                             <img width="20" height="20" src="{{ theme_asset('assets/img/icons/product-type.svg') }}" class="svg" alt="">
                                         </a>
-                                    @else
-                                        <a href="javascript:void(0)" style="--size: 35px;"
-                                           class="border text-warning d-inline-flex align-items-center justify-content-center" data-bs-toggle="tooltip" data-bs-title="{{ translate('Digital_Product') }}" data-bs-placement="left">
-                                            <img width="20" height="20" src="{{ theme_asset('assets/img/icons/digital-product.svg') }}" class="svg" alt="">
-                                        </a>
                                     @endif
                                     <div class="d-flex flex-column gap-12">
                                         <a class="btn-wishlist add-to-wishlist cursor-pointer wishlist-{{$product['id']}} {{($wishlist_status == 1?'wishlist_icon_active':'')}}"
@@ -238,39 +233,7 @@
                             </div>
 
 
-                            @if($product['product_type'] == 'digital')
-                                <div class="digital-product-authors mb-2">
-                                    @if(count($productPublishingHouseInfo['data']) > 0)
-                                        <div class="d-flex align-items-center g-2 me-2">
-                                            <span class="text-capitalize digital-product-author-title">{{ translate('Publishing_House') }} :</span>
-                                            <div class="item-list">
-                                                @foreach($productPublishingHouseInfo['data'] as $publishingHouseName)
-                                                    <a href="{{ route('products', ['publishing_house_id' => $publishingHouseName['id'], 'product_type' => 'digital', 'page'=>1]) }}"
-                                                       class="text-base">
-                                                        {{ $publishingHouseName['name'] }}
-                                                    </a>
-                                                @endforeach
-                                            </div>
-                                        </div>
-                                    @endif
-
-                                    @if(count($productAuthorsInfo['data']) > 0)
-                                        <div class="d-flex align-items-center g-2 me-2">
-                                            <span class="text-capitalize digital-product-author-title">{{ translate('Author') }} :</span>
-                                            <div class="item-list">
-                                                @foreach($productAuthorsInfo['data'] as $productAuthor)
-                                                    <a href="{{ route('products',['author_id' => $productAuthor['id'], 'product_type' => 'digital', 'page' => 1]) }}"
-                                                       class="text-base">
-                                                        {{ $productAuthor['name'] }}
-                                                    </a>
-                                                @endforeach
-                                            </div>
-                                        </div>
-                                    @endif
-                                </div>
-                            @endif
-
-                        <div class="product__price d-flex flex-wrap align-items-end gap-2 mb-4">
+                            <div class="product__price d-flex flex-wrap align-items-end gap-2 mb-4">
                             <div class="d-flex flex-wrap align-items-center gap-2 mb-0">
                                 {!! getPriceRangeWithDiscount(product: $product) !!}
                             </div>
@@ -320,35 +283,6 @@
                                         </ul>
                                     </div>
                                 @endforeach
-
-                                @php($extensionIndex=0)
-                                @if($product['product_type'] == 'digital' && $product['digital_product_file_types'] && count($product['digital_product_file_types']) > 0 && $product['digital_product_extensions'])
-                                    @foreach($product['digital_product_extensions'] as $extensionKey => $extensionGroup)
-                                        <div class="d-flex gap-4 align-items-center mb-4">
-                                            <span class="text-muted">
-                                                {{ translate($extensionKey) }}
-                                            </span>
-
-                                            @if(count($extensionGroup) > 0)
-                                                <ul class="option-select-btn custom_01_option flex-wrap weight-style--two gap-2">
-                                                    @foreach($extensionGroup as $index => $extension)
-                                                        <li>
-                                                            <label>
-                                                                <input type="radio" hidden
-                                                                       name="variant_key"
-                                                                       value="{{ $extensionKey.'-'.preg_replace('/\s+/', '-', $extension) }}"
-                                                                    {{ $extensionIndex == 0 ? 'checked' : ''}}>
-                                                                <span class="text-transform-none">{{ $extension }}</span>
-                                                            </label>
-                                                        </li>
-                                                        @php($extensionIndex++)
-                                                    @endforeach
-                                                </ul>
-                                            @endif
-
-                                        </div>
-                                    @endforeach
-                                @endif
 
                                 <div class="d-flex gap-4 flex-wrap align-items-center mb-4">
                                     <span class="text-muted">{{translate('Qty')}}</span>

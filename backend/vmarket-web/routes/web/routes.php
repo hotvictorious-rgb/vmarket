@@ -11,7 +11,6 @@ use App\Http\Controllers\Customer\SystemController;
 // [AI] FlutterwaveV3Controller removed — Flutterwave is not an authorized payment gateway. Only Paystack is authorized.
 use App\Http\Controllers\Payment_Methods\PaystackController;
 use App\Http\Controllers\Web\CartController;
-use App\Http\Controllers\Web\ChattingController;
 use App\Http\Controllers\Web\CouponController;
 use App\Http\Controllers\Web\HomeController;
 use App\Http\Controllers\Web\PageController;
@@ -230,17 +229,6 @@ Route::group(['middleware' => ['maintenance_mode', 'guestCheck']], function () {
         Route::get('user-restock-request-delete', 'deleteRestockRequest')->name('user-restock-request-delete')->middleware('customer');
         Route::get('user-all-restock-request-delete/{ids}', 'deleteRestockRequest')->name('user-all-restock-request-delete')->middleware('customer');
     });
-
-    Route::controller(ChattingController::class)->group(function () {
-        Route::get('chat/{type}', 'index')->name('chat')->middleware('customer');
-        Route::get('message', 'getMessageByUser')->name('messages');
-        Route::post('message', 'addMessage');
-    });
-
-    
-
-
-
 
     Route::controller(ShopViewController::class)->group(function () {
         Route::get('store/{slug}', 'seller_shop')->name('vendor-store');

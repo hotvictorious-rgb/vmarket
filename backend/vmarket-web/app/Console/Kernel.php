@@ -26,7 +26,8 @@ class Kernel extends ConsoleKernel
     {
         $schedule->command('products:check-price-expiry')->dailyAt('00:01');
         $schedule->command('products:check-marketplace-freshness')->dailyAt('00:05');
-        $schedule->command('whatsapp:auto-resume-human-chats --minutes=5')->everyTwoMinutes()->withoutOverlapping();
+        $schedule->command('cashback:mature')->dailyAt('00:10');
+        $schedule->command('orders:process-settlement-eligibility')->hourly();
     }
 
     /**

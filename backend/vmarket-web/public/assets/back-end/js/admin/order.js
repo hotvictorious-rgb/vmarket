@@ -204,6 +204,13 @@ $("#order_status").on('change', function (e) {
                     setTimeout(() => {
                         location.reload();
                     }, 2500)
+                },
+                error: function (xhr) {
+                    let errMsg = xhr.responseJSON?.message || 'Failed to update order status';
+                    toastMagic.error(errMsg);
+                    setTimeout(() => {
+                        location.reload();
+                    }, 2500);
                 }
             });
         }

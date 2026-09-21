@@ -43,18 +43,4 @@ class OrderService
         ];
     }
 
-    public function getCheckIsOrderOnlyDigital(object $order): bool
-    {
-        $isOrderOnlyDigital = true;
-        if ($order->orderDetails) {
-            foreach ($order->orderDetails as $detail) {
-                $product = json_decode($detail->product_details);
-                if (isset($product->product_type) && $product->product_type == 'physical') {
-                    $isOrderOnlyDigital = false;
-                }
-            }
-        }
-        return $isOrderOnlyDigital;
-    }
-
 }

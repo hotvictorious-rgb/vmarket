@@ -16,7 +16,7 @@
                                 <div class="card-body">
                                     <div class="pt-3">
                                         @php
-                                                $trackOrderArray = \App\Utils\OrderManager::getTrackOrderStatusHistory(orderId: $orderDetails['id'], isOrderOnlyDigital: $isOrderOnlyDigital);
+                                                $trackOrderArray = \App\Utils\OrderManager::getTrackOrderStatusHistory(orderId: $orderDetails['id']);
 
                                                 $statusIcons = [
                                                     'order_placed' => 'track-shopping-list.svg',
@@ -36,11 +36,7 @@
                                                         break;
                                                     }
                                                 }
-                                                if ($trackOrderArray['is_digital_order']) {
-                                                    $statusesToShow = ['order_placed', 'order_confirmed', 'order_delivered'];
-                                                } else {
-                                                    $statusesToShow = ['order_placed', 'order_confirmed', 'preparing_for_shipment', 'order_is_on_the_way', 'order_delivered'];
-                                                }
+                                                $statusesToShow = ['order_placed', 'order_confirmed', 'preparing_for_shipment', 'order_is_on_the_way', 'order_delivered'];
                                                 if ($activeTerminalStatus) {
                                                     $statusesToShow[] = $activeTerminalStatus;
                                                 }
@@ -81,7 +77,7 @@
                                                                 @if($statusKey === 'order_placed' && $statusData['status'])
                                                                     <p class="fs-12 m-0">{{ translate('Order Placed') }}</p>
                                                                 @endif
-                                                                @if($statusKey === 'order_is_on_the_way' && $statusData['status'] && !$trackOrderArray['is_digital_order'])
+                                                                @if($statusKey === 'order_is_on_the_way' && $statusData['status'])
                                                                     <p class="fs-12 mb-0 mt-1">{{ translate('Your deliveryman is coming') }}</p>
                                                                 @endif
                                                                 @if($isTerminalStatus && $statusData['status'])

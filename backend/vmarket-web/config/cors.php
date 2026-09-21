@@ -19,11 +19,12 @@ return [
 
     'allowed_methods' => ['*'],
 
-    'allowed_origins' => [
+    'allowed_origins' => array_values(array_filter([
+        env('APP_URL'),
         'https://shop.victoriousmarket.com.ng',
         'https://support.victoriousmarket.com.ng',
         'https://pos.victoriousmarket.com.ng',
-    ],
+    ])),
 
     'allowed_origins_patterns' => [
         '#^https://([a-z0-9-]+\.)*victoriousmarket\.com\.ng$#',

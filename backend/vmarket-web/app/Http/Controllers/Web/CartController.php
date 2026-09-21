@@ -9,7 +9,6 @@ use App\Contracts\Repositories\RestockProductRepositoryInterface;
 use App\Events\RequestProductRestockEvent;
 use App\Models\BusinessSetting;
 use App\Models\CartShipping;
-use App\Models\DigitalProductVariation;
 use App\Models\RestockProductCustomer;
 use App\Models\Shop;
 use App\Models\Wishlist;
@@ -55,7 +54,7 @@ class CartController extends Controller
         $discountedUnitPrice = 0;
         $color_name = '';
         $requestQuantity = $request['quantity'];
-        $product = Product::with(['digitalVariation', 'clearanceSale' => function ($query) {
+        $product = Product::with(['clearanceSale' => function ($query) {
             return $query->active();
         }])->where(['id' => $request['id']])->first();
         $productVariationCode = $request['product_variation_code'];
@@ -82,12 +81,6 @@ class CartController extends Controller
                 $inCartExistKey = $cartItem['id'];
                 $requestQuantity = $productVariationCode == $string ? $request['quantity'] : $cartItem['quantity'];
             }
-
-            if ($product['product_type'] == 'digital' && $request['variant_key'] && $cartItem['variant'] == $request['variant_key']) {
-                $inCartExistStatus = 1;
-                $inCartExistKey = $cartItem['id'];
-                $requestQuantity = $productVariationCode == $request['variant_key'] ? $request['quantity'] : $cartItem['quantity'];
-            }
         }
 
 
@@ -108,21 +101,6 @@ class CartController extends Controller
             $discountedUnitPrice = $product->unit_price - $discount;
             $unit_price = $product->unit_price;
             $quantity = $product->current_stock;
-        }
-
-        $digitalVariation = DigitalProductVariation::where(['product_id' => $product['id'], 'variant_key' => $request['variant_key']])->first();
-        if ($product['product_type'] == 'digital' && $digitalVariation) {
-            $discount = getProductPriceByType(product: $product, type: 'discounted_amount', result: 'value', price: $digitalVariation['price']);
-            $price = $digitalVariation['price'] - $discount;
-            $discountedUnitPrice = $digitalVariation['price'] - $discount;
-            $unit_price = $digitalVariation['price'];
-            $quantity = $digitalVariation['price'];
-
-            foreach ($getCartList as $cartItem) {
-                if ($product['product_type'] == 'digital' && $cartItem['variant'] == $request['variant_key']) {
-                    $string = $cartItem['variant'];
-                }
-            }
         }
 
         $deliveryInfo = [];
@@ -155,7 +133,7 @@ class CartController extends Controller
             'discount' => $discountType == 'flat' ? webCurrencyConverter($discount) : getProductPriceByType(product: $product, type: 'discount', result: 'value') . '%',
             'discount_type' => $discountType,
             'discount_amount' => $discount,
-            'quantity' => $product['product_type'] == 'physical' ? $quantity : 100,
+            'quantity' => $quantity,
             'delivery_cost' => isset($deliveryInfo['delivery_cost']) ? webCurrencyConverter($deliveryInfo['delivery_cost']) : 0,
             'unit_price' => webCurrencyConverter($price), //fashion theme
             'total_unit_price' => webCurrencyConverter($unit_price), //fashion theme
@@ -493,86 +471,10 @@ class CartController extends Controller
         }
     }
 
-    function addToCartDigitalProduct($request, $product): array
-    {
-        $price = $product->unit_price;
-        $digitalVariation = DigitalProductVariation::where(['product_id' => $product['id'], 'variant_key' => $request['variant_key']])->first();
-        if ($request['variant_key'] && $digitalVariation) {
-            $price = $digitalVariation['price'];
-        }
-        $user = Helpers::getCustomerInformation($request);
-        $guestId = session('guest_id') ?? ($request->guest_id ?? 0);
-
-        if ($user == 'offline') {
-            $customerId = $guestId;
-            $isGuest = 1;
-        } else {
-            $customerId = $user->id;
-            $isGuest = 0;
-        }
-
-        $getProductDiscount = Helpers::getProductDiscount($product, $price);
-        $cartArray = [
-            'customer_id' => $customerId,
-            'product_id' => $product['id'],
-            'product_type' => $product['product_type'],
-            'digital_product_type' => $product['digital_product_type'],
-            'choices' => json_encode([]),
-            'variations' => json_encode([]),
-            'variant' => $request['variant_key'],
-            'quantity' => $request['quantity'],
-            'price' => $price,
-            'discount' => $getProductDiscount,
-            'is_checked' => 1,
-            'slug' => $product['slug'],
-            'name' => $product['name'],
-            'thumbnail' => $product['thumbnail'],
-            'seller_id' => ($product->added_by == 'admin') ? 1 : $product->user_id,
-            'seller_is' => $product['added_by'],
-            'created_at' => now(),
-            'updated_at' => now(),
-            'shop_info' => $product->added_by == 'admin' ? getInHouseShopConfig(key: 'name') : Shop::where(['seller_id' => $product->user_id])->first()->name,
-            'shipping_cost' => $product['product_type'] == 'physical' ? CartManager::get_shipping_cost_for_product_category_wise($product, $request['quantity']) : 0,
-            'is_guest' => $isGuest,
-        ];
-
-        $cart = Cart::where([
-            'id' => $request['id'],
-            'product_id' => $request['product_id'],
-            'customer_id' => $user == 'offline' ? session('guest_id') : $user->id,
-            'is_guest' => $user == 'offline' ? 1 : '0',
-            'variant' => $request['current_variant_key']
-        ])->first();
-
-        if (isset($cart)) {
-            Cart::where(['id' => $cart['id']])->update($cartArray);
-            return [
-                'status' => 1,
-                'message' => translate('successfully_update!'),
-                'price' => webCurrencyConverter($price),
-                'discount' => webCurrencyConverter($getProductDiscount),
-                'data' => view(VIEW_FILE_NAMES['products_cart_details_partials'], compact('request'))->render()
-            ];
-        } else {
-            Cart::insertGetId($cartArray);
-            return [
-                'status' => 1,
-                'message' => translate('successfully_added') . '!',
-                'price' => webCurrencyConverter($price),
-                'discount' => webCurrencyConverter($getProductDiscount),
-                'data' => view(VIEW_FILE_NAMES['products_cart_details_partials'], compact('request'))->render()
-            ];
-        }
-    }
-
     function update_variation(Request $request)
     {
         $product = Product::where(['id' => $request['product_id']])->first();
-        if ($product['product_type'] == 'digital') {
-            return self::addToCartDigitalProduct($request, $product);
-        } else {
-            return self::addToCartPhysicalProduct($request, $product);
-        }
+        return self::addToCartPhysicalProduct($request, $product);
     }
 
     public function remove_all_cart()

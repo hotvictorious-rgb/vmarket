@@ -507,7 +507,7 @@ class OrderController extends Controller
     {
         $validator = Validator::make($request->all(), [
             'order_id' => 'required',
-            'payment_status' => 'required|in:paid,unpaid',
+            'payment_status' => 'nullable|in:paid,unpaid',
         ]);
 
         if ($validator->fails()) {
@@ -519,7 +519,9 @@ class OrderController extends Controller
         $order = Order::with(['customer', 'seller.shop', 'deliveryMan'])->where(['id' => $request['order_id'], 'seller_id' => $seller['id']])->first();
 
         if (isset($order)) {
-            if ($order['payment_status'] == 'paid' && $request['payment_status'] != 'paid') {
+            $paymentStatus = $request->input('payment_status', $order['payment_status']);
+
+            if ($order['payment_status'] == 'paid' && $paymentStatus != 'paid') {
                 return response()->json(['success' => 0, 'message' => translate('when_payment_status_paid_then_you_can_not_change_payment_status_paid_to_unpaid.')], 403);
             }
 
@@ -682,7 +684,7 @@ class OrderController extends Controller
             }
 
             $order = Order::with(['customer', 'seller.shop', 'deliveryMan'])->find($request['order_id']);
-            if ($order['payment_status'] != 'paid' && $request['payment_status'] == 'paid') {
+            if ($order['payment_status'] != 'paid' && $paymentStatus == 'paid' && $request->has('payment_status')) {
                 // [AI] Redundant security check: Double enforce non-COD rejection
                 if ($order['payment_method'] !== 'cash_on_delivery') {
                     return response()->json([

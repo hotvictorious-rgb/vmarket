@@ -23,36 +23,6 @@ trait VendorPOSManagement
             }
         }
 
-        if ($product['product_type'] == 'digital' && $product['digital_product_type'] == 'ready_product' && !empty($product['digital_file_ready']) && !isset($cartItem['variant_key'])) {
-            $product['storage_path'] = $product['digital_file_ready_storage_type'] ?? 'public';
-        }
-
-        if ($product['product_type'] == 'digital' && isset($cartItem['variant_key']) && !empty($cartItem['variant_key'])) {
-            foreach ($product['digitalVariation'] as $digitalVariation) {
-                if ($digitalVariation['variant_key'] == $cartItem['variant_key']) {
-                    $digitalProductVariation = $this->digitalProductVariationRepo->getFirstWhere(
-                        params: ['product_id' => $cartItem['id'], 'variant_key' => $cartItem['variant_key']],
-                        relations: ['storage']
-                    );
-                    if ($product['digital_product_type'] == 'ready_product' && $digitalProductVariation) {
-                        $getStoragePath = $this->storageRepo->getFirstWhere(params: [
-                            'data_id' => $digitalProductVariation['id'],
-                            "data_type" => "App\Models\DigitalProductVariation",
-                        ]);
-
-                        $product['digital_file_ready'] = $digitalProductVariation['file'];
-                        $product['storage_path'] = $getStoragePath ? $getStoragePath['value'] : 'public';
-                    }
-
-                    $variant = $digitalVariation['variant_key'];
-                    $unitPrice = $digitalVariation['price'];
-                    $price = $digitalVariation['price'];
-                    $productDiscount = getProductPriceByType(product: $product, type: 'discounted_amount', result: 'value', price: $digitalVariation['price'], from: 'panel');
-                    $productSubtotal = $digitalVariation['price'] * $cartItem['quantity'];
-                }
-            }
-        }
-
         $product['unit_price_amount'] = $unitPrice;
         return [
             'tax' => 0,

@@ -526,19 +526,6 @@ class ProductService
         $variations = $this->getVariations(request: $request, combinations: $combinations);
         $stockCount = isset($combinations[0]) && count($combinations[0]) > 0 ? $this->getTotalQuantity(variations: $variations) : (integer)$request['current_stock'];
 
-        $digitalFile = '';
-        if ($request['product_type'] == 'digital' && $request['digital_product_type'] == 'ready_product' && $request['digital_file_ready']) {
-            $digitalFile = $this->fileUpload(dir: 'product/digital-product/', format: $request['digital_file_ready']->getClientOriginalExtension(), file: $request['digital_file_ready']);
-        }
-
-        $previewFile = $request['product_type'] == 'digital' && $request->existing_preview_file ? $request->existing_preview_file : '';
-        if ($request['product_type'] == 'digital' && $request->has('preview_file') && $request['preview_file']) {
-            $previewFile = $this->fileUpload(dir: 'product/preview/', format: $request['preview_file']->getClientOriginalExtension(), file: $request['preview_file']);
-        }
-
-        $digitalFileOptions = $this->getDigitalVariationOptions(request: $request);
-        $digitalFileCombinations = $this->getDigitalVariationCombinations(arrays: $digitalFileOptions);
-
         $pricingService = app(\App\Services\PricingService::class);
         if ($addedBy == 'seller') {
             $vendorCost = currencyConverter(amount: (float)($request['purchase_price'] ?? $request['unit_price'] ?? 0));
@@ -564,17 +551,12 @@ class ProductService
             'sub_sub_category_id' => $request['sub_sub_category_id'],
             'brand_id' => $request['product_type'] == "physical" ? ( $request['brand_id'] ?? null) : null,
             'unit' => $request['product_type'] == 'physical' ? $request['unit'] : null,
-            'digital_product_type' => $request['product_type'] == 'digital' ? $request['digital_product_type'] : null,
-            'digital_file_ready' => $digitalFile,
-            'digital_file_ready_storage_type' => $digitalFile ? $storage : null,
             'product_type' => $request['product_type'],
             'details' => $request['description'][array_search('en', $request['lang'])],
             'colors' => $this->getColorsObject(request: $request),
             'choice_options' => $request['product_type'] == 'physical' ? json_encode($this->getChoiceOptions(request: $request)) : json_encode([]),
             'variation' => $request['product_type'] == 'physical' ? json_encode($variations) : json_encode([]),
             'specifications' => $request->has('specifications') && is_array($request['specifications']) ? $request['specifications'] : null,
-            'digital_product_file_types' => $request->has('extensions_type') ? $request->get('extensions_type') : [],
-            'digital_product_extensions' => $digitalFileCombinations,
             'unit_price' => $unitPrice,
             'purchase_price' => $purchasePrice,
             'tax' => $request['tax_type'] == 'flat' ? currencyConverter(amount: $request['tax']) : $request['tax'],
@@ -598,8 +580,6 @@ class ProductService
             'images' => json_encode($processedImages['image_names']),
             'thumbnail' => $request->has('image') ? $this->upload(dir: 'product/thumbnail/', format: 'webp', image: $request['image']) : $request->existing_thumbnail,
             'thumbnail_storage_type' => $request->has('image') ? $storage : null,
-            'preview_file' => $previewFile,
-            'preview_file_storage_type' => $request->has('image') ? $storage : $request->get('existing_preview_file_storage_type', null),
             'meta_title' => $request['meta_title'],
             'meta_description' => $request['meta_description'],
             'meta_image' => $request->has('meta_image') ? $this->upload(dir: 'product/meta/', format: 'webp', image: $request['meta_image']) : $request->existing_meta_image,
@@ -626,26 +606,6 @@ class ProductService
         $variations = $this->getVariations(request: $request, combinations: $combinations);
         $stockCount = isset($combinations[0]) && count($combinations[0]) > 0 ? $this->getTotalQuantity(variations: $variations) : (integer)$request['current_stock'];
 
-        if ($request->has('extensions_type') && $request->has('digital_product_variant_key')) {
-            $digitalFile = null;
-        } else {
-            $digitalFile = $product['digital_file_ready'];
-        }
-        if ($request['product_type'] == 'digital') {
-            if ($request['digital_product_type'] == 'ready_product' && $request->hasFile('digital_file_ready')) {
-                $digitalFile = $this->update(dir: 'product/digital-product/', oldImage: $product['digital_file_ready'], format: $request['digital_file_ready']->getClientOriginalExtension(), image: $request['digital_file_ready'], fileType: 'file');
-            } elseif (($request['digital_product_type'] == 'ready_after_sell') && $product['digital_file_ready']) {
-                $digitalFile = null;
-                // $this->delete(filePath: 'product/digital-product/' . $product['digital_file_ready']);
-            }
-        } elseif ($request['product_type'] == 'physical' && $product['digital_file_ready']) {
-            $digitalFile = null;
-            // $this->delete(filePath: 'product/digital-product/' . $product['digital_file_ready']);
-        }
-
-        $digitalFileOptions = $this->getDigitalVariationOptions(request: $request);
-        $digitalFileCombinations = $this->getDigitalVariationCombinations(arrays: $digitalFileOptions);
-
         $pricingService = app(\App\Services\PricingService::class);
         if ($updateBy == 'seller') {
             $vendorCost = currencyConverter(amount: (float)($request['purchase_price'] ?? $request['unit_price'] ?? $product['purchase_price'] ?? 0));
@@ -668,14 +628,11 @@ class ProductService
             'sub_sub_category_id' => $request['sub_sub_category_id'],
             'brand_id' => $request['product_type'] == "physical" ? ($request['brand_id'] ?? null) : null,
             'unit' => $request['product_type'] == 'physical' ? $request['unit'] : null,
-            'digital_product_type' => $request['product_type'] == 'digital' ? $request['digital_product_type'] : null,
             'details' => $request['description'][array_search('en', $request['lang'])],
             'colors' => $this->getColorsObject(request: $request),
             'choice_options' => $request['product_type'] == 'physical' ? json_encode($this->getChoiceOptions(request: $request)) : json_encode([]),
             'variation' => $request['product_type'] == 'physical' ? json_encode($variations) : json_encode([]),
             'specifications' => $request->has('specifications') && is_array($request['specifications']) ? $request['specifications'] : null,
-            'digital_product_file_types' => $request->has('extensions_type') ? $request->get('extensions_type') : [],
-            'digital_product_extensions' => $digitalFileCombinations,
             'unit_price' => $unitPrice,
             'purchase_price' => $purchasePrice,
             'tax' => $request['tax_type'] == 'flat' ? currencyConverter(amount: $request['tax']) : $request['tax'],
@@ -694,8 +651,6 @@ class ProductService
             'multiply_qty' => ($request['product_type'] == 'physical') ? ($request['multiply_qty'] == 'on' ? 1 : 0) : 0,
             'color_image' => json_encode($processedImages['colored_image_names']),
             'images' => json_encode($processedImages['image_names']),
-            'digital_file_ready' => $digitalFile,
-            'digital_file_ready_storage_type' => $request->has('digital_file_ready') ? $storage : $product['digital_file_ready_storage_type'],
             'meta_title' => $request['meta_title'],
             'meta_description' => $request['meta_description'],
             'meta_image' => $request->file('meta_image') ? $this->update(dir: 'product/meta/', oldImage: $product['meta_image'], format: 'png', image: $request['meta_image']) : $product['meta_image'],
@@ -708,18 +663,6 @@ class ProductService
             $dataArray += [
                 'thumbnail' => $this->update(dir: 'product/thumbnail/', oldImage: $product['thumbnail'], format: 'webp', image: $request['image'], fileType: 'image'),
                 'thumbnail_storage_type' => $storage
-            ];
-        }
-        if ($request->file('preview_file')) {
-            $dataArray += [
-                'preview_file' => $this->update(dir: 'product/preview/', oldImage: $product['preview_file'], format: $request['preview_file']->getClientOriginalExtension(), image: $request['preview_file'], fileType: 'file'),
-                'preview_file_storage_type' => $storage
-            ];
-        }
-        if ($request['product_type'] == 'physical' && $product['preview_file']) {
-            $this->delete(filePath: '/product/preview/' . $product['preview_file']);
-            $dataArray += [
-                'preview_file' => null,
             ];
         }
 
@@ -946,47 +889,6 @@ class ProductService
         ];
     }
 
-    public function getAddProductDigitalVariationData(object $request, object|array $product): array
-    {
-        $digitalFileOptions = $this->getDigitalVariationOptions(request: $request);
-        $digitalFileCombinations = $this->getDigitalVariationCombinations(arrays: $digitalFileOptions);
-
-        $digitalFiles = [];
-        foreach ($digitalFileCombinations as $combinationKey => $combination) {
-            foreach ($combination as $item) {
-                $string = $combinationKey . '-' . str_replace(' ', '', $item);
-                $uniqueKey = strtolower(str_replace('-', '_', $string));
-                $fileItem = $request->file('digital_files.' . $uniqueKey);
-                $uploadedFile = '';
-                if ($fileItem) {
-                    $uploadedFile = $this->fileUpload(dir: 'product/digital-product/', format: $fileItem->getClientOriginalExtension(), file: $fileItem);
-                }
-                $digitalFiles[] = [
-                    'product_id' => $product->id,
-                    'variant_key' => $request->input('digital_product_variant_key.' . $uniqueKey),
-                    'sku' => $request->input('digital_product_sku.' . $uniqueKey),
-                    'price' => currencyConverter(amount: $request->input('digital_product_price.' . $uniqueKey)),
-                    'file' => $uploadedFile,
-                ];
-            }
-        }
-        return $digitalFiles;
-    }
-
-    public function getDigitalVariationCombinationView(object $request, ?object $product = null): array
-    {
-        $productName = $request['name'][array_search('en', $request['lang'])];
-        $unitPrice = $request['unit_price'];
-        $options = $this->getDigitalVariationOptions(request: $request);
-        $combinations = $this->getDigitalVariationCombinations(arrays: $options);
-        $digitalProductType = $request['digital_product_type'];
-        $generateCombination = $this->generateDigitalVariationCombination(request: $request, combinations: $combinations, product: $product);
-        return [
-            'view' => view('admin-views.product.partials._digital-variation-combination', compact('generateCombination', 'unitPrice', 'productName', 'digitalProductType', 'product', 'request'))->render(),
-            'combination_count' => count($generateCombination),
-        ];
-    }
-
     public function generatePhysicalVariationCombination(object|array $request, object|array $options, object|array $combinations, object|array|null $product): array
     {
         $productName = $request['name'][array_search('en', $request['lang'])];
@@ -1049,91 +951,6 @@ class ProductService
         return $generateCombination;
     }
 
-
-    public function generateDigitalVariationCombination(object|array $request, object|array $combinations, object|array|null $product): array
-    {
-        $productName = $request['name'][array_search('en', $request['lang'])];
-        $unitPrice = $request['unit_price'];
-
-        $generateCombination = [];
-        foreach ($combinations as $combinationKey => $combination) {
-            foreach ($combination as $item) {
-                $sku = '';
-                foreach (explode(' ', $productName) as $value) {
-                    $sku .= substr($value, 0, 1);
-                }
-                $string = $combinationKey . '-' . preg_replace('/\s+/', '-', $item);
-                $sku .= '-' . $combinationKey . '-' . str_replace(' ', '', $item);
-                $uniqueKey = strtolower(str_replace('-', '_', $string));
-                if ($product && $product->digitalVariation && count($product->digitalVariation) > 0) {
-                    $productDigitalVariationArray = [];
-                    foreach ($product->digitalVariation->toArray() as $variationKey => $digitalVariation) {
-                        $productDigitalVariationArray[$digitalVariation['variant_key']] = $digitalVariation;
-                    }
-                    if (key_exists($string, $productDigitalVariationArray)) {
-                        $generateCombination[] = [
-                            'product_id' => $product['id'],
-                            'unique_key' => $uniqueKey,
-                            'variant_key' => $productDigitalVariationArray[$string]['variant_key'],
-                            'sku' => $productDigitalVariationArray[$string]['sku'],
-                            'price' => $productDigitalVariationArray[$string]['price'],
-                            'file' => $productDigitalVariationArray[$string]['file'],
-                        ];
-                    } else {
-                        $generateCombination[] = [
-                            'product_id' => $product['id'],
-                            'unique_key' => $uniqueKey,
-                            'variant_key' => $string,
-                            'sku' => $sku,
-                            'price' => currencyConverter(amount: $unitPrice),
-                            'file' => '',
-                        ];
-                    }
-                } else {
-                    $generateCombination[] = [
-                        'product_id' => '',
-                        'unique_key' => $uniqueKey,
-                        'variant_key' => $string,
-                        'sku' => $sku,
-                        'price' => currencyConverter(amount: $unitPrice),
-                        'file' => '',
-                    ];
-                }
-            }
-        }
-        return $generateCombination;
-    }
-
-    public function getDigitalVariationOptions(object $request): array
-    {
-        $options = [];
-        if ($request->has('extensions_type')) {
-            foreach ($request->extensions_type as $type) {
-                $name = 'extensions_options_' . $type;
-                $my_str = implode('|', $request[$name]);
-                $optionsArray = [];
-                foreach (explode(',', $my_str) as $option) {
-                    $optionsArray[] = str_replace('.', '_', removeSpecialCharacters($option));
-                }
-                $options[$type] = $optionsArray;
-            }
-        }
-        return $options;
-    }
-
-    public function getDigitalVariationCombinations(array $arrays): array
-    {
-        $result = [];
-        foreach ($arrays as $arrayKey => $array) {
-            foreach ($array as $value) {
-                if ($value) {
-                    $result[$arrayKey][] = $value;
-                }
-            }
-        }
-        return $result;
-    }
-
     public function getProductSEOData(object $request, object|null $product = null, ?string $action = null): array
     {
         if ($product) {
@@ -1169,48 +986,6 @@ class ProductService
             "image" => $metaImage ?? ($product ? $product['meta_image'] : null),
             "created_at" => now(),
             "updated_at" => now(),
-        ];
-    }
-
-    public function getProductAuthorsInfo(object|array $product): array
-    {
-        $productAuthorIds = [];
-        $productAuthorNames = [];
-        $productAuthors = [];
-        if ($product?->digitalProductAuthors && count($product?->digitalProductAuthors) > 0) {
-            foreach ($product?->digitalProductAuthors as $author) {
-                $productAuthorIds[] = $author['author_id'];
-                $productAuthors[] = $author?->author;
-                if ($author?->author?->name) {
-                    $productAuthorNames[] = $author?->author?->name;
-                }
-            }
-        }
-        return [
-            'ids' => $productAuthorIds,
-            'names' => $productAuthorNames,
-            'data' => $productAuthors,
-        ];
-    }
-
-    public function getProductPublishingHouseInfo(object|array $product): array
-    {
-        $productPublishingHouseIds = [];
-        $productPublishingHouseNames = [];
-        $productPublishingHouses = [];
-        if ($product?->digitalProductPublishingHouse && count($product?->digitalProductPublishingHouse) > 0) {
-            foreach ($product?->digitalProductPublishingHouse as $publishingHouse) {
-                $productPublishingHouseIds[] = $publishingHouse['publishing_house_id'];
-                $productPublishingHouses[] = $publishingHouse?->publishingHouse;
-                if ($publishingHouse?->publishingHouse?->name) {
-                    $productPublishingHouseNames[] = $publishingHouse?->publishingHouse?->name;
-                }
-            }
-        }
-        return [
-            'ids' => $productPublishingHouseIds,
-            'names' => $productPublishingHouseNames,
-            'data' => $productPublishingHouses,
         ];
     }
 

@@ -1,11 +1,9 @@
 <?php
 
-use App\Http\Controllers\RestAPI\v2\delivery_man\ChatController as DeliveryChatController;
 use App\Http\Controllers\RestAPI\v2\seller\auth\ForgotPasswordController;
 use App\Http\Controllers\RestAPI\v2\seller\auth\LoginController;
 use App\Http\Controllers\RestAPI\v2\delivery_man\auth\LoginController as DeliveryManLoginController;
 use App\Http\Controllers\RestAPI\v2\seller\auth\RegisterController;
-use App\Http\Controllers\RestAPI\v2\seller\ChatController as VendorChatController;
 use App\Http\Controllers\RestAPI\v2\delivery_man\DeliveryManController;
 use App\Http\Controllers\RestAPI\v2\delivery_man\WithdrawController;
 use App\Http\Controllers\RestAPI\v2\seller\BrandController;
@@ -54,7 +52,6 @@ Route::group(['prefix' => 'v2', 'middleware' => ['api_lang']], function () {
         Route::group(['prefix' => 'products'], function () {
             Route::controller(ProductController::class)->group(function () {
                 Route::post('upload-images', 'upload_images');
-                Route::post('upload-digital-product', 'upload_digital_product');
                 Route::post('add', 'add_new');
                 Route::get('list', 'list');
                 Route::get('stock-out-list', 'stock_out_list');
@@ -72,7 +69,6 @@ Route::group(['prefix' => 'v2', 'middleware' => ['api_lang']], function () {
                 Route::get('/{id}', 'details');
                 Route::put('order-detail-status/{id}', 'order_detail_status');
                 Route::put('assign-delivery-man', 'assign_delivery_man');
-                Route::put('order-wise-product-upload', 'digital_file_upload_after_sell');
                 Route::put('delivery-charge-date-update', 'amount_date_update');
                 Route::post('assign-third-party-delivery', 'assign_third_party_delivery');
                 Route::post('update-payment-status', 'update_payment_status');
@@ -102,15 +98,6 @@ Route::group(['prefix' => 'v2', 'middleware' => ['api_lang']], function () {
                 Route::put('status', 'status_update');
                 Route::put('update/{id}', 'update');
                 Route::delete('delete/{id}', 'delete');
-            });
-        });
-
-        Route::group(['prefix' => 'messages'], function () {
-            Route::controller(VendorChatController::class)->group(function () {
-                Route::get('list/{type}', 'list');
-                Route::get('get-message/{type}/{id}', 'get_message');
-                Route::post('send/{type}', 'send_message');
-                Route::get('search/{type}', 'search');
             });
         });
 
@@ -182,15 +169,6 @@ Route::group(['prefix' => 'v2', 'middleware' => ['api_lang']], function () {
             Route::controller(WithdrawController::class)->group(function () {
                 Route::post('withdraw-request', 'sendWithdrawRequest');
                 Route::get('withdraw-list-by-approved', 'getWithdrawListByApproved');
-            });
-
-            Route::group(['prefix' => 'messages'], function () {
-                Route::controller(DeliveryChatController::class)->group(function () {
-                    Route::get('list/{type}', 'list');
-                    Route::get('get-message/{type}/{id}', 'get_message');
-                    Route::post('send-message/{type}', 'send_message');
-                    Route::get('search/{type}', 'search');
-                });
             });
         });
 

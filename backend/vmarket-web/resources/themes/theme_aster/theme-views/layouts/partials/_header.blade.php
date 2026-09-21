@@ -110,7 +110,7 @@
         <div class="container">
             <div class="d-flex align-items-center justify-content-between gap-3">
                 <a class="logo" href="{{route('home')}}">
-                    <img class="dark-support svg h-45" alt="{{ translate('Logo') }}"
+                    <img class="dark-support h-45" alt="{{ translate('Logo') }}"
                          src="{{ getStorageImages(path: $web_config['web_logo'], type:'logo') }}">
                 </a>
                 <div class="search-box position-relative">
@@ -347,22 +347,6 @@
                                 </li>
                             @endif
 
-                            @if ($web_config['digital_product_setting'] && count($web_config['publishing_houses']) == 1)
-                                @php($firstPublisherID = is_array($web_config['publishing_houses']) && isset($web_config['publishing_houses']['id']) ? $web_config['publishing_houses']['id'] : $web_config['publishing_houses']?->first()?->id)
-                                <li>
-                                    <a class="d-flex gap-2 align-items-center text-capitalize"
-                                       href="{{ route('products',['publishing_house_id' => $firstPublisherID, 'product_type' => 'digital', 'page'=>1]) }}">
-                                        {{ translate('Publication_House')}}
-                                    </a>
-                                </li>
-                            @elseif ($web_config['digital_product_setting'] && count($web_config['publishing_houses']) > 1)
-                                <li>
-                                    <a class="d-flex gap-2 align-items-center text-capitalize"
-                                       href="{{ route('products', ['product_type' => 'digital', 'page'=>1]) }}">
-                                        {{ translate('Publication_House')}}
-                                    </a>
-                                </li>
-                            @endif
                             @if($web_config['business_mode'] == 'multi' &&  $web_config['seller_registration'])
                                 <li class="d-xl-none">
                                     <a href="{{route('vendor.auth.registration.index')}}" class="d-flex text-capitalize">
@@ -599,44 +583,6 @@
                                         </div>
                                     </div>
                                 </li>
-                            @endif
-
-                            @if ($web_config['digital_product_setting'] && count($web_config['publishing_houses']) == 1)
-                                <li>
-                                    <a href="{{ route('products',['publishing_house_id' => 0, 'product_type' => 'digital', 'page'=>1]) }}">
-                                        {{ translate('Publication_House') }}
-                                    </a>
-                                </li>
-                            @elseif ($web_config['digital_product_setting'] && count($web_config['publishing_houses']) > 1)
-                            <li>
-                                <a class="cursor-pointer" href="{{ route('products', ['product_type' => 'digital', 'page'=>1]) }}">
-                                    {{ translate('Publication_House') }}
-                                </a>
-                                <div class="sub-menu megamenu p-3 bs-dropdown-min-width--max-content">
-                                    <div class="d-flex gap-4">
-                                        <div class="column-2">
-                                            @php($publishingHousesIndex=0)
-                                            @foreach($web_config['publishing_houses'] as $publishingHouseItem)
-                                                @if($publishingHousesIndex < 10 && $publishingHouseItem['name'] != 'Unknown')
-                                                    @php($publishingHousesIndex++)
-                                                    <a href="{{ route('products',['publishing_house_id'=> $publishingHouseItem['id'], 'product_type' => 'digital', 'page'=>1]) }}"
-                                                       class="media gap-3 align-items-center border-bottom">
-                                                        <div class="media-body text-truncate width--7rem">
-                                                            {{ $publishingHouseItem['name'] }}
-                                                        </div>
-                                                    </a>
-                                                @endif
-                                            @endforeach
-                                            <div class="d-flex">
-                                                <a href="{{ route('products', ['product_type' => 'digital', 'page' => 1]) }}"
-                                                   class="fw-bold text-primary d-flex justify-content-center">
-                                                    {{ translate('view_all').'...' }}
-                                                </a>
-                                            </div>
-                                        </div>
-                                    </div>
-                                </div>
-                            </li>
                             @endif
                         </ul>
                     </div>

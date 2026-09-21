@@ -28,7 +28,6 @@ use Modules\TaxModule\app\Models\Taxable;
  * @property int $sub_sub_category_id
  * @property int $brand_id
  * @property string $unit
- * @property string $digital_product_type
  * @property string $product_type
  * @property string $details
  * @property int $min_qty
@@ -55,9 +54,6 @@ use Modules\TaxModule\app\Models\Taxable;
  * @property float $temp_shipping_cost
  * @property string $thumbnail
  * @property string $thumbnail_storage_type
- * @property string $preview_file
- * @property string $preview_file_storage_type
- * @property string $digital_file_ready
  * @property string $meta_title
  * @property string $meta_description
  * @property string $meta_image
@@ -80,15 +76,12 @@ class Product extends Model
         'sub_sub_category_id',
         'brand_id',
         'unit',
-        'digital_product_type',
         'product_type',
         'details',
         'colors',
         'choice_options',
         'variation',
         'specifications',
-        'digital_product_file_types',
-        'digital_product_extensions',
         'unit_price',
         'purchase_price',
         'tax',
@@ -112,13 +105,9 @@ class Product extends Model
         'images',
         'thumbnail',
         'thumbnail_storage_type',
-        'preview_file',
-        'preview_file_storage_type',
-        'digital_file_ready',
         'meta_title',
         'meta_description',
         'meta_image',
-        'digital_file_ready_storage_type',
         'is_shipping_cost_updated',
         'temp_shipping_cost',
         'price_updated_at',
@@ -149,7 +138,6 @@ class Product extends Model
         'sub_sub_category_id' => 'integer',
         'brand_id' => 'integer',
         'unit' => 'string',
-        'digital_product_type' => 'string',
         'product_type' => 'string',
         'details' => 'string',
         'min_qty' => 'integer',
@@ -177,24 +165,19 @@ class Product extends Model
         'multiply_qty' => 'integer',
         'temp_shipping_cost' => 'float',
         'thumbnail' => 'string',
-        'preview_file' => 'string',
-        'digital_file_ready' => 'string',
         'meta_title' => 'string',
         'meta_description' => 'string',
         'meta_image' => 'string',
         'is_shipping_cost_updated' => 'integer',
         'specifications' => 'array',
-        'digital_product_file_types' => 'array',
-        'digital_product_extensions' => 'array',
         'thumbnail_storage_type' => 'string',
-        'digital_file_ready_storage_type' => 'string',
         'marketplace_confirmed_at'  => 'datetime',
         // [AI] Canonical availability lifecycle casts
         'availability_confirmed_at' => 'datetime',
         'availability_expires_at'   => 'datetime',
     ];
 
-    protected $appends = ['is_shop_temporary_close', 'thumbnail_full_url', 'preview_file_full_url', 'color_images_full_url', 'meta_image_full_url', 'images_full_url', 'digital_file_ready_full_url'];
+    protected $appends = ['is_shop_temporary_close', 'thumbnail_full_url', 'color_images_full_url', 'meta_image_full_url', 'images_full_url'];
 
     public function translations(): MorphMany
     {
@@ -204,21 +187,17 @@ class Product extends Model
     public function scopeActive($query)
     {
         $brandSetting = getWebConfig(name: 'product_brand');
-        $digitalProductSetting = getWebConfig(name: 'digital_product');
         $businessMode = getWebConfig(name: 'business_mode');
-        $productType = $digitalProductSetting ? ['digital', 'physical'] : ['physical'];
 
         return $query->when($businessMode == 'single', function ($query) {
                 $query->where(['added_by' => 'admin']);
             })
-            ->when($brandSetting, function ($query) use ($brandSetting, $productType) {
-                if (!in_array('digital', $productType)) {
-                    $query->whereHas('brand', function ($query) {
-                        $query->where('status', 1);
-                    })->orWhere(function ($query) {
-                        $query->whereNull('brand_id')->where('status', 1);
-                    });
-                }
+            ->when($brandSetting, function ($query) {
+                $query->whereHas('brand', function ($query) {
+                    $query->where('status', 1);
+                })->orWhere(function ($query) {
+                    $query->whereNull('brand_id')->where('status', 1);
+                });
             })
             ->when(!$brandSetting, function ($query) {
                 $query->whereNull('brand_id')->where('status', 1);
@@ -226,7 +205,7 @@ class Product extends Model
             ->where(['status' => 1])
             ->where(['request_status' => 1])
             ->SellerApproved()
-            ->whereIn('product_type', $productType);
+            ->where('product_type', 'physical');
     }
 
     public function scopeSellerApproved($query): void
@@ -416,16 +395,6 @@ class Product extends Model
         return $this->hasMany(Review::class, 'product_id')->where('customer_id', auth('customer')->id())->whereNotNull('product_id')->whereNull('delivery_man_id');
     }
 
-    public function digitalProductAuthors(): HasMany
-    {
-        return $this->hasMany(DigitalProductAuthor::class, 'product_id');
-    }
-
-    public function digitalProductPublishingHouse(): HasMany
-    {
-        return $this->hasMany(DigitalProductPublishingHouse::class, 'product_id');
-    }
-
     public function brand(): BelongsTo
     {
         return $this->belongsTo(Brand::class);
@@ -514,11 +483,6 @@ class Product extends Model
         return $this->hasMany(Wishlist::class, 'product_id');
     }
 
-    public function digitalVariation(): HasMany
-    {
-        return $this->hasMany(DigitalProductVariation::class, 'product_id');
-    }
-
     public function tags(): BelongsToMany
     {
         if (strpos(url()->current(), '/api')) {
@@ -581,22 +545,10 @@ class Product extends Model
         return $this->storageLink('product/thumbnail', $value, $this->thumbnail_storage_type ?? 'public');
     }
 
-    public function getPreviewFileFullUrlAttribute(): string|null|array
-    {
-        $value = $this->preview_file;
-        return $this->storageLink('product/preview', $value, $this->preview_file_storage_type ?? 'public');
-    }
-
     public function getMetaImageFullUrlAttribute(): array
     {
         $value = $this->meta_image;
         return $this->storageLink('product/meta', $value, 'public');
-    }
-
-    public function getDigitalFileReadyFullUrlAttribute(): array
-    {
-        $value = $this->digital_file_ready;
-        return $this->storageLink('product/digital-product', $value, $this->digital_file_ready_storage_type ?? 'public');
     }
 
     public function getColorImagesFullUrlAttribute(): array

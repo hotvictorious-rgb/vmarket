@@ -4,7 +4,6 @@ use App\Http\Controllers\RestAPI\v3\seller\auth\ForgotPasswordController;
 use App\Http\Controllers\RestAPI\v3\seller\auth\LoginController as VendorLoginController;
 use App\Http\Controllers\RestAPI\v3\seller\auth\RegisterController;
 use App\Http\Controllers\RestAPI\v3\seller\BrandController;
-use App\Http\Controllers\RestAPI\v3\seller\ChatController;
 use App\Http\Controllers\RestAPI\v3\seller\ClearanceSaleController;
 use App\Http\Controllers\RestAPI\v3\seller\CouponController;
 use App\Http\Controllers\RestAPI\v3\seller\DeliveryManController;
@@ -129,7 +128,6 @@ Route::group(['prefix' => 'v3/seller', 'middleware' => ['api_lang']], function (
                 Route::get('/{id}', 'details');
                 Route::put('order-detail-status/{id}', 'order_detail_status');
                 Route::put('assign-delivery-man', 'assign_delivery_man');
-                Route::put('order-wise-product-upload', 'digital_file_upload_after_sell');
                 Route::put('delivery-charge-date-update', 'amount_date_update');
                 Route::post('assign-third-party-delivery', 'assign_third_party_delivery');
                 Route::post('update-payment-status', 'update_payment_status');
@@ -194,17 +192,6 @@ Route::group(['prefix' => 'v3/seller', 'middleware' => ['api_lang']], function (
                 Route::delete('delete/{id}', 'delete');
             });
         });
-
-        Route::group(['prefix' => 'messages'], function () {
-            Route::controller(ChatController::class)->group(function () {
-                Route::get('list/{type}', 'list');
-                Route::get('get-message/{type}/{id}', 'get_message');
-                Route::post('send/{type}', 'send_message');
-                Route::post('seen/{type}', 'seenMessage');
-                Route::get('search/{type}', 'search');
-            });
-        });
-
 
         Route::group(['prefix' => 'delivery-man'], function () {
             Route::controller(DeliveryManController::class)->group(function () {

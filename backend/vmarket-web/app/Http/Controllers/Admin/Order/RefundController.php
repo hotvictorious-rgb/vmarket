@@ -115,11 +115,7 @@ class RefundController extends BaseController
             return response()->json(['error' => translate('this_account_has_been_deleted_you_can_not_modify_the_status') . '.']);
         }
 
-        $orderDetailsRewards = $this->orderDetailsRewardsRepo->getFirstWhere(params: ['order_details_id' => $refund['order_details_id'], 'reward_type' => 'loyalty_point']);
-        $loyaltyPoint = $orderDetailsRewards['reward_amount'] ?? 0;
-        if ($orderDetailsRewards && $user['loyalty_point'] < $orderDetailsRewards['reward_amount'] && ($request['refund_status'] == 'refunded' || $request['refund_status'] == 'approved')) {
-            return response()->json(['error' => translate('customer_has_not_sufficient_loyalty_point_to_take_refund_for_this_order') . '.']);
-        }
+        // [AI] Loyalty points decommissioned in V1 - customer refund check removed.
 
         $order = $this->orderRepo->getFirstWhere(params: ['id' => $refund['order_id']]);
 

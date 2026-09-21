@@ -366,7 +366,6 @@ class OrderController extends BaseController
                 'seller_id' => $sellerId,
             ];
             $deliveryMen = $this->deliveryManRepo->getListWhere(filters: $filters, dataLimit: 'all');
-            $isOrderOnlyDigital = $orderService->getCheckIsOrderOnlyDigital(order: $order);
 
             $previousOrder = $this->orderRepo->getPreviousFirstOrderWhere(id: $id);
             $nextOrder = $this->orderRepo->getNextFirstOrderWhere(id: $id);
@@ -381,7 +380,7 @@ class OrderController extends BaseController
                 $orderCount = $this->orderRepo->getListWhereCount(filters: ['customer_id' => $order['customer_id']]);
                 return view('admin-views.order.order-details', compact('order', 'linkedOrders',
                     'deliveryMen', 'totalDelivered', 'companyName', 'companyWebLogo', 'physicalProduct',
-                    'countryRestrictStatus', 'zipRestrictStatus', 'countries', 'zipCodes', 'orderCount', 'isOrderOnlyDigital', 'previousOrder', 'nextOrder', 'allProductsList', 'isOrderEditable', 'orderProductsSession', 'editOrderSummary', 'orderEditPaymentHistory'));
+                    'countryRestrictStatus', 'zipRestrictStatus', 'countries', 'zipCodes', 'orderCount', 'previousOrder', 'nextOrder', 'allProductsList', 'isOrderEditable', 'orderProductsSession', 'editOrderSummary', 'orderEditPaymentHistory'));
             } else {
                 $orderCount = $this->orderRepo->getListWhereCount(filters: ['customer_id' => $order['customer_id'], 'order_type' => 'POS']);
                 return view('admin-views.pos.order.order-details', compact('order', 'companyName', 'companyWebLogo', 'orderCount', 'previousOrder', 'nextOrder', 'allProductsList', 'isOrderEditable', 'orderProductsSession', 'editOrderSummary'));
@@ -729,4 +728,47 @@ class OrderController extends BaseController
         ]);
     }
 
+    /**
+     * [AI] Super Admin manual settlement execution for eligible third-party vendor orders.
+     */
+    public function settleVendorOrder(Request $request, \App\Services\VendorSettlementService $settlementService): JsonResponse
+    {
+        $request->validate([
+            'order_id' => 'required|integer',
+            'payment_method' => 'required|string|max:50',
+            'payment_reference' => 'required|string|max:100',
+            'notes' => 'nullable|string|max:500',
+        ]);
+
+        $adminId = auth('admin')->id() ?? 1;
+
+        try {
+            $result = $settlementService->executeManualSettlement(
+                orderId: (int)$request->order_id,
+                adminId: $adminId,
+                paymentMethod: $request->payment_method,
+                paymentReference: $request->payment_reference,
+                notes: $request->notes ?? ''
+            );
+
+            if ($result['status']) {
+                return response()->json([
+                    'status' => true,
+                    'message' => translate($result['message']),
+                ]);
+            }
+
+            return response()->json([
+                'status' => false,
+                'message' => translate($result['message']),
+            ], 422);
+        } catch (\Throwable $e) {
+            return response()->json([
+                'status' => false,
+                'message' => $e->getMessage(),
+            ], 500);
+        }
+    }
+
 }
+

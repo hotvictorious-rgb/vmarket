@@ -68,7 +68,7 @@
             color: {{ $web_config['primary_color'] }} !important;
             --bs-btn-border-color: {{ $web_config['primary_color'] }} !important;
         }
-        /* Accessibility Contrast Overrides */
+        /* Accessibility & Contrast Enhancements [AI] */
         .header-top a, .header-top button {
             color: #212529 !important;
         }
@@ -82,14 +82,14 @@
             font-weight: 700 !important;
         }
         .btn-primary, #cookie-accept, #install-btn {
-            color: #000000 !important;
-            font-weight: 700 !important;
+            color: #ffffff !important;
+            font-weight: 600 !important;
         }
         h2.title.text-primary, .title.text-primary, span.text-primary, .text-primary {
-            color: #904b00 !important;
+            color: var(--bs-primary) !important;
         }
         .media.absolute-white, .media.absolute-white a, .media.absolute-white div, .media.absolute-white i {
-            color: #000000 !important;
+            color: #ffffff !important;
         }
     </style>
 

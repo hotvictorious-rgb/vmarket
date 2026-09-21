@@ -20,8 +20,8 @@
                     <div class="swiper-container">
                         <div class="position-relative left-align-info">
                             <div class="swiper" data-swiper-loop="true" data-swiper-margin="16"
-                                 data-swiper-pagination-el="null" data-swiper-navigation-next=".top-rated-nav-next"
-                                 data-swiper-navigation-prev=".top-rated-nav-prev"
+                                 data-swiper-pagination-el="null" data-swiper-navigation-next=".clearance-sale-nav-next"
+                                 data-swiper-navigation-prev=".clearance-sale-nav-prev"
                                  data-swiper-breakpoints='{"0": {"slidesPerView": "1"}, "340": {"slidesPerView": "2", "spaceBetween": "8"}, "992": {"slidesPerView": "3"}, "1200": {"slidesPerView": "4"}, "1400": {"slidesPerView": "5"}}'>
                                 <div class="swiper-wrapper swiper-wrapper-rtl align-items-stretch">
                                     @foreach($clearanceSaleProducts as $key => $product)
@@ -31,8 +31,8 @@
                                     @endforeach
                                 </div>
                             </div>
-                            <div class="swiper-button-prev top-rated-nav-prev"></div>
-                            <div class="swiper-button-next top-rated-nav-next"></div>
+                            <div class="swiper-button-prev clearance-sale-nav-prev"></div>
+                            <div class="swiper-button-next clearance-sale-nav-next"></div>
                         </div>
                     </div>
                 </div>

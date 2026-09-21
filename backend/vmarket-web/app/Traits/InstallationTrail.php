@@ -59,7 +59,6 @@ trait InstallationTrail
         BusinessSetting::where(['type' => 'company_name'])->update(['value' => $request['company_name']]);
 
         $this->businessSettingGetOrInsert(type: 'product_brand', value: 1);
-        $this->businessSettingGetOrInsert(type: 'digital_product', value: 1);
         $this->businessSettingGetOrInsert(type: 'delivery_boy_expected_delivery_date_message', value: json_encode(['status' => 0, 'message' => '']));
         $this->businessSettingGetOrInsert(type: 'order_canceled', value: json_encode(['status' => 0, 'message' => '']));
         $this->businessSettingGetOrInsert(type: 'offline_payment', value: json_encode(['status' => 0]));

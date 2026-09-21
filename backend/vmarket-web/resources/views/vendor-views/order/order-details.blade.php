@@ -1439,7 +1439,6 @@
 
 
                                 @if ($order['order_status']!='returned' && $order['order_status']!='failed' && $order['order_status']!='canceled')
-                                    @if(!$isOrderOnlyDigital)
                                         <li class="nav-item ">
                                             <div
                                                 class="nav-link {{($order['order_status']=='confirmed') || ($order['order_status']=='processing') || ($order['order_status']=='processed') || ($order['order_status']=='out_for_delivery') || ($order['order_status']=='delivered')?'active-status' : ''}}">
@@ -1605,7 +1604,6 @@
                                                 </div>
                                             </div>
                                         </li>
-                                    @endif
                                 @elseif(in_array($order['order_status'], ['returned', 'canceled']))
                                     <li class="nav-item">
                                         <div class="nav-link active-status">

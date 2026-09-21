@@ -50,7 +50,10 @@ class RouteServiceProvider extends ServiceProvider
         $this->mapApiv2Routes();
         $this->mapApiv3Routes();
 
-        //$this->mapInstallRoutes();
+        // [AI] Enable installation routes if system is uninstalled, DB not configured, or install route requested
+        if (empty(env('DB_DATABASE')) || env('APP_MODE') === 'installation' || (!file_exists(storage_path('installed')) && request()->is('step*', 'database_installation', 'import_sql', 'force-import-sql', 'system_settings', 'purchase_code'))) {
+            $this->mapInstallRoutes();
+        }
         //$this->mapUpdateRoutes();
 
         $this->mapBetaAdminRoutes();

@@ -1256,7 +1256,6 @@
                             Request::is('admin/third-party/sms-module') ||
                             Request::is('admin/third-party/recaptcha') ||
                             Request::is('admin/third-party/social-login/view') ||
-                            Request::is('admin/third-party/social-media-chat/view') ||
                             Request::is('admin/third-party/storage-connection-settings/index') ||
                             Request::is('admin/third-party/map-api') ? 'active'  :'' }}"
                        href="{{ route('admin.third-party.social-login.view') }}"

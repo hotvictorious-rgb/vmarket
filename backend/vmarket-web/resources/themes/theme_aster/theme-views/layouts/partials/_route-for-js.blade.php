@@ -9,7 +9,6 @@
 <span id="get-place-holder-image" data-src="{{ theme_asset('assets/img/image-place-holder.png') }}"></span>
 <span id="authentication-status" data-auth="{{ auth('customer')->check() ? 'true' : 'false' }}"></span>
 <span id="set-shipping-url" data-url="{{url('/')}}/customer/set-shipping-method"></span>
-<span id="digital-product-download-otp-reset" data-route="{{ Route::has('digital-product-download-otp-reset') ? route('digital-product-download-otp-reset') : '' }}"></span>
 <span id="order_again_url" data-action="{{ route('cart.order-again') }}"></span>
 <span id="route-product-restock-request" data-url="{{ route('cart.product-restock-request') }}"></span>
 <span id="route-get-session-recaptcha-code"

@@ -3,13 +3,11 @@
 namespace App\Traits;
 
 use App\Models\CategoryShippingCost;
-use App\Models\DigitalProductVariation;
 use App\Models\Product;
 use App\Models\RestockProduct;
 use App\Models\RestockProductCustomer;
 use App\Models\ShippingMethod;
 use App\Models\ShippingType;
-use App\Models\Storage;
 use App\Services\ProductService;
 use Modules\TaxModule\app\Traits\VatTaxManagement;
 
@@ -145,7 +143,7 @@ trait ProductTrait
                 return $query->where('is_active', 1);
             });
         }] : [];
-        $relations = ['digitalVariation','clearanceSale' => function ($query) {
+        $relations = ['clearanceSale' => function ($query) {
             return $query->active();
         }];
         $relations = array_merge($productWiseTaxRelation, $relations);
@@ -169,7 +167,7 @@ trait ProductTrait
             });
         }] : [];
 
-        $relations = ['category', 'brand', 'reviews', 'rating', 'orderDetails', 'orderDelivered', 'digitalVariation', 'seoInfo', 'clearanceSale' => function ($query) {
+        $relations = ['category', 'brand', 'reviews', 'rating', 'orderDetails', 'orderDelivered', 'seoInfo', 'clearanceSale' => function ($query) {
             return $query->active();
         }];
         $relations = array_merge($productWiseTaxRelation, $relations);

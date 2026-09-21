@@ -150,7 +150,6 @@ trait UpdateClass
     {
         if ($versionNumber == '13.0') {
             $this->businessSettingGetOrInsert(type: 'product_brand', value: 1);
-            $this->businessSettingGetOrInsert(type: 'digital_product', value: 1);
         }
 
         if ($versionNumber == '13.1') {

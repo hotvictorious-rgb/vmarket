@@ -274,7 +274,6 @@ class VendorController extends BaseController
         }
         $shipping_method = getWebConfig(name: 'shipping_method');
         $delivery_men = $this->deliveryManRepo->getListWhereIn(filters: ['is_active' => 1, 'seller_id' => $order['seller_id'], 'shipping_method' => $shipping_method], dataLimit: 'all',);
-        $isOrderOnlyDigital = $orderService->getCheckIsOrderOnlyDigital(order: $order);
         $shipping_address = $this->shippingAddressRepo->getFirstWhere(params: ['id' => $order['shipping_address']]);
         $total_delivered = $this->orderRepo->getListWhere(
             filters: ['seller_id' => $order['seller_id'], 'seller_is' => 'seller', 'order_status' => 'delivered', 'order_type' => 'default_type'],
@@ -291,7 +290,7 @@ class VendorController extends BaseController
         } else {
             $orderCount = $this->orderRepo->getListWhereCount(filters: ['customer_id' => $order['customer_id'], 'order_type' => 'POS']);
         }
-        return view('admin-views.vendor.order-details', compact('order', 'seller_id', 'delivery_men', 'isOrderOnlyDigital','linked_orders', 'physical_product',
+        return view('admin-views.vendor.order-details', compact('order', 'seller_id', 'delivery_men', 'linked_orders', 'physical_product',
             'shipping_address', 'total_delivered', 'countries', 'zip_codes', 'zip_restrict_status', 'country_restrict_status', 'orderCount'));
     }
 

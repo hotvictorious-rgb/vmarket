@@ -281,68 +281,6 @@
                 </div>
             </div>
         </div>
-
-        <div class="col-md-3">
-            <div class="item-1 show-for-digital-product h-100">
-                <div class="card h-100">
-                    <div class="card-body">
-                        <div class="form-group">
-                            <div class="d-flex align-items-center justify-content-between gap-2 mb-1">
-                                <div>
-                                    <label for="name" class="form-label text-capitalize fw-bold mb-0">
-                                        {{ translate('Product_Preview_File') }}
-                                    </label>
-                                    <span class="tooltip-icon cursor-pointer" data-bs-toggle="tooltip"
-                                        title="{{ translate('upload_a_suitable_file_for_a_short_product_preview.') }} {{ translate('this_preview_will_be_common_for_all_variations.') }}">
-                                        <i class="fi fi-sr-info"></i>
-                                    </span>
-                                </div>
-                            </div>
-                            <p class="text-muted">{{ translate('Upload_a_short_preview.') }}</p>
-                        </div>
-                        <div class="image-uploader">
-                            <input type="file" name="preview_file" class="image-uploader__zip" id="input-file" data-max-size="{{ getFileUploadMaxSize(type: 'file')  }}">
-                            <div class="image-uploader__zip-preview">
-                                <img src="{{ dynamicAsset(path: 'public/assets/back-end/img/icons/product-upload-icon.svg') }}"
-                                    class="mx-auto" width="50" alt="">
-                                <div class="image-uploader__title line-2">
-                                    @if ($product->preview_file_full_url['path'])
-                                        {{ $product->preview_file }}
-                                    @elseif(request('product-gallery') && $product?->preview_file)
-                                        {{ translate('Upload_File') }}
-                                    @else
-                                        {{ translate('Upload_File') }}
-                                    @endif
-
-                                    @if (request('product-gallery'))
-                                        <input type="hidden" name="existing_preview_file"
-                                            value="{{ $product?->preview_file }}">
-                                        <input type="hidden" name="existing_preview_file_storage_type"
-                                            value="{{ $product?->preview_file_storage_type }}">
-                                    @endif
-                                </div>
-                            </div>
-                            @if ($product->preview_file_full_url['path'])
-                                <span
-                                    class="btn btn-outline-danger icon-btn collapse show zip-remove-btn delete_preview_file_input"
-                                    data-route="{{ route('admin.products.delete-preview-file') }}">
-                                    <i class="fi fi-rr-trash"></i>
-                                </span>
-                            @else
-                                <span class="btn btn-outline-danger icon-btn collapse zip-remove-btn">
-                                    <i class="fi fi-rr-trash"></i>
-                                </span>
-                            @endif
-                        </div>
-                        <p class="text-muted mt-2 fs-12">
-                            {{ translate('Format') }} : {{ ' pdf, mp4, mp3' }}
-                            <br>
-                            {{ translate('image_size') }} : {{ translate('max') }} {{ '10 MB' }}
-                        </p>
-                    </div>
-                </div>
-            </div>
-        </div>
     </div>
     <input type="hidden" id="color_image" value="{{ json_encode($product->color_images_full_url) }}">
     <input type="hidden" id="color_image_json" value="{{ json_encode($product->color_images_full_url) }}">

@@ -4,7 +4,6 @@ namespace App\Http\Controllers\Admin;
 
 use App\Contracts\Repositories\AdminWalletRepositoryInterface;
 use App\Contracts\Repositories\BrandRepositoryInterface;
-use App\Contracts\Repositories\ChattingRepositoryInterface;
 use App\Contracts\Repositories\CustomerRepositoryInterface;
 use App\Contracts\Repositories\DeliveryManRepositoryInterface;
 use App\Contracts\Repositories\OrderRepositoryInterface;
@@ -37,7 +36,6 @@ class DashboardController extends BaseController
         private readonly VendorWalletRepositoryInterface     $vendorWalletRepo,
         private readonly RestockProductRepositoryInterface   $restockProductRepo,
         private readonly DashboardService                    $dashboardService,
-        private readonly ChattingRepositoryInterface          $chattingRepo,
     )
     {
     }

@@ -766,29 +766,13 @@ class UserProfileController extends Controller
                 return redirect()->route('account-oder');
             }
 
-            $isOrderOnlyDigital = self::getCheckIsOrderOnlyDigital($orderDetails);
-            return view(VIEW_FILE_NAMES['track_order_wise_result'], compact('orderDetails', 'isOrderOnlyDigital', 'paymentGatewayList', 'cashOnDeliveryStatus', 'offlinePaymentMethods', 'offlinePaymentStatus'));
+            return view(VIEW_FILE_NAMES['track_order_wise_result'], compact('orderDetails', 'paymentGatewayList', 'cashOnDeliveryStatus', 'offlinePaymentMethods', 'offlinePaymentStatus'));
         }
         return back();
     }
 
-    public function getCheckIsOrderOnlyDigital($order): bool
-    {
-        $isOrderOnlyDigital = true;
-        if ($order->orderDetails) {
-            foreach ($order->orderDetails as $detail) {
-                $product = json_decode($detail->product_details, true) ?? [];
-                if (isset($product['product_type']) && $product['product_type'] == 'physical') {
-                    $isOrderOnlyDigital = false;
-                }
-            }
-        }
-        return $isOrderOnlyDigital;
-    }
-
     public function track_order_result(Request $request)
     {
-        $isOrderOnlyDigital = false;
         $user = auth('customer')->user();
         $user_phone = $request['phone_number'] ?? '';
         $order_verification_status = getWebConfig(name: 'order_verification');
@@ -869,14 +853,12 @@ class UserProfileController extends Controller
             if ($orderExist && $orderExist->orderDetails()->whereHas('product', fn($q) => $q->where('product_type', 'physical'))->exists()) {
                 $isPhysicalProduct = true;
             }
-            $isOrderOnlyDigital = self::getCheckIsOrderOnlyDigital($orderExist);
             $orderDetails = $orderExist;
             return view(VIEW_FILE_NAMES['track_order'], compact(
                 'orderDetails',
                 'user_phone',
                 'order_verification_status',
                 'orderEditPaymentHistory',
-                'isOrderOnlyDigital',
                 'paymentGatewayList',
                 'cashOnDeliveryStatus',
                 'isPhysicalProduct',
@@ -958,14 +940,7 @@ class UserProfileController extends Controller
 
         $user = auth('customer')->user();
 
-        $loyaltyPointStatus = getWebConfig(name: 'loyalty_point_status');
-        if ($loyaltyPointStatus == 1) {
-            $loyaltyPoint = CustomerManager::countLoyaltyPointForAmount($id);
-            if ($user['loyalty_point'] < $loyaltyPoint) {
-                Toastr::warning(translate('you_have_not_sufficient_loyalty_point_to_refund_this_order') . '!!');
-                return back();
-            }
-        }
+        // [AI] Loyalty points decommissioned in V1 - customer refund check removed.
 
         return view('web-views.users-profile.refund-request', [
             'order_details' => $orderDetails,
@@ -1010,13 +985,7 @@ class UserProfileController extends Controller
             return back();
         }
 
-        $orderDetailsReward = $this->orderDetailsRewardsRepo->getFirstWhere(params: ['order_details_id' => $request['order_details_id'], 'reward_type' => 'loyalty_point']);
-        $user = auth('customer')->user();
-
-        if ($orderDetailsReward && $user->loyalty_point < $orderDetailsReward['reward_amount']) {
-            Toastr::warning(translate('you_have_not_sufficient_loyalty_point_to_refund_this_order') . '!!');
-            return back();
-        }
+        // [AI] Loyalty points decommissioned in V1 - customer refund check removed.
         $refundRequest = new RefundRequest;
         $refundRequest->order_details_id = $request->order_details_id;
         $refundRequest->customer_id = auth('customer')->id();

@@ -102,8 +102,6 @@ class ShopViewController extends Controller
         $productListData = ProductManager::getProductListData($request, $productUserID, $productAddedBy);
         $categories = self::getShopCategoriesList(products: $shopAllProducts);
         $brands = self::getShopBrandsList(request: $request, products: $shopAllProducts, sellerType: $productAddedBy, sellerId: $productUserID);
-        $shopPublishingHouses = ProductManager::getPublishingHouseList(productIds: $shopAllProducts->pluck('id')->toArray(), vendorId: $productUserID);
-        $digitalProductAuthors = ProductManager::getProductAuthorList(productIds: $shopAllProducts->pluck('id')->toArray(), vendorId: $productUserID);
         $shopInfoArray = self::getShopInfoArray(shop: $shop, shopProducts: $shopAllProducts, sellerType: $productAddedBy, sellerId: $productUserID);
         $products = $productListData->paginate(20)->appends($request->all());
         $stockClearanceProducts = StockClearanceProduct::active()->where(['shop_id'=> $shopId])->count();
@@ -122,8 +120,6 @@ class ShopViewController extends Controller
             'seller_id' => $shop['seller_id'],
             'activeBrands'=> $brands,
             'shopInfoArray'=> $shopInfoArray,
-            'shopPublishingHouses' => $shopPublishingHouses,
-            'digitalProductAuthors' => $digitalProductAuthors,
             'stockClearanceProducts' => $stockClearanceProducts,
             'stockClearanceSetup' => $stockClearanceSetup,
             'data' => $data,
@@ -140,8 +136,6 @@ class ShopViewController extends Controller
         $productListData = ProductManager::getProductListData($request, $productUserID, $productAddedBy);
         $categories = self::getShopCategoriesList(products: $shopAllProducts);
         $activeBrands = self::getShopBrandsList(request: $request,products: $shopAllProducts, sellerType: $productAddedBy, sellerId: $productUserID);
-        $shopPublishingHouses = ProductManager::getPublishingHouseList(productIds: $shopAllProducts->pluck('id')->toArray(), vendorId: $productUserID);
-        $digitalProductAuthors = ProductManager::getProductAuthorList(productIds: $shopAllProducts->pluck('id')->toArray(), vendorId: $productUserID);
         $shopInfoArray = self::getShopInfoArray(shop: $shop, shopProducts: $shopAllProducts, sellerType: $productAddedBy, sellerId: $productUserID);
         $singlePageProductCount = 20;
         $ratings = [
@@ -269,8 +263,6 @@ class ShopViewController extends Controller
             'total_review' => $totalReviews,
             'avg_rating' => $averageRating,
             'shopInfoArray' => $shopInfoArray,
-            'shopPublishingHouses' => $shopPublishingHouses,
-            'digitalProductAuthors' => $digitalProductAuthors,
             'singlePageProductCount' => $singlePageProductCount,
             'page' => $request['page'] ?? 1,
             'total_order' => $totalOrder
@@ -286,8 +278,6 @@ class ShopViewController extends Controller
         $productListData = ProductManager::getProductListData($request, $productUserID, $productAddedBy);
         $categories = self::getShopCategoriesList(products: $productListData);
         $brands = self::getShopBrandsList(request: $request,products: $productListData, sellerType: $productAddedBy, sellerId: $productUserID);
-        $shopPublishingHouses = ProductManager::getPublishingHouseList(productIds: $productListData->pluck('id')->toArray(), vendorId: $productUserID);
-        $digitalProductAuthors = ProductManager::getProductAuthorList(productIds: $productListData->pluck('id')->toArray(), vendorId: $productUserID);
 
         $id = $id != 0 ? Shop::where('id', $id)->first()->seller_id : $id;
 
@@ -442,7 +432,7 @@ class ShopViewController extends Controller
         $stockClearanceProducts = StockClearanceProduct::active()->where('shop_id', $id)->count();
         $stockClearanceSetup = StockClearanceSetup::where(['shop_id'=> $id])->first()?->is_active ?? 0;
 
-        return view(VIEW_FILE_NAMES['shop_view_page'], compact('products', 'shop', 'categories', 'current_date', 'products_for_review', 'featuredProductsList', 'brands', 'rattingStatusArray', 'reviews', 'allProductsColorList', 'paginate_count', 'shopPublishingHouses', 'digitalProductAuthors', 'stockClearanceProducts', 'stockClearanceSetup', 'singlePageProductCount'))
+        return view(VIEW_FILE_NAMES['shop_view_page'], compact('products', 'shop', 'categories', 'current_date', 'products_for_review', 'featuredProductsList', 'brands', 'rattingStatusArray', 'reviews', 'allProductsColorList', 'paginate_count', 'stockClearanceProducts', 'stockClearanceSetup', 'singlePageProductCount'))
             ->with('seller_id', $id)
             ->with('total_review', $totalReviews)
             ->with('avg_rating', $averageRating)

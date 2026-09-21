@@ -47,7 +47,7 @@
                             </ul>
                         </div>
                     </div>
-                    <div class="col-xl-6">
+                    <div class="{{ ($random_coupon && count($random_coupon) > 0) ? 'col-xl-6 col-lg-8' : 'col-xl-9 col-lg-12' }} col-12">
                         <div class="row g-2 g-sm-3 mt-lg-0">
                             <div class="col-12">
                                 <div class="swiper-container shadow-sm rounded">
@@ -71,44 +71,21 @@
                                     </div>
                                 </div>
                             </div>
-                            @foreach($bannerTypeFooterBanner as $key=>$banner)
-                                <div class="col-6 d-none d-sm-block aspect-2">
-                                    <a href="{{ $banner['url'] }}" class="ad-hover h-100">
-                                        <img src="{{  getStorageImages(path:$banner['photo_full_url'], type:'banner') }}"
-                                             loading="lazy" alt="" class="dark-support rounded w-100 img-fit">
-                                    </a>
-                                </div>
-                            @endforeach
-                            @if(count($bannerTypeFooterBanner)==0)
-                                <div class="col-6 d-none d-sm-block">
-                                    <span class="ad-hover h-100 aspect-2 overflow-hidden rounded">
-                                        <img src="{{ getStorageImages(path: null, type:'banner') }}"
-                                             loading="lazy" alt=""
-                                             class="dark-support rounded w-100 img-fit">
-                                    </span>
-                                </div>
-                                <div class="col-6 d-none d-sm-block">
-                                    <span class="ad-hover h-100 aspect-2 overflow-hidden rounded">
-                                        <img src="{{ getStorageImages(path: null, type:'banner') }}"
-                                             loading="lazy" alt=""
-                                             class="dark-support rounded w-100 img-fit">
-                                    </span>
-                                </div>
-                            @endif
-                            @if(count($bannerTypeFooterBanner)==1)
-                                <div class="col-6 d-none d-sm-block">
-                                    <span class="ad-hover h-100 aspect-2 overflow-hidden rounded">
-                                        <img src="{{ getStorageImages(path: null, type:'banner') }}"
-                                             loading="lazy" alt=""
-                                             class="dark-support rounded w-100">
-                                    </span>
-                                </div>
+                            @if(count($bannerTypeFooterBanner) > 0)
+                                @foreach($bannerTypeFooterBanner as $key=>$banner)
+                                    <div class="{{ count($bannerTypeFooterBanner) == 1 ? 'col-12' : 'col-6' }} d-none d-sm-block aspect-2">
+                                        <a href="{{ $banner['url'] }}" class="ad-hover h-100">
+                                            <img src="{{ getStorageImages(path:$banner['photo_full_url'], type:'banner') }}"
+                                                 loading="lazy" alt="" class="dark-support rounded w-100 img-fit">
+                                        </a>
+                                    </div>
+                                @endforeach
                             @endif
                         </div>
                     </div>
 
                     @if($random_coupon && count($random_coupon) > 0)
-                        <div class="col-xl-3 d-none d-sm-block">
+                        <div class="col-xl-3 col-lg-4 d-none d-lg-block">
                             <div class="bg-primary-light happy-club-rightside-bar rounded p-3 mt-lg-3">
                                 <h3 class="text-primary my-3">{{ translate('Happy_Club') }}</h3>
                                 <p>{{ translate('collect_coupons_from_stores_and_apply_to_get_special_discount_from_stores') }}</p>

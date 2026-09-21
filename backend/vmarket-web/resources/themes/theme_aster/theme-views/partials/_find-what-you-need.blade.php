@@ -3,10 +3,14 @@
     use App\Utils\ProductManager;
 @endphp
 
+@php
+    $hasSidebarContent = (auth('customer')->check() && count($order_again) > 0) || !empty($bannerTypeSidebarBanner);
+@endphp
+
 @if (count($final_category) > 0)
     <section>
         <div class="container">
-            <div class="flexible-grid lg-down-1 gap-3">
+            <div class="{{ $hasSidebarContent ? 'flexible-grid lg-down-1' : 'w-100' }} gap-3">
                 @if(isset($bannerTypeFooterBanner[0]))
                     <div class="col-12 d-sm-none">
                         <a href="{{ $bannerTypeFooterBanner[0]['url'] }}" class="ad-hover">
@@ -15,7 +19,7 @@
                         </a>
                     </div>
                 @endif
-                @if(auth('customer')->check() && count($order_again)>0)
+                @if(auth('customer')->check() && count($order_again) > 0)
                     <div class="bg-primary-light rounded p-3 d-none d-sm-block">
                         <h3 class="text-primary mb-3 mt-2 text-capitalize">{{ translate('order_again') }}</h3>
                         <p>{{ translate('want_to_order_your_usuals') }}
@@ -75,19 +79,13 @@
                             @endforeach
                         </div>
                     </div>
-                @else
+                @elseif(!empty($bannerTypeSidebarBanner))
                     <div class="d-none d-sm-block">
-                        @if($bannerTypeSidebarBanner)
-                            <a href="{{ $bannerTypeSidebarBanner['url'] }}">
-                                <img alt="" class="dark-support rounded w-100"
-                                    width="302" height="554" style="aspect-ratio: 302/554; object-fit: cover;"
-                                    src="{{ getStorageImages(path: $bannerTypeSidebarBanner['photo_full_url'],type:'banner') }}">
-                            </a>
-                        @else
-                            <img src="{{ theme_asset('assets/img/top-side-banner-placeholder.png') }}"
+                        <a href="{{ $bannerTypeSidebarBanner['url'] }}">
+                            <img alt="" class="dark-support rounded w-100"
                                 width="302" height="554" style="aspect-ratio: 302/554; object-fit: cover;"
-                                class="dark-support rounded w-100" alt="">
-                        @endif
+                                src="{{ getStorageImages(path: $bannerTypeSidebarBanner['photo_full_url'], type:'banner') }}">
+                        </a>
                     </div>
                 @endif
 

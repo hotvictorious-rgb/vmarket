@@ -118,16 +118,7 @@ $(document).on('click', '.filter-on-product-type-change', function () {
 })
 
 function listPageProductTypeCheck() {
-    if ($('[name="product_type"]').val()?.toString() === 'digital') {
-        $('.product-type-digital-section').show();
-        $('.product-type-physical-section').hide();
-    } else if ($('[name="product_type"]').val()?.toString() === 'physical') {
-        $('.product-type-digital-section').hide();
-        $('.product-type-physical-section').show();
-    } else {
-        $('.product-type-physical-section').show();
-        $('.product-type-digital-section').show();
-    }
+    $('.product-type-physical-section').show();
 }
 
 function productTagsActionForViewEvents() {
@@ -139,16 +130,6 @@ function productTagsActionForViewEvents() {
     $(".remove_tags_Brand").on("click", function () {
         let id = $(this).data("id");
         $(".brand_class_for_tag_" + id).click();
-    });
-
-    $(".remove_tags_publishing_house").on("click", function () {
-        let id = $(this).data("id");
-        $(".publishing_house_class_for_tag_" + id).click();
-    });
-
-    $(".remove_tags_author_id").on("click", function () {
-        let id = $(this).data("id");
-        $(".authors_id_class_for_tag_" + id).click();
     });
 
     $(".remove_tags_review").on("click", function () {

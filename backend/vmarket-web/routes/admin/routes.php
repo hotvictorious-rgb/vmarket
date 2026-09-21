@@ -13,7 +13,6 @@ use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\SharedController;
 use App\Http\Controllers\Admin\ReportController;
 use App\Http\Controllers\Admin\ProfileController;
-use App\Http\Controllers\Admin\ChattingController;
 use App\Http\Controllers\Admin\DashboardController;
 use App\Http\Controllers\Admin\Auth\LoginController;
 use App\Http\Controllers\Admin\Order\OrderController;
@@ -78,7 +77,6 @@ use App\Http\Controllers\Admin\ThirdParty\PaymentMethodController;
 use App\Http\Controllers\Admin\Notification\NotificationController;
 use App\Http\Controllers\Admin\Settings\BusinessSettingsController;
 use App\Http\Controllers\Admin\Settings\RobotsMetaContentController;
-use App\Http\Controllers\Admin\ThirdParty\SocialMediaChatController;
 use App\Http\Controllers\Admin\Deliveryman\EmergencyContactController;
 use App\Http\Controllers\Admin\HelpAndSupport\SupportTicketController;
 use App\Http\Controllers\Admin\Settings\DeliverymanSettingsController;
@@ -171,8 +169,6 @@ Route::group(['prefix' => 'admin', 'as' => 'admin.', 'middleware' => ['admin', '
             Route::post('add', 'add')->name('store');
             Route::get('view/{addedBy}/{id}', 'getView')->name('view');
             Route::post('sku-combination', 'getSkuCombinationView')->name('sku-combination');
-            Route::post('digital-variation-combination', 'getDigitalVariationCombinationView')->name('digital-variation-combination');
-            Route::post('digital-variation-file-delete', 'deleteDigitalVariationFile')->name('digital-variation-file-delete');
             Route::post('featured-status', 'updateFeaturedStatus')->name('featured-status');
             Route::get('get-categories', 'getCategories')->name('get-categories');
             Route::post('status-update', 'updateStatus')->name('status-update');
@@ -196,7 +192,6 @@ Route::group(['prefix' => 'admin', 'as' => 'admin.', 'middleware' => ['admin', '
             Route::get('search-all-product', 'getSearchedAllProductsView')->name('search-all-type-product');
             Route::get('product-gallery', 'getProductGalleryView')->name('product-gallery');
             Route::get('stock-limit-status/{type}', 'getStockLimitStatus')->name('stock-limit-status');
-            Route::post('delete-preview-file', 'deletePreviewFile')->name('delete-preview-file');
             Route::get('request-restock-list', 'getRequestRestockListView')->name('request-restock-list');
             Route::get('export-restock', 'exportRestockList')->name('restock-export');
             Route::delete('restock-delete/{id}', 'deleteRestock')->name('restock-delete');
@@ -224,8 +219,8 @@ Route::group(['prefix' => 'admin', 'as' => 'admin.', 'middleware' => ['admin', '
             Route::get('customers', 'getCustomers')->name('customers');
             Route::post('payment-status', 'updatePaymentStatus')->name('payment-status');
             Route::get('inhouse-order-filter', 'filterInHouseOrder')->name('inhouse-order-filter');
-            Route::post('digital-file-upload-after-sell', 'uploadDigitalFileAfterSell')->name('digital-file-upload-after-sell');
             Route::post('status', 'updateStatus')->name('status');
+            Route::post('settle-vendor-order', 'settleVendorOrder')->name('settle-vendor-order');
         });
     });
 
@@ -605,14 +600,6 @@ Route::group(['prefix' => 'admin', 'as' => 'admin.', 'middleware' => ['admin', '
         });
     });
 
-    Route::group(['prefix' => 'messages', 'as' => 'messages.'], function () {
-        Route::controller(ChattingController::class)->group(function () {
-            Route::get('index/{type}', 'index')->name('index');
-            Route::get('message', 'getMessageByUser')->name('message');
-            Route::post('message', 'addAdminMessage');
-        });
-    });
-
     Route::group(['prefix' => 'contact', 'as' => 'contact.', 'middleware' => ['module:support_section']], function () {
         Route::controller(ContactController::class)->group(function () {
             Route::get('list', 'index')->name('list');
@@ -878,12 +865,6 @@ Route::group(['prefix' => 'admin', 'as' => 'admin.', 'middleware' => ['admin', '
                     Route::get('index', 'index')->name('index');
                     Route::post('update-storage-type', 'updateStorageType')->name('update-storage-type');
                     Route::post('s3-credential', 'updateS3Credential')->name('s3-credential');
-                });
-            });
-
-            Route::group(['prefix' => 'social-media-chat', 'as' => 'social-media-chat.'], function () {
-                Route::controller(SocialMediaChatController::class)->group(function () {
-                    Route::post('update/{service}', 'update')->name('update');
                 });
             });
 

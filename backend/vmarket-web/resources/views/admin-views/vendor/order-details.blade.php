@@ -1118,7 +1118,6 @@
                                         </div>
                                     </li>
                                     @if ($order['order_status']!='returned' && $order['order_status']!='failed' && $order['order_status']!='canceled')
-                                        @if(!$isOrderOnlyDigital)
                                             <li class="nav-item">
                                                 <div class="nav-link {{ in_array($order['order_status'], ['confirmed','processing','processed','out_for_delivery','delivered']) ? 'active-status' : '' }}">
                                                     <div class="d-flex flex-sm-column gap-3 gap-sm-0">
@@ -1274,7 +1273,6 @@
                                                     </div>
                                                 </div>
                                             </li>
-                                        @endif
                                     @elseif(in_array($order['order_status'], ['returned', 'canceled']))
                                         <li class="nav-item">
                                             <div class="nav-link active-status">

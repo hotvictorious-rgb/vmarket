@@ -3,19 +3,15 @@
 namespace App\Http\Controllers\Vendor\Product;
 
 use App\Contracts\Repositories\AttributeRepositoryInterface;
-use App\Contracts\Repositories\AuthorRepositoryInterface;
 use App\Contracts\Repositories\BrandRepositoryInterface;
 use App\Contracts\Repositories\BusinessSettingRepositoryInterface;
 use App\Contracts\Repositories\CartRepositoryInterface;
 use App\Contracts\Repositories\CategoryRepositoryInterface;
 use App\Contracts\Repositories\ColorRepositoryInterface;
 use App\Contracts\Repositories\DealOfTheDayRepositoryInterface;
-use App\Contracts\Repositories\DigitalProductAuthorRepositoryInterface;
-use App\Contracts\Repositories\DigitalProductVariationRepositoryInterface;
 use App\Contracts\Repositories\FlashDealProductRepositoryInterface;
 use App\Contracts\Repositories\ProductRepositoryInterface;
 use App\Contracts\Repositories\ProductSeoRepositoryInterface;
-use App\Contracts\Repositories\PublishingHouseRepositoryInterface;
 use App\Contracts\Repositories\RestockProductCustomerRepositoryInterface;
 use App\Contracts\Repositories\RestockProductRepositoryInterface;
 use App\Contracts\Repositories\ReviewRepositoryInterface;
@@ -30,7 +26,6 @@ use App\Exports\RestockProductListExport;
 use App\Http\Controllers\BaseController;
 use App\Http\Requests\ProductAddRequest;
 use App\Http\Requests\ProductUpdateRequest;
-use App\Repositories\DigitalProductPublishingHouseRepository;
 use App\Repositories\TranslationRepository;
 use App\Services\ProductService;
 use App\Traits\FileManagerTrait;
@@ -60,14 +55,9 @@ class ProductController extends BaseController
     }
 
     public function __construct(
-        private readonly AuthorRepositoryInterface                  $authorRepo,
-        private readonly PublishingHouseRepositoryInterface         $publishingHouseRepo,
-        private readonly DigitalProductAuthorRepositoryInterface    $digitalProductAuthorRepo,
-        private readonly DigitalProductPublishingHouseRepository    $digitalProductPublishingHouseRepo,
         private readonly CategoryRepositoryInterface                $categoryRepo,
         private readonly BrandRepositoryInterface                   $brandRepo,
         private readonly ProductRepositoryInterface                 $productRepo,
-        private readonly DigitalProductVariationRepositoryInterface $digitalProductVariationRepo,
         private readonly StockClearanceProductRepositoryInterface   $stockClearanceProductRepo,
         private readonly StockClearanceSetupRepositoryInterface     $stockClearanceSetupRepo,
         private readonly ProductSeoRepositoryInterface              $productSeoRepo,
@@ -191,15 +181,11 @@ class ProductController extends BaseController
         $categories = $this->categoryRepo->getListWhere(filters: ['position' => 0], relations: ['childes.childes'], dataLimit: 'all');
         $brands = $this->brandRepo->getListWhere(filters: ['status' => 1], dataLimit: 'all');
         $brandSetting = getWebConfig(name: 'product_brand');
-        $digitalProductSetting = getWebConfig(name: 'digital_product');
         $colors = $this->colorRepo->getList(orderBy: ['name' => 'desc'], dataLimit: 'all');
         $attributes = $this->attributeRepo->getList(orderBy: ['name' => 'desc'], dataLimit: 'all');
         $languages = getWebConfig(name: 'pnc_language') ?? null;
         $defaultLanguage = $languages[0];
-        $digitalProductFileTypes = ['audio', 'video', 'document', 'software'];
-        $digitalProductAuthors = $this->authorRepo->getListWhere(dataLimit: 'all');
-        $publishingHouseList = $this->publishingHouseRepo->getListWhere(dataLimit: 'all');
-        return view('vendor-views.product.add-new', compact('languages', 'categories', 'brands', 'brandSetting', 'digitalProductSetting', 'colors', 'attributes', 'languages', 'defaultLanguage', 'digitalProductFileTypes', 'digitalProductAuthors', 'publishingHouseList', 'productWiseTax', 'taxVats'));
+        return view('vendor-views.product.add-new', compact('languages', 'categories', 'brands', 'brandSetting', 'colors', 'attributes', 'languages', 'defaultLanguage', 'productWiseTax', 'taxVats'));
     }
 
     public function add(ProductAddRequest $request, ProductService $service): JsonResponse|RedirectResponse
@@ -213,13 +199,6 @@ class ProductController extends BaseController
         $savedProduct = $this->productRepo->add(data: $dataArray);
         $this->productRepo->addRelatedTags(request: $request, product: $savedProduct);
         $this->translationRepo->add(request: $request, model: 'App\Models\Product', id: $savedProduct->id);
-        $this->updateProductAuthorAndPublishingHouse(request: $request, product: $savedProduct);
-
-        // Digital Product Variation
-        $digitalFileArray = $service->getAddProductDigitalVariationData(request: $request, product: $savedProduct);
-        foreach ($digitalFileArray as $digitalFile) {
-            $this->digitalProductVariationRepo->add(data: $digitalFile);
-        }
 
         $this->productSeoRepo->add(data: $service->getProductSEOData(request: $request, product: $savedProduct, action: 'add'));
 
@@ -239,28 +218,22 @@ class ProductController extends BaseController
         $productWiseTax = $taxData['productWiseTax'] && !$taxData['is_included'];
         $taxVats = $taxData['taxVats'];
 
-        $product = $this->productRepo->getFirstWhereWithoutGlobalScope(params: ['id' => $id, 'user_id' => auth('seller')->id(), 'added_by' => 'seller'], relations: ['translations', 'seoInfo', 'digitalProductAuthors', 'digitalProductPublishingHouse']);
+        $product = $this->productRepo->getFirstWhereWithoutGlobalScope(params: ['id' => $id, 'user_id' => auth('seller')->id(), 'added_by' => 'seller'], relations: ['translations', 'seoInfo']);
         if (!$product) {
             ToastMagic::error(translate('invalid_product'));
             return redirect()->route('vendor.products.list', ['type' => 'all']);
         }
-        $productAuthorIds = $this->productService->getProductAuthorsInfo(product: $product)['ids'];
-        $productPublishingHouseIds = $this->productService->getProductPublishingHouseInfo(product: $product)['ids'];
 
         $product['colors'] = json_decode($product['colors']);
         $categories = $this->categoryRepo->getListWhere(filters: ['position' => 0], relations: ['childes.childes'], dataLimit: 'all');
         $brands = $this->brandRepo->getListWhere(filters: ['status' => 1], dataLimit: 'all');
         $brandSetting = getWebConfig(name: 'product_brand');
-        $digitalProductSetting = getWebConfig(name: 'digital_product');
         $colors = $this->colorRepo->getList(orderBy: ['name' => 'desc'], dataLimit: 'all');
         $attributes = $this->attributeRepo->getList(orderBy: ['name' => 'desc'], dataLimit: 'all');
         $languages = getWebConfig(name: 'pnc_language') ?? null;
         $defaultLanguage = $languages[0];
-        $digitalProductFileTypes = ['audio', 'video', 'document', 'software'];
-        $digitalProductAuthors = $this->authorRepo->getListWhere(dataLimit: 'all');
-        $publishingHouseList = $this->publishingHouseRepo->getListWhere(dataLimit: 'all');
         $taxVatIds = $product?->taxVats?->pluck('tax_id')->toArray() ?? [];
-        return view('vendor-views.product.edit', compact('product', 'categories', 'brands', 'brandSetting', 'digitalProductSetting', 'colors', 'attributes', 'languages', 'defaultLanguage', 'digitalProductFileTypes', 'digitalProductAuthors', 'publishingHouseList', 'productAuthorIds', 'productPublishingHouseIds', 'productWiseTax', 'taxVats', 'taxVatIds'));
+        return view('vendor-views.product.edit', compact('product', 'categories', 'brands', 'brandSetting', 'colors', 'attributes', 'languages', 'defaultLanguage', 'productWiseTax', 'taxVats', 'taxVatIds'));
     }
 
     public function update(ProductUpdateRequest $request, ProductService $service, string|int $id): JsonResponse|RedirectResponse
@@ -276,13 +249,10 @@ class ProductController extends BaseController
             return redirect()->route('vendor.products.list', ['type' => 'all']);
         }
         $dataArray = $service->getUpdateProductData(request: $request, product: $product, updateBy: 'seller');
-        $this->updateProductAuthorAndPublishingHouse(request: $request, product: $product);
 
         $this->productRepo->update(id: $id, data: $dataArray);
         $this->productRepo->addRelatedTags(request: $request, product: $product);
         $this->translationRepo->update(request: $request, model: 'App\Models\Product', id: $id);
-
-        self::getDigitalProductUpdateProcess($request, $product);
 
         $this->productSeoRepo->updateOrInsert(
             params: ['product_id' => $product['id']],
@@ -443,125 +413,6 @@ class ProductController extends BaseController
         }
     }
 
-    public function updateProductAuthorAndPublishingHouse(object|array $request, object|array $product): void
-    {
-        if ($request['product_type'] == 'digital') {
-            if ($request->has('authors')) {
-                $authorIds = [];
-                foreach ($request['authors'] as $author) {
-                    $authorId = $this->authorRepo->updateOrCreate(params: ['name' => $author], value: ['name' => $author]);
-                    $authorIds[] = $authorId?->id;
-                }
-
-                foreach ($authorIds as $author) {
-                    $productAuthorData = ['author_id' => $author, 'product_id' => $product->id];
-                    $this->digitalProductAuthorRepo->updateOrCreate(params: $productAuthorData, value: $productAuthorData);
-                }
-
-                $this->digitalProductAuthorRepo->deleteWhereNotIn(filters: ['product_id' => $product->id], whereNotIn: ['author_id' => $authorIds]);
-            } else {
-                $this->digitalProductAuthorRepo->delete(params: ['product_id' => $product->id]);
-            }
-
-            if ($request->has('publishing_house')) {
-                $publishingHouseIds = [];
-                foreach ($request['publishing_house'] as $publishingHouse) {
-                    $publishingHouseId = $this->publishingHouseRepo->updateOrCreate(params: ['name' => $publishingHouse], value: ['name' => $publishingHouse]);
-                    $publishingHouseIds[] = $publishingHouseId?->id;
-                }
-
-                foreach ($publishingHouseIds as $publishingHouse) {
-                    $publishingHouseData = ['publishing_house_id' => $publishingHouse, 'product_id' => $product->id];
-                    $this->digitalProductPublishingHouseRepo->updateOrCreate(params: $publishingHouseData, value: $publishingHouseData);
-                }
-                $this->digitalProductPublishingHouseRepo->deleteWhereNotIn(filters: ['product_id' => $product->id], whereNotIn: ['publishing_house_id' => $publishingHouseIds]);
-            } else {
-                $this->digitalProductPublishingHouseRepo->delete(params: ['product_id' => $product->id]);
-            }
-        } else {
-            $this->digitalProductAuthorRepo->delete(params: ['product_id' => $product->id]);
-            $this->digitalProductPublishingHouseRepo->delete(params: ['product_id' => $product->id]);
-        }
-    }
-
-
-    public function getDigitalProductUpdateProcess($request, $product): void
-    {
-        if ($request->has('digital_product_variant_key') && !$request->hasFile('digital_file_ready')) {
-            $getAllVariation = $this->digitalProductVariationRepo->getListWhere(filters: ['product_id' => $product['id']]);
-            $getAllVariationKey = $getAllVariation->pluck('variant_key')->toArray();
-            $getRequestVariationKey = $request['digital_product_variant_key'];
-            $differenceFromDB = array_diff($getAllVariationKey, $getRequestVariationKey);
-            $differenceFromRequest = array_diff($getRequestVariationKey, $getAllVariationKey);
-            $newCombinations = array_merge($differenceFromDB, $differenceFromRequest);
-
-            foreach ($newCombinations as $newCombination) {
-                if (in_array($newCombination, $request['digital_product_variant_key'])) {
-                    $uniqueKey = strtolower(str_replace('-', '_', $newCombination));
-
-                    $fileItem = null;
-                    if ($request['digital_product_type'] == 'ready_product') {
-                        $fileItem = $request->file('digital_files.' . $uniqueKey);
-                    }
-                    $uploadedFile = '';
-                    if ($fileItem) {
-                        $uploadedFile = $this->fileUpload(dir: 'product/digital-product/', format: $fileItem->getClientOriginalExtension(), file: $fileItem);
-                    }
-                    $this->digitalProductVariationRepo->add(data: [
-                        'product_id' => $product['id'],
-                        'variant_key' => $request->input('digital_product_variant_key.' . $uniqueKey),
-                        'sku' => $request->input('digital_product_sku.' . $uniqueKey),
-                        'price' => currencyConverter(amount: $request->input('digital_product_price.' . $uniqueKey)),
-                        'file' => $uploadedFile,
-                    ]);
-                }
-            }
-
-            foreach ($differenceFromDB as $variation) {
-                $variation = $this->digitalProductVariationRepo->getFirstWhere(params: ['product_id' => $product['id'], 'variant_key' => $variation]);
-                if ($variation) {
-                    // $this->deleteFile(filePath: '/product/digital-product/' . $variation['file']);
-                    $this->digitalProductVariationRepo->delete(params: ['id' => $variation['id']]);
-                }
-            }
-
-            foreach ($getAllVariation as $variation) {
-                if (in_array($variation['variant_key'], $request['digital_product_variant_key'])) {
-                    $uniqueKey = strtolower(str_replace('-', '_', $variation['variant_key']));
-
-                    $fileItem = null;
-                    if ($request['digital_product_type'] == 'ready_product') {
-                        $fileItem = $request->file('digital_files.' . $uniqueKey);
-                    }
-                    $uploadedFile = $variation['file'] ?? '';
-                    $variation = $this->digitalProductVariationRepo->getFirstWhere(params: ['product_id' => $product['id'], 'variant_key' => $variation['variant_key']]);
-                    if ($fileItem) {
-                        $uploadedFile = $this->fileUpload(dir: 'product/digital-product/', format: $fileItem->getClientOriginalExtension(), file: $fileItem);
-                    }
-                    $this->digitalProductVariationRepo->updateByParams(params: ['product_id' => $product['id'], 'variant_key' => $variation['variant_key']], data: [
-                        'variant_key' => $request->input('digital_product_variant_key.' . $uniqueKey),
-                        'sku' => $request->input('digital_product_sku.' . $uniqueKey),
-                        'price' => currencyConverter(amount: $request->input('digital_product_price.' . $uniqueKey)),
-                        'file' => $uploadedFile,
-                    ]);
-                }
-
-                if ($request['product_type'] == 'physical' || $request['digital_product_type'] == 'ready_after_sell') {
-                    $variation = $this->digitalProductVariationRepo->getFirstWhere(params: ['product_id' => $product['id'], 'variant_key' => $variation['variant_key']]);
-                    if ($variation && $variation['file']) {
-                        // $this->deleteFile(filePath: '/product/digital-product/' . $variation['file']);
-                        $this->digitalProductVariationRepo->updateByParams(params: ['id' => $variation['id']], data: ['file' => '']);
-                    }
-                    if ($request['product_type'] == 'physical') {
-                        $variation->delete();
-                    }
-                }
-            }
-        } else {
-            $this->digitalProductVariationRepo->delete(params: ['product_id' => $product['id']]);
-        }
-    }
-
     public function getView(string|int $id): View|RedirectResponse
     {
         $vendorId = auth('seller')->id();
@@ -623,7 +474,7 @@ class ProductController extends BaseController
             });
         }] : [];
 
-        $relations = ['category', 'brand', 'reviews', 'rating', 'orderDetails', 'orderDelivered', 'digitalVariation', 'seoInfo', 'translations', 'clearanceSale' => function ($query) {
+        $relations = ['category', 'brand', 'reviews', 'rating', 'orderDetails', 'orderDelivered', 'seoInfo', 'translations', 'clearanceSale' => function ($query) {
             return $query->active();
         }];
         $relations = array_merge($productWiseTaxRelation, $relations);
@@ -706,45 +557,9 @@ class ProductController extends BaseController
 
     public function getSkuCombinationView(Request $request, ProductService $service): JsonResponse
     {
-        $product = $this->productRepo->getFirstWhere(params: ['id' => $request['product_id']], relations: ['digitalVariation', 'seoInfo']);
+        $product = $this->productRepo->getFirstWhere(params: ['id' => $request['product_id']], relations: ['seoInfo']);
         $combinationView = $service->getSkuCombinationView(request: $request, product: $product);
         return response()->json(['view' => $combinationView]);
-    }
-
-    public function getDigitalVariationCombinationView(Request $request, ProductService $service): JsonResponse
-    {
-        $product = $this->productRepo->getFirstWhere(params: ['id' => $request['product_id']], relations: ['digitalVariation']);
-        $combinationView = $service->getDigitalVariationCombinationView(request: $request, product: $product);
-        return response()->json([
-            'view' => $combinationView['view'],
-            'combination_count' => $combinationView['combination_count'],
-        ]);
-    }
-
-    public function deleteDigitalVariationFile(Request $request, ProductService $service): JsonResponse
-    {
-        // [AI] Ownership Guard: Product must belong to authenticated vendor
-        $product = $this->productRepo->getFirstWhere(params: ['id' => $request['product_id'], 'user_id' => auth('seller')->id(), 'added_by' => 'seller']);
-        if (!$product) {
-            return response()->json([
-                'status' => 0,
-                'message' => translate('unauthorized_access')
-            ], 403);
-        }
-
-        $variation = $this->digitalProductVariationRepo->getFirstWhere(params: ['product_id' => $request['product_id'], 'variant_key' => $request['variant_key']]);
-        if ($variation) {
-            $this->deleteFile(filePath: '/product/digital-product/' . $variation['file']);
-            $this->digitalProductVariationRepo->updateByParams(params: ['id' => $variation['id']], data: ['file' => null]);
-            return response()->json([
-                'status' => 1,
-                'message' => translate('delete_successful')
-            ]);
-        }
-        return response()->json([
-            'status' => 0,
-            'message' => translate('delete_unsuccessful')
-        ]);
     }
 
     public function getCategories(Request $request, ProductService $service): JsonResponse
@@ -1043,17 +858,6 @@ class ProductController extends BaseController
         } else {
             return response()->json(['status' => 'multiple_product', 'product_count' => $products->count()]);
         }
-    }
-
-    public function deletePreviewFile(Request $request): JsonResponse
-    {
-        $product = $this->productRepo->getFirstWhereWithoutGlobalScope(params: ['id' => $request['product_id']]);
-        $this->productService->deletePreviewFile(product: $product);
-        $this->productRepo->update(id: $request['product_id'], data: ['preview_file' => null]);
-        return response()->json([
-            'status' => 1,
-            'message' => translate('Preview_file_deleted')
-        ]);
     }
 
     public function loadMoreBrands(Request $request): JsonResponse

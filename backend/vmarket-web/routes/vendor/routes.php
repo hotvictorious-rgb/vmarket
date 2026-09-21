@@ -1,6 +1,5 @@
 <?php
 
-use App\Enums\ViewPaths\Vendor\Chatting;
 use App\Enums\ViewPaths\Vendor\Coupon;
 
 use App\Enums\ViewPaths\Vendor\Refund;
@@ -9,7 +8,6 @@ use App\Http\Controllers\Vendor\Auth\ForgotPasswordController;
 use App\Http\Controllers\Vendor\Auth\LoginController;
 use App\Http\Controllers\Vendor\Auth\RegisterController;
 use App\Http\Controllers\Vendor\DashboardController;
-use App\Http\Controllers\Vendor\ChattingController;
 use App\Http\Controllers\Vendor\Coupon\CouponController;
 use App\Http\Controllers\Vendor\CustomerController;
 use App\Http\Controllers\Vendor\DeliveryMan\DeliveryManController;
@@ -93,8 +91,6 @@ Route::group(['middleware' => ['maintenance_mode', 'actch:admin_panel']], functi
                     Route::post('add', 'add');
                     Route::get('get-categories', 'getCategories')->name('get-categories');
                     Route::post('sku-combination', 'getSkuCombinationView')->name('sku-combination');
-                    Route::post('digital-variation-combination', 'getDigitalVariationCombinationView')->name('digital-variation-combination');
-                    Route::post('digital-variation-file-delete', 'deleteDigitalVariationFile')->name('digital-variation-file-delete');
                     Route::post('status-update', 'updateStatus')->name('status-update');
                     Route::get('export-excel/{type}', 'exportList')->name('export-excel');
                     Route::get('view/{id}', 'getView')->name('view');
@@ -113,7 +109,6 @@ Route::group(['middleware' => ['maintenance_mode', 'actch:admin_panel']], functi
                     Route::get('search', 'getSearchedProductsView')->name('search-product');
                     Route::get('product-gallery', 'getProductGalleryView')->name('product-gallery');
                     Route::get('stock-limit-status', 'getStockLimitStatus')->name('stock-limit-status');
-                    Route::post('delete-preview-file', 'deletePreviewFile')->name('delete-preview-file');
                     Route::get('request-restock-list', 'getRequestRestockListView')->name('request-restock-list');
                     Route::get('export-restock', 'exportRestockList')->name('restock-export');
                     Route::delete('delete-restock/{id}', 'deleteRestock')->name('restock-delete');
@@ -143,7 +138,6 @@ Route::group(['middleware' => ['maintenance_mode', 'actch:admin_panel']], functi
                     Route::post('update-deliver-info', 'updateDeliverInfo')->name('update-deliver-info');
                     Route::get('add-delivery-man/{order_id}/{d_man_id}', 'addDeliveryMan')->name('add-delivery-man');
                     Route::post('amount-date-update', 'updateAmountDate')->name('amount-date-update');
-                    Route::post('digital-file-upload-after-sell', 'uploadDigitalFileAfterSell')->name('digital-file-upload-after-sell');
                     Route::post('status', 'updateStatus')->name('status');
                 });
             });
@@ -190,15 +184,6 @@ Route::group(['middleware' => ['maintenance_mode', 'actch:admin_panel']], functi
                     Route::delete('clearance-delete' . '/{product_id}', 'deleteClearanceProduct')->name('clearance-delete');
                     Route::delete('clearance-products-delete', 'deleteClearanceAllProduct')->name('clearance-delete-all-product');
                     Route::post('update-discount', 'updateDiscountAmount')->name('update-discount');
-                });
-            });
-
-            Route::group(['prefix' => 'messages', 'as' => 'messages.'], function () {
-                Route::controller(ChattingController::class)->group(function () {
-                    Route::get(Chatting::INDEX[URI] . '/{type}', 'index')->name('index');
-                    Route::get(Chatting::MESSAGE[URI], 'getMessageByUser')->name('message');
-                    Route::post(Chatting::MESSAGE[URI], 'addVendorMessage');
-                    Route::get(Chatting::NEW_NOTIFICATION[URI], 'getNewNotification')->name('new-notification');
                 });
             });
 

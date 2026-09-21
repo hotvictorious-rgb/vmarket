@@ -108,13 +108,10 @@ class AppServiceProvider extends ServiceProvider
                         'wallet_status' => getWebConfig(name: 'wallet_status'),
                         'loyalty_point_status' => getWebConfig(name: 'loyalty_point_status'),
                         'guest_checkout_status' => getWebConfig(name: 'guest_checkout'),
-                        'digital_product_setting' => getWebConfig(name: 'digital_product'),
                         'language' => (is_string(getWebConfig(name: 'language')) ? (json_decode(getWebConfig(name: 'language'), true) ?? [['id' => 1, 'name' => 'English', 'code' => 'en', 'status' => 1, 'default' => true, 'direction' => 'ltr']]) : (getWebConfig(name: 'language') ?? [['id' => 1, 'name' => 'English', 'code' => 'en', 'status' => 1, 'default' => true, 'direction' => 'ltr']])),
                         'currencies' => \App\Models\Currency::where('status', 1)->get(),
                         'currency_model' => getWebConfig(name: 'currency_model') ?? 'single_currency',
                         'brand_setting' => getWebConfig(name: 'product_brand') ?? 1,
-                        'publishing_houses' => Schema::hasTable('publishing_houses') ? ProductManager::getPublishingHouseList(type: 'count') : null,
-                        'digital_product_authors' => Schema::hasTable('authors') ? ProductManager::getProductAuthorList() : null,
                         'firebase_otp_verification' => $firebaseOTPVerification,
                         'firebase_otp_verification_status' => $firebaseOTPVerificationStatus,
                         'announcement' => getWebConfig(name: 'announcement') ?: ['status' => 0, 'color' => '#5e2e85', 'text_color' => '#ffffff', 'announcement' => ''],
@@ -126,23 +123,36 @@ class AppServiceProvider extends ServiceProvider
                         $userId = Auth::guard('customer')->user() ? Auth::guard('customer')->id() : 0;
                         $flashDeal = ProductManager::getPriorityWiseFlashDealsProductsQuery(userId: $userId);
 
-                        $shops = Shop::whereHas('seller', function ($query) {
-                            return $query->approved();
-                        })->take(9)->get();
+                        // [AI] Cache global storefront shops (1 hour TTL)
+                        $shops = Cache::remember('global_storefront_top_shops', 3600, function () {
+                            return Shop::whereHas('seller', function ($query) {
+                                return $query->approved();
+                            })->take(9)->get();
+                        });
 
                         $recaptcha = getWebConfig(name: 'recaptcha');
                         $paymentGatewayPublishedStatus = config('get_payment_publish_status') ?? 0;
 
-                        $paymentGatewaysQuery = Setting::whereIn('settings_type', ['payment_config'])->where('is_active', 1);
-                        if ($paymentGatewayPublishedStatus == 1) {
-                            $paymentsGatewaysList = $paymentGatewaysQuery->select('key_name', 'additional_data')->get();
-                        } else {
-                            $paymentsGatewaysList = $paymentGatewaysQuery->whereIn('key_name', GlobalConstant::DEFAULT_PAYMENT_GATEWAYS)->select('key_name', 'additional_data')->get();
-                        }
+                        // [AI] Cache active payment gateways list (1 hour TTL)
+                        $paymentsGatewaysList = Cache::remember('global_storefront_payment_gateways_' . $paymentGatewayPublishedStatus, 3600, function () use ($paymentGatewayPublishedStatus) {
+                            $paymentGatewaysQuery = Setting::whereIn('settings_type', ['payment_config'])->where('is_active', 1);
+                            if ($paymentGatewayPublishedStatus == 1) {
+                                return $paymentGatewaysQuery->select('key_name', 'additional_data')->get();
+                            } else {
+                                return $paymentGatewaysQuery->whereIn('key_name', GlobalConstant::DEFAULT_PAYMENT_GATEWAYS)->select('key_name', 'additional_data')->get();
+                            }
+                        });
 
-                        $customerLoginOptions = LoginSetup::where(['key' => 'login_options'])->first()?->value ?? '';
-                        $customerSocialLoginOptions = LoginSetup::where(['key' => 'social_media_for_login'])->first()?->value ?? '';
-                        $customerSocialLoginOptions = json_decode($customerSocialLoginOptions, true) ?? [];
+                        // [AI] Cache customer login options setup (1 hour TTL)
+                        $customerLoginOptions = Cache::remember('global_storefront_login_options', 3600, function () {
+                            return LoginSetup::where(['key' => 'login_options'])->first()?->value ?? '';
+                        });
+
+                        $customerSocialLoginOptions = Cache::remember('global_storefront_social_login_options', 3600, function () {
+                            $raw = LoginSetup::where(['key' => 'social_media_for_login'])->first()?->value ?? '';
+                            return json_decode($raw, true) ?? [];
+                        });
+
                         $socialLoginConfigStatus = $this->checkCustomerSocialMediaLoginAbility();
 
                         foreach ($customerSocialLoginOptions as $socialKey => $socialLoginService) {
@@ -155,27 +165,31 @@ class AppServiceProvider extends ServiceProvider
                                 $socialLoginTextShowStatus = true;
                             }
                         }
-                        $totalDiscountProducts = Product::active()
-                            ->withCount('reviews')
-                            ->where(function ($subQuery) {
-                                return $subQuery->where(function ($query) {
-                                    return $query->where('discount', '!=', 0);
-                                })->orWhere(function ($query) {
-                                    $stockClearanceProductIds = StockClearanceProduct::active()->pluck('product_id')->toArray();
-                                    return $query->whereIn('id', $stockClearanceProductIds);
-                                });
-                            })
-                            ->count();
+
+                        // [AI] Cache global discount products count (1 hour TTL)
+                        $totalDiscountProducts = Cache::remember('global_storefront_discount_products_count', 3600, function () {
+                            return Product::active()
+                                ->withCount('reviews')
+                                ->where(function ($subQuery) {
+                                    return $subQuery->where(function ($query) {
+                                        return $query->where('discount', '!=', 0);
+                                    })->orWhere(function ($query) {
+                                        $stockClearanceProductIds = StockClearanceProduct::active()->pluck('product_id')->toArray();
+                                        return $query->whereIn('id', $stockClearanceProductIds);
+                                    });
+                                })
+                                ->count();
+                        });
 
                         $web_config += [
                             'cookie_setting' => Helpers::get_settings($web, 'cookie_setting'),
                             'announcement' => getWebConfig(name: 'announcement'),
                             'currency_model' => getWebConfig(name: 'currency_model'),
-                            'currencies' => Currency::where(['status' => 1])->get(),
+                            'currencies' => Cache::remember('global_storefront_currencies_list', 3600, fn() => Currency::where(['status' => 1])->get()),
                             'main_categories' => $this->cacheMainCategoriesList(),
                             'priority_wise_brands' => $this->cachePriorityWiseBrandList(),
                             'business_mode' => getWebConfig(name: 'business_mode'),
-                            'social_media' => SocialMedia::where('active_status', 1)->get(),
+                            'social_media' => Cache::remember('global_storefront_social_media_list', 3600, fn() => SocialMedia::where('active_status', 1)->get()),
                             'ios' => getWebConfig(name: 'download_app_apple_store'),
                             'android' => getWebConfig(name: 'download_app_google_store'),
                             'refund_policy' => getWebConfig(name: 'refund-policy'),

@@ -254,7 +254,7 @@
                                                                 </td>
                                                                 <td class="text-center">
                                                                     @if ($checkProductStatus == 1)
-                                                                        @php($isProductCountChangeable = $product->product_type == 'digital' || ($product->product_type == 'physical' && $getProductCurrentStock >= $cartItem['quantity']))
+                                                                        @php($isProductCountChangeable = ($product->product_type == 'physical' && $getProductCurrentStock >= $cartItem['quantity']))
                                                                         <div class="quantity quantity--style-two border-primary-light d-inline-flex align-items-center min-h-35px rounded
                                                         {{ $isProductCountChangeable ? 'justify-content-between min-w-90px' : 'justify-content-center aspect-1' }}">
                                                             <span

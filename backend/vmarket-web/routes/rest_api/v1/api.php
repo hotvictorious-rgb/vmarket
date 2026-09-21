@@ -11,7 +11,6 @@ use App\Http\Controllers\RestAPI\v1\BannerController;
 use App\Http\Controllers\RestAPI\v1\BrandController;
 use App\Http\Controllers\RestAPI\v1\CartController;
 use App\Http\Controllers\RestAPI\v1\CategoryController;
-use App\Http\Controllers\RestAPI\v1\ChatController;
 use App\Http\Controllers\RestAPI\v1\ConfigController;
 use App\Http\Controllers\RestAPI\v1\CouponController;
 use App\Http\Controllers\RestAPI\v1\CustomerCashbackController;
@@ -332,18 +331,6 @@ Route::group(['prefix' => 'v1', 'middleware' => ['api_lang']], function () {
                 Route::post('deliveryman-reviews/submit', 'submit_deliveryman_review')->middleware('auth:api');
             });
         });
-
-        // Chatting
-        Route::group(['prefix' => 'chat'], function () {
-            Route::controller(ChatController::class)->group(function () {
-                Route::get('list/{type}', 'list');
-                Route::get('get-messages/{type}/{id}', 'get_message');
-                Route::post('send-message/{type}', 'send_message');
-                Route::post('seen-message/{type}', 'seen_message');
-                Route::get('search/{type}', 'search');
-            });
-        });
-
 
         // Cashback Reward Ledger
         Route::group(['prefix' => 'cashback'], function () {

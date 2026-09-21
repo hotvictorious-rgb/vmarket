@@ -61,8 +61,7 @@ use function App\Utils\order_status_history;
 
                         <?php
                         $trackOrderArray = \App\Utils\OrderManager::getTrackOrderStatusHistory(
-                            orderId: $orderDetails['id'],
-                            isOrderOnlyDigital: $isOrderOnlyDigital
+                            orderId: $orderDetails['id']
                         );
 
                         $statusIcons = [
@@ -86,11 +85,7 @@ use function App\Utils\order_status_history;
                             }
                         }
 
-                        if ($trackOrderArray['is_digital_order']) {
-                            $statusesToShow = ['order_placed', 'order_confirmed', 'order_delivered'];
-                        } else {
-                            $statusesToShow = ['order_placed', 'order_confirmed', 'preparing_for_shipment', 'order_is_on_the_way', 'order_delivered'];
-                        }
+                        $statusesToShow = ['order_placed', 'order_confirmed', 'preparing_for_shipment', 'order_is_on_the_way', 'order_delivered'];
 
                         if ($activeTerminalStatus) {
                             $statusesToShow[] = $activeTerminalStatus;
@@ -137,7 +132,7 @@ use function App\Utils\order_status_history;
                                                         </p>
                                                     @endif
 
-                                                    @if($statusKey === 'order_is_on_the_way' && $statusData['status'] && !$trackOrderArray['is_digital_order'])
+                                                    @if($statusKey === 'order_is_on_the_way' && $statusData['status'])
                                                         <p class="fs-12 mb-0 mt-1">{{ translate('Your deliveryman is coming') }}</p>
                                                     @endif
 
@@ -539,23 +534,10 @@ use function App\Utils\order_status_history;
             </div>
         </div>
     </main>
-    <div class="modal fade __sign-in-modal" id="digital-product-order-otp-verify-modal" tabindex="-1"
-         aria-labelledby="digital_product_order_otp_verifyLabel" aria-hidden="true">
-        <div class="modal-dialog modal-dialog-centered">
-            <div class="modal-content">
-                <div class="modal-header border-0">
-                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-                </div>
-                <div class="modal-body">
-                </div>
-            </div>
-        </div>
-    </div>
     <span class="get-payment-method-list" data-action="{{ route('pay-offline-method-list') }}"></span>
 @endsection
 
 @push('script')
-    <script src="{{ theme_asset('assets/js/tracking-page.js') }}"></script>
     <script src="{{ theme_asset('assets/js/payment-page.js') }}"></script>
     <script src="{{ dynamicAsset(path: 'public/assets/front-end/js/payment.js') }}"></script>
 @endpush

@@ -2,6 +2,8 @@
 /public/hot
 /public/storage
 /public/themes
+/public/public
+/public/resources
 #/storage/*.key
 /storage/app/*
 /storage/framework/cache/*

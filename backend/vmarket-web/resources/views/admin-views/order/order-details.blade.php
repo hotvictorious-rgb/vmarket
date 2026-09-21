@@ -978,8 +978,16 @@
                                         value="processing" {{$order->order_status == 'processing'?'selected':''}} >{{translate('packaging')}} </option>
                                     <option class="text-capitalize"
                                             value="out_for_delivery" {{$order->order_status == 'out_for_delivery'?'selected':''}} >{{translate('out_for_delivery')}} </option>
-                                    <option
-                                        value="delivered" {{$order->order_status == 'delivered'?'selected':''}} >{{translate('delivered')}} </option>
+                                    @php($isMarketplace = \App\Utils\OrderManager::isVictoriousMarketplaceOrder($order))
+                                    @if($isMarketplace)
+                                        <option
+                                            value="delivered" {{$order->order_status == 'delivered'?'selected':''}} disabled>
+                                            {{translate('delivered')}} ({{ translate('Requires_Customer_OTP') }})
+                                        </option>
+                                    @else
+                                        <option
+                                            value="delivered" {{$order->order_status == 'delivered'?'selected':''}} >{{translate('delivered')}} </option>
+                                    @endif
                                     <option
                                         value="returned" {{$order->order_status == 'returned'?'selected':''}} > {{translate('returned')}}</option>
                                     <option
@@ -1411,6 +1419,94 @@
                         </div>
                     </div>
                 </div>
+
+                @if($order->seller_is == 'seller')
+                    <div class="card">
+                        <div class="card-body">
+                            <h4 class="d-flex gap-2 fs-14 fw-bold mb-3">
+                                <i class="fi fi-sr-shield-check text-primary"></i>
+                                {{ translate('vendor_settlement_status') }}
+                            </h4>
+                            <div class="d-flex flex-column gap-2 fs-12">
+                                <div class="d-flex justify-content-between align-items-center">
+                                    <span class="text-dark">{{ translate('Settlement_Status') }}:</span>
+                                    @php($vStatus = $order->vendor_settlement_status ?? 'held')
+                                    @if($vStatus === 'settled')
+                                        <span class="badge badge-success text-bg-success py-1 px-2">{{ translate('settled') }}</span>
+                                    @elseif($vStatus === 'eligible')
+                                        <span class="badge badge-primary text-bg-primary py-1 px-2">{{ translate('eligible_for_disbursement') }}</span>
+                                    @elseif($vStatus === 'disputed')
+                                        <span class="badge badge-danger text-bg-danger py-1 px-2">{{ translate('disputed') }}</span>
+                                    @elseif($vStatus === 'refunded')
+                                        <span class="badge badge-secondary text-bg-secondary py-1 px-2">{{ translate('refunded') }}</span>
+                                    @else
+                                        <span class="badge badge-warning text-bg-warning py-1 px-2">{{ translate('held_in_escrow') }}</span>
+                                    @endif
+                                </div>
+
+                                @if($order->received_at)
+                                    <div class="d-flex justify-content-between align-items-center">
+                                        <span class="text-dark">{{ translate('Customer_Received') }}:</span>
+                                        <span>{{ \Carbon\Carbon::parse($order->received_at)->format('d M, Y h:i A') }}</span>
+                                    </div>
+                                @endif
+
+                                @if($order->refund_window_expires_at)
+                                    <div class="d-flex justify-content-between align-items-center">
+                                        <span class="text-dark">{{ translate('Inspection_Window_Ends') }}:</span>
+                                        <span>{{ \Carbon\Carbon::parse($order->refund_window_expires_at)->format('d M, Y h:i A') }}</span>
+                                    </div>
+                                @endif
+
+                                @if($vStatus === 'eligible')
+                                    <div class="mt-2">
+                                        <button type="button" class="btn btn-primary btn-sm w-100" data-bs-toggle="modal" data-bs-target="#settleVendorModal">
+                                            <i class="fi fi-sr-bank me-1"></i> {{ translate('Disburse_Vendor_Share') }} (90%)
+                                        </button>
+                                    </div>
+                                @endif
+                            </div>
+                        </div>
+                    </div>
+
+                    @if($vStatus === 'eligible')
+                        <div class="modal fade" id="settleVendorModal" tabindex="-1" aria-labelledby="settleVendorModalLabel" aria-hidden="true">
+                            <div class="modal-dialog modal-dialog-centered">
+                                <div class="modal-content">
+                                    <form action="{{ route('admin.orders.settle-vendor-order') }}" method="POST" id="settleVendorForm">
+                                        @csrf
+                                        <input type="hidden" name="order_id" value="{{ $order->id }}">
+                                        <div class="modal-header">
+                                            <h5 class="modal-title" id="settleVendorModalLabel">{{ translate('Disburse_Vendor_Share') }} (Order #{{ $order->id }})</h5>
+                                            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                                        </div>
+                                        <div class="modal-body">
+                                            <p class="fs-12 text-muted mb-3">
+                                                {{ translate('Confirm_that_you_have_manually_transferred_the_vendor_payable_amount_to_the_merchant_bank_account._This_action_records_the_transaction_and_marks_the_order_as_settled.') }}
+                                            </p>
+                                            <div class="mb-3">
+                                                <label class="form-label fw-semibold">{{ translate('Payment_Method') }}</label>
+                                                <input type="text" name="payment_method" class="form-control" value="Bank Transfer" required>
+                                            </div>
+                                            <div class="mb-3">
+                                                <label class="form-label fw-semibold">{{ translate('Bank_Transfer_Reference') }} / Session ID</label>
+                                                <input type="text" name="payment_reference" class="form-control" placeholder="e.g. NIP-20260921-998811" required>
+                                            </div>
+                                            <div class="mb-3">
+                                                <label class="form-label fw-semibold">{{ translate('Audit_Notes') }} ({{ translate('optional') }})</label>
+                                                <textarea name="notes" class="form-control" rows="2" placeholder="{{ translate('Authorized_by_Super_Admin') }}"></textarea>
+                                            </div>
+                                        </div>
+                                        <div class="modal-footer">
+                                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">{{ translate('Cancel') }}</button>
+                                            <button type="submit" class="btn btn-primary">{{ translate('Confirm_Disbursement') }}</button>
+                                        </div>
+                                    </form>
+                                </div>
+                            </div>
+                        </div>
+                    @endif
+                @endif
             </div>
         </div>
     </div>
@@ -1743,7 +1839,6 @@
 
 
                                     @if ($order['order_status']!='returned' && $order['order_status']!='failed' && $order['order_status']!='canceled')
-                                        @if(!$isOrderOnlyDigital)
                                             <li class="nav-item ">
                                                 <div
                                                     class="nav-link {{ ($order['order_status']=='confirmed') || ($order['order_status']=='processing') || ($order['order_status']=='processed') || ($order['order_status']=='out_for_delivery') || ($order['order_status']=='delivered')?'active-status' : ''}}">
@@ -1909,7 +2004,6 @@
                                                     </div>
                                                 </div>
                                             </li>
-                                        @endif
                                     @elseif(in_array($order['order_status'], ['returned', 'canceled']))
                                         <li class="nav-item">
                                             <div class="nav-link active-status">

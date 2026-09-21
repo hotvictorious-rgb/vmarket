@@ -53,9 +53,14 @@ class InstallController extends Controller
     public function step5(): View
     {
         if (DOMAIN_POINTED_DIRECTORY == 'public' && function_exists('shell_exec')) {
-            shell_exec('ln -s ../resources/themes themes');
-            Artisan::call('storage:link');
+            try {
+                @shell_exec('ln -s ../resources/themes themes');
+            } catch (Exception $e) {}
         }
+
+        try {
+            Artisan::call('storage:link');
+        } catch (Exception $exception) {}
 
         try {
             $this->setEnvironmentValue(envKey: 'APP_URL', envValue: url('/'));
@@ -127,9 +132,21 @@ class InstallController extends Controller
         } catch (\Exception $exception) {
         }
 
+        try {
+            Artisan::call('migrate', ['--force' => true]);
+        } catch (Exception $e) {
+        }
+
         $previousRouteServiceProvider = base_path('app/Providers/RouteServiceProvider.php');
         $newRouteServiceProvider = base_path('app/Providers/RouteServiceProvider.txt');
         copy($newRouteServiceProvider, $previousRouteServiceProvider);
+        
+        try {
+            touch(storage_path('installed'));
+            Artisan::call('optimize:clear');
+        } catch (Exception $e) {
+        }
+
         return view('installation.step6');
     }
 
@@ -164,6 +181,10 @@ class InstallController extends Controller
         try {
             $sql_path = base_path('installation/backup/database.sql');
             DB::unprepared(file_get_contents($sql_path));
+            try {
+                Artisan::call('migrate', ['--force' => true]);
+            } catch (Exception $e) {
+            }
             return redirect('step5');
         } catch (\Exception $exception) {
             session()->flash('error', 'Your database is not clean, do you want to clean database then import?');
@@ -177,6 +198,10 @@ class InstallController extends Controller
             Artisan::call('db:wipe');
             $sql_path = base_path('installation/backup/database.sql');
             DB::unprepared(file_get_contents($sql_path));
+            try {
+                Artisan::call('migrate', ['--force' => true]);
+            } catch (Exception $e) {
+            }
             return redirect('step5');
         } catch (\Exception $exception) {
             session()->flash('error', 'Check your database permission!');

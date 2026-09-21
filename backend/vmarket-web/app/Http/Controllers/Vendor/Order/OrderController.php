@@ -380,7 +380,6 @@ class OrderController extends BaseController
             'seller_id' => $sellerId,
         ];
         $deliveryMen = $this->deliveryManRepo->getListWhere(filters: $filters, dataLimit: 'all');
-        $isOrderOnlyDigital = $orderService->getCheckIsOrderOnlyDigital(order: $order);
         $previousOrder = $this->orderRepo->getPreviousFirstOrderWhere(id: $id, params: ['seller_id' => $vendorId, 'seller_is' => 'seller']);
         $nextOrder = $this->orderRepo->getNextFirstOrderWhere(id: $id, params: ['seller_id' => $vendorId, 'seller_is' => 'seller']);
         $allProductsList = $this->productRepo->getListWhere(filters: ['added_by' => 'in_house'], dataLimit: 'all');
@@ -392,7 +391,7 @@ class OrderController extends BaseController
         if ($order['order_type'] == 'default_type') {
             $orderCount = $this->orderRepo->getListWhereCount(filters: ['customer_id' => $order['customer_id']]);
             return view('vendor-views.order.order-details', compact('order', 'linkedOrders',
-                'deliveryMen', 'totalDelivered', 'physicalProduct', 'isOrderOnlyDigital',
+                'deliveryMen', 'totalDelivered', 'physicalProduct',
                 'countryRestrictStatus', 'zipRestrictStatus', 'countries', 'zipCodes', 'orderCount', 'previousOrder', 'nextOrder', 'allProductsList', 'isOrderEditable', 'orderProductsSession', 'editOrderSummary', 'orderEditPaymentHistory'));
         } else {
             $orderCount = $this->orderRepo->getListWhereCount(filters: ['customer_id' => $order['customer_id'], 'order_type' => 'POS']);

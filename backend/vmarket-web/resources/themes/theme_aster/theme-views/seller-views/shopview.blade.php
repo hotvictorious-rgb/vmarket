@@ -58,7 +58,6 @@
                                 </button>
                             </div>
                             <div class="card-body d-flex flex-column gap-4">
-                                @include('theme-views.product.partials._filter-product-type')
                                 @include('theme-views.product.partials._filter-product-price')
                                 @include('theme-views.product.partials._filter-product-categories', [
                                     'productCategories' => $categories,
@@ -66,14 +65,6 @@
                                 ])
                                 @include('theme-views.product.partials._filter-product-brands', [
                                     'productBrands' => $activeBrands,
-                                    'dataFrom' => 'flash-deals',
-                                ])
-                                @include('theme-views.product.partials._filter-publishing-houses', [
-                                    'productPublishingHouses' => $shopPublishingHouses,
-                                    'dataFrom' => 'flash-deals',
-                                ])
-                                @include('theme-views.product.partials._filter-product-authors', [
-                                    'productAuthors' => $digitalProductAuthors,
                                     'dataFrom' => 'flash-deals',
                                 ])
 

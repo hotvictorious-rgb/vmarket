@@ -2,7 +2,6 @@
 
 namespace App\Utils;
 
-use App\Models\DigitalProductVariation;
 use App\Models\ShippingMethod;
 use App\Models\Cart;
 use App\Models\CartShipping;
@@ -474,15 +473,6 @@ class CartManager
 
             Cart::where(['id' => $cart['id']])->update(['is_checked' => 1]);
 
-            if ($product['product_type'] == 'digital') {
-                return [
-                    'status' => 1,
-                    'redirect_to' => 'checkout',
-                    'cart' => $cart,
-                    'message' => translate('successfully_added') . '!',
-                ];
-            }
-
             if ($product['product_type'] == 'physical' && $shippingType == 'order_wise') {
                 if ($request['shipping_method_exist'] && $request['shipping_method_id'] && count($sellerShippingList) > 0) {
                     $cart->update(['is_checked' => 1]);
@@ -552,109 +542,11 @@ class CartManager
         ];
     }
 
-    public static function addToCartDigitalProduct($request, $product, $shippingType, $sellerShippingList): array
-    {
-        if (!$product->isMarketplacePurchasable()) {
-            return ['status' => 0, 'message' => translate('out_of_stock!')];
-        }
-
-        if ($product['minimum_order_qty'] > $request['quantity']) {
-            return ['status' => 0, 'message' => translate('Minimum_order_quantity').' '. $product['minimum_order_qty']];
-        }
-
-        $price = $product->unit_price;
-        $digitalVariation = DigitalProductVariation::where(['product_id' => $product['id'], 'variant_key' => $request['variant_key']])->first();
-        if ($request['variant_key'] && $digitalVariation) {
-            $price = $digitalVariation['price'];
-        }
-        $user = Helpers::getCustomerInformation($request);
-        $guestId = session('guest_id') ?? ($request->guest_id ?? 0);
-
-        if ($user == 'offline') {
-            $customerId = $guestId;
-            $isGuest = 1;
-        } else {
-            $customerId = $user['id'];
-            $isGuest = 0;
-        }
-
-        $getProductDiscount = getProductPriceByType(product: $product, type: 'discounted_amount', result: 'value', price: $price);
-        $cartArray = [
-            'customer_id' => $customerId,
-            'product_id' => $request['id'],
-            'product_type' => $product['product_type'],
-            'digital_product_type' => $product['digital_product_type'],
-            'choices' => json_encode([]),
-            'variations' => json_encode([]),
-            'variant' => $request['variant_key'],
-            'quantity' => $request['quantity'],
-            'price' => $price,
-            'discount' => $getProductDiscount,
-            'is_checked' => 1,
-            'slug' => $product['slug'],
-            'name' => $product['name'],
-            'thumbnail' => $product['thumbnail'],
-            'seller_id' => ($product->added_by == 'admin') ? 1 : $product->user_id,
-            'seller_is' => $product['added_by'],
-            'created_at' => now(),
-            'updated_at' => now(),
-            'shop_info' => $product->added_by == 'admin' ? getInHouseShopConfig(key: 'name') : Shop::where(['seller_id' => $product->user_id])->first()->name,
-            'shipping_cost' => $product['product_type'] == 'physical' ? CartManager::get_shipping_cost_for_product_category_wise($product, $request['quantity']) : 0,
-            'shipping_type' => $shippingType,
-            'is_guest' => $isGuest,
-        ];
-
-        $cartCheck = Cart::where(['customer_id' => $customerId, 'is_guest' => $isGuest, 'seller_id' => ($product->added_by == 'admin') ? 1 : $product->user_id, 'seller_is' => $product->added_by])->first();
-        if ($cartCheck) {
-            $cartArray['cart_group_id'] = $cartCheck['cart_group_id'];
-        } else {
-            $cartArray['cart_group_id'] = ($user == 'offline' ? 'guest' : $user['id']) . '-' . Str::random(5) . '-' . time();
-        }
-
-        $cart = Cart::where(['product_id' => $request->id, 'customer_id' => $customerId, 'is_guest' => $isGuest, 'variant' => $request['variant_key']])->first();
-        if ($cart) {
-            Cart::where(['id' => $cart['id']])->update($cartArray);
-        } else {
-            $cartID = Cart::insertGetId($cartArray);
-            $cart = Cart::where(['id' => $cartID])->first();
-        }
-
-        if ($request['buy_now'] == 1) {
-            $productTotalPrice = ($price * $request['quantity']) - ($getProductDiscount * $request['quantity']);
-            $verifyStatus = OrderManager::checkSingleProductMinimumOrderAmountVerify(request: $request, product: $product, totalAmount: $productTotalPrice);
-            if ($verifyStatus['status'] == 0) {
-                return ['status' => 0, 'message' => $verifyStatus['message']];
-            }
-
-            Cart::where(['customer_id' => ($user == 'offline' ? $guestId : $user['id']), 'is_guest' => ($user == 'offline' ? 1 : 0)])
-                ->update(['is_checked' => 0]);
-
-            Cart::where(['id' => $cart['id']])->update(['is_checked' => 1]);
-
-            if ($product['product_type'] == 'digital') {
-                return [
-                    'status' => 1,
-                    'redirect_to' => 'checkout',
-                    'cart' => $cart,
-                    'message' => translate('successfully_added') . '!',
-                ];
-            }
-        }
-
-        return [
-            'status' => 1,
-            'in_cart_key' => $cart['id'],
-            'cart' => $cart,
-            'message' => translate('successfully_added') . '!',
-            'product_variant_type' => 'single_variant',
-        ];
-    }
-
     public static function add_to_cart($request, $from_api = false): array
     {
         cacheRemoveByType(type: 'carts');
 
-        $product = Product::with(['digitalVariation', 'clearanceSale' => function ($query) {
+        $product = Product::with(['clearanceSale' => function ($query) {
             return $query->active();
         }])->where(['id' => $request['id']])->first();
 
@@ -690,11 +582,7 @@ class CartManager
             }
         }
 
-        if ($product['product_type'] == 'digital') {
-            return self::addToCartDigitalProduct($request, $product, $shippingType, $sellerShippingList);
-        } else {
-            return self::addToCartPhysicalProduct($request, $product, $shippingType, $sellerShippingList);
-        }
+        return self::addToCartPhysicalProduct($request, $product, $shippingType, $sellerShippingList);
     }
 
     public static function update_cart_qty($request): array

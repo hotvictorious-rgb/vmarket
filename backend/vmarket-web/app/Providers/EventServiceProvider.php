@@ -3,12 +3,10 @@
 namespace App\Providers;
 
 use App\Events\RefundEvent;
-use App\Events\ChattingEvent;
 use App\Events\OrderPlacedEvent;
 use App\Events\OrderStatusEvent;
 use App\Listeners\RefundListener;
 use App\Events\PasswordResetEvent;
-use App\Listeners\ChattingListener;
 use App\Events\EmailVerificationEvent;
 use App\Listeners\OrderPlacedListener;
 use App\Listeners\OrderStatusListener;
@@ -65,9 +63,6 @@ class EventServiceProvider extends ServiceProvider
         ],
         OrderStatusEvent::class => [
             OrderStatusListener::class,
-        ],
-        ChattingEvent::class => [
-            ChattingListener::class,
         ],
         RefundEvent::class => [
             RefundListener::class,

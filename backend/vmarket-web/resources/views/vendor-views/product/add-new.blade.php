@@ -39,9 +39,6 @@
             @include("vendor-views.product.add._general-setup")
             @include("vendor-views.product.add._pricing-others")
             @include("vendor-views.product.add._product-variation-setup")
-            <div class="row product-image-wrapper gx-2 gy-3 mt-0">
-                @include("vendor-views.product.add._digital-product-file")
-            </div>
             @include("vendor-views.product.add._product-video")
             @include("vendor-views.product.add._seo-section")
 

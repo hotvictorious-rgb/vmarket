@@ -15,7 +15,6 @@ use App\Models\Order;
 use App\Models\Coupon;
 use App\Models\Seller;
 use App\Models\Product;
-use App\Models\Storage;
 use App\Models\AdminWallet;
 use App\Models\OrderDetail;
 use App\Models\Transaction;
@@ -34,7 +33,6 @@ use App\Events\OrderPlacedEvent;
 use App\Models\OrderTransaction;
 use App\Models\ReferralCustomer;
 use Illuminate\Support\Facades\DB;
-use App\Models\DigitalProductVariation;
 use App\Models\DeliveryHub;
 use Modules\TaxModule\app\Traits\VatTaxManagement;
 
@@ -994,7 +992,7 @@ class OrderManager
                 if ($cartItem->product) {
                     $currentProductDiscountedPrice = ($cartItem->price - $cartItem->discount) * $cartItem->quantity;
                     $totalDiscountProductPrice += $currentProductDiscountedPrice;
-                    $totalApplicableShippingAmount += $cartItem?->product?->product_type == 'digital' ? 0 : $currentProductDiscountedPrice;
+                    $totalApplicableShippingAmount += $currentProductDiscountedPrice;
                 }
             }
 
@@ -1026,7 +1024,7 @@ class OrderManager
                     );
 
                     $vendorWiseCartAppliedTax += $appliedTaxAmount;
-                    $vendorWiseCartAppliedTax += $cartItem?->product?->product_type == 'digital' ? 0 : $appliedShippingTaxAmount;
+                    $vendorWiseCartAppliedTax += $appliedShippingTaxAmount;
                     $vendorWiseCart['applied_tax_cart_list'][] = [
                         'cart_id' => $cartItem->id,
                         'cart_group_id' => $cartItem->cart_group_id,
@@ -1040,9 +1038,9 @@ class OrderManager
                         'total_discounted_price' => $totalDiscountPrice,
                         'applied_discounted_amount' => $appliedDiscountAmount,
                         'applied_tax_amount' => $appliedTaxAmount,
-                        'applied_shipping_cost_tax' => $cartItem?->product?->product_type == 'digital' ? 0 : $appliedShippingTaxAmount,
+                        'applied_shipping_cost_tax' => $appliedShippingTaxAmount,
                         'applied_tax_ids' => $appliedTaxIds,
-                        'applied_shipping_cost_tax_ids' => $cartItem?->product?->product_type == 'digital' ? [] : $appliedShippingTaxIds,
+                        'applied_shipping_cost_tax_ids' => $appliedShippingTaxIds,
                     ];
                 }
             }
@@ -1134,15 +1132,9 @@ class OrderManager
         $taxConfig = self::getTaxSystemType();
 
         $productIds = collect($vendorCart['cart_list'])->pluck('product_id')->unique();
-        $products = Product::whereIn('id', $productIds)->with(['digitalVariation', 'clearanceSale' => function ($query) {
+        $products = Product::whereIn('id', $productIds)->with(['clearanceSale' => function ($query) {
             return $query->active();
         }])->get()->keyBy('id');
-
-        $digitalVariations = DigitalProductVariation::with(['storage'])->whereIn('product_id', $productIds)->get();
-        $digitalVariationsByProduct = $digitalVariations->groupBy('product_id');
-        
-        $variationStoragePaths = Storage::where("data_type", "App\Models\DigitalProductVariation")
-            ->whereIn('data_id', $digitalVariations->pluck('id'))->get()->keyBy('data_id');
 
         foreach ($vendorCart['cart_list'] as $cartSingleItem) {
             $product = $products[$cartSingleItem['product_id']]->toArray();
@@ -1152,24 +1144,6 @@ class OrderManager
             unset($product['images_full_url']);
             unset($product['reviews']);
             unset($product['translations']);
-
-            if (!isset($product['digital_variation'])) {
-                $allDigitalVariation = isset($digitalVariationsByProduct[$cartSingleItem['product_id']]) ? 
-                    $digitalVariationsByProduct[$cartSingleItem['product_id']]->toArray() : [];
-                $product['digital_variation'] = $allDigitalVariation;
-            }
-
-            $digitalProductVariation = $digitalVariations->where('product_id', $cartSingleItem['product_id'])
-                ->where('variant_key', $cartSingleItem['variant'])->first();
-
-            if ($product['digital_product_type'] == 'ready_product' && $digitalProductVariation) {
-                $getStoragePath = $variationStoragePaths->get($digitalProductVariation['id']);
-
-                $product['digital_file_ready'] = $digitalProductVariation['file'];
-                $product['storage_path'] = $getStoragePath ? $getStoragePath['value'] : 'public';
-            } elseif ($product['digital_product_type'] == 'ready_product' && !empty($product['digital_file_ready'])) {
-                $product['storage_path'] = $product['digital_file_ready_storage_type'] ?? 'public';
-            }
 
             $productDiscount = getProductPriceByType(product: $product, type: 'discounted_amount', result: 'value', price: $cartSingleItem['price']);
             $orderDetails = [
@@ -1785,13 +1759,13 @@ class OrderManager
 
         foreach ($orderProducts as $key => $orderProduct) {
             $productDetails = json_decode($orderProduct->product_details, true);
-            $product = Product::active()->where(['id' => $orderProduct->product_id])->with(['digitalVariation'])->first();
+            $product = Product::active()->where(['id' => $orderProduct->product_id])->first();
             if (!$product) {
                 $errorMessages[] = $productDetails['name'] ?? '' . translate(' currently_not_available');
             }
             if ($product) {
                 $productValid = true;
-                if (($product['product_type'] == 'physical') && (($product['current_stock'] < $orderProduct['qty']) || ($product['minimum_order_qty'] > $product['current_stock']))) {
+                if ($product->product_type == 'physical' && (($product['current_stock'] < $orderProduct['qty']) || ($product['minimum_order_qty'] > $product['current_stock']))) {
                     $productValid = false;
                     $errorMessages[] = $productDetails['name'] ?? '' . translate(' cannot be ordered because the available stock is insufficient or does not meet the minimum order quantity requirement.');
                 }
@@ -1850,23 +1824,6 @@ class OrderManager
                         }
                     } else {
                         $price = $product->unit_price;
-                    }
-
-                    if ($product->product_type == 'digital') {
-                        if ($product->digital_product_type == "ready_after_sell") {
-                            $price = $product->unit_price;
-                        } elseif ($product->digital_product_type == "ready_product" && !empty($product->digital_file_ready)) {
-                            $price = $product->unit_price;
-                        } elseif ($product->digital_product_type == "ready_product" && empty($product->digital_file_ready) && $product->digitalVariation) {
-                            $productValid = false;
-                            $errorMessages[] = translate('This digital ready product is missing its associated file. Please upload the ready file before proceeding.');
-                            foreach ($product->digitalVariation as $digitalVariation) {
-                                if ($digitalVariation['variant_key'] == $orderProduct['variant']) {
-                                    $price = $digitalVariation['price'];
-                                    $productValid = true;
-                                }
-                            }
-                        }
                     }
 
                     $tax = Helpers::tax_calculation(product: $product, price: $price, tax: $product['tax'], tax_type: 'percent');
@@ -2476,7 +2433,7 @@ class OrderManager
         ];
     }
 
-    public static function getTrackOrderStatusHistory(int $orderId, bool $isOrderOnlyDigital): array
+    public static function getTrackOrderStatusHistory(int $orderId): array
     {
         $statusHistory = OrderStatusHistory::where('order_id', $orderId)
             ->orderBy('created_at', 'asc')
@@ -2486,41 +2443,27 @@ class OrderManager
 
         $order = Order::where('id', $orderId)->select('created_at')->first();
 
-        if (!$isOrderOnlyDigital) {
-            $orderTracking = [
-                'order_placed' => ['key' => 'order_placed', 'label' => translate('order_placed'), 'status' => true, 'date_time' => $order->created_at],
-                'order_confirmed' => ['key' => 'order_confirmed', 'label' => translate('order_confirmed'), 'status' => false, 'date_time' => null],
-                'preparing_for_shipment' => ['key' => 'preparing_for_shipment', 'label' => translate('preparing_for_shipment'), 'status' => false, 'date_time' => null],
-                'order_is_on_the_way' => ['key' => 'order_is_on_the_way', 'label' => translate('order_is_on_the_way'), 'status' => false, 'date_time' => null],
-                'order_delivered' => ['key' => 'order_delivered', 'label' => translate('order_delivered'), 'status' => false, 'date_time' => null],
-                'order_returned' => ['key' => 'order_returned', 'label' => translate('order_returned'), 'status' => false, 'date_time' => null],
-                'order_failed' => ['key' => 'order_failed', 'label' => translate('order_failed'), 'status' => false, 'date_time' => null],
-                'order_canceled' => ['key' => 'order_canceled', 'label' => translate('order_canceled'), 'status' => false, 'date_time' => null],
-            ];
+        $orderTracking = [
+            'order_placed' => ['key' => 'order_placed', 'label' => translate('order_placed'), 'status' => true, 'date_time' => $order->created_at],
+            'order_confirmed' => ['key' => 'order_confirmed', 'label' => translate('order_confirmed'), 'status' => false, 'date_time' => null],
+            'preparing_for_shipment' => ['key' => 'preparing_for_shipment', 'label' => translate('preparing_for_shipment'), 'status' => false, 'date_time' => null],
+            'order_is_on_the_way' => ['key' => 'order_is_on_the_way', 'label' => translate('order_is_on_the_way'), 'status' => false, 'date_time' => null],
+            'order_delivered' => ['key' => 'order_delivered', 'label' => translate('order_delivered'), 'status' => false, 'date_time' => null],
+            'order_returned' => ['key' => 'order_returned', 'label' => translate('order_returned'), 'status' => false, 'date_time' => null],
+            'order_failed' => ['key' => 'order_failed', 'label' => translate('order_failed'), 'status' => false, 'date_time' => null],
+            'order_canceled' => ['key' => 'order_canceled', 'label' => translate('order_canceled'), 'status' => false, 'date_time' => null],
+        ];
 
-            $statusMapping = [
-                'order_placed' => 'pending',
-                'order_confirmed' => 'confirmed',
-                'preparing_for_shipment' => 'processing',
-                'order_is_on_the_way' => 'out_for_delivery',
-                'order_delivered' => 'delivered',
-                'order_returned' => 'returned',
-                'order_failed' => 'failed',
-                'order_canceled' => 'canceled',
-            ];
-        } else {
-            $orderTracking = [
-                'order_placed' => ['key' => 'order_placed', 'label' => translate('order_placed'), 'status' => true, 'date_time' => $order->created_at],
-                'order_confirmed' => ['key' => 'order_confirmed', 'label' => translate('order_confirmed'), 'status' => false, 'date_time' => null],
-                'order_delivered' => ['key' => 'order_delivered', 'label' => translate('order_delivered'), 'status' => false, 'date_time' => null],
-            ];
-
-            $statusMapping = [
-                'order_placed' => 'pending',
-                'order_confirmed' => 'confirmed',
-                'order_delivered' => 'delivered',
-            ];
-        }
+        $statusMapping = [
+            'order_placed' => 'pending',
+            'order_confirmed' => 'confirmed',
+            'preparing_for_shipment' => 'processing',
+            'order_is_on_the_way' => 'out_for_delivery',
+            'order_delivered' => 'delivered',
+            'order_returned' => 'returned',
+            'order_failed' => 'failed',
+            'order_canceled' => 'canceled',
+        ];
 
         foreach ($orderTracking as $statusKey => &$statusData) {
             if (isset($statusMapping[$statusKey]) && isset($statusHistory[$statusMapping[$statusKey]])) {
@@ -2628,7 +2571,6 @@ class OrderManager
 
         return [
             'history' => $withDate + $withoutDate,
-            'is_digital_order' => $isOrderOnlyDigital
         ];
     }
 

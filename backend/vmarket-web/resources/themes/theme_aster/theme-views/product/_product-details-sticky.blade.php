@@ -62,34 +62,6 @@
                     </div>
                     @endforeach
 
-                    @php($extensionIndex=0)
-                    @if($productDetails['product_type'] == 'digital' && $productDetails['digital_product_file_types'] && count($productDetails['digital_product_file_types']) > 0 && $productDetails['digital_product_extensions'])
-                        @foreach($productDetails['digital_product_extensions'] as $extensionKey => $extensionGroup)
-                        <div class="product-details-content">
-                            <h6 class="fs-14 mb-2">
-                                {{ translate($extensionKey) }}
-                            </h6>
-
-                            @if(count($extensionGroup) > 0)
-                                <ul class="option-select-btn custom_01_option flex-wrap weight-style--two gap-2">
-                                    @foreach($extensionGroup as $index => $extension)
-                                        <li>
-                                            <label>
-                                                <input type="radio" hidden
-                                                       name="variant_key"
-                                                       value="{{ $extensionKey.'-'.preg_replace('/\s+/', '-', $extension) }}"
-                                                    {{ $extensionIndex == 0 ? 'checked' : ''}}>
-                                                <span class="text-transform-none">{{ $extension }}</span>
-                                            </label>
-                                        </li>
-                                        @php($extensionIndex++)
-                                    @endforeach
-                                </ul>
-                            @endif
-                        </div>
-                        @endforeach
-                    @endif
-
                 </div>
             </div>
 

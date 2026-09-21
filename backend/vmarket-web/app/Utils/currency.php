@@ -329,15 +329,16 @@ if (!function_exists('getProductPriceByType')) {
             } else if (isset($product['discount_type']) && $product['discount_type'] =='flat') {
                 return $result == 'value' ? $product['discount'] : webCurrencyConverter(amount: $product['discount']);
             }
+            return $result == 'value' ? 0 : webCurrencyConverter(amount: 0);
         }
 
         if ($type == 'discount_type') {
-            $discountType = $product['discount_type'];
+            $discountType = $product['discount_type'] ?? 'flat';
             if ((isset($product['clearanceSale']) && $product['clearanceSale']) || isset($product['clearance_sale']) && $product['clearance_sale']) {
                 $clearanceSale = $product['clearanceSale'] ?? $product['clearance_sale'];
-                $discountType = $clearanceSale['discount_type'];
+                $discountType = $clearanceSale['discount_type'] ?? $discountType;
             }
-            return $discountType;
+            return $discountType ?: 'flat';
         }
 
         if ($type == 'discounted_unit_price') {
