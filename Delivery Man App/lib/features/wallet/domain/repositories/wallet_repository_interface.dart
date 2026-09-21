@@ -4,5 +4,4 @@ import 'package:sixvalley_delivery_boy/interface/repository_interface.dart';
 
 abstract class WalletRepositoryInterface implements RepositoryInterface{
   Future<Response> getDeliveryWiseEarned({String? startDate, String? endDate, int? offset,String? type});
-  Future<Response> getDepositedList({String? startDate, String? endDate, int? offset, String? type});
   }

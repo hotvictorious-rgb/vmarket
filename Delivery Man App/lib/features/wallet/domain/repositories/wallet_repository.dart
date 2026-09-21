@@ -13,12 +13,6 @@ class WalletRepository implements WalletRepositoryInterface{
     return apiClient.getData('${AppConstants.deliveryWiseEarnedUri}?start_date=$startDate&end_date=$endDate&limit=10&offset=$offset&type=$type');
   }
 
-
-  @override
-  Future<Response> getDepositedList({String? startDate, String? endDate, int? offset, String? type}) async {
-    return apiClient.getData('${AppConstants.depositedList}?limit=10&offset=$offset&start_date=$startDate&end_date=$endDate&type=$type');
-  }
-
   @override
   
 

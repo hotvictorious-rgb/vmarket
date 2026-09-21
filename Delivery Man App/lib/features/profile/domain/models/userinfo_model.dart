@@ -25,7 +25,6 @@ class UserInfoModel {
   int? totalDelivery;
   int? pauseDelivery;
   int? pendingDelivery;
-  double? totalDeposit;
   String? countryCode;
   String? address;
   String? bankName;
@@ -58,7 +57,6 @@ class UserInfoModel {
         this.totalDelivery,
         this.pauseDelivery,
         this.pendingDelivery,
-        this.totalDeposit,
         this.address,
         this.countryCode,
         this.bankName,
@@ -101,7 +99,6 @@ class UserInfoModel {
     totalDelivery = json['total_delivery'] != null ? int.tryParse(json['total_delivery'].toString()) ?? 0 : 0;
     pauseDelivery = json['pause_delivery'] != null ? int.tryParse(json['pause_delivery'].toString()) ?? 0 : 0;
     pendingDelivery = json['pending_delivery'] != null ? int.tryParse(json['pending_delivery'].toString()) ?? 0 : 0;
-    totalDeposit = json['total_deposit'] != null ? double.tryParse(json['total_deposit'].toString()) ?? 0.0 : 0.0;
     countryCode = json['country_code'];
     if(json['address'] != null){
       address = json['address'];

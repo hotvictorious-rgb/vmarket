@@ -64,8 +64,6 @@ class Images {
   static const String support = 'assets/image/support.png';
   static const String image = 'assets/image/image.png';
   static const String pendingWithdraw = 'assets/image/pending_withdraw.png';
-  static const String deposit = 'assets/image/deposit.png';
-  static const String depositedIcon = 'assets/image/deposited_icon.png';
   static const String accNumberIcon = 'assets/image/acc_number_icon.png';
   static const String bankIcon = 'assets/image/bank_icon.png';
   static const String branchNameIcon = 'assets/image/br_name_icon.png';

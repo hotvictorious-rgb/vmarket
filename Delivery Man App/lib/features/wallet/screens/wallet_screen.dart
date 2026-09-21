@@ -12,7 +12,6 @@ import 'package:sixvalley_delivery_boy/utill/images.dart';
 import 'package:sixvalley_delivery_boy/utill/styles.dart';
 import 'package:sixvalley_delivery_boy/common/basewidgets/custom_app_bar_widget.dart';
 import 'package:sixvalley_delivery_boy/common/basewidgets/sliver_deligate_widget.dart';
-import 'package:sixvalley_delivery_boy/features/wallet/widgets/deposited_list_view_widget.dart';
 import 'package:sixvalley_delivery_boy/features/wallet/widgets/transaction_list_view_widget.dart';
 import 'package:sixvalley_delivery_boy/features/wallet/widgets/transaction_search_filter_widget.dart';
 import 'package:sixvalley_delivery_boy/features/wallet/widgets/transaction_type_card_widget.dart';
@@ -38,7 +37,6 @@ class _WalletScreenState extends State<WalletScreen> {
     TransactionTypeModel(Images.delivery, 'delivery_charge_earned', Get.find<ProfileController>().profileModel?.totalEarn ?? 0, 0),
     TransactionTypeModel(Images.withdrawn, 'withdrawn', Get.find<ProfileController>().profileModel?.totalWithdraw ?? 0, 1),
     TransactionTypeModel(Images.pendingWithdraw, 'pending_withdrawn', Get.find<ProfileController>().profileModel?.pendingWithdraw ?? 0, 2),
-    TransactionTypeModel(Images.deposit, 'already_deposited', Get.find<ProfileController>().profileModel?.totalDeposit ?? 0, 3),
   ];
 
   @override
@@ -109,9 +107,7 @@ class _WalletScreenState extends State<WalletScreen> {
                         _transactionTypes[0].title:
                         walletController.selectedItem == 1?
                         _transactionTypes[1].title:
-                        walletController.selectedItem == 2?
-                        _transactionTypes[2].title:
-                        _transactionTypes[3].title;
+                        _transactionTypes[2].title;
 
                         return Column(crossAxisAlignment: CrossAxisAlignment.start, children:  [
 
@@ -145,8 +141,6 @@ class _WalletScreenState extends State<WalletScreen> {
                           ),
                           walletController.selectedItem == 0
                               ? const TransactionListViewWidget()
-                              : walletController.selectedItem == 3
-                              ? const DepositedListViewWidget()
                               : const WithdrawListViewWidget()
 
                         ]);

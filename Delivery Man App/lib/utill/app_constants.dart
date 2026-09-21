@@ -38,7 +38,6 @@ class AppConstants {
   static const String sendMessageUri = '/api/v2/delivery-man/messages/send-message/';
   static const String withdrawListUri = '/api/v2/delivery-man/withdraw-list-by-approved';
   static const String emergencyContactList = '/api/v2/delivery-man/emergency-contact-list';
-  static const String depositedList = '/api/v2/delivery-man/collected_cash_history';
   static const String forgotPassword = '/api/v2/delivery-man/auth/forgot-password';
   static const String verifyOtp = '/api/v2/delivery-man/auth/verify-otp';
   static const String resetPassword = '/api/v2/delivery-man/auth/reset-password';

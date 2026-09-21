@@ -3,7 +3,6 @@ import 'package:get/get.dart';
 import 'package:sixvalley_delivery_boy/features/wallet/domain/models/delivery_wise_earned_model.dart';
 import 'package:sixvalley_delivery_boy/features/wallet/domain/services/wallet_service_interface.dart';
 import 'package:sixvalley_delivery_boy/features/withdraw/controllers/withdraw_controller.dart';
-import 'package:sixvalley_delivery_boy/features/wallet/domain/models/deposited_model.dart';
 
 class WalletController extends GetxController implements GetxService {
   final WalletServiceInterface walletServiceInterface;
@@ -11,8 +10,6 @@ class WalletController extends GetxController implements GetxService {
 
   List<Orders> _deliveryWiseEarned = [];
   List<Orders> get deliveryWiseEarned => _deliveryWiseEarned;
-  List<Deposit> _depositedList = [];
-  List<Deposit> get depositedList => _depositedList;
    bool _isLoading = false;
    bool get isLoading => _isLoading;
 
@@ -40,8 +37,6 @@ class WalletController extends GetxController implements GetxService {
        Get.find<WithdrawController>().getWithdrawList(startDate == "dd-mm-yyyy" ? '' :startDate, endDate == "dd-mm-yyyy"? '' : endDate, 1, 'withdrawn', fromNotification: fromNotification);
      }else if(selectedItem == 2 ){
        Get.find<WithdrawController>().getWithdrawList(startDate == "dd-mm-yyyy" ? '' :startDate, endDate == "dd-mm-yyyy" ? '' : endDate, 1, 'pending', fromNotification: fromNotification);
-     }else if(selectedItem == 3 ){
-       getDepositedList(startDate == "dd-mm-yyyy" ? '' : startDate, endDate == "dd-mm-yyyy" ? '' : endDate, 1, '', fromNotification: fromNotification);
      }
      if(!fromNotification){
        update();
@@ -87,23 +82,7 @@ class WalletController extends GetxController implements GetxService {
 
 
 
-  Future<void> getDepositedList(String startDate, String endDate, int offset, String type, {bool reload = true,  bool fromNotification = false}) async {
-    if(reload){
-      _depositedList = [];
-    }
-    _isLoading = true;
-    if(!fromNotification) {
-      update();
-    }
-    _depositedList = await walletServiceInterface.getDepositedList(startDate: startDate,endDate: endDate, offset: offset,type: type);
-    _isLoading = false;
-
-    update();
-  }
-
-
-
-  Future <void> selectDate({String startDate = 'dd-mm-yyyy', String endDate = 'dd-mm-yyyy', bool isUpdate = true}) async {
+  Future<void> selectDate({String startDate = 'dd-mm-yyyy', String endDate = 'dd-mm-yyyy', bool isUpdate = true}) async {
     _startDate = startDate;
     _endDate = endDate;
     
