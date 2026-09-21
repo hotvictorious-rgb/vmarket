@@ -29,8 +29,8 @@ class ShopService implements ShopServiceInterface {
   }
 
   @override
-  Future getClearanceSearchProduct(String sellerId, String offset, String productId, {String search = '', String? categoryIds, String? brandIds, String? authorIds, String? publishingIds, String? productType, String? offerType}) async {
-    return await shopRepositoryInterface.getClearanceSearchProduct(sellerId, offset, productId, search: search, categoryIds: categoryIds, brandIds: brandIds, authorIds: authorIds, publishingIds: publishingIds, productType: productType, offerType: 'clearance_sale');
+  Future getClearanceSearchProduct(String sellerId, String offset, String productId, {String search = '', String? categoryIds, String? brandIds, String? productType, String? offerType}) async {
+    return await shopRepositoryInterface.getClearanceSearchProduct(sellerId, offset, productId, search: search, categoryIds: categoryIds, brandIds: brandIds, productType: productType, offerType: 'clearance_sale');
   }
 
 }

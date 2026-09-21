@@ -68,8 +68,8 @@ class ProductService implements ProductServiceInterface{
 
 
   @override
-  Future getClearanceSearchProducts(String query, String? categoryIds, String? brandIds, String? authorIds, String? publishingIds, String? sort, String? priceMin, String? priceMax, int offset, String? productType, String? offerType) async{
-    return await productRepositoryInterface.getClearanceSearchProducts(query, categoryIds, brandIds, authorIds, publishingIds, sort, priceMin, priceMax, offset, productType, offerType);
+  Future getClearanceSearchProducts(String query, String? categoryIds, String? brandIds, String? sort, String? priceMin, String? priceMax, int offset, String? productType, String? offerType) async{
+    return await productRepositoryInterface.getClearanceSearchProducts(query, categoryIds, brandIds, sort, priceMin, priceMax, offset, productType, offerType);
   }
 
   @override

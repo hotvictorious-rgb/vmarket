@@ -61,10 +61,6 @@ class DashBoardScreenState extends State<DashBoardScreen> {
     final SplashController splashController =
         Provider.of<SplashController>(context, listen: false);
     singleVendor = splashController.configModel?.businessMode == "single";
-    Provider.of<SearchProductController>(context, listen: false)
-        .getAuthorList(null);
-    Provider.of<SearchProductController>(context, listen: false)
-        .getPublishingHouseList(null);
 
     if (widget.pageIndex != null) {
       _pageIndex = widget.pageIndex!;

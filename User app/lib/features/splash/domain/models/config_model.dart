@@ -1,13 +1,10 @@
-import 'package:flutter/foundation.dart';
 import 'package:flutter_sixvalley_ecommerce/data/model/image_full_url.dart';
 import 'package:flutter_sixvalley_ecommerce/features/shop/domain/enums/vacation_duration_type.dart';
 
 class ConfigModel {
   String? brandSetting;
-  String? digitalProductSetting;
   int? systemDefaultCurrency;
   bool? digitalPayment;
-  bool? cashOnDelivery;
   String? sellerRegistration;
   String? posActive;
   String? companyPhone;
@@ -49,10 +46,6 @@ class ConfigModel {
   String? inhouseSelectedShippingType;
   int? billingInputByCustomer;
   int? minimumOrderLimit;
-  int? walletStatus;
-  int? loyaltyPointStatus;
-  double? loyaltyPointExchangeRate;
-  int? loyaltyPointMinimumPoint;
   List<PaymentMethods>? paymentMethods;
   OfflinePayment? offlinePayment;
   String? paymentMethodImagePath;
@@ -60,7 +53,6 @@ class ConfigModel {
   String? activeTheme;
   List<PopularTags>? popularTags;
   int? guestCheckOut;
-  int? addFundsToWallet;
   double? minimumAddFundAmount;
   double? maximumAddFundAmount;
   String? refSignup;
@@ -91,10 +83,8 @@ class ConfigModel {
 
   ConfigModel(
       {this.brandSetting,
-        this.digitalProductSetting,
         this.systemDefaultCurrency,
         this.digitalPayment,
-        this.cashOnDelivery,
         this.sellerRegistration,
         this.posActive,
         this.companyPhone,
@@ -136,10 +126,6 @@ class ConfigModel {
         this.inhouseSelectedShippingType,
         this.billingInputByCustomer,
         this.minimumOrderLimit,
-        this.walletStatus,
-        this.loyaltyPointStatus,
-        this.loyaltyPointExchangeRate,
-        this.loyaltyPointMinimumPoint,
         this.paymentMethods,
         this.offlinePayment,
         this.paymentMethodImagePath,
@@ -147,7 +133,6 @@ class ConfigModel {
         this.activeTheme,
         this.popularTags,
         this.guestCheckOut,
-        this.addFundsToWallet,
         this.minimumAddFundAmount,
         this.maximumAddFundAmount,
         this.refSignup,
@@ -178,10 +163,8 @@ class ConfigModel {
 
   ConfigModel.fromJson(Map<String, dynamic> json) {
     brandSetting = json['brand_setting'];
-    digitalProductSetting = json['digital_product_setting'];
     systemDefaultCurrency = json['system_default_currency'];
     digitalPayment = json['digital_payment'];
-    cashOnDelivery = json['cash_on_delivery'];
     sellerRegistration = json['seller_registration'];
     posActive = json['pos_active'];
     companyPhone = json['company_phone'].toString();
@@ -268,15 +251,6 @@ class ConfigModel {
     inhouseSelectedShippingType = json['inhouse_selected_shipping_type'];
     billingInputByCustomer = json['billing_input_by_customer'];
     minimumOrderLimit = json['minimum_order_limit'];
-    walletStatus = json['wallet_status'];
-    loyaltyPointStatus = json['loyalty_point_status'];
-    if(json['loyalty_point_exchange_rate'] != null){
-      loyaltyPointExchangeRate = double.tryParse(json['loyalty_point_exchange_rate'].toString()) ?? 1.0;
-    }else{
-      loyaltyPointExchangeRate = 1;
-    }
-
-    loyaltyPointMinimumPoint = json['loyalty_point_minimum_point'];
     if (json['payment_methods'] != null) {
       paymentMethods = <PaymentMethods>[];
       json['payment_methods'].forEach((v) {
@@ -299,11 +273,6 @@ class ConfigModel {
       guestCheckOut = int.tryParse(json['guest_checkout'].toString()) ?? 0;
     }else{
       guestCheckOut = 0;
-    }
-    if(json['add_funds_to_wallet'] != null){
-      addFundsToWallet = int.tryParse(json['add_funds_to_wallet'].toString()) ?? 0;
-    }else{
-      addFundsToWallet = 0;
     }
     if(json['minimum_add_fund_amount'] != null){
       minimumAddFundAmount = double.tryParse(json['minimum_add_fund_amount'].toString()) ?? 0.0;
@@ -377,7 +346,6 @@ class ConfigModel {
 class BaseUrls {
   String? productImageUrl;
   String? productThumbnailUrl;
-  String? digitalProductUrl;
   String? brandImageUrl;
   String? customerImageUrl;
   String? bannerImageUrl;
@@ -391,7 +359,6 @@ class BaseUrls {
   BaseUrls(
       {this.productImageUrl,
         this.productThumbnailUrl,
-        this.digitalProductUrl,
         this.brandImageUrl,
         this.customerImageUrl,
         this.bannerImageUrl,
@@ -405,7 +372,6 @@ class BaseUrls {
   BaseUrls.fromJson(Map<String, dynamic> json) {
     productImageUrl = json['product_image_url'];
     productThumbnailUrl = json['product_thumbnail_url'];
-    digitalProductUrl = json['digital_product_url'];
     brandImageUrl = json['brand_image_url'];
     customerImageUrl = json['customer_image_url'];
     bannerImageUrl = json['banner_image_url'];

@@ -1,8 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_sixvalley_ecommerce/features/clearance_sale/widgets/clearance_custom_textfield_widget.dart';
 import 'package:flutter_sixvalley_ecommerce/features/clearance_sale/widgets/clearance_sale_filter_dialog_widget.dart';
-import 'package:flutter_sixvalley_ecommerce/features/search_product/controllers/search_product_controller.dart';
-import 'package:flutter_sixvalley_ecommerce/features/search_product/domain/models/author_model.dart';
 import 'package:flutter_sixvalley_ecommerce/localization/language_constrants.dart';
 import 'package:flutter_sixvalley_ecommerce/theme/controllers/theme_controller.dart';
 import 'package:flutter_sixvalley_ecommerce/utill/dimensions.dart';
@@ -27,24 +25,6 @@ class ClearanceSearchBarWidget extends StatefulWidget {
 }
 
 class _ClearanceSearchBarWidgetState extends State<ClearanceSearchBarWidget> {
-
-  late List<AuthorModel>? authorList;
-  late List<AuthorModel>? publishingHouse;
-
-  @override
-  void initState() {
-    super.initState();
-
-    if(widget.fromShop){
-      authorList = Provider.of<SearchProductController>(context, listen: false).sellerAuthorsList;
-      publishingHouse = Provider.of<SearchProductController>(context, listen: false).sellerPublishingHouseList;
-    }else{
-      authorList = Provider.of<SearchProductController>(context, listen: false).authorsList;
-      publishingHouse = Provider.of<SearchProductController>(context, listen: false).publishingHouseList;
-    }
-  }
-
-
 
   @override
   Widget build(BuildContext context) {
@@ -107,9 +87,7 @@ class _ClearanceSearchBarWidgetState extends State<ClearanceSearchBarWidget> {
                 showModalBottomSheet(
                     context: context, isScrollControlled: true,
                     backgroundColor: Colors.transparent,
-                    builder: (c) => widget.fromShop
-                        ? ClearanceProductFilterDialog(slug: widget.slug, authorList: authorList, publishingHouse: publishingHouse, applyFilter: widget.applyFilter, fromShop: widget.fromShop,)
-                        : ClearanceProductFilterDialog(authorList: authorList, publishingHouse: publishingHouse, applyFilter: widget.applyFilter, fromShop: widget.fromShop,)
+                    builder: (c) => ClearanceProductFilterDialog(slug: widget.slug, applyFilter: widget.applyFilter, fromShop: widget.fromShop,)
                 );
               },
               child: Container(

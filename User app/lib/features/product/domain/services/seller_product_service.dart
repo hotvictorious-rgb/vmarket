@@ -13,16 +13,12 @@ class SellerProductService implements SellerProductServiceInterface {
       {String search = '',
       String? categoryIds,
       String? brandIds,
-      String? authorIds,
-      String? publishingIds,
       String? productType}) async {
     return await sellerProductRepositoryInterface.getSellerProductList(
         slug, offset, productId,
         search: search,
         categoryIds: categoryIds,
         brandIds: brandIds,
-        authorIds: authorIds,
-        publishingIds: publishingIds,
         productType: productType);
   }
 

@@ -13,13 +13,4 @@ class CartHelper {
     }
     return taxAmount;
   }
-
-  bool hasPhysical(List<List<CartModel>> cartProductList) {
-    for (CartModel cart in cartProductList[0]) {
-      if (cart.productType == 'physical' && cart.isChecked!) {
-        return true;
-      }
-    }
-    return false;
-  }
 }

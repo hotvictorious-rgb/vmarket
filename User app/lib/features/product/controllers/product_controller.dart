@@ -603,7 +603,7 @@ class ProductController extends ChangeNotifier {
   bool isSearchLoading = false;
   bool isSearchActive = false;
   bool isFilterActive = false;
-  Future <ApiResponseModel> getClearanceSearchProduct({required String query, String? categoryIds, String? brandIds,  String? authorIds, String? publishingIds, String? sort, String? priceMin, String? priceMax, required int offset, String? productType, String offerType = 'clearance_sale', bool fromPaginantion = false, isNotify = true}) async {
+  Future <ApiResponseModel> getClearanceSearchProduct({required String query, String? categoryIds, String? brandIds, String? sort, String? priceMin, String? priceMax, required int offset, String? productType, String offerType = 'clearance_sale', bool fromPaginantion = false, isNotify = true}) async {
 
     if(!fromPaginantion && isNotify){
       isSearchLoading = true;
@@ -615,7 +615,7 @@ class ProductController extends ChangeNotifier {
     //   sellerProduct = null;
     // }
 
-    ApiResponseModel apiResponse = await productServiceInterface!.getClearanceSearchProducts(query, categoryIds, brandIds, authorIds, publishingIds, sort, priceMin, priceMax, offset, productType, offerType);
+    ApiResponseModel apiResponse = await productServiceInterface!.getClearanceSearchProducts(query, categoryIds, brandIds, sort, priceMin, priceMax, offset, productType, offerType);
     if (apiResponse.response != null && apiResponse.response!.statusCode == 200) {
       if(offset == 1){
         // clearanceSearchProductModel = null;

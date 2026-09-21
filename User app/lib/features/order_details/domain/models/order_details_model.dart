@@ -1,7 +1,6 @@
 
 import 'package:flutter_sixvalley_ecommerce/data/model/image_full_url.dart';
 import 'package:flutter_sixvalley_ecommerce/features/product/domain/models/product_model.dart';
-import 'package:flutter_sixvalley_ecommerce/features/product_details/domain/models/product_details_model.dart';
 import 'package:flutter_sixvalley_ecommerce/features/shop/domain/models/seller_model.dart';
 
 class OrderDetailsModel {
@@ -9,7 +8,6 @@ class OrderDetailsModel {
   int? _orderId;
   int? _productId;
   int? _sellerId;
-  String? _digitalFileAfterSell;
   Product? _productDetails;
   int? _qty;
   double? _price;
@@ -28,9 +26,6 @@ class OrderDetailsModel {
   Order? order;
   Product? product;
   bool? isExpanded;
-  List<DigitalVariation>? digitalVariation;
-  ImageFullUrl? digitalFileAfterSellFullUrl;
-  ImageFullUrl? digitalFileReadyFullUrl;
   Review? _reviewData;
   double? _bringChangeAmount;
   String? _refundStartedAt;
@@ -42,7 +37,6 @@ class OrderDetailsModel {
         int? orderId,
         int? productId,
         int? sellerId,
-        String? digitalFileAfterSell,
         Product? productDetails,
         int? qty,
         double? price,
@@ -68,9 +62,6 @@ class OrderDetailsModel {
     _orderId = orderId;
     _productId = productId;
     _sellerId = sellerId;
-    if(digitalFileAfterSell != null){
-      _digitalFileAfterSell = digitalFileAfterSell;
-    }
     _productDetails = productDetails;
     _qty = qty;
     _price = price;
@@ -91,9 +82,6 @@ class OrderDetailsModel {
     this.order;
     product;
     isExpanded;
-    digitalVariation;
-    digitalFileAfterSellFullUrl;
-    digitalFileReadyFullUrl;
     _reviewData = review;
     _bringChangeAmount = bringChangeAmount;
     _refundStartedAt = refundStartedAt;
@@ -104,7 +92,6 @@ class OrderDetailsModel {
   int? get orderId => _orderId;
   int? get productId => _productId;
   int? get sellerId => _sellerId;
-  String? get digitalFileAfterSell => _digitalFileAfterSell;
   Product? get productDetails => _productDetails;
   int? get qty => _qty;
   double? get price => _price;
@@ -130,9 +117,6 @@ class OrderDetailsModel {
     _orderId = json['order_id'];
     _productId = json['product_id'];
     _sellerId = json['seller_id'];
-    if(json['digital_file_after_sell'] != null) {
-      _digitalFileAfterSell = json['digital_file_after_sell'];
-    }
     if(json['product_details'] != null) {
       _productDetails = Product.fromJson(json['product_details']);
     }
@@ -159,16 +143,6 @@ class OrderDetailsModel {
     if(json['product'] != null) {
       product = Product.fromJson(json['product']);
     }
-    if (json['digital_variation'] != null) {
-      digitalVariation = <DigitalVariation>[];
-      json['digital_variation'].forEach((v) {
-        digitalVariation!.add(DigitalVariation.fromJson(v));
-      });
-    }
-
-    digitalFileAfterSellFullUrl = json['digital_file_after_sell_full_url'] != null
-        ? ImageFullUrl.fromJson(json['digital_file_after_sell_full_url']) : null;
-
 
     isExpanded = false;
 

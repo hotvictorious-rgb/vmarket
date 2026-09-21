@@ -120,18 +120,10 @@ class CartScreenState extends State<CartScreen> with AutomaticKeepAliveClientMix
               double discount = 0.0;
               double tax = 0.0;
               int totalQuantity = 0;
-              int totalPhysical = 0;
-              bool onlyDigital= true;
               List<CartModel> cartList = [];
               cartList.addAll(cart.cartList);
               bool isItemChecked = false;
               int totalItemCheckedCount = 0;
-
-              for(CartModel cart in cartList) {
-                if(cart.productType == "physical" && cart.isChecked!) {
-                  onlyDigital = false;
-                }
-              }
 
               List<String?> orderTypeShipping = [];
               List<String?> sellerList = [];
@@ -205,7 +197,7 @@ class CartScreenState extends State<CartScreen> with AutomaticKeepAliveClientMix
                 }
               }
               for(int i=0; i<shippingController.chosenShippingList.length; i++){
-                if(shippingController.chosenShippingList[i].isCheckItemExist == 1 && !onlyDigital) {
+                if(shippingController.chosenShippingList[i].isCheckItemExist == 1) {
                   shippingAmount += shippingController.chosenShippingList[i].shippingCost!;
                 }
               }
@@ -408,7 +400,7 @@ class CartScreenState extends State<CartScreen> with AutomaticKeepAliveClientMix
                                     _scrollToSeller(requiredMinOrderQtyCart.sellerIndex);
                                     await Future.delayed(const Duration(milliseconds: 900));
                                     changeColor();
-                                  } else if(hasNull && configProvider.configModel!.shippingMethod == 'sellerwise_shipping' && !onlyDigital) {
+                                  } else if(hasNull && configProvider.configModel!.shippingMethod == 'sellerwise_shipping') {
                                     showCustomSnackBarWidget(
                                         '${getTranslated('select_all_shipping_method', context)} ${getTranslated('for', Get.context!)} ${requiredShippingCartModel?.sellerCart.sellerIs == 'admin' ? Provider.of<SplashController>(context, listen: false).configModel?.inHouseShop?.name : requiredShippingCartModel?.sellerCart.shop?.name}',
                                         Get.context!, snackBarType: SnackBarType.warning);
@@ -418,7 +410,7 @@ class CartScreenState extends State<CartScreen> with AutomaticKeepAliveClientMix
                                     changeColor();
                                   } else if(shippingController.chosenShippingList.isEmpty &&
                                       configProvider.configModel!.shippingMethod !='sellerwise_shipping' &&
-                                      configProvider.configModel!.inhouseSelectedShippingType =='order_wise' && !onlyDigital) {
+                                      configProvider.configModel!.inhouseSelectedShippingType =='order_wise') {
                                     showCustomSnackBarWidget(getTranslated('select_shipping_method', context), Get.context!, snackBarType: SnackBarType.warning);
 
                                     showModalBottomSheet(
@@ -426,13 +418,6 @@ class CartScreenState extends State<CartScreen> with AutomaticKeepAliveClientMix
                                         builder: (context) => const ShippingMethodBottomSheetWidget(groupId: 'all_cart_group',sellerIndex: 0, sellerId: 1)
                                     );
                                   } else {
-                                    int sellerGroupLenght = 0;
-
-                                    for(CartModel seller in sellerGroupList) {
-                                      if(seller.isGroupItemChecked!) {
-                                        sellerGroupLenght += 1;
-                                      }
-                                    }
                                     RouterHelper.getCheckoutScreenRoute(
                                       action: RouteAction.push,
                                       cartList: cartList,
@@ -442,8 +427,6 @@ class CartScreenState extends State<CartScreen> with AutomaticKeepAliveClientMix
                                       discount: discount,
                                       tax: tax,
                                       sellerId: null,
-                                      onlyDigital: sellerGroupLenght != totalPhysical,
-                                      hasPhysical: totalPhysical > 0,
                                       quantity: totalQuantity,
                                     );
                                   }
@@ -520,7 +503,6 @@ class CartScreenState extends State<CartScreen> with AutomaticKeepAliveClientMix
                                     for(CartModel cart in cartProductList[index]) {
                                       if(cart.productType == 'physical' && cart.isChecked!) {
                                         hasPhysical = true;
-                                        totalPhysical += 1;
                                         break;
                                       }
                                     }
@@ -860,7 +842,7 @@ class CartScreenState extends State<CartScreen> with AutomaticKeepAliveClientMix
                                   },
                                 ),
 
-                                (!onlyDigital && configProvider.configModel!.shippingMethod != 'sellerwise_shipping' && configProvider.configModel!.inhouseSelectedShippingType =='order_wise') ?
+                                (configProvider.configModel!.shippingMethod != 'sellerwise_shipping' && configProvider.configModel!.inhouseSelectedShippingType =='order_wise') ?
                                 InkWell(onTap: () {
                                   showModalBottomSheet(
                                       context: context, isScrollControlled: true, backgroundColor: Colors.transparent,
@@ -906,7 +888,7 @@ class CartScreenState extends State<CartScreen> with AutomaticKeepAliveClientMix
                           ),
                         ),
 
-                        if(sellerGroupList[0].freeDeliveryOrderAmount?.status == 1 && CartHelper().hasPhysical(cartProductList) && sellerGroupList[0].isGroupItemChecked! && singleVendor)
+                        if(sellerGroupList[0].freeDeliveryOrderAmount?.status == 1 && sellerGroupList[0].isGroupItemChecked! && singleVendor)
                           Container(
                             padding: const EdgeInsets.fromLTRB(
                               Dimensions.paddingSizeDefault, Dimensions.paddingSizeSmall,

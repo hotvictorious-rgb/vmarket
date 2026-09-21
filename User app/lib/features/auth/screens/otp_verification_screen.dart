@@ -4,7 +4,6 @@ import 'package:flutter_sixvalley_ecommerce/common/basewidget/custom_asset_image
 import 'package:flutter_sixvalley_ecommerce/features/auth/domain/models/signup_model.dart';
 import 'package:flutter_sixvalley_ecommerce/features/auth/domain/models/user_log_data.dart';
 import 'package:flutter_sixvalley_ecommerce/features/auth/enums/from_page.dart';
-import 'package:flutter_sixvalley_ecommerce/features/order_details/controllers/order_details_controller.dart';
 import 'package:flutter_sixvalley_ecommerce/features/splash/domain/models/config_model.dart';
 import 'package:flutter_sixvalley_ecommerce/helper/color_helper.dart';
 import 'package:flutter_sixvalley_ecommerce/helper/email_checker_helper.dart';
@@ -26,13 +25,11 @@ import 'package:provider/provider.dart';
 class VerificationScreen extends StatefulWidget {
   final String? userInput;
   final FromPage fromPage;
-  final bool fromDigitalProduct;
-  final int? orderId;
   final String? session;
   final String? toNavigateScreen;
   final VoidCallback? onLoginSuccess;
   const VerificationScreen(this.userInput, this.fromPage,
-   {super.key, this.session, this.fromDigitalProduct = false, this.orderId, this.toNavigateScreen, this.onLoginSuccess});
+   {super.key, this.session, this.toNavigateScreen, this.onLoginSuccess});
 
   @override
   State<VerificationScreen> createState() => _VerificationScreenState();
@@ -91,8 +88,6 @@ class _VerificationScreenState extends State<VerificationScreen> {
                   physics: const BouncingScrollPhysics(),
                   child: Consumer<AuthController>(
                     builder: (context, authProvider, child) => Column(crossAxisAlignment: CrossAxisAlignment.center, children: [
-                      widget.fromDigitalProduct? CustomAppBar(title: '${getTranslated('verify_otp', context)}'): const SizedBox(),
-
                       SizedBox(height: size.height * 0.14),
 
                       CustomAssetImageWidget(
@@ -163,24 +158,7 @@ class _VerificationScreenState extends State<VerificationScreen> {
                       ),
 
 
-                      if(widget.fromDigitalProduct)
-                        Padding(padding: const EdgeInsets.symmetric(horizontal: Dimensions.paddingSizeLarge),
-                          child:  CustomButton(buttonText: getTranslated('verify', context),
-                              onTap: (){
-                                Provider.of<OrderDetailsController>(context, listen: false).verifyDigitalProductOtp(orderId: widget.orderId!,
-                                    otp: authProvider.verificationCode).then((value) {
-                                  if(value.response?.statusCode == 200) {
-                                    if(context.mounted) {
-                                      Navigator.of(context).pop();
-                                    }
-                                  }else {
-                                    if(context.mounted) {
-                                      showCustomSnackBarWidget(getTranslated('input_valid_otp', context), context, snackBarType: SnackBarType.warning);
-                                    }
-                                  }});})),
-
-                      if(!widget.fromDigitalProduct)
-                        Padding(padding: const EdgeInsets.symmetric(horizontal: Dimensions.paddingSizeLarge),
+                      Padding(padding: const EdgeInsets.symmetric(horizontal: Dimensions.paddingSizeLarge),
                           child: (authProvider.isEnableVerificationCode && !authProvider.resendButtonLoading) ?
                           !authProvider.isPhoneNumberVerificationButtonLoading ?
                           CustomButton(

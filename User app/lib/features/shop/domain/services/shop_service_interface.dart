@@ -6,5 +6,5 @@ abstract class ShopServiceInterface {
   Future<ApiResponseModel<T>> getSellerList<T>({required String type, required int offset, required int limit, required DataSourceEnum source});
   Future<dynamic> getClearanceShopProductList(String type, String offset, String sellerId);
   Future<dynamic> get(String id);
-  Future<dynamic> getClearanceSearchProduct(String sellerId, String offset, String productId, {String search = '', String? categoryIds, String? brandIds,  String? authorIds, String? publishingIds, String? productType, String? offerType});
+  Future<dynamic> getClearanceSearchProduct(String sellerId, String offset, String productId, {String search = '', String? categoryIds, String? brandIds, String? productType, String? offerType});
 }

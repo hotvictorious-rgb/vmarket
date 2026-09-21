@@ -45,10 +45,10 @@ class ShopRepository extends DataSyncService implements ShopRepositoryInterface 
 
 
   @override
-  Future<ApiResponseModel> getClearanceSearchProduct(String sellerId, String offset, String productId, {String search = '', String? categoryIds="[]", String? brandIds="[]", String? authorIds ='[]', String? publishingIds = '[]', String? productType, String? offerType}) async {
+  Future<ApiResponseModel> getClearanceSearchProduct(String sellerId, String offset, String productId, {String search = '', String? categoryIds="[]", String? brandIds="[]", String? productType, String? offerType}) async {
     try {
       final response = await dioClient.get(
-          '${AppConstants.clearanceShopSearchProductUri}$sellerId/products?guest_id=1&limit=10&offset=$offset&search=$search&category=$categoryIds&brand_ids=$brandIds&product_id=$productId&product_authors=$authorIds&publishing_houses=$publishingIds&product_type=$productType&offer_type=$offerType');
+          '${AppConstants.clearanceShopSearchProductUri}$sellerId/products?guest_id=1&limit=10&offset=$offset&search=$search&category=$categoryIds&brand_ids=$brandIds&product_id=$productId&product_type=$productType&offer_type=$offerType');
       return ApiResponseModel.withSuccess(response);
     } catch (e) {
       return ApiResponseModel.withError(ApiErrorHandler.getMessage(e));

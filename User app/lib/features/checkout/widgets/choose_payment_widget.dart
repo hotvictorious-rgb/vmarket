@@ -11,8 +11,7 @@ import 'package:flutter_sixvalley_ecommerce/features/checkout/widgets/payment_me
 import 'package:provider/provider.dart';
 
 class ChoosePaymentWidget extends StatelessWidget {
-  final bool onlyDigital;
-  const ChoosePaymentWidget({super.key, required this.onlyDigital});
+  const ChoosePaymentWidget({super.key});
 
   @override
   Widget build(BuildContext context) {
@@ -71,7 +70,7 @@ class ChoosePaymentWidget extends StatelessWidget {
                             context: context,
                             isScrollControlled: true,
                             backgroundColor: Colors.transparent,
-                            builder: (c) => PaymentMethodBottomSheetWidget(onlyDigital: onlyDigital),
+                            builder: (c) => PaymentMethodBottomSheetWidget(),
                           ),
                           child: Container(
                             padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
@@ -102,7 +101,7 @@ class ChoosePaymentWidget extends StatelessWidget {
                         context: context,
                         isScrollControlled: true,
                         backgroundColor: Colors.transparent,
-                        builder: (c) => PaymentMethodBottomSheetWidget(onlyDigital: onlyDigital),
+                        builder: (c) => PaymentMethodBottomSheetWidget(),
                       ),
                       borderRadius: BorderRadius.circular(14),
                       child: Container(

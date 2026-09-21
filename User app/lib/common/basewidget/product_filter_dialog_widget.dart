@@ -4,8 +4,6 @@ import 'package:flutter_sixvalley_ecommerce/common/basewidget/custom_loader_widg
 import 'package:flutter_sixvalley_ecommerce/features/brand/domain/models/brand_model.dart';
 import 'package:flutter_sixvalley_ecommerce/features/category/domain/models/category_model.dart';
 import 'package:flutter_sixvalley_ecommerce/features/product/controllers/seller_product_controller.dart';
-import 'package:flutter_sixvalley_ecommerce/features/search_product/domain/models/author_model.dart';
-import 'package:flutter_sixvalley_ecommerce/features/splash/controllers/splash_controller.dart';
 import 'package:flutter_sixvalley_ecommerce/localization/language_constrants.dart';
 import 'package:flutter_sixvalley_ecommerce/features/brand/controllers/brand_controller.dart';
 import 'package:flutter_sixvalley_ecommerce/features/category/controllers/category_controller.dart';
@@ -15,7 +13,6 @@ import 'package:flutter_sixvalley_ecommerce/utill/custom_themes.dart';
 import 'package:flutter_sixvalley_ecommerce/utill/dimensions.dart';
 import 'package:flutter_sixvalley_ecommerce/utill/images.dart';
 import 'package:flutter_sixvalley_ecommerce/common/basewidget/custom_button_widget.dart';
-import 'package:flutter_sixvalley_ecommerce/common/basewidget/show_custom_snakbar_widget.dart';
 import 'package:provider/provider.dart';
 
 class ProductFilterDialog extends StatefulWidget {
@@ -28,8 +25,6 @@ class ProductFilterDialog extends StatefulWidget {
 }
 
 class ProductFilterDialogState extends State<ProductFilterDialog> {
-  List<int> authors = [];
-  List<int> publishingHouses = [];
 
 
   @override
@@ -46,24 +41,6 @@ class ProductFilterDialogState extends State<ProductFilterDialog> {
       direction: DismissDirection.down,
       onDismissed: (_) => Navigator.pop(context),
       child: Consumer<SearchProductController>(builder: (context, searchProvider, child) {
-        late List<AuthorModel>? authorList = widget.fromShop ? Provider.of<SearchProductController>(context, listen: false).sellerAuthorsList :
-        Provider.of<SearchProductController>(context, listen: false).authorsList;
-
-        late List<AuthorModel>? publishingHouse = widget.fromShop ? Provider.of<SearchProductController>(context, listen: false).sellerPublishingHouseList :
-        Provider.of<SearchProductController>(context, listen: false).publishingHouseList;
-
-        if(authorList!.isNotEmpty) {
-          for (int i =0; i< authorList.length; i++) {
-            authors.add(i);
-          }
-        }
-
-        if(publishingHouse!.isNotEmpty) {
-          for (int i=0; i < publishingHouse.length; i++) {
-            publishingHouses.add(i);
-          }
-        }
-
         return Consumer<CategoryController>(builder: (context, categoryProvider,_) {
           return Consumer<BrandController>(builder: (context, brandProvider,_) {
             return Consumer<SellerProductController>(builder: (context, productController,_) {
@@ -85,15 +62,6 @@ class ProductFilterDialogState extends State<ProductFilterDialog> {
 
                       Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
 
-                        // Opacity(
-                        //   opacity: 0,
-                        //   child: Row(children: [
-                        //     SizedBox(width: 20, child: Image.asset(Images.reset)),
-                        //     Text('${getTranslated('reset', context)}', style: textRegular.copyWith(color: Theme.of(context).primaryColor)),
-                        //     const SizedBox(width: Dimensions.paddingSizeDefault)
-                        //   ]),
-                        // ),
-
                         const SizedBox(width: 64,),
 
                         Row(
@@ -105,8 +73,6 @@ class ProductFilterDialogState extends State<ProductFilterDialog> {
 
 
                        (categoryProvider.selectedCategoryIds.isNotEmpty || brandProvider.selectedBrandIds.isNotEmpty
-                         || (widget.fromShop ? searchProvider.sellerPublishingHouseIds.isNotEmpty : searchProvider.publishingHouseIds.isNotEmpty) ||
-                         (widget.fromShop ? searchProvider.selectedSellerAuthorIds.isNotEmpty : searchProvider.selectedAuthorIds.isNotEmpty)
                         ) ? InkWell(
                           onTap: () async {
                             showDialog(context: context, builder: (ctx)  => const CustomLoaderWidget());
@@ -114,11 +80,6 @@ class ProductFilterDialogState extends State<ProductFilterDialog> {
                             searchProvider.setFilterApply(isFiltered: false);
                             categoryProvider.selectedCategoryIds.clear();
                             brandProvider.selectedBrandIds.clear();
-                            searchProvider.selectedSellerAuthorIds.clear();
-                            searchProvider.sellerPublishingHouseIds.clear();
-                            searchProvider.publishingHouseIds.clear();
-                            searchProvider.selectedAuthorIds.clear();
-                            searchProvider.resetChecked(widget.slug, widget.fromShop);
                             if(context.mounted) {
                               Provider.of<SearchProductController>(context, listen: false).setProductTypeIndex(0, false);
                               Navigator.of(context).pop();
@@ -142,42 +103,6 @@ class ProductFilterDialogState extends State<ProductFilterDialog> {
                           child: Column( crossAxisAlignment: CrossAxisAlignment.start,
                             mainAxisSize: MainAxisSize.min,
                             children: [
-
-                              if(Provider.of<SplashController>(context, listen: false).configModel?.digitalProductSetting == '1')...[
-                                Padding(
-                                  padding: const EdgeInsets.fromLTRB(0, 0, 0, 0),
-                                  child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                                    const SizedBox(height: Dimensions.paddingSizeSmall),
-                                    Text(getTranslated('product_type', context)!,
-                                        style: titilliumRegular.copyWith(fontSize: Dimensions.fontSizeDefault, color: Theme.of(context).textTheme.bodyLarge?.color)),
-                                    const SizedBox(height: Dimensions.paddingSizeExtraSmall),
-
-                                    Container(
-                                      padding: const EdgeInsets.symmetric(horizontal: Dimensions.paddingSizeSmall),
-                                      decoration: BoxDecoration(
-                                        color: Theme.of(context).cardColor,
-                                        border: Border.all(width: .7,color: Theme.of(context).hintColor.withValues(alpha:.3)),
-                                        borderRadius: BorderRadius.circular(Dimensions.paddingSizeExtraSmall),
-                                      ),
-                                      child: DropdownButton<String>(
-                                        value: searchProvider.productTypeIndex == 0 ? 'all_product_search' : searchProvider.productTypeIndex == 1 ? 'physical' : 'digital',
-                                        items: <String>['all_product_search', 'physical', 'digital'].map((String value) {
-                                          return DropdownMenuItem<String>(
-                                            value: value,
-                                            child: Text(getTranslated(value, context)!),
-                                          );
-                                        }).toList(),
-                                        onChanged: (value) {
-                                          searchProvider.setProductTypeIndex(value == 'all_product_search' ? 0 : value == 'physical' ? 1 : 2, true);
-                                        },
-                                        isExpanded: true,
-                                        underline: const SizedBox(),
-                                      ),
-                                    ),
-                                  ]),
-                                ),
-                                const SizedBox(height: Dimensions.paddingSizeSmall),
-                              ],
 
                               // Category
                              Text(getTranslated('CATEGORY', context) ?? '',
@@ -223,15 +148,14 @@ class ProductFilterDialogState extends State<ProductFilterDialog> {
                                 ),
 
                               // Brand
-                              if((searchProvider.productTypeIndex == 0 || searchProvider.productTypeIndex == 1) && brandProvider.brandList.isNotEmpty)...[
+                              if(brandProvider.brandList.isNotEmpty)...[
                                 Padding(padding: const EdgeInsets.only(top: Dimensions.paddingSizeDefault),
                                   child: Text(getTranslated('brand', context)??'',
                                     style: titilliumSemiBold.copyWith(fontSize: Dimensions.fontSizeLarge, color: Theme.of(context).textTheme.bodyLarge?.color))),
 
                                 Divider(color: Theme.of(context).hintColor.withValues(alpha:.25), thickness: .5),
 
-                                if(brandProvider.brandList.isNotEmpty)
-                                  ConstrainedBox(
+                                ConstrainedBox(
                                     constraints: const BoxConstraints(
                                       minHeight: 40.0,
                                       maxHeight: 350.0,
@@ -250,150 +174,6 @@ class ProductFilterDialogState extends State<ProductFilterDialog> {
                                     ),
                                   ),
                               ],
-
-                              //Author
-                              if((authorList.isNotEmpty) && searchProvider.productTypeIndex == 0 || searchProvider.productTypeIndex == 2 )...[
-                                const SizedBox(height: Dimensions.paddingSizeSmall),
-                                Text(getTranslated('author_creator_artist', context) ?? '',
-                                  style: titilliumSemiBold.copyWith(fontSize: Dimensions.fontSizeLarge, color: Theme.of(context).textTheme.bodyLarge?.color)
-                                ),
-                                const SizedBox(height: Dimensions.paddingSizeSmall),
-
-                                Autocomplete<int> (
-                                  optionsBuilder: (TextEditingValue value) {
-                                    if (value.text.isEmpty) {
-                                      return const Iterable<int>.empty();
-                                    } else {
-                                      return authors.where((author) => authorList[author].name!.toLowerCase().contains(value.text.toLowerCase()));
-                                    }
-                                  },
-                                  fieldViewBuilder: (context, controller, node, onComplete) {
-                                    return Container(
-                                      height: 50,
-                                      decoration: BoxDecoration(color: Theme.of(context).highlightColor,
-                                        border: Border.all(width: 1, color: Theme.of(context).hintColor.withValues(alpha:.50)),
-                                        borderRadius: BorderRadius.circular(Dimensions.paddingSizeSmall),
-                                      ),
-                                      child: TextField(
-                                        controller: controller,
-                                        focusNode: node,
-                                        onEditingComplete: onComplete,
-                                        onSubmitted: (value) {
-                                          // resProvider.addPublishingHouse(value);
-                                        },
-                                        decoration: InputDecoration(
-                                          hintText: getTranslated('search_by_author', context),
-                                          hintStyle: textMedium.copyWith(fontSize: Dimensions.fontSizeDefault, color: Theme.of(context).hintColor),
-                                          border: OutlineInputBorder(
-                                              borderRadius: BorderRadius.circular(Dimensions.paddingSizeSmall),
-                                              borderSide: BorderSide.none
-                                          ),
-                                        ),
-                                      ),
-                                    );
-                                  },
-                                  displayStringForOption: (value) =>  authorList[value].name!,
-                                  onSelected: (int value) {
-                                    searchProvider.checkedToggleAuthors(value, widget.fromShop);
-                                  },
-                                ),
-
-                                if(authorList.isNotEmpty)
-                                  ConstrainedBox(
-                                    constraints: const BoxConstraints(
-                                      minHeight: 40.0,
-                                      maxHeight: 350.0,
-                                    ),
-                                    child: SizedBox(
-                                      child: RepaintBoundary(
-                                        child: ListView.builder(
-                                          itemCount: authorList.length,
-                                          shrinkWrap: true,
-                                          itemBuilder: (context, index){
-                                            return Column(children: [
-                                              CategoryFilterItem(title: authorList[index].name,
-                                                checked: authorList[index].isChecked!,
-                                                onTap: () => searchProvider.checkedToggleAuthors(index, widget.fromShop)),
-                                            ],
-                                            );
-                                          }),
-                                      ),
-                                    ),
-                                  ),
-                              ],
-
-                              //Publishing House
-                              if((publishingHouse.isNotEmpty) && searchProvider.productTypeIndex == 0 || searchProvider.productTypeIndex == 2)...[
-                                const SizedBox(height: Dimensions.paddingSizeSmall),
-                                Text( getTranslated('publishing_house', context) ?? '',
-                                  style: titilliumSemiBold.copyWith(fontSize: Dimensions.fontSizeLarge, color: Theme.of(context).textTheme.bodyLarge?.color)
-                                ),
-                                const SizedBox(height: Dimensions.paddingSizeSmall),
-
-                                Autocomplete<int> (
-                                  optionsBuilder: (TextEditingValue value) {
-                                    if (value.text.isEmpty) {
-                                      return const Iterable<int>.empty();
-                                    } else {
-                                      return publishingHouses.where((author) => publishingHouse[author].name!.toLowerCase().contains(value.text.toLowerCase()));
-                                    }
-                                  },
-                                  fieldViewBuilder: (context, controller, node, onComplete) {
-                                    return Container(
-                                      height: 50,
-                                      decoration: BoxDecoration(color: Theme.of(context).highlightColor,
-                                        border: Border.all(width: 1, color: Theme.of(context).hintColor.withValues(alpha:.50)),
-                                        borderRadius: BorderRadius.circular(Dimensions.paddingSizeSmall),
-                                      ),
-                                      child: TextField(
-                                        controller: controller,
-                                        focusNode: node,
-                                        onEditingComplete: onComplete,
-                                        onSubmitted: (value) {
-                                          // resProvider.addPublishingHouse(value);
-                                        },
-                                        decoration: InputDecoration(
-                                          hintText: getTranslated('search_by_publishing_house', context),
-                                          hintStyle: textMedium.copyWith(fontSize: Dimensions.fontSizeDefault, color: Theme.of(context).hintColor),
-                                          border: OutlineInputBorder(
-                                              borderRadius: BorderRadius.circular(Dimensions.paddingSizeSmall),
-                                              borderSide: BorderSide.none
-                                          ),
-                                        ),
-                                      ),
-                                    );
-                                  },
-                                  displayStringForOption: (value) =>  publishingHouse[value].name!,
-                                  onSelected: (int value) {
-                                    searchProvider.checkedTogglePublishingHouse(value, widget.fromShop);
-                                  },
-                                ),
-
-                                if(publishingHouse.isNotEmpty)
-                                  ConstrainedBox(
-                                    constraints: const BoxConstraints(
-                                      minHeight: 40.0,
-                                      maxHeight: 350.0,
-                                    ),
-                                    child: SizedBox(
-                                      child: RepaintBoundary(
-                                        child: ListView.builder(
-                                          itemCount: publishingHouse.length,
-                                          shrinkWrap: true,
-                                          itemBuilder: (context, index){
-                                            return Column(children: [
-                                              CategoryFilterItem(
-                                                title: publishingHouse[index].name,
-                                                checked: publishingHouse[index].isChecked!,
-                                                onTap: () => searchProvider.checkedTogglePublishingHouse(index, widget.fromShop)
-                                              ),
-                                            ],
-                                            );
-                                          }),
-                                      ),
-                                    ),
-                                  ),
-                              ],
                             ],
                           ),
                         ),
@@ -402,9 +182,7 @@ class ProductFilterDialogState extends State<ProductFilterDialog> {
                     Padding(padding: const EdgeInsets.all(Dimensions.paddingSizeSmall),
                       child: CustomButton(
                         buttonText: getTranslated('apply', context),
-                        onTap:
-
-                        brandProvider.selectedBrandIds.isEmpty && categoryProvider.selectedCategoryIds.isEmpty && (widget.fromShop ? searchProvider.selectedSellerAuthorIds.isEmpty && searchProvider.sellerPublishingHouseIds.isEmpty : searchProvider.selectedAuthorIds.isEmpty && searchProvider.publishingHouseIds.isEmpty) && (searchProvider.productTypeIndex != 0 && searchProvider.productTypeIndex != 1 && searchProvider.productTypeIndex != 2) ? null : () {
+                        onTap: brandProvider.selectedBrandIds.isEmpty && categoryProvider.selectedCategoryIds.isEmpty ? null : () {
                           searchProvider.setFilterApply(isFiltered: true);
                           List<int> selectedBrandIdsList =[];
                           List<int> selectedCategoryIdsList =[];
@@ -433,38 +211,26 @@ class ProductFilterDialogState extends State<ProductFilterDialog> {
                             }
                           }
 
-                          if(searchProvider.productTypeIndex == 1  && selectedCategoryIdsList.isEmpty && selectedBrandIdsList.isEmpty && searchProvider.productTypeIndex == 0) {
-                            showCustomSnackBarWidget(getTranslated('select_brand_or_category_first', context), context, snackBarType: SnackBarType.warning);
-                          } else if (searchProvider.productTypeIndex == 2 &&((searchProvider.selectedAuthorIds.isEmpty && searchProvider.publishingHouseIds.isEmpty) || (searchProvider.selectedSellerAuthorIds.isEmpty && searchProvider.sellerPublishingHouseIds.isEmpty)) && searchProvider.productTypeIndex == 0){
-                            showCustomSnackBarWidget(getTranslated('select_author_or_publishing_first', context), context, snackBarType: SnackBarType.warning);
-                          } else{
-                            String selectedCategoryId = selectedCategoryIdsList.isNotEmpty? jsonEncode(selectedCategoryIdsList) : '[]';
-                            String selectedBrandId = selectedBrandIdsList.isNotEmpty? jsonEncode(selectedBrandIdsList) : '[]';
-                            String selectedAuthorId = widget.fromShop ?
-                            searchProvider.selectedSellerAuthorIds.isNotEmpty? jsonEncode(searchProvider.selectedSellerAuthorIds) : '[]' :
-                            searchProvider.selectedAuthorIds.isNotEmpty? jsonEncode(searchProvider.selectedAuthorIds) : '[]';
-                            String selectedPublishingId =  widget.fromShop ?
-                            searchProvider.sellerPublishingHouseIds.isNotEmpty? jsonEncode(searchProvider.sellerPublishingHouseIds) : '[]' :
-                            searchProvider.publishingHouseIds.isNotEmpty? jsonEncode(searchProvider.publishingHouseIds) : '[]';
+                          String selectedCategoryId = selectedCategoryIdsList.isNotEmpty? jsonEncode(selectedCategoryIdsList) : '[]';
+                          String selectedBrandId = selectedBrandIdsList.isNotEmpty? jsonEncode(selectedBrandIdsList) : '[]';
 
-                            if(widget.fromShop) {
-                              productController.getSellerProductList(widget.slug.toString(), 1, "", categoryIds: selectedCategoryId,
-                                brandIds: selectedBrandId, authorIds: selectedAuthorId, publishingIds: selectedPublishingId,
-                                productType:  searchProvider.productTypeIndex == 0 ? 'all' : searchProvider.productTypeIndex == 1 ? 'physical' : 'digital'
-                              ).then((value) {
-                                if(value.response?.statusCode == 200){
-                                  if(context.mounted) {
-                                    Provider.of<SellerProductController>(context, listen: false).setFilterApply(true);
-                                    Navigator.pop(context);
-                                  }
+                          if(widget.fromShop) {
+                            productController.getSellerProductList(widget.slug.toString(), 1, "", categoryIds: selectedCategoryId,
+                              brandIds: selectedBrandId,
+                              productType: searchProvider.productTypeIndex == 1 ? 'physical' : 'all'
+                            ).then((value) {
+                              if(value.response?.statusCode == 200){
+                                if(context.mounted) {
+                                  Provider.of<SellerProductController>(context, listen: false).setFilterApply(true);
+                                  Navigator.pop(context);
                                 }
-                              });
-                            } else {
-                              searchProvider.searchProduct(query : searchProvider.searchController.text.toString(),
-                                offset: 1, brandIds: selectedBrandId, categoryIds: selectedCategoryId, authorIds: selectedAuthorId, publishingIds: selectedPublishingId,
-                                sort: searchProvider.sortText, priceMin: searchProvider.minPriceForFilter.toString(), priceMax: searchProvider.maxPriceForFilter.toString());
-                              Navigator.pop(context);
-                            }
+                              }
+                            });
+                          } else {
+                            searchProvider.searchProduct(query : searchProvider.searchController.text.toString(),
+                              offset: 1, brandIds: selectedBrandId, categoryIds: selectedCategoryId,
+                              sort: searchProvider.sortText, priceMin: searchProvider.minPriceForFilter.toString(), priceMax: searchProvider.maxPriceForFilter.toString());
+                            Navigator.pop(context);
                           }
                         },
 
@@ -534,4 +300,3 @@ class CategoryFilterItem extends StatelessWidget {
     );
   }
 }
-

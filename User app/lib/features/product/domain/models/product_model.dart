@@ -79,8 +79,6 @@ class Product {
   String? _taxModel;
   int? _minQty;
   int? _refundable;
-  String? _digitalProductType;
-  String? _digitalFileReady;
   String? _taxType;
   double? _discount;
   String? _discountType;
@@ -96,8 +94,6 @@ class Product {
   int? _minimumOrderQty;
   int? wishList;
   Brand? brand;
-  ImageFullUrl? digitalFileReadyFullUrl;
-  List<DigitalVariation>? digitalVariation;
   ImageFullUrl? previewFileFullUrl;
   ClearanceSale? clearanceSale;
   int? _status;
@@ -116,8 +112,6 @@ class Product {
         String? unit,
         int? minQty,
         int? refundable,
-        String? digitalProductType,
-        String? digitalFileReady,
         List<String>? images,
         List<ImageFullUrl>? imagesFullUrl,
         String? thumbnail,
@@ -165,12 +159,6 @@ class Product {
     if (refundable != null) {
       _refundable = refundable;
     }
-    if (digitalProductType != null) {
-      _digitalProductType = digitalProductType;
-    }
-    if (digitalFileReady != null) {
-      _digitalFileReady = digitalFileReady;
-    }
     if (reviews != null) {
       _reviews = reviews;
     }
@@ -205,8 +193,6 @@ class Product {
     _minimumOrderQty = minimumOrderQty;
     this.wishList;
     this.brand;
-    digitalVariation;
-    digitalFileReadyFullUrl;
     previewFileFullUrl;
     clearanceSale;
     _status = status;
@@ -228,8 +214,6 @@ class Product {
   String? get unit => _unit;
   int? get minQty => _minQty;
   int? get refundable => _refundable;
-  String? get digitalProductType => _digitalProductType;
-  String? get digitalFileReady => _digitalFileReady;
   List<String>? get images => _images;
   List<ImageFullUrl>? get imagesFullUrl => _imagesFullUrl;
   String? get thumbnail => _thumbnail;
@@ -286,12 +270,6 @@ class Product {
 
     if(json['refundable']!=null){
       _refundable = int.tryParse(json['refundable'].toString()) ?? 1;
-    }
-    if(json['digital_product_type']!=null){
-      _digitalProductType = json['digital_product_type'];
-    }
-    if(json['digital_file_ready']!=null){
-      _digitalFileReady = json['digital_file_ready'];
     }
 
     if(json['images'] != null){
@@ -416,9 +394,6 @@ class Product {
         ? ImageFullUrl.fromJson(json['thumbnail_full_url'])
         : null;
 
-    digitalFileReadyFullUrl = json['digital_file_ready_full_url'] != null
-        ? ImageFullUrl.fromJson(json['digital_file_ready_full_url']) : null;
-
     previewFileFullUrl  = json['preview_file_full_url'] != null
         ? ImageFullUrl.fromJson(json['preview_file_full_url'])
         : null;
@@ -451,8 +426,6 @@ class Product {
     data['unit'] = _unit;
     data['min_qty'] = _minQty;
     data['refundable'] = _refundable;
-    data['digital_product_type'] = _digitalProductType;
-    data['digital_file_ready'] = _digitalFileReady;
     data['images'] = _images;
     if (_imagesFullUrl != null) {
       data['images_full_url'] = _imagesFullUrl!.map((v) => v.toJson()).toList();
@@ -484,7 +457,6 @@ class Product {
     data['minimum_order_qty'] = _minimumOrderQty;
     data['wish_list_count'] = wishList;
     if (brand != null) data['brand'] = brand!.toJson();
-    if (digitalFileReadyFullUrl != null) data['digital_file_ready_full_url'] = digitalFileReadyFullUrl!.toJson();
     if (previewFileFullUrl != null) data['preview_file_full_url'] = previewFileFullUrl!.toJson();
     if (clearanceSale != null) data['clearance_sale'] = clearanceSale!.toJson();
     data['status'] = _status;

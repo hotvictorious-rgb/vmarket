@@ -22,8 +22,6 @@ class SellerProductController extends ChangeNotifier {
     String search = '',
     String? categoryIds = '[]',
     String? brandIds = '[]',
-    String? authorIds = '[]',
-    String? publishingIds = '[]',
     String? productType = 'all',
   }) async {
 
@@ -31,7 +29,6 @@ class SellerProductController extends ChangeNotifier {
       slug, offset.toString(),
       productId, categoryIds : categoryIds,
       brandIds: brandIds, search: search,
-      authorIds: authorIds, publishingIds: publishingIds,
       productType: productType
     );
 

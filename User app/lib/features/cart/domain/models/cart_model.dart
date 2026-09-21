@@ -306,7 +306,6 @@ class CartModelBody{
   Variation? variation;
   int? quantity;
   String? variantKey;
-  double? digitalVariantPrice;
 
   CartModelBody(
     {this.productId,
@@ -314,8 +313,7 @@ class CartModelBody{
       this.color,
       this.variation,
       this.quantity,
-      this.variantKey,
-      this.digitalVariantPrice});
+      this.variantKey});
 
 
   Map<String, dynamic> toJson() {
@@ -326,7 +324,6 @@ class CartModelBody{
     if (variation != null) data['variation'] = variation!.toJson();
     data['quantity'] = quantity;
     data['variant_key'] = variantKey;
-    data['digital_variant_price'] = digitalVariantPrice;
     return data;
   }
 

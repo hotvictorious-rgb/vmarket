@@ -152,7 +152,6 @@ class RouterHelper {
 
 
   static const String signUp = '/sign-up';
-  static const String digitalProduct = '/sign-up';
 
 
 
@@ -359,19 +358,15 @@ class RouterHelper {
     String? userInput,
     required FromPage fromPage,
     String? session,
-    bool fromDigitalProduct = false,
-    int? orderId,
     RouteAction? action,
     String? toNavigateScreen,
     VoidCallback? onLoginSuccess
   }) {
     final params = <String, String>{
       'fromPage': fromPage.name,
-      'fromDigitalProduct': fromDigitalProduct.toString(),
     };
     if (userInput != null) params['userInput'] = Uri.encodeComponent(userInput);
     if (session != null) params['session'] = Uri.encodeComponent(session);
-    if (orderId != null) params['orderId'] = orderId.toString();
     if (toNavigateScreen != null) params['toNavigateScreen'] = toNavigateScreen.toString();
     final query = params.entries.map((e) => '${e.key}=${e.value}').join('&');
     return _navigateRoute(
@@ -489,8 +484,6 @@ class RouterHelper {
     double discount = 0,
     double tax = 0,
     int? sellerId,
-    bool onlyDigital = false,
-    bool hasPhysical = true,
     int quantity = 1,
   }) {
     final params = <String, String>{
@@ -500,8 +493,6 @@ class RouterHelper {
       'shippingFee': shippingFee.toString(),
       'discount': discount.toString(),
       'tax': tax.toString(),
-      'onlyDigital': onlyDigital.toString(),
-      'hasPhysical': hasPhysical.toString(),
       'quantity': quantity.toString(),
     };
 
@@ -1070,8 +1061,6 @@ class RouterHelper {
             qp['userInput'],
             FromPage.values.firstWhere((e) => e.name == qp['fromPage']),
             session: qp['session'],
-            fromDigitalProduct: qp['fromDigitalProduct'] == 'true',
-            orderId: qp['orderId'] != null ? int.tryParse(qp['orderId']!) : null,
             toNavigateScreen: state.uri.queryParameters['toNavigateScreen'],
             onLoginSuccess: extra?['onLoginSuccess'] as VoidCallback?,
           );
@@ -1194,8 +1183,6 @@ class RouterHelper {
             discount: double.tryParse(qp['discount'] ?? '0') ?? 0,
             tax: double.tryParse(qp['tax'] ?? '0') ?? 0,
             sellerId: qp['sellerId'] != null ? int.tryParse(qp['sellerId']!) : null,
-            onlyDigital: qp['onlyDigital'] == 'true',
-            hasPhysical: qp['hasPhysical'] == 'true',
             quantity: int.tryParse(qp['quantity'] ?? '1') ?? 1,
           );
         },

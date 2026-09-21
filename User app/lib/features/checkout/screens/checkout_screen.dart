@@ -39,13 +39,11 @@ class CheckoutScreen extends StatefulWidget {
   final double discount;
   final double tax;
   final int? sellerId;
-  final bool onlyDigital;
-  final bool hasPhysical;
   final int quantity;
 
   const CheckoutScreen({super.key, required this.cartList, this.fromProductDetails = false,
     required this.discount, required this.tax, required this.totalOrderAmount, required this.shippingFee,
-    this.sellerId, this.onlyDigital = false, required this.quantity, required this.hasPhysical});
+    this.sellerId, required this.quantity});
 
 
   @override
@@ -80,7 +78,6 @@ class CheckoutScreenState extends State<CheckoutScreen> {
     Provider.of<CheckoutController>(context, listen: false).resetPaymentMethod();
     Provider.of<CheckoutController>(context, listen: false).initDefaultPaymentMethod(
       splashController,
-      onlyDigital: widget.onlyDigital,
       isUpdate: false,
     );
     Provider.of<ShippingController>(context, listen: false).getChosenShippingMethod(context);
@@ -150,12 +147,10 @@ class CheckoutScreenState extends State<CheckoutScreen> {
                                 CustomButton(onTap: (orderProvider.isLoading || !orderProvider.isAcceptTerms || _isSubmitting) ? null : () async {
                                   if(_isSubmitting) return;
 
-                                  if(orderProvider.addressIndex == null && widget.hasPhysical) {
+                                  if(orderProvider.addressIndex == null) {
                                     RouterHelper.getSavedAddressListRoute(fromGuest: !Provider.of<AuthController>(context, listen: false).isLoggedIn());
                                     showCustomSnackBarWidget(getTranslated('select_a_shipping_address', context), Get.context!, snackBarType: SnackBarType.warning);
-                                  } else if((orderProvider.billingAddressIndex == null && !widget.hasPhysical &&  !_billingAddress)) {
-                                    showCustomSnackBarWidget(getTranslated('you_cant_place_order_of_digital_product_without_billing_address', context), Get.context!, snackBarType: SnackBarType.warning);
-                                  } else if((orderProvider.billingAddressIndex == null && !widget.hasPhysical && !orderProvider.sameAsBilling && _billingAddress) || (orderProvider.billingAddressIndex == null && _billingAddress && !orderProvider.sameAsBilling)){
+                                  } else if(orderProvider.billingAddressIndex == null && _billingAddress && !orderProvider.sameAsBilling) {
                                     RouterHelper.getSavedBillingAddressListRoute(fromGuest: !Provider.of<AuthController>(context, listen: false).isLoggedIn());
                                     showCustomSnackBarWidget(getTranslated('select_a_billing_address', context), Get.context!, snackBarType: SnackBarType.warning);
                                   } else {
@@ -191,7 +186,7 @@ class CheckoutScreenState extends State<CheckoutScreen> {
                                         showModalBottomSheet(
                                           context: context, isScrollControlled: true, backgroundColor: Colors.transparent,
                                           builder: (c) {
-                                            return PaymentMethodBottomSheetWidget(onlyDigital: widget.onlyDigital);
+                                            return PaymentMethodBottomSheetWidget();
                                           },
                                         );
                                       }
@@ -232,7 +227,7 @@ class CheckoutScreenState extends State<CheckoutScreen> {
                         Padding(
                           padding: const EdgeInsets.only(bottom: Dimensions.paddingSizeDefault),
                           child: ShippingDetailsWidget(
-                            hasPhysical: widget.hasPhysical,
+                            hasPhysical: true,
                             billingAddress: _billingAddress,
                             passwordFormKey: passwordFormKey,
                           ),
@@ -251,7 +246,7 @@ class CheckoutScreenState extends State<CheckoutScreen> {
 
                         Padding(
                           padding: const EdgeInsets.symmetric(horizontal: 0),
-                          child: ChoosePaymentWidget(onlyDigital: widget.onlyDigital),
+                          child: ChoosePaymentWidget(),
                         ),
                         SizedBox(height: Dimensions.paddingSizeSmall),
 

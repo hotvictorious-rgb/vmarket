@@ -3,13 +3,7 @@ import 'package:flutter_sixvalley_ecommerce/common/basewidget/discount_tag_widge
 
 import 'package:flutter_sixvalley_ecommerce/features/product_details/controllers/product_details_controller.dart';
 import 'package:flutter_sixvalley_ecommerce/features/product_details/domain/models/product_details_model.dart';
-import 'package:flutter_sixvalley_ecommerce/features/product_details/enums/preview_type.dart';
 import 'package:flutter_sixvalley_ecommerce/features/product_details/screens/product_image_screen.dart';
-import 'package:flutter_sixvalley_ecommerce/features/product_details/widgets/audio_preview.dart';
-import 'package:flutter_sixvalley_ecommerce/features/product_details/widgets/download_preview_file.dart';
-import 'package:flutter_sixvalley_ecommerce/features/product_details/widgets/image_preview.dart';
-import 'package:flutter_sixvalley_ecommerce/features/product_details/widgets/pdf_preview_flutter.dart';
-import 'package:flutter_sixvalley_ecommerce/features/product_details/widgets/video_preview.dart';
 import 'package:flutter_sixvalley_ecommerce/features/splash/controllers/splash_controller.dart';
 import 'package:flutter_sixvalley_ecommerce/localization/language_constrants.dart';
 import 'package:flutter_sixvalley_ecommerce/features/auth/controllers/auth_controller.dart';
@@ -166,41 +160,6 @@ class ProductImageWidget extends StatelessWidget {
                           ])
                       ),
 
-                      (productModel?.productType == 'digital' && productModel?.previewFileFullUrl != null && productModel?.previewFileFullUrl?.path != '') ?
-                      Positioned (right: 10, bottom: 10,
-                        child: InkWell(
-                          onTap: () => _showPreview(productModel?.previewFileFullUrl?.path ?? '', productModel?.name ?? '', productModel?.previewFileFullUrl?.key ?? '', context),
-                          child: Container(
-                            padding: const EdgeInsets.all(Dimensions.paddingSizeExtraSmall),
-                            height: 35, width: 81,
-                            decoration: BoxDecoration(
-                                color: Theme.of(context).cardColor,
-                                borderRadius: BorderRadius.circular(Dimensions.paddingSizeExtraSmall),
-                                boxShadow: const [
-                                  BoxShadow(
-                                    color: Color(0x0D1B7FED), offset: Offset(0, 6),
-                                    blurRadius: 12, spreadRadius: -3,
-                                  ),
-                                  BoxShadow(
-                                    color: Color(0x0D1B7FED), offset: Offset(0, -6),
-                                    blurRadius: 12, spreadRadius: -3,
-                                  ),
-                                ]
-                            ),
-                            child: Row(
-                                children: [
-                                  Image.asset(Images.previewEyeIcon, width: 15),
-                                  const SizedBox(width: Dimensions.paddingSizeExtraSmall),
-
-                                  Text('${getTranslated('preview', context)}',
-                                      style: titilliumRegular.copyWith(fontSize: Dimensions.fontSizeDefault)
-                                  ),
-                                ]
-                            ),
-                          ),
-                        ),
-                      ) : const SizedBox(),
-
                       if(fromFlashDeals)
                       Positioned(
                         top: 16, left: 16,
@@ -284,25 +243,6 @@ class ProductImageWidget extends StatelessWidget {
       ));
     }
     return indicators;
-  }
-
-  void _showPreview(String url, String productName, String fileName, BuildContext context) {
-    PreviewType type = Provider.of<ProductDetailsController>(context, listen: false).getFileType(url);
-
-    showDialog(context: context, builder: (BuildContext context){
-      return Dialog(
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(Dimensions.radiusDefault)),
-        insetPadding: const EdgeInsets.all(Dimensions.paddingSizeSmall),
-        child: (type == PreviewType.pdf) ?
-        PdfPreview(url: url, fileName: productName) : (type == PreviewType.image) ?
-        ImagePreview(url: url, fileName: productName) : (type == PreviewType.video) ?
-        VideoPreview(url: url, fileName: productName) : (type == PreviewType.audio)  ?
-        AudioPreview(url: url, fileName: productName) : (type == PreviewType.others) ?
-        DownloadPreview(url: url, fileName: fileName) :
-        const SizedBox(),
-      );
-    });
-
   }
 
 }

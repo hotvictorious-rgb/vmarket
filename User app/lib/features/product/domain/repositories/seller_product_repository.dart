@@ -16,13 +16,11 @@ class SellerProductRepository extends DataSyncService implements SellerProductRe
       {String search = '',
         String? categoryIds = "[]",
         String? brandIds = "[]",
-        String? authorIds = '[]',
-        String? publishingIds = '[]',
         String? productType,
       }) async {
     try {
       final response = await dioClient.get(
-          '${AppConstants.sellerProductUri}$slug/products?guest_id=1&limit=10&offset=$offset&search=$search&category=$categoryIds&brand_ids=$brandIds&product_id=$productId&product_authors=$authorIds&publishing_houses=$publishingIds&product_type=$productType');
+          '${AppConstants.sellerProductUri}$slug/products?guest_id=1&limit=10&offset=$offset&search=$search&category=$categoryIds&brand_ids=$brandIds&product_id=$productId&product_type=$productType');
       return ApiResponseModel.withSuccess(response);
     } catch (e) {
       return ApiResponseModel.withError(ApiErrorHandler.getMessage(e));

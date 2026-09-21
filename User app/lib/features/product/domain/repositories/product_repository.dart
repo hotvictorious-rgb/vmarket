@@ -174,7 +174,7 @@ class ProductRepository extends DataSyncService implements ProductRepositoryInte
 
 
   @override
-  Future<ApiResponseModel> getClearanceSearchProducts(String query, String? categoryIds, String? brandIds, String? authorIds, String? publishingIds, String? sort, String? priceMin, String? priceMax, int offset, String? productType, String? offerType) async {
+  Future<ApiResponseModel> getClearanceSearchProducts(String query, String? categoryIds, String? brandIds, String? sort, String? priceMin, String? priceMax, int offset, String? productType, String? offerType) async {
 
     try {
       log("===limit==>" );
@@ -182,8 +182,6 @@ class ProductRepository extends DataSyncService implements ProductRepositoryInte
           data: {'search' : base64.encode(utf8.encode(query)),
             'category': categoryIds != null ? categoryIds.toString() : '[]',
             'brand' : brandIds??'[]',
-            'product_authors' : authorIds ?? '[]',
-            'publishing_houses' : publishingIds ?? '[]',
             'sort_by': sort,
             'price_min' : priceMin,
             'price_max' : priceMax,

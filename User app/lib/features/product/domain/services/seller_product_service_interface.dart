@@ -7,8 +7,6 @@ abstract class SellerProductServiceInterface {
       {String search = '',
       String? categoryIds,
       String? brandIds,
-      String? authorIds,
-      String? publishingIds,
       String? productType});
 
   Future<dynamic> getSellerWiseBestSellingProductList(

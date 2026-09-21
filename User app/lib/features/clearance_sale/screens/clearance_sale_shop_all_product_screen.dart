@@ -133,8 +133,6 @@ void applyShopFilter({required BuildContext context, required String sellerId, b
 
 
   (brandProvider.selectedBrandIds.isEmpty && categoryProvider.selectedCategoryIds.isEmpty)
-      && searchProvider.selectedSellerAuthorIds.isEmpty && searchProvider.sellerPublishingHouseIds.isEmpty
-      && (searchProvider.productTypeIndex != 0 && searchProvider.productTypeIndex != 1 && searchProvider.productTypeIndex != 2)
       ? null :
   searchProvider.setFilterApply(isFiltered: true);
   List<int> selectedBrandIdsList =[];
@@ -203,21 +201,17 @@ void applyShopFilter({required BuildContext context, required String sellerId, b
 
   String selectedCategoryId = selectedCategoryIdsList.isNotEmpty? jsonEncode(selectedCategoryIdsList) : '[]';
   String selectedBrandId = selectedBrandIdsList.isNotEmpty? jsonEncode(selectedBrandIdsList) : '[]';
-  String selectedAuthorId = searchProvider.selectedSellerAuthorIds.isNotEmpty? jsonEncode(searchProvider.selectedSellerAuthorIds) : searchProvider.selectedAuthorIds.isNotEmpty? jsonEncode(searchProvider.selectedAuthorIds) : '[]';
-  String selectedPublishingId = searchProvider.sellerPublishingHouseIds.isNotEmpty? jsonEncode(searchProvider.sellerPublishingHouseIds) : searchProvider.publishingHouseIds.isNotEmpty? jsonEncode(searchProvider.publishingHouseIds) : '[]';
 
   if(fromPagination) {
     await shopController.getClearanceSearchProduct(sellerId, offset ?? 1, "", categoryIds: selectedCategoryId,
-        brandIds: selectedBrandId, authorIds: selectedAuthorId, publishingIds: selectedPublishingId,
-        productType:  searchProvider.productTypeIndex == 0 ? 'all' : searchProvider.productTypeIndex == 1 ? 'physical' : 'digital', offerType: 'clearance_sale', fromPaginantion: fromPagination
+        brandIds: selectedBrandId, offerType: 'clearance_sale', fromPaginantion: fromPagination
     );
   } else {
 
     if(context.mounted) Navigator.pop(context);
 
     shopController.getClearanceSearchProduct(sellerId, 1, "", categoryIds: selectedCategoryId,
-        brandIds: selectedBrandId, authorIds: selectedAuthorId, publishingIds: selectedPublishingId,
-        productType:  searchProvider.productTypeIndex == 0 ? 'all' : searchProvider.productTypeIndex == 1 ? 'physical' : 'digital', offerType: 'clearance_sale'
+        brandIds: selectedBrandId, offerType: 'clearance_sale'
     ).then((value) {
       if(value.response?.statusCode == 200){
         shopController.isFilterActive = true;

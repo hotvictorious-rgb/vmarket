@@ -217,7 +217,6 @@ class _CartQuantityControlsWidget extends StatelessWidget {
               maxQty: cartModel!.productInfo?.totalCurrentStock,
               cartModel: cartModel,
               minimumOrderQuantity: cartModel!.productInfo!.minimumOrderQty,
-              digitalProduct: cartModel!.productType == "digital" ? true : false,
             ),
 
             Padding(
@@ -261,7 +260,6 @@ class _CartQuantityControlsWidget extends StatelessWidget {
               maxQty: cartModel!.productInfo?.totalCurrentStock,
               cartModel: cartModel,
               minimumOrderQuantity: cartModel!.productInfo!.minimumOrderQty,
-              digitalProduct: cartModel!.productType == "digital" ? true : false,
             ),
           ],
         ),

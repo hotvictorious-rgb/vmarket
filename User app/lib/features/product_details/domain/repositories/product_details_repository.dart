@@ -1,5 +1,3 @@
-import 'dart:io';
-
 import 'package:flutter_sixvalley_ecommerce/data/datasource/remote/dio/dio_client.dart';
 import 'package:flutter_sixvalley_ecommerce/data/datasource/remote/exception/api_error_handler.dart';
 import 'package:flutter_sixvalley_ecommerce/data/model/api_response.dart';
@@ -66,16 +64,5 @@ class ProductDetailsRepository implements ProductDetailsRepositoryInterface {
     // TODO: implement update
     throw UnimplementedError();
   }
-
-  @override
-  Future<HttpClientResponse> previewDownload(String? url) async {
-    HttpClient client = HttpClient();
-    final response = await client.getUrl(Uri.parse(url!)).then((HttpClientRequest request) {
-      return request.close();
-    },
-    );
-    return response;
-  }
-
 
 }

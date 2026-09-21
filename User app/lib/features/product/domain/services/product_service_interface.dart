@@ -16,7 +16,7 @@ abstract class ProductServiceInterface{
   Future<ApiResponseModel<T>> getMostSearchingProductList<T>({required int offset, required DataSourceEnum source});
   Future<ApiResponseModel<T>> getClearanceAllProductList<T>({required int offset, required DataSourceEnum source});
   Future<ApiResponseModel<T>> getHomeCategoryProductList<T>({required DataSourceEnum source});
-  Future<dynamic> getClearanceSearchProducts(String query, String? categoryIds, String? brandIds, String? authorIds, String? publishingIds, String? sort, String? priceMin, String? priceMax, int offset, String? productType, String? offerType);
+  Future<dynamic> getClearanceSearchProducts(String query, String? categoryIds, String? brandIds, String? sort, String? priceMin, String? priceMax, int offset, String? productType, String? offerType);
   Future<ApiResponseModel<T>> getProductModelByType<T>({required int offset, required ProductType productType, required DataSourceEnum source});
 
 }

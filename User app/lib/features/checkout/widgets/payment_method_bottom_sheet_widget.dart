@@ -13,8 +13,7 @@ import 'package:flutter_sixvalley_ecommerce/features/checkout/widgets/custom_che
 import 'package:provider/provider.dart';
 
 class PaymentMethodBottomSheetWidget extends StatefulWidget {
-  final bool onlyDigital;
-  const PaymentMethodBottomSheetWidget({super.key, required this.onlyDigital});
+  const PaymentMethodBottomSheetWidget({super.key});
 
   @override
   PaymentMethodBottomSheetWidgetState createState() => PaymentMethodBottomSheetWidgetState();

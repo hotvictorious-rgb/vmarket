@@ -27,8 +27,6 @@ class CheckoutController with ChangeNotifier {
   bool _newUser = false;
 
   int _paymentMethodIndex = -1;
-  bool _onlyDigital = true;
-  bool get onlyDigital => _onlyDigital;
   int? get addressIndex => _addressIndex;
   int? get shippingIndex => _shippingIndex;
   bool get isLoading => _isLoading;
@@ -94,7 +92,7 @@ class CheckoutController with ChangeNotifier {
     selectedDigitalPaymentMethodName = '';
   }
 
-  void initDefaultPaymentMethod(SplashController splashController, {bool onlyDigital = false, bool isUpdate = true}) {
+  void initDefaultPaymentMethod(SplashController splashController, {bool isUpdate = true}) {
     final config = splashController.configModel;
     if (config == null) return;
 
@@ -142,16 +140,6 @@ String selectedDigitalPaymentMethodName = '';
     selectedDigitalPaymentMethodName = name;
                 notifyListeners();
   }
-
-
-  void digitalOnly(bool value, {bool isUpdate = false}){
-    _onlyDigital = value;
-    if(isUpdate){
-      notifyListeners();
-    }
-
-  }
-
 
 
 

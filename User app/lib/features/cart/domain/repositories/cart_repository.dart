@@ -54,8 +54,7 @@ class CartRepository extends DataSyncService implements CartRepositoryInterface 
     }
     if(cart.variantKey != null){
       data.addAll({
-        'variant_key': cart.variantKey,
-        'digital_variation_price': cart.digitalVariantPrice
+        'variant_key': cart.variantKey
       });
     }
 
@@ -91,8 +90,7 @@ class CartRepository extends DataSyncService implements CartRepositoryInterface 
     }
     if(cart.variantKey != null){
       data.addAll({
-        'variant_key': cart.variantKey,
-        'digital_variation_price': cart.digitalVariantPrice
+        'variant_key': cart.variantKey
       });
     }
 

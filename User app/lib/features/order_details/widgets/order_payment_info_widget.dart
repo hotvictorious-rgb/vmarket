@@ -49,9 +49,7 @@ class OrderPaymentInfoWidget extends StatelessWidget {
                             || orderProvider.orders?.orderType == 'self_pickup'
                             || (orderProvider.orders?.deliveryType == 'self_pickup')
                             || (orderProvider.orders?.shippingAddressData == null && (orderProvider.orders?.pickupVerificationCode != null && orderProvider.orders!.pickupVerificationCode!.isNotEmpty));
-                        final String displayOtp = isSelfPickup
-                            ? (orderProvider.orders?.pickupVerificationCode ?? '')
-                            : (orderProvider.orders?.verificationCode ?? '');
+                        final String displayOtp = orderProvider.orders?.verificationCode ?? '';
                         final String titleText = isSelfPickup
                             ? (getTranslated('pickup_verification_code', context) ?? 'In-Store Pickup Secret OTP')
                             : (getTranslated('order_verification_code', context) ?? 'Secret Handover OTP');

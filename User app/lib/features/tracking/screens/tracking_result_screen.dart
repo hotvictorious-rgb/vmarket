@@ -20,7 +20,6 @@ class TrackingResultScreen extends StatefulWidget {
 
 class _TrackingResultScreenState extends State<TrackingResultScreen> {
   TrackingHistory? trackingHistory;
-  late bool isDigitalOrder;
   late bool isOrderFailed;
 
   @override
@@ -38,7 +37,6 @@ class _TrackingResultScreenState extends State<TrackingResultScreen> {
           child: Consumer<OrderDetailsController>(
             builder: (context, tracking, child) {
               trackingHistory = tracking.trackOrderDetailsModel?.history;
-              isDigitalOrder = tracking.trackOrderDetailsModel?.isDigitalOrder ?? false;
 
               isOrderFailed = (trackingHistory?.orderCanceled?.status ?? false)
                 || (trackingHistory?.orderFailed?.status ?? false)
@@ -99,8 +97,7 @@ class _TrackingResultScreenState extends State<TrackingResultScreen> {
                         if((trackingHistory?.orderConfirmed!.status ?? true) && (isOrderFailed) && !(trackingHistory?.preparingForShipment?.status ?? false) )
                           CanceledStatusWidget(),
 
-                        if(!isDigitalOrder)
-                          StatusStepperWidget(
+                        StatusStepperWidget(
                             title: '${getTranslated('preparing_for_shipment', context)}',
                             icon: Images.prepareingForShippingIconTimeline,
                             dateTime: trackingHistory?.preparingForShipment?.dateTime,
@@ -109,12 +106,11 @@ class _TrackingResultScreenState extends State<TrackingResultScreen> {
                             isNextTrue: trackingHistory?.orderIsOnTheWay?.status ?? false,
                           ),
 
-                        if(!isDigitalOrder &&  (trackingHistory?.preparingForShipment!.status ?? true) && (isOrderFailed) && !(trackingHistory?.orderIsOnTheWay?.status ?? false))
+                        if((trackingHistory?.preparingForShipment!.status ?? true) && (isOrderFailed) && !(trackingHistory?.orderIsOnTheWay?.status ?? false))
                           CanceledStatusWidget(),
 
 
-                        if(!isDigitalOrder)
-                          StatusStepperWidget(
+                        StatusStepperWidget(
                             title: '${getTranslated('order_is_on_the_way', context)}',
                             statusKey: trackingHistory?.orderIsOnTheWay?.key,
                             icon: Images.onTheWayIconTimeline,
@@ -125,7 +121,7 @@ class _TrackingResultScreenState extends State<TrackingResultScreen> {
                           ),
 
 
-                        if(!isDigitalOrder &&  (trackingHistory?.orderIsOnTheWay!.status ?? true) && (isOrderFailed) && !(trackingHistory?.orderDelivered?.status ?? false))
+                        if((trackingHistory?.orderIsOnTheWay!.status ?? true) && (isOrderFailed) && !(trackingHistory?.orderDelivered?.status ?? false))
                           CanceledStatusWidget(),
 
                         StatusStepperWidget(

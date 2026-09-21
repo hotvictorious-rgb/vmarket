@@ -233,13 +233,10 @@ class SearchFilterBottomSheetState extends State<SearchFilterBottomSheet> {
                               }
 
 
-                              String selectedAuthorId = searchProvider.selectedAuthorIds.isNotEmpty? jsonEncode(searchProvider.selectedAuthorIds) : '[]';
-                              String selectedPublishingId = searchProvider.publishingHouseIds.isNotEmpty? jsonEncode(searchProvider.publishingHouseIds) : '[]';
-
                               String selectedCategoryId = selectedCategoryIdsList.isNotEmpty? jsonEncode(selectedCategoryIdsList) : '[]';
                               String selectedBrandId = selectedBrandIdsList.isNotEmpty? jsonEncode(selectedBrandIdsList) : '[]';
                               searchProvider.searchProduct(query : searchProvider.searchController.text.toString(),
-                                  offset: 1, brandIds: selectedBrandId, categoryIds: selectedCategoryId, authorIds: selectedAuthorId, publishingIds: selectedPublishingId,
+                                  offset: 1, brandIds: selectedBrandId, categoryIds: selectedCategoryId,
                                   sort: searchProvider.sortText, priceMin: _minController?.text, priceMax: _maxController?.text);
                               Navigator.pop(context);
                             },

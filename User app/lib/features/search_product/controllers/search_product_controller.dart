@@ -3,7 +3,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter_sixvalley_ecommerce/data/model/api_response.dart';
 
 import 'package:flutter_sixvalley_ecommerce/features/product/domain/models/product_model.dart';
-import 'package:flutter_sixvalley_ecommerce/features/search_product/domain/models/author_model.dart';
 import 'package:flutter_sixvalley_ecommerce/features/search_product/domain/models/suggestion_product_model.dart';
 import 'package:flutter_sixvalley_ecommerce/features/search_product/domain/services/search_product_service_interface.dart';
 import 'package:flutter_sixvalley_ecommerce/helper/api_checker.dart';
@@ -17,30 +16,9 @@ class SearchProductController with ChangeNotifier {
 
   int _filterIndex = 0;
   List<String> _historyList = [];
-  List<AuthorModel>? _authorsList;
-  List<AuthorModel>? _publishingHouseList;
-  List<AuthorModel>? _sellerAuthorsList;
-  List<AuthorModel>? _sellerPublishingHouseList;
-
 
   int get filterIndex => _filterIndex;
   List<String> get historyList => _historyList;
-  List<AuthorModel>? get authorsList => _authorsList;
-  List<AuthorModel>? get publishingHouseList => _publishingHouseList;
-  List<AuthorModel>? get sellerAuthorsList => _sellerAuthorsList;
-  List<AuthorModel>? get sellerPublishingHouseList => _sellerPublishingHouseList;
-
-  final List<int> _selectedAuthorIds = [];
-  List<int> get selectedAuthorIds => _selectedAuthorIds;
-
-  final List<int> _publishingHouseIds = [];
-  List<int> get publishingHouseIds => _publishingHouseIds;
-
-  List<int> _selectedSellerAuthorIds = [];
-  List<int> get selectedSellerAuthorIds => _selectedSellerAuthorIds;
-
-  List<int> _sellerPublishingHouseIds = [];
-  List<int> get sellerPublishingHouseIds => _sellerPublishingHouseIds;
 
   double minPriceForFilter = AppConstants.minFilter;
   double maxPriceForFilter = AppConstants.maxFilter;
@@ -139,7 +117,7 @@ class SearchProductController with ChangeNotifier {
 
 
   ProductModel? searchedProduct;
-  Future searchProduct({required String query, String? categoryIds, String? brandIds,  String? authorIds, String? publishingIds, String? sort, String? priceMin, String? priceMax, required int offset}) async {
+  Future searchProduct({required String query, String? categoryIds, String? brandIds, String? sort, String? priceMin, String? priceMax, required int offset}) async {
     if(query.isNotEmpty){
       searchController.text = query;
     }
@@ -149,7 +127,7 @@ class SearchProductController with ChangeNotifier {
       notifyListeners();
     }
 
-    ApiResponseModel apiResponse = await searchProductServiceInterface!.getSearchProductList(query, categoryIds, brandIds, authorIds, publishingIds, sort, priceMin, priceMax, offset, _productTypeIndex == 0 ? 'all' : _productTypeIndex == 1 ? 'physical' : 'digital');
+    ApiResponseModel apiResponse = await searchProductServiceInterface!.getSearchProductList(query, categoryIds, brandIds, sort, priceMin, priceMax, offset, _productTypeIndex == 1 ? 'physical' : 'all');
     if (apiResponse.response != null && apiResponse.response!.statusCode == 200) {
       if(offset == 1) {
         searchedProduct = null;
@@ -275,122 +253,10 @@ class SearchProductController with ChangeNotifier {
     _filterIndex = 0;
   }
 
-
-  Future<void> getAuthorList(String? slug) async {
-    ApiResponseModel apiResponse = await searchProductServiceInterface!.getAuthorList(slug);
-
-    if(slug != null && apiResponse.response != null && apiResponse.response!.statusCode == 200) {
-      _sellerAuthorsList = [];
-
-      apiResponse.response!.data.forEach((author) {
-        _sellerAuthorsList!.add(AuthorModel.fromJson(author));
-      });
-    } else if (apiResponse.response != null && apiResponse.response!.statusCode == 200) {
-      _authorsList = [];
-
-      apiResponse.response!.data.forEach((author) {
-        _authorsList!.add(AuthorModel.fromJson(author));
-      });
-    }
-    notifyListeners();
-  }
-
-  Future<void> getPublishingHouseList(String? slug) async {
-    ApiResponseModel apiResponse = await searchProductServiceInterface!.getPublishingHouse(slug);
-    if(slug != null && apiResponse.response != null && apiResponse.response!.statusCode == 200) {
-      _sellerPublishingHouseList = [];
-      apiResponse.response!.data.forEach((house) {
-        _sellerPublishingHouseList!.add(AuthorModel.fromJson(house));
-      });
-    } else if (apiResponse.response != null && apiResponse.response!.statusCode == 200) {
-      _publishingHouseList = [];
-      apiResponse.response?.data.forEach((house) {
-        _publishingHouseList?.add(AuthorModel.fromJson(house));
-      });
-    }
-    notifyListeners();
-  }
-
-  void checkedToggleAuthors(int index, bool formShop) {
-    if(formShop) {
-      _sellerAuthorsList![index].isChecked = !_sellerAuthorsList![index].isChecked!;
-
-      if(_sellerAuthorsList![index].isChecked ?? false) {
-        if(!_selectedSellerAuthorIds.contains(_sellerAuthorsList![index].id)) {
-          _selectedSellerAuthorIds.add(_sellerAuthorsList![index].id!);
-        }
-      }else {
-        _selectedSellerAuthorIds.remove(_sellerAuthorsList![index].id!);
-      }
-    } else {
-      _authorsList![index].isChecked = !_authorsList![index].isChecked!;
-
-      if(_authorsList![index].isChecked ?? false) {
-        if(!_selectedAuthorIds.contains(_authorsList![index].id)) {
-          _selectedAuthorIds.add(_authorsList![index].id!);
-        }
-      }else {
-        _selectedAuthorIds.remove(_authorsList![index].id!);
-      }
-    }
-    notifyListeners();
-  }
-
-
-
-  void checkedTogglePublishingHouse(int index, bool fromShop, {bool fromHomePage = false}) {
-    if(fromHomePage) {
-      _sellerPublishingHouseIds = [];
-      _publishingHouseList?.map((house) {
-        house.isChecked = false;
-      }).toList();
-    }
-
-    if(fromShop) {
-      _sellerPublishingHouseList![index].isChecked = !_sellerPublishingHouseList![index].isChecked!;
-
-      if(_sellerPublishingHouseList![index].isChecked ?? false) {
-        if(!_sellerPublishingHouseIds.contains(_sellerPublishingHouseList![index].id!)) {
-          _sellerPublishingHouseIds.add(_sellerPublishingHouseList![index].id!);
-        }
-      }else {
-        _sellerPublishingHouseIds.remove(_sellerPublishingHouseList![index].id!);
-      }
-    }else{
-      _publishingHouseList![index].isChecked = !_publishingHouseList![index].isChecked!;
-      if(_publishingHouseList![index].isChecked ?? false) {
-        if(!_publishingHouseIds.contains(_publishingHouseList![index].id)) {
-          _publishingHouseIds.add(_publishingHouseList![index].id!);
-        }
-      }else {
-        _publishingHouseIds.remove(_publishingHouseList![index].id!);
-      }
-    }
-    notifyListeners();
-  }
-
   void setProductTypeIndex(int index, bool notify) {
     _productTypeIndex = index;
     if(notify) {
       notifyListeners();
-    }
-  }
-
-  void clearSellerAuthorHouse() {
-    _selectedSellerAuthorIds = [];
-    _sellerAuthorsList =[];
-    _sellerPublishingHouseList = [];
-    _sellerPublishingHouseIds = [];
-  }
-
-  Future<void> resetChecked(String? slug, bool fromShop) async{
-    if(fromShop){
-      getAuthorList(slug);
-      getPublishingHouseList(slug);
-
-    }else{
-      getAuthorList(null);
-      getPublishingHouseList(null);
     }
   }
 

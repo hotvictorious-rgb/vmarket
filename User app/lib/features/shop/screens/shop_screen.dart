@@ -126,12 +126,6 @@ class _TopSellerProductScreenState extends State<TopSellerProductScreen>
     }
 
     Provider.of<SearchProductController>(context, listen: false)
-        .clearSellerAuthorHouse();
-    Provider.of<SearchProductController>(context, listen: false)
-        .getAuthorList(widget.slug);
-    Provider.of<SearchProductController>(context, listen: false)
-        .getPublishingHouseList(widget.slug);
-    Provider.of<SearchProductController>(context, listen: false)
         .setProductTypeIndex(0, false);
     Provider.of<ShopController>(context, listen: false)
         .setShopName(widget.name, notify: false);

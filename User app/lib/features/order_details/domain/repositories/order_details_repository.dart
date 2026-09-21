@@ -1,5 +1,3 @@
-import 'dart:io';
-
 import 'package:flutter_sixvalley_ecommerce/data/datasource/remote/dio/dio_client.dart';
 import 'package:flutter_sixvalley_ecommerce/data/datasource/remote/exception/api_error_handler.dart';
 import 'package:flutter_sixvalley_ecommerce/data/model/api_response.dart';
@@ -7,7 +5,6 @@ import 'package:flutter_sixvalley_ecommerce/features/order_details/domain/reposi
 import 'package:flutter_sixvalley_ecommerce/main.dart';
 import 'package:flutter_sixvalley_ecommerce/features/auth/controllers/auth_controller.dart';
 import 'package:flutter_sixvalley_ecommerce/utill/app_constants.dart';
-import 'dart:async';
 import 'package:provider/provider.dart';
 
 class OrderDetailsRepository implements OrderDetailsRepositoryInterface{
@@ -34,37 +31,6 @@ class OrderDetailsRepository implements OrderDetailsRepositoryInterface{
     }
   }
 
-
-  @override
-  Future<ApiResponseModel> downloadDigitalProduct(int orderDetailsId) async {
-    try {
-      final response = await dioClient!.get('${AppConstants.downloadDigitalProduct}$orderDetailsId?guest_id=${Provider.of<AuthController>(Get.context!, listen: false).getGuestToken()}');
-      return ApiResponseModel.withSuccess(response);
-    } catch (e) {
-      return ApiResponseModel.withError(ApiErrorHandler.getMessage(e));
-    }
-  }
-
-  @override
-  Future<ApiResponseModel> resendOtpForDigitalProduct(int orderId) async {
-    try {
-      final response = await dioClient!.post(AppConstants.otpVResendForDigitalProduct,
-      data: {'order_details_id' : orderId});
-      return ApiResponseModel.withSuccess(response);
-    } catch (e) {
-      return ApiResponseModel.withError(ApiErrorHandler.getMessage(e));
-    }
-  }
-
-  @override
-  Future<ApiResponseModel> otpVerificationForDigitalProduct(int orderId, String otp) async {
-    try {
-      final response = await dioClient!.get('${AppConstants.otpVerificationForDigitalProduct}?order_details_id=$orderId&otp=$otp&guest_id=1',);
-      return ApiResponseModel.withSuccess(response);
-    } catch (e) {
-      return ApiResponseModel.withError(ApiErrorHandler.getMessage(e));
-    }
-  }
 
   @override
   Future<ApiResponseModel> trackYourOrder(String orderId, String phoneNumber) async {
@@ -138,17 +104,4 @@ class OrderDetailsRepository implements OrderDetailsRepositoryInterface{
     }
   }
 
-
-
-
-  @override
-  Future<HttpClientResponse> productDownload(String? url) async {
-      HttpClient client = HttpClient();
-    final response = await client.getUrl(Uri.parse(url!)).then((HttpClientRequest request) {
-          return request.close();
-        },
-      );
-    return response;
-  }
-
-  }
+}

@@ -61,11 +61,9 @@ class _OrderDetailsScreenState extends State<OrderDetailsScreen> {
     if(Provider.of<SplashController>(context, listen: false).configModel == null ) {
       Provider.of<SplashController>(context, listen: false).initConfig(context, null, null).then((value){
         _loadData(Get.context!);
-        Provider.of<OrderDetailsController>(Get.context!, listen: false).digitalOnly(true);
       });
     }else{
       _loadData(context);
-      Provider.of<OrderDetailsController>(context, listen: false).digitalOnly(true);
     }
   }
 
@@ -123,14 +121,6 @@ class _OrderDetailsScreenState extends State<OrderDetailsScreen> {
                     }else{
                       shippingCost = orderProvider.orders?.shippingCost??0;
                     }
-
-                    for (var orderDetails in orderProvider.orderDetails!) {
-                      if(orderDetails.productDetails?.productType != null && orderDetails.productDetails!.productType != "physical" ){
-                        orderProvider.digitalOnly(false, isUpdate: false);
-                      }
-                    }
-
-
 
                     for (var orderDetails in orderProvider.orderDetails!) {
                       itemTotalAmount = itemTotalAmount + (orderDetails.price! * orderDetails.qty!);

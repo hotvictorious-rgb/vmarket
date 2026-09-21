@@ -34,10 +34,7 @@ class _SearchScreenState extends State<SearchScreen> {
     Provider.of<SearchProductController>(context, listen: false).setFilterApply(isFiltered: false, isSorted: false, isUpdate: false);
     Provider.of<CategoryController>(context, listen: false).selectedCategoryIds.clear();
     Provider.of<BrandController>(context, listen: false).selectedBrandIds.clear();
-    Provider.of<SearchProductController>(context, listen: false).selectedSellerAuthorIds.clear();
-    Provider.of<SearchProductController>(context, listen: false).sellerPublishingHouseIds.clear();
-    Provider.of<SearchProductController>(context, listen: false).publishingHouseIds.clear();
-    Provider.of<SearchProductController>(context, listen: false).selectedAuthorIds.clear();
+    Provider.of<SearchProductController>(context, listen: false).setProductTypeIndex(0, false);
     super.initState();
   }
   @override

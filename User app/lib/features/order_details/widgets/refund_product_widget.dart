@@ -1,4 +1,3 @@
-import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter_sixvalley_ecommerce/common/basewidget/custom_directionality_widget.dart';
 import 'package:flutter_sixvalley_ecommerce/common/basewidget/custom_image_widget.dart';
@@ -46,23 +45,10 @@ class _RefundProductWidgetState extends State<RefundProductWidget> {
   }
 
 
-  DigitalVariation? digitalVariation;
-
-  String? downloadMessage;
-  File? downloadedFile;
-
   @override
   Widget build(BuildContext context) {
     ConfigModel? configModel = Provider.of<SplashController>(context, listen: false).configModel;
     final bool isLtr = Provider.of<LocalizationController>(context, listen: false).isLtr;
-
-    if(widget.orderDetailsModel.productDetails != null && widget.orderDetailsModel.variant != null && widget.orderDetailsModel.variant!.isNotEmpty && widget.orderDetailsModel.productDetails?.productType == 'digital') {
-      for(DigitalVariation dv in widget.orderDetailsModel.productDetails!.digitalVariation ?? []) {
-        if(dv.variantKey == widget.orderDetailsModel.variant){
-          digitalVariation = dv;
-        }
-      }
-    }
 
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: Dimensions.paddingSizeDefault),
@@ -372,21 +358,5 @@ class _RefundProductWidgetState extends State<RefundProductWidget> {
     } catch (_) {
       return false;
     }
-  }
-
-  void _downloadProduct(){
-    String url = widget.orderDetailsModel.productDetails!.digitalProductType == 'ready_after_sell'?
-    '${widget.orderDetailsModel.digitalFileAfterSellFullUrl?.path}':
-    '${widget.orderDetailsModel.productDetails?.digitalFileReadyFullUrl?.path}';
-
-    String filename = widget.orderDetailsModel.productDetails!.digitalProductType == 'ready_after_sell'?
-    '${widget.orderDetailsModel.digitalFileAfterSellFullUrl?.key}':
-    '${widget.orderDetailsModel.productDetails?.digitalFileReadyFullUrl?.key}';
-
-    Provider.of<OrderDetailsController>(context, listen: false).productDownload(
-        url: url,
-        fileName: filename,
-        index: widget.index
-    );
   }
 }

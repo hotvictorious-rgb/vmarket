@@ -207,8 +207,6 @@ class Products {
   String? unit;
   int? minQty;
   int? refundable;
-  String? digitalProductType;
-  String? digitalFileReady;
   String? images;
   String? colorImage;
   String? thumbnail;
@@ -221,8 +219,6 @@ class Products {
   String? attributes;
   String? choiceOptions;
   String? variation;
-  List<String>? digitalProductFileTypes;
-  List<Null>? digitalProductExtensions;
   int? published;
   double? unitPrice;
   int? purchasePrice;
@@ -255,7 +251,6 @@ class Products {
   List<ColorImagesFullUrl>? colorImagesFullUrl;
   ThumbnailFullUrl? metaImageFullUrl;
   List<ImageFullUrl>? imagesFullUrl;
-  ThumbnailFullUrl? digitalFileReadyFullUrl;
   List<Null>? translations;
   List<Storage>? storage;
   SeoInfo? seoInfo;
@@ -276,8 +271,6 @@ class Products {
         this.unit,
         this.minQty,
         this.refundable,
-        this.digitalProductType,
-        this.digitalFileReady,
         this.images,
         this.colorImage,
         this.thumbnail,
@@ -290,8 +283,6 @@ class Products {
         this.attributes,
         this.choiceOptions,
         this.variation,
-        this.digitalProductFileTypes,
-        this.digitalProductExtensions,
         this.published,
         this.unitPrice,
         this.purchasePrice,
@@ -324,7 +315,6 @@ class Products {
         this.colorImagesFullUrl,
         this.metaImageFullUrl,
         this.imagesFullUrl,
-        this.digitalFileReadyFullUrl,
         this.translations,
         this.storage,
         this.seoInfo,
@@ -345,8 +335,6 @@ class Products {
     unit = json['unit'];
     minQty = json['min_qty'];
     refundable = json['refundable'];
-    digitalProductType = json['digital_product_type'];
-    digitalFileReady = json['digital_file_ready'];
     images = json['images'];
     colorImage = json['color_image'];
     thumbnail = json['thumbnail'];
@@ -359,8 +347,6 @@ class Products {
     attributes = json['attributes'];
     choiceOptions = json['choice_options'];
     variation = json['variation'];
-    // [AI] Safely parse digitalProductFileTypes without fragile cast
-    digitalProductFileTypes = (json['digital_product_file_types'] is List) ? (json['digital_product_file_types'] as List).map((e) => e.toString()).toList() : [];
     published = json['published'];
     unitPrice = json['unit_price'];
     purchasePrice = json['purchase_price'];
@@ -407,9 +393,6 @@ class Products {
         imagesFullUrl!.add(ImageFullUrl.fromJson(v));
       });
     }
-    digitalFileReadyFullUrl = json['digital_file_ready_full_url'] != null
-        ? ThumbnailFullUrl.fromJson(json['digital_file_ready_full_url'])
-        : null;
     if (json['storage'] != null) {
       storage = <Storage>[];
       json['storage'].forEach((v) {
@@ -443,8 +426,6 @@ class Products {
     data['unit'] = unit;
     data['min_qty'] = minQty;
     data['refundable'] = refundable;
-    data['digital_product_type'] = digitalProductType;
-    data['digital_file_ready'] = digitalFileReady;
     data['images'] = images;
     data['color_image'] = colorImage;
     data['thumbnail'] = thumbnail;
@@ -457,7 +438,6 @@ class Products {
     data['attributes'] = attributes;
     data['choice_options'] = choiceOptions;
     data['variation'] = variation;
-    data['digital_product_file_types'] = digitalProductFileTypes;
     data['published'] = published;
     data['unit_price'] = unitPrice;
     data['purchase_price'] = purchasePrice;
@@ -499,10 +479,6 @@ class Products {
     if (imagesFullUrl != null) {
       data['images_full_url'] =
           imagesFullUrl!.map((v) => v.toJson()).toList();
-    }
-    if (digitalFileReadyFullUrl != null) {
-      data['digital_file_ready_full_url'] =
-          digitalFileReadyFullUrl!.toJson();
     }
     if (storage != null) {
       data['storage'] = storage!.map((v) => v.toJson()).toList();

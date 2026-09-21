@@ -14,7 +14,7 @@ class SearchProductRepository implements SearchProductRepositoryInterface{
   SearchProductRepository({required this.dioClient, required this.sharedPreferences});
 
   @override
-  Future<ApiResponseModel> getSearchProductList(String query, String? categoryIds, String? brandIds, String? authorIds, String? publishingIds, String? sort, String? priceMin, String? priceMax, int offset, String? productType) async {
+  Future<ApiResponseModel> getSearchProductList(String query, String? categoryIds, String? brandIds, String? sort, String? priceMin, String? priceMax, int offset, String? productType) async {
 
     try {
       log("===limit==>" );
@@ -23,8 +23,6 @@ class SearchProductRepository implements SearchProductRepositoryInterface{
           'search' : base64.encode(utf8.encode(query)),
           'category': categoryIds??'[]',
           'brand' : brandIds??'[]',
-          'product_authors' : authorIds ?? '[]',
-          'publishing_houses' : publishingIds ?? '[]',
           'sort_by': sort,
           'price_min' : priceMin,
           'price_max' : priceMax,
@@ -103,26 +101,5 @@ class SearchProductRepository implements SearchProductRepositoryInterface{
   Future update(Map<String, dynamic> body, int id) {
     // TODO: implement update
     throw UnimplementedError();
-  }
-
-
-  @override
-  Future<ApiResponseModel> getAuthorList(String? slug) async {
-    try {
-      final response = await dioClient!.get('${AppConstants.getDigitalAuthorList}&slug=$slug');
-      return ApiResponseModel.withSuccess(response);
-    } catch (e) {
-      return ApiResponseModel.withError(ApiErrorHandler.getMessage(e));
-    }
-  }
-
-  @override
-  Future<ApiResponseModel> getPublishingHouse(String? slug) async {
-    try {
-      final response = await dioClient!.get('${AppConstants.getDigitalPublishingHouse}&slug=$slug');
-      return ApiResponseModel.withSuccess(response);
-    } catch (e) {
-      return ApiResponseModel.withError(ApiErrorHandler.getMessage(e));
-    }
   }
 }

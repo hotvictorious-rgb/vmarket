@@ -276,8 +276,6 @@ class ShopController extends ChangeNotifier {
     String search = '',
     String? categoryIds = '[]',
     String? brandIds = '[]',
-    String? authorIds = '[]',
-    String? publishingIds = '[]',
     String? productType = 'all',
     String? offerType = 'clearance_sale',
     bool fromPaginantion = false
@@ -294,7 +292,6 @@ class ShopController extends ChangeNotifier {
         sellerId, offset.toString(),
         productId, categoryIds : categoryIds,
         brandIds: brandIds, search: search,
-        authorIds: authorIds, publishingIds: publishingIds,
         productType: productType,
         offerType: offerType
     );

@@ -17,9 +17,8 @@ class CartQuantityButton extends StatelessWidget {
   final int index;
   final int? maxQty;
   final int? minimumOrderQuantity;
-  final bool? digitalProduct;
   const CartQuantityButton({super.key, required this.isIncrement, required this.quantity, required this.index,
-    required this.maxQty,required this.cartModel, this.minimumOrderQuantity, this.digitalProduct});
+    required this.maxQty,required this.cartModel, this.minimumOrderQuantity});
 
   @override
   Widget build(BuildContext context) {
@@ -29,7 +28,7 @@ class CartQuantityButton extends StatelessWidget {
             onTap: () {
               if (!isIncrement && quantity! > minimumOrderQuantity!) {
                 cartProvider.updateCartProductQuantity(cartModel!.id, cartModel!.quantity!-1, context, false, index);
-              } else if (isIncrement && (maxQty == null || quantity! < maxQty! || digitalProduct!)) {
+              } else if (isIncrement && (maxQty == null || quantity! < maxQty!)) {
                 cartProvider.updateCartProductQuantity(cartModel!.id, cartModel!.quantity!+1, context, true, index);
               }else if(isIncrement && maxQty != null && quantity! >= maxQty!){
                 showCustomSnackBarWidget(getTranslated('out_of_stock', context), context, snackBarType: SnackBarType.warning);

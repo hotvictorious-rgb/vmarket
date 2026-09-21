@@ -1,13 +1,11 @@
 class TrackOrderDetailsModel {
   TrackingHistory? history;
-  bool? isDigitalOrder;
 
-  TrackOrderDetailsModel({this.history, this.isDigitalOrder});
+  TrackOrderDetailsModel({this.history});
 
   TrackOrderDetailsModel.fromJson(Map<String, dynamic> json) {
     history =
     json['history'] != null ? TrackingHistory.fromJson(json['history']) : null;
-    isDigitalOrder = json['is_digital_order'];
   }
 
   Map<String, dynamic> toJson() {
@@ -15,7 +13,6 @@ class TrackOrderDetailsModel {
     if (history != null) {
       data['history'] = history!.toJson();
     }
-    data['is_digital_order'] = isDigitalOrder;
     return data;
   }
 }

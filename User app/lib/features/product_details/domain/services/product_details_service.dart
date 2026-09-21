@@ -1,4 +1,3 @@
-import 'dart:io';
 import 'package:flutter_sixvalley_ecommerce/features/product_details/domain/repositories/product_details_repository_interface.dart';
 import 'package:flutter_sixvalley_ecommerce/features/product_details/domain/services/product_details_service_interface.dart';
 
@@ -20,11 +19,6 @@ class ProductDetailsService implements ProductDetailsServiceInterface{
   @override
   Future getSharableLink(String productID) async{
     return await productDetailsRepositoryInterface.getSharableLink(productID);
-  }
-
-  @override
-  Future<HttpClientResponse> previewDownload(String url) async{
-    return await productDetailsRepositoryInterface.previewDownload(url);
   }
 
 }

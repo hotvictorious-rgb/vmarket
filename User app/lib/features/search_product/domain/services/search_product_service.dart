@@ -16,8 +16,8 @@ class SearchProductService implements SearchProductServiceInterface{
   }
 
   @override
-  Future getSearchProductList(String query, String? categoryIds, String? brandIds, String? authorIds, String? publishingIds, String? sort, String? priceMin, String? priceMax, int offset, String? productType) async{
-    return await searchProductRepositoryInterface.getSearchProductList(query, categoryIds, brandIds, authorIds, publishingIds, sort, priceMin, priceMax, offset, productType);
+  Future getSearchProductList(String query, String? categoryIds, String? brandIds, String? sort, String? priceMin, String? priceMax, int offset, String? productType) async{
+    return await searchProductRepositoryInterface.getSearchProductList(query, categoryIds, brandIds, sort, priceMin, priceMax, offset, productType);
   }
 
   @override
@@ -29,16 +29,5 @@ class SearchProductService implements SearchProductServiceInterface{
   Future saveSearchProductName(String searchAddress) async{
     return await searchProductRepositoryInterface.saveSearchProductName(searchAddress);
   }
-
-  @override
-  Future getAuthorList(String? slug){
-    return searchProductRepositoryInterface.getAuthorList(slug);
-  }
-
-  @override
-  Future getPublishingHouse(String? slug) {
-    return searchProductRepositoryInterface.getPublishingHouse(slug);
-  }
-
 
 }

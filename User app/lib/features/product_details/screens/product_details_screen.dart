@@ -44,9 +44,6 @@ class ProductDetails extends StatefulWidget {
 
 class _ProductDetailsState extends State<ProductDetails> {
 
-  List<TextSpan> _publishingHouse = [];
-  List<TextSpan> _authors = [];
-
   Size widgetSize = const Size(100, 400);
 
   Future<void> _loadData( BuildContext context) async {
@@ -112,20 +109,6 @@ class _ProductDetailsState extends State<ProductDetails> {
           onRefresh: () async => _loadData(context),
           child: Consumer<ProductDetailsController>(
             builder: (context, details, child) {
-              if(details.productDetailsModel?.publishingHouse != null && details.productDetailsModel!.publishingHouse!.isNotEmpty) {
-                _publishingHouse = [];
-                for(String? houseName in details.productDetailsModel!.publishingHouse!) {
-                  _publishingHouse.add(TextSpan(text: '${houseName!} ' , style: titilliumSemiBold.copyWith(fontSize: Dimensions.fontSizeDefault)));
-                }
-              }
-
-              if(details.productDetailsModel?.authors != null && details.productDetailsModel!.authors!.isNotEmpty) {
-                _authors = [];
-                for(String? authorName in details.productDetailsModel!.authors!) {
-                  _authors.add(TextSpan(text: '${authorName!} ', style: titilliumSemiBold.copyWith(fontSize: Dimensions.fontSizeDefault)));
-                }
-              }
-
 
               return SingleChildScrollView(
                 physics: const BouncingScrollPhysics(),
@@ -205,43 +188,6 @@ class _ProductDetailsState extends State<ProductDetails> {
                       productModel: details.productDetailsModel,
                       averageRatting: details.productDetailsModel?.averageReview ?? "0",
                     ),
-
-                    (details.productDetailsModel?.productType == 'digital' && (_publishingHouse.isNotEmpty || _authors.isNotEmpty)) ?
-                    Padding(
-                      padding: const EdgeInsets.symmetric(horizontal : Dimensions.homePagePadding),
-                      child: RichText(text: TextSpan(
-                          text: '',
-                          style: Theme.of(context).textTheme.titleMedium!.copyWith(
-                            fontWeight: FontWeight.w400,
-                            fontSize: Dimensions.fontSizeDefault,
-                            color: Theme.of(context).textTheme.bodyLarge?.color,
-                          ),
-                          children: [
-                            if (details.productDetailsModel?.publishingHouse != null && details.productDetailsModel!.publishingHouse!.isNotEmpty)
-                              TextSpan( text: "${getTranslated('publishing_housec', context)}", style: titilliumRegular.copyWith(
-                                  fontSize: Dimensions.fontSizeDefault,
-                                  color: Theme.of(context).hintColor,
-                              )),
-
-                            ..._publishingHouse,
-
-                            if (details.productDetailsModel?.publishingHouse != null && details.productDetailsModel!.publishingHouse!.isNotEmpty)
-                              WidgetSpan(
-                                child: Container(
-                                  margin: const EdgeInsets.symmetric(horizontal: 8.0),
-                                  height: 15.0, width: 1.0,
-                                  color: Theme.of(context).primaryColor.withValues(alpha:0.50),
-                                ),
-                              ),
-
-                            if (details.productDetailsModel?.authors != null && details.productDetailsModel!.authors!.isNotEmpty)
-                              TextSpan( text: "${getTranslated('author', context)}",
-                                  style: titilliumRegular.copyWith(fontSize: Dimensions.fontSizeDefault, color: Theme.of(context).hintColor)
-                              ),
-                            ..._authors,
-                          ],
-                      )),
-                    ) : const SizedBox(),
 
                     ReviewAndSpecificationSectionWidget(
                       averageReview: double.tryParse(details.productDetailsModel?.averageReview ?? '0'),

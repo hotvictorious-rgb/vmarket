@@ -113,8 +113,6 @@ import 'package:flutter_sixvalley_ecommerce/common/enums/local_caches_type_enum.
   static const String digitalPayment = '/api/v1/digital-payment';
   static const String sellerWiseCategoryList = '/api/v1/categories?shop_slug=';
   static const String sellerWiseBrandList = '/api/v1/brands?shop_slug=';
-  static const String getDigitalAuthorList = '/api/v1/products/digital-author-list?guest_id=1';
-  static const String getDigitalPublishingHouse = '/api/v1/products/digital-publishing-house-list?guest_id=1';
   static const String verifyProfileInfo = '/api/v1/auth/verify-profile-info';
   static const String firebaseAuthTokenStore = '/api/v1/auth/firebase-auth-token-store';
   static const String productRestockRequest = '/api/v1/cart/product-restock-request';
@@ -153,9 +151,6 @@ import 'package:flutter_sixvalley_ecommerce/common/enums/local_caches_type_enum.
   static const String contactUsUri = '/api/v1/contact-us';
   static const String attributeUri = '/api/v1/attributes';
   static const String availableCoupon = '/api/v1/coupon/applicable-list';
-  static const String downloadDigitalProduct = '/api/v1/customer/order/digital-product-download/';
-  static const String otpVResendForDigitalProduct = '/api/v1/customer/order/digital-product-download-otp-resend';
-  static const String otpVerificationForDigitalProduct = '/api/v1/customer/order/digital-product-download-otp-verify';
   static const String selectCartItemsUri = '/api/v1/cart/select-cart-items';
   static const String generateInvoice = '/api/v1/customer/order/generate-invoice?order_id=';
 

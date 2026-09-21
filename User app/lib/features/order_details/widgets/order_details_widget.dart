@@ -1,6 +1,3 @@
-import 'dart:io';
-import 'dart:isolate';
-import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:flutter_sixvalley_ecommerce/common/basewidget/custom_asset_image_widget.dart';
 import 'package:flutter_sixvalley_ecommerce/common/basewidget/custom_directionality_widget.dart';
@@ -42,43 +39,15 @@ class OrderDetailsWidget extends StatefulWidget {
 }
 
 class _OrderDetailsWidgetState extends State<OrderDetailsWidget> {
-  final ReceivePort _port = ReceivePort();
-
 
   @override
   void initState() {
     super.initState();
-
-    IsolateNameServer.registerPortWithName(_port.sendPort, 'downloader_send_port');
-    _port.listen((dynamic data) {
-      setState((){ });
-    });
-
-//    FlutterDownloader.registerCallback(downloadCallback);
   }
-
-  void downloadCallback(String id, int status, int progress) async {
-    final SendPort? send = IsolateNameServer.lookupPortByName('downloader_send_port');
-    send?.send([id, status, progress]);
-  }
-
-
-  DigitalVariation? digitalVariation;
-
-  String? downloadMessage;
-  File? downloadedFile;
 
   @override
   Widget build(BuildContext context) {
     final bool isLtr = Provider.of<LocalizationController>(context, listen: false).isLtr;
-
-    if(widget.orderDetailsModel.productDetails != null && widget.orderDetailsModel.variant != null && widget.orderDetailsModel.variant!.isNotEmpty && widget.orderDetailsModel.productDetails?.productType == 'digital') {
-      for(DigitalVariation dv in widget.orderDetailsModel.productDetails!.digitalVariation ?? []) {
-        if(dv.variantKey == widget.orderDetailsModel.variant){
-          digitalVariation = dv;
-        }
-      }
-    }
 
     return Container(
       color: Theme.of(context).cardColor,
@@ -171,51 +140,6 @@ class _OrderDetailsWidgetState extends State<OrderDetailsWidget> {
 
 
             Column(crossAxisAlignment: CrossAxisAlignment.end, children: [
-              widget.orderDetailsModel.productDetails?.productType =='digital' && widget.paymentStatus == 'paid' ?
-              Consumer<OrderDetailsController>(
-                builder: (context, orderProvider, _) {
-                  return InkWell(onTap : () async {
-                    if(widget.orderDetailsModel.productDetails!.digitalProductType == 'ready_after_sell' &&
-                        widget.orderDetailsModel.digitalFileAfterSell == null) {
-                      showCustomSnackBarWidget(getTranslated('product_not_uploaded_yet', context), context, snackBarType: SnackBarType.success);
-                    } else {
-                      if(Provider.of<AuthController>(context, listen: false).isLoggedIn() && widget.isGuest == 0){
-                        _downloadProduct();
-                      }else{
-                        orderProvider.downloadDigitalProduct(orderDetailsId: widget.orderDetailsModel.id!).then((value){
-                          if(value.response?.statusCode == 200){
-
-                          }
-                        });
-                      }
-                    }
-                  },
-                    child: Align(alignment: Alignment.centerRight,
-                      child: Builder(
-                        builder: (context) {
-                          return Container(
-                            padding: const EdgeInsets.symmetric(horizontal: Dimensions.paddingSizeSmall, vertical: Dimensions.paddingSizeEight),
-                            decoration: BoxDecoration(borderRadius: BorderRadius.circular(5),
-                              color: Theme.of(context).primaryColor.withValues(alpha: 0.10)),
-                            alignment: Alignment.center,
-                            child: (orderProvider.isDownloaodLoading &&  orderProvider.downloaodIndex == widget.index) ?
-                            SizedBox(height: 15,  width: 15, child: CircularProgressIndicator(color: Theme.of(context).primaryColor, strokeWidth: 2)) :
-                            Center(child:  Row(mainAxisAlignment: MainAxisAlignment.center, children: [
-                              CustomAssetImageWidget(Images.productDownloadIcon, height: 15, width: 15, color: Theme.of(context).primaryColor),
-                            ]))
-                          );
-                        }
-                      )
-                    ),
-                  );
-                }
-              ) : const SizedBox(),
-
-              SizedBox(height: (widget.orderDetailsModel.productDetails != null &&
-                  widget.orderDetailsModel.productDetails?.productType =='digital' && widget.paymentStatus == 'paid') ?
-              Dimensions.paddingSizeSmall : 0),
-
-
               ///Refund
               ///
               // Consumer<RefundController>(builder: (context,refund,_) {
@@ -382,22 +306,6 @@ class _OrderDetailsWidgetState extends State<OrderDetailsWidget> {
     } catch (_) {
       return false;
     }
-  }
-
-  void _downloadProduct(){
-    String url = widget.orderDetailsModel.productDetails!.digitalProductType == 'ready_after_sell'?
-    '${widget.orderDetailsModel.digitalFileAfterSellFullUrl?.path}':
-    '${widget.orderDetailsModel.productDetails?.digitalFileReadyFullUrl?.path}';
-
-    String filename = widget.orderDetailsModel.productDetails!.digitalProductType == 'ready_after_sell'?
-    '${widget.orderDetailsModel.digitalFileAfterSellFullUrl?.key}':
-    '${widget.orderDetailsModel.productDetails?.digitalFileReadyFullUrl?.key}';
-
-    Provider.of<OrderDetailsController>(context, listen: false).productDownload(
-        url: url,
-        fileName: filename,
-        index: widget.index
-    );
   }
 }
 

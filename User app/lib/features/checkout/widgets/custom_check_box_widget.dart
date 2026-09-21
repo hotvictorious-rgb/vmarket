@@ -8,12 +8,11 @@ import 'package:provider/provider.dart';
 
 class CustomCheckBoxWidget extends StatelessWidget {
   final int index;
-  final bool isDigital;
   final String? icon;
   final String name;
   final String title;
   final double? padding;
-  const CustomCheckBoxWidget({super.key,  required this.index, this.isDigital =  false, this.icon, required this.name, required this.title, this.padding});
+  const CustomCheckBoxWidget({super.key,  required this.index, this.icon, required this.name, required this.title, this.padding});
 
   @override
   Widget build(BuildContext context) {
