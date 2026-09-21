@@ -251,6 +251,19 @@ class DeliveryManController extends Controller
                     $deliveryManWallet->current_balance += $charge;
                     $deliveryManWallet->save();
                 }
+
+                if ($charge > 0) {
+                    DeliveryManTransaction::create([
+                        'delivery_man_id' => $deliveryMan['id'],
+                        'user_id' => 0,
+                        'user_type' => 'admin',
+                        'credit' => $charge,
+                        'transaction_id' => \Ramsey\Uuid\Uuid::uuid4(),
+                        'transaction_type' => 'deliveryman_charge',
+                        'created_at' => now(),
+                        'updated_at' => now(),
+                    ]);
+                }
             }
 
             if ($request['status'] == 'delivered' && $order['seller_id'] != null) {
@@ -467,7 +480,9 @@ class DeliveryManController extends Controller
         $dateType = $request['type'] ?? "all";
         $delivery_man = $request->delivery_man;
 
-        $order = Order::with(['seller.shop', 'customer'])->where(['delivery_man_id' => $delivery_man->id, 'payment_status' => 'paid']);
+        // [AI] Driver earnings are earned exclusively upon completed delivery handover.
+        $order = Order::with(['seller.shop', 'customer'])
+            ->where(['delivery_man_id' => $delivery_man->id, 'order_status' => 'delivered']);
 
         if (isset($request->start_date) && isset($request->end_date)) {
             $start_date = Carbon::parse($request['start_date'])->format('Y-m-d 00:00:00');
@@ -478,20 +493,20 @@ class DeliveryManController extends Controller
             $start_time = Carbon::now()->startOfDay()->format('Y-m-d H:i:s');
             $end_time = Carbon::now()->endOfDay()->format('Y-m-d H:i:s');
 
-            $order->whereBetween('created_at', [$start_time, $end_time]);
+            $order->whereBetween('updated_at', [$start_time, $end_time]);
         } elseif ($dateType == 'ThisWeekEarn') {
             $start_date = Carbon::now()->startOfWeek()->format('Y-m-d H:i:s');
             $end_data = Carbon::now()->endOfWeek()->format('Y-m-d H:i:s');
 
-            $order->whereBetween('created_at', [$start_date, $end_data]);
+            $order->whereBetween('updated_at', [$start_date, $end_data]);
         } elseif ($dateType == 'ThisMonthEarn') {
             $start_date = date('Y-m-01 00:00:00');
             $end_data = date('Y-m-t 23:59:59');
 
-            $order->whereBetween('created_at', [$start_date, $end_data]);
+            $order->whereBetween('updated_at', [$start_date, $end_data]);
         }
 
-        $orders = $order->latest()->paginate($request['limit'], ['*'], 'page', $request['offset']);
+        $orders = $order->latest('updated_at')->paginate($request['limit'], ['*'], 'page', $request['offset']);
 
         $data['total_size'] = $orders->total();
         $data['limit'] = $request['limit'];
@@ -534,10 +549,13 @@ class DeliveryManController extends Controller
     {
         $delivery_man = $request['delivery_man'];
         $orders = Order::where('delivery_man_id', $delivery_man->id);
-        $data = DeliverymanWallet::where('delivery_man_id', $delivery_man->id)->first();
+        $data = DeliverymanWallet::firstOrCreate(
+            ['delivery_man_id' => $delivery_man->id],
+            ['current_balance' => 0, 'cash_in_hand' => 0, 'pending_withdraw' => 0, 'total_withdraw' => 0]
+        );
 
-        $data['total_delivery_count'] = $orders->count();
-        $data['delivered_orders'] = $orders->where('order_status', 'delivered')->count();
+        $data['total_delivery_count'] = (clone $orders)->count();
+        $data['delivered_orders'] = (clone $orders)->where('order_status', 'delivered')->count();
         return response()->json($data);
     }
 

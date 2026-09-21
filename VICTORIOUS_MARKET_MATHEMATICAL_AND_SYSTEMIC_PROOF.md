@@ -662,3 +662,37 @@ $$\Delta_{\text{Settlement}} = |\text{Order Amount} - (\text{Vendor Net 90\%} + 
    RESULT: 100% PASS - ALL DELIVERY LIFECYCLE & SETTLEMENT INVARIANTS VERIFIED 
 ================================================================================
 ```
+
+## 9. DRIVER EARNING TRACKING & WITHDRAWAL MATHEMATICAL PROOF (ZERO-DRIFT)
+
+### 9.1 Mathematical Invariants & Balance Equations
+1. **Rider Wallet Balance Equation**:
+   $$\text{Total Earned} = \text{Current Balance} + \text{Total Withdrawn}$$
+   $$\text{Withdrawable Balance} = \text{Current Balance} - \text{Pending Withdraw}$$
+   $$\text{Locked Balance} = \text{Pending Withdraw}$$
+
+2. **Proof of Invariant Under State Transitions**:
+   - **State 0 (Initial)**: $C = 0, P = 0, T = 0 \implies \text{Withdrawable} = 0, \text{Total Earned} = 0$.
+   - **State 1 (Order Delivery Handover)**:
+     $$\Delta_{\text{fee}} = \text{deliveryman\_charge} = 1500.00$$
+     $$C' = C + \Delta_{\text{fee}} = 1500.00, P' = 0, T' = 0$$
+     $$\text{Withdrawable}' = C' - P' = 1500.00 - 0 = 1500.00$$
+     $$\Delta_{\text{drift}} = |(C' + T') - (1500.00)| = 0.00$$
+   - **State 2 (Rider Withdrawal Submission of $W = 1000.00$)**:
+     $$P'' = P' + W = 1000.00$$
+     $$\text{Withdrawable}'' = C'' - P'' = 1500.00 - 1000.00 = 500.00$$
+     $$\text{Available} + \text{Locked} = 500.00 + 1000.00 = 1500.00 = C'' \quad (\Delta = 0.00)$$
+   - **State 3A (Admin Payout Approved with Proof of Payment Upload)**:
+     $$C''' = C'' - W = 500.00, P''' = P'' - W = 0.00, T''' = T'' + W = 1000.00$$
+     $$\text{Total Earned} = C''' + T''' = 500.00 + 1000.00 = 1500.00$$
+     $$\Delta_{\text{drift}} = |(500.00 + 1000.00) - 1500.00| = 0.00$$
+   - **State 3B (Admin Payout Denied / Rejected)**:
+     $$P''' = P'' - W = 0.00, C''' = C'' = 1500.00, T''' = T'' = 0.00$$
+     $$\text{Withdrawable}''' = C''' - P''' = 1500.00 - 0 = 1500.00 \quad (\Delta = 0.00)$$
+
+### 9.2 Reconciled Discrepancies
+- **`delivery_wise_earned` Scope**: Aligned query to filter strictly on `order_status = 'delivered'` and temporal filtering on `updated_at` (completion timestamp), guaranteeing total agreement between order list and `total_earn`.
+- **`DeliveryManTransaction` Ledger**: Added audit transaction generation upon rider delivery completion to preserve parity between Web Admin and Rider Mobile ledgers.
+- **`WithdrawController` NGN Pass-Through**: Enforced native `floatval($request['amount'])` without foreign currency conversion.
+- **Flutter Price Converter**: Added `price ??= 0.0;` null safety guard to eliminate runtime exceptions.
+

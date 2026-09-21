@@ -28,7 +28,8 @@ class WithdrawController extends Controller
 
         $deliveryMan = $request->delivery_man;
         $parentId = $request->delivery_man->seller_id;
-        $requestedAmount = Convert::usd($request['amount']);
+        // [AI] Victorious Market operates natively in NGN. Delivery charges and wallet balances are stored in NGN.
+        $requestedAmount = floatval($request['amount']);
 
         return DB::transaction(function () use ($deliveryMan, $parentId, $requestedAmount, $request) {
             $wallet = DeliverymanWallet::where('delivery_man_id', $deliveryMan['id'])->lockForUpdate()->first();
