@@ -31,69 +31,56 @@
                 </div>
 
                 <div class="row g-2" id="order_stats">
-                    <div class="col-lg-4">
-                        <div class="card h-100 d-flex justify-content-center align-items-center">
-                            <div class="card-body d-flex flex-column gap-10 align-items-center justify-content-center">
-                                <img width="48" src="{{dynamicAsset(path: 'public/assets/back-end/img/cc.png')}}" alt="">
-                                <h3 class="for-card-count mb-0 fz-24">{{ $deliveryMan->wallet ? setCurrencySymbol(amount: usdToDefaultCurrency(amount:$deliveryMan->wallet->cash_in_hand), currencyCode: getCurrencyCode()) : setCurrencySymbol(amount: 0, currencyCode: getCurrencyCode()) }}</h3>
+                    <div class="col-sm-6 col-lg-3">
+                        <div class="card card-body h-100 justify-content-center py-5">
+                            <div class="d-flex gap-2 justify-content-between align-items-center">
+                                <div class="d-flex flex-column align-items-start">
+                                    <h3 class="mb-1 fz-24">{{ $deliveryMan->wallet ? setCurrencySymbol(amount: usdToDefaultCurrency(amount:$deliveryMan->wallet->current_balance), currencyCode: getCurrencyCode()) : setCurrencySymbol(amount:0, currencyCode: getCurrencyCode())}}</h3>
+                                    <div class="text-capitalize mb-0">{{translate('current_balance')}}</div>
+                                </div>
+                                <div>
+                                    <img width="40" src="{{dynamicAsset(path: 'public/assets/back-end/img/withdraw-icon.png')}}" alt="">
                                 </div>
                             </div>
                         </div>
                     </div>
-                    <div class="col-lg-8">
-                        <div class="row g-2">
-                            <div class="col-md-6">
-                                <div class="card card-body h-100 justify-content-center py-5">
-                                    <div class="d-flex gap-2 justify-content-between align-items-center">
-                                        <div class="d-flex flex-column align-items-start">
-                                            <h3 class="mb-1 fz-24">{{ $deliveryMan->wallet ? setCurrencySymbol(amount: usdToDefaultCurrency(amount:$deliveryMan->wallet->current_balance), currencyCode: getCurrencyCode()) : setCurrencySymbol(amount:0, currencyCode: getCurrencyCode())}}</h3>
-                                            <div class="text-capitalize mb-0">{{translate('current_balance')}}</div>
-                                        </div>
-                                        <div>
-                                            <img width="40" src="{{dynamicAsset(path: 'public/assets/back-end/img/withdraw-icon.png')}}" alt="">
-                                        </div>
-                                    </div>
+                    <div class="col-sm-6 col-lg-3">
+                        <div class="card card-body h-100 justify-content-center py-5">
+                            <div class="d-flex gap-2 justify-content-between align-items-center">
+                                <div class="d-flex flex-column align-items-start">
+                                    <h3 class="mb-1 fz-24">{{ $deliveryMan->wallet ? setCurrencySymbol(amount: usdToDefaultCurrency(amount:$deliveryMan->wallet->total_withdraw), currencyCode: getCurrencyCode()) : setCurrencySymbol(amount:0, currencyCode: getCurrencyCode())}}</h3>
+                                    <div class="text-capitalize mb-0">{{translate('total_withdrawn')}}</div>
+                                </div>
+                                <div>
+                                    <img width="40" src="{{dynamicAsset(path: 'public/assets/back-end/img/aw.png')}}" alt="">
                                 </div>
                             </div>
-                            <div class="col-md-6">
-                                <div class="card card-body h-100 justify-content-center py-5">
-                                    <div class="d-flex gap-2 justify-content-between align-items-center">
-                                        <div class="d-flex flex-column align-items-start">
-                                            <h3 class="mb-1 fz-24">{{ $deliveryMan->wallet ? setCurrencySymbol(amount: usdToDefaultCurrency(amount:$deliveryMan->wallet->total_withdraw), currencyCode: getCurrencyCode()) : setCurrencySymbol(amount:0, currencyCode: getCurrencyCode())}}</h3>
-                                            <div class="text-capitalize mb-0">{{translate('total_withdrawn')}}</div>
-                                        </div>
-                                        <div>
-                                            <img width="40" src="{{dynamicAsset(path: 'public/assets/back-end/img/aw.png')}}" alt="">
-                                        </div>
-                                    </div>
+                        </div>
+                    </div>
+                    <div class="col-sm-6 col-lg-3">
+                        <div class="card card-body h-100 justify-content-center py-5">
+                            <div class="d-flex gap-2 justify-content-between align-items-center">
+                                <div class="d-flex flex-column align-items-start">
+                                    <h3 class="mb-1 fz-24">{{$deliveryMan->wallet ? setCurrencySymbol(amount: usdToDefaultCurrency(amount:$deliveryMan->wallet->pending_withdraw), currencyCode: getCurrencyCode()) : setCurrencySymbol(amount:0, currencyCode: getCurrencyCode())}}</h3>
+                                    <div class="text-capitalize mb-0">{{translate('pending_withdraw')}}</div>
+                                </div>
+                                <div>
+                                    <img width="40" class="mb-2" src="{{dynamicAsset(path: 'public/assets/back-end/img/pw.png')}}" alt="">
                                 </div>
                             </div>
-                            <div class="col-md-6">
-                                <div class="card card-body h-100 justify-content-center py-5">
-                                    <div class="d-flex gap-2 justify-content-between align-items-center">
-                                        <div class="d-flex flex-column align-items-start">
-                                            <h3 class="mb-1 fz-24">{{$deliveryMan->wallet ? setCurrencySymbol(amount: usdToDefaultCurrency(amount:$deliveryMan->wallet->pending_withdraw), currencyCode: getCurrencyCode()) : setCurrencySymbol(amount:0, currencyCode: getCurrencyCode())}}</h3>
-                                            <div class="text-capitalize mb-0">{{translate('pending_withdraw')}}</div>
-                                        </div>
-                                        <div>
-                                            <img width="40" class="mb-2" src="{{dynamicAsset(path: 'public/assets/back-end/img/pw.png')}}" alt="">
-                                        </div>
-                                    </div>
+                        </div>
+                    </div>
+                    <div class="col-sm-6 col-lg-3">
+                        <div class="card card-body h-100 justify-content-center py-5">
+                            <div class="d-flex gap-2 justify-content-between align-items-center">
+                                <div class="d-flex flex-column align-items-start">
+                                    <h3 class="mb-1 fz-24">
+                                        {{ empty($withdrawableBalance) ? setCurrencySymbol(amount: 0, currencyCode: getCurrencyCode()) : setCurrencySymbol(amount: usdToDefaultCurrency(amount: $withdrawableBalance), currencyCode: getCurrencyCode()) }}
+                                    </h3>
+                                    <div class="text-capitalize mb-0">{{translate('withdrawable_balance')}}</div>
                                 </div>
-                            </div>
-                            <div class="col-md-6">
-                                <div class="card card-body h-100 justify-content-center py-5">
-                                    <div class="d-flex gap-2 justify-content-between align-items-center">
-                                        <div class="d-flex flex-column align-items-start">
-                                            <h3 class="mb-1 fz-24">
-                                                {{ empty($withdrawableBalance) ? setCurrencySymbol(amount: 0, currencyCode: getCurrencyCode()) : setCurrencySymbol(amount: usdToDefaultCurrency(amount: $withdrawableBalance), currencyCode: getCurrencyCode()) }}
-                                            </h3>
-                                            <div class="text-capitalize mb-0">{{translate('withdrawable_balance')}}</div>
-                                        </div>
-                                        <div>
-                                            <img width="40" class="mb-2" src="{{dynamicAsset(path: 'public/assets/back-end/img/withdraw.png')}}" alt="">
-                                        </div>
-                                    </div>
+                                <div>
+                                    <img width="40" class="mb-2" src="{{dynamicAsset(path: 'public/assets/back-end/img/withdraw.png')}}" alt="">
                                 </div>
                             </div>
                         </div>
@@ -168,38 +155,4 @@
         </div>
     </div>
 
-    <div class="modal fade py-5" id="exampleModal" tabindex="-1">
-        <div class="modal-dialog">
-            <div class="modal-content">
-                <div class="modal-header">
-                    <h5 class="modal-title">{{translate('cash_Withdraw')}}</h5>
-                    <button id="invoice_close" type="button" class="close" data-dismiss="modal" aria-label="Close">
-                        <span aria-hidden="true">&times;</span>
-                    </button>
-                </div>
-                <div class="modal-body row">
-                    <div class="col-md-12 mb-3">
-                        <div class="d-flex flex-wrap gap-2 mt-3 title-color" id="chosen_price_div">
-                            <div class="product-description-label">{{translate('total_Cash_In_Hand')}}: </div>
-                            <div class="product-price">
-                                <strong>{{ $deliveryMan->wallet ? setCurrencySymbol(amount: usdToDefaultCurrency(amount:$deliveryMan->wallet->cash_in_hand), currencyCode: getCurrencyCode()) : 0  }}</strong>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="col-md-12 mb-3">
-                        <input type="number" class="form-control" name="amount" placeholder="Enter Amount to withdraw">
-                    </div>
-                    <div class="col-md-12 mb-3">
-                        <div class="mt-4 text-center">
-                            <form action="">
-                                <button type="button" class="btn btn-danger" data-dismiss="modal">{{translate('close')}}</button>
-                                <button class="btn btn--primary text-capitalize" data-toggle="modal" data-target="#exampleModal">{{translate('collect_cash')}}</button>
-                            </form>
-                        </div>
-                        <hr class="non-printable">
-                    </div>
-                </div>
-            </div>
-        </div>
-    </div>
 @endsection

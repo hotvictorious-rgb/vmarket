@@ -75,15 +75,15 @@
                         <div class="card h-100 d-flex justify-content-center align-items-center py-xl-4">
                             <span class="tooltip-icon position-absolute top-0 inset-inline-end-0 p-3"
                                 data-bs-toggle="tooltip"
-                                data-bs-title="{{ translate('the_delivery_man_has_this_amount_in_hand') . '.' }}">
+                                data-bs-title="{{ translate('the_delivery_man_has_pending_withdrawal_requests') . '.' }}">
                                 <i class="fi fi-sr-info"></i>
                             </span>
                             <div class="card-body d-flex flex-column gap-2 align-items-center justify-content-center">
-                                <img src="{{ asset('public/assets/back-end/img/cash-in-hand.png') }}" width="40"
+                                <img src="{{ dynamicAsset('public/assets/back-end/img/pw.png') }}" width="40"
                                     class="mb-2" alt="">
-                                <h4 class="text-capitalize mb-2">{{ translate('cash_in_hand') }}</h4>
+                                <h4 class="text-capitalize mb-2">{{ translate('pending_withdraw') }}</h4>
                                 <h2 class="business-analytics__title h1 fw-bold">
-                                    {{ $deliveryMan->wallet ? setCurrencySymbol(amount: usdToDefaultCurrency(amount: $deliveryMan->wallet->cash_in_hand), currencyCode: getCurrencyCode()) : setCurrencySymbol(amount: 0, currencyCode: getCurrencyCode()) }}
+                                    {{ $deliveryMan->wallet ? setCurrencySymbol(amount: usdToDefaultCurrency(amount: $deliveryMan->wallet->pending_withdraw), currencyCode: getCurrencyCode()) : setCurrencySymbol(amount: 0, currencyCode: getCurrencyCode()) }}
                                 </h2>
                             </div>
                         </div>

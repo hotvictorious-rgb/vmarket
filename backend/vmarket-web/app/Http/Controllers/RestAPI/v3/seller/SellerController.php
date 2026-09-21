@@ -735,7 +735,7 @@ class SellerController extends Controller
     protected function getCountOfDeliveryManTransactionNotClearWithSeller($sellerId): int
     {
         return DeliveryMan::with('wallet')->whereHas('wallet', function ($query) {
-            return $query->where('current_balance', '!=', 0)->where('cash_in_hand', '!=', 0);
+            return $query->where('current_balance', '!=', 0);
         })->where('seller_id', $sellerId)->get()->count();
     }
 
