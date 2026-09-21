@@ -40,12 +40,10 @@ class NotificationHelper {
             Navigator.of(Get.context!).pushReplacement(MaterialPageRoute(builder: (_) => const NotificationScreen(fromNotification: true)));
           } else if(payload.type == 'order') {
             Navigator.of(Get.context!).pushReplacement(MaterialPageRoute(builder: (_) => OrderDetailsScreen(orderModel: OrderModel(id: payload.orderId), fromNotification: true)));
-          } else if(payload.type  == 'wallet_withdraw') {
+          } else if(payload.type == 'wallet_withdraw') {
             Navigator.of(Get.context!).pushReplacement(MaterialPageRoute(builder: (_) =>  WalletScreen(fromNotification: true, selectedIndex:  payload.messageKey == 'withdraw_request_status_message' ? 1 : 0 )));
-          } else if(payload.type  == 'wallet' && payload.messageKey == 'cash_collect_by_seller_message'){
-            Navigator.of(Get.context!).pushReplacement(MaterialPageRoute(builder: (_) =>  WalletScreen(fromNotification: true, selectedIndex:  payload.messageKey == 'cash_collect_by_seller_message' ? 3 : 0)));
-          } else if(payload.type  == 'wallet'){
-            Navigator.of(Get.context!).pushReplacement(MaterialPageRoute(builder: (_) =>  WalletScreen(fromNotification: true, selectedIndex:  payload.messageKey == 'cash_collect_by_admin_message' ? 3 : 0)));
+          } else if(payload.type == 'wallet'){
+            Navigator.of(Get.context!).pushReplacement(MaterialPageRoute(builder: (_) => const WalletScreen(fromNotification: true, selectedIndex: 0)));
           } else {
             Navigator.of(Get.context!).pushReplacement(MaterialPageRoute(builder: (_) => const NotificationScreen(fromNotification: true)));
           }
@@ -133,12 +131,10 @@ class NotificationHelper {
         Navigator.of(Get.context!).pushReplacement(MaterialPageRoute(builder: (_) => const NotificationScreen(fromNotification: true)));
       } else if(payload?.type == 'order'){
         Navigator.of(Get.context!).pushReplacement(MaterialPageRoute(builder: (_) => OrderDetailsScreen(orderModel: OrderModel(id: payload?.orderId), fromNotification: true)));
-      } else if(payload?.type  == 'wallet_withdraw'){
+      } else if(payload?.type == 'wallet_withdraw'){
         Navigator.of(Get.context!).pushReplacement(MaterialPageRoute(builder: (_) =>  WalletScreen(fromNotification: true, selectedIndex:  payload?.messageKey == 'withdraw_request_status_message' ? 1 : 0 )));
-      } else if(payload?.type  == 'wallet' && payload?.messageKey == 'cash_collect_by_seller_message'){
-        Navigator.of(Get.context!).pushReplacement(MaterialPageRoute(builder: (_) =>  WalletScreen(fromNotification: true, selectedIndex:  payload?.messageKey == 'cash_collect_by_seller_message' ? 3 : 0)));
-      } else if(payload?.type  == 'wallet'){
-        Navigator.of(Get.context!).pushReplacement(MaterialPageRoute(builder: (_) =>  WalletScreen(fromNotification: true, selectedIndex:  payload?.messageKey == 'cash_collect_by_admin_message' ? 3 : 0)));
+      } else if(payload?.type == 'wallet'){
+        Navigator.of(Get.context!).pushReplacement(MaterialPageRoute(builder: (_) => const WalletScreen(fromNotification: true, selectedIndex: 0)));
       }else {
         Navigator.of(Get.context!).pushReplacement(MaterialPageRoute(builder: (_) => const NotificationScreen(fromNotification: true)));
       }

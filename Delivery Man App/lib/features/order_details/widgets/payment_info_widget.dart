@@ -29,7 +29,6 @@ class PaymentInfoWidget extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final bool isDark = Get.isDarkMode;
-    final bool isPrepaid = isPaid || (totalPrice != null && totalPrice! <= 0);
 
     return Container(
       padding: EdgeInsets.symmetric(horizontal: Dimensions.paddingSizeDefault, vertical: Dimensions.paddingSizeSmall),
@@ -56,7 +55,7 @@ class PaymentInfoWidget extends StatelessWidget {
                   Padding(
                     padding: EdgeInsets.symmetric(horizontal: Dimensions.paddingSizeSmall, vertical: Dimensions.paddingSizeSmall),
                     child: Text(
-                      isPrepaid ? 'Prepaid Order'.tr : 'Cash on Delivery'.tr,
+                      'Prepaid Order'.tr,
                       style: rubikBold.copyWith(
                         color: isDark ? Theme.of(context).hintColor.withValues(alpha: 0.8) : Theme.of(context).primaryColor,
                         fontSize: Dimensions.fontSizeLarge,
@@ -74,21 +73,17 @@ class PaymentInfoWidget extends StatelessWidget {
             width: double.infinity,
             padding: const EdgeInsets.all(14),
             decoration: BoxDecoration(
-              color: isPrepaid
-                  ? const Color(0xFF00A884).withValues(alpha: 0.08)
-                  : const Color(0xFF6A1B9A).withValues(alpha: 0.08),
+              color: const Color(0xFF00A884).withValues(alpha: 0.08),
               borderRadius: BorderRadius.circular(12),
               border: Border.all(
-                color: isPrepaid
-                    ? const Color(0xFF00A884).withValues(alpha: 0.25)
-                    : const Color(0xFF6A1B9A).withValues(alpha: 0.25),
+                color: const Color(0xFF00A884).withValues(alpha: 0.25),
               ),
             ),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  isPrepaid ? 'Amount to Collect from Customer'.tr : 'Amount to Collect from Customer'.tr,
+                  'Amount to Collect from Customer'.tr,
                   style: rubikRegular.copyWith(
                     color: isDark ? Colors.white70 : Colors.black87,
                     fontSize: Dimensions.fontSizeDefault,
@@ -99,18 +94,16 @@ class PaymentInfoWidget extends StatelessWidget {
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
                     Text(
-                      isPrepaid ? PriceConverter.convertPrice(0) : PriceConverter.convertPrice(totalPrice ?? 0),
+                      PriceConverter.convertPrice(0),
                       style: rubikBold.copyWith(
                         fontSize: 22,
-                        color: isPrepaid ? const Color(0xFF00A884) : const Color(0xFF6A1B9A),
+                        color: const Color(0xFF00A884),
                       ),
                     ),
                     Container(
                       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
                       decoration: BoxDecoration(
-                        color: isPrepaid
-                            ? const Color(0xFF00A884).withValues(alpha: 0.15)
-                            : const Color(0xFF6A1B9A).withValues(alpha: 0.15),
+                        color: const Color(0xFF00A884).withValues(alpha: 0.15),
                         borderRadius: BorderRadius.circular(8),
                       ),
                       child: Text(

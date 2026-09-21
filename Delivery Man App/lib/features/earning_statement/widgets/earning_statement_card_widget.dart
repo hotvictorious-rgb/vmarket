@@ -31,8 +31,8 @@ class EarningStatementCardWidget extends StatelessWidget {
             Text('${'order'.tr}# ${ordersWiseEarned!.id}',
               style: rubikMedium.copyWith(fontSize: Dimensions.fontSizeDefault),),
             Row(children: [Padding(padding:  EdgeInsets.symmetric(horizontal: Dimensions.paddingSizeSmall),
-              child: const SizedBox(width: 20, child: CustomAssetImageWidget(Images.cash))),
-              Text('${'by'.tr} ${'cash'.tr}',
+              child: const SizedBox(width: 20, child: CustomAssetImageWidget(Images.paymentInfo))),
+              Text('Online (Prepaid)'.tr,
                 style: rubikMedium.copyWith(color: Get.isDarkMode?
                 Theme.of(context).hintColor.withValues(alpha:.5) :Theme.of(context).primaryColor))])],),
 

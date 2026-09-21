@@ -96,11 +96,7 @@ class _SplashScreenState extends State<SplashScreen> {
                 break;
 
                 case 'wallet' : {
-                  if(widget.body?.type  == 'wallet' && widget.body?.messageKey  == 'cash_collect_by_seller_message'){
-                    Get.offAll(() => WalletScreen(fromNotification: true, selectedIndex:  widget.body?.messageKey == 'cash_collect_by_seller_message' ? 3 : 0));
-                  }else{
-                    Get.offAll(() => WalletScreen(fromNotification: true, selectedIndex:  widget.body?.messageKey == 'cash_collect_by_admin_message' ? 3 : 0));
-                  }
+                  Get.offAll(() => const WalletScreen(fromNotification: true, selectedIndex: 0));
                 }
                 break;
 
