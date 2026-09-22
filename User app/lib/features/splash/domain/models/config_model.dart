@@ -80,6 +80,16 @@ class ConfigModel {
   int? systemImageFileUploadMaxSize;
   int? systemGeneralFileUploadMaxSize;
 
+  // [AI] Victorious MARKET V1 Cashback / Loyalty config — sourced from backend, never hardcoded.
+  // The app MUST read these fields and display them dynamically so admin changes reflect immediately.
+  int? loyaltyPointStatus;                       // 1 = enabled, 0 = disabled
+  double? loyaltyPointExchangeRate;              // 1 point = N naira (e.g. 1.0)
+  double? loyaltyPointMinimumPoint;              // Minimum points before redeem is shown
+  double? loyaltyPointMaxOrderRedemptionPercentage; // Max % of order value redeemable
+  double? loyaltyPointEarnRatePercent;           // % of order total awarded as points on payment
+  List<String>? cashbackEligibleChannels;        // e.g. ["delivery", "pickup"]
+
+
 
   ConfigModel(
       {this.brandSetting,
@@ -158,8 +168,16 @@ class ConfigModel {
         this.productMinUnitPriceRange,
         this.systemTaxIncludeStatus,
         this.systemImageFileUploadMaxSize,
-        this.systemGeneralFileUploadMaxSize
+        this.systemGeneralFileUploadMaxSize,
+        // [AI] Cashback / Loyalty
+        this.loyaltyPointStatus,
+        this.loyaltyPointExchangeRate,
+        this.loyaltyPointMinimumPoint,
+        this.loyaltyPointMaxOrderRedemptionPercentage,
+        this.loyaltyPointEarnRatePercent,
+        this.cashbackEligibleChannels,
       });
+
 
   ConfigModel.fromJson(Map<String, dynamic> json) {
     brandSetting = json['brand_setting'];
@@ -339,6 +357,18 @@ class ConfigModel {
     systemTaxIncludeStatus = int.tryParse(json['system_tax_include_status'].toString());
     systemImageFileUploadMaxSize = int.tryParse(json['system_image_file_upload_max_size'].toString());
     systemGeneralFileUploadMaxSize = int.tryParse(json['system_general_file_upload_max_size'].toString());
+
+    // [AI] Cashback / Loyalty config fields — backend-driven, app never hardcodes %
+    loyaltyPointStatus = int.tryParse(json['loyalty_point_status']?.toString() ?? '0') ?? 0;
+    loyaltyPointExchangeRate = double.tryParse(json['loyalty_point_exchange_rate']?.toString() ?? '1.0') ?? 1.0;
+    loyaltyPointMinimumPoint = double.tryParse(json['loyalty_point_minimum_point']?.toString() ?? '0') ?? 0.0;
+    loyaltyPointMaxOrderRedemptionPercentage = double.tryParse(json['loyalty_point_max_order_redemption_percentage']?.toString() ?? '10') ?? 10.0;
+    loyaltyPointEarnRatePercent = double.tryParse(json['loyalty_point_earn_rate_percent']?.toString() ?? '5.0') ?? 5.0;
+    if (json['cashback_eligible_channels'] is List) {
+      cashbackEligibleChannels = (json['cashback_eligible_channels'] as List).map((e) => e.toString()).toList();
+    } else {
+      cashbackEligibleChannels = ['delivery', 'pickup']; // safe default until backend responds
+    }
   }
 
 }

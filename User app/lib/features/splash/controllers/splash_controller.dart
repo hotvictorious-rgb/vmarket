@@ -48,6 +48,16 @@ class SplashController extends ChangeNotifier {
   List<BusinessPageModel>? _businessPages;
   List<BusinessPageModel>? get businessPages => _businessPages;
 
+  // [AI] Victorious MARKET Cashback / Loyalty Helpers
+  bool get isCashbackEnabled => _configModel?.loyaltyPointStatus == 1;
+  double get cashbackEarnRatePercent => _configModel?.loyaltyPointEarnRatePercent ?? 5.0;
+  bool isChannelCashbackEligible(String channel) {
+    if (!isCashbackEnabled) return false;
+    final channels = _configModel?.cashbackEligibleChannels;
+    if (channels == null || channels.isEmpty) return true;
+    return channels.contains(channel);
+  }
+
   Future<bool> initConfig(
     BuildContext context,
       Function(ConfigModel? configModel)? onLocalDataReceived,

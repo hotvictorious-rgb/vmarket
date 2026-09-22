@@ -10,16 +10,24 @@ use Illuminate\Support\Facades\DB;
 /**
  * [AI] CashbackRedemption Model
  *
- * Tracks pessimistic point reservations for Victorious Points (Cashback) redemptions at checkout.
- * States:
- *   - 'reserved': Points are locked during CheckoutIntent creation; cannot be spent by concurrent checkouts.
- *   - 'captured': Points permanently deducted upon verified Paystack payment settlement.
- *   - 'released': Reservation released back to customer pool due to cancellation, stock failure, or payment failure.
- *   - 'expired': Reservation timed out along with stale CheckoutIntent.
+ * Tracks Victorious Points (Cashback) transactions for both fulfilment channels:
+ *
+ * DELIVERY (spend/redeem path):
+ *   - status='reserved': Points locked during CheckoutIntent creation; cannot be spent concurrently.
+ *   - status='captured': Points permanently deducted upon verified Paystack delivery payment.
+ *   - status='released': Points returned to pool on cancellation, stock failure, or payment failure.
+ *   - status='expired': Reservation expired with its stale CheckoutIntent.
+ *   - checkout_intent_id is set; pickup_reservation_id is NULL.
+ *
+ * PICKUP (earn path):
+ *   - status='captured' only: Points awarded immediately upon verified Paystack pickup payment settlement.
+ *   - No 'reserved' phase for pickup — cashback is earned, not spent.
+ *   - pickup_reservation_id is set; checkout_intent_id is NULL.
  *
  * @property int $id
  * @property int $customer_id
- * @property int|null $checkout_intent_id
+ * @property int|null $checkout_intent_id  FK to checkout_intents (delivery)
+ * @property int|null $pickup_reservation_id FK to pickup_reservations (pickup)
  * @property string $order_group_id
  * @property string $points
  * @property string $cashback_amount
@@ -36,6 +44,7 @@ class CashbackRedemption extends Model
     protected $fillable = [
         'customer_id',
         'checkout_intent_id',
+        'pickup_reservation_id',
         'order_group_id',
         'points',
         'cashback_amount',
@@ -47,6 +56,7 @@ class CashbackRedemption extends Model
     protected $casts = [
         'customer_id' => 'integer',
         'checkout_intent_id' => 'integer',
+        'pickup_reservation_id' => 'integer',
         'order_group_id' => 'string',
         'points' => 'string',
         'cashback_amount' => 'string',
@@ -63,6 +73,14 @@ class CashbackRedemption extends Model
     public function checkoutIntent(): BelongsTo
     {
         return $this->belongsTo(CheckoutIntent::class, 'checkout_intent_id');
+    }
+
+    /**
+     * [AI] Relationship to the originating PickupReservation (pickup cashback earn records only).
+     */
+    public function pickupReservation(): BelongsTo
+    {
+        return $this->belongsTo(PickupReservation::class, 'pickup_reservation_id');
     }
 
     /**

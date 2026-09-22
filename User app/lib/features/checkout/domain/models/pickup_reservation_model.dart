@@ -35,8 +35,12 @@ class PickupReservationModel {
   String? totalAmount;
   String? currency;
   String? expiresAt;
+  String? createdAt;
+  int? orderId;
   PickupShopSnapshot? shop;
   List<PickupItemSnapshot>? items;
+  // [AI] Backend-supplied cashback promise — app MUST display this, never calculate locally
+  PickupCashbackToEarn? cashbackToEarn;
 
   PickupReservationModel({
     this.id,
@@ -49,8 +53,11 @@ class PickupReservationModel {
     this.totalAmount,
     this.currency,
     this.expiresAt,
+    this.createdAt,
+    this.orderId,
     this.shop,
     this.items,
+    this.cashbackToEarn,
   });
 
   PickupReservationModel.fromJson(Map<String, dynamic> json) {
@@ -64,21 +71,41 @@ class PickupReservationModel {
     totalAmount = json['total_amount']?.toString();
     currency = json['currency'];
     expiresAt = json['expires_at'];
+    createdAt = json['created_at'];
+    orderId = json['order_id'];
 
-    // If reservation_items snapshot is present:
-    dynamic itemsData = json['reservation_items'];
-    if (itemsData is Map<String, dynamic>) {
-      if (itemsData['shop'] != null) {
-        shop = PickupShopSnapshot.fromJson(itemsData['shop']);
+    // [AI] Priority 1: New enriched API response shape — shop_snapshot top-level key
+    if (json['shop_snapshot'] != null && json['shop_snapshot'] is Map<String, dynamic>) {
+      shop = PickupShopSnapshot.fromEnrichedJson(json['shop_snapshot']);
+    }
+    // [AI] Priority 2: New enriched API response — items top-level
+    if (json['items'] != null && json['items'] is List) {
+      items = <PickupItemSnapshot>[];
+      json['items'].forEach((v) {
+        items!.add(PickupItemSnapshot.fromJson(v));
+      });
+    }
+    // [AI] Legacy fallback: reservation_items snapshot structure (pre-V1 enrichment)
+    if (shop == null) {
+      dynamic itemsData = json['reservation_items'];
+      if (itemsData is Map<String, dynamic>) {
+        if (itemsData['shop'] != null) {
+          shop = PickupShopSnapshot.fromJson(itemsData['shop']);
+        }
+        if (items == null && itemsData['items'] != null && itemsData['items'] is List) {
+          items = <PickupItemSnapshot>[];
+          itemsData['items'].forEach((v) {
+            items!.add(PickupItemSnapshot.fromJson(v));
+          });
+        }
+      } else if (json['shop'] != null) {
+        shop = PickupShopSnapshot.fromJson(json['shop']);
       }
-      if (itemsData['items'] != null && itemsData['items'] is List) {
-        items = <PickupItemSnapshot>[];
-        itemsData['items'].forEach((v) {
-          items!.add(PickupItemSnapshot.fromJson(v));
-        });
-      }
-    } else if (json['shop'] != null) {
-      shop = PickupShopSnapshot.fromJson(json['shop']);
+    }
+
+    // [AI] Cashback to earn — from backend-enriched response
+    if (json['cashback_to_earn'] != null && json['cashback_to_earn'] is Map<String, dynamic>) {
+      cashbackToEarn = PickupCashbackToEarn.fromJson(json['cashback_to_earn']);
     }
   }
 }
@@ -107,6 +134,29 @@ class PickupShopSnapshot {
     address = json['address'];
     contact = json['contact'];
     directionGuidance = json['direction_guidance'];
+  }
+
+  // [AI] New enriched response shape (flat keys from controller mapping)
+  PickupShopSnapshot.fromEnrichedJson(Map<String, dynamic> json) {
+    shopId = json['shop_id'];
+    name = json['shop_name'];
+    address = json['shop_address'];
+    sellerId = null;
+    contact = null;
+    directionGuidance = null;
+  }
+}
+
+// [AI] Cashback promised by backend for this reservation — displayed as earn badge in UI
+class PickupCashbackToEarn {
+  double? percent;
+  String? estimatedNaira;
+
+  PickupCashbackToEarn({this.percent, this.estimatedNaira});
+
+  PickupCashbackToEarn.fromJson(Map<String, dynamic> json) {
+    percent = double.tryParse(json['percent']?.toString() ?? '0');
+    estimatedNaira = json['estimated_naira']?.toString();
   }
 }
 

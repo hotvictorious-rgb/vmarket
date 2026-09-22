@@ -194,6 +194,11 @@ class ConfigController extends Controller
             'loyalty_point_exchange_rate' => (int)getWebConfig(name: 'loyalty_point_exchange_rate'),
             'loyalty_point_minimum_point' => (int)getWebConfig(name: 'loyalty_point_minimum_point'),
             'loyalty_point_max_order_redemption_percentage' => (int)(getWebConfig(name: 'loyalty_point_max_order_redemption_percentage') ?? 10),
+            // [AI] Victorious MARKET V1: App-facing cashback config — app reads these, never hardcodes %.
+            // loyalty_point_earn_rate_percent: % of order total awarded as Victorious Points on payment.
+            // cashback_eligible_channels: ["delivery","pickup"] — controls which checkout UIs show earn badge.
+            'loyalty_point_earn_rate_percent' => (float)(getWebConfig(name: 'loyalty_point_earn_rate_percent') ?? 5.0),
+            'cashback_eligible_channels' => ['delivery', 'pickup'],
             'payment_methods' => $paymentMethods,
             'offline_payment' => $offlinePayment,
             'payment_method_image_path' => dynamicStorage(path: 'storage/app/public/payment_modules/gateway_image'),

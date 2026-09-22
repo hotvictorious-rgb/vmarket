@@ -42,22 +42,23 @@ class DeliveryCheckoutIntentController extends Controller
      *
      * Optional fields:
      *   - billing_address_id (int)
-     *   - coupon_code (string)
-     *   - coupon_discount (numeric string, in NGN)
+     *   - use_cashback (bool): Redeem customer's Victorious Points as a discount
      *   - cart_item_ids (array of int): Specific cart items to include (defaults to all checked)
+     *
+     * Decommissioned fields (accepted but ignored for backwards compat):
+     *   - coupon_code, coupon_discount: Coupons removed from V1 checkout.
      *
      * [AI] Clients: Customer Mobile App
      */
     public function create(Request $request): JsonResponse
     {
         $validator = Validator::make($request->all(), [
-            'address_id'       => 'required|integer|min:1',
-            'idempotency_key'  => 'required|string|min:8|max:64|regex:/^[A-Za-z0-9_\-\:]{8,64}$/',
+            'address_id'         => 'required|integer|min:1',
+            'idempotency_key'    => 'required|string|min:8|max:64|regex:/^[A-Za-z0-9_\-\:]{8,64}$/',
             'billing_address_id' => 'nullable|integer|min:1',
-            'coupon_code'      => 'nullable|string|max:100',
-            'coupon_discount'  => 'nullable|numeric|min:0',
-            'cart_item_ids'    => 'nullable|array',
-            'cart_item_ids.*'  => 'integer|min:1',
+            'use_cashback'       => 'nullable|boolean',
+            'cart_item_ids'      => 'nullable|array',
+            'cart_item_ids.*'    => 'integer|min:1',
         ]);
 
         if ($validator->fails()) {
@@ -79,8 +80,7 @@ class DeliveryCheckoutIntentController extends Controller
                 idempotencyKey: $request->input('idempotency_key'),
                 shippingAddress: (int) $request->input('address_id'),
                 billingAddress: $request->input('billing_address_id') ? (int) $request->input('billing_address_id') : null,
-                couponCode: $request->input('coupon_code'),
-                couponDiscount: $request->input('coupon_discount'),
+                useCashback: filter_var($request->input('use_cashback', false), FILTER_VALIDATE_BOOLEAN),
                 cartItemIds: $request->input('cart_item_ids'),
             );
 
