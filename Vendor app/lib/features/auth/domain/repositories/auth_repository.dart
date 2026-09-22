@@ -2,7 +2,7 @@ import 'package:dio/dio.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/foundation.dart';
 import 'package:image_picker/image_picker.dart';
-import 'package:shared_preferences/shared_preferences.dart';
+import 'package:sixvalley_vendor_app/services/storage_service.dart';
 import 'package:sixvalley_vendor_app/data/datasource/remote/dio/dio_client.dart';
 import 'package:sixvalley_vendor_app/data/datasource/remote/exception/api_error_handler.dart';
 import 'package:sixvalley_vendor_app/features/auth/domain/models/register_model.dart';
@@ -10,64 +10,13 @@ import 'package:sixvalley_vendor_app/data/model/response/base/api_response.dart'
 import 'package:sixvalley_vendor_app/features/auth/domain/repositories/auth_repository_interface.dart';
 import 'package:sixvalley_vendor_app/utill/app_constants.dart';
 import 'package:path/path.dart';
-import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:http/http.dart' as http;
 
 class AuthRepository implements AuthRepositoryInterface{
   final DioClient? dioClient;
-  final SharedPreferences? sharedPreferences;
-  final FlutterSecureStorage? secureStorage;
-  
-  static String _token = "";
-  static String _userEmail = "";
-  static String _userPassword = "";
+  final StorageService storageService;
 
-  AuthRepository({required this.dioClient, required this.sharedPreferences, this.secureStorage}) {
-    _initStorage();
-  }
-
-  Future<void> _initStorage() async {
-    String? sToken = await secureStorage?.read(key: AppConstants.token);
-    if (sToken == null) {
-      String? oldToken = sharedPreferences?.getString(AppConstants.token);
-      if (oldToken != null) {
-        await secureStorage?.write(key: AppConstants.token, value: oldToken);
-        _token = oldToken;
-        await sharedPreferences?.remove(AppConstants.token);
-      }
-    } else {
-      _token = sToken;
-    }
-
-    String? sEmail = await secureStorage?.read(key: AppConstants.userEmail);
-    if (sEmail == null) {
-      String? oldEmail = sharedPreferences?.getString(AppConstants.userEmail);
-      if (oldEmail != null) {
-        await secureStorage?.write(key: AppConstants.userEmail, value: oldEmail);
-        _userEmail = oldEmail;
-        await sharedPreferences?.remove(AppConstants.userEmail);
-      }
-    } else {
-      _userEmail = sEmail;
-    }
-
-    String? sPassword = await secureStorage?.read(key: AppConstants.userPassword);
-    if (sPassword == null) {
-      String? oldPassword = sharedPreferences?.getString(AppConstants.userPassword);
-      if (oldPassword != null) {
-        await secureStorage?.write(key: AppConstants.userPassword, value: oldPassword);
-        _userPassword = oldPassword;
-        await sharedPreferences?.remove(AppConstants.userPassword);
-      }
-    } else {
-      _userPassword = sPassword;
-    }
-
-    if (_token.isNotEmpty) {
-      dioClient?.token = _token;
-      dioClient?.dio?.options.headers = {'Content-Type': 'application/json; charset=UTF-8', 'Authorization': 'Bearer $_token'};
-    }
-  }
+  AuthRepository({required this.dioClient, required this.storageService});
 
   @override
   Future<ApiResponse> login({String? emailAddress, String? password}) async {
@@ -159,25 +108,19 @@ class AuthRepository implements AuthRepositoryInterface{
 
   @override
   Future<void> saveUserToken(String token) async {
-    _token = token;
-    dioClient!.token = token;
-    dioClient!.dio!.options.headers = {'Content-Type': 'application/json; charset=UTF-8', 'Authorization': 'Bearer $token'};
-
-    try {
-      await secureStorage?.write(key: AppConstants.token, value: token);
-    } catch (e) {
-      rethrow;
-    }
+    dioClient?.token = token;
+    dioClient?.dio?.options.headers = {'Content-Type': 'application/json; charset=UTF-8', 'Authorization': 'Bearer $token'};
+    await storageService.setString(AppConstants.token, token);
   }
 
   @override
   String getUserToken() {
-    return _token;
+    return storageService.getString(AppConstants.token) ?? "";
   }
 
   @override
   bool isLoggedIn() {
-    return _token.isNotEmpty;
+    return (storageService.getString(AppConstants.token) ?? "").isNotEmpty;
   }
 
   @override
@@ -185,8 +128,9 @@ class AuthRepository implements AuthRepositoryInterface{
     try{
       await FirebaseMessaging.instance.unsubscribeFromTopic(AppConstants.topic);
       await FirebaseMessaging.instance.unsubscribeFromTopic(AppConstants.maintenanceModeTopic);
-      await secureStorage?.delete(key: AppConstants.token);
-      _token = "";
+      await storageService.remove(AppConstants.token);
+      dioClient?.token = null;
+      dioClient?.dio?.options.headers.remove('Authorization');
     }catch(e) {
       if (kDebugMode) {
         print("====Execption====>>$e");
@@ -197,32 +141,25 @@ class AuthRepository implements AuthRepositoryInterface{
 
   @override
   Future<void> saveUserCredentials(String number, String password) async {
-    _userEmail = number;
-    _userPassword = password;
-    try {
-      await secureStorage?.write(key: AppConstants.userPassword, value: password);
-      await secureStorage?.write(key: AppConstants.userEmail, value: number);
-    } catch (e) {
-      rethrow;
-    }
+    // [AI] Only store user identifier/email. Never write raw password to disk.
+    await storageService.setString(AppConstants.userEmail, number);
   }
 
   @override
   String getUserEmail() {
-    return _userEmail;
+    return storageService.getString(AppConstants.userEmail) ?? "";
   }
 
   @override
   String getUserPassword() {
-    return _userPassword;
+    // [AI] Raw password persistence eradicated. Always return empty string.
+    return "";
   }
 
   @override
   Future<bool> clearUserNumberAndPassword() async {
-    _userEmail = "";
-    _userPassword = "";
-    await secureStorage?.delete(key: AppConstants.userPassword);
-    await secureStorage?.delete(key: AppConstants.userEmail);
+    await storageService.remove(AppConstants.userPassword);
+    await storageService.remove(AppConstants.userEmail);
     return true;
   }
 

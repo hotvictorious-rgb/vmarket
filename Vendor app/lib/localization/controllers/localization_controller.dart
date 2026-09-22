@@ -1,15 +1,15 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import 'package:shared_preferences/shared_preferences.dart';
 import 'package:sixvalley_vendor_app/features/auth/controllers/auth_controller.dart';
 import 'package:sixvalley_vendor_app/localization/models/language_model.dart';
 import 'package:sixvalley_vendor_app/main.dart';
+import 'package:sixvalley_vendor_app/services/storage_service.dart';
 import 'package:sixvalley_vendor_app/utill/app_constants.dart';
 
 class LocalizationController extends ChangeNotifier {
-  final SharedPreferences? sharedPreferences;
+  final StorageService storageService;
 
-  LocalizationController({required this.sharedPreferences}) {
+  LocalizationController({required this.storageService}) {
     _loadCurrentLanguage();
   }
 
@@ -37,8 +37,8 @@ class LocalizationController extends ChangeNotifier {
   }
 
   Future<void> _loadCurrentLanguage() async {
-    _locale = Locale(sharedPreferences!.getString(AppConstants.languageCode) ?? AppConstants.languages[0].languageCode!,
-        sharedPreferences!.getString(AppConstants.countryCode) ?? AppConstants.languages[0].countryCode);
+    _locale = Locale(storageService.getString(AppConstants.languageCode) ?? AppConstants.languages[0].languageCode!,
+        storageService.getString(AppConstants.countryCode) ?? AppConstants.languages[0].countryCode);
     for(int index=0; index<AppConstants.languages.length; index++) {
       if(AppConstants.languages[index].languageCode == _locale.languageCode) {
         _languageIndex = index;
@@ -52,12 +52,12 @@ class LocalizationController extends ChangeNotifier {
   }
 
   Future<void> _saveLanguage(Locale locale) async {
-    sharedPreferences!.setString(AppConstants.languageCode, locale.languageCode);
-    sharedPreferences!.setString(AppConstants.countryCode, locale.countryCode!);
+    await storageService.setString(AppConstants.languageCode, locale.languageCode);
+    await storageService.setString(AppConstants.countryCode, locale.countryCode!);
   }
 
   String? getCurrentLanguage() {
-    return sharedPreferences!.getString(AppConstants.countryCode == 'US'? 'en' : AppConstants.countryCode) ?? "en";
+    return storageService.getString(AppConstants.countryCode == 'US'? 'en' : AppConstants.countryCode) ?? "en";
   }
 
 

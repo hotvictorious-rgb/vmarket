@@ -1,7 +1,7 @@
 import 'package:dio/dio.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:get_it/get_it.dart';
-import 'package:shared_preferences/shared_preferences.dart';
+import 'package:sixvalley_vendor_app/services/storage_service.dart';
 import 'package:sixvalley_vendor_app/features/addProduct/controllers/add_product_image_controller.dart';
 import 'package:sixvalley_vendor_app/features/addProduct/controllers/add_product_tax_controller.dart';
 import 'package:sixvalley_vendor_app/features/addProduct/controllers/variation_controller.dart';
@@ -18,14 +18,6 @@ import 'package:sixvalley_vendor_app/features/bank_info/domain/services/bank_inf
 import 'package:sixvalley_vendor_app/features/chat/domain/repositories/chat_repository_interface.dart';
 import 'package:sixvalley_vendor_app/features/chat/domain/services/chat_service.dart';
 import 'package:sixvalley_vendor_app/features/chat/domain/services/chat_service_interface.dart';
-import 'package:sixvalley_vendor_app/features/clearance_sale/controllers/clearance_sale_controller.dart';
-import 'package:sixvalley_vendor_app/features/clearance_sale/domain/repositories/clearance_sale_repository.dart';
-import 'package:sixvalley_vendor_app/features/clearance_sale/domain/repositories/clearance_sale_repository_interface.dart';
-import 'package:sixvalley_vendor_app/features/clearance_sale/domain/services/clearance_sale_service.dart';
-import 'package:sixvalley_vendor_app/features/clearance_sale/domain/services/clearance_sale_service_interface.dart';
-import 'package:sixvalley_vendor_app/features/coupon/domain/repositories/coupon_repository_interface.dart';
-import 'package:sixvalley_vendor_app/features/coupon/domain/services/coupon_service.dart';
-import 'package:sixvalley_vendor_app/features/coupon/domain/services/coupon_service_interface.dart';
 
 import 'package:sixvalley_vendor_app/features/emergency_contract/domain/repositories/emergency_contact_repository.dart';
 import 'package:sixvalley_vendor_app/features/emergency_contract/domain/repositories/emergency_contract_repository_interface.dart';
@@ -66,11 +58,6 @@ import 'package:sixvalley_vendor_app/features/profile/domain/services/profile_se
 import 'package:sixvalley_vendor_app/features/refund/domain/repositories/refund_repository_interface.dart';
 import 'package:sixvalley_vendor_app/features/refund/domain/services/refund_service.dart';
 import 'package:sixvalley_vendor_app/features/refund/domain/services/refund_service_interface.dart';
-import 'package:sixvalley_vendor_app/features/restock/controllers/restock_controller.dart';
-import 'package:sixvalley_vendor_app/features/restock/domain/repositories/restock_repository.dart';
-import 'package:sixvalley_vendor_app/features/restock/domain/repositories/restock_repository_interface.dart';
-import 'package:sixvalley_vendor_app/features/restock/domain/services/restock_service.dart';
-import 'package:sixvalley_vendor_app/features/restock/domain/services/restock_service_interface.dart';
 import 'package:sixvalley_vendor_app/features/review/domain/repositories/product_review_repository_interface.dart';
 import 'package:sixvalley_vendor_app/features/review/domain/services/review_service.dart';
 import 'package:sixvalley_vendor_app/features/review/domain/services/review_service_interface.dart';
@@ -78,7 +65,6 @@ import 'package:sixvalley_vendor_app/features/settings/domain/repositories/buisn
 import 'package:sixvalley_vendor_app/features/settings/domain/repositories/business_repository.dart';
 
 import 'package:sixvalley_vendor_app/features/chat/domain/repositories/chat_repository.dart';
-import 'package:sixvalley_vendor_app/features/coupon/domain/repositories/coupon_repository.dart';
 
 import 'package:sixvalley_vendor_app/features/emergency_contract/domain/repositories/emergency_contact_repository.dart';
 import 'package:sixvalley_vendor_app/features/order/domain/repositories/location_repository.dart';
@@ -106,11 +92,6 @@ import 'package:sixvalley_vendor_app/features/settings/controllers/business_cont
 import 'package:sixvalley_vendor_app/features/transaction/domain/repositories/transaction_repository_interface.dart';
 import 'package:sixvalley_vendor_app/features/transaction/domain/services/transaction_service.dart';
 import 'package:sixvalley_vendor_app/features/transaction/domain/services/transaction_service_interface.dart';
-import 'package:sixvalley_vendor_app/features/vat_management/controllers/vat_controller.dart';
-import 'package:sixvalley_vendor_app/features/vat_management/domain/repositories/vat_repository.dart';
-import 'package:sixvalley_vendor_app/features/vat_management/domain/repositories/vat_repository_interface.dart';
-import 'package:sixvalley_vendor_app/features/vat_management/domain/services/vat_service.dart';
-import 'package:sixvalley_vendor_app/features/vat_management/domain/services/vat_service_interface.dart';
 import 'package:sixvalley_vendor_app/features/wallet/controllers/wallet_controller.dart';
 import 'package:sixvalley_vendor_app/features/wallet/domain/repositories/wallet_repository.dart';
 import 'package:sixvalley_vendor_app/features/wallet/domain/repositories/wallet_repository_interface.dart';
@@ -118,10 +99,8 @@ import 'package:sixvalley_vendor_app/features/wallet/domain/services/wallet_serv
 import 'package:sixvalley_vendor_app/features/wallet/domain/services/wallet_service_interface.dart';
 
 import 'package:sixvalley_vendor_app/features/chat/controllers/chat_controller.dart';
-import 'package:sixvalley_vendor_app/features/coupon/controllers/coupon_controller.dart';
 
 import 'package:sixvalley_vendor_app/features/emergency_contract/controllers/emergency_contact_controller.dart';
-import 'package:sixvalley_vendor_app/features/language/controllers/language_controller.dart';
 import 'package:sixvalley_vendor_app/localization/controllers/localization_controller.dart';
 import 'package:sixvalley_vendor_app/features/dashboard/controllers/bottom_menu_controller.dart';
 import 'package:sixvalley_vendor_app/features/order/controllers/location_controller.dart';
@@ -151,40 +130,36 @@ final sl = GetIt.instance;
 
 Future<void> init() async {
 
-  // External
-  final sharedPreferences = await SharedPreferences.getInstance();
-  sl.registerLazySingleton(() => sharedPreferences);
+  // Storage & Core
   const secureStorage = FlutterSecureStorage();
   sl.registerLazySingleton(() => secureStorage);
+  final storageService = StorageService(secureStorage: secureStorage);
+  await storageService.init();
+  sl.registerLazySingleton(() => storageService);
 
-  // [AI] Pre-load secure token asynchronously on startup to prevent boot race condition
-  String? secureToken = await secureStorage.read(key: AppConstants.token);
-  if (secureToken == null) {
-    secureToken = sharedPreferences.getString(AppConstants.token);
-  }
+  // [AI] Pre-load secure token synchronously from unified storage cache on startup
+  String? secureToken = storageService.getString(AppConstants.token);
 
   // Core
-  sl.registerLazySingleton(() => DioClient(AppConstants.baseUrl, sl(), loggingInterceptor: sl(), sharedPreferences: sl(), token: secureToken));
+  sl.registerLazySingleton(() => DioClient(AppConstants.baseUrl, sl(), loggingInterceptor: sl(), storageService: sl(), token: secureToken));
   sl.registerLazySingleton(() => Dio());
   sl.registerLazySingleton(() => LoggingInterceptor());
 
   // Interface
-  AuthRepositoryInterface authRepoInterface = AuthRepository(dioClient: sl(), sharedPreferences: sl(), secureStorage: sl());
+  AuthRepositoryInterface authRepoInterface = AuthRepository(dioClient: sl(), storageService: sl());
   sl.registerLazySingleton(() => authRepoInterface);
-  BankInfoRepositoryInterface bankInfoRepoInterface = BankInfoRepository(dioClient: sl(), sharedPreferences: sl(), secureStorage: sl());
+  BankInfoRepositoryInterface bankInfoRepoInterface = BankInfoRepository(dioClient: sl());
   sl.registerLazySingleton(() => bankInfoRepoInterface);
   ChatRepositoryInterface chatRepoInterface = ChatRepository(dioClient: sl());
   sl.registerLazySingleton(() => chatRepoInterface);
-  CouponRepositoryInterface couponRepoInterface = CouponRepository(dioClient: sl(), sharedPreferences: sl());
-  sl.registerLazySingleton(() => couponRepoInterface);
 
   EmergencyContractRepositoryInterface emergencyContractRepoInterface = EmergencyContactRepository(dioClient: sl());
   sl.registerLazySingleton(() => emergencyContractRepoInterface);
   OrderRepositoryInterface orderRepoInterface = OrderRepository(dioClient: sl());
   sl.registerLazySingleton(() => orderRepoInterface);
-  ProductRepositoryInterface productRepoInterface = ProductRepository(dioClient: sl(), sharedPreferences: sl());
+  ProductRepositoryInterface productRepoInterface = ProductRepository(dioClient: sl());
   sl.registerLazySingleton(() => productRepoInterface);
-  ProfileRepositoryInterface profileRepoInterface = ProfileRepository(dioClient: sl(), sharedPreferences: sl());
+  ProfileRepositoryInterface profileRepoInterface = ProfileRepository(dioClient: sl());
   sl.registerLazySingleton(() => profileRepoInterface);
   RefundRepositoryInterface refundRepoInterface = RefundRepository(dioClient: sl());
   sl.registerLazySingleton(() => refundRepoInterface);
@@ -195,7 +170,7 @@ Future<void> init() async {
 
   AddProductRepositoryInterface addProductRepositoryInterface = AddProductRepository(dioClient: sl());
   sl.registerLazySingleton(() => addProductRepositoryInterface);
-  SplashRepositoryInterface splashRepoInterface = SplashRepository(dioClient: sl(), sharedPreferences: sl());
+  SplashRepositoryInterface splashRepoInterface = SplashRepository(dioClient: sl(), storageService: sl());
   sl.registerLazySingleton(() => splashRepoInterface);
   TransactionRepositoryInterface transactionRepoInterface = TransactionRepository(dioClient: sl());
   sl.registerLazySingleton(() => transactionRepoInterface);
@@ -206,21 +181,15 @@ Future<void> init() async {
   LocationRepositoryInterface locationRepositoryInterface = LocationRepository(dioClient: sl());
   sl.registerLazySingleton(() => locationRepositoryInterface);
 
-  ShopRepositoryInterface shopRepositoryInterface = ShopRepository(dioClient: sl(), sharedPreferences: sl());
+  ShopRepositoryInterface shopRepositoryInterface = ShopRepository(dioClient: sl());
   sl.registerLazySingleton(() => shopRepositoryInterface);
   OrderDetailsRepositoryInterface orderDetailsRepositoryInterface = OrderDetailsRepository(dioClient: sl());
   sl.registerLazySingleton(() => orderDetailsRepositoryInterface);
   ProductDetailsRepositoryInterface productDetailsRepositoryInterface = ProductDetailsRepository(dioClient: sl());
   sl.registerLazySingleton(() => productDetailsRepositoryInterface);
 
-  RestockRepositoryInterface restockRepositoryInterface = RestockRepository(dioClient: sl());
-  sl.registerLazySingleton(() => restockRepositoryInterface);
-  ClearanceSaleRepositoryInterface clearanceSaleRepositoryInterface = ClearanceSaleRepository(dioClient: sl());
-  sl.registerLazySingleton(() => clearanceSaleRepositoryInterface);
-  CategoryRepositoryInterface categoryRepositoryInterface = CategoryRepository(dioClient: sl(), sharedPreferences: sl());
+  CategoryRepositoryInterface categoryRepositoryInterface = CategoryRepository(dioClient: sl());
   sl.registerLazySingleton(() => categoryRepositoryInterface);
-  VatRepositoryInterface vatRepositoryInterface = VatRepository(dioClient: sl());
-  sl.registerLazySingleton(() => vatRepositoryInterface);
 
   // Services
   AuthServiceInterface authServiceInterface = AuthService(authRepoInterface: sl());
@@ -229,8 +198,6 @@ Future<void> init() async {
   sl.registerLazySingleton(() => bankInfoServiceInterface);
   ChatServiceInterface chatServiceInterface = ChatService(chatRepoInterface: sl());
   sl.registerLazySingleton(() => chatServiceInterface);
-  CouponServiceInterface couponServiceInterface = CouponService(couponRepoInterface: sl());
-  sl.registerLazySingleton(() => couponServiceInterface);
 
   EmergencyServiceInterface emergencyServiceInterface = EmergencyService(emergencyContractRepoInterface: sl());
   sl.registerLazySingleton(() => emergencyServiceInterface);
@@ -267,49 +234,38 @@ Future<void> init() async {
   ProductDetailsServiceInterface productDetailsServiceInterface = ProductDetailsService(productDetailsRepositoryInterface: sl());
   sl.registerLazySingleton(() => productDetailsServiceInterface);
 
-  RestockServiceInterface restockServiceInterface = RestockService(restockRepositoryInterface: sl());
-  sl.registerLazySingleton(() => restockServiceInterface);
-  ClearanceSaleServiceInterface clearanceSaleServiceInterface = ClearanceSaleService(clearanceSaleRepositoryInterface: sl());
-  sl.registerLazySingleton(() => clearanceSaleServiceInterface);
   CategoryServiceInterface categoryServiceInterface = CategoryService(categoryRepositoryInterface: sl());
   sl.registerLazySingleton(() => categoryServiceInterface);
-  VatServiceInterface vatServiceInterface = VatService(vatRepoInterface: sl());
-  sl.registerLazySingleton(() => vatServiceInterface);
 
   // Repository
-  sl.registerLazySingleton(() => AuthRepository(sharedPreferences: sl(), dioClient: sl(), secureStorage: sl()));
-  sl.registerLazySingleton(() => SplashRepository(sharedPreferences: sl(), dioClient: sl()));
-  sl.registerLazySingleton(() => ProfileRepository(dioClient: sl(), sharedPreferences: sl()));
-  sl.registerLazySingleton(() => ShopRepository(dioClient: sl(), sharedPreferences: sl()));
+  sl.registerLazySingleton(() => AuthRepository(dioClient: sl(), storageService: sl()));
+  sl.registerLazySingleton(() => SplashRepository(dioClient: sl(), storageService: sl()));
+  sl.registerLazySingleton(() => ProfileRepository(dioClient: sl()));
+  sl.registerLazySingleton(() => ShopRepository(dioClient: sl()));
   sl.registerLazySingleton(() => OrderRepository(dioClient: sl()));
-  sl.registerLazySingleton(() => BankInfoRepository(dioClient: sl(), sharedPreferences: sl()));
+  sl.registerLazySingleton(() => BankInfoRepository(dioClient: sl()));
   sl.registerLazySingleton(() => ChatRepository(dioClient: sl()));
   sl.registerLazySingleton(() => BusinessRepository());
   sl.registerLazySingleton(() => TransactionRepository(dioClient: sl()));
   sl.registerLazySingleton(() => AddProductRepository(dioClient: sl()));
-  sl.registerLazySingleton(() => ProductRepository(dioClient: sl(), sharedPreferences: sl()));
+  sl.registerLazySingleton(() => ProductRepository(dioClient: sl()));
   sl.registerLazySingleton(() => ProductReviewRepository(dioClient: sl()));
 
   sl.registerLazySingleton(() => RefundRepository(dioClient: sl()));
 
   sl.registerLazySingleton(() => EmergencyContactRepository(dioClient: sl()));
   sl.registerLazySingleton(() => LocationRepository(dioClient: sl()));
-  sl.registerLazySingleton(() => CouponRepository(dioClient: sl(), sharedPreferences: sl()));
   sl.registerLazySingleton(() => NotificationRepository(dioClient: sl()));
   sl.registerLazySingleton(() => WalletRepository(dioClient: sl()));
   sl.registerLazySingleton(() => OrderDetailsRepository(dioClient: sl()));
   sl.registerLazySingleton(() => ProductDetailsRepository(dioClient: sl()));
 
-  sl.registerLazySingleton(() => RestockRepository(dioClient: sl()));
-  sl.registerLazySingleton(() => ClearanceSaleRepository(dioClient: sl()));
-  sl.registerLazySingleton(() => CategoryRepository(dioClient: sl(), sharedPreferences: sl()));
-  sl.registerLazySingleton(() => VatRepository(dioClient: sl()));
+  sl.registerLazySingleton(() => CategoryRepository(dioClient: sl()));
 
   // Controller
   sl.registerFactory(() => AuthController(authServiceInterface: sl()));
   sl.registerFactory(() => BankInfoController(bankInfoServiceInterface: sl()));
   sl.registerFactory(() => ChatController(chatServiceInterface: sl()));
-  sl.registerFactory(() => CouponController(couponServiceInterface: sl()));
 
   sl.registerFactory(() => EmergencyContactController(emergencyServiceInterface: sl()));
   sl.registerFactory(() => OrderController(orderServiceInterface: sl()));
@@ -326,16 +282,12 @@ Future<void> init() async {
   sl.registerFactory(() => WalletController(walletServiceInterface: sl()));
   sl.registerFactory(() => OrderDetailsController(orderDetailsServiceInterface: sl()));
   sl.registerFactory(() => ProductDetailsController(productDetailsServiceInterface: sl()));
-  sl.registerFactory(() => ThemeController(sharedPreferences: sl()));
-  sl.registerFactory(() => LocalizationController(sharedPreferences: sl()));
-  sl.registerFactory(() => LanguageController());
+  sl.registerFactory(() => ThemeController(storageService: sl()));
+  sl.registerFactory(() => LocalizationController(storageService: sl()));
   sl.registerFactory(() => ShopController(shopServiceInterface: sl()));
 
   sl.registerFactory(() => BottomMenuController());
   sl.registerFactory(() => LocationController(locationServiceInterface: sl()));
-
-  sl.registerFactory(() => RestockController(restockServiceInterface: sl()));
-  sl.registerFactory(() => ClearanceSaleController(chatServiceInterface: sl()));
 
   sl.registerFactory(() => ShowBottomSheetController());
   sl.registerFactory(() => TutorialController());
@@ -343,5 +295,4 @@ Future<void> init() async {
   sl.registerFactory(() => VariationController(addProductServiceInterface: sl()));
   sl.registerFactory(() => CategoryController(categoryServiceInterface: sl()));
   sl.registerFactory(() => AddProductTaxController(addProductServiceInterface: sl()));
-  sl.registerFactory(() => VatController(vatServiceInterface: sl()));
 }

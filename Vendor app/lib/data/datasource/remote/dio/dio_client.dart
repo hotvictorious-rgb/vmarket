@@ -1,14 +1,14 @@
 import 'dart:io';
 import 'package:dio/dio.dart';
 import 'package:flutter/foundation.dart';
-import 'package:shared_preferences/shared_preferences.dart';
+import 'package:sixvalley_vendor_app/services/storage_service.dart';
 import 'package:sixvalley_vendor_app/data/datasource/remote/dio/logging_interceptor.dart';
 import 'package:sixvalley_vendor_app/utill/app_constants.dart';
 
 class DioClient {
   final String baseUrl;
   final LoggingInterceptor loggingInterceptor;
-  final SharedPreferences sharedPreferences;
+  final StorageService storageService;
 
   Dio? dio;
   String? token;
@@ -16,13 +16,10 @@ class DioClient {
   DioClient(this.baseUrl,
       Dio? dioC, {
         required this.loggingInterceptor,
-        required this.sharedPreferences,
+        required this.storageService,
         String? token, // [AI] Pre-loaded secure token to prevent race condition
       }) {
-    this.token = token ?? sharedPreferences.getString(AppConstants.token);
-    if (kDebugMode) {
-      print(this.token);
-    }
+    this.token = token ?? storageService.getString(AppConstants.token);
     dio = dioC ?? Dio();
     dio!
       ..options.baseUrl = baseUrl

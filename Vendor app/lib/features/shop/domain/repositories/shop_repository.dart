@@ -3,7 +3,6 @@ import 'dart:io';
 
 import 'package:image_picker/image_picker.dart';
 import 'package:provider/provider.dart';
-import 'package:shared_preferences/shared_preferences.dart';
 import 'package:sixvalley_vendor_app/data/datasource/remote/dio/dio_client.dart';
 import 'package:sixvalley_vendor_app/data/datasource/remote/exception/api_error_handler.dart';
 import 'package:sixvalley_vendor_app/data/model/response/base/api_response.dart';
@@ -20,8 +19,7 @@ import 'package:path/path.dart';
 
 class ShopRepository implements ShopRepositoryInterface{
   final DioClient? dioClient;
-  final SharedPreferences? sharedPreferences;
-  ShopRepository({required this.dioClient, required this.sharedPreferences});
+  ShopRepository({required this.dioClient});
 
   @override
   Future<ApiResponse> getShop() async {

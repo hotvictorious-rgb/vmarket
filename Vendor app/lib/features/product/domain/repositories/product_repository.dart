@@ -1,7 +1,6 @@
 import 'dart:convert';
 import 'package:dio/dio.dart';
 import 'package:flutter/cupertino.dart';
-import 'package:shared_preferences/shared_preferences.dart';
 import 'package:sixvalley_vendor_app/data/datasource/remote/dio/dio_client.dart';
 import 'package:sixvalley_vendor_app/data/datasource/remote/exception/api_error_handler.dart';
 import 'package:sixvalley_vendor_app/data/model/response/base/api_response.dart';
@@ -13,8 +12,7 @@ import 'package:sixvalley_vendor_app/utill/app_constants.dart';
 
 class ProductRepository implements ProductRepositoryInterface{
   final DioClient? dioClient;
-  final SharedPreferences? sharedPreferences;
-  ProductRepository({required this.sharedPreferences, required this.dioClient});
+  ProductRepository({required this.dioClient});
 
   @override
   Future<ApiResponse> getSellerProductList({

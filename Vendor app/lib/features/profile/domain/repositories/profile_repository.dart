@@ -1,6 +1,5 @@
 import 'dart:io';
 import 'package:flutter/foundation.dart';
-import 'package:shared_preferences/shared_preferences.dart';
 import 'package:sixvalley_vendor_app/data/datasource/remote/dio/dio_client.dart';
 import 'package:sixvalley_vendor_app/data/datasource/remote/exception/api_error_handler.dart';
 import 'package:sixvalley_vendor_app/features/profile/domain/models/profile_body.dart';
@@ -12,8 +11,7 @@ import 'package:http/http.dart' as http;
 
 class ProfileRepository implements ProfileRepositoryInterface{
   final DioClient? dioClient;
-  final SharedPreferences? sharedPreferences;
-  ProfileRepository({required this.dioClient, required this.sharedPreferences});
+  ProfileRepository({required this.dioClient});
 
   @override
   Future<ApiResponse> getSellerInfo() async {

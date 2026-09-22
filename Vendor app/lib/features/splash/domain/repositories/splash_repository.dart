@@ -1,6 +1,6 @@
 import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
-import 'package:shared_preferences/shared_preferences.dart';
+import 'package:sixvalley_vendor_app/services/storage_service.dart';
 import 'package:sixvalley_vendor_app/data/datasource/remote/dio/dio_client.dart';
 import 'package:sixvalley_vendor_app/data/datasource/remote/exception/api_error_handler.dart';
 import 'package:sixvalley_vendor_app/data/model/response/base/api_response.dart';
@@ -9,8 +9,8 @@ import 'package:sixvalley_vendor_app/utill/app_constants.dart';
 
 class SplashRepository implements SplashRepositoryInterface{
   final DioClient? dioClient;
-  final SharedPreferences? sharedPreferences;
-  SplashRepository({required this.dioClient, required this.sharedPreferences});
+  final StorageService storageService;
+  SplashRepository({required this.dioClient, required this.storageService});
 
   @override
   Future<ApiResponse> getConfig() async {
@@ -23,31 +23,31 @@ class SplashRepository implements SplashRepositoryInterface{
   }
 
   @override
-  void initSharedData() async {
-    if (!sharedPreferences!.containsKey(AppConstants.cartList)) {
-      sharedPreferences!.setStringList(AppConstants.cartList, []);
+  void initSharedData() {
+    if (!storageService.containsKey(AppConstants.cartList)) {
+      storageService.setStringList(AppConstants.cartList, []);
     }
-    if (!sharedPreferences!.containsKey(AppConstants.searchAddress)) {
-      sharedPreferences!.setStringList(AppConstants.searchAddress, []);
+    if (!storageService.containsKey(AppConstants.searchAddress)) {
+      storageService.setStringList(AppConstants.searchAddress, []);
     }
-    if(!sharedPreferences!.containsKey(AppConstants.currency)) {
-      sharedPreferences!.setString(AppConstants.currency, '');
+    if(!storageService.containsKey(AppConstants.currency)) {
+      storageService.setString(AppConstants.currency, '');
     }
   }
 
   @override
   String getCurrency() {
-    return sharedPreferences!.getString(AppConstants.currency) ?? '';
+    return storageService.getString(AppConstants.currency) ?? '';
   }
 
   @override
   void setCurrency(String currencyCode) {
-    sharedPreferences!.setString(AppConstants.currency, currencyCode);
+    storageService.setString(AppConstants.currency, currencyCode);
   }
 
   @override
   void setShippingType(String shippingType) {
-    sharedPreferences!.setString(AppConstants.shippingType, shippingType);
+    storageService.setString(AppConstants.shippingType, shippingType);
   }
 
   @override
