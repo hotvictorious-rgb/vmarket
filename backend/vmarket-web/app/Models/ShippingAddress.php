@@ -88,4 +88,19 @@ class ShippingAddress extends Model
     {
         return $this->belongsTo(Lga::class, 'lga_id');
     }
+
+    public function country(): \Illuminate\Database\Eloquent\Relations\BelongsTo
+    {
+        return $this->canonicalCountry();
+    }
+
+    public function state(): \Illuminate\Database\Eloquent\Relations\BelongsTo
+    {
+        return $this->canonicalState();
+    }
+
+    public function lga(): \Illuminate\Database\Eloquent\Relations\BelongsTo
+    {
+        return $this->canonicalLga();
+    }
 }

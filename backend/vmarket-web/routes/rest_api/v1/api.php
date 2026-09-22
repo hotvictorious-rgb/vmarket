@@ -33,6 +33,7 @@ use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\Customer\PaymentController;
 use App\Http\Controllers\RestAPI\v1\customer\DeliveryCheckoutIntentController;
 use App\Http\Controllers\RestAPI\v1\customer\FulfillmentAvailabilityController;
+use App\Http\Controllers\RestAPI\v1\GeographyController;
 
 /*
 |--------------------------------------------------------------------------
@@ -243,6 +244,15 @@ Route::group(['prefix' => 'v1', 'middleware' => ['api_lang']], function () {
                 Route::get('cities/{state_id}', 'getCities');
                 Route::get('hubs/{city_id}', 'getHubs');
                 Route::post('calculate-shipping', 'calculateHubShipping');
+            });
+        });
+
+        // [AI] Phase 3: Canonical Geography REST API (Country -> State -> LGA)
+        Route::group(['prefix' => 'geography'], function () {
+            Route::controller(GeographyController::class)->group(function () {
+                Route::get('countries', 'getCountries');
+                Route::get('states/{country_id}', 'getStates');
+                Route::get('lgas/{state_id}', 'getLgas');
             });
         });
 

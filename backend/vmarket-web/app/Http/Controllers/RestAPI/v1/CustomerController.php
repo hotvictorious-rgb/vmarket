@@ -97,11 +97,12 @@ class CustomerController extends Controller
     public function get_address(Request $request, $id): JsonResponse
     {
         $user = Helpers::getCustomerInformation($request);
-        $shippingAddress = ShippingAddress::where([
-            'id' => $id,
-            'customer_id' => $user == 'offline' ? $request->guest_id : $user->id,
-            'is_guest' => $user == 'offline' ? 1 : 0
-        ])->first();
+        $shippingAddress = ShippingAddress::with(['country:id,name,iso_code', 'state:id,name,state_code', 'lga:id,name'])
+            ->where([
+                'id' => $id,
+                'customer_id' => $user == 'offline' ? $request->guest_id : $user->id,
+                'is_guest' => $user == 'offline' ? 1 : 0
+            ])->first();
 
         if (!$shippingAddress) {
             return response()->json(['message' => translate('address_not_found')], 404);
@@ -261,40 +262,69 @@ class CustomerController extends Controller
     public function address_list(Request $request): JsonResponse
     {
         $user = Helpers::getCustomerInformation($request);
-        if ($user == 'offline') {
-            $data = ShippingAddress::where(['customer_id' => $request->guest_id, 'is_guest' => 1])->get();
-        } else {
-            $data = ShippingAddress::where(['customer_id' => $user->id, 'is_guest' => '0'])->get();
-        }
+        $isGuest = $user == 'offline';
+        $customerId = $isGuest ? $request->guest_id : $user->id;
+
+        $data = ShippingAddress::with(['country:id,name,iso_code', 'state:id,name,state_code', 'lga:id,name'])
+            ->where(['customer_id' => $customerId, 'is_guest' => $isGuest ? 1 : 0])
+            ->latest()
+            ->get();
+
         return response()->json($data, 200);
     }
 
-    public function add_new_address(Request $request):JsonResponse
+    public function add_new_address(Request $request): JsonResponse
     {
         $validator = Validator::make($request->all(), [
             'contact_person_name' => 'required',
             'address_type' => 'required',
             'address' => 'required',
-            'city' => 'required',
-            'zip' => 'required',
-            'country' => 'required',
+            'city' => 'nullable',
+            'zip' => 'nullable',
+            'country' => 'nullable',
             'phone' => 'required',
-            'latitude' => 'required',
-            'longitude' => 'required',
-            'is_billing' => 'required'
+            'latitude' => 'nullable',
+            'longitude' => 'nullable',
+            'is_billing' => 'required',
+            'country_id' => 'nullable|integer|exists:countries,id',
+            'state_id' => 'nullable|integer|exists:states,id',
+            'lga_id' => [
+                'nullable',
+                'integer',
+                'exists:lgas,id',
+                new \App\Rules\ValidLgaForState($request->input('state_id')),
+            ],
         ]);
 
         if ($validator->fails()) {
             return response()->json(['errors' => Helpers::validationErrorProcessor($validator)], 403);
         }
 
+        $countryId = $request->input('country_id');
+        $stateId = $request->input('state_id');
+        $lgaId = $request->input('lga_id');
+
+        $countryName = $request->input('country');
+        if (!$countryName && $countryId) {
+            $countryName = \App\Models\Country::find($countryId)?->name;
+        }
+
+        $stateName = $request->input('state');
+        if (!$stateName && $stateId) {
+            $stateName = \App\Models\State::find($stateId)?->name;
+        }
+
+        $cityName = $request->input('city');
+        if (!$cityName && $lgaId) {
+            $cityName = \App\Models\Lga::find($lgaId)?->name;
+        }
+
         $zip_restrict_status = getWebConfig(name: 'delivery_zip_code_area_restriction');
         $country_restrict_status = getWebConfig(name: 'delivery_country_restriction');
 
-        if ($country_restrict_status && !self::delivery_country_exist_check($request->input('country'))) {
+        if ($country_restrict_status && $countryName && !self::delivery_country_exist_check($countryName)) {
             return response()->json(['message' => translate('Delivery_unavailable_for_this_country')], 403);
-
-        } elseif ($zip_restrict_status && !self::delivery_zipcode_exist_check($request->input('zip'))) {
+        } elseif ($zip_restrict_status && $request->input('zip') && !self::delivery_zipcode_exist_check($request->input('zip'))) {
             return response()->json(['message' => translate('Delivery_unavailable_for_this_zip_code_area')], 403);
         }
 
@@ -306,19 +336,28 @@ class CustomerController extends Controller
             'contact_person_name' => $request->contact_person_name,
             'address_type' => $request->address_type,
             'address' => $request->address,
-            'city' => $request->city,
-            'zip' => $request->zip,
-            'country' => $request->country,
+            'city' => $cityName ?? '',
+            'zip' => $request->zip ?? '',
+            'country' => $countryName ?? 'Nigeria',
+            'state' => $stateName ?? '',
+            'country_id' => $countryId ? (int) $countryId : null,
+            'state_id' => $stateId ? (int) $stateId : null,
+            'lga_id' => $lgaId ? (int) $lgaId : null,
             'phone' => $request->phone,
             'email' => $request->email,
-            'latitude' => $request->latitude,
-            'longitude' => $request->longitude,
-            'is_billing' => $request->is_billing,
+            'latitude' => $request->latitude ?? '',
+            'longitude' => $request->longitude ?? '',
+            'is_billing' => (bool) $request->is_billing,
             'created_at' => now(),
             'updated_at' => now(),
         ];
-        ShippingAddress::insert($address);
-        return response()->json(['message' => translate('successfully added!')], 200);
+
+        $newAddress = ShippingAddress::create($address);
+
+        return response()->json([
+            'message' => translate('successfully added!'),
+            'address' => $newAddress->load(['country:id,name,iso_code', 'state:id,name,state_code', 'lga:id,name']),
+        ], 200);
     }
 
     public function update_address(Request $request): JsonResponse
@@ -334,33 +373,75 @@ class CustomerController extends Controller
             return response()->json(['message' => translate('not_found')], 200);
         }
 
+        $countryId = $request->input('country_id', $shippingAddress->country_id);
+        $stateId = $request->input('state_id', $shippingAddress->state_id);
+        $lgaId = $request->input('lga_id', $shippingAddress->lga_id);
+
+        if ($request->has('state_id') || $request->has('lga_id')) {
+            $validator = Validator::make($request->all(), [
+                'country_id' => 'nullable|integer|exists:countries,id',
+                'state_id' => 'nullable|integer|exists:states,id',
+                'lga_id' => [
+                    'nullable',
+                    'integer',
+                    'exists:lgas,id',
+                    new \App\Rules\ValidLgaForState($stateId),
+                ],
+            ]);
+
+            if ($validator->fails()) {
+                return response()->json(['errors' => Helpers::validationErrorProcessor($validator)], 403);
+            }
+        }
+
+        $countryName = $request->input('country', $shippingAddress->country);
+        if (!$countryName && $countryId) {
+            $countryName = \App\Models\Country::find($countryId)?->name;
+        }
+
+        $stateName = $request->input('state', $shippingAddress->state);
+        if (!$stateName && $stateId) {
+            $stateName = \App\Models\State::find($stateId)?->name;
+        }
+
+        $cityName = $request->input('city', $shippingAddress->city);
+        if (!$cityName && $lgaId) {
+            $cityName = \App\Models\Lga::find($lgaId)?->name;
+        }
+
         $zipRestrictStatus = getWebConfig(name: 'delivery_zip_code_area_restriction');
         $countryRestrictStatus = getWebConfig(name: 'delivery_country_restriction');
 
-        if ($countryRestrictStatus && !self::delivery_country_exist_check($request->input('country'))) {
+        if ($countryRestrictStatus && $countryName && !self::delivery_country_exist_check($countryName)) {
             return response()->json(['error_type' => 'address', 'message' => translate('Delivery_unavailable_for_this_country')], 403);
-        } elseif ($zipRestrictStatus && !self::delivery_zipcode_exist_check($request->input('zip'))) {
+        } elseif ($zipRestrictStatus && $request->input('zip') && !self::delivery_zipcode_exist_check($request->input('zip'))) {
             return response()->json(['error_type' => 'zip_code', 'message' => translate('Delivery_unavailable_for_this_zip_code_area')], 403);
         }
 
         $shippingAddress->update([
             'customer_id' => $user == 'offline' ? $request->guest_id : $user->id,
             'is_guest' => $user == 'offline' ? 1 : 0,
-            'contact_person_name' => $request['contact_person_name'],
-            'address_type' => $request['address_type'],
-            'address' => $request['address'],
-            'city' => $request['city'],
-            'zip' => $request['zip'],
-            'country' => $request['country'],
-            'phone' => $request['phone'],
-            'latitude' => $request['latitude'],
-            'longitude' => $request['longitude'],
-            'is_billing' => $request['is_billing'],
-            'created_at' => now(),
+            'contact_person_name' => $request->input('contact_person_name', $shippingAddress->contact_person_name),
+            'address_type' => $request->input('address_type', $shippingAddress->address_type),
+            'address' => $request->input('address', $shippingAddress->address),
+            'city' => $cityName,
+            'zip' => $request->input('zip', $shippingAddress->zip),
+            'country' => $countryName,
+            'state' => $stateName,
+            'country_id' => $countryId ? (int) $countryId : null,
+            'state_id' => $stateId ? (int) $stateId : null,
+            'lga_id' => $lgaId ? (int) $lgaId : null,
+            'phone' => $request->input('phone', $shippingAddress->phone),
+            'latitude' => $request->input('latitude', $shippingAddress->latitude),
+            'longitude' => $request->input('longitude', $shippingAddress->longitude),
+            'is_billing' => (bool) $request->input('is_billing', $shippingAddress->is_billing),
             'updated_at' => now(),
         ]);
 
-        return response()->json(['message' => translate('update_successful')], 200);
+        return response()->json([
+            'message' => translate('update_successful'),
+            'address' => $shippingAddress->fresh()->load(['country:id,name,iso_code', 'state:id,name,state_code', 'lga:id,name']),
+        ], 200);
     }
 
     public function delete_address(Request $request):JsonResponse

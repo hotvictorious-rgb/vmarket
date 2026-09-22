@@ -869,3 +869,46 @@ $$\Delta \text{Balance} = ₦0.00, \quad \text{OrdersCreated} = 0, \quad \text{N
 | 09 | Stock Failure | Two-Phase Rollback & Reconciliation | Status: reconciliation_required | Zero negative stock (stock = 0), Phase 2 reconciliation case persisted | **PASS** |
 | 10 | Decommissioning | CartShipping Marked @deprecated | @deprecated docblock present | Verified in CartShipping docblock -> links to FulfillmentAvailabilityService & DeliveryLane | **PASS** |
 | 11 | Decommissioning | ShippingMethod Marked @deprecated | @deprecated docblock present | Verified in ShippingMethod docblock -> links to DeliveryLane & PickupReservationService | **PASS** |
+
+---
+
+## 14. Phase 3: Backend API Contract Freeze Invariant Proofs
+
+### 14.1 Canonical Geographic Contract Invariant
+For any client requesting geographic units for address selection and lane routing:
+$$\text{Countries} = \{ c \mid c \in \text{Country}, c.\text{is_active} = 1 \}$$
+$$\text{States}(c) = \{ s \mid s \in \text{State}, s.\text{country_id} = c, s.\text{is_active} = 1 \}$$
+$$\text{LGAs}(s) = \{ l \mid l \in \text{Lga}, l.\text{state_id} = s, l.\text{is_active} = 1 \}$$
+- Addresses strictly bind $l \in \text{LGAs}(s)$. Mismatched submissions reject with HTTP 403 (`ValidLgaForState`).
+
+### 14.2 Authoritative Fulfillment & Fee Binding Invariant
+Client applications never compute delivery fees, taxes, or availability:
+$$\text{Fee}_{authoritative} = \text{DeliveryLane}(l_{origin}, l_{dest}).\text{delivery_fee}$$
+$$\text{Availability}(s, a) = \text{FulfillmentAvailabilityService}.\text{checkFulfillmentOptions}(s, a)$$
+- Client apps receive frozen amounts in NGN. Delivery fee is guaranteed invariant during checkout via `CheckoutIntent` snapshot.
+
+### 14.3 Multi-Branch Staff & Authorization Scoping Invariant
+For any vendor employee $E$ assigned to branch shop $S_E$ attempting mutation on branch shop $S_{target}$:
+$$\text{BranchPermitted}(E, S_{target}) = \begin{cases} \text{true} & \text{if } S_E \equiv S_{target} \\ \text{false (HTTP 403 Forbidden)} & \text{if } S_E \neq S_{target} \end{cases}$$
+
+---
+
+## Phase 3 Reproducible Verification Execution Log
+
+**Script:** `backend/vmarket-web/scratch/verify_phase_3_api_contracts.php`  
+**Execution Timestamp:** `2026-09-22 16:55 UTC`  
+**Status:** 11 Passed, 0 Failed ($\Delta = 0.00$)
+
+| # | Domain | Audit Test Case | Expected | Actual Result | Status |
+| :- | :--- | :--- | :--- | :--- | :--- |
+| 01 | Geography API | GET `/api/v1/geography/countries` | Active countries with ISO | Returns HTTP 200 with active countries array containing ISO & currency codes | **PASS** |
+| 02 | Geography API | GET `/api/v1/geography/states/{id}` | States for country (Akwa Ibom) | Returns HTTP 200 with states belonging strictly to country | **PASS** |
+| 03 | Geography API | GET `/api/v1/geography/lgas/{id}` | Canonical LGAs (Uyo, Eket) | Returns HTTP 200 with canonical LGAs belonging strictly to state | **PASS** |
+| 04 | Customer Address | POST `/api/v1/customer/address/add` | Canonical LGA persisted & loaded | Address created with persisted canonical LGA (#69) and eager-loaded relations | **PASS** |
+| 05 | Customer Address | ValidLgaForState Mismatch | HTTP 403 Validation Error | Rejected with HTTP 403 validation error when LGA does not belong to State | **PASS** |
+| 06 | Customer Address | GET `/api/v1/customer/address/list` | Eager-loaded relations | Returns address array with eager-loaded country, state, and lga objects | **PASS** |
+| 07 | Fulfillment Engine | POST `/api/v1/fulfillment/availability` | Authoritative options schema | Returns authoritative delivery fee (₦500.00) and in-shop pickup slots | **PASS** |
+| 08 | Delivery Checkout | POST `/api/v1/checkout/intent` | Frozen `order_group_id` & total | Freezes order_group_id, NGN currency, and exact total (₦12,500.00) | **PASS** |
+| 09 | In-Shop Pickup | POST `/api/v1/customer/pickup-reservations` | 24h code, ₦0.00 shipping | Issues 24h reservation code, status 'pending_inspection', and zero shipping fee | **PASS** |
+| 10 | Vendor Multi-Branch | Cross-Branch Employee Breach | HTTP 403 Forbidden | Middleware strictly returned HTTP 403 Forbidden with anti-tamper message | **PASS** |
+| 11 | Delivery Rider | Doorstep Delivery OTP Length | 6-digit cryptographic standard | OTP format enforced strictly to 6 cryptographic digits | **PASS** |
