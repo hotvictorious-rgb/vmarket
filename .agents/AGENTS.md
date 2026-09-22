@@ -15,6 +15,10 @@ Before taking ANY action, every AI **MUST** read:
 9. `.agents/rules/VMARKET_ADMIN_PANEL_SPEC.md` — The 70-section canonical production contract for Admin Panel ↔ Backend.
 10. `.agents/rules/ADMIN_PANEL_ALIGNMENT.md` — The mandatory Admin Panel enforcing rules.
 11. `.agents/rules/ADMIN_PANEL_ALIGNMENT_PLAN.md` — The 10-phase Admin Panel alignment plan.
+12. `.agents/rules/VMARKET_VENDOR_SPEC.md` — The 31-section canonical production contract for Vendor Web & Vendor Mobile App ↔ Backend.
+13. `.agents/rules/VMARKET_DELIVERY_APP_SPEC.md` — The 31-section canonical production contract for Delivery Rider Mobile App ↔ Backend.
+
+**MANDATORY RULE FOR ALL AIs**: All AIs working on Victorious MARKET must strictly follow all 4 canonical production specifications (`VMARKET_CUSTOMER_APP_SPEC.md`, `VMARKET_ADMIN_PANEL_SPEC.md`, `VMARKET_VENDOR_SPEC.md`, `VMARKET_DELIVERY_APP_SPEC.md`) without exception. No AI is permitted to bypass, override, or alter these specification rules under any circumstances.
 
 ## 1. Golden Rule: Read Before Writing
 Before making ANY changes to this codebase, you MUST:

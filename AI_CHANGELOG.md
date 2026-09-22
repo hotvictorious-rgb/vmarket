@@ -14,6 +14,16 @@
   - `CustomRoleController.php` – closed authorization gap: `updateStatus()`/`delete()` now guarded by policy + Super-Admin-role protection; audit entries (`role.created`/`role.updated`/`role.status_updated`/`role.deleted`).
 * **Guard note:** Legacy coarse modules (`user_section`, `system_settings`, `order_management`, etc.) remain honored as explicit grants for backward compatibility; implied prefix coverage is reserved for coarse-module UX display, never for write-authorization escalation.
 
+### [2026-09-23 00:17 UTC] VMarket Deliveryman Mobile App Production Alignment Specification [ai-governance] [AI]
+* **Components:** AI Governance (`.agents/rules/VMARKET_DELIVERY_APP_SPEC.md`, `.agents/AGENTS.md`, `CLAUDE.md`), Delivery Rider Mobile App (`Delivery Man App`)
+* **Scope:** Codified the 31-section canonical VMarket Deliveryman App ↔ Backend Production Alignment Specification. Updated `.agents/AGENTS.md` Prime Directive and `CLAUDE.md` mandating that **ALL AI coding agents MUST strictly follow all 4 canonical production specification documents** without exception (`VMARKET_CUSTOMER_APP_SPEC.md`, `VMARKET_ADMIN_PANEL_SPEC.md`, `VMARKET_VENDOR_SPEC.md`, `VMARKET_DELIVERY_APP_SPEC.md`).
+* **Key Invariants Codified:**
+  - **Field Operations Client Architecture**: The Deliveryman App displays backend-authorized work and submits operational inputs; backend is the sole authority for fees, pricing, stock, assignment, and status.
+  - **6-Digit Cryptographic OTP Server Verification**: Customer delivery OTP verification is performed strictly server-side (`verify_order_delivery_otp`). Local OTP checking is strictly forbidden.
+  - **Internal Logistics vs Marketplace Geography**: Internal logistics (`Hubs`, `Riders`, `Dispatch`) are decoupled from marketplace geography (`Country ──► State ──► LGA`). Riders cannot alter delivery lanes or destinations.
+  - **Return-to-Vendor Workflow**: Failed deliveries trigger audited `return_to_shop` assignments. Riders cannot cancel orders or issue refunds.
+  - **Zero-Trust Security & State Machine**: Backend validates rider identity, active status, assignment ownership, and valid state transitions for every API action.
+
 ### [2026-09-22 23:57 UTC] VMarket Vendor Web + Vendor App Production Alignment Specification [ai-governance] [AI]
 * **Components:** AI Governance (`.agents/rules/VMARKET_VENDOR_SPEC.md`), Vendor Web Dashboard, Vendor Mobile App (`Vendor app`)
 * **Scope:** Codified the 31-section canonical VMarket Vendor Web + Vendor App Production Alignment Specification.

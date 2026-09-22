@@ -41,7 +41,7 @@ Frontend applications (**User App**, **Vendor App**, **Delivery App**) are **con
 
 ---
 
-## Canonical Production Alignment References
+## Canonical Production Alignment References & Mandatory AI Rules
 - **Customer App ↔ Backend Contract:** `.agents/rules/VMARKET_CUSTOMER_APP_SPEC.md` (77-section canonical production contract)
 - **Customer App Rules:** `.agents/rules/CUSTOMER_APP_ALIGNMENT.md` (20 mandatory rules)
 - **Customer App Alignment Plan:** `.agents/rules/CUSTOMER_APP_ALIGNMENT_PLAN.md` (34-phase execution plan)
@@ -49,6 +49,10 @@ Frontend applications (**User App**, **Vendor App**, **Delivery App**) are **con
 - **Admin Panel ↔ Backend Contract:** `.agents/rules/VMARKET_ADMIN_PANEL_SPEC.md` (70-section canonical production contract)
 - **Admin Panel Rules:** `.agents/rules/ADMIN_PANEL_ALIGNMENT.md` (Mandatory Admin enforcing rules)
 - **Admin Panel Alignment Plan:** `.agents/rules/ADMIN_PANEL_ALIGNMENT_PLAN.md` (10-phase execution plan)
+- **Vendor Web & Vendor App ↔ Backend Contract:** `.agents/rules/VMARKET_VENDOR_SPEC.md` (31-section canonical production contract)
+- **Deliveryman Mobile App ↔ Backend Contract:** `.agents/rules/VMARKET_DELIVERY_APP_SPEC.md` (31-section canonical production contract)
+
+> **MANDATORY RULE FOR ALL AIs**: All AI coding agents working on Victorious MARKET MUST strictly follow all 4 canonical production specifications (`VMARKET_CUSTOMER_APP_SPEC.md`, `VMARKET_ADMIN_PANEL_SPEC.md`, `VMARKET_VENDOR_SPEC.md`, `VMARKET_DELIVERY_APP_SPEC.md`) without exception. No AI is permitted to bypass, override, or alter these specification rules under any circumstances.
 
 ---
 
