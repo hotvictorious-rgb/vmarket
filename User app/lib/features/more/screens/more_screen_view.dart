@@ -119,6 +119,13 @@ class _MoreScreenState extends State<MoreScreen> with AutomaticKeepAliveClientMi
                                   },
                                 ),
 
+                              if(authController.isLoggedIn())
+                                MenuButtonWidget(image: Images.shoppingImage, title: getTranslated('my_pickup_reservations', context) ?? 'My Pickup Reservations',
+                                  onTap: () {
+                                    Navigator.pushNamed(context, '/my-reservations');
+                                  },
+                                ),
+
                               MenuButtonWidget(image: Images.address, title: getTranslated('addresses', context),
                                 onTap: () {
                                   RouterHelper.getAddressListScreen(action: RouteAction.push);
