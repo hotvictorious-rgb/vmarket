@@ -27,6 +27,85 @@
                             <input type="hidden" id="billing-input-enable" name="billing_input_enable"
                                    value="{{ $billing_input_by_customer }}">
                             @if($physical_product_view)
+                                @php
+                                    $cartItems = \App\Utils\CartManager::getCartListQuery(type: 'checked');
+                                    $uniqueShops = [];
+                                    foreach ($cartItems as $item) {
+                                        $sellerId = $item['seller_id'];
+                                        $sellerIs = $item['seller_is'];
+                                        if ($sellerIs == 'admin') {
+                                            $uniqueShops['admin'] = [
+                                                'name' => getWebConfig(name: 'company_name') ?? 'Victorious Central Store',
+                                                'address' => getWebConfig(name: 'shop_address') ?? 'Victorious Central Hub, Nigeria',
+                                            ];
+                                        } else {
+                                            $shop = \App\Models\Shop::where('seller_id', $sellerId)->first();
+                                            if ($shop && !isset($uniqueShops['seller_' . $sellerId])) {
+                                                $uniqueShops['seller_' . $sellerId] = [
+                                                    'name' => $shop->name ?? 'Vendor Store',
+                                                    'address' => $shop->address ?? 'Store Location',
+                                                ];
+                                            }
+                                        }
+                                    }
+                                @endphp
+
+                                <div class="fulfillment-selector d-flex p-1 bg-light rounded-3 mb-4" style="border: 1.5px solid rgba(114, 50, 187, 0.15);">
+                                    <button type="button" class="btn w-50 py-2 fw-bold text-capitalize rounded-3 active btn-primary text-white" id="fulfillment-tab-delivery" onclick="switchFulfillment('delivery')">
+                                        <i class="bi bi-truck me-1"></i> {{ translate('doorstep_delivery') ?? 'Doorstep Delivery' }}
+                                    </button>
+                                    <button type="button" class="btn w-50 py-2 fw-bold text-capitalize rounded-3 text-dark" id="fulfillment-tab-pickup" onclick="switchFulfillment('pickup')">
+                                        <i class="bi bi-shop me-1"></i> {{ translate('in_shop_pickup') ?? 'In-Shop Pickup' }}
+                                        <span class="badge bg-success ms-1 font-size-10">{{ translate('pay_zero_now') ?? 'Pay ₦0 Now' }}</span>
+                                    </button>
+                                </div>
+
+                                <div id="in-shop-pickup-container" class="d-none mb-4">
+                                    <h5 class="mb-3 text-capitalize"><i class="bi bi-shop text-primary me-2"></i>{{ translate('store_pickup_locations') ?? 'Store Pickup Locations' }}</h5>
+                                    <div class="alert alert-info py-2 px-3 mb-3 d-flex align-items-center gap-2 rounded-3" style="background-color: rgba(16, 185, 129, 0.08); border-color: rgba(16, 185, 129, 0.25); color: #065F46;">
+                                        <i class="bi bi-clock-history fs-18"></i>
+                                        <span class="fs-13"><strong>{{ translate('24_hour_hold') ?? '24-Hour Stock Hold' }}:</strong> {{ translate('inspect_in_person_pay_at_store') ?? 'Pay ₦0.00 right now. Inspect items in person at the vendor counter before final payment.' }}</span>
+                                    </div>
+
+                                    @foreach($uniqueShops as $shop)
+                                        <div class="card mb-3 border rounded-3 shadow-sm">
+                                            <div class="card-body">
+                                                <div class="d-flex align-items-center gap-2 mb-2">
+                                                    <i class="bi bi-building fs-18 text-primary"></i>
+                                                    <h6 class="mb-0 fw-bold">{{ $shop['name'] }}</h6>
+                                                </div>
+                                                <div class="d-flex align-items-start gap-2 text-muted fs-13 mb-3">
+                                                    <i class="bi bi-geo-alt-fill text-danger mt-1"></i>
+                                                    <div>{{ $shop['address'] }}</div>
+                                                </div>
+
+                                                {{-- [AI] Direction Guidance Box with Message Support button (STRICTLY NO PHONE NUMBER) --}}
+                                                <div class="p-2 rounded-3 d-flex align-items-center justify-content-between flex-wrap gap-2" style="background: rgba(114, 50, 187, 0.05); border: 1px dashed rgba(114, 50, 187, 0.25);">
+                                                    <div class="d-flex align-items-center gap-2 fs-12 text-dark">
+                                                        <i class="bi bi-compass text-primary fs-15"></i>
+                                                        <span>{{ translate('need_help_finding_this_store') ?? 'Need help finding this store? Message Customer Support for step-by-step guidance.' }}</span>
+                                                    </div>
+                                                    <a href="{{ route('support-ticket') }}" class="btn btn-sm btn-primary rounded-2 text-nowrap py-1 px-2 fs-12">
+                                                        <i class="bi bi-chat-dots me-1"></i>{{ translate('message_support') ?? 'Message Support' }}
+                                                    </a>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    @endforeach
+
+                                    <div class="mt-4">
+                                        @if(auth('customer')->check())
+                                            <button type="button" class="btn btn-primary w-100 py-3 fw-bold fs-16 rounded-3" id="btn-reserve-pickup" onclick="submitPickupReservation()">
+                                                <i class="bi bi-bag-check me-2"></i>{{ translate('reserve_store_pickup_pay_zero') ?? 'Reserve for Store Pickup (Pay ₦0.00 Now)' }}
+                                            </button>
+                                        @else
+                                            <a href="{{ route('customer.auth.login') }}" class="btn btn-primary w-100 py-3 fw-bold fs-16 rounded-3">
+                                                <i class="bi bi-box-arrow-in-right me-2"></i>{{ translate('login_to_reserve_pickup') ?? 'Log in to Reserve for Store Pickup' }}
+                                            </a>
+                                        @endif
+                                    </div>
+                                </div>
+
                                 <form method="post" id="address-form">
                                     <h5 class="mb-3 text-capitalize">{{ translate('delivery_information_details') }}</h5>
 
@@ -704,4 +783,53 @@
             defer>
         </script>
     @endif
+
+    <script>
+        function switchFulfillment(type) {
+            if (type === 'pickup') {
+                $('#address-form').addClass('d-none');
+                $('#in-shop-pickup-container').removeClass('d-none');
+                $('#fulfillment-tab-delivery').removeClass('active btn-primary text-white').addClass('text-dark');
+                $('#fulfillment-tab-pickup').addClass('active btn-primary text-white').removeClass('text-dark');
+                $('#proceed-to-next-action').addClass('d-none');
+            } else {
+                $('#address-form').removeClass('d-none');
+                $('#in-shop-pickup-container').addClass('d-none');
+                $('#fulfillment-tab-delivery').addClass('active btn-primary text-white').removeClass('text-dark');
+                $('#fulfillment-tab-pickup').removeClass('active btn-primary text-white').addClass('text-dark');
+                $('#proceed-to-next-action').removeClass('d-none');
+            }
+        }
+
+        function submitPickupReservation() {
+            var $btn = $('#btn-reserve-pickup');
+            $btn.prop('disabled', true).html('<span class="spinner-border spinner-border-sm me-2"></span>{{ translate("reserving") ?? "Reserving..." }}');
+            $.ajax({
+                url: "{{ route('pickup-reservations.create') }}",
+                type: "POST",
+                data: {
+                    _token: "{{ csrf_token() }}",
+                    idempotency_key: "prc_web_" + Date.now() + "_" + Math.floor(Math.random() * 10000),
+                    checked_only: 1
+                },
+                success: function(response) {
+                    if (response.status) {
+                        toastr.success(response.message || "{{ translate('reservation_created_successfully') ?? 'Reservation created successfully!' }}");
+                        window.location.href = "{{ route('account-oder') }}";
+                    } else {
+                        toastr.error(response.message || "{{ translate('unable_to_create_reservation') ?? 'Unable to create reservation.' }}");
+                        $btn.prop('disabled', false).html('<i class="bi bi-bag-check me-2"></i>{{ translate("reserve_store_pickup_pay_zero") ?? "Reserve for Store Pickup (Pay ₦0.00 Now)" }}');
+                    }
+                },
+                error: function(xhr) {
+                    var msg = "{{ translate('unable_to_process_pickup_reservation') ?? 'Unable to process pickup reservation.' }}";
+                    if (xhr.responseJSON && xhr.responseJSON.message) {
+                        msg = xhr.responseJSON.message;
+                    }
+                    toastr.error(msg);
+                    $btn.prop('disabled', false).html('<i class="bi bi-bag-check me-2"></i>{{ translate("reserve_store_pickup_pay_zero") ?? "Reserve for Store Pickup (Pay ₦0.00 Now)" }}');
+                }
+            });
+        }
+    </script>
 @endpush

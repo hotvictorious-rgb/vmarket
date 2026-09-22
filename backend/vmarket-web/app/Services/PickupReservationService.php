@@ -185,7 +185,8 @@ class PickupReservationService
                 'seller_id' => $sellerId,
                 'name' => $shop ? (string) $shop->name : 'Shop #' . $shopId,
                 'address' => $shop ? (string) $shop->address : '',
-                'contact' => $shop ? (string) $shop->contact : '',
+                'contact' => null, // [AI] Strictly redacted for vendor privacy
+                'direction_guidance' => 'Need help finding this store? Please message Customer Support for step-by-step guidance.',
             ];
 
             // Immutable reservation snapshot

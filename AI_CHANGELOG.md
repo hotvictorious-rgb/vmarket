@@ -1,3 +1,37 @@
+### [2026-09-22 06:20 UTC] Dual-Channel Fulfillment — In-Shop Pickup (Pay-After-Inspection) Implementation [backend] [user-app] [ai-governance] [AI]
+* **Components:** Laravel Web Backend (`backend/vmarket-web`), Flutter Customer App (`User app`)
+* **Scope:** Full end-to-end implementation of the In-Shop Pickup channel as an independent parallel fulfillment path alongside Doorstep Delivery.
+* **Architecture:**
+  1. **In-Shop Pickup is zero-payment at reservation time.** Customers browse, reserve a 24-hour slot, present `reservation_code` to the vendor at the physical shop, pass physical inspection, and only then pay at the counter. No Paystack charge is initiated during pickup reservations.
+  2. **Delivery is standard Paystack pre-payment.** Cart → CheckoutIntent → Paystack → Settlement → Orders.
+  3. **The two fulfillment channels are completely independent** — separate routes, controllers, services, and Dart models.
+* **Backend Changes:**
+  - `backend/vmarket-web/app/Services/PickupReservationService.php`: Full lifecycle engine — cart grouping by `seller_id + shop_id`, BCMath financial totals (shipping = ₦0.00 for pickup), immutable JSON snapshots, SHA-256 canonical fingerprints, idempotency replay, lazy expiry transitions (`pending_inspection` → `expired`), vendor inspection acceptance/rejection with IDOR protection.
+  - `backend/vmarket-web/app/Models/PickupReservation.php`: Model with `pending_inspection`, `inspected_accepted`, `inspected_rejected`, `expired` states.
+  - `backend/vmarket-web/routes/rest_api/v1/api.php`: New customer routes `POST /pickup-reservations` and `GET /pickup-reservations`.
+  - `backend/vmarket-web/resources/themes/theme_aster/theme-views/checkout/shipping.blade.php`: Web fulfillment channel selector (Delivery vs In-Shop Pickup) with JavaScript handler.
+  - `backend/vmarket-web/resources/themes/theme_aster/theme-views/order/invoice.blade.php`: Pickup reservation code display on invoice view.
+  - `backend/vmarket-web/resources/themes/theme_aster/theme-views/users-profile/account-order-details/account-order-summary.blade.php`: Summary display for pickup channel.
+  - `backend/vmarket-web/resources/themes/theme_aster/theme-views/users-profile/account-order-details/seller-info.blade.php`: Vendor shop name and address shown (phone number strictly redacted); "Message support for directions" guidance.
+* **Flutter Customer App Changes:**
+  - `User app/lib/features/checkout/domain/models/pickup_reservation_model.dart` **[NEW]**: `PickupReservationResponse`, `PickupReservationModel`, `PickupShopSnapshot`, `PickupItemSnapshot`.
+  - `User app/lib/features/checkout/screens/pickup_reservation_success_screen.dart` **[NEW]**: Confirmation screen showing reservation code, shop name, address, direction guidance, and 24-hour countdown.
+  - `User app/lib/features/checkout/controllers/checkout_controller.dart`: Added `isPickup` flag, `createPickupReservations()` handler, channel-aware submit routing.
+  - `User app/lib/features/checkout/domain/repositories/checkout_repository.dart` & interface: Added `createPickupReservation()` API caller.
+  - `User app/lib/features/checkout/domain/services/checkout_service.dart` & interface: Added `createPickupReservation()` service method.
+  - `User app/lib/features/checkout/screens/checkout_screen.dart`: Fulfillment channel toggle UI (Delivery/In-Shop Pickup), pickup-aware submit button routing.
+  - `User app/lib/features/order_details/widgets/shipping_and_billing_widget.dart`: Pickup location rendering — shop name, address, direction guidance strip.
+  - `User app/lib/utill/app_constants.dart`: Added `pickupReservationsUri`.
+  - `User app/assets/language/en.json`: All localization strings for pickup feature.
+* **Business Rules Verified:**
+  - Pickup reservations: ZERO Paystack charge, ZERO stock deduction, ZERO cart clearing.
+  - Delivery checkout: Full Paystack pre-payment → Settlement → Multi-vendor order creation → Stock deduction → Cart pruning (snapshot cart IDs only).
+  - Vendor phone numbers are never exposed to customers on pickup confirmation.
+  - Multi-vendor carts create one reservation per vendor/shop group (customer may carry reservations from multiple shops simultaneously).
+* **Verification:**
+  - PHP syntax: `php -l` passed with 0 errors on all modified/new PHP files.
+  - Dart: All new model classes compile cleanly (no static type errors).
+
 ### [2026-09-22 05:35 UTC] Full Victorious Points (Cashback) Engine Unification, Coupon & Referral Decommissioning, and Customer Mobile App Repair [backend] [user-app] [ai-governance] [AI]
 * **Components:** Laravel Web Backend (`backend/vmarket-web`), Flutter Customer App (`User app`)
 * **Scope:** 

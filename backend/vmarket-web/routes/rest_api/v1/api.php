@@ -341,6 +341,15 @@ Route::group(['prefix' => 'v1', 'middleware' => ['api_lang']], function () {
             });
         });
 
+        // [AI] In-Shop Pickup Reservations (REST API)
+        Route::group(['prefix' => 'pickup-reservations'], function () {
+            Route::controller(\App\Http\Controllers\Customer\PickupReservationController::class)->group(function () {
+                Route::post('/', 'create');
+                Route::get('/', 'index');
+                Route::get('/{code}', 'show');
+                Route::post('/{code}/pay', 'pay');
+            });
+        });
 
     });
 

@@ -212,6 +212,46 @@
                                                         @endif
                                                     </div>
                                                 </div>
+                                            @else
+                                                @php
+                                                    $shopName = $order->seller?->shop?->name ?? $order->orderDetails?->first()?->seller?->shop?->name ?? getInHouseShopConfig(key: 'name') ?? translate('In-House Store');
+                                                    $shopAddress = $order->seller?->shop?->address ?? $order->orderDetails?->first()?->seller?->shop?->address ?? getWebConfig(name: 'shop_address') ?? translate('Store address available on request');
+                                                @endphp
+                                                <div class="card-body">
+                                                    <div class="d-flex flex-column gap-3">
+                                                        <address class="m-0">
+                                                            <div class="media gap-2 mb-2">
+                                                                <i class="bi bi-shop text-primary fs-18"></i>
+                                                                <div class="media-body">
+                                                                    <div class="mb-0 fw-bold text-dark fs-14 text-capitalize">
+                                                                        {{ translate('In-Store Pickup Location') }}
+                                                                    </div>
+                                                                </div>
+                                                            </div>
+
+                                                            <p class="m-0 fs-12">
+                                                                <strong>{{ translate('Store Name') }}</strong>: {{ $shopName }}
+                                                                <br>
+                                                                <strong>{{ translate('Store Address') }}</strong>: {{ $shopAddress }}
+                                                            </p>
+                                                        </address>
+
+                                                        <div class="p-3 rounded-2 bg-warning bg-opacity-10 border border-warning border-opacity-25">
+                                                            <div class="d-flex align-items-start gap-2">
+                                                                <i class="bi bi-info-circle-fill text-warning fs-14 mt-1"></i>
+                                                                <div class="fs-12 text-dark">
+                                                                    <strong>{{ translate('Need directions?') }}</strong>
+                                                                    {{ translate('Please message customer support for step-by-step guidance to this store.') }}
+                                                                    <div class="mt-2">
+                                                                        <a href="{{ route('support-ticket') }}" class="btn btn-primary btn-sm fs-11 px-3 py-1 text-white">
+                                                                            <i class="bi bi-chat-dots-fill me-1"></i> {{ translate('Message Support') }}
+                                                                        </a>
+                                                                    </div>
+                                                                </div>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                </div>
                                             @endif
                                         </div>
                                     </div>

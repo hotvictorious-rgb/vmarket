@@ -643,7 +643,7 @@
                                 <table>
                                     <tbody>
                                     @php($shipping = $order->shipping_address_data)
-                                    @if(!empty((array) $shipping))
+                                    @if(!empty((array) $shipping) && $order->order_type != 'pickup')
                                         <tr>
                                             <td class="px-2" colspan="3">
                                                 <h5>{{ translate('Shipping_address') }} <span class="fw-normal">({{ translate($shipping->address_type ?? '') }})</span></h5>
@@ -668,6 +668,31 @@
                                             <td class="px-2 pt-1 pb-1">{{ translate('Address') }}</td>
                                             <td class="pt-1 pb-1">:</td>
                                             <td class="px-2 pt-1 pb-1"><span class="text-dark">{{ $shipping->address ?? '' }}</span></td>
+                                        </tr>
+                                    @elseif($order->order_type == 'pickup')
+                                        @php
+                                            $shopName = $order->seller?->shop?->name ?? $order->orderDetails?->first()?->seller?->shop?->name ?? getInHouseShopConfig(key: 'name') ?? translate('In-House Store');
+                                            $shopAddress = $order->seller?->shop?->address ?? $order->orderDetails?->first()?->seller?->shop?->address ?? getWebConfig(name: 'shop_address') ?? translate('Store address available on request');
+                                        @endphp
+                                        <tr>
+                                            <td class="px-2" colspan="3">
+                                                <h5>{{ translate('Store_Pickup_Location') }}</h5>
+                                            </td>
+                                        </tr>
+                                        <tr>
+                                            <td class="px-2 pt-1 pb-1">{{ translate('Store_Name') }}</td>
+                                            <td class="pt-1 pb-1">:</td>
+                                            <td class="px-2 pt-1 pb-1"><span class="text-dark">{{ $shopName }}</span></td>
+                                        </tr>
+                                        <tr>
+                                            <td class="px-2 pt-1 pb-1">{{ translate('Store_Address') }}</td>
+                                            <td class="pt-1 pb-1">:</td>
+                                            <td class="px-2 pt-1 pb-1"><span class="text-dark">{{ $shopAddress }}</span></td>
+                                        </tr>
+                                        <tr>
+                                            <td class="px-2 pt-1 pb-1" colspan="3">
+                                                <small class="text-muted"><em>{{ translate('For directions and guidance to this store, please contact Customer Support.') }}</em></small>
+                                            </td>
                                         </tr>
                                     @else
                                         <tr>

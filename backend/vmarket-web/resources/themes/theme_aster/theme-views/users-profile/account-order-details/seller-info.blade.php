@@ -58,6 +58,15 @@
                                                     <ul class="list-unstyled list-inline-dot fs-12">
                                                         <li>{{ $rating_count }} {{ translate('reviews') }} </li>
                                                     </ul>
+                                                    @if(!empty($order?->seller?->shop?->address))
+                                                        <div class="fs-12 text-muted d-flex align-items-center gap-1 mt-1">
+                                                            <i class="bi bi-geo-alt-fill text-primary"></i>
+                                                            <span><strong>{{ translate('Store Address') }}:</strong> {{ $order->seller->shop->address }}</span>
+                                                        </div>
+                                                        <div class="fs-11 text-warning mt-1">
+                                                            <i class="bi bi-info-circle me-1"></i> {{ translate('Need directions to this store? Please message Customer Support.') }}
+                                                        </div>
+                                                    @endif
                                                 </div>
                                             </div>
 
@@ -126,6 +135,16 @@
                                                     <ul class="list-unstyled list-inline-dot fs-12">
                                                         <li>{{ $rating_count }} {{ translate('reviews') }} </li>
                                                     </ul>
+                                                    @php($inhouseAddress = getWebConfig(name: 'shop_address'))
+                                                    @if(!empty($inhouseAddress))
+                                                        <div class="fs-12 text-muted d-flex align-items-center gap-1 mt-1">
+                                                            <i class="bi bi-geo-alt-fill text-primary"></i>
+                                                            <span><strong>{{ translate('Store Address') }}:</strong> {{ $inhouseAddress }}</span>
+                                                        </div>
+                                                        <div class="fs-11 text-warning mt-1">
+                                                            <i class="bi bi-info-circle me-1"></i> {{ translate('Need directions to this store? Please message Customer Support.') }}
+                                                        </div>
+                                                    @endif
                                                 </div>
                                             </div>
 
