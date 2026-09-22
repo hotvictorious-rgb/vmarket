@@ -13,6 +13,8 @@ use App\Contracts\Repositories\RestockProductRepositoryInterface;
 use App\Contracts\Repositories\VendorRepositoryInterface;
 use App\Contracts\Repositories\VendorWalletRepositoryInterface;
 use App\Http\Controllers\BaseController;
+use App\Models\AdminAuditLog;
+use App\Models\PickupReservation;
 use App\Services\DashboardService;
 use Carbon\Carbon;
 use Illuminate\Contracts\View\View;
@@ -103,6 +105,20 @@ class DashboardController extends BaseController
             'getTotalCustomerCount' => $getTotalCustomerCount,
             'getTotalVendorCount' => $this->vendorRepo->getListWhere(dataLimit: 'all')->count(),
             'getTotalDeliveryManCount' => $this->deliveryManRepo->getListWhere(filters: ['seller_id' => 0], dataLimit: 'all')->count(),
+
+            // [AI] Phase A10 — VMarket Operational Command Centre metrics
+            // Pickup reservations awaiting in-shop inspection before release
+            'pending_inspection_count' => PickupReservation::where('status', 'pending_inspection')->count(),
+            // Blocked payment override attempts today — indicates someone tried to
+            // manually mark a digital (Paystack) order as paid without webhook confirmation
+            'blocked_payment_overrides_today' => AdminAuditLog::where('action', 'payment_status.override_blocked')
+                ->whereDate('created_at', today())
+                ->count(),
+            // Count of in-house products at or below their restock threshold
+            'low_stock_inhouse_count' => $this->productRepo->getListWhere(
+                filters: ['added_by' => 'admin'],
+                dataLimit: 'all'
+            )->filter(fn($p) => $p->current_stock <= ($p->minimum_order_qty ?? 1))->count(),
         ];
         return view('admin-views.system.dashboard', compact('data', 'inHouseEarning', 'vendorEarning', 'commissionEarn', 'inHouseOrderEarningArray', 'vendorOrderEarningArray', 'label', 'dateType'));
     }

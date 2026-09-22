@@ -45,6 +45,11 @@ class DeliveryLaneController extends Controller
      */
     public function store(Request $request): RedirectResponse
     {
+        if (!\App\Utils\Helpers::module_permission_check('delivery.lane.manage') && !\App\Utils\Helpers::module_permission_check('order_management')) {
+            ToastMagic::error(translate('Access Denied: Permission required to manage delivery lanes.'));
+            return back();
+        }
+
         $request->validate([
             'origin_country_id' => 'required|exists:countries,id',
             'origin_state_id' => 'required|exists:states,id',
@@ -66,7 +71,7 @@ class DeliveryLaneController extends Controller
             return back()->withInput();
         }
 
-        DeliveryLane::create([
+        $lane = DeliveryLane::create([
             'origin_country_id' => $request->origin_country_id,
             'origin_state_id' => $request->origin_state_id,
             'origin_lga_id' => $request->origin_lga_id,
@@ -78,38 +83,94 @@ class DeliveryLaneController extends Controller
             'is_enabled' => true,
         ]);
 
+        \App\Services\AdminAuditService::log(
+            action: 'delivery_lane.created',
+            resourceType: DeliveryLane::class,
+            resourceId: $lane->id,
+            afterState: $lane->toArray(),
+            reason: $request->input('reason', 'New directional delivery lane created')
+        );
+
         ToastMagic::success(translate('Delivery lane added successfully'));
         return back();
     }
 
     /**
-     * Update Delivery Lane
+     * Update Delivery Lane Fee / ETA
      */
     public function update(Request $request, $id): RedirectResponse
     {
+        if (!\App\Utils\Helpers::module_permission_check('delivery.fee.update') && !\App\Utils\Helpers::module_permission_check('delivery.lane.manage') && !\App\Utils\Helpers::module_permission_check('order_management')) {
+            ToastMagic::error(translate('Access Denied: Permission required to update delivery lane terms.'));
+            return back();
+        }
+
         $request->validate([
             'delivery_fee' => 'required|numeric|min:0',
             'estimated_delivery_time' => 'required|string|max:100',
         ]);
 
         $lane = DeliveryLane::findOrFail($id);
+        $beforeState = $lane->toArray();
+
         $lane->update([
             'delivery_fee' => $request->delivery_fee,
             'estimated_delivery_time' => $request->estimated_delivery_time,
         ]);
+
+        \App\Services\AdminAuditService::log(
+            action: 'delivery_lane.updated',
+            resourceType: DeliveryLane::class,
+            resourceId: $lane->id,
+            beforeState: $beforeState,
+            afterState: $lane->fresh()->toArray(),
+            reason: $request->input('reason', 'Delivery fee / ETA updated')
+        );
 
         ToastMagic::success(translate('Delivery lane updated successfully'));
         return back();
     }
 
     /**
-     * Delete Delivery Lane
+     * Delete / Disable Delivery Lane
      */
     public function delete($id): RedirectResponse
     {
-        Configuration:
+        if (!\App\Utils\Helpers::module_permission_check('delivery.lane.manage') && !\App\Utils\Helpers::module_permission_check('order_management')) {
+            ToastMagic::error(translate('Access Denied: Permission required to delete delivery lanes.'));
+            return back();
+        }
+
         $lane = DeliveryLane::findOrFail($id);
+        $beforeState = $lane->toArray();
+
+        // Check if orders exist referencing this lane
+        $hasOrders = \App\Models\Order::where('lane_id', $lane->id)->exists();
+
+        if ($hasOrders) {
+            // Preserve historical snapshot: soft-disable instead of hard deletion
+            $lane->update(['is_enabled' => false]);
+            \App\Services\AdminAuditService::log(
+                action: 'delivery_lane.disabled_for_historical_preservation',
+                resourceType: DeliveryLane::class,
+                resourceId: $lane->id,
+                beforeState: $beforeState,
+                afterState: $lane->fresh()->toArray(),
+                reason: 'Soft disabled because historical order snapshots reference this lane'
+            );
+            ToastMagic::warning(translate('Lane has historical orders. Soft-disabled to preserve order snapshots.'));
+            return back();
+        }
+
         $lane->delete();
+
+        \App\Services\AdminAuditService::log(
+            action: 'delivery_lane.deleted',
+            resourceType: DeliveryLane::class,
+            resourceId: $id,
+            beforeState: $beforeState,
+            reason: 'Delivery lane removed'
+        );
 
         ToastMagic::success(translate('Delivery lane removed'));
         return back();
@@ -120,9 +181,23 @@ class DeliveryLaneController extends Controller
      */
     public function status(Request $request): JsonResponse
     {
+        if (!\App\Utils\Helpers::module_permission_check('delivery.lane.manage') && !\App\Utils\Helpers::module_permission_check('order_management')) {
+            return response()->json(['success' => false, 'message' => translate('Access Denied')], 403);
+        }
+
         $lane = DeliveryLane::findOrFail($request->id);
+        $beforeStatus = $lane->is_enabled;
         $lane->is_enabled = $request->status;
         $lane->save();
+
+        \App\Services\AdminAuditService::log(
+            action: $lane->is_enabled ? 'delivery_lane.enabled' : 'delivery_lane.disabled',
+            resourceType: DeliveryLane::class,
+            resourceId: $lane->id,
+            beforeState: ['is_enabled' => $beforeStatus],
+            afterState: ['is_enabled' => $lane->is_enabled],
+            reason: $request->input('reason', 'Status toggled')
+        );
 
         return response()->json([
             'success' => true,

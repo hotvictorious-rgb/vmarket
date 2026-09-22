@@ -154,6 +154,7 @@ Route::group(['prefix' => 'admin', 'as' => 'admin.', 'middleware' => ['admin', '
     });
 
     Route::get('logout', [LoginController::class, 'logout'])->name('logout');
+    Route::get('audit-logs', [\App\Http\Controllers\Admin\System\AdminAuditLogController::class, 'index'])->name('audit-logs.index');
 
     Route::group(['prefix' => 'profile', 'as' => 'profile.'], function () {
         Route::controller(ProfileController::class)->group(function () {
@@ -210,6 +211,7 @@ Route::group(['prefix' => 'admin', 'as' => 'admin.', 'middleware' => ['admin', '
     Route::group(['prefix' => 'orders', 'as' => 'orders.', 'middleware' => ['module:order_management']], function () {
         Route::controller(OrderController::class)->group(function () {
             Route::get('list/{status}', 'index')->name('list');
+            Route::get('pickup-list', [\App\Http\Controllers\Admin\Order\PickupOrderController::class, 'index'])->name('pickup-list');
             Route::get('export-excel/{status}', 'exportList')->name('export-excel');
             Route::get('generate-invoice/{id}', 'generateInvoice')->name('generate-invoice')->withoutMiddleware(['module:order_management']);
             Route::get('details/{id}', 'getView')->name('details');
@@ -1149,5 +1151,11 @@ Route::group(['prefix' => 'admin', 'as' => 'admin.', 'middleware' => ['admin', '
                 Route::post('refund-status-update', 'updateRefundStatus')->name('refund-status-update');
             });
         });
+    });
+
+    // [AI] Phase A9 — Victorious Points / Cashback Ledger Oversight (read-only, audit)
+    Route::group(['prefix' => 'cashback', 'as' => 'cashback.'], function () {
+        Route::get('ledger', [\App\Http\Controllers\Admin\Finance\CustomerCashbackAdminController::class, 'index'])
+            ->name('index');
     });
 });

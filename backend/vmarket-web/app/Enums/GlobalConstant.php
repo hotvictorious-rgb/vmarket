@@ -1262,4 +1262,25 @@ enum GlobalConstant
         '3rd_party_setup' => '3rd_party_setup',
         'themes_and_addons' => 'themes_and_addons',
     ];
+
+    const EMPLOYEE_ROLE_GRANULAR_PERMISSIONS = [
+        'geography.manage' => 'geography_country_state_lga_management',
+        'delivery.lane.view' => 'delivery_lane_view',
+        'delivery.lane.manage' => 'delivery_lane_creation_and_status_toggle',
+        'delivery.fee.update' => 'delivery_lane_fee_update',
+        'merchants.view' => 'merchants_view',
+        'merchants.review' => 'merchants_application_review',
+        'merchants.approve' => 'merchants_approval_and_rejection',
+        'merchants.suspend' => 'merchants_suspension_and_reinstatement',
+        'orders.view' => 'orders_view',
+        'orders.view_sensitive' => 'orders_view_sensitive_customer_data',
+        'orders.cancel' => 'orders_cancellation',
+        'orders.refund' => 'orders_refund_approval',
+        'payments.view' => 'payments_and_transactions_view',
+        'payments.reconcile' => 'payments_exception_reconciliation',
+        'cashback.manage' => 'victorious_cashback_points_management',
+        'pickup.manage' => 'in_shop_pickup_reservations_and_inspection_audit',
+        'audit_log.view' => 'immutable_admin_audit_log_view',
+        'staff.manage' => 'admin_staff_and_custom_role_management',
+    ];
 }

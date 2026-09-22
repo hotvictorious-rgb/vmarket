@@ -648,6 +648,12 @@ class OrderController extends BaseController
 
     public function updatePaymentStatus(Request $request): JsonResponse
     {
+        // [AI] Phase A7 — Paystack Server-to-Server Payment Guard (Spec Sections 32, 57)
+        // Digital payment methods (paystack, card, etc.) must NEVER be manually overridden to 'paid'
+        // by admin staff without verified Paystack webhook confirmation.
+        // Only: (a) offline/cash payments, or (b) the Super Admin under documented exception may override.
+        // Invariant: 'paystack' is the sole configured gateway (GlobalConstant::DEFAULT_PAYMENT_GATEWAYS).
+
         $order = $this->orderRepo->getFirstWhere(params: ['id' => $request['id']]);
 
         if ($order['is_guest'] == '0' && !isset($order['customer'])) {
@@ -656,13 +662,59 @@ class OrderController extends BaseController
                 'message' => translate('account_has_been_deleted_you_can_not_change_the_status'),
             ]);
         }
+
         if ($order['payment_method'] == 'offline_payment' && $order['payment_status'] == 'unpaid') {
             return response()->json([
                 'status' => 0,
                 'message' => translate('Please confirm the offline payment information before editing this order.'),
             ]);
         }
+
+        // Digital payment guard: block arbitrary 'paid' override without Paystack verification
+        $digitalGateways = \App\Enums\GlobalConstant::DEFAULT_PAYMENT_GATEWAYS ?? ['paystack'];
+        $isDigitalPayment = in_array($order['payment_method'], $digitalGateways, true)
+            || (!in_array($order['payment_method'], ['offline_payment', 'cash_on_delivery'], true));
+
+        if ($isDigitalPayment && $request['payment_status'] === 'paid') {
+            // Only Super Admin (admin_role_id == 1 or id == 1) may override with documented reason
+            $admin = auth('admin')->user();
+            $isSuperAdmin = $admin && ($admin->id == 1 || $admin->admin_role_id == 1);
+
+            if (!$isSuperAdmin) {
+                \App\Services\AdminAuditService::log(
+                    action: 'payment_status.override_blocked',
+                    resourceType: \App\Models\Order::class,
+                    resourceId: $order['id'],
+                    beforeState: ['payment_status' => $order['payment_status'], 'payment_method' => $order['payment_method']],
+                    afterState: ['attempted_status' => $request['payment_status']],
+                    reason: 'Unauthorized attempt to manually mark digital order as paid — blocked by Paystack guard'
+                );
+                return response()->json([
+                    'status' => 0,
+                    'message' => translate('Digital payment orders cannot have their payment status manually overridden. Payment status is set automatically upon Paystack gateway verification.'),
+                ], 403);
+            }
+
+            // Super Admin override — requires explicit reason; log immutably
+            if (!$request->filled('reason')) {
+                return response()->json([
+                    'status' => 0,
+                    'message' => translate('A documented reason is required for Super Admin payment status override on a digital payment order.'),
+                ], 422);
+            }
+
+            \App\Services\AdminAuditService::log(
+                action: 'payment_status.super_admin_override',
+                resourceType: \App\Models\Order::class,
+                resourceId: $order['id'],
+                beforeState: ['payment_status' => $order['payment_status'], 'payment_method' => $order['payment_method']],
+                afterState: ['payment_status' => $request['payment_status']],
+                reason: $request->input('reason')
+            );
+        }
+
         $this->orderRepo->update(id: $request['id'], data: ['payment_status' => $request['payment_status']]);
+
         return response()->json([
             'status' => 1,
             'message' => translate('status_change_successfully')
