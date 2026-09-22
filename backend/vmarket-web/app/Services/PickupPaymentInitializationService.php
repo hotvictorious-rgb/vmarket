@@ -5,6 +5,7 @@ namespace App\Services;
 use App\Exceptions\InvalidCartException;
 use App\Exceptions\InvalidPaymentStateException;
 use App\Exceptions\PaymentInitializationException;
+use App\Models\CashbackRedemption;
 use App\Models\PaymentRequest;
 use App\Models\PickupReservation;
 use App\Models\User;
@@ -45,6 +46,7 @@ class PickupPaymentInitializationService
      *
      * @param int|User $customer Authenticated customer instance or ID
      * @param string|int|PickupReservation $reservationInput Reservation model, ID, or reservation_code
+     * @param bool $useCashback Whether to redeem Victorious Cashback points
      * @param int $ttlMinutes Attempt validity duration in minutes (default 30)
      * @param string|null $callbackUrl Optional custom callback URL
      * @return array
@@ -52,6 +54,7 @@ class PickupPaymentInitializationService
     public function initializePayment(
         int|User $customer,
         string|int|PickupReservation $reservationInput,
+        bool $useCashback = false,
         int $ttlMinutes = 30,
         ?string $callbackUrl = null
     ): array {
@@ -72,9 +75,9 @@ class PickupPaymentInitializationService
         // =========================================================================
         // PHASE A: Short Database Transaction (Zero External Network Calls)
         // =========================================================================
-        $phaseAResult = DB::transaction(function () use ($customerId, $customerRecord, $reservationInput, $ttlMinutes) {
+        $phaseAResult = DB::transaction(function () use ($customerId, $customerRecord, $reservationInput, $useCashback, $ttlMinutes) {
             // Step 1: Pessimistic Row Lock on Customer Serialization Anchor
-            User::where('id', $customerId)->lockForUpdate()->first();
+            $lockedCustomer = User::where('id', $customerId)->lockForUpdate()->first();
 
             // Step 2: Fetch and Lock PickupReservation (IDOR Protected)
             $resQuery = PickupReservation::query()->lockForUpdate();
@@ -137,6 +140,28 @@ class PickupPaymentInitializationService
             $amountKobo = (int) $amountKoboString;
             if ($amountKobo <= 0) {
                 throw new InvalidPaymentStateException("Payment amount must be greater than zero.");
+            }
+
+            // Step 3B: Cashback Reserve (Spend/Redeem Path)
+            $cashbackReserved = $this->reserveCashbackForPickup(
+                $reservation,
+                $customerId,
+                $lockedCustomer,
+                $useCashback,
+                'pickup-' . $reservation->reservation_code
+            );
+
+            // Adjust payment amount after cashback discount
+            $cashbackAmount = $cashbackReserved['cashback_amount'] ?? '0.00';
+            $discountedNaira = bcsub($twoDecimals, $cashbackAmount, 2);
+            if (bccomp($discountedNaira, '0.00', 2) < 0) {
+                $discountedNaira = '0.00';
+            }
+
+            // Recalculate kobo amount after discount
+            if (bccomp($cashbackAmount, '0.00', 2) > 0) {
+                $amountKoboString = bcmul($discountedNaira, '100', 0);
+                $amountKobo = (int) $amountKoboString;
             }
 
             // Step 4: Overlap Concurrency Guard
@@ -303,6 +328,17 @@ class PickupPaymentInitializationService
                 ]),
             ]);
 
+            // Store cashback reservation details in additional_data if reserved
+            if ($cashbackReserved['reserved']) {
+                $additional = json_decode($newPaymentRequest->additional_data, true);
+                $additional['cashback_reservation'] = [
+                    'redemption_id' => $cashbackReserved['redemption_id'],
+                    'points' => $cashbackReserved['points'],
+                    'cashback_amount' => $cashbackReserved['cashback_amount'],
+                ];
+                $newPaymentRequest->update(['additional_data' => json_encode($additional)]);
+            }
+
             return [
                 'action' => 'INITIALIZE_NEW',
                 'payment_request' => $newPaymentRequest,
@@ -310,6 +346,7 @@ class PickupPaymentInitializationService
                 'amount_kobo' => $amountKobo,
                 'customer' => $customerRecord,
                 'gateway_reference' => $gatewayReference,
+                'cashback_reserved' => $cashbackReserved,
             ];
         });
 
@@ -586,5 +623,126 @@ class PickupPaymentInitializationService
                     'gateway_reference' => $reference,
                 ];
         }
+    }
+
+    /**
+     * Reserves Victorious Cashback points for a pickup payment (spend/redeem path).
+     *
+     * MUST be called inside an existing DB::transaction() with User already locked via lockForUpdate().
+     *
+     * @param PickupReservation $reservation
+     * @param int $customerId
+     * @param User $lockedCustomer User row already locked by caller
+     * @param bool $useCashback
+     * @param string $orderGroupId
+     * @return array{reserved: bool, points: string, cashback_amount: string, redemption_id: int|null}
+     */
+    protected function reserveCashbackForPickup(
+        PickupReservation $reservation,
+        int $customerId,
+        User $lockedCustomer,
+        bool $useCashback,
+        string $orderGroupId
+    ): array {
+        // Default: no cashback reserved
+        $defaultResult = [
+            'reserved' => false,
+            'points' => '0.0000',
+            'cashback_amount' => '0.00',
+            'redemption_id' => null,
+        ];
+
+        if (!$useCashback) {
+            return $defaultResult;
+        }
+
+        // Check loyalty system enabled
+        $loyaltyStatus = (int) (getWebConfig(name: 'loyalty_point_status') ?: 0);
+        if ($loyaltyStatus !== 1) {
+            Log::info("[AI] PickupPayment: Loyalty disabled, no cashback reserved for Reservation #{$reservation->id}.");
+            return $defaultResult;
+        }
+
+        // Load config
+        $exchangeRate = (float) (getWebConfig(name: 'loyalty_point_exchange_rate') ?: 1.0);
+        $maxCapPercentage = (float) (getWebConfig(name: 'loyalty_point_max_order_redemption_percentage') ?: 10.0);
+        $minPoint = (float) (getWebConfig(name: 'loyalty_point_minimum_point') ?: 0.0);
+
+        // Calculate effective available points (excluding already reserved points from other checkouts)
+        $activeReservedPoints = CashbackRedemption::where('customer_id', $customerId)
+            ->where('status', 'reserved')
+            ->lockForUpdate()
+            ->sum('points') ?: '0.0000';
+
+        $userPoints = (string) ($lockedCustomer->loyalty_point ?? '0.0000');
+        $effectiveAvailable = bcsub($userPoints, (string) $activeReservedPoints, 4);
+        if (bccomp($effectiveAvailable, '0.0000', 4) < 0) {
+            $effectiveAvailable = '0.0000';
+        }
+
+        // Check minimum point threshold
+        if (bccomp($effectiveAvailable, (string) $minPoint, 4) < 0) {
+            Log::info("[AI] PickupPayment: Customer #{$customerId} has {$effectiveAvailable} pts, below minimum {$minPoint}. No cashback reserved.");
+            return $defaultResult;
+        }
+
+        // Calculate maximum discount allowed (e.g. 10% of reservation total)
+        $reservationTotal = bcadd((string) $reservation->total_amount, '0', 2);
+        $maxNairaDiscount = bcmul($reservationTotal, bcdiv((string) $maxCapPercentage, '100', 4), 2);
+
+        // Convert customer's effective points to Naira
+        $pointsInNaira = bcmul($effectiveAvailable, (string) $exchangeRate, 2);
+
+        // Actual cashback discount: min(pointsInNaira, maxNairaDiscount)
+        $cashbackAmount = (bccomp($pointsInNaira, $maxNairaDiscount, 2) > 0) ? $maxNairaDiscount : $pointsInNaira;
+
+        // Must be at least ₦0.01 to reserve
+        if (bccomp($cashbackAmount, '0.01', 2) < 0) {
+            return $defaultResult;
+        }
+
+        // Exact points corresponding to the cashback amount
+        $pointsToReserve = bcdiv($cashbackAmount, (string) $exchangeRate, 4);
+
+        // Create CashbackRedemption reservation record
+        $redemption = CashbackRedemption::create([
+            'customer_id' => $customerId,
+            'checkout_intent_id' => null, // delivery FK; null for pickup
+            'pickup_reservation_id' => $reservation->id,
+            'order_group_id' => $orderGroupId,
+            'points' => $pointsToReserve,
+            'cashback_amount' => $cashbackAmount,
+            'status' => 'reserved',
+        ]);
+
+        // Decrement user's loyalty_point balance atomically
+        DB::table('users')
+            ->where('id', $customerId)
+            ->decrement('loyalty_point', (float) $pointsToReserve);
+
+        // Insert audit trail in loyalty_point_transactions
+        $freshBalance = (float) DB::table('users')->where('id', $customerId)->value('loyalty_point');
+
+        DB::table('loyalty_point_transactions')->insert([
+            'user_id' => $customerId,
+            'transaction_id' => Str::uuid()->toString(),
+            'credit' => 0.0000,
+            'debit' => (float) $pointsToReserve, // spending = debit
+            'balance' => $freshBalance,
+            'reference' => $orderGroupId,
+            'transaction_type' => 'order_place', // standard type for order-related transactions
+            'created_at' => now(),
+            'updated_at' => now(),
+        ]);
+
+        Log::info("[AI] PickupPayment: Reserved {$pointsToReserve} pts (₦{$cashbackAmount}) from customer #{$customerId} " .
+            "for Reservation #{$reservation->id}. Redemption #{$redemption->id}.");
+
+        return [
+            'reserved' => true,
+            'points' => $pointsToReserve,
+            'cashback_amount' => $cashbackAmount,
+            'redemption_id' => $redemption->id,
+        ];
     }
 }

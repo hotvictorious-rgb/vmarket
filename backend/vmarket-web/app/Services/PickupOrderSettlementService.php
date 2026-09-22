@@ -4,6 +4,7 @@ namespace App\Services;
 
 use App\Exceptions\PostPaymentStockFailureException;
 use App\Models\Cart;
+use App\Models\CashbackRedemption;
 use App\Models\Order;
 use App\Models\PaymentReconciliation;
 use App\Models\PaymentRequest;
@@ -35,9 +36,15 @@ use Illuminate\Support\Str;
  * 10. Competing reservation cancellation: overlapping reservations set to 'canceled' (existing enum),
  *     their pending attempts superseded; quarantined reconciliation_required attempts preserved.
  * 11. Targeted post-commit cart pruning: only snapshot cart IDs removed; unrelated cart items preserved.
+ * 12. [AI] Pickup Cashback Award: After Order creation, PickupCashbackAwardService awards 5%
+ *     (admin-config-driven) Victorious Cashback. Inside the transaction = rolls back if order fails.
+ *     Earning event only (no reserve phase). cashback_earned included in settlement response.
  */
 class PickupOrderSettlementService
 {
+    public function __construct(
+        protected PickupCashbackAwardService $cashbackAwardService = new PickupCashbackAwardService()
+    ) {}
     /**
      * Settles a verified Paystack payment for a marketplace pickup reservation.
      *
@@ -253,29 +260,82 @@ class PickupOrderSettlementService
 
                 // STEP 3B: Single Order Creation from Immutable Snapshot
                 $createdOrderId = $this->createPickupOrderFromSnapshot($reservation, $paymentRequest);
+                $createdOrder = Order::find($createdOrderId);
 
-                // STEP 3C: Atomic State Transitions
+                // STEP 3C: [AI] Capture Reserved Cashback (Spend Path)
+                // If customer redeemed points before payment, capture the reservation now
+                $cashbackRedeemed = ['captured' => false, 'points' => '0.0000', 'cashback_amount' => '0.00'];
+                $additional = is_array($paymentRequest->additional_data)
+                    ? $paymentRequest->additional_data
+                    : json_decode($paymentRequest->additional_data ?? '{}', true);
+
+                if (!empty($additional['cashback_reservation']['redemption_id'])) {
+                    $redemptionId = $additional['cashback_reservation']['redemption_id'];
+                    $redemption = CashbackRedemption::find($redemptionId);
+                    if ($redemption && $redemption->status === 'reserved') {
+                        $redemption->capture(); // captures immediately, no points returned
+                        $cashbackRedeemed = [
+                            'captured' => true,
+                            'points' => $redemption->points,
+                            'cashback_amount' => $redemption->cashback_amount,
+                        ];
+                        Log::info("[AI] PickupOrderSettlement: Captured cashback redemption #{$redemptionId} " .
+                            "({$redemption->points} pts, ₦{$redemption->cashback_amount}) for Order #{$createdOrderId}.");
+                    }
+                }
+
+                // STEP 3D: [AI] Pickup Cashback Award (inside transaction — rolls back if order fails)
+                // Earning event: 5% of total_amount awarded immediately as 'captured' (no reserve phase).
+                // lockForUpdate() on User was acquired in Lock 1 above; cashbackAwardService trusts that lock.
+                $cashbackResult = ['awarded' => false, 'cashback_amount' => '0.00', 'points' => '0.0000'];
+                if ($createdOrder) {
+                    try {
+                        $cashbackResult = $this->cashbackAwardService->award($reservation, $createdOrder, $customerId);
+                    } catch (\Throwable $cbEx) {
+                        // [AI] Non-fatal: log and continue. Order is already created; cashback failure
+                        // should NOT roll back the payment settlement. Cashback can be reconciled manually.
+                        Log::error('[AI] PickupOrderSettlement: Cashback award failed (non-fatal).', [
+                            'reservation_id' => $reservation->id,
+                            'order_id' => $createdOrderId,
+                            'error' => $cbEx->getMessage(),
+                        ]);
+                    }
+                }
+
+                // STEP 3E: Atomic State Transitions
                 $reservation->update([
                     'status' => 'order_placed',
                     'order_id' => $createdOrderId,
                     'active_reservation_token' => null,
                 ]);
 
-                $additional = is_array($paymentRequest->additional_data)
+                $additionalData = is_array($paymentRequest->additional_data)
                     ? $paymentRequest->additional_data
                     : json_decode($paymentRequest->additional_data ?? '{}', true);
 
-                $additional['settled_order_id'] = $createdOrderId;
-                $additional['settled_at'] = now()->toIso8601String();
+                $additionalData['settled_order_id'] = $createdOrderId;
+                $additionalData['settled_at'] = now()->toIso8601String();
+
+                // Record cashback redeemed (spend path)
+                if ($cashbackRedeemed['captured']) {
+                    $additionalData['cashback_redeemed_amount'] = $cashbackRedeemed['cashback_amount'];
+                    $additionalData['cashback_redeemed_points'] = $cashbackRedeemed['points'];
+                }
+
+                // Record cashback earned (earn path)
+                if ($cashbackResult['awarded']) {
+                    $additionalData['cashback_earned_amount'] = $cashbackResult['cashback_amount'];
+                    $additionalData['cashback_earned_points'] = $cashbackResult['points'];
+                }
 
                 $paymentRequest->update([
                     'attempt_status' => 'successful',
                     'is_paid' => 1,
                     'active_pickup_reservation_id' => null,
-                    'additional_data' => json_encode($additional),
+                    'additional_data' => json_encode($additionalData),
                 ]);
 
-                // STEP 3D: Cancel Competing Overlapping Reservations
+                // STEP 3F: Cancel Competing Overlapping Reservations
                 $this->cancelCompetingOverlappingReservations($reservation, $cartIds);
 
                 return [
@@ -286,6 +346,18 @@ class PickupOrderSettlementService
                     'order_id' => $createdOrderId,
                     'snapshot' => $snapshot,
                     'customer_id' => $customerId,
+                    // [AI] Cashback redeemed (spend path) — surfaced for customer confirmation
+                    'cashback_redeemed' => [
+                        'captured'        => $cashbackRedeemed['captured'],
+                        'points'          => $cashbackRedeemed['points'],
+                        'amount_naira'    => $cashbackRedeemed['cashback_amount'],
+                    ],
+                    // [AI] Cashback earned (earn path) — surfaced to Paystack callback for customer notification
+                    'cashback_earned' => [
+                        'awarded'         => $cashbackResult['awarded'],
+                        'points'          => $cashbackResult['points'],
+                        'amount_naira'    => $cashbackResult['cashback_amount'],
+                    ],
                 ];
             });
 

@@ -63,12 +63,61 @@ class PickupReservationController extends Controller
                 $validated
             );
 
+            // [AI] Build authoritative per-reservation response payload.
+            // The app MUST use these fields — not local cart data — as the authoritative source.
+            $cashbackRatePercent = (float) (getWebConfig(name: 'loyalty_point_earn_rate_percent') ?? 5.0);
+            $exchangeRate        = (float) (getWebConfig(name: 'loyalty_point_exchange_rate') ?? 1.0);
+            $loyaltyStatus       = (int)   (getWebConfig(name: 'loyalty_point_status') ?? 0);
+
+            $mappedReservations = array_map(function ($reservation) use ($cashbackRatePercent, $exchangeRate, $loyaltyStatus) {
+                $snapshot = is_array($reservation->reservation_items)
+                    ? $reservation->reservation_items
+                    : json_decode($reservation->reservation_items ?? '{}', true);
+
+                // Extract shop snapshot from immutable reservation_items JSON
+                $shopSnapshot = [
+                    'shop_id'      => $reservation->shop_id,
+                    'shop_name'    => $snapshot['shop']['name'] ?? null,
+                    'shop_address' => $snapshot['shop']['address'] ?? null,
+                ];
+
+                // Compute estimated cashback (informational only — awarded at settlement)
+                $estimatedCashbackNaira = '0.00';
+                if ($loyaltyStatus === 1 && $cashbackRatePercent > 0 && $exchangeRate > 0) {
+                    $estimatedCashbackNaira = bcmul(
+                        bcadd((string) $reservation->total_amount, '0', 2),
+                        bcdiv((string) $cashbackRatePercent, '100', 6),
+                        2
+                    );
+                }
+
+                return [
+                    'id'               => $reservation->id,
+                    'reservation_code' => $reservation->reservation_code,
+                    'status'           => $reservation->status,
+                    'expires_at'       => $reservation->expires_at,
+                    'total_amount'     => $reservation->total_amount,
+                    'currency'         => $reservation->currency ?? 'NGN',
+                    'seller_id'        => $reservation->seller_id,
+                    'shop_snapshot'    => $shopSnapshot,
+                    'items'            => $snapshot['items'] ?? [],
+                    // [AI] Cashback to earn when paying at store — app shows this as a promise
+                    'cashback_to_earn' => [
+                        'percent'          => $loyaltyStatus === 1 ? $cashbackRatePercent : 0.0,
+                        'estimated_naira'  => $estimatedCashbackNaira,
+                    ],
+                    'order_id'         => $reservation->order_id,
+                    'created_at'       => $reservation->created_at,
+                ];
+            }, $reservations);
+
             return response()->json([
-                'status' => true,
-                'message' => 'Pickup reservation(s) created successfully.',
+                'status'             => true,
+                'message'            => 'Pickup reservation(s) created successfully.',
                 'reservations_count' => count($reservations),
-                'reservations' => $reservations,
+                'reservations'       => $mappedReservations,
             ], 201);
+
         } catch (IdempotencyConflictException $e) {
             return response()->json([
                 'status' => false,
@@ -154,11 +203,13 @@ class PickupReservationController extends Controller
 
         $ttlMinutes = (int) ($request->input('ttl_minutes', 30));
         $callbackUrl = $request->input('callback_url');
+        $useCashback = (bool) ($request->input('use_cashback', false));
 
         try {
             $result = $this->paymentInitService->initializePayment(
                 $customerId,
                 $reservationCode,
+                $useCashback,
                 $ttlMinutes,
                 $callbackUrl
             );
