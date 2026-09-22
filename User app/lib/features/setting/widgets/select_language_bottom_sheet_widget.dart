@@ -1,6 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_sixvalley_ecommerce/features/deal/controllers/featured_deal_controller.dart';
-import 'package:flutter_sixvalley_ecommerce/features/deal/controllers/flash_deal_controller.dart';
 import 'package:flutter_sixvalley_ecommerce/features/product/controllers/product_controller.dart';
 import 'package:flutter_sixvalley_ecommerce/features/shop/controllers/shop_controller.dart';
 import 'package:flutter_sixvalley_ecommerce/features/splash/controllers/splash_controller.dart';
@@ -90,9 +88,6 @@ class _SelectLanguageBottomSheetWidgetState extends State<SelectLanguageBottomSh
                     Provider.of<BrandController>(context, listen: false).getBrandList(offset: 1);
                     productController.getLatestProductList(1);
                     productController.getFeaturedProductModel(1, isUpdate: true);
-                    Provider.of<FeaturedDealController>(context, listen: false).getFeaturedDealList();
-                    // productController.getLProductList('1', reload: true);
-                    Provider.of<FlashDealController>(context, listen: false).getFlashDealList(true, true);
                     productController.getRecommendedProduct();
                     productController.getJustForYouProduct(1);
 

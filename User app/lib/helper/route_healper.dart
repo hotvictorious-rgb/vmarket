@@ -19,12 +19,7 @@ import 'package:flutter_sixvalley_ecommerce/features/category/domain/models/cate
 import 'package:flutter_sixvalley_ecommerce/features/category/screens/category_screen.dart';
 import 'package:flutter_sixvalley_ecommerce/features/checkout/screens/checkout_screen.dart';
 import 'package:flutter_sixvalley_ecommerce/features/checkout/screens/digital_payment_order_place_screen.dart';
-import 'package:flutter_sixvalley_ecommerce/features/clearance_sale/screens/clearance_sale_all_product_screen.dart';
-import 'package:flutter_sixvalley_ecommerce/features/clearance_sale/screens/clearance_sale_shop_all_product_screen.dart';
 import 'package:flutter_sixvalley_ecommerce/features/contact_us/screens/contact_us_screen.dart';
-import 'package:flutter_sixvalley_ecommerce/features/coupon/screens/coupon_screen.dart';
-import 'package:flutter_sixvalley_ecommerce/features/deal/screens/featured_deal_screen_view.dart';
-import 'package:flutter_sixvalley_ecommerce/features/deal/screens/flash_deal_screen_view.dart';
 import 'package:flutter_sixvalley_ecommerce/features/home/screens/view_all_product_screen.dart';
 import 'package:flutter_sixvalley_ecommerce/features/location/screens/select_location_screen.dart';
 import 'package:flutter_sixvalley_ecommerce/features/more/screens/faq_screen_view.dart';
@@ -33,7 +28,6 @@ import 'package:flutter_sixvalley_ecommerce/features/order_details/screens/order
 import 'package:flutter_sixvalley_ecommerce/features/product/enums/product_type.dart';
 import 'package:flutter_sixvalley_ecommerce/features/product_details/screens/product_image_screen.dart';
 import 'package:flutter_sixvalley_ecommerce/features/product_details/screens/specification_screen.dart';
-import 'package:flutter_sixvalley_ecommerce/features/restock/screens/restock_list_screen.dart';
 import 'package:flutter_sixvalley_ecommerce/features/review/domain/models/review_model.dart';
 import 'package:flutter_sixvalley_ecommerce/features/review/screens/review_screen.dart';
 import 'package:flutter_sixvalley_ecommerce/features/search_product/screens/search_product_screen.dart';
@@ -109,17 +103,10 @@ class RouterHelper {
   static const String categoryScreen = '/category';
   static const String checkoutScreen = '/checkout';
   static const String digitalPaymentScreen = '/digital-payment';
-  static const String clearanceSaleAllProductScreen = '/clearance-sale-all-product';
-  static const String clearanceSaleShopProductScreen = '/clearance-sale-shop-product';
-
   static const String contactUsScreen = '/contact-us';
-  static const String couponListScreen = '/coupon-list';
-  static const String featuredDealScreenView = '/featured-deal';
-  static const String flashDealScreenView = '/flash-deal';
   static const String viewAllProductScreen = '/view-all-product';
 
   static const String maintenanceScreen = '/maintenance';
-  static const String restockListScreen = '/restock-list';
   static const String settingsScreen = '/settings';
   static const String notificationScreen = '/notification';
   static const String guestTrackOrderScreen = '/guest-track-order';
@@ -439,32 +426,8 @@ class RouterHelper {
     return _navigateRoute('$digitalPaymentScreen$query', route: action);
   }
 
-  static String getClearanceSaleAllProductScreenRoute({RouteAction? action}) {
-    return _navigateRoute(clearanceSaleAllProductScreen, route: action);
-  }
-
-  static String getClearanceSaleShopProductScreenRoute({required String slug, RouteAction? action}) {
-    final params = <String, String>{'slug': slug};
-    final query = '?${params.entries.map((e) => '${e.key}=${e.value}').join('&')}';
-    return _navigateRoute('$clearanceSaleShopProductScreen$query', route: action);
-  }
-
-
-
   static String getContactUsScreenRoute({RouteAction? action}) {
     return _navigateRoute(contactUsScreen, route: action);
-  }
-
-  static String getCouponListScreenRoute({RouteAction? action}) {
-    return _navigateRoute(couponListScreen, route: action);
-  }
-
-  static String getFeaturedDealScreenViewRoute({RouteAction? action}) {
-    return _navigateRoute(featuredDealScreenView, route: action);
-  }
-
-  static String getFlashDealScreenViewRoute({RouteAction? action}) {
-    return _navigateRoute(flashDealScreenView, route: action);
   }
 
   static String getViewAllProductScreenRoute({required ProductType productType, RouteAction? action}) {
@@ -477,12 +440,6 @@ class RouterHelper {
 
   static String getMaintenanceRoute({RouteAction? action}) {
     return _navigateRoute(maintenanceScreen, route: action);
-  }
-
-
-
-  static String getRestockListRoute({RouteAction? action}) {
-    return _navigateRoute(restockListScreen, route: action);
   }
 
   static String getSettingsRoute({RouteAction? action}) {
@@ -1062,38 +1019,8 @@ class RouterHelper {
 
 
       GoRoute(
-        path: clearanceSaleAllProductScreen,
-        builder: (context, state) => const ClearanceSaleAllProductScreen(),
-      ),
-
-      GoRoute(
-        path: clearanceSaleShopProductScreen,
-        builder: (context, state) {
-          final slug = state.uri.queryParameters['slug'] ?? '';
-          return ClearanceSaleShopProductScreen(slug: slug);
-        },
-      ),
-
-
-
-      GoRoute(
         path: contactUsScreen,
         builder: (context, state) => const ContactUsScreen(),
-      ),
-
-      GoRoute(
-        path: couponListScreen,
-        builder: (context, state) => const CouponList(),
-      ),
-
-      GoRoute(
-        path: featuredDealScreenView,
-        builder: (context, state) => const FeaturedDealScreenView(),
-      ),
-
-      GoRoute(
-        path: flashDealScreenView,
-        builder: (context, state) => const FlashDealScreenView(),
       ),
 
       GoRoute(
@@ -1113,13 +1040,6 @@ class RouterHelper {
       GoRoute(
         path: maintenanceScreen,
         builder: (context, state) => const MaintenanceScreen(),
-      ),
-
-
-
-      GoRoute(
-        path: restockListScreen,
-        builder: (context, state) => const RestockListScreen(),
       ),
 
       GoRoute(

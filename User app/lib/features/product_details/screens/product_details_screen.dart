@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_sixvalley_ecommerce/common/basewidget/no_internet_screen_widget.dart' show NoInternetOrDataScreenWidget;
-import 'package:flutter_sixvalley_ecommerce/features/deal/controllers/flash_deal_controller.dart';
+
 import 'package:flutter_sixvalley_ecommerce/features/product/controllers/product_controller.dart';
 import 'package:flutter_sixvalley_ecommerce/features/product/controllers/seller_product_controller.dart';
 import 'package:flutter_sixvalley_ecommerce/features/product/widgets/recently_viewed_products_widget.dart';
@@ -118,68 +118,8 @@ class _ProductDetailsState extends State<ProductDetails> {
                   height: MediaQuery.of(context).size.height - 200,
                   child: NoInternetOrDataScreenWidget(isNoInternet: false, icon: Images.noProduct, message: 'no_product_found')) :
                 Column(children: [
-                  if(widget.fromFlashDeals)
-                  Consumer<FlashDealController>(
-                    builder: (context, flashDealController, child) {
-                      Duration? eventDuration = flashDealController.duration;
-
-                      int? days, hours, minutes, seconds;
-                      if (eventDuration != null) {
-                        days = eventDuration.inDays;
-                        hours = eventDuration.inHours - days * 24;
-                        minutes = eventDuration.inMinutes - (24 * days * 60) - (hours * 60);
-                        seconds = eventDuration.inSeconds - (24 * days * 60 * 60) - (hours * 60 * 60) - (minutes * 60);
-                      }
-
-                      return  Padding(
-                        padding: EdgeInsets.only(left: Dimensions.paddingSizeDefault, right: Dimensions.paddingSizeDefault, top: Dimensions.paddingSizeSmall),
-                        child: Container(
-                          padding: EdgeInsets.all(Dimensions.paddingSizeSmall),
-                          decoration: BoxDecoration(
-                            color: Theme.of(context).colorScheme.tertiary.withValues(alpha: 0.25),
-                            borderRadius: BorderRadius.circular(Dimensions.radiusSmall)
-                          ),
-                          child: Row(
-                            children: [
-                              Flexible(
-                                child: Container(
-                                  decoration: BoxDecoration(
-                                    borderRadius: BorderRadius.circular(Dimensions.radiusSmall),
-                                    color: Theme.of(context).cardColor,
-                                  ),
-                                  padding: EdgeInsets.all(Dimensions.paddingSizeSmall),
-                                  child: Text(
-                                    getTranslated('this_product_is_now_on_a_flash_deal', context) ?? '',
-                                    style: textRegular.copyWith(
-                                      fontSize: Dimensions.fontSizeSmall,
-                                      color: Theme.of(context).textTheme.bodyLarge?.color
-                                    ),
-                                  ),
-                                ),
-                              ),
-
-
-                              Row(mainAxisAlignment: MainAxisAlignment.center, children: [
-                                eventDuration == null ? const Expanded(child: SizedBox.shrink()) :
-                                Padding(padding: const EdgeInsets.symmetric(vertical: 0),
-                                  child: Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                                    const SizedBox(width: 5),
-                                    TimerBox(time: days, day: getTranslated('day', context), isDetailsPage: true),
-
-                                    TimerBox(time: hours, day: getTranslated('hour', context), isDetailsPage:  true),
-
-                                    TimerBox(time: minutes, day: getTranslated('min', context), isDetailsPage:  true),
-
-                                    TimerBox(time: seconds,day: getTranslated('sec', context), isDetailsPage:  true),
-                                  ]),
-                                ),
-                              ])
-                            ],
-                          ),
-                        ),
-                      );
-                    }
-                  ),
+                  // [AI] FlashDeal feature decommissioned — no countdown timer displayed
+                  const SizedBox.shrink(),
 
                   ProductImageWidget(productModel: details.productDetailsModel, fromFlashDeals: widget.fromFlashDeals),
 

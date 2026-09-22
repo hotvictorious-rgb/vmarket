@@ -30,11 +30,10 @@ class CheckoutRepository implements CheckoutRepositoryInterface{
       String? customerId,
       String? addressId,
       String? billingAddressId,
-      String? couponCode,
-      String? couponDiscount,
       String? paymentMethod,
       bool? isCheckCreateAccount,
-      String? password
+      String? password,
+      {bool useCashback = false}
       ) async {
 
     try {
@@ -44,10 +43,9 @@ class CheckoutRepository implements CheckoutRepositoryInterface{
         "customer_id":  customerId,
         "address_id": addressId,
         "billing_address_id": billingAddressId,
-        "coupon_code": couponCode,
-        "coupon_discount": couponDiscount,
+        "use_cashback": useCashback ? 1 : 0,
         "payment_platform" : "app",
-        "payment_method" : paymentMethod,
+        "payment_method" : paymentMethod ?? "paystack",
         "callback" : null,
         "payment_request_from" : "app",
         'guest_id' : Provider.of<AuthController>(Get.context!, listen: false).getGuestToken(),

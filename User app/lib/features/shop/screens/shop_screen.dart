@@ -9,7 +9,6 @@ import 'package:flutter_sixvalley_ecommerce/localization/controllers/localizatio
 import 'package:flutter_sixvalley_ecommerce/localization/language_constrants.dart';
 import 'package:flutter_sixvalley_ecommerce/features/brand/controllers/brand_controller.dart';
 import 'package:flutter_sixvalley_ecommerce/features/category/controllers/category_controller.dart';
-import 'package:flutter_sixvalley_ecommerce/features/coupon/controllers/coupon_controller.dart';
 import 'package:flutter_sixvalley_ecommerce/features/shop/controllers/shop_controller.dart';
 import 'package:flutter_sixvalley_ecommerce/main.dart';
 import 'package:flutter_sixvalley_ecommerce/utill/custom_themes.dart';
@@ -73,8 +72,6 @@ class _TopSellerProductScreenState extends State<TopSellerProductScreen>
     final shopCtrl = Provider.of<ShopController>(Get.context!, listen: false);
     final sellerProdCtrl =
         Provider.of<SellerProductController>(Get.context!, listen: false);
-    final couponCtrl =
-        Provider.of<CouponController>(Get.context!, listen: false);
     final catCtrl =
         Provider.of<CategoryController>(Get.context!, listen: false);
     final brandCtrl = Provider.of<BrandController>(Get.context!, listen: false);
@@ -86,12 +83,11 @@ class _TopSellerProductScreenState extends State<TopSellerProductScreen>
       shopCtrl.getClearanceShopProductList('clearance_sale', '1', slugStr),
     ]);
 
-    // Secondary UI fold: categories, deals & coupons in background
+    // Secondary UI fold: categories, deals & recommended products in background
     Future.wait([
       sellerProdCtrl.getSellerWiseBestSellingProductList(slugStr, 1),
       sellerProdCtrl.getSellerWiseFeaturedProductList(slugStr, 1),
       sellerProdCtrl.getSellerWiseRecommendedProductList(slugStr, 1),
-      couponCtrl.getSellerWiseCouponList(widget.slug!, 1),
       catCtrl.getSellerWiseCategoryList(widget.slug!),
       brandCtrl.getSellerWiseBrandList(widget.slug!),
     ]);

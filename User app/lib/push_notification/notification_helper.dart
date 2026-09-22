@@ -8,8 +8,6 @@ import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:flutter_sixvalley_ecommerce/common/basewidget/demo_reset_dialog_widget.dart';
 import 'package:flutter_sixvalley_ecommerce/features/address/controllers/address_controller.dart';
 import 'package:flutter_sixvalley_ecommerce/features/auth/controllers/auth_controller.dart';
-import 'package:flutter_sixvalley_ecommerce/features/restock/controllers/restock_controller.dart';
-import 'package:flutter_sixvalley_ecommerce/features/restock/widgets/restock_bottom_sheet.dart';
 import 'package:flutter_sixvalley_ecommerce/features/splash/controllers/splash_controller.dart';
 import 'package:flutter_sixvalley_ecommerce/features/splash/domain/models/config_model.dart';
 import 'package:flutter_sixvalley_ecommerce/helper/route_healper.dart';
@@ -92,22 +90,8 @@ class NotificationHelper {
         }
       }
 
-      if(message.data['type'] != 'maintenance_mode' || message.data['type'] != 'product_restock_update') {
+      if(message.data['type'] != 'maintenance_mode') {
         NotificationHelper.showNotification(message, flutterLocalNotificationsPlugin, false);
-      }
-
-      if(message.data['type'] == 'product_restock_update' && !Provider.of<RestockController>(Get.context!, listen: false).isBottomSheetOpen){
-        NotificationBody notificationBody = convertNotification(message.data);
-        Provider.of<RestockController>(Get.context!, listen: false).setBottomSheetOpen(true);
-        final result = await showModalBottomSheet(context: Get.context!, isScrollControlled: true,
-          backgroundColor: Theme.of(Get.context!).primaryColor.withValues(alpha:0),
-          builder: (con) => RestockSheetWidget(notificationBody: notificationBody),
-        );
-
-        if (result == null) {
-          Provider.of<RestockController>(Get.context!, listen: false).setBottomSheetOpen(false);
-        } else {
-        }
       }
     });
 

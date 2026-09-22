@@ -4,8 +4,6 @@ import 'package:flutter_sixvalley_ecommerce/features/cart/controllers/cart_contr
 import 'package:flutter_sixvalley_ecommerce/features/cart/screens/cart_screen.dart';
 import 'package:flutter_sixvalley_ecommerce/features/dashboard/models/navigation_model.dart';
 import 'package:flutter_sixvalley_ecommerce/features/dashboard/widgets/dashboard_menu_widget.dart';
-import 'package:flutter_sixvalley_ecommerce/features/deal/controllers/flash_deal_controller.dart';
-import 'package:flutter_sixvalley_ecommerce/features/restock/controllers/restock_controller.dart';
 import 'package:flutter_sixvalley_ecommerce/features/search_product/controllers/search_product_controller.dart';
 import 'package:flutter_sixvalley_ecommerce/features/wishlist/controllers/wishlist_controller.dart';
 import 'package:flutter_sixvalley_ecommerce/helper/network_info.dart';
@@ -39,8 +37,6 @@ class DashBoardScreenState extends State<DashBoardScreen> {
   void initState() {
     super.initState();
 
-    Provider.of<FlashDealController>(context, listen: false)
-        .getFlashDealList(true, true);
     Provider.of<SplashController>(context, listen: false)
         .getBusinessPagesList('default');
     Provider.of<SplashController>(context, listen: false)
@@ -48,8 +44,6 @@ class DashBoardScreenState extends State<DashBoardScreen> {
     if (Provider.of<AuthController>(context, listen: false).isLoggedIn()) {
       Provider.of<CartController>(context, listen: false).mergeGuestCart();
       Provider.of<WishListController>(context, listen: false).getWishList('');
-      Provider.of<RestockController>(context, listen: false)
-          .getRestockProductList(1, getAll: true);
     }
 
     final SplashController splashController =

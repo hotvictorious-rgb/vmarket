@@ -92,16 +92,38 @@ class CheckoutController with ChangeNotifier {
     selectedDigitalPaymentMethodName = '';
   }
 
+  bool _isUseCashback = false;
+  bool get isUseCashback => _isUseCashback;
+
+  void toggleUseCashback({bool isUpdate = true}) {
+    _isUseCashback = !_isUseCashback;
+    if (isUpdate) {
+      notifyListeners();
+    }
+  }
+
+  void setUseCashback(bool value, {bool isUpdate = true}) {
+    _isUseCashback = value;
+    if (isUpdate) {
+      notifyListeners();
+    }
+  }
+
   void initDefaultPaymentMethod(SplashController splashController, {bool isUpdate = true}) {
     final config = splashController.configModel;
     if (config == null) return;
 
-    // [AI] Victorious MARKET V1 Directive 57321: COD and offline payments are decommissioned.
-    // Digital payment (Paystack) is authoritative for delivery checkout.
-            
+    // [AI] Victorious MARKET V1: Explicit Paystack selection.
+    // Paystack is the exclusive digital gateway for marketplace delivery checkout.
     if ((config.digitalPayment ?? false) && (config.paymentMethods != null && config.paymentMethods!.isNotEmpty)) {
-      _paymentMethodIndex = 0;
-      selectedDigitalPaymentMethodName = config.paymentMethods![0].keyName ?? '';
+      int paystackIndex = config.paymentMethods!.indexWhere((m) => (m.keyName ?? '').toLowerCase() == 'paystack');
+      if (paystackIndex != -1) {
+        _paymentMethodIndex = paystackIndex;
+        selectedDigitalPaymentMethodName = config.paymentMethods![paystackIndex].keyName ?? 'paystack';
+      } else {
+        _paymentMethodIndex = 0;
+        selectedDigitalPaymentMethodName = config.paymentMethods![0].keyName ?? 'paystack';
+      }
     } else {
       _paymentMethodIndex = -1;
       selectedDigitalPaymentMethodName = '';
@@ -145,15 +167,27 @@ String selectedDigitalPaymentMethodName = '';
 
   List<TextEditingController> inputFieldControllerList = [];
 
-  Future<ApiResponseModel> digitalPaymentPlaceOrder({String? orderNote, String? customerId,
-    String? addressId, String? billingAddressId,
-    String? couponCode,
-    String? couponDiscount,
-    String? paymentMethod}) async {
-    _isLoading =true;
+  Future<ApiResponseModel> digitalPaymentPlaceOrder({
+    String? orderNote,
+    String? customerId,
+    String? addressId,
+    String? billingAddressId,
+    String? paymentMethod,
+    bool useCashback = false,
+  }) async {
+    _isLoading = true;
     notifyListeners();
 
-    ApiResponseModel apiResponse = await checkoutServiceInterface.digitalPaymentPlaceOrder(orderNote, customerId, addressId, billingAddressId, couponCode, couponDiscount, paymentMethod, _isCheckCreateAccount, passwordController.text.trim());
+    ApiResponseModel apiResponse = await checkoutServiceInterface.digitalPaymentPlaceOrder(
+      orderNote,
+      customerId,
+      addressId,
+      billingAddressId,
+      paymentMethod ?? 'paystack',
+      _isCheckCreateAccount,
+      passwordController.text.trim(),
+      useCashback: useCashback,
+    );
 
     if (apiResponse.response != null && apiResponse.response?.statusCode == 200) {
       _addressIndex = null;

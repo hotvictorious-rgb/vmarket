@@ -15,7 +15,6 @@ import 'package:flutter_sixvalley_ecommerce/localization/language_constrants.dar
 import 'package:flutter_sixvalley_ecommerce/main.dart';
 import 'package:flutter_sixvalley_ecommerce/features/auth/controllers/auth_controller.dart';
 import 'package:flutter_sixvalley_ecommerce/features/cart/controllers/cart_controller.dart';
-import 'package:flutter_sixvalley_ecommerce/features/coupon/controllers/coupon_controller.dart';
 import 'package:flutter_sixvalley_ecommerce/features/splash/controllers/splash_controller.dart';
 import 'package:flutter_sixvalley_ecommerce/utill/custom_themes.dart';
 import 'package:flutter_sixvalley_ecommerce/utill/dimensions.dart';
@@ -26,7 +25,6 @@ import 'package:flutter_sixvalley_ecommerce/common/basewidget/custom_button_widg
 import 'package:flutter_sixvalley_ecommerce/common/basewidget/show_custom_snakbar_widget.dart';
 import 'package:flutter_sixvalley_ecommerce/common/basewidget/custom_textfield_widget.dart';
 import 'package:flutter_sixvalley_ecommerce/features/checkout/widgets/choose_payment_widget.dart';
-import 'package:flutter_sixvalley_ecommerce/features/checkout/widgets/coupon_apply_widget.dart';
 import 'package:flutter_sixvalley_ecommerce/features/checkout/widgets/shipping_details_widget.dart';
 import 'package:provider/provider.dart';
 
@@ -52,16 +50,12 @@ class CheckoutScreen extends StatefulWidget {
 
 class CheckoutScreenState extends State<CheckoutScreen> {
   final GlobalKey<ScaffoldMessengerState> _scaffoldKey = GlobalKey<ScaffoldMessengerState>();
-  final TextEditingController _controller = TextEditingController();
   final GlobalKey<FormState> passwordFormKey = GlobalKey<FormState>();
-
 
   final FocusNode _orderNoteNode = FocusNode();
   double _order = 0;
   double _tax = 0;
   late bool _billingAddress;
-  double? _couponDiscount;
-  double? _referralDiscount;
   bool _isSubmitting = false;
 
   DebounceHelper debounceHelper = DebounceHelper(milliseconds: 500);
@@ -72,8 +66,6 @@ class CheckoutScreenState extends State<CheckoutScreen> {
   void initState() {
     super.initState();
     Provider.of<AddressController>(context, listen: false).getAddressList();
-    Provider.of<CheckoutController>(context, listen: false).getReferralAmount('0');
-    Provider.of<CouponController>(context, listen: false).removePrevCouponData();
     Provider.of<CartController>(context, listen: false).getCartData(context);
     Provider.of<CheckoutController>(context, listen: false).resetPaymentMethod();
     Provider.of<CheckoutController>(context, listen: false).initDefaultPaymentMethod(
@@ -81,11 +73,8 @@ class CheckoutScreenState extends State<CheckoutScreen> {
       isUpdate: false,
     );
     Provider.of<ShippingController>(context, listen: false).getChosenShippingMethod(context);
-    // [AI] Victorious MARKET V1 Directive 57321: Offline payment decommissioned
-
-    if(Provider.of<AuthController>(context, listen: false).isLoggedIn()){
-      Provider.of<CouponController>(context, listen: false).getAvailableCouponList();
-    }
+    // [AI] Victorious MARKET V1: COD and offline payments are decommissioned.
+    // Digital payment via Paystack is canonical.
 
     if(Provider.of<CheckoutController>(context, listen: false).isAcceptTerms){
       Provider.of<CheckoutController>(context, listen: false).toggleTermsCheck(isUpdate: false);
@@ -110,97 +99,84 @@ class CheckoutScreenState extends State<CheckoutScreen> {
         builder: (context, locationProvider,_) {
           return Consumer<CheckoutController>(
             builder: (context, orderProvider, child) {
-              return Consumer<CouponController>(
-                builder: (context, couponProvider, _) {
-                  if(splashController.configModel?.systemTaxIncludeStatus != 1) {
-                    _tax = CartHelper().calculateVatTax(Provider.of<CartController>(context, listen: false).cartList);
-                  }
-                  return Consumer<CartController>(
-                    builder: (context, cartProvider,_) {
-                      return Consumer<ProfileController>(
-                        builder: (context, profileProvider,_) {
-                          return orderProvider.isLoading ? const Row(
-                            mainAxisAlignment: MainAxisAlignment.center, children: [
-                              SizedBox(width: 30,height: 30,child: CircularProgressIndicator())]
-                          ) :
+              if(splashController.configModel?.systemTaxIncludeStatus != 1) {
+                _tax = CartHelper().calculateVatTax(Provider.of<CartController>(context, listen: false).cartList);
+              }
+              return Consumer<CartController>(
+                builder: (context, cartProvider,_) {
+                  return Consumer<ProfileController>(
+                    builder: (context, profileProvider,_) {
+                      return orderProvider.isLoading ? const Row(
+                        mainAxisAlignment: MainAxisAlignment.center, children: [
+                          SizedBox(width: 30,height: 30,child: CircularProgressIndicator())]
+                      ) :
 
-                          Container(
-                            padding: const EdgeInsets.all(Dimensions.paddingSizeDefault),
-                            decoration: BoxDecoration(
-                              color: Theme.of(context).cardColor,
-                              borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
-                              boxShadow: [
-                                BoxShadow(
-                                  color: Colors.black.withValues(alpha: 0.06),
-                                  blurRadius: 12,
-                                  offset: const Offset(0, -4),
-                                ),
-                              ],
+                      Container(
+                        padding: const EdgeInsets.all(Dimensions.paddingSizeDefault),
+                        decoration: BoxDecoration(
+                          color: Theme.of(context).cardColor,
+                          borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
+                          boxShadow: [
+                            BoxShadow(
+                              color: Colors.black.withValues(alpha: 0.06),
+                              blurRadius: 12,
+                              offset: const Offset(0, -4),
                             ),
-                            child: Column(
-                              mainAxisSize: MainAxisSize.min,
-                              children: [
+                          ],
+                        ),
+                        child: Column(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
 
-                                const CheckoutConditionCheckBox(),
-                                const SizedBox(height: Dimensions.paddingSizeSmall),
+                            const CheckoutConditionCheckBox(),
+                            const SizedBox(height: Dimensions.paddingSizeSmall),
 
-                                CustomButton(onTap: (orderProvider.isLoading || !orderProvider.isAcceptTerms || _isSubmitting) ? null : () async {
-                                  if(_isSubmitting) return;
+                            CustomButton(onTap: (orderProvider.isLoading || !orderProvider.isAcceptTerms || _isSubmitting) ? null : () async {
+                              if(_isSubmitting) return;
 
-                                  if(orderProvider.addressIndex == null) {
-                                    RouterHelper.getSavedAddressListRoute(fromGuest: !Provider.of<AuthController>(context, listen: false).isLoggedIn());
-                                    showCustomSnackBarWidget(getTranslated('select_a_shipping_address', context), Get.context!, snackBarType: SnackBarType.warning);
-                                  } else if(orderProvider.billingAddressIndex == null && _billingAddress && !orderProvider.sameAsBilling) {
-                                    RouterHelper.getSavedBillingAddressListRoute(fromGuest: !Provider.of<AuthController>(context, listen: false).isLoggedIn());
-                                    showCustomSnackBarWidget(getTranslated('select_a_billing_address', context), Get.context!, snackBarType: SnackBarType.warning);
+                              if(orderProvider.addressIndex == null) {
+                                RouterHelper.getSavedAddressListRoute(fromGuest: !Provider.of<AuthController>(context, listen: false).isLoggedIn());
+                                showCustomSnackBarWidget(getTranslated('select_a_shipping_address', context), Get.context!, snackBarType: SnackBarType.warning);
+                              } else if(orderProvider.billingAddressIndex == null && _billingAddress && !orderProvider.sameAsBilling) {
+                                RouterHelper.getSavedBillingAddressListRoute(fromGuest: !Provider.of<AuthController>(context, listen: false).isLoggedIn());
+                                showCustomSnackBarWidget(getTranslated('select_a_billing_address', context), Get.context!, snackBarType: SnackBarType.warning);
+                              } else {
+                                if(!orderProvider.isCheckCreateAccount || (orderProvider.isCheckCreateAccount && (passwordFormKey.currentState?.validate() ?? false))) {
+                                  setState(() => _isSubmitting = true);
+                                  String orderNote = orderProvider.orderNoteController.text.trim();
+
+                                  String addressId =  orderProvider.addressIndex != null ?
+                                  locationProvider.addressList![orderProvider.addressIndex!].id.toString() : '';
+
+                                  String billingAddressId = (_billingAddress) ?
+                                  !orderProvider.sameAsBilling ?
+                                  locationProvider.addressList![orderProvider.billingAddressIndex!].id.toString() : locationProvider.addressList![orderProvider.addressIndex!].id.toString() : '';
+
+                                  if(orderProvider.paymentMethodIndex != -1) {
+                                    orderProvider.digitalPaymentPlaceOrder(
+                                        orderNote: orderNote,
+                                        customerId: Provider.of<AuthController>(context, listen: false).isLoggedIn() ?
+                                        profileProvider.userInfoModel?.id.toString() : Provider.of<AuthController>(context, listen: false).getGuestToken(),
+                                        addressId: addressId,
+                                        billingAddressId: billingAddressId,
+                                        useCashback: orderProvider.isUseCashback,
+                                        paymentMethod: orderProvider.selectedDigitalPaymentMethodName);
                                   } else {
-                                    if(!orderProvider.isCheckCreateAccount || (orderProvider.isCheckCreateAccount && (passwordFormKey.currentState?.validate() ?? false))) {
-                                      setState(() => _isSubmitting = true);
-                                      String orderNote = orderProvider.orderNoteController.text.trim();
-                                      String couponCode = couponProvider.discount != null && couponProvider.discount != 0? couponProvider.couponCode : '';
-                                      String couponCodeAmount = couponProvider.discount != null && couponProvider.discount != 0?
-                                      couponProvider.discount.toString() : '0';
-
-
-                                      String addressId =  orderProvider.addressIndex != null ?
-                                      locationProvider.addressList![orderProvider.addressIndex!].id.toString() : '';
-
-                                      String billingAddressId = (_billingAddress) ?
-                                      !orderProvider.sameAsBilling ?
-                                      locationProvider.addressList![orderProvider.billingAddressIndex!].id.toString() : locationProvider.addressList![orderProvider.addressIndex!].id.toString() : '';
-
-
-
-                                      if(orderProvider.paymentMethodIndex != -1) {
-                                        orderProvider.digitalPaymentPlaceOrder(
-                                            orderNote: orderNote,
-                                            customerId: Provider.of<AuthController>(context, listen: false).isLoggedIn() ?
-                                            profileProvider.userInfoModel?.id.toString() : Provider.of<AuthController>(context, listen: false).getGuestToken(),
-                                            addressId: addressId,
-                                            billingAddressId: billingAddressId,
-                                            couponCode: couponCode,
-                                            couponDiscount: couponCodeAmount,
-                                            paymentMethod: orderProvider.selectedDigitalPaymentMethodName);
-                                      } else {
-                                        setState(() => _isSubmitting = false);
-                                        showModalBottomSheet(
-                                          context: context, isScrollControlled: true, backgroundColor: Colors.transparent,
-                                          builder: (c) {
-                                            return PaymentMethodBottomSheetWidget();
-                                          },
-                                        );
-                                      }
-                                    }
+                                    setState(() => _isSubmitting = false);
+                                    showModalBottomSheet(
+                                      context: context, isScrollControlled: true, backgroundColor: Colors.transparent,
+                                      builder: (c) {
+                                        return PaymentMethodBottomSheetWidget();
+                                      },
+                                    );
                                   }
-                                },
-                                  buttonText: '${getTranslated('proceed', context)}',
-                                )
-                              ],
-                            ),
-                          );
-
-
-                        }
+                                }
+                              }
+                            },
+                              buttonText: '${getTranslated('proceed', context)}',
+                            )
+                          ],
+                        ),
                       );
                     }
                   );
@@ -237,9 +213,81 @@ class CheckoutScreenState extends State<CheckoutScreen> {
                         if (Provider.of<AuthController>(context, listen: false).isLoggedIn())
                           Padding(
                             padding: const EdgeInsets.only(bottom: Dimensions.paddingSizeSmall),
-                            child: CouponApplyWidget(
-                              couponController: _controller,
-                              orderAmount: _order,
+                            child: Consumer<ProfileController>(
+                              builder: (context, profileProvider, _) {
+                                final double loyaltyPoints = profileProvider.userInfoModel?.loyaltyPoint ?? 0;
+                                return Container(
+                                  decoration: BoxDecoration(
+                                    color: Theme.of(context).cardColor,
+                                    borderRadius: BorderRadius.circular(Dimensions.radiusDefault),
+                                    border: Border.all(
+                                      color: orderProvider.isUseCashback
+                                          ? Theme.of(context).primaryColor
+                                          : Theme.of(context).cardColor,
+                                      width: 1.5,
+                                    ),
+                                    boxShadow: [
+                                      BoxShadow(
+                                        color: Colors.black.withValues(alpha: 0.04),
+                                        blurRadius: 8,
+                                        offset: const Offset(0, 2),
+                                      ),
+                                    ],
+                                  ),
+                                  padding: const EdgeInsets.symmetric(
+                                    horizontal: Dimensions.paddingSizeDefault,
+                                    vertical: Dimensions.paddingSizeSmall,
+                                  ),
+                                  child: Row(
+                                    children: [
+                                      Container(
+                                        width: 40,
+                                        height: 40,
+                                        decoration: BoxDecoration(
+                                          color: Theme.of(context).primaryColor.withValues(alpha: 0.1),
+                                          shape: BoxShape.circle,
+                                        ),
+                                        child: Icon(
+                                          Icons.stars_rounded,
+                                          color: Theme.of(context).primaryColor,
+                                          size: 24,
+                                        ),
+                                      ),
+                                      const SizedBox(width: Dimensions.paddingSizeDefault),
+                                      Expanded(
+                                        child: Column(
+                                          crossAxisAlignment: CrossAxisAlignment.start,
+                                          children: [
+                                            Text(
+                                              'Victorious Points (Cashback)',
+                                              style: titilliumBold.copyWith(fontSize: Dimensions.fontSizeDefault),
+                                            ),
+                                            const SizedBox(height: 2),
+                                            Text(
+                                              loyaltyPoints > 0
+                                                  ? 'Available: ${loyaltyPoints.toStringAsFixed(0)} pts (Redeem up to 10%)'
+                                                  : 'No cashback points available',
+                                              style: textRegular.copyWith(
+                                                fontSize: Dimensions.fontSizeSmall,
+                                                color: Theme.of(context).hintColor,
+                                              ),
+                                            ),
+                                          ],
+                                        ),
+                                      ),
+                                      Switch(
+                                        value: orderProvider.isUseCashback && loyaltyPoints > 0,
+                                        onChanged: loyaltyPoints > 0
+                                            ? (val) {
+                                                orderProvider.toggleUseCashback();
+                                              }
+                                            : null,
+                                        activeColor: Theme.of(context).primaryColor,
+                                      ),
+                                    ],
+                                  ),
+                                );
+                              },
                             ),
                           ),
 
@@ -287,56 +335,62 @@ class CheckoutScreenState extends State<CheckoutScreen> {
                                 padding: const EdgeInsets.symmetric(horizontal: Dimensions.paddingSizeDefault),
                                 child: Consumer<CheckoutController>(
                                   builder: (context, checkoutController, child) {
-                                    _couponDiscount = Provider.of<CouponController>(context).discount ?? 0;
-                                    _referralDiscount = Provider.of<CheckoutController>(context).referralAmount?.amount ?? 0;
-                                    return Column(
-                                      crossAxisAlignment: CrossAxisAlignment.start,
-                                      children: [
-                                        widget.quantity > 1
-                                        ? AmountWidget(
-                                            title: '${getTranslated('sub_total', context)} ${' (${widget.quantity} ${getTranslated('items', context)}) '}',
-                                            amount: PriceConverter.convertPrice(context, _order),
-                                          )
-                                        : AmountWidget(
-                                            title: '${getTranslated('sub_total', context)} ${'(${widget.quantity} ${getTranslated('item', context)})'}',
-                                            amount: PriceConverter.convertPrice(context, _order),
-                                          ),
-                                        AmountWidget(
-                                          title: getTranslated('shipping_fee', context),
-                                          amount: PriceConverter.convertPrice(context, widget.shippingFee),
-                                        ),
-                                        AmountWidget(
-                                          title: getTranslated('discount', context),
-                                          amount: PriceConverter.convertPrice(context, widget.discount),
-                                        ),
-                                        AmountWidget(
-                                          title: getTranslated('coupon_voucher', context),
-                                          amount: PriceConverter.convertPrice(context, _couponDiscount),
-                                        ),
+                                    return Consumer<ProfileController>(
+                                      builder: (context, profileProvider, _) {
+                                        double estimatedCashback = 0;
+                                        if (checkoutController.isUseCashback) {
+                                          final double userPoints = profileProvider.userInfoModel?.loyaltyPoint ?? 0;
+                                          final double rate = (splashController.configModel?.loyaltyPointExchangeRate ?? 1).toDouble();
+                                          final double maxCap = _order * 0.10;
+                                          final double pointsInNaira = userPoints * rate;
+                                          estimatedCashback = (pointsInNaira > maxCap ? maxCap : pointsInNaira);
+                                        }
+                                        final double totalPayable = (_order + widget.shippingFee - widget.discount - estimatedCashback + _tax);
 
-                                        if (splashController.configModel?.systemTaxIncludeStatus != 1)
-                                        AmountWidget(
-                                          title: getTranslated('tax', context),
-                                          amount: PriceConverter.convertPrice(context, _tax),
-                                        ),
+                                        return Column(
+                                          crossAxisAlignment: CrossAxisAlignment.start,
+                                          children: [
+                                            widget.quantity > 1
+                                            ? AmountWidget(
+                                                title: '${getTranslated('sub_total', context)} ${' (${widget.quantity} ${getTranslated('items', context)}) '}',
+                                                amount: PriceConverter.convertPrice(context, _order),
+                                              )
+                                            : AmountWidget(
+                                                title: '${getTranslated('sub_total', context)} ${'(${widget.quantity} ${getTranslated('item', context)})'}',
+                                                amount: PriceConverter.convertPrice(context, _order),
+                                              ),
+                                            AmountWidget(
+                                              title: getTranslated('shipping_fee', context),
+                                              amount: PriceConverter.convertPrice(context, widget.shippingFee),
+                                            ),
+                                            AmountWidget(
+                                              title: getTranslated('discount', context),
+                                              amount: PriceConverter.convertPrice(context, widget.discount),
+                                            ),
 
-                                        if ((_referralDiscount ?? 0) > 0)
-                                        AmountWidget(
-                                          title: getTranslated('referral_discount', context),
-                                          amount: PriceConverter.convertPrice(context, _referralDiscount),
-                                        ),
+                                            if (checkoutController.isUseCashback && estimatedCashback > 0)
+                                            AmountWidget(
+                                              title: 'Victorious Cashback',
+                                              amount: '- ${PriceConverter.convertPrice(context, estimatedCashback)}',
+                                            ),
 
-                                        Divider(height: 16, color: Theme.of(context).hintColor.withValues(alpha: 0.2)),
-                                        AmountWidget(
-                                          fontSize: Dimensions.fontSizeLarge, isTitleBlack: true,
-                                          title: '${getTranslated('total_payable', context)} ${Provider.of<SplashController>(Get.context!, listen: false).configModel?.systemTaxIncludeStatus == 1 ? getTranslated('inc_vat_tax', context) : ''} ',
-                                          amount: PriceConverter.convertPrice(context,
-                                            (_order + widget.shippingFee - (_referralDiscount ?? 0) - widget.discount - _couponDiscount! + _tax),
-                                          ),
-                                        ),
+                                            if (splashController.configModel?.systemTaxIncludeStatus != 1)
+                                            AmountWidget(
+                                              title: getTranslated('tax', context),
+                                              amount: PriceConverter.convertPrice(context, _tax),
+                                            ),
 
-                                        const SizedBox(height: Dimensions.paddingSizeDefault),
-                                      ],
+                                            Divider(height: 16, color: Theme.of(context).hintColor.withValues(alpha: 0.2)),
+                                            AmountWidget(
+                                              fontSize: Dimensions.fontSizeLarge, isTitleBlack: true,
+                                              title: '${getTranslated('total_payable', context)} ${Provider.of<SplashController>(Get.context!, listen: false).configModel?.systemTaxIncludeStatus == 1 ? getTranslated('inc_vat_tax', context) : ''} ',
+                                              amount: PriceConverter.convertPrice(context, totalPayable > 0 ? totalPayable : 0),
+                                            ),
+
+                                            const SizedBox(height: Dimensions.paddingSizeDefault),
+                                          ],
+                                        );
+                                      },
                                     );
                                   },
                                 ),

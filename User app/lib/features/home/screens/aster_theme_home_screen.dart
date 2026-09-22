@@ -10,11 +10,6 @@ import 'package:flutter_sixvalley_ecommerce/features/brand/controllers/brand_con
 import 'package:flutter_sixvalley_ecommerce/features/cart/controllers/cart_controller.dart';
 import 'package:flutter_sixvalley_ecommerce/features/category/controllers/category_controller.dart';
 import 'package:flutter_sixvalley_ecommerce/features/category/widgets/category_list_widget.dart';
-import 'package:flutter_sixvalley_ecommerce/features/deal/controllers/featured_deal_controller.dart';
-import 'package:flutter_sixvalley_ecommerce/features/deal/controllers/flash_deal_controller.dart';
-import 'package:flutter_sixvalley_ecommerce/features/deal/widgets/featured_deal_list_widget.dart';
-import 'package:flutter_sixvalley_ecommerce/features/deal/widgets/flash_deals_list_widget.dart';
-import 'package:flutter_sixvalley_ecommerce/features/home/shimmers/flash_deal_shimmer.dart';
 import 'package:flutter_sixvalley_ecommerce/features/home/shimmers/order_again_shimmer.dart';
 import 'package:flutter_sixvalley_ecommerce/features/home/shimmers/top_store_shimmer.dart';
 import 'package:flutter_sixvalley_ecommerce/features/home/widgets/announcement_widget.dart';
@@ -71,8 +66,6 @@ class AsterThemeHomeScreen extends StatefulWidget {
         Provider.of<ProductController>(context, listen: false);
     final brandController =
         Provider.of<BrandController>(context, listen: false);
-    final featuredDealController =
-        Provider.of<FeaturedDealController>(context, listen: false);
     final notificationController =
         Provider.of<NotificationController>(context, listen: false);
     final cartController = Provider.of<CartController>(context, listen: false);
@@ -103,7 +96,6 @@ class AsterThemeHomeScreen extends StatefulWidget {
       productController.getHomeCategoryProductList(reload),
       shopController.getTopSellerList(offset: 1, isUpdate: reload),
       brandController.getBrandList(offset: 1, isUpdate: reload),
-      featuredDealController.getFeaturedDealList(),
       productController.getRecommendedProduct(),
       productController.findWhatYouNeed(),
       productController.getJustForYouProduct(1, isUpdate: reload),
@@ -389,55 +381,7 @@ class _AsterThemeHomeScreenState extends State<AsterThemeHomeScreen>
             SliverToBoxAdapter(
                 child: SizedBox(height: Dimensions.paddingSizeDefault)),
 
-            SliverToBoxAdapter(
-              child: Consumer<FlashDealController>(
-                  builder: (context, megaDeal, child) {
-                return (megaDeal.flashDeal != null &&
-                        megaDeal.flashDealList.isNotEmpty)
-                    ? Column(children: [
-                        Padding(
-                            padding: const EdgeInsets.symmetric(
-                                horizontal: Dimensions.paddingSizeDefault),
-                            child: FlashDealBar(
-                              title: getTranslated('flash_deal', context)!
-                                  .toUpperCase(),
-                              eventDuration: megaDeal.flashDeal != null
-                                  ? megaDeal.duration
-                                  : null,
-                              onTap: () {
-                                RouterHelper.getFlashDealScreenViewRoute();
-                              },
-                            )),
-                        const SizedBox(height: Dimensions.paddingSizeSmall),
-                        Padding(
-                          padding: const EdgeInsets.symmetric(
-                              horizontal: Dimensions.paddingSizeDefault),
-                          child: Text(
-                              getTranslated(
-                                      'hurry_up_the_offer_is_limited_grab_while_it_lasts',
-                                      context) ??
-                                  '',
-                              textAlign: TextAlign.center,
-                              style: textRegular.copyWith(
-                                  color: Provider.of<ThemeController>(context,
-                                              listen: false)
-                                          .darkTheme
-                                      ? Theme.of(context).hintColor
-                                      : Theme.of(context).primaryColor,
-                                  fontSize: Dimensions.fontSizeDefault)),
-                        ),
-                        const SizedBox(height: Dimensions.paddingSizeDefault),
-                        const Padding(
-                          padding: EdgeInsets.only(
-                              bottom: Dimensions.paddingSizeDefault),
-                          child: FlashDealsListWidget(),
-                        ),
-                      ])
-                    : (!megaDeal.hasLoaded
-                        ? const FlashDealShimmer()
-                        : const SizedBox.shrink());
-              }),
-            ),
+
 
             SliverToBoxAdapter(
               child: Consumer<ProductController>(
@@ -547,49 +491,7 @@ class _AsterThemeHomeScreenState extends State<AsterThemeHomeScreen>
                 }),
               ),
 
-            SliverToBoxAdapter(
-              child: Consumer<FeaturedDealController>(
-                builder: (context, featuredDealProvider, child) {
-                  return featuredDealProvider.featuredDealProductList != null
-                      ? featuredDealProvider.featuredDealProductList!.isNotEmpty
-                          ? Stack(children: [
-                              Container(
-                                  width: MediaQuery.of(context).size.width,
-                                  height: 150,
-                                  color: Provider.of<ThemeController>(context,
-                                              listen: false)
-                                          .darkTheme
-                                      ? Theme.of(context)
-                                          .primaryColor
-                                          .withValues(alpha: .20)
-                                      : Theme.of(context)
-                                          .primaryColor
-                                          .withValues(alpha: .125)),
-                              Padding(
-                                  padding: const EdgeInsets.only(
-                                      bottom: Dimensions.paddingSizeDefault),
-                                  child: Column(children: [
-                                    Padding(
-                                        padding: const EdgeInsets.fromLTRB(
-                                            0,
-                                            Dimensions.paddingSizeDefault,
-                                            0,
-                                            Dimensions.paddingSizeDefault),
-                                        child: TitleRowWidget(
-                                            title:
-                                                '${getTranslated('featured_deals', context)}',
-                                            onTap: () {
-                                              RouterHelper
-                                                  .getFeaturedDealScreenViewRoute();
-                                            })),
-                                    const FeaturedDealsListWidget()
-                                  ]))
-                            ])
-                          : const SizedBox.shrink()
-                      : const FindWhatYouNeedShimmer();
-                },
-              ),
-            ),
+
 
 
 

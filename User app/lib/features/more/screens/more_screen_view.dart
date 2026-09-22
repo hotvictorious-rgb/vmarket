@@ -126,12 +126,6 @@ class _MoreScreenState extends State<MoreScreen> with AutomaticKeepAliveClientMi
 
                               ),
 
-                              MenuButtonWidget(image: Images.coupon, title: getTranslated('coupons', context),
-                                onTap: () {
-                                  RouterHelper.getCouponListScreenRoute();
-                                },
-                              ),
-
 
                               MenuButtonWidget(image: Images.category, title: getTranslated('CATEGORY', context),
                                 onTap: () {

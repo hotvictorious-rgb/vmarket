@@ -15,8 +15,6 @@ import 'package:flutter_sixvalley_ecommerce/features/auth/controllers/google_log
 import 'package:flutter_sixvalley_ecommerce/features/banner/controllers/banner_controller.dart';
 import 'package:flutter_sixvalley_ecommerce/features/checkout/controllers/checkout_controller.dart';
 import 'package:flutter_sixvalley_ecommerce/features/contact_us/controllers/contact_us_controller.dart';
-import 'package:flutter_sixvalley_ecommerce/features/deal/controllers/featured_deal_controller.dart';
-import 'package:flutter_sixvalley_ecommerce/features/deal/controllers/flash_deal_controller.dart';
 import 'package:flutter_sixvalley_ecommerce/features/location/controllers/location_controller.dart';
 import 'package:flutter_sixvalley_ecommerce/features/notification/controllers/notification_controller.dart';
 import 'package:flutter_sixvalley_ecommerce/features/onboarding/controllers/onboarding_controller.dart';
@@ -28,7 +26,6 @@ import 'package:flutter_sixvalley_ecommerce/features/product_details/controllers
 import 'package:flutter_sixvalley_ecommerce/features/profile/controllers/profile_contrroller.dart';
 import 'package:flutter_sixvalley_ecommerce/features/refund/controllers/refund_controller.dart';
 import 'package:flutter_sixvalley_ecommerce/features/reorder/controllers/re_order_controller.dart';
-import 'package:flutter_sixvalley_ecommerce/features/restock/controllers/restock_controller.dart';
 import 'package:flutter_sixvalley_ecommerce/features/review/controllers/review_controller.dart';
 import 'package:flutter_sixvalley_ecommerce/features/shipping/controllers/shipping_controller.dart';
 import 'package:flutter_sixvalley_ecommerce/features/splash/controllers/splash_controller.dart';
@@ -43,7 +40,6 @@ import 'package:flutter_sixvalley_ecommerce/features/auth/controllers/auth_contr
 import 'package:flutter_sixvalley_ecommerce/features/brand/controllers/brand_controller.dart';
 import 'package:flutter_sixvalley_ecommerce/features/cart/controllers/cart_controller.dart';
 import 'package:flutter_sixvalley_ecommerce/features/category/controllers/category_controller.dart';
-import 'package:flutter_sixvalley_ecommerce/features/coupon/controllers/coupon_controller.dart';
 import 'package:flutter_sixvalley_ecommerce/features/search_product/controllers/search_product_controller.dart';
 import 'package:flutter_sixvalley_ecommerce/features/shop/controllers/shop_controller.dart';
 import 'package:flutter_sixvalley_ecommerce/push_notification/notification_helper.dart';
@@ -114,8 +110,6 @@ Future<void> main() async {
   runApp(MultiProvider(providers: [
       ChangeNotifierProvider(create: (context) => di.sl<CategoryController>()),
       ChangeNotifierProvider(create: (context) => di.sl<ShopController>()),
-      ChangeNotifierProvider(create: (context) => di.sl<FlashDealController>()),
-      ChangeNotifierProvider(create: (context) => di.sl<FeaturedDealController>()),
       ChangeNotifierProvider(create: (context) => di.sl<BrandController>()),
       ChangeNotifierProvider(create: (context) => di.sl<ProductController>()),
       ChangeNotifierProvider(create: (context) => di.sl<BannerController>()),
@@ -123,7 +117,6 @@ Future<void> main() async {
       ChangeNotifierProvider(create: (context) => di.sl<OnBoardingController>()),
       ChangeNotifierProvider(create: (context) => di.sl<AuthController>()),
       ChangeNotifierProvider(create: (context) => di.sl<SearchProductController>()),
-      ChangeNotifierProvider(create: (context) => di.sl<CouponController>()),
       ChangeNotifierProvider(create: (context) => di.sl<OrderController>()),
       ChangeNotifierProvider(create: (context) => di.sl<NotificationController>()),
       ChangeNotifierProvider(create: (context) => di.sl<ProfileController>()),
@@ -148,7 +141,6 @@ Future<void> main() async {
       ChangeNotifierProvider(create: (context) => di.sl<ReOrderController>()),
       ChangeNotifierProvider(create: (context) => di.sl<ReviewController>()),
       ChangeNotifierProvider(create: (context) => di.sl<SellerProductController>()),
-      ChangeNotifierProvider(create: (context) => di.sl<RestockController>()),
     ],
     child: MyApp(body: body, route: path),
   ));
