@@ -129,6 +129,7 @@ import 'package:flutter_sixvalley_ecommerce/common/enums/local_caches_type_enum.
   static const String submitDeliveryManReview = '/api/v1/customer/order/deliveryman-review/update?order_id=';
   static const String mergeGuestCart = '/api/v1/cart/get-merge-guest-cart';
   static const String orderDetailsTrack = '/api/v1/order/track-order-details?order_id=';
+  static const String pickupReservationsUri = '/api/v1/customer/pickup-reservations';
 
 
   //address

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_sixvalley_ecommerce/features/order_details/controllers/order_details_controller.dart';
 import 'package:flutter_sixvalley_ecommerce/features/order_details/widgets/icon_with_text_row_widget.dart';
+import 'package:flutter_sixvalley_ecommerce/helper/route_healper.dart';
 import 'package:flutter_sixvalley_ecommerce/localization/language_constrants.dart';
 import 'package:flutter_sixvalley_ecommerce/theme/controllers/theme_controller.dart';
 import 'package:flutter_sixvalley_ecommerce/utill/custom_themes.dart';
@@ -20,11 +21,24 @@ class ShippingAndBillingWidget extends StatefulWidget {
 class _ShippingAndBillingWidgetState extends State<ShippingAndBillingWidget> {
   bool isExpand = false;
 
-
-
   @override
   Widget build(BuildContext context) {
-    return  widget.orderProvider.orders?.orderType == 'POS' ? SizedBox() :
+    final bool isPickup = widget.orderProvider.orders?.orderType == 'pickup' || widget.orderProvider.orders?.orderType == 'self_pickup';
+
+    String shopName = 'Victorious Partner Store';
+    String shopAddress = 'Store Pickup Location';
+
+    if (widget.orderProvider.orderDetails != null && widget.orderProvider.orderDetails!.isNotEmpty) {
+      if (widget.orderProvider.orderDetails![0].order?.sellerIs == 'admin') {
+        shopName = Provider.of<SplashController>(context, listen: false).configModel?.inHouseShop?.name ?? 'Victorious Central Store';
+        shopAddress = Provider.of<SplashController>(context, listen: false).configModel?.inHouseShop?.address ?? 'Victorious Central Hub, Nigeria';
+      } else if (widget.orderProvider.orderDetails![0].seller?.shop != null) {
+        shopName = widget.orderProvider.orderDetails![0].seller?.shop?.name ?? 'Vendor Store';
+        shopAddress = widget.orderProvider.orderDetails![0].seller?.shop?.address ?? 'Store Location';
+      }
+    }
+
+    return  widget.orderProvider.orders?.orderType == 'POS' ? const SizedBox() :
     CollapsibleAddressSection(
       addressContent: Column(
         children: [
@@ -32,7 +46,73 @@ class _ShippingAndBillingWidgetState extends State<ShippingAndBillingWidget> {
           Container(
             color: Theme.of(context).cardColor,
             child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-              widget.orderProvider.orders!.shippingAddressData != null ?
+              isPickup ?
+              Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                Row(children: [
+                  Icon(Icons.storefront_rounded, color: Theme.of(context).primaryColor, size: 20),
+                  const SizedBox(width: 8),
+                  Text(getTranslated('store_pickup_location', context) ?? 'Store Pickup Location',
+                    style: titilliumSemiBold.copyWith(fontSize: Dimensions.fontSizeDefault, color: Theme.of(context).textTheme.bodyLarge?.color)),
+                ]),
+                const SizedBox(height: Dimensions.marginSizeSmall),
+                IconWithTextRowWidget(
+                  isBold: true,
+                  icon: Icons.store,
+                  text: shopName,
+                ),
+                const SizedBox(height: Dimensions.marginSizeSmall),
+                IconWithTextRowWidget(
+                  icon: Icons.location_on,
+                  text: shopAddress,
+                ),
+                const SizedBox(height: Dimensions.marginSizeSmall),
+                Container(
+                  padding: const EdgeInsets.all(10),
+                  decoration: BoxDecoration(
+                    color: Theme.of(context).primaryColor.withValues(alpha: 0.08),
+                    borderRadius: BorderRadius.circular(8),
+                    border: Border.all(color: Theme.of(context).primaryColor.withValues(alpha: 0.2)),
+                  ),
+                  child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                    Row(
+                      children: [
+                        Icon(Icons.directions_outlined, color: Theme.of(context).primaryColor, size: 18),
+                        const SizedBox(width: 6),
+                        Expanded(
+                          child: Text(
+                            getTranslated('pickup_direction_guidance', context) ?? 'Need help finding this store? Please message Customer Support for step-by-step guidance.',
+                            style: titilliumRegular.copyWith(fontSize: Dimensions.fontSizeSmall, color: Theme.of(context).textTheme.bodyMedium?.color),
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 8),
+                    InkWell(
+                      onTap: () => RouterHelper.getSupportTicketRoute(action: RouteAction.push),
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                        decoration: BoxDecoration(
+                          color: Theme.of(context).primaryColor,
+                          borderRadius: BorderRadius.circular(6),
+                        ),
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            const Icon(Icons.chat_bubble_outline, color: Colors.white, size: 14),
+                            const SizedBox(width: 6),
+                            Text(
+                              getTranslated('message_support', context) ?? 'Message Support for Guidance',
+                              style: titilliumSemiBold.copyWith(fontSize: Dimensions.fontSizeExtraSmall, color: Colors.white),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                  ]),
+                ),
+                const SizedBox(height: Dimensions.marginSizeSmall),
+              ]) :
+              (widget.orderProvider.orders!.shippingAddressData != null ?
               Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
                 Text(getTranslated('shipping_address', context)!,
                   style: titilliumSemiBold.copyWith(fontSize: Dimensions.fontSizeDefault, color: Theme.of(context).textTheme.bodyLarge?.color)
@@ -138,7 +218,7 @@ class _ShippingAndBillingWidgetState extends State<ShippingAndBillingWidget> {
                   ),
                 ),
                 const SizedBox(height: Dimensions.marginSizeSmall),
-              ]),
+              ])),
 
 
               if(widget.orderProvider.orders!.billingAddressData != null &&  widget.orderProvider.orders!.shippingAddressData != null)

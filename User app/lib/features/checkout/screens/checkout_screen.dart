@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_sixvalley_ecommerce/features/address/controllers/address_controller.dart';
 import 'package:flutter_sixvalley_ecommerce/features/cart/domain/models/cart_model.dart';
 import 'package:flutter_sixvalley_ecommerce/features/checkout/controllers/checkout_controller.dart';
+import 'package:flutter_sixvalley_ecommerce/features/checkout/domain/models/pickup_reservation_model.dart';
+import 'package:flutter_sixvalley_ecommerce/features/checkout/screens/pickup_reservation_success_screen.dart';
 import 'package:flutter_sixvalley_ecommerce/features/checkout/widgets/checkout_condition_checkbox.dart';
 import 'package:flutter_sixvalley_ecommerce/features/checkout/widgets/order_place_bottomsheet_widget.dart';
 import 'package:flutter_sixvalley_ecommerce/features/checkout/widgets/payment_method_bottom_sheet_widget.dart';
@@ -61,6 +63,26 @@ class CheckoutScreenState extends State<CheckoutScreen> {
   DebounceHelper debounceHelper = DebounceHelper(milliseconds: 500);
   SplashController  splashController= Provider.of<SplashController>(Get.context!, listen: false);
 
+  Map<String, Map<String, String>> _getUniqueStores(List<CartModel> cartList, SplashController splash) {
+    final Map<String, Map<String, String>> stores = {};
+    for (final item in cartList) {
+      final String storeKey = (item.sellerIs == 'admin') ? 'admin' : (item.sellerId?.toString() ?? 'vendor_${item.shop?.id}');
+      if (!stores.containsKey(storeKey)) {
+        if (item.sellerIs == 'admin') {
+          stores[storeKey] = {
+            'name': splash.configModel?.inHouseShop?.name ?? 'Victorious Central Store',
+            'address': splash.configModel?.inHouseShop?.address ?? 'Victorious Central Hub, Nigeria',
+          };
+        } else {
+          stores[storeKey] = {
+            'name': item.shop?.name ?? 'Vendor Store',
+            'address': (item.shop?.address != null && item.shop!.address!.isNotEmpty) ? item.shop!.address! : 'Store Location',
+          };
+        }
+      }
+    }
+    return stores;
+  }
 
   @override
   void initState() {
@@ -68,13 +90,15 @@ class CheckoutScreenState extends State<CheckoutScreen> {
     Provider.of<AddressController>(context, listen: false).getAddressList();
     Provider.of<CartController>(context, listen: false).getCartData(context);
     Provider.of<CheckoutController>(context, listen: false).resetPaymentMethod();
+    Provider.of<CheckoutController>(context, listen: false).setFulfillmentType(false, notify: false);
     Provider.of<CheckoutController>(context, listen: false).initDefaultPaymentMethod(
       splashController,
       isUpdate: false,
     );
     Provider.of<ShippingController>(context, listen: false).getChosenShippingMethod(context);
     // [AI] Victorious MARKET V1: COD and offline payments are decommissioned.
-    // Digital payment via Paystack is canonical.
+    // Digital payment via Paystack is canonical for doorstep delivery.
+    // In-store pickup uses 24-hr stock hold reservation with payment at store inspection.
 
     if(Provider.of<CheckoutController>(context, listen: false).isAcceptTerms){
       Provider.of<CheckoutController>(context, listen: false).toggleTermsCheck(isUpdate: false);
@@ -134,6 +158,41 @@ class CheckoutScreenState extends State<CheckoutScreen> {
                             CustomButton(onTap: (orderProvider.isLoading || !orderProvider.isAcceptTerms || _isSubmitting) ? null : () async {
                               if(_isSubmitting) return;
 
+                              // [AI] In-Shop Pickup Fulfillment Channel
+                              if (orderProvider.isPickup) {
+                                if (!Provider.of<AuthController>(context, listen: false).isLoggedIn()) {
+                                  showCustomSnackBarWidget(
+                                    getTranslated('login_to_reserve_pickup', context) ?? 'Please log in to make an in-store pickup reservation.',
+                                    context,
+                                    snackBarType: SnackBarType.warning,
+                                  );
+                                  return;
+                                }
+                                setState(() => _isSubmitting = true);
+                                final cartIds = widget.cartList.map((e) => e.id!).toList();
+                                final response = await orderProvider.submitPickupReservation(cartIds: cartIds, checkedOnly: false);
+                                setState(() => _isSubmitting = false);
+
+                                if (response.response != null && (response.response?.statusCode == 201 || response.response?.statusCode == 200)) {
+                                  final parsed = PickupReservationResponse.fromJson(response.response!.data);
+                                  Navigator.of(context).pushReplacement(
+                                    MaterialPageRoute(
+                                      builder: (_) => PickupReservationSuccessScreen(
+                                        reservations: parsed.reservations ?? [],
+                                      ),
+                                    ),
+                                  );
+                                } else {
+                                  showCustomSnackBarWidget(
+                                    response.error?.toString() ?? 'Unable to create pickup reservation.',
+                                    context,
+                                    snackBarType: SnackBarType.error,
+                                  );
+                                }
+                                return;
+                              }
+
+                              // [AI] Doorstep Delivery Channel (Requires Shipping Address + Paystack Gateway)
                               if(orderProvider.addressIndex == null) {
                                 RouterHelper.getSavedAddressListRoute(fromGuest: !Provider.of<AuthController>(context, listen: false).isLoggedIn());
                                 showCustomSnackBarWidget(getTranslated('select_a_shipping_address', context), Get.context!, snackBarType: SnackBarType.warning);
@@ -173,7 +232,9 @@ class CheckoutScreenState extends State<CheckoutScreen> {
                                 }
                               }
                             },
-                              buttonText: '${getTranslated('proceed', context)}',
+                              buttonText: orderProvider.isPickup
+                                  ? (getTranslated('reserve_store_pickup_pay_zero', context) ?? 'Reserve for Store Pickup (Pay ₦0.00 Now)')
+                                  : '${getTranslated('proceed', context)}',
                             )
                           ],
                         ),
@@ -198,19 +259,292 @@ class CheckoutScreenState extends State<CheckoutScreen> {
                       physics: const BouncingScrollPhysics(),
                       padding: const EdgeInsets.all(0),
                       children: [
-                        SizedBox(height: Dimensions.paddingSizeSmall),
+                        const SizedBox(height: Dimensions.paddingSizeSmall),
 
-                        Padding(
-                          padding: const EdgeInsets.only(bottom: Dimensions.paddingSizeDefault),
-                          child: ShippingDetailsWidget(
-                            hasPhysical: true,
-                            billingAddress: _billingAddress,
-                            passwordFormKey: passwordFormKey,
+                        // [AI] Fulfillment Channel Segmented Selector (Doorstep Delivery vs In-Shop Pickup)
+                        Container(
+                          margin: const EdgeInsets.symmetric(
+                            horizontal: Dimensions.paddingSizeDefault,
+                            vertical: Dimensions.paddingSizeExtraSmall,
+                          ),
+                          decoration: BoxDecoration(
+                            color: Theme.of(context).cardColor,
+                            borderRadius: BorderRadius.circular(16),
+                            boxShadow: [
+                              BoxShadow(
+                                color: Colors.black.withValues(alpha: 0.04),
+                                blurRadius: 10,
+                                offset: const Offset(0, 4),
+                              ),
+                            ],
+                            border: Border.all(
+                              color: Theme.of(context).primaryColor.withValues(alpha: 0.08),
+                            ),
+                          ),
+                          padding: const EdgeInsets.all(4),
+                          child: Row(
+                            children: [
+                              Expanded(
+                                child: InkWell(
+                                  borderRadius: BorderRadius.circular(12),
+                                  onTap: () {
+                                    if (orderProvider.isPickup) {
+                                      orderProvider.setFulfillmentType(false);
+                                    }
+                                  },
+                                  child: AnimatedContainer(
+                                    duration: const Duration(milliseconds: 200),
+                                    padding: const EdgeInsets.symmetric(vertical: 10),
+                                    decoration: BoxDecoration(
+                                      color: !orderProvider.isPickup ? Theme.of(context).primaryColor : Colors.transparent,
+                                      borderRadius: BorderRadius.circular(12),
+                                    ),
+                                    child: Column(
+                                      children: [
+                                        Row(
+                                          mainAxisAlignment: MainAxisAlignment.center,
+                                          children: [
+                                            Icon(
+                                              Icons.local_shipping_rounded,
+                                              color: !orderProvider.isPickup ? Colors.white : Theme.of(context).hintColor,
+                                              size: 18,
+                                            ),
+                                            const SizedBox(width: 6),
+                                            Text(
+                                              getTranslated('doorstep_delivery', context) ?? 'Doorstep Delivery',
+                                              style: titilliumBold.copyWith(
+                                                color: !orderProvider.isPickup ? Colors.white : Theme.of(context).textTheme.bodyLarge?.color,
+                                                fontSize: Dimensions.fontSizeSmall,
+                                              ),
+                                            ),
+                                          ],
+                                        ),
+                                        const SizedBox(height: 2),
+                                        Text(
+                                          getTranslated('courier_dispatch', context) ?? 'Rider to Your Door',
+                                          style: titilliumRegular.copyWith(
+                                            color: !orderProvider.isPickup ? Colors.white.withValues(alpha: 0.85) : Theme.of(context).hintColor,
+                                            fontSize: Dimensions.fontSizeExtraSmall,
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                ),
+                              ),
+                              Expanded(
+                                child: InkWell(
+                                  borderRadius: BorderRadius.circular(12),
+                                  onTap: () {
+                                    if (!orderProvider.isPickup) {
+                                      orderProvider.setFulfillmentType(true);
+                                    }
+                                  },
+                                  child: AnimatedContainer(
+                                    duration: const Duration(milliseconds: 200),
+                                    padding: const EdgeInsets.symmetric(vertical: 10),
+                                    decoration: BoxDecoration(
+                                      color: orderProvider.isPickup ? Theme.of(context).primaryColor : Colors.transparent,
+                                      borderRadius: BorderRadius.circular(12),
+                                    ),
+                                    child: Column(
+                                      children: [
+                                        Row(
+                                          mainAxisAlignment: MainAxisAlignment.center,
+                                          children: [
+                                            Icon(
+                                              Icons.storefront_rounded,
+                                              color: orderProvider.isPickup ? Colors.white : Theme.of(context).hintColor,
+                                              size: 18,
+                                            ),
+                                            const SizedBox(width: 6),
+                                            Text(
+                                              getTranslated('in_shop_pickup', context) ?? 'In-Shop Pickup',
+                                              style: titilliumBold.copyWith(
+                                                color: orderProvider.isPickup ? Colors.white : Theme.of(context).textTheme.bodyLarge?.color,
+                                                fontSize: Dimensions.fontSizeSmall,
+                                              ),
+                                            ),
+                                          ],
+                                        ),
+                                        const SizedBox(height: 2),
+                                        Text(
+                                          getTranslated('pay_zero_at_checkout', context) ?? 'Pay ₦0 Now • Free Hold',
+                                          style: titilliumRegular.copyWith(
+                                            color: orderProvider.isPickup ? Colors.white.withValues(alpha: 0.85) : const Color(0xFF10B981),
+                                            fontSize: Dimensions.fontSizeExtraSmall,
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                ),
+                              ),
+                            ],
                           ),
                         ),
 
+                        const SizedBox(height: Dimensions.paddingSizeSmall),
 
-                        if (Provider.of<AuthController>(context, listen: false).isLoggedIn())
+                        // [AI] Fulfillment Specific Content:
+                        // If In-Shop Pickup: Display store pickup location card(s) with shop name, address, no phone, and guidance button.
+                        // If Doorstep Delivery: Display ShippingDetailsWidget (customer delivery & billing addresses).
+                        if (orderProvider.isPickup) ...[
+                          Container(
+                            margin: const EdgeInsets.symmetric(
+                              horizontal: Dimensions.paddingSizeDefault,
+                              vertical: Dimensions.paddingSizeExtraSmall,
+                            ),
+                            padding: const EdgeInsets.all(Dimensions.paddingSizeDefault),
+                            decoration: BoxDecoration(
+                              color: Theme.of(context).cardColor,
+                              borderRadius: BorderRadius.circular(16),
+                              boxShadow: [
+                                BoxShadow(
+                                  color: Colors.black.withValues(alpha: 0.04),
+                                  blurRadius: 10,
+                                  offset: const Offset(0, 4),
+                                ),
+                              ],
+                              border: Border.all(
+                                color: Theme.of(context).primaryColor.withValues(alpha: 0.12),
+                              ),
+                            ),
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Row(
+                                  children: [
+                                    Icon(Icons.storefront_rounded, color: Theme.of(context).primaryColor, size: 20),
+                                    const SizedBox(width: 8),
+                                    Text(
+                                      getTranslated('store_pickup_locations', context) ?? 'Store Pickup Locations',
+                                      style: titilliumBold.copyWith(
+                                        fontSize: Dimensions.fontSizeDefault,
+                                        color: Theme.of(context).textTheme.bodyLarge?.color,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                                const SizedBox(height: Dimensions.paddingSizeSmall),
+                                ..._getUniqueStores(widget.cartList, splashController).entries.map((entry) {
+                                  final store = entry.value;
+                                  return Container(
+                                    margin: const EdgeInsets.only(bottom: Dimensions.paddingSizeSmall),
+                                    padding: const EdgeInsets.all(12),
+                                    decoration: BoxDecoration(
+                                      color: Theme.of(context).primaryColor.withValues(alpha: 0.04),
+                                      borderRadius: BorderRadius.circular(12),
+                                      border: Border.all(color: Theme.of(context).primaryColor.withValues(alpha: 0.1)),
+                                    ),
+                                    child: Column(
+                                      crossAxisAlignment: CrossAxisAlignment.start,
+                                      children: [
+                                        Row(
+                                          children: [
+                                            Icon(Icons.store, color: Theme.of(context).primaryColor, size: 18),
+                                            const SizedBox(width: 6),
+                                            Expanded(
+                                              child: Text(
+                                                store['name'] ?? 'Merchant Store',
+                                                style: titilliumBold.copyWith(fontSize: Dimensions.fontSizeDefault),
+                                              ),
+                                            ),
+                                          ],
+                                        ),
+                                        const SizedBox(height: 6),
+                                        Row(
+                                          crossAxisAlignment: CrossAxisAlignment.start,
+                                          children: [
+                                            Icon(Icons.location_on, color: Theme.of(context).hintColor, size: 16),
+                                            const SizedBox(width: 6),
+                                            Expanded(
+                                              child: Text(
+                                                store['address'] ?? 'Store Physical Address',
+                                                style: titilliumRegular.copyWith(
+                                                  fontSize: Dimensions.fontSizeSmall,
+                                                  color: Theme.of(context).hintColor,
+                                                ),
+                                              ),
+                                            ),
+                                          ],
+                                        ),
+                                        const SizedBox(height: 10),
+                                        // Direction guidance note with message support action (STRICTLY NO PHONE NUMBER)
+                                        Container(
+                                          padding: const EdgeInsets.all(8),
+                                          decoration: BoxDecoration(
+                                            color: Theme.of(context).cardColor,
+                                            borderRadius: BorderRadius.circular(8),
+                                            border: Border.all(color: Theme.of(context).primaryColor.withValues(alpha: 0.15)),
+                                          ),
+                                          child: Column(
+                                            crossAxisAlignment: CrossAxisAlignment.start,
+                                            children: [
+                                              Row(
+                                                children: [
+                                                  Icon(Icons.directions_outlined, color: Theme.of(context).primaryColor, size: 16),
+                                                  const SizedBox(width: 6),
+                                                  Expanded(
+                                                    child: Text(
+                                                      getTranslated('pickup_direction_guidance', context) ??
+                                                          'Need help finding this store? Message Customer Support for step-by-step guidance.',
+                                                      style: titilliumRegular.copyWith(
+                                                        fontSize: Dimensions.fontSizeExtraSmall,
+                                                        color: Theme.of(context).textTheme.bodyMedium?.color,
+                                                      ),
+                                                    ),
+                                                  ),
+                                                ],
+                                              ),
+                                              const SizedBox(height: 6),
+                                              InkWell(
+                                                onTap: () => RouterHelper.getSupportTicketRoute(action: RouteAction.push),
+                                                child: Container(
+                                                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                                                  decoration: BoxDecoration(
+                                                    color: Theme.of(context).primaryColor,
+                                                    borderRadius: BorderRadius.circular(6),
+                                                  ),
+                                                  child: Row(
+                                                    mainAxisSize: MainAxisSize.min,
+                                                    children: [
+                                                      const Icon(Icons.chat_bubble_outline, color: Colors.white, size: 12),
+                                                      const SizedBox(width: 4),
+                                                      Text(
+                                                        getTranslated('message_support', context) ?? 'Message Support for Guidance',
+                                                        style: titilliumSemiBold.copyWith(
+                                                          fontSize: Dimensions.fontSizeExtraSmall,
+                                                          color: Colors.white,
+                                                        ),
+                                                      ),
+                                                    ],
+                                                  ),
+                                                ),
+                                              ),
+                                            ],
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                  );
+                                }),
+                              ],
+                            ),
+                          ),
+                          const SizedBox(height: Dimensions.paddingSizeSmall),
+                        ] else ...[
+                          Padding(
+                            padding: const EdgeInsets.only(bottom: Dimensions.paddingSizeDefault),
+                            child: ShippingDetailsWidget(
+                              hasPhysical: true,
+                              billingAddress: _billingAddress,
+                              passwordFormKey: passwordFormKey,
+                            ),
+                          ),
+                        ],
+
+                        if (Provider.of<AuthController>(context, listen: false).isLoggedIn() && !orderProvider.isPickup)
                           Padding(
                             padding: const EdgeInsets.only(bottom: Dimensions.paddingSizeSmall),
                             child: Consumer<ProfileController>(
@@ -291,12 +625,65 @@ class CheckoutScreenState extends State<CheckoutScreen> {
                             ),
                           ),
 
-
-                        Padding(
-                          padding: const EdgeInsets.symmetric(horizontal: 0),
-                          child: ChoosePaymentWidget(),
-                        ),
-                        SizedBox(height: Dimensions.paddingSizeSmall),
+                        // Payment Section: If Pickup, show In-Store inspection card; If Delivery, show ChoosePaymentWidget
+                        if (orderProvider.isPickup) ...[
+                          Container(
+                            margin: const EdgeInsets.symmetric(
+                              horizontal: Dimensions.paddingSizeDefault,
+                              vertical: Dimensions.paddingSizeExtraSmall,
+                            ),
+                            padding: const EdgeInsets.all(Dimensions.paddingSizeDefault),
+                            decoration: BoxDecoration(
+                              color: const Color(0xFF10B981).withValues(alpha: 0.08),
+                              borderRadius: BorderRadius.circular(16),
+                              border: Border.all(color: const Color(0xFF10B981).withValues(alpha: 0.25)),
+                            ),
+                            child: Row(
+                              children: [
+                                Container(
+                                  width: 40,
+                                  height: 40,
+                                  decoration: const BoxDecoration(
+                                    color: Color(0xFF10B981),
+                                    shape: BoxShape.circle,
+                                  ),
+                                  child: const Icon(Icons.verified_rounded, color: Colors.white, size: 22),
+                                ),
+                                const SizedBox(width: Dimensions.paddingSizeDefault),
+                                Expanded(
+                                  child: Column(
+                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                    children: [
+                                      Text(
+                                        getTranslated('pay_at_store_title', context) ?? 'Pay at Store Counter',
+                                        style: titilliumBold.copyWith(
+                                          fontSize: Dimensions.fontSizeDefault,
+                                          color: const Color(0xFF065F46),
+                                        ),
+                                      ),
+                                      const SizedBox(height: 2),
+                                      Text(
+                                        getTranslated('pay_at_store_desc', context) ??
+                                            '₦0.00 due right now. Inspect items in person at the vendor shop before payment.',
+                                        style: titilliumRegular.copyWith(
+                                          fontSize: Dimensions.fontSizeSmall,
+                                          color: const Color(0xFF047857),
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                          const SizedBox(height: Dimensions.paddingSizeSmall),
+                        ] else ...[
+                          Padding(
+                            padding: const EdgeInsets.symmetric(horizontal: 0),
+                            child: ChoosePaymentWidget(),
+                          ),
+                          const SizedBox(height: Dimensions.paddingSizeSmall),
+                        ],
 
                         Container(
                           decoration: BoxDecoration(
@@ -338,14 +725,15 @@ class CheckoutScreenState extends State<CheckoutScreen> {
                                     return Consumer<ProfileController>(
                                       builder: (context, profileProvider, _) {
                                         double estimatedCashback = 0;
-                                        if (checkoutController.isUseCashback) {
+                                        if (checkoutController.isUseCashback && !checkoutController.isPickup) {
                                           final double userPoints = profileProvider.userInfoModel?.loyaltyPoint ?? 0;
                                           final double rate = (splashController.configModel?.loyaltyPointExchangeRate ?? 1).toDouble();
                                           final double maxCap = _order * 0.10;
                                           final double pointsInNaira = userPoints * rate;
                                           estimatedCashback = (pointsInNaira > maxCap ? maxCap : pointsInNaira);
                                         }
-                                        final double totalPayable = (_order + widget.shippingFee - widget.discount - estimatedCashback + _tax);
+                                        final double activeShipping = checkoutController.isPickup ? 0.0 : widget.shippingFee;
+                                        final double totalPayable = (_order + activeShipping - widget.discount - estimatedCashback + _tax);
 
                                         return Column(
                                           crossAxisAlignment: CrossAxisAlignment.start,
@@ -361,14 +749,16 @@ class CheckoutScreenState extends State<CheckoutScreen> {
                                               ),
                                             AmountWidget(
                                               title: getTranslated('shipping_fee', context),
-                                              amount: PriceConverter.convertPrice(context, widget.shippingFee),
+                                              amount: checkoutController.isPickup
+                                                  ? (getTranslated('free_pickup', context) ?? '₦0.00 (In-Store Pickup)')
+                                                  : PriceConverter.convertPrice(context, widget.shippingFee),
                                             ),
                                             AmountWidget(
                                               title: getTranslated('discount', context),
                                               amount: PriceConverter.convertPrice(context, widget.discount),
                                             ),
 
-                                            if (checkoutController.isUseCashback && estimatedCashback > 0)
+                                            if (checkoutController.isUseCashback && estimatedCashback > 0 && !checkoutController.isPickup)
                                             AmountWidget(
                                               title: 'Victorious Cashback',
                                               amount: '- ${PriceConverter.convertPrice(context, estimatedCashback)}',
@@ -381,11 +771,27 @@ class CheckoutScreenState extends State<CheckoutScreen> {
                                             ),
 
                                             Divider(height: 16, color: Theme.of(context).hintColor.withValues(alpha: 0.2)),
-                                            AmountWidget(
-                                              fontSize: Dimensions.fontSizeLarge, isTitleBlack: true,
-                                              title: '${getTranslated('total_payable', context)} ${Provider.of<SplashController>(Get.context!, listen: false).configModel?.systemTaxIncludeStatus == 1 ? getTranslated('inc_vat_tax', context) : ''} ',
-                                              amount: PriceConverter.convertPrice(context, totalPayable > 0 ? totalPayable : 0),
-                                            ),
+                                            if (checkoutController.isPickup) ...[
+                                              AmountWidget(
+                                                fontSize: Dimensions.fontSizeLarge, isTitleBlack: true,
+                                                title: '${getTranslated('total_payable_now', context) ?? 'Total Payable Today'} ',
+                                                amount: PriceConverter.convertPrice(context, 0),
+                                              ),
+                                              const SizedBox(height: 6),
+                                              AmountWidget(
+                                                title: '${getTranslated('due_at_store_inspection', context) ?? 'Due at Store Inspection'} ',
+                                                amount: PriceConverter.convertPrice(
+                                                  context,
+                                                  (_order - widget.discount + _tax) > 0 ? (_order - widget.discount + _tax) : 0,
+                                                ),
+                                              ),
+                                            ] else ...[
+                                              AmountWidget(
+                                                fontSize: Dimensions.fontSizeLarge, isTitleBlack: true,
+                                                title: '${getTranslated('total_payable', context)} ${Provider.of<SplashController>(Get.context!, listen: false).configModel?.systemTaxIncludeStatus == 1 ? getTranslated('inc_vat_tax', context) : ''} ',
+                                                amount: PriceConverter.convertPrice(context, totalPayable > 0 ? totalPayable : 0),
+                                              ),
+                                            ],
 
                                             const SizedBox(height: Dimensions.paddingSizeDefault),
                                           ],

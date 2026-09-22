@@ -1,6 +1,7 @@
 import 'package:flutter_sixvalley_ecommerce/data/model/api_response.dart';
 import 'package:flutter_sixvalley_ecommerce/features/auth/controllers/auth_controller.dart';
 import 'package:flutter_sixvalley_ecommerce/features/cart/domain/models/cart_model.dart';
+import 'package:flutter_sixvalley_ecommerce/features/checkout/domain/models/pickup_reservation_model.dart';
 import 'package:flutter_sixvalley_ecommerce/features/checkout/domain/services/checkout_service_interface.dart';
 import 'package:flutter_sixvalley_ecommerce/features/splash/controllers/splash_controller.dart';
 import 'package:flutter_sixvalley_ecommerce/helper/api_checker.dart';
@@ -25,6 +26,16 @@ class CheckoutController with ChangeNotifier {
   bool _isLoading = false;
   bool _isCheckCreateAccount = false;
   bool _newUser = false;
+
+  bool _isPickup = false;
+  bool get isPickup => _isPickup;
+
+  void setFulfillmentType(bool isPickup, {bool notify = true}) {
+    _isPickup = isPickup;
+    if (notify) {
+      notifyListeners();
+    }
+  }
 
   int _paymentMethodIndex = -1;
   int? get addressIndex => _addressIndex;
@@ -273,5 +284,22 @@ String selectedDigitalPaymentMethodName = '';
     notifyListeners();
   }
 
+  Future<ApiResponseModel> submitPickupReservation({
+    List<int>? cartIds,
+    bool? checkedOnly = true,
+  }) async {
+    _isLoading = true;
+    notifyListeners();
 
+    final String idempotencyKey = 'prc_${DateTime.now().millisecondsSinceEpoch}_${(1000 + (DateTime.now().microsecond % 9000))}';
+    ApiResponseModel apiResponse = await checkoutServiceInterface.createPickupReservation(
+      idempotencyKey: idempotencyKey,
+      cartIds: cartIds,
+      checkedOnly: checkedOnly,
+    );
+
+    _isLoading = false;
+    notifyListeners();
+    return apiResponse;
+  }
 }

@@ -73,6 +73,28 @@ class CheckoutRepository implements CheckoutRepositoryInterface{
     }
   }
 
+  @override
+  Future<ApiResponseModel> createPickupReservation({
+    required String idempotencyKey,
+    List<int>? cartIds,
+    bool? checkedOnly,
+  }) async {
+    try {
+      final response = await dioClient!.post(
+        AppConstants.pickupReservationsUri,
+        data: {
+          'idempotency_key': idempotencyKey,
+          'cart_ids': cartIds,
+          'checked_only': checkedOnly,
+        },
+      );
+      return ApiResponseModel.withSuccess(response);
+    } catch (e) {
+      final error = e as DioException;
+      return ApiResponseModel.withError(ApiErrorHandler.getMessage(e), responseValue: (error.response));
+    }
+  }
+
 
   @override
   Future add(value) {

@@ -20,4 +20,9 @@ class CheckoutService implements CheckoutServiceInterface{
   Future getReferralAmount(String? amount) async {
     return await checkoutRepositoryInterface.getReferralAmount(amount);
   }
+
+  @override
+  Future createPickupReservation({required String idempotencyKey, List<int>? cartIds, bool? checkedOnly}) async {
+    return await checkoutRepositoryInterface.createPickupReservation(idempotencyKey: idempotencyKey, cartIds: cartIds, checkedOnly: checkedOnly);
+  }
 }
