@@ -172,7 +172,7 @@ No architectural expansion or feature additions outside the controlled completio
 1. **Current Backend Architecture:** Canonical LGA geography (`Country → State → LGA`), directional lanes (`Origin LGA → Destination LGA → DeliveryLane`), in-shop pickup (`Shop → Pickup Settings → Availability`), and unified fulfillment engine integration.
 2. **Backend Integration & Hardening:** Rigorous scenario testing (`Uyo → Uyo`, `Uyo → Eket`, `Eket → Uyo`, unsupported destinations, split delivery/pickup) and exhaustive subsystem audits.
 3. **Backend API Contract Freeze:** Lock authoritative API schemas. All apps strictly consume backend contracts.
-4. **Customer Mobile App (`User app`):** Complete core shopping, cart, address, Paystack, tracking lifecycle.
+4. **Customer Mobile App (`User app`):** Complete core shopping, cart, address, Paystack, tracking lifecycle strictly adhering to the 77-section contract in `.agents/rules/VMARKET_CUSTOMER_APP_SPEC.md`, `.agents/rules/CUSTOMER_APP_ALIGNMENT.md`, and `.agents/rules/CUSTOMER_APP_ALIGNMENT_PLAN.md`. Zero client-side fee or tax calculations permitted.
 5. **Vendor Mobile App (`Vendor app`):** Complete merchant operations with strict branch isolation.
 6. **Delivery Rider App (`Delivery Man App`):** Complete dispatch, transit, and proof of delivery. Hubs and riders are internal operational infrastructure.
 7. **Admin Control Center:** Unified command center across all marketplace governance.
