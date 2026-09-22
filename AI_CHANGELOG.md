@@ -1,3 +1,62 @@
+### [2026-09-22 19:21 UTC] Customer App ↔ Backend Production Alignment Specification & Governance Rules [ai-governance] [AI]
+* **Components:** AI Governance (`.agents/rules/`)
+* **Scope:** Added three canonical governance documents that all AI agents must read and follow before making any changes to the Customer App (`User app/`) or its backend contracts.
+* **Files Added:**
+  - `.agents/rules/VMARKET_CUSTOMER_APP_SPEC.md` — 77-section canonical production alignment specification defining the authoritative contract between the Customer App and the VMarket backend. Covers system boundary, all customer journeys (discovery → cart → fulfillment → checkout → payment → orders → pickup → cashback → returns), API contract rules, security invariants, error contract, data models, legacy cleanup rules, test matrix, E2E production tests, alignment audit process, and the definition of done.
+  - `.agents/rules/CUSTOMER_APP_ALIGNMENT.md` — Enforcing rule file with 20 mandatory rules derived from the spec. Updated to include a prominent directive requiring all AIs to read `VMARKET_CUSTOMER_APP_SPEC.md` first.
+  - `.agents/rules/CUSTOMER_APP_ALIGNMENT_PLAN.md` — Full 34-phase execution plan (repository inventory → API contract audit → auth → profile → address → catalog → fulfillment → checkout → payment → orders → pickup → tracking → cashback → returns → security → legacy cleanup → E2E tests → production readiness).
+* **Key Invariants Codified:**
+  - Backend is the sole source of truth; Customer App is a client only.
+  - Delivery availability is directional (`Uyo→Eket ≠ Eket→Uyo`).
+  - Payment success requires backend verification — never a Flutter callback alone.
+  - Stock deduction occurs only at successful backend settlement.
+  - Checkout snapshots are immutable to post-creation configuration changes.
+  - There must be exactly ONE authoritative checkout, fulfillment, and pickup engine.
+  - All 10 golden E2E tests must pass before Customer App is considered production-ready.
+* **Note:** This is the target production contract, not a claim of current implementation correctness. AI agents must audit v1 code against the spec, identify mismatches, and fix them without creating duplicate systems.
+* **Next:** Customer App alignment execution (34-phase plan), then Vendor App, Delivery App, Admin Web, Marketplace Web specs.
+
+### [2026-09-22 18:30 UTC] Phase 6 Completion: Delivery Man App Logistics & OTP Custody Verification [delivery-app] [AI]
+* **Components:** Delivery Man Mobile App (`Delivery Man App`), Architecture Governance
+* **Scope:** Finalization of Phase 6 of the Controlled Completion Roadmap (Finish Delivery App).
+* **Delivery Man Mobile App Hardening & Alignment:**
+  - **Mandatory Customer Delivery OTP Handover:** Removed legacy bypasses (`orderVerification == 0`) in `order_details_screen.dart` and `order_status_change_custom_button_widget.dart`. All marketplace deliveries now strictly require collecting and validating the 6-digit customer OTP via backend `verify_order_delivery_otp`.
+  - **No-Cash Delivery Invariant Enforcement:** Eliminated legacy "collect cash from customer" prompts and UI branches from `verify_otp_sheet_widget.dart`. In Victorious Market V1, all delivery orders are prepaid upfront via digital checkout; riders never collect cash on delivery.
+  - **Pickup Custody Transfer (Merchant/Hub -> Rider):** Streamlined `verify_pickup_sheet_widget.dart` and `order_details_controller.dart` (`updateOrderStatus`). Eliminated double-pop navigation issues upon successful pickup OTP verification and ensured active order state refreshes automatically in memory.
+  - **Live State Synchronization:** Updated `OrderDetailsScreen` builder to reactively bind and update `orderModel` from `orderDetailsController.orderDetails`, keeping the screen reactive across status transitions (`processing` -> `out_for_delivery` -> `delivered`).
+* **Architecture Milestone:**
+  - Phase 6 (Finish Delivery Mobile App) is officially **COMPLETE**.
+  - Ready to proceed to **Phase 7 (Admin Control Center & Central Operations Control Tower)**.
+
+### [2026-09-22 18:00 UTC] Phase 5 Completion: Vendor Mobile App Pickup Inspection & Branch Isolation [vendor-app] [AI]
+* **Components:** Merchant Mobile App (`Vendor app`), Laravel Web Backend (`backend/vmarket-web`)
+* **Scope:** Finalization of Phase 5 of the Controlled Completion Roadmap (Finish Vendor App).
+* **Vendor Mobile App Integrations:**
+  - **Pickup Reservation Inspection System:** Implemented `PickupInspectionScreen`, `PickupReservationController`, `PickupReservationService`, and `PickupReservationRepository` (`lib/features/pickup_reservation/`). Allows merchants to scan or input customer reservation codes, inspect reserved line items, and perform one-click Accept (releasing for digital checkout) or Reject (releasing items back to shop stock).
+  - **App Navigation & DI Integration:** Registered `PickupInspectionScreen` in `menu_widget.dart` and wired all dependency injection bindings in `di_container.dart`. Added authoritative API URIs (`verifyPickupReservationUri`, `acceptPickupReservationUri`, `rejectPickupReservationUri`) to `app_constants.dart`.
+  - **Branch Security & Employee Scoping:** Hardened `SellerApiAuthMiddleware.php` and `PickupReservationController.php` ensuring multi-branch employee tokens are strictly isolated to their assigned `shop_id` with 403 Forbidden enforcement on cross-branch operations.
+* **Architecture Milestone:**
+  - Phase 5 (Finish Vendor Mobile App) is officially **COMPLETE**.
+  - Proceeded to **Phase 6 (Finish Delivery Mobile App - `Delivery Man App`)**.
+
+### [2026-09-22 17:45 UTC] Phase 4 Completion: Customer Mobile App Canonical Geography & Checkout Integration [user-app] [AI]
+* **Components:** Customer Mobile App (`User app`), AI Architecture Governance
+* **Scope:** Finalization of Phase 4 of the Controlled Completion Roadmap (Finish Customer App).
+* **Customer Mobile App Integrations:**
+  - **Canonical Geography Models & Service:** Added `CountryModel`, `StateModel`, `LgaModel` (`geography_models.dart`). Implemented typed cascading geography methods (`getCountries()`, `getStates(countryId)`, `getLgas(stateId)`) in `AddressRepository`, `AddressService`, and `AddressController`.
+  - **Dynamic Canonical Address Form (`add_new_address_screen.dart`):** Replaced arbitrary text inputs with reactive, validated cascading dropdowns (`DropdownButtonFormField2`) for Country, State, and LGA. Auto-loads and pre-selects canonical relations on edit (`initEditAddress`). Submits validated `country_id`, `state_id`, and `lga_id` to backend.
+  - **Canonical Address Book & Display:** Updated `AddressModel` to serialize/deserialize canonical geographic IDs and eager-loaded relations (`countryData`, `stateData`, `lgaData`, `lgaName`). Display cards in `address_type_widget.dart` and `address_list_screen.dart` show canonical LGA and State subtitles.
+  - **Fulfillment Availability Integration:** Created `FulfillmentAvailabilityModel` and wired `checkFulfillmentAvailability(shopId, shippingAddressId)` in `CheckoutRepository`, `CheckoutService`, and `CheckoutController`. Zero local delivery fee calculation in Flutter — all fees originate directly from authoritative backend `DeliveryLane` records.
+  - **Delivery Checkout Intent & Payment Flow:** Implemented `createDeliveryCheckoutIntent(addressId, idempotencyKey)` and `initializeIntentPayment(orderGroupId)` in `CheckoutController` to consume the frozen two-phase checkout and Paystack digital payment pipeline.
+  - **Checkout Address Card Verification:** Enhanced `shipping_details_widget.dart` to display verified destination LGA and State tags.
+* **Verification & Code Quality:**
+  - `dart analyze` executed with 0 errors across all newly created models, services, and repositories.
+  - Backend regression test suites executed: Phase 1 Fulfillment (11/11 PASSED), Phase 2 Backend Hardening (11/11 PASSED), Phase 3 API Contracts (11/11 PASSED). Total 33 automated tests passing with zero errors and zero drift ($\Delta = ₦0.00$).
+  - Section 15 appended to `VICTORIOUS_MARKET_MATHEMATICAL_AND_SYSTEMIC_PROOF.md`.
+* **Architecture Milestone:**
+  - Phase 4 (Finish Customer Mobile App) is officially **COMPLETE**.
+  - Ready to proceed to **Phase 5 (Finish Vendor Mobile App - `Vendor app`)**.
+
 ### [2026-09-22 17:00 UTC] Phase 3 Completion: Authoritative Backend API Contract Freeze [backend] [ai-governance] [AI]
 * **Components:** Laravel Web Backend (`backend/vmarket-web`), Architecture Governance
 * **Scope:** Finalization of Phase 3 of the Controlled Completion Roadmap (Lock Backend API Contracts).
