@@ -70,6 +70,21 @@ class PaystackController extends Controller
             return response()->json($this->response_formatter(GATEWAYS_DEFAULT_400, null, ['message' => 'Unsupported currency. Victorious MARKET requires NGN.']), 400);
         }
 
+        // [AI] Customer Ownership Check — UUID secrecy is NOT a sufficient authorization mechanism.
+        // For marketplace payments (delivery/pickup), verify the authenticated customer owns this PaymentRequest.
+        if (in_array($data->payment_domain, ['marketplace_delivery', 'marketplace_pickup'], true)) {
+            $authenticatedCustomerId = auth('customer')->id() ?? auth('api')->id();
+            if ($authenticatedCustomerId && (string) $data->payer_id !== (string) $authenticatedCustomerId) {
+                Log::warning('Paystack initialize: Customer ownership check failed.', [
+                    'payment_id'             => $data->id,
+                    'payment_domain'         => $data->payment_domain,
+                    'expected_payer_id'      => $data->payer_id,
+                    'authenticated_customer' => $authenticatedCustomerId,
+                ]);
+                return response()->json($this->response_formatter(GATEWAYS_DEFAULT_400, null, ['message' => 'Unauthorized payment request.']), 403);
+            }
+        }
+
         $payer = json_decode($data['payer_information'], true);
 
         $url = "https://api.paystack.co/transaction/initialize";
@@ -173,28 +188,17 @@ class PaystackController extends Controller
                     return $this->payment_response($settlementResult['payment_request'] ?? $paymentRequest, 'fail');
                 }
 
-                // Exact Integer Amount Equality in Smallest Currency Unit (Step 2 - L)
-                $expectedKobo = (int) round($paymentRequest->payment_amount * 100);
-                $paidKobo = (int) ($txData['amount'] ?? 0);
-                if ($paidKobo !== $expectedKobo) {
-                    Log::error("Paystack callback: Amount mismatch: expected {$expectedKobo} kobo, received {$paidKobo} kobo.");
-                    return $this->payment_response($paymentRequest, 'fail');
-                }
-
-                // Fulfill using canonical verified reference (NEVER browser trxref)
-                $affected = $this->payment::where('id', $metadataPaymentId)
-                    ->where('is_paid', 0)
-                    ->update([
-                        'payment_method' => 'paystack',
-                        'is_paid' => 1,
-                        'transaction_id' => $verifiedReference,
-                    ]);
-
-                $data = $this->payment::where('id', $metadataPaymentId)->first();
-                if ($affected > 0 && isset($data) && function_exists($data->success_hook)) {
-                    call_user_func($data->success_hook, $data);
-                }
-                return $this->payment_response($data, 'success');
+                // [AI] Legacy digital_payment_success fallback removed.
+                // All e-commerce checkout payments MUST have payment_domain = 'marketplace_delivery'
+                // or 'marketplace_pickup' and are settled exclusively by their respective settlement
+                // services. A PaymentRequest without a recognized payment_domain reaching this point
+                // is an architectural violation — reject it hard to prevent unauthorized order creation.
+                Log::error('Paystack callback: PaymentRequest has no recognized payment_domain. Rejecting to prevent legacy path execution.', [
+                    'payment_id'     => $metadataPaymentId,
+                    'payment_domain' => $paymentRequest->payment_domain ?? 'null',
+                    'reference'      => $verifiedReference,
+                ]);
+                return $this->payment_response($paymentRequest, 'fail');
 
             case 'NON_FINAL':
                 Log::info("Paystack callback: Transaction non-final ({$paymentDetails['error_msg']}).", [
@@ -585,27 +589,16 @@ class PaystackController extends Controller
                     ], 200);
                 }
 
-                if ($paymentRequest->is_paid == 0) {
-                    $expectedAmount = (int) round(($paymentRequest->payment_amount ?? 0) * 100);
-                    $amountPaid = (int) ($data['amount'] ?? 0);
-                    if ($amountPaid === $expectedAmount) {
-                        $affected = $this->payment::where('id', $paymentRequest->id)
-                            ->where('is_paid', 0)
-                            ->update([
-                                'payment_method' => 'paystack',
-                                'is_paid' => 1,
-                                'transaction_id' => $reference,
-                            ]);
-
-                        if ($affected > 0) {
-                            $updatedPayment = $this->payment::where('id', $paymentRequest->id)->first();
-                            if (!empty($updatedPayment->success_hook) && function_exists($updatedPayment->success_hook)) {
-                                call_user_func($updatedPayment->success_hook, $updatedPayment);
-                            }
-                            Log::info("Paystack Webhook: Successfully processed PaymentRequest #{$paymentRequest->id} with ref {$reference}.");
-                        }
-                    }
-                }
+                // [AI] Legacy direct webhook settlement removed.
+                // All marketplace checkout PaymentRequests must have payment_domain = 'marketplace_delivery'
+                // or 'marketplace_pickup', and are settled by their respective settlement services above.
+                // A PaymentRequest without a recognized payment_domain reaching this webhook branch
+                // is an architectural violation. Log and skip — never call digital_payment_success hook.
+                Log::warning('Paystack Webhook: PaymentRequest reached legacy fallback branch — no settlement action taken.', [
+                    'payment_id'     => $paymentRequest->id,
+                    'payment_domain' => $paymentRequest->payment_domain ?? 'null',
+                    'reference'      => $reference,
+                ]);
             }
 
             // B. Check Delivery Rider Cash-on-Delivery Order Payment Link

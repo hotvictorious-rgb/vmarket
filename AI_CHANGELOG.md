@@ -1,3 +1,42 @@
+### [2026-09-22 02:58 UTC] Legacy Payment Architecture Decommission — Canonical Settlement Engine Migration [backend] [ai-governance] [AI]
+* **Component:** Laravel Web Backend (`backend/vmarket-web`)
+* **Scope:** Surgical removal of the legacy dual-payment architecture that coexisted alongside the new secure marketplace settlement engine. Makes `DeliveryOrderSettlementService` / `PickupOrderSettlementService` the exclusive financial pipeline for all e-commerce checkout payments.
+* **Root Cause Fixed:** V1 had two simultaneous payment architectures:
+  1. **NEW** (Canonical): `CheckoutIntent` (frozen amount) → `PaymentRequest` (`payment_domain = marketplace_delivery/pickup`) → `PaystackInitializationClient` → Paystack → HMAC-SHA512 webhook → `DeliveryOrderSettlementService` / `PickupOrderSettlementService`
+  2. **LEGACY** (Removed): `PaymentController::payment()` → `Payment::generate_link()` → `PaymentRequest` (client-supplied identity + `payment_domain = null`) → `digital_payment_success` hook → direct `Order::create()`
+* **Changes:**
+  - **`app/Traits/Payment.php`:**
+    - Stripped 35 dead legacy gateway routes (ssl_commerz, stripe, paymob, flutterwave, paytm, paypal, paytabs, liqpay, razor_pay, senang_pay, mercadopago, bkash, fatoorah, xendit, amazon_pay, iyzi_pay, hyper_pay, foloosi, ccavenue, pvit, moncash, thawani, tap, viva_wallet, hubtel, maxicash, esewa, swish, momo, payfast, worldpay, sixcash, phonepe, cashfree, instamojo, mercadopago_pix).
+    - `$routes` array reduced to `['paystack' => 'payment/paystack/pay']` — the single authorized gateway for V1.
+  - **`app/Http/Controllers/Customer/PaymentController.php`:** (Full rewrite)
+    - Removed `use Payment, PaymentGatewayTrait` dependency entirely.
+    - Removed all legacy imports (`Payment`, `PaymentInfo`, `Payer`, `Receiver`, `PaymentGatewayTrait`).
+    - `payment()` now delegates to two-phase canonical engine: Phase 1 `DeliveryCheckoutIntentService::createCheckoutIntent()` (freezes amount server-side from authenticated cart) → Phase 2 `DeliveryPaymentInitializationService::initializePayment()` (creates `PaymentRequest` with `payment_domain = marketplace_delivery` + initializes Paystack).
+    - API contract **unchanged**: App receives `{ redirect_link: '...' }`, web gets redirect to Paystack authorization URL.
+    - Guest checkout (`is_guest = 1`) now returns structured `403` with `code: 'guest-not-supported'`.
+    - IDOR-hardened: shipping address ownership (`where('customer_id', $customer->id)`) enforced before checkout intent creation.
+    - Full exception handling: `IdempotencyConflictException`, `InvalidCartException`, `ProductUnavailableException`, `InvalidPaymentStateException`, `PaymentInitializationException`.
+  - **`app/Http/Controllers/Payment_Methods/PaystackController.php`:**
+    - `index()`: Added customer ownership check for `marketplace_delivery`/`marketplace_pickup` PaymentRequests — verifies `payer_id` matches authenticated customer before allowing gateway redirect.
+    - `handleGatewayCallback()`: Removed the `digital_payment_success` legacy fallback block (lines 176–197). Replaced with hard rejection: PaymentRequests with no recognized `payment_domain` are logged as architectural violations and return `fail` response.
+    - `webhook()`: Removed the legacy `is_paid == 0` direct webhook settlement branch (lines 588–608) that called `digital_payment_success`. Log-and-skip replaces it — no unauthorized order creation possible.
+    - `marketplace_delivery` and `marketplace_pickup` routing branches in both callback and webhook are fully preserved.
+    - Rider doorstep payment webhook branch (metadata `type = delivery_payment`) preserved intact.
+  - **`app/Http/Controllers/RestAPI/v1/customer/DeliveryCheckoutIntentController.php`:** [NEW]
+    - Canonical two-phase controller exposing Phase 1 (`POST /api/v1/checkout/intent`) and Phase 2 (`POST /api/v1/checkout/intent/{orderGroupId}/pay`) explicitly.
+    - Authenticated customers only (`auth:api` middleware). Structured error responses for all exception types.
+  - **`routes/rest_api/v1/api.php`:**
+    - Preserved legacy `/api/v1/digital-payment` route (zero API contract break for existing Flutter app).
+    - Added comment clarifying it internally now routes through the canonical engine.
+    - Added new explicit canonical routes: `POST /api/v1/checkout/intent` and `POST /api/v1/checkout/intent/{orderGroupId}/pay` (V1.1+ upgrade path).
+* **Security Invariants Enforced:**
+  - Client-supplied `payment_amount`, `customer_id`, `coupon_discount` can no longer influence the PaymentRequest amount — server derives all amounts from `CheckoutIntent.total_amount`.
+  - `payment_domain` is always set to `marketplace_delivery` by the new `PaymentController` — never `null`.
+  - UUID secrecy alone no longer authorizes payment initialization for marketplace payments.
+* **Verification:**
+  - PHP syntax check (`php -l`): **0 errors** across all 5 modified/new PHP files.
+  - `DeliveryFlowLifecycleTest`: **1 test passed, 32 assertions passed (0 failed)**.
+
 ### [2026-09-21 19:15 UTC] Driver Payment & Earning Calculation Engine Audit & Ledger Reconciliation [delivery-man] [backend] [ai-governance] [AI]
 * **Component:** Delivery Rider App (`Delivery Man App`), Laravel Web Backend (`backend/vmarket-web`), AI Governance & Mathematical Proof
 * **Scope:** Mathematical audit and systemic verification of driver compensation, dispatch fee attribution, wallet crediting, proof of delivery verification, and withdrawal ledger reconciliation

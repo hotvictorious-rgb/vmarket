@@ -2,211 +2,266 @@
 
 namespace App\Http\Controllers\Customer;
 
-use App\Models\AdminWallet;
-use App\Models\Cart;
-use App\Models\Order;
-use App\Models\Seller;
-use App\Models\User;
-use App\Library\Payer;
-use App\Utils\Convert;
-use App\Utils\CustomerManager;
-use App\Utils\Helpers;
-use App\Traits\Payment;
-use App\Models\Currency;
-use App\Library\Receiver;
-use App\Utils\CartManager;
-use App\Utils\OrderManager;
-use App\Models\CartShipping;
-use App\Models\ShippingType;
-use FontLib\Table\Type\name;
-use Illuminate\Http\Request;
-use App\Models\BusinessSetting;
-use App\Models\ShippingAddress;
-use Illuminate\Http\JsonResponse;
-use Illuminate\Routing\Redirector;
-use App\Traits\PaymentGatewayTrait;
+use App\Exceptions\IdempotencyConflictException;
+use App\Exceptions\InvalidCartException;
+use App\Exceptions\InvalidPaymentStateException;
+use App\Exceptions\PaymentInitializationException;
+use App\Exceptions\ProductUnavailableException;
 use App\Http\Controllers\Controller;
+use App\Models\Order;
+use App\Models\ShippingAddress;
+use App\Models\User;
+use App\Services\DeliveryCheckoutIntentService;
+use App\Services\DeliveryPaymentInitializationService;
+use App\Utils\Helpers;
 use Brian2694\Toastr\Facades\Toastr;
-use Illuminate\Http\RedirectResponse;
-use App\Library\Payment as PaymentInfo;
+use Illuminate\Http\JsonResponse;
+use Illuminate\Http\Request;
+use Illuminate\Routing\Redirector;
+use Illuminate\Routing\RedirectResponse;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Validator;
+use Illuminate\Support\Str;
 
+/**
+ * [AI] PaymentController — Canonical V1 Customer Payment Entry Point
+ *
+ * Consumers:
+ *   - Customer Mobile App: POST /api/v1/digital-payment   (payment_request_from = 'app')
+ *   - Web Storefront:      POST /customer/web-payment-request
+ *
+ * This controller is the public API surface that both the Flutter Customer App and the
+ * Web Storefront hit to initiate a marketplace delivery checkout payment.
+ * Internally it delegates ALL financial logic to:
+ *   1. DeliveryCheckoutIntentService::createCheckoutIntent()  → freezes the cart amount server-side
+ *   2. DeliveryPaymentInitializationService::initializePayment() → creates PaymentRequest + Paystack authorization_url
+ *
+ * The legacy flow (Payment trait → generate_link → digital_payment_success hook) has been removed.
+ * Guest checkout (is_guest = 1) is not supported in V1 — authentication is required.
+ */
 class PaymentController extends Controller
 {
-    use Payment, PaymentGatewayTrait;
+    public function __construct(
+        protected DeliveryCheckoutIntentService $intentService,
+        protected DeliveryPaymentInitializationService $paymentService
+    ) {}
 
+    /**
+     * Entry point for delivery checkout payment.
+     * API (app): returns JSON { redirect_link: string }
+     * Web:       redirects to Paystack authorization URL
+     *
+     * [AI] Clients: Customer Mobile App, Web Storefront
+     */
     public function payment(Request $request): JsonResponse|Redirector|RedirectResponse
     {
-        $user = Helpers::getCustomerInformation($request);
-        $orderAdditionalData = [];
+        $isApp = in_array($request->input('payment_request_from'), ['app']);
+
+        // ── 1. Reject guest checkout — V1 requires authenticated customers ──────────────────
+        $isGuest = (bool) $request->input('is_guest', false);
+        if ($isGuest) {
+            $err = ['code' => 'guest-not-supported', 'message' => 'Guest checkout is not supported. Please log in to place an order.'];
+            if ($isApp) {
+                return response()->json(['errors' => [$err]], 403);
+            }
+            Toastr::error(translate('Please log in to place an order.'));
+            return redirect()->route('customer.auth.login');
+        }
+
+        // ── 2. Resolve Authenticated Customer ────────────────────────────────────────────────
+        // Try API guard first (mobile app), then web customer guard
+        $customer = auth('api')->user() ?? auth('customer')->user();
+        if (!$customer) {
+            $err = ['code' => 'unauthenticated', 'message' => 'Authentication required.'];
+            if ($isApp) {
+                return response()->json(['errors' => [$err]], 401);
+            }
+            Toastr::error(translate('Please log in to place an order.'));
+            return redirect()->route('customer.auth.login');
+        }
+
+        // ── 3. Validate Core Payment Request Params ──────────────────────────────────────────
         $validator = Validator::make($request->all(), [
-            'payment_method' => 'required',
-            'payment_platform' => 'required',
+            'payment_method'   => 'required|string',
+            'payment_platform' => 'required|string',
+            'address_id'       => 'required',
         ]);
 
-        $response = OrderManager::checkValidationForCheckoutPages($request);
-        if ($response['status'] == 0) {
-            if (in_array($request['payment_request_from'], ['app'])) {
-                $errorKeeper = [];
-                foreach ($response['message'] as $index => $message) {
-                    $errorKeeper[] = ['code' => $index, 'message' => $message];
-                }
-                return response()->json(['errors' => $errorKeeper], 403);
-            } else {
-                foreach ($response['message'] as $message) {
-                    Toastr::error($message);
-                }
-                return $response['redirect'] ? redirect($response['redirect']) : redirect('/');
-            }
-        }
-
-        $validator->sometimes('customer_id', 'required', function ($input) {
-            return in_array($input->payment_request_from, ['app']);
-        });
-        $validator->sometimes('is_guest', 'required', function ($input) {
-            return in_array($input->payment_request_from, ['app']);
-        });
-
-        if ($validator->fails()) { //api
-            $errors = Helpers::validationErrorProcessor($validator);
-            if (in_array($request['payment_request_from'], ['app'])) {
+        if ($validator->fails()) {
+            if ($isApp) {
                 return response()->json(['errors' => Helpers::validationErrorProcessor($validator)], 403);
-            } else {
-                foreach ($errors as $value) {
-                    Toastr::error(translate($value['message']));
-                }
-                return back();
             }
+            foreach (Helpers::validationErrorProcessor($validator) as $v) {
+                Toastr::error(translate($v['message']));
+            }
+            return back();
         }
 
-        $cartGroupIds = CartManager::get_cart_group_ids(request: $request, type: 'checked');
-        $carts = Cart::whereHas('product', function ($query) {
-            return $query->active();
-        })->whereIn('cart_group_id', $cartGroupIds)->where(['is_checked' => 1])->get();
-        $productStockCheck = CartManager::product_stock_check($carts);
-        if (!$productStockCheck && in_array($request['payment_request_from'], ['app'])) {
-            return response()->json(['errors' => ['code' => 'product-stock', 'message' => 'The following items in your cart are currently out of stock']], 403);
-        } elseif (!$productStockCheck) {
-            Toastr::error(translate('the_following_items_in_your_cart_are_currently_out_of_stock'));
+        // Only Paystack is authorized in V1
+        if (strtolower($request->input('payment_method')) !== 'paystack') {
+            $err = ['code' => 'unsupported-gateway', 'message' => 'Only Paystack payments are accepted.'];
+            if ($isApp) {
+                return response()->json(['errors' => [$err]], 422);
+            }
+            Toastr::error(translate('Only Paystack payments are accepted.'));
+            return back();
+        }
+
+        // ── 4. Resolve Shipping Address (IDOR-protected) ─────────────────────────────────────
+        $addressId = (int) ($request->input('address_id') ?? 0);
+        $shippingAddress = ShippingAddress::where('id', $addressId)
+            ->where('customer_id', $customer->id)
+            ->where('is_guest', 0)
+            ->first();
+
+        if (!$shippingAddress) {
+            $err = ['code' => 'invalid-address', 'message' => 'Shipping address not found or does not belong to your account.'];
+            if ($isApp) {
+                return response()->json(['errors' => [$err]], 422);
+            }
+            Toastr::error(translate('Shipping address not found.'));
+            return back();
+        }
+
+        $billingAddressId = (int) ($request->input('billing_address_id') ?? 0);
+        $billingAddress = null;
+        if ($billingAddressId > 0) {
+            $billingAddress = ShippingAddress::where('id', $billingAddressId)
+                ->where('customer_id', $customer->id)
+                ->where('is_guest', 0)
+                ->first();
+        }
+
+        // ── 5. Build Idempotency Key ─────────────────────────────────────────────────────────
+        // Allows retry-safe checkout attempts. Uses explicit key if provided, otherwise derives one.
+        $idempotencyKey = $request->input('idempotency_key');
+        if (empty($idempotencyKey) || !preg_match('/^[A-Za-z0-9_\-\:]{8,64}$/', $idempotencyKey)) {
+            // Derive a stable key: customer + address + unix minute (allows retries within the same minute)
+            $idempotencyKey = 'CHK-' . $customer->id . '-' . $addressId . '-' . floor(time() / 60);
+        }
+
+        $couponCode     = $isApp ? $request->input('coupon_code') : session('coupon_code');
+        $couponDiscount = $isApp ? $request->input('coupon_discount') : session('coupon_discount', 0);
+
+        // ── 6. Phase 1: Create / Replay Frozen CheckoutIntent ────────────────────────────────
+        try {
+            $intent = $this->intentService->createCheckoutIntent(
+                customer: $customer,
+                idempotencyKey: $idempotencyKey,
+                shippingAddress: $shippingAddress,
+                billingAddress: $billingAddress,
+                couponCode: $couponCode ?: null,
+                couponDiscount: $couponDiscount ?: null,
+                cartItemIds: null, // Use all checked cart items
+            );
+        } catch (IdempotencyConflictException $e) {
+            $err = ['code' => 'idempotency-conflict', 'message' => 'Checkout parameters changed mid-session. Please restart checkout.'];
+            if ($isApp) {
+                return response()->json(['errors' => [$err]], 409);
+            }
+            Toastr::error(translate('Checkout parameters changed. Please restart checkout.'));
             return redirect()->route('shop-cart');
-        }
-
-        $verifyStatus = OrderManager::verifyCartListMinimumOrderAmount($request);
-        if ($verifyStatus['status'] == 0 && in_array($request['payment_request_from'], ['app'])) {
-            return response()->json(['errors' => ['code' => 'Check the minimum order amount requirement']], 403);
-        } elseif ($verifyStatus['status'] == 0) {
-            Toastr::info('Check the minimum order amount requirement');
+        } catch (InvalidCartException | ProductUnavailableException $e) {
+            $err = ['code' => 'cart-error', 'message' => $e->getMessage()];
+            if ($isApp) {
+                return response()->json(['errors' => [$err]], 422);
+            }
+            Toastr::error(translate($e->getMessage()));
             return redirect()->route('shop-cart');
+        } catch (\Exception $e) {
+            Log::error('[AI] PaymentController::payment - CheckoutIntent creation failed', [
+                'customer_id' => $customer->id,
+                'error'       => $e->getMessage(),
+            ]);
+            $err = ['code' => 'server-error', 'message' => 'Unable to create checkout agreement. Please try again.'];
+            if ($isApp) {
+                return response()->json(['errors' => [$err]], 500);
+            }
+            Toastr::error(translate('Something went wrong. Please try again.'));
+            return back();
         }
 
-        if (in_array($request['payment_request_from'], ['app'])) {
-            $shippingMethod = getWebConfig(name: 'shipping_method');
-            $physicalProductExist = false;
-            foreach ($carts as $cart) {
-                if ($cart->product_type == 'physical') {
-                    $physicalProductExist = true;
-                }
-
-                if ($shippingMethod == 'inhouse_shipping') {
-                    $adminShipping = ShippingType::where('seller_id', 0)->first();
-                    $getShippingType = isset($adminShipping) == true ? $adminShipping->shipping_type : 'order_wise';
-                } else {
-                    if ($cart->seller_is == 'admin') {
-                        $adminShipping = ShippingType::where('seller_id', 0)->first();
-                        $getShippingType = isset($adminShipping) == true ? $adminShipping->shipping_type : 'order_wise';
-                    } else {
-                        $seller_shipping = ShippingType::where('seller_id', $cart->seller_id)->first();
-                        $getShippingType = isset($seller_shipping) == true ? $seller_shipping->shipping_type : 'order_wise';
-                    }
-                }
-
-                if ($getShippingType == 'order_wise') {
-                    $cartShipping = CartShipping::where('cart_group_id', $cart->cart_group_id)->first();
-                    if (!isset($cartShipping) && $physicalProductExist) {
-                        return response()->json(['errors' => ['code' => 'shipping-method', 'message' => 'Data not found']], 403);
-                    }
-                }
+        // ── 7. Phase 2: Initialize Paystack Payment Attempt ──────────────────────────────────
+        try {
+            $result = $this->paymentService->initializePayment(
+                customer: $customer,
+                intentInput: $intent,
+                ttlMinutes: 30,
+            );
+        } catch (InvalidCartException | InvalidPaymentStateException $e) {
+            $err = ['code' => 'payment-state-error', 'message' => $e->getMessage()];
+            if ($isApp) {
+                return response()->json(['errors' => [$err]], 409);
             }
-
-            if (($user == 'offline' && $request['is_check_create_account'])) {
-                $getAPIProcess = self::getRegisterNewCustomerAPIProcess($request);
-                if ($getAPIProcess['status'] == 0) {
-                    return response()->json(['message' => translate('Already_registered ')], 403);
-                }
-                $orderAdditionalData += [
-                    'new_customer_info' => $getAPIProcess['data'],
-                ];
+            Toastr::error(translate($e->getMessage()));
+            return redirect()->route('shop-cart');
+        } catch (PaymentInitializationException $e) {
+            $err = ['code' => 'gateway-error', 'message' => 'Payment gateway unavailable. Please try again shortly.'];
+            if ($isApp) {
+                return response()->json(['errors' => [$err]], 502);
             }
+            Toastr::error(translate('Payment gateway unavailable. Please try again.'));
+            return back();
+        } catch (\Exception $e) {
+            Log::error('[AI] PaymentController::payment - PaymentInitialization failed', [
+                'customer_id' => $customer->id,
+                'intent_id'   => $intent->id ?? null,
+                'error'       => $e->getMessage(),
+            ]);
+            $err = ['code' => 'server-error', 'message' => 'Payment initialization failed. Please try again.'];
+            if ($isApp) {
+                return response()->json(['errors' => [$err]], 500);
+            }
+            Toastr::error(translate('Payment initialization failed. Please try again.'));
+            return back();
         }
 
-        $redirectLink = $this->getCustomerPaymentRequest($request, $orderAdditionalData);
+        // ── 8. Extract Authorization URL and Return ───────────────────────────────────────────
+        $status = $result['status'] ?? 'unknown';
 
-        if (in_array($request['payment_request_from'], ['app'])) {
+        if ($status === 'success') {
+            $redirectLink = $result['authorization_url'];
+        } elseif ($status === 'pending_on_gateway') {
+            // Existing attempt recovered from Paystack — reuse the existing authorization URL
+            $additionalData = json_decode($result['payment_request']->additional_data ?? '{}', true);
+            $redirectLink = $additionalData['authorization_url'] ?? null;
+        } else {
+            // ambiguous_transport or unknown
+            Log::warning('[AI] PaymentController::payment - Ambiguous Paystack initialization status', [
+                'status'      => $status,
+                'customer_id' => $customer->id,
+            ]);
+            $err = ['code' => 'gateway-unavailable', 'message' => 'Payment gateway temporarily unavailable. Please retry.'];
+            if ($isApp) {
+                return response()->json(['errors' => [$err]], 503);
+            }
+            Toastr::error(translate('Payment gateway temporarily unavailable. Please retry.'));
+            return back();
+        }
+
+        if (empty($redirectLink)) {
+            $err = ['code' => 'no-redirect-url', 'message' => 'No payment URL received from gateway.'];
+            if ($isApp) {
+                return response()->json(['errors' => [$err]], 502);
+            }
+            Toastr::error(translate('No payment URL received. Please try again.'));
+            return back();
+        }
+
+        // Return redirect link — same contract as the legacy payment() method
+        if ($isApp) {
             return response()->json([
                 'redirect_link' => $redirectLink,
-                'new_user' => isset($orderAdditionalData['new_customer_info']) && $orderAdditionalData['new_customer_info'] != null ? 1 : 0,
+                'new_user'      => 0,
             ], 200);
-        } else {
-            return redirect($redirectLink);
-        }
-    }
-
-    function getRegisterNewCustomerAPIProcess($request)
-    {
-        $newCustomerRegister = [];
-        $shippingAddress = ShippingAddress::where(['customer_id' => $request['guest_id'], 'is_guest' => 1, 'id' => $request->input('address_id')])->first();
-        if ($request->has('address_id') && $request['address_id'] && $shippingAddress) {
-            if (User::where(['email' => $shippingAddress['email']])->orWhere(['phone' => $shippingAddress['phone']])->first()) {
-                return ['status' => 0];
-            } else {
-                $newCustomerRegister = [
-                    'status' => 1,
-                    'data' => self::getRegisterNewCustomer(
-                        request: $request,
-                        address: $shippingAddress,
-                        shippingId: $request['address_id'],
-                        billingId: $request->has('billing_address_id') && $request['billing_address_id'] ? $request['billing_address_id'] : null
-                    )
-                ];
-            }
         }
 
-        $billingAddress = ShippingAddress::where(['customer_id' => $request['guest_id'], 'is_guest' => 1, 'id' => $request->input('billing_address_id')])->first();
-        if ($request['address_id'] == null && $request->has('billing_address_id') && $request['billing_address_id'] && $billingAddress) {
-            if (User::where(['email' => $billingAddress['email']])->orWhere(['phone' => $billingAddress['phone']])->first()) {
-                return ['status' => 0];
-            } else {
-                $newCustomerRegister = [
-                    'status' => 1,
-                    'data' => self::getRegisterNewCustomer(
-                        request: $request,
-                        address: $billingAddress,
-                        shippingId: null,
-                        billingId: $request['billing_address_id'],
-                    )
-                ];
-            }
-        }
-
-        return $newCustomerRegister;
+        return redirect($redirectLink);
     }
 
-
-    function getRegisterNewCustomer($request, $address, $shippingId = null, $billingId = null): array
-    {
-        return [
-            'name' => $address['contact_person_name'],
-            'f_name' => $address['contact_person_name'],
-            'l_name' => '',
-            'email' => $address['email'],
-            'phone' => $address['phone'],
-            'is_active' => 1,
-            'password' => $request['password'],
-            'referral_code' => Helpers::generate_referer_code(),
-            'shipping_id' => $shippingId,
-            'billing_id' => $billingId,
-        ];
-    }
+    // ──────────────────────────────────────────────────────────────────────────────────────────
+    // Response Handlers
+    // ──────────────────────────────────────────────────────────────────────────────────────────
 
     public function success(Request $request): JsonResponse
     {
@@ -255,133 +310,5 @@ class PaymentController extends Controller
                 return redirect(url('/'));
             }
         }
-
     }
-
-    public function getCustomerPaymentRequest(Request $request, $orderAdditionalData = []): mixed
-    {
-        $additionalData = [
-            'business_name' => getWebConfig(name: 'company_name'),
-            'business_logo' => getStorageImages(path: getWebConfig('company_web_logo'), type: 'shop'),
-            'payment_mode' => $request->has('payment_platform') ? $request['payment_platform'] : 'web',
-        ];
-
-        $user = Helpers::getCustomerInformation($request);
-
-        $getGuestId = $request['is_guest'] ? $request['guest_id'] : (session('guest_id') ?? 0);
-        $isGuestUser = ($user == 'offline') ? 1 : 0;
-        $getCustomerID = null;
-        $isGuestUserInOrder = $isGuestUser;
-        if ($user == 'offline' && session('newCustomerRegister')) {
-            $additionalData['new_customer_info'] = session('newCustomerRegister') ?? null;
-            $additionalData['customer_id'] = $getGuestId;
-            $additionalData['address_id'] = session('newCustomerRegister')['address_id'] ?? null;
-            $additionalData['billing_address_id'] = session('newCustomerRegister')['billing_address_id'] ?? null;
-            $getCustomerID = $getGuestId;
-            $isGuestUserInOrder = 0;
-        } elseif ($user == 'offline' && !session('newCustomerRegister') && isset($orderAdditionalData['new_customer_info'])) {
-            $additionalData['new_customer_info'] = $orderAdditionalData['new_customer_info'];
-            $getCustomerID = $getGuestId;
-            $isGuestUserInOrder = $isGuestUser;
-        } elseif ($user != 'offline') {
-            $getCustomerID = 0;
-            $isGuestUserInOrder = 0;
-        }
-
-        $additionalData['is_guest'] = $isGuestUser;
-        if (in_array($request['payment_request_from'], ['app'])) {
-            $additionalData['customer_id'] = $request['customer_id'];
-            $additionalData['guest_id'] = $request['guest_id'];
-            $additionalData['is_guest'] = $request['is_guest'];
-            $additionalData['order_note'] = $request['order_note'];
-            $additionalData['address_id'] = $request['address_id'];
-            $additionalData['billing_address_id'] = $request['billing_address_id'];
-            $additionalData['coupon_code'] = $request['coupon_code'];
-            $additionalData['coupon_discount'] = $request['coupon_discount'];
-            $additionalData['payment_request_from'] = $request['payment_request_from'];
-        } else {
-            $additionalData['customer_id'] = $user != 'offline' ? $user->id : $getCustomerID;
-            $additionalData['order_note'] = session('order_note') ?? null;
-            $additionalData['address_id'] = session('address_id') ?? 0;
-            $additionalData['billing_address_id'] = session('billing_address_id') ?? 0;
-
-            $additionalData['coupon_code'] = session('coupon_code') ?? null;
-            $additionalData['coupon_discount'] = session('coupon_discount') ?? 0;
-            $additionalData['payment_request_from'] = $request['payment_mode'] ?? 'web';
-        }
-        $additionalData['new_customer_id'] = $getCustomerID;
-        $additionalData['is_guest_in_order'] = $isGuestUserInOrder;
-
-        if (in_array($request['payment_request_from'], ['app'])) {
-            $couponCode = $request['coupon_code'] ?? '';
-        } else {
-            $couponCode = session()->has('coupon_code') ? session('coupon_code') : '';
-        }
-
-        $customer = Helpers::getCustomerInformation($request);
-        $vendorWiseCartList = OrderManager::processOrderGenerateData(data: [
-            'coupon_code' => $couponCode,
-            'requestObj' => $request,
-        ]);
-        $paymentAmount = collect($vendorWiseCartList)->sum('order_amount_with_tax');
-
-        if ($customer == 'offline') {
-            $address = ShippingAddress::where(['customer_id' => $request['customer_id'], 'is_guest' => 1])->latest()->first();
-            if ($address) {
-                $payer = new Payer(
-                    $address->contact_person_name,
-                    $address->email,
-                    $address->phone,
-                    ''
-                );
-            } else {
-                $payer = new Payer(
-                    'Contact person name',
-                    '',
-                    '',
-                    ''
-                );
-            }
-        } else {
-            $payer = new Payer(
-                $customer['f_name'] . ' ' . $customer['l_name'],
-                $customer['email'],
-                $customer['phone'],
-                ''
-            );
-            if (empty($customer['phone'])) {
-                Toastr::error(translate('please_update_your_phone_number'));
-                return route('checkout-payment');
-            }
-        }
-
-        $currency_model = getWebConfig(name: 'currency_model');
-        if ($currency_model == 'multi_currency') {
-            $currentCurrency = $request['current_currency_code'] ?? session('currency_code');
-            $currency_code = $this->getPaymentGatewayCurrencyCode(key: $request['payment_method'], currentCurrency: $currentCurrency);
-            $paymentAmount = usdToAnotherCurrencyConverter(currencyCode: $currency_code, amount: $paymentAmount);
-        } else {
-            $default = getWebConfig(name: 'system_default_currency');
-            $currency_code = Currency::find($default)->code;
-        }
-
-        $paymentInfo = new PaymentInfo(
-            success_hook: 'digital_payment_success',
-            failure_hook: 'digital_payment_fail',
-            currency_code: $currency_code,
-            payment_method: $request['payment_method'],
-            payment_platform: $request['payment_platform'],
-            payer_id: $customer == 'offline' ? $request['customer_id'] : $customer['id'],
-            receiver_id: '100',
-            additional_data: $additionalData,
-            payment_amount: $paymentAmount,
-            external_redirect_link: $request['payment_platform'] == 'web' ? $request['external_redirect_link'] : null,
-            attribute: 'order',
-            attribute_id: idate("U")
-        );
-
-        $receiverInfo = new Receiver('receiver_name', 'example.png');
-        return $this->generate_link($payer, $paymentInfo, $receiverInfo);
-    }
-
 }

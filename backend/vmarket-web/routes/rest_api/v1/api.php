@@ -31,6 +31,7 @@ use App\Http\Controllers\RestAPI\v1\FeedSyncController;
 use App\Http\Controllers\RestAPI\v1\DeliveryHubApiController;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\Customer\PaymentController;
+use App\Http\Controllers\RestAPI\v1\customer\DeliveryCheckoutIntentController;
 
 /*
 |--------------------------------------------------------------------------
@@ -345,8 +346,20 @@ Route::group(['prefix' => 'v1', 'middleware' => ['api_lang']], function () {
 
 
 
+    // [AI] Legacy delivery checkout payment endpoint — preserved for backwards compat.
+    // Internally now calls DeliveryCheckoutIntentService + DeliveryPaymentInitializationService.
+    // Authenticated customers only; guest checkout is not supported in V1.
     Route::group(['prefix' => 'digital-payment', 'middleware' => 'apiGuestCheck'], function () {
         Route::post('/', [PaymentController::class, 'payment']);
+    });
+
+    // [AI] Canonical two-phase delivery checkout routes (auth:api required).
+    // Phase 1: POST /checkout/intent            — create / replay frozen CheckoutIntent
+    // Phase 2: POST /checkout/intent/{id}/pay   — initialize Paystack payment attempt
+    // These are the explicit V1.1+ endpoints; the /digital-payment route above is the V1 compat shim.
+    Route::prefix('checkout')->middleware('auth:api')->group(function () {
+        Route::post('intent', [DeliveryCheckoutIntentController::class, 'create'])->name('checkout.intent.create');
+        Route::post('intent/{orderGroupId}/pay', [DeliveryCheckoutIntentController::class, 'initializePayment'])->name('checkout.intent.pay');
     });
 
 

@@ -9,6 +9,23 @@ use App\Models\PaymentRequest;
 
 trait Payment
 {
+    /**
+     * Creates a PaymentRequest record and returns a redirect URL to the Paystack payment page.
+     *
+     * [AI] V1 Victorious MARKET is Paystack-only. All legacy gateway routes
+     * (ssl_commerz, stripe, paymob, flutterwave, paytm, paypal, paytabs, liqpay,
+     * razor_pay, senang_pay, mercadopago, bkash, fatoorah, xendit, amazon_pay,
+     * iyzi_pay, hyper_pay, foloosi, ccavenue, pvit, moncash, thawani, tap,
+     * viva_wallet, hubtel, maxicash, esewa, swish, momo, payfast, worldpay,
+     * sixcash, phonepe, cashfree, instamojo, mercadopago_pix) have been
+     * decommissioned. Only Paystack is authorized for NGN marketplace payments.
+     *
+     * NOTE: For e-commerce delivery/pickup checkout, use DeliveryPaymentInitializationService
+     * or PickupPaymentInitializationService directly — those bypass this trait entirely and
+     * route through the secure CheckoutIntent / PickupReservation canonical engine.
+     * This method is retained only for non-checkout payment flows (e.g. wallet top-ups)
+     * that still use the legacy PaymentRequest path.
+     */
     public static function generate_link(object $payer, object $payment_info, object $receiver): Application|bool|string|UrlGenerator|\Illuminate\Contracts\Foundation\Application
     {
         if ($payment_info->getPaymentAmount() <= 0) {
@@ -36,45 +53,11 @@ trait Payment
         $payment->payment_platform = $payment_info->getPaymentPlatForm();
         $payment->save();
 
+        // [AI] Paystack is the only authorized payment gateway for V1.
         $routes = [
-            'ssl_commerz' => 'payment/sslcommerz/pay',
-            'stripe' => 'payment/stripe/pay',
-            'paymob_accept' => 'payment/paymob/pay',
-            'flutterwave' => 'payment/flutterwave-v3/pay',
-            'paytm' => 'payment/paytm/pay',
-            'paypal' => 'payment/paypal/pay',
-            'paytabs' => 'payment/paytabs/pay',
-            'liqpay' => 'payment/liqpay/pay',
-            'razor_pay' => 'payment/razor-pay/pay',
-            'senang_pay' => 'payment/senang-pay/pay',
-            'mercadopago' => 'payment/mercadopago/pay',
-            'bkash' => 'payment/bkash/make-payment',
             'paystack' => 'payment/paystack/pay',
-            'fatoorah' => 'payment/fatoorah/pay',
-            'xendit' => 'payment/xendit/pay',
-            'amazon_pay' => 'payment/amazon/pay',
-            'iyzi_pay' => 'payment/iyzipay/pay',
-            'hyper_pay' => 'payment/hyperpay/pay',
-            'foloosi' => 'payment/foloosi/pay',
-            'ccavenue' => 'payment/ccavenue/pay',
-            'pvit' => 'payment/pvit/pay',
-            'moncash' => 'payment/moncash/pay',
-            'thawani' => 'payment/thawani/pay',
-            'tap' => 'payment/tap/pay',
-            'viva_wallet' => 'payment/viva/pay',
-            'hubtel' => 'payment/hubtel/pay',
-            'maxicash' => 'payment/maxicash/pay',
-            'esewa' => 'payment/esewa/pay',
-            'swish' => 'payment/swish/pay',
-            'momo' => 'payment/momo/pay',
-            'payfast' => 'payment/payfast/pay',
-            'worldpay' => 'payment/worldpay/pay',
-            'sixcash' => 'payment/sixcash/pay',
-            'phonepe' => 'payment/phonepe/pay',
-            'cashfree' => 'payment/cashfree/pay',
-            'instamojo' => 'payment/instamojo/pay',
-            'mercadopago_pix' => 'payment/mercadopago_pix/pay',
         ];
+
         if (array_key_exists($payment->payment_method, $routes)) {
             return url("{$routes[$payment->payment_method]}/?payment_id={$payment->id}");
         } else {
