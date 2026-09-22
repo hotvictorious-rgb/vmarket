@@ -50,9 +50,9 @@ class DeliveryManController extends Controller
      */
     public function index(Request|null $request, ?string $type = null): View
     {
-        $relations = ['rating', 'deliveryHub.city.state'];
+        $relations = ['rating', 'deliveryHub.city.state', 'lga.state', 'country'];
         if ($request['sort_by'] == 'rating') {
-            $relations = ['deliveredOrders', 'rating', 'review', 'deliveryHub.city.state'];
+            $relations = ['deliveredOrders', 'rating', 'review', 'deliveryHub.city.state', 'lga.state', 'country'];
         }
         $deliveryMens = $this->deliveryManRepo->getListWhere(
             searchValue: $request['searchValue'],
@@ -67,7 +67,8 @@ class DeliveryManController extends Controller
     {
         $telephoneCodes = TELEPHONE_CODES;
         $deliveryHubs = \App\Models\DeliveryHub::with('city.state')->where('is_active', true)->get();
-        return view('admin-views.delivery-man.index', compact('telephoneCodes', 'deliveryHubs'));
+        $countries = \App\Models\Country::where('is_active', true)->get();
+        return view('admin-views.delivery-man.index', compact('telephoneCodes', 'deliveryHubs', 'countries'));
     }
 
     public function updateStatus(Request $request): JsonResponse
@@ -78,9 +79,9 @@ class DeliveryManController extends Controller
 
     public function exportList(Request $request): BinaryFileResponse
     {
-        $relations = ['rating', 'deliveryHub.city.state'];
+        $relations = ['rating', 'deliveryHub.city.state', 'lga.state', 'country'];
         if ($request['sort_by'] == 'rating') {
-            $relations = ['deliveredOrders', 'rating', 'review', 'deliveryHub.city.state'];
+            $relations = ['deliveredOrders', 'rating', 'review', 'deliveryHub.city.state', 'lga.state', 'country'];
         }
 
         $deliveryMens = $this->deliveryManRepo->getListWhere(
@@ -107,7 +108,10 @@ class DeliveryManController extends Controller
         $deliveryMan = $this->deliveryManRepo->getFirstWhere(params: ['id' => $id]);
         $telephoneCodes = TELEPHONE_CODES;
         $deliveryHubs = \App\Models\DeliveryHub::with('city.state')->where('is_active', true)->get();
-        return view('admin-views.delivery-man.edit', compact('deliveryMan', 'telephoneCodes', 'deliveryHubs'));
+        $countries = \App\Models\Country::where('is_active', true)->get();
+        $states = $deliveryMan->country_id ? \App\Models\State::where('country_id', $deliveryMan->country_id)->where('is_active', true)->get() : collect();
+        $lgas = $deliveryMan->state_id ? \App\Models\Lga::where('state_id', $deliveryMan->state_id)->where('is_active', true)->get() : collect();
+        return view('admin-views.delivery-man.edit', compact('deliveryMan', 'telephoneCodes', 'deliveryHubs', 'countries', 'states', 'lgas'));
     }
 
 

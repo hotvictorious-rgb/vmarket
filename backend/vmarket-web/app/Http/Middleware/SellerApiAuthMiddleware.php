@@ -48,7 +48,7 @@ class SellerApiAuthMiddleware
 
                 // [AI] Branch Security Isolation:
                 // If route/payload targets a specific shop_id, verify employee is authorized for that branch
-                $targetShopId = $request->input('shop_id') ?? $request->route('shop_id');
+                $targetShopId = $request->header('X-Branch-ID') ?? $request->input('shop_id') ?? $request->route('shop_id');
                 if ($targetShopId && !$employee->canAccessShop((int)$targetShopId)) {
                     return response()->json([
                         'auth-001' => translate('Access Denied: You are not authorized to access or modify this physical branch.')

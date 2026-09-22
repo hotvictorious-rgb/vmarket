@@ -18,6 +18,7 @@ import 'package:sixvalley_vendor_app/features/addProduct/controllers/variation_c
 import 'package:sixvalley_vendor_app/features/clearance_sale/controllers/clearance_sale_controller.dart';
 import 'package:sixvalley_vendor_app/features/notification/controllers/notification_controller.dart';
 import 'package:sixvalley_vendor_app/features/order_details/controllers/order_details_controller.dart';
+import 'package:sixvalley_vendor_app/features/pickup_reservation/controllers/pickup_reservation_controller.dart';
 import 'package:sixvalley_vendor_app/features/product/controllers/category_controller.dart';
 import 'package:sixvalley_vendor_app/features/product/widgets/cookies_widget.dart';
 import 'package:sixvalley_vendor_app/features/product_details/controllers/product_details_controller.dart';
@@ -144,7 +145,8 @@ Future<void> main() async {
       ChangeNotifierProvider(create: (context) => di.sl<ShowBottomSheetController>()),
       ChangeNotifierProvider(create: (context) => di.sl<TutorialController>()),
       ChangeNotifierProvider(create: (context) => di.sl<AddProductTaxController>()),
-      ChangeNotifierProvider(create: (context) => di.sl<VatController>())
+      ChangeNotifierProvider(create: (context) => di.sl<VatController>()),
+      ChangeNotifierProvider(create: (context) => di.sl<PickupReservationController>()),
     ],
     child: _GlobalScrollListener(
       child: MyApp(body: body)

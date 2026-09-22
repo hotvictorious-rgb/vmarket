@@ -202,33 +202,30 @@ class CheckoutScreenState extends State<CheckoutScreen> {
                               } else {
                                 if(!orderProvider.isCheckCreateAccount || (orderProvider.isCheckCreateAccount && (passwordFormKey.currentState?.validate() ?? false))) {
                                   setState(() => _isSubmitting = true);
-                                  String orderNote = orderProvider.orderNoteController.text.trim();
 
-                                  String addressId =  orderProvider.addressIndex != null ?
-                                  locationProvider.addressList![orderProvider.addressIndex!].id.toString() : '';
+                                  // [AI] Phase I: Two-Phase CheckoutIntent. Resolve canonical int address IDs.
+                                  final int? addressId = orderProvider.addressIndex != null
+                                      ? locationProvider.addressList![orderProvider.addressIndex!].id
+                                      : null;
+                                  final int? billingAddressId = (_billingAddress)
+                                      ? !orderProvider.sameAsBilling
+                                          ? locationProvider.addressList![orderProvider.billingAddressIndex!].id
+                                          : locationProvider.addressList![orderProvider.addressIndex!].id
+                                      : null;
 
-                                  String billingAddressId = (_billingAddress) ?
-                                  !orderProvider.sameAsBilling ?
-                                  locationProvider.addressList![orderProvider.billingAddressIndex!].id.toString() : locationProvider.addressList![orderProvider.addressIndex!].id.toString() : '';
-
-                                  if(orderProvider.paymentMethodIndex != -1) {
-                                    orderProvider.digitalPaymentPlaceOrder(
-                                        orderNote: orderNote,
-                                        customerId: Provider.of<AuthController>(context, listen: false).isLoggedIn() ?
-                                        profileProvider.userInfoModel?.id.toString() : Provider.of<AuthController>(context, listen: false).getGuestToken(),
-                                        addressId: addressId,
-                                        billingAddressId: billingAddressId,
-                                        useCashback: orderProvider.isUseCashback,
-                                        paymentMethod: orderProvider.selectedDigitalPaymentMethodName);
-                                  } else {
+                                  if (addressId == null) {
                                     setState(() => _isSubmitting = false);
-                                    showModalBottomSheet(
-                                      context: context, isScrollControlled: true, backgroundColor: Colors.transparent,
-                                      builder: (c) {
-                                        return PaymentMethodBottomSheetWidget();
-                                      },
-                                    );
+                                    showCustomSnackBarWidget(getTranslated('select_a_shipping_address', context), Get.context!, snackBarType: SnackBarType.warning);
+                                    return;
                                   }
+
+                                  // [AI] POST /api/v1/checkout/intent → /api/v1/checkout/intent/{id}/pay → Paystack URL
+                                  await orderProvider.placeDeliveryOrder(
+                                    addressId: addressId,
+                                    billingAddressId: billingAddressId,
+                                    useCashback: orderProvider.isUseCashback,
+                                  );
+                                  setState(() => _isSubmitting = false);
                                 }
                               }
                             },

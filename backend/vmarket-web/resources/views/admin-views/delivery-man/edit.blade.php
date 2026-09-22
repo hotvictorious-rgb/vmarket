@@ -90,6 +90,58 @@
                                         <textarea name="address" class="form-control" id="address" rows="1" placeholder="Address">{{ $deliveryMan['address'] }}</textarea>
                                     </div>
                                 </div>
+
+                                <div class="col-md-4">
+                                    <div class="form-group">
+                                        <label class="mb-2 font-weight-bold" for="country_id">{{ translate('Country') }}</label>
+                                        <div class="select-wrapper">
+                                            <select name="country_id" id="country_id" class="form-select js-select2-custom" required>
+                                                <option value="">{{ translate('Select_Country') }}</option>
+                                                @foreach($countries as $country)
+                                                    <option value="{{ $country->id }}" {{ $deliveryMan['country_id'] == $country->id ? 'selected' : '' }}>
+                                                        {{ $country->name }}
+                                                    </option>
+                                                @endforeach
+                                            </select>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div class="col-md-4">
+                                    <div class="form-group">
+                                        <label class="mb-2 font-weight-bold" for="state_id">{{ translate('State') }}</label>
+                                        <div class="select-wrapper">
+                                            <select name="state_id" id="state_id" class="form-select js-select2-custom" required>
+                                                <option value="">{{ translate('Select_State') }}</option>
+                                                @if(isset($states))
+                                                    @foreach($states as $state)
+                                                        <option value="{{ $state->id }}" {{ $deliveryMan['state_id'] == $state->id ? 'selected' : '' }}>
+                                                            {{ $state->name }}
+                                                        </option>
+                                                    @endforeach
+                                                @endif
+                                            </select>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="col-md-4">
+                                    <div class="form-group">
+                                        <label class="mb-2 font-weight-bold" for="lga_id">{{ translate('Lga') }}</label>
+                                        <div class="select-wrapper">
+                                            <select name="lga_id" id="lga_id" class="form-select js-select2-custom" required>
+                                                <option value="">{{ translate('Select_LGA') }}</option>
+                                                @if(isset($lgas))
+                                                    @foreach($lgas as $lga)
+                                                        <option value="{{ $lga->id }}" {{ $deliveryMan['lga_id'] == $lga->id ? 'selected' : '' }}>
+                                                            {{ $lga->name }}
+                                                        </option>
+                                                    @endforeach
+                                                @endif
+                                            </select>
+                                        </div>
+                                    </div>
+                                </div>
+
                                 <div class="col-md-4">
                                     <div class="form-group">
                                         <label class="mb-2 font-weight-bold" for="delivery_hub_id">{{ translate('Assigned_Primary_Hub') }}</label>
@@ -314,4 +366,49 @@
 @push('script')
     <script src="{{ dynamicAsset(path: 'public/assets/back-end/js/spartan-multi-image-picker.js') }}"></script>
     <script src="{{ dynamicAsset(path: 'public/assets/back-end/js/admin/deliveryman.js') }}"></script>
+    <script>
+        $(document).ready(function () {
+            $('#country_id').on('change', function () {
+                let countryId = $(this).val();
+                let stateSelect = $('#state_id');
+                let lgaSelect = $('#lga_id');
+
+                stateSelect.empty().append('<option value="">{{ translate("Select_State") }}</option>');
+                lgaSelect.empty().append('<option value="">{{ translate("Select_LGA") }}</option>');
+
+                if (countryId) {
+                    $.ajax({
+                        url: "{{ route('admin.delivery-lanes.get-states-ajax') }}",
+                        type: "GET",
+                        data: { country_id: countryId },
+                        success: function (data) {
+                            $.each(data, function (key, value) {
+                                stateSelect.append('<option value="' + value.id + '">' + value.name + '</option>');
+                            });
+                        }
+                    });
+                }
+            });
+
+            $('#state_id').on('change', function () {
+                let stateId = $(this).val();
+                let lgaSelect = $('#lga_id');
+
+                lgaSelect.empty().append('<option value="">{{ translate("Select_LGA") }}</option>');
+
+                if (stateId) {
+                    $.ajax({
+                        url: "{{ route('admin.delivery-lanes.get-lgas-ajax') }}",
+                        type: "GET",
+                        data: { state_id: stateId },
+                        success: function (data) {
+                            $.each(data, function (key, value) {
+                                lgaSelect.append('<option value="' + value.id + '">' + value.name + '</option>');
+                            });
+                        }
+                    });
+                }
+            });
+        });
+    </script>
 @endpush

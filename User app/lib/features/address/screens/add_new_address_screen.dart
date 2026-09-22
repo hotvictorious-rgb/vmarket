@@ -2,6 +2,7 @@ import 'package:country_code_picker/country_code_picker.dart';
 import 'package:dropdown_button2/dropdown_button2.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_sixvalley_ecommerce/features/address/domain/models/address_model.dart';
+import 'package:flutter_sixvalley_ecommerce/features/address/domain/models/geography_models.dart';
 import 'package:flutter_sixvalley_ecommerce/features/auth/widgets/code_picker_widget.dart';
 import 'package:flutter_sixvalley_ecommerce/features/checkout/controllers/checkout_controller.dart';
 import 'package:flutter_sixvalley_ecommerce/features/location/controllers/location_controller.dart';
@@ -79,6 +80,13 @@ class _AddNewAddressScreenState extends State<AddNewAddressScreen> {
     Provider.of<AddressController>(context, listen: false).getAddressType();
     Provider.of<AddressController>(context, listen: false).getRestrictedDeliveryCountryList();
     Provider.of<AddressController>(context, listen: false).getRestrictedDeliveryZipList();
+
+    final addressCtrl = Provider.of<AddressController>(context, listen: false);
+    if (widget.isEnableUpdate && widget.address != null) {
+      addressCtrl.initEditAddress(widget.address!);
+    } else {
+      addressCtrl.getCountries();
+    }
 
 
     _checkPermission(() => Provider.of<LocationController>(context, listen: false).getCurrentLocation(context, true, mapController: _controller), context);
@@ -424,20 +432,91 @@ class _AddNewAddressScreenState extends State<AddNewAddressScreen> {
 
 
                           const SizedBox(height: Dimensions.paddingSizeDefaultAddress),
-                          CustomTextFieldWidget(
-                            labelText: getTranslated('city', context),
-                            hintText: getTranslated('city', context),
-                            inputType: TextInputType.streetAddress,
-                            inputAction: TextInputAction.next,
-                            focusNode: _cityNode,
-                            required: true,
-                            nextFocus: _zipNode,
-                            prefixIcon: Images.city,
-                            controller: _cityController,
-                            validator: (value)=> ValidateCheck.validateEmptyText(value, 'city_is_required'),
+
+                          // [AI] Canonical Geography: State Selector (e.g. Akwa Ibom)
+                          Text('State / Region *', style: textRegular.copyWith(
+                            color: Theme.of(context).hintColor,
+                            fontSize: Dimensions.fontSizeSmall,
+                          )),
+                          const SizedBox(height: Dimensions.paddingSizeExtraSmall),
+                          Container(width: MediaQuery.of(context).size.width,
+                            decoration: BoxDecoration(color: Theme.of(context).cardColor,
+                                borderRadius: BorderRadius.circular(5),
+                                border: Border.all(width: .5, color: Theme.of(context).hintColor.withValues(alpha:0.2))),
+                            child: DropdownButtonFormField2<StateModel>(
+                              isExpanded: true,
+                              isDense: true,
+                              value: addressController.selectedState,
+                              decoration: InputDecoration(contentPadding: const EdgeInsets.symmetric(vertical: 0),
+                                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(5))),
+                              hint: Row(children: [
+                                Image.asset(Images.city, height: 18, width: 18),
+                                const SizedBox(width: Dimensions.paddingSizeSmall),
+                                Text(
+                                  addressController.selectedState?.name ?? (widget.address?.state != null && widget.address!.state!.isNotEmpty ? widget.address!.state! : 'Select State (e.g. Akwa Ibom)'),
+                                  style: textRegular.copyWith(fontSize: Dimensions.fontSizeDefault, color: Theme.of(context).textTheme.bodyLarge!.color),
+                                ),
+                              ]),
+                              items: addressController.stateList.map((item) => DropdownMenuItem<StateModel>(
+                                  value: item,
+                                  child: Text(item.name ?? '', style: textRegular.copyWith(fontSize: Dimensions.fontSizeSmall, color: Theme.of(context).textTheme.bodyLarge?.color)))).toList(),
+                              onChanged: (value) {
+                                if (value != null) {
+                                  addressController.setSelectedState(value, loadLgas: true);
+                                }
+                              },
+                              buttonStyleData: const ButtonStyleData(padding: EdgeInsets.only(right: 8)),
+                              iconStyleData: IconStyleData(
+                                  icon: Icon(Icons.arrow_drop_down, color: Theme.of(context).hintColor), iconSize: 24),
+                              dropdownStyleData: DropdownStyleData(
+                                decoration: BoxDecoration(borderRadius: BorderRadius.circular(5))),
+                              menuItemStyleData: const MenuItemStyleData(padding: EdgeInsets.symmetric(horizontal: 16)),
+                            ),
                           ),
                           const SizedBox(height: Dimensions.paddingSizeDefaultAddress),
 
+                          // [AI] Canonical Geography: LGA Selector (e.g. Uyo, Eket)
+                          Text('LGA (Local Government Area) *', style: textRegular.copyWith(
+                            color: Theme.of(context).hintColor,
+                            fontSize: Dimensions.fontSizeSmall,
+                          )),
+                          const SizedBox(height: Dimensions.paddingSizeExtraSmall),
+                          Container(width: MediaQuery.of(context).size.width,
+                            decoration: BoxDecoration(color: Theme.of(context).cardColor,
+                                borderRadius: BorderRadius.circular(5),
+                                border: Border.all(width: .5, color: Theme.of(context).hintColor.withValues(alpha:0.2))),
+                            child: DropdownButtonFormField2<LgaModel>(
+                              isExpanded: true,
+                              isDense: true,
+                              value: addressController.selectedLga,
+                              decoration: InputDecoration(contentPadding: const EdgeInsets.symmetric(vertical: 0),
+                                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(5))),
+                              hint: Row(children: [
+                                Image.asset(Images.address, height: 18, width: 18),
+                                const SizedBox(width: Dimensions.paddingSizeSmall),
+                                Text(
+                                  addressController.selectedLga?.name ?? (widget.address?.lgaName != null && widget.address!.lgaName!.isNotEmpty ? widget.address!.lgaName! : 'Select LGA (e.g. Uyo, Eket)'),
+                                  style: textRegular.copyWith(fontSize: Dimensions.fontSizeDefault, color: Theme.of(context).textTheme.bodyLarge!.color),
+                                ),
+                              ]),
+                              items: addressController.lgaList.map((item) => DropdownMenuItem<LgaModel>(
+                                  value: item,
+                                  child: Text(item.name ?? '', style: textRegular.copyWith(fontSize: Dimensions.fontSizeSmall, color: Theme.of(context).textTheme.bodyLarge?.color)))).toList(),
+                              onChanged: (value) {
+                                if (value != null) {
+                                  addressController.setSelectedLga(value);
+                                  _cityController.text = value.name ?? '';
+                                }
+                              },
+                              buttonStyleData: const ButtonStyleData(padding: EdgeInsets.only(right: 8)),
+                              iconStyleData: IconStyleData(
+                                  icon: Icon(Icons.arrow_drop_down, color: Theme.of(context).hintColor), iconSize: 24),
+                              dropdownStyleData: DropdownStyleData(
+                                decoration: BoxDecoration(borderRadius: BorderRadius.circular(5))),
+                              menuItemStyleData: const MenuItemStyleData(padding: EdgeInsets.symmetric(horizontal: 16)),
+                            ),
+                          ),
+                          const SizedBox(height: Dimensions.paddingSizeDefaultAddress),
 
                           Provider.of<SplashController>(context, listen: false).configModel!.deliveryZipCodeAreaRestriction == 0 ?
                           CustomTextFieldWidget(
@@ -488,14 +567,28 @@ class _AddNewAddressScreenState extends State<AddNewAddressScreen> {
                               onTap: locationController.loading ? null : () {
 
                                 if(_addressFormKey.currentState?.validate() ?? false) {
+                                  if (addressController.selectedState == null && (widget.address?.stateId == null && (widget.address?.state == null || widget.address!.state!.isEmpty))) {
+                                    showCustomSnackBarWidget('Please select a State', Get.context!, snackBarType: SnackBarType.warning);
+                                    return;
+                                  }
+                                  if (addressController.selectedLga == null && (widget.address?.lgaId == null && (widget.address?.lgaName == null || widget.address!.lgaName!.isEmpty))) {
+                                    showCustomSnackBarWidget('Please select an LGA (Local Government Area)', Get.context!, snackBarType: SnackBarType.warning);
+                                    return;
+                                  }
+
                                   AddressModel addressModel = AddressModel(
                                     addressType: addressController.addressTypeList[addressController.selectAddressIndex].title,
                                     contactPersonName: _contactPersonNameController.text,
                                     phone: '${Provider.of<AuthController>(context, listen: false).countryDialCode}${_contactPersonNumberController.text.trim()}',
                                     email: _contactPersonEmailController.text.trim(),
-                                    city: _cityController.text,
+                                    city: addressController.selectedLga?.name ?? (widget.address?.lgaName ?? _cityController.text),
                                     zip: _zipCodeController.text.trim().isEmpty ? '100001' : _zipCodeController.text.trim(),
-                                    country:  _countryCodeController.text,
+                                    country: addressController.selectedCountry?.name ?? (_countryCodeController.text.isNotEmpty ? _countryCodeController.text : 'Nigeria'),
+                                    state: addressController.selectedState?.name ?? (widget.address?.state ?? ''),
+                                    countryId: addressController.selectedCountry?.id ?? (widget.address?.countryId ?? 1),
+                                    stateId: addressController.selectedState?.id ?? widget.address?.stateId,
+                                    lgaId: addressController.selectedLga?.id ?? widget.address?.lgaId,
+                                    lgaName: addressController.selectedLga?.name ?? widget.address?.lgaName,
                                     guestId: Provider.of<AuthController>(context, listen: false).getGuestToken(),
                                     isBilling: _address == Address.billing,
                                     address: locationController.locationController.text,
@@ -508,7 +601,7 @@ class _AddNewAddressScreenState extends State<AddNewAddressScreen> {
                                     addressModel.id = widget.address!.id;
                                     addressController.updateAddress(context, addressModel: addressModel, addressId: addressModel.id);
 
-                                  }else if(_countryCodeController.text.trim().isEmpty){
+                                  }else if(_countryCodeController.text.trim().isEmpty && addressController.selectedCountry == null){
                                     showCustomSnackBarWidget(getTranslated('country_is_required', context), Get.context!, snackBarType: SnackBarType.warning);
                                   } else {
                                     addressController.addAddress(addressModel).then((value) {

@@ -147,6 +147,9 @@ class AppConstants {
   static const String clearanceSaleProductAdd = '/api/v3/seller/clearance-sale/product-add';
   static const String setUpOrder = '/api/v3/seller/orders/order-detail-info-update';
   static const String verifyPickupOtpUri = '/api/v3/seller/orders/verify-pickup-otp';
+  static const String verifyPickupReservationUri = '/api/v3/seller/pickup-reservations/verify';
+  static const String acceptPickupReservationUri = '/api/v3/seller/pickup-reservations/accept';
+  static const String rejectPickupReservationUri = '/api/v3/seller/pickup-reservations/reject';
   static const String businessPagesUri = '/api/v1/business-pages?type=';
   static const String paymentWithdrawalMethodList = '/api/v3/seller/payment-information/withdrawal-method-list';
   static const String paymentInformationAdd = '/api/v3/seller/payment-information/add';

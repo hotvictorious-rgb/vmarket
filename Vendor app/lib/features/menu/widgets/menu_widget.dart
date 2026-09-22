@@ -19,6 +19,7 @@ import 'package:sixvalley_vendor_app/features/chat/screens/inbox_screen.dart';
 import 'package:sixvalley_vendor_app/features/coupon/screens/coupon_list_screen.dart';
 import 'package:sixvalley_vendor_app/features/menu/widgets/sign_out_confirmation_dialog_widget.dart';
 import 'package:sixvalley_vendor_app/features/more/screens/html_view_screen.dart';
+import 'package:sixvalley_vendor_app/features/pickup_reservation/screens/pickup_inspection_screen.dart';
 import 'package:sixvalley_vendor_app/features/product/screens/product_list_screen.dart';
 import 'package:sixvalley_vendor_app/features/profile/screens/profile_view_screen.dart';
 import 'package:sixvalley_vendor_app/features/review/screens/product_review_screen.dart';
@@ -57,6 +58,10 @@ class MenuBottomSheetWidget extends StatelessWidget {
 
           CustomBottomSheetWidget(image: Images.productIconPp, title: getTranslated('products', context),
             onTap: () => _handleMenuTap(context, const ProductListMenuScreen()),
+          ),
+
+          CustomBottomSheetWidget(image: Images.order, title: 'Pickup Inspection',
+            onTap: () => _handleMenuTap(context, const PickupInspectionScreen()),
           ),
 
           CustomBottomSheetWidget(image: Images.reviewIcon, title: getTranslated('reviews', context),

@@ -929,6 +929,13 @@
                             </a>
                         </li>
                         <li class="nav-item">
+                            <a class="nav-link {{ Request::is('admin/delivery-lanes*') ? 'active' : '' }}"
+                               href="{{ route('admin.delivery-lanes.index') }}"
+                               title="{{ translate('Delivery Lanes') }}">
+                                <span class="text-truncate font-weight-bold text-success"><i class="tio-directions mr-1"></i> {{ translate('Delivery Lanes') }}</span>
+                            </a>
+                        </li>
+                        <li class="nav-item">
                             <a class="nav-link  {{ Request::is('admin/delivery-man/emergency-contact') ? 'active' : '' }}"
                                href="{{ route('admin.delivery-man.emergency-contact.index') }}"
                                title="{{ translate('emergency_contact') }}">
@@ -998,8 +1005,6 @@
                                 Request::is('admin/business-settings/vendor-settings') ||
                                 Request::is('admin/customer/customer-settings') ||
                                 Request::is('admin/business-settings/delivery-man-settings') ||
-                                Request::is('admin/business-settings/shipping-method/update'.'*') ||
-                                Request::is('admin/business-settings/shipping-method/index') ||
                                 Request::is('admin/business-settings/order-settings/index') ||
                                 Request::is('admin/business-settings/invoice-settings') ||
                                 Request::is('admin/business-settings/delivery-zone')) ? 'active' : '' }}"

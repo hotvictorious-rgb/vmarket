@@ -30,6 +30,11 @@ class ProfileInfoModel {
   String? nin;
   String? cacNumber;
   String? kycStatus;
+  bool? isEmployee;
+  int? employeeShopId;
+  int? branchId;
+  String? employeeName;
+  String? employeeRole;
 
   ProfileInfoModel(
       {this.id,
@@ -57,7 +62,15 @@ class ProfileInfoModel {
         this.wallet,
         this.minimumOrderAmount,
         this.freeOverDeliveryAmount,
-        this.freeOverDeliveryAmountStatus
+        this.freeOverDeliveryAmountStatus,
+        this.nin,
+        this.cacNumber,
+        this.kycStatus,
+        this.isEmployee,
+        this.employeeShopId,
+        this.branchId,
+        this.employeeName,
+        this.employeeRole,
       });
 
   ProfileInfoModel.fromJson(Map<String, dynamic> json) {
@@ -79,6 +92,11 @@ class ProfileInfoModel {
     nin = json['nin'];
     cacNumber = json['cac_number'];
     kycStatus = json['kyc_status'];
+    isEmployee = json['is_employee'] ?? false;
+    employeeShopId = json['employee_shop_id'] != null ? int.tryParse(json['employee_shop_id'].toString()) : null;
+    branchId = json['branch_id'] != null ? int.tryParse(json['branch_id'].toString()) : null;
+    employeeName = json['employee_name'];
+    employeeRole = json['employee_role'];
     authToken = json['auth_token'];
     salesCommissionPercentage = double.tryParse(json['sales_commission_percentage']?.toString() ?? '');
     if(json['gst']!=null){

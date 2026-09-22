@@ -912,3 +912,35 @@ $$\text{BranchPermitted}(E, S_{target}) = \begin{cases} \text{true} & \text{if }
 | 09 | In-Shop Pickup | POST `/api/v1/customer/pickup-reservations` | 24h code, ₦0.00 shipping | Issues 24h reservation code, status 'pending_inspection', and zero shipping fee | **PASS** |
 | 10 | Vendor Multi-Branch | Cross-Branch Employee Breach | HTTP 403 Forbidden | Middleware strictly returned HTTP 403 Forbidden with anti-tamper message | **PASS** |
 | 11 | Delivery Rider | Doorstep Delivery OTP Length | 6-digit cryptographic standard | OTP format enforced strictly to 6 cryptographic digits | **PASS** |
+
+---
+
+## 15. Phase 4: Customer Mobile App (`User app`) Canonical Geography & Checkout Integration Proof
+
+### 15.1 Dynamic Geography Selection Invariant (Zero Hardcoded Regions)
+The customer mobile application (`User app`) guarantees that all geographic selectors are populated strictly from backend canonical sources:
+$$\text{Countries} = \text{AddressService}.\text{getCountries}() \longleftrightarrow \text{GET } /api/v1/geography/countries$$
+$$\text{States} = \text{AddressService}.\text{getStates}(countryId) \longleftrightarrow \text{GET } /api/v1/geography/states/\{countryId\}$$
+$$\text{LGAs} = \text{AddressService}.\text{getLgas}(stateId) \longleftrightarrow \text{GET } /api/v1/geography/lgas/\{stateId\}$$
+
+All address creation and mutation payloads strictly bind:
+$$\text{AddressPayload} = \{ \text{country\_id}: C_{id}, \text{state\_id}: S_{id}, \text{lga\_id}: L_{id}, \text{city}: L_{name}, \dots \}$$
+- Mismatched or forged geographic pairs fail backend validation (`ValidLgaForState`).
+- The mobile app maintains zero local country/state/LGA tables or shipping price lists.
+
+### 15.2 Authoritative Fulfillment & Delivery Fee Invariant
+During checkout, shipping options and delivery fees are bound to backend contracts:
+$$\text{FulfillmentResult} = \text{CheckoutService}.\text{checkFulfillmentAvailability}(addressId) \longleftrightarrow \text{POST } /api/v1/fulfillment/availability$$
+$$\text{IntentResult} = \text{CheckoutService}.\text{createDeliveryCheckoutIntent}(addressId) \longleftrightarrow \text{POST } /api/v1/checkout/intent$$
+- The mobile app performs zero local shipping fee calculations. All delivery fees displayed to the user originate directly from authoritative `DeliveryLane` records.
+- Order group snapshot ensures delivery total mathematical invariance:
+$$\Delta = \text{Total}_{\text{app}} - \text{Total}_{\text{backend}} \equiv â‚¦0.00$$
+
+### 15.3 Multi-Actor Parity Matrix (User App Integration)
+| Component / Screen | Canonical Backend Contract | Operational State | Drift ($\Delta$) |
+| :--- | :--- | :--- | :--- |
+| `add_new_address_screen.dart` | `GET /geography/countries`, `states`, `lgas` | Dynamic cascading dropdowns | $â‚¦0.00$ |
+| `address_list_screen.dart` | `GET /customer/address/list` | Eager-loaded LGA & State display | $â‚¦0.00$ |
+| `shipping_details_widget.dart` | Address Model `lgaName` & `stateData.name` | Verified LGA/State destination tag | $â‚¦0.00$ |
+| `checkout_controller.dart` | `POST /fulfillment/availability` | Authoritative options & pickup slots | $â‚¦0.00$ |
+| `checkout_controller.dart` | `POST /checkout/intent` & `/pay` | Frozen NGN order group payment | $â‚¦0.00$ |

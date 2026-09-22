@@ -113,6 +113,9 @@ class _OrderDetailsScreenState extends State<OrderDetailsScreen> {
                   double _tax = 0;
                   double _subTotal = 0;
 
+                  if (orderDetailsController.orderDetails != null && orderDetailsController.orderDetails!.isNotEmpty) {
+                    orderModel = orderDetailsController.orderDetails!.first.orderModel ?? orderModel;
+                  }
 
                   if(orderModel?.orderStatus != null){
                     deliveryCharge = orderModel?.shippingCost;
@@ -373,30 +376,18 @@ class _OrderDetailsScreenState extends State<OrderDetailsScreen> {
   }
 
   void _handlePostUploadFlow(BuildContext context, OrderDetailsController orderDetailsController, OrderModel orderModel) {
-    final splashController = Get.find<SplashController>();
-
-    if (splashController.configModel?.orderVerification == 1) {
-      _showVerificationBottomSheet(context, orderModel, orderDetailsController.totalPrice ?? 0);
-    } else {
-      _handlePaymentStatusFlow(context, orderDetailsController, orderModel);
-    }
+    // [AI] Victorious MARKET V1: OTP handover verification is MANDATORY.
+    _showVerificationBottomSheet(context, orderModel, orderDetailsController.totalPrice ?? 0);
   }
 
   void _handleNonImageUploadFlow(BuildContext context, OrderDetailsController orderDetailsController, OrderModel? orderModel, config.ConfigModel? config) {
-    if (config?.orderVerification == 1) {
-      _showVerificationBottomSheet(context, orderModel!, orderDetailsController.totalPrice ?? 0);
-    } else {
-      _handlePaymentStatusFlow(context, orderDetailsController, orderModel!);
-    }
+    // [AI] Victorious MARKET V1: OTP handover verification is MANDATORY.
+    _showVerificationBottomSheet(context, orderModel!, orderDetailsController.totalPrice ?? 0);
   }
 
   void _handlePaymentStatusFlow(BuildContext context, OrderDetailsController orderDetailsController, OrderModel orderModel) {
-    if (orderModel.paymentStatus != 'paid') {
-      orderDetailsController.toggleProceedToNext();
-      _showVerificationBottomSheet(context, orderModel, orderDetailsController.totalPrice ?? 0);
-    } else {
-      _completeDelivery(context, orderDetailsController, orderModel);
-    }
+    // [AI] This method is redundant in V1 since OTP is mandatory, but keeping for compatibility.
+    _showVerificationBottomSheet(context, orderModel, orderDetailsController.totalPrice ?? 0);
   }
 
   void _showVerificationBottomSheet(BuildContext context, OrderModel orderModel, double totalPrice) {

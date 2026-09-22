@@ -112,6 +112,11 @@ import 'package:sixvalley_vendor_app/features/refund/controllers/refund_controll
 import 'package:sixvalley_vendor_app/features/addProduct/controllers/add_product_controller.dart';
 
 import 'package:sixvalley_vendor_app/features/shop/controllers/shop_controller.dart';
+import 'package:sixvalley_vendor_app/features/pickup_reservation/controllers/pickup_reservation_controller.dart';
+import 'package:sixvalley_vendor_app/features/pickup_reservation/domain/repositories/pickup_reservation_repository.dart';
+import 'package:sixvalley_vendor_app/features/pickup_reservation/domain/repositories/pickup_reservation_repository_interface.dart';
+import 'package:sixvalley_vendor_app/features/pickup_reservation/domain/services/pickup_reservation_service.dart';
+import 'package:sixvalley_vendor_app/features/pickup_reservation/domain/services/pickup_reservation_service_interface.dart';
 import 'package:sixvalley_vendor_app/features/splash/controllers/splash_controller.dart';
 import 'package:sixvalley_vendor_app/theme/controllers/theme_controller.dart';
 import 'package:sixvalley_vendor_app/features/bank_info/controllers/bank_info_controller.dart';
@@ -191,6 +196,9 @@ Future<void> init() async {
   CategoryRepositoryInterface categoryRepositoryInterface = CategoryRepository(dioClient: sl());
   sl.registerLazySingleton(() => categoryRepositoryInterface);
 
+  PickupReservationRepositoryInterface pickupReservationRepositoryInterface = PickupReservationRepository(dioClient: sl());
+  sl.registerLazySingleton(() => pickupReservationRepositoryInterface);
+
   // Services
   AuthServiceInterface authServiceInterface = AuthService(authRepoInterface: sl());
   sl.registerLazySingleton(() => authServiceInterface);
@@ -236,6 +244,9 @@ Future<void> init() async {
 
   CategoryServiceInterface categoryServiceInterface = CategoryService(categoryRepositoryInterface: sl());
   sl.registerLazySingleton(() => categoryServiceInterface);
+
+  PickupReservationServiceInterface pickupReservationServiceInterface = PickupReservationService(pickupReservationRepositoryInterface: sl());
+  sl.registerLazySingleton(() => pickupReservationServiceInterface);
 
   // Repository
   sl.registerLazySingleton(() => AuthRepository(dioClient: sl(), storageService: sl()));
@@ -295,4 +306,5 @@ Future<void> init() async {
   sl.registerFactory(() => VariationController(addProductServiceInterface: sl()));
   sl.registerFactory(() => CategoryController(categoryServiceInterface: sl()));
   sl.registerFactory(() => AddProductTaxController(addProductServiceInterface: sl()));
+  sl.registerFactory(() => PickupReservationController(reservationServiceInterface: sl()));
 }

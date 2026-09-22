@@ -261,6 +261,29 @@ Addresses capture canonical `country_id`, `state_id`, and `lga_id` to establish 
 }
 ```
 
+### 5.3 Victorious Cashback 5% Reward Ledger API
+* **Summary Route:** `GET /api/v1/cashback/summary`
+* **Ledger Route:** `GET /api/v1/cashback/list?limit=20&offset=1`
+* **Auth:** Required (`auth:api`)
+* **Response (HTTP 200):**
+```json
+{
+  "status": true,
+  "summary": {
+    "points_balance": 2500,
+    "equivalent_naira": "2500.00",
+    "currency": "NGN",
+    "lifetime_earned_points": 12500,
+    "lifetime_redeemed_points": 10000,
+    "pending_settlement_points": 500
+  }
+}
+```
+* **Invariants:**
+  - Cashback is earned at 5% of settled order merchandise total.
+  - Redeemed as order discount via `use_cashback: true` in `POST /api/v1/checkout/intent`.
+  - Client never transmits arbitrary point deductions; backend strictly validates balance under pessimistic lock.
+
 ---
 
 ## 6. In-Shop Inspection & Pickup Reservations
@@ -391,3 +414,13 @@ Zero-shipping reservation channel. Stock is locked, pre-payment is ₦0.00, and 
 2. **Canonical Geographic IDs:** Addresses must provide `country_id`, `state_id`, and `lga_id`. Unrecognized LGAs are rejected.
 3. **Pessimistic Balance & Stock Concurrency:** All financial balance updates and inventory decrements run inside `DB::transaction()` under `lockForUpdate()`.
 4. **Zero Float Drift:** Every monetary computation is calculated via BCMath with exact decimal precision ($\Delta = ₦0.00$).
+
+---
+
+## 10. Canonical Production Alignment References
+
+All client and backend implementations must strictly comply with:
+- **Customer App Specification:** `.agents/rules/VMARKET_CUSTOMER_APP_SPEC.md` (77 canonical sections)
+- **Customer App Enforcing Rules:** `.agents/rules/CUSTOMER_APP_ALIGNMENT.md` (20 mandatory rules)
+- **Customer App Alignment Plan:** `.agents/rules/CUSTOMER_APP_ALIGNMENT_PLAN.md` (34-phase plan)
+- **Systemic Proof Record:** `VICTORIOUS_MARKET_MATHEMATICAL_AND_SYSTEMIC_PROOF.md`

@@ -94,6 +94,9 @@ class OrderDetailsController extends GetxController implements GetxService {
       Get.back();
       showCustomSnackBarWidget(response.body['message'], isError: false);
       _isSuccess = true;
+      if (context != null && orderId != null) {
+        getOrderDetails(orderId.toString(), context);
+      }
       Get.find<OrderController>().getCurrentOrders();
       Get.find<OrderController>().getAllOrderHistory('', '', '', '',0);
       Get.find<ProfileController>().getProfile();

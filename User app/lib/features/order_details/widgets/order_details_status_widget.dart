@@ -64,18 +64,7 @@ class OrderDetailsStatusWidget extends StatelessWidget {
                             text: ' ${getTranslated('${orderProvider.orders?.orderStatus}', context)}',
                             style: textBold.copyWith(
                               fontSize: Dimensions.fontSizeLarge,
-                              color: orderProvider.orders?.orderStatus == 'delivered'
-                                ? Theme.of(context).colorScheme.onTertiaryContainer
-                                : orderProvider.orders?.orderStatus == 'pending'
-                                  ? Theme.of(context).primaryColor
-                                  : orderProvider.orders?.orderStatus == 'confirmed'
-                                    ? Theme.of(context).colorScheme.onTertiaryContainer
-                                    : orderProvider.orders?.orderStatus == 'processing'
-                                      ? Theme.of(context).colorScheme.outline
-                                      : ((orderProvider.orders?.orderStatus == 'canceled' || orderProvider.orders?.orderStatus == "failed")
-                                        ? Theme.of(context).colorScheme.error
-                                        : Theme.of(context).colorScheme.secondary
-                              ),
+                              color: _getStatusColor(context, orderProvider.orders?.orderStatus),
                             ),
                           ),
 
@@ -238,6 +227,32 @@ class OrderDetailsStatusWidget extends StatelessWidget {
         );
       }
     );
+  }
+
+  Color _getStatusColor(BuildContext context, String? status) {
+    switch (status) {
+      case 'delivered':
+      case 'collected':
+      case 'confirmed':
+      case 'paid':
+        return Theme.of(context).colorScheme.onTertiaryContainer;
+      case 'pending':
+      case 'payment_pending':
+        return Theme.of(context).primaryColor;
+      case 'processing':
+      case 'out_for_delivery':
+      case 'ready_for_pickup':
+        return Theme.of(context).colorScheme.outline;
+      case 'canceled':
+      case 'failed':
+      case 'returned':
+        return Theme.of(context).colorScheme.error;
+      case 'refund_pending':
+      case 'refunded':
+        return Theme.of(context).colorScheme.errorContainer;
+      default:
+        return Theme.of(context).colorScheme.secondary;
+    }
   }
 
   bool showRefundRequest(ConfigModel? configModel, OrderDetailsController orderDetailsController) => orderDetailsController.orderDetails?.first.order?.status == 'delivered'

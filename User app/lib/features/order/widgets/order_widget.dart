@@ -292,15 +292,24 @@ class _OrderWidgetState extends State<OrderWidget> {
   Color _getStatusBgColor(BuildContext context, String? status) {
     switch (status) {
       case 'delivered':
+      case 'collected':
       case 'confirmed':
+      case 'paid':
         return Theme.of(context).colorScheme.onTertiaryContainer.withValues(alpha: .1);
       case 'pending':
+      case 'payment_pending':
         return Theme.of(context).primaryColor.withValues(alpha: .1);
       case 'processing':
+      case 'out_for_delivery':
+      case 'ready_for_pickup':
         return Theme.of(context).colorScheme.outline.withValues(alpha: .1);
       case 'canceled':
       case 'failed':
+      case 'returned':
         return Theme.of(context).colorScheme.error.withValues(alpha: .1);
+      case 'refund_pending':
+      case 'refunded':
+        return Theme.of(context).colorScheme.errorContainer.withValues(alpha: .1);
       default:
         return Theme.of(context).colorScheme.secondary.withValues(alpha: .1);
     }
@@ -309,15 +318,24 @@ class _OrderWidgetState extends State<OrderWidget> {
   Color _getStatusTextColor(BuildContext context, String? status) {
     switch (status) {
       case 'delivered':
+      case 'collected':
       case 'confirmed':
+      case 'paid':
         return Theme.of(context).colorScheme.onTertiaryContainer;
       case 'pending':
+      case 'payment_pending':
         return Theme.of(context).primaryColor;
       case 'processing':
+      case 'out_for_delivery':
+      case 'ready_for_pickup':
         return Theme.of(context).colorScheme.outline;
       case 'canceled':
       case 'failed':
+      case 'returned':
         return Theme.of(context).colorScheme.error;
+      case 'refund_pending':
+      case 'refunded':
+        return Theme.of(context).colorScheme.errorContainer;
       default:
         return Theme.of(context).colorScheme.secondary;
     }

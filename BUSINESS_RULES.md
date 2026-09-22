@@ -122,17 +122,17 @@ Checkout
   ↓
 Choose Fulfillment: "Delivery to Address"
   ↓
-Enter / select delivery address (State, LGA, Street, Landmark)
+Enter / select canonical delivery address (Country -> State -> LGA, Street, Landmark)
   ↓
-Delivery fee calculated dynamically based on logistics zone / weight
+Authoritative delivery fee calculated dynamically via Directional Delivery Lane (Origin LGA -> Lane -> Destination LGA)
   ↓
-Order created in state: [pending_payment]
+Frozen pre-order snapshot created via CheckoutIntent (POST /api/v1/checkout/intent)
   ↓
-Customer pays Victorious MARKET via central payment gateway (Paystack / Wallet)
+Customer pays Victorious MARKET via central Paystack gateway attempt (POST /api/v1/checkout/intent/{orderGroupId}/pay)
   ↓
-Webhook verifies payment cryptographically with atomic row-level lock
+Webhook / callback verifies payment cryptographically with atomic row-level lock
   ↓
-Order state advances to: [processing] / [paid]
+Order settled and created in state: [processing] / [paid]
   ↓
 Vendor receives order alert with item details (customer phone masked)
   ↓
@@ -168,21 +168,17 @@ Choose Fulfillment: "Pickup from Merchant"
   ↓
 Select Payment Mode: "Pay at Pickup through Vmarket"
   ↓
-Order created in state: [pending_payment] / [pickup_scheduled]
+In-Shop Pickup Reservation created in state: [pending_inspection] with 24-hr stock hold (₦0.00 pre-paid)
   ↓
-Victorious MARKET provides approved, vetted merchant pickup instructions
+Victorious MARKET provides approved merchant pickup instructions & 6-digit reservation code
   ↓
 Customer arrives at designated merchant pickup premises
   ↓
-Customer contacts Victorious MARKET support / checks in via app
-  ↓
-Victorious MARKET coordinates with merchant in real time
-  ↓
 Customer inspects physical merchandise and accepts condition
   ↓
-Customer initiates digital payment to Victorious MARKET (USSD, Transfer, Card, or in-app Wallet)
+Customer initiates digital payment to Victorious MARKET (Paystack Gateway: Card, Bank Transfer, USSD)
   ↓
-Victorious MARKET webhook atomically verifies payment receipt
+Victorious MARKET webhook / API atomically verifies payment receipt
   ↓
 Victorious MARKET sends digital release authorization & OTP to merchant
   ↓
@@ -259,7 +255,7 @@ Victorious MARKET automated policy inspection:
   ↓
 If Approved:
   • Order marked [canceled]
-  • Automated refund routed back to customer Victorious MARKET Wallet or original bank account
+  • Automated refund routed back via Paystack to customer's originating bank account (and Victorious Points restored if redeemed)
   • Merchant notified of cancellation
 ```
 
@@ -518,7 +514,7 @@ Channel Formatter:
 ```text
 Customer initiates payment at checkout
   ↓
-Payment Gateway (Paystack, Flutterwave, Wallet) processes transaction
+Payment Gateway (Paystack) processes transaction
   ↓
 Webhook / IPN received by Victorious MARKET
   ↓
@@ -677,8 +673,8 @@ Refund or replacement authorized based on return inspection report
 Approved Refund Authorized by Super Admin
   ↓
 System executes atomic refund transaction:
-  • Option A: Instant credit to customer's Victorious MARKET Wallet
-  • Option B: Reversal via Paystack API to originating bank account
+  • Option A: Direct reversal via Paystack API to customer's originating bank account
+  • Option B: Victorious Points adjustment (if order utilized or earned cashback points)
   ↓
 Order record permanently annotated with refund transaction reference and reason code
 ```

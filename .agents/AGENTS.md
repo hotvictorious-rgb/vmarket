@@ -8,6 +8,9 @@ Before taking ANY action, every AI **MUST** read:
 2. `CHANGE_IMPACT_PROTOCOL.md` — The mandatory 6-point pre-change impact analysis checklist.
 3. `ARCHITECTURE.md` — The system topology, service layers, and state boundaries.
 4. `AI_CHANGELOG.md` — The chronological log of recent AI modifications.
+5. `.agents/rules/VMARKET_CUSTOMER_APP_SPEC.md` — The 77-section canonical production contract for Customer App ↔ Backend.
+6. `.agents/rules/CUSTOMER_APP_ALIGNMENT.md` — The 20 mandatory Customer App enforcing rules.
+7. `.agents/rules/CUSTOMER_APP_ALIGNMENT_PLAN.md` — The 34-phase Customer App alignment plan.
 
 ## 1. Golden Rule: Read Before Writing
 Before making ANY changes to this codebase, you MUST:
@@ -39,6 +42,7 @@ Any time you make a functional change, fix a bug, or complete a feature, you **M
 - **Dependency Injection:** All services and providers must be registered using **GetIt** in `lib/di_container.dart`.
 - **Security:** API tokens must ONLY be stored using `flutter_secure_storage`. Do not use `shared_preferences` for sensitive keys.
 - **Architecture:** Follow the Feature-First directory structure (`lib/features/{feature_name}`).
+- **Customer App Canonical Contract:** The Customer App (`User app`) must strictly adhere to the 77-section specification in `.agents/rules/VMARKET_CUSTOMER_APP_SPEC.md` and the 20 enforcing rules in `.agents/rules/CUSTOMER_APP_ALIGNMENT.md`. No client-side pricing, tax, commission, or delivery fee calculation is permitted. The backend is the sole authority.
 
 ### C. Delivery Man App (Flutter)
 - **State Management:** This specific app uses **GetX** for state and routing. Do NOT use Provider here.

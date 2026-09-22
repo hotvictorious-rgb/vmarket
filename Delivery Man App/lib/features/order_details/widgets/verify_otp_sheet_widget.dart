@@ -35,20 +35,6 @@ class _VerifyDeliverySheetWidgetState extends State<VerifyDeliverySheetWidget> {
               decoration: BoxDecoration(borderRadius: BorderRadius.circular(Dimensions.radiusLarge),
                 color: Theme.of(context).disabledColor.withValues(alpha:0.5))),
 
-
-            orderController.otpVerified ?
-                Padding(padding:  EdgeInsets.only(bottom: Dimensions.paddingSizeOverLarge, top: 50),
-                  child: Column(children: [
-                    Text('collect_money_from_customer'.tr, style: rubikBold, textAlign: TextAlign.center),
-                    SizedBox(height: Dimensions.paddingSizeLarge),
-
-                    Row(mainAxisAlignment: MainAxisAlignment.center, children: [
-                        Text('${'order_amount'.tr}:  ', style: rubikRegular.copyWith(), textAlign: TextAlign.center),
-                        Text(PriceConverter.convertPrice(widget.totalPrice),
-                            style: rubikBold.copyWith(color: Get.isDarkMode ? Theme.of(context).primaryColorLight : Theme.of(context).primaryColor,
-                                fontSize: Dimensions.fontSizeLarge), textAlign: TextAlign.center)]),
-                    SizedBox(height: Dimensions.paddingSizeLarge)])) :
-
             Column(children: [
                SizedBox(height: Dimensions.paddingSizeLarge),
 
@@ -126,7 +112,6 @@ class _VerifyDeliverySheetWidgetState extends State<VerifyDeliverySheetWidget> {
               ],
             ),
 
-            if(!orderController.otpVerified)
             Padding(padding:  EdgeInsets.only(top: Dimensions.paddingSizeSmall),
               child: Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
                 Text('did_not_get_any_OTP'.tr,
@@ -144,6 +129,6 @@ class _VerifyDeliverySheetWidgetState extends State<VerifyDeliverySheetWidget> {
       }),
     );
   }
-  
-  
+
+
 }

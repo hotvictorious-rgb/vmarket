@@ -123,6 +123,36 @@ class AddressRepository implements AddressRepoInterface<ApiResponseModel>{
     throw UnimplementedError();
   }
 
+  // [AI] Canonical Geography Methods (Country -> State -> LGA)
+  @override
+  Future<ApiResponseModel> getCountries() async {
+    try {
+      final response = await dioClient!.get(AppConstants.geographyCountriesUri);
+      return ApiResponseModel.withSuccess(response);
+    } catch (e) {
+      return ApiResponseModel.withError(ApiErrorHandler.getMessage(e));
+    }
+  }
+
+  @override
+  Future<ApiResponseModel> getStates(int countryId) async {
+    try {
+      final response = await dioClient!.get('${AppConstants.geographyStatesUri}$countryId');
+      return ApiResponseModel.withSuccess(response);
+    } catch (e) {
+      return ApiResponseModel.withError(ApiErrorHandler.getMessage(e));
+    }
+  }
+
+  @override
+  Future<ApiResponseModel> getLgas(int stateId) async {
+    try {
+      final response = await dioClient!.get('${AppConstants.geographyLgasUri}$stateId');
+      return ApiResponseModel.withSuccess(response);
+    } catch (e) {
+      return ApiResponseModel.withError(ApiErrorHandler.getMessage(e));
+    }
+  }
 }
 
 

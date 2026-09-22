@@ -39,6 +39,9 @@ class DeliveryManUpdateRequest extends FormRequest
         $rules = [
             'f_name' => 'required',
             'l_name' => 'required',
+            'country_id' => 'nullable|exists:countries,id',
+            'state_id' => 'nullable|exists:states,id',
+            'lga_id' => 'nullable|exists:lgas,id',
             'email' => [
                 'required',
                 'email',

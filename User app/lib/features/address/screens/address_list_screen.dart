@@ -191,11 +191,11 @@ class AddressItemWidget extends StatelessWidget {
             Row(crossAxisAlignment: CrossAxisAlignment.start,children: [
             
               Flexible(child: Text.rich(TextSpan(children: [
-                TextSpan(text: '${getTranslated('city', context)} : ', style: textRegular.copyWith(
+                TextSpan(text: 'LGA : ', style: textRegular.copyWith(
                   fontSize: Dimensions.fontSizeSmall, color: Theme.of(context).hintColor,
                 )),
             
-                TextSpan(text: locationProvider.addressList?[index].city ?? "", style: textRegular.copyWith(
+                TextSpan(text: locationProvider.addressList?[index].lgaName ?? locationProvider.addressList?[index].city ?? "", style: textRegular.copyWith(
                   fontSize: Dimensions.fontSizeSmall, color: Theme.of(context).textTheme.bodyLarge?.color,
                 )),
               ]))),
@@ -208,11 +208,11 @@ class AddressItemWidget extends StatelessWidget {
               ),
             
               Flexible(child: Text.rich(TextSpan(children: [
-                TextSpan(text: '${getTranslated('zip', context)} : ', style: textRegular.copyWith(
+                TextSpan(text: 'State : ', style: textRegular.copyWith(
                   fontSize: Dimensions.fontSizeSmall, color: Theme.of(context).hintColor,
                 )),
             
-                TextSpan(text: locationProvider.addressList?[index].zip ?? "", style: textRegular.copyWith(
+                TextSpan(text: locationProvider.addressList?[index].state ?? "", style: textRegular.copyWith(
                   fontSize: Dimensions.fontSizeSmall, color: Theme.of(context).textTheme.bodyLarge?.color,
                 )),
               ]))),

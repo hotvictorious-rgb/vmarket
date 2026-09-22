@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_sixvalley_ecommerce/common/basewidget/show_custom_snakbar_widget.dart';
 import 'package:flutter_sixvalley_ecommerce/features/address/domain/models/address_model.dart';
+import 'package:flutter_sixvalley_ecommerce/features/address/domain/models/geography_models.dart';
 import 'package:flutter_sixvalley_ecommerce/data/model/api_response.dart';
 import 'package:flutter_sixvalley_ecommerce/features/address/domain/models/label_model.dart';
 import 'package:flutter_sixvalley_ecommerce/features/address/domain/models/restricted_zip_model.dart';
@@ -181,5 +182,112 @@ class AddressController with ChangeNotifier {
     }
   }
 
+  // [AI] Canonical Geography Management (Country -> State -> LGA)
+  List<CountryModel> _countryList = [];
+  List<CountryModel> get countryList => _countryList;
+  List<StateModel> _stateList = [];
+  List<StateModel> get stateList => _stateList;
+  List<LgaModel> _lgaList = [];
+  List<LgaModel> get lgaList => _lgaList;
 
+  CountryModel? _selectedCountry;
+  CountryModel? get selectedCountry => _selectedCountry;
+  StateModel? _selectedState;
+  StateModel? get selectedState => _selectedState;
+  LgaModel? _selectedLga;
+  LgaModel? get selectedLga => _selectedLga;
+
+  bool _isGeographyLoading = false;
+  bool get isGeographyLoading => _isGeographyLoading;
+
+  Future<void> getCountries({bool reload = false}) async {
+    if (_countryList.isNotEmpty && !reload) return;
+    _isGeographyLoading = true;
+    notifyListeners();
+    _countryList = await addressServiceInterface.getCountries();
+    _isGeographyLoading = false;
+    if (_countryList.isNotEmpty && _selectedCountry == null) {
+      int ngIndex = _countryList.indexWhere((c) => (c.name ?? '').toLowerCase() == 'nigeria');
+      _selectedCountry = ngIndex != -1 ? _countryList[ngIndex] : _countryList.first;
+      if (_selectedCountry?.id != null) {
+        getStates(_selectedCountry!.id!);
+      }
+    }
+    notifyListeners();
+  }
+
+  Future<void> getStates(int countryId, {int? preSelectStateId}) async {
+    _isGeographyLoading = true;
+    notifyListeners();
+    _stateList = await addressServiceInterface.getStates(countryId);
+    _lgaList = [];
+    _selectedLga = null;
+    if (preSelectStateId != null) {
+      int idx = _stateList.indexWhere((s) => s.id == preSelectStateId);
+      _selectedState = idx != -1 ? _stateList[idx] : null;
+    } else {
+      _selectedState = null;
+    }
+    _isGeographyLoading = false;
+    notifyListeners();
+  }
+
+  Future<void> getLgas(int stateId, {int? preSelectLgaId}) async {
+    _isGeographyLoading = true;
+    notifyListeners();
+    _lgaList = await addressServiceInterface.getLgas(stateId);
+    if (preSelectLgaId != null) {
+      int idx = _lgaList.indexWhere((l) => l.id == preSelectLgaId);
+      _selectedLga = idx != -1 ? _lgaList[idx] : null;
+    } else {
+      _selectedLga = null;
+    }
+    _isGeographyLoading = false;
+    notifyListeners();
+  }
+
+  void setSelectedCountry(CountryModel? country, {bool loadStates = true}) {
+    _selectedCountry = country;
+    _selectedState = null;
+    _selectedLga = null;
+    _stateList = [];
+    _lgaList = [];
+    if (loadStates && country?.id != null) {
+      getStates(country!.id!);
+    }
+    notifyListeners();
+  }
+
+  void setSelectedState(StateModel? state, {bool loadLgas = true}) {
+    _selectedState = state;
+    _selectedLga = null;
+    _lgaList = [];
+    if (loadLgas && state?.id != null) {
+      getLgas(state!.id!);
+    }
+    notifyListeners();
+  }
+
+  void setSelectedLga(LgaModel? lga) {
+    _selectedLga = lga;
+    notifyListeners();
+  }
+
+  Future<void> initEditAddress(AddressModel address) async {
+    await getCountries();
+    if (address.countryId != null) {
+      int cIdx = _countryList.indexWhere((c) => c.id == address.countryId);
+      if (cIdx != -1) {
+        _selectedCountry = _countryList[cIdx];
+      }
+    }
+    if (_selectedCountry?.id != null) {
+      await getStates(_selectedCountry!.id!, preSelectStateId: address.stateId);
+      if (_selectedState?.id != null) {
+        await getLgas(_selectedState!.id!, preSelectLgaId: address.lgaId);
+      }
+    }
+    notifyListeners();
+  }
 }
+

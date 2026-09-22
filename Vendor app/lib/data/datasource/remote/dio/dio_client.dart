@@ -33,6 +33,18 @@ class DioClient {
     dio!.interceptors.add(loggingInterceptor);
   }
 
+  void updateHeader({String? token, String? branchId}) {
+    if (token != null) {
+      this.token = token;
+      dio!.options.headers['Authorization'] = 'Bearer ${this.token}';
+    }
+    if (branchId != null) {
+      dio!.options.headers['X-Branch-ID'] = branchId;
+    } else {
+      dio!.options.headers.remove('X-Branch-ID');
+    }
+  }
+
   Future<Response> get(String uri, {
     Map<String, dynamic>? queryParameters,
     Options? options,

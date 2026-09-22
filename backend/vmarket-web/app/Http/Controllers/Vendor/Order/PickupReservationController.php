@@ -40,13 +40,16 @@ class PickupReservationController extends Controller
             $sellerId = (int) auth('api')->id();
         }
 
-        $shopId = null;
-        if ($sellerId) {
+        $shopId = $request->header('X-Branch-ID')
+            ?? $request->input('shop_id')
+            ?? ($request['employee_shop_id'] ?? null);
+
+        if (!$shopId && $sellerId) {
             $shop = Shop::where('seller_id', $sellerId)->first();
             $shopId = $shop ? (int) $shop->id : null;
         }
 
-        return [(int) $sellerId, $shopId];
+        return [(int) $sellerId, $shopId ? (int) $shopId : null];
     }
 
     /**

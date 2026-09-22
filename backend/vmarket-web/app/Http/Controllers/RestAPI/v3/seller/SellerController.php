@@ -219,6 +219,19 @@ class SellerController extends Controller
         $data['minimum_order_amount'] = \App\Utils\Convert::default($data['minimum_order_amount']);
         $data['free_delivery_over_amount'] = \App\Utils\Convert::default($data['free_delivery_over_amount']);
 
+        if (isset($request['vendor_employee']) && $request['vendor_employee']) {
+            $employee = $request['vendor_employee'];
+            $data['is_employee'] = true;
+            $data['employee_shop_id'] = $request['employee_shop_id'] ?? $employee->shop_id;
+            $data['branch_id'] = $request['employee_shop_id'] ?? $employee->shop_id;
+            $data['employee_name'] = $employee->name;
+            $data['employee_role'] = $employee->role?->name;
+        } else {
+            $data['is_employee'] = false;
+            $data['employee_shop_id'] = $data->shop?->id;
+            $data['branch_id'] = $data->shop?->id;
+        }
+
         return response()->json($data, 200);
     }
 

@@ -36,6 +36,9 @@ class DeliveryMan extends Model
 
     protected $fillable = [
         'seller_id',
+        'country_id',
+        'state_id',
+        'lga_id',
         'delivery_hub_id',
         'f_name',
         'l_name',
@@ -59,6 +62,9 @@ class DeliveryMan extends Model
     protected $casts = [
         'id' => 'integer',
         'seller_id' => 'integer',
+        'country_id' => 'integer',
+        'state_id' => 'integer',
+        'lga_id' => 'integer',
         'delivery_hub_id' => 'integer',
         'f_name' => 'string',
         'l_name' => 'string',
@@ -77,6 +83,21 @@ class DeliveryMan extends Model
         'fcm_token' => 'string',
         'app_language' => 'string',
     ];
+
+    public function country(): \Illuminate\Database\Eloquent\Relations\BelongsTo
+    {
+        return $this->belongsTo(Country::class, 'country_id');
+    }
+
+    public function state(): \Illuminate\Database\Eloquent\Relations\BelongsTo
+    {
+        return $this->belongsTo(State::class, 'state_id');
+    }
+
+    public function lga(): \Illuminate\Database\Eloquent\Relations\BelongsTo
+    {
+        return $this->belongsTo(Lga::class, 'lga_id');
+    }
 
     public function deliveryHub(): \Illuminate\Database\Eloquent\Relations\BelongsTo
     {

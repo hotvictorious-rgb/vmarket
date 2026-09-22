@@ -1,6 +1,7 @@
 
 import 'package:flutter_sixvalley_ecommerce/data/model/api_response.dart';
 import 'package:flutter_sixvalley_ecommerce/features/address/domain/models/address_model.dart';
+import 'package:flutter_sixvalley_ecommerce/features/address/domain/models/geography_models.dart';
 import 'package:flutter_sixvalley_ecommerce/features/address/domain/models/label_model.dart';
 import 'package:flutter_sixvalley_ecommerce/features/address/domain/repositories/address_repository_interface.dart';
 import 'package:flutter_sixvalley_ecommerce/features/address/domain/services/address_service_interface.dart';
@@ -74,4 +75,47 @@ import 'package:flutter_sixvalley_ecommerce/features/address/domain/services/add
     ApiResponseModel apiResponse = await addressRepoInterface.getDeliveryRestrictedZipList();
     return apiResponse;
   }
-}
+
+  // [AI] Canonical Geography Methods (Country -> State -> LGA)
+  @override
+  Future<List<CountryModel>> getCountries() async {
+    ApiResponseModel apiResponse = await addressRepoInterface.getCountries();
+    List<CountryModel> list = [];
+    if (apiResponse.response != null && apiResponse.response!.statusCode == 200) {
+      if (apiResponse.response!.data is List) {
+        for (var item in apiResponse.response!.data) {
+          list.add(CountryModel.fromJson(item));
+        }
+      }
+    }
+    return list;
+  }
+
+  @override
+  Future<List<StateModel>> getStates(int countryId) async {
+    ApiResponseModel apiResponse = await addressRepoInterface.getStates(countryId);
+    List<StateModel> list = [];
+    if (apiResponse.response != null && apiResponse.response!.statusCode == 200) {
+      if (apiResponse.response!.data is List) {
+        for (var item in apiResponse.response!.data) {
+          list.add(StateModel.fromJson(item));
+        }
+      }
+    }
+    return list;
+  }
+
+  @override
+  Future<List<LgaModel>> getLgas(int stateId) async {
+    ApiResponseModel apiResponse = await addressRepoInterface.getLgas(stateId);
+    List<LgaModel> list = [];
+    if (apiResponse.response != null && apiResponse.response!.statusCode == 200) {
+      if (apiResponse.response!.data is List) {
+        for (var item in apiResponse.response!.data) {
+          list.add(LgaModel.fromJson(item));
+        }
+      }
+    }
+    return list;
+  }
+}

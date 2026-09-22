@@ -131,6 +131,15 @@ import 'package:flutter_sixvalley_ecommerce/common/enums/local_caches_type_enum.
   static const String orderDetailsTrack = '/api/v1/order/track-order-details?order_id=';
   static const String pickupReservationsUri = '/api/v1/customer/pickup-reservations';
 
+  // [AI] Canonical Geography, Fulfillment & Delivery Checkout Endpoints
+  static const String geographyCountriesUri = '/api/v1/geography/countries';
+  static const String geographyStatesUri = '/api/v1/geography/states/';
+  static const String geographyLgasUri = '/api/v1/geography/lgas/';
+  static const String fulfillmentAvailabilityUri = '/api/v1/fulfillment/availability';
+  static const String fulfillmentDeliveryFeeUri = '/api/v1/fulfillment/delivery-fee';
+  static const String checkoutIntentUri = '/api/v1/checkout/intent';
+  static const String checkoutIntentPayUri = '/api/v1/checkout/intent/';
+
 
   //address
   static const String updateAddressUri = '/api/v1/customer/address/update';

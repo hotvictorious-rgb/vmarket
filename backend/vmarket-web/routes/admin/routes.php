@@ -82,6 +82,7 @@ use App\Http\Controllers\Admin\HelpAndSupport\SupportTicketController;
 use App\Http\Controllers\Admin\Settings\DeliverymanSettingsController;
 use App\Http\Controllers\Admin\Settings\DeliveryRestrictionController;
 use App\Http\Controllers\Admin\Delivery\DeliveryHubController;
+use App\Http\Controllers\Admin\Delivery\DeliveryLaneController;
 use App\Http\Controllers\Admin\Delivery\DispatchPortalController;
 use App\Http\Controllers\Admin\Settings\EnvironmentSettingsController;
 use App\Http\Controllers\Admin\Settings\SocialMediaSettingsController;
@@ -651,6 +652,18 @@ Route::group(['prefix' => 'admin', 'as' => 'admin.', 'middleware' => ['admin', '
         });
     });
 
+    Route::group(['prefix' => 'delivery-lanes', 'as' => 'delivery-lanes.', 'middleware' => ['module:order_management']], function () {
+        Route::controller(DeliveryLaneController::class)->group(function () {
+            Route::get('/', 'index')->name('index');
+            Route::post('store', 'store')->name('store');
+            Route::post('update/{id}', 'update')->name('update');
+            Route::delete('delete/{id}', 'delete')->name('delete');
+            Route::post('status', 'status')->name('status');
+            Route::get('get-states-ajax', 'getStatesAjax')->name('get-states-ajax');
+            Route::get('get-lgas-ajax', 'getLgasAjax')->name('get-lgas-ajax');
+        });
+    });
+
     Route::group(['prefix' => 'delivery-hubs', 'as' => 'delivery-hubs.', 'middleware' => ['module:order_management']], function () {
         Route::controller(DeliveryHubController::class)->group(function () {
             Route::get('/', 'index')->name('index');
@@ -962,27 +975,8 @@ Route::group(['prefix' => 'admin', 'as' => 'admin.', 'middleware' => ['admin', '
                 Route::post('refund-setup', 'updateRefundSetup')->name('refund-setup-update');
             });
 
-            Route::group(['prefix' => 'shipping-method', 'as' => 'shipping-method.'], function () {
-                Route::controller(ShippingMethodController::class)->group(function () {
-                    Route::get('index', 'index')->name('index');
-                    Route::post('index', 'add');
-                    Route::get('update' . '/{id}', 'getUpdateView')->name('update');
-                    Route::post('update' . '/{id}', 'update');
-                    Route::post('update-status', 'updateStatus')->name('update-status');
-                    Route::post('delete', 'delete')->name('delete');
-                    Route::post('update-shipping-responsibility', 'updateShippingResponsibility')->name('update-shipping-responsibility');
-                });
-            });
-
-            Route::group(['prefix' => 'shipping-type', 'as' => 'shipping-type.'], function () {
-                Route::post('index', [ShippingTypeController::class, 'addOrUpdate'])->name('index');
-            });
-
-            Route::group(['prefix' => 'category-shipping-cost', 'as' => 'category-shipping-cost.'], function () {
-                Route::controller(CategoryShippingCostController::class)->group(function () {
-                    Route::post('store', 'add')->name('store');
-                });
-            });
+            // [AI] Phase 7 Decommissioning: Legacy product-level / category shipping methods deprecated and removed.
+            // DeliveryLaneController and canonical LGA lanes now authoritatively govern all shipping routes and fees.
 
             Route::group(['prefix' => 'delivery-zone', 'as' => 'delivery-zone.'], function () {
                 Route::controller(DeliveryRestrictionController::class)->group(function () {

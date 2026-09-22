@@ -16,6 +16,11 @@ class AddressTypeWidget extends StatelessWidget {
         color: Theme.of(context).textTheme.bodyLarge?.color, height: 30, width: 30),
       title: Text(address?.address??'',maxLines: 1, overflow: TextOverflow.ellipsis,
           style: textRegular.copyWith(fontSize: Dimensions.fontSizeDefault)),
+      subtitle: (address?.lgaName != null || address?.city != null || address?.state != null) ? Text(
+        '${address?.lgaName ?? address?.city ?? ""}${(address?.state != null && address!.state!.isNotEmpty) ? ", ${address!.state}" : ""}'.trim(),
+        style: textRegular.copyWith(fontSize: Dimensions.fontSizeSmall, color: Theme.of(context).hintColor),
+      ) : null,
     );
   }
 }
+

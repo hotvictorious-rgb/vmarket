@@ -27,23 +27,25 @@ This keeps the physical source of every Order unambiguous.
 
 ---
 
-## 2. Fulfillment mode
+## 2. Fulfillment mode & Mixed Cart Partitioning
 
 ### Rule
-For V1, a checkout should use **one fulfillment mode**:
-* Delivery checkout
-* Pickup checkout
+Every child vendor Order/OrderGroup must have **exactly one authoritative fulfillment mode**:
+* **Delivery:** pay first via Paystack → vendor prepares → VMarket rider delivers
+* **Pickup:** reserve now (₦0.00) → visit shop → inspect items → pay at store → OTP handover
 
-Do not mix delivery and pickup in one checkout in V1.
+### Multi-Vendor Mixed Cart Handling (Spec Section 34 Alignment)
+A customer's cart MAY contain items intended for delivery alongside items intended for pickup:
+```text
+Vendor A -> Delivery (Doorstep via Directional Lane)
+Vendor B -> In-Shop Pickup (24-hr Stock Reservation at Store)
+```
 
-A customer who wants some products delivered and others picked up should place separate checkouts.
+The system partitions the checkout into two decoupled execution channels:
+1. **Delivery Channel:** Items for Vendor A are submitted to `POST /api/v1/checkout/intent` (two-phase pre-paid checkout).
+2. **Pickup Channel:** Items for Vendor B are submitted to `POST /api/v1/customer/pickup-reservations` (zero-payment stock hold).
 
-### Reason
-This keeps payment timing simple:
-* **Delivery:** pay first → delivery
-* **Pickup:** reserve → inspect → pay → handover
-
-Mixed fulfillment can be added later.
+Neither channel blocks or corrupts the other. The customer is never forced to empty their cart or make entire carts 100% delivery or 100% pickup. Each order group is independently evaluated and settled according to its authoritative lifecycle.
 
 ---
 

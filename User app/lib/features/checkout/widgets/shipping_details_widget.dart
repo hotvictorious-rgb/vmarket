@@ -149,23 +149,38 @@ class _ShippingDetailsWidgetState extends State<ShippingDetailsWidget> {
                                 borderRadius: BorderRadius.circular(Dimensions.radiusSmall),
                                 color: Theme.of(context).colorScheme.onPrimary.withValues(alpha: 0.07)
                             ),
-                            child: Row(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
-                                SizedBox(width: Dimensions.paddingSizeExtraSmall),
-                                CustomAssetImageWidget(Images.savedAddressLocationIcon, height: 20, width: 20),
-                                SizedBox(width: Dimensions.paddingSizeSmall),
+                                Row(
+                                  children: [
+                                    SizedBox(width: Dimensions.paddingSizeExtraSmall),
+                                    CustomAssetImageWidget(Images.savedAddressLocationIcon, height: 20, width: 20),
+                                    SizedBox(width: Dimensions.paddingSizeSmall),
 
-                                Text(
-                                  '${locationProvider.addressList![shippingProvider.addressIndex!].addressType ?? ''}: ',
-                                  style: textMedium.copyWith(fontSize: Dimensions.fontSizeDefault, color: Theme.of(context).primaryColor),
+                                    Text(
+                                      '${locationProvider.addressList![shippingProvider.addressIndex!].addressType ?? ''}: ',
+                                      style: textMedium.copyWith(fontSize: Dimensions.fontSizeDefault, color: Theme.of(context).primaryColor),
+                                    ),
+
+                                    Expanded(
+                                      child: Text(
+                                        '${locationProvider.addressList![shippingProvider.addressIndex!].address ?? ''}',
+                                        style: textMedium.copyWith(fontSize: Dimensions.fontSizeDefault, color: Theme.of(context).textTheme.bodyLarge?.color, overflow: TextOverflow.ellipsis), maxLines: 1,
+                                      ),
+                                    ),
+                                  ],
                                 ),
-
-                                Expanded(
-                                  child: Text(
-                                    '${locationProvider.addressList![shippingProvider.addressIndex!].address ?? ''}: ',
-                                    style: textMedium.copyWith(fontSize: Dimensions.fontSizeDefault, color: Theme.of(context).textTheme.bodyLarge?.color, overflow: TextOverflow.ellipsis), maxLines: 1,
+                                if (locationProvider.addressList![shippingProvider.addressIndex!].lgaName != null || locationProvider.addressList![shippingProvider.addressIndex!].city != null) ...[
+                                  SizedBox(height: 4),
+                                  Padding(
+                                    padding: EdgeInsets.only(left: 28),
+                                    child: Text(
+                                      '${locationProvider.addressList![shippingProvider.addressIndex!].lgaName ?? locationProvider.addressList![shippingProvider.addressIndex!].city ?? ''}${(locationProvider.addressList![shippingProvider.addressIndex!].state != null && locationProvider.addressList![shippingProvider.addressIndex!].state!.isNotEmpty) ? ", ${locationProvider.addressList![shippingProvider.addressIndex!].state}" : ""}',
+                                      style: textRegular.copyWith(fontSize: Dimensions.fontSizeSmall, color: Theme.of(context).hintColor),
+                                    ),
                                   ),
-                                ),
+                                ],
                               ],
                             ),
                           ),

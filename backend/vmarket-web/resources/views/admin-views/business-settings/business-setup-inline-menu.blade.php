@@ -49,18 +49,6 @@
             </a>
         </li>
         <li class="nav-item">
-            <a class="nav-link {{ Request::is('admin/business-settings/shipping-method/index') ? 'active' : '' }}"
-                href="{{ route('admin.business-settings.shipping-method.index') }}">
-                {{ translate('Shipping_Method') }}
-            </a>
-        </li>
-        <li class="nav-item">
-            <a class="nav-link {{ Request::is('admin/business-settings/delivery-zone') ? 'active' : '' }}"
-                href="{{ route('admin.business-settings.delivery-zone.index') }}">
-                {{ translate('Delivery_Zone') }}
-            </a>
-        </li>
-        <li class="nav-item">
             <a class="nav-link {{ Request::is('admin/business-settings/invoice-settings') ? 'active' : '' }}"
                 href="{{ route('admin.business-settings.invoice-settings.index') }}">
                 {{ translate('Invoice') }}

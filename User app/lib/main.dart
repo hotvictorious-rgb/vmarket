@@ -15,6 +15,7 @@ import 'package:flutter_sixvalley_ecommerce/features/auth/controllers/google_log
 import 'package:flutter_sixvalley_ecommerce/features/banner/controllers/banner_controller.dart';
 import 'package:flutter_sixvalley_ecommerce/features/checkout/controllers/checkout_controller.dart';
 import 'package:flutter_sixvalley_ecommerce/features/contact_us/controllers/contact_us_controller.dart';
+import 'package:flutter_sixvalley_ecommerce/features/fulfillment/controllers/fulfillment_controller.dart';
 import 'package:flutter_sixvalley_ecommerce/features/location/controllers/location_controller.dart';
 import 'package:flutter_sixvalley_ecommerce/features/notification/controllers/notification_controller.dart';
 import 'package:flutter_sixvalley_ecommerce/features/onboarding/controllers/onboarding_controller.dart';
@@ -129,8 +130,8 @@ Future<void> main() async {
       ChangeNotifierProvider(create: (context) => di.sl<GoogleSignInController>()),
       ChangeNotifierProvider(create: (context) => di.sl<FacebookLoginController>()),
       ChangeNotifierProvider(create: (context) => di.sl<AddressController>()),
-        ChangeNotifierProvider(create: (context) => di.sl<CashbackController>()),
-
+      ChangeNotifierProvider(create: (context) => di.sl<CashbackController>()),
+      ChangeNotifierProvider(create: (context) => di.sl<FulfillmentController>()),
       ChangeNotifierProvider(create: (context) => di.sl<CheckoutController>()),
 
       ChangeNotifierProvider(create: (context) => di.sl<LocationController>()),

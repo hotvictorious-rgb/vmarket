@@ -90,9 +90,7 @@ class _VerifyPickupSheetWidgetState extends State<VerifyPickupSheetWidget> {
                     if(otp.length == 6){
                        orderController.updateOrderStatus(orderId: widget.orderModel!.id,context: context,
                            status: 'out_for_delivery', pickupVerificationCode: otp).then((isSuccess) {
-                         if (isSuccess) {
-                             Get.back();
-                         } else {
+                         if (!isSuccess) {
                             setState(() {invalidOtp = true;});
                          }
                        });

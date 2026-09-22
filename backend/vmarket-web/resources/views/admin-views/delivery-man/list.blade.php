@@ -112,6 +112,7 @@
                                 <th>{{translate('SL')}}</th>
                                 <th>{{translate('name')}}</th>
                                 <th>{{translate('contact info')}}</th>
+                                <th>{{translate('Operating_LGA')}}</th>
                                 <th>{{translate('Primary Hub')}}</th>
                                 <th>{{translate('total_Orders')}}</th>
                                 <th>{{translate('rating')}}</th>
@@ -140,6 +141,15 @@
                                         <a class="text-dark text-hover-primary" href="tel:{{$deliveryMen['country_code']}}{{$deliveryMen['phone']}}">
                                             {{ $deliveryMen['country_code'].$deliveryMen['phone'] }}</a>
                                     </div>
+                                </td>
+                                <td>
+                                    @if($deliveryMen->lga)
+                                        <span class="badge badge-soft-info font-weight-bold">
+                                            <i class="tio-map"></i> {{ $deliveryMen->lga->name }} ({{ $deliveryMen->lga->state->name ?? '' }})
+                                        </span>
+                                    @else
+                                        <span class="badge badge-soft-secondary">{{ translate('Unassigned') }}</span>
+                                    @endif
                                 </td>
                                 <td>
                                     @if($deliveryMen->deliveryHub)

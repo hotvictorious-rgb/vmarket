@@ -14,6 +14,8 @@ import 'package:http/http.dart' as http;
 import 'package:sixvalley_vendor_app/helper/country_code_helper.dart';
 import 'package:sixvalley_vendor_app/localization/language_constrants.dart';
 import 'package:sixvalley_vendor_app/main.dart';
+import 'package:sixvalley_vendor_app/di_container.dart';
+import 'package:sixvalley_vendor_app/data/datasource/remote/dio/dio_client.dart';
 
 class ProfileController with ChangeNotifier {
   final ProfileServiceInterface profileServiceInterface;
@@ -40,6 +42,12 @@ class ProfileController with ChangeNotifier {
       _userInfoModel = ProfileInfoModel.fromJson(apiResponse.response!.data);
       _userId = _userInfoModel!.id;
       _profileImage = _userInfoModel!.image;
+
+      // [AI] Multi-branch security: automatically configure active Branch ID in Dio headers
+      if (_userInfoModel?.branchId != null) {
+        sl<DioClient>().updateHeader(branchId: _userInfoModel!.branchId.toString());
+      }
+
       responseModel = ResponseModel(true, 'successful');
     } else {
       String? errorMessage;

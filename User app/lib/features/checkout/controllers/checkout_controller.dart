@@ -2,6 +2,7 @@ import 'package:flutter_sixvalley_ecommerce/data/model/api_response.dart';
 import 'package:flutter_sixvalley_ecommerce/features/auth/controllers/auth_controller.dart';
 import 'package:flutter_sixvalley_ecommerce/features/cart/domain/models/cart_model.dart';
 import 'package:flutter_sixvalley_ecommerce/features/checkout/domain/models/pickup_reservation_model.dart';
+import 'package:flutter_sixvalley_ecommerce/features/checkout/domain/models/fulfillment_availability_model.dart';
 import 'package:flutter_sixvalley_ecommerce/features/checkout/domain/services/checkout_service_interface.dart';
 import 'package:flutter_sixvalley_ecommerce/features/splash/controllers/splash_controller.dart';
 import 'package:flutter_sixvalley_ecommerce/helper/api_checker.dart';
@@ -302,4 +303,163 @@ String selectedDigitalPaymentMethodName = '';
     notifyListeners();
     return apiResponse;
   }
+
+  Future<ApiResponseModel> payPickupReservation({
+    required String reservationCode,
+    bool useCashback = false,
+  }) async {
+    _isLoading = true;
+    notifyListeners();
+
+    ApiResponseModel apiResponse = await checkoutServiceInterface.payPickupReservation(
+      reservationCode: reservationCode,
+      useCashback: useCashback,
+      paymentGateway: 'paystack',
+      ttlMinutes: 30,
+    );
+
+    _isLoading = false;
+    notifyListeners();
+    return apiResponse;
+  }
+
+  // [AI] Authoritative Fulfillment & Delivery Intent Methods
+  FulfillmentAvailabilityModel? _fulfillmentAvailability;
+  FulfillmentAvailabilityModel? get fulfillmentAvailability => _fulfillmentAvailability;
+  bool _isCheckingFulfillment = false;
+  bool get isCheckingFulfillment => _isCheckingFulfillment;
+
+  Future<FulfillmentAvailabilityModel?> checkFulfillmentAvailability({
+    required int shopId,
+    int? shippingAddressId,
+    List<Map<String, dynamic>>? cartItems,
+  }) async {
+    _isCheckingFulfillment = true;
+    notifyListeners();
+
+    ApiResponseModel apiResponse = await checkoutServiceInterface.checkFulfillmentAvailability(
+      shopId: shopId,
+      shippingAddressId: shippingAddressId,
+      cartItems: cartItems,
+    );
+
+    _isCheckingFulfillment = false;
+    if (apiResponse.response != null && apiResponse.response!.statusCode == 200) {
+      _fulfillmentAvailability = FulfillmentAvailabilityModel.fromJson(apiResponse.response!.data);
+    } else {
+      _fulfillmentAvailability = null;
+    }
+    notifyListeners();
+    return _fulfillmentAvailability;
+  }
+
+  String? _currentIntentOrderGroupId;
+  String? get currentIntentOrderGroupId => _currentIntentOrderGroupId;
+
+  Future<void> placeDeliveryOrder({
+    required int addressId,
+    int? billingAddressId,
+    bool useCashback = false,
+    List<int>? cartItemIds,
+  }) async {
+    _isLoading = true;
+    notifyListeners();
+
+    // Phase 1: Create CheckoutIntent
+    final intentResponse = await createDeliveryCheckoutIntent(
+      addressId: addressId,
+      billingAddressId: billingAddressId,
+      useCashback: useCashback,
+      cartItemIds: cartItemIds,
+    );
+
+    if (intentResponse.response == null || intentResponse.response?.statusCode != 200) {
+      _isLoading = false;
+      notifyListeners();
+      showCustomSnackBarWidget(
+        getTranslated(intentResponse.error ?? 'Failed to create checkout intent', Get.context!),
+        Get.context!,
+        snackBarType: SnackBarType.error,
+      );
+      return;
+    }
+
+    final orderGroupId = intentResponse.response!.data['order_group_id']?.toString();
+    if (orderGroupId == null) {
+      _isLoading = false;
+      notifyListeners();
+      showCustomSnackBarWidget('Invalid response: Missing order_group_id', Get.context!, snackBarType: SnackBarType.error);
+      return;
+    }
+
+    _currentIntentOrderGroupId = orderGroupId;
+
+    // Phase 2: Initialize Paystack payment
+    final payResponse = await initializeIntentPayment(orderGroupId: orderGroupId);
+
+    if (payResponse.response != null && payResponse.response!.statusCode == 200) {
+      _addressIndex = null;
+      _billingAddressIndex = null;
+      sameAsBilling = false;
+      _isLoading = false;
+
+      final data = payResponse.response!.data;
+      if (data['authorization_url'] != null) {
+        RouterHelper.getDigitalPaymentScreenRoute(
+          url: data['authorization_url'],
+          fromWallet: false,
+          action: RouteAction.pushReplacement,
+        );
+      } else {
+        showCustomSnackBarWidget('Payment initialized but no authorization URL returned', Get.context!, snackBarType: SnackBarType.error);
+      }
+    } else {
+      _isLoading = false;
+      showCustomSnackBarWidget(
+        getTranslated(payResponse.error ?? 'Payment initialization failed', Get.context!),
+        Get.context!,
+        snackBarType: SnackBarType.error,
+      );
+    }
+    notifyListeners();
+  }
+
+  Future<ApiResponseModel> createDeliveryCheckoutIntent({
+    required int addressId,
+    int? billingAddressId,
+    bool useCashback = false,
+    List<int>? cartItemIds,
+  }) async {
+    _isLoading = true;
+    notifyListeners();
+
+    final String idempotencyKey = 'dci_${DateTime.now().millisecondsSinceEpoch}_${(1000 + (DateTime.now().microsecond % 9000))}';
+    ApiResponseModel apiResponse = await checkoutServiceInterface.createDeliveryCheckoutIntent(
+      addressId: addressId,
+      idempotencyKey: idempotencyKey,
+      billingAddressId: billingAddressId,
+      useCashback: useCashback,
+      cartItemIds: cartItemIds,
+    );
+
+    _isLoading = false;
+    notifyListeners();
+    return apiResponse;
+  }
+
+  Future<ApiResponseModel> initializeIntentPayment({
+    required String orderGroupId,
+  }) async {
+    _isLoading = true;
+    notifyListeners();
+
+    ApiResponseModel apiResponse = await checkoutServiceInterface.initializeIntentPayment(
+      orderGroupId: orderGroupId,
+    );
+
+    _isLoading = false;
+    notifyListeners();
+    return apiResponse;
+  }
 }
+

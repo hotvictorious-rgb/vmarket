@@ -42,6 +42,11 @@ import 'package:flutter_sixvalley_ecommerce/features/checkout/domain/repositorie
 import 'package:flutter_sixvalley_ecommerce/features/checkout/domain/repositories/checkout_repository_interface.dart';
 import 'package:flutter_sixvalley_ecommerce/features/checkout/domain/services/checkout_service.dart';
 import 'package:flutter_sixvalley_ecommerce/features/checkout/domain/services/checkout_service_interface.dart';
+import 'package:flutter_sixvalley_ecommerce/features/fulfillment/controllers/fulfillment_controller.dart';
+import 'package:flutter_sixvalley_ecommerce/features/fulfillment/domain/repositories/fulfillment_repository.dart';
+import 'package:flutter_sixvalley_ecommerce/features/fulfillment/domain/repositories/fulfillment_repository_interface.dart';
+import 'package:flutter_sixvalley_ecommerce/features/fulfillment/domain/services/fulfillment_service.dart';
+import 'package:flutter_sixvalley_ecommerce/features/fulfillment/domain/services/fulfillment_service_interface.dart';
 
 import 'package:flutter_sixvalley_ecommerce/features/contact_us/controllers/contact_us_controller.dart';
 import 'package:flutter_sixvalley_ecommerce/features/contact_us/domain/repository/contact_us_repository.dart';
@@ -237,8 +242,14 @@ Future<void> init() async {
   sl.registerLazySingleton<CashbackServiceInterface>(() => CashbackService(cashbackRepositoryInterface: sl()));
   sl.registerFactory(() => CashbackController(cashbackServiceInterface: sl()));
 
+  // [AI] Fulfillment Domain (Phase G)
+  sl.registerLazySingleton<FulfillmentRepositoryInterface>(() => FulfillmentRepository(dioClient: sl()));
+  sl.registerLazySingleton<FulfillmentServiceInterface>(() => FulfillmentService(fulfillmentRepositoryInterface: sl()));
+  sl.registerFactory(() => FulfillmentController(fulfillmentServiceInterface: sl()));
+
   sl.registerFactory(() => CheckoutController(checkoutServiceInterface: sl()));
   sl.registerFactory(() => LocationController(locationServiceInterface: sl()));
+  // [LEGACY MIGRATION] ShippingController pending removal in Phase M
   sl.registerFactory(() => ShippingController(shippingServiceInterface: sl()));
   sl.registerFactory(() => ContactUsController(contactUsServiceInterface: sl()));
   sl.registerFactory(() => ReviewController(reviewServiceInterface: sl()));

@@ -5,7 +5,6 @@ import 'package:flutter_sixvalley_ecommerce/data/model/api_response.dart';
 import 'package:flutter_sixvalley_ecommerce/features/cart/domain/models/cart_model.dart';
 import 'package:flutter_sixvalley_ecommerce/features/product/domain/models/product_model.dart';
 import 'package:flutter_sixvalley_ecommerce/features/product_details/controllers/product_details_controller.dart';
-import 'package:flutter_sixvalley_ecommerce/features/shipping/controllers/shipping_controller.dart';
 import 'package:flutter_sixvalley_ecommerce/helper/api_checker.dart';
 import 'package:flutter_sixvalley_ecommerce/main.dart';
 import 'package:flutter_sixvalley_ecommerce/common/basewidget/show_custom_snakbar_widget.dart';
@@ -164,10 +163,7 @@ class CartController extends ChangeNotifier {
     };
     ApiResponseModel apiResponse = await cartServiceInterface!.addRemoveCartSelectedItem(data);
     if (apiResponse.response != null && apiResponse.response!.statusCode == 200) {
-      await Future.wait([
-        Provider.of<ShippingController>(Get.context!, listen: false).getChosenShippingMethod(Get.context!),
-        getCartData(Get.context!, reload: false),
-      ]);
+      await getCartData(Get.context!, reload: false);
     } else {
       ApiChecker.checkApi(apiResponse);
     }

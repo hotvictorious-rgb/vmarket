@@ -95,6 +95,96 @@ class CheckoutRepository implements CheckoutRepositoryInterface{
     }
   }
 
+  @override
+  Future<ApiResponseModel> payPickupReservation({
+    required String reservationCode,
+    bool useCashback = false,
+    String paymentGateway = 'paystack',
+    int ttlMinutes = 30,
+  }) async {
+    try {
+      final response = await dioClient!.post(
+        '${AppConstants.pickupReservationsUri}/$reservationCode/pay',
+        data: {
+          'use_cashback': useCashback ? 1 : 0,
+          'payment_gateway': paymentGateway,
+          'ttl_minutes': ttlMinutes,
+        },
+      );
+      return ApiResponseModel.withSuccess(response);
+    } catch (e) {
+      final error = e as DioException;
+      return ApiResponseModel.withError(ApiErrorHandler.getMessage(e), responseValue: (error.response));
+    }
+  }
+
+  // [AI] Authoritative Fulfillment & Delivery Intent Methods
+  @override
+  Future<ApiResponseModel> checkFulfillmentAvailability({
+    required int shopId,
+    int? shippingAddressId,
+    List<Map<String, dynamic>>? cartItems,
+  }) async {
+    try {
+      final response = await dioClient!.post(
+        AppConstants.fulfillmentAvailabilityUri,
+        data: {
+          'shop_id': shopId,
+          if (shippingAddressId != null) 'shipping_address_id': shippingAddressId,
+          if (cartItems != null) 'cart_items': cartItems,
+        },
+      );
+      return ApiResponseModel.withSuccess(response);
+    } catch (e) {
+      final error = e as DioException;
+      return ApiResponseModel.withError(ApiErrorHandler.getMessage(e), responseValue: (error.response));
+    }
+  }
+
+  @override
+  Future<ApiResponseModel> createDeliveryCheckoutIntent({
+    required int addressId,
+    required String idempotencyKey,
+    int? billingAddressId,
+    bool useCashback = false,
+    List<int>? cartItemIds,
+  }) async {
+    try {
+      final response = await dioClient!.post(
+        AppConstants.checkoutIntentUri,
+        data: {
+          'address_id': addressId,
+          'idempotency_key': idempotencyKey,
+          if (billingAddressId != null) 'billing_address_id': billingAddressId,
+          'use_cashback': useCashback,
+          if (cartItemIds != null) 'cart_item_ids': cartItemIds,
+        },
+      );
+      return ApiResponseModel.withSuccess(response);
+    } catch (e) {
+      final error = e as DioException;
+      return ApiResponseModel.withError(ApiErrorHandler.getMessage(e), responseValue: (error.response));
+    }
+  }
+
+  @override
+  Future<ApiResponseModel> initializeIntentPayment({
+    required String orderGroupId,
+  }) async {
+    try {
+      final response = await dioClient!.post(
+        '${AppConstants.checkoutIntentPayUri}$orderGroupId/pay',
+        data: {
+          'payment_method': 'paystack',
+        },
+      );
+      return ApiResponseModel.withSuccess(response);
+    } catch (e) {
+      final error = e as DioException;
+      return ApiResponseModel.withError(ApiErrorHandler.getMessage(e), responseValue: (error.response));
+    }
+  }
+
 
   @override
   Future add(value) {

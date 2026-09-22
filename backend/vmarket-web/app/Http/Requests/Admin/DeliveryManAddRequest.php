@@ -38,6 +38,9 @@ class DeliveryManAddRequest extends FormRequest
         return [
             'f_name' => 'required',
             'l_name' => 'required',
+            'country_id' => 'nullable|exists:countries,id',
+            'state_id' => 'nullable|exists:states,id',
+            'lga_id' => 'nullable|exists:lgas,id',
             'phone' => 'required|max:20|min:4|unique:delivery_men',
             'email' => 'required|unique:delivery_men',
             'image' => getRulesStringForImageValidation(

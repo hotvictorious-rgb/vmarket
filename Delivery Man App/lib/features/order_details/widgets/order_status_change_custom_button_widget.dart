@@ -199,16 +199,9 @@ class OrderStatusChangeCustomButtonWidget extends StatelessWidget {
       SplashController splashController,
       OrderDetailsController orderDetailsController,
       ) {
-    if (splashController.configModel?.orderVerification == 0) {
-      if (orderModel?.paymentStatus != 'paid') {
-        orderDetailsController.toggleProceedToNext();
-        _showVerifyDeliverySheet(context);
-      } else {
-        _completeDelivery(context, orderDetailsController);
-      }
-    } else {
-      orderDetailsController.gotoEndOfPage();
-    }
+    // [AI] Victorious MARKET V1: OTP handover verification is MANDATORY for all marketplace deliveries.
+    // Ensure rider is prompted to collect the 6-digit order verification code from the customer.
+    _showVerifyDeliverySheet(context);
   }
 
   void _showVerifyDeliverySheet(BuildContext context) {

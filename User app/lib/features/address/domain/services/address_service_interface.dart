@@ -1,4 +1,5 @@
 import 'package:flutter_sixvalley_ecommerce/features/address/domain/models/address_model.dart';
+import 'package:flutter_sixvalley_ecommerce/features/address/domain/models/geography_models.dart';
 import 'package:flutter_sixvalley_ecommerce/features/address/domain/models/label_model.dart';
 
 abstract class AddressServiceInterface{
@@ -20,4 +21,9 @@ abstract class AddressServiceInterface{
   Future<dynamic> getDeliveryRestrictedZipBySearch(String zipcode);
 
   Future<dynamic> getDeliveryRestrictedCountryBySearch(String country);
-}
+
+  // [AI] Canonical Geography Methods (Country -> State -> LGA)
+  Future<List<CountryModel>> getCountries();
+  Future<List<StateModel>> getStates(int countryId);
+  Future<List<LgaModel>> getLgas(int stateId);
+}
