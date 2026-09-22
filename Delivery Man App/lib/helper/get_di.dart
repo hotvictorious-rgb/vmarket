@@ -1,7 +1,7 @@
 import 'dart:convert';
 import 'package:flutter/services.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
-import 'package:shared_preferences/shared_preferences.dart';
+import 'package:sixvalley_delivery_boy/services/storage_service.dart';
 import 'package:get/get.dart';
 import 'package:sixvalley_delivery_boy/features/auth/controllers/auth_controller.dart';
 import 'package:sixvalley_delivery_boy/features/auth/domain/repositories/auth_repository_interface.dart';
@@ -70,35 +70,35 @@ import 'package:sixvalley_delivery_boy/features/wallet/domain/repositories/walle
 import 'package:sixvalley_delivery_boy/utill/app_constants.dart';
 
 Future<Map<String, Map<String, String>>> init() async {
-  // Core
-  final sharedPreferences = await SharedPreferences.getInstance();
+  // Storage & Core
   const secureStorage = FlutterSecureStorage();
-  Get.lazyPut(() => sharedPreferences);
   Get.lazyPut(() => secureStorage);
+  final storageService = StorageService(secureStorage: secureStorage);
+  await storageService.init();
+  Get.lazyPut(() => storageService);
 
-  // [AI] Pre-load secure token asynchronously on startup to prevent boot race condition
-  String? secureToken = await secureStorage.read(key: AppConstants.token);
-  secureToken ??= sharedPreferences.getString(AppConstants.token);
+  // [AI] Pre-load secure token synchronously from unified storage cache on startup
+  String? secureToken = storageService.getString(AppConstants.token);
 
-  Get.lazyPut(() => ApiClient(appBaseUrl: AppConstants.baseUri, sharedPreferences: Get.find(), secureStorage: secureStorage, token: secureToken));
+  Get.lazyPut(() => ApiClient(appBaseUrl: AppConstants.baseUri, storageService: Get.find(), token: secureToken));
 
 
   ///Interface
-  AuthRepositoryInterface authRepoInterface = AuthRepository(apiClient: Get.find(), sharedPreferences: Get.find(), secureStorage: secureStorage);
+  AuthRepositoryInterface authRepoInterface = AuthRepository(apiClient: Get.find(), storageService: Get.find());
   Get.lazyPut(() => authRepoInterface);
-  NotificationRepositoryInterface notificationRepoInterface = NotificationRepository(apiClient: Get.find(), sharedPreferences: Get.find());
+  NotificationRepositoryInterface notificationRepoInterface = NotificationRepository(apiClient: Get.find(), storageService: Get.find());
   Get.lazyPut(()=> notificationRepoInterface);
   OnboardRepositoryInterface onboardRepoInterface = OnBoardingRepository();
   Get.lazyPut(()=> onboardRepoInterface);
-  OrderRepositoryInterface orderRepoInterface = OrderRepository(apiClient: Get.find(), sharedPreferences: Get.find());
+  OrderRepositoryInterface orderRepoInterface = OrderRepository(apiClient: Get.find());
   Get.lazyPut(()=> orderRepoInterface);
-  ProfileRepositoryInterface profileRepoInterface = ProfileRepository(apiClient: Get.find(), sharedPreferences: Get.find());
+  ProfileRepositoryInterface profileRepoInterface = ProfileRepository(apiClient: Get.find());
   Get.lazyPut(()=> profileRepoInterface);
-  SplashRepositoryInterface splashRepoInterface = SplashRepository(sharedPreferences: Get.find(), apiClient: Get.find(), secureStorage: secureStorage);
+  SplashRepositoryInterface splashRepoInterface = SplashRepository(storageService: Get.find(), apiClient: Get.find());
   Get.lazyPut(()=> splashRepoInterface);
   WalletRepositoryInterface walletRepoInterface = WalletRepository(apiClient: Get.find());
   Get.lazyPut(()=> walletRepoInterface);
-  ReviewRepositoryInterface reviewRepoInterface = ReviewRepository(apiClient: Get.find(), sharedPreferences: Get.find());
+  ReviewRepositoryInterface reviewRepoInterface = ReviewRepository(apiClient: Get.find());
   Get.lazyPut(()=> reviewRepoInterface);
   WithdrawRepositoryInterface withdrawRepoInterface = WithdrawRepository(apiClient: Get.find());
   Get.lazyPut(()=> withdrawRepoInterface);
@@ -147,16 +147,16 @@ Future<Map<String, Map<String, String>>> init() async {
 
 
   /// Repository
-  Get.lazyPut(() => SplashRepository(sharedPreferences: Get.find(), apiClient: Get.find(), secureStorage: secureStorage));
+  Get.lazyPut(() => SplashRepository(storageService: Get.find(), apiClient: Get.find()));
   Get.lazyPut(() => OnBoardingRepository());
   Get.lazyPut(() => LanguageRepository());
-  Get.lazyPut(() => ProfileRepository(apiClient: Get.find(), sharedPreferences: sharedPreferences));
-  Get.lazyPut(() => AuthRepository(apiClient: Get.find(), sharedPreferences: Get.find(), secureStorage: secureStorage));
-  Get.lazyPut(() => OrderRepository(apiClient: Get.find(), sharedPreferences: Get.find()));
-  Get.lazyPut(() => NotificationRepository(apiClient: Get.find(), sharedPreferences:  Get.find()));
+  Get.lazyPut(() => ProfileRepository(apiClient: Get.find()));
+  Get.lazyPut(() => AuthRepository(apiClient: Get.find(), storageService: Get.find()));
+  Get.lazyPut(() => OrderRepository(apiClient: Get.find()));
+  Get.lazyPut(() => NotificationRepository(apiClient: Get.find(), storageService: Get.find()));
   Get.lazyPut(() => WalletRepository(apiClient: Get.find()));
   Get.lazyPut(() => RiderRepository(apiClient: Get.find()));
-  Get.lazyPut(() => ReviewRepository(apiClient: Get.find(), sharedPreferences: Get.find()));
+  Get.lazyPut(() => ReviewRepository(apiClient: Get.find()));
   Get.lazyPut(()=> WithdrawRepository(apiClient: Get.find()));
   Get.lazyPut(()=> EmergencyContactRepository(apiClient: Get.find()));
   Get.lazyPut(()=> OrderDetailsRepository(apiClient: Get.find()));
@@ -176,12 +176,10 @@ Future<Map<String, Map<String, String>>> init() async {
   Get.lazyPut(()=> EmergencyContactController(emergencyContactServiceInterface: Get.find()));
   Get.lazyPut(()=> OrderDetailsController(orderDetailsServiceInterface: Get.find()));
 
-  Get.lazyPut(() => LocalizationController(sharedPreferences: sharedPreferences));
+  Get.lazyPut(() => LocalizationController(storageService: Get.find()));
   Get.lazyPut(() => RiderController(riderRepo : Get.find()));
   Get.lazyPut(() => DashboardController());
-  Get.lazyPut(() => ThemeController(sharedPreferences: Get.find()));
-  Get.lazyPut(() => LocalizationController(sharedPreferences: Get.find()));
-  Get.lazyPut(() => LanguageController(sharedPreferences: Get.find()));
+  Get.lazyPut(() => ThemeController(storageService: Get.find()));
 
 
   /// Retrieving localized data

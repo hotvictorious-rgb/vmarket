@@ -2,7 +2,6 @@ import 'dart:io';
 
 import 'package:flutter/foundation.dart';
 import 'package:get/get_connect/http/src/response/response.dart';
-import 'package:shared_preferences/shared_preferences.dart';
 import 'package:sixvalley_delivery_boy/data/api/api_client.dart';
 import 'package:sixvalley_delivery_boy/features/profile/domain/repositories/profile_repository_interface.dart';
 import 'package:sixvalley_delivery_boy/utill/app_constants.dart';
@@ -10,9 +9,8 @@ import 'package:http/http.dart' as http;
 
 class ProfileRepository implements ProfileRepositoryInterface{
   final ApiClient apiClient;
-  final SharedPreferences sharedPreferences;
 
-  ProfileRepository({required this.apiClient, required this.sharedPreferences});
+  ProfileRepository({required this.apiClient});
 
   @override
   Future<Response> getProfileInfo() async {

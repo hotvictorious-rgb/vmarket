@@ -1,82 +1,17 @@
 import 'dart:async';
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/foundation.dart';
-import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:get/get.dart';
-import 'package:shared_preferences/shared_preferences.dart';
+import 'package:sixvalley_delivery_boy/services/storage_service.dart';
 import 'package:sixvalley_delivery_boy/data/api/api_client.dart';
 import 'package:sixvalley_delivery_boy/features/auth/domain/repositories/auth_repository_interface.dart';
 import 'package:sixvalley_delivery_boy/utill/app_constants.dart';
 
-
 class AuthRepository implements AuthRepositoryInterface {
   final ApiClient apiClient;
-  final SharedPreferences sharedPreferences;
-  final FlutterSecureStorage secureStorage;
+  final StorageService storageService;
 
-  static String _token = "";
-  static String _userEmail = "";
-  static String _userPassword = "";
-  static String _userCountryCode = "";
-
-  AuthRepository({required this.apiClient, required this.sharedPreferences, required this.secureStorage}) {
-    _initStorage();
-  }
-
-  Future<void> _initStorage() async {
-    String? sToken = await secureStorage.read(key: AppConstants.token);
-    if (sToken == null) {
-      String? oldToken = sharedPreferences.getString(AppConstants.token);
-      if (oldToken != null) {
-        await secureStorage.write(key: AppConstants.token, value: oldToken);
-        _token = oldToken;
-        await sharedPreferences.remove(AppConstants.token);
-      }
-    } else {
-      _token = sToken;
-    }
-
-    String? sEmail = await secureStorage.read(key: AppConstants.userEmail);
-    if (sEmail == null) {
-      String? oldEmail = sharedPreferences.getString(AppConstants.userEmail);
-      if (oldEmail != null) {
-        await secureStorage.write(key: AppConstants.userEmail, value: oldEmail);
-        _userEmail = oldEmail;
-        await sharedPreferences.remove(AppConstants.userEmail);
-      }
-    } else {
-      _userEmail = sEmail;
-    }
-
-    String? sPassword = await secureStorage.read(key: AppConstants.userPassword);
-    if (sPassword == null) {
-      String? oldPassword = sharedPreferences.getString(AppConstants.userPassword);
-      if (oldPassword != null) {
-        await secureStorage.write(key: AppConstants.userPassword, value: oldPassword);
-        _userPassword = oldPassword;
-        await sharedPreferences.remove(AppConstants.userPassword);
-      }
-    } else {
-      _userPassword = sPassword;
-    }
-
-    String? sCountryCode = await secureStorage.read(key: AppConstants.userCountryCode);
-    if (sCountryCode == null) {
-      String? oldCountryCode = sharedPreferences.getString(AppConstants.userCountryCode);
-      if (oldCountryCode != null) {
-        await secureStorage.write(key: AppConstants.userCountryCode, value: oldCountryCode);
-        _userCountryCode = oldCountryCode;
-        await sharedPreferences.remove(AppConstants.userCountryCode);
-      }
-    } else {
-      _userCountryCode = sCountryCode;
-    }
-
-    if (_token.isNotEmpty) {
-      apiClient.token = _token;
-      apiClient.updateHeader(_token, sharedPreferences.getString(AppConstants.languageCode));
-    }
-  }
+  AuthRepository({required this.apiClient, required this.storageService});
 
   @override
   Future<Response> login(String countryCode, String phone, String password) async {
@@ -90,14 +25,11 @@ class AuthRepository implements AuthRepositoryInterface {
         {"current_language": languageCode, '_method' : 'put' });
   }
 
-
   @override
   Future<bool> saveUserToken(String token) async {
-    _token = token;
     apiClient.token = token;
-    apiClient.updateHeader(token, sharedPreferences.getString(AppConstants.languageCode));
-    // Store token securely in encrypted storage
-    await secureStorage.write(key: AppConstants.token, value: token);
+    apiClient.updateHeader(token, storageService.getString(AppConstants.languageCode));
+    await storageService.setString(AppConstants.token, token);
     return true;
   }
 
@@ -125,11 +57,10 @@ class AuthRepository implements AuthRepositoryInterface {
         {"_method": "put", "fcm_token": _deviceToken},
       headers:  {
         'Content-Type': 'application/json; charset=UTF-8',
-        'Authorization': 'Bearer $_token'
+        'Authorization': 'Bearer ${getUserToken()}'
       },
     );
   }
-
 
   Future<String?> _saveDeviceToken() async {
     String? _deviceToken = '';
@@ -141,12 +72,12 @@ class AuthRepository implements AuthRepositoryInterface {
 
   @override
   String getUserToken() {
-    return _token;
+    return storageService.getString(AppConstants.token) ?? "";
   }
 
   @override
   bool isLoggedIn() {
-    return _token.isNotEmpty;
+    return (storageService.getString(AppConstants.token) ?? "").isNotEmpty;
   }
 
   @override
@@ -154,38 +85,28 @@ class AuthRepository implements AuthRepositoryInterface {
     if(!GetPlatform.isWeb) {
       apiClient.postData(AppConstants.tokenUri, {"_method": "put", "fcm_token": 'no'});
     }
-    // Clear token from both secure storage and SharedPreferences
-    await secureStorage.delete(key: AppConstants.token);
-    _token = "";
+    await storageService.remove(AppConstants.token);
+    apiClient.token = null;
     return true;
   }
 
   @override
   Future<void> saveUserCredentials(String countryCode, String number, String password) async {
-    _userCountryCode = countryCode;
-    _userEmail = number;
-    _userPassword = password;
-    try {
-      // Store credentials securely in encrypted storage
-      await secureStorage.write(key: AppConstants.userPassword, value: password);
-      await secureStorage.write(key: AppConstants.userEmail, value: number);
-      await secureStorage.write(key: AppConstants.userCountryCode, value: countryCode);
-    } catch (e) {
-      rethrow;
-    }
+    // [AI] Only persist user email/phone and country code. Never write raw password to storage.
+    await storageService.setString(AppConstants.userEmail, number);
+    await storageService.setString(AppConstants.userCountryCode, countryCode);
   }
 
   @override
   String getUserEmail() {
-    return _userEmail;
+    return storageService.getString(AppConstants.userEmail) ?? "";
   }
 
   @override
   String getUserPassword() {
-    return _userPassword;
+    // [AI] Raw password persistence eradicated. Always return empty string.
+    return "";
   }
-
-
 
   @override
   Future add(value) {
@@ -218,22 +139,16 @@ class AuthRepository implements AuthRepositoryInterface {
   }
 
   Future<bool> clearUserEmailAndPassword() async {
-    _userEmail = "";
-    _userPassword = "";
-    await secureStorage.delete(key: AppConstants.userPassword);
-    await secureStorage.delete(key: AppConstants.userEmail);
+    await storageService.remove(AppConstants.userPassword);
+    await storageService.remove(AppConstants.userEmail);
     return true;
   }
 
-
   @override
   Future<bool> clearUserCredentials() async{
-    _userPassword = "";
-    _userCountryCode = "";
-    _userEmail = "";
-    await secureStorage.delete(key: AppConstants.userPassword);
-    await secureStorage.delete(key: AppConstants.userCountryCode);
-    await secureStorage.delete(key: AppConstants.userEmail);
+    await storageService.remove(AppConstants.userPassword);
+    await storageService.remove(AppConstants.userCountryCode);
+    await storageService.remove(AppConstants.userEmail);
     return true;
   }
 
@@ -259,8 +174,7 @@ class AuthRepository implements AuthRepositoryInterface {
 
   @override
   String getUserCountryCode() {
-    return _userCountryCode;
+    return storageService.getString(AppConstants.userCountryCode) ?? "";
   }
-
 }
 

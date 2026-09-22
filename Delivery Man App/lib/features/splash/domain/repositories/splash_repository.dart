@@ -1,15 +1,13 @@
-import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:get/get.dart';
-import 'package:shared_preferences/shared_preferences.dart';
+import 'package:sixvalley_delivery_boy/services/storage_service.dart';
 import 'package:sixvalley_delivery_boy/data/api/api_client.dart';
 import 'package:sixvalley_delivery_boy/features/splash/domain/repositories/splash_repository_interface.dart';
 import 'package:sixvalley_delivery_boy/utill/app_constants.dart';
 
 class SplashRepository implements SplashRepositoryInterface{
   ApiClient apiClient;
-  final SharedPreferences sharedPreferences;
-  final FlutterSecureStorage secureStorage;
-  SplashRepository({required this.sharedPreferences, required this.apiClient, required this.secureStorage});
+  final StorageService storageService;
+  SplashRepository({required this.storageService, required this.apiClient});
 
   @override
   Future<Response> getConfigData() async {
@@ -24,69 +22,69 @@ class SplashRepository implements SplashRepositoryInterface{
   }
 
   @override
-  Future<bool> initSharedData() {
-    if(!sharedPreferences.containsKey(AppConstants.theme)) {
-      return sharedPreferences.setBool(AppConstants.theme, false);
+  Future<bool> initSharedData() async {
+    if(!storageService.containsKey(AppConstants.theme)) {
+      await storageService.setBool(AppConstants.theme, false);
     }
-    if(!sharedPreferences.containsKey(AppConstants.countryCode)) {
-      return sharedPreferences.setString(AppConstants.countryCode, AppConstants.languages[0].countryCode!);
+    if(!storageService.containsKey(AppConstants.countryCode)) {
+      await storageService.setString(AppConstants.countryCode, AppConstants.languages[0].countryCode!);
     }
-    if(!sharedPreferences.containsKey(AppConstants.languageCode)) {
-      return sharedPreferences.setString(AppConstants.languageCode, AppConstants.languages[0].languageCode!);
+    if(!storageService.containsKey(AppConstants.languageCode)) {
+      await storageService.setString(AppConstants.languageCode, AppConstants.languages[0].languageCode!);
     }
-    if(!sharedPreferences.containsKey(AppConstants.intro)) {
-      sharedPreferences.setBool(AppConstants.intro, true);
+    if(!storageService.containsKey(AppConstants.intro)) {
+      await storageService.setBool(AppConstants.intro, true);
     }
 
-    return Future.value(true);
+    return true;
   }
 
   @override
   String getCurrency() {
-    return sharedPreferences.getString(AppConstants.currency) ?? '';
+    return storageService.getString(AppConstants.currency) ?? '';
   }
 
   @override
   void setCurrency(String currencyCode) {
-    sharedPreferences.setString(AppConstants.currency, currencyCode);
+    storageService.setString(AppConstants.currency, currencyCode);
   }
 
   @override
   Future<bool> removeSharedData() async {
-    await secureStorage.delete(key: AppConstants.token);
-    return sharedPreferences.remove(AppConstants.token);
+    await storageService.remove(AppConstants.token);
+    return true;
   }
 
   @override
   void disableIntro() {
-    sharedPreferences.setBool(AppConstants.intro, false);
+    storageService.setBool(AppConstants.intro, false);
   }
 
   @override
   bool? showIntro() {
-    if(!sharedPreferences.containsKey(AppConstants.intro)) {
-      sharedPreferences.setBool(AppConstants.intro, true);
+    if(!storageService.containsKey(AppConstants.intro)) {
+      storageService.setBool(AppConstants.intro, true);
     }
-    return sharedPreferences.getBool(AppConstants.intro);
+    return storageService.getBool(AppConstants.intro);
 
   }
 
   @override
   void disableNotification() {
-    sharedPreferences.setBool(AppConstants.notificationSound, false);
+    storageService.setBool(AppConstants.notificationSound, false);
   }
 
   @override
   void enableNotification() {
-    sharedPreferences.setBool(AppConstants.notificationSound, true);
+    storageService.setBool(AppConstants.notificationSound, true);
   }
 
   @override
   bool? notificationSound() {
-    if(!sharedPreferences.containsKey(AppConstants.notificationSound)) {
-      sharedPreferences.setBool(AppConstants.notificationSound, true);
+    if(!storageService.containsKey(AppConstants.notificationSound)) {
+      storageService.setBool(AppConstants.notificationSound, true);
     }
-    return sharedPreferences.getBool(AppConstants.notificationSound);
+    return storageService.getBool(AppConstants.notificationSound);
   }
 
   @override

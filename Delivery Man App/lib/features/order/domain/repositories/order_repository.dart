@@ -1,14 +1,12 @@
 import 'package:get/get_connect/http/src/response/response.dart';
-import 'package:shared_preferences/shared_preferences.dart';
 import 'package:sixvalley_delivery_boy/data/api/api_client.dart';
 import 'package:sixvalley_delivery_boy/features/order/domain/repositories/order_repository_interface.dart';
 import 'package:sixvalley_delivery_boy/utill/app_constants.dart';
 
 class OrderRepository implements OrderRepositoryInterface{
   final ApiClient apiClient;
-  final SharedPreferences sharedPreferences;
 
-  OrderRepository({required this.apiClient, required this.sharedPreferences});
+  OrderRepository({required this.apiClient});
 
   @override
   Future<Response> getCurrentOrders() async {

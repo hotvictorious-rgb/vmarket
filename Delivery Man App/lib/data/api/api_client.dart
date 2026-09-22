@@ -6,8 +6,7 @@ import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:image_picker/image_picker.dart';
-import 'package:shared_preferences/shared_preferences.dart';
-import 'package:flutter_secure_storage/flutter_secure_storage.dart';
+import 'package:sixvalley_delivery_boy/services/storage_service.dart';
 import 'package:http/http.dart' as http;
 import 'package:flutter/foundation.dart' as foundation;
 import 'package:path/path.dart';
@@ -17,28 +16,16 @@ import 'package:sixvalley_delivery_boy/utill/app_constants.dart';
 
 class ApiClient extends GetxService {
   final String appBaseUrl;
-  final SharedPreferences sharedPreferences;
-  final FlutterSecureStorage secureStorage;
+  final StorageService storageService;
   static const String noInternetMessage = 'Connection to API server failed due to internet connection';
   final int timeoutInSeconds = 30;
 
   String? token;
   late Map<String, String>? _mainHeaders;
 
-  ApiClient({required this.appBaseUrl, required this.sharedPreferences, required this.secureStorage, String? token}) {
-    this.token = token ?? sharedPreferences.getString(AppConstants.token);
-    debugPrint('Token: ${this.token}');
-
-    updateHeader(this.token, sharedPreferences.getString(AppConstants.languageCode));
-    _loadSecureToken();
-  }
-
-  Future<void> _loadSecureToken() async {
-    String? secureToken = await secureStorage.read(key: AppConstants.token);
-    if (secureToken != null) {
-      token = secureToken;
-      updateHeader(token, sharedPreferences.getString(AppConstants.languageCode));
-    }
+  ApiClient({required this.appBaseUrl, required this.storageService, String? token}) {
+    this.token = token ?? storageService.getString(AppConstants.token);
+    updateHeader(this.token, storageService.getString(AppConstants.languageCode));
   }
 
   void updateHeader(String? token, String? languageCode) {

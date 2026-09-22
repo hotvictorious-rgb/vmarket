@@ -1,13 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
-import 'package:shared_preferences/shared_preferences.dart';
+import 'package:sixvalley_delivery_boy/services/storage_service.dart';
 import 'package:sixvalley_delivery_boy/features/auth/controllers/auth_controller.dart';
 import 'package:sixvalley_delivery_boy/utill/app_constants.dart';
 
 class LocalizationController extends GetxController implements GetxService {
-  final SharedPreferences sharedPreferences;
+  final StorageService storageService;
 
-  LocalizationController({required this.sharedPreferences}) {
+  LocalizationController({required this.storageService}) {
     loadCurrentLanguage();
   }
 
@@ -29,19 +29,19 @@ class LocalizationController extends GetxController implements GetxService {
     update();
   }
 
-  void loadCurrentLanguage() async {
-    _locale = Locale(sharedPreferences.getString(AppConstants.languageCode) ?? AppConstants.languages[0].languageCode!,
-        sharedPreferences.getString(AppConstants.countryCode) ?? AppConstants.languages[0].countryCode);
+  void loadCurrentLanguage() {
+    _locale = Locale(storageService.getString(AppConstants.languageCode) ?? AppConstants.languages[0].languageCode!,
+        storageService.getString(AppConstants.countryCode) ?? AppConstants.languages[0].countryCode);
     _isLtr = _locale.languageCode != 'ar';
     update();
   }
 
   void saveLanguage(Locale locale) async {
-    sharedPreferences.setString(AppConstants.languageCode, locale.languageCode);
-    sharedPreferences.setString(AppConstants.countryCode, locale.countryCode!);
+    await storageService.setString(AppConstants.languageCode, locale.languageCode);
+    await storageService.setString(AppConstants.countryCode, locale.countryCode!);
   }
 
   String? getCurrentLanguage() {
-    return sharedPreferences.getString(AppConstants.countryCode == 'US'? 'en' : AppConstants.countryCode) ?? "en";
+    return storageService.getString(AppConstants.countryCode == 'US'? 'en' : AppConstants.countryCode) ?? "en";
   }
 }
