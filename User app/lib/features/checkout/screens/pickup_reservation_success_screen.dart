@@ -175,7 +175,7 @@ class PickupReservationSuccessScreen extends StatelessWidget {
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          // 24-Hour Stock Hold Banner
+                          // 24-Hour Reservation Window Banner
                           Container(
                             padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
                             decoration: BoxDecoration(
@@ -189,8 +189,8 @@ class PickupReservationSuccessScreen extends StatelessWidget {
                                 const SizedBox(width: 8),
                                 Expanded(
                                   child: Text(
-                                    getTranslated('stock_hold_notice', context) ??
-                                        'Stock held for 24 hours. Visit the store to inspect and collect.',
+                                    getTranslated('reservation_window_24h', context) ??
+                                        'Reservation window: 24 hours. Visit the store to inspect your items before paying.',
                                     style: titilliumSemiBold.copyWith(
                                       fontSize: Dimensions.fontSizeSmall,
                                       color: const Color(0xFFB45309),
@@ -202,6 +202,36 @@ class PickupReservationSuccessScreen extends StatelessWidget {
                           ),
 
                           const SizedBox(height: Dimensions.paddingSizeDefault),
+
+                          // [AI] Cashback Earn Badge — config-driven from API
+                          if (item.cashbackToEarn != null && (item.cashbackToEarn!.percent ?? 0) > 0) ...[
+                            Container(
+                              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                              decoration: BoxDecoration(
+                                color: const Color(0xFF10B981).withValues(alpha: 0.1),
+                                borderRadius: BorderRadius.circular(8),
+                                border: Border.all(color: const Color(0xFF10B981).withValues(alpha: 0.3)),
+                              ),
+                              child: Row(
+                                children: [
+                                  const Icon(Icons.stars_rounded, color: Color(0xFF10B981), size: 18),
+                                  const SizedBox(width: 6),
+                                  Expanded(
+                                    child: Text(
+                                      '${getTranslated('earn_cashback_at_store', context) ?? 'Earn {percent}% Victorious Cashback when you pay at the store'}'
+                                          .replaceAll('{percent}', item.cashbackToEarn!.percent!.toStringAsFixed(0))
+                                          .replaceAll('{amount}', item.cashbackToEarn!.estimatedNaira ?? '0'),
+                                      style: titilliumSemiBold.copyWith(
+                                        fontSize: Dimensions.fontSizeSmall,
+                                        color: const Color(0xFF059669),
+                                      ),
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                            const SizedBox(height: Dimensions.paddingSizeDefault),
+                          ],
 
                           // Store Pickup Location Section (Strictly No Phone Number)
                           Row(
@@ -390,7 +420,7 @@ class PickupReservationSuccessScreen extends StatelessWidget {
                         '1. Visit the store within 24 hours.\n'
                         '2. Present your reservation code to inspect your items.\n'
                         '3. Pay at the store counter once satisfied.\n'
-                        '4. Receive your handover OTP and 5% cashback!',
+                        '4. After payment, receive your pickup handover OTP.',
                     style: titilliumRegular.copyWith(
                       fontSize: Dimensions.fontSizeSmall,
                       color: Theme.of(context).textTheme.bodyMedium?.color,
