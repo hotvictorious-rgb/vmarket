@@ -9,15 +9,18 @@ use App\Exports\EmployeeListExport;
 use App\Http\Controllers\BaseController;
 use App\Http\Requests\Admin\AdminAddRequest;
 use App\Http\Requests\Admin\AdminUpdateRequest;
+use App\Services\AdminAuditService;
 use App\Services\AdminService;
 use Devrabiul\ToastMagic\Facades\ToastMagic;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Gate;
 use App\Traits\PaginatorTrait;
 use Illuminate\Contracts\View\View;
 use Maatwebsite\Excel\Facades\Excel;
 use Symfony\Component\HttpFoundation\BinaryFileResponse;
+use Illuminate\Support\Facades\Auth;
 
 class EmployeeController extends BaseController
 {
@@ -28,6 +31,15 @@ class EmployeeController extends BaseController
         private readonly AdminRoleRepositoryInterface $adminRoleRepo,
     )
     {
+    }
+
+    /**
+     * [AI] Phase A3: Zero-trust policy resolution for the admin guard.
+     */
+    private function authorizeAdminAction(string $ability): void
+    {
+        $admin = Auth::guard('admin')->user();
+        Gate::forUser($admin)->authorize($ability, \App\Models\Admin::class);
     }
 
     /**
@@ -57,8 +69,16 @@ class EmployeeController extends BaseController
 
     public function add(AdminAddRequest $request, AdminService $adminService): RedirectResponse
     {
+        $this->authorizeAdminAction('manageStaff');
+
         if ($request['role_id'] == 1) {
             ToastMagic::warning(translate('access_denied'));
+            return back();
+        }
+
+        $role = $this->adminRoleRepo->getFirstWhere(params: ['id' => $request['role_id']]);
+        if (!$role || $role['status'] != 1) {
+            ToastMagic::warning(translate('access_denied_invalid_role'));
             return back();
         }
 
@@ -78,6 +98,13 @@ class EmployeeController extends BaseController
         ];
 
         $this->adminRepo->add(data: $data);
+        AdminAuditService::log(
+            action: 'staff.created',
+            resourceType: \App\Models\Admin::class,
+            resourceId: $data['email'] ?? null,
+            beforeState: null,
+            afterState: ['name' => $data['name'], 'email' => $data['email'], 'admin_role_id' => $data['admin_role_id']],
+        );
         ToastMagic::success(translate('employee_added_successfully'));
         return redirect()->route('admin.employee.list');
     }
@@ -123,11 +150,30 @@ class EmployeeController extends BaseController
 
     public function update(AdminUpdateRequest $request, AdminService $adminService): RedirectResponse
     {
+        $this->authorizeAdminAction('manageStaff');
+
         if ($request['role_id'] == 1) {
             ToastMagic::warning(translate('access_denied'));
             return back();
         }
         $employee = $this->adminRepo->getFirstWhere(params:['id' => $request['id']]);
+        if (!$employee) {
+            ToastMagic::error(translate('employee_not_found'));
+            return back();
+        }
+        $role = $this->adminRoleRepo->getFirstWhere(params: ['id' => $request['role_id']]);
+        if (!$role || $role['status'] != 1) {
+            ToastMagic::warning(translate('access_denied_invalid_role'));
+            return back();
+        }
+
+        $beforeState = [
+            'name' => $employee['name'],
+            'email' => $employee['email'],
+            'admin_role_id' => $employee['admin_role_id'],
+            'phone' => $employee['phone'],
+        ];
+
         $identity_image = [];
         if ($request->file('identity_image')) {
             $identity_image = $adminService->getIdentityImages(request: $request, oldImages: $employee);
@@ -147,15 +193,24 @@ class EmployeeController extends BaseController
         ];
 
         $this->adminRepo->update(id:$request['id'], data: $data);
+        AdminAuditService::log(
+            action: 'staff.updated',
+            resourceType: \App\Models\Admin::class,
+            resourceId: $employee['id'],
+            beforeState: $beforeState,
+            afterState: ['name' => $data['name'], 'email' => $data['email'], 'admin_role_id' => $data['admin_role_id'], 'phone' => $data['phone']],
+        );
         ToastMagic::success(translate('employee_updated_successfully'));
         return redirect()->route('admin.employee.list');
     }
 
     public function updateStatus(Request $request): RedirectResponse|JsonResponse
     {
+        $this->authorizeAdminAction('manageStaff');
+
         // [AI] Protection Guard: Prevent deactivating super admin (role_id 1) or currently logged in administrator
         $employee = $this->adminRepo->getFirstWhere(params: ['id' => $request['id']]);
-        if (!$employee || $employee['admin_role_id'] == 1 || $employee['id'] == auth('admin')->id()) {
+        if (!$employee || $employee['admin_role_id'] == 1 || $employee['id'] == Auth::guard('admin')->id()) {
             if ($request->ajax()) {
                 return response()->json([
                     'status' => 'error',
@@ -166,7 +221,15 @@ class EmployeeController extends BaseController
             return back();
         }
 
-        $this->adminRepo->update(id:$request['id'], data:['status'=> $request->get('status', 0)]);
+        $newStatus = $request->get('status', 0) ? 1 : 0;
+        $this->adminRepo->update(id:$request['id'], data:['status'=> $newStatus]);
+        AdminAuditService::log(
+            action: 'staff.status_updated',
+            resourceType: \App\Models\Admin::class,
+            resourceId: $employee['id'],
+            beforeState: ['status' => $employee['status']],
+            afterState: ['status' => $newStatus],
+        );
         if($request->ajax()) {
             return response()->json([
                 'status' => 'success',

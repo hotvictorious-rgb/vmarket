@@ -462,51 +462,7 @@ class Helpers
             return false;
         }
 
-        $admin = auth('admin')->user();
-        if ($admin->id == 1 || $admin->admin_role_id == 1) {
-            return true;
-        }
-
-        $user_role = $admin->role;
-        if (!$user_role || $user_role->status != 1) {
-            return false;
-        }
-
-        $permission = json_decode($user_role->module_access ?? '[]', true);
-        if (is_array($permission) && in_array($mod_name, $permission, true)) {
-            return true;
-        }
-
-        // [AI] Phase A3: Granular permission slug support.
-        // Permissions stored in JSON `module_access` may now contain atomic granular slugs
-        // (e.g. 'delivery.lane.manage', 'orders.refund') alongside legacy coarse module strings.
-        // `in_array` above already handles this since both are string entries in the same array.
-        // However, we also derive implied coarse-module coverage from granular slugs:
-        // e.g. if an admin has 'orders.view' or 'orders.cancel', they implicitly have 'order_management' read access.
-        if (is_array($permission)) {
-            $granularMap = \App\Enums\GlobalConstant::EMPLOYEE_ROLE_GRANULAR_PERMISSIONS;
-            // If requesting a granular slug, check exact match (already handled above).
-            // If requesting a legacy coarse module, check if any granular slug implies coverage.
-            // Coarse module → implied by granular prefixes:
-            $coarseToGranularPrefix = [
-                'order_management'    => ['orders.', 'pickup.'],
-                'system_settings'     => ['audit_log.', 'staff.'],
-                'business_settings'   => ['geography.', 'delivery.'],
-                'user_section'        => ['orders.view_sensitive'],
-                'report'              => ['payments.view', 'cashback.'],
-            ];
-            if (isset($coarseToGranularPrefix[$mod_name])) {
-                foreach ($coarseToGranularPrefix[$mod_name] as $prefix) {
-                    foreach ($permission as $perm) {
-                        if (str_starts_with($perm, $prefix) || $perm === $prefix) {
-                            return true;
-                        }
-                    }
-                }
-            }
-        }
-
-        return false;
+        return auth('admin')->user()->hasModuleAccess($mod_name);
     }
 
     public static function convert_currency_to_usd($price)

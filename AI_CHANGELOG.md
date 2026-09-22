@@ -1,3 +1,29 @@
+### [2026-09-22 23:05 UTC] Phase A3 Executed: Zero-Trust Admin Authorization Policies, RBAC & Immutable Audit Log [admin-control-tower] [AI]
+* **Components:** Admin Web Panel (`backend/vmarket-web`), Backend Governance
+* **Scope:** Executed Phase A3 of the Admin Control Tower alignment plan per `ADMIN_PANEL_ALIGNMENT_PLAN.md`. All changes lint-clean (`php -l`) and empirically verified: Phase 1 (11/11), Phase 2 (11/11), Phase 3 (11/11) regression suites remain 100% green; new A3 governance suite `scratch/verify_phase_a3_admin_governance.php` passes 14/14.
+* **Prerequisite fix (Phase 1 stabilization):** Fixed real midnight-crossing bug in `FulfillmentAvailabilityService::buildAvailablePickupSlots()` where `$openingTomorrow`/`$closingTomorrow` shared one mutable Carbon instance, yielding zero pickup slots late at night (`Slots: 0`). Restored Phase 1 from 32/33 to 33/33.
+* **Implemented:**
+  - Ran pending `2026_09_22_000030_create_admin_audit_logs_table` migration (table did not exist in SQLite).
+  - `app/Models/AdminAuditLog.php` – append-only immutability: `update()`, `delete()`, `forceDelete()` throw `LogicException`; `updating`/`deleting` model events throw as a backstop.
+  - `app/Models/Admin.php` – new `isSuperAdmin()` (id=1 or role_id=1), `hasModuleAccess()` (authoritative zero-trust permission resolution), `hasExactModuleAccess()` (explicit-grant check with NO implied-prefix escalation).
+  - `app/Utils/Helpers.php` – `module_permission_check()` now delegates to `Admin::hasModuleAccess()` (single source of truth).
+  - `app/Models/AdminRole.php` – authoritative 15-role RBAC schema `ROLE_DEFINITIONS` (SUPER_ADMIN → READ_ONLY_AUDITOR) + `permissions()`/`hasPermission()`/`SUPER_ADMIN_ROLE_ID`.
+  - `app/Policies/AdminPolicy.php` (NEW) – first zero-trust Laravel Policy; super-admin `before()` bypass + exact-grant abilities for staff/roles/audit/orders/refunds/payments/lanes/geography/merchants/pickup/cashback. Read-only grants (e.g. `audit_log.view`) cannot escalate into write abilities.
+  - `app/Providers/AuthServiceProvider.php` – registered `Admin::class => AdminPolicy::class`.
+  - `EmployeeController.php` – `Gate::forUser(admin-guard)` policy enforcement on `add`/`update`/`updateStatus`, invalid/disabled-role rejection, immutable audit entries (`staff.created`/`staff.updated`/`staff.status_updated`).
+  - `CustomRoleController.php` – closed authorization gap: `updateStatus()`/`delete()` now guarded by policy + Super-Admin-role protection; audit entries (`role.created`/`role.updated`/`role.status_updated`/`role.deleted`).
+* **Guard note:** Legacy coarse modules (`user_section`, `system_settings`, `order_management`, etc.) remain honored as explicit grants for backward compatibility; implied prefix coverage is reserved for coarse-module UX display, never for write-authorization escalation.
+
+### [2026-09-22 23:57 UTC] VMarket Vendor Web + Vendor App Production Alignment Specification [ai-governance] [AI]
+* **Components:** AI Governance (`.agents/rules/VMARKET_VENDOR_SPEC.md`), Vendor Web Dashboard, Vendor Mobile App (`Vendor app`)
+* **Scope:** Codified the 31-section canonical VMarket Vendor Web + Vendor App Production Alignment Specification.
+* **Key Principles Codified:**
+  - **Single Authoritative Backend**: Vendor Web and Vendor App are two interfaces consuming the exact same backend REST APIs, rules, data, and authorization engines.
+  - **Branch Multi-Tenant Isolation**: Authorizations strictly scoped to shop/branch level (`Vendor ──► Shops`). Employee access to one branch does not grant access to another branch.
+  - **Zero Client-Side Calculation**: Product pricing, stock deductions, delivery fees, and order states are decided exclusively by backend services.
+  - **Pickup Inspection Controls**: Vendor UI clearly distinguishes Delivery from In-Shop Pickup; inspection outcomes (`accepted`/`rejected`) and 6-digit OTP verification are validated server-side.
+  - **Zero-Trust Security Matrix**: Explicit server-side policy enforcement blocking cross-vendor tampering, fake payment overrides, fake stock deductions, and unauthorized branch access.
+
 ### [2026-09-22 21:30 UTC] VMarket Admin Panel Production Alignment Plan & Deep Scan Impact Map [ai-governance] [AI]
 * **Components:** AI Governance (`.agents/rules/`), Admin Web Panel, Backend Architecture
 * **Scope:** Formulated and codified the canonical VMarket Admin Panel production alignment specification, rules, phased alignment roadmap, and repository-wide deep scan impact map.

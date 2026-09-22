@@ -9,12 +9,16 @@ use App\Enums\GlobalConstant;
 use App\Exports\EmployeeRoleListExport;
 use App\Http\Controllers\BaseController;
 use App\Http\Requests\Admin\CustomRoleRequest;
+use App\Models\AdminRole;
+use App\Services\AdminAuditService;
 use App\Traits\PaginatorTrait;
 use Devrabiul\ToastMagic\Facades\ToastMagic;
 use Illuminate\Contracts\View\View;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Gate;
 use Symfony\Component\HttpFoundation\BinaryFileResponse;
 use Maatwebsite\Excel\Facades\Excel;
 
@@ -49,12 +53,8 @@ class CustomRoleController extends BaseController
 
     public function add(CustomRoleRequest $request): RedirectResponse
     {
-        // [AI] Privilege Escalation Guard: Only primary Super Admin can create custom roles
-        $currentAdmin = auth('admin')->user();
-        if ($currentAdmin && $currentAdmin->id != 1 && ($currentAdmin->admin_role_id ?? 0) != 1) {
-            ToastMagic::error(translate('Access Denied: Custom role creation is restricted strictly to the Super Admin.'));
-            return back();
-        }
+        $admin = Auth::guard('admin')->user();
+        Gate::forUser($admin)->authorize('manageRoles', AdminRole::class);
 
         $data = [
             'name' => $request['name'],
@@ -64,6 +64,13 @@ class CustomRoleController extends BaseController
             'updated_at' => now(),
         ];
         $this->adminRoleRepo->add(data: $data);
+        AdminAuditService::log(
+            action: 'role.created',
+            resourceType: AdminRole::class,
+            resourceId: null,
+            beforeState: null,
+            afterState: ['name' => $data['name'], 'module_access' => $request['modules']],
+        );
         ToastMagic::success(translate('role_added_successfully'));
         return back();
     }
@@ -77,30 +84,62 @@ class CustomRoleController extends BaseController
 
     public function update(CustomRoleRequest $request): RedirectResponse
     {
-        // [AI] Privilege Escalation Guard: Only primary Super Admin can update custom roles
-        $currentAdmin = auth('admin')->user();
-        if ($currentAdmin && $currentAdmin->id != 1 && ($currentAdmin->admin_role_id ?? 0) != 1) {
-            ToastMagic::error(translate('Access Denied: Custom role editing is restricted strictly to the Super Admin.'));
+        $admin = Auth::guard('admin')->user();
+        Gate::forUser($admin)->authorize('manageRoles', AdminRole::class);
+
+        $role = $this->adminRoleRepo->getFirstWhere(params: ['id' => $request['id']]);
+        if (!$role) {
+            ToastMagic::error(translate('role_not_found'));
             return back();
         }
+
+        $beforeState = [
+            'name' => $role['name'],
+            'module_access' => json_decode($role['module_access'] ?? '[]', true),
+        ];
 
         $data = [
             'name' => $request['name'],
             'module_access' => json_encode($request['modules']),
         ];
         $this->adminRoleRepo->update(id: $request['id'], data: $data);
+        AdminAuditService::log(
+            action: 'role.updated',
+            resourceType: AdminRole::class,
+            resourceId: $request['id'],
+            beforeState: $beforeState,
+            afterState: ['name' => $request['name'], 'module_access' => $request['modules']],
+        );
         ToastMagic::success(translate('role_updated_successfully'));
         return back();
     }
 
     public function updateStatus(Request $request): JsonResponse
     {
-        $this->adminRoleRepo->update(id: $request['id'], data: ['status' => $request->get('status', 0)]);
+        $admin = Auth::guard('admin')->user();
+        Gate::forUser($admin)->authorize('manageRoles', AdminRole::class);
+
+        $role = $this->adminRoleRepo->getFirstWhere(params: ['id' => $request['id']]);
+        if (!$role || $role['id'] == AdminRole::SUPER_ADMIN_ROLE_ID) {
+            return response()->json([
+                'success' => 0,
+                'message' => translate('Access Denied: Cannot modify the Super Admin role.'),
+            ], 403);
+        }
+
+        $newStatus = $request->get('status', 0) ? 1 : 0;
+        $this->adminRoleRepo->update(id: $request['id'], data: ['status' => $newStatus]);
+        AdminAuditService::log(
+            action: 'role.status_updated',
+            resourceType: AdminRole::class,
+            resourceId: $request['id'],
+            beforeState: ['status' => $role['status']],
+            afterState: ['status' => $newStatus],
+        );
         return response()->json([
             'success' => 1,
             'message' => translate('status_updated_successfully'),
         ], 200);
-
     }
 
     public function exportList(Request $request): BinaryFileResponse
@@ -121,7 +160,25 @@ class CustomRoleController extends BaseController
 
     public function delete(Request $request): JsonResponse
     {
+        $admin = Auth::guard('admin')->user();
+        Gate::forUser($admin)->authorize('manageRoles', AdminRole::class);
+
+        $role = $this->adminRoleRepo->getFirstWhere(params: ['id' => $request['id']]);
+        if (!$role || $role['id'] == AdminRole::SUPER_ADMIN_ROLE_ID) {
+            return response()->json([
+                'success' => 0,
+                'message' => translate('Access Denied: Cannot delete the Super Admin role.'),
+            ], 403);
+        }
+
         $this->adminRoleRepo->delete(params: ['id' => $request['id']]);
+        AdminAuditService::log(
+            action: 'role.deleted',
+            resourceType: AdminRole::class,
+            resourceId: $request['id'],
+            beforeState: ['name' => $role['name'], 'module_access' => json_decode($role['module_access'] ?? '[]', true)],
+            afterState: null,
+        );
         return response()->json([
             'success' => 1,
             'message' => translate('role_deleted_successfully')
