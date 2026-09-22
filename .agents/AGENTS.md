@@ -11,6 +11,7 @@ Before taking ANY action, every AI **MUST** read:
 5. `.agents/rules/VMARKET_CUSTOMER_APP_SPEC.md` — The 77-section canonical production contract for Customer App ↔ Backend.
 6. `.agents/rules/CUSTOMER_APP_ALIGNMENT.md` — The 20 mandatory Customer App enforcing rules.
 7. `.agents/rules/CUSTOMER_APP_ALIGNMENT_PLAN.md` — The 34-phase Customer App alignment plan.
+8. `.agents/rules/CUSTOMER_APP_SCENARIO_AUDIT_PROTOCOL.md` — The 26-scenario, 9-phase audit protocol and parity matrix.
 
 ## 1. Golden Rule: Read Before Writing
 Before making ANY changes to this codebase, you MUST:

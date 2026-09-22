@@ -2441,34 +2441,62 @@ class OrderManager
             ->unique('status')
             ->keyBy('status');
 
-        $order = Order::where('id', $orderId)->select('created_at')->first();
+        $order = Order::where('id', $orderId)->select('created_at', 'order_type')->first();
+        $isPickup = in_array($order?->order_type, ['pickup', 'self_pickup'], true);
 
-        $orderTracking = [
-            'order_placed' => ['key' => 'order_placed', 'label' => translate('order_placed'), 'status' => true, 'date_time' => $order->created_at],
-            'order_confirmed' => ['key' => 'order_confirmed', 'label' => translate('order_confirmed'), 'status' => false, 'date_time' => null],
-            'preparing_for_shipment' => ['key' => 'preparing_for_shipment', 'label' => translate('preparing_for_shipment'), 'status' => false, 'date_time' => null],
-            'order_is_on_the_way' => ['key' => 'order_is_on_the_way', 'label' => translate('order_is_on_the_way'), 'status' => false, 'date_time' => null],
-            'order_delivered' => ['key' => 'order_delivered', 'label' => translate('order_delivered'), 'status' => false, 'date_time' => null],
-            'order_returned' => ['key' => 'order_returned', 'label' => translate('order_returned'), 'status' => false, 'date_time' => null],
-            'order_failed' => ['key' => 'order_failed', 'label' => translate('order_failed'), 'status' => false, 'date_time' => null],
-            'order_canceled' => ['key' => 'order_canceled', 'label' => translate('order_canceled'), 'status' => false, 'date_time' => null],
-        ];
+        if ($isPickup) {
+            $orderTracking = [
+                'order_placed' => ['key' => 'pending_inspection', 'label' => translate('pending_inspection'), 'status' => true, 'date_time' => $order?->created_at],
+                'order_confirmed' => ['key' => 'inspection_accepted', 'label' => translate('inspection_accepted'), 'status' => false, 'date_time' => null],
+                'preparing_for_shipment' => ['key' => 'paid', 'label' => translate('paid'), 'status' => false, 'date_time' => null],
+                'order_is_on_the_way' => ['key' => 'ready_for_collection', 'label' => translate('ready_for_collection'), 'status' => false, 'date_time' => null],
+                'order_delivered' => ['key' => 'collected', 'label' => translate('collected'), 'status' => false, 'date_time' => null],
+                'order_returned' => ['key' => 'order_returned', 'label' => translate('order_returned'), 'status' => false, 'date_time' => null],
+                'order_failed' => ['key' => 'inspection_rejected', 'label' => translate('inspection_rejected'), 'status' => false, 'date_time' => null],
+                'order_canceled' => ['key' => 'order_canceled', 'label' => translate('order_canceled'), 'status' => false, 'date_time' => null],
+            ];
 
-        $statusMapping = [
-            'order_placed' => 'pending',
-            'order_confirmed' => 'confirmed',
-            'preparing_for_shipment' => 'processing',
-            'order_is_on_the_way' => 'out_for_delivery',
-            'order_delivered' => 'delivered',
-            'order_returned' => 'returned',
-            'order_failed' => 'failed',
-            'order_canceled' => 'canceled',
-        ];
+            $statusCandidates = [
+                'order_placed' => ['pending_inspection', 'pending'],
+                'order_confirmed' => ['inspection_accepted', 'confirmed'],
+                'preparing_for_shipment' => ['paid', 'processing', 'awaiting_payment'],
+                'order_is_on_the_way' => ['ready_for_collection', 'ready_for_pickup', 'out_for_delivery'],
+                'order_delivered' => ['collected', 'delivered'],
+                'order_returned' => ['returned'],
+                'order_failed' => ['inspection_rejected', 'failed'],
+                'order_canceled' => ['canceled'],
+            ];
+        } else {
+            $orderTracking = [
+                'order_placed' => ['key' => 'order_placed', 'label' => translate('order_placed'), 'status' => true, 'date_time' => $order?->created_at],
+                'order_confirmed' => ['key' => 'order_confirmed', 'label' => translate('order_confirmed'), 'status' => false, 'date_time' => null],
+                'preparing_for_shipment' => ['key' => 'preparing_for_shipment', 'label' => translate('preparing_for_shipment'), 'status' => false, 'date_time' => null],
+                'order_is_on_the_way' => ['key' => 'order_is_on_the_way', 'label' => translate('order_is_on_the_way'), 'status' => false, 'date_time' => null],
+                'order_delivered' => ['key' => 'order_delivered', 'label' => translate('order_delivered'), 'status' => false, 'date_time' => null],
+                'order_returned' => ['key' => 'order_returned', 'label' => translate('order_returned'), 'status' => false, 'date_time' => null],
+                'order_failed' => ['key' => 'order_failed', 'label' => translate('order_failed'), 'status' => false, 'date_time' => null],
+                'order_canceled' => ['key' => 'order_canceled', 'label' => translate('order_canceled'), 'status' => false, 'date_time' => null],
+            ];
+
+            $statusCandidates = [
+                'order_placed' => ['pending'],
+                'order_confirmed' => ['confirmed'],
+                'preparing_for_shipment' => ['processing'],
+                'order_is_on_the_way' => ['out_for_delivery'],
+                'order_delivered' => ['delivered'],
+                'order_returned' => ['returned'],
+                'order_failed' => ['failed'],
+                'order_canceled' => ['canceled'],
+            ];
+        }
 
         foreach ($orderTracking as $statusKey => &$statusData) {
-            if (isset($statusMapping[$statusKey]) && isset($statusHistory[$statusMapping[$statusKey]])) {
-                $statusData['status'] = true;
-                $statusData['date_time'] = $statusHistory[$statusMapping[$statusKey]]->created_at;
+            foreach ($statusCandidates[$statusKey] as $cand) {
+                if (isset($statusHistory[$cand])) {
+                    $statusData['status'] = true;
+                    $statusData['date_time'] = $statusHistory[$cand]->created_at;
+                    break;
+                }
             }
         }
         unset($statusData);

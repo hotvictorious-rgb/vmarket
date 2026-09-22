@@ -75,7 +75,7 @@ class _TrackingResultScreenState extends State<TrackingResultScreen> {
                     child: Column(
                       children: [
                         StatusStepperWidget(
-                          title: getTranslated('order_placed', context),
+                          title: trackingHistory?.orderPlaced?.label ?? getTranslated('order_placed', context),
                           icon: Images.orderPlacedIconTimeline, checked: true,
                           dateTime: trackingHistory?.orderPlaced?.dateTime,
                           isCanceled: isOrderFailed,
@@ -86,7 +86,7 @@ class _TrackingResultScreenState extends State<TrackingResultScreen> {
                           CanceledStatusWidget(),
 
                         StatusStepperWidget(
-                          title: '${getTranslated('order_confirmed', context)}',
+                          title: trackingHistory?.orderConfirmed?.label ?? '${getTranslated('order_confirmed', context)}',
                           icon: Images.orderConfirmedIconTimeline,
                           dateTime: trackingHistory?.orderConfirmed?.dateTime,
                           isCanceled: isOrderFailed,
@@ -98,7 +98,7 @@ class _TrackingResultScreenState extends State<TrackingResultScreen> {
                           CanceledStatusWidget(),
 
                         StatusStepperWidget(
-                            title: '${getTranslated('preparing_for_shipment', context)}',
+                            title: trackingHistory?.preparingForShipment?.label ?? '${getTranslated('preparing_for_shipment', context)}',
                             icon: Images.prepareingForShippingIconTimeline,
                             dateTime: trackingHistory?.preparingForShipment?.dateTime,
                             isCanceled: isOrderFailed,
@@ -111,7 +111,7 @@ class _TrackingResultScreenState extends State<TrackingResultScreen> {
 
 
                         StatusStepperWidget(
-                            title: '${getTranslated('order_is_on_the_way', context)}',
+                            title: trackingHistory?.orderIsOnTheWay?.label ?? '${getTranslated('order_is_on_the_way', context)}',
                             statusKey: trackingHistory?.orderIsOnTheWay?.key,
                             icon: Images.onTheWayIconTimeline,
                             dateTime: trackingHistory?.orderIsOnTheWay?.dateTime,
@@ -125,7 +125,7 @@ class _TrackingResultScreenState extends State<TrackingResultScreen> {
                           CanceledStatusWidget(),
 
                         StatusStepperWidget(
-                          title: '${getTranslated('order_delivered', context)}',
+                          title: trackingHistory?.orderDelivered?.label ?? '${getTranslated('order_delivered', context)}',
                           icon: Images.deliverdIconTimeline,
                           dateTime: trackingHistory?.orderDelivered?.dateTime,
                           isCanceled: trackingHistory?.orderCanceled?.status ?? false,
