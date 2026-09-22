@@ -2,70 +2,31 @@ import 'dart:developer';
 import 'dart:io';
 import 'package:dio/dio.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
-import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:flutter_sixvalley_ecommerce/data/datasource/remote/dio/dio_client.dart';
 import 'package:flutter_sixvalley_ecommerce/data/datasource/remote/exception/api_error_handler.dart';
 import 'package:flutter_sixvalley_ecommerce/data/model/api_response.dart';
 import 'package:flutter_sixvalley_ecommerce/features/auth/controllers/auth_controller.dart';
 import 'package:flutter_sixvalley_ecommerce/features/auth/domain/repositories/auth_repository_interface.dart';
 import 'package:flutter_sixvalley_ecommerce/main.dart';
+import 'package:flutter_sixvalley_ecommerce/services/storage_service.dart';
 import 'package:flutter_sixvalley_ecommerce/utill/app_constants.dart';
 import 'package:provider/provider.dart';
-import 'package:shared_preferences/shared_preferences.dart';
 
 
 class AuthRepository implements AuthRepoInterface{
   final DioClient? dioClient;
-  final SharedPreferences? sharedPreferences;
-  final FlutterSecureStorage secureStorage;
+  final StorageService storageService;
 
   static String _token = "";
-  static String _password = "";
   static String _userLogData = "";
 
-  AuthRepository({required this.dioClient, required this.sharedPreferences, required this.secureStorage}) {
+  AuthRepository({required this.dioClient, required this.storageService}) {
     _initStorage();
   }
 
-  Future<void> _initStorage() async {
-    // 1. Migrate userLoginToken
-    String? sToken = await secureStorage.read(key: AppConstants.userLoginToken);
-    if (sToken == null) {
-      String? oldToken = sharedPreferences?.getString(AppConstants.userLoginToken);
-      if (oldToken != null) {
-        await secureStorage.write(key: AppConstants.userLoginToken, value: oldToken);
-        _token = oldToken;
-        await sharedPreferences?.remove(AppConstants.userLoginToken);
-      }
-    } else {
-      _token = sToken;
-    }
-
-    // 2. Migrate userPassword
-    String? sPassword = await secureStorage.read(key: AppConstants.userPassword);
-    if (sPassword == null) {
-      String? oldPassword = sharedPreferences?.getString(AppConstants.userPassword);
-      if (oldPassword != null) {
-        await secureStorage.write(key: AppConstants.userPassword, value: oldPassword);
-        _password = oldPassword;
-        await sharedPreferences?.remove(AppConstants.userPassword);
-      }
-    } else {
-      _password = sPassword;
-    }
-
-    // 3. Migrate userLogData
-    String? sLogData = await secureStorage.read(key: AppConstants.userLogData);
-    if (sLogData == null) {
-      String? oldLogData = sharedPreferences?.getString(AppConstants.userLogData);
-      if (oldLogData != null) {
-        await secureStorage.write(key: AppConstants.userLogData, value: oldLogData);
-        _userLogData = oldLogData;
-        await sharedPreferences?.remove(AppConstants.userLogData);
-      }
-    } else {
-      _userLogData = sLogData;
-    }
+  void _initStorage() {
+    _token = storageService.getString(AppConstants.userLoginToken) ?? "";
+    _userLogData = storageService.getString(AppConstants.userLogData) ?? "";
 
     if (_token.isNotEmpty) {
       dioClient?.updateHeader(_token, null);
@@ -174,7 +135,7 @@ class AuthRepository implements AuthRepoInterface{
     _token = token;
     dioClient!.updateHeader(token, null);
     try {
-      await secureStorage.write(key: AppConstants.userLoginToken, value: token);
+      await storageService.setString(AppConstants.userLoginToken, token);
     } catch (e) {
       rethrow;
     }
@@ -199,7 +160,7 @@ class AuthRepository implements AuthRepoInterface{
   @override
   Future<void> saveGuestId(String guestId) async {
     try {
-      await sharedPreferences!.setString(AppConstants.guestId, guestId);
+      await storageService.setString(AppConstants.guestId, guestId);
     } catch (e) {
       rethrow;
     }
@@ -207,17 +168,17 @@ class AuthRepository implements AuthRepoInterface{
 
   @override
   String? getGuestIdToken() {
-    return sharedPreferences!.getString(AppConstants.guestId) ?? "1";
+    return storageService.getString(AppConstants.guestId) ?? "1";
   }
 
   @override
   bool isGuestIdExist() {
-    return sharedPreferences!.containsKey(AppConstants.guestId);
+    return storageService.containsKey(AppConstants.guestId);
   }
 
   @override
   Future<bool> clearGuestId() async {
-    sharedPreferences!.remove(AppConstants.guestId);
+    await storageService.remove(AppConstants.guestId);
     return true;
   }
 
@@ -231,8 +192,9 @@ class AuthRepository implements AuthRepoInterface{
   @override
   Future<bool> clearSharedData() async {
     _token = "";
-    await secureStorage.delete(key: AppConstants.userLoginToken);
-    sharedPreferences?.remove(AppConstants.guestId);
+    dioClient?.updateHeader("", null);
+    await storageService.remove(AppConstants.userLoginToken);
+    await storageService.remove(AppConstants.guestId);
     return true;
   }
 
@@ -394,7 +356,7 @@ class AuthRepository implements AuthRepoInterface{
   Future<void> saveUserEmailAndPassword(String userData) async {
     _userLogData = userData;
     try {
-      await secureStorage.write(key: AppConstants.userLogData, value: userData);
+      await storageService.setString(AppConstants.userLogData, userData);
     } catch (e) {
       rethrow;
     }
@@ -407,16 +369,15 @@ class AuthRepository implements AuthRepoInterface{
 
   @override
   String getUserPassword() {
-    return _password;
+    return "";
   }
 
   @override
   Future<bool> clearUserEmailAndPassword() async {
-    _password = "";
     _userLogData = "";
-    await secureStorage.delete(key: AppConstants.userPassword);
-    await secureStorage.delete(key: AppConstants.userLogData);
-    await sharedPreferences!.remove(AppConstants.userEmail);
+    await storageService.remove(AppConstants.userPassword);
+    await storageService.remove(AppConstants.userLogData);
+    await storageService.remove(AppConstants.userEmail);
     return true;
   }
 

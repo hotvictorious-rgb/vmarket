@@ -10,15 +10,15 @@ import 'package:flutter_sixvalley_ecommerce/data/model/api_response.dart';
 import 'package:flutter_sixvalley_ecommerce/data/reposotories/data_sync_repo_interface.dart';
 import 'package:flutter_sixvalley_ecommerce/helper/db_helper.dart';
 import 'package:flutter_sixvalley_ecommerce/main.dart';
+import 'package:flutter_sixvalley_ecommerce/services/storage_service.dart';
 import 'package:flutter_sixvalley_ecommerce/utill/app_constants.dart';
-import 'package:shared_preferences/shared_preferences.dart';
 
 
 class DataSyncRepo implements DataSyncRepoInterface{
   final DioClient dioClient;
-  final SharedPreferences? sharedPreferences;
+  final StorageService? storageService;
 
-  DataSyncRepo({required this.dioClient, required this.sharedPreferences});
+  DataSyncRepo({required this.dioClient, required this.storageService});
 
   @override
   Future<ApiResponseModel<T>> fetchData<T>(String uri, DataSourceEnum source) async {
@@ -66,14 +66,14 @@ class DataSyncRepo implements DataSyncRepoInterface{
       response: cacheData.response.value,
       isSuccess: true,
     ).toJson();
-    sharedPreferences?.setString(uri, jsonEncode(cacheJson));
+    storageService?.setString(uri, jsonEncode(cacheJson));
   }
 
   Future<ApiResponseModel<T>> _fetchFromLocalCache<T>(String uri) async {
     CacheResponseData? cacheData;
 
     if (kIsWeb) {
-      final cachedJson = sharedPreferences?.getString(uri);
+      final cachedJson = storageService?.getString(uri);
       if (cachedJson != null) {
         cacheData = CacheResponseData.fromJson(jsonDecode(cachedJson));
       }

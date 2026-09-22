@@ -1,17 +1,16 @@
 import 'dart:io';
 import 'package:dio/dio.dart';
 import 'package:flutter/foundation.dart';
-import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:flutter_sixvalley_ecommerce/data/datasource/remote/dio/logging_interceptor.dart';
+import 'package:flutter_sixvalley_ecommerce/services/storage_service.dart';
 import 'package:flutter_sixvalley_ecommerce/utill/app_constants.dart';
 import 'package:path_provider/path_provider.dart';
-import 'package:shared_preferences/shared_preferences.dart';
 import 'package:path/path.dart' as path;
 
 class DioClient {
   final String baseUrl;
   final LoggingInterceptor loggingInterceptor;
-  final SharedPreferences sharedPreferences;
+  final StorageService storageService;
 
   Dio? dio;
   String? token;
@@ -20,14 +19,11 @@ class DioClient {
   DioClient(this.baseUrl,
       Dio? dioC, {
         required this.loggingInterceptor,
-        required this.sharedPreferences,
-        String? token, // [AI] Pre-loaded secure token to prevent race condition
+        required this.storageService,
+        String? token,
       }) {
-    this.token = token ?? sharedPreferences.getString(AppConstants.userLoginToken);
-    countryCode = sharedPreferences.getString(AppConstants.countryCode) ?? AppConstants.languages[0].countryCode;
-    if (kDebugMode) {
-      print("NNNN ${this.token}");
-    }
+    this.token = token ?? storageService.getString(AppConstants.userLoginToken);
+    countryCode = storageService.getString(AppConstants.countryCode) ?? AppConstants.languages[0].countryCode;
     dio = dioC ?? Dio();
     dio
       ?..options.baseUrl = baseUrl
@@ -41,16 +37,6 @@ class DioClient {
         AppConstants.langKey : countryCode == 'US'? 'en': countryCode!.toLowerCase(),
       };
     dio!.interceptors.add(loggingInterceptor);
-    _loadSecureToken();
-  }
-
-  Future<void> _loadSecureToken() async {
-    const secureStorage = FlutterSecureStorage();
-    String? secureToken = await secureStorage.read(key: AppConstants.userLoginToken);
-    if (secureToken != null) {
-      token = secureToken;
-      updateHeader(token, countryCode);
-    }
   }
 
   void updateHeader(String? token, String? countryCode) {

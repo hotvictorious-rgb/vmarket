@@ -5,13 +5,13 @@ import 'package:flutter_sixvalley_ecommerce/data/datasource/remote/dio/dio_clien
 import 'package:flutter_sixvalley_ecommerce/data/datasource/remote/exception/api_error_handler.dart';
 import 'package:flutter_sixvalley_ecommerce/data/model/api_response.dart';
 import 'package:flutter_sixvalley_ecommerce/features/search_product/domain/repositories/search_product_repository_interface.dart';
+import 'package:flutter_sixvalley_ecommerce/services/storage_service.dart';
 import 'package:flutter_sixvalley_ecommerce/utill/app_constants.dart';
-import 'package:shared_preferences/shared_preferences.dart';
 
 class SearchProductRepository implements SearchProductRepositoryInterface{
   final DioClient? dioClient;
-  final SharedPreferences? sharedPreferences;
-  SearchProductRepository({required this.dioClient, required this.sharedPreferences});
+  final StorageService storageService;
+  SearchProductRepository({required this.dioClient, required this.storageService});
 
   @override
   Future<ApiResponseModel> getSearchProductList(String query, String? categoryIds, String? brandIds, String? sort, String? priceMin, String? priceMax, int offset, String? productType) async {
@@ -53,11 +53,11 @@ class SearchProductRepository implements SearchProductRepositoryInterface{
   @override
   Future<void> saveSearchProductName(String searchAddress) async {
     try {
-      List<String> searchKeywordList = sharedPreferences!.getStringList(AppConstants.searchProductName)??[];
+      List<String> searchKeywordList = storageService.getStringList(AppConstants.searchProductName) ?? [];
       if (!searchKeywordList.contains(searchAddress)) {
         searchKeywordList.add(searchAddress);
       }
-      await sharedPreferences!.setStringList(AppConstants.searchProductName, searchKeywordList);
+      await storageService.setStringList(AppConstants.searchProductName, searchKeywordList);
     } catch (e) {
       rethrow;
     }
@@ -65,12 +65,13 @@ class SearchProductRepository implements SearchProductRepositoryInterface{
 
   @override
   List<String> getSavedSearchProductName() {
-    return sharedPreferences!.getStringList(AppConstants.searchProductName) ?? [];
+    return storageService.getStringList(AppConstants.searchProductName) ?? [];
   }
 
   @override
   Future<bool> clearSavedSearchProductName() async {
-    return sharedPreferences!.setStringList(AppConstants.searchProductName, []);
+    await storageService.setStringList(AppConstants.searchProductName, []);
+    return true;
   }
 
   @override

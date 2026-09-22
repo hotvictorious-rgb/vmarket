@@ -12,8 +12,8 @@ import 'package:flutter_sixvalley_ecommerce/helper/api_checker.dart';
 import 'package:flutter_sixvalley_ecommerce/features/product/enums/product_type.dart';
 import 'package:flutter_sixvalley_ecommerce/helper/data_sync_helper.dart';
 import 'package:flutter_sixvalley_ecommerce/main.dart';
-import 'package:flutter_sixvalley_ecommerce/features/product_details/domain/models/product_details_model.dart';
-import 'package:shared_preferences/shared_preferences.dart';
+import 'package:flutter_sixvalley_ecommerce/di_container.dart';
+import 'package:flutter_sixvalley_ecommerce/services/storage_service.dart';
 
 class ProductController extends ChangeNotifier {
   final ProductServiceInterface? productServiceInterface;
@@ -699,9 +699,9 @@ class ProductController extends ChangeNotifier {
       }
       notifyListeners();
 
-      final sp = await SharedPreferences.getInstance();
+      final storage = sl<StorageService>();
       final listJson = _recentlyViewedProducts.map((p) => jsonEncode(p.toJson())).toList();
-      await sp.setStringList('recently_viewed_products', listJson);
+      await storage.setStringList('recently_viewed_products', listJson);
     } catch (e) {
       debugPrint('Error saving recently viewed product: $e');
     }
@@ -709,8 +709,8 @@ class ProductController extends ChangeNotifier {
 
   Future<void> loadRecentlyViewedProducts() async {
     try {
-      final sp = await SharedPreferences.getInstance();
-      final listJson = sp.getStringList('recently_viewed_products');
+      final storage = sl<StorageService>();
+      final listJson = storage.getStringList('recently_viewed_products');
       if (listJson != null && listJson.isNotEmpty) {
         _recentlyViewedProducts = listJson.map((item) => Product.fromJson(jsonDecode(item))).toList();
         notifyListeners();

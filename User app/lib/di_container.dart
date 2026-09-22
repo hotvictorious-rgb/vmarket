@@ -48,21 +48,7 @@ import 'package:flutter_sixvalley_ecommerce/features/contact_us/domain/repositor
 import 'package:flutter_sixvalley_ecommerce/features/contact_us/domain/repository/contact_us_repository_interface.dart';
 import 'package:flutter_sixvalley_ecommerce/features/contact_us/domain/services/contact_us_service.dart';
 import 'package:flutter_sixvalley_ecommerce/features/contact_us/domain/services/contact_us_service_interface.dart';
-import 'package:flutter_sixvalley_ecommerce/features/coupon/domain/repositories/coupon_repository.dart';
-import 'package:flutter_sixvalley_ecommerce/features/coupon/domain/repositories/coupon_repository_interface.dart';
-import 'package:flutter_sixvalley_ecommerce/features/coupon/domain/services/coupon_service.dart';
-import 'package:flutter_sixvalley_ecommerce/features/coupon/domain/services/coupon_service_interface.dart';
 import 'package:flutter_sixvalley_ecommerce/features/address/domain/repositories/address_repository.dart';
-import 'package:flutter_sixvalley_ecommerce/features/deal/controllers/featured_deal_controller.dart';
-import 'package:flutter_sixvalley_ecommerce/features/deal/controllers/flash_deal_controller.dart';
-import 'package:flutter_sixvalley_ecommerce/features/deal/domain/repositories/featured_deal_repository.dart';
-import 'package:flutter_sixvalley_ecommerce/features/deal/domain/repositories/featured_deal_repository_interface.dart';
-import 'package:flutter_sixvalley_ecommerce/features/deal/domain/repositories/flash_deal_repository.dart';
-import 'package:flutter_sixvalley_ecommerce/features/deal/domain/repositories/flash_deal_repository_interface.dart';
-import 'package:flutter_sixvalley_ecommerce/features/deal/domain/services/featured_deal_service.dart';
-import 'package:flutter_sixvalley_ecommerce/features/deal/domain/services/featured_deal_service_interface.dart';
-import 'package:flutter_sixvalley_ecommerce/features/deal/domain/services/flash_deal_service.dart';
-import 'package:flutter_sixvalley_ecommerce/features/deal/domain/services/flash_deal_service_interface.dart';
 import 'package:flutter_sixvalley_ecommerce/features/location/controllers/location_controller.dart';
 import 'package:flutter_sixvalley_ecommerce/features/location/domain/repositories/location_repository.dart';
 import 'package:flutter_sixvalley_ecommerce/features/location/domain/repositories/location_repository_interface.dart';
@@ -119,11 +105,6 @@ import 'package:flutter_sixvalley_ecommerce/features/reorder/domain/repositories
 import 'package:flutter_sixvalley_ecommerce/features/reorder/domain/repositories/re_order_repository_interface.dart';
 import 'package:flutter_sixvalley_ecommerce/features/reorder/domain/services/re_order_service.dart';
 import 'package:flutter_sixvalley_ecommerce/features/reorder/domain/services/re_order_service_interface.dart';
-import 'package:flutter_sixvalley_ecommerce/features/restock/controllers/restock_controller.dart';
-import 'package:flutter_sixvalley_ecommerce/features/restock/domain/repositories/restock_repository.dart';
-import 'package:flutter_sixvalley_ecommerce/features/restock/domain/repositories/restock_repository_interface.dart';
-import 'package:flutter_sixvalley_ecommerce/features/restock/domain/services/restock_service.dart';
-import 'package:flutter_sixvalley_ecommerce/features/restock/domain/services/restock_service_interface.dart';
 import 'package:flutter_sixvalley_ecommerce/features/review/controllers/review_controller.dart';
 import 'package:flutter_sixvalley_ecommerce/features/review/domain/repositories/review_repository.dart';
 import 'package:flutter_sixvalley_ecommerce/features/review/domain/repositories/review_repository_interface.dart';
@@ -161,7 +142,6 @@ import 'package:flutter_sixvalley_ecommerce/features/auth/controllers/auth_contr
 import 'package:flutter_sixvalley_ecommerce/features/brand/controllers/brand_controller.dart';
 import 'package:flutter_sixvalley_ecommerce/features/cart/controllers/cart_controller.dart';
 import 'package:flutter_sixvalley_ecommerce/features/category/controllers/category_controller.dart';
-import 'package:flutter_sixvalley_ecommerce/features/coupon/controllers/coupon_controller.dart';
 import 'package:flutter_sixvalley_ecommerce/localization/controllers/localization_controller.dart';
 import 'package:flutter_sixvalley_ecommerce/features/address/controllers/address_controller.dart';
 import 'package:flutter_sixvalley_ecommerce/features/search_product/controllers/search_product_controller.dart';
@@ -169,7 +149,7 @@ import 'package:flutter_sixvalley_ecommerce/features/shop/controllers/shop_contr
 import 'package:flutter_sixvalley_ecommerce/theme/controllers/theme_controller.dart';
 import 'package:flutter_sixvalley_ecommerce/utill/app_constants.dart';
 import 'package:get_it/get_it.dart';
-import 'package:shared_preferences/shared_preferences.dart';
+import 'package:flutter_sixvalley_ecommerce/services/storage_service.dart';
 import 'data/datasource/remote/dio/logging_interceptor.dart';
 
 import 'features/search_product/domain/repositories/search_product_repository.dart';
@@ -178,50 +158,45 @@ final sl = GetIt.instance;
 
 Future<void> init() async {
   // Core
-  final sharedPreferences = await SharedPreferences.getInstance();
-  sl.registerLazySingleton(() => sharedPreferences);
   const secureStorage = FlutterSecureStorage();
   sl.registerLazySingleton(() => secureStorage);
+  final storageService = StorageService(secureStorage: secureStorage);
+  await storageService.init();
+  sl.registerLazySingleton(() => storageService);
 
-  // [AI] Pre-load secure token asynchronously on startup to prevent boot race condition
-  String? secureToken = await secureStorage.read(key: AppConstants.userLoginToken);
-  if (secureToken == null) {
-    secureToken = sharedPreferences.getString(AppConstants.userLoginToken);
-  }
+  // [AI] Pre-load secure token synchronously from unified storage cache on startup
+  String? secureToken = storageService.getString(AppConstants.userLoginToken);
 
   sl.registerLazySingleton(() => Dio());
   sl.registerLazySingleton(() => LoggingInterceptor());
   sl.registerLazySingleton(() => Connectivity());
   sl.registerLazySingleton(() => NetworkInfo(sl()));
-  sl.registerLazySingleton(() => DioClient(AppConstants.baseUrl, sl(), loggingInterceptor: sl(), sharedPreferences: sl(), token: secureToken));
+  sl.registerLazySingleton(() => DioClient(AppConstants.baseUrl, sl(), loggingInterceptor: sl(), storageService: sl(), token: secureToken));
 
 
-  DataSyncRepoInterface dataSyncRepoInterface = DataSyncRepo(dioClient: sl(), sharedPreferences: sl());
+  DataSyncRepoInterface dataSyncRepoInterface = DataSyncRepo(dioClient: sl(), storageService: sl());
   sl.registerLazySingleton(() => dataSyncRepoInterface);
   DataSyncServiceInterface dataSyncServiceInterface = DataSyncService(dataSyncRepoInterface: sl());
   sl.registerLazySingleton(() => dataSyncServiceInterface);
 
 
   // Repository
-  sl.registerLazySingleton(() => DataSyncRepo(dioClient: sl(), sharedPreferences: sl()));
+  sl.registerLazySingleton(() => DataSyncRepo(dioClient: sl(), storageService: sl()));
   sl.registerLazySingleton(() => CategoryRepository(dioClient: sl(), dataSyncRepoInterface: sl()));
-  sl.registerLazySingleton(() => FlashDealRepository(dioClient: sl()));
-  sl.registerLazySingleton(() => FeaturedDealRepository(dioClient: sl(), dataSyncRepoInterface: sl()));
   sl.registerLazySingleton(() => BrandRepository(dioClient: sl(), dataSyncRepoInterface: sl()));
   sl.registerLazySingleton(() => ProductRepository(dioClient: sl(), dataSyncRepoInterface: sl()));
   sl.registerLazySingleton(() => BannerRepository(dioClient: sl(), dataSyncRepoInterface: sl()));
   sl.registerLazySingleton(() => OnBoardingRepository(dioClient: sl()));
-  sl.registerLazySingleton(() => AuthRepository(dioClient: sl(), sharedPreferences: sl(), secureStorage: sl()));
+  sl.registerLazySingleton(() => AuthRepository(dioClient: sl(), storageService: sl()));
   sl.registerLazySingleton(() => ProductDetailsRepository(dioClient: sl()));
-  sl.registerLazySingleton(() => SearchProductRepository(dioClient: sl(), sharedPreferences: sl()));
+  sl.registerLazySingleton(() => SearchProductRepository(dioClient: sl(), storageService: sl()));
   sl.registerLazySingleton(() => OrderRepository(dioClient: sl()));
   sl.registerLazySingleton(() => ShopRepository(dioClient: sl(), dataSyncRepoInterface: sl()));
-  sl.registerLazySingleton(() => CouponRepository(dioClient: sl()));
   sl.registerLazySingleton(() => NotificationRepository(dioClient: sl()));
-  sl.registerLazySingleton(() => ProfileRepository(dioClient: sl(), sharedPreferences: sl()));
+  sl.registerLazySingleton(() => ProfileRepository(dioClient: sl()));
   sl.registerLazySingleton(() => WishListRepository(dioClient: sl()));
   sl.registerLazySingleton(() => CartRepository(dioClient: sl(), dataSyncRepoInterface: sl()));
-  sl.registerLazySingleton(() => SplashRepository(sharedPreferences: sl(), dioClient: sl()));
+  sl.registerLazySingleton(() => SplashRepository(storageService: sl(), dioClient: sl()));
   sl.registerLazySingleton(() => SupportTicketRepository(dioClient: sl()));
   sl.registerLazySingleton(() => AddressRepository(dioClient: sl()));
 
@@ -233,14 +208,11 @@ Future<void> init() async {
   sl.registerLazySingleton(() => OrderDetailsRepository(dioClient: sl()));
   sl.registerLazySingleton(() => RefundRepository(dioClient: sl()));
   sl.registerLazySingleton(() => ReOrderRepository(dioClient: sl()));
-  sl.registerLazySingleton(() => RestockRepository(dioClient: sl()));
 
 
   // Provider
   sl.registerFactory(() => CategoryController(categoryServiceInterface: sl()));
   sl.registerFactory(() => ShopController(shopServiceInterface: sl()));
-  sl.registerFactory(() => FlashDealController(flashDealServiceInterface: sl()));
-  sl.registerFactory(() => FeaturedDealController(featuredDealServiceInterface: sl()));
   sl.registerFactory(() => BrandController(brandRepo: sl()));
   sl.registerFactory(() => ProductController(productServiceInterface: sl()));
   sl.registerFactory(() => BannerController(bannerServiceInterface: sl()));
@@ -249,15 +221,14 @@ Future<void> init() async {
   sl.registerFactory(() => ProductDetailsController(productDetailsServiceInterface: sl()));
   sl.registerFactory(() => SearchProductController(searchProductServiceInterface: sl()));
   sl.registerFactory(() => OrderController(orderServiceInterface: sl()));
-  sl.registerFactory(() => CouponController(couponRepo: sl()));
   sl.registerFactory(() => NotificationController(notificationServiceInterface: sl()));
   sl.registerFactory(() => ProfileController(profileServiceInterface: sl()));
   sl.registerFactory(() => WishListController(wishlistServiceInterface: sl()));
   sl.registerFactory(() => SplashController(splashServiceInterface: sl()));
   sl.registerFactory(() => CartController(cartServiceInterface: sl()));
   sl.registerFactory(() => SupportTicketController(supportTicketServiceInterface: sl()));
-  sl.registerFactory(() => LocalizationController(sharedPreferences: sl(), dioClient: sl()));
-  sl.registerFactory(() => ThemeController(sharedPreferences: sl()));
+  sl.registerFactory(() => LocalizationController(storageService: sl(), dioClient: sl()));
+  sl.registerFactory(() => ThemeController(storageService: sl()));
   sl.registerFactory(() => GoogleSignInController());
   sl.registerFactory(() => FacebookLoginController());
   sl.registerFactory(() => AddressController(addressServiceInterface: sl()));
@@ -275,7 +246,6 @@ Future<void> init() async {
   sl.registerFactory(() => OrderDetailsController(orderDetailsServiceInterface: sl()));
   sl.registerFactory(() => RefundController(refundServiceInterface: sl()));
   sl.registerFactory(() => ReOrderController(reOrderServiceInterface: sl()));
-  sl.registerFactory(() => RestockController(restockServiceInterface: sl()));
 
   //interface
   AddressRepoInterface addressRepoInterface = AddressRepository(dioClient: sl());
@@ -283,7 +253,7 @@ Future<void> init() async {
   AddressServiceInterface addressServiceInterface = AddressService(addressRepoInterface: sl());
   sl.registerLazySingleton(() => addressServiceInterface);
 
-  AuthRepoInterface authRepoInterface = AuthRepository(dioClient: sl(), sharedPreferences: sl(), secureStorage: sl());
+  AuthRepoInterface authRepoInterface = AuthRepository(dioClient: sl(), storageService: sl());
   sl.registerLazySingleton(() => authRepoInterface);
   AuthServiceInterface authServiceInterface = AuthService(authRepoInterface: sl());
   sl.registerLazySingleton(() => authServiceInterface);
@@ -326,23 +296,6 @@ Future<void> init() async {
   sl.registerLazySingleton(() => contactUsRepositoryInterface);
   ContactUsServiceInterface contactUsServiceInterface = ContactUsService(contactUsRepositoryInterface: sl());
   sl.registerLazySingleton(() => contactUsServiceInterface);
-
-  CouponRepositoryInterface couponRepositoryInterface = CouponRepository(dioClient: sl());
-  sl.registerLazySingleton(() => couponRepositoryInterface);
-  CouponServiceInterface couponServiceInterface = CouponService(couponRepositoryInterface: sl());
-  sl.registerLazySingleton(() => couponServiceInterface);
-
-
-  FlashDealRepositoryInterface flashDealRepositoryInterface = FlashDealRepository(dioClient: sl());
-  sl.registerLazySingleton(() => flashDealRepositoryInterface);
-  FlashDealServiceInterface flashDealServiceInterface = FlashDealService(flashDealRepositoryInterface: sl());
-  sl.registerLazySingleton(() => flashDealServiceInterface);
-
-
-  FeaturedDealRepositoryInterface featuredDealRepositoryInterface = FeaturedDealRepository(dioClient: sl(), dataSyncRepoInterface: sl());
-  sl.registerLazySingleton(() => featuredDealRepositoryInterface);
-  FeaturedDealServiceInterface featuredDealServiceInterface = FeaturedDealService(featuredDealRepositoryInterface: sl());
-  sl.registerLazySingleton(() => featuredDealServiceInterface);
 
   LocationRepositoryInterface locationRepositoryInterface = LocationRepository(dioClient: sl());
   sl.registerLazySingleton(() => locationRepositoryInterface);
@@ -408,12 +361,12 @@ Future<void> init() async {
   ProductServiceInterface productServiceInterface = ProductService(productRepositoryInterface: sl());
   sl.registerLazySingleton(() => productServiceInterface);
 
-  ProfileRepositoryInterface profileRepositoryInterface = ProfileRepository(dioClient: sl(), sharedPreferences: sl());
+  ProfileRepositoryInterface profileRepositoryInterface = ProfileRepository(dioClient: sl());
   sl.registerLazySingleton(() => profileRepositoryInterface);
   ProfileServiceInterface profileServiceInterface = ProfileService(profileRepositoryInterface: sl());
   sl.registerLazySingleton(() => profileServiceInterface);
 
-  SplashRepositoryInterface splashRepositoryInterface = SplashRepository(dioClient: sl(), sharedPreferences: sl());
+  SplashRepositoryInterface splashRepositoryInterface = SplashRepository(dioClient: sl(), storageService: sl());
   sl.registerLazySingleton(() => splashRepositoryInterface);
   SplashServiceInterface splashServiceInterface = SplashService(splashRepositoryInterface: sl());
   sl.registerLazySingleton(() => splashServiceInterface);
@@ -429,18 +382,12 @@ Future<void> init() async {
   sl.registerLazySingleton(() => wishlistServiceInterface);
 
 
-  SearchProductRepositoryInterface searchProductRepositoryInterface = SearchProductRepository(dioClient: sl(), sharedPreferences: sl());
+  SearchProductRepositoryInterface searchProductRepositoryInterface = SearchProductRepository(dioClient: sl(), storageService: sl());
   sl.registerLazySingleton(() => searchProductRepositoryInterface);
   SearchProductServiceInterface searchProductServiceInterface = SearchProductService(searchProductRepositoryInterface: sl());
   sl.registerLazySingleton(() => searchProductServiceInterface);
 
-
-  RestockRepositoryInterface restockRepositoryInterface = RestockRepository(dioClient: sl());
-  sl.registerLazySingleton(() => restockRepositoryInterface);
-  RestockServiceInterface restockServiceInterface = RestockService(restockRepositoryInterface: sl());
-  sl.registerLazySingleton(() => restockServiceInterface);
-
-  // DataSyncRepoInterface dataSyncRepoInterface = DataSyncRepo(dioClient: sl(), sharedPreferences: sl());
+  // DataSyncRepoInterface dataSyncRepoInterface = DataSyncRepo(dioClient: sl(), storageService: sl());
   // sl.registerLazySingleton(() => dataSyncRepoInterface);
   // DataSyncServiceInterface dataSyncServiceInterface = DataSyncService(dataSyncRepoInterface: sl());
   // sl.registerLazySingleton(() => dataSyncServiceInterface);
@@ -459,9 +406,6 @@ Future<void> init() async {
   sl.registerLazySingleton(() => CheckoutService(checkoutRepositoryInterface : sl()));
 
   sl.registerLazySingleton(() => ContactUsService(contactUsRepositoryInterface : sl()));
-  sl.registerLazySingleton(() => CouponService(couponRepositoryInterface : sl()));
-  sl.registerLazySingleton(() => FlashDealService(flashDealRepositoryInterface : sl()));
-  sl.registerLazySingleton(() => FeaturedDealService(featuredDealRepositoryInterface : sl()));
   sl.registerLazySingleton(() => LocationService(locationRepoInterface : sl()));
 
   sl.registerLazySingleton(() => NotificationService(notificationRepositoryInterface : sl()));
@@ -480,5 +424,4 @@ Future<void> init() async {
   sl.registerLazySingleton(() => SupportTicketService(supportTicketRepositoryInterface : sl()));
   sl.registerLazySingleton(() => WishListService(wishListRepositoryInterface : sl()));
   sl.registerLazySingleton(() => SearchProductService(searchProductRepositoryInterface : sl()));
-  sl.registerLazySingleton(() => RestockService(restockRepositoryInterface : sl()));
 }

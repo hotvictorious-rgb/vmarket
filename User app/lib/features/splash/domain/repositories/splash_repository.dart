@@ -2,13 +2,13 @@ import 'package:flutter_sixvalley_ecommerce/data/datasource/remote/dio/dio_clien
 import 'package:flutter_sixvalley_ecommerce/data/datasource/remote/exception/api_error_handler.dart';
 import 'package:flutter_sixvalley_ecommerce/data/model/api_response.dart';
 import 'package:flutter_sixvalley_ecommerce/features/splash/domain/repositories/splash_repository_interface.dart';
+import 'package:flutter_sixvalley_ecommerce/services/storage_service.dart';
 import 'package:flutter_sixvalley_ecommerce/utill/app_constants.dart';
-import 'package:shared_preferences/shared_preferences.dart';
 
 class SplashRepository implements SplashRepositoryInterface{
   final DioClient? dioClient;
-  final SharedPreferences? sharedPreferences;
-  SplashRepository({required this.dioClient, required this.sharedPreferences});
+  final StorageService storageService;
+  SplashRepository({required this.dioClient, required this.storageService});
 
   @override
   Future<ApiResponseModel> getConfig() async {
@@ -33,32 +33,32 @@ class SplashRepository implements SplashRepositoryInterface{
 
   @override
   void initSharedData() async {
-    if (!sharedPreferences!.containsKey(AppConstants.intro)) {
-      sharedPreferences!.setBool(AppConstants.intro, true);
+    if (!storageService.containsKey(AppConstants.intro)) {
+      await storageService.setBool(AppConstants.intro, true);
     }
-    if(!sharedPreferences!.containsKey(AppConstants.currency)) {
-      sharedPreferences!.setString(AppConstants.currency, '');
+    if(!storageService.containsKey(AppConstants.currency)) {
+      await storageService.setString(AppConstants.currency, '');
     }
   }
 
   @override
   String getCurrency() {
-    return sharedPreferences!.getString(AppConstants.currency) ?? '';
+    return storageService.getString(AppConstants.currency) ?? '';
   }
 
   @override
   void setCurrency(String currencyCode) {
-    sharedPreferences!.setString(AppConstants.currency, currencyCode);
+    storageService.setString(AppConstants.currency, currencyCode);
   }
 
   @override
   void disableIntro() {
-    sharedPreferences!.setBool(AppConstants.intro, false);
+    storageService.setBool(AppConstants.intro, false);
   }
 
   @override
   bool? showIntro() {
-    return sharedPreferences!.getBool(AppConstants.intro);
+    return storageService.getBool(AppConstants.intro);
   }
 
   @override
