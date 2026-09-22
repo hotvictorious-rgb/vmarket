@@ -115,6 +115,14 @@ class Order extends Model
         'seller_id',
         'seller_is',
         'shipping_address_data',
+        'origin_lga_id',
+        'origin_lga_name',
+        'origin_state_name',
+        'destination_lga_id',
+        'destination_lga_name',
+        'destination_state_name',
+        'authoritative_delivery_fee',
+        'estimated_delivery_time',
         'delivery_man_id',
         'deliveryman_assigned_at',
         'deliveryman_charge',
@@ -220,7 +228,15 @@ class Order extends Model
         'delivery_type' => 'string',
         'delivery_service_name' => 'string',
         'third_party_delivery_tracking_id' => 'string',
-        'edited_status' => 'integer'
+        'edited_status' => 'integer',
+        'origin_lga_id' => 'integer',
+        'origin_lga_name' => 'string',
+        'origin_state_name' => 'string',
+        'destination_lga_id' => 'integer',
+        'destination_lga_name' => 'string',
+        'destination_state_name' => 'string',
+        'authoritative_delivery_fee' => 'float',
+        'estimated_delivery_time' => 'string',
     ];
 
     /**

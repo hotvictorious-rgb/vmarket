@@ -9,7 +9,9 @@ use App\Models\Cart;
 use App\Models\CartShipping;
 use App\Models\CashbackRedemption;
 use App\Models\CheckoutIntent;
+use App\Models\DeliveryLane;
 use App\Models\Product;
+use App\Models\Shop;
 use App\Models\ShippingAddress;
 use App\Models\User;
 use Illuminate\Database\QueryException;
@@ -119,6 +121,20 @@ class DeliveryCheckoutIntentService
             return ($item->seller_is === 'admin' ? 'admin' : 'seller') . '_' . ($item->seller_id ?? 1);
         });
 
+        // Fetch canonical geography for destination address once
+        $shippingAddressEntity = null;
+        if (is_int($shippingAddress)) {
+            $shippingAddressEntity = ShippingAddress::find($shippingAddress);
+        } elseif ($shippingAddress instanceof ShippingAddress) {
+            $shippingAddressEntity = $shippingAddress;
+        }
+
+        // Get destination LGA ID if address exists and has canonical geography
+        $destinationLgaId = null;
+        if ($shippingAddressEntity && $shippingAddressEntity->lga_id) {
+            $destinationLgaId = $shippingAddressEntity->lga_id;
+        }
+
         foreach ($groupedBySeller as $groupKey => $items) {
             $first = $items->first();
             $sellerId = (int) ($first->seller_id ?? 1);
@@ -158,12 +174,51 @@ class DeliveryCheckoutIntentService
                 ];
             }
 
-            // Resolve shipping method and cost for this vendor group
+            // Resolve shipping method, canonical geography, and cost for this vendor group
             $cartShipping = CartShipping::where('cart_group_id', $cartGroupId)->first();
             $shippingMethodId = $cartShipping ? (int) $cartShipping->shipping_method_id : 0;
-            $shippingCost = $cartShipping 
-                ? $this->toDecimalString($cartShipping->shipping_cost ?? '0.00') 
-                : $this->toDecimalString($first->shipping_cost ?? '0.00');
+
+            // Resolve Shop and Canonical Geography
+            $shop = null;
+            if ($sellerIs === 'seller') {
+                $shop = Shop::where('seller_id', $sellerId)->first();
+            } else {
+                // In-house / Admin shop
+                $shop = Shop::where('seller_id', 0)->orWhere('author_type', 'admin')->first();
+            }
+
+            $originLgaId = $shop ? $shop->lga_id : null;
+            $originLgaName = $shop && $shop->lga ? $shop->lga->name : null;
+            $originStateName = $shop && $shop->state ? $shop->state->name : null;
+
+            $destinationLgaName = $shippingAddressEntity && $shippingAddressEntity->canonicalLga
+                ? $shippingAddressEntity->canonicalLga->name
+                : null;
+            $destinationStateName = $shippingAddressEntity && $shippingAddressEntity->canonicalState
+                ? $shippingAddressEntity->canonicalState->name
+                : null;
+
+            // Authoritative delivery fee from DeliveryLane if canonical LGAs are present
+            $laneFee = null;
+            $laneEstimatedTime = null;
+            if ($originLgaId && $destinationLgaId) {
+                $lane = DeliveryLane::findLane($originLgaId, $destinationLgaId);
+                if ($lane) {
+                    $laneFee = (string) $lane->delivery_fee;
+                    $laneEstimatedTime = $lane->estimated_delivery_time;
+                    $shippingCost = $this->toDecimalString($laneFee);
+                } else {
+                    $origStr = $originLgaName ?: "LGA #{$originLgaId}";
+                    $destStr = $destinationLgaName ?: "LGA #{$destinationLgaId}";
+                    $shopStr = $shop ? $shop->name : "Vendor #{$sellerId}";
+                    throw new InvalidCartException("Delivery is currently unavailable from {$origStr} to {$destStr} for '{$shopStr}'. No active delivery route exists.");
+                }
+            } else {
+                // Fallback to legacy cart shipping cost during migration if address or shop lacks canonical LGA
+                $shippingCost = $cartShipping
+                    ? $this->toDecimalString($cartShipping->shipping_cost ?? '0.00')
+                    : $this->toDecimalString($first->shipping_cost ?? '0.00');
+            }
 
             // Group total = items subtotal + shipping cost
             $groupTotal = bcadd($groupItemsSubtotal, $shippingCost, 2);
@@ -171,6 +226,15 @@ class DeliveryCheckoutIntentService
             $vendorGroups[] = [
                 'seller_id' => $sellerId,
                 'seller_is' => $sellerIs,
+                'shop_id' => $shop ? (int) $shop->id : null,
+                'shop_name' => $shop ? (string) $shop->name : null,
+                'origin_lga_id' => $originLgaId,
+                'origin_lga_name' => $originLgaName,
+                'origin_state_name' => $originStateName,
+                'destination_lga_id' => $destinationLgaId,
+                'destination_lga_name' => $destinationLgaName,
+                'destination_state_name' => $destinationStateName,
+                'estimated_delivery_time' => $laneEstimatedTime,
                 'cart_group_id' => $cartGroupId,
                 'shipping_method_id' => $shippingMethodId,
                 'shipping_cost' => $shippingCost,
@@ -400,6 +464,10 @@ class DeliveryCheckoutIntentService
                 'country' => (string) ($addr->country ?? 'Nigeria'),
                 'latitude' => (string) ($addr->latitude ?? ''),
                 'longitude' => (string) ($addr->longitude ?? ''),
+                // Canonical geography (Phase 10)
+                'lga_id' => $addr->lga_id,
+                'state_id' => $addr->state_id,
+                'country_id' => $addr->country_id,
             ];
         }
 
@@ -420,6 +488,10 @@ class DeliveryCheckoutIntentService
                 'country' => (string) ($addressInput->country ?? 'Nigeria'),
                 'latitude' => (string) ($addressInput->latitude ?? ''),
                 'longitude' => (string) ($addressInput->longitude ?? ''),
+                // Canonical geography (Phase 10)
+                'lga_id' => $addressInput->lga_id,
+                'state_id' => $addressInput->state_id,
+                'country_id' => $addressInput->country_id,
             ];
         }
 

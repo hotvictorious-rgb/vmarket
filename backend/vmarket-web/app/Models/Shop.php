@@ -76,11 +76,22 @@ class Shop extends Model
         'tin_expire_date',
         'tin_certificate',
         'tin_certificate_storage_type',
+        // Canonical geography (Phase 4)
+        'country_id',
+        'state_id',
+        'lga_id',
+        // Legacy geography (kept for backward compatibility)
         'delivery_state_id',
         'delivery_city_id',
         'delivery_hub_id',
         'is_primary_branch',
         'branch_code',
+        // Pickup settings (Phase 7)
+        'pickup_enabled',
+        'pickup_opening_time',
+        'pickup_closing_time',
+        'pickup_preparation_time_minutes',
+        'pickup_instructions',
     ];
 
     protected $appends = ['image_full_url', 'bottom_banner_full_url', 'offer_banner_full_url', 'banner_full_url', 'tin_certificate_full_url'];
@@ -99,6 +110,10 @@ class Shop extends Model
         'setup_guide_app' => 'array',
         'tin_expire_date' => 'date',
         'is_primary_branch' => 'boolean',
+        'pickup_enabled' => 'boolean',
+        'pickup_opening_time' => 'datetime:H:i',
+        'pickup_closing_time' => 'datetime:H:i',
+        'pickup_preparation_time_minutes' => 'integer',
     ];
 
     public function seller(): BelongsTo
@@ -163,6 +178,23 @@ class Shop extends Model
 
 
 
+    // Canonical geography relationships (Phase 4)
+    public function country(): BelongsTo
+    {
+        return $this->belongsTo(Country::class);
+    }
+
+    public function state(): BelongsTo
+    {
+        return $this->belongsTo(State::class);
+    }
+
+    public function lga(): BelongsTo
+    {
+        return $this->belongsTo(Lga::class);
+    }
+
+    // Legacy geography relationships (kept for backward compatibility)
     public function deliveryState(): \Illuminate\Database\Eloquent\Relations\BelongsTo
     {
         return $this->belongsTo(DeliveryState::class, 'delivery_state_id');

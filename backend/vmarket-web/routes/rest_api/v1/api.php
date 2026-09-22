@@ -32,6 +32,7 @@ use App\Http\Controllers\RestAPI\v1\DeliveryHubApiController;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\Customer\PaymentController;
 use App\Http\Controllers\RestAPI\v1\customer\DeliveryCheckoutIntentController;
+use App\Http\Controllers\RestAPI\v1\customer\FulfillmentAvailabilityController;
 
 /*
 |--------------------------------------------------------------------------
@@ -242,6 +243,13 @@ Route::group(['prefix' => 'v1', 'middleware' => ['api_lang']], function () {
                 Route::get('cities/{state_id}', 'getCities');
                 Route::get('hubs/{city_id}', 'getHubs');
                 Route::post('calculate-shipping', 'calculateHubShipping');
+            });
+        });
+
+        Route::group(['prefix' => 'fulfillment'], function () {
+            Route::controller(FulfillmentAvailabilityController::class)->group(function () {
+                Route::post('availability', 'checkAvailability');
+                Route::post('delivery-fee', 'getDeliveryFee');
             });
         });
 

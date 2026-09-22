@@ -43,6 +43,11 @@ class ShippingAddress extends Model
         'contact_person_name',
         'email',
         'address_type',
+        // Canonical geography (Phase 5)
+        'country_id',
+        'state_id',
+        'lga_id',
+        // Text fields (kept for display/history)
         'address',
         'city',
         'zip',
@@ -63,4 +68,24 @@ class ShippingAddress extends Model
         'is_guest' => 'boolean',
         'is_billing' => 'boolean',
     ];
+
+    /**
+     * Canonical geography relationships (Phase 5)
+     *
+     * Customer address LGA = Destination for delivery routing (Origin LGA → Destination LGA)
+     */
+    public function canonicalCountry(): \Illuminate\Database\Eloquent\Relations\BelongsTo
+    {
+        return $this->belongsTo(Country::class, 'country_id');
+    }
+
+    public function canonicalState(): \Illuminate\Database\Eloquent\Relations\BelongsTo
+    {
+        return $this->belongsTo(State::class, 'state_id');
+    }
+
+    public function canonicalLga(): \Illuminate\Database\Eloquent\Relations\BelongsTo
+    {
+        return $this->belongsTo(Lga::class, 'lga_id');
+    }
 }

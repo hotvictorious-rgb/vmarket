@@ -466,6 +466,16 @@ class DeliveryOrderSettlementService
             $adminCommission = bcadd($rawCommission, '0', 2);
             $sellerAmount = bcsub($subtotal, $adminCommission, 2);
 
+            // [AI] Phase 11: Extract canonical geography snapshot from vendor group
+            $originLgaId = $vendor['origin_lga_id'] ?? null;
+            $originLgaName = $vendor['origin_lga_name'] ?? null;
+            $originStateName = $vendor['origin_state_name'] ?? null;
+            $destinationLgaId = $vendor['destination_lga_id'] ?? null;
+            $destinationLgaName = $vendor['destination_lga_name'] ?? null;
+            $destinationStateName = $vendor['destination_state_name'] ?? null;
+            $authoritativeFee = isset($vendor['shipping_cost']) ? bcadd((string) $vendor['shipping_cost'], '0', 4) : null;
+            $estimatedTime = $vendor['estimated_delivery_time'] ?? null;
+
             $ordersData = [
                 'id' => $orderId,
                 'verification_code' => $verificationCode,
@@ -500,6 +510,14 @@ class DeliveryOrderSettlementService
                 'shipping_responsibility' => 'inhouse_shipping',
                 'shipping_cost' => $shippingCost,
                 'shipping_method_id' => (int) ($vendor['shipping_method_id'] ?? 0),
+                'origin_lga_id' => $originLgaId,
+                'origin_lga_name' => $originLgaName,
+                'origin_state_name' => $originStateName,
+                'destination_lga_id' => $destinationLgaId,
+                'destination_lga_name' => $destinationLgaName,
+                'destination_state_name' => $destinationStateName,
+                'authoritative_delivery_fee' => $authoritativeFee,
+                'estimated_delivery_time' => $estimatedTime,
                 'created_at' => now(),
                 'updated_at' => now(),
             ];
