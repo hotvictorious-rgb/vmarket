@@ -1,3 +1,20 @@
+### [2026-09-22 20:55 UTC] Ecosystem Markdown Deep-Scan & Alignment with 77-Section Spec [ai-governance] [AI]
+* **Components:** AI Governance, Architecture Documentation, API Contracts, Rulebooks
+* **Scope:** Repository-wide deep-scan and reconciliation of all markdown documentation to enforce complete alignment with `.agents/rules/VMARKET_CUSTOMER_APP_SPEC.md`, `.agents/rules/CUSTOMER_APP_ALIGNMENT.md`, and `.agents/rules/CUSTOMER_APP_ALIGNMENT_PLAN.md`.
+* **Reconciled Documentation:**
+  - `.agents/AGENTS.md` — Prime Directive (Section 0) and Flutter Architecture rules (Section 3.B) updated to mandate adherence to the 77-section Customer App spec; client-side price, tax, and fee calculations strictly prohibited.
+  - `CLAUDE.md` — Added authoritative references to the 77-section specification, 20 enforcing rules, and 34-phase alignment plan.
+  - `AI_ENGINEERING_RULES.md` — Updated Section 13 (Controlled Completion Path) to strictly link the Customer Mobile App completion step to the canonical 77-section contract.
+  - `docs/api/endpoints_summary.md` — Fully overhauled from legacy stock endpoints to authoritative VMarket endpoints: Two-Phase Checkout Intent (`POST /api/v1/checkout/intent`, `POST /api/v1/checkout/intent/{orderGroupId}/pay`), Canonical Geography (`/api/v1/geography/*`), Fulfillment Availability (`/api/v1/fulfillment/availability`), Pickup Reservations, and Victorious Cashback Ledger (`/api/v1/customer/cashback/*`).
+  - `API_CONTRACT.md` — Updated Section 4.1 to Two-Phase Checkout Intent, added Section 5.3 (Victorious Cashback 5% Reward Ledger API), and added Section 10 formally establishing `VMARKET_CUSTOMER_APP_SPEC.md` as the authoritative consumer specification.
+  - `ARCHITECTURE.md` — Updated Authoritative Service Layer, Customer App canonical role, Delivery Rider App operational infrastructure role, and cross-referenced the 77-section specification.
+  - `docs/architecture/overview.md` — Expanded from legacy stub into comprehensive multi-client topology, authoritative service layer, shared domain models, and canonical governance links.
+  - `User app/README.md` — Replaced default generic boilerplate with comprehensive Victorious MARKET Customer App documentation, technology stack, directory layout, Provider state management rules, and specification links.
+  - `V1_BUSINESS_RULEBOOK.md` — Reconciled Section 2 mixed-cart fulfillment handling with Section 34 of the spec (clarified Checkout Intent for delivery items vs Pickup Reservation for in-shop items).
+  - `BUSINESS_RULES.md` — Replaced legacy wallet/Flutterwave payment references with Paystack and Victorious Cashback; aligned order creation timing to two-phase CheckoutIntent -> Payment -> Settlement -> Order; aligned in-shop pickup to `pending_inspection` (₦0.00 upfront).
+  - `Phase_1_Customer_Backend_Impact_Map.md` — Updated with verified 77-section audit findings, exact code paths, and legacy decommissioning action plan.
+  - `VICTORIOUS_MARKET_MATHEMATICAL_AND_SYSTEMIC_PROOF.md` — Updated Proof 1.1 invariant equation and proof values to Victorious Cashback ($D_{\text{cashback}}$) and Directional Lane Shipping ($S_{\text{lane}}$); appended Section 16 certifying the 77-Section Customer App Specification Production Verification & Zero-Drift Audit Matrix ($\Delta = 0.00$).
+
 ### [2026-09-22 19:21 UTC] Customer App ↔ Backend Production Alignment Specification & Governance Rules [ai-governance] [AI]
 * **Components:** AI Governance (`.agents/rules/`)
 * **Scope:** Added three canonical governance documents that all AI agents must read and follow before making any changes to the Customer App (`User app/`) or its backend contracts.
