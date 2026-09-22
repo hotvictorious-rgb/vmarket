@@ -400,36 +400,21 @@ class CartScreenState extends State<CartScreen> with AutomaticKeepAliveClientMix
                                     _scrollToSeller(requiredMinOrderQtyCart.sellerIndex);
                                     await Future.delayed(const Duration(milliseconds: 900));
                                     changeColor();
-                                  } else if(hasNull && configProvider.configModel!.shippingMethod == 'sellerwise_shipping') {
-                                    showCustomSnackBarWidget(
-                                        '${getTranslated('select_all_shipping_method', context)} ${getTranslated('for', Get.context!)} ${requiredShippingCartModel?.sellerCart.sellerIs == 'admin' ? Provider.of<SplashController>(context, listen: false).configModel?.inHouseShop?.name : requiredShippingCartModel?.sellerCart.shop?.name}',
-                                        Get.context!, snackBarType: SnackBarType.warning);
-
-                                    _scrollToSeller(requiredShippingCartModel?.sellerIndex);
-                                    await Future.delayed(const Duration(milliseconds: 900));
-                                    changeColor();
-                                  } else if(shippingController.chosenShippingList.isEmpty &&
-                                      configProvider.configModel!.shippingMethod !='sellerwise_shipping' &&
-                                      configProvider.configModel!.inhouseSelectedShippingType =='order_wise') {
-                                    showCustomSnackBarWidget(getTranslated('select_shipping_method', context), Get.context!, snackBarType: SnackBarType.warning);
-
-                                    showModalBottomSheet(
-                                        context: context, isScrollControlled: true, backgroundColor: Colors.transparent,
-                                        builder: (context) => const ShippingMethodBottomSheetWidget(groupId: 'all_cart_group',sellerIndex: 0, sellerId: 1)
-                                    );
-                                  } else {
-                                    RouterHelper.getCheckoutScreenRoute(
-                                      action: RouteAction.push,
-                                      cartList: cartList,
-                                      fromProductDetails: false,
-                                      totalOrderAmount: amount,
-                                      shippingFee: shippingAmount-freeDeliveryAmountDiscount,
-                                      discount: discount,
-                                      tax: tax,
-                                      sellerId: null,
-                                      quantity: totalQuantity,
-                                    );
-                                  }
+                                   } else {
+                                     // [AI] Victorious MARKET V1 (§§ 30-38): Legacy shipping method bottom sheets decoupled.
+                                     // Authoritative directional lane shipping fees and fulfillment availability are computed at checkout based on destination LGA.
+                                     RouterHelper.getCheckoutScreenRoute(
+                                       action: RouteAction.push,
+                                       cartList: cartList,
+                                       fromProductDetails: false,
+                                       totalOrderAmount: amount,
+                                       shippingFee: 0.0,
+                                       discount: discount,
+                                       tax: tax,
+                                       sellerId: null,
+                                       quantity: totalQuantity,
+                                     );
+                                   }
                                 },
                                 child: Container(
                                   height: 48,

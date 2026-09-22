@@ -184,6 +184,71 @@ class _ShippingDetailsWidgetState extends State<ShippingDetailsWidget> {
                               ],
                             ),
                           ),
+                          // [AI] Victorious MARKET V1 (§§ 20-29): Authoritative Directional Lane Fulfillment Status
+                          if (shippingProvider.fulfillmentAvailability != null) ...[
+                            Builder(
+                              builder: (context) {
+                                final options = shippingProvider.fulfillmentAvailability?.data?.fulfillmentOptions;
+                                final delivery = options?.delivery;
+                                final bool isDeliveryAvailable = delivery?.available ?? false;
+                                final String originLga = delivery?.originLga ?? 'Vendor Store';
+                                final String destinationLga = delivery?.destinationLga ?? (locationProvider.addressList![shippingProvider.addressIndex!].lgaName ?? 'Destination LGA');
+                                final double? deliveryFee = delivery?.fee;
+
+                                return Container(
+                                  margin: const EdgeInsets.only(top: 8),
+                                  padding: const EdgeInsets.all(12),
+                                  decoration: BoxDecoration(
+                                    color: isDeliveryAvailable
+                                        ? const Color(0xFF10B981).withValues(alpha: 0.08)
+                                        : const Color(0xFFEF4444).withValues(alpha: 0.08),
+                                    borderRadius: BorderRadius.circular(12),
+                                    border: Border.all(
+                                      color: isDeliveryAvailable
+                                          ? const Color(0xFF10B981).withValues(alpha: 0.25)
+                                          : const Color(0xFFEF4444).withValues(alpha: 0.25),
+                                    ),
+                                  ),
+                                  child: Row(
+                                    children: [
+                                      Icon(
+                                        isDeliveryAvailable ? Icons.local_shipping_rounded : Icons.info_outline_rounded,
+                                        color: isDeliveryAvailable ? const Color(0xFF059669) : const Color(0xFFDC2626),
+                                        size: 20,
+                                      ),
+                                      const SizedBox(width: 8),
+                                      Expanded(
+                                        child: Column(
+                                          crossAxisAlignment: CrossAxisAlignment.start,
+                                          children: [
+                                            Text(
+                                              isDeliveryAvailable
+                                                  ? 'Verified Delivery Lane: $originLga → $destinationLga'
+                                                  : 'Delivery Unavailable to $destinationLga',
+                                              style: textMedium.copyWith(
+                                                fontSize: Dimensions.fontSizeSmall,
+                                                color: isDeliveryAvailable ? const Color(0xFF065F46) : const Color(0xFF991B1B),
+                                              ),
+                                            ),
+                                            const SizedBox(height: 2),
+                                            Text(
+                                              isDeliveryAvailable
+                                                  ? (deliveryFee != null ? 'Lane Shipping Fee: ₦${deliveryFee.toStringAsFixed(2)}' : 'Authoritative Lane Active')
+                                                  : (delivery?.reason ?? 'Please choose in-store pickup or select a supported delivery LGA.'),
+                                              style: textRegular.copyWith(
+                                                fontSize: Dimensions.fontSizeExtraSmall,
+                                                color: Theme.of(context).hintColor,
+                                              ),
+                                            ),
+                                          ],
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                );
+                              },
+                            ),
+                          ],
                           SizedBox(height: Dimensions.paddingSizeDefault),
                         ]),
                       ) : SizedBox(

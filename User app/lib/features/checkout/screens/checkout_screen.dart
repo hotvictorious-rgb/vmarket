@@ -84,6 +84,32 @@ class CheckoutScreenState extends State<CheckoutScreen> {
     return stores;
   }
 
+  int? _lastCheckedAddressId;
+
+  void _checkFulfillmentIfReady(int? addressId) {
+    if (addressId == null || addressId == _lastCheckedAddressId) return;
+    _lastCheckedAddressId = addressId;
+    final checkoutCtrl = Provider.of<CheckoutController>(context, listen: false);
+    int shopId = 0;
+    for (final item in widget.cartList) {
+      if (item.productType == 'physical') {
+        shopId = item.shop?.id ?? (item.sellerId ?? 0);
+        break;
+      }
+    }
+    final cartItems = widget.cartList.map((c) => {
+      'id': c.id,
+      'product_id': c.productId,
+      'quantity': c.quantity,
+    }).toList();
+
+    checkoutCtrl.checkFulfillmentAvailability(
+      shopId: shopId,
+      shippingAddressId: addressId,
+      cartItems: cartItems,
+    );
+  }
+
   @override
   void initState() {
     super.initState();
@@ -99,6 +125,18 @@ class CheckoutScreenState extends State<CheckoutScreen> {
     // [AI] Victorious MARKET V1: COD and offline payments are decommissioned.
     // Digital payment via Paystack is canonical for doorstep delivery.
     // In-store pickup uses 24-hr stock hold reservation with payment at store inspection.
+
+    WidgetsBinding.instance.addPostFrameCallback((_) async {
+      final addrCtrl = Provider.of<AddressController>(context, listen: false);
+      final checkoutCtrl = Provider.of<CheckoutController>(context, listen: false);
+      await addrCtrl.getAddressList();
+      if (addrCtrl.addressList != null && addrCtrl.addressList!.isNotEmpty) {
+        if (checkoutCtrl.addressIndex == null) {
+          checkoutCtrl.setAddressIndex(0);
+        }
+        _checkFulfillmentIfReady(addrCtrl.addressList![checkoutCtrl.addressIndex ?? 0].id);
+      }
+    });
 
     if(Provider.of<CheckoutController>(context, listen: false).isAcceptTerms){
       Provider.of<CheckoutController>(context, listen: false).toggleTermsCheck(isUpdate: false);
@@ -216,6 +254,17 @@ class CheckoutScreenState extends State<CheckoutScreen> {
                                   if (addressId == null) {
                                     setState(() => _isSubmitting = false);
                                     showCustomSnackBarWidget(getTranslated('select_a_shipping_address', context), Get.context!, snackBarType: SnackBarType.warning);
+                                    return;
+                                  }
+
+                                  // [AI] Victorious MARKET V1 (§§ 20-29): Strict fulfillment availability verification before Intent creation
+                                  if (orderProvider.fulfillmentAvailability != null && !(orderProvider.fulfillmentAvailability?.data?.fulfillmentOptions?.delivery?.available ?? true)) {
+                                    setState(() => _isSubmitting = false);
+                                    showCustomSnackBarWidget(
+                                      orderProvider.fulfillmentAvailability?.data?.fulfillmentOptions?.delivery?.reason ?? 'Doorstep delivery is unavailable for this destination LGA. Please select In-Store Pickup or choose another address.',
+                                      Get.context!,
+                                      snackBarType: SnackBarType.warning,
+                                    );
                                     return;
                                   }
 
@@ -730,7 +779,9 @@ class CheckoutScreenState extends State<CheckoutScreen> {
                                           final double pointsInNaira = userPoints * rate;
                                           estimatedCashback = (pointsInNaira > maxCap ? maxCap : pointsInNaira);
                                         }
-                                        final double activeShipping = checkoutController.isPickup ? 0.0 : widget.shippingFee;
+                                        final double activeShipping = checkoutController.isPickup
+                                            ? 0.0
+                                            : (checkoutController.fulfillmentAvailability?.data?.fulfillmentOptions?.delivery?.fee ?? widget.shippingFee);
                                         final double totalPayable = (_order + activeShipping - widget.discount - estimatedCashback + _tax);
 
                                         return Column(
@@ -749,7 +800,7 @@ class CheckoutScreenState extends State<CheckoutScreen> {
                                               title: getTranslated('shipping_fee', context),
                                               amount: checkoutController.isPickup
                                                   ? (getTranslated('free_pickup', context) ?? '₦0.00 (In-Store Pickup)')
-                                                  : PriceConverter.convertPrice(context, widget.shippingFee),
+                                                  : PriceConverter.convertPrice(context, activeShipping),
                                             ),
                                             AmountWidget(
                                               title: getTranslated('discount', context),
