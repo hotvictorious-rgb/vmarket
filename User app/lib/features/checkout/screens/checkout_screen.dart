@@ -599,7 +599,7 @@ class CheckoutScreenState extends State<CheckoutScreen> {
                                             const SizedBox(height: 2),
                                             Text(
                                               loyaltyPoints > 0
-                                                  ? 'Available: ${loyaltyPoints.toStringAsFixed(0)} pts (Redeem up to 10%)'
+                                                  ? 'Available: ${loyaltyPoints.toStringAsFixed(0)} pts (Redeem up to ${(splashController.configModel?.loyaltyPointMaxOrderRedemptionPercentage ?? 10.0).toStringAsFixed(0)}%)'
                                                   : 'No cashback points available',
                                               style: textRegular.copyWith(
                                                 fontSize: Dimensions.fontSizeSmall,
@@ -728,7 +728,8 @@ class CheckoutScreenState extends State<CheckoutScreen> {
                                         if (checkoutController.isUseCashback && !checkoutController.isPickup) {
                                           final double userPoints = profileProvider.userInfoModel?.loyaltyPoint ?? 0;
                                           final double rate = (splashController.configModel?.loyaltyPointExchangeRate ?? 1).toDouble();
-                                          final double maxCap = _order * 0.10;
+                                          final double maxRedeemPercent = (splashController.configModel?.loyaltyPointMaxOrderRedemptionPercentage ?? 10.0) / 100;
+                                          final double maxCap = _order * maxRedeemPercent;
                                           final double pointsInNaira = userPoints * rate;
                                           estimatedCashback = (pointsInNaira > maxCap ? maxCap : pointsInNaira);
                                         }
