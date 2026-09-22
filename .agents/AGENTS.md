@@ -136,4 +136,44 @@ Never pass raw `$request->all()` directly into Eloquent `create()`, `update()`, 
 3. **Reproducible Test Execution:** Every code edit must pass syntax validation (`php -l` for PHP / `flutter analyze` for Dart) and automated regression execution.
 4. **Mandatory Documentation of Proof:** All mathematical proofs, balance tables, and verification logs must be permanently updated in `VICTORIOUS_MARKET_MATHEMATICAL_AND_SYSTEMIC_PROOF.md` and documented in `AI_CHANGELOG.md` before committing. No task is complete without reproducible proof.
 
+## 11. The Controlled Completion Path & Decommissioning Directive 🛑
 
+### A. The Controlled Completion Roadmap
+To prevent architectural sprawl and converge VMarket toward production readiness, all AI agents must strictly follow the sequential completion roadmap:
+1. **Finish Backend Geography & Fulfillment:** Canonical LGA routing (`Country → State → LGA`), directional lanes (`Origin LGA → Destination LGA → DeliveryLane`), and in-shop pickup (`Shop → Pickup Settings → Availability`), cleanly integrated into existing checkout/settlement engines without duplicate pipelines.
+2. **Backend Integration & Hardening:** Comprehensive audit and deterministic test scenarios across API contracts, database, auth, branch isolation, transactions, stock locks, payment verification, idempotency, fulfillment, cashback, and legacy dependencies.
+3. **Freeze Backend API Contracts:** Lock the authoritative API schemas so client applications consume backend contracts rather than inventing marketplace logic.
+4. **Finish Customer App (`User app`):** Complete end-to-end customer journey strictly consuming backend decisions.
+5. **Finish Vendor App (`Vendor app`):** Complete merchant operations, inventory, orders, returns, and strict branch/employee security isolation.
+6. **Finish Delivery App (`Delivery Man App`):** Complete rider dispatch, merchant pickup, transit, and proof of delivery. Hubs and riders are operational logistics infrastructure, not marketplace geography.
+7. **Admin Command Center:** Complete unified governance, geography/lane controls, merchant/order management, and audit logs.
+8. **End-to-End Simulation:** Run realistic multi-actor scenarios (Uyo→Uyo, Uyo→Eket, In-Shop Pickup, Split Fulfillment) and adversarial edge cases (race conditions, invalid LGA, tamper attacks).
+9. **Controlled V1 Launch:** Small merchant cohort (~10 merchants) + limited geography + controlled logistics.
+10. **Progressive Post-V1 Scaling:** Advanced analytics, loyalty tiers, ads, broader geographic coverage.
+
+### B. Single Authoritative Implementation Rule (One Concept → One Implementation)
+The repository must maintain **exactly one authoritative implementation** for every marketplace business capability. Legacy implementations must not remain as ambiguous alternatives for future AIs to guess between. Clean architecture is AI-readable architecture.
+
+### C. Architecture Status Taxonomy
+Every major capability, service, model, and route must have an unambiguous classification:
+- **`AUTHORITATIVE`**: The current, single source of truth for the capability. All new and existing active flows must use this.
+- **`DEPRECATED`**: Obsolete implementation slated for removal. No new code may consume it; existing callers must be actively migrated.
+- **`LEGACY / MIGRATION`**: Historical schema or operational structure in active transition (e.g., `DeliveryHub` repurposed as internal logistics infrastructure, not public geography).
+- **`REMOVED`**: Fully eradicated code once 100% of production callers, migrations, and dependencies have been decoupled.
+
+### D. The 10-Step Capability Migration & Cleanup Protocol
+Never delete code aggressively based on filenames or assumptions. Follow this disciplined protocol:
+1. **Identify:** Inspect the capability, callers, routes, and data dependencies.
+2. **Search:** Conduct exhaustive repository-wide search for all callers (Controllers, Services, Models, Blade views, Flutter apps, tests).
+3. **Zero Duplicate Engines:** Never build a parallel duplicate engine alongside an unmigrated legacy engine without explicit deprecation linkage.
+4. **Migrate Callers:** Re-point all production callers to the authoritative implementation one by one.
+5. **Mark Deprecated:** Add explicit `@deprecated` annotations and log deprecations.
+6. **Remove Dead Code:** Delete obsolete controllers, services, models, routes, and migrations once all callers are migrated.
+7. **Clean Clients & Docs:** Remove dead endpoints, unused client DTOs, obsolete tests, and stale configuration.
+8. **Universal Reference Audit:** Perform repository-wide search to confirm zero lingering references.
+9. **Regression Proof:** Validate syntax (`php -l`, `flutter analyze`) and execute deterministic tests.
+10. **Document & Commit:** Record retained legacy exceptions in `AI_CHANGELOG.md` and commit.
+
+### E. Continuous Per-Phase Cleanup
+Cleanup is mandatory in **every** phase, not deferred to the end:
+$$\text{Build} \longrightarrow \text{Integrate} \longrightarrow \text{Test} \longrightarrow \text{Migrate} \longrightarrow \text{Remove Obsolete Code} \longrightarrow \text{Document} \longrightarrow \text{Git Commit}$$

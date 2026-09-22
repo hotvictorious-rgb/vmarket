@@ -163,5 +163,35 @@ All payment gateway controllers MUST enforce an **Atomic Row-Level Database Lock
 
 Every AI modifying ANY system component (Backend, Mobile Apps, POS, Ledgers, Logistics, Pricing, Payments) MUST formulate and execute mathematical proofs ($\Delta = 0.00$), verify cross-module parity, execute zero-error linter validation, and record concrete reproducible proofs in `VICTORIOUS_MARKET_MATHEMATICAL_AND_SYSTEMIC_PROOF.md` and `AI_CHANGELOG.md` before concluding any session. No change can be considered complete without verifiable proof.
 
+---
 
+## 13. Controlled Completion Path & Authoritative Decommissioning Directive 🛑
 
+### The Sequential Roadmap
+No architectural expansion or feature additions outside the controlled completion path:
+1. **Current Backend Architecture:** Canonical LGA geography (`Country → State → LGA`), directional lanes (`Origin LGA → Destination LGA → DeliveryLane`), in-shop pickup (`Shop → Pickup Settings → Availability`), and unified fulfillment engine integration.
+2. **Backend Integration & Hardening:** Rigorous scenario testing (`Uyo → Uyo`, `Uyo → Eket`, `Eket → Uyo`, unsupported destinations, split delivery/pickup) and exhaustive subsystem audits.
+3. **Backend API Contract Freeze:** Lock authoritative API schemas. All apps strictly consume backend contracts.
+4. **Customer Mobile App (`User app`):** Complete core shopping, cart, address, Paystack, tracking lifecycle.
+5. **Vendor Mobile App (`Vendor app`):** Complete merchant operations with strict branch isolation.
+6. **Delivery Rider App (`Delivery Man App`):** Complete dispatch, transit, and proof of delivery. Hubs and riders are internal operational infrastructure.
+7. **Admin Control Center:** Unified command center across all marketplace governance.
+8. **End-to-End Simulation:** Multi-actor, multi-vendor, and adversarial race/tamper stress tests.
+9. **Controlled V1 Launch:** Small merchant cohort (~10 merchants) + limited geography + controlled logistics.
+10. **Progressive Post-V1 Scaling:** Iterative feature expansion after real commerce is flowing.
+
+### One Business Concept → One Authoritative Implementation
+- The repository must maintain **exactly one authoritative implementation** for every marketplace capability.
+- Old implementations must never remain as ambiguous co-existing alternatives.
+- Clean architecture is AI-readable architecture.
+
+### Architecture Status Taxonomy
+Every system component must possess an unambiguous status:
+* `AUTHORITATIVE`: Active single source of truth.
+* `DEPRECATED`: Marked obsolete; actively migrating callers away.
+* `LEGACY / MIGRATION`: Operational infrastructure transitioning roles (e.g., `DeliveryHub`).
+* `REMOVED`: 100% eradicated from codebase, database, routes, and clients.
+
+### Mandatory Per-Phase Lifecycle
+Every phase must execute:
+$$\text{Build} \longrightarrow \text{Integrate} \longrightarrow \text{Test} \longrightarrow \text{Migrate} \longrightarrow \text{Remove Obsolete Code} \longrightarrow \text{Document} \longrightarrow \text{Git Commit}$$

@@ -1,3 +1,64 @@
+### [2026-09-22 15:55 UTC] Phase 1 Completion: Canonical Geography, Directional Lane Routing & Invariant Proofs [backend] [ai-governance] [AI]
+* **Components:** Laravel Web Backend (`backend/vmarket-web`), AI Governance
+* **Scope:** Finalization of Phase 1 of the Controlled Completion Roadmap (Geography + Fulfillment Integration).
+* **Changes & Hardening:**
+  - `backend/vmarket-web/app/Services/DeliveryCheckoutIntentService.php`: Hardened lane resolution under canonical LGAs. When both Origin LGA and Destination LGA are mapped, the system authoritatively queries `DeliveryLane::findLane()`. If no active lane exists, it strictly halts checkout by throwing an `InvalidCartException` with explicit routing diagnostic details, eradicating silent fallbacks to arbitrary legacy costs.
+  - `backend/vmarket-web/app/Services/FulfillmentAvailabilityService.php`: Verified 100% parity with checkout intent and pickup reservation services.
+* **Verification & Mathematical Proofs:**
+  - Automated test suite `scratch/verify_phase_1_fulfillment_scenarios.php` executed across 11 scenarios:
+    1. Intra-LGA Delivery (`Uyo → Uyo`): ₦500.00, 2–6 hours ETA — PASSED.
+    2. Inter-LGA Delivery (`Uyo → Eket`): ₦1,500.00, 24–48 hours ETA — PASSED.
+    3. Reverse Inter-LGA Delivery (`Eket → Uyo`): ₦1,500.00, 24–48 hours ETA — PASSED.
+    4. Unsupported Destination Availability Rejection: `no_delivery_lane` — PASSED.
+    5. In-Shop Pickup Enabled (Shop A): Business hours, slots generated, instructions — PASSED.
+    6. In-Shop Pickup Disabled (Shop B): `pickup_disabled` — PASSED.
+    7. Strict Unsupported Route Rejection: `InvalidCartException` thrown on checkout intent — PASSED.
+    8. Authoritative Intra-LGA Fee Frozen in Intent: ₦500.00 frozen, subtotal + shipping exact — PASSED.
+    9. Multi-Vendor Directional Lane Fees: Vendor A (₦500) + Vendor B (₦1,500) = ₦2,000 — PASSED.
+    10. Multi-Vendor Total Mathematical Invariant: $\Delta = ₦72,000.00 - ₦72,000.00 = ₦0.00$ — PASSED.
+    11. In-Shop Pickup Zero-Shipping Isolation: 24h reservation code issued, ₦0.00 shipping — PASSED.
+  - All 11 tests passed with zero error and zero mathematical drift ($\Delta = 0.00$).
+  - Full invariant equations and test logs appended to `VICTORIOUS_MARKET_MATHEMATICAL_AND_SYSTEMIC_PROOF.md`.
+* **Architecture Milestone:**
+  - Phase 1 (Finish Current Backend Geography & Fulfillment Architecture) is officially **COMPLETE**.
+  - Ready to proceed to **Phase 2 (Backend Integration & Hardening)**.
+
+### [2026-09-22 14:45 UTC] Controlled Completion Path & Authoritative Decommissioning Directive Formalization [ai-governance] [AI]
+* **Components:** AI Governance (`.agents/AGENTS.md`, `AI_ENGINEERING_RULES.md`)
+* **Scope:** Architectural freeze on out-of-scope expansion and formal codification of the Controlled Completion Roadmap and Deliberate Decommissioning Protocol ("One Business Concept → One Authoritative Implementation").
+* **Key Directives Codified:**
+  1. **Controlled Completion Roadmap (Phases 1–10):**
+     - Phase 1: Finish Current Backend Architecture (Canonical LGA Geography, Directional Delivery Lanes, In-Shop Pickup Availability, Zero-Duplicate Fulfillment Integration).
+     - Phase 2: Backend Integration + Hardening (API contracts, database, auth, branch isolation, transactions, stock locking, payment verification, idempotency, scenario testing: Uyo→Uyo, Uyo→Eket, Eket→Uyo, unsupported destinations, split delivery/pickup).
+     - Phase 3: Lock Backend API Contracts (Freeze core API contracts; apps consume backend decisions without inventing business logic).
+     - Phase 4: Finish Customer App (`User app`).
+     - Phase 5: Finish Vendor App (`Vendor app` with branch/employee security isolation).
+     - Phase 6: Finish Delivery App (`Delivery Man App` with hubs/riders as internal operational infrastructure).
+     - Phase 7: Build Admin Control Center.
+     - Phase 8: End-to-End Simulation (Real-world scenarios and stress/adversarial testing).
+     - Phase 9: Controlled V1 Launch (~10 merchants, limited geography, controlled delivery).
+     - Phase 10: Progressive Post-V1 Scaling.
+  2. **Single Authoritative Implementation Rule:**
+     - Exactly one authoritative engine per marketplace business capability.
+     - Co-existing ambiguous legacy engines strictly prohibited.
+  3. **Architecture Status Taxonomy:**
+     - `AUTHORITATIVE`: Single source of truth for active flows.
+     - `DEPRECATED`: Obsolete implementation; no new code may use it; callers actively migrating.
+     - `LEGACY / MIGRATION`: Transitioning infrastructure (e.g. `DeliveryHub` repositioned as internal logistics, not public geography).
+     - `REMOVED`: 100% eradicated once all callers and migrations decouple.
+  4. **10-Step Capability Migration & Cleanup Protocol:**
+     - Identify → Search callers → Zero duplicate engines → Migrate callers → Mark deprecated → Remove dead code → Clean clients/docs → Universal reference audit → Regression proof → Document & commit.
+  5. **Continuous Per-Phase Cleanup:**
+     - Build → Integrate → Test → Migrate → Remove obsolete code → Document → Git commit.
+* **Initial Fulfillment Architecture Status Classifications:**
+  - `FulfillmentAvailabilityService`: `AUTHORITATIVE`
+  - `DeliveryLane`: `AUTHORITATIVE`
+  - `PickupReservationService`: `AUTHORITATIVE`
+  - `DeliveryCheckoutIntentService`: `AUTHORITATIVE`
+  - `CartShipping`: `DEPRECATED` (Active migration underway; remove after callers decouple)
+  - `DeliveryCity` / `DeliveryState`: `LEGACY / MIGRATION` (Repoint address selectors to canonical `Lga` / `State`)
+  - `DeliveryHub`: `KEEP` (Repositioned exclusively as internal logistics infrastructure, not marketplace geography)
+
 ### [2026-09-22 06:20 UTC] Dual-Channel Fulfillment — In-Shop Pickup (Pay-After-Inspection) Implementation [backend] [user-app] [ai-governance] [AI]
 * **Components:** Laravel Web Backend (`backend/vmarket-web`), Flutter Customer App (`User app`)
 * **Scope:** Full end-to-end implementation of the In-Shop Pickup channel as an independent parallel fulfillment path alongside Doorstep Delivery.

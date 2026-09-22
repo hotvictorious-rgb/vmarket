@@ -764,3 +764,53 @@ $$\Delta_{\text{Settlement}} = |\text{Order Amount} - (\text{Vendor Net 90\%} + 
 5. **Multi-Platform Backward Compatibility & Synchronous Access**:
    - Synchronous getters (\getString\, \getBool\, \getInt\, \getDouble\, \getStringList\, \containsKey\, \getKeys\) provide 100% contract parity for existing synchronous controllers (\ThemeController\, \LocalizationController\, \isLoggedIn()\).
    - Mutations update the in-memory cache instantaneously and write through to \FlutterSecureStorage\ asynchronously.
+
+
+---
+
+# 12. PHASE 1: GEOGRAPHY & FULFILLMENT AUDIT PROOF (ZERO DRIFT: Δ = 0.00)
+
+## Mathematical & Contractual Invariants
+
+### 12.1 Directional Delivery Lane Routing & Frozen Fees
+For Origin LGA $LGA_O$ and Destination LGA $LGA_D$:
+$$\text{DeliveryFee}(LGA_O, LGA_D) = \begin{cases}
+500.00 \text{ NGN}, & \text{if } LGA_O = LGA_D \text{ (Intra-LGA)} \\
+\text{DeliveryLane::findLane}(LGA_O, LGA_D)\to\text{delivery\_fee}, & \text{if active lane exists} \\
+\bot \text{ (InvalidCartException)}, & \text{if no active lane exists}
+\end{cases}$$
+
+### 12.2 Multi-Vendor Cart Summation Invariant
+For a multi-vendor cart with $n$ distinct vendor groups $V_1, V_2, \dots, V_n$ shipping to destination $LGA_D$:
+$$\text{TotalShipping} = \sum_{i=1}^n \text{DeliveryFee}(LGA_{O,i}, LGA_D)$$
+$$\text{TotalAmount} = \sum_{i=1}^n \text{Subtotal}_i + \text{TotalShipping}$$
+$$\Delta = \text{ActualTotal} - \text{ExpectedTotal} = 0.00 \text{ NGN}$$
+
+### 12.3 In-Shop Pickup Channel Isolation
+For any in-shop pickup reservation:
+- $\text{DeliveryFee} = 0.00 \text{ NGN}$
+- $\text{PaystackPrePayment} = 0.00 \text{ NGN}$
+- $\text{ReservedStockDeduction} = 0$
+- Inspection lifecycle: `pending_inspection` $\to$ `inspected_accepted` / `inspected_rejected`
+
+---
+
+## Reproducible Verification Execution Log
+
+**Script:** `backend/vmarket-web/scratch/verify_phase_1_fulfillment_scenarios.php`  
+**Execution Timestamp:** `2026-09-22 14:52 UTC`  
+**Status:** 11 Passed, 0 Failed ($\Delta = 0.00$)
+
+| # | Scenario | Test Case | Expected | Actual Result | Status |
+| :- | :--- | :--- | :--- | :--- | :--- |
+| 01 | Scenario A | Intra-LGA (`Uyo → Uyo`) | `Fee = ₦500.00, ETA = 2-6 hours` | `Fee = ₦500.00, ETA = 2-6 hours` | **PASS** |
+| 02 | Scenario B | Inter-LGA (`Uyo → Eket`) | `Fee = ₦1,500.00, ETA = 24-48 hours` | `Fee = ₦1,500.00, ETA = 24-48 hours` | **PASS** |
+| 03 | Scenario C | Reverse Inter-LGA (`Eket → Uyo`) | `Fee = ₦1,500.00, ETA = 24-48 hours` | `Fee = ₦1,500.00, ETA = 24-48 hours` | **PASS** |
+| 04 | Scenario D | Unsupported Destination | `available = false, no_delivery_lane` | `available = false, no_delivery_lane` | **PASS** |
+| 05 | Scenario E1 | In-Shop Pickup Enabled | `available = true, 3 time slots` | `available = true, 3 time slots` | **PASS** |
+| 06 | Scenario E2 | In-Shop Pickup Disabled | `available = false, pickup_disabled` | `available = false, pickup_disabled` | **PASS** |
+| 07 | Scenario D2 | Strict Unsupported Lane Rejection | `InvalidCartException` thrown | `InvalidCartException: Delivery is currently unavailable...` | **PASS** |
+| 08 | Scenario A2 | Authoritative Intra-LGA Fee Frozen | `shipping = ₦500.00, total = ₦50,500.00` | `shipping = ₦500.00, total = ₦50,500.00` | **PASS** |
+| 09 | Scenario F1 | Multi-Vendor Directional Lane Fees | `Vendor A: ₦500, Vendor B: ₦1,500, Total: ₦2,000` | `Vendor A: ₦500, Vendor B: ₦1,500, Total: ₦2,000` | **PASS** |
+| 10 | Scenario F2 | Multi-Vendor Total Mathematical Invariant | $\Delta = ₦72,000.00 - ₦72,000.00 = ₦0.00$ | $\Delta = ₦0.00$ | **PASS** |
+| 11 | Scenario G | In-Shop Pickup Zero-Shipping Isolation | `RES-1FB933B8, Total = ₦50,000.00, pending_inspection` | `RES-1FB933B8, Total = ₦50,000.00, pending_inspection` | **PASS** |
