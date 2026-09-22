@@ -40,6 +40,7 @@ class VendorEmployee extends Authenticatable
     protected $casts = [
         'id' => 'integer',
         'seller_id' => 'integer',
+        'shop_id' => 'integer',
         'vendor_role_id' => 'integer',
         'name' => 'string',
         'phone' => 'string',
@@ -51,6 +52,7 @@ class VendorEmployee extends Authenticatable
 
     protected $fillable = [
         'seller_id',
+        'shop_id',
         'vendor_role_id',
         'name',
         'phone',
@@ -67,9 +69,42 @@ class VendorEmployee extends Authenticatable
         return $this->belongsTo(Seller::class, 'seller_id');
     }
 
+    public function shop(): BelongsTo
+    {
+        return $this->belongsTo(Shop::class, 'shop_id');
+    }
+
     public function role(): BelongsTo
     {
         return $this->belongsTo(VendorRole::class, 'vendor_role_id');
+    }
+
+    /**
+     * [AI] Scope employee queries to a specific physical branch/shop.
+     */
+    public function scopeForShop($query, ?int $shopId)
+    {
+        if ($shopId) {
+            return $query->where('shop_id', $shopId);
+        }
+        return $query;
+    }
+
+    /**
+     * [AI] Branch Security Isolation:
+     * Check if employee is authorized for a specific physical shop/branch.
+     * If employee's shop_id is null, they are an organization-wide master employee of the seller.
+     * If employee's shop_id is set, they strictly only have access to that specific physical branch.
+     */
+    public function canAccessShop(?int $targetShopId): bool
+    {
+        if (empty($this->shop_id)) {
+            return true; // Organization-wide seller staff
+        }
+        if (empty($targetShopId)) {
+            return false;
+        }
+        return (int) $this->shop_id === (int) $targetShopId;
     }
 
     /**

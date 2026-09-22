@@ -9,6 +9,11 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 /**
  * Class CartShipping
  *
+ * @deprecated [AI] Architecture Status: DEPRECATED.
+ * Superseded by FulfillmentAvailabilityService and directional DeliveryLane routing.
+ * Maintained strictly for backward compatibility during active migration of remaining callers.
+ * Slated for full removal once all callers decouple in Phase 3.
+ *
  * @property int $id Primary
  * @property string $cart_group_id
  * @property int $shipping_method_id

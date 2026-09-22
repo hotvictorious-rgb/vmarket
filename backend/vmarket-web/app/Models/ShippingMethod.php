@@ -10,6 +10,10 @@ use Illuminate\Support\Carbon;
 /**
  * Class ShippingMethod
  *
+ * @deprecated [AI] Architecture Status: DEPRECATED.
+ * Superseded by DeliveryLane and PickupReservationService.
+ * Slated for full removal once all callers decouple in Phase 3.
+ *
  * @property int $id
  * @property int|null $creator_id
  * @property string $creator_type

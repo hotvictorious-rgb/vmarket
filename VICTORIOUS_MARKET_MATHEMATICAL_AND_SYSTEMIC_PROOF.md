@@ -814,3 +814,58 @@ For any in-shop pickup reservation:
 | 09 | Scenario F1 | Multi-Vendor Directional Lane Fees | `Vendor A: ₦500, Vendor B: ₦1,500, Total: ₦2,000` | `Vendor A: ₦500, Vendor B: ₦1,500, Total: ₦2,000` | **PASS** |
 | 10 | Scenario F2 | Multi-Vendor Total Mathematical Invariant | $\Delta = ₦72,000.00 - ₦72,000.00 = ₦0.00$ | $\Delta = ₦0.00$ | **PASS** |
 | 11 | Scenario G | In-Shop Pickup Zero-Shipping Isolation | `RES-1FB933B8, Total = ₦50,000.00, pending_inspection` | `RES-1FB933B8, Total = ₦50,000.00, pending_inspection` | **PASS** |
+
+---
+
+## 13. Phase 2: Backend Integration & Hardening Invariant Proofs
+
+### 13.1 Zero-Trust IDOR Authorization Scoping Invariant
+For every resource access $R$ requested by principal $P_{req}$ on resource owned by $P_{owner}$:
+$$\text{AccessAllowed}(P_{req}, R) = \begin{cases} \text{true} & \text{if } P_{req} \equiv P_{owner} \\ \text{false (403 / InvalidCartException)} & \text{if } P_{req} \neq P_{owner} \end{cases}$$
+- Customer B attempting to checkout with Customer A's shipping address is rejected: `InvalidCartException: Selected shipping address does not belong to the authenticated customer.`
+- Customer B attempting to checkout cart items owned by Customer A is rejected: `InvalidCartException: One or more selected cart items do not belong to the customer.`
+
+### 13.2 Multi-Branch Isolation & Employee Scoping Invariant
+For any vendor employee $E$ assigned to branch shop $S_E$ attempting mutation on branch shop $S_{target}$:
+$$\text{BranchPermitted}(E, S_{target}) = \begin{cases} \text{true} & \text{if } S_E \equiv S_{target} \\ \text{false (HTTP 403 Forbidden)} & \text{if } S_E \neq S_{target} \end{cases}$$
+- In `SellerApiAuthMiddleware`, if `$employee->shop_id` is defined and `$request->shop_id != $employee->shop_id`, execution terminates immediately with HTTP 403 Forbidden:
+  `{"status": false, "message": "Unauthorized branch access. You are only authorized to operate within your assigned shop branch."}`
+
+### 13.3 Pessimistic Inventory Concurrency & Settlement Replay Idempotency
+Under concurrent order settlements:
+1. Product inventory is locked via `Product::where('id', $id)->lockForUpdate()->first()`.
+2. Decrement is atomic: $\text{Stock}_{new} = \text{Stock}_{old} - \text{QuantityOrdered} \ge 0$.
+3. When payment gateway callback replays identical reference $Ref$:
+$$\text{SettlementStatus}(Ref) = \text{ALREADY_PAID}$$
+$$\text{DuplicateOrdersCreated} = 0, \quad \Delta \text{Stock} = 0$$
+
+### 13.4 Two-Phase Stockout Rollback Invariant ($\Delta = ₦0.00$)
+When stock failure occurs post-payment:
+- **Phase 1:** Complete transaction rollback:
+$$\Delta \text{Balance} = ₦0.00, \quad \text{OrdersCreated} = 0, \quad \text{NegativeStockIncidents} = 0$$
+- **Phase 2:** Anomaly record persisted in `payment_reconciliations` table:
+  - `current_status = 'open'`
+  - `initial_anomaly_type = 'post_payment_stock_failure'`
+  - Customer funds remain captured for manual backoffice review / refund.
+
+---
+
+## Phase 2 Reproducible Verification Execution Log
+
+**Script:** `backend/vmarket-web/scratch/verify_phase_2_hardening_scenarios.php`  
+**Execution Timestamp:** `2026-09-22 15:33 UTC`  
+**Status:** 11 Passed, 0 Failed ($\Delta = 0.00$)
+
+| # | Domain | Audit Test Case | Expected | Actual Result | Status |
+| :- | :--- | :--- | :--- | :--- | :--- |
+| 01 | Zero-Trust IDOR | Cross-Customer Address Check | Blocked (InvalidCartException) | Customer B blocked from using Customer A's address | **PASS** |
+| 02 | Zero-Trust IDOR | Cross-Customer Cart Item Tamper | Blocked (InvalidCartException) | Customer B blocked from checking out Customer A's cart | **PASS** |
+| 03 | Branch Security | Assigned Branch Access Check | Authorized (true) | Employee #2 authorized for Branch A (#6) | **PASS** |
+| 04 | Branch Security | Cross-Branch Denial Check | Denied (false) | Employee #2 strictly denied access to Branch B (#7) | **PASS** |
+| 05 | SellerApiAuth | Branch A Allowed Execution | Allowed (HTTP 200 / Next) | Middleware injected employee_shop_id = 6 and passed next() | **PASS** |
+| 06 | SellerApiAuth | Cross-Branch Breach Blocked | HTTP 403 Forbidden | HTTP 403 Forbidden returned with anti-tamper message | **PASS** |
+| 07 | Stock Hardening | Atomic Inventory Deduction | Decrement 1 -> 0 | Settlement claimed, stock decremented exactly 1 -> 0 | **PASS** |
+| 08 | Idempotency | Replaying Verified Payment | Status: ALREADY_PAID | Returned ALREADY_PAID; 0 duplicate orders; 0 duplicate stock deductions | **PASS** |
+| 09 | Stock Failure | Two-Phase Rollback & Reconciliation | Status: reconciliation_required | Zero negative stock (stock = 0), Phase 2 reconciliation case persisted | **PASS** |
+| 10 | Decommissioning | CartShipping Marked @deprecated | @deprecated docblock present | Verified in CartShipping docblock -> links to FulfillmentAvailabilityService & DeliveryLane | **PASS** |
+| 11 | Decommissioning | ShippingMethod Marked @deprecated | @deprecated docblock present | Verified in ShippingMethod docblock -> links to DeliveryLane & PickupReservationService | **PASS** |

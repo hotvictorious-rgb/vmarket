@@ -1,3 +1,37 @@
+### [2026-09-22 15:35 UTC] Phase 2 Completion: Backend Integration & Hardening [backend] [ai-governance] [AI]
+* **Components:** Laravel Web Backend (`backend/vmarket-web`), AI Governance
+* **Scope:** Finalization of Phase 2 of the Controlled Completion Roadmap (Backend Integration & Hardening across 13 core dimensions).
+* **Hardening & Security Implementations:**
+  - **Zero-Trust IDOR Authorization Scoping:** Verified address and cart item ownership checks in checkout pipeline; cross-customer address usage or cart item checkout is strictly blocked (`InvalidCartException`).
+  - **Multi-Branch Security Isolation:**
+    - Added `shop_id` column to `vendor_employees` via migration `2026_09_22_000018_add_shop_id_to_vendor_employees.php`.
+    - Updated `VendorEmployee` model with `shop()` relation, `scopeForShop()`, and `canAccessShop(?int $targetShopId): bool`.
+    - Hardened `SellerApiAuthMiddleware.php` to prevent employee cross-branch mutation, returning HTTP 403 Forbidden with anti-tamper message when an employee attempts to operate on another shop branch. Injects `employee_shop_id` into request attributes.
+  - **Pessimistic Inventory & Settlement Hardening:**
+    - Audited atomic inventory deduction under pessimistic locks (`lockForUpdate()`) in `DeliveryOrderSettlementService`.
+    - Verified payment replay idempotency returning `ALREADY_PAID` with 0 duplicate orders and 0 duplicate stock deductions.
+    - Verified Two-Phase Stock Failure Handling: When stock is exhausted concurrently post-payment, Phase 1 transaction rolls back cleanly ($\Delta = ₦0.00$), and Phase 2 persists a `PaymentReconciliation` anomaly record.
+    - Configured default `coupon_discount_bearer` to `'inhouse'` in `DeliveryOrderSettlementService`.
+  - **Legacy Decommissioning Linkage:**
+    - Marked legacy `CartShipping` and `ShippingMethod` models as `@deprecated [AI] Architecture Status: DEPRECATED` linking to `FulfillmentAvailabilityService`, `DeliveryLane`, and `PickupReservationService`.
+* **Verification & Mathematical Invariant Proofs ($\Delta = ₦0.00$):**
+  - Automated test harness `scratch/verify_phase_2_hardening_scenarios.php` executed across 11 test cases:
+    1. Zero-Trust IDOR: Cross-Customer Address Ownership Check — PASSED.
+    2. Zero-Trust IDOR: Cross-Customer Cart Item Tamper Check — PASSED.
+    3. Branch Security: Employee Authorized for Assigned Branch — PASSED.
+    4. Branch Security: Employee Strictly Barred from Other Branch — PASSED.
+    5. SellerApiAuthMiddleware: Branch A Allowed Execution — PASSED.
+    6. SellerApiAuthMiddleware: Cross-Branch Breach Blocked (HTTP 403) — PASSED.
+    7. Atomic Inventory Deduction: First Order Settlement (1 -> 0) — PASSED.
+    8. Settlement Idempotency: Replaying Verified Payment (ALREADY_PAID) — PASSED.
+    9. Two-Phase Stock Failure Handling: Graceful Rollback & Reconciliation Case — PASSED.
+    10. Legacy Decommissioning: CartShipping Marked @deprecated — PASSED.
+    11. Legacy Decommissioning: ShippingMethod Marked @deprecated — PASSED.
+  - All 11 tests passed with 0 errors and zero drift ($\Delta = ₦0.00$). Regression suite `scratch/verify_phase_1_fulfillment_scenarios.php` also verified with 11/11 PASSED.
+* **Architecture Milestone:**
+  - Phase 2 (Backend Integration & Hardening) is officially **COMPLETE**.
+  - Ready to transition to **Phase 3 (Lock Backend API Contracts)**.
+
 ### [2026-09-22 15:55 UTC] Phase 1 Completion: Canonical Geography, Directional Lane Routing & Invariant Proofs [backend] [ai-governance] [AI]
 * **Components:** Laravel Web Backend (`backend/vmarket-web`), AI Governance
 * **Scope:** Finalization of Phase 1 of the Controlled Completion Roadmap (Geography + Fulfillment Integration).

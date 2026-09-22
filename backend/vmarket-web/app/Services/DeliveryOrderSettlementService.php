@@ -495,7 +495,7 @@ class DeliveryOrderSettlementService
                 'discount_amount' => 0.00,
                 'discount_type' => null,
                 'coupon_code' => null,
-                'coupon_discount_bearer' => null,
+                'coupon_discount_bearer' => 'inhouse',
                 'order_amount' => $orderAmount,
                 'init_order_amount' => $orderAmount,
                 'total_tax_amount' => 0.00,
