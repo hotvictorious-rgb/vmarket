@@ -140,8 +140,9 @@ class PaymentController extends Controller
             $idempotencyKey = 'CHK-' . $customer->id . '-' . $addressId . '-' . floor(time() / 60);
         }
 
-        $couponCode     = $isApp ? $request->input('coupon_code') : session('coupon_code');
-        $couponDiscount = $isApp ? $request->input('coupon_discount') : session('coupon_discount', 0);
+        // [AI] Victorious MARKET V1: Cashback is the sole customer order-reduction mechanism.
+        // Coupon codes and referral discounts are decommissioned from checkout.
+        $useCashback = filter_var($request->input('use_cashback', false), FILTER_VALIDATE_BOOLEAN);
 
         // ── 6. Phase 1: Create / Replay Frozen CheckoutIntent ────────────────────────────────
         try {
@@ -150,8 +151,7 @@ class PaymentController extends Controller
                 idempotencyKey: $idempotencyKey,
                 shippingAddress: $shippingAddress,
                 billingAddress: $billingAddress,
-                couponCode: $couponCode ?: null,
-                couponDiscount: $couponDiscount ?: null,
+                useCashback: $useCashback,
                 cartItemIds: null, // Use all checked cart items
             );
         } catch (IdempotencyConflictException $e) {

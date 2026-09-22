@@ -5,6 +5,7 @@ namespace App\Services;
 use App\Exceptions\PostPaymentStockFailureException;
 use App\Models\AdminWallet;
 use App\Models\Cart;
+use App\Models\CashbackRedemption;
 use App\Models\CheckoutIntent;
 use App\Models\Order;
 use App\Models\OrderDetail;
@@ -205,11 +206,41 @@ class DeliveryOrderSettlementService
                 // STEP C: Multi-Vendor Order Creation from Immutable Snapshot
                 $createdOrderIds = $this->createOrdersFromDeliverySnapshot($intent, $paymentRequest);
 
-                // STEP D: Atomic State Transitions
+                // STEP D: Atomic State Transitions & Cashback Capture
                 $intent->update([
                     'status' => 'converted_to_orders',
                     'active_cart_token' => null,
                 ]);
+
+                // [AI] Victorious MARKET V1: Atomic Capture of Reserved Cashback (if used)
+                $redemption = CashbackRedemption::where('order_group_id', $intent->order_group_id)
+                    ->lockForUpdate()
+                    ->first();
+
+                if ($redemption && $redemption->status === 'reserved') {
+                    $redemption->update([
+                        'status' => 'captured',
+                        'captured_at' => now(),
+                    ]);
+
+                    $customer = User::where('id', $intent->customer_id)->lockForUpdate()->first();
+                    if ($customer) {
+                        $customer->decrement('loyalty_point', (float) $redemption->points);
+
+                        // Immutable audit record in loyalty_point_transactions
+                        DB::table('loyalty_point_transactions')->insert([
+                            'user_id' => $customer->id,
+                            'transaction_id' => Str::uuid()->toString(),
+                            'credit' => 0.000,
+                            'debit' => (float) $redemption->points,
+                            'balance' => (float) $customer->fresh()->loyalty_point,
+                            'reference' => $intent->order_group_id,
+                            'transaction_type' => 'cashback_redemption',
+                            'created_at' => now(),
+                            'updated_at' => now(),
+                        ]);
+                    }
+                }
 
                 $additional = is_array($paymentRequest->additional_data)
                     ? $paymentRequest->additional_data
@@ -284,6 +315,14 @@ class DeliveryOrderSettlementService
                 'additional_data' => json_encode($additional),
             ]);
 
+            // Release any reserved cashback points back to customer pool
+            CashbackRedemption::where('order_group_id', $paymentRequest->order_group_id)
+                ->where('status', 'reserved')
+                ->update([
+                    'status' => 'released',
+                    'released_at' => now(),
+                ]);
+
             $capturedNaira = bcdiv((string) ($gatewayData['amount'] ?? 0), '100', 4);
 
             $reconciliation = PaymentReconciliation::create([
@@ -349,6 +388,14 @@ class DeliveryOrderSettlementService
             'is_paid' => 1,
             'additional_data' => json_encode($additional),
         ]);
+
+        // Release any reserved cashback points back to customer pool
+        CashbackRedemption::where('order_group_id', $paymentRequest->order_group_id)
+            ->where('status', 'reserved')
+            ->update([
+                'status' => 'released',
+                'released_at' => now(),
+            ]);
 
         $capturedNaira = bcdiv((string) ($gatewayData['amount'] ?? 0), '100', 4);
 
@@ -437,8 +484,8 @@ class DeliveryOrderSettlementService
                 'order_group_id' => $intent->order_group_id,
                 'discount_amount' => 0.00,
                 'discount_type' => null,
-                'coupon_code' => $snapshot['coupon']['code'] ?? null,
-                'coupon_discount_bearer' => 'inhouse',
+                'coupon_code' => null,
+                'coupon_discount_bearer' => null,
                 'order_amount' => $orderAmount,
                 'init_order_amount' => $orderAmount,
                 'total_tax_amount' => 0.00,

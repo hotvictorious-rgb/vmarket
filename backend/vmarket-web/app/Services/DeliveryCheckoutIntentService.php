@@ -7,6 +7,7 @@ use App\Exceptions\InvalidCartException;
 use App\Exceptions\ProductUnavailableException;
 use App\Models\Cart;
 use App\Models\CartShipping;
+use App\Models\CashbackRedemption;
 use App\Models\CheckoutIntent;
 use App\Models\Product;
 use App\Models\ShippingAddress;
@@ -30,6 +31,8 @@ use InvalidArgumentException;
  *    graceful replay on same key + same payload, 409 conflict on same key + different payload.
  * 7. Lazy expiration of stale active intents releasing active_cart_token under row lock.
  * 8. Zero Order, PaymentRequest, or Cart mutation in this phase.
+ * 9. Victorious Points (Cashback) is the single authoritative order-reduction mechanism.
+ *    Coupon codes and referral discounts are strictly decommissioned.
  */
 class DeliveryCheckoutIntentService
 {
@@ -40,8 +43,7 @@ class DeliveryCheckoutIntentService
      * @param string $idempotencyKey
      * @param int|ShippingAddress|array $shippingAddress
      * @param int|ShippingAddress|array|null $billingAddress
-     * @param string|null $couponCode
-     * @param string|int|null $couponDiscount
+     * @param bool $useCashback
      * @param array|null $cartItemIds
      * @return CheckoutIntent
      *
@@ -55,8 +57,7 @@ class DeliveryCheckoutIntentService
         string $idempotencyKey,
         int|ShippingAddress|array $shippingAddress,
         int|ShippingAddress|array|null $billingAddress = null,
-        ?string $couponCode = null,
-        string|int|null $couponDiscount = null,
+        bool $useCashback = false,
         ?array $cartItemIds = null
     ): CheckoutIntent {
         // 1. Resolve and Validate Authenticated Customer
@@ -111,8 +112,7 @@ class DeliveryCheckoutIntentService
 
         // 5. Group by Vendor and Calculate Exact Amounts (BCMath only)
         $vendorGroups = [];
-        $totalCouponDiscount = $this->toDecimalString($couponDiscount ?? '0.00');
-        $totalAmount = '0.00';
+        $grossAmount = '0.00';
 
         // Group cart items by seller
         $groupedBySeller = $cartItems->groupBy(function ($item) {
@@ -188,26 +188,17 @@ class DeliveryCheckoutIntentService
             return strcmp($a['seller_is'], $b['seller_is']);
         });
 
-        // Calculate grand total across all vendor groups
+        // Calculate gross total across all vendor groups
         foreach ($vendorGroups as $vg) {
-            $totalAmount = bcadd($totalAmount, $vg['total'], 2);
-        }
-
-        // Apply overall coupon discount if any
-        if (bccomp($totalCouponDiscount, '0.00', 2) > 0) {
-            $totalAmount = bcsub($totalAmount, $totalCouponDiscount, 2);
-            if (bccomp($totalAmount, '0.00', 2) < 0) {
-                $totalAmount = '0.00';
-            }
+            $grossAmount = bcadd($grossAmount, $vg['total'], 2);
         }
 
         // 6. Generate Canonical Fingerprint Payload
         $fingerprintPayload = [
             'customer_id' => $customerId,
             'currency' => 'NGN',
-            'total_amount' => $totalAmount,
-            'coupon_code' => $couponCode ?? null,
-            'coupon_discount' => $totalCouponDiscount,
+            'gross_amount' => $grossAmount,
+            'use_cashback' => (bool) $useCashback,
             'shipping_address' => $canonicalShippingAddress,
             'billing_address' => $canonicalBillingAddress,
             'vendors' => $vendorGroups,
@@ -219,11 +210,10 @@ class DeliveryCheckoutIntentService
             $customerId,
             $idempotencyKey,
             $cartFingerprint,
-            $totalAmount,
+            $grossAmount,
+            $useCashback,
             $canonicalShippingAddress,
             $canonicalBillingAddress,
-            $couponCode,
-            $totalCouponDiscount,
             $vendorGroups
         ) {
             // Check for existing intent with the SAME idempotency key
@@ -250,11 +240,14 @@ class DeliveryCheckoutIntentService
 
             if ($existingActive) {
                 if (now()->greaterThanOrEqualTo($existingActive->expires_at)) {
-                    // Stale active intent expired -> Release active token under lock
+                    // Stale active intent expired -> Release active token and any reserved cashback under lock
                     $existingActive->update([
                         'status' => 'expired',
                         'active_cart_token' => null,
                     ]);
+                    CashbackRedemption::where('checkout_intent_id', $existingActive->id)
+                        ->where('status', 'reserved')
+                        ->update(['status' => 'released', 'released_at' => now()]);
                 } elseif ($existingActive->cart_fingerprint === $cartFingerprint) {
                     // Active intent for identical cart state already exists
                     return $existingActive;
@@ -264,7 +257,49 @@ class DeliveryCheckoutIntentService
                         'status' => 'canceled',
                         'active_cart_token' => null,
                     ]);
+                    CashbackRedemption::where('checkout_intent_id', $existingActive->id)
+                        ->where('status', 'reserved')
+                        ->update(['status' => 'released', 'released_at' => now()]);
                 }
+            }
+
+            // Authoritative Cashback Calculation & Reservation under Row Lock
+            $cashbackAmount = '0.00';
+            $pointsToReserve = '0.0000';
+            $exchangeRate = (float) (getWebConfig(name: 'loyalty_point_exchange_rate') ?: 1);
+            $maxCapPercentage = (float) (getWebConfig(name: 'loyalty_point_max_order_redemption_percentage') ?: 10);
+            $loyaltyStatus = (int) (getWebConfig(name: 'loyalty_point_status') ?: 0);
+            $minPoint = (float) (getWebConfig(name: 'loyalty_point_minimum_point') ?: 0);
+
+            if ($useCashback && $loyaltyStatus === 1) {
+                $lockedCustomer = User::where('id', $customerId)->lockForUpdate()->first();
+                $activeReservedPoints = CashbackRedemption::where('customer_id', $customerId)
+                    ->where('status', 'reserved')
+                    ->lockForUpdate()
+                    ->sum('points') ?: '0.0000';
+
+                $userPoints = (string) ($lockedCustomer->loyalty_point ?? '0.0000');
+                $effectiveAvailable = bcsub($userPoints, (string) $activeReservedPoints, 4);
+                if (bccomp($effectiveAvailable, '0.0000', 4) < 0) {
+                    $effectiveAvailable = '0.0000';
+                }
+
+                if (bccomp($effectiveAvailable, (string) $minPoint, 4) >= 0) {
+                    // Maximum Naira discount allowed on this order (e.g. 10% cap)
+                    $maxNairaDiscount = bcmul($grossAmount, bcdiv((string) $maxCapPercentage, '100', 4), 2);
+                    // Value of customer's effective points in Naira
+                    $pointsInNaira = bcmul($effectiveAvailable, (string) $exchangeRate, 2);
+                    // Actual cashback discount is min(pointsInNaira, maxNairaDiscount)
+                    $cashbackAmount = (bccomp($pointsInNaira, $maxNairaDiscount, 2) > 0) ? $maxNairaDiscount : $pointsInNaira;
+                    // Exact points corresponding to the cashback amount
+                    $pointsToReserve = bcdiv($cashbackAmount, (string) $exchangeRate, 4);
+                }
+            }
+
+            // Final net payable amount (Gross - Cashback)
+            $totalAmount = bcsub($grossAmount, $cashbackAmount, 2);
+            if (bccomp($totalAmount, '0.00', 2) < 0) {
+                $totalAmount = '0.00';
             }
 
             // Generate Strong Unique Order Group ID
@@ -276,12 +311,16 @@ class DeliveryCheckoutIntentService
                 'customer_id' => $customerId,
                 'order_group_id' => $orderGroupId,
                 'currency' => 'NGN',
+                'gross_amount' => $grossAmount,
                 'total_amount' => $totalAmount,
                 'shipping_address' => $canonicalShippingAddress,
                 'billing_address' => $canonicalBillingAddress,
-                'coupon' => [
-                    'code' => $couponCode ?? null,
-                    'discount' => $totalCouponDiscount,
+                'cashback' => [
+                    'enabled' => bccomp($cashbackAmount, '0.00', 2) > 0,
+                    'points_reserved' => $pointsToReserve,
+                    'cashback_amount' => $cashbackAmount,
+                    'exchange_rate' => (string) $exchangeRate,
+                    'redemption_cap_percentage' => (string) $maxCapPercentage,
                 ],
                 'vendors' => $vendorGroups,
                 'fingerprint' => $cartFingerprint,
@@ -289,7 +328,7 @@ class DeliveryCheckoutIntentService
             ];
 
             try {
-                return CheckoutIntent::create([
+                $intent = CheckoutIntent::create([
                     'order_group_id' => $orderGroupId,
                     'customer_id' => $customerId,
                     'idempotency_key' => $idempotencyKey,
@@ -301,6 +340,20 @@ class DeliveryCheckoutIntentService
                     'checkout_snapshot' => $snapshot,
                     'expires_at' => now()->addHours(24),
                 ]);
+
+                // Atomically create CashbackRedemption reservation record if cashback points reserved
+                if (bccomp($pointsToReserve, '0.0000', 4) > 0) {
+                    CashbackRedemption::create([
+                        'customer_id' => $customerId,
+                        'checkout_intent_id' => $intent->id,
+                        'order_group_id' => $orderGroupId,
+                        'points' => $pointsToReserve,
+                        'cashback_amount' => $cashbackAmount,
+                        'status' => 'reserved',
+                    ]);
+                }
+
+                return $intent;
             } catch (QueryException $e) {
                 // Race condition guard: concurrent identical request inserted first
                 if ($e->getCode() == 23000 || str_contains($e->getMessage(), '1062')) {

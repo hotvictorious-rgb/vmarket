@@ -82,47 +82,8 @@ class CustomerManager
 
     public static function getReferralDiscountAmount($user = null, $couponDiscount = null)
     {
-        if ($user && isset($user['id'])) {
-            $cart = CartManager::getCartListQuery(type: 'checked');
-            $totalAmount = 0;
-            if (!empty($cart)) {
-                foreach ($cart as $item) {
-                    $discount = getProductPriceByType(product: $item['product'], type: 'discounted_amount', result: 'value', price: $item['price']);
-                    $totalAmount += ($item['price'] - $discount) * $item['quantity'];
-                }
-            }
-            $couponDiscount = is_null($couponDiscount) ? 0 : (float)$couponDiscount;
-            if ($totalAmount > $couponDiscount && $couponDiscount != 0) {
-                $totalAmount = $totalAmount - $couponDiscount;
-            }
-
-            $referralCustomerCheck = ReferralCustomer::where('user_id', $user['id'])->where('is_used', 0)->first();
-            if (!empty($referralCustomerCheck)) {
-                $type = $referralCustomerCheck->customer_discount_amount_type;
-                $amount = $referralCustomerCheck->customer_discount_amount;
-                $validity = $referralCustomerCheck->customer_discount_validity;
-                $validityType = $referralCustomerCheck->customer_discount_validity_type;
-
-                $expirationDate = Carbon::parse($referralCustomerCheck->created_at);
-                if ($validityType == 'day') {
-                    $expirationDate->addDays($validity);
-                } else if ($validityType == 'week') {
-                    $expirationDate->addWeeks($validity);
-                } else if ($validityType == 'month') {
-                    $expirationDate->addMonths($validity);
-                } else {
-                    return 0;
-                }
-
-                if (Carbon::now()->greaterThan($expirationDate)) {
-                    return 0;
-                }
-                if ($type == 'flat') {
-                    return $amount;
-                }
-                return ($totalAmount * $amount) / 100;
-            }
-        }
+        // [AI] Victorious MARKET V1: Referral discounts do not reduce marketplace checkout totals.
+        // Cashback (Victorious Points) is the sole customer order-reduction mechanism.
         return 0;
     }
 

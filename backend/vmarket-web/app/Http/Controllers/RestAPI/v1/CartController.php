@@ -314,14 +314,9 @@ class CartController extends Controller
 
     public function getReferralDiscountRedeem(Request $request): JsonResponse
     {
-        $user = Helpers::getCustomerInformation($request);
-        $referralDiscount = 0;
-        if ($user != 'offline') {
-            $referralDiscount = CustomerManager::getReferralDiscountAmount(user: $user, couponDiscount: $request['coupon_discount']);
-        }
-
+        // [AI] Victorious MARKET V1: Referral discounts do not reduce marketplace checkout totals.
         return response()->json([
-            'amount' => $referralDiscount,
+            'amount' => 0,
         ]);
     }
 

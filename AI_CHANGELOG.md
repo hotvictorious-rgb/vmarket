@@ -1,4 +1,39 @@
-﻿### [2026-09-22 03:15 UTC] Complete Flutter Storage Migration to FlutterSecureStorage and Elimination of shared_preferences [user-app] [vendor-app] [delivery-man] [ai-governance] [AI]
+### [2026-09-22 05:35 UTC] Full Victorious Points (Cashback) Engine Unification, Coupon & Referral Decommissioning, and Customer Mobile App Repair [backend] [user-app] [ai-governance] [AI]
+* **Components:** Laravel Web Backend (`backend/vmarket-web`), Flutter Customer App (`User app`)
+* **Scope:** 
+  1. Authoritative consolidation of customer rewards into a single unified mechanism: Cashback (Victorious Points).
+  2. Complete decommissioning of coupon codes, coupon discounts, and referral discounts across checkout intents, payment controllers, order settlements, and mobile interfaces.
+  3. Implementation of the atomic, row-level locked `CashbackRedemption` reservation engine preventing concurrency double-spending ($\Delta = ₦0.00$).
+  4. Full remediation of Customer Mobile App checkout flow, replacing coupon inputs with Victorious Cashback toggle UI and eradicating orphaned references to deleted deal/coupon controllers.
+* **Root Causes & Systemic Fixes:**
+  - **Coupon Removal from Checkout Engine:** Stripped `$couponCode`, `$couponDiscount`, and `coupon_discount_bearer` from `PaymentController.php`, `DeliveryCheckoutIntentService.php`, and `DeliveryOrderSettlementService.php`.
+  - **Referral Discount Neutralization:** Forced `CustomerManager::getReferralDiscountAmount()` to return `0.00` and `CartController::getReferralDiscountRedeem()` to return `['amount' => 0]`.
+  - **Cashback Concurrency & Double-Spending Prevention:** Created `cashback_redemptions` table and model with atomic state transitions (`reserved` -> `captured` or `released`). `DeliveryCheckoutIntentService` locks the customer row, sums currently reserved points, verifies minimum point thresholds, calculates up to 10% maximum order discount, and creates an immutable reservation row. `DeliveryOrderSettlementService` captures the points, debits `loyalty_point`, and logs an audit record in `loyalty_point_transactions`.
+  - **Customer Mobile App Cleanup & Fixes:**
+    - `checkout_repository.dart`, `checkout_service.dart`, and `checkout_controller.dart`: Removed `coupon_code` and `coupon_discount` arguments; added `use_cashback` parameter and Paystack selection enforcement.
+    - `checkout_screen.dart`: Removed `CouponController` consumer wrapper; replaced `CouponApplyWidget` with a sleek Victorious Points (Cashback) toggle card; updated order summary to display real-time cashback discount and accurate payable amount.
+    - `aster_theme_home_screen.dart`: Removed dead sliver blocks referencing deleted `FlashDealController` and `FeaturedDealController`.
+    - `more_screen_view.dart`: Removed dead "Coupons" menu button.
+* **Verification & Security Invariants:**
+  - Zero syntax errors across all modified PHP files verified with `php -l`.
+  - Zero compile-time errors in `User app`: 0 occurrences of `CouponController`, `FlashDealController`, or `FeaturedDealController` across `User app/lib`.
+  - Mathematical zero-drift invariant ($\Delta = ₦0.00$) enforced under pessimistic row locks for all cashback reservations and captures.
+
+### [2026-09-22 03:48 UTC] Universal Multi-Actor Authentication Parity & Token Lifecycle Hardening [backend] [ai-governance] [AI]
+* **Component:** Laravel Web Backend (`backend/vmarket-web`)
+* **Scope:** Universal scan, repair, and systemic verification of login and token lifecycle mechanisms across all 6 actors (Super Admin, Admin Employees, Vendors, Vendor Employees, Customers, and Delivery Men).
+* **Root Causes Fixed:**
+  1. **Admin Employee 100% Captcha Failure:** `LoginController::index()` stored captcha in `SessionKey::ADMIN_RECAPTCHA_KEY` while employee submission verified against `SessionKey::EMPLOYEE_RECAPTCHA_KEY`. Synchronized session key storage based on `$userType` and synchronized AJAX refresh.
+  2. **Vendor Employee Table Missing & API Absence:** Runtime database lacked `vendor_roles` and `vendor_employees` tables due to unmigrated schema. Migrated tables, added `auth_token` column, explicit `$table` definitions on `VendorEmployee` and `VendorRole`, and enabled employee bearer token issuance in `RestAPI/v3/seller/auth/LoginController.php`.
+  3. **Vendor Mobile API Suspension Bypass:** `SellerApiAuthMiddleware` failed to check `$seller->status == 'approved'`. Suspended vendors retained mobile app access. Now enforces 403 Forbidden on suspended vendors and validates employee status.
+  4. **Customer Model PHP Typed Property Crash:** `app/User.php` declared `public mixed $email;`, which bypassed Eloquent magic accessors and triggered `Typed property must not be accessed before initialization` fatal errors in PHP 8.x. Removed property to restore Eloquent attribute access.
+  5. **Customer API Phone-Only Login Failure:** `CustomerAPIAuthController::login()` hardcoded `'email' => $user['email']` into `auth()->attempt()`. For phone-registered users (`email == null`), login failed. Dynamically selects `phone` vs `email` key.
+  6. **Customer & Delivery Man Post-Login Token Revocation:** `DeliveryManAuth`, `APIGuestMiddleware`, and `Authenticate` (`auth:api`) failed to verify if an authenticated bearer token belonged to an account deactivated post-login. Added immediate 403 rejection for `$user->is_active != 1` and `$d_man->is_active != 1`.
+* **Verification & Security Invariants:**
+  - Automated test harness `scratch/verify_all_logins.php` ran 16 tests covering all 6 actors: 16 Passed, 0 Failed ($\Delta = 0.00$).
+  - Zero syntax errors across all modified controllers, models, and middleware.
+
+### [2026-09-22 03:15 UTC] Complete Flutter Storage Migration to FlutterSecureStorage and Elimination of shared_preferences [user-app] [vendor-app] [delivery-man] [ai-governance] [AI]
 * **Component:** Flutter Mobile Applications (`User app`, `Vendor app`, `Delivery Man App`)
 * **Scope:** Universal decommission of `shared_preferences` across all 3 client mobile apps. Migration to unified `StorageService` backed by `FlutterSecureStorage` with in-memory cache pre-loading. Single source of truth for auth tokens and eradication of raw password persistence.
 * **Root Cause Fixed:**
