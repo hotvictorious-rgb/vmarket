@@ -294,8 +294,8 @@ class FulfillmentAvailabilityService
         // Add tomorrow's slots if today has none
         if (empty($slots)) {
             $tomorrow = $now->copy()->addDay();
-            $openingTomorrow = $tomorrow->setTimeFromTimeString($shop->pickup_opening_time);
-            $closingTomorrow = $tomorrow->setTimeFromTimeString($shop->pickup_closing_time);
+            $openingTomorrow = $tomorrow->copy()->setTimeFromTimeString($shop->pickup_opening_time);
+            $closingTomorrow = $tomorrow->copy()->setTimeFromTimeString($shop->pickup_closing_time);
 
             $slotTime = $openingTomorrow;
             while ($slotTime <= $closingTomorrow) {
