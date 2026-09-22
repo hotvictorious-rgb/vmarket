@@ -22,6 +22,8 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
  */
 class VendorRole extends Model
 {
+    protected $table = 'vendor_roles';
+
     protected $casts = [
         'id' => 'integer',
         'seller_id' => 'integer',

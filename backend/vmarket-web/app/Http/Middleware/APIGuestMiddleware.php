@@ -15,7 +15,14 @@ class APIGuestMiddleware
     public function handle(Request $request, Closure $next): mixed
     {
         if ($request->header('Authorization') && app('auth')->guard('api')) {
-            $request->merge(['user' => auth('api')->user()]);
+            $user = auth('api')->user();
+            if ($user && isset($user->is_active) && $user->is_active != 1) {
+                return response()->json([
+                    'message' => translate('Your account has been suspended or deactivated.'),
+                    'status' => 'inactive'
+                ], 403);
+            }
+            $request->merge(['user' => $user]);
             return $next($request);
         } elseif ($request->guest_id) {
             return $next($request);

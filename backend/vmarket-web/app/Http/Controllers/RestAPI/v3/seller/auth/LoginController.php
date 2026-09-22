@@ -71,6 +71,33 @@ class LoginController extends Controller
                 'loginStatus' => 'pending'
             ], 401);
         } else {
+            // [AI] Check if login is by an active Vendor Employee
+            $employee = \App\Models\VendorEmployee::with('role', 'seller')
+                ->where('email', $request['email'])
+                ->first();
+
+            if ($employee && \Illuminate\Support\Facades\Hash::check($request['password'], $employee->password)) {
+                if (!$employee->status) {
+                    return response()->json([
+                        'errors' => [['code' => 'auth-001', 'message' => translate('your_employee_account_has_been_deactivated')]],
+                        'loginStatus' => 'deactivated'
+                    ], 403);
+                }
+
+                if (!$employee->seller || $employee->seller->status !== 'approved') {
+                    return response()->json([
+                        'errors' => [['code' => 'auth-001', 'message' => translate('associated_vendor_shop_is_not_approved_yet')]],
+                        'loginStatus' => 'pending'
+                    ], 401);
+                }
+
+                $token = Str::random(50);
+                $employee->auth_token = $token;
+                $employee->save();
+
+                return response()->json(['token' => $token, 'is_vendor_employee' => true], 200);
+            }
+
             $errors = [];
             $errors[] = ['code' => 'auth-001', 'message' => translate('invalid_credential')];
             return response()->json([

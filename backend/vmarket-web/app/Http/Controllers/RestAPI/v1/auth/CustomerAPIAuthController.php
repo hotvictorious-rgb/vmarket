@@ -128,8 +128,9 @@ class CustomerAPIAuthController extends Controller
                 return response()->json(['errors' => $errors], 403);
             }
 
+            $medium = !empty($user['email']) ? 'email' : 'phone';
             $data = [
-                'email' => $user['email'],
+                $medium => $user[$medium],
                 'password' => $request['password'],
             ];
 

@@ -23,7 +23,30 @@ class SellerApiAuthMiddleware
         if (count($token) > 1 && strlen($token[1]) > 30) {
             $seller = Seller::where(['auth_token' => $token['1']])->first();
             if (isset($seller)) {
+                if ($seller->status !== 'approved') {
+                    return response()->json([
+                        'auth-001' => translate('Your account is not approved or has been suspended.')
+                    ], 403);
+                }
                 $request['seller'] = $seller;
+                return $next($request);
+            }
+
+            // Check if token belongs to an active Vendor Employee
+            $employee = \App\Models\VendorEmployee::with('seller', 'role')->where(['auth_token' => $token['1']])->first();
+            if (isset($employee)) {
+                if (!$employee->status) {
+                    return response()->json([
+                        'auth-001' => translate('Your employee account has been deactivated by the shop owner.')
+                    ], 403);
+                }
+                if (!$employee->seller || $employee->seller->status !== 'approved') {
+                    return response()->json([
+                        'auth-001' => translate('The associated vendor shop is not approved yet or has been suspended.')
+                    ], 403);
+                }
+                $request['seller'] = $employee->seller;
+                $request['vendor_employee'] = $employee;
                 return $next($request);
             }
         }

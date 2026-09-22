@@ -35,6 +35,7 @@ return new class extends Migration
                 $table->string('password');
                 $table->string('image')->nullable();
                 $table->boolean('status')->default(true);
+                $table->string('auth_token', 100)->nullable()->index();
                 $table->rememberToken();
                 $table->timestamps();
 

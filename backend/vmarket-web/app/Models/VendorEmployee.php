@@ -30,6 +30,8 @@ class VendorEmployee extends Authenticatable
 {
     use Notifiable, StorageTrait;
 
+    protected $table = 'vendor_employees';
+
     protected $hidden = [
         'password',
         'remember_token',
@@ -56,6 +58,7 @@ class VendorEmployee extends Authenticatable
         'password',
         'image',
         'status',
+        'auth_token',
         'remember_token',
     ];
 

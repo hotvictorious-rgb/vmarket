@@ -21,6 +21,11 @@ class DeliveryManAuth
         if (count($token) > 1 && strlen($token[1]) > 30) {
             $d_man = DeliveryMan::where(['auth_token' => $token['1']])->first();
             if (isset($d_man)) {
+                if ($d_man->is_active != 1) {
+                    return response()->json([
+                        'auth-001' => translate('Your account has been deactivated or suspended.')
+                    ], 403);
+                }
                 $request['delivery_man'] = $d_man;
                 return $next($request);
             }

@@ -38,7 +38,8 @@ class LoginController extends BaseController
         abort_if(!$userType, 404);
 
         $recaptchaBuilder = $this->generateDefaultReCaptcha(4);
-        Session::put(SessionKey::ADMIN_RECAPTCHA_KEY, $recaptchaBuilder->getPhrase());
+        $sessionKey = ($userType === UserRole::EMPLOYEE) ? SessionKey::EMPLOYEE_RECAPTCHA_KEY : SessionKey::ADMIN_RECAPTCHA_KEY;
+        Session::put($sessionKey, $recaptchaBuilder->getPhrase());
 
         $recaptcha = getWebConfig(name: 'recaptcha');
         return view('admin-views.auth.login', compact('recaptchaBuilder', 'recaptcha'))->with(['role' => $userType]);
@@ -47,10 +48,9 @@ class LoginController extends BaseController
     public function generateReCaptcha()
     {
         $recaptchaBuilder = $this->generateDefaultReCaptcha(4);
-        if (Session::has(SessionKey::ADMIN_RECAPTCHA_KEY)) {
-            Session::forget(SessionKey::ADMIN_RECAPTCHA_KEY);
-        }
-        Session::put(SessionKey::ADMIN_RECAPTCHA_KEY, $recaptchaBuilder->getPhrase());
+        $phrase = $recaptchaBuilder->getPhrase();
+        Session::put(SessionKey::ADMIN_RECAPTCHA_KEY, $phrase);
+        Session::put(SessionKey::EMPLOYEE_RECAPTCHA_KEY, $phrase);
         header("Cache-Control: no-cache, must-revalidate");
         header("Content-Type:image/jpeg");
         $recaptchaBuilder->output();
