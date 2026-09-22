@@ -175,7 +175,7 @@ No architectural expansion or feature additions outside the controlled completio
 4. **Customer Mobile App (`User app`):** Complete core shopping, cart, address, Paystack, tracking lifecycle strictly adhering to the 77-section contract in `.agents/rules/VMARKET_CUSTOMER_APP_SPEC.md`, `.agents/rules/CUSTOMER_APP_ALIGNMENT.md`, and `.agents/rules/CUSTOMER_APP_ALIGNMENT_PLAN.md`. Zero client-side fee or tax calculations permitted.
 5. **Vendor Mobile App (`Vendor app`):** Complete merchant operations with strict branch isolation.
 6. **Delivery Rider App (`Delivery Man App`):** Complete dispatch, transit, and proof of delivery. Hubs and riders are internal operational infrastructure.
-7. **Admin Control Center:** Unified command center across all marketplace governance.
+7. **Admin Control Center:** Unified operational command center across all marketplace governance, strictly adhering to `.agents/rules/VMARKET_ADMIN_PANEL_SPEC.md`, `.agents/rules/ADMIN_PANEL_ALIGNMENT.md`, and `.agents/rules/ADMIN_PANEL_ALIGNMENT_PLAN.md`. Zero client-side fee or tax calculations permitted; backend remains single source of truth.
 8. **End-to-End Simulation:** Multi-actor, multi-vendor, and adversarial race/tamper stress tests.
 9. **Controlled V1 Launch:** Small merchant cohort (~10 merchants) + limited geography + controlled logistics.
 10. **Progressive Post-V1 Scaling:** Iterative feature expansion after real commerce is flowing.

@@ -12,6 +12,9 @@ Before taking ANY action, every AI **MUST** read:
 6. `.agents/rules/CUSTOMER_APP_ALIGNMENT.md` — The 20 mandatory Customer App enforcing rules.
 7. `.agents/rules/CUSTOMER_APP_ALIGNMENT_PLAN.md` — The 34-phase Customer App alignment plan.
 8. `.agents/rules/CUSTOMER_APP_SCENARIO_AUDIT_PROTOCOL.md` — The 26-scenario, 9-phase audit protocol and parity matrix.
+9. `.agents/rules/VMARKET_ADMIN_PANEL_SPEC.md` — The 70-section canonical production contract for Admin Panel ↔ Backend.
+10. `.agents/rules/ADMIN_PANEL_ALIGNMENT.md` — The mandatory Admin Panel enforcing rules.
+11. `.agents/rules/ADMIN_PANEL_ALIGNMENT_PLAN.md` — The 10-phase Admin Panel alignment plan.
 
 ## 1. Golden Rule: Read Before Writing
 Before making ANY changes to this codebase, you MUST:
@@ -53,6 +56,13 @@ Any time you make a functional change, fix a bug, or complete a feature, you **M
 ### D. Payment Gateways & Hook Security (Laravel Backend)
 - **Atomic Payment Row Lock Directive:** Every payment gateway controller (Paystack, Flutterwave, Stripe, PayPal, Razorpay, bKash, Paytm, etc.) MUST enforce an **Atomic Row-Level Lock** (`where('is_paid', 0)->update(...)`) on `payment_requests`.
 - **Double Execution Guard:** Before invoking `$data->success_hook` (`digital_payment_success`), the code MUST check `$affected > 0`. Never call `success_hook` without checking affected rows, to prevent concurrent browser callbacks and background IPN/webhooks from generating duplicate orders or duplicate wallet credits.
+
+### E. Admin Web Panel (Control Tower & Governance)
+- **Control Tower, Not a Second Engine:** The Admin Panel (`backend/vmarket-web/resources/views/admin-views/`) is strictly a presentation and command interface for the backend. All business logic, fee calculations, and state machines reside in domain services.
+- **Zero-Trust Server-Side Authorization:** Every admin action must be authorized server-side using Laravel Policies or Gates. Never trust frontend role checks or hidden UI elements.
+- **Admin Canonical Contract:** All modifications to Admin controllers, routes, and views must strictly adhere to `.agents/rules/VMARKET_ADMIN_PANEL_SPEC.md` and `.agents/rules/ADMIN_PANEL_ALIGNMENT.md`.
+- **Canonical Geography & Lanes:** Admin strictly manages `Country → State → LGA` and directional `DeliveryLane` records. No wards or hubs in public geography. Historical order snapshots must remain immutable when lanes or fees change.
+- **Immutable Audit Logging:** Every sensitive admin mutation (lane toggling, fee modification, merchant suspension, refund approval) must write an immutable audit log record. Audit logs cannot be edited or deleted.
 
 ## 4. UI / UX Standards
 - The platform uses a specific color scheme (Purple & Gold). Use the predefined theme colors.

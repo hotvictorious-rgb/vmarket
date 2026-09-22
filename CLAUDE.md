@@ -45,6 +45,10 @@ Frontend applications (**User App**, **Vendor App**, **Delivery App**) are **con
 - **Customer App ↔ Backend Contract:** `.agents/rules/VMARKET_CUSTOMER_APP_SPEC.md` (77-section canonical production contract)
 - **Customer App Rules:** `.agents/rules/CUSTOMER_APP_ALIGNMENT.md` (20 mandatory rules)
 - **Customer App Alignment Plan:** `.agents/rules/CUSTOMER_APP_ALIGNMENT_PLAN.md` (34-phase execution plan)
+- **Customer App Scenario Audit Protocol:** `.agents/rules/CUSTOMER_APP_SCENARIO_AUDIT_PROTOCOL.md` (26 scenarios)
+- **Admin Panel ↔ Backend Contract:** `.agents/rules/VMARKET_ADMIN_PANEL_SPEC.md` (70-section canonical production contract)
+- **Admin Panel Rules:** `.agents/rules/ADMIN_PANEL_ALIGNMENT.md` (Mandatory Admin enforcing rules)
+- **Admin Panel Alignment Plan:** `.agents/rules/ADMIN_PANEL_ALIGNMENT_PLAN.md` (10-phase execution plan)
 
 ---
 
