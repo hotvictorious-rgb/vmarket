@@ -3,11 +3,11 @@
 namespace App\Http\Controllers\Admin\Delivery;
 
 use App\Http\Controllers\Controller;
-use App\Models\DeliveryCity;
 use App\Models\DeliveryHub;
 use App\Models\DeliveryMan;
-use App\Models\DeliveryState;
+use App\Models\Lga;
 use App\Models\Order;
+use App\Models\State;
 use App\Utils\Helpers;
 use Devrabiul\ToastMagic\Facades\ToastMagic;
 use Carbon\Carbon;
@@ -25,7 +25,7 @@ class DispatchPortalController extends Controller
     public function index(Request $request): View
     {
         $selectedStateId = $request->get('state_id');
-        $selectedCityId = $request->get('city_id');
+        $selectedLgaId = $request->get('lga_id');
         $selectedDeliveryType = $request->get('delivery_type');
 
         // 1. Fetch Active Orders eligible for Dispatch
@@ -37,9 +37,9 @@ class DispatchPortalController extends Controller
             $ordersQuery->where('delivery_type', $selectedDeliveryType);
         }
 
-        if ($selectedCityId) {
-            $ordersQuery->whereHas('destinationHub', function ($q) use ($selectedCityId) {
-                $q->where('city_id', $selectedCityId);
+        if ($selectedLgaId) {
+            $ordersQuery->whereHas('destinationHub', function ($q) use ($selectedLgaId) {
+                $q->where('lga_id', $selectedLgaId);
             });
         }
 
@@ -86,10 +86,12 @@ class DispatchPortalController extends Controller
             }])
             ->get();
 
-        $states = DeliveryState::where('is_active', true)->get();
-        $cities = $selectedStateId ? DeliveryCity::where('state_id', $selectedStateId)->where('is_active', true)->get() : DeliveryCity::where('is_active', true)->get();
+        $states = State::active()->orderBy('name')->get();
+        $lgas = $selectedStateId
+            ? Lga::where('state_id', $selectedStateId)->active()->orderBy('name')->get()
+            : Lga::active()->orderBy('name')->get();
 
-        return view('admin-views.delivery.dispatch-portal', compact('corridors', 'deliveryMen', 'states', 'cities', 'selectedStateId', 'selectedCityId', 'selectedDeliveryType'));
+        return view('admin-views.delivery.dispatch-portal', compact('corridors', 'deliveryMen', 'states', 'lgas', 'selectedStateId', 'selectedLgaId', 'selectedDeliveryType'));
     }
 
     /**
@@ -141,7 +143,7 @@ class DispatchPortalController extends Controller
                     $order->deliveryman_charge = $order->destinationHub->rider_delivery_fee;
                 } else {
                     $isInterstate = ($order->destinationHub && $order->destinationHub->type == 'motor_park')
-                        || ($order->originHub && $order->destinationHub && $order->originHub->city_id != $order->destinationHub->city_id);
+                        || ($order->originHub && $order->destinationHub && $order->originHub->lga_id != $order->destinationHub->lga_id);
                     $order->deliveryman_charge = $isInterstate ? 1000.00 : 500.00;
                 }
 
@@ -188,7 +190,7 @@ class DispatchPortalController extends Controller
             return back();
         }
 
-        $orders = Order::with(['seller.shop.deliveryHub', 'originHub', 'destinationHub.city.state', 'deliveryMan', 'customer', 'details'])
+        $orders = Order::with(['seller.shop.deliveryHub', 'originHub', 'destinationHub.lga.state', 'deliveryMan', 'customer', 'details'])
             ->whereIn('id', $orderIds)
             ->get();
 
@@ -201,7 +203,7 @@ class DispatchPortalController extends Controller
         $batchId = $firstOrder->batch_dispatch_id ?? ('MANIFEST-' . strtoupper(Str::random(6)));
         $originName = $firstOrder->originHub?->name ?? ($firstOrder->seller?->shop?->deliveryHub?->name ?? 'Plaza / Central Sorting Hub');
         $destName = $firstOrder->destinationHub?->name ?? 'General Landmark Corridor';
-        $destCity = $firstOrder->destinationHub?->city?->name ?? 'Uyo';
+        $destCity = $firstOrder->destinationHub?->lga?->state?->name ?? 'Akwa Ibom';
         $deliveryMan = $firstOrder->deliveryMan;
 
         $companyName = getWebConfig(name: 'company_name') ?? 'Victorious MARKET';
@@ -217,7 +219,7 @@ class DispatchPortalController extends Controller
      */
     public function printWaybill(string|int $id): View|RedirectResponse
     {
-        $order = Order::with(['seller.shop.deliveryHub', 'originHub', 'destinationHub.city.state', 'deliveryMan', 'customer', 'details'])
+        $order = Order::with(['seller.shop.deliveryHub', 'originHub', 'destinationHub.lga.state', 'deliveryMan', 'customer', 'details'])
             ->find($id);
 
         if (!$order) {

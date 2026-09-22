@@ -3,226 +3,104 @@
 namespace App\Http\Controllers\Admin\Delivery;
 
 use App\Http\Controllers\Controller;
-use App\Models\DeliveryCity;
 use App\Models\DeliveryHub;
-use App\Models\DeliveryState;
+use App\Models\Lga;
+use App\Models\State;
 use Devrabiul\ToastMagic\Facades\ToastMagic;
 use Illuminate\Contracts\View\View;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 
+/**
+ * [AI] Phase A8 — Logistics Hub Decoupling
+ *
+ * Removed all DeliveryState / DeliveryCity CRUD (those models are
+ * legacy and the canonical state/LGA data is managed via the
+ * canonical_geography seeders, not by the admin panel).
+ *
+ * Hub geography: State → LGA (canonical) instead of DeliveryState → DeliveryCity (legacy).
+ *
+ * Retained methods:
+ *   index, storeHub, updateHub, deleteHub, statusHub,
+ *   getLgasAjax (renamed from getCitiesAjax), getHubsAjax
+ */
 class DeliveryHubController extends Controller
 {
     /**
-     * Display the Geographic Hubs Management View
+     * Display the Delivery Hub Management view.
      */
     public function index(Request $request): View
     {
-        $states = DeliveryState::withCount('cities')->latest()->paginate(15, ['*'], 'state_page');
-        $cities = DeliveryCity::with('state')->withCount(['landmarks', 'motorParks'])->latest()->paginate(15, ['*'], 'city_page');
-        
-        $hubQuery = DeliveryHub::with('city.state');
-        if ($request->has('hub_type') && in_array($request->hub_type, ['landmark', 'motor_park'])) {
+        $hubQuery = DeliveryHub::with('lga.state');
+
+        if ($request->filled('hub_type') && in_array($request->hub_type, ['landmark', 'motor_park'])) {
             $hubQuery->where('type', $request->hub_type);
         }
-        if ($request->has('city_id') && $request->city_id) {
-            $hubQuery->where('city_id', $request->city_id);
+        if ($request->filled('lga_id')) {
+            $hubQuery->where('lga_id', $request->lga_id);
         }
-        if ($request->has('searchValue') && $request->searchValue) {
+        if ($request->filled('searchValue')) {
             $hubQuery->where('name', 'like', '%' . $request->searchValue . '%');
         }
-        $hubs = $hubQuery->latest()->paginate(20, ['*'], 'hub_page');
-        $allStates = DeliveryState::where('is_active', true)->get();
-        $allCities = DeliveryCity::where('is_active', true)->get();
 
-        return view('admin-views.delivery.hub-management', compact('states', 'cities', 'hubs', 'allStates', 'allCities'));
+        $hubs      = $hubQuery->latest()->paginate(20, ['*'], 'hub_page');
+        $allStates = State::active()->orderBy('name')->get();
+        // Pre-load all active LGAs for the edit-modal dropdown
+        $allLgas   = Lga::active()->orderBy('name')->get();
+
+        return view('admin-views.delivery.hub-management', compact('hubs', 'allStates', 'allLgas'));
     }
 
     /**
-     * Store State
-     */
-    public function storeState(Request $request): RedirectResponse
-    {
-        $request->validate([
-            'name' => 'required|string|max:100|unique:delivery_states,name',
-        ]);
-
-        DeliveryState::create([
-            'name' => trim($request->name),
-            'is_active' => true,
-        ]);
-
-        ToastMagic::success(translate('State added successfully'));
-        return back();
-    }
-
-    /**
-     * Update State
-     */
-    public function updateState(Request $request, $id): RedirectResponse
-    {
-        $request->validate([
-            'name' => 'required|string|max:100|unique:delivery_states,name,' . $id,
-        ]);
-
-        $state = DeliveryState::findOrFail($id);
-        $state->update([
-            'name' => trim($request->name),
-        ]);
-
-        ToastMagic::success(translate('State updated successfully'));
-        return back();
-    }
-
-    /**
-     * Delete State
-     */
-    public function deleteState($id): RedirectResponse
-    {
-        $state = DeliveryState::with('cities.hubs')->findOrFail($id);
-        foreach ($state->cities as $city) {
-            $city->hubs()->delete();
-            $city->delete();
-        }
-        $state->delete();
-
-        ToastMagic::success(translate('State and associated cities removed'));
-        return back();
-    }
-
-    /**
-     * Toggle State Status
-     */
-    public function statusState(Request $request): JsonResponse
-    {
-        $state = DeliveryState::findOrFail($request->id);
-        $state->is_active = $request->status;
-        $state->save();
-
-        return response()->json([
-            'success' => 1,
-            'message' => translate('State status updated successfully'),
-        ]);
-    }
-
-    /**
-     * Store City
-     */
-    public function storeCity(Request $request): RedirectResponse
-    {
-        $request->validate([
-            'state_id' => 'required|exists:delivery_states,id',
-            'name' => 'required|string|max:100',
-        ]);
-
-        DeliveryCity::create([
-            'state_id' => $request->state_id,
-            'name' => trim($request->name),
-            'is_active' => true,
-        ]);
-
-        ToastMagic::success(translate('City added successfully'));
-        return back();
-    }
-
-    /**
-     * Update City
-     */
-    public function updateCity(Request $request, $id): RedirectResponse
-    {
-        $request->validate([
-            'state_id' => 'required|exists:delivery_states,id',
-            'name' => 'required|string|max:100',
-        ]);
-
-        $city = DeliveryCity::findOrFail($id);
-        $city->update([
-            'state_id' => $request->state_id,
-            'name' => trim($request->name),
-        ]);
-
-        ToastMagic::success(translate('City updated successfully'));
-        return back();
-    }
-
-    /**
-     * Delete City
-     */
-    public function deleteCity($id): RedirectResponse
-    {
-        $city = DeliveryCity::findOrFail($id);
-        $city->hubs()->delete();
-        $city->delete();
-
-        ToastMagic::success(translate('City and associated hubs deleted successfully'));
-        return back();
-    }
-
-    /**
-     * Toggle City Status
-     */
-    public function statusCity(Request $request): JsonResponse
-    {
-        $city = DeliveryCity::findOrFail($request->id);
-        $city->is_active = $request->status;
-        $city->save();
-
-        return response()->json([
-            'success' => 1,
-            'message' => translate('City status updated successfully'),
-        ]);
-    }
-
-    /**
-     * Store Hub (Landmark or Motor Park)
+     * Store a new Delivery Hub (Landmark or Motor Park).
      */
     public function storeHub(Request $request): RedirectResponse
     {
         $request->validate([
-            'city_id' => 'required|exists:delivery_cities,id',
-            'name' => 'required|string|max:150',
-            'type' => 'required|in:landmark,motor_park',
-            'base_shipping_cost' => 'required|numeric|min:0',
-            'rider_delivery_fee' => 'nullable|numeric|min:0',
+            'lga_id'                => 'required|exists:lgas,id',
+            'name'                  => 'required|string|max:150',
+            'type'                  => 'required|in:landmark,motor_park',
+            'base_shipping_cost'    => 'required|numeric|min:0',
+            'rider_delivery_fee'    => 'nullable|numeric|min:0',
             'estimated_delivery_time' => 'nullable|string|max:100',
         ]);
 
         DeliveryHub::create([
-            'city_id' => $request->city_id,
-            'name' => trim($request->name),
-            'type' => $request->type,
-            'base_shipping_cost' => $request->base_shipping_cost,
-            'rider_delivery_fee' => $request->rider_delivery_fee ?? 0.00,
+            'lga_id'                  => $request->lga_id,
+            'name'                    => trim($request->name),
+            'type'                    => $request->type,
+            'base_shipping_cost'      => $request->base_shipping_cost,
+            'rider_delivery_fee'      => $request->rider_delivery_fee ?? 0.00,
             'estimated_delivery_time' => $request->estimated_delivery_time,
-            'is_active' => true,
+            'is_active'               => true,
         ]);
 
-        ToastMagic::success(translate($request->type == 'landmark' ? 'Landmark added successfully' : 'Motor Park hub added successfully'));
+        ToastMagic::success(translate($request->type === 'landmark' ? 'Landmark added successfully' : 'Motor Park hub added successfully'));
         return back();
     }
 
     /**
-     * Update Hub
+     * Update an existing Delivery Hub.
      */
     public function updateHub(Request $request, $id): RedirectResponse
     {
         $request->validate([
-            'city_id' => 'required|exists:delivery_cities,id',
-            'name' => 'required|string|max:150',
-            'type' => 'required|in:landmark,motor_park',
-            'base_shipping_cost' => 'required|numeric|min:0',
-            'rider_delivery_fee' => 'nullable|numeric|min:0',
+            'lga_id'                => 'required|exists:lgas,id',
+            'name'                  => 'required|string|max:150',
+            'type'                  => 'required|in:landmark,motor_park',
+            'base_shipping_cost'    => 'required|numeric|min:0',
+            'rider_delivery_fee'    => 'nullable|numeric|min:0',
             'estimated_delivery_time' => 'nullable|string|max:100',
         ]);
 
         $hub = DeliveryHub::findOrFail($id);
         $hub->update([
-            'city_id' => $request->city_id,
-            'name' => trim($request->name),
-            'type' => $request->type,
-            'base_shipping_cost' => $request->base_shipping_cost,
-            'rider_delivery_fee' => $request->rider_delivery_fee ?? 0.00,
+            'lga_id'                  => $request->lga_id,
+            'name'                    => trim($request->name),
+            'type'                    => $request->type,
+            'base_shipping_cost'      => $request->base_shipping_cost,
+            'rider_delivery_fee'      => $request->rider_delivery_fee ?? 0.00,
             'estimated_delivery_time' => $request->estimated_delivery_time,
         ]);
 
@@ -231,7 +109,7 @@ class DeliveryHubController extends Controller
     }
 
     /**
-     * Delete Hub
+     * Delete a Delivery Hub.
      */
     public function deleteHub($id): RedirectResponse
     {
@@ -243,7 +121,7 @@ class DeliveryHubController extends Controller
     }
 
     /**
-     * Toggle Hub Status
+     * Toggle Hub active status (AJAX).
      */
     public function statusHub(Request $request): JsonResponse
     {
@@ -258,24 +136,25 @@ class DeliveryHubController extends Controller
     }
 
     /**
-     * Get Cities by State (AJAX)
+     * Get LGAs by State (AJAX) — replaces the legacy getCitiesAjax.
+     * Route: GET admin/delivery-hubs/get-lgas-ajax/{state_id}
      */
-    public function getCitiesAjax($state_id): JsonResponse
+    public function getLgasAjax(int $state_id): JsonResponse
     {
-        $cities = DeliveryCity::where('state_id', $state_id)->where('is_active', true)->get();
-        return response()->json($cities);
+        $lgas = Lga::where('state_id', $state_id)->active()->orderBy('name')->get(['id', 'name']);
+        return response()->json($lgas);
     }
 
     /**
-     * Get Hubs by City (AJAX)
+     * Get Hubs by LGA (AJAX) — parameter renamed from $city_id to $lga_id.
+     * Route: GET admin/delivery-hubs/get-hubs-ajax/{lga_id}
      */
-    public function getHubsAjax(Request $request, $city_id): JsonResponse
+    public function getHubsAjax(Request $request, int $lga_id): JsonResponse
     {
-        $query = DeliveryHub::where('city_id', $city_id)->where('is_active', true);
-        if ($request->has('type') && in_array($request->type, ['landmark', 'motor_park'])) {
+        $query = DeliveryHub::where('lga_id', $lga_id)->where('is_active', true);
+        if ($request->filled('type') && in_array($request->type, ['landmark', 'motor_park'])) {
             $query->where('type', $request->type);
         }
-        $hubs = $query->get();
-        return response()->json($hubs);
+        return response()->json($query->get());
     }
 }

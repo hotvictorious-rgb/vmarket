@@ -33,11 +33,11 @@
                     </select>
                 </div>
                 <div class="col-md-3">
-                    <label class="title-color fs-12">{{ translate('Delivery City') }}</label>
-                    <select name="city_id" class="form-control form-control-sm" id="filter-city">
-                        <option value="">{{ translate('All Cities') }}</option>
-                        @foreach($cities as $ct)
-                            <option value="{{ $ct->id }}" {{ $selectedCityId == $ct->id ? 'selected' : '' }}>{{ $ct->name }}</option>
+                    <label class="title-color fs-12">{{ translate('Delivery LGA') }}</label>
+                    <select name="lga_id" class="form-control form-control-sm" id="filter-lga">
+                        <option value="">{{ translate('All LGAs') }}</option>
+                        @foreach($lgas as $ct)
+                            <option value="{{ $ct->id }}" {{ $selectedLgaId == $ct->id ? 'selected' : '' }}>{{ $ct->name }}</option>
                         @endforeach
                     </select>
                 </div>

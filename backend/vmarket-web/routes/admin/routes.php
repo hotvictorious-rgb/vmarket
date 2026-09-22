@@ -669,23 +669,19 @@ Route::group(['prefix' => 'admin', 'as' => 'admin.', 'middleware' => ['admin', '
     Route::group(['prefix' => 'delivery-hubs', 'as' => 'delivery-hubs.', 'middleware' => ['module:order_management']], function () {
         Route::controller(DeliveryHubController::class)->group(function () {
             Route::get('/', 'index')->name('index');
-            Route::post('store-state', 'storeState')->name('store-state');
-            Route::post('update-state/{id}', 'updateState')->name('update-state');
-            Route::delete('delete-state/{id}', 'deleteState')->name('delete-state');
-            Route::post('status-state', 'statusState')->name('status-state');
 
-            Route::post('store-city', 'storeCity')->name('store-city');
-            Route::post('update-city/{id}', 'updateCity')->name('update-city');
-            Route::delete('delete-city/{id}', 'deleteCity')->name('delete-city');
-            Route::post('status-city', 'statusCity')->name('status-city');
+            // [AI] Phase A8 — Logistics Hub Decoupling
+            // Removed: store-state, update-state, delete-state, status-state (legacy DeliveryState CRUD)
+            // Removed: store-city, update-city, delete-city, status-city (legacy DeliveryCity CRUD)
+            // Canonical state/LGA data is managed via seeders, not the admin panel.
 
             Route::post('store-hub', 'storeHub')->name('store-hub');
             Route::post('update-hub/{id}', 'updateHub')->name('update-hub');
             Route::delete('delete-hub/{id}', 'deleteHub')->name('delete-hub');
             Route::post('status-hub', 'statusHub')->name('status-hub');
 
-            Route::get('get-cities-ajax/{state_id}', 'getCitiesAjax')->name('get-cities-ajax');
-            Route::get('get-hubs-ajax/{city_id}', 'getHubsAjax')->name('get-hubs-ajax');
+            Route::get('get-lgas-ajax/{state_id}', 'getLgasAjax')->name('get-lgas-ajax');
+            Route::get('get-hubs-ajax/{lga_id}', 'getHubsAjax')->name('get-hubs-ajax');
         });
     });
 
