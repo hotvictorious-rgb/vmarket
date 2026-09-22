@@ -161,6 +161,15 @@ class CheckoutScreenState extends State<CheckoutScreen> {
         builder: (context, locationProvider,_) {
           return Consumer<CheckoutController>(
             builder: (context, orderProvider, child) {
+              if (orderProvider.addressIndex != null && locationProvider.addressList != null && locationProvider.addressList!.isNotEmpty && orderProvider.addressIndex! < locationProvider.addressList!.length) {
+                final int currentAddressId = locationProvider.addressList![orderProvider.addressIndex!].id!;
+                if (_lastCheckedAddressId != currentAddressId) {
+                  WidgetsBinding.instance.addPostFrameCallback((_) {
+                    _checkFulfillmentIfReady(currentAddressId);
+                  });
+                }
+              }
+
               if(splashController.configModel?.systemTaxIncludeStatus != 1) {
                 _tax = CartHelper().calculateVatTax(Provider.of<CartController>(context, listen: false).cartList);
               }

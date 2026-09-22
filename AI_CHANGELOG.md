@@ -1,3 +1,14 @@
+### [2026-09-22 21:05 UTC] Full 77-Section Customer App Alignment Implementation [user-app] [AI]
+* **Components:** Customer Mobile App (`User app`)
+* **Scope:** Executed complete implementation of the 77-section production alignment specification across Cart, Fulfillment Availability, Directional Lanes, Two-Phase Checkout Intent, and Pickup Verification OTP.
+* **Key Enhancements Implemented:**
+  - **Cart Screen Decoupling (§§ 30–38):** Eradicated legacy shipping method checks and modal gates (`sellerwise_shipping`, `order_wise`, `checkShippingMethod()`) in `cart_screen.dart`. Cart now smoothly proceeds to checkout with zero client-side shipping calculation.
+  - **Authoritative Fulfillment Availability Hook (§§ 20–29):** Integrated dynamic `_checkFulfillmentIfReady` in `checkout_screen.dart` triggering `POST /api/v1/fulfillment/availability` on address resolution and selection changes.
+  - **Directional Delivery Lane Status & Parity Card (§§ 20–29):** Enhanced `shipping_details_widget.dart` with verified delivery lane card showing live origin-to-destination routing (`Origin LGA → Destination LGA`), authoritative lane shipping fee, and delivery availability warnings.
+  - **Delivery Availability Enforcing Guard (§ 22, § 25):** Added strict guard in checkout submission preventing doorstep delivery if backend returns `delivery.available = false`.
+  - **Authoritative Summary Pricing (§§ 30–38):** Bound order summary active shipping fee to authoritative backend lane fee (`fulfillmentAvailability?.data?.fulfillmentOptions?.delivery?.fee`).
+  - **In-Store Pickup & Delivery OTP Unification (§ 52):** Hardened `order_payment_info_widget.dart` to support both `pickupVerificationCode` and `verificationCode` fallbacks.
+
 ### [2026-09-22 20:55 UTC] Ecosystem Markdown Deep-Scan & Alignment with 77-Section Spec [ai-governance] [AI]
 * **Components:** AI Governance, Architecture Documentation, API Contracts, Rulebooks
 * **Scope:** Repository-wide deep-scan and reconciliation of all markdown documentation to enforce complete alignment with `.agents/rules/VMARKET_CUSTOMER_APP_SPEC.md`, `.agents/rules/CUSTOMER_APP_ALIGNMENT.md`, and `.agents/rules/CUSTOMER_APP_ALIGNMENT_PLAN.md`.
