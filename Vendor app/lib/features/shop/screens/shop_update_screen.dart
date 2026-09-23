@@ -34,7 +34,7 @@ class ShopUpdateScreenState extends State<ShopUpdateScreen> {
   final FocusNode _sNameFocus = FocusNode();
   final FocusNode _cNumberFocus = FocusNode();
   final FocusNode _addressFocus = FocusNode();
-  String countryDialCode = '+880';
+  String countryDialCode = '+234';
 
   final TextEditingController _shopNameController = TextEditingController();
   final TextEditingController _contactNumberController = TextEditingController();

@@ -25,25 +25,14 @@ class OrderDetailsRepository implements OrderDetailsRepositoryInterface{
   @override
   Future<ApiResponse> getOrderStatusList(String type) async {
     try {
-      List<String> addressTypeList = [];
-      if(type == 'inhouse_shipping'){
-        addressTypeList = [
-          'pending',
-          'confirmed',
-          'processing'
-        ];
-      }else{
-        addressTypeList = [
-          'pending',
-          'confirmed',
-          'processing',
-          'out_for_delivery',
-          'delivered',
-          'returned',
-          'failed',
-          'canceled',
-        ];
-      }
+      // [AI] In VMarket, platform logistics handles delivery and staff OTP handles in-shop pickup.
+      // Vendors are authorized to transition orders through packaging stages: pending, confirmed, processing, canceled.
+      List<String> addressTypeList = [
+        'pending',
+        'confirmed',
+        'processing',
+        'canceled',
+      ];
 
       Response response = Response(requestOptions: RequestOptions(path: ''), data: addressTypeList, statusCode: 200);
       return ApiResponse.withSuccess(response);

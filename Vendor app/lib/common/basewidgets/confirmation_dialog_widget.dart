@@ -1,9 +1,7 @@
 
 import 'package:flutter/material.dart';
-import 'package:provider/provider.dart';
 import 'package:sixvalley_vendor_app/common/basewidgets/custom_button_widget.dart';
 import 'package:sixvalley_vendor_app/localization/language_constrants.dart';
-import 'package:sixvalley_vendor_app/features/shipping/controllers/shipping_controller.dart';
 import 'package:sixvalley_vendor_app/utill/dimensions.dart';
 import 'package:sixvalley_vendor_app/utill/styles.dart';
 
@@ -61,25 +59,23 @@ class ConfirmationDialogWidget extends StatelessWidget {
           ),
           const SizedBox(height: Dimensions.paddingSizeLarge),
 
-          Consumer<ShippingController>(builder: (context, shippingProvider, child) {
-            return !shippingProvider.isLoading ? Row(children: [
-              Expanded(child: InkWell(
-                splashColor: Colors.transparent,
-                onTap: () => Navigator.pop(context),
-               child: CustomButtonWidget(
-                 btnTxt: getTranslated('no',context),
-                 backgroundColor: Theme.of(context).hintColor,
-                 isColor: true,
-               ),
-              )),
-              const SizedBox(width: Dimensions.paddingSizeLarge),
-              Expanded(child: (isLoading ?? false) ?
-              const Center(child: SizedBox(width: 35, child: CircularProgressIndicator())) : CustomButtonWidget(
-                btnTxt: getTranslated('yes',context),
-                onTap: () =>  onYesPressed(),
-              )),
-            ]) : const Center(child: CircularProgressIndicator());
-        }),
+          Row(children: [
+            Expanded(child: InkWell(
+              splashColor: Colors.transparent,
+              onTap: () => Navigator.pop(context),
+             child: CustomButtonWidget(
+               btnTxt: getTranslated('no',context),
+               backgroundColor: Theme.of(context).hintColor,
+               isColor: true,
+             ),
+            )),
+            const SizedBox(width: Dimensions.paddingSizeLarge),
+            Expanded(child: (isLoading ?? false) ?
+            const Center(child: SizedBox(width: 35, child: CircularProgressIndicator())) : CustomButtonWidget(
+              btnTxt: getTranslated('yes',context),
+              onTap: () =>  onYesPressed(),
+            )),
+          ]),
       ])),
     ));
   }

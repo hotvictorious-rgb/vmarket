@@ -56,7 +56,7 @@ class AuthController with ChangeNotifier {
   String get phone => _phone;
   bool _isPhoneNumberVerificationButtonLoading = false;
   bool get isPhoneNumberVerificationButtonLoading => _isPhoneNumberVerificationButtonLoading;
-  String? _countryDialCode = '+880';
+  String? _countryDialCode = '+234';
   String? get countryDialCode => _countryDialCode;
 
   bool _resendButtonLoading = false;

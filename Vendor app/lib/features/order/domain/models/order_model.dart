@@ -1,5 +1,4 @@
 import 'package:sixvalley_vendor_app/data/model/image_full_url.dart';
-import 'package:sixvalley_vendor_app/features/delivery_man/domain/model/top_delivery_man.dart';
 import 'package:sixvalley_vendor_app/features/order_details/domain/models/order_details_model.dart';
 
 
@@ -638,7 +637,42 @@ class PaymentInfo {
     accountNumber = json['account_number'];
     accountHolderName = json['account_holder_name'];
   }
+}
 
+class DeliveryMan {
+  int? id;
+  String? fName;
+  String? lName;
+  String? phone;
+  String? email;
+  String? countryCode;
+  ImageFullUrl? imageFullUrl;
+
+  DeliveryMan({this.id, this.fName, this.lName, this.phone, this.email, this.countryCode, this.imageFullUrl});
+
+  DeliveryMan.fromJson(Map<String, dynamic> json) {
+    id = json['id'];
+    fName = json['f_name'];
+    lName = json['l_name'];
+    phone = json['phone'];
+    email = json['email'];
+    countryCode = json['country_code'];
+    imageFullUrl = json['image_full_url'] != null ? ImageFullUrl.fromJson(json['image_full_url']) : null;
+  }
+
+  Map<String, dynamic> toJson() {
+    final Map<String, dynamic> data = <String, dynamic>{};
+    data['id'] = id;
+    data['f_name'] = fName;
+    data['l_name'] = lName;
+    data['phone'] = phone;
+    data['email'] = email;
+    data['country_code'] = countryCode;
+    if (imageFullUrl != null) {
+      data['image_full_url'] = imageFullUrl!.toJson();
+    }
+    return data;
+  }
 }
 
 

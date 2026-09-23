@@ -24,7 +24,7 @@ class EmergencyContactController extends ChangeNotifier {
 
 
 
-  String? _countryDialCode = '+880';
+  String? _countryDialCode = '+234';
   String? get countryDialCode => _countryDialCode;
 
 

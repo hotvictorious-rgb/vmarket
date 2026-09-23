@@ -150,7 +150,7 @@ class _OrderDetailsScreenState extends State<OrderDetailsScreen> {
                                 || (orderDetailsController.orderDetails?[0].order?.shipping?.title?.toLowerCase().contains('pickup') ?? false);
                             final bool isOrderPaid = orderDetailsController.orderDetails?[0].order?.paymentStatus == 'paid';
 
-                            if (currentStatus == 'ready_for_pickup') {
+                            if (currentStatus == 'ready_for_pickup' || (isSelfPickupOrder && currentStatus == 'processing')) {
                               return Container(
                                 margin: const EdgeInsets.symmetric(horizontal: Dimensions.paddingSizeDefault, vertical: Dimensions.paddingSizeExtraSmall),
                                 padding: const EdgeInsets.all(Dimensions.paddingSizeDefault),
@@ -206,6 +206,41 @@ class _OrderDetailsScreenState extends State<OrderDetailsScreen> {
                                               color: Theme.of(context).textTheme.bodyMedium?.color?.withValues(alpha: 0.8),
                                             ),
                                           ),
+                                          if (isSelfPickupOrder && isOrderPaid && orderDetailsController.orderDetails?[0].order?.id != null) ...[
+                                            const SizedBox(height: 10),
+                                            InkWell(
+                                              onTap: () => _showVerifyPickupOtpDialog(
+                                                context,
+                                                orderDetailsController.orderDetails![0].order!.id!,
+                                                orderDetailsController,
+                                              ),
+                                              child: Container(
+                                                padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+                                                decoration: BoxDecoration(
+                                                  color: const Color(0xFF00897B),
+                                                  borderRadius: BorderRadius.circular(8),
+                                                  boxShadow: [
+                                                    BoxShadow(
+                                                      color: const Color(0xFF00897B).withValues(alpha: 0.25),
+                                                      blurRadius: 4,
+                                                      offset: const Offset(0, 2),
+                                                    ),
+                                                  ],
+                                                ),
+                                                child: Row(
+                                                  mainAxisSize: MainAxisSize.min,
+                                                  children: [
+                                                    const Icon(Icons.verified_user_rounded, color: Colors.white, size: 16),
+                                                    const SizedBox(width: 6),
+                                                    Text(
+                                                      getTranslated('verify_customer_pickup_otp', context) ?? 'Verify Customer OTP',
+                                                      style: robotoBold.copyWith(color: Colors.white, fontSize: Dimensions.fontSizeSmall),
+                                                    ),
+                                                  ],
+                                                ),
+                                              ),
+                                            ),
+                                          ],
                                         ],
                                       ),
                                     ),

@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter_switch/flutter_switch.dart';
 import 'package:provider/provider.dart';
 
-import 'package:sixvalley_vendor_app/features/delivery_man/controllers/delivery_man_controller.dart';
 import 'package:sixvalley_vendor_app/features/dashboard/controllers/bottom_menu_controller.dart';
 import 'package:sixvalley_vendor_app/features/product_details/controllers/product_details_controller.dart';
 import 'package:sixvalley_vendor_app/features/review/controllers/product_review_controller.dart';
@@ -86,24 +85,20 @@ class CustomAppBarWidget extends StatelessWidget implements PreferredSizeWidget 
             isSwitch ?
             Consumer<ProductDetailsController>(
               builder: (context, details,_) {
-                return Consumer<DeliveryManController>(
-                  builder: (context, delivery,_) {
-                    return Consumer<ProductReviewController>(
-                      builder: (context, productReview,_) {
-                        return Padding(
-                          padding: const EdgeInsets.all(Dimensions.paddingSizeSmall),
-                          child: FlutterSwitch(
-                            activeColor: Theme.of(context).primaryColor,
-                            width: 40,height: 22,toggleSize: 18,
-                            padding: 2,
-                            value: productSwitch? details.productDetails?.status == 1 :
-                            reviewSwitch? productReview.reviewList[index!].status==1 :
-                            productReviewSwitch? productReview.productReviewList[index!].status ==1:
-                            delivery.deliveryManDetails?.deliveryMan?.isActive == 1,
-                            onToggle: switchAction as void Function(bool)
-                          ),
-                        );
-                      }
+                return Consumer<ProductReviewController>(
+                  builder: (context, productReview,_) {
+                    return Padding(
+                      padding: const EdgeInsets.all(Dimensions.paddingSizeSmall),
+                      child: FlutterSwitch(
+                        activeColor: Theme.of(context).primaryColor,
+                        width: 40,height: 22,toggleSize: 18,
+                        padding: 2,
+                        value: productSwitch? details.productDetails?.status == 1 :
+                        reviewSwitch? productReview.reviewList[index!].status==1 :
+                        productReviewSwitch? productReview.productReviewList[index!].status ==1:
+                        false,
+                        onToggle: switchAction as void Function(bool)
+                      ),
                     );
                   }
                 );

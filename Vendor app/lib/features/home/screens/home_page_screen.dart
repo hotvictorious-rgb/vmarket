@@ -4,12 +4,10 @@ import 'package:provider/provider.dart';
 import 'package:sixvalley_vendor_app/features/notification/controllers/notification_controller.dart';
 import 'package:sixvalley_vendor_app/features/product/domain/models/product_model.dart';
 import 'package:sixvalley_vendor_app/features/bank_info/controllers/bank_info_controller.dart';
-import 'package:sixvalley_vendor_app/features/delivery_man/controllers/delivery_man_controller.dart';
 import 'package:sixvalley_vendor_app/features/order/controllers/order_controller.dart';
 import 'package:sixvalley_vendor_app/features/product/controllers/product_controller.dart';
 import 'package:sixvalley_vendor_app/features/profile/controllers/profile_controller.dart';
 import 'package:sixvalley_vendor_app/features/review/controllers/product_review_controller.dart';
-import 'package:sixvalley_vendor_app/features/shipping/controllers/shipping_controller.dart';
 import 'package:sixvalley_vendor_app/features/splash/controllers/splash_controller.dart';
 import 'package:sixvalley_vendor_app/utill/dimensions.dart';
 import 'package:sixvalley_vendor_app/utill/images.dart';
@@ -21,7 +19,6 @@ import 'package:sixvalley_vendor_app/features/product/widgets/stock_out_product_
 import 'package:sixvalley_vendor_app/features/notification/screens/notification_screen.dart';
 import 'package:sixvalley_vendor_app/features/product/screens/most_popular_product_screen.dart';
 import 'package:sixvalley_vendor_app/features/product/screens/top_selling_product_screen.dart';
-import 'package:sixvalley_vendor_app/features/delivery_man/widgets/top_delivery_man_view_widget.dart';
 
 
 class HomePageScreen extends StatefulWidget {
@@ -49,11 +46,8 @@ class _HomePageScreenState extends State<HomePageScreen> {
 
     await Future.delayed(const Duration(milliseconds: 150));
     await Provider.of<ProductController>(context,listen: false).getTopSellingProductList(1, context, 'en', reload: reload);
-    await Provider.of<ShippingController>(context,listen: false).getCategoryWiseShippingMethod();
-    await Provider.of<ShippingController>(context,listen: false).getSelectedShippingMethodType(context);
 
     await Future.delayed(const Duration(milliseconds: 150));
-    await Provider.of<DeliveryManController>(context, listen: false).getTopDeliveryManList(context);
     await Provider.of<BankInfoController>(context, listen: false).getDashboardRevenueData(context,'yearEarn');
     Provider.of<BankInfoController>(context, listen: false).setRevenueFilterType(0, false);
     
@@ -183,9 +177,6 @@ class _HomePageScreenState extends State<HomePageScreen> {
 
                       const MostPopularProductScreen(isMain: true),
                       const SizedBox(height: Dimensions.paddingSizeSmall),
-
-                      Provider.of<SplashController>(context, listen: false).configModel?.shippingMethod != 'inhouse_shipping' ?
-                      const TopDeliveryManViewWidget(isMain: true) : const SizedBox()
 
                     ],
                   ),

@@ -58,6 +58,10 @@ class AppConstants {
   static const String updateMarketplaceAvailabilityUri = '/api/v3/seller/products/update-marketplace-availability';
   static const String updateMarketplaceListingUri = '/api/v3/seller/products/update-marketplace-listing';
   static const String bulkConfirmMarketplaceAvailabilityUri = '/api/v3/seller/products/bulk-confirm-availability';
+  static const String getEmployeeListUri = '/api/v3/seller/employee/list';
+  static const String addEmployeeUri = '/api/v3/seller/employee/store';
+  static const String updateEmployeeStatusUri = '/api/v3/seller/employee/status';
+  static const String deleteEmployeeUri = '/api/v3/seller/employee/delete';
   static const String addShippingUri = '/api/v3/seller/shipping-method/add';
   static const String updateShippingUri = '/api/v3/seller/shipping-method/update';
   static const String editShippingUri = '/api/v3/seller/shipping-method/edit';

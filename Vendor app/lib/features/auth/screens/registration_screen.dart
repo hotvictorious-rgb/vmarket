@@ -46,7 +46,7 @@ class _RegistrationScreenState extends State<RegistrationScreen> with TickerProv
           break;
       }
     });
-    Provider.of<AuthController>(Get.context!, listen: false).setCountryDialCode(CountryCode.fromCountryCode(Provider.of<SplashController>(context, listen: false).configModel!.countryCode ?? '+880').dialCode);
+    Provider.of<AuthController>(Get.context!, listen: false).setCountryDialCode(CountryCode.fromCountryCode(Provider.of<SplashController>(context, listen: false).configModel!.countryCode ?? '+234').dialCode);
     Provider.of<AuthController>(Get.context!, listen: false).emptyRegistrationData();
   }
 
