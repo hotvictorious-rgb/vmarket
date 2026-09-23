@@ -478,7 +478,10 @@ class PickupOrderSettlementService
                 }
 
                 if (!empty($reservation->shop_id)) {
-                    $stockQuery->where('shop_id', $reservation->shop_id);
+                    $stockQuery->where(function ($q) use ($reservation) {
+                        $q->where('shop_id', $reservation->shop_id)
+                          ->orWhereNull('shop_id');
+                    });
                 }
 
                 $affected = $stockQuery->decrement('current_stock', $qty);
@@ -493,7 +496,7 @@ class PickupOrderSettlementService
                         $sellerMatch = ($sellerIs === 'seller')
                             ? ($freshProd->added_by === 'seller' && (int) $freshProd->user_id === (int) $reservation->seller_id)
                             : ($freshProd->added_by === 'admin');
-                        $shopMatch = empty($reservation->shop_id) || ((int) $freshProd->shop_id === (int) $reservation->shop_id);
+                        $shopMatch = empty($reservation->shop_id) || empty($freshProd->shop_id) || ((int) $freshProd->shop_id === (int) $reservation->shop_id);
 
                         if (!$sellerMatch || !$shopMatch) {
                             throw new PostPaymentStockFailureException(

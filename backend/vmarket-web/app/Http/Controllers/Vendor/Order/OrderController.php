@@ -314,7 +314,7 @@ class OrderController extends BaseController
     {
         $vendorId = auth('seller')->id();
         $params = ['id' => $id, 'seller_id' => $vendorId, 'seller_is' => 'seller'];
-        $relations = ['details.productAllStatus', 'originHub.city.state', 'destinationHub.city.state', 'seller.shop'];
+        $relations = ['details.productAllStatus', 'originHub.lga.state', 'destinationHub.lga.state', 'seller.shop'];
         $order = $this->orderRepo->getFirstWhere(params: $params, relations: $relations);
 
         if (!$order) {

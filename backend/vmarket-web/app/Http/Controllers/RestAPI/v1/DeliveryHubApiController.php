@@ -50,6 +50,14 @@ class DeliveryHubApiController extends Controller
     }
 
     /**
+     * Alias for backward compatibility with mobile clients calling /cities/{state_id}.
+     */
+    public function getCities(int $state_id): JsonResponse
+    {
+        return $this->getLgas($state_id);
+    }
+
+    /**
      * Get Active Hubs (Landmarks / Motor Parks) for an LGA.
      */
     public function getHubs(Request $request, int $lga_id): JsonResponse

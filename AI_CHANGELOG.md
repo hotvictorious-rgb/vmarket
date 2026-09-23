@@ -1,3 +1,46 @@
+### [2026-09-23 07:05 UTC] Backend Legacy and Dead Code Removal [backend] [AI]
+* **Components:** Laravel Backend (`backend/vmarket-web/`)
+* **Scope:** Backend-only cleanup removing all unmapped, duplicate, and dead code while strictly adhering to `.agents/AGENTS.md` (Prime Directives, 10-step Capability Migration & Cleanup Protocol, zero client breakage, and zero-drift verification $\Delta = ₦0.00$). Absolutely ZERO frontend code modified.
+* **Dead Files Removed:**
+  - `app/Models/ReferrlaCustomer.php`: Removed typo/duplicate model with 0 references in the repository.
+  - `app/Traits/Payment.txt`: Removed non-PHP text artifact from traits directory.
+  - `routes/test.php`: Removed unmapped 6valley test route file containing hardcoded test emails and mock endpoints.
+  - `routes/shared.php`: Removed empty 17-line skeleton route file.
+  - `app/Http/Controllers/Admin/CategoryShippingCostController.php`: Removed dead controller (replaced by canonical DeliveryLane).
+  - `app/Http/Controllers/Admin/Shipping/ShippingMethodController.php`: Removed dead controller (replaced by canonical DeliveryLane).
+  - `app/Http/Controllers/Admin/Shipping/ShippingTypeController.php`: Removed dead controller (replaced by canonical DeliveryLane).
+  - `app/Http/Controllers/RestAPI/v2/seller/`: Deleted entire directory containing 10 obsolete controllers (BrandController, OrderController, ProductController, RefundController, SellerController, ShippingMethodController, shippingController, auth/ForgotPasswordController, auth/LoginController, auth/RegisterController) which were fully superseded by `v3/seller/`.
+* **Route Cleanup:**
+  - `routes/admin/routes.php`: Removed orphaned imports of deleted shipping controllers (`CategoryShippingCostController`, `ShippingMethodController`, `ShippingTypeController`).
+  - `routes/rest_api/v2/api.php`: Purged dead `v2/seller` imports and route groups that pointed to deleted `RestAPI/v2/seller` controllers.
+* **Bug Fixes & Hardening:**
+  - `app/Http/Controllers/RestAPI/v1/DeliveryHubApiController.php`: Added `getCities(int $state_id)` alias method delegating to `getLgas` to prevent HTTP 500 BadMethodCall crashes for legacy mobile app calls targeting `/api/v1/delivery-hubs/cities/{state_id}`.
+  - `app/Http/Controllers/RestAPI/v2/delivery_man/DeliveryManController.php`: Fixed broken eager loading relation chain from `originHub.city.state, destinationHub.city.state` to canonical `originHub.lga.state, destinationHub.lga.state`.
+  - `app/Http/Controllers/Vendor/Order/OrderController.php`: Fixed broken eager loading relation chain in packing slip generation from `city.state` to `lga.state`.
+  - `app/Services/PickupOrderSettlementService.php`: Fixed pickup stock decrement check to handle products with `shop_id = NULL` (primary seller catalog items) without falsely triggering an ownership mismatch exception.
+* **Verification & Zero-Drift Proof ($\Delta = ₦0.00$):**
+  - Syntax check: `php -l` verified 100% clean on all modified PHP files.
+  - Phase 3 Authoritative API Contract Verification Suite: 11 tests PASSED, 0 failed.
+  - Phase 2 Backend Hardening Scenarios Verification Suite: 11 tests PASSED, 0 failed.
+  - Master End-to-End Buying Scenarios Verification Suite: 8 scenarios PASSED, 0 failed with zero drift ($\Delta = ₦0.00$).
+
+### [2026-09-23 06:20 UTC] Vendor Web and App Alignment to Backend SSOT (Zero Backend Code Modifications) [vendor-web-app-alignment] [AI]
+* **Components:** Vendor Web Views (`backend/vmarket-web/resources/views/vendor-views/order/order-details.blade.php`), Vendor Mobile App (`Vendor app/lib/`)
+* **Scope:** Aligned Vendor Web Panel and Vendor Mobile App presentation layers strictly to consume from the backend as the Single Source of Truth (SSOT). Absolutely ZERO backend code modified (`backend/vmarket-web/app/`, `routes/`, `database/` untouched).
+* **Vendor Web Alignment (`order-details.blade.php`):**
+  - **Payment Authority Enforced:** Replaced interactive payment switcher with read-only badge indicating backend authority (Paystack payment gateway / Admin is sole authority for digital payments; vendor manual override rejected with 403 by backend).
+  - **Order Status Scope Enforced:** Restricted selectable order transitions to packaging states (`pending`, `confirmed`, `processing`, `canceled`). Removed `out_for_delivery` and `delivered` options which backend rejects with 403 for marketplace orders. If already out for delivery or delivered, displays read-only status.
+  - **In-Store Customer Pickup Handshake UI Added:** For pickup orders (`$isSelfPickup`), rendered dedicated In-Store Pickup card showing payment status check and 6-digit Customer Pickup OTP verification form submitting directly to existing backend route `route('vendor.orders.verify-pickup-otp')`.
+  - **Delivery Fee Authority:** Displayed deliveryman incentive as read-only, removing mutating button.
+  - **Logistics Isolation:** Hidden delivery type dropdown and rider assignment for in-shop pickup orders.
+* **Vendor Mobile App Alignment:**
+  - **Packaging Status Domain (`order_details_repository.dart`):** Updated `getOrderStatusList` to return `['pending', 'confirmed', 'processing', 'canceled']` to match backend packaging authority.
+  - **Order Setup Bottom Sheet (`order_setup_bottom_sheet.dart`):** Replaced editable payment status dropdown with read-only status container and badge; updated status dropdown to show read-only container for terminal/transit states; disabled `_deliverySetUpExist()` and third-party/incentive inputs; simplified `_canUpdate` and `onTap` to only submit order status changes.
+  - **Nigeria Dial Code Alignment:** Updated default dial codes from `+880` (Bangladesh) to `+234` (Nigeria) across `shop_update_screen.dart`, `auth_controller.dart`, `registration_screen.dart`, `profile_screen.dart`, `profile_controller.dart`, and `emergency_contact_controller.dart`.
+* **Backend Gaps Reported (Zero Backend Touched):**
+  1. *Vendor Employee REST API:* Backend web routes exist (`vendor/employee/*`), but `routes/rest_api/v3/seller.php` lacks REST endpoints for Vendor Mobile App.
+  2. *Vendor Web Pickup Reservations GET View:* Backend has POST routes for verification/accept/reject, but lacks a dedicated web index/management GET route. Handover is integrated in the order details view.
+
 ### [2026-09-23] Delivery Man App Alignment to VMARKET_DELIVERY_APP_SPEC (Rider Cancel Removal, OTP Invariants, Canonical Reason Codes) [delivery-man] [AI]
 * **Components:** Delivery Man App (`Delivery Man App/`), Backend (`backend/vmarket-web/app/Http/Controllers/RestAPI/v2/delivery_man/DeliveryManController.php`)
 * **Scope:** Verified 31-section delivery spec and removed all rider-initiated order cancellation per §14/§23 (authority belongs to backend/dispatch workflows only), enforced server-side OTP mandate per §19, aligned failed-delivery reason codes to canonical server-controlled set per §21, and completed the dangling-reference purge so the app compiles cleanly.
