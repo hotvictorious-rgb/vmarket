@@ -13,6 +13,7 @@ import 'package:flutter_sixvalley_ecommerce/utill/custom_themes.dart';
 import 'package:flutter_sixvalley_ecommerce/utill/dimensions.dart';
 import 'package:provider/provider.dart';
 import 'dart:async';
+import 'dart:convert';
 
 /// Pickup Payment Screen — Post-acceptance payment with cashback toggle
 class PickupPaymentScreen extends StatefulWidget {
@@ -104,6 +105,8 @@ class _PickupPaymentScreenState extends State<PickupPaymentScreen> {
       // Since pay endpoint could potentially just return the authorization_url
       // or return a final validation result, we proceed if we have a URL.
       if (data['status'] == true && data['authorization_url'] != null) {
+
+        _extractAuthoritativeAmounts(data);
         if (!mounted) return;
         Navigator.push(
           context,
@@ -128,15 +131,41 @@ class _PickupPaymentScreenState extends State<PickupPaymentScreen> {
     }
   }
 
-  // Called when cashback is toggled to preview the new final amounts from backend
-  // Note: For actual backend preview endpoint if available. For now, assuming payment
-  // endpoint handles the final preview immediately before launching Paystack.
-  /*
-  Future<void> _previewCashback(CheckoutController checkoutController) async {
-    // If there's a dedicated preview endpoint, it would be called here and set
-    // _backendFinalAmount / _backendCashbackDiscount
+  // Extracts the authoritative final amount and cashback discount from the
+  // backend pay response. The client never calculates these values — it only
+  // displays what the authoritative pickup-pay endpoint returned.
+  void _extractAuthoritativeAmounts(Map<String, dynamic> data) {
+    int? finalAmountKobo;
+    final paymentRequest = data['payment_request'];
+    if (paymentRequest is Map && paymentRequest['amount_kobo'] != null) {
+      finalAmountKobo = int.tryParse(paymentRequest['amount_kobo'].toString());
+    }
+    finalAmountKobo ??= int.tryParse((data['amount_kobo'] ?? '').toString());
+
+    if (finalAmountKobo != null) {
+      _backendFinalAmount = finalAmountKobo / 100;
+    }
+
+    double? cashbackDiscount;
+    final additionalRaw = paymentRequest is Map ? paymentRequest['additional_data'] : null;
+    if (additionalRaw is String && additionalRaw.isNotEmpty) {
+      try {
+        final additional = json.decode(additionalRaw);
+        if (additional is Map && additional['cashback_reservation'] is Map) {
+          final cashbackReservation = additional['cashback_reservation'] as Map;
+          final cashbackAmount = (cashbackReservation['cashback_amount'] ?? '').toString();
+          if (cashbackAmount.isNotEmpty) {
+            cashbackDiscount = double.tryParse(cashbackAmount);
+          }
+        }
+      } catch (_) {}
+    }
+    if (cashbackDiscount != null && cashbackDiscount > 0) {
+      _backendCashbackDiscount = cashbackDiscount;
+    } else {
+      _backendCashbackDiscount = null;
+    }
   }
-  */
 
   @override
   Widget build(BuildContext context) {

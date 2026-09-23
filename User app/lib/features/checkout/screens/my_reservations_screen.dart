@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_sixvalley_ecommerce/common/basewidget/custom_app_bar_widget.dart';
 import 'package:flutter_sixvalley_ecommerce/features/checkout/domain/models/pickup_reservation_model.dart';
 import 'package:flutter_sixvalley_ecommerce/helper/price_converter.dart';
+import 'package:flutter_sixvalley_ecommerce/helper/route_healper.dart';
 import 'package:flutter_sixvalley_ecommerce/localization/language_constrants.dart';
 import 'package:flutter_sixvalley_ecommerce/utill/app_constants.dart';
 import 'package:flutter_sixvalley_ecommerce/utill/custom_themes.dart';
@@ -259,10 +260,9 @@ class _MyReservationsScreenState extends State<MyReservationsScreen> with Single
             isActive: isActive,
             onTap: () {
               // Navigate to reservation detail screen
-              Navigator.pushNamed(
-                context,
-                '/reservation-detail',
-                arguments: reservation,
+              RouterHelper.getReservationDetailRoute(
+                action: RouteAction.push,
+                reservation: reservation,
               );
             },
           );

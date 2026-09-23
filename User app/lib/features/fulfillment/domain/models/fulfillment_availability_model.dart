@@ -66,9 +66,7 @@ class FulfillmentOptions {
 
   FulfillmentOptions.fromJson(Map<String, dynamic> json) {
     delivery = json['delivery'] != null ? DeliveryOption.fromJson(json['delivery']) : null;
-    inShopPickup = json['in_shop_pickup'] != null
-        ? PickupOption.fromJson(json['in_shop_pickup'])
-        : null;
+    inShopPickup = json['pickup'] != null ? PickupOption.fromJson(json['pickup']) : null;
   }
 }
 
@@ -94,12 +92,14 @@ class PickupOption {
   bool? available;
   bool? requiresVerification;
   String? reason;
+  String? message;
 
-  PickupOption({this.available, this.requiresVerification, this.reason});
+  PickupOption({this.available, this.requiresVerification, this.reason, this.message});
 
   PickupOption.fromJson(Map<String, dynamic> json) {
     available = json['available'] ?? false;
     requiresVerification = json['requires_verification'] ?? true;
     reason = json['reason'];
+    message = json['message'];
   }
 }

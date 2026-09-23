@@ -90,13 +90,32 @@ class _PaymentStatusScreenState extends State<PaymentStatusScreen> {
           if (data['status'] == true && data['reservation'] != null) {
             final reservation = data['reservation'];
             if (reservation['order_id'] != null) {
-              // Payment successful - order created
+              // Payment successful - order created.
+              // The OTP (pickup_verification_code) is NOT exposed on the reservation
+              // show endpoint; it lives only on the Order. Fetch it authoritatively.
+              String? pickupVerificationCode;
+              try {
+                final orderResponse = await http.get(
+                  Uri.parse('${AppConstants.baseUrl}${AppConstants.getOrderFromOrderId}${reservation['order_id']}'),
+                  headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': 'Bearer $token',
+                  },
+                );
+                if (orderResponse.statusCode == 200) {
+                  final orderData = json.decode(orderResponse.body);
+                  pickupVerificationCode = orderData['pickup_verification_code'];
+                }
+              } catch (e) {
+                debugPrint('Pickup order OTP fetch error: $e');
+              }
+
               _pollTimer?.cancel();
               setState(() {
                 _status = PaymentStatus.success;
                 _orderData = {
                   'order_id': reservation['order_id'],
-                  'pickup_verification_code': reservation['pickup_verification_code'],
+                  'pickup_verification_code': pickupVerificationCode ?? 'XXXXXX',
                   'cashback_earned': reservation['cashback_earned'],
                   'shop_name': reservation['shop']?['name'] ?? 'Victorious Store',
                   'shop_address': reservation['shop']?['address'],

@@ -11,6 +11,8 @@ import 'package:flutter_sixvalley_ecommerce/main.dart';
 import 'package:flutter_sixvalley_ecommerce/utill/app_constants.dart';
 import 'package:flutter_sixvalley_ecommerce/common/basewidget/animated_custom_dialog_widget.dart';
 import 'package:flutter_sixvalley_ecommerce/features/checkout/widgets/order_place_dialog_widget.dart';
+import 'package:flutter_sixvalley_ecommerce/features/checkout/screens/payment_status_screen.dart';
+import 'package:flutter_sixvalley_ecommerce/common/basewidget/show_custom_snakbar_widget.dart';
 import 'package:provider/provider.dart';
 
 class DigitalPaymentScreen extends StatefulWidget {
@@ -291,4 +293,113 @@ class DigitalPaymentScreenState extends State<DigitalPaymentScreen> {
     });
   }
 
+}
+class DigitalPaymentOrderPlaceScreen extends StatefulWidget {
+  final String paymentUrl;
+  final bool isPickupPayment;
+  final String reservationCode;
+  const DigitalPaymentOrderPlaceScreen({
+    super.key,
+    required this.paymentUrl,
+    this.isPickupPayment = false,
+    this.reservationCode = '',
+  });
+
+  @override
+  _DigitalPaymentOrderPlaceScreenState createState() => _DigitalPaymentOrderPlaceScreenState();
+}
+
+class _DigitalPaymentOrderPlaceScreenState extends State<DigitalPaymentOrderPlaceScreen> {
+  late final WebViewController controller;
+  bool _isLoading = true;
+  bool _canRedirect = true     ;
+  bool _isInitialized = false;
+  bool _hasResult = false;
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    if (!_isInitialized) {
+      _isInitialized = true;
+      _initWebViewController();
+    }
+  }
+
+  void _initWebViewController() {
+    controller = WebViewController()
+      ..setJavaScriptMode(JavaScriptMode.unrestricted)
+      ..setBackgroundColor(Theme.of(context).cardColor)
+      ..setNavigationDelegate(
+        NavigationDelegate(
+          onProgress: (int progress) {
+            if (progress == 100 && mounted) {
+              setState(() => _isLoading = false);
+            }
+          },
+          onPageStarted: (String url) => _checkRedirect(url),
+          onPageFinished: (String url) => _checkRedirect(url),
+          onNavigationRequest: (NavigationRequest request) {
+            if (_canRedirect && _isRedirectUrl(request.url)) {
+              _checkRedirect(request.url);
+              return NavigationDecision.prevent;
+            }
+            return NavigationDecision.navigate;
+          },
+        ),
+      )
+      ..loadRequest(Uri.parse(widget.paymentUrl));
+  }
+
+  bool _isRedirectUrl(String url) {
+    return (url.contains('success') || url.contains('fail') || url.contains('cancel'))
+        && url.contains(AppConstants.baseUrl);
+  }
+
+  void _checkRedirect(String url) {
+    if (_canRedirect && _isRedirectUrl(url)) {
+      _canRedirect = false;
+      bool isSuccess = url.contains('success');
+      bool isFailed = url.contains('fail') || url.contains('cancel');
+
+WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (isSuccess) {
+          Navigator.of(context).pushReplacement(
+            MaterialPageRoute(
+              builder: (_) => PaymentStatusScreen(
+                reservationCode: widget.reservationCode,
+                isPickup: true,
+              ),
+            ),
+          );
+        } else {
+showCustomSnackBarWidget(
+            getTranslated('payment_failed', Get.context!) ?? 'Payment not completed',
+            Get.context!,
+            snackBarType: SnackBarType.error,
+          );
+          Navigator.of(context).pop();
+        }
+      });
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      backgroundColor: Theme.of(context).cardColor,
+      appBar: AppBar(
+        title: Text(getTranslated('payment', Get.context!) ?? 'Payment'),
+        backgroundColor: Theme.of(context).cardColor,
+        elevation: 0,
+        centerTitle: true,
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back_ios, size: 18),
+          onPressed: () => Navigator.of(context).pop(),
+        ),
+      ),
+      body: _isLoading
+          ? const Center(child: CircularProgressIndicator())
+          : WebViewWidget(controller: controller),
+    );
+  }
 }

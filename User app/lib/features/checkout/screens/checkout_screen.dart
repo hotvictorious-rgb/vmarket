@@ -97,6 +97,7 @@ class CheckoutScreenState extends State<CheckoutScreen> {
         break;
       }
     }
+    if (shopId == 0) return;
     final cartItems = widget.cartList.map((c) => {
       'id': c.id,
       'product_id': c.productId,
@@ -106,6 +107,28 @@ class CheckoutScreenState extends State<CheckoutScreen> {
     checkoutCtrl.checkFulfillmentAvailability(
       shopId: shopId,
       shippingAddressId: addressId,
+      cartItems: cartItems,
+    );
+  }
+
+  void _checkPickupFulfillmentIfReady() {
+    final checkoutCtrl = Provider.of<CheckoutController>(context, listen: false);
+    int shopId = 0;
+    for (final item in widget.cartList) {
+      if (item.productType == 'physical') {
+        shopId = item.shop?.id ?? (item.sellerId ?? 0);
+        break;
+      }
+    }
+    if (shopId == 0) return;
+    final cartItems = widget.cartList.map((c) => {
+      'id': c.id,
+      'product_id': c.productId,
+      'quantity': c.quantity,
+    }).toList();
+
+    checkoutCtrl.checkFulfillmentAvailability(
+      shopId: shopId,
       cartItems: cartItems,
     );
   }
@@ -207,6 +230,19 @@ class CheckoutScreenState extends State<CheckoutScreen> {
 
                               // [AI] In-Shop Pickup Fulfillment Channel
                               if (orderProvider.isPickup) {
+                                // [AI] Authoritative pickup availability gate — backend-supplied, never locally inferred.
+                                final pickupAvailability = orderProvider.fulfillmentAvailability?.data?.fulfillmentOptions?.inShopPickup;
+                                if (orderProvider.fulfillmentAvailability != null && !(pickupAvailability?.available ?? true)) {
+                                  showCustomSnackBarWidget(
+                                    pickupAvailability?.reason ??
+                                    getTranslated('pickup_currently_unavailable', context) ??
+                                    'In-store pickup is currently unavailable for this store. Please contact the merchant or choose doorstep delivery instead.',
+                                    context,
+                                    snackBarType: SnackBarType.warning,
+                                  );
+                                  return;
+                                }
+
                                 if (!Provider.of<AuthController>(context, listen: false).isLoggedIn()) {
                                   showCustomSnackBarWidget(
                                     getTranslated('login_to_reserve_pickup', context) ?? 'Please log in to make an in-store pickup reservation.',
@@ -393,6 +429,8 @@ class CheckoutScreenState extends State<CheckoutScreen> {
                                   onTap: () {
                                     if (!orderProvider.isPickup) {
                                       orderProvider.setFulfillmentType(true);
+                                      // [AI] Trigger authoritative backend in-store pickup availability check for this pickup channel
+                                      _checkPickupFulfillmentIfReady();
                                     }
                                   },
                                   child: AnimatedContainer(

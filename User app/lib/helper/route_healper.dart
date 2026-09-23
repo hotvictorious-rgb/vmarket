@@ -19,6 +19,9 @@ import 'package:flutter_sixvalley_ecommerce/features/category/domain/models/cate
 import 'package:flutter_sixvalley_ecommerce/features/category/screens/category_screen.dart';
 import 'package:flutter_sixvalley_ecommerce/features/checkout/screens/checkout_screen.dart';
 import 'package:flutter_sixvalley_ecommerce/features/checkout/screens/digital_payment_order_place_screen.dart';
+import 'package:flutter_sixvalley_ecommerce/features/checkout/screens/my_reservations_screen.dart';
+import 'package:flutter_sixvalley_ecommerce/features/checkout/screens/reservation_detail_screen.dart';
+import 'package:flutter_sixvalley_ecommerce/features/checkout/domain/models/pickup_reservation_model.dart';
 import 'package:flutter_sixvalley_ecommerce/features/contact_us/screens/contact_us_screen.dart';
 import 'package:flutter_sixvalley_ecommerce/features/home/screens/view_all_product_screen.dart';
 import 'package:flutter_sixvalley_ecommerce/features/location/screens/select_location_screen.dart';
@@ -125,6 +128,8 @@ class RouterHelper {
   static const String trackingResultScreen = '/tracking-result';
   static const String updateScreen = '/update';
   static const String cashbackScreen = '/cashback';
+  static const String myReservationsScreen = '/my-reservations';
+  static const String reservationDetailScreen = '/reservation-detail';
   static const String wishListScreen = '/wish-list';
   static const String selectLocationScreen = '/select-location-screen';
   static const String shopOverviewScreen = '/shop-overview-screen';
@@ -619,6 +624,21 @@ class RouterHelper {
 
     static String getCashbackRoute({RouteAction? action}) {
     return _navigateRoute(cashbackScreen, route: action);
+  }
+
+  static String getMyReservationsRoute({RouteAction? action}) {
+    return _navigateRoute(myReservationsScreen, route: action);
+  }
+
+  static String getReservationDetailRoute({
+    RouteAction? action,
+    dynamic reservation,
+  }) {
+    return _navigateRoute(
+      reservationDetailScreen,
+      route: action,
+      extra: {'reservation': reservation},
+    );
   }
 
 
@@ -1242,6 +1262,27 @@ class RouterHelper {
         path: cashbackScreen,
         builder: (BuildContext context, GoRouterState state) {
           return const CashbackScreen();
+        },
+      ),
+
+      GoRoute(
+        path: myReservationsScreen,
+        builder: (BuildContext context, GoRouterState state) {
+          return const MyReservationsScreen();
+        },
+      ),
+
+      GoRoute(
+        path: reservationDetailScreen,
+        builder: (BuildContext context, GoRouterState state) {
+          final extra = state.extra as Map<String, dynamic>?;
+          final reservation = extra?['reservation'];
+          return ReservationDetailScreen(
+            reservation: reservation is PickupReservationModel
+                ? reservation
+                : PickupReservationModel.fromJson(
+                    reservation is Map<String, dynamic> ? reservation : {}),
+          );
         },
       ),
 
