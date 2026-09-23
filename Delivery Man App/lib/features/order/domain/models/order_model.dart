@@ -32,9 +32,6 @@ class OrderModel {
   ShippingAddress? shippingAddress;
   bool? isGuest;
   bool? isShippingFree;
-  double? bringChangeAmount;
-  String? bringChangeAmountCurrency;
-
 
   OrderModel(
       {this.id,
@@ -67,8 +64,6 @@ class OrderModel {
         this.shippingAddress,
         this.isGuest,
         this.isShippingFree,
-        this.bringChangeAmount,
-        this.bringChangeAmountCurrency,
       });
 
   OrderModel.fromJson(Map<String, dynamic> json) {
@@ -124,8 +119,6 @@ class OrderModel {
         : null;
 
     isShippingFree = json['is_shipping_free'] ?? false;
-    bringChangeAmount = double.tryParse('${json['bring_change_amount']}');
-    bringChangeAmountCurrency = json['bring_change_amount_currency'];
 
   }
 
@@ -165,8 +158,6 @@ class OrderModel {
     if (shippingAddress != null) {
       data['shipping_address'] = shippingAddress!.toJson();
     }
-    bringChangeAmount = data['bring_change_amount'];
-    bringChangeAmountCurrency = data['bring_change_amount_currency'];
 
     return data;
   }
@@ -276,7 +267,6 @@ class Customer {
   String? temporaryToken;
   String? paymentCardLastFour;
   String? paymentCardBrand;
-  String? paymentCardFawryToken;
   int? isEmailVerified;
 
   Customer(
@@ -305,7 +295,6 @@ class Customer {
         this.temporaryToken,
         this.paymentCardLastFour,
         this.paymentCardBrand,
-        this.paymentCardFawryToken,
         this.isEmailVerified});
 
   Customer.fromJson(Map<String, dynamic> json) {
@@ -339,7 +328,6 @@ class Customer {
     temporaryToken = json['temporary_token'];
     paymentCardLastFour = json['payment_card_last_four'];
     paymentCardBrand = json['payment_card_brand'];
-    paymentCardFawryToken = json['payment_card_fawry_token'];
     if(json['is_email_verified'] != null){
       isEmailVerified = json['is_email_verified'] ? 1 : 0;
     }
@@ -374,7 +362,6 @@ class Customer {
     data['temporary_token'] = temporaryToken;
     data['payment_card_last_four'] = paymentCardLastFour;
     data['payment_card_brand'] = paymentCardBrand;
-    data['payment_card_fawry_token'] = paymentCardFawryToken;
     data['is_email_verified'] = isEmailVerified;
     return data;
   }

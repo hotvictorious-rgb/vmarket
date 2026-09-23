@@ -7,22 +7,12 @@ import 'package:sixvalley_delivery_boy/utill/styles.dart';
 import 'package:get/get.dart';
 
 class PaymentInfoWidget extends StatelessWidget {
-  final double? itemsPrice;
-  final double? discount;
-  final double? tax;
-  final double? subTotal;
-  final double? deliveryCharge;
-  final double? totalPrice;
+  final String? paymentMethod;
   final bool isPaid;
 
   const PaymentInfoWidget({
     Key? key,
-    this.itemsPrice,
-    this.discount,
-    this.tax,
-    this.subTotal,
-    this.deliveryCharge,
-    this.totalPrice,
+    this.paymentMethod,
     this.isPaid = false,
   }) : super(key: key);
 
@@ -55,7 +45,7 @@ class PaymentInfoWidget extends StatelessWidget {
                   Padding(
                     padding: EdgeInsets.symmetric(horizontal: Dimensions.paddingSizeSmall, vertical: Dimensions.paddingSizeSmall),
                     child: Text(
-                      'Prepaid Order'.tr,
+                      'prepaid_order'.tr,
                       style: rubikBold.copyWith(
                         color: isDark ? Theme.of(context).hintColor.withValues(alpha: 0.8) : Theme.of(context).primaryColor,
                         fontSize: Dimensions.fontSizeLarge,
@@ -83,7 +73,7 @@ class PaymentInfoWidget extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  'Amount to Collect from Customer'.tr,
+                  'amount_to_collect_from_customer'.tr,
                   style: rubikRegular.copyWith(
                     color: isDark ? Colors.white70 : Colors.black87,
                     fontSize: Dimensions.fontSizeDefault,
@@ -107,7 +97,7 @@ class PaymentInfoWidget extends StatelessWidget {
                         borderRadius: BorderRadius.circular(8),
                       ),
                       child: Text(
-                        'Prepaid (Online Paystack)'.tr,
+                        isPaid ? (paymentMethod?.isNotEmpty == true ? paymentMethod! : 'paid'.tr) : 'unpaid_payment_status'.tr,
                         style: rubikMedium.copyWith(
                           fontSize: Dimensions.fontSizeSmall,
                           color: const Color(0xFF00A884),
@@ -118,7 +108,7 @@ class PaymentInfoWidget extends StatelessWidget {
                 ),
                 const SizedBox(height: 8),
                 Text(
-                  '🔒 This order is fully paid online. Do NOT collect any cash from the customer. Customer must provide 6-digit delivery OTP for handover.'.tr,
+                  'fully_paid_online_notice'.tr,
                   style: rubikRegular.copyWith(
                     fontSize: Dimensions.fontSizeSmall,
                     color: isDark ? Colors.white60 : Colors.grey[700],

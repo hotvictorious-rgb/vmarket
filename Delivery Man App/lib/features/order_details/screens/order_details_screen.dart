@@ -38,7 +38,6 @@ class OrderDetailsScreen extends StatefulWidget {
 }
 
 class _OrderDetailsScreenState extends State<OrderDetailsScreen> {
-  double? deliveryCharge = 0;
   OrderModel? orderModel;
 
   Future<void> _loadData() async {
@@ -107,34 +106,8 @@ class _OrderDetailsScreenState extends State<OrderDetailsScreen> {
                   if(orderDetailsController.endOfPage){
                     _scrollDown();
                   }
-                  double _itemsPrice = 0;
-                  double _discount = 0;
-                  double _tax = 0;
-                  double _subTotal = 0;
-
                   if (orderDetailsController.orderDetails != null && orderDetailsController.orderDetails!.isNotEmpty) {
                     orderModel = orderDetailsController.orderDetails!.first.orderModel ?? orderModel;
-                  }
-
-                  if(orderModel?.orderStatus != null){
-                    deliveryCharge = orderModel?.shippingCost;
-
-                    if (orderDetailsController.orderDetails != null) {
-                      for (var orderDetails in orderDetailsController.orderDetails!) {
-                        _itemsPrice = _itemsPrice + (orderDetails.price! * orderDetails.qty!);
-                        _discount = _discount + orderDetails.discount!;
-                        _tax = _tax + orderDetails.tax!;
-                      }
-                    }
-
-                    if(orderModel?.isShippingFree ?? false){
-                      deliveryCharge = 0;
-                    }
-
-                    _subTotal = _itemsPrice + _tax - _discount;
-
-                    orderDetailsController.setTotalPrice = (_subTotal  + (deliveryCharge ?? 0) - (orderModel?.discountAmount ?? 0));
-
                   }
 
                   return (orderDetailsController.orderDetails != null && (orderModel?.orderStatus != null)) ?
@@ -160,12 +133,7 @@ class _OrderDetailsScreenState extends State<OrderDetailsScreen> {
 
                       PaymentInfoWidget(
                         isPaid: orderModel?.paymentStatus == 'paid',
-                        itemsPrice: _itemsPrice,
-                        tax: _tax,
-                        subTotal: _subTotal,
-                        discount: _discount,
-                        deliveryCharge: orderModel?.isShippingFree ?? false ? 0 : deliveryCharge,
-                        totalPrice: orderDetailsController.totalPrice,
+                        paymentMethod: orderModel!.paymentMethod,
                       ),
 
 
@@ -205,7 +173,7 @@ class _OrderDetailsScreenState extends State<OrderDetailsScreen> {
                                     crossAxisAlignment: CrossAxisAlignment.start,
                                     children: [
                                       Text(
-                                        'Your Delivery Earnings'.tr,
+                                        'your_delivery_earnings'.tr,
                                         style: rubikBold.copyWith(
                                           color: Get.isDarkMode ? Colors.white : const Color(0xFF4A148C),
                                           fontSize: Dimensions.fontSizeDefault,
@@ -213,7 +181,7 @@ class _OrderDetailsScreenState extends State<OrderDetailsScreen> {
                                       ),
                                       const SizedBox(height: 2),
                                       Text(
-                                        'Credited upon delivery'.tr,
+                                        'credited_upon_delivery'.tr,
                                         style: rubikRegular.copyWith(
                                           color: Get.isDarkMode ? Colors.white60 : Colors.grey[600],
                                           fontSize: Dimensions.fontSizeExtraSmall,

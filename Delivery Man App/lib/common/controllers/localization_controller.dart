@@ -19,7 +19,7 @@ class LocalizationController extends GetxController implements GetxService {
   void setLanguage(Locale locale) {
     Get.updateLocale(locale);
     _locale = locale;
-    Get.find<AuthController>().setCurrentLanguage(locale.countryCode == 'US'?'en': _locale.countryCode!.toLowerCase());
+    Get.find<AuthController>().setCurrentLanguage(_locale.countryCode == 'US' ? 'en' : _locale.languageCode);
     if(_locale.languageCode == 'ar') {
       _isLtr = false;
     }else {
@@ -42,6 +42,6 @@ class LocalizationController extends GetxController implements GetxService {
   }
 
   String? getCurrentLanguage() {
-    return storageService.getString(AppConstants.countryCode == 'US'? 'en' : AppConstants.countryCode) ?? "en";
+    return storageService.getString(AppConstants.languageCode) ?? AppConstants.defaultLanguageCode;
   }
 }

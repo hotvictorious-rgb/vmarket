@@ -218,21 +218,6 @@ class OrderDetailsController extends GetxController implements GetxService {
     endOfPage = false;
   }
 
-  bool otpVerified = false;
-  void toggleProceedToNext(){
-    identityImages.clear();
-    otpVerified = true;
-    update();
-  }
-
-  String? otp;
-  void setOtp(String otp) {
-    otp = otp;
-    if(otp != '') {
-      update();
-    }
-  }
-
   bool uploading = false;
   Future<Response> uploadOrderVerificationImage( String oderId) async {
     uploading = true;

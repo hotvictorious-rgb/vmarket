@@ -1,3 +1,46 @@
+### [2026-09-23 05:30 UTC] Delivery App Audit Hardening: i18n Repair, Backend-Driven Payment Info, Uyo Coordinates & Dead-Code Purge [delivery-app] [AI]
+* **Components:** Delivery Man App (`Delivery Man App/`)
+* **Scope:** Completed the remaining canonical-contract audit fixes for the Delivery Man App so the client is a pure consumer of backend decisions. Zero backend changes.
+* **Localization (en.json) Repair:**
+  - `assets/language/en.json`: Regenerated via script — 333 keys (was 380), duplicates removed (`Delivered`/`delivered` merged), still valid JSON. Added 8 missing statically-referenced keys: `order_confirmed`, `order_processing` (tracking stepper), `pickup_otp_verification`, `enter_pickup_otp_number`, `collect_pickup_otp_from_vendor` (pickup OTP sheet), `total_earn` (earnings statement), `you_denied`, `you_denied_forever` (permission dialogs). Added `prepaid_order`, `amount_to_collect_from_customer`, `fully_paid_online_notice`, `your_delivery_earnings`, `credited_upon_delivery` to replace raw client-side strings.
+  - Purged ~52 dead keys: cash-on-delivery/money-collection keys, 14 legacy gateway names (`stripe`, `ssl_commerz`, `senang`, `paymob`, `mercadopago`, `flutterwave`, `paytm`, `payStack`, `payTabs`, `razorpay`, `bkAsh`, `paypal`, `liqpay`, `offline_payment`), chat keys, file-size helpers, dev names, non-English language names.
+  - Verified: all 215 `'key'.tr` usages in `lib/` resolve to keys in en.json — zero missing; zero raw space-containing strings remain in `.tr` calls.
+* **Backend-Driven Payment & Total (single source of truth):**
+  - `lib/features/order_details/screens/order_details_screen.dart`: Removed the client-side total recalculation engine (`_itemsPrice`/`_discount`/`_tax`/`_subTotal` recompute from line items) and the `setTotalPrice` overwrite — the app now displays only backend-returned totals. Replaced raw `'Your Delivery Earnings'.tr`/`'Credited upon delivery'.tr` with proper keys.
+  - `lib/features/order_details/widgets/payment_info_widget.dart`: Rewritten to be backend-driven — title, `isPaid` from `orderModel.paymentStatus == 'paid'`, payment-method badge from `orderModel.paymentMethod`, amount-to-collect fixed at ₦0 (VMarket has zero cash-on-delivery) with a mandatory-OTP handover notice. Removed all client-computed `itemsPrice`/`discount`/`tax`/`subTotal`/`deliveryCharge`/`totalPrice` plumbing and raw literal strings.
+* **Order Status / Cause-Code Canonicalization:**
+  - `lib/features/order_details/widgets/order_status_widget.dart`: Status badge now compares the canonical code (`orderStatus == 'delivered'`) instead of the translated value, so it no longer breaks if a translation value changes.
+  - `lib/features/order_details/widgets/order_info_with_customer_widget.dart`: `rescheduleOrderStatus` and `pauseAndResumeOrder` now send the raw canonical `cause` code (`reasonValue`) instead of an already-translated display string.
+* **Geography Defaults → Uyo, Akwa Ibom:**
+  - `lib/features/order/controllers/order_controller.dart` and `lib/features/live_tracking/controllers/rider_controller.dart`: Replaced Dhaka placeholder coordinates with VMarket canonical fallback `(5.0333, 7.9333)` (Uyo) for default map centering.
+* **Localization Controller Bug Fixes:**
+  - `lib/common/controllers/localization_controller.dart`: `setLanguage` now reads from the newly-set `_locale` instead of the outward parameter; `getCurrentLanguage` reads the `language_code` storage key instead of the malformed `AppConstants.countryCode == 'US' ? ...` ternary (which compared the key literal, always false).
+* **COD / Legacy Payment Remnants Removed:**
+  - `lib/features/order/domain/models/order_model.dart`: Removed `bringChangeAmount`/`bringChangeAmountCurrency` (COD) fields, their `fromJson`/`toJson` (including a self-assign bug in `toJson`), and `paymentCardFawryToken` from `Customer`.
+  - `lib/features/order_details/domain/models/order_model.dart`: Removed `paymentCardFawryToken` from `Customer`.
+  - `lib/features/order_details/controllers/order_details_controller.dart`: Removed dead `otp` field/`setOtp` (self-assignment bug, zero callers), `otpVerified`, and `toggleProceedToNext`.
+* **TLS Hardening:**
+  - `lib/main.dart`: Removed `MyHttpOverrides` (global self-signed-certificate bypass) and the `ignoreSsl: true` flag from `FlutterDownloader.initialize` — app now enforces real TLS against `https://shop.victoriousmarket.com.ng`.
+* **Credential Note:** `AppConstants.polylineMapKey = 'YOUR_MAP_KEY_HERE'` requires a real Google Maps API key before live tracking routes render; no real key can be fabricated — production .env/keystore placement pending.
+* **Verification:** `dart analyze lib` — 0 issues; `flutter test` — 4/4 passed; node validation of en.json (333 keys, 0 dups, all 215 used keys present).
+
+### [2026-09-23 09:25 UTC] Vendor Web Pickup Reservation Queue, Paystack Bank Resolution & Mobile In-Shop Handshake [vendor-experience] [AI]
+* **Components:** Vendor Web Panel (`backend/vmarket-web/`), Vendor Mobile App (`Vendor app/`)
+* **Scope:** Completed full implementation of In-Shop Pickup Reservation Queue on Vendor Web, live Paystack Nigerian bank resolution on Vendor Web, and inline In-Shop Pickup OTP verification on the Vendor Mobile App. Strictly adhered to user directive: zero Vendor Employee changes.
+* **Vendor Web In-Shop Pickup Reservation Queue:**
+  - `app/Http/Controllers/Vendor/Order/PickupReservationController.php`: Implemented `index(Request $request)` to retrieve pre-payment physical inspection reservations for the vendor's shop, with status tabs (`all`, `pending_inspection`, `inspected_accepted`, `order_placed`, `expired`, `inspected_rejected`), live search strictly by `reservation_code` and customer name (zero customer phone or email search/exposure per privacy specification §28), eager-loading customer and shop to prevent N+1 queries.
+  - `routes/vendor/routes.php`: Registered `Route::get('/', [PickupReservationController::class, 'index'])->name('index');` under the `pickup-reservations` route group.
+  - `resources/views/layouts/vendor/partials/_side-bar.blade.php`: Added "Pickup Reservations" navigation item under Orders in the Vendor Web sidebar with dynamic badge counting pending counter inspections.
+  - `resources/views/vendor-views/order/pickup-reservations/index.blade.php`: Created professional queue management interface with reservation cards, items snapshot, estimated totals, 24h countdown timers, counter verification modal (`#verifyReservationModal`), inspection acceptance modal, and decline modal. Strict customer privacy enforced: customer phone numbers and emails are 100% removed and masked (`f_name` + initial + `#customer_id`).
+* **Vendor Web Paystack Bank Auto-Resolution:**
+  - `app/Http/Controllers/Vendor/ProfileController.php`: Updated `getBankInfoUpdateView` to load Nigerian commercial banks via `PaystackBankService::getNigerianBanks()`. Added `resolveBankAccount(Request $request)` AJAX endpoint validating 10-digit NUBAN numbers.
+  - `routes/vendor/routes.php`: Registered `Route::post('resolve-bank-account', 'resolveBankAccount')->name('resolve-bank-account');` under profile group.
+  - `resources/views/vendor-views/profile/bank-info-update-view.blade.php`: Upgraded bank edit form with live Nigerian bank select dropdown, 10-digit NUBAN account input with debounced AJAX resolution, and instant verified account name display with visual verification badge.
+* **Vendor Mobile App In-Shop Handshake:**
+  - `Vendor app/lib/features/order_details/screens/order_details_screen.dart`: Enhanced in-store pickup card to appear when order is `processing` (packaged) or `ready_for_pickup`, and added immediate inline "Verify Customer OTP" action button triggering `_showVerifyPickupOtpDialog` directly at the counter.
+* **Verification:**
+  - PHP syntax check (`php -l`): 0 syntax errors across `PickupReservationController.php`, `ProfileController.php`, `routes/vendor/routes.php`, `bank-info-update-view.blade.php`, and `pickup-reservations/index.blade.php`.
+
 ### [2026-09-23 09:00 UTC] Backend Specification Enriched: In-Shop Pickup Dual-Code Protocol & Delivery Operations [ai-governance] [AI]
 * **Components:** Architecture Specification (`.agents/rules/VMARKET_BACKEND_SPEC.md`)
 * **Scope:** Governance documentation update codifying the authoritative In-Shop Pickup dual-code architecture, Pay-After-Inspection lifecycle, stock concurrency rules, delivery state machine, and logistics infrastructure decoupling.

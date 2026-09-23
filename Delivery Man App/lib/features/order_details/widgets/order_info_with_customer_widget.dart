@@ -69,7 +69,7 @@ class OrderInfoWithDeliveryInfoWidget extends StatelessWidget {
                       orderController.rescheduleOrderStatus(
                         orderId: orderModel!.id,
                         deliveryDate: orderController.dateFormat.format(orderController.startDate!).toString(),
-                        cause: orderController.reasonValue!.tr,
+                        cause: orderController.reasonValue,
                         context: context);
                     },),isFlip: true),)),
 
@@ -84,7 +84,7 @@ class OrderInfoWithDeliveryInfoWidget extends StatelessWidget {
                       orderController.pauseAndResumeOrder(
                           orderId: orderModel!.id,
                           isPos: !orderModel!.isPause! ? 1: 0,
-                          cause: orderController.reasonValue!.tr,
+                          cause: orderController.reasonValue,
                           context: context);
                     },),isFlip: true),)),
               ]) : const SizedBox(),

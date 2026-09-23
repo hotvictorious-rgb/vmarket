@@ -265,7 +265,6 @@ class Customer {
   String? temporaryToken;
   String? paymentCardLastFour;
   String? paymentCardBrand;
-  String? paymentCardFawryToken;
   int? isEmailVerified;
 
   Customer(
@@ -293,7 +292,6 @@ class Customer {
         this.temporaryToken,
         this.paymentCardLastFour,
         this.paymentCardBrand,
-        this.paymentCardFawryToken,
         this.isEmailVerified});
 
   Customer.fromJson(Map<String, dynamic> json) {
@@ -323,7 +321,6 @@ class Customer {
     temporaryToken = json['temporary_token'];
     paymentCardLastFour = json['payment_card_last_four'];
     paymentCardBrand = json['payment_card_brand'];
-    paymentCardFawryToken = json['payment_card_fawry_token'];
     isEmailVerified = json['is_email_verified'];
   }
 
@@ -353,7 +350,6 @@ class Customer {
     data['temporary_token'] = temporaryToken;
     data['payment_card_last_four'] = paymentCardLastFour;
     data['payment_card_brand'] = paymentCardBrand;
-    data['payment_card_fawry_token'] = paymentCardFawryToken;
     data['is_email_verified'] = isEmailVerified;
     return data;
   }

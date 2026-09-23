@@ -23,8 +23,8 @@ class OrderController extends GetxController implements GetxService {
   List<OrderModel> deliveredOrderHistory = [];
   List<OrderModel> get allOrderHistory => _allOrderHistory;
 
-  String? selectedOrderLat = '23.83721';
-  String? selectedOrderLng = '90.363715';
+  String? selectedOrderLat = '5.0333';
+  String? selectedOrderLng = '7.9333';
 
   void setSelectedOrderLatLng(LatLng latLng){
     selectedOrderLat = latLng.latitude.toString();

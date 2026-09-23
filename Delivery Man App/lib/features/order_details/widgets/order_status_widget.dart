@@ -14,13 +14,13 @@ class OrderStatusWidget extends StatelessWidget {
     return Container(
       padding: EdgeInsets.symmetric(horizontal: Dimensions.paddingSizeChat, vertical: Dimensions.paddingSizeExtraSmall),
       decoration: BoxDecoration(
-        color: orderModel?.orderStatus?.tr == 'Delivered'
+        color: orderModel?.orderStatus == 'delivered'
             ? Theme.of(context).colorScheme.onTertiaryContainer.withValues(alpha: 0.07)
             : Theme.of(context).primaryColor.withValues(alpha: 0.07),
         borderRadius: BorderRadius.circular(Dimensions.paddingSizeMin),
       ),
       child: Text(orderModel?.orderStatus?.tr ?? '', style: rubikMedium.copyWith(
-        color: orderModel?.orderStatus?.tr == 'Delivered'
+        color: orderModel?.orderStatus == 'delivered'
             ? Theme.of(context).colorScheme.onTertiaryContainer
             : Theme.of(context).primaryColor,
         fontSize: Dimensions.fontSizeSmall,

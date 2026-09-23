@@ -17,8 +17,8 @@ class RiderController extends GetxController implements GetxService {
   double _persistentContentHeight = Get.context!.width<= 400? 220 :260;
   double get persistentContentHeight => _persistentContentHeight;
 
-  final List<LatLng> _latLngList = [const LatLng(23.8376661, 90.3701626),];
-  List<LatLng> toTatLngList = [const LatLng(23.8376661, 90.3701626),];
+  final List<LatLng> _latLngList = [const LatLng(5.0333, 7.9333),];
+  List<LatLng> toTatLngList = [const LatLng(5.0333, 7.9333),];
 
   List<LatLng> get latLngList => _latLngList;
   double? _distance;
@@ -26,7 +26,7 @@ class RiderController extends GetxController implements GetxService {
 
   Position? _position;
   Position? get position => _position;
-  LatLng _initialPosition = const LatLng(23.83721, 90.363715);
+  LatLng _initialPosition = const LatLng(5.0333, 7.9333);
   LatLng get initialPosition => _initialPosition;
   final List<MarkerData> _customMarkers = [];
   List<MarkerData> get customMarkers => _customMarkers;
