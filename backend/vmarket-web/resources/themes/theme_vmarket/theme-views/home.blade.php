@@ -168,172 +168,177 @@
             </ul>
         </aside>
 
-        <!-- Hero Slider (Desktop: 1:2 on Right | Mobile: Conditional 2:1 Small Centered) -->
-        <div class="vm-hero-slider-container">
-            <div class="vm-hero-slider" id="vmHeroSlider">
-                @if(isset($bannerTypeMainBanner) && count($bannerTypeMainBanner) > 0)
-                    @foreach($bannerTypeMainBanner as $idx => $banner)
-                        @php
-                            $bannerPhoto = is_array($banner) ? ($banner['photo_full_url'] ?? ['path' => '']) : ($banner->photo_full_url ?? ['path' => '']);
-                            $bannerUrl = is_array($banner) ? ($banner['url'] ?? '#') : ($banner->url ?? '#');
-                            $photoName = is_array($banner) ? ($banner['photo'] ?? '') : ($banner->photo ?? '');
-                            $hasCustomImage = !empty($photoName) && $photoName !== 'def.png' && !str_contains($photoName, 'def.png');
-                            $title = is_array($banner) ? ($banner['title'] ?? '') : ($banner->title ?? '');
-                            $subTitle = is_array($banner) ? ($banner['sub_title'] ?? '') : ($banner->sub_title ?? '');
-                            $btnText = is_array($banner) ? ($banner['button_text'] ?? '') : ($banner->button_text ?? '');
-                            $bgColor = is_array($banner) ? ($banner['background_color'] ?? '') : ($banner->background_color ?? '');
+        <!-- Main Content Column (Desktop: Right column alongside Category Sidebar | Mobile: Stacked) -->
+        <div class="vm-hero-main-column">
 
-                            // Generative Variations: 4 Moods & 3 Layout Placements
-                            $moodStyles = ['vm-mood-luxe', 'vm-mood-midnight', 'vm-mood-velvet', 'vm-mood-emerald'];
-                            $layoutStyles = ['vm-layout-text-left', 'vm-layout-text-right', 'vm-layout-centered'];
+            <!-- Hero Slider (Desktop: 1:2 on Right | Mobile: Conditional 2:1 Small Centered) -->
+            <div class="vm-hero-slider-container">
+                <div class="vm-hero-slider" id="vmHeroSlider">
+                    @if(isset($bannerTypeMainBanner) && count($bannerTypeMainBanner) > 0)
+                        @foreach($bannerTypeMainBanner as $idx => $banner)
+                            @php
+                                $bannerPhoto = is_array($banner) ? ($banner['photo_full_url'] ?? ['path' => '']) : ($banner->photo_full_url ?? ['path' => '']);
+                                $bannerUrl = is_array($banner) ? ($banner['url'] ?? '#') : ($banner->url ?? '#');
+                                $photoName = is_array($banner) ? ($banner['photo'] ?? '') : ($banner->photo ?? '');
+                                $hasCustomImage = !empty($photoName) && $photoName !== 'def.png' && !str_contains($photoName, 'def.png');
+                                $title = is_array($banner) ? ($banner['title'] ?? '') : ($banner->title ?? '');
+                                $subTitle = is_array($banner) ? ($banner['sub_title'] ?? '') : ($banner->sub_title ?? '');
+                                $btnText = is_array($banner) ? ($banner['button_text'] ?? '') : ($banner->button_text ?? '');
+                                $bgColor = is_array($banner) ? ($banner['background_color'] ?? '') : ($banner->background_color ?? '');
 
-                            $activeMood = ($bgColor && $bgColor !== '#5E17EB') ? '' : $moodStyles[$idx % 4];
-                            $activeLayout = $layoutStyles[$idx % 3];
+                                // Generative Variations: 4 Moods & 3 Layout Placements
+                                $moodStyles = ['vm-mood-luxe', 'vm-mood-midnight', 'vm-mood-velvet', 'vm-mood-emerald'];
+                                $layoutStyles = ['vm-layout-text-left', 'vm-layout-text-right', 'vm-layout-centered'];
 
-                            $badgePills = [
-                                ['icon' => '👑', 'label' => translate('Verified Marketplace')],
-                                ['icon' => '⚡', 'label' => translate('Direct LGA Delivery • Akwa Ibom')],
-                                ['icon' => '🛡️', 'label' => translate('Paystack Escrow Protected')],
-                                ['icon' => '🏪', 'label' => translate('Physical In-Shop Inspection')],
-                            ];
-                            $badge = $badgePills[$idx % 4];
-                        @endphp
-                        <div class="vm-hero-slide {{ $idx === 0 ? 'active' : '' }}" data-slide="{{ $idx }}">
-                            <div class="vm-hero-card-banner {{ $activeMood }} {{ $activeLayout }}" 
-                                 style="{{ ($bgColor && $bgColor !== '#5E17EB') ? 'background: linear-gradient(135deg, ' . $bgColor . ' 0%, #170733 100%) !important;' : '' }}">
-                                
+                                $activeMood = ($bgColor && $bgColor !== '#5E17EB') ? '' : $moodStyles[$idx % 4];
+                                $activeLayout = $layoutStyles[$idx % 3];
+
+                                $badgePills = [
+                                    ['icon' => '👑', 'label' => translate('Verified Marketplace')],
+                                    ['icon' => '⚡', 'label' => translate('Direct LGA Delivery • Akwa Ibom')],
+                                    ['icon' => '🛡️', 'label' => translate('Paystack Escrow Protected')],
+                                    ['icon' => '🏪', 'label' => translate('Physical In-Shop Inspection')],
+                                ];
+                                $badge = $badgePills[$idx % 4];
+                            @endphp
+                            <div class="vm-hero-slide {{ $idx === 0 ? 'active' : '' }}" data-slide="{{ $idx }}">
+                                <div class="vm-hero-card-banner {{ $activeMood }} {{ $activeLayout }}" 
+                                     style="{{ ($bgColor && $bgColor !== '#5E17EB') ? 'background: linear-gradient(135deg, ' . $bgColor . ' 0%, #170733 100%) !important;' : '' }}">
+                                    
+                                    <div class="vm-hero-card-content">
+                                        <div class="vm-hero-badge-pill">
+                                            <span class="vm-badge-dot"></span>
+                                            <span>{{ $badge['icon'] }} {{ $badge['label'] }}</span>
+                                        </div>
+                                        <h2 class="vm-hero-title">
+                                            {{ $title ?: translate('Seamless Shopping, Swift Logistics') }}
+                                        </h2>
+                                        <p class="vm-hero-subtitle">
+                                            {{ $subTitle ?: translate('Akwa Ibom’s Premier Platform • Physical In-Shop Inspection • Escrow Protected') }}
+                                        </p>
+                                        <div class="vm-hero-actions">
+                                            <a href="{{ $bannerUrl ?: route('products') }}" class="vm-hero-cta-btn">
+                                                {{ $btnText ?: translate('Shop Verified Items') }} →
+                                            </a>
+                                            <a href="{{ route('vendors') }}" class="vm-hero-secondary-btn">
+                                                {{ translate('Explore Stores') }}
+                                            </a>
+                                        </div>
+                                    </div>
+
+                                    <div class="vm-hero-visual-zone">
+                                        @if($hasCustomImage)
+                                            <div class="vm-pedestal-orb">
+                                                <img src="{{ getStorageImages(path: $bannerPhoto, type: 'banner') }}" 
+                                                     alt="{{ $title ?: getWebConfig(name: 'company_name') }}" 
+                                                     class="vm-product-cutout-img" 
+                                                     loading="lazy">
+                                            </div>
+                                        @else
+                                            <div class="vm-trust-pill-grid">
+                                                <div class="vm-trust-pill-item">
+                                                    <span class="vm-trust-pill-icon">🛡️</span>
+                                                    <span>100% Genuine Escrow</span>
+                                                </div>
+                                                <div class="vm-trust-pill-item">
+                                                    <span class="vm-trust-pill-icon">⚡</span>
+                                                    <span>Door-to-Door Logistics</span>
+                                                </div>
+                                            </div>
+                                        @endif
+                                    </div>
+
+                                </div>
+                            </div>
+                        @endforeach
+                    @else
+                        {{-- Default Branded Hero Card Fallback --}}
+                        <div class="vm-hero-slide active" data-slide="0">
+                            <div class="vm-hero-card-banner">
                                 <div class="vm-hero-card-content">
                                     <div class="vm-hero-badge-pill">
                                         <span class="vm-badge-dot"></span>
-                                        <span>{{ $badge['icon'] }} {{ $badge['label'] }}</span>
+                                        <span>{{ translate('Verified Omnichannel Market') }}</span>
                                     </div>
-                                    <h2 class="vm-hero-title">
-                                        {{ $title ?: translate('Seamless Shopping, Swift Logistics') }}
-                                    </h2>
-                                    <p class="vm-hero-subtitle">
-                                        {{ $subTitle ?: translate('Akwa Ibom’s Premier Platform • Physical In-Shop Inspection • Escrow Protected') }}
-                                    </p>
+                                    <h2 class="vm-hero-title">{{ translate('Seamless Shopping, Swift Logistics') }}</h2>
+                                    <p class="vm-hero-subtitle">{{ translate('Akwa Ibom’s Premier Platform • Physical In-Shop Inspection • Escrow Protected') }}</p>
                                     <div class="vm-hero-actions">
-                                        <a href="{{ $bannerUrl ?: route('products') }}" class="vm-hero-cta-btn">
-                                            {{ $btnText ?: translate('Shop Verified Items') }} →
-                                        </a>
-                                        <a href="{{ route('vendors') }}" class="vm-hero-secondary-btn">
-                                            {{ translate('Explore Stores') }}
-                                        </a>
+                                        <a href="{{ route('products') }}" class="vm-hero-cta-btn">{{ translate('Shop Verified Items') }} →</a>
                                     </div>
                                 </div>
-
-                                <div class="vm-hero-visual-zone">
-                                    @if($hasCustomImage)
-                                        <div class="vm-pedestal-orb">
-                                            <img src="{{ getStorageImages(path: $bannerPhoto, type: 'banner') }}" 
-                                                 alt="{{ $title ?: getWebConfig(name: 'company_name') }}" 
-                                                 class="vm-product-cutout-img" 
-                                                 loading="lazy">
-                                        </div>
-                                    @else
-                                        <div class="vm-trust-pill-grid">
-                                            <div class="vm-trust-pill-item">
-                                                <span class="vm-trust-pill-icon">🛡️</span>
-                                                <span>100% Genuine Escrow</span>
-                                            </div>
-                                            <div class="vm-trust-pill-item">
-                                                <span class="vm-trust-pill-icon">⚡</span>
-                                                <span>Door-to-Door Logistics</span>
-                                            </div>
-                                        </div>
-                                    @endif
-                                </div>
-
                             </div>
                         </div>
-                    @endforeach
-                @else
-                    {{-- Default Branded Hero Card Fallback --}}
-                    <div class="vm-hero-slide active" data-slide="0">
-                        <div class="vm-hero-card-banner">
-                            <div class="vm-hero-card-content">
-                                <div class="vm-hero-badge-pill">
-                                    <span class="vm-badge-dot"></span>
-                                    <span>{{ translate('Verified Omnichannel Market') }}</span>
-                                </div>
-                                <h2 class="vm-hero-title">{{ translate('Seamless Shopping, Swift Logistics') }}</h2>
-                                <p class="vm-hero-subtitle">{{ translate('Akwa Ibom’s Premier Platform • Physical In-Shop Inspection • Escrow Protected') }}</p>
-                                <div class="vm-hero-actions">
-                                    <a href="{{ route('products') }}" class="vm-hero-cta-btn">{{ translate('Shop Verified Items') }} →</a>
-                                </div>
-                            </div>
-                        </div>
+                    @endif
+
+                    @if(isset($bannerTypeMainBanner) && count($bannerTypeMainBanner) > 1)
+                        <button type="button" class="vm-slider-arrow vm-slider-prev" id="vmHeroPrev" aria-label="{{ translate('Previous slide') }}">‹</button>
+                        <button type="button" class="vm-slider-arrow vm-slider-next" id="vmHeroNext" aria-label="{{ translate('Next slide') }}">›</button>
+                    @endif
+                </div>
+
+                <!-- Dedicated Pagination Track: Outside content zone so it NEVER covers text or buttons -->
+                @if(isset($bannerTypeMainBanner) && count($bannerTypeMainBanner) > 1)
+                    <div class="vm-slider-dots" id="vmHeroDots">
+                        @foreach($bannerTypeMainBanner as $idx => $b)
+                            <button type="button" class="vm-slider-dot {{ $idx === 0 ? 'active' : '' }}" data-slide="{{ $idx }}" aria-label="{{ translate('Slide') }} {{ $idx + 1 }}"></button>
+                        @endforeach
                     </div>
                 @endif
-
-                @if(isset($bannerTypeMainBanner) && count($bannerTypeMainBanner) > 1)
-                    <button type="button" class="vm-slider-arrow vm-slider-prev" id="vmHeroPrev" aria-label="{{ translate('Previous slide') }}">‹</button>
-                    <button type="button" class="vm-slider-arrow vm-slider-next" id="vmHeroNext" aria-label="{{ translate('Next slide') }}">›</button>
-                @endif
             </div>
 
-            <!-- Dedicated Pagination Track: Outside content zone so it NEVER covers text or buttons -->
-            @if(isset($bannerTypeMainBanner) && count($bannerTypeMainBanner) > 1)
-                <div class="vm-slider-dots" id="vmHeroDots">
-                    @foreach($bannerTypeMainBanner as $idx => $b)
-                        <button type="button" class="vm-slider-dot {{ $idx === 0 ? 'active' : '' }}" data-slide="{{ $idx }}" aria-label="{{ translate('Slide') }} {{ $idx + 1 }}"></button>
-                    @endforeach
+            <!-- 2. Value Proposition Strip (Aligned with Hero Slider) -->
+            <div class="vm-val-prop-strip">
+                <div class="vm-val-prop-item">
+                    <div class="vm-val-prop-icon-wrap primary">🛡️</div>
+                    <div class="vm-val-prop-text">
+                        <strong class="vm-val-prop-title">{{ translate('100% Authentic Items') }}</strong>
+                        <span class="vm-val-prop-desc">{{ translate('Verified local merchants') }}</span>
+                    </div>
                 </div>
-            @endif
+                <div class="vm-val-prop-item">
+                    <div class="vm-val-prop-icon-wrap gold">🏪</div>
+                    <div class="vm-val-prop-text">
+                        <strong class="vm-val-prop-title">{{ translate('In-Shop Inspection') }}</strong>
+                        <span class="vm-val-prop-desc">{{ translate('Inspect physically before payment') }}</span>
+                    </div>
+                </div>
+                <div class="vm-val-prop-item">
+                    <div class="vm-val-prop-icon-wrap primary">⚡</div>
+                    <div class="vm-val-prop-text">
+                        <strong class="vm-val-prop-title">{{ translate('Directional LGA Delivery') }}</strong>
+                        <span class="vm-val-prop-desc">{{ translate('Uyo, Eket & nationwide logistics') }}</span>
+                    </div>
+                </div>
+                <div class="vm-val-prop-item">
+                    <div class="vm-val-prop-icon-wrap success">💳</div>
+                    <div class="vm-val-prop-text">
+                        <strong class="vm-val-prop-title">{{ translate('Paystack Escrow') }}</strong>
+                        <span class="vm-val-prop-desc">{{ translate('Cards, transfers & cashbacks') }}</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 2.5 Omnichannel Proximity Status Bar -->
+            <div class="vm-proximity-strip">
+                <div class="vm-proximity-info">
+                    <span class="vm-proximity-icon">📍</span>
+                    <div class="vm-proximity-text">
+                        <span class="vm-proximity-label">{{ translate('Active Marketplace Coverage') }}:</span>
+                        <strong class="vm-proximity-highlight">{{ $activeCity ?? 'Uyo' }}, {{ $activeState ?? 'Akwa Ibom' }}</strong>
+                        <span class="vm-proximity-dot">•</span>
+                        <span class="vm-proximity-mode-tag {{ ($fulfillmentMode ?? 'delivery') }}">
+                            {{ ($fulfillmentMode ?? 'delivery') === 'pickup' ? translate('🏪 In-Shop Inspection (Zero Delivery Fee)') : translate('⚡ Direct Doorstep LGA Logistics') }}
+                        </span>
+                    </div>
+                </div>
+                <button type="button" class="vm-proximity-switch-btn" id="vmProximityTrigger">
+                    <span>{{ translate('Change Location or Mode') }}</span>
+                    <span class="vm-caret">▾</span>
+                </button>
+            </div>
+
         </div>
 
-    </div>
-
-    <!-- 2. Value Proposition Strip -->
-    <div class="vm-val-prop-strip">
-        <div class="vm-val-prop-item">
-            <div class="vm-val-prop-icon-wrap primary">🛡️</div>
-            <div>
-                <strong class="vm-val-prop-title">{{ translate('100% Authentic Items') }}</strong>
-                <span class="vm-val-prop-desc">{{ translate('Verified local merchants') }}</span>
-            </div>
-        </div>
-        <div class="vm-val-prop-item">
-            <div class="vm-val-prop-icon-wrap gold">🏪</div>
-            <div>
-                <strong class="vm-val-prop-title">{{ translate('In-Shop Inspection') }}</strong>
-                <span class="vm-val-prop-desc">{{ translate('Inspect physically before payment') }}</span>
-            </div>
-        </div>
-        <div class="vm-val-prop-item">
-            <div class="vm-val-prop-icon-wrap primary">⚡</div>
-            <div>
-                <strong class="vm-val-prop-title">{{ translate('Directional LGA Delivery') }}</strong>
-                <span class="vm-val-prop-desc">{{ translate('Uyo, Eket & nationwide logistics') }}</span>
-            </div>
-        </div>
-        <div class="vm-val-prop-item">
-            <div class="vm-val-prop-icon-wrap success">💳</div>
-            <div>
-                <strong class="vm-val-prop-title">{{ translate('Paystack Escrow') }}</strong>
-                <span class="vm-val-prop-desc">{{ translate('Cards, transfers & cashbacks') }}</span>
-            </div>
-        </div>
-    </div>
-
-    <!-- 2.5 Omnichannel Proximity Status Bar -->
-    <div class="vm-proximity-strip">
-        <div class="vm-proximity-info">
-            <span class="vm-proximity-icon">📍</span>
-            <div class="vm-proximity-text">
-                <span class="vm-proximity-label">{{ translate('Active Marketplace Coverage') }}:</span>
-                <strong class="vm-proximity-highlight">{{ $activeCity ?? 'Uyo' }}, {{ $activeState ?? 'Akwa Ibom' }}</strong>
-                <span class="vm-proximity-dot">•</span>
-                <span class="vm-proximity-mode-tag {{ ($fulfillmentMode ?? 'delivery') }}">
-                    {{ ($fulfillmentMode ?? 'delivery') === 'pickup' ? translate('🏪 In-Shop Inspection (Zero Delivery Fee)') : translate('⚡ Direct Doorstep LGA Logistics') }}
-                </span>
-            </div>
-        </div>
-        <button type="button" class="vm-proximity-switch-btn" id="vmProximityTrigger">
-            <span>{{ translate('Change Location or Mode') }}</span>
-            <span class="vm-caret">▾</span>
-        </button>
     </div>
 
     <!-- 2.6 Amazon-Inspired Quad Discovery & Recommendation Grid -->

@@ -1,3 +1,19 @@
+### [2026-09-23 17:06 UTC] Align Value Proposition Strip & Proximity Bar with Hero Slider alongside Category Sidebar [storefront] [AI]
+* **1. Hero Column Layout & Value Prop Alignment (`home.blade.php`):**
+  - Grouped `.vm-hero-slider-container`, `.vm-val-prop-strip`, and `.vm-proximity-strip` into a dedicated `.vm-hero-main-column` container inside `.vm-hero-wrapper`.
+  - The Value Proposition Strip and Active Marketplace Coverage Proximity Bar now align directly underneath the Hero Slider in the right main content column, sitting alongside the Category Sidebar on the left (classic Amazon / Jumia / AliExpress marketplace layout).
+  - Eliminates vertical and horizontal overflow into the Category Sidebar column, preventing any overlap or collision between category items and the value proposition strip.
+* **2. Styling, Height Balancing & Responsive Transitions (`vmarket.css`):**
+  - Removed rigid fixed `height: 350px` from `.vm-hero-wrapper`, allowing the grid row to adapt cleanly with `align-items: stretch`.
+  - Added `.vm-hero-main-column` flex column with `gap: 12px` and `min-width: 0`.
+  - Tuned `.vm-hero-slider-container` to `height: 310px; min-height: 290px; max-height: 330px;` so the combined height of the main column (Slider + Value Props + Proximity Bar) seamlessly balances with the Category Sidebar's 12 items (~422px).
+  - Refined `.vm-val-prop-strip` per-item padding (`10px 14px`), icon size (`36px`), and title/desc typography to fit comfortably within the right column.
+  - Preserved responsive media queries: tablet (`≤991px`) and mobile (`≤768px`) gracefully hide the Category Sidebar and render `.vm-hero-main-column` full-width with 2-column value propositions.
+* **3. Assets & Cache Synchronization:**
+  - Synchronized updated `vmarket.css` to `public/themes/theme_vmarket/public/assets/css/vmarket.css`.
+  - Cleared compiled Blade view cache (`php artisan view:clear`).
+  - Verified DOM tree hierarchy via PHP DOMDocument test and confirmed HTTP 200 live render with zero errors.
+
 ### [2026-09-23 16:38 UTC] Storefront Full-Width Alignment Fix + AppServiceProvider HTTP 500 Bugfix [storefront] [backend] [AI]
 * **1. Val-Prop Strip — Fixed Alignment & Responsiveness (`vmarket.css`):**
   - Changed `grid-template-columns` from `repeat(auto-fit, minmax(220px, 1fr))` to `repeat(4, 1fr)` — strip now always locks to 4 equal columns on desktop regardless of viewport width.
