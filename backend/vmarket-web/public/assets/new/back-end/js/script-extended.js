@@ -776,31 +776,6 @@ document.addEventListener("DOMContentLoaded", function() {
     enableDragScroll(".custom-scrollable");
 });
 
-
-// ---- Setup guide scroll animation ----
-function handleSetupGuideVisibility() {
-    const setupGuideElement = document.querySelector(".setup-guide");
-
-    if (!setupGuideElement) return;
-
-    let lastScrollY = window.pageYOffset + 100;
-
-    setupGuideElement.classList.add("show");
-
-    window.addEventListener("scroll", () => {
-        const currentScrollY = window.pageYOffset;
-
-        if (currentScrollY > lastScrollY) {
-            setupGuideElement.classList.remove("show");
-        } else {
-            setupGuideElement.classList.add("show");
-        }
-
-    });
-}
-
-document.addEventListener("DOMContentLoaded", handleSetupGuideVisibility);
-
 // ---- offcanvas slider
  document.addEventListener("DOMContentLoaded", () => {
 

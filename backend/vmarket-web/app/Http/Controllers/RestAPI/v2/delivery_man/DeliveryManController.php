@@ -129,20 +129,22 @@ class DeliveryManController extends Controller
 
     public function update_order_status(Request $request):JsonResponse
     {
+        // [AI] VMarket §14/§23: Delivery riders execute pickup & delivery handover only.
+        // Cancellation and return authority belongs exclusively to backend/dispatch workflows.
         $validator = Validator::make($request->all(), [
             'order_id' => 'required',
-            'status' => 'required|in:delivered,canceled,returned,out_for_delivery'
+            'status' => 'required|in:out_for_delivery,delivered'
         ]);
 
         if ($validator->fails()) {
             return response()->json(['errors' => Helpers::validationErrorProcessor($validator)], 403);
         }
 
-        $deliveryMan = $request['delivery_man'];
-        $cause = null;
-        if ($request['status'] == 'canceled') {
-            $cause = $request['cause'];
+        if (in_array($request['status'], ['canceled', 'returned'], true)) {
+            return response()->json(['success' => 0, 'message' => translate('Riders cannot cancel or return orders. Please contact dispatch for rescheduling.')], 403);
         }
+
+        $deliveryMan = $request['delivery_man'];
 
         $order = Order::with(['customer', 'deliveryMan'])->where(['delivery_man_id' => $deliveryMan['id'], 'id' => $request['order_id']])->first();
 
@@ -211,7 +213,6 @@ class DeliveryManController extends Controller
             $now = now();
             $updatePayload = [
                 'order_status' => $request['status'],
-                'cause' => $cause
             ];
 
             if ($request['status'] == 'out_for_delivery') {
@@ -287,8 +288,6 @@ class DeliveryManController extends Controller
             event(new OrderStatusEvent(key: 'out_for_delivery', type: 'customer', order: $order));
         } elseif ($request['status'] == 'delivered') {
             event(new OrderStatusEvent(key: 'delivered', type: 'customer', order: $order));
-        } elseif ($request['status'] == 'canceled') {
-            event(new OrderStatusEvent(key: 'canceled', type: 'delivery_man', order: $order));
         }
 
         self::add_order_status_history($order->id, $deliveryMan['id'], $request['status'], 'delivery_man', $request['cause']);

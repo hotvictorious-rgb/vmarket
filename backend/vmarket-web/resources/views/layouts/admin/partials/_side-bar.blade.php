@@ -1349,16 +1349,9 @@
 
             @endif
 
-            <?php $checkSetupGuideRequirements = checkSetupGuideRequirements(panel: 'admin'); ?>
-
-            <li class="nav-item {{ $checkSetupGuideRequirements['completePercent'] < 100 ? 'pt-5 mt-5 d-none d-lg-block' : '' }}">
-                <div class="pt-4"></div>
-            </li>
         </ul>
     </div>
 </aside>
-
-@include("layouts.admin.partials._setup-guide")
 
 <div class="offcanvas offcanvas-start bg-panel d-lg-none w-280" tabindex="-1" id="offcanvasAside"
      aria-labelledby="offcanvasAsideLabel">

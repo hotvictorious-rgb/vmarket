@@ -106,7 +106,6 @@ class PushNotificationSettingsController extends BaseController
             }
         }
 
-        updateSetupGuideCacheKey(key: 'notification_configuration', panel: 'admin');
         ToastMagic::success(translate('update_successfully'));
         return redirect()->route('admin.push-notification.index');
     }

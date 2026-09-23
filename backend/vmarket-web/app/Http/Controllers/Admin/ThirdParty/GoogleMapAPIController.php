@@ -37,7 +37,6 @@ class GoogleMapAPIController extends BaseController
         $this->businessSettingRepo->updateOrInsert(type: 'map_api_key_server', value: $request['map_api_key_server'] ?? '');
         $this->businessSettingRepo->updateOrInsert(type: 'map_api_status', value: $request->get('status', 0));
 
-        updateSetupGuideCacheKey(key: 'google_map_apis', panel: 'admin');
         ToastMagic::success(translate('config_data_updated'));
         return redirect()->route('admin.third-party.map-api');
     }

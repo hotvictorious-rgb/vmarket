@@ -104,7 +104,6 @@ class LanguageController extends BaseController
         $this->businessSettingRepo->updateOrInsert(type: 'language', value: $dataArray['languages']);
         $this->businessSettingRepo->updateOrInsert(type: 'pnc_language', value: json_encode($dataArray['codes']));
         clearWebConfigCacheKeys();
-        updateSetupGuideCacheKey(key: 'language_setup', panel: 'admin');
         ToastMagic::success(translate('Language_Added'));
         return back();
     }
@@ -115,7 +114,6 @@ class LanguageController extends BaseController
         $languageArray = $languageService->getStatusData(request: $request, language: $language);
         clearWebConfigCacheKeys();
         $this->businessSettingRepo->updateOrInsert(type: 'language', value: $languageArray);
-        updateSetupGuideCacheKey(key: 'language_setup', panel: 'admin');
         return response()->json([
             'status' => 1,
             'message' => translate('Language_Status_Updated'),
@@ -138,7 +136,6 @@ class LanguageController extends BaseController
         $languageArray = $languageService->getUpdateData(request: $request, language: $language);
         $this->businessSettingRepo->updateOrInsert(type: 'language', value: $languageArray);
         clearWebConfigCacheKeys();
-        updateSetupGuideCacheKey(key: 'language_setup', panel: 'admin');
         ToastMagic::success(translate('Language_updated'));
         return back();
     }

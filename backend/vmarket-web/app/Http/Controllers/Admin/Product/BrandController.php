@@ -102,7 +102,6 @@ class BrandController extends BaseController
         $seoMetaData = $this->seoMetaInfoService->getModelSEOData(request: $request, seoMetaInfo: $savedBrand?->seo, type: 'App\Models\Brand', modelId: $savedBrand->id, action: 'add');
         $this->seoMetaInfoRepo->add(data: $seoMetaData);
 
-        updateSetupGuideCacheKey(key: 'brand_setup', panel: 'admin');
         ToastMagic::success(translate('brand_added_successfully'));
         return redirect()->route('admin.brand.list');
     }
@@ -117,7 +116,6 @@ class BrandController extends BaseController
         $seoMetaData = $this->seoMetaInfoService->getModelSEOData(request: $request, seoMetaInfo: $brand?->seo, type: 'App\Models\Brand', modelId: $brand->id, action: 'update');
         $this->seoMetaInfoRepo->updateOrInsert(params: ['seoable_type' => 'App\Models\Brand', 'seoable_id' => $brand['id']], data: $seoMetaData);
 
-        updateSetupGuideCacheKey(key: 'brand_setup', panel: 'admin');
         ToastMagic::success(translate('brand_updated_successfully'));
         return redirect()->route('admin.brand.list');
     }

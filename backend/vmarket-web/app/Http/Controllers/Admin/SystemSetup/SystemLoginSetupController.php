@@ -89,7 +89,6 @@ class SystemLoginSetupController extends BaseController
         $this->loginSetupRepo->updateOrInsert(key: 'email_verification', value: $request->get('email_verification', 0));
         $this->loginSetupRepo->updateOrInsert(key: 'phone_verification', value: $request->get('phone_verification', 0));
 
-        updateSetupGuideCacheKey(key: 'customer_login', panel: 'admin');
         ToastMagic::success(translate('Login_settings_updated'));
         return redirect()->route('admin.system-setup.login-settings.customer-login-setup');
     }

@@ -381,3 +381,13 @@ if (!$isGatewayPublished) {
         });
     });
 }
+
+// [AI] Storefront XML Sitemap Routes (SEO / Discovery Layer)
+use App\Http\Controllers\Web\SitemapController;
+
+Route::get('sitemap.xml', [SitemapController::class, 'index'])->name('sitemap.index');
+Route::get('sitemap-products.xml', [SitemapController::class, 'products'])->name('sitemap.products');
+Route::get('sitemap-categories.xml', [SitemapController::class, 'categories'])->name('sitemap.categories');
+Route::get('sitemap-brands.xml', [SitemapController::class, 'brands'])->name('sitemap.brands');
+Route::get('sitemap-shops.xml', [SitemapController::class, 'shops'])->name('sitemap.shops');
+

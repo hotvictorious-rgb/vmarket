@@ -63,7 +63,6 @@ class PaymentInformationController extends BaseController
     public function addPaymentInfo(Request $request): RedirectResponse
     {
 
-        updateSetupGuideCacheKey(key: 'payment_information', panel: 'vendor');
         return redirect()->back();
     }
 

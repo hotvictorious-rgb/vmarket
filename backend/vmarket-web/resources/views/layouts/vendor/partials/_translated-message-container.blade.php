@@ -51,5 +51,5 @@
 <span id="get-currency-symbol"
       data-currency-symbol="{{ getCurrencySymbol(currencyCode: getCurrencyCode(type: 'default')) }}"></span>
 
-<span id="check-offcanvas-setup-guide" data-value="{{ request('offcanvasShow') && request('offcanvasShow') == 'offcanvasSetupGuide' }}"></span>
+
 <span id="get-initial-data-for-panel-time" data-value="{!! in_array(request()->ip(), ['127.0.0.1', '::1']) ? '15000' : '15000' !!}"></span>

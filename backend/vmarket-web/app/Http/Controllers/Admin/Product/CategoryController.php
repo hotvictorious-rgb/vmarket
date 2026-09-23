@@ -119,7 +119,6 @@ class CategoryController extends BaseController
             );
         }
 
-        updateSetupGuideCacheKey(key: 'category_setup', panel: 'admin');
 
         if ($request->ajax()) {
             return response()->json([
@@ -162,7 +161,6 @@ class CategoryController extends BaseController
             oldTaxIds: $taxVatIds
         );
 
-        updateSetupGuideCacheKey(key: 'category_setup', panel: 'admin');
 
         if ($category['position'] == 1) {
             ToastMagic::success(translate('Sub_Category_updated_successfully'));
@@ -180,7 +178,6 @@ class CategoryController extends BaseController
             'home_status' => $request->get('home_status', 0),
         ];
         $this->categoryRepo->update(id: $request['id'], data: $data);
-        updateSetupGuideCacheKey(key: 'category_setup', panel: 'admin');
         return response()->json(['success' => 1, 'message' => translate('Status_updated_successfully!')], 200);
     }
 

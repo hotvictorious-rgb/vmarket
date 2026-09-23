@@ -571,7 +571,6 @@ trait UpdateClass
 
         if ($versionNumber == '15.2') {
             $this->addOrUpdateBusinessPagesData();
-            $this->addOrUpdateSetupGuideCacheKey();
         }
 
         if ($versionNumber == '15.3') {
@@ -737,25 +736,6 @@ trait UpdateClass
             shell_exec('ln -s ../resources/themes themes');
             Artisan::call('storage:link');
         }
-    }
-
-    public function addOrUpdateSetupGuideCacheKey(): void
-    {
-        $this->businessSettingGetOrInsert(type: 'setup_guide_requirements_for_admin', value: json_encode([
-            'general_setup' => 0,
-            'shipping_method' => 0,
-            'language_setup' => 0,
-            'currency_setup' => 0,
-            'customer_login' => 0,
-            'google_map_apis' => 0,
-            'notification_configuration' => 0,
-            'digital_payment_setup' => 0,
-            'offline_payment_setup' => 0,
-            'category_setup' => Category::all()->count() > 0 ? 1 : 0,
-            'brand_setup' => Brand::all()->count() > 0 ? 1 : 0,
-            'inhouse_shop_setup' => 0,
-            'add_new_product' => Product::all()->count() > 0 ? 1 : 0,
-        ]));
     }
 
     private function companyReliabilityImport(): void

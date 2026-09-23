@@ -165,7 +165,6 @@ class PaymentMethodController extends BaseController
         if ($status != 0) {
             ToastMagic::success(translate('Updated_successfully'));
         }
-        updateSetupGuideCacheKey(key: 'digital_payment_setup', panel: 'admin');
         return redirect()->route('admin.third-party.payment-method.index');
     }
 
@@ -182,7 +181,6 @@ class PaymentMethodController extends BaseController
         }
         $this->settingRepo->updateWhere(params: ['key_name' => $request['key_name']], data: ['is_active' => $request['status'] ?? 0]);
 
-        updateSetupGuideCacheKey(key: 'digital_payment_setup', panel: 'admin');
         ToastMagic::success(translate('Updated_successfully'));
         return redirect()->route('admin.third-party.payment-method.index');
     }

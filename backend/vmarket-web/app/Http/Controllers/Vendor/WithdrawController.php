@@ -74,7 +74,6 @@ class WithdrawController extends BaseController
             dataLimit: 'all'
         );
 
-        updateSetupGuideCacheKey(key: 'withdraw_setup', panel: 'vendor');
         return view('vendor-views.withdraw.index', [
             'vendorWallet' => $vendorWallet,
             'withdrawRequests' => $withdrawRequests,

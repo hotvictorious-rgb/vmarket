@@ -332,30 +332,6 @@ class SellerController extends Controller
         return response()->json(translate('Shop_info_updated_successfully'), 200);
     }
 
-    public function updateSetupGuideApp(Request $request): JsonResponse
-    {
-        $validator = Validator::make($request->all(), [
-            'key' => 'required|string',
-            'value' => 'required',
-        ]);
-
-        if ($validator->fails()) {
-            return response()->json(['message' => Helpers::validationErrorProcessor($validator)], 403);
-        }
-
-        $seller = $request->seller;
-        $shop = Shop::where(['seller_id' => $seller['id']])->first();
-        $setupGuideApp = is_array($shop['setup_guide_app']) ? $shop['setup_guide_app'] : json_decode($shop['setup_guide_app'], true);
-        $setupGuideApp[$request['key']] = (int)($request['value'] ?? 0);
-
-        Shop::where(['seller_id' => $seller['id']])->update([
-            'setup_guide_app' => json_encode($setupGuideApp),
-            'updated_at' => now()
-        ]);
-
-        return response()->json(translate('Shop_info_updated_successfully'), 200);
-    }
-
     public function seller_info_update(SellerUpdateRequest $request): JsonResponse
     {
         $seller = $request->seller;

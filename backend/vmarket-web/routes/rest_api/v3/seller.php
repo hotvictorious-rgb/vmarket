@@ -70,7 +70,6 @@ Route::group(['prefix' => 'v3/seller', 'middleware' => ['api_lang']], function (
             Route::get('shop-info', 'shop_info');
             Route::get('transactions', 'transaction');
             Route::put('shop-update', 'shop_info_update');
-            Route::post('update-setup-guide-app', 'updateSetupGuideApp');
             Route::get('withdraw-method-list', 'withdraw_method_list');
             Route::post('balance-withdraw', 'withdraw_request');
             Route::delete('close-withdraw-request', 'close_withdraw_request');

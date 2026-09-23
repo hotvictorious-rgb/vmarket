@@ -177,7 +177,6 @@ class ProductController extends BaseController
             taxIds: $request['tax_ids'] ?? []
         );
 
-        updateSetupGuideCacheKey(key: 'add_new_product', panel: 'admin');
         ToastMagic::success(translate('product_added_successfully'));
         return redirect()->route('admin.products.list', ['in_house']);
     }
@@ -239,7 +238,6 @@ class ProductController extends BaseController
             oldTaxIds: $taxVatIds
         );
 
-        updateSetupGuideCacheKey(key: 'add_new_product', panel: 'admin');
         ToastMagic::success(translate('product_updated_successfully'));
         return redirect()->route('admin.products.view', ['addedBy' => $product['added_by'], 'id' => $product['id']]);
     }

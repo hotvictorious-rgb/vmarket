@@ -158,7 +158,6 @@ class BusinessSettingsController extends BaseController
             'status' => $request->get('cookie_status', 0),
             'cookie_text' => $request['cookie_text'],
         ]));
-        updateSetupGuideCacheKey(key: 'general_setup', panel: 'admin');
 
         $this->updateSystemCurrency(request: $request);
         $paymentResponse = $this->updatePaymentOption(request: $request);

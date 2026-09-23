@@ -51,7 +51,6 @@ class VendorPaymentInfoController extends Controller
             )->count() == 1) {
             $this->vendorWithdrawMethodInfoRepo->updateWhere(params: ['user_id' => auth('seller')->id()], data: ['is_default' => 1, 'is_active' => 1]);
         }
-        updateSetupGuideCacheKey(key: 'payment_information', panel: 'vendor');
 
         return response()->json([
             'status' => true,

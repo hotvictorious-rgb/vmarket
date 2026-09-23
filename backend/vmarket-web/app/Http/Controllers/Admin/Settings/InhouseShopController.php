@@ -126,7 +126,6 @@ class InhouseShopController extends BaseController
 
         cacheRemoveByType(type: 'in_house_shop');
         clearWebConfigCacheKeys();
-        updateSetupGuideCacheKey(key: 'inhouse_shop_setup', panel: 'admin');
         ToastMagic::success(translate('Updated_successfully'));
         return back();
     }
@@ -137,7 +136,6 @@ class InhouseShopController extends BaseController
         $this->shopRepo->updateWhere(params: ['author_type' => 'admin'], data: ['temporary_close' => $status]);
         $this->businessSettingRepo->updateOrInsert(type: 'temporary_close', value: json_encode(['status' => $status]));
         cacheRemoveByType(type: 'in_house_shop');
-        updateSetupGuideCacheKey(key: 'inhouse_shop_setup', panel: 'admin');
         return response()->json(['status' => true, 'message' => translate('Status_updated_successfully')], 200);
     }
 

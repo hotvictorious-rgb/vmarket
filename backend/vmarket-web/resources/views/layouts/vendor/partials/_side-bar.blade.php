@@ -509,21 +509,10 @@
                             </li>
                         @endif
 
-                        <?php $checkSetupGuideRequirements = checkSetupGuideRequirements(panel: 'vendor'); ?>
-
-                        <li class="nav-item ">
-
-                        @if($checkSetupGuideRequirements['completePercent'] < 100)
-                            <li class="pb-5"><div class="py-5"></div></li>
-                        @else
-                            <li><div class="py-2"></div></li>
-                        @endif
                     </ul>
                 </div>
             </div>
         </div>
     </aside>
 </div>
-
-@include("layouts.vendor.partials._setup-guide")
 

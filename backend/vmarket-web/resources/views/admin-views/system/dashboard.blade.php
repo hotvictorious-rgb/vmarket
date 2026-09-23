@@ -172,24 +172,6 @@
 @push('script')
     <script src="{{ dynamicAsset(path: 'public/assets/new/back-end/js/apexcharts.js') }}"></script>
     <script src="{{ dynamicAsset(path: 'public/assets/new/back-end/js/admin/dashboard.js') }}"></script>
-    <script>
-        document.addEventListener('DOMContentLoaded', () => {
-            const guideModal = document.getElementById('guideModal');
-            const arrowIcon = document.querySelector('.setup-guide__button .fi');
-
-            if (guideModal && arrowIcon) {
-                guideModal.addEventListener('shown.bs.modal', () => {
-                    arrowIcon.classList.remove('fi-sr-angle-right');
-                    arrowIcon.classList.add('fi-sr-angle-down');
-                });
-
-                guideModal.addEventListener('hidden.bs.modal', () => {
-                    arrowIcon.classList.remove('fi-sr-angle-down');
-                    arrowIcon.classList.add('fi-sr-angle-right');
-                });
-            }
-        });
-    </script>
 
 
 @endpush

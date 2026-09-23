@@ -104,7 +104,7 @@
       data-path="{{ dynamicAsset(path: 'public/assets/new/back-end/img/modal') }}"></span>
 <span id="get-decimal-point" data-decimal-point="{{ getWebConfig('decimal_point_settings') }}"></span>
 
-<span id="check-offcanvas-setup-guide" data-value="{{ request('offcanvasShow') && request('offcanvasShow') == 'offcanvasSetupGuide' }}"></span>
+
 <span id="get-initial-data-for-panel-time" data-value="{!! in_array(request()->ip(), ['127.0.0.1', '::1']) ? '15000' : '15000' !!}"></span>
 
 <span id="imageUploadMaxSize" data-max-size="{{ getFileUploadMaxSize() }}"></span>

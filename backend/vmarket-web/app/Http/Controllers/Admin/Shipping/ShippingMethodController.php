@@ -98,7 +98,6 @@ class ShippingMethodController extends BaseController
     {
         $this->shippingMethodRepo->add($this->shippingMethodService->addShippingMethodData(request: $request, addedBy: 'admin'));
 
-        updateSetupGuideCacheKey(key: 'shipping_method', panel: 'admin');
         ToastMagic::success(translate('successfully_added'));
         return redirect()->route('admin.business-settings.shipping-method.index');
     }
@@ -110,7 +109,6 @@ class ShippingMethodController extends BaseController
     public function updateStatus(Request $request): JsonResponse
     {
         $this->shippingMethodRepo->update(id: $request['id'], data: ['status' => $request['status']]);
-        updateSetupGuideCacheKey(key: 'shipping_method', panel: 'admin');
         return response()->json(['success' => 1, 'message' => translate('Status_updated_successfully!')], status: 200);
     }
 
@@ -137,7 +135,6 @@ class ShippingMethodController extends BaseController
     {
         $this->shippingMethodRepo->update(id: $id, data: $this->shippingMethodService->addShippingMethodData(request: $request, addedBy: 'admin'));
         $this->categoryShippingRepo->updateWhere(params: ['shipping_method_id' => $id], data: ['shipping_cost' => currencyConverter($request['cost'])]);
-        updateSetupGuideCacheKey(key: 'shipping_method', panel: 'admin');
         ToastMagic::success(translate('successfully_updated'));
         return redirect()->route('admin.business-settings.shipping-method.index');
     }
@@ -160,7 +157,6 @@ class ShippingMethodController extends BaseController
     {
         $this->businessSettingRepo->updateOrInsert(type: 'shipping_method', value: $request['shipping_method']);
 
-        updateSetupGuideCacheKey(key: 'shipping_method', panel: 'admin');
         ToastMagic::success(translate('successfully_updated'));
         return redirect()->route('admin.business-settings.shipping-method.index');
     }

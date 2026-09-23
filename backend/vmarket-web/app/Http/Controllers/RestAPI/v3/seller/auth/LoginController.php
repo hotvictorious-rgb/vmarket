@@ -3,10 +3,8 @@
 namespace App\Http\Controllers\RestAPI\v3\seller\auth;
 
 use App\Http\Controllers\Controller;
-use App\Models\Product;
 use App\Models\Seller;
 use App\Models\SellerWallet;
-use App\Models\Shop;
 use App\Utils\Helpers;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -33,18 +31,6 @@ class LoginController extends Controller
         ];
 
         $seller = Seller::where(['email' => $request['email']])->first();
-
-        if ($seller && isset($seller?->shop) && empty($seller?->shop?->setup_guide_app)) {
-            Shop::where(['seller_id' => $seller['id']])->update([
-                'setup_guide_app' => json_encode([
-                    'shop_setup' => 0,
-                    'add_new_product' => Product::where(['added_by' => 'seller', 'user_id' => $seller['id']])->count() > 0 ? 1 : 0,
-                    'order_setup' => 0,
-                    'withdraw_setup' => 0,
-                    'payment_information' => 0,
-                ]),
-            ]);
-        }
 
         if (isset($seller) && $seller['status'] == 'approved' && auth('seller')->attempt($data)) {
             $token = Str::random(50);

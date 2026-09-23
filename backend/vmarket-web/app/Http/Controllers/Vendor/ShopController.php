@@ -125,7 +125,6 @@ class ShopController extends BaseController
         }
 
         $this->shopRepo->update(id: $id, data: $this->shopService->getShopDataForUpdate(request: $request, shop: $shop));
-        updateSetupGuideCacheKey(key: 'shop_setup', panel: 'vendor');
         ToastMagic::info(translate('Shop_updated_successfully'));
         return redirect()->route('vendor.shop.index');
     }
@@ -145,7 +144,6 @@ class ShopController extends BaseController
         }
 
         $this->shopRepo->update(id: $request['id'], data: $this->shopService->getVacationData(request: $request));
-        updateSetupGuideCacheKey(key: 'shop_setup', panel: 'vendor');
         ToastMagic::success(translate('Vacation_mode_updated_successfully'));
         return back();
     }
@@ -166,7 +164,6 @@ class ShopController extends BaseController
 
         $this->shopRepo->update(id: $request['id'], data: ['temporary_close' => !$request->get(key: 'status', default: 0)]);
         Cache::clear();
-        updateSetupGuideCacheKey(key: 'shop_setup', panel: 'vendor');
         ToastMagic::success(translate('Status_updated_successfully'));
         return back();
     }
@@ -211,7 +208,6 @@ class ShopController extends BaseController
             params: ['seller_id' => auth('seller')->id()],
             data: $this->vendorService->getUpdateBusinessTIN(request: $request)
         );
-        updateSetupGuideCacheKey(key: 'order_setup', panel: 'vendor');
         ToastMagic::success(translate('updated_successfully'));
         return back();
     }

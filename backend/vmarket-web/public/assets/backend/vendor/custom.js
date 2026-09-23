@@ -1,17 +1,6 @@
 "use strict";
 
 $(document).ready(function () {
-    let checkIsOffcanvasSetupDataValue = $('#check-offcanvas-setup-guide').data('value')?.toString();
-    let checkIsOffcanvasSetupGuideEnable = checkIsOffcanvasSetupDataValue === 'true' || checkIsOffcanvasSetupDataValue === '1';
-
-    if (checkIsOffcanvasSetupGuideEnable) {
-        setTimeout(() => {
-            const url = new URL(window.location.href);
-            url.searchParams.delete('offcanvasShow');
-            window.history.replaceState({}, document.title, url.toString());
-        }, 3000);
-    }
-
     try {
         $(".js-daterangepicker_till_current").daterangepicker({ maxDate: moment() });
     } catch (e) {}

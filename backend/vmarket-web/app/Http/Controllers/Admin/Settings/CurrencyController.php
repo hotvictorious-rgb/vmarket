@@ -115,7 +115,6 @@ class CurrencyController extends BaseController
             'exchange_rate' => $request->has('exchange_rate') ? $request['exchange_rate'] : 1,
         ]);
 
-        updateSetupGuideCacheKey(key: 'currency_setup', panel: 'admin');
         ToastMagic::success(translate('New_Currency_inserted_successfully'));
         return redirect()->back();
     }
@@ -161,7 +160,6 @@ class CurrencyController extends BaseController
         ];
         $this->currencyRepo->update(id: $currency['id'], data: $dataArray);
 
-        updateSetupGuideCacheKey(key: 'currency_setup', panel: 'admin');
         ToastMagic::success(translate('currency_updated_successfully'));
         return redirect()->back();
     }
@@ -205,7 +203,6 @@ class CurrencyController extends BaseController
             }
         }
         $this->currencyRepo->update(id: $request['id'], data: ['status' => $request->get('status', 0)]);
-        updateSetupGuideCacheKey(key: 'currency_setup', panel: 'admin');
         return response()->json([
             'status' => 1,
             'message' => translate('Currency_status_successfully_changed.')

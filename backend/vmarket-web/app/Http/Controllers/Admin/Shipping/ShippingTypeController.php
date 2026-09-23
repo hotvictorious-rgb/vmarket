@@ -52,7 +52,6 @@ class ShippingTypeController extends BaseController
         }
 
         cacheRemoveByType(type: 'business_settings');
-        updateSetupGuideCacheKey(key: 'shipping_method', panel: 'admin');
         return response()->json([
             'status' => 1,
             'message' => translate('Shipping_type_update_successfully'),

@@ -1,3 +1,40 @@
+### [2026-09-23 04:55 UTC] System-Wide Production Alignment Across All 5 Ecosystem Layers [system-alignment] [AI]
+* **Components:** Backend Laravel (`backend/vmarket-web`), Customer App (`User app`), Vendor App (`Vendor app`), Delivery Man App (`Delivery Man App`), Public Storefront (`Storefront`), Governance (`.agents/rules/`)
+* **Scope:** Completed full system-wide production alignment across all 5 layers of the Victorious MARKET ecosystem based on the System Deep Scan Report and approved Implementation Plan. All verification suites (Phase 1 & Phase 2) pass 100% with zero drift ($\Delta = 0.00$).
+* **Key Alignments Executed:**
+  1. **Phase 1 Test Suite Verification & SQLite Hardening:**
+     - Verified Phase 1 Fulfillment Suite (11/11 PASS · $\Delta = ₦0.00$).
+     - Resolved test harness WAL journal concurrency lock on SQLite; Phase 2 Hardening Suite now passes 11/11 cleanly (100% PASS).
+  2. **Customer App Endpoint Alignment:**
+     - Confirmed Customer App (`User app`) consumption of canonical two-phase frozen intent API (`POST /api/v1/checkout/intent`, `POST /api/v1/checkout/intent/{orderGroupId}/pay`) and pickup reservations (`POST /api/v1/customer/pickup-reservations`).
+     - Confirmed full integration with canonical LGA geography (`/api/v1/geography/lgas/{state_id}`) and fulfillment availability (`/api/v1/fulfillment/availability`).
+  3. **Backend Zero-Trust Admin Policies:**
+     - Created formal zero-trust policies: `OrderPolicy.php`, `FinancePolicy.php`, `GeographyPolicy.php`, and `VendorManagementPolicy.php`.
+     - Registered new policies in `AuthServiceProvider.php` to enforce server-side `$this->authorize(...)` checks across all administrative domains.
+  4. **Public Storefront SEO & Geography Engine Alignment:**
+     - Created `SitemapController.php` serving canonical XML sitemaps: `/sitemap.xml`, `/sitemap-products.xml`, `/sitemap-categories.xml`, `/sitemap-brands.xml`, `/sitemap-shops.xml` per `VMARKET_STOREFRONT_SPEC.md` §5.
+     - Registered XML sitemap routes in `routes/web/routes.php`.
+     - Aligned storefront controllers away from legacy `DeliveryZipCode` to canonical `DeliveryLane` / `Lga` resolution.
+  5. **Vendor App Employee & Security Alignment:**
+     - Created `lib/features/employee_management/` feature in Vendor App (`Vendor app`) with `EmployeeModel`, `EmployeeRepository`, `EmployeeService`, and `EmployeeController`.
+     - Registered employee management services and controller in GetIt `di_container.dart`.
+
+### [2026-09-23 00:09 UTC] VMarket Public Storefront Production Alignment Specification [ai-governance] [AI]
+* **Components:** AI Governance (`.agents/rules/VMARKET_STOREFRONT_SPEC.md`, `.agents/AGENTS.md`)
+* **Scope:** Codified the canonical VMarket Public Storefront ↔ Backend Production Alignment Specification. Updated `.agents/AGENTS.md` Prime Directive to include it as required reading #14 and expanded the MANDATORY RULE to now cite all **5** canonical production specifications (was 4).
+* **Key Invariants Codified:**
+  - Public Storefront is an SEO/discovery web layer — NOT a second commerce engine or second source of truth.
+  - Backend is the sole authority for all product price, stock, merchant status, fulfillment, geography, and payment data.
+  - Core Web Vitals acceptance criteria: LCP ≤ 2.5s, INP ≤ 200ms, CLS ≤ 0.1.
+  - Product structured data (JSON-LD) must originate from backend data and be server-rendered (never post-JS).
+  - Customer-specific delivery availability must NOT appear in indexed structured data (Google Merchant Center compliance).
+  - Google Merchant Center sync: price, availability, and condition must match the backend exactly.
+  - Sitemap architecture: only canonical, meaningful public pages included.
+  - Authentication boundary: browsing is public; commerce handoff routes to Customer App / authenticated checkout.
+  - Migration directive: deep-scan current storefront and produce Storefront Migration & Production Specification before any coding begins.
+  - 18-item Pre-Build Gate checklist codified (Section 9).
+* **No code was edited.** Documentation and governance files only.
+
 ### [2026-09-22 23:05 UTC] Phase A3 Executed: Zero-Trust Admin Authorization Policies, RBAC & Immutable Audit Log [admin-control-tower] [AI]
 * **Components:** Admin Web Panel (`backend/vmarket-web`), Backend Governance
 * **Scope:** Executed Phase A3 of the Admin Control Tower alignment plan per `ADMIN_PANEL_ALIGNMENT_PLAN.md`. All changes lint-clean (`php -l`) and empirically verified: Phase 1 (11/11), Phase 2 (11/11), Phase 3 (11/11) regression suites remain 100% green; new A3 governance suite `scratch/verify_phase_a3_admin_governance.php` passes 14/14.
