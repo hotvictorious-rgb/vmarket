@@ -35,9 +35,9 @@ class PriceConverter {
     final splashProvider = Get.find<SplashController>();
     bool singleCurrency = splashProvider.configModel!.currencyModel == 'single_currency';
 
-    return (singleCurrency? price : price!
+    return (singleCurrency? price : price
         * splashProvider.myCurrency!.exchangeRate!
-        * (1 / splashProvider.usdCurrency!.exchangeRate!))!.toStringAsFixed(splashProvider.configModel!.decimalPointSettings!);
+        * (1 / splashProvider.usdCurrency!.exchangeRate!)).toStringAsFixed(splashProvider.configModel!.decimalPointSettings!);
   }
 
   static double convertWithDiscount(double price, double discount, String discountType) {

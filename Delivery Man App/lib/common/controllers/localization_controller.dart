@@ -11,7 +11,7 @@ class LocalizationController extends GetxController implements GetxService {
     loadCurrentLanguage();
   }
 
-  Locale _locale = Locale(AppConstants.defaultLanguageCode, AppConstants.defaultCountryCode);
+  Locale _locale = const Locale(AppConstants.defaultLanguageCode, AppConstants.defaultCountryCode);
   bool _isLtr = true;
   Locale get locale => _locale;
   bool get isLtr => _isLtr;

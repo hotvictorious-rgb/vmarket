@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:sixvalley_delivery_boy/common/controllers/localization_controller.dart';
 import 'package:sixvalley_delivery_boy/features/order_details/controllers/order_details_controller.dart';
-import 'package:sixvalley_delivery_boy/features/order_details/screens/order_delivered_screen.dart';
 import 'package:sixvalley_delivery_boy/features/order_details/widgets/camera_or_gallery_widget.dart';
 import 'package:sixvalley_delivery_boy/features/order_details/widgets/slider_button_widget.dart';
 import 'package:sixvalley_delivery_boy/features/order_details/widgets/verify_otp_sheet_widget.dart';
@@ -219,26 +218,6 @@ class OrderStatusChangeCustomButtonWidget extends StatelessWidget {
         );
       },
     );
-  }
-
-  void _completeDelivery(
-      BuildContext context,
-      OrderDetailsController orderDetailsController,
-      ) {
-    orderDetailsController.updateOrderStatus(
-      orderId: orderModel!.id,
-      context: context,
-      status: 'delivered',
-    ).then((value) {
-      Navigator.of(context).pushReplacement(
-        MaterialPageRoute(
-          builder: (_) => OrderDeliveredScreen(
-            orderID: orderModel!.id.toString(),
-            orderModel: orderModel,
-          ),
-        ),
-      );
-    });
   }
 
 }

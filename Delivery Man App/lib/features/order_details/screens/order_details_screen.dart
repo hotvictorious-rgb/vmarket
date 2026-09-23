@@ -7,7 +7,6 @@ import 'package:sixvalley_delivery_boy/features/order/controllers/order_controll
 import 'package:sixvalley_delivery_boy/features/order/widgets/order_info_widget.dart';
 import 'package:sixvalley_delivery_boy/features/order_details/controllers/order_details_controller.dart';
 import 'package:sixvalley_delivery_boy/features/order_details/domain/models/order_details_model.dart';
-import 'package:sixvalley_delivery_boy/features/order_details/screens/order_delivered_screen.dart';
 import 'package:sixvalley_delivery_boy/features/order_details/widgets/camera_or_gallery_widget.dart';
 import 'package:sixvalley_delivery_boy/features/order_details/widgets/delivery_info_widget.dart';
 import 'package:sixvalley_delivery_boy/features/order_details/widgets/order_info_with_customer_widget.dart';
@@ -386,11 +385,6 @@ class _OrderDetailsScreenState extends State<OrderDetailsScreen> {
     _showVerificationBottomSheet(context, orderModel!, orderDetailsController.totalPrice ?? 0);
   }
 
-  void _handlePaymentStatusFlow(BuildContext context, OrderDetailsController orderDetailsController, OrderModel orderModel) {
-    // [AI] This method is redundant in V1 since OTP is mandatory, but keeping for compatibility.
-    _showVerificationBottomSheet(context, orderModel, orderDetailsController.totalPrice ?? 0);
-  }
-
   void _showVerificationBottomSheet(BuildContext context, OrderModel orderModel, double totalPrice) {
     showModalBottomSheet<void>(
       backgroundColor: Colors.transparent,
@@ -406,23 +400,6 @@ class _OrderDetailsScreenState extends State<OrderDetailsScreen> {
         );
       },
     );
-  }
-
-  void _completeDelivery(BuildContext context, OrderDetailsController orderDetailsController, OrderModel orderModel) {
-    orderDetailsController.updateOrderStatus(
-      orderId: orderModel.id,
-      context: context,
-      status: 'delivered',
-    ).then((value) {
-      Navigator.of(context).pushReplacement(
-        MaterialPageRoute(
-          builder: (_) => OrderDeliveredScreen(
-            orderID: orderModel.id.toString(),
-            orderModel: orderModel,
-          ),
-        ),
-      );
-    });
   }
 
 
