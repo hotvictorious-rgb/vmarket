@@ -12,7 +12,6 @@ import 'package:sixvalley_delivery_boy/features/emergency_contact/domain/reposit
 import 'package:sixvalley_delivery_boy/features/emergency_contact/domain/repositories/emergency_contruct_repository_interface.dart';
 import 'package:sixvalley_delivery_boy/features/emergency_contact/domain/services/emergency_contruct_service.dart';
 import 'package:sixvalley_delivery_boy/features/emergency_contact/domain/services/emergency_contruct_service_interface.dart';
-import 'package:sixvalley_delivery_boy/features/language/controllers/language_controller.dart';
 import 'package:sixvalley_delivery_boy/common/controllers/localization_controller.dart';
 import 'package:sixvalley_delivery_boy/features/dashboard/controllers/dashboard_controller.dart';
 import 'package:sixvalley_delivery_boy/features/live_tracking/controllers/rider_controller.dart';
@@ -60,7 +59,6 @@ import 'package:sixvalley_delivery_boy/data/api/api_client.dart';
 import 'package:sixvalley_delivery_boy/features/language/domain/models/language_model.dart';
 import 'package:sixvalley_delivery_boy/data/repository/rider_repository.dart';
 import 'package:sixvalley_delivery_boy/features/auth/domain/repositories/auth_repository.dart';
-import 'package:sixvalley_delivery_boy/features/language/domain/repositories/language_repository.dart';
 import 'package:sixvalley_delivery_boy/features/notification/domain/repositories/notification_repository.dart';
 import 'package:sixvalley_delivery_boy/features/onboard/domain/repositories/onboarding_repository.dart';
 import 'package:sixvalley_delivery_boy/features/order/domain/repositories/order_repository.dart';
@@ -149,7 +147,6 @@ Future<Map<String, Map<String, String>>> init() async {
   /// Repository
   Get.lazyPut(() => SplashRepository(storageService: Get.find(), apiClient: Get.find()));
   Get.lazyPut(() => OnBoardingRepository());
-  Get.lazyPut(() => LanguageRepository());
   Get.lazyPut(() => ProfileRepository(apiClient: Get.find()));
   Get.lazyPut(() => AuthRepository(apiClient: Get.find(), storageService: Get.find()));
   Get.lazyPut(() => OrderRepository(apiClient: Get.find()));
@@ -184,15 +181,13 @@ Future<Map<String, Map<String, String>>> init() async {
 
   /// Retrieving localized data
   Map<String, Map<String, String>> _languages = {};
-  for(LanguageModel languageModel in AppConstants.languages) {
-    String jsonStringValues =  await rootBundle.loadString('assets/language/${languageModel.languageCode}.json');
-    Map<String, dynamic> _mappedJson = json.decode(jsonStringValues);
-    Map<String, String> _json = {};
-    _mappedJson.forEach((key, value) {
-      _json[key] = value.toString();
-    });
-    _languages['${languageModel.languageCode}_${languageModel.countryCode}'] = _json;
-  }
+  String jsonStringValues =  await rootBundle.loadString('assets/language/${AppConstants.defaultLanguageCode}.json');
+  Map<String, dynamic> _mappedJson = json.decode(jsonStringValues);
+  Map<String, String> _json = {};
+  _mappedJson.forEach((key, value) {
+    _json[key] = value.toString();
+  });
+  _languages['${AppConstants.defaultLanguageCode}_${AppConstants.defaultCountryCode}'] = _json;
   return _languages;
 }
 

@@ -35,17 +35,15 @@ class OrderDetailsController extends GetxController implements GetxService {
 
 
 
+  // [AI] VMarket §21: Allowed failed-delivery reason codes are server-controlled canonical codes.
   final List<String> reasonList = [
-    'customer_unreachable_phone_off',
-    'wrong_address_landmark_not_found',
-    'customer_requested_reschedule',
-    'customer_refused_package',
-    'unable_to_reach_location_gate_closed',
-    'rider_vehicle_bike_issue',
-    'could_not_contact_with_the_customer',
-    'could_not_find_the_location',
-    'delivery_man_transport_broken',
-    'other'
+    'customer_unavailable',
+    'incorrect_address',
+    'customer_refused',
+    'phone_unreachable',
+    'access_issue',
+    'shop_closed',
+    'other',
   ];
 
 
@@ -112,19 +110,7 @@ class OrderDetailsController extends GetxController implements GetxService {
 
 
 
-  Future<bool> cancelOrderStatus({int? orderId, String? cause,BuildContext? context}) async {
-    _isLoading = true;
-    update();
-    bool _isSuccess = await orderDetailsServiceInterface.cancelOrderStatus(orderId: orderId,  cause: cause);
-    Get.back();
-    if(_isSuccess) {
-      getOrderDetails(orderId.toString(), context!);
-    }
-
-    _isLoading = false;
-    update();
-    return _isSuccess;
-  }
+  
 
   Future<bool> rescheduleOrderStatus({int? orderId, String? deliveryDate, String? cause, BuildContext? context}) async {
     _isLoading = true;

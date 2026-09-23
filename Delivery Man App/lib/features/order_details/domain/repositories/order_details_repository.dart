@@ -44,14 +44,7 @@ class OrderDetailsRepository implements OrderDetailsRepositoryInterface{
 
   }
 
-  @override
-  Future<Response> cancelOrderStatus({int? orderId, String? cause}) async {
-    Response response = await apiClient.postData(
-        AppConstants.updateOrderStatusUri,
-        {"order_id": orderId, "status": 'canceled', "_method": 'put', 'cause': cause});
-    return response;
-
-  }
+  
 
 
 

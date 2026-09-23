@@ -94,7 +94,7 @@ class MyApp extends StatelessWidget {
             theme: themeController.darkTheme ? dark : light,
             locale: localizeController.locale,
             translations: Messages(languages: languages),
-            fallbackLocale: Locale(AppConstants.languages[0].languageCode!, AppConstants.languages[0].countryCode),
+            fallbackLocale: Locale(AppConstants.defaultLanguageCode, AppConstants.defaultCountryCode),
             home: SplashScreen(body: body),
             defaultTransition: Transition.topLevel,
             transitionDuration: const Duration(milliseconds: 500),

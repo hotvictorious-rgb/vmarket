@@ -29,7 +29,6 @@ class ConfigModel {
   ImageFullUrl? _companyLogoImage;
   String? _companyIcon;
   int? imageUpload;
-  int? orderVerification;
   int? _mapApiStatus;
   DefaultLocation? defaultLocation;
   ImageFullUrl? companyFavIcon;
@@ -66,7 +65,6 @@ class ConfigModel {
         ImageFullUrl? companyLogoImage,
         String? companyIcon,
         int? imageUpload,
-        int? orderVerification,
         int? mapApiStatus,
 
       }) {
@@ -102,7 +100,6 @@ class ConfigModel {
     _companyLogoImage = companyLogoImage;
     _companyIcon = companyIcon;
     this.imageUpload;
-    this.orderVerification;
     _mapApiStatus = mapApiStatus;
     defaultLocation;
     companyFavIcon;
@@ -198,13 +195,6 @@ class ConfigModel {
         imageUpload = json['upload_picture_on_delivery'];
       }catch(e){
         imageUpload = int.parse(json['upload_picture_on_delivery'].toString());
-      }
-    }
-    if(json['order_verification'] != null){
-      try{
-        orderVerification = json['order_verification'];
-      }catch(e){
-        orderVerification = int.parse(json['order_verification'].toString());
       }
     }
     _mapApiStatus = int.parse(json['map_api_status'].toString());

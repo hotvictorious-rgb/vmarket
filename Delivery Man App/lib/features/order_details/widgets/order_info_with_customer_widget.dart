@@ -60,17 +60,6 @@ class OrderInfoWithDeliveryInfoWidget extends StatelessWidget {
               ReceiverWidget(orderModel: orderModel),
               (orderModel?.orderStatus == 'processing' || orderModel?.orderStatus == 'out_for_delivery') ?
               Row(children:  [
-                Expanded(child: OrderActionItemWidget(icon: Images.cancelIcon, title: 'cancel'.tr,
-                  onTap: () => showAnimatedDialogWidget(context,  OrderStatusUpdateDialogWidget(icon: Images.cancelIcon,
-                  title: 'why_you_want_to_cancel_this_delivery'.tr,
-                   onYesPressed: () {
-                     Get.back();
-                     Get.back();
-                     orderController.cancelOrderStatus(orderId: orderModel!.id,
-                       cause: orderController.reasonValue!.tr, context: context);
-                  }),isFlip: true),)),
-
-
                 Expanded(child: OrderActionItemWidget(icon: Images.reachedIcon,title:  'reached'.tr,
                   onTap: () => showAnimatedDialogWidget(context,  OrderStatusUpdateDialogWidget(icon: Images.reachedIcon,
                     isReschedule: true,

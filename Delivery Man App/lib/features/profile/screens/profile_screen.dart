@@ -17,7 +17,6 @@ import 'package:sixvalley_delivery_boy/common/basewidgets/confirmation_dialog_wi
 import 'package:sixvalley_delivery_boy/common/basewidgets/custom_app_bar_widget.dart';
 import 'package:sixvalley_delivery_boy/common/basewidgets/online_offline_button_widget.dart';
 import 'package:sixvalley_delivery_boy/features/auth/screens/login_screen.dart';
-import 'package:sixvalley_delivery_boy/features/earning_statement/screens/earning_statement_screen.dart';
 import 'package:sixvalley_delivery_boy/features/emergency_contact/screens/emergency_contact_screen.dart';
 import 'package:sixvalley_delivery_boy/features/help_and_support/screens/help_and_support_screen.dart';
 import 'package:sixvalley_delivery_boy/features/profile/screens/html_view_screen.dart';
@@ -72,9 +71,6 @@ class ProfileScreen extends StatelessWidget {
                                SizedBox(width: Dimensions.paddingSizeDefault),
                               Expanded(child: Text('status'.tr,style: rubikRegular.copyWith(fontSize: Dimensions.fontSizeDefault))),
                               const OnlineOfflineButtonWidget(showProfileImage: false)])),
-
-                          ProfileButtonWidget(icon: Images.earnStatement, title: 'earning_statement'.tr,
-                              onTap: () => Get.to(const EarningStatementScreen())),
 
                           ProfileButtonWidget(icon: Images.walletIcon, title: 'my_wallet'.tr,
                               onTap: () => Get.to(const WalletScreen(fromNotification: false, fromProfile: true,))),

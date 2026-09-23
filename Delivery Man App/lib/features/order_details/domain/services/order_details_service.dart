@@ -11,20 +11,7 @@ class OrderDetailsService implements OrderDetailsServiceInterface{
   OrderDetailsService({required this.orderDetailsRepositoryInterface});
 
 
-  @override
-  Future cancelOrderStatus({int? orderId, String? cause}) async {
-    Response response = await orderDetailsRepositoryInterface.cancelOrderStatus(orderId: orderId, cause: cause);
-    bool _isSuccess;
-    if(response.body != null && response.statusCode == 200) {
-      showCustomSnackBarWidget(response.body['message'], isError: false);
-      _isSuccess = true;
-      Get.find<OrderController>().getCurrentOrders();
-    }else {
-      ApiChecker.checkApi(response);
-      _isSuccess = false;
-    }
-    return _isSuccess;
-  }
+  
 
 
 

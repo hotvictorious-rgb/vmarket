@@ -326,14 +326,15 @@ class _OrderDetailsScreenState extends State<OrderDetailsScreen> {
                 final isEndOfPage = orderDetailsController.endOfPage;
                 final imageUploadOff = config?.imageUpload == 0;
                 final isNotProcessing = orderModel?.orderStatus != 'processing';
-                final hasNoVerificationAndNoUpload = config?.orderVerification == 0 && config?.imageUpload == 0;
+                // [AI] V1 Invariant: marketplace delivery verification is ALWAYS mandatory.
+                // The admin 'order_verification' config must NEVER gate rider actions; backend enforces it.
 
                 return (orderDetailsController.orderDetails != null && orderModel?.orderStatus != null) ?
 
                 SizedBox(
                   height: (orderModel?.orderStatus == 'processing' || orderModel?.orderStatus == 'out_for_delivery') && !orderModel!.isPause! ? 80 : 0,
 
-                  child : isEndOfPage || (imageUploadOff && isNotProcessing && !hasNoVerificationAndNoUpload) ?
+                  child : isEndOfPage || (imageUploadOff && isNotProcessing) ?
                     Padding(padding: EdgeInsets.all(Dimensions.paddingSizeDefault),
                       child: orderDetailsController.uploading ? const Center(child: CircularProgressIndicator()):
                       CustomButtonWidget(btnTxt: 'proceed_next'.tr,

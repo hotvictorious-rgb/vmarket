@@ -53,7 +53,6 @@ class Images {
   static const String orderDeliveredIcon = 'assets/image/order_delivered_icon.png';
   static const String orderOutForDeliveryIcon = 'assets/image/out_for_delivery_icon.png';
   static const String orderProcessingIcon = 'assets/image/processing_order_icon.png';
-  static const String cancelIcon = 'assets/image/cancel_icon.png';
   static const String reachedIcon = 'assets/image/reached_icon.png';
   static const String pauseIcon = 'assets/image/pause_icon.png';
   static const String orderCompletedImage = 'assets/image/order_completed_image.png';

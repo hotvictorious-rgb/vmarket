@@ -1,6 +1,3 @@
-import 'package:sixvalley_delivery_boy/features/language/domain/models/language_model.dart';
-import 'images.dart';
-
 class AppConstants {
   static const String companyName = 'Victorious MARKET';
   static const String appName = 'Victorious Delivery';
@@ -23,19 +20,10 @@ class AppConstants {
   static const String rescheduleOrderStatusUri = '/api/v2/delivery-man/update-expected-delivery';
   static const String pauseAndResumeOrderStatusUri = '/api/v2/delivery-man/order-update-is-pause';
   static const String tokenUri = '/api/v2/delivery-man/update-fcm-token';
-  // [AI] Corrected searchConversationListUri endpoint to messages/search
-  static const String searchConversationListUri = '/api/v2/delivery-man/messages/search/';
   static const String statusOnOffUri = '/api/v2/delivery-man/is-online';
   static const String withdrawRequestUri = '/api/v2/delivery-man/withdraw-request';
-  static const String walletInfoUri = '/api/v2/delivery-man/wallet';
-  static const String orderCountUri = '/api/v2/delivery-man/order-count';
   static const String deliveryWiseEarnedUri = '/api/v2/delivery-man/delivery-wise-earned';
-  static const String orderListFilterByDate = '/api/v2/delivery-man/order-list-by-date';
-  static const String orderSearchUri = '/api/v2/delivery-man/search';
   static const String profileUpdateUri = '/api/v2/delivery-man/update-info';
-  static const String chatListUri = '/api/v2/delivery-man/messages/list/';
-  static const String messageListUri = '/api/v2/delivery-man/messages/get-message/';
-  static const String sendMessageUri = '/api/v2/delivery-man/messages/send-message/';
   static const String withdrawListUri = '/api/v2/delivery-man/withdraw-list-by-approved';
   static const String emergencyContactList = '/api/v2/delivery-man/emergency-contact-list';
   static const String forgotPassword = '/api/v2/delivery-man/auth/forgot-password';
@@ -44,7 +32,6 @@ class AppConstants {
   static const String reviewListUri = '/api/v2/delivery-man/review-list';
   static const String updateBankInfo = '/api/v2/delivery-man/bank-info';
   static const String distanceApi = '/api/v2/delivery-man/distance-api';
-  static const String chatSearch = '/api/v2/delivery-man/messages/search/';
   static const String addToSavedReviewList = '/api/v2/delivery-man/save-review';
   static const String deliveryVerificationImage = '/api/v2/delivery-man/order-delivery-verification';
   static const String otpVerificationForOrder = '/api/v2/delivery-man/verify-order-delivery-otp';
@@ -71,14 +58,9 @@ class AppConstants {
   static const String notificationSound = 'sound';
   static const String userCountryCode = 'user_country_code';
 
-
-  static List<LanguageModel> languages = [
-    LanguageModel(imageUrl: Images.unitedKindom, languageName: 'English', countryCode: 'US', languageCode: 'en'),
-    LanguageModel(imageUrl: Images.arabic, languageName: 'Arabic', countryCode: 'SA', languageCode: 'ar'),
-    LanguageModel(imageUrl: Images.hindi, languageName: 'Hindi', countryCode: 'IN', languageCode: 'hi'),
-    LanguageModel(imageUrl: Images.bd, languageName: 'Bangla', countryCode: 'BD', languageCode: 'bn'),
-    LanguageModel(imageUrl: Images.spanish, languageName: 'Spanish', countryCode: 'ES', languageCode: 'es'),
-  ];
+  // [AI] Only English localization ships with the Delivery Man App.
+  static const String defaultLanguageCode = 'en';
+  static const String defaultCountryCode = 'US';
 
   static const int limitOfPickedIdentityImageNumber = 2;
   static const double limitOfPickedImageSizeInMB = 2;

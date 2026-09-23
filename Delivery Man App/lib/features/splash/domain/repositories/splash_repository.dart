@@ -27,10 +27,10 @@ class SplashRepository implements SplashRepositoryInterface{
       await storageService.setBool(AppConstants.theme, false);
     }
     if(!storageService.containsKey(AppConstants.countryCode)) {
-      await storageService.setString(AppConstants.countryCode, AppConstants.languages[0].countryCode!);
+      await storageService.setString(AppConstants.countryCode, AppConstants.defaultCountryCode);
     }
     if(!storageService.containsKey(AppConstants.languageCode)) {
-      await storageService.setString(AppConstants.languageCode, AppConstants.languages[0].languageCode!);
+      await storageService.setString(AppConstants.languageCode, AppConstants.defaultLanguageCode);
     }
     if(!storageService.containsKey(AppConstants.intro)) {
       await storageService.setBool(AppConstants.intro, true);
