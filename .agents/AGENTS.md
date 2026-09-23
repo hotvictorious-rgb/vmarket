@@ -18,8 +18,9 @@ Before taking ANY action, every AI **MUST** read:
 12. `.agents/rules/VMARKET_VENDOR_SPEC.md` — The 31-section canonical production contract for Vendor Web & Vendor Mobile App ↔ Backend.
 13. `.agents/rules/VMARKET_DELIVERY_APP_SPEC.md` — The 31-section canonical production contract for Delivery Rider Mobile App ↔ Backend.
 14. `.agents/rules/VMARKET_STOREFRONT_SPEC.md` — The canonical production specification for the VMarket Public Storefront (SEO/discovery layer). Governs Core Web Vitals, structured data, sitemap, Google Merchant Center sync, and backend-data authority.
+15. `.agents/rules/VMARKET_BACKEND_SPEC.md` — The master backend reference blueprint (Full Production Architecture: 54 sections). Backend is the Single Source of Truth (SSOT) and central operating system.
 
-**MANDATORY RULE FOR ALL AIs**: All AIs working on Victorious MARKET must strictly follow all 5 canonical production specifications (`VMARKET_CUSTOMER_APP_SPEC.md`, `VMARKET_ADMIN_PANEL_SPEC.md`, `VMARKET_VENDOR_SPEC.md`, `VMARKET_DELIVERY_APP_SPEC.md`, `VMARKET_STOREFRONT_SPEC.md`) without exception. No AI is permitted to bypass, override, or alter these specification rules under any circumstances.
+**MANDATORY RULE FOR ALL AIs**: All AIs working on Victorious MARKET must strictly follow all 6 canonical production specifications (`VMARKET_BACKEND_SPEC.md`, `VMARKET_CUSTOMER_APP_SPEC.md`, `VMARKET_ADMIN_PANEL_SPEC.md`, `VMARKET_VENDOR_SPEC.md`, `VMARKET_DELIVERY_APP_SPEC.md`, `VMARKET_STOREFRONT_SPEC.md`) without exception. No AI is permitted to bypass, override, or alter these specification rules under any circumstances.
 
 ## 1. Golden Rule: Read Before Writing
 Before making ANY changes to this codebase, you MUST:

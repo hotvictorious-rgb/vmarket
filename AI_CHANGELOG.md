@@ -1,3 +1,11 @@
+### [2026-09-23 07:20 UTC] Canonical VMarket Backend Production Architecture Specification Established [ai-governance] [AI]
+* **Components:** AI Governance & Rules (`.agents/rules/VMARKET_BACKEND_SPEC.md`, `.agents/AGENTS.md`)
+* **Scope:** Established the master 54-section canonical backend blueprint (`VMARKET_BACKEND_SPEC.md`) defining the VMarket Laravel backend as the Single Source of Truth (SSOT) and central operating system of the entire ecosystem.
+* **Architecture Rules Formalized:**
+  - Formally registered `VMARKET_BACKEND_SPEC.md` in `.agents/AGENTS.md` Rule 0 as one of the 6 canonical production contracts that **ALL AIs** working on Victorious MARKET must strictly follow without exception.
+  - Mandated that all clients (Customer App, Public Storefront, Vendor Mobile App, Vendor Web Panel, Delivery Rider App, Admin Command Center) are strictly presentation and command clients of this single backend engine, with zero duplicate business logic.
+  - Codified the 54 architectural boundaries across Identity, Branch Isolation, Canonical Geography (Country → State → LGA), Delivery Lanes, Availability Engine, Stock Concurrency, Checkout Intent & Snapshot, Paystack Settlement, Manual Refunds, Cashback Ledger, and Audit Logging.
+
 ### [2026-09-23 UTC] Delivery Man App Dead Code & Legacy 6valley Purge [delivery-man] [AI]
 * **Component:** Delivery Man App (`Delivery Man App/lib/`)
 * **Scope:** App-only cleanup. Removed dead code and legacy 6valley remnants that do not align with `.agents/rules/VMARKET_DELIVERY_APP_SPEC.md`. Absolutely ZERO backend code modified; app remains a pure consumer of backend decisions (spec §1/§30). `dart analyze lib` and `dart analyze test`: **No issues found**; `flutter test`: **All tests passed**.
