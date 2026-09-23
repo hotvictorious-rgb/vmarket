@@ -334,9 +334,9 @@ The frontend only displays this.
 
 ---
 
-## 10. Pickup availability
+## 10. Pickup availability and the Two-Code Architecture
 
-Pickup is separate.
+Pickup is completely separate from delivery logistics.
 
 It depends on:
 - shop active
@@ -351,10 +351,24 @@ It does NOT require a delivery lane.
 Therefore:
 
 **Delivery:**
-Origin LGA → Destination LGA
+Origin LGA → Destination LGA (Requires enabled `DeliveryLane`)
 
 **Pickup:**
-Shop → Customer
+Shop → Customer (In-person collection at physical merchant premises)
+
+### The Dual-Code In-Shop Pickup Architecture
+In-Shop Pickup operates on a strict **Two-Code Verification Architecture** that cleanly separates pre-payment in-store inspection from post-payment package release:
+
+1. **Pre-Payment Reservation Code (`reservation_code`):**
+   - Format: `RES-XXXXXXXX` (alphanumeric, e.g., `RES-17B81659`).
+   - Cost: **₦0.00 (Zero payment required)**.
+   - Purpose: Physical store pass presented upon arrival so merchant can retrieve items for customer hands-on examination.
+   - Rule: **Reservation ≠ Sale**; zero inventory deduction or stock locking at this stage.
+
+2. **Post-Payment Handover / Collection OTP (`pickup_verification_code`):**
+   - Format: 6-digit cryptographic numeric PIN (`XXXXXX`, e.g., `784912`).
+   - Timing: Generated **ONLY AFTER** customer inspects, vendor accepts, and customer completes Paystack payment.
+   - Purpose: Proof of payment presented at the counter to authorize physical handover of packaged items.
 
 ---
 
@@ -647,112 +661,145 @@ Everything that changes money or inventory needs idempotent handling.
 
 ## 22. Delivery order settlement
 
-Once payment is verified:
+Once payment is verified by Paystack (via atomic row-level lock on `payment_requests.is_paid`), the backend invokes `DeliveryOrderSettlementService`.
+
+Execution pipeline inside an atomic database transaction:
 
 ```
-Payment verified
-      ↓
+Paystack Payment Verified
+        ↓
+Atomic Lock (payment_requests.is_paid 0 -> 1)
+        ↓
 DeliveryOrderSettlementService
-      ↓
-Create order
-      ↓
-Create order group
-      ↓
-Create delivery record
-      ↓
-Deduct/reserve stock
-      ↓
-Financial records
-      ↓
-Vendor notification
-      ↓
-Delivery workflow
+        ↓
+Create Order Group (Multi-vendor grouping)
+        ↓
+Create Sub-Orders (Split per vendor/shop)
+        ↓
+Deduct/Reserve Physical Stock (Row lock on products)
+        ↓
+Freeze Delivery Snapshots (Origin LGA, Destination LGA, Fee, ETA)
+        ↓
+Financial Ledger Records (Customer paid, Platform held, Vendor held)
+        ↓
+Vendor Notifications Triggered
+        ↓
+Logistics Dispatch Workflow Initialized
 ```
 
-All critical changes should happen transactionally.
+All critical changes happen transactionally. If inventory deduction or order creation fails, the transaction rolls back cleanly and initiates post-payment reconciliation.
 
 ---
 
-## 23. Pickup settlement
+## 23. Pickup settlement and the Dual-Code Protocol
 
-Pickup is different.
+In-Shop Pickup is architecturally distinct from delivery: it enforces **Pay-After-Inspection** governed by two distinct verification codes.
 
-Current intended lifecycle:
+### The Two Distinct Codes
+1. **Code #1: Reservation Code (`reservation_code`, e.g., `RES-17B81659`):**
+   - Issued immediately upon placing a pickup reservation (`POST /api/v1/customer/pickup-reservations`).
+   - Cost: **₦0.00 (Zero payment required)**.
+   - Status: `pending_inspection` with a bounded 24-hour expiration (`expires_at`).
+   - Rule: **Reservation ≠ Sale**; zero inventory deduction or stock locking.
+   - Usage: Customer presents this code to the merchant upon arriving at the physical store.
 
-```
-Pending inspection
-       ↓
-Inspected accepted
-       ↓
-Customer pays
-       ↓
-Payment verified
-       ↓
-Pickup order created
-       ↓
-Stock deducted
-       ↓
-OTP generated
-       ↓
-Customer collects
-```
+2. **Code #2: Handover / Collection OTP (`pickup_verification_code`, 6-digit numeric PIN, e.g., `784912`):**
+   - Issued **ONLY AFTER** customer physical inspection, merchant acceptance, and Paystack payment confirmation.
+   - Stored in: `orders.pickup_verification_code`.
+   - Usage: Customer presents this 6-digit code to the merchant at the counter as cryptographic proof of escrow payment to authorize release of packaged goods.
 
-Or:
+### The Complete In-Shop Pickup Lifecycle
 
 ```
-Pending inspection
-       ↓
-Inspected rejected
+Customer Cart
+      ↓
+POST /api/v1/customer/pickup-reservations
+      ↓
+PickupReservation Created (Code #1: RES-XXXXXXXX, ₦0.00 Paid, 24h TTL)
+Status: pending_inspection
+      ↓
+Customer visits physical shop & presents Code #1 (RES-XXXXXXXX)
+      ↓
+Merchant enters Code #1 in Vendor App/Panel (verifyReservationForVendor)
+Merchant hands physical goods to customer for hands-on examination
+      ↓
+┌───────────────────────────────┴───────────────────────────────┐
+│                                                               │
+[Customer Rejects Items]                        [Customer Accepts Items]
+│                                                               │
+Merchant clicks "Reject"                        Merchant clicks "Accept"
+Status: inspected_rejected                      Status: inspected_accepted
+No payment. No Order.                           Unlocks Payment in Customer App
+Cart preserved. Complete.                                       │
+                                                Customer taps "Pay at Store"
+                                                POST /api/v1/customer/pickup-payment/initialize
+                                                (Optional Victorious Cashback applied)
+                                                                │
+                                                Paystack Payment Verified
+                                                                │
+                                                PickupOrderSettlementService (Atomic DB Transaction)
+                                                ├── Atomic Stock Decrement
+                                                ├── Create Order (order_type = 'pickup', paid)
+                                                ├── Generate Code #2: 6-Digit Handover OTP
+                                                ├── Award 5% Instant Pickup Cashback
+                                                └── Status: order_placed
+                                                                │
+                                                Customer shows Code #2 (6-digit OTP) at counter
+                                                                │
+                                                Merchant verifies OTP (InShopHandoverController)
+                                                Merchant releases packaged goods
+                                                                │
+                                                Order Status: delivered → completed
 ```
-
-No payment.
-No completed order.
 
 ---
 
 ## 24. Pickup reservation does not own stock prematurely
 
-The reservation should not behave like a completed sale.
+The reservation must never behave like a completed sale.
 
-The current business rule is:
+The foundational business invariant is:
 
 **Reservation ≠ Sale**
 
-Stock deduction occurs at successful settlement.
-
-This needs careful concurrency protection so another transaction cannot consume the same inventory incorrectly.
+Key Concurrency Rules:
+1. When Code #1 (`RES-XXXXXXXX`) is issued, **zero inventory is deducted** and no database stock locks are held.
+2. The physical item remains on the merchant's shelf and available for discovery.
+3. If two customers simultaneously reserve the final in-stock unit of a product, both are allowed to receive a reservation code and visit the shop.
+4. **Physical Stock Claim:** Only the customer whose vendor accepts the inspection AND whose payment successfully settles first via `PickupOrderSettlementService` atomically claims the physical inventory.
+5. The second customer's checkout will be caught by pessimistic row locks (`lockForUpdate()`) and fail gracefully with clear out-of-stock messaging, without negative stock or corrupted balances.
 
 ---
 
-## 25. Delivery lifecycle
+## 25. Delivery lifecycle and State Machine
 
-Backend should own the state machine.
+The backend owns the authoritative fulfillment state machine across all client applications. Neither the Customer App, Vendor App, nor Delivery App may invent arbitrary order states.
 
-For example:
+The standard marketplace delivery lifecycle:
 
 ```
-pending_payment
+pending_payment      (Order intent initialized; waiting for Paystack gateway response)
       ↓
-paid
+paid                 (Paystack verified; atomic settlement initiated)
       ↓
-processing
+confirmed            (Order created, stock decremented, financial records locked)
       ↓
-ready_for_pickup
+processing           (Merchant notified; merchant actively packaging items)
       ↓
-assigned
+ready_for_pickup     (Merchant signals packaging complete; ready for logistics pickup)
       ↓
-picked_up
+assigned             (Admin dispatcher or automated engine assigns delivery rider)
       ↓
-in_transit
+picked_up            (Rider arrives at merchant shop, verifies collection OTP/barcode, takes custody)
       ↓
-out_for_delivery
+in_transit           (Rider traveling along designated DeliveryLane or transit hub corridor)
       ↓
-delivered
+out_for_delivery     (Rider in destination LGA, en route to customer delivery address)
       ↓
-completed
+delivered            (Rider verifies customer 6-digit delivery OTP / signature; package handed over)
+      ↓
+completed            (Financial settlement finalized, vendor hold released per business schedule)
 ```
-
-Exact states should be standardized rather than allowing every app to invent states.
 
 ---
 
@@ -1079,23 +1126,33 @@ The exact settlement timing can be configured later, but it must be represented 
 
 ---
 
-## 39. Delivery operations
+## 39. Delivery operations and Logistics Infrastructure
 
-Delivery backend should maintain:
-- delivery order
-- delivery assignment
-- rider
-- hub
-- dispatch batch
-- waybill
-- tracking events
-- proof of delivery
+The delivery backend orchestrates physical transit across merchants, riders, and customers.
 
-Internal logistics can use hubs.
+Key Logistics Entities:
+- `delivery_orders`: Maps order to logistics lifecycle.
+- `delivery_assignments`: Dispatches an order to a specific `delivery_man` (rider).
+- `delivery_hubs`: Internal logistics aggregation landmarks/parks (operational infrastructure, NOT public marketplace geography).
+- `dispatch_batches`: Grouping of orders moving along identical delivery corridors.
+- `waybills`: Official manifest detailing origin merchant, destination customer, and item quantity.
+- `tracking_events`: Immutable audit trail of timestamped GPS and status milestones.
+- `proof_of_delivery`: 6-digit delivery verification OTP or recipient digital signature.
 
-But customer-facing geography remains:
-
-**Country → State → LGA**
+### Logistics Architecture Rules:
+1. **Public Geography vs Internal Logistics:**
+   - Customer-facing and merchant-facing geography is **STRICTLY**:
+     **Country → State → LGA**
+   - Corridors and hubs (`DeliveryHub`) are operational logistics transit points managed by Super Admin and dispatchers; they are never exposed as selectable delivery destinations to public shoppers.
+2. **Merchant Release Handshake:**
+   - Delivery riders must present a collection OTP or waybill scan to the merchant before taking custody of items.
+   - Merchant only releases items when status is `ready_for_pickup`.
+3. **Cash-on-Delivery (COD) Prohibition:**
+   - Riders are strictly prohibited from collecting cash payments from customers in V1.
+   - All orders must be pre-paid digitally through Paystack before rider dispatch.
+4. **Proof of Delivery (POD) Handshake:**
+   - Order cannot transition to `delivered` without entering the customer's 6-digit delivery verification OTP into the Rider App.
+   - Protects merchants and riders against false claims of non-receipt.
 
 ---
 

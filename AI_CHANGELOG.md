@@ -1,3 +1,12 @@
+### [2026-09-23 09:00 UTC] Backend Specification Enriched: In-Shop Pickup Dual-Code Protocol & Delivery Operations [ai-governance] [AI]
+* **Components:** Architecture Specification (`.agents/rules/VMARKET_BACKEND_SPEC.md`)
+* **Scope:** Governance documentation update codifying the authoritative In-Shop Pickup dual-code architecture, Pay-After-Inspection lifecycle, stock concurrency rules, delivery state machine, and logistics infrastructure decoupling.
+* **Specification Updates:**
+  - **Section 10 & 23 (Pickup Availability & Dual-Code Protocol):** Formalized the Two-Code Verification Architecture separating pre-payment in-store inspection (Code #1: `reservation_code`, `RES-XXXXXXXX`, ₦0.00 cost, zero inventory hold, 24h TTL) from post-payment handover (Code #2: 6-digit numeric OTP `pickup_verification_code` generated only upon Paystack settlement).
+  - **Section 24 (Stock Concurrency & Invariant Preservation):** Codified the non-inventory hold invariant (`Reservation ≠ Sale`), specifying atomic stock claim on settlement and graceful out-of-stock handling for competing reservations.
+  - **Section 25 (Delivery State Machine):** Documented the 11 standard state transitions from `pending_payment` through `processing`, `ready_for_pickup`, `picked_up`, to `delivered` and `completed`.
+  - **Section 39 (Delivery Operations & Logistics Infrastructure):** Codified strict decoupling between public geography (`Country → State → LGA`) and internal logistics hubs/corridors (`DeliveryHub`), merchant-to-rider collection handshake, Cash-on-Delivery prohibition, and proof-of-delivery OTP verification.
+
 ### [2026-09-23 08:40 UTC] Backend Duplicate & Legacy Shipping System Purge [backend] [AI]
 * **Components:** Laravel Backend (`backend/vmarket-web/`)
 * **Scope:** Backend-only deep cleanup adhering strictly to `VMARKET_BACKEND_SPEC.md` and `.agents/AGENTS.md` (Prime Directives, 10-step Capability Migration & Cleanup Protocol, zero client breakage, and zero-drift verification $\Delta = ₦0.00$). Absolutely ZERO frontend code modified.
