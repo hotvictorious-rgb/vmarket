@@ -24,10 +24,13 @@
     <div class="vm-container vm-header-inner">
         <!-- Brand Wordmark & Logo -->
         <a href="{{ route('home') }}" class="vm-brand">
-            @if($companyWebLogo)
-                <img src="{{ getStorageImages(path: $companyWebLogo, type: 'logo') }}" alt="{{ $companyName }}" class="vm-brand-logo">
-            @endif
-            <span class="vm-brand-wordmark">Victorious <span>MARKET</span></span>
+            <div class="vm-brand-pill">
+                <img src="{{ theme_asset('assets/img/vm_icon.jpg') }}" alt="VM" class="vm-brand-icon-sq">
+                <span class="vm-brand-wordmark">
+                    <span class="vm-word-victorious">Victorious</span>
+                    <span class="vm-word-market">MARKET</span>
+                </span>
+            </div>
         </a>
 
         <!-- Global Search Bar -->

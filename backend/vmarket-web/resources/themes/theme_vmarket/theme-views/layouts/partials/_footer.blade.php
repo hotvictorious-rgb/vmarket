@@ -10,9 +10,15 @@
         <div class="vm-footer-grid">
             <!-- Brand Column -->
             <div>
-                <h4 style="color: #FFFFFF; font-size: 20px; font-weight: 800; margin-bottom: 12px;">
-                    Victorious <span style="color: var(--vm-gold);">MARKET</span>
-                </h4>
+                <a href="{{ route('home') }}" class="vm-brand" style="margin-bottom: 16px;">
+                    <div class="vm-brand-pill">
+                        <img src="{{ theme_asset('assets/img/vm_icon.jpg') }}" alt="VM" class="vm-brand-icon-sq">
+                        <span class="vm-brand-wordmark">
+                            <span class="vm-word-victorious">Victorious</span>
+                            <span class="vm-word-market">MARKET</span>
+                        </span>
+                    </div>
+                </a>
                 <p style="font-size: 13.5px; line-height: 1.6; margin-bottom: 16px;">
                     {{ translate('Nigeria’s omnichannel marketplace and delivery logistics ecosystem. Connecting verified merchants across Akwa Ibom with guaranteed in-shop inspection and swift door-to-door delivery.') }}
                 </p>

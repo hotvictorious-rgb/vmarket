@@ -8,8 +8,8 @@
     <title>@yield('title', getWebConfig(name: 'company_name') . ' | ' . translate('Leading Omnichannel Marketplace in Akwa Ibom'))</title>
     
     <!-- Favicon -->
-    @php($companyFavIcon = getWebConfig(name: 'company_fav_icon'))
-    <link rel="icon" type="image/x-icon" href="{{ getStorageImages(path: $companyFavIcon, type: 'logo') }}">
+    <link rel="icon" type="image/jpeg" href="{{ theme_asset('assets/img/vm_icon.jpg') }}">
+    <link rel="apple-touch-icon" href="{{ theme_asset('assets/img/vm_icon.jpg') }}">
     
     <!-- Preconnect Fonts -->
     <link rel="preconnect" href="https://fonts.googleapis.com">

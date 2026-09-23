@@ -6,17 +6,17 @@
 @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap');
 
 :root {
-    --vm-primary: #3B1262;
-    --vm-primary-hover: #4C1D95;
-    --vm-primary-light: #F5F3FF;
-    --vm-primary-glow: rgba(59, 18, 98, 0.15);
-    --vm-primary-gradient: linear-gradient(135deg, #3B1262 0%, #5B21B6 100%);
+    --vm-primary: #5E17EB;
+    --vm-primary-hover: #4D10C7;
+    --vm-primary-light: #F5F0FF;
+    --vm-primary-glow: rgba(94, 23, 235, 0.2);
+    --vm-primary-gradient: linear-gradient(135deg, #5E17EB 0%, #7C3AED 100%);
     
-    --vm-gold: #F59E0B;
-    --vm-gold-hover: #D97706;
-    --vm-gold-light: #FEF9C3;
-    --vm-gold-glow: rgba(245, 158, 11, 0.2);
-    --vm-gold-gradient: linear-gradient(135deg, #F59E0B 0%, #D97706 100%);
+    --vm-gold: #FFD700;
+    --vm-gold-hover: #E6C200;
+    --vm-gold-light: #FFFBE6;
+    --vm-gold-glow: rgba(255, 215, 0, 0.25);
+    --vm-gold-gradient: linear-gradient(135deg, #FFD700 0%, #FFA500 100%);
     
     --vm-dark: #0F172A;
     --vm-dark-surface: #1E293B;
@@ -149,28 +149,68 @@ button, input, select, textarea {
 }
 
 .vm-brand {
-    display: flex;
+    display: inline-flex;
     align-items: center;
-    gap: 10px;
     text-decoration: none;
     flex-shrink: 0;
 }
 
+.vm-brand-pill {
+    display: inline-flex;
+    align-items: center;
+    gap: 10px;
+    background: #5E17EB;
+    padding: 6px 18px 6px 10px;
+    border-radius: 999px;
+    box-shadow: 0 4px 14px rgba(94, 23, 235, 0.28);
+    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+    border: 1.5px solid rgba(255, 215, 0, 0.35);
+}
+
+.vm-brand:hover .vm-brand-pill {
+    transform: translateY(-1px);
+    box-shadow: 0 6px 20px rgba(94, 23, 235, 0.42);
+    border-color: rgba(255, 215, 0, 0.6);
+}
+
+.vm-brand-icon-sq {
+    height: 38px;
+    width: 38px;
+    object-fit: cover;
+    border-radius: 9px;
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.25);
+    flex-shrink: 0;
+}
+
 .vm-brand-logo {
-    height: 42px;
+    height: 38px;
     width: auto;
     object-fit: contain;
+    filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.2));
 }
 
 .vm-brand-wordmark {
-    font-weight: 800;
-    font-size: 20px;
-    letter-spacing: -0.5px;
-    color: var(--vm-primary);
+    display: flex;
+    align-items: baseline;
+    gap: 6px;
+    font-family: 'Plus Jakarta Sans', sans-serif;
+    line-height: 1;
 }
 
-.vm-brand-wordmark span {
-    color: var(--vm-gold);
+.vm-word-victorious {
+    color: #FFD700 !important;
+    font-weight: 800;
+    font-size: 19px;
+    letter-spacing: -0.3px;
+    text-shadow: 0 1px 2px rgba(0, 0, 0, 0.25);
+}
+
+.vm-word-market {
+    color: #FFFFFF !important;
+    font-weight: 900;
+    font-size: 19px;
+    letter-spacing: 0.6px;
+    text-shadow: 0 1px 2px rgba(0, 0, 0, 0.25);
 }
 
 /* Search Bar */
