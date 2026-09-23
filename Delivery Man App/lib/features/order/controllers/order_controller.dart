@@ -98,7 +98,7 @@ class OrderController extends GetxController implements GetxService {
     } else if(orderTypeIndex == 3){
       getAllOrderHistory('delivered', startDate, endDate, search, 0);
     }else if(orderTypeIndex == 4){
-      getAllOrderHistory('return', startDate, endDate, search, 0);
+      getAllOrderHistory('returned', startDate, endDate, search, 0);
     }else if(orderTypeIndex == 5){
       getAllOrderHistory('canceled', startDate, endDate, search, 0);
     }
