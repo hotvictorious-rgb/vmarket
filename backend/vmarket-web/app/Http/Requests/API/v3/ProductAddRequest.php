@@ -24,7 +24,7 @@ class ProductAddRequest extends FormRequest
     {
         return [
             'name' => 'required',
-            'category_id' => 'required|exists:categories,id',
+            'category_id' => 'required|exists:categories,id,position,0',
             'unit_price' => 'required|numeric|gt:0',
             'images' => 'required',
             'code' => 'nullable|string|max:50',

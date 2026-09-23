@@ -120,7 +120,7 @@
                                                    placeholder="{{ translate('Enter_url') }}">
                                         </div>
 
-                                        @if(theme_root_path() == 'theme_fashion')
+                                        @if(in_array(theme_root_path(), ['theme_fashion', 'theme_vmarket']))
                                             <div class="form-group mt-4 input-field-for-main-banner">
                                                 <label for="title" class="form-label">
                                                     {{ translate('Title') }}
@@ -153,18 +153,25 @@
                                         @endif
                                     </div>
                                 </div>
-                                <div class="col-md-6 d-flex flex-column justify-content-center">
+                                 <div class="col-md-6 d-flex flex-column justify-content-center">
                                     <div class="d-flex justify-content-center align-items-center bg-section rounded-8 p-20 w-100 h-100">
                                         <div class="d-flex flex-column gap-30 w-100">
                                             <div class="text-center">
                                                 <label for="" class="form-label fw-semibold mb-1">
-                                                    {{ translate('banner_image') }}  <span class="text-danger">*</span>
+                                                    {{ translate('banner_image') }}
+                                                    @if(theme_root_path() == 'theme_vmarket')
+                                                        <span class="badge badge-soft-info">{{ translate('optional_for_generative_designs') }}</span>
+                                                    @else
+                                                        <span class="text-danger">*</span>
+                                                    @endif
                                                 </label>
                                                 <h4 class="mb-0"><span class="text-info-dark" id="theme_ratio"> ( {{ translate('ratio') }} 4:1 )</span></h4>
                                             </div>
                                             <div class="upload-file">
                                                 <input type="file" name="image" class="upload-file__input single_file_input"
-                                                       id="banner" accept="{{ getFileUploadFormats(skip: '.svg') }}" required  data-max-size="{{ getFileUploadMaxSize() }}"
+                                                       id="banner" accept="{{ getFileUploadFormats(skip: '.svg') }}"
+                                                       {{ theme_root_path() == 'theme_vmarket' ? '' : 'required' }}
+                                                       data-max-size="{{ getFileUploadMaxSize() }}"
                                                        data-required-msg="{{ translate('banner_image_is_required') }}"
                                                        value="">
                                                 <div class="upload-file__wrapper ratio-4-1">
@@ -195,6 +202,12 @@
                                                     </div>
                                                 </div>
                                             </div>
+                                            @if(theme_root_path() == 'theme_vmarket')
+                                                <div class="p-2 rounded bg-soft-info border border-info fs-12 text-center">
+                                                    ✨ <strong>{{ translate('Generative Design Engine Active') }}:</strong>
+                                                    {{ translate('If no photo is uploaded, Victorious MARKET will automatically generate dynamic luxury typography, trust badges, and brand color moods on the fly with zero graphic design needed!') }}
+                                                </div>
+                                            @endif
                                             <p class="fs-12 text-center max-w-360 m-auto">
                                                 {{ getFileUploadFormats(skip: '.svg', asBladeMessage: true).' '. translate('Image_size'). ' : '. translate('Max').' '. getFileUploadMaxSize() . 'MB' }}
                                             </p>
@@ -373,7 +386,20 @@
 
         elementBannerTypeSelect.on('change', function () {
             getThemeWiseRatio();
-
+            @if(theme_root_path() == 'theme_vmarket')
+                setTimeout(function() {
+                    $('.input-field-for-main-banner').removeClass('d-none');
+                }, 50);
+            @endif
         });
+        @if(theme_root_path() == 'theme_vmarket')
+            $('.input-field-for-main-banner').removeClass('d-none');
+            $(document).on('ready', function () {
+                $('.input-field-for-main-banner').removeClass('d-none');
+            });
+            setTimeout(function() {
+                $('.input-field-for-main-banner').removeClass('d-none');
+            }, 300);
+        @endif
     </script>
 @endpush

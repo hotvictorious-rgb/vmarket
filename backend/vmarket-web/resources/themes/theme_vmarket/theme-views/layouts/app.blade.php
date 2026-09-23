@@ -37,6 +37,9 @@
     <!-- Mobile Bottom Navigation Bar -->
     @include('theme-views.layouts.partials._mobile-nav')
 
+    <!-- Omnichannel Location & Fulfillment Switcher Modal -->
+    @include('theme-views.layouts.partials._location_modal')
+
     <!-- VMarket Vanilla JS -->
     <script src="{{ theme_asset('assets/js/vmarket.js') }}" defer></script>
     

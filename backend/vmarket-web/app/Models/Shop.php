@@ -188,20 +188,29 @@ class Shop extends Model
         return $this->belongsTo(Lga::class);
     }
 
-    // Legacy geography relationships (kept for backward compatibility)
+    // Legacy geography relationships (safe fallback to canonical State and Lga)
     public function deliveryState(): \Illuminate\Database\Eloquent\Relations\BelongsTo
     {
-        return $this->belongsTo(DeliveryState::class, 'delivery_state_id');
+        if (\Illuminate\Support\Facades\Schema::hasTable('delivery_states')) {
+            return $this->belongsTo(DeliveryState::class, 'delivery_state_id');
+        }
+        return $this->belongsTo(State::class, 'state_id');
     }
 
     public function deliveryCity(): \Illuminate\Database\Eloquent\Relations\BelongsTo
     {
-        return $this->belongsTo(DeliveryCity::class, 'delivery_city_id');
+        if (\Illuminate\Support\Facades\Schema::hasTable('delivery_cities')) {
+            return $this->belongsTo(DeliveryCity::class, 'delivery_city_id');
+        }
+        return $this->belongsTo(Lga::class, 'lga_id');
     }
 
     public function deliveryHub(): \Illuminate\Database\Eloquent\Relations\BelongsTo
     {
-        return $this->belongsTo(DeliveryHub::class, 'delivery_hub_id');
+        if (\Illuminate\Support\Facades\Schema::hasTable('delivery_hubs')) {
+            return $this->belongsTo(DeliveryHub::class, 'delivery_hub_id');
+        }
+        return $this->belongsTo(Lga::class, 'lga_id');
     }
 
     protected static function boot(): void

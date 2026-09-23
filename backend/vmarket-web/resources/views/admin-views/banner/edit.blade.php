@@ -118,9 +118,9 @@
                                                    placeholder="{{ translate('enter_url') }}" value="{{ $banner['url'] }}">
                                         </div>
 
-                                        @if(theme_root_path() == 'theme_fashion')
+                                        @if(in_array(theme_root_path(), ['theme_fashion', 'theme_vmarket']))
                                             <div
-                                                class="form-group mt-4 input-field-for-main-banner {{ $banner['banner_type'] !='Main Banner'?'d-none':''}}">
+                                                class="form-group mt-4 input-field-for-main-banner {{ ($banner['banner_type'] !='Main Banner' && theme_root_path() != 'theme_vmarket') ? 'd-none' : '' }}">
                                                 <label for="title"
                                                     class="form-label">{{ translate('Title') }}</label>
                                                 <input type="text" name="title" class="form-control" id="title"
@@ -128,7 +128,7 @@
                                                     value="{{ $banner['title'] }}">
                                             </div>
                                             <div
-                                                class="form-group mb-0 input-field-for-main-banner {{ $banner['banner_type'] !='Main Banner'?'d-none':''}}">
+                                                class="form-group mb-0 input-field-for-main-banner {{ ($banner['banner_type'] !='Main Banner' && theme_root_path() != 'theme_vmarket') ? 'd-none' : '' }}">
                                                 <label for="sub_title" class="form-label">
                                                     {{ translate('Sub_Title') }}
                                                 </label>
@@ -138,7 +138,7 @@
                                                     value="{{ $banner['sub_title'] }}">
                                             </div>
                                             <div
-                                                class="form-group mt-4 input-field-for-main-banner {{ $banner['banner_type'] !='Main Banner'?'d-none':''}}">
+                                                class="form-group mt-4 input-field-for-main-banner {{ ($banner['banner_type'] !='Main Banner' && theme_root_path() != 'theme_vmarket') ? 'd-none' : '' }}">
                                                 <label for="button_text"
                                                        class="form-label">{{ translate('Button_Text') }}</label>
                                                 <input type="text" name="button_text" class="form-control" id="button_text"
@@ -146,7 +146,7 @@
                                                        value="{{ $banner['button_text'] }}">
                                             </div>
                                             <div
-                                                class="form-group mt-4 mb-0 input-field-for-main-banner {{ $banner['banner_type'] !='Main Banner'?'d-none':''}}">
+                                                class="form-group mt-4 mb-0 input-field-for-main-banner {{ ($banner['banner_type'] !='Main Banner' && theme_root_path() != 'theme_vmarket') ? 'd-none' : '' }}">
                                                 <label for="background_color"
                                                        class="form-label">{{ translate('background_color') }}</label>
                                                 <input type="color" name="background_color"
@@ -161,7 +161,12 @@
                                         <div class="d-flex flex-column gap-30 w-100">
                                             <div class="text-center">
                                                 <label for="" class="form-label fw-semibold mb-1">
-                                                    {{ translate('banner_image') }} <span class="text-danger">*</span>
+                                                    {{ translate('banner_image') }}
+                                                    @if(theme_root_path() == 'theme_vmarket')
+                                                        <span class="badge badge-soft-info">{{ translate('optional_for_generative_designs') }}</span>
+                                                    @else
+                                                        <span class="text-danger">*</span>
+                                                    @endif
                                                 </label>
                                                 <h4 class="mb-0"><span class="text-info-dark" id="theme_ratio"> ( {{ translate('ratio') }} 4:1 )</span></h4>
                                             </div>
@@ -173,7 +178,7 @@
                                                        data-max-size="{{ getFileUploadMaxSize() }}"
                                                        accept="{{ getFileUploadFormats(skip: '.svg') }}"
                                                        data-required-msg="{{ translate('banner_image_is_required') }}"
-                                                    {{ empty(getStorageImages(path: $banner['photo_full_url'], type: 'banner')) ? 'required' : '' }}>
+                                                    {{ (theme_root_path() != 'theme_vmarket' && empty(getStorageImages(path: $banner['photo_full_url'], type: 'banner'))) ? 'required' : '' }}>
 
                                                 <div class="upload-file__wrapper ratio-4-1">
                                                     <div class="upload-file-textbox text-center">
@@ -240,7 +245,21 @@
         let elementBannerTypeSelect = $('#banner_type_select');
         elementBannerTypeSelect.on('change', function () {
             getThemeWiseRatio();
+            @if(theme_root_path() == 'theme_vmarket')
+                setTimeout(function() {
+                    $('.input-field-for-main-banner').removeClass('d-none');
+                }, 50);
+            @endif
         });
+        @if(theme_root_path() == 'theme_vmarket')
+            $('.input-field-for-main-banner').removeClass('d-none');
+            $(document).on('ready', function () {
+                $('.input-field-for-main-banner').removeClass('d-none');
+            });
+            setTimeout(function() {
+                $('.input-field-for-main-banner').removeClass('d-none');
+            }, 300);
+        @endif
         function getThemeWiseRatio() {
             let bannerType = elementBannerTypeSelect.val();
             let theme = '{{ theme_root_path() }}';

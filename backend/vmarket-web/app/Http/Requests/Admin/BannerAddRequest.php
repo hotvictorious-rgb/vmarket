@@ -21,10 +21,11 @@ class BannerAddRequest extends FormRequest
 
     public function rules(): array
     {
+        $imageRules = (theme_root_path() == 'theme_vmarket') ? ['nullable', 'image'] : ['required', 'image'];
         return [
             'url' => 'required_if:resource_type,custom|nullable|url',
             'image' => getRulesStringForImageValidation(
-                rules: ['required', 'image'],
+                rules: $imageRules,
                 skipMimes: ['.svg'],
                 maxSize: getFileUploadMaxSize(unit: 'kb'),
                 isDisallowed: true

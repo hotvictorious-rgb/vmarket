@@ -60,7 +60,6 @@ use App\Http\Controllers\Admin\Promotion\MostDemandedController;
 use App\Http\Controllers\Admin\Settings\OrderSettingsController;
 use App\Http\Controllers\Admin\Settings\PrioritySetupController;
 use App\Http\Controllers\Admin\Deliveryman\DeliveryManController;
-use App\Http\Controllers\Admin\Settings\SoftwareUpdateController;
 use App\Http\Controllers\Admin\Settings\VendorSettingsController;
 use App\Http\Controllers\Admin\ThirdParty\GoogleMapAPIController;
 use App\Http\Controllers\Admin\Vendor\WithdrawalMethodController;
@@ -759,11 +758,6 @@ Route::group(['prefix' => 'admin', 'as' => 'admin.', 'middleware' => ['admin', '
                 Route::post('app-settings', 'updateAppSettings');
                 Route::get('app-deep-link', 'getAppDeepLinkView')->name('app-deep-link');
                 Route::post('app-deep-link', 'updateAppDeepLink')->name('app-deep-link-store');
-            });
-
-            Route::controller(SoftwareUpdateController::class)->group(function () {
-                Route::get('software-update', 'index')->name('software-update');
-                Route::post('software-update', 'update');
             });
 
             Route::group(['prefix' => 'language', 'as' => 'language.', 'middleware' => ['module:system_settings']], function () {

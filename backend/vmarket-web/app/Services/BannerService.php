@@ -61,6 +61,12 @@ class BannerService
                 "Promo Banner Right" => translate('promo_banner_right'),
                 "Promo Banner Bottom" => translate('promo_banner_bottom'),
             ];
+        }elseif (theme_root_path() == 'theme_vmarket') {
+            $bannerTypes = [
+                "Main Banner" => translate('Hero Slider Banner'),
+                "Footer Banner" => translate('Footer Slider Banner'),
+                "Popup Banner" => translate('Popup Promotional Banner'),
+            ];
         }
 
         return $bannerTypes;

@@ -3,7 +3,6 @@
 namespace App\Http\Controllers;
 
 use App\Http\Requests\Request;
-use App\Traits\ActivationClass;
 use App\Traits\RecaptchaTrait;
 use App\Utils\Helpers;
 use App\Models\BusinessSetting;
@@ -18,7 +17,6 @@ use Illuminate\Support\Facades\Session;
 class SharedController extends Controller
 {
     use RecaptchaTrait;
-    use ActivationClass;
 
     public function changeLanguage(Request $request): JsonResponse
     {
@@ -67,32 +65,4 @@ class SharedController extends Controller
         header("Expires:Sat, 26 Jul 1997 05:00:00 GMT");
         $recaptchaBuilder->output();
     }
-
-    public function getActivationCheckView(Request $request): View|RedirectResponse
-    {
-        $config = $this->getAddonsConfig();
-        $adminPanel = $config['admin_panel'] ?? [];
-        $status = ($this->is_local() || env('DEVELOPMENT_ENVIRONMENT', false)) ? 1 : ($adminPanel['active'] ?? 0);
-        return $status == 1 ? redirect(url('/')) : view('installation.activation-check');
-    }
-
-    public function activationCheck(Request $request): RedirectResponse
-    {
-        $response = $this->getRequestConfig(
-            username: $request['username'],
-            purchaseKey: $request['purchase_key'],
-            softwareType: $request->get('software_type', base64_decode('cHJvZHVjdA=='))
-        );
-        $this->updateActivationConfig(app: 'admin_panel', response: $response);
-
-        if (!empty($response['errors'])) {
-            foreach ($response['errors'] as $error) {
-                $message = is_array($error) ? ($error[0] ?? 'Unknown error') : $error;
-                ToastMagic::error($message);
-            }
-        }
-        return redirect(url('/'));
-    }
-
-
 }

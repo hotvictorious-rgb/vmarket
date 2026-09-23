@@ -50,7 +50,7 @@ class HomeController extends Controller
             'default' => self::default_theme(),
             'theme_aster' => self::theme_aster(),
             'theme_fashion' => self::theme_fashion(),
-            'theme_vmarket' => self::theme_aster(),
+            'theme_vmarket' => self::theme_vmarket(),
         };
     }
 
@@ -465,4 +465,104 @@ class HomeController extends Controller
             )
         );
     }
+
+    public function theme_vmarket(): View
+    {
+        $categories = Category::with(['childes' => function ($q) {
+            $q->orderBy('priority', 'asc');
+        }])
+            ->where('position', 0)
+            ->where('home_status', 1)
+            ->orderBy('priority', 'asc')
+            ->get();
+
+        $bannerTypeMainBanner = Banner::where(['published' => 1, 'banner_type' => 'Main Banner'])
+            ->where(function ($q) {
+                $q->where('theme', 'theme_vmarket')->orWhere('theme', 'default');
+            })
+            ->orderBy('id', 'desc')
+            ->get();
+
+        $bannerTypeFooterBanner = Banner::where(['published' => 1, 'banner_type' => 'Footer Banner'])
+            ->where(function ($q) {
+                $q->where('theme', 'theme_vmarket')->orWhere('theme', 'default');
+            })
+            ->orderBy('id', 'desc')
+            ->get();
+
+        $bannerTypePopupBanner = Banner::where(['published' => 1, 'banner_type' => 'Popup Banner'])
+            ->where(function ($q) {
+                $q->where('theme', 'theme_vmarket')->orWhere('theme', 'default');
+            })
+            ->latest('id')
+            ->first();
+
+        $featuredProductsList = Cache::remember('home_featured_products_vmarket', CACHE_FOR_3_HOURS, function () {
+            return Product::active()
+                ->where('featured', 1)
+                ->with(['seller.shop', 'rating'])
+                ->take(12)
+                ->get();
+        });
+
+        $latestProductsList = Cache::remember('home_latest_products_vmarket', CACHE_FOR_3_HOURS, function () {
+            return Product::active()
+                ->with(['seller.shop', 'rating'])
+                ->latest('id')
+                ->take(12)
+                ->get();
+        });
+
+        $topVendorsList = ProductManager::getPriorityWiseTopVendorQuery(query: $this->cacheHomePageTopVendorsList());
+        $brands = $this->cachePriorityWiseBrandList();
+
+        $activeCity = session('customer_city', 'Uyo');
+        $activeState = session('customer_state', 'Akwa Ibom');
+        $fulfillmentMode = session('fulfillment_mode', 'delivery');
+
+        // [AI] Proximity-based Verified Shops recommendation (Omnichannel: Delivery & Pickup)
+        $nearbyShops = \App\Models\Shop::where('temporary_close', 0)
+            ->where(function ($q) use ($activeCity) {
+                $q->where('address', 'like', "%{$activeCity}%")
+                  ->orWhere('name', 'like', "%{$activeCity}%")
+                  ->orWhereHas('lga', function ($lQ) use ($activeCity) {
+                      $lQ->where('name', 'like', "%{$activeCity}%");
+                  });
+            })
+            ->when($fulfillmentMode === 'pickup', function ($q) {
+                $q->where('pickup_enabled', 1);
+            })
+            ->with(['seller'])
+            ->take(8)
+            ->get();
+
+        // Fallback to active shops if city query returns fewer than 4
+        if ($nearbyShops->count() < 4) {
+            $fallbackShops = \App\Models\Shop::where('temporary_close', 0)
+                ->when($fulfillmentMode === 'pickup', function ($q) {
+                    $q->where('pickup_enabled', 1);
+                })
+                ->whereNotIn('id', $nearbyShops->pluck('id'))
+                ->with(['seller'])
+                ->take(4 - $nearbyShops->count())
+                ->get();
+            $nearbyShops = $nearbyShops->concat($fallbackShops);
+        }
+
+        return view(VIEW_FILE_NAMES['home'], [
+            'categories' => $categories,
+            'bannerTypeMainBanner' => $bannerTypeMainBanner,
+            'bannerTypeFooterBanner' => $bannerTypeFooterBanner,
+            'bannerTypePopupBanner' => $bannerTypePopupBanner,
+            'featuredProductsList' => $featuredProductsList,
+            'latestProductsList' => $latestProductsList,
+            'topVendorsList' => $topVendorsList,
+            'brands' => $brands,
+            'activeCity' => $activeCity,
+            'activeState' => $activeState,
+            'fulfillmentMode' => $fulfillmentMode,
+            'nearbyShops' => $nearbyShops,
+        ]);
+    }
 }
+

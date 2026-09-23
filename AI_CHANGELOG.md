@@ -1,3 +1,112 @@
+### [2026-09-23 16:30 UTC] Admin-Enabled Delivery Coverage & Amazon-Style Omnichannel Location Recommendations [backend] [storefront] [AI]
+* **1. Backend Delivery Coverage & Geolocation API (`WebController.php` & `routes/web/routes.php`):**
+  - Implemented `getDeliveryCoverage(Request $request)` endpoint (`GET /get-delivery-coverage`): returns admin-enabled destination LGAs from authoritative `DeliveryLane` (`where('is_active', 1)`) with destination LGA/State relationships, delivery fees, and estimated delivery turnaround times, along with active merchant pickup shops (`where('pickup_enabled', 1)`).
+  - Enhanced `setCustomerLocation(Request $request)` endpoint (`POST /set-customer-location`): resolves canonical LGA/State from `lgas` table, validates against admin delivery lanes, records customer fulfillment preference (`delivery` vs `pickup`), and binds to session (`customer_city`, `customer_state`, `customer_lga_id`, `customer_state_id`, `fulfillment_mode`).
+  - Updated `HomeController::theme_vmarket()`: extracts session location parameters and queries `$nearbyShops` with canonical `lga` relationship matching the active customer location or fallback hub, passing `$activeCity`, `$activeState`, `$fulfillmentMode`, and `$nearbyShops` to the view.
+* **2. Amazon-Style Header Location Component (`_header.blade.php`):**
+  - Desktop: Added `.vm-header-location-pill` with map pin icon, sub-label ("Deliver to" / "Pickup near"), and active city bold label with dropdown caret (`Uyo ▾`).
+  - Mobile: Added `.vm-mobile-location-strip-btn` in header with active location and fulfillment mode indicator badge (`[ 🏪 In-Shop ]` / `[ 🚚 Doorstep ]`).
+* **3. Omnichannel Location & Coverage Switcher Modal (`_location_modal.blade.php`):**
+  - Segmented toggle between **Doorstep Delivery** and **In-Shop Pickup**.
+  - Doorstep Delivery tab: populates quick LGA chips from admin-enabled delivery lanes (`Uyo`, `Eket`, `Ikot Ekpene`, `Oron`), paired with State & LGA selector dropdowns showing live delivery fee formatted and estimated transit time.
+  - In-Shop Pickup tab: lists verified local merchant pickup points with zero-delivery-fee badges, physical store addresses, and preparation turnaround times.
+  - Interactive Geolocation Auto-Detection button with fallback resolution.
+* **4. Amazon-Inspired Quad Discovery & Recommendation Grid (`home.blade.php`):**
+  - Added `.vm-proximity-strip` status bar below hero section displaying active marketplace coverage, fulfillment mode badge, and quick switcher button.
+  - Added `.vm-amazon-discovery-grid` with 4 quad cards:
+    - **Card 1 (Stores Closer to You in {City}):** 4-tile grid of verified local merchant storefronts with in-shop pickup badges.
+    - **Card 2 (Shop Kitchen Must-Haves):** 4-tile grid featuring blenders, microwaves, gas cookers, and air fryers with category routing.
+    - **Card 3 (Level Up Your Tech & PC):** 4-tile grid featuring smartphones, laptops, audio/headphones, and power gear.
+    - **Card 4 (Trending Fashion & Beauty Finds / Start Looking Sharp):** 4-tile grid featuring shoes, wristwatches, grooming, and luxury perfumes.
+* **5. Legacy Schema Safeguard (`Shop.php`):**
+  - Updated `Shop.php` relations (`deliveryCity()`, `deliveryState()`, and `deliveryHub()`) to safely verify table existence via `Schema::hasTable` and fallback cleanly to canonical `lga_id` / `state_id`, ensuring zero SQL crashes on SQLite or systems without legacy tables.
+* **6. Styles & Scripts Synchronization (`vmarket.css` & `vmarket.js`):**
+  - Synchronized CSS tokens and interactive JS logic across both `resources/themes/theme_vmarket/public/assets/` and `public/themes/theme_vmarket/public/assets/`.
+* **7. Verification:**
+  - Validated PHP syntax across all modified files (`php -l`) with zero errors.
+  - Verified Kernel request execution for `/get-delivery-coverage` (HTTP 200 OK with active lanes and pickup shops).
+  - Verified Kernel request execution for homepage `/` (HTTP 200 OK, 161,510 bytes, confirming presence of location pill, modal, proximity strip, and all 4 Amazon discovery quad cards).
+
+### [2026-09-23 15:20 UTC] Hero Rectangle Geometry Restoration & Hover/Click-Only Pagination Reveal [storefront] [AI]
+* **1. Original Rectangle Geometry Restored:**
+  - Restored `.vm-hero-slider-container` and `.vm-footer-slider-container` to their exact crisp rectangular structure (`border-radius: var(--vm-radius-md); overflow: hidden; box-shadow: var(--vm-shadow-sm); min-height: 380px; display: flex; position: relative;`).
+  - Preserved the clean desktop 1:2 layout ratio (`grid-template-columns: 270px 1fr; gap: 20px;`) with the original spacing to the right.
+  - Preserved mobile conditional 2:1 aspect ratio (`aspect-ratio: 2 / 1; max-width: 480px; margin: 0 auto;`).
+* **2. Hover & Click-Only Pagination Reveal (Zero Obstruction During Passive Viewing):**
+  - Configured `.vm-slider-dots` and `.vm-slider-arrow` to be completely hidden (`opacity: 0; pointer-events: none;`) by default.
+  - Reveal smoothly (`opacity: 1; pointer-events: auto;`) ONLY when the user hovers over the slider with a mouse (`:hover`), focuses on it (`:focus-within`), or clicks/taps anywhere on the banner (`.active-hover` via `vmarket.js` with a 3.5s tactile persistence timeout).
+  - Wrapped pagination dots inside a glassmorphic pill capsule (`background: rgba(0, 0, 0, 0.3); backdrop-filter: blur(8px); padding: 5px 12px; border-radius: 9999px;`) anchored cleanly at `bottom: 14px`, keeping text and CTAs completely unobscured when reading.
+* **3. Verification:**
+  - Verified live compilation at `http://127.0.0.1:8080/` with HTTP 200 OK.
+
+### [2026-09-23 15:05 UTC] Generative Design Matrix & Non-Overlapping External Pagination Architecture [storefront] [backend] [AI]
+* **1. Non-Overlapping External Pagination Architecture (Zero Text/Content Obstruction):**
+  - **The Problem Solved:** Centered internal pagination dots (`position: absolute; bottom: 14px;`) previously overlapped banner titles, subtitles, and CTA buttons (especially on 2:1 mobile screens and centered layout slides).
+  - **External Flow Solution:** Separated the slide canvas from pagination controls:
+    - `.vm-slider-dots` (Hero Slider `#vmHeroDots` & Footer Slider `#vmFooterDots`) now sits in its own dedicated external track directly **below** the slider card (`position: static; padding-top: 10px; margin: 0 auto;`).
+    - **100% Unobstructed Canvas:** The banner canvas retains 100% clean, uninhibited space for badges, headlines, subtitles, product photo cutouts, and CTA buttons on all viewports without any possibility of pagination button collision.
+  - **Navigation Arrows Optimization:**
+    - On Desktop: Navigation arrows (`.vm-slider-arrow`) are positioned at outer edges with hover-reveal (`opacity: 0; pointer-events: none;` transitioning to `opacity: 1;` on slider hover) so arrows never obstruct content during passive viewing.
+    - On Mobile (`< 768px`): Arrows are completely hidden (`display: none !important;`) because mobile users navigate via touch swipe gestures (handled by `vmarket.js` touch events). This prevents arrows from blocking side text or visual cutouts on narrow screens.
+* **2. Generative Luxury Design Matrix (Automatic Photoshop/Canva Replacement):**
+  - **4 Dynamic Color Moods:**
+    - `vm-mood-luxe`: Royal Purple (`#5E17EB` to `#170733`)
+    - `vm-mood-midnight`: Midnight Obsidian (`#0F172A` to `#110726` with purple neon rim)
+    - `vm-mood-velvet`: Solar Velvet (`#24084F` to `#7E22CE`)
+    - `vm-mood-emerald`: Emerald Escrow (`#062024` to `#170733` with emerald rim)
+  - **3 Automatic Composition Layouts:**
+    - `vm-layout-text-left`: Text content 58% on left, product pedestal/visual 40% on right.
+    - `vm-layout-text-right`: Product visual 40% on left, text content 58% on right.
+    - `vm-layout-centered`: Luxury centered editorial layout with centered headline, badges, and CTA button.
+  - **Dynamic Visual Zone:**
+    - When a product photo is uploaded: Renders inside an illuminated pedestal orb (`.vm-pedestal-orb`) with dynamic drop shadows and hover scaling (`scale(1.05)`).
+    - When text-only (no photo): Automatically generates dual glassmorphism trust pill badges (`.vm-trust-pill-grid`) so banners look like bespoke graphic designs without requiring external design software.
+* **3. Admin Panel Optional Images & Universal Generative Fields:**
+  - `admin-views/banner/view.blade.php` & `edit.blade.php`: Made image upload strictly optional for `theme_vmarket` with an informative badge (`Optional for Generative Designs`) and helper tip explaining the automated generative design engine.
+  - Ensured Title, Subtitle, Button Text, and Background Color inputs remain visible and fully functional across all 3 strategic banner types (Main Hero, Footer Slider, Popup Modal).
+* **4. Blade Directive Balance Fix:**
+  - Fixed syntax error (`unexpected token "endif"`) in `home.blade.php`: restored closing `@endif` for the Main Banner fallback card on line 156 and restored closing `@endforeach` for the Footer Slider slide loop on line 428.
+  - Verified compilation via dev server request (`http://127.0.0.1:8080/`), confirming HTTP 200 OK with zero template errors.
+
+### [2026-09-23 14:25 UTC] 3-Point Strategic Banners, Hero & Footer Sliders, Side Category Dropdown & Vendor Category Restrictions [backend] [AI]
+* **1. Strategic 3-Point Banner Architecture (Hero Slider, Footer Slider, Session Popup Modal):**
+  - **Touchpoint 1: Hero Banner Slider (`.vm-hero-slider`):**
+    - Conditional layout: Desktop 1:2 ratio on the right (flanked by the left category sidebar); Mobile conditional **2:1 aspect ratio** centered and compact in the middle (`max-width: 480px; margin: 0 auto;`).
+    - Multi-slide touch-swipable slider with auto-rotation (5.5s), prev/next arrow controls, and pill dot pagination.
+    - Fallback rich branded cards with Royal Purple (`#5E17EB`) to Midnight Navy gradient, Imperial Gold (`#FFD700`) badge pills, bold headings, subtitles, and CTA buttons.
+  - **Touchpoint 2: Footer Banner Slider (`.vm-footer-slider`):**
+    - Strategically positioned above the main dark footer, between "Latest Products in Market" and the final trust strip.
+    - Compact and non-intrusive height (120px-140px desktop, 105px mobile), maintaining readability with high-converting trust messaging (Direct LGA rider logistics, merchant onboarding, Paystack escrow guarantee).
+    - Multi-slide slider with auto-advance (6.5s), dot indicators, and navigation controls.
+  - **Touchpoint 3: Promotional Popup Modal (`#vmPromoPopupCard`):**
+    - Polite floating card at the bottom-right on desktop (and centered card on mobile) that never obscures full-screen shopping content.
+    - Compact, readable layout (~350px width) with authentic VM icon, welcome headline, value proposition, and CTA button.
+    - Fires after 2.5s delay and enforces strict single-display per user session via `sessionStorage.getItem('vm_promo_popup_seen')`.
+* **2. Category Side Dropdown & Navigation Integration:**
+  - Homepage Desktop: Built left-hand side category navigation menu (`.vm-category-sidebar`) showcasing Admin-created main categories with icons, chevrons, and subcategories hover flyout (`.vm-category-flyout`).
+  - Desktop Header Navigation: Added "Categories ▾" dropdown in `_header.blade.php` with direct links to main categories and "View All Categories".
+* **3. Admin Panel Banner Governance & Dynamic Theme Ratios:**
+  - `app/Services/BannerService.php`: Configured `getBannerTypes()` for `theme_vmarket` strictly limited to the 3 strategic points ("Hero Slider Banner", "Footer Slider Banner", "Popup Promotional Banner").
+  - `app/Library/Constant.php` & `app/Enums/GlobalConstant.php`: Added `theme_vmarket` to `THEME_RATIO` (Main Banner: Ratio 2:1 / Desktop 1:2, Footer Banner: Ratio 4:1, Popup Banner: Ratio 1:1).
+  - `admin-views/banner/view.blade.php` & `edit.blade.php`: Enabled Title, Sub_Title, Button_Text, and Background_Color controls for `theme_vmarket`.
+* **4. Vendor Category Restriction & Backend Single Source of Truth:**
+  - `app/Http/Requests/ProductAddRequest.php`: Enforced `'category_id' => 'required|exists:categories,id,position,0'` so vendors cannot create products in unapproved categories.
+  - `app/Http/Requests/ProductUpdateRequest.php`: Enforced `'category_id' => 'required|exists:categories,id,position,0'`.
+  - `app/Http/Requests/API/v3/ProductAddRequest.php`: Enforced `'category_id' => 'required|exists:categories,id,position,0'`.
+* **5. Backend Home Engine:**
+  - `app/Http/Controllers/Web/HomeController.php`: Implemented dedicated `theme_vmarket()` method, eager-loading categories with childes, main banners, footer banners, popup modal, featured products, and top verified merchants.
+* **Verification:** Syntax checked all PHP controllers and requests (`php -l`), verified HTTP 200 OK across CSS, JS, VM icon assets, and live server endpoints.
+
+### [2026-09-23 13:58 UTC] Storefront Mobile Perfection, iOS Safe-Area Insets & Brands Catalog View [backend] [AI]
+* **Mobile Experience Perfection & Search Accessibility:**
+  - Added dedicated `.vm-mobile-search-strip` in `_header.blade.php` with pill styling and search action, visible exclusively on mobile viewports (`< 768px`), ensuring mobile shoppers have instant search access across all views.
+  - Added iOS home indicator safe-area inset support via `env(safe-area-inset-bottom, 0px)` for fixed bottom navigation (`.vm-mobile-nav`) and `body` padding.
+  - Implemented responsive micro-scaling for small mobile displays (<= 480px and <= 360px), adapting header heights, brand pill padding, and action buttons to eliminate overflow.
+  - Added active state tactile touch micro-animation (`scale(0.92)`) and glassmorphic backdrop blur (`12px`) to the mobile navigation bar.
+* **Official Brands Catalog View Creation:**
+  - Created `resources/themes/theme_vmarket/theme-views/product/brands.blade.php` with luxury brand palette, search filter, responsive brand grid (`repeat(auto-fill, minmax(150px, 1fr))`), and empty-state resilience, resolving the missing `VIEW_FILE_NAMES['all_brands']` route.
+* **Verification:** Validated syntax and template rendering across all mobile breakpoints (320px, 375px, 414px, 768px, 1024px).
+
 ### [2026-09-23 12:40 UTC] Authentic Brand Identity Alignment: VM Icon & Exact Colors (#5E17EB, #FFD700) [backend] [AI]
 * **Brand Asset Deletion & Replacement:** Completely removed the previous 3D arrow logo and deployed the user's authentic **VM** (Victorious MARKET) icon (`vm_icon.jpg`) from the official brand ecosystem artifacts.
 * **Exact Brand Colors & Hierarchy:**

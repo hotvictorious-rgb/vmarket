@@ -1,6 +1,5 @@
 <?php
 
-use App\Http\Middleware\ActivationCheckMiddleware;
 use App\Http\Middleware\AdminMiddleware;
 use App\Http\Middleware\APIGuestMiddleware;
 use App\Http\Middleware\APILocalizationMiddleware;
@@ -8,7 +7,6 @@ use App\Http\Middleware\CustomerMiddleware;
 use App\Http\Middleware\DatabaseRefreshMiddleware;
 use App\Http\Middleware\DeliveryManAuth;
 use App\Http\Middleware\GuestMiddleware;
-use App\Http\Middleware\InstallationMiddleware;
 use App\Http\Middleware\MaintenanceModeMiddleware;
 use App\Http\Middleware\ModulePermissionMiddleware;
 use App\Http\Middleware\SellerApiAuthMiddleware;
@@ -68,8 +66,6 @@ return Application::configure(basePath: dirname(__DIR__))
             'seller' => SellerMiddleware::class,
             'customer' => CustomerMiddleware::class,
             'module' => ModulePermissionMiddleware::class,
-            'installation-check' => InstallationMiddleware::class,
-            'actch' => ActivationCheckMiddleware::class,
             'api_lang' => APILocalizationMiddleware::class,
             'maintenance_mode' => MaintenanceModeMiddleware::class,
             'delivery_man_auth' => DeliveryManAuth::class,

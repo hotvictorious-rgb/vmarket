@@ -1289,13 +1289,150 @@ class WebController extends Controller
     }
 
 
-    public function pay_offline_method_list(Request $request): JsonResponse
+    /**
+     * [AI] Omnichannel Delivery & In-Shop Pickup Coverage API
+     * Returns admin-enabled delivery lanes (destination LGAs & fees) and active pickup shops.
+     */
+    public function getDeliveryCoverage(Request $request): JsonResponse
     {
-        // [AI] Victorious MARKET: Offline payments are permanently decommissioned.
+        // 1. Admin-enabled delivery coverage via DeliveryLane
+        $lanes = \App\Models\DeliveryLane::where('is_enabled', true)
+            ->with(['destinationLga.state', 'destinationState', 'originLga'])
+            ->get();
+
+        $deliveryLgas = [];
+        $deliveryStates = [];
+
+        foreach ($lanes as $lane) {
+            $destLga = $lane->destinationLga;
+            $destState = $lane->destinationState ?? $destLga?->state;
+            if ($destLga && $destState) {
+                if (!isset($deliveryStates[$destState->id])) {
+                    $deliveryStates[$destState->id] = [
+                        'id' => $destState->id,
+                        'name' => $destState->name,
+                        'lgas' => [],
+                    ];
+                }
+
+                if (!isset($deliveryLgas[$destLga->id])) {
+                    $lgaItem = [
+                        'id' => $destLga->id,
+                        'name' => $destLga->name,
+                        'state_id' => $destState->id,
+                        'state_name' => $destState->name,
+                        'delivery_fee' => (float)$lane->delivery_fee,
+                        'delivery_fee_formatted' => webCurrencyConverter($lane->delivery_fee),
+                        'estimated_time' => $lane->estimated_delivery_time ?: '2-6 hours',
+                    ];
+                    $deliveryLgas[$destLga->id] = $lgaItem;
+                    $deliveryStates[$destState->id]['lgas'][] = $lgaItem;
+                }
+            }
+        }
+
+        // 2. In-Shop Pickup coverage via verified merchant shops
+        $pickupShops = \App\Models\Shop::where('pickup_enabled', true)
+            ->where('temporary_close', 0)
+            ->with(['lga.state', 'state', 'seller'])
+            ->get()
+            ->map(function ($shop) {
+                return [
+                    'id' => $shop->id,
+                    'name' => $shop->name,
+                    'slug' => $shop->slug,
+                    'address' => $shop->address,
+                    'city' => $shop->lga?->name ?? 'Uyo',
+                    'state' => $shop->state?->name ?? 'Akwa Ibom',
+                    'lga_id' => $shop->lga_id,
+                    'image' => getStorageImages(path: $shop->image_full_url, type: 'shop'),
+                    'preparation_time' => $shop->pickup_preparation_time_minutes ? $shop->pickup_preparation_time_minutes . ' mins' : '30 mins',
+                ];
+            });
+
         return response()->json([
-            'status' => 0,
-            'message' => 'Offline payments are permanently decommissioned on Victorious MARKET.'
-        ], 403);
+            'status' => 'success',
+            'delivery_states' => array_values($deliveryStates),
+            'delivery_lgas' => array_values($deliveryLgas),
+            'pickup_shops' => $pickupShops,
+            'current' => [
+                'city' => session('customer_city', 'Uyo'),
+                'state' => session('customer_state', 'Akwa Ibom'),
+                'lga_id' => session('customer_lga_id'),
+                'state_id' => session('customer_state_id'),
+                'fulfillment_mode' => session('fulfillment_mode', 'delivery'),
+            ],
+        ]);
+    }
+
+    /**
+     * [AI] Update Customer Active Location & Fulfillment Mode
+     */
+    public function setCustomerLocation(Request $request): JsonResponse
+    {
+        $request->validate([
+            'city' => 'nullable|string|max:100',
+            'state' => 'nullable|string|max:100',
+            'lga_id' => 'nullable|integer',
+            'state_id' => 'nullable|integer',
+            'fulfillment_mode' => 'nullable|in:delivery,pickup',
+        ]);
+
+        $lgaId = $request->lga_id ? (int)$request->lga_id : null;
+        $stateId = $request->state_id ? (int)$request->state_id : null;
+        $city = $request->city ? trim($request->city) : null;
+        $state = $request->state ? trim($request->state) : null;
+        $fulfillmentMode = in_array($request->fulfillment_mode, ['delivery', 'pickup']) ? $request->fulfillment_mode : 'delivery';
+
+        // Authoritative resolution from canonical geography models
+        if ($lgaId) {
+            $lga = \App\Models\Lga::with('state')->find($lgaId);
+            if ($lga) {
+                $city = $lga->name;
+                $state = $lga->state?->name ?? $state;
+                $stateId = $lga->state_id ?? $stateId;
+            }
+        } elseif ($city && !$state) {
+            $matchingLga = \App\Models\Lga::where('name', 'like', "%{$city}%")->with('state')->first();
+            if ($matchingLga) {
+                $lgaId = $matchingLga->id;
+                $city = $matchingLga->name;
+                $state = $matchingLga->state?->name ?? 'Akwa Ibom';
+                $stateId = $matchingLga->state_id;
+            }
+        }
+
+        $city = $city ?: 'Uyo';
+        $state = $state ?: 'Akwa Ibom';
+
+        // Check authoritative DeliveryLane if mode is delivery
+        $activeLane = null;
+        if ($lgaId) {
+            $activeLane = \App\Models\DeliveryLane::where('destination_lga_id', $lgaId)
+                ->where('is_enabled', true)
+                ->first();
+        }
+
+        Session::put('customer_city', $city);
+        Session::put('customer_state', $state);
+        Session::put('customer_lga_id', $lgaId);
+        Session::put('customer_state_id', $stateId);
+        Session::put('fulfillment_mode', $fulfillmentMode);
+
+        return response()->json([
+            'status' => 'success',
+            'city' => $city,
+            'state' => $state,
+            'lga_id' => $lgaId,
+            'state_id' => $stateId,
+            'fulfillment_mode' => $fulfillmentMode,
+            'is_covered' => $activeLane ? true : false,
+            'delivery_fee' => $activeLane ? (float)$activeLane->delivery_fee : null,
+            'delivery_fee_formatted' => $activeLane ? webCurrencyConverter($activeLane->delivery_fee) : null,
+            'estimated_time' => $activeLane?->estimated_delivery_time ?: '2-6 hours',
+            'message' => translate('Location preference updated to') . ' ' . $city . ', ' . $state,
+        ]);
     }
 
 }
+

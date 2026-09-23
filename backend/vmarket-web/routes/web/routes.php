@@ -97,6 +97,8 @@ Route::group(['middleware' => ['maintenance_mode', 'guestCheck']], function () {
     Route::controller(WebController::class)->group(function () {
         Route::get('quick-view', 'getQuickView')->name('quick-view');
         Route::get('searched-products', 'getSearchedProducts')->name('searched-products');
+        Route::get('get-delivery-coverage', 'getDeliveryCoverage')->name('get-delivery-coverage');
+        Route::post('set-customer-location', 'setCustomerLocation')->name('set-customer-location');
     });
 
     Route::group(['middleware' => ['customer']], function () {
