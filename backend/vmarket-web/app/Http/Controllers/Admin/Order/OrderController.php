@@ -329,7 +329,7 @@ class OrderController extends BaseController
         $zipCodes = $zipRestrictStatus ? $this->deliveryZipCodeRepo->getList(dataLimit: 'all') : 0;
         $companyName = getWebConfig(name: 'company_name');
         $companyWebLogo = getWebConfig(name: 'company_web_logo');
-        $order = $this->orderRepo->getFirstWhere(params: ['id' => $id], relations: ['details.productAllStatus', 'verificationImages', 'shipping', 'seller.shop', 'deliveryMan']);
+        $order = $this->orderRepo->getFirstWhere(params: ['id' => $id], relations: ['details.productAllStatus', 'verificationImages', 'shipping', 'seller.shop', 'deliveryMan', 'pickupReservation.shop']);
 
         if ($order) {
 

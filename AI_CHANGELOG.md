@@ -1,3 +1,43 @@
+### [2026-09-23 09:35 UTC] Admin Panel Alignment with Backend Spec: In-Shop Pickup Oversight, Fulfillment Badges & Dead-Code Purge [backend] [AI]
+* **Components:** Admin Web Panel (`backend/vmarket-web/resources/views/admin-views/`, `backend/vmarket-web/resources/views/layouts/admin/`, `backend/vmarket-web/app/Http/Controllers/Admin/Order/OrderController.php`, `backend/vmarket-web/app/Models/Order.php`)
+* **Scope:** Aligned Admin Panel presentation layer with canonical backend specification (`VMARKET_ADMIN_PANEL_SPEC.md` and `VMARKET_BACKEND_SPEC.md`). Eradicated dead shipping method views, introduced In-Shop Pickup oversight into Admin sidebar, integrated fulfillment badges on order lists, and presented dedicated In-Shop Pickup Information Card with collection OTP mask/reveal on order details while suppressing courier dispatch for pickup orders.
+* **1. Dead Code Purge (Legacy 6Valley Shipping Method Views):**
+  - Deleted obsolete `resources/views/admin-views/shipping-method/` directory (`index.blade.php`, `update-view.blade.php`).
+  - Deleted obsolete offcanvas blade `resources/views/layouts/admin/partials/offcanvas/_shipping-method.blade.php`.
+* **2. Admin Navigation & Sidebar Enhancement:**
+  - `resources/views/layouts/admin/partials/_side-bar.blade.php`: Added "In-Shop Pickup Oversight" link pointing to `admin.orders.pickup-list` with a live count badge of pending physical store inspections (`PickupReservation::where('status', 'pending_inspection')->count()`).
+  - Uncoupled `product_update_requests` from the dead `product_wise_shipping_cost_approval` configuration check so administrators have direct visibility into vendor product update requests.
+* **3. Order List Fulfillment Badges:**
+  - `resources/views/admin-views/order/list.blade.php`: Added visual fulfillment badges below the Order ID:
+    - In-Shop Pickup orders (`order_type == 'pickup'`) display `<span class="badge badge-soft-info text-info"><i class="tio-shop mr-1"></i> In-Shop Pickup</span>`.
+    - Delivery orders (`order_type == 'default'`) display `<span class="badge badge-soft-success text-success"><i class="tio-bike mr-1"></i> Delivery</span>`.
+* **4. Order Details Fulfillment Handling & In-Shop Pickup Card:**
+  - `app/Models/Order.php`: Added `pickupReservation(): HasOne` relationship linked to `PickupReservation::class`.
+  - `app/Http/Controllers/Admin/Order/OrderController.php`: Eager-loaded `pickupReservation.shop` in `getView()` method.
+  - `resources/views/admin-views/order/order-details.blade.php`: When `order_type == 'pickup'`, suppresses deliveryman/courier assignment and displays an In-Shop Pickup Information Card featuring store name, address, phone, reservation code, physical inspection outcome badge, and toggle-masked 6-digit collection OTP with eye icon toggle. Cleaned legacy `shipping_type == 'order_wise'` check.
+* **5. Verification & Mathematical Proof:**
+  - PHP syntax check (`php -l`): 0 syntax errors across `Order.php`, `OrderController.php`, `_side-bar.blade.php`, `list.blade.php`, and `order-details.blade.php`.
+  - Phase 3 API Contracts Suite (`verify_phase_3_api_contracts.php`): 11/11 assertions PASSED ($\Delta = 0.00$).
+  - Phase 2 Backend Hardening Suite (`verify_phase_2_hardening_scenarios.php`): 11/11 assertions PASSED ($\Delta = 0.00$).
+  - Master End-to-End Buying Scenarios Suite (`verify_all_buying_scenarios_e2e.php`): 8/8 full lifecycle scenarios PASSED ($\Delta = ₦0.00$).
+
+### [2026-09-23 09:20 UTC] Notification Subsystem Hardening: FCM HTTP v1 Unification, SMS Generic Messaging & Laravel 12 Mailers [backend] [AI]
+* **Components:** Laravel Backend (`backend/vmarket-web/`), Verification Suite (`scratch/`)
+* **Scope:** Conducted complete audit and implemented hardening across all 3 notification pillars: FCM HTTP v1 push notifications, SMS generic messaging across Nigerian gateways, and Laravel 12 Symfony Mailer configuration.
+* **1. Push Notifications & FCM HTTP v1 Unification:**
+  - `app/Utils/Helpers.php`: Overhauled `Helpers::send_push_notif_to_device($fcm_token, $data)`. Eradicated deprecated legacy endpoint (`https://fcm.googleapis.com/fcm/send`) and integrated modern FCM HTTP v1 via `PushNotificationTrait`, utilizing Google Service Account JWT bearer tokens and payload normalization (`title`, `description`, `image`, `order_id`, `type`).
+  - Restored reliable push notifications for 6 controllers: `MarketplaceApprovalController`, `DeliverymanWithdrawController`, `DeliveryManController`, `DispatchPortalController`, and `CheckProductPriceExpiryCommand`.
+* **2. SMS Module: Generic Text Messaging & 6-Digit OTP Standards:**
+  - `app/Utils/SMSModule.php`: Introduced `sendTextMessage($receiver, $message)` and `sendCentralizedTextMessage($phone, $message)` alongside existing OTP methods.
+  - Implemented dedicated generic text dispatchers: `sendTermiiText` (Nigeria #1 DND transactional priority), `sendEbulksmsText`, `sendSmartSmsText`, `sendKudismsText`, `sendSendchampText`, and `sendTwilioText` without corrupting message bodies into OTP templates.
+  - `app/Http/Controllers/Admin/ThirdParty/SMSModuleController.php`: Updated line 104 to enforce compliant 6-digit universal OTP generation (`rand(100000, 999999)`), eliminating legacy 4-digit code in adherence to Rule 9.C.
+* **3. Email System: Laravel 12 Symfony Mailer & Diagnostics:**
+  - `app/Providers/MailConfigServiceProvider.php`: Configured modern Laravel 12 nested `mail.mailers.smtp` array and `mail.default = 'smtp'` alongside preserved legacy flat keys for backward compatibility. Added exception logging.
+  - `app/Traits/EmailTemplateTrait.php`: Fixed swapped translation key assignment bug on lines 42–43 (`footer_text` and `copyright_text` cross-assigned). Added explicit `Log::error()` logging inside the catch block to diagnose production SMTP failures.
+* **4. Deterministic Automated Verification:**
+  - Created `scratch/test_notification_subsystem.php`: 29/29 assertions passed (0 errors, 0 warnings, $\Delta = 0.00$).
+  - Validated PHP syntax across all modified files with `php -l` (0 errors).
+
 ### [2026-09-23 05:30 UTC] Delivery App Audit Hardening: i18n Repair, Backend-Driven Payment Info, Uyo Coordinates & Dead-Code Purge [delivery-app] [AI]
 * **Components:** Delivery Man App (`Delivery Man App/`)
 * **Scope:** Completed the remaining canonical-contract audit fixes for the Delivery Man App so the client is a pure consumer of backend decisions. Zero backend changes.

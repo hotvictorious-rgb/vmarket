@@ -254,6 +254,15 @@
                                                     </span>
                                                 @endif
                                             </div>
+                                            @if($order->order_type == 'pickup')
+                                                <span class="badge badge-soft-info text-info border border-info px-1 py-0 fs-11 w-max-content">
+                                                    <i class="tio-shop mr-1"></i> {{ translate('In-Shop Pickup') }}
+                                                </span>
+                                            @elseif($order->order_type == 'default')
+                                                <span class="badge badge-soft-success text-success border border-success px-1 py-0 fs-11 w-max-content">
+                                                    <i class="tio-bike mr-1"></i> {{ translate('Delivery') }}
+                                                </span>
+                                            @endif
                                             @if($order->edited_status == 1)
                                                 <span class="badge badge-info text-bg-info w-max-content">
                                                         {{ translate('Edited') }}

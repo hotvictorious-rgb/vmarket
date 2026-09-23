@@ -1017,14 +1017,101 @@
                             </div>
                         </div>
                         <?php $disableDeliveryType = !$physicalProduct && $shippingAddress; ?>
-                        @if($physicalProduct || $shippingAddress)
+                        @if($order->order_type == 'pickup')
+                            <div class="border rounded p-3 bg-section mt-3">
+                                <div class="d-flex align-items-center justify-content-between mb-3 border-bottom pb-2">
+                                    <div class="d-flex align-items-center gap-2">
+                                        <i class="tio-shop fs-20 text-primary"></i>
+                                        <h5 class="mb-0 text-capitalize">{{ translate('In-Shop Pickup Order') }}</h5>
+                                    </div>
+                                    <span class="badge badge-soft-info text-info font-weight-bold">
+                                        <i class="tio-checkmark-circle mr-1"></i> {{ translate('Store Pickup') }}
+                                    </span>
+                                </div>
+                                <div class="fs-12 text-muted mb-3">
+                                    {{ translate('Customer collects this order physically at the merchant shop. Delivery rider dispatch is not applicable.') }}
+                                </div>
+                                <div class="d-flex flex-column gap-2 mb-3">
+                                    <div class="d-flex justify-content-between align-items-center">
+                                        <span class="text-muted fs-13">{{ translate('Pickup Store') }}:</span>
+                                        <span class="fw-semibold fs-13 text-dark text-right">
+                                            {{ $order->pickupReservation?->shop?->name ?? $order->seller?->shop?->name ?? translate('Inhouse / Vendor Shop') }}
+                                        </span>
+                                    </div>
+                                    @php($shopAddress = $order->pickupReservation?->shop?->address ?? $order->seller?->shop?->address)
+                                    @if($shopAddress)
+                                        <div class="d-flex justify-content-between align-items-center">
+                                            <span class="text-muted fs-13">{{ translate('Store Address') }}:</span>
+                                            <span class="fs-12 text-dark text-right max-w-200">
+                                                {{ $shopAddress }}
+                                            </span>
+                                        </div>
+                                    @endif
+                                    @php($shopPhone = $order->pickupReservation?->shop?->contact ?? $order->seller?->shop?->contact ?? $order->seller?->phone)
+                                    @if($shopPhone)
+                                        <div class="d-flex justify-content-between align-items-center">
+                                            <span class="text-muted fs-13">{{ translate('Store Phone') }}:</span>
+                                            <a href="tel:{{ $shopPhone }}" class="fs-13 text-primary fw-semibold">
+                                                {{ $shopPhone }}
+                                            </a>
+                                        </div>
+                                    @endif
+                                    @if($order->pickupReservation?->reservation_code)
+                                        <div class="d-flex justify-content-between align-items-center">
+                                            <span class="text-muted fs-13">{{ translate('Reservation Code') }}:</span>
+                                            <span class="badge badge-soft-dark font-monospace fs-13">
+                                                {{ $order->pickupReservation->reservation_code }}
+                                            </span>
+                                        </div>
+                                    @endif
+                                    <div class="d-flex justify-content-between align-items-center">
+                                        <span class="text-muted fs-13">{{ translate('Physical Inspection') }}:</span>
+                                        @php($pStatus = $order->pickupReservation?->status ?? 'inspected_accepted')
+                                        @if($pStatus == 'pending_inspection')
+                                            <span class="badge badge-soft-warning text-warning">{{ translate('Pending Inspection') }}</span>
+                                        @elseif($pStatus == 'inspected_accepted' || $order->order_status == 'delivered')
+                                            <span class="badge badge-soft-success text-success">{{ translate('Inspected & Accepted') }}</span>
+                                        @elseif($pStatus == 'inspected_rejected')
+                                            <span class="badge badge-soft-danger text-danger">{{ translate('Rejected by Customer') }}</span>
+                                        @else
+                                            <span class="badge badge-soft-info text-info">{{ translate($pStatus) }}</span>
+                                        @endif
+                                    </div>
+                                    @if($order->verification_code)
+                                        <div class="d-flex justify-content-between align-items-center pt-2 border-top">
+                                            <span class="text-muted fs-13">{{ translate('Collection OTP') }}:</span>
+                                            <div class="d-flex align-items-center gap-2">
+                                                <span class="font-monospace fs-14 fw-bold" id="pickup_otp_val">••••••</span>
+                                                <button type="button" class="btn btn-outline-secondary btn-xs p-1" id="toggle_pickup_otp" title="{{ translate('Show/Hide OTP') }}">
+                                                    <i class="tio-hidden-outlined" id="otp_eye_icon"></i>
+                                                </button>
+                                            </div>
+                                        </div>
+                                        <script>
+                                            document.addEventListener('DOMContentLoaded', function() {
+                                                var otpRevealed = false;
+                                                var btn = document.getElementById('toggle_pickup_otp');
+                                                var val = document.getElementById('pickup_otp_val');
+                                                var icon = document.getElementById('otp_eye_icon');
+                                                if(btn && val) {
+                                                    btn.addEventListener('click', function() {
+                                                        otpRevealed = !otpRevealed;
+                                                        val.textContent = otpRevealed ? '{{ $order->verification_code }}' : '••••••';
+                                                        icon.className = otpRevealed ? 'tio-visible-outlined' : 'tio-hidden-outlined';
+                                                    });
+                                                }
+                                            });
+                                        </script>
+                                    @endif
+                                </div>
+                            </div>
+                        @elseif($physicalProduct || $shippingAddress)
                             <ul class="list-unstyled list-unstyled-py-4 d-flex flex-column gap-4 mb-0 pe-0">
                                 <li class="">
-                                    @if ($order->shipping_type == 'order_wise')
+                                    @if ($order->shipping)
                                         <label class="form-label fw-bold mb-2">
                                             {{translate('shipping_Method')}}
-                                            ({{$order->shipping ? translate(str_replace('_',' ',$order->shipping->title)) :translate('no_shipping_method_selected')}}
-                                            )
+                                            ({{ translate(str_replace('_',' ',$order->shipping->title)) }})
                                         </label>
                                     @endif
                                     <div class="select-wrapper"

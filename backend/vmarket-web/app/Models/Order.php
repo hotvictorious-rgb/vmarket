@@ -345,6 +345,14 @@ class Order extends Model
         return $this->hasOne(RefundRequest::class, 'order_id');
     }
 
+    /**
+     * [AI] Linked in-shop pickup reservation (if order originated from reservation flow)
+     */
+    public function pickupReservation(): HasOne
+    {
+        return $this->hasOne(PickupReservation::class, 'order_id');
+    }
+
 
     /* verification_images -> verificationImages */
     public function verificationImages(): HasMany

@@ -153,6 +153,17 @@
                                 </span>
                             </a>
                         </li>
+                        <li class="nav-item">
+                            <a class="nav-link {{ Request::is('admin/orders/pickup-list*') ? 'active' : '' }}"
+                               href="{{ route('admin.orders.pickup-list') }}" title="{{ translate('In-Shop Pickup Oversight') }}">
+                                <span class="flex-grow-1 text-truncate">
+                                    {{ translate('In-Shop Pickup Oversight') }}
+                                </span>
+                                <span class="badge fw-bold badge-info badge-sm text-bg-info">
+                                    {{ \App\Models\PickupReservation::where('status', 'pending_inspection')->count() }}
+                                </span>
+                            </a>
+                        </li>
                     </ul>
                 </li>
 
@@ -384,20 +395,18 @@
                                 </span>
                             </a>
                         </li>
-                        @if (getWebConfig(name: 'product_wise_shipping_cost_approval')==1)
-                            <li class="nav-item">
-                                <a class="nav-link text-capitalize {{ Request::is('admin/products/updated-product-list') ? 'active' : '' }}"
-                                   title="{{ translate('product_update_requests') }}"
-                                   href="{{ route('admin.products.updated-product-list') }}">
-                                    <span class="flex-grow-1 text-truncate">
-                                        {{Str::limit(translate('product_update_requests'), 18, '...') }}
-                                    </span>
-                                    <span class="badge fw-bold badge-info badge-sm text-bg-info">
-                                        {{getVendorProductsCount('product-updated-request') }}
-                                    </span>
-                                </a>
-                            </li>
-                        @endif
+                        <li class="nav-item">
+                            <a class="nav-link text-capitalize {{ Request::is('admin/products/updated-product-list') ? 'active' : '' }}"
+                               title="{{ translate('product_update_requests') }}"
+                               href="{{ route('admin.products.updated-product-list') }}">
+                                <span class="flex-grow-1 text-truncate">
+                                    {{Str::limit(translate('product_update_requests'), 18, '...') }}
+                                </span>
+                                <span class="badge fw-bold badge-info badge-sm text-bg-info">
+                                    {{getVendorProductsCount('product-updated-request') }}
+                                </span>
+                            </a>
+                        </li>
                         <li class="nav-item">
                             <a class="nav-link {{str_contains(url()->current().'?request_status='.request()->get('request_status'),'/admin/products/list/vendor?request_status=1')==1? 'active' : '' }}"
                                title="{{ translate('approved_Products') }}"
