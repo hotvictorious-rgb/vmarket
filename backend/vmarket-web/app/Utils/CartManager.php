@@ -158,6 +158,11 @@ class CartManager
         return $cartItems->groupBy('cart_group_id');
     }
 
+    public static function get_cart($request = null, $type = null)
+    {
+        return self::getCartListQuery($request, $type);
+    }
+
     public static function get_cart_group_ids($request = null, $type = null)
     {
         $user = Helpers::getCustomerInformation(!is_null($request) ? $request : request());

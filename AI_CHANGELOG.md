@@ -1,3 +1,24 @@
+### [2026-09-23 11:45 UTC] Storefront Live Runtime Hardening: Search & Filter Compatibility, Cross-Database LOCATE, and View Resilience [backend] [AI]
+* **Components:** Helpers (`app/Utils/Helpers.php`), CartManager (`app/Utils/CartManager.php`), ProductManager (`app/Utils/ProductManager.php`), FilePath (`app/Utils/file_path.php`), Theme Views (`details.blade.php`, `sellers.blade.php`)
+* **Scope:** Hardened storefront execution when serving live HTTP traffic on local/production environments across all primary pages (Home, Products Search & Filter, Merchant Directory, Store Catalog, Product Details).
+* **1. Cross-Database Search Resilience (SQLite & MySQL):**
+  - `app/Utils/ProductManager.php`: Added `getLocateSql()` helper method to resolve MySQL `LOCATE()` vs SQLite `INSTR()` differences dynamically. Replaced hardcoded `LOCATE()` calls in search keyword ranking to ensure zero syntax crashes on SQLite test/local setups and MySQL production environments.
+* **2. Cart & Discount Helper Compatibility:**
+  - `app/Utils/Helpers.php`: Added `get_product_discount()` alias pointing to `getProductDiscount()`.
+  - `app/Utils/CartManager.php`: Added `get_cart()` alias pointing to `getCartListQuery()` to satisfy storefront cart query invocations.
+* **3. Asset & Placeholder Fallbacks:**
+  - `app/Utils/file_path.php`: Added safe fallback chain for `$placeholderMap[$type][$theme]` so new themes (`theme_vmarket`) cleanly fall back to default placeholder graphics without undefined index errors.
+* **4. Blade Template Syntax & Variable Alignment:**
+  - `details.blade.php`: Escaped `@@context` and `@@type` inside Schema.org JSON-LD script blocks to prevent Laravel 11's Blade context directive parser from mistaking JSON keys as unclosed `@context` control structures.
+  - `sellers.blade.php`: Aligned view data binding to accept both `$vendorsList` (from `getAllVendorsView`) and `$sellers` (from `search_shop`), extracting proper `Shop` model instance and product counts.
+* **5. Live Server Verification:**
+  - `http://127.0.0.1:8080/`: 200 OK
+  - `http://127.0.0.1:8080/products`: 200 OK (57 catalog items with category/price filters)
+  - `http://127.0.0.1:8080/products?name=Mouse`: 200 OK (live search query returning 10 matching products)
+  - `http://127.0.0.1:8080/vendors`: 200 OK (verified merchant directory with direct store links)
+  - `http://127.0.0.1:8080/vendor-shop/en`: 200 OK (merchant catalog with in-store search & category pills)
+  - `http://127.0.0.1:8080/product/eket-wireless-mouse-4Y22Ab`: 200 OK (product details with Schema.org JSON-LD)
+
 ### [2026-09-23 11:20 UTC] Native Storefront Architecture: theme_vmarket Launch, Zero Vendor Banners & Privacy Protection [backend] [AI]
 * **Components:** Laravel Web Storefront (`backend/vmarket-web/resources/themes/theme_vmarket/`), Theme Provider (`app/Providers/ThemeServiceProvider.php`), Controllers (`HomeController.php`, `ShopViewController.php`, `ProductDetailsController.php`, `ProductListController.php`, `theme-helpers.php`)
 * **Scope:** Retired legacy stock 6Valley storefront (`theme_aster`) in favor of bespoke, high-performance, mobile-first native theme (`theme_vmarket`). Admin Panel and Vendor Panel remain 100% intact and untouched.

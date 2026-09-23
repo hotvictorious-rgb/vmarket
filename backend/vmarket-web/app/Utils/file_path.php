@@ -90,10 +90,8 @@ if (!function_exists('getStorageImages')) {
         if (isset($placeholderMap[$type])) {
             if (is_array($placeholderMap[$type])) {
                 $theme = theme_root_path();
-                $placeholderPath = theme_asset(path: $placeholderMap[$type][$theme]);
-                if ($theme == 'default') {
-                    $placeholderPath = theme_asset(path: $placeholderMap[$type][$theme]);
-                }
+                $targetAsset = $placeholderMap[$type][$theme] ?? ($placeholderMap[$type]['theme_aster'] ?? ($placeholderMap[$type]['default'] ?? ''));
+                $placeholderPath = theme_asset(path: $targetAsset);
                 return (!empty($path) && $path['status'] == 200) ? $path['path'] : $placeholderPath;
             } else {
                 return (!empty($path) && isset($path['status']) && $path['status'] == 200) ? $path['path'] : dynamicAsset(path: 'public/assets/' . $placeholderMap[$type]);
@@ -213,10 +211,8 @@ if (!function_exists('getValidImage')) {
         if (isset($placeholderMap[$type])) {
             if (is_array($placeholderMap[$type])) {
                 $theme = theme_root_path();
-                $placeholderPath = theme_asset(path: $placeholderMap[$type][$theme]);
-                if ($theme == 'default') {
-                    $placeholderPath = theme_asset(path: $placeholderMap[$type][$theme]);
-                }
+                $targetAsset = $placeholderMap[$type][$theme] ?? ($placeholderMap[$type]['theme_aster'] ?? ($placeholderMap[$type]['default'] ?? ''));
+                $placeholderPath = theme_asset(path: $targetAsset);
 
                 return is_file($path) ? $givenPath : $placeholderPath;
             } else {

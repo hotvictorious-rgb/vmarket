@@ -24,8 +24,8 @@
     <!-- Server-Rendered Google Product Schema.org JSON-LD -->
     <script type="application/ld+json">
     {
-      "@context": "https://schema.org/",
-      "@type": "Product",
+      "@@context": "https://schema.org/",
+      "@@type": "Product",
       "name": "{{ addslashes($product->name) }}",
       "image": [
         "{{ getStorageImages(path: $mainImage, type: 'product') }}"
@@ -34,12 +34,12 @@
       "sku": "{{ $product->code ?? ('VM-' . $product->id) }}",
       @if($product->brand)
       "brand": {
-        "@type": "Brand",
+        "@@type": "Brand",
         "name": "{{ addslashes($product->brand->name) }}"
       },
       @endif
       "offers": {
-        "@type": "Offer",
+        "@@type": "Offer",
         "url": "{{ url()->current() }}",
         "priceCurrency": "NGN",
         "price": "{{ $finalPrice }}",
@@ -47,7 +47,7 @@
         "itemCondition": "https://schema.org/NewCondition",
         "availability": "{{ $inStock ? 'https://schema.org/InStock' : 'https://schema.org/OutOfStock' }}",
         "seller": {
-          "@type": "Organization",
+          "@@type": "Organization",
           "name": "{{ addslashes($shopName) }}"
         }
       }

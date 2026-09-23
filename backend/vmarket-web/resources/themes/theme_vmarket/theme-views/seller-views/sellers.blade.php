@@ -14,13 +14,17 @@
         </div>
     </div>
 
-    @if($sellers && count($sellers) > 0)
+@php
+    $storeList = $vendorsList ?? ($sellers ?? collect());
+@endphp
+
+    @if(count($storeList) > 0)
         <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 20px; margin-top: 20px;">
-            @foreach($sellers as $seller)
+            @foreach($storeList as $seller)
                 @php
-                    $shop = $seller->shop;
+                    $shop = ($seller instanceof \App\Models\Shop) ? $seller : ($seller->shop ?? null);
                     if (!$shop) continue;
-                    $productCount = $shop->products_count ?? 0;
+                    $productCount = $shop->products_count ?? ($shop->products?->count() ?? 0);
                 @endphp
                 <div style="background: var(--vm-surface); border: 1px solid var(--vm-border); border-radius: var(--vm-radius-md); padding: 20px; transition: var(--vm-transition); display: flex; flex-direction: column; gap: 14px; position: relative;" onmouseover="this.style.borderColor='var(--vm-primary)'; this.style.transform='translateY(-3px)'; this.style.boxShadow='var(--vm-shadow-hover)'" onmouseout="this.style.borderColor='var(--vm-border)'; this.style.transform='none'; this.style.boxShadow='none'">
                     

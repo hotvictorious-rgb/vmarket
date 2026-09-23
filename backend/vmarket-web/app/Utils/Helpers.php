@@ -456,6 +456,11 @@ class Helpers
         return floatval($discount);
     }
 
+    public static function get_product_discount($product, $price): float
+    {
+        return self::getProductDiscount($product, $price);
+    }
+
     public static function module_permission_check($mod_name): bool
     {
         if (!auth('admin')->check() || !auth('admin')->user()) {

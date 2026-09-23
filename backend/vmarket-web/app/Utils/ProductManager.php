@@ -13,6 +13,7 @@ use Exception;
 use Illuminate\Support\Facades\Request as FacadesRequest;
 use App\Models\Category;
 use App\Models\CategoryShippingCost;
+use App\Models\FlashDeal;
 use App\Models\FlashDealProduct;
 use App\Models\OrderDetail;
 use App\Models\Product;
@@ -1327,6 +1328,14 @@ class ProductManager
         return $query->orderBy('id', 'desc')->get();
     }
 
+    public static function getLocateSql(string $keyword, string $column = 'name'): string
+    {
+        if (DB::getDriverName() === 'sqlite') {
+            return "INSTR({$column}, '{$keyword}')";
+        }
+        return "LOCATE('{$keyword}', {$column})";
+    }
+
     public static function getPriorityWiseSearchedProductQuery($query, $keyword, $dataLimit = 'all', $offset = 1, $appends = null, $type = null)
     {
         $searchedProductListSortBy = getWebConfig(name: 'searched_product_list_priority');
@@ -1341,7 +1350,8 @@ class ProductManager
             }
         }
         $searchKeyword = str_ireplace(['\'', '"', ',', ';', '<', '>', '?'], ' ', preg_replace('/\s\s+/', ' ', $keyword));
-        $query = $query->orderByRaw("CASE WHEN name LIKE '%$searchKeyword%' THEN 1 ELSE 2 END, LOCATE('$searchKeyword', name), name")->get();
+        $locateSql = self::getLocateSql($searchKeyword, 'name');
+        $query = $query->orderByRaw("CASE WHEN name LIKE '%$searchKeyword%' THEN 1 ELSE 2 END, {$locateSql}, name")->get();
 
         if ($searchedProductListSortBy && ($searchedProductListSortBy['custom_sorting_status'] == 1 && $searchedProductListSortBy['out_of_stock_product'] == 'desc')) {
             $query = self::mergeStockAndOutOfStockProduct(query: $query);
@@ -1801,7 +1811,8 @@ class ProductManager
             })
             ->when($request->has('name') && !empty($request['name']), function ($query) use ($request) {
                 $searchName = str_ireplace(['\'', '"', ',', ';', '<', '>', '?'], ' ', preg_replace('/\s\s+/', ' ', $request['name']));
-                return $query->orderByRaw("CASE WHEN name LIKE '%{$searchName}%' THEN 1 ELSE 2 END, LOCATE('{$searchName}', name), name");
+                $locateSql = self::getLocateSql($searchName, 'name');
+                return $query->orderByRaw("CASE WHEN name LIKE '%{$searchName}%' THEN 1 ELSE 2 END, {$locateSql}, name");
             })
             ->when(($request['data_from'] == 'search' && !empty($request['search'])) || !empty($request['name']) || !empty($request['product_name']), function ($query) use ($request) {
                 $searchKey = $request->search ? $request->search : ($request['product_name'] ?? $request['name']);
@@ -1817,11 +1828,12 @@ class ProductManager
                 }
 
                 $searchName = str_ireplace(['\'', '"', ',', ';', '<', '>', '?'], ' ', preg_replace('/\s\s+/', ' ', $searchKey));
+                $locateSql = self::getLocateSql($searchName, 'name');
                 return $query->when(!empty($productsIDArray), function ($query) use ($productsIDArray) {
                     return $query->whereIn('id', $productsIDArray);
                 })->when(empty($productsIDArray), function ($query) use ($productsIDArray) {
                     return $query->whereIn('id', [0]);
-                })->orderByRaw("CASE WHEN name LIKE '%{$searchName}%' THEN 1 ELSE 2 END, LOCATE('{$searchName}', name), name");
+                })->orderByRaw("CASE WHEN name LIKE '%{$searchName}%' THEN 1 ELSE 2 END, {$locateSql}, name");
             })
             ->when(($request['min_price'] != null && $request['min_price'] > 0), function ($query) use ($request) {
                 $minPrice = Convert::usdPaymentModule($request['min_price'] ?? 0, session('currency_code'));
