@@ -13,8 +13,6 @@ use App\Http\Controllers\RestAPI\v3\seller\OrderController;
 use App\Http\Controllers\RestAPI\v3\seller\ProductController;
 use App\Http\Controllers\RestAPI\v3\seller\RefundController;
 use App\Http\Controllers\RestAPI\v3\seller\SellerController;
-use App\Http\Controllers\RestAPI\v3\seller\shippingController;
-use App\Http\Controllers\RestAPI\v3\seller\ShippingMethodController;
 use App\Http\Controllers\RestAPI\v3\seller\ShopController;
 use App\Http\Controllers\RestAPI\v3\seller\VendorPaymentInfoController;
 use Illuminate\Support\Facades\Route;
@@ -171,27 +169,6 @@ Route::group(['prefix' => 'v3/seller', 'middleware' => ['api_lang']], function (
                 Route::get('customers', 'customers');
             });
         });
-
-        Route::group(['prefix' => 'shipping'], function () {
-            Route::controller(shippingController::class)->group(function () {
-                Route::get('get-shipping-method', 'get_shipping_type');
-                Route::get('selected-shipping-method', 'selected_shipping_type');
-                Route::get('all-category-cost', 'all_category_cost');
-                Route::post('set-category-cost', 'set_category_cost');
-            });
-        });
-
-        Route::group(['prefix' => 'shipping-method'], function () {
-            Route::controller(ShippingMethodController::class)->group(function () {
-                Route::get('list', 'list');
-                Route::post('add', 'store');
-                Route::get('edit/{id}', 'edit');
-                Route::put('status', 'status_update');
-                Route::put('update/{id}', 'update');
-                Route::delete('delete/{id}', 'delete');
-            });
-        });
-
         Route::group(['prefix' => 'delivery-man'], function () {
             Route::controller(DeliveryManController::class)->group(function () {
                 Route::get('list', 'list');

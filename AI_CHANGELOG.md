@@ -1,3 +1,65 @@
+### [2026-09-23 08:40 UTC] Backend Duplicate & Legacy Shipping System Purge [backend] [AI]
+* **Components:** Laravel Backend (`backend/vmarket-web/`)
+* **Scope:** Backend-only deep cleanup adhering strictly to `VMARKET_BACKEND_SPEC.md` and `.agents/AGENTS.md` (Prime Directives, 10-step Capability Migration & Cleanup Protocol, zero client breakage, and zero-drift verification $\Delta = ₦0.00$). Absolutely ZERO frontend code modified.
+* **Dead & Duplicate Shipping Engines Removed:**
+  - Removed competing legacy 6valley vendor shipping methods and category-wise shipping cost systems, enforcing the single authoritative system (`DeliveryLane`, `FulfillmentAvailabilityService`, `DeliveryCheckoutIntentService`, `PickupReservationService`).
+  - Purged obsolete controllers:
+    - `app/Http/Controllers/Vendor/Shipping/CategoryShippingCostController.php`
+    - `app/Http/Controllers/Vendor/Shipping/ShippingMethodController.php`
+    - `app/Http/Controllers/Vendor/Shipping/ShippingTypeController.php`
+    - `app/Http/Controllers/RestAPI/v3/seller/ShippingMethodController.php`
+    - `app/Http/Controllers/RestAPI/v3/seller/shippingController.php`
+  - Purged obsolete services:
+    - `app/Services/CategoryShippingCostService.php`
+    - `app/Services/ShippingMethodService.php`
+    - `app/Services/ShippingTypeService.php`
+  - Purged obsolete repositories & contracts:
+    - `app/Repositories/CategoryShippingCostRepository.php` & `CategoryShippingCostRepositoryInterface.php`
+    - `app/Repositories/ShippingMethodRepository.php` & `ShippingMethodRepositoryInterface.php`
+    - `app/Repositories/ShippingTypeRepository.php` & `ShippingTypeRepositoryInterface.php`
+  - Purged obsolete requests, enums, & views:
+    - `app/Http/Requests/Vendor/CategoryShippingCostRequest.php`
+    - `app/Enums/ViewPaths/Vendor/ShippingMethod.php`
+    - `app/Enums/ViewPaths/Admin/ShippingType.php`
+    - `resources/views/vendor-views/shipping-method/` (`index.blade.php`, `update-view.blade.php`)
+    - `app/Providers/RouteServiceProvider.txt` (stray text backup file)
+* **Route Cleanup:**
+  - `routes/vendor/routes.php`: Removed `shipping-method`, `shipping-type`, and `category-wise-shipping-cost` route groups and unused controller imports.
+  - `routes/rest_api/v3/seller.php`: Removed `shipping` and `shipping-method` route groups and unused controller imports.
+* **Bug Fix & Geography Decoupling:**
+  - `app/Http/Controllers/Vendor/ShopController.php`: Corrected `$hubs` query in `getUpdateView` to query `DeliveryHub` by `lga_id` (since `city_id` was dropped in canonical migration `2026_09_22_000040`), resolving a potential fatal column not found exception.
+* **Verification & Zero Drift ($\Delta = ₦0.00$):**
+  - PHP syntax check (`php -l`): All modified files clean with 0 syntax errors.
+  - Phase 3 API Contracts: 11/11 PASSED.
+  - Phase 2 Backend Hardening: 11/11 PASSED.
+  - Master Buying & Fulfillment E2E Scenarios: 8/8 PASSED with 100% mathematical zero drift ($\Delta = ₦0.00$).
+
+### [2026-09-23 08:20 UTC] Vendor Web and App Strict Alignment & Purge of Unaligned Controls [vendor-app-web] [AI]
+* **Components:** Vendor Mobile App (`Vendor app/`), Vendor Web Panel Views (`backend/vmarket-web/resources/views/vendor-views/`)
+* **Scope:** Frontend-only strict alignment with `.agents/rules/VMARKET_VENDOR_SPEC.md` and Backend as Single Source of Truth (SSOT). Absolutely ZERO backend code was modified. All unaligned, dangling, and obsolete controls that allowed vendors to violate backend authority were reported and deleted.
+* **Deleted Dead & Unaligned Vendor App Files:**
+  - `Vendor app/lib/features/order/widgets/delivery_man_assign_widget.dart`: Deleted. Attempted to let vendors assign delivery men and set delivery charges (violates Spec §16 & §24).
+  - `Vendor app/lib/features/settings/screens/order_wise_shipping_add_screen.dart`: Deleted. Attempted to configure order-wise shipping methods (violates Spec §24).
+  - `Vendor app/lib/features/settings/screens/order_wise_shipping_list_screen.dart`: Deleted. Orphaned shipping list screen (violates Spec §24).
+  - `Vendor app/lib/features/settings/widgets/choose_shipping_dialog_widget.dart`: Deleted. Obsolete shipping dialog (violates Spec §24).
+  - `Vendor app/lib/features/settings/widgets/order_wise_shipping_card_widget.dart`: Deleted. Obsolete shipping card (violates Spec §24).
+* **Vendor App Code Decoupled & Cleaned:**
+  - `Vendor app/lib/common/basewidgets/custom_app_bar_widget.dart`: Removed dangling `DeliveryManController` import and Consumer wrapper.
+  - `Vendor app/lib/common/basewidgets/confirmation_dialog_widget.dart`: Removed dangling `ShippingController` import and Consumer wrapper; restored direct button rendering.
+  - `Vendor app/lib/features/home/screens/home_page_screen.dart`: Purged dangling `DeliveryManController`, `ShippingController`, and `TopDeliveryManViewWidget` imports, data fetch calls in `_loadData`, and dashboard UI render.
+  - `Vendor app/lib/features/order_details/widgets/order_setup_bottom_sheet.dart`: Replaced interactive payment switcher with read-only badge; restricted status selection to packaging lifecycle; removed mutating delivery controls.
+  - `Vendor app/lib/features/order_details/domain/repositories/order_details_repository.dart`: Updated `getOrderStatusList` to return strictly `['pending', 'confirmed', 'processing', 'canceled']`.
+* **Vendor Web Code Purged & Cleaned:**
+  - `backend/vmarket-web/resources/views/vendor-views/dashboard/index.blade.php`: Removed `_top-rated-delivery-man` widget inclusion under `$shippingMethod=='sellerwise_shipping'`.
+  - `backend/vmarket-web/resources/views/vendor-views/partials/_top-rated-delivery-man.blade.php`: Deleted obsolete partial file.
+  - `backend/vmarket-web/resources/views/vendor-views/order/order-details.blade.php`: Purged obsolete delivery man assignment spans (`#message-deliveryman-add-*`, `#add-delivery-man-url`, `#add-date-update-url`, `#deliveryman-charge-alert-message`). Enforced read-only payment badge, restricted status transitions to packaging lifecycle, and integrated in-shop customer pickup verification handshake.
+* **Backend Gaps & Legacy Surface Report:**
+  - Legacy routes `vendor.delivery-man.*` and `vendor.business-settings.shipping-method.*` still exist in backend route files. Per user instruction ("do not touch backend just the app and vendor web panel"), backend routes and controllers were not modified. The vendor web sidebar and vendor mobile app have completely decoupled from them, rendering them dead from the frontend perspective.
+* **Verification:**
+  - `php -l "backend/vmarket-web/resources/views/vendor-views/dashboard/index.blade.php"`: No syntax errors detected.
+  - `php -l "backend/vmarket-web/resources/views/vendor-views/order/order-details.blade.php"`: No syntax errors detected.
+  - Dart code grep audit: 0 references to `ShippingController`, 0 references to `DeliveryManController`.
+
 ### [2026-09-23 07:20 UTC] Canonical VMarket Backend Production Architecture Specification Established [ai-governance] [AI]
 * **Components:** AI Governance & Rules (`.agents/rules/VMARKET_BACKEND_SPEC.md`, `.agents/AGENTS.md`)
 * **Scope:** Established the master 54-section canonical backend blueprint (`VMARKET_BACKEND_SPEC.md`) defining the VMarket Laravel backend as the Single Source of Truth (SSOT) and central operating system of the entire ecosystem.

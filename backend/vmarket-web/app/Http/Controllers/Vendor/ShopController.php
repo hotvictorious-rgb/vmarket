@@ -102,8 +102,9 @@ class ShopController extends BaseController
         $cities = $shop->delivery_state_id 
             ? \App\Models\DeliveryCity::where('state_id', $shop->delivery_state_id)->where('is_active', true)->orderBy('name', 'asc')->get() 
             : collect([]);
-        $hubs = $shop->delivery_city_id 
-            ? \App\Models\DeliveryHub::where('city_id', $shop->delivery_city_id)->where('is_active', true)->orderBy('name', 'asc')->get() 
+        // [AI] DeliveryHub uses lga_id in canonical architecture (city_id column was migrated/dropped)
+        $hubs = $shop->lga_id 
+            ? \App\Models\DeliveryHub::where('lga_id', $shop->lga_id)->where('is_active', true)->orderBy('name', 'asc')->get() 
             : collect([]);
 
         return view('vendor-views.shop.update-view', compact('shop', 'states', 'cities', 'hubs'));

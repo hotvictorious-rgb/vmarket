@@ -1720,22 +1720,6 @@
     <span id="order-status-url" data-url="{{ route('vendor.orders.status') }}"></span>
     <span id="payment-status-url" data-url="{{ route('vendor.orders.payment-status') }}"></span>
 
-    <span id="message-deliveryman-add-success-text"
-          data-text="{{ translate("delivery_man_successfully_assigned/changed") }}"></span>
-    <span id="message-deliveryman-add-error-text"
-          data-text="{{ translate("deliveryman_man_can_not_assign_or_change_in_that_status") }}"></span>
-    <span id="message-deliveryman-add-invalid-text"
-          data-text="{{ translate("deliveryman_man_can_not_assign_or_change_in_that_status") }}"></span>
-    <span id="delivery-type" data-type="{{ $order->delivery_type }}"></span>
-    <span id="add-delivery-man-url" data-url="{{url('/vendor/orders/add-delivery-man/'.$order['id'])}}/"></span>
-
-    <span id="message-deliveryman-charge-success-text"
-          data-text="{{ translate("deliveryman_charge_add_successfully") }}"></span>
-    <span id="message-deliveryman-charge-error-text"
-          data-text="{{ translate("failed_to_add_deliveryman_charge") }}"></span>
-    <span id="message-deliveryman-charge-invalid-text" data-text="{{ translate("add_valid_data") }}"></span>
-    <span id="add-date-update-url" data-url="{{route('vendor.orders.amount-date-update')}}"></span>
-
     <span id="customer-name" data-text="{{ $maskName(($order->customer['f_name']??"") . " " . ($order->customer['l_name']??"")) }}"></span>
     <span id="is-shipping-exist" data-status="{{$shippingAddress ? 'true':'false'}}"></span>
     <span id="shipping-address" data-text="{{ $maskAddress($shippingAddress->address??'') }}"></span>
@@ -1747,8 +1731,6 @@
           data-path="{{dynamicAsset(path: 'public/assets/front-end/img/customer_location.png')}}"></span>
     <span id="customer-image"
           data-path="{{dynamicStorage(path: 'storage/app/public/profile/')}}{{$order->customer->image??""}}"></span>
-    <span id="deliveryman-charge-alert-message"
-          data-message="{{translate('when_order_status_delivered_you_can`t_update_the_delivery_man_incentive').'.'}}"></span>
     <span id="payment-status-alert-message"
           data-message="{{translate('when_payment_status_paid_then_you_can`t_change_payment_status_paid_to_unpaid').'.'}}"></span>
     {{-- [AI] Directive 57326: edit-order route spans removed — order editing decommissioned in V1. --}}

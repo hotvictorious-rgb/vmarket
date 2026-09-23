@@ -22,9 +22,6 @@ use App\Http\Controllers\Vendor\ProfileController;
 use App\Http\Controllers\Vendor\Promotion\ClearanceSaleController;
 use App\Http\Controllers\Vendor\RefundController;
 use App\Http\Controllers\Vendor\ReviewController;
-use App\Http\Controllers\Vendor\Shipping\CategoryShippingCostController;
-use App\Http\Controllers\Vendor\Shipping\ShippingMethodController;
-use App\Http\Controllers\Vendor\Shipping\ShippingTypeController;
 use App\Http\Controllers\Vendor\ShopController;
 use App\Http\Controllers\Vendor\SystemController;
 use App\Http\Controllers\Vendor\WithdrawController;
@@ -274,25 +271,6 @@ Route::group(['middleware' => ['maintenance_mode', 'actch:admin_panel']], functi
             });
 
             Route::group(['prefix' => 'business-settings', 'as' => 'business-settings.'], function () {
-                Route::group(['prefix' => 'shipping-method', 'as' => 'shipping-method.'], function () {
-                    Route::controller(ShippingMethodController::class)->group(function () {
-                        Route::get('index', 'index')->name('index');
-                        Route::post('index', 'add');
-                        Route::get('update/{id}', 'getUpdateView')->name('update');
-                        Route::post('update/{id}', 'update');
-                        Route::post('update-status', 'updateStatus')->name('update-status');
-                        Route::post('delete', 'delete')->name('delete');
-                    });
-                });
-
-                Route::group(['prefix' => 'shipping-type', 'as' => 'shipping-type.'], function () {
-                    Route::post('index', [ShippingTypeController::class, 'addOrUpdate'])->name('index');
-                });
-
-                Route::group(['prefix' => 'category-wise-shipping-cost', 'as' => 'category-wise-shipping-cost.'], function () {
-                    Route::post('index', [CategoryShippingCostController::class, 'index'])->name('index');
-                });
-
                 Route::group(['prefix' => 'withdraw', 'as' => 'withdraw.'], function () {
                     Route::controller(WithdrawController::class)->group(function () {
                         Route::get('index', 'index')->name('index');
