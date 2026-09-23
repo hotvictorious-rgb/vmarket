@@ -55,6 +55,7 @@ class ProductDetailsController extends Controller
             'default' => self::getDefaultTheme(slug: $slug),
             'theme_aster' => self::getThemeAster(slug: $slug),
             'theme_fashion' => self::getThemeFashion(slug: $slug),
+            'theme_vmarket' => self::getThemeAster(slug: $slug),
         };
     }
 

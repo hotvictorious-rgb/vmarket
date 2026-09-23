@@ -89,6 +89,7 @@ class ShopViewController extends Controller
             'default' => self::default_theme($request, $shop),
             'theme_aster' => self::theme_aster($request, $shop),
             'theme_fashion' => self::theme_fashion($request, $shop),
+            'theme_vmarket' => self::theme_aster($request, $shop),
         };
     }
 

@@ -14,10 +14,10 @@ class ThemeServiceProvider extends ServiceProvider
      */
     public function register(): void
     {
-        $theme = env('WEB_THEME') == null ? 'theme_aster' : env('WEB_THEME');
+        $theme = env('WEB_THEME') == null ? 'theme_vmarket' : env('WEB_THEME');
         $path = base_path('resources/themes/' . $theme);
         if (!is_dir($path)) {
-            $path = base_path('resources/themes/theme_aster');
+            $path = base_path('resources/themes/theme_vmarket');
         }
         if (!defined('VIEW_FILE_NAMES') && file_exists($path . '/file_names.php')) {
             define("VIEW_FILE_NAMES", include($path . '/file_names.php'));

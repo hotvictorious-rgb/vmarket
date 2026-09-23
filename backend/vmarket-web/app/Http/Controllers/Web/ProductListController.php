@@ -41,6 +41,7 @@ class ProductListController extends Controller
         return match (theme_root_path()) {
             'default' => self::default_theme(request: $request, pageType: 'default', pageTitle: $pageTitle),
             'theme_aster' => self::theme_aster(request: $request, pageType: 'default', pageTitle: $pageTitle),
+            'theme_vmarket' => self::theme_aster(request: $request, pageType: 'default', pageTitle: $pageTitle),
         };
     }
 
@@ -186,6 +187,7 @@ class ProductListController extends Controller
         return match (theme_root_path()) {
             'default' => self::default_theme(request: $request, pageType: $pageType, pageTitle: $pageTitle, metaData: $metaData),
             'theme_aster' => self::theme_aster(request: $request, pageType: $pageType, pageTitle: $pageTitle, metaData: $metaData),
+            'theme_vmarket' => self::theme_aster(request: $request, pageType: $pageType, pageTitle: $pageTitle, metaData: $metaData),
         };
     }
 

@@ -50,6 +50,7 @@ class HomeController extends Controller
             'default' => self::default_theme(),
             'theme_aster' => self::theme_aster(),
             'theme_fashion' => self::theme_fashion(),
+            'theme_vmarket' => self::theme_aster(),
         };
     }
 
