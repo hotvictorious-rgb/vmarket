@@ -39,8 +39,8 @@ trait EmailTemplateTrait
                 foreach ($template?->translationCurrentLanguage ?? [] as $translate) {
                     $template['title'] = $translate->key == 'title' ? $translate->value : $template['title'];
                     $template['body'] = $translate->key == 'body' ? $translate->value : $template['body'];
-                    $template['footer_text'] = $translate->key == 'copyright_text' ? $translate->value : $template['footer_text'];
-                    $template['copyright_text'] = $translate->key == 'footer_text' ? $translate->value : $template['copyright_text'];
+                    $template['footer_text'] = $translate->key == 'footer_text' ? $translate->value : $template['footer_text'];
+                    $template['copyright_text'] = $translate->key == 'copyright_text' ? $translate->value : $template['copyright_text'];
                     $template['button_name'] = $translate->key == 'button_name' ? $translate->value : $template['button_name'];
                 }
             }
@@ -67,9 +67,68 @@ trait EmailTemplateTrait
             );
             $data['send-mail'] = true;
             if ($template['status'] == 1) {
-                try {
-                    Mail::to($sendMailTo)->send(new SendMail($data, $template, $socialMedia));
-                } catch (Exception $exception) {
+                $phpMail = getWebConfig(name: 'mail_config_php');
+                $smtpMail = getWebConfig(name: 'mail_config');
+                if (is_array($smtpMail) && isset($smtpMail['status']) && $smtpMail['status'] == 0) {
+                    $smtpMail = getWebConfig(name: 'mail_config_sendgrid');
+                }
+
+                $isPhpActive = is_array($phpMail) && isset($phpMail['status']) && $phpMail['status'] == 1;
+                $isSmtpActive = is_array($smtpMail) && isset($smtpMail['status']) && $smtpMail['status'] == 1;
+
+                if ($isPhpActive && $isSmtpActive) {
+                    // Rule: PHP mail first, then fallback to SMTP
+                    try {
+                        Mail::mailer('sendmail')->to($sendMailTo)->send(new SendMail($data, $template, $socialMedia));
+                    } catch (\Throwable $exception) {
+                        \Illuminate\Support\Facades\Log::warning('PHP mail (sendmail) failed, failing over to SMTP: ' . $exception->getMessage(), [
+                            'to' => $sendMailTo,
+                            'template' => $templateName,
+                        ]);
+                        try {
+                            Mail::mailer('smtp')->to($sendMailTo)->send(new SendMail($data, $template, $socialMedia));
+                        } catch (\Throwable $smtpException) {
+                            \Illuminate\Support\Facades\Log::error('SMTP fallback also failed: ' . $smtpException->getMessage(), [
+                                'to' => $sendMailTo,
+                                'template' => $templateName,
+                            ]);
+                        }
+                    }
+                } elseif ($isPhpActive) {
+                    try {
+                        Mail::mailer('sendmail')->to($sendMailTo)->send(new SendMail($data, $template, $socialMedia));
+                    } catch (\Throwable $exception) {
+                        \Illuminate\Support\Facades\Log::error('PHP mail failed in EmailTemplateTrait: ' . $exception->getMessage(), [
+                            'to' => $sendMailTo,
+                            'template' => $templateName,
+                        ]);
+                    }
+                } elseif ($isSmtpActive) {
+                    try {
+                        Mail::mailer('smtp')->to($sendMailTo)->send(new SendMail($data, $template, $socialMedia));
+                    } catch (\Throwable $exception) {
+                        \Illuminate\Support\Facades\Log::warning('SMTP mail failed, attempting PHP sendmail fallback: ' . $exception->getMessage(), [
+                            'to' => $sendMailTo,
+                            'template' => $templateName,
+                        ]);
+                        try {
+                            Mail::mailer('sendmail')->to($sendMailTo)->send(new SendMail($data, $template, $socialMedia));
+                        } catch (\Throwable $phpException) {
+                            \Illuminate\Support\Facades\Log::error('PHP sendmail fallback failed: ' . $phpException->getMessage(), [
+                                'to' => $sendMailTo,
+                                'template' => $templateName,
+                            ]);
+                        }
+                    }
+                } else {
+                    try {
+                        Mail::to($sendMailTo)->send(new SendMail($data, $template, $socialMedia));
+                    } catch (\Throwable $exception) {
+                        \Illuminate\Support\Facades\Log::error('Default mail dispatch failed: ' . $exception->getMessage(), [
+                            'to' => $sendMailTo,
+                            'template' => $templateName,
+                        ]);
+                    }
                 }
             }
             if (isset($data['attachmentPath'])) {

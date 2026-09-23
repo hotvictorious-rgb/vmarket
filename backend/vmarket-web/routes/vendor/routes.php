@@ -241,6 +241,7 @@ Route::group(['middleware' => ['maintenance_mode', 'actch:admin_panel']], functi
                     Route::patch('update/{id}', 'updatePassword');
                     Route::get('update-bank-info/{id}', 'getBankInfoUpdateView')->name('update-bank-info');
                     Route::post('update-bank-info/{id}', 'updateBankInfo');
+                    Route::post('resolve-bank-account', 'resolveBankAccount')->name('resolve-bank-account');
                 });
             });
 
@@ -338,6 +339,7 @@ Route::group(['middleware' => ['maintenance_mode', 'actch:admin_panel']], functi
 
             /* [AI] In-Shop Pickup Reservations (Commit 5) */
             Route::group(['prefix' => 'pickup-reservations', 'as' => 'pickup-reservations.'], function () {
+                Route::get('/', [\App\Http\Controllers\Vendor\Order\PickupReservationController::class, 'index'])->name('index');
                 Route::post('verify', [\App\Http\Controllers\Vendor\Order\PickupReservationController::class, 'verify'])->name('verify');
                 Route::post('accept', [\App\Http\Controllers\Vendor\Order\PickupReservationController::class, 'accept'])->name('accept');
                 Route::post('reject', [\App\Http\Controllers\Vendor\Order\PickupReservationController::class, 'reject'])->name('reject');

@@ -22,11 +22,19 @@ class SettingService
     {
         collect(['status'])->each(fn($item, $key) => $request[$item] = $request->has($item) ? (int)$request[$item] : 0);
         $validation = [
-            'gateway' => 'required|in:termii,ebulksms,smart_sms,kudisms,sendchamp,releans,twilio,nexmo,2factor,msg91,hubtel,paradox,signal_wire,019_sms,viatech,global_sms,akandit_sms,sms_to,alphanet_sms',
+            'gateway' => 'required|in:whatsapp_meta,termii,ebulksms,smart_sms,kudisms,sendchamp,releans,twilio,nexmo,2factor,msg91,hubtel,paradox,signal_wire,019_sms,viatech,global_sms,akandit_sms,sms_to,alphanet_sms',
             'mode' => 'required|in:live,test'
         ];
         $additional_data = [];
-        if ($request['gateway'] == 'termii') {
+        if ($request['gateway'] == 'whatsapp_meta') {
+            $additional_data = [
+                'status' => 'required|in:1,0',
+                'token' => 'required',
+                'phone_number_id' => 'required',
+                'template_name' => 'required',
+                'language_code' => 'nullable',
+            ];
+        } elseif ($request['gateway'] == 'termii') {
             $additional_data = [
                 'status' => 'required|in:1,0',
                 'api_key' => 'required',

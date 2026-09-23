@@ -31,6 +31,107 @@
                 </button>
             </div>
         </div>
+
+        <div class="card bg-info bg-opacity-10 border-info border-opacity-25 mb-3">
+            <div class="card-body py-3 d-flex align-items-center gap-3">
+                <i class="fi fi-sr-shield-check text-info fs-24"></i>
+                <div>
+                    <h5 class="mb-1 text-dark">{{ translate('Dual-Tier Intelligent Email Failover Enabled') }}</h5>
+                    <p class="fs-12 mb-0 text-muted">
+                        {{ translate('You can activate Native PHP Mail and SMTP simultaneously. When both are enabled, Victorious MARKET sends via Native PHP Mail first for instant delivery, and automatically fails over to SMTP if any error occurs.') }}
+                    </p>
+                </div>
+            </div>
+        </div>
+
+        <div class="card mb-3">
+            <div class="card-body">
+                @php($data_php=getWebConfig(name: 'mail_config_php') ?? ['status' => 0, 'name' => getWebConfig(name: 'company_name') ?? 'Victorious MARKET', 'email_id' => 'noreply@victoriousmarket.com.ng', 'path' => '/usr/sbin/sendmail -bs'])
+                <form action="{{route('admin.third-party.mail.update-php')}}" method="post" id="php-mail-config-form" class="form-advance-validation form-advance-inputs-validation form-advance-file-validation non-ajax-form-validate" novalidate>
+                    @csrf
+                    <div class="view-details-container">
+                        <div class="d-flex justify-content-between align-items-center gap-3">
+                            <div>
+                                <h3 class="d-flex align-items-center gap-2">
+                                    <i class="fi fi-sr-server text-primary"></i>
+                                    {{ translate('Native PHP Mail / Sendmail Configuration') }}
+                                    <span class="badge badge-soft-info fs-11">{{ translate('Primary Priority') }}</span>
+                                </h3>
+                                <p class="mb-1 fs-12">
+                                    {{ translate("Send emails directly using the server local PHP mail agent (Sendmail/Postfix). Zero external credentials required.") }}
+                                </p>
+                            </div>
+                            <div class="d-flex gap-2">
+                                <a href="javascript:" class="fs-12 fw-semibold d-flex align-items-end view-btn {{ ($data_php['status'] ?? 0) == 1 ? 'active' : '' }}">{{ translate('View') }} <i class="fi fi-rr-arrow-small-down fs-16 trans3"></i></a>
+                                <label class="switcher">
+                                    <input
+                                        class="switcher_input custom-modal-plugin"
+                                        type="checkbox" value="1" name="status"
+                                        {{ ($data_php['status'] ?? 0) == 1 ? 'checked':'' }}
+                                        data-modal-type="input-change-form"
+                                        data-modal-form="#php-mail-config-form"
+                                        data-on-image="{{ dynamicAsset(path: 'public/assets/new/back-end/img/modal/maintenance_mode-on.png') }}"
+                                        data-off-image="{{ dynamicAsset(path: 'public/assets/new/back-end/img/modal/maintenance_mode-off.png') }}"
+                                        data-on-title="{{translate('want_to_Turn_ON_the_PHP_mail_config_option').'?'}}"
+                                        data-off-title="{{translate('want_to_Turn_OFF_the_PHP_mail_config_option').'?'}}"
+                                        data-on-message="<p>{{translate('Enabling PHP Mail allows the platform to dispatch emails directly via the server local MTA.')}}</p>"
+                                        data-off-message="<p>{{translate('Disabling PHP Mail stops native sendmail dispatches.')}}</p>">
+                                    <span class="switcher_control"></span>
+                                </label>
+                            </div>
+                        </div>
+                        <div class="view-details mt-3 mt-sm-4">
+                            <div class="p-12 p-sm-20 bg-section rounded">
+                                <div class="row g-4">
+                                    <div class="col-lg-4 col-sm-6">
+                                        <div class="form-group">
+                                            <label class="form-label">{{translate('mailer_name')}}
+                                                <span class="text-danger">*</span>
+                                            </label>
+                                            <input type="text"
+                                                   class="form-control" name="name"
+                                                   value="{{ $data_php['name'] ?? (getWebConfig(name: 'company_name') ?? 'Victorious MARKET') }}" required>
+                                        </div>
+                                    </div>
+                                    <div class="col-lg-4 col-sm-6">
+                                        <div class="form-group">
+                                            <label class="form-label">{{translate('sender_email_address')}}
+                                                <span class="text-danger">*</span>
+                                            </label>
+                                            <input type="email"
+                                                   class="form-control" name="email"
+                                                   value="{{ $data_php['email_id'] ?? 'noreply@victoriousmarket.com.ng' }}" required>
+                                        </div>
+                                    </div>
+                                    <div class="col-lg-4 col-sm-6">
+                                        <div class="form-group">
+                                            <label class="form-label">{{translate('sendmail_path')}}
+                                                <span class="tooltip-icon" data-bs-toggle="tooltip" data-bs-placement="top"
+                                                    data-bs-title="{{translate('Standard Linux/cPanel sendmail binary path')}}">
+                                                    <i class="fi fi-sr-info"></i>
+                                                </span>
+                                            </label>
+                                            <input type="text"
+                                                   class="form-control" name="path"
+                                                   value="{{ $data_php['path'] ?? '/usr/sbin/sendmail -bs' }}" required>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="d-flex justify-content-end flex-wrap gap-3 mt-4">
+                                <button type="reset" class="btn btn-secondary w-120 px-4">
+                                    {{ translate('reset') }}
+                                </button>
+                                <button class="btn btn-primary w-120 px-4" type="submit">
+                                    {{ translate('save') }}
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </form>
+            </div>
+        </div>
+
         <div class="card mb-3">
             <div class="card-body">
                 @php($data_smtp=getWebConfig(name: 'mail_config'))

@@ -179,6 +179,18 @@
                                         </span>
                                     </a>
                                 </li>
+                                <li class="nav-item {{ Request::is('vendor/pickup-reservations*')?'active' : ''}}">
+                                    <a class="nav-link " href="{{ route('vendor.pickup-reservations.index') }}" title="{{ translate('in_shop_pickup_reservations') }}">
+                                        <span class="tio-circle nav-indicator-icon"></span>
+                                        <span class="text-truncate">
+                                            {{ translate('pickup_Reservations') }}
+                                            <span
+                                                class="badge badge-soft-primary badge-pill {{Session::get('direction') === "rtl" ? 'mr-1' : 'ml-1'}}">
+                                                {{ \App\Models\PickupReservation::where(['seller_id'=>$sellerId])->whereIn('status', ['pending_inspection', 'inspected_accepted'])->count() }}
+                                            </span>
+                                        </span>
+                                    </a>
+                                </li>
                             </ul>
                         </li>
 

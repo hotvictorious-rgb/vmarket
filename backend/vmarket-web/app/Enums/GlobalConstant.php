@@ -1135,6 +1135,7 @@ enum GlobalConstant
     ];
 
     const DEFAULT_SMS_GATEWAYS = [
+        'whatsapp_meta',
         'termii',
         'ebulksms',
         'smart_sms',

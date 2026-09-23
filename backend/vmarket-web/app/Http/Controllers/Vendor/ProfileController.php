@@ -114,7 +114,27 @@ class ProfileController extends BaseController
             return redirect()->back();
         }
         $vendor = $this->vendorRepo->getFirstWhere(['id' => $vendorId]);
-        return view('vendor-views.profile.bank-info-update-view', compact('vendor'));
+
+        $paystackService = app(\App\Services\PaystackBankService::class);
+        $banksResult = $paystackService->getNigerianBanks();
+        $nigerianBanks = $banksResult['data'] ?? [];
+
+        return view('vendor-views.profile.bank-info-update-view', compact('vendor', 'nigerianBanks'));
+    }
+
+    /**
+     * [AI] Resolves a 10-digit NUBAN bank account via Paystack Transfer API.
+     */
+    public function resolveBankAccount(Request $request): \Illuminate\Http\JsonResponse
+    {
+        $request->validate([
+            'account_number' => 'required|string|size:10',
+            'bank_code' => 'required|string',
+        ]);
+
+        $paystackService = app(\App\Services\PaystackBankService::class);
+        $result = $paystackService->resolveAccount($request->account_number, $request->bank_code);
+        return response()->json($result, ($result['status'] ?? false) ? 200 : 400);
     }
 
     /**

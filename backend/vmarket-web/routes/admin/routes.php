@@ -881,6 +881,7 @@ Route::group(['prefix' => 'admin', 'as' => 'admin.', 'middleware' => ['admin', '
                     Route::get('', 'index')->name('index');
                     Route::post('update', 'update')->name('update');
                     Route::post('update-sendgrid', 'updateSendGrid')->name('update-sendgrid');
+                    Route::post('update-php', 'updatePhpMail')->name('update-php');
                     Route::post('send', 'send')->name('send');
                 });
             });

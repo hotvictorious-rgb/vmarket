@@ -43,17 +43,50 @@ class MailService
         $status = 0;
         $message = 'success';
         try {
-            $emailServicesSmtp = getWebConfig(name: 'mail_config');
-            if ($emailServicesSmtp['status'] == 0) {
-                $emailServicesSmtp = getWebConfig(name: 'mail_config_sendgrid');
+            $phpMail = getWebConfig(name: 'mail_config_php');
+            $smtpMail = getWebConfig(name: 'mail_config');
+            if (is_array($smtpMail) && isset($smtpMail['status']) && $smtpMail['status'] == 0) {
+                $smtpMail = getWebConfig(name: 'mail_config_sendgrid');
             }
-            if ($emailServicesSmtp['status'] == 1) {
-                Mail::to($request->email)->send(new TestEmailSender());
+
+            $isPhpActive = is_array($phpMail) && isset($phpMail['status']) && $phpMail['status'] == 1;
+            $isSmtpActive = is_array($smtpMail) && isset($smtpMail['status']) && $smtpMail['status'] == 1;
+
+            if ($isPhpActive && $isSmtpActive) {
+                // Rule: PHP mail first, then fallback to SMTP if it fails
+                try {
+                    Mail::mailer('sendmail')->to($request->email)->send(new TestEmailSender());
+                    $status = 1;
+                    $message = 'Test mail sent successfully via PHP Mail (Sendmail).';
+                } catch (\Throwable $e) {
+                    \Illuminate\Support\Facades\Log::warning('Test mail: PHP mail failed, falling back to SMTP: ' . $e->getMessage());
+                    Mail::mailer('smtp')->to($request->email)->send(new TestEmailSender());
+                    $status = 1;
+                    $message = 'PHP Mail failed, successfully failed over to SMTP!';
+                }
+            } elseif ($isPhpActive) {
+                Mail::mailer('sendmail')->to($request->email)->send(new TestEmailSender());
                 $status = 1;
+                $message = 'Test mail sent successfully via PHP Mail (Sendmail).';
+            } elseif ($isSmtpActive) {
+                try {
+                    Mail::mailer('smtp')->to($request->email)->send(new TestEmailSender());
+                    $status = 1;
+                    $message = 'Test mail sent successfully via SMTP.';
+                } catch (\Throwable $e) {
+                    \Illuminate\Support\Facades\Log::warning('Test mail: SMTP failed, attempting PHP mail fallback: ' . $e->getMessage());
+                    Mail::mailer('sendmail')->to($request->email)->send(new TestEmailSender());
+                    $status = 1;
+                    $message = 'SMTP failed, successfully failed over to PHP Mail!';
+                }
+            } else {
+                $message = 'No mail configuration is currently active. Please activate PHP Mail or SMTP.';
+                $status = 2;
             }
-        } catch (Exception $exception) {
+        } catch (\Throwable $exception) {
             $message = $exception->getMessage();
             $status = 2;
+            \Illuminate\Support\Facades\Log::error('Test mail dispatch failed: ' . $exception->getMessage());
         }
         return [
             'status' => $status,

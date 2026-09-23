@@ -547,58 +547,43 @@ class Helpers
 
 
     /**
-     * Device wise notification send
+     * Device wise notification send via modern FCM HTTP v1
      */
     public static function send_push_notif_to_device($fcm_token, $data)
     {
-        $key = BusinessSetting::where(['type' => 'push_notification_key'])->first()->value;
-        $url = "https://fcm.googleapis.com/fcm/send";
-        $header = array("authorization: key=" . $key . "",
-            "content-type: application/json"
-        );
-
-        if (isset($data['order_id']) == false) {
-            $data['order_id'] = null;
+        if (empty($fcm_token)) {
+            return false;
         }
 
-        $postdata = '{
-            "to" : "' . $fcm_token . '",
-            "data" : {
-                "title" :"' . $data['title'] . '",
-                "body" : "' . $data['description'] . '",
-                "image" : "' . $data['image'] . '",
-                "order_id":"' . $data['order_id'] . '",
-                "type":"' . $data['type'] . '",
-                "is_read": 0
-              },
-              "notification" : {
-                "title" :"' . $data['title'] . '",
-                "body" : "' . $data['description'] . '",
-                "image" : "' . $data['image'] . '",
-                "order_id":"' . $data['order_id'] . '",
-                "title_loc_key":"' . $data['order_id'] . '",
-                "type":"' . $data['type'] . '",
-                "is_read": 0,
-                "icon" : "new",
-                "sound" : "default"
-              }
-        }';
+        try {
+            $normalizedData = [
+                'title' => (string)($data['title'] ?? ''),
+                'description' => (string)($data['description'] ?? ($data['body'] ?? '')),
+                'image' => (string)($data['image'] ?? ''),
+                'order_id' => (string)($data['order_id'] ?? ''),
+                'type' => (string)($data['type'] ?? 'general'),
+                'order_details_id' => (string)($data['order_details_id'] ?? ''),
+                'refund_id' => (string)($data['refund_id'] ?? ''),
+                'deliveryman_charge' => (string)($data['deliveryman_charge'] ?? ''),
+                'expected_delivery_date' => (string)($data['expected_delivery_date'] ?? ''),
+                'message_key' => (string)($data['message_key'] ?? ''),
+                'notification_key' => (string)($data['notification_key'] ?? ''),
+                'notification_from' => (string)($data['notification_from'] ?? ''),
+            ];
 
-        $ch = curl_init();
-        $timeout = 120;
-        curl_setopt($ch, CURLOPT_URL, $url);
-        curl_setopt($ch, CURLOPT_RETURNTRANSFER, 1);
-        curl_setopt($ch, CURLOPT_CONNECTTIMEOUT, $timeout);
-        curl_setopt($ch, CURLOPT_CUSTOMREQUEST, "POST");
-        curl_setopt($ch, CURLOPT_POSTFIELDS, $postdata);
-        curl_setopt($ch, CURLOPT_HTTPHEADER, $header);
+            $sender = new class {
+                use \App\Traits\PushNotificationTrait;
+                public function dispatch(string $token, array $payload): bool|string
+                {
+                    return $this->sendPushNotificationToDevice($token, $payload);
+                }
+            };
 
-        // Get URL content
-        $result = curl_exec($ch);
-        // close handle to release resources
-        curl_close($ch);
-
-        return $result;
+            return $sender->dispatch((string)$fcm_token, $normalizedData);
+        } catch (\Throwable $e) {
+            \Illuminate\Support\Facades\Log::error('FCM HTTP v1 dispatch failed in Helpers: ' . $e->getMessage());
+            return false;
+        }
     }
 
 

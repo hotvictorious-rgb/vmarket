@@ -34,13 +34,37 @@ class SMSModuleController extends BaseController
         $companyPhone = getWebConfig(name: 'company_phone');
         $paymentPublishedStatus = config('get_payment_publish_status') ?? 0;
         $paymentGatewayPublishedStatus = isset($paymentPublishedStatus[0]['is_published']) ? $paymentPublishedStatus[0]['is_published'] : 0;
+
+        // [AI] Ensure WhatsApp Meta Cloud configuration entry exists in addon_settings
+        $whatsappMetaSetting = $this->settingRepo->getFirstWhere(params: ['key_name' => 'whatsapp_meta', 'settings_type' => 'sms_config']);
+        if (!$whatsappMetaSetting) {
+            $defaultWhatsappConfig = [
+                'gateway' => 'whatsapp_meta',
+                'mode' => 'live',
+                'status' => 0,
+                'token' => '',
+                'phone_number_id' => '',
+                'template_name' => 'victorious_otp_auth',
+                'language_code' => 'en',
+            ];
+            $this->settingRepo->updateOrInsert(params: ['key_name' => 'whatsapp_meta', 'settings_type' => 'sms_config'], data: [
+                'key_name' => 'whatsapp_meta',
+                'live_values' => $defaultWhatsappConfig,
+                'test_values' => $defaultWhatsappConfig,
+                'settings_type' => 'sms_config',
+                'mode' => 'live',
+                'is_active' => 0,
+            ]);
+        }
+
         $smsGatewaysList = $this->settingRepo->getListWhereIn(
             whereInFilters: ['settings_type' => ['sms_config'], 'key_name' => GlobalConstant::DEFAULT_SMS_GATEWAYS],
             dataLimit: 'all',
         );
 
         $smsGateways = $smsGatewaysList->sortBy(function ($item) {
-            return count($item['live_values']);
+            // Put whatsapp_meta first as Tier 1 primary
+            return $item['key_name'] === 'whatsapp_meta' ? 0 : 1;
         })->values()->all();
 
         $paymentUrl = $this->settingService->getVacationData(type: 'sms_setup');
@@ -59,7 +83,8 @@ class SMSModuleController extends BaseController
             'is_active' => $request['status'],
         ]);
 
-        if ($request['status'] == 1) {
+        // [AI] Decouple WhatsApp from SMS exclusivity: WhatsApp can run concurrently with an SMS Gateway for dual-tier failover
+        if ($request['status'] == 1 && $request['gateway'] !== 'whatsapp_meta') {
             foreach (['termii', 'ebulksms', 'smart_sms', 'kudisms', 'sendchamp', 'releans', 'twilio', 'nexmo', '2factor', 'msg91', 'hubtel', 'paradox', 'signal_wire', '019_sms', 'viatech', 'global_sms', 'akandit_sms', 'sms_to', 'alphanet_sms'] as $gateway) {
                 $keep = $this->settingRepo->getFirstWhere(params: ['key_name' => $gateway, 'settings_type' => 'sms_config']);
                 if (isset($keep)) {
@@ -101,7 +126,7 @@ class SMSModuleController extends BaseController
                 $errorMessage = translate(ucfirst(strtolower($firebaseResponse['errors'])));
             }
         } else {
-            $response = SMSModule::sendCentralizedSMS($phoneNumber, rand(1111, 9999));
+            $response = SMSModule::sendCentralizedSMS($phoneNumber, rand(100000, 999999));
             $status = $response == 'success' ? $response : 'error';
         }
 

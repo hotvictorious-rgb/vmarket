@@ -16,51 +16,147 @@ class SMSModule
         return $paymentPublishedStatus == 1 ? SmsGateway::send($phone, $token) : SMSModule::send($phone, $token);
     }
 
-    public static function send($receiver, $otp): string
+    public static function sendCentralizedTextMessage($phone, $message)
     {
-        // 0. WhatsApp Meta Cloud API (Primary - Instant, Verified, 6-Digit OTP)
-        $config = self::get_settings('whatsapp_meta');
-        if (isset($config) && $config['status'] == 1) {
-            return self::whatsapp_meta($receiver, $otp);
-        }
+        return self::sendTextMessage($phone, $message);
+    }
 
-        // 1. Termii (Nigeria - Primary SMS Fallback)
+    public static function sendTextMessage($receiver, $message): string
+    {
+        // 1. Termii (Nigeria - Primary SMS)
         $config = self::get_settings('termii');
         if (isset($config) && $config['status'] == 1) {
-            return self::termii($receiver, $otp);
+            $res = self::sendTermiiText($receiver, $message);
+            if ($res == 'success') {
+                return $res;
+            }
         }
 
         // 2. Ebulksms (Nigeria)
         $config = self::get_settings('ebulksms');
         if (isset($config) && $config['status'] == 1) {
-            return self::ebulksms($receiver, $otp);
+            $res = self::sendEbulksmsText($receiver, $message);
+            if ($res == 'success') {
+                return $res;
+            }
         }
 
         // 3. SmartSMSSolutions (Nigeria)
         $config = self::get_settings('smart_sms');
         if (isset($config) && $config['status'] == 1) {
-            return self::smart_sms($receiver, $otp);
+            $res = self::sendSmartSmsText($receiver, $message);
+            if ($res == 'success') {
+                return $res;
+            }
         }
 
         // 4. KudiSMS (Nigeria)
         $config = self::get_settings('kudisms');
         if (isset($config) && $config['status'] == 1) {
-            return self::kudisms($receiver, $otp);
+            $res = self::sendKudismsText($receiver, $message);
+            if ($res == 'success') {
+                return $res;
+            }
         }
 
         // 5. Sendchamp (Nigeria)
         $config = self::get_settings('sendchamp');
         if (isset($config) && $config['status'] == 1) {
-            return self::sendchamp($receiver, $otp);
+            $res = self::sendSendchampText($receiver, $message);
+            if ($res == 'success') {
+                return $res;
+            }
         }
 
         // 6. Twilio (Global Fallback)
         $config = self::get_settings('twilio');
         if (isset($config) && $config['status'] == 1) {
-            return self::twilio($receiver, $otp);
+            $res = self::sendTwilioText($receiver, $message);
+            if ($res == 'success') {
+                return $res;
+            }
         }
 
         return 'not_found';
+    }
+
+    public static function send($receiver, $otp): string
+    {
+        $whatsappAttempted = false;
+        $whatsappResult = null;
+
+        // 0. WhatsApp Meta Cloud API (Tier 1 - Instant, Verified, 6-Digit OTP)
+        $config = self::get_settings('whatsapp_meta');
+        if (isset($config) && $config['status'] == 1) {
+            $whatsappAttempted = true;
+            try {
+                $whatsappResult = self::whatsapp_meta($receiver, $otp);
+                if ($whatsappResult == 'success') {
+                    return 'success';
+                }
+                Log::info("[AI SMSModule] WhatsApp OTP dispatch returned '{$whatsappResult}'. Initiating automatic failover to SMS gateway.", [
+                    'receiver' => $receiver,
+                ]);
+            } catch (Exception $e) {
+                Log::warning("[AI SMSModule] WhatsApp OTP dispatch exception: " . $e->getMessage() . ". Initiating automatic failover to SMS gateway.");
+            }
+        }
+
+        // 1. Termii (Nigeria - Primary SMS Fallback)
+        $config = self::get_settings('termii');
+        if (isset($config) && $config['status'] == 1) {
+            $res = self::termii($receiver, $otp);
+            if ($res == 'success') {
+                return $res;
+            }
+        }
+
+        // 2. Ebulksms (Nigeria)
+        $config = self::get_settings('ebulksms');
+        if (isset($config) && $config['status'] == 1) {
+            $res = self::ebulksms($receiver, $otp);
+            if ($res == 'success') {
+                return $res;
+            }
+        }
+
+        // 3. SmartSMSSolutions (Nigeria)
+        $config = self::get_settings('smart_sms');
+        if (isset($config) && $config['status'] == 1) {
+            $res = self::smart_sms($receiver, $otp);
+            if ($res == 'success') {
+                return $res;
+            }
+        }
+
+        // 4. KudiSMS (Nigeria)
+        $config = self::get_settings('kudisms');
+        if (isset($config) && $config['status'] == 1) {
+            $res = self::kudisms($receiver, $otp);
+            if ($res == 'success') {
+                return $res;
+            }
+        }
+
+        // 5. Sendchamp (Nigeria)
+        $config = self::get_settings('sendchamp');
+        if (isset($config) && $config['status'] == 1) {
+            $res = self::sendchamp($receiver, $otp);
+            if ($res == 'success') {
+                return $res;
+            }
+        }
+
+        // 6. Twilio (Global Fallback)
+        $config = self::get_settings('twilio');
+        if (isset($config) && $config['status'] == 1) {
+            $res = self::twilio($receiver, $otp);
+            if ($res == 'success') {
+                return $res;
+            }
+        }
+
+        return $whatsappAttempted && $whatsappResult ? $whatsappResult : 'not_found';
     }
 
     /**
@@ -130,6 +226,29 @@ class SMSModule
                         $response = 'success';
                     } elseif ($httpCode == 200) {
                         $response = 'success';
+                    }
+                }
+
+                // [AI] Termii WhatsApp Channel Failover: If WhatsApp delivery fails, immediately re-route to DND SMS
+                if ($response !== 'success' && $channel === 'whatsapp') {
+                    Log::info('[AI SMSModule] Termii WhatsApp channel failed. Initiating automatic failover to Termii DND SMS.', ['to' => $to]);
+                    $payload['channel'] = 'dnd';
+                    $chRetry = curl_init('https://api.ng.termii.com/api/sms/send');
+                    curl_setopt($chRetry, CURLOPT_HTTPHEADER, ['Content-Type: application/json', 'Accept: application/json']);
+                    curl_setopt($chRetry, CURLOPT_RETURNTRANSFER, true);
+                    curl_setopt($chRetry, CURLOPT_POST, true);
+                    curl_setopt($chRetry, CURLOPT_POSTFIELDS, json_encode($payload));
+                    curl_setopt($chRetry, CURLOPT_TIMEOUT, 20);
+                    $retryResult = curl_exec($chRetry);
+                    $retryErr = curl_error($chRetry);
+                    $retryHttpCode = curl_getinfo($chRetry, CURLINFO_HTTP_CODE);
+                    curl_close($chRetry);
+
+                    if (!$retryErr && ($retryHttpCode == 200 || $retryHttpCode == 201)) {
+                        $retryJson = json_decode($retryResult, true);
+                        if (isset($retryJson['code']) && $retryJson['code'] == 'ok' || isset($retryJson['message']) && stripos($retryJson['message'], 'Successfully') !== false) {
+                            $response = 'success';
+                        }
                     }
                 }
             } catch (Exception $exception) {
@@ -616,6 +735,294 @@ class SMSModule
             }
         }
 
+        return $response;
+    }
+
+    /*
+    |--------------------------------------------------------------------------
+    | Generic Transactional & Operational Text Messaging Implementations
+    |--------------------------------------------------------------------------
+    */
+
+    /**
+     * Termii Generic Text Message (Nigeria #1)
+     */
+    public static function sendTermiiText($receiver, $message): string
+    {
+        $config = self::get_settings('termii');
+        $response = 'error';
+        if (isset($config) && $config['status'] == 1) {
+            $to = self::formatNigerianPhone($receiver);
+            $apiKey = $config['api_key'] ?? '';
+            $sender = !empty($config['from']) ? $config['from'] : 'Vmarket';
+            $channel = !empty($config['channel']) ? $config['channel'] : 'dnd';
+
+            try {
+                $payload = [
+                    'to' => $to,
+                    'from' => $sender,
+                    'sms' => $message,
+                    'type' => 'plain',
+                    'channel' => $channel,
+                    'api_key' => $apiKey,
+                ];
+
+                $ch = curl_init('https://api.ng.termii.com/api/sms/send');
+                curl_setopt($ch, CURLOPT_HTTPHEADER, ['Content-Type: application/json', 'Accept: application/json']);
+                curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+                curl_setopt($ch, CURLOPT_POST, true);
+                curl_setopt($ch, CURLOPT_POSTFIELDS, json_encode($payload));
+                curl_setopt($ch, CURLOPT_TIMEOUT, 20);
+
+                $result = curl_exec($ch);
+                $err = curl_error($ch);
+                $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+                curl_close($ch);
+
+                Log::info('Termii Text SMS response', [
+                    'to' => $to,
+                    'http_code' => $httpCode,
+                    'error' => $err,
+                    'response' => $result,
+                ]);
+
+                if (!$err && ($httpCode == 200 || $httpCode == 201)) {
+                    $resJson = json_decode($result, true);
+                    if (isset($resJson['code']) && $resJson['code'] == 'ok' || isset($resJson['message']) && stripos($resJson['message'], 'Successfully') !== false) {
+                        $response = 'success';
+                    } elseif ($httpCode == 200) {
+                        $response = 'success';
+                    }
+                }
+            } catch (Exception $exception) {
+                Log::error('Termii Text SMS Exception: ' . $exception->getMessage());
+                $response = 'error';
+            }
+        }
+        return $response;
+    }
+
+    /**
+     * Ebulksms Generic Text Message (Nigeria)
+     */
+    public static function sendEbulksmsText($receiver, $message): string
+    {
+        $config = self::get_settings('ebulksms');
+        $response = 'error';
+        if (isset($config) && $config['status'] == 1) {
+            $apiKey   = $config['api_key'] ?? '';
+            $sender   = !empty($config['sender']) ? $config['sender'] : (!empty($config['from']) ? $config['from'] : 'Vmarket');
+            $username = $config['username'] ?? ($config['otp_template'] ?? '');
+            $to = self::formatNigerianPhone($receiver);
+
+            try {
+                $curl = curl_init();
+                curl_setopt_array($curl, array(
+                    CURLOPT_URL => "https://api.ebulksms.com/sendsms?username=" . urlencode($username)
+                        . "&apikey=" . urlencode($apiKey)
+                        . "&sender=" . urlencode($sender)
+                        . "&messagetext=" . urlencode($message)
+                        . "&flash=0&dndsender=1&recipients=" . $to,
+                    CURLOPT_RETURNTRANSFER => true,
+                    CURLOPT_TIMEOUT => 20,
+                    CURLOPT_CUSTOMREQUEST => "GET",
+                ));
+                $result = curl_exec($curl);
+                $err = curl_error($curl);
+                curl_close($curl);
+
+                Log::info('Ebulksms Text response', [
+                    'to' => $to,
+                    'error' => $err,
+                    'response' => $result,
+                ]);
+
+                $response = (!$err && $result && stripos($result, 'SUCCESS') !== false) ? 'success' : ((!$err) ? 'success' : 'error');
+            } catch (Exception $exception) {
+                Log::error('Ebulksms Text Exception: ' . $exception->getMessage());
+                $response = 'error';
+            }
+        }
+        return $response;
+    }
+
+    /**
+     * SmartSMSSolutions Generic Text Message (Nigeria)
+     */
+    public static function sendSmartSmsText($receiver, $message): string
+    {
+        $config = self::get_settings('smart_sms');
+        $response = 'error';
+        if (isset($config) && $config['status'] == 1) {
+            $apiKey   = $config['api_key'] ?? '';
+            $sender   = !empty($config['sender_id']) ? $config['sender_id'] : 'Vmarket';
+            $to = self::formatNigerianPhone($receiver);
+
+            try {
+                $payload = [
+                    'token' => $apiKey,
+                    'sender' => $sender,
+                    'to' => $to,
+                    'message' => $message,
+                    'type' => 0,
+                    'routing' => 3,
+                ];
+
+                $ch = curl_init('https://app.smartsmssolutions.com/io/api/client/v1/sms/send/');
+                curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+                curl_setopt($ch, CURLOPT_POST, true);
+                curl_setopt($ch, CURLOPT_POSTFIELDS, http_build_query($payload));
+                curl_setopt($ch, CURLOPT_TIMEOUT, 20);
+
+                $result = curl_exec($ch);
+                $err = curl_error($ch);
+                curl_close($ch);
+
+                Log::info('SmartSMS Text response', [
+                    'to' => $to,
+                    'error' => $err,
+                    'response' => $result,
+                ]);
+
+                if (!$err && $result) {
+                    $resJson = json_decode($result, true);
+                    if (isset($resJson['code']) && $resJson['code'] == '1000' || isset($resJson['successful'])) {
+                        $response = 'success';
+                    }
+                }
+            } catch (Exception $exception) {
+                Log::error('SmartSMS Text Exception: ' . $exception->getMessage());
+                $response = 'error';
+            }
+        }
+        return $response;
+    }
+
+    /**
+     * KudiSMS Generic Text Message (Nigeria)
+     */
+    public static function sendKudismsText($receiver, $message): string
+    {
+        $config = self::get_settings('kudisms');
+        $response = 'error';
+        if (isset($config) && $config['status'] == 1) {
+            $token    = $config['token'] ?? ($config['api_key'] ?? '');
+            $sender   = !empty($config['sender']) ? $config['sender'] : 'Vmarket';
+            $to = self::formatNigerianPhone($receiver);
+
+            try {
+                $payload = [
+                    'token' => $token,
+                    'sender' => $sender,
+                    'recipient' => $to,
+                    'message' => $message,
+                ];
+
+                $ch = curl_init('https://kudisms.net/api/sms');
+                curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+                curl_setopt($ch, CURLOPT_POST, true);
+                curl_setopt($ch, CURLOPT_POSTFIELDS, http_build_query($payload));
+                curl_setopt($ch, CURLOPT_TIMEOUT, 20);
+
+                $result = curl_exec($ch);
+                $err = curl_error($ch);
+                curl_close($ch);
+
+                Log::info('KudiSMS Text response', [
+                    'to' => $to,
+                    'error' => $err,
+                    'response' => $result,
+                ]);
+
+                if (!$err && $result) {
+                    $response = 'success';
+                }
+            } catch (Exception $exception) {
+                Log::error('KudiSMS Text Exception: ' . $exception->getMessage());
+                $response = 'error';
+            }
+        }
+        return $response;
+    }
+
+    /**
+     * Sendchamp Generic Text Message (Nigeria)
+     */
+    public static function sendSendchampText($receiver, $message): string
+    {
+        $config = self::get_settings('sendchamp');
+        $response = 'error';
+        if (isset($config) && $config['status'] == 1) {
+            $publicKey = $config['public_key'] ?? '';
+            $senderName = !empty($config['sender_name']) ? $config['sender_name'] : 'Sendchamp';
+            $to = self::formatNigerianPhone($receiver);
+
+            try {
+                $payload = [
+                    'to' => '+' . $to,
+                    'message' => $message,
+                    'sender_name' => $senderName,
+                    'route' => 'dnd',
+                ];
+
+                $ch = curl_init('https://api.sendchamp.com/api/v1/sms/send');
+                curl_setopt($ch, CURLOPT_HTTPHEADER, [
+                    'Authorization: Bearer ' . $publicKey,
+                    'Content-Type: application/json',
+                    'Accept: application/json'
+                ]);
+                curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+                curl_setopt($ch, CURLOPT_POST, true);
+                curl_setopt($ch, CURLOPT_POSTFIELDS, json_encode($payload));
+                curl_setopt($ch, CURLOPT_TIMEOUT, 20);
+
+                $result = curl_exec($ch);
+                $err = curl_error($ch);
+                $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+                curl_close($ch);
+
+                Log::info('Sendchamp Text response', [
+                    'to' => $to,
+                    'http_code' => $httpCode,
+                    'error' => $err,
+                    'response' => $result,
+                ]);
+
+                if (!$err && ($httpCode == 200 || $httpCode == 201)) {
+                    $response = 'success';
+                }
+            } catch (Exception $exception) {
+                Log::error('Sendchamp Text Exception: ' . $exception->getMessage());
+                $response = 'error';
+            }
+        }
+        return $response;
+    }
+
+    /**
+     * Twilio Generic Text Message (Global)
+     */
+    public static function sendTwilioText($receiver, $message): string
+    {
+        $config = self::get_settings('twilio');
+        $response = 'error';
+        if (isset($config) && $config['status'] == 1) {
+            $sid = $config['sid'];
+            $token = $config['token'];
+            try {
+                $twilio = new Client($sid, $token);
+                $twilio->messages
+                    ->create($receiver,
+                        array(
+                            "messagingServiceSid" => $config['messaging_service_sid'],
+                            "body" => $message
+                        )
+                    );
+                $response = 'success';
+            } catch (Exception $exception) {
+                Log::error('Twilio Text Exception: ' . $exception->getMessage());
+            }
+        }
         return $response;
     }
 

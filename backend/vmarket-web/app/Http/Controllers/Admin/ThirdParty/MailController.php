@@ -63,6 +63,33 @@ class MailController extends BaseController
         return back();
     }
 
+    public function updatePhpMail(Request $request): RedirectResponse
+    {
+        $status = $request->get('status', 0);
+        $dataArray = [
+            'status' => (int)$status,
+            'name' => $request->input('name', getWebConfig('company_name') ?? 'Victorious MARKET'),
+            'driver' => 'sendmail',
+            'email_id' => $request->input('email', 'noreply@victoriousmarket.com.ng'),
+            'path' => $request->input('path', '/usr/sbin/sendmail -bs'),
+        ];
+
+        $existing = $this->businessSettingRepo->getFirstWhere(params: ['type' => 'mail_config_php']);
+        if ($existing) {
+            $this->businessSettingRepo->updateWhere(params: ['type' => 'mail_config_php'], data: ['value' => json_encode($dataArray)]);
+        } else {
+            $this->businessSettingRepo->add([
+                'type' => 'mail_config_php',
+                'value' => json_encode($dataArray),
+                'created_at' => now(),
+                'updated_at' => now(),
+            ]);
+        }
+
+        ToastMagic::success(translate('PHP_Mail_Configuration_updated_successfully'));
+        return back();
+    }
+
     public function send(Request $request): JsonResponse
     {
         $response = $this->mailService->sendMail(request: $request);

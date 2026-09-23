@@ -37,6 +37,16 @@
             </span>
         </div>
 
+        <div class="alert alert-soft-primary d-flex align-items-center gap-3 p-3 mb-3 border-left-lg border-primary rounded" role="alert">
+            <i class="tio-chat-outlined fs-24 text-primary"></i>
+            <div>
+                <h5 class="alert-heading mb-1 text-primary fw-bold">{{ translate('Dual-Tier Intelligent OTP Failover') }}</h5>
+                <p class="mb-0 fs-12 text-dark">
+                    {{ translate('When WhatsApp Meta Cloud is enabled alongside an SMS Gateway (e.g. Termii), the system attempts delivery via WhatsApp first. If the recipient is not on WhatsApp or WhatsApp delivery encounters any network/quota issue, it will immediately and automatically failover to your active SMS gateway to ensure zero dropped OTPs.') }}
+                </p>
+            </div>
+        </div>
+
         <div class="card mb-3">
             <div class="card-body">
                 <div class="row g-3">
@@ -155,7 +165,7 @@
         <div class="row g-3">
             @foreach($smsGateways as $key => $smsConfig)
                 <div class="col-lg-6">
-                    <div class="card">
+                    <div class="card h-100 {{ $smsConfig['key_name'] === 'whatsapp_meta' ? 'border-primary' : '' }}">
                         <div class="card-body">
                             <form action="{{route('admin.third-party.addon-sms-set')}}" method="POST"
                                   id="sms-{{$smsConfig['key_name']}}-form" enctype="multipart/form-data" class="form-advance-validation form-advance-inputs-validation form-advance-file-validation non-ajax-form-validate" novalidate>
@@ -166,17 +176,27 @@
                                 <div class="view-details-container">
                                     <div class="d-flex justify-content-between align-items-center gap-3">
                                         <div>
-                                            <h3 class="mb-1 text-capitalize">
-                                                {{ str_replace('_', ' ', $smsConfig['key_name'])}}
+                                            <h3 class="mb-1 text-capitalize d-flex align-items-center gap-2">
+                                                @if($smsConfig['key_name'] === 'whatsapp_meta')
+                                                    <span>{{ translate('WhatsApp Meta Cloud API') }}</span>
+                                                    <span class="badge badge-soft-success text-success"><i class="tio-whatsapp mr-1"></i> Tier 1</span>
+                                                @else
+                                                    <span>{{ str_replace('_', ' ', $smsConfig['key_name'])}}</span>
+                                                    <span class="badge badge-soft-info text-info"><i class="tio-sms mr-1"></i> SMS Gateway</span>
+                                                @endif
                                             </h3>
                                             <p class="mb-0 fs-12 text-capitalize">
-                                                {{ translate('setup') }} {{ str_replace('_', ' ', $smsConfig['key_name'])}} {{ translate('_as_sms_gateway') }}
+                                                @if($smsConfig['key_name'] === 'whatsapp_meta')
+                                                    {{ translate('Instant, verified WhatsApp OTP delivery with automatic SMS failover') }}
+                                                @else
+                                                    {{ translate('setup') }} {{ str_replace('_', ' ', $smsConfig['key_name'])}} {{ translate('_as_sms_gateway') }}
+                                                @endif
                                             </p>
                                         </div>
                                         <div class="d-flex gap-2">
                                             <a href="javascript:"
                                                class="fs-12 fw-semibold d-flex align-items-end view-btn ">
-                                                {{ translate('View') }}
+                                               {{ translate('View') }}
                                                 <i class="fi fi-rr-arrow-small-down fs-16 trans3"></i>
                                             </a>
                                             <label class="switcher mx-auto" for="{{$smsConfig['key_name']}}">
@@ -189,10 +209,10 @@
                                                     data-modal-form="#sms-{{$smsConfig['key_name']}}-form"
                                                     data-on-image="{{ dynamicAsset(path: 'public/assets/new/back-end/img/modal/'. $imgPath) }}"
                                                     data-off-image="{{ dynamicAsset(path: 'public/assets/new/back-end/img/modal/' .$imgPath) }}"
-                                                    data-on-title="{{translate('want_to_Turn_ON_').' '.ucwords(str_replace('_',' ',$smsConfig['key_name'])).' '.translate('_as_the_SMS_Gateway').'?'}}"
-                                                    data-off-title="{{translate('want_to_Turn_OFF_').' '.ucwords(str_replace('_',' ',$smsConfig['key_name'])).' '.translate('_as_the_SMS_Gateway').'?'}}"
-                                                    data-on-message="<p>{{translate('if_enabled_system_can_use_this_SMS_Gateway')}}</p>"
-                                                    data-off-message="<p>{{translate('if_disabled_system_cannot_use_this_SMS_Gateway')}}</p>"
+                                                    data-on-title="{{translate('want_to_Turn_ON_').' '.ucwords(str_replace('_',' ',$smsConfig['key_name'])).'?'}}"
+                                                    data-off-title="{{translate('want_to_Turn_OFF_').' '.ucwords(str_replace('_',' ',$smsConfig['key_name'])).'?'}}"
+                                                    data-on-message="<p>{{translate('if_enabled_system_can_use_this_gateway')}}</p>"
+                                                    data-off-message="<p>{{translate('if_disabled_system_cannot_use_this_gateway')}}</p>"
                                                     data-on-button-text="{{ translate('turn_on') }}"
                                                     data-off-button-text="{{ translate('turn_off') }}">
                                                 <span class="switcher_control"></span>
@@ -207,14 +227,28 @@
                                             @foreach($smsConfig['live_values'] as $keyName => $value)
                                                 @if(!in_array($keyName, $skip))
                                                     <div class="form-group">
-                                                        <label for=""
-                                                               class="form-label">{{ucwords(str_replace('_',' ',$keyName))}}
-                                                            <span class="text-danger">*</span>
+                                                        <label for="" class="form-label">
+                                                            @if($smsConfig['key_name'] === 'whatsapp_meta' && $keyName === 'token')
+                                                                {{ translate('Meta_Access_Token_(System_User_Permanent_Token)') }}
+                                                            @elseif($smsConfig['key_name'] === 'whatsapp_meta' && $keyName === 'phone_number_id')
+                                                                {{ translate('WhatsApp_Phone_Number_ID') }}
+                                                            @elseif($smsConfig['key_name'] === 'whatsapp_meta' && $keyName === 'template_name')
+                                                                {{ translate('WhatsApp_Authentication_Template_Name_(e.g._victorious_otp_auth)') }}
+                                                            @elseif($smsConfig['key_name'] === 'whatsapp_meta' && $keyName === 'language_code')
+                                                                {{ translate('Template_Language_Code_(default:_en)') }}
+                                                            @else
+                                                                {{ ucwords(str_replace('_',' ',$keyName)) }}
+                                                            @endif
+                                                            @if(!in_array($keyName, ['language_code', 'channel', 'otp_template']))
+                                                                <span class="text-danger">*</span>
+                                                            @endif
                                                         </label>
                                                         <input type="text" class="form-control"
                                                                name="{{$keyName}}"
                                                                placeholder="{{ucwords(str_replace('_',' ',$keyName))}}"
-                                                               value="{{ showDemoModeInputValue(value: $value) }}"  data-required-msg="{{ translate($keyName).translate('_field_is_required')}}" required>
+                                                               value="{{ showDemoModeInputValue(value: $value) }}"
+                                                               data-required-msg="{{ translate($keyName).translate('_field_is_required')}}"
+                                                               {{ !in_array($keyName, ['language_code', 'channel', 'otp_template']) ? 'required' : '' }}>
                                                     </div>
                                                 @endif
                                             @endforeach
