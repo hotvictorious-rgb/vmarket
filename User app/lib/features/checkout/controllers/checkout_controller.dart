@@ -2,7 +2,7 @@ import 'package:flutter_sixvalley_ecommerce/data/model/api_response.dart';
 import 'package:flutter_sixvalley_ecommerce/features/auth/controllers/auth_controller.dart';
 import 'package:flutter_sixvalley_ecommerce/features/cart/domain/models/cart_model.dart';
 import 'package:flutter_sixvalley_ecommerce/features/checkout/domain/models/pickup_reservation_model.dart';
-import 'package:flutter_sixvalley_ecommerce/features/checkout/domain/models/fulfillment_availability_model.dart';
+import 'package:flutter_sixvalley_ecommerce/features/fulfillment/domain/models/fulfillment_availability_model.dart';
 import 'package:flutter_sixvalley_ecommerce/features/checkout/domain/services/checkout_service_interface.dart';
 import 'package:flutter_sixvalley_ecommerce/features/splash/controllers/splash_controller.dart';
 import 'package:flutter_sixvalley_ecommerce/helper/api_checker.dart';

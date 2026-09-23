@@ -67,7 +67,7 @@ class _PaymentStatusScreenState extends State<PaymentStatusScreen> {
   Future<void> _checkPaymentStatus() async {
     try {
       final prefs = await SharedPreferences.getInstance();
-      final token = prefs.getString(AppConstants.token);
+      final token = prefs.getString(AppConstants.userLoginToken);
 
       if (token == null || token.isEmpty) {
         _pollTimer?.cancel();
@@ -336,7 +336,7 @@ class _PaymentStatusScreenState extends State<PaymentStatusScreen> {
           return ElevatedButton(
             onPressed: () {
               Navigator.of(context).pushAndRemoveUntil(
-                MaterialPageRoute(builder: (_) => const DashBoardScreen()),
+                MaterialPageRoute(builder: (_) => const DashBoardScreen(pageIndex: 0)),
                 (route) => false,
               );
             },
@@ -382,7 +382,7 @@ class _PaymentStatusScreenState extends State<PaymentStatusScreen> {
             TextButton(
               onPressed: () {
                 Navigator.of(context).pushAndRemoveUntil(
-                  MaterialPageRoute(builder: (_) => const DashBoardScreen()),
+                  MaterialPageRoute(builder: (_) => const DashBoardScreen(pageIndex: 0)),
                   (route) => false,
                 );
               },

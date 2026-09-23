@@ -437,7 +437,7 @@ class AuthRepository implements AuthRepoInterface{
   @override
   Future<void> setAppleLoginEmail(String email) async {
     try {
-      await sharedPreferences!.setString(AppConstants.appleLoginEmail, email);
+      await storageService.setString(AppConstants.appleLoginEmail, email);
     } catch (e) {
       rethrow;
     }
@@ -445,13 +445,13 @@ class AuthRepository implements AuthRepoInterface{
 
   @override
   String getAppleLoginEmail() {
-    return sharedPreferences!.getString(AppConstants.appleLoginEmail) ?? "";
+    return storageService.getString(AppConstants.appleLoginEmail) ?? "";
   }
 
   @override
   Future<void> saveGuestCartId(String guestId) async {
     try {
-      await sharedPreferences!.setString(AppConstants.guestCartId, guestId);
+      await storageService.setString(AppConstants.guestCartId, guestId);
     } catch (e) {
       rethrow;
     }
@@ -460,7 +460,7 @@ class AuthRepository implements AuthRepoInterface{
 
   @override
   String? getGuestCartId() {
-    return sharedPreferences!.getString(AppConstants.guestCartId) ?? "-1";
+    return storageService.getString(AppConstants.guestCartId) ?? "-1";
   }
 
 

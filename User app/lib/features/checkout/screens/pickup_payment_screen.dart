@@ -532,7 +532,7 @@ class _PickupPaymentScreenState extends State<PickupPaymentScreen> {
                 child: CustomButton(
                   buttonText: checkoutController.isLoading
                       ? '${getTranslated('processing', context) ?? 'Processing'}...'
-                      : '${getTranslated('pay_now', context) ?? 'Pay Now'} ${PriceConverter.convertPrice(context, _displayFinalAmount, isShowLongPrice: false)}',
+                      : '${getTranslated('pay_now', context) ?? 'Pay Now'} ${PriceConverter.convertPrice(context, _displayFinalAmount)}',
                   onTap: checkoutController.isLoading ? null : () => _initiatePayment(checkoutController),
                 ),
               ),

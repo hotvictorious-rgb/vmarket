@@ -344,7 +344,7 @@ class ReservationDetailScreen extends StatelessWidget {
               ),
               child: CustomButton(
                 buttonText: '${getTranslated('pay_at_store_cta', context) ?? 'Pay ₦{amount} at Store'}'
-                    .replaceAll('{amount}', PriceConverter.convertPrice(context, amount, isShowLongPrice: false)),
+                    .replaceAll('{amount}', PriceConverter.convertPrice(context, amount)),
                 onTap: () {
                   Navigator.push(
                     context,

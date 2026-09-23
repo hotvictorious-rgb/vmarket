@@ -24,7 +24,7 @@ class PickupReservationSuccessScreen extends StatelessWidget {
       onPopInvokedWithResult: (didPop, result) {
         if (!didPop) {
           Navigator.of(context).pushAndRemoveUntil(
-            MaterialPageRoute(builder: (_) => const DashBoardScreen()),
+            MaterialPageRoute(builder: (_) => const DashBoardScreen(pageIndex: 0)),
             (route) => false,
           );
         }
@@ -35,7 +35,7 @@ class PickupReservationSuccessScreen extends StatelessWidget {
           isBackButtonExist: true,
           onBackPressed: () {
             Navigator.of(context).pushAndRemoveUntil(
-              MaterialPageRoute(builder: (_) => const DashBoardScreen()),
+              MaterialPageRoute(builder: (_) => const DashBoardScreen(pageIndex: 0)),
               (route) => false,
             );
           },
@@ -438,7 +438,7 @@ class PickupReservationSuccessScreen extends StatelessWidget {
               buttonText: getTranslated('continue_shopping', context) ?? 'Continue Shopping',
               onTap: () {
                 Navigator.of(context).pushAndRemoveUntil(
-                  MaterialPageRoute(builder: (_) => const DashBoardScreen()),
+                  MaterialPageRoute(builder: (_) => const DashBoardScreen(pageIndex: 0)),
                   (route) => false,
                 );
               },

@@ -34,7 +34,7 @@ class PickupOrderSuccessScreen extends StatelessWidget {
       onPopInvokedWithResult: (didPop, result) {
         if (!didPop) {
           Navigator.of(context).pushAndRemoveUntil(
-            MaterialPageRoute(builder: (_) => const DashBoardScreen()),
+            MaterialPageRoute(builder: (_) => const DashBoardScreen(pageIndex: 0)),
             (route) => false,
           );
         }
@@ -45,7 +45,7 @@ class PickupOrderSuccessScreen extends StatelessWidget {
           isBackButtonExist: true,
           onBackPressed: () {
             Navigator.of(context).pushAndRemoveUntil(
-              MaterialPageRoute(builder: (_) => const DashBoardScreen()),
+              MaterialPageRoute(builder: (_) => const DashBoardScreen(pageIndex: 0)),
               (route) => false,
             );
           },
@@ -226,7 +226,7 @@ class PickupOrderSuccessScreen extends StatelessWidget {
                         children: [
                           Text(
                             '${getTranslated('cashback_earned_badge', context) ?? '🎉 You earned ₦{amount} Victorious Cashback'}'
-                                .replaceAll('{amount}', PriceConverter.convertPrice(context, cashbackEarned!, isShowLongPrice: false)),
+                                .replaceAll('{amount}', PriceConverter.convertPrice(context, cashbackEarned!)),
                             style: titilliumBold.copyWith(
                               fontSize: Dimensions.fontSizeDefault,
                               color: const Color(0xFF059669),
@@ -334,7 +334,7 @@ class PickupOrderSuccessScreen extends StatelessWidget {
               child: TextButton(
                 onPressed: () {
                   Navigator.of(context).pushAndRemoveUntil(
-                    MaterialPageRoute(builder: (_) => const DashBoardScreen()),
+                    MaterialPageRoute(builder: (_) => const DashBoardScreen(pageIndex: 0)),
                     (route) => false,
                   );
                 },

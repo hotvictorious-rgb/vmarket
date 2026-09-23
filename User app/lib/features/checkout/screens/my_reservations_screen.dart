@@ -46,7 +46,7 @@ class _MyReservationsScreenState extends State<MyReservationsScreen> with Single
 
     try {
       final prefs = await SharedPreferences.getInstance();
-      final token = prefs.getString(AppConstants.token);
+      final token = prefs.getString(AppConstants.userLoginToken);
 
       if (token == null || token.isEmpty) {
         setState(() {
