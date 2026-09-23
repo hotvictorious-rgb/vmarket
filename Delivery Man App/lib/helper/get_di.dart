@@ -56,7 +56,6 @@ import 'package:sixvalley_delivery_boy/features/withdraw/domain/services/withdra
 import 'package:sixvalley_delivery_boy/theme/controllers/theme_controller.dart';
 import 'package:sixvalley_delivery_boy/features/wallet/controllers/wallet_controller.dart';
 import 'package:sixvalley_delivery_boy/data/api/api_client.dart';
-import 'package:sixvalley_delivery_boy/features/language/domain/models/language_model.dart';
 import 'package:sixvalley_delivery_boy/data/repository/rider_repository.dart';
 import 'package:sixvalley_delivery_boy/features/auth/domain/repositories/auth_repository.dart';
 import 'package:sixvalley_delivery_boy/features/notification/domain/repositories/notification_repository.dart';

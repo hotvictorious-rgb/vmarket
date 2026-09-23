@@ -1,3 +1,27 @@
+### [2026-09-23] Delivery Man App Alignment to VMARKET_DELIVERY_APP_SPEC (Rider Cancel Removal, OTP Invariants, Canonical Reason Codes) [delivery-man] [AI]
+* **Components:** Delivery Man App (`Delivery Man App/`), Backend (`backend/vmarket-web/app/Http/Controllers/RestAPI/v2/delivery_man/DeliveryManController.php`)
+* **Scope:** Verified 31-section delivery spec and removed all rider-initiated order cancellation per §14/§23 (authority belongs to backend/dispatch workflows only), enforced server-side OTP mandate per §19, aligned failed-delivery reason codes to canonical server-controlled set per §21, and completed the dangling-reference purge so the app compiles cleanly.
+* **App — Rider Cancel Removed:** Deleted `cancelOrderStatus` across controller, service, service interface, repository, repository interface, and removed the Cancel action UI block from `order_info_with_customer_widget.dart`; removed orphaned `Images.cancelIcon`. Verified 0 remaining references (`cancelOrderStatus`, `why_you_want_to_cancel_this_delivery`, `Images.cancelIcon`).
+* **App — OTP Mandatory (§19):** Purged `orderVerification == 0` bypass in `order_details_screen.dart` (removed `hasNoVerificationAndNoUpload`) and removed `orderVerification` from `config_model.dart`; added `[AI] V1 Invariant` comments. Marketplace delivery verification is ALWAYS mandatory.
+* **App — Canonical Reason Codes (§21):** `reasonList` in `order_details_controller.dart` now `[customer_unavailable, incorrect_address, customer_refused, phone_unreachable, access_issue, shop_closed, other]`. Updated `assets/language/en.json` with the 7 canonical keys and removed all dead stock reason keys and duplicated `other`.
+* **App — Dead Endpoints:** Removed 9 unused constants from `app_constants.dart` (`searchConversationListUri`, `chatListUri`, `chatSearch`, `messageListUri`, `sendMessageUri`, `walletInfoUri`, `orderCountUri`, `orderListFilterByDate`, `orderSearchUri`); removed stale `[AI]` searchConversationListUri correction; kept used endpoints (`singleOrderHistoryUri`, `withdrawListUri`, `addToSavedReviewList`, `deliveryVerificationImage`, `distanceApi`, `reviewListUri`, `updateBankInfo`, `emergencyContactList`).
+* **App — Purge Completion:** Restored compile: removed dangling imports/usages to deleted `features/language/` (LanguageModel, LanguageController, LanguageRepository, ChooseLanguageScreen) and `features/earning_statement/` (EarningStatementScreen) after commit `3ea9a587` left 5 callers; localization now English-only (`AppConstants.defaultLanguageCode`/`defaultCountryCode`) loading only `assets/language/en.json`.
+* **Backend — §14/§23 Hardening:** `update_order_status` status validation narrowed to `in:out_for_delivery,delivered`; explicit 403 guard rejecting `canceled`/`returned` from riders; removed rider `cause` handling and `canceled` OrderStatusEvent. `php -l` passes.
+* **Verification:** `dart analyze lib` → 0 errors (8 pre-existing warnings/infos); `php -l` on modified controller passes.
+
+### [2026-09-23 05:20 UTC] Master End-to-End Buying Scenarios Verification & Zero-Drift Certification [e2e-buying-proof] [AI]
+* **Components:** Backend Laravel (`backend/vmarket-web/scratch/verify_all_buying_scenarios_e2e.php`), All Platform Apps
+* **Scope:** Created and executed master end-to-end buying scenarios verification suite testing 8 complete buying, fulfillment, settlement, cashback, and refund lifecycles with 100% PASS rate and zero drift ($\Delta = ₦0.00$).
+* **Scenarios Certified:**
+  1. **Intra-LGA Delivery (Single Vendor):** Uyo→Uyo (₦500 fee, 2-6h ETA), frozen checkout intent, Paystack settlement, 6-digit delivery OTP handover.
+  2. **Inter-LGA Cross-City Delivery:** Uyo→Eket (₦1,500 fee, 24-48h ETA route enforcement).
+  3. **Multi-Vendor Split Fulfillment:** 2 Vendors (Uyo + Eket), split shipping costs (₦500 + ₦1,500 = ₦2,000), 1 order group ID, 2 sub-orders ($\Delta = ₦0.00$).
+  4. **In-Shop Pickup with 5% Cashback:** ₦0 delivery fee, slot reservation, shop counter OTP verification, 5% customer cashback award (₦2,500.00 credited).
+  5. **Split-Tender Payment (Wallet Cashback + Paystack):** ₦2,500.00 wallet cashback deduction with pessimistic locking + ₦8,000.00 Paystack settlement ($\Delta = ₦0.00$).
+  6. **Out-of-Stock Concurrent Settlement:** Race condition between shoppers for last stock (stock=1); Customer A gets order (`CLAIMED`), Customer B triggers `reconciliation_required` without negative stock.
+  7. **Paystack Webhook Replay Protection:** Duplicate `charge.success` IPN payload caught by `where('is_paid', 0)` row-level lock -> returns `ALREADY_PAID` with 0 duplicate orders.
+  8. **Full Refund Lifecycle & Payout Guard:** HMAC-SHA512 Paystack refund processing executed; vendor payout strictly blocked for refunded orders ($\Delta = ₦0.00$).
+
 ### [2026-09-23 04:55 UTC] System-Wide Production Alignment Across All 5 Ecosystem Layers [system-alignment] [AI]
 * **Components:** Backend Laravel (`backend/vmarket-web`), Customer App (`User app`), Vendor App (`Vendor app`), Delivery Man App (`Delivery Man App`), Public Storefront (`Storefront`), Governance (`.agents/rules/`)
 * **Scope:** Completed full system-wide production alignment across all 5 layers of the Victorious MARKET ecosystem based on the System Deep Scan Report and approved Implementation Plan. All verification suites (Phase 1 & Phase 2) pass 100% with zero drift ($\Delta = 0.00$).

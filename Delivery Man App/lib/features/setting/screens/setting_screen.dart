@@ -51,7 +51,7 @@ class _SettingScreenState extends State<SettingScreen> {
                   ],
                 ),
               ]),
-            ))),
+        )),
 
         Padding(
           padding: EdgeInsets.symmetric(horizontal: Dimensions.paddingSizeDefault),
