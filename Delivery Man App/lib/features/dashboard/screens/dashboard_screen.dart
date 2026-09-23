@@ -12,8 +12,7 @@ import 'package:sixvalley_delivery_boy/common/basewidgets/custom_botom_navy_bar_
 
 class DashboardScreen extends StatefulWidget {
   final int pageIndex;
-  final int? chatIndex;
-  const DashboardScreen({Key? key, required this.pageIndex, this.chatIndex}) : super(key: key);
+  const DashboardScreen({Key? key, required this.pageIndex}) : super(key: key);
   @override
   _DashboardScreenState createState() => _DashboardScreenState();
 }

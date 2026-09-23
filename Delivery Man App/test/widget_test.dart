@@ -1,30 +1,47 @@
-// This is a basic Flutter widget test.
-//
-// To perform an interaction with a widget in your test, use the WidgetTester
-// utility that Flutter provides. For example, you can send tap and scroll
-// gestures. You can also use WidgetTester to find child widgets in the widget
-// tree, read text, and verify that the values of widget properties are correct.
-
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 
-import 'package:sixvalley_delivery_boy/main.dart';
+import 'package:sixvalley_delivery_boy/common/basewidgets/custom_divider_widget.dart';
+import 'package:sixvalley_delivery_boy/features/notification/domain/models/notification_body.dart';
 
 void main() {
-  testWidgets('Counter increments smoke test', (WidgetTester tester) async {
-    // Build our app and trigger a frame.
-    await tester.pumpWidget(const MyApp(languages: {},));
+  group('NotificationBody', () {
+    test('parses order notification payload', () {
+      final body = NotificationBody.fromJson({
+        'order_id': '42',
+        'type': 'order',
+        'message_key': 'order_status',
+      });
+      expect(body.orderId, 42);
+      expect(body.type, 'order');
+      expect(body.messageKey, 'order_status');
+    });
 
-    // Verify that our counter starts at 0.
-    expect(find.text('0'), findsOneWidget);
-    expect(find.text('1'), findsNothing);
+    test('serializes to json without legacy chat fields', () {
+      final body = NotificationBody(orderId: 7, type: 'wallet', messageKey: 'withdraw_request_status_message');
+      final json = body.toJson();
+      expect(json['order_id'], 7);
+      expect(json['type'], 'wallet');
+      expect(json['message_key'], 'withdraw_request_status_message');
+      expect(json.containsKey('conversation_id'), isFalse);
+      expect(json.containsKey('customer_id'), isFalse);
+      expect(json.containsKey('vendor_id'), isFalse);
+    });
 
-    // Tap the '+' icon and trigger a frame.
-    await tester.tap(find.byIcon(Icons.add));
-    await tester.pump();
+    test('handles missing order id', () {
+      final body = NotificationBody.fromJson({'type': 'general'});
+      expect(body.orderId, isNull);
+      expect(body.type, 'general');
+    });
+  });
 
-    // Verify that our counter has incremented.
-    expect(find.text('0'), findsNothing);
-    expect(find.text('1'), findsOneWidget);
+  group('CustomDividerWidget', () {
+    testWidgets('renders without exception', (WidgetTester tester) async {
+      await tester.pumpWidget(const MaterialApp(
+        home: Scaffold(body: CustomDividerWidget()),
+      ));
+      await tester.pump();
+      expect(find.byType(CustomDividerWidget), findsOneWidget);
+    });
   });
 }

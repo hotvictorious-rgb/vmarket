@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:sixvalley_delivery_boy/features/home/screens/home_screen.dart';
-import 'package:sixvalley_delivery_boy/features/notification/screens/notification_screen.dart';
 import 'package:sixvalley_delivery_boy/features/order/screens/order_history_screen.dart';
 import 'package:sixvalley_delivery_boy/features/profile/screens/profile_screen.dart';
 import 'package:sixvalley_delivery_boy/features/wallet/screens/wallet_screen.dart';
@@ -51,11 +50,6 @@ class DashboardController extends GetxController implements GetxService{
     _currentScreen = const WalletScreen(fromNotification: false, fromMenu: true);
     _currentTab = 2;
     update();
-  }
-
-
-  void selectNotificationScreen({bool isUpdate = true}) {
-    Get.to(() => const NotificationScreen(fromNotification: true));
   }
 
 

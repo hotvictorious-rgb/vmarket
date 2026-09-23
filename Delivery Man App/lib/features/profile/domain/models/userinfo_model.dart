@@ -17,7 +17,6 @@ class UserInfoModel {
   String? updatedAt;
   double? withdrawableBalance;
   double? currentBalance;
-  double? cashInHand;
   double? pendingWithdraw;
   double? totalWithdraw;
   double? totalEarn;
@@ -49,7 +48,6 @@ class UserInfoModel {
         this.updatedAt,
         this.withdrawableBalance,
         this.currentBalance,
-        this.cashInHand,
         this.pendingWithdraw,
         this.totalWithdraw,
         this.totalEarn,
@@ -91,7 +89,6 @@ class UserInfoModel {
     updatedAt = json['updated_at'];
     withdrawableBalance = json['withdrawable_balance'] != null ? double.tryParse(json['withdrawable_balance'].toString()) ?? 0.0 : 0.0;
     currentBalance = json['current_balance'] != null ? double.tryParse(json['current_balance'].toString()) ?? 0.0 : 0.0;
-    cashInHand = json['cash_in_hand'] != null ? double.tryParse(json['cash_in_hand'].toString()) ?? 0.0 : 0.0;
     pendingWithdraw = json['pending_withdraw'] != null ? double.tryParse(json['pending_withdraw'].toString()) ?? 0.0 : 0.0;
     totalWithdraw = json['total_withdraw'] != null ? double.tryParse(json['total_withdraw'].toString()) ?? 0.0 : 0.0;
     totalEarn = json['total_earn'] != null ? double.tryParse(json['total_earn'].toString()) ?? 0.0 : 0.0;

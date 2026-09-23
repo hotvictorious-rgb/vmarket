@@ -34,9 +34,7 @@ class NotificationHelper {
         NotificationBody payload;
         if(data.payload != null && data.payload!.isNotEmpty) {
           payload = NotificationBody.fromJson(jsonDecode(data.payload!));
-          if(payload.type == 'chatting') {
-            Navigator.of(Get.context!).pushReplacement(MaterialPageRoute(builder: (_) => const NotificationScreen(fromNotification: true)));
-          } else if(payload.type == 'Theme') {
+          if(payload.type == 'Theme') {
             Navigator.of(Get.context!).pushReplacement(MaterialPageRoute(builder: (_) => const NotificationScreen(fromNotification: true)));
           } else if(payload.type == 'order') {
             Navigator.of(Get.context!).pushReplacement(MaterialPageRoute(builder: (_) => OrderDetailsScreen(orderModel: OrderModel(id: payload.orderId), fromNotification: true)));
@@ -125,9 +123,7 @@ class NotificationHelper {
         payload = NotificationBody.fromJson(message.data);
       }
 
-      if(payload?.type == 'chatting') {
-        Navigator.of(Get.context!).pushReplacement(MaterialPageRoute(builder: (_) => const NotificationScreen(fromNotification: true)));
-      } else if(payload?.type == 'Theme') {
+      if(payload?.type == 'Theme') {
         Navigator.of(Get.context!).pushReplacement(MaterialPageRoute(builder: (_) => const NotificationScreen(fromNotification: true)));
       } else if(payload?.type == 'order'){
         Navigator.of(Get.context!).pushReplacement(MaterialPageRoute(builder: (_) => OrderDetailsScreen(orderModel: OrderModel(id: payload?.orderId), fromNotification: true)));
@@ -191,7 +187,7 @@ class NotificationHelper {
 
   static Future<void> showTextNotification(String title, String body, String orderID, FlutterLocalNotificationsPlugin fln, {bool playSound = true}) async {
     const AndroidNotificationDetails androidPlatformChannelSpecifics = AndroidNotificationDetails(
-      '6valley_delivery', '6valley_delivery name', playSound:  true,
+      'vmarket_delivery', 'Victorious Delivery', playSound:  true,
       importance: Importance.max, priority: Priority.max, sound: RawResourceAndroidNotificationSound('notification'),
     );
     const NotificationDetails platformChannelSpecifics = NotificationDetails(android: androidPlatformChannelSpecifics);
@@ -204,7 +200,7 @@ class NotificationHelper {
       contentTitle: title, htmlFormatContentTitle: true,
     );
     AndroidNotificationDetails androidPlatformChannelSpecifics = AndroidNotificationDetails(
-      '6valley_delivery channel id', '6valley_delivery name', importance: Importance.max,
+      'vmarket_delivery', 'Victorious Delivery', importance: Importance.max,
       styleInformation: bigTextStyleInformation, priority: Priority.max, playSound: true,
       sound: const RawResourceAndroidNotificationSound('notification'),
     );
@@ -221,7 +217,7 @@ class NotificationHelper {
       summaryText: body, htmlFormatSummaryText: true,
     );
     final AndroidNotificationDetails androidPlatformChannelSpecifics = AndroidNotificationDetails(
-      '6valley_delivery', '6valley_delivery name',
+      'vmarket_delivery', 'Victorious Delivery',
       largeIcon: FilePathAndroidBitmap(largeIconPath), priority: Priority.max, playSound: playSound? true: false,
       styleInformation: bigPictureStyleInformation, importance: Importance.max,
       sound: const RawResourceAndroidNotificationSound('notification'),

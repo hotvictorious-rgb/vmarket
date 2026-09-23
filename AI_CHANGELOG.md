@@ -1,3 +1,22 @@
+### [2026-09-23 UTC] Delivery Man App Dead Code & Legacy 6valley Purge [delivery-man] [AI]
+* **Component:** Delivery Man App (`Delivery Man App/lib/`)
+* **Scope:** App-only cleanup. Removed dead code and legacy 6valley remnants that do not align with `.agents/rules/VMARKET_DELIVERY_APP_SPEC.md`. Absolutely ZERO backend code modified; app remains a pure consumer of backend decisions (spec §1/§30). `dart analyze lib` and `dart analyze test`: **No issues found**; `flutter test`: **All tests passed**.
+* **Dead Image Constants Removed (`utill/images.dart`):** 41 unused constants purged: `search`, `doneWithFullBackground`, `location`, `chatIcon`, `notificationMenuIcon`, `cancelFromDeliveryMan`, `arabic`, `unitedKindom`, `done`, `moneyCollect`, `guestLogin`, `login`, `notificationIcon`, `moneyWithdrawal`, `from`, `to`, `commission`, `filter`, `paymentInfo`, `send`, `cash`, `image`, `pause`, `cancel`, `bd`, `hindi`, `spanish`, `attachment`, `emoji`, `fileIcon`, `file`, `imageCancel`, `noMessageFound`, `downloadIcon`, `noTransactionAvailableIcon`, `smsIcon`, `digital`, `earnStatement`, `card`, `fromGallery`, `openCamera`, plus `getImageUrl` helper. Each verified unreferenced repo-wide before removal.
+* **Dead AppConstants Removed (`utill/app_constants.dart`):** `appBadge`, `slogan`, `appVersion`, `recordLocationUri`, `cartList`, `limitOfPickedIdentityImageNumber`, `limitOfPickedImageSizeInMB`, `balanceInputLength`, `maxLimitOfFileSentINConversation`, `maxLimitOfTotalFileSent`, `maxSizeOfASingleFile`, `videoExtensions`, `imageExtensions`, `documentExtensions` (chat/ecommerce/legacy remnants). Verified 0 external references.
+* **Dead Files Deleted:**
+  - `lib/helper/image_size_checker.dart`: never imported.
+  - `lib/features/notification/widgets/notification_dialog_widget.dart`: defined but never used.
+* **Dead Methods/Fields Removed:**
+  - `DashboardScreen.chatIndex` dangling param/field.
+  - `DashboardController.selectNotificationScreen()` dead method + `NotificationScreen` import.
+  - `NotificationBody.conversationId`, `customerId`, `vendorId`, `notificationType` enum (legacy chat/ecommerce) — model reduced to `orderId`, `type`, `messageKey`.
+  - `UserInfoModel.cashInHand` (legacy COD; spec §24 forbids rider cash collection).
+* **Legacy Chat Notification Routing Purged:** Removed `type == 'chatting'` branches in `notification_helper.dart` (2 sites) and `splash_screen.dart` (1 site). Notification routing now handles only `theme`, `order`, `wallet`, `wallet_withdraw`, and default.
+* **6valley Branding Removed:** Android notification channels renamed from `6valley_delivery`/`6valley_delivery name` to `vmarket_delivery`/`Victorious Delivery` (`notification_helper.dart`). FCM topic and storage-key values untouched (backend-coupled).
+* **Dead Pub Dependencies Purged (`pubspec.yaml`):** Removed `dio`, `get_it`, `emoji_picker_flutter`, `flutter_html`, `qr_flutter`, `carousel_slider`, `open_file`, `video_player`, `chewie`, `get_thumbnail_video`, `audioplayers`, `record`, `permission_handler`, `geocoding`, `image`. Kept `file_picker` + `dotted_line` (both referenced). Verified 0 dart imports for each removed package.
+* **Tests:** Replaced broken template `test/widget_test.dart` (referenced non-existent `MyApp(languages:)`) with real tests: `NotificationBody` JSON parse/serialize (regression guard for legacy-field removal) + `CustomDividerWidget` render smoke test. `flutter test`: 4/4 passed.
+* **Verification:** `dart analyze lib` = 0 issues; `dart analyze test` = 0 issues; `flutter test` all passed; `dart pub get` clean.
+
 ### [2026-09-23 07:05 UTC] Backend Legacy and Dead Code Removal [backend] [AI]
 * **Components:** Laravel Backend (`backend/vmarket-web/`)
 * **Scope:** Backend-only cleanup removing all unmapped, duplicate, and dead code while strictly adhering to `.agents/AGENTS.md` (Prime Directives, 10-step Capability Migration & Cleanup Protocol, zero client breakage, and zero-drift verification $\Delta = ₦0.00$). Absolutely ZERO frontend code modified.

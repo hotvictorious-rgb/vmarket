@@ -80,11 +80,6 @@ class _SplashScreenState extends State<SplashScreen> {
             if(widget.body != null) {
               String notificationType = widget.body?.type??"";
               switch(notificationType.toLowerCase()) {
-                case 'chatting' : {
-                  Get.offAll(const NotificationScreen(fromNotification: true));
-                }
-                break;
-
                 case 'theme' : {
                   Get.offAll(const NotificationScreen(fromNotification: true));
                 }

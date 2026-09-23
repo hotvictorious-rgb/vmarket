@@ -1,9 +1,6 @@
 class AppConstants {
   static const String companyName = 'Victorious MARKET';
   static const String appName = 'Victorious Delivery';
-  static const String appBadge = 'DISPATCH & COURIER PARTNER';
-  static const String slogan = 'Your Trusted Online Market For Quality Products';
-  static const String appVersion = '4.2'; ///flutter SDK : 3.29.3
   static const String polylineMapKey = 'YOUR_MAP_KEY_HERE';
 
   static const String baseUri = 'https://shop.victoriousmarket.com.ng';
@@ -15,7 +12,6 @@ class AppConstants {
   static const String currentOrderUri = '/api/v2/delivery-man/current-orders';
   static const String orderDetailsUri = '/api/v2/delivery-man/order-details?order_id=';
   static const String allOrderHistoryUri = '/api/v2/delivery-man/all-orders';
-  static const String recordLocationUri = '/api/v2/delivery-man/record-location-data';
   static const String updateOrderStatusUri = '/api/v2/delivery-man/update-order-status';
   static const String rescheduleOrderStatusUri = '/api/v2/delivery-man/update-expected-delivery';
   static const String pauseAndResumeOrderStatusUri = '/api/v2/delivery-man/order-update-is-pause';
@@ -46,7 +42,6 @@ class AppConstants {
   static const String token = 'token';
   static const String countryCode = 'country_code';
   static const String languageCode = 'language_code';
-  static const String cartList = 'cart_list';
   static const String userPassword = 'user_password';
   static const String userEmail = 'user_email';
   static const String currency = 'currency';
@@ -61,27 +56,4 @@ class AppConstants {
   // [AI] Only English localization ships with the Delivery Man App.
   static const String defaultLanguageCode = 'en';
   static const String defaultCountryCode = 'US';
-
-  static const int limitOfPickedIdentityImageNumber = 2;
-  static const double limitOfPickedImageSizeInMB = 2;
-  static const double balanceInputLength = 10;
-
-  static const double maxLimitOfFileSentINConversation = 25;
-  static const double maxLimitOfTotalFileSent = 5;
-  static const double maxSizeOfASingleFile = 10;
-
-
-
-  static const List<String> videoExtensions = [
-    'mp4', 'mkv', 'avi', 'mov', 'wmv', 'flv', 'webm', 'mpeg', 'mpg', 'm4v', '3gp', 'ogv'
-  ];
-
-  static const List<String> imageExtensions = [
-    'jpg', 'jpeg', 'jpe', 'jif', 'jfif', 'jfi', 'png', 'gif', 'webp', 'tiff', 'tif', 'bmp', 'svg',
-  ];
-
-  static const List<String> documentExtensions = [
-    'doc', 'docx', 'txt', 'csv', 'xls', 'xlsx', 'rar', 'tar', 'targz', 'zip', 'pdf',
-
-  ];
 }
