@@ -15,6 +15,11 @@ import 'package:sixvalley_vendor_app/features/bank_info/domain/repositories/bank
 import 'package:sixvalley_vendor_app/features/bank_info/domain/services/bank_info_service.dart';
 import 'package:sixvalley_vendor_app/features/bank_info/domain/services/bank_info_service_interface.dart';
 
+import 'package:sixvalley_vendor_app/features/employee_management/controllers/employee_controller.dart';
+import 'package:sixvalley_vendor_app/features/employee_management/domain/repositories/employee_repository.dart';
+import 'package:sixvalley_vendor_app/features/employee_management/domain/repositories/employee_repository_interface.dart';
+import 'package:sixvalley_vendor_app/features/employee_management/domain/services/employee_service.dart';
+import 'package:sixvalley_vendor_app/features/employee_management/domain/services/employee_service_interface.dart';
 import 'package:sixvalley_vendor_app/features/chat/domain/repositories/chat_repository_interface.dart';
 import 'package:sixvalley_vendor_app/features/chat/domain/services/chat_service.dart';
 import 'package:sixvalley_vendor_app/features/chat/domain/services/chat_service_interface.dart';
@@ -307,4 +312,10 @@ Future<void> init() async {
   sl.registerFactory(() => CategoryController(categoryServiceInterface: sl()));
   sl.registerFactory(() => AddProductTaxController(addProductServiceInterface: sl()));
   sl.registerFactory(() => PickupReservationController(reservationServiceInterface: sl()));
+
+  // Employee Management Registration
+  sl.registerLazySingleton<EmployeeRepositoryInterface>(() => EmployeeRepository(dioClient: sl()));
+  sl.registerLazySingleton<EmployeeServiceInterface>(() => EmployeeService(employeeRepositoryInterface: sl()));
+  sl.registerFactory(() => EmployeeController(employeeServiceInterface: sl()));
 }
+
