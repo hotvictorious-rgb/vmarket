@@ -1,3 +1,9 @@
+### [2026-09-23 12:20 UTC] Storefront Asset Routing & Server Document Root Alignment [backend] [AI]
+* **Scope:** Resolved unstyled/broken CSS and JS rendering on local PHP development server.
+* **1. Document Root Alignment:** Started server with `-t public server.php` so all theme assets (`/themes/theme_vmarket/public/assets/css/vmarket.css` and `vmarket.js`) resolve directly with HTTP 200 OK from the web root instead of falling back to a 404 unstyled response.
+* **2. Typography & Fonts:** Linked Google Fonts (`Plus Jakarta Sans` / `Inter`) in `app.blade.php` for high-end typography rendering.
+* **3. Verification:** Verified HTTP 200 OK for `vmarket.css` (19KB), `vmarket.js` (3KB), homepage `/`, and `/products` catalog.
+
 ### [2026-09-23 11:45 UTC] Storefront Live Runtime Hardening: Search & Filter Compatibility, Cross-Database LOCATE, and View Resilience [backend] [AI]
 * **Components:** Helpers (`app/Utils/Helpers.php`), CartManager (`app/Utils/CartManager.php`), ProductManager (`app/Utils/ProductManager.php`), FilePath (`app/Utils/file_path.php`), Theme Views (`details.blade.php`, `sellers.blade.php`)
 * **Scope:** Hardened storefront execution when serving live HTTP traffic on local/production environments across all primary pages (Home, Products Search & Filter, Merchant Directory, Store Catalog, Product Details).
