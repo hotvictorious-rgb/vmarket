@@ -40,11 +40,10 @@ ini_set('post_max_size', '200M');
 
 class AppServiceProvider extends ServiceProvider
 {
-    use AddonHelper;
     use CacheManagerTrait;
     use FileManagerTrait;
     use ThemeHelper;
-    use UpdateClass;
+    use \App\Traits\AddonHelper;
 
     /**
      * Register any application services.

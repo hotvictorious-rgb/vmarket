@@ -1,3 +1,22 @@
+### [2026-09-23 16:38 UTC] Storefront Full-Width Alignment Fix + AppServiceProvider HTTP 500 Bugfix [storefront] [backend] [AI]
+* **1. Val-Prop Strip — Fixed Alignment & Responsiveness (`vmarket.css`):**
+  - Changed `grid-template-columns` from `repeat(auto-fit, minmax(220px, 1fr))` to `repeat(4, 1fr)` — strip now always locks to 4 equal columns on desktop regardless of viewport width.
+  - Removed gap and card-level padding, replaced with per-item `padding: 16px 20px` and `border-right` dividers for a seamless horizontal strip aesthetic.
+  - Added `overflow: hidden` on container to clip border radii cleanly.
+  - Added responsive breakpoints: `≤991px` → 2-col with cross-dividers; `≤600px` → 2-col compact with reduced icon and text sizes.
+* **2. Stray Orphaned CSS Block Removed (`vmarket.css`):**
+  - Removed floating `.vm-slider-dots` block at lines 2179–2183 that was outside any media query scope — this was a leftover from a previous session's improperly closed media query.
+* **3. Footer Slider — Height & Padding Corrected (`vmarket.css`):**
+  - Bumped `min-height` from 120px → 140px for desktop, 130px for tablet, 110px for mobile.
+  - Added `@media (max-width: 991px)` tablet breakpoint for banner card padding (`20px 28px`) previously missing.
+  - Improved `box-shadow` to `var(--vm-shadow-sm)` for more presence.
+* **4. Amazon Discovery Grid — Breakpoints Tightened (`vmarket.css`):**
+  - Changed `≤600px` from 1-col to 2-col (keeps 2×2 on medium-small phones); added `≤400px` for 1-col.
+  - Adjusted gap values (14px desktop → 12px tablet → 10px mobile).
+* **5. AppServiceProvider HTTP 500 Fix (`AppServiceProvider.php`):**
+  - `AddonHelper` trait was imported in the `use` statement at the top but missing from the class body `use` block. Added `use \App\Traits\AddonHelper;` inside the class. This was causing all routes to return HTTP 500 via the PHP dev server.
+  - Verified: Homepage now returns HTTP 200 (161,510 bytes) consistently.
+
 ### [2026-09-23 16:30 UTC] Admin-Enabled Delivery Coverage & Amazon-Style Omnichannel Location Recommendations [backend] [storefront] [AI]
 * **1. Backend Delivery Coverage & Geolocation API (`WebController.php` & `routes/web/routes.php`):**
   - Implemented `getDeliveryCoverage(Request $request)` endpoint (`GET /get-delivery-coverage`): returns admin-enabled destination LGAs from authoritative `DeliveryLane` (`where('is_active', 1)`) with destination LGA/State relationships, delivery fees, and estimated delivery turnaround times, along with active merchant pickup shops (`where('pickup_enabled', 1)`).

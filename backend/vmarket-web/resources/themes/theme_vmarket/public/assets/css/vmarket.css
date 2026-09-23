@@ -1187,20 +1187,33 @@ button, input, select, textarea {
 /* Value Proposition Strip */
 .vm-val-prop-strip {
     display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
-    gap: 16px;
-    margin-bottom: 32px;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 0;
+    margin-top: 0;
+    margin-bottom: 24px;
     background: #FFFFFF;
     border: 1px solid var(--vm-border);
     border-radius: var(--vm-radius-md);
-    padding: 18px 24px;
+    padding: 0;
     box-shadow: var(--vm-shadow-xs);
+    overflow: hidden;
 }
 
 .vm-val-prop-item {
     display: flex;
     align-items: center;
     gap: 12px;
+    padding: 16px 20px;
+    border-right: 1px solid var(--vm-border-light);
+    transition: background 0.2s ease;
+}
+
+.vm-val-prop-item:last-child {
+    border-right: none;
+}
+
+.vm-val-prop-item:hover {
+    background: #FAFAFF;
 }
 
 .vm-val-prop-icon-wrap {
@@ -1236,6 +1249,49 @@ button, input, select, textarea {
 .vm-val-prop-desc {
     font-size: 12px;
     color: var(--vm-text-muted);
+}
+
+/* Val-prop responsive breakpoints */
+@media (max-width: 991px) {
+    .vm-val-prop-strip {
+        grid-template-columns: repeat(2, 1fr);
+    }
+    .vm-val-prop-item {
+        border-right: 1px solid var(--vm-border-light);
+        border-bottom: 1px solid var(--vm-border-light);
+    }
+    .vm-val-prop-item:nth-child(2) {
+        border-right: none;
+    }
+    .vm-val-prop-item:nth-child(3),
+    .vm-val-prop-item:nth-child(4) {
+        border-bottom: none;
+    }
+    .vm-val-prop-item:nth-child(4) {
+        border-right: none;
+    }
+}
+
+@media (max-width: 600px) {
+    .vm-val-prop-strip {
+        grid-template-columns: repeat(2, 1fr);
+        margin-bottom: 16px;
+    }
+    .vm-val-prop-item {
+        padding: 12px 14px;
+        gap: 8px;
+    }
+    .vm-val-prop-icon-wrap {
+        width: 36px;
+        height: 36px;
+        font-size: 16px;
+    }
+    .vm-val-prop-title {
+        font-size: 12px;
+    }
+    .vm-val-prop-desc {
+        font-size: 11px;
+    }
 }
 
 /* Section Blocks */
@@ -2176,12 +2232,6 @@ button, input, select, textarea {
     }
 }
 
-    .vm-slider-dots {
-        bottom: 8px;
-        padding: 3px 8px;
-    }
-}
-
 /* ==========================================================================
    2. FOOTER SLIDER: Sleek, Compact, Readable (Above Main Footer)
    ========================================================================== */
@@ -2189,15 +2239,15 @@ button, input, select, textarea {
     position: relative;
     border-radius: var(--vm-radius-md);
     overflow: hidden;
-    margin-bottom: 36px;
-    box-shadow: var(--vm-shadow-xs);
-    min-height: 120px;
+    margin-bottom: 40px;
+    box-shadow: var(--vm-shadow-sm);
+    min-height: 140px;
 }
 
 .vm-footer-slider {
     position: relative;
     width: 100%;
-    min-height: 120px;
+    min-height: 140px;
 }
 
 .vm-footer-slide {
@@ -2230,12 +2280,12 @@ button, input, select, textarea {
 }
 
 .vm-footer-banner-card {
-    padding: 22px 32px;
+    padding: 24px 36px;
     display: flex;
     align-items: center;
     justify-content: space-between;
-    gap: 20px;
-    min-height: 120px;
+    gap: 24px;
+    min-height: 140px;
 }
 
 .vm-footer-banner-content {
@@ -2317,16 +2367,27 @@ button, input, select, textarea {
     bottom: 12px;
 }
 
+@media (max-width: 991px) {
+    .vm-footer-slider-container,
+    .vm-footer-slider {
+        min-height: 130px;
+    }
+    .vm-footer-banner-card {
+        padding: 20px 28px;
+        gap: 16px;
+    }
+}
+
 @media (max-width: 768px) {
     .vm-footer-slider-container,
     .vm-footer-slider {
-        min-height: 105px;
+        min-height: 110px;
     }
     .vm-footer-dots {
         bottom: 8px;
     }
     .vm-footer-banner-card {
-        padding: 16px 20px;
+        padding: 14px 18px;
         flex-direction: column;
         align-items: flex-start;
         gap: 10px;
@@ -2338,11 +2399,11 @@ button, input, select, textarea {
         font-size: 14px;
     }
     .vm-footer-subtitle {
-        font-size: 11px;
+        font-size: 11.5px;
     }
     .vm-footer-cta-btn {
         font-size: 11.5px;
-        padding: 6px 14px;
+        padding: 7px 16px;
     }
 }
 
@@ -3291,19 +3352,28 @@ button, input, select, textarea {
 .vm-amazon-discovery-grid {
     display: grid;
     grid-template-columns: repeat(4, 1fr);
-    gap: 16px;
+    gap: 14px;
     margin-bottom: 32px;
 }
 
 @media (max-width: 1100px) {
     .vm-amazon-discovery-grid {
         grid-template-columns: repeat(2, 1fr);
+        gap: 12px;
     }
 }
 
 @media (max-width: 600px) {
     .vm-amazon-discovery-grid {
+        grid-template-columns: repeat(2, 1fr);
+        gap: 10px;
+    }
+}
+
+@media (max-width: 400px) {
+    .vm-amazon-discovery-grid {
         grid-template-columns: 1fr;
+        gap: 10px;
     }
 }
 
@@ -3475,6 +3545,7 @@ button, input, select, textarea {
 .vm-discovery-card-link:hover {
     color: #4310A8;
 }
+
 
 
 
