@@ -75,7 +75,7 @@ class ProfileRepository implements ProfileRepositoryInterface{
       "branch": branch,
       "account_no": accountNumber,
       "holder_name" : holderName,
-      "_method": " put"
+      "_method": "put"
     });
   }
 

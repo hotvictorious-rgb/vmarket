@@ -17,7 +17,16 @@ class OrderRepository implements OrderRepositoryInterface{
 
   @override
   Future<Response> getAllOrderHistory(String type, String startDate, String endDate, String search, int isPause) async {
-    Response response = await apiClient.getData('${AppConstants.allOrderHistoryUri}?status=$type&start_date=$startDate&end_date=$endDate&search=$search&is_pause=$isPause');
+    final bool _hasDateRange = (startDate.isNotEmpty && endDate.isNotEmpty);
+    final _queryParams = <String, String>{
+      'status': type,
+      'search': search,
+      'is_pause': '$isPause',
+      if (_hasDateRange) 'date_type': 'custom_date',
+      if (_hasDateRange) 'start_date': startDate,
+      if (_hasDateRange) 'end_date': endDate,
+    };
+    Response response = await apiClient.getData('${AppConstants.allOrderHistoryUri}?${Uri(queryParameters: _queryParams).query}');
       return response;
   }
 

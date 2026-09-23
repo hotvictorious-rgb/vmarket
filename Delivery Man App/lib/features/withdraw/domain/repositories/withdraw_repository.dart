@@ -19,10 +19,17 @@ class WithdrawRepository implements WithdrawRepositoryInterface {
   });
  }
 
- @override
- Future<Response> getWithdrawList({String? startDate, String? endDate, int? offset, String? type}) async {
-  return apiClient.getData('${AppConstants.withdrawListUri}?limit=10&offset=$offset&start_date=$startDate&end_date=$endDate&type=$type');
- }
+@override
+  Future<Response> getWithdrawList({String? startDate, String? endDate, int? offset, String? type}) async {
+    final _queryParams = <String, String>{
+      'limit': '10',
+      'offset': '$offset',
+      'type': '$type',
+      if ((startDate ?? '').isNotEmpty) 'start_date': '$startDate',
+      if ((endDate ?? '').isNotEmpty) 'end_date': '$endDate',
+    };
+    return apiClient.getData('${AppConstants.withdrawListUri}?${Uri(queryParameters: _queryParams).query}');
+  }
 
   @override
   Future add(value) {

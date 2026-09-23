@@ -156,8 +156,7 @@ class AuthRepository implements AuthRepositoryInterface {
   Future<Response> forgotPassword(String? countryCode ,String? phone) async {
     Response _response = await apiClient.postData(AppConstants.forgotPassword,
         {
-          'country_code' : countryCode,
-          'phone': phone
+          'identity': phone
         });
     return _response;
   }
@@ -167,7 +166,7 @@ class AuthRepository implements AuthRepositoryInterface {
     Response _response = await apiClient.postData(AppConstants.verifyOtp,
         {
           'otp' : countryCode,
-          'phone': phone
+          'identity': phone
         });
     return _response;
   }

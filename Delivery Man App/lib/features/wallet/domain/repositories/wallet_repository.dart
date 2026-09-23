@@ -10,7 +10,14 @@ class WalletRepository implements WalletRepositoryInterface{
 
   @override
   Future<Response> getDeliveryWiseEarned({String? startDate, String? endDate, int? offset, String? type}) async {
-    return apiClient.getData('${AppConstants.deliveryWiseEarnedUri}?start_date=$startDate&end_date=$endDate&limit=10&offset=$offset&type=$type');
+    final _queryParams = <String, String>{
+      'limit': '10',
+      'offset': '$offset',
+      'type': '$type',
+      if ((startDate ?? '').isNotEmpty) 'start_date': '$startDate',
+      if ((endDate ?? '').isNotEmpty) 'end_date': '$endDate',
+    };
+    return apiClient.getData('${AppConstants.deliveryWiseEarnedUri}?${Uri(queryParameters: _queryParams).query}');
   }
 
   @override
