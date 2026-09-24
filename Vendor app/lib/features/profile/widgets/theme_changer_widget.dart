@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter_switch/flutter_switch.dart';
 import 'package:provider/provider.dart';
 import 'package:sixvalley_vendor_app/localization/language_constrants.dart';
-import 'package:sixvalley_vendor_app/features/splash/controllers/splash_controller.dart';
 import 'package:sixvalley_vendor_app/theme/controllers/theme_controller.dart';
 import 'package:sixvalley_vendor_app/utill/dimensions.dart';
 import 'package:sixvalley_vendor_app/utill/images.dart';
@@ -10,7 +9,6 @@ import 'package:sixvalley_vendor_app/utill/styles.dart';
 import 'package:sixvalley_vendor_app/common/basewidgets/custom_dialog_widget.dart';
 import 'package:sixvalley_vendor_app/features/bank_info/screens/bank_info_screen.dart';
 import 'package:sixvalley_vendor_app/features/menu/widgets/sign_out_confirmation_dialog_widget.dart';
-import 'package:sixvalley_vendor_app/features/settings/screens/setting_screen.dart';
 
 class ThemeChangerWidget extends StatelessWidget {
   const ThemeChangerWidget({super.key});
@@ -50,12 +48,6 @@ class ThemeChangerWidget extends StatelessWidget {
       ),
 
 
-        const SizedBox(height: Dimensions.paddingSizeExtraSmall,),
-
-        SectionItemWidget(icon: Images.editProfile, title: 'settings',
-          onTap: (){
-            Navigator.push(context, MaterialPageRoute(builder: (_)=>const SettingsScreen()));
-          },),
         const SizedBox(height: Dimensions.paddingSizeExtraSmall,),
 
         SectionItemWidget(icon: Images.bankCard, title: 'bank_info',

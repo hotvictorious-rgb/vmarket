@@ -3,7 +3,7 @@ import 'package:sixvalley_vendor_app/features/order_details/domain/models/order_
 abstract class OrderDetailsServiceInterface{
   Future<dynamic> setUpOrder(OrderSetupModel orderSetUpModel);
   Future<dynamic> getOrderDetails(String orderID);
-  Future<dynamic> getOrderStatusList(String type);
+  Future<dynamic> getOrderStatusList();
 
   Future <dynamic> getOrderInvoice(String orderID);
   Future<dynamic> verifyPickupOtp(int orderId, String otp);

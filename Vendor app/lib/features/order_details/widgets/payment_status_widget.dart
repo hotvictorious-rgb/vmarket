@@ -76,7 +76,7 @@ class _PaymentStatusWidgetState extends State<PaymentStatusWidget> {
                 Row(
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    Text(PriceConverter.convertPrice(context, widget.orderModel?.initOrderAmount ?? widget.orderModel?.orderAmount ?? 0),
+                    Text(PriceConverter.convertPrice(context, widget.orderModel?.orderAmount ?? widget.orderModel?.initOrderAmount ?? 0),
                       style: robotoMedium.copyWith(color: Theme.of(context).textTheme.bodyLarge?.color)
                     ),
                     SizedBox(width: Dimensions.paddingSizeSmall),

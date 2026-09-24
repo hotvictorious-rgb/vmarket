@@ -61,8 +61,8 @@ class OrderDetailsController extends ChangeNotifier{
   }
 
 
-  void initOrderStatusList(String type) async {
-    ApiResponse apiResponse = await orderDetailsServiceInterface.getOrderStatusList(type);
+  void initOrderStatusList() async {
+    ApiResponse apiResponse = await orderDetailsServiceInterface.getOrderStatusList();
     if (apiResponse.response != null && apiResponse.response!.statusCode == 200) {
       _orderStatusList =[];
       _orderStatusList.addAll(apiResponse.response!.data);
@@ -134,8 +134,8 @@ class OrderDetailsController extends ChangeNotifier{
     }
   }
 
-  Future<void> updateQuickOrderStatus(int orderId, String newStatus, {String? paymentStatus}) async {
-    OrderSetupModel model = OrderSetupModel(orderId: orderId, orderStatus: newStatus, paymentStatus: paymentStatus);
+  Future<void> updateQuickOrderStatus(int orderId, String newStatus) async {
+    OrderSetupModel model = OrderSetupModel(orderId: orderId, orderStatus: newStatus);
     await setUpOrder(orderSetupModel: model);
   }
 
@@ -170,7 +170,7 @@ class OrderDetailsController extends ChangeNotifier{
 
 
   void initializeOrderSetupModel({required Order? order}){
-    orderSetupModel = OrderSetupModel(orderId: order?.id, paymentStatus: order?.paymentStatus, orderStatus: order?.orderStatus);
+    orderSetupModel = OrderSetupModel(orderId: order?.id, orderStatus: order?.orderStatus);
   }
 
 

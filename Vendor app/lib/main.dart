@@ -15,24 +15,18 @@ import 'package:sixvalley_vendor_app/common/basewidgets/custom_asset_image_widge
 import 'package:sixvalley_vendor_app/features/addProduct/controllers/add_product_image_controller.dart';
 import 'package:sixvalley_vendor_app/features/addProduct/controllers/add_product_tax_controller.dart';
 import 'package:sixvalley_vendor_app/features/addProduct/controllers/variation_controller.dart';
-import 'package:sixvalley_vendor_app/features/clearance_sale/controllers/clearance_sale_controller.dart';
 import 'package:sixvalley_vendor_app/features/notification/controllers/notification_controller.dart';
 import 'package:sixvalley_vendor_app/features/order_details/controllers/order_details_controller.dart';
 import 'package:sixvalley_vendor_app/features/pickup_reservation/controllers/pickup_reservation_controller.dart';
 import 'package:sixvalley_vendor_app/features/product/controllers/category_controller.dart';
 import 'package:sixvalley_vendor_app/features/product/widgets/cookies_widget.dart';
 import 'package:sixvalley_vendor_app/features/product_details/controllers/product_details_controller.dart';
-import 'package:sixvalley_vendor_app/features/restock/controllers/restock_controller.dart';
-import 'package:sixvalley_vendor_app/features/vat_management/controllers/vat_controller.dart';
 import 'package:sixvalley_vendor_app/features/wallet/controllers/wallet_controller.dart';
 import 'package:sixvalley_vendor_app/localization/app_localization.dart';
 import 'package:sixvalley_vendor_app/features/auth/controllers/auth_controller.dart';
 import 'package:sixvalley_vendor_app/features/settings/controllers/business_controller.dart';
-import 'package:sixvalley_vendor_app/features/chat/controllers/chat_controller.dart';
-import 'package:sixvalley_vendor_app/features/coupon/controllers/coupon_controller.dart';
 
 import 'package:sixvalley_vendor_app/features/emergency_contract/controllers/emergency_contact_controller.dart';
-import 'package:sixvalley_vendor_app/features/language/controllers/language_controller.dart';
 import 'package:sixvalley_vendor_app/localization/controllers/localization_controller.dart';
 import 'package:sixvalley_vendor_app/features/dashboard/controllers/bottom_menu_controller.dart';
 import 'package:sixvalley_vendor_app/features/order/controllers/location_controller.dart';
@@ -112,17 +106,15 @@ Future<void> main() async {
 
   runApp(MultiProvider(
     providers: [
-      ChangeNotifierProvider(create: (context) => di.sl<ThemeController>()),
-      ChangeNotifierProvider(create: (context) => di.sl<SplashController>()),
-      ChangeNotifierProvider(create: (context) => di.sl<LanguageController>()),
-      ChangeNotifierProvider(create: (context) => di.sl<LocalizationController>()),
+       ChangeNotifierProvider(create: (context) => di.sl<ThemeController>()),
+       ChangeNotifierProvider(create: (context) => di.sl<SplashController>()),
+       ChangeNotifierProvider(create: (context) => di.sl<LocalizationController>()),
       ChangeNotifierProvider(create: (context) => di.sl<AuthController>()),
       ChangeNotifierProvider(create: (context) => di.sl<ProfileController>()),
       ChangeNotifierProvider(create: (context) => di.sl<ShopController>()),
       ChangeNotifierProvider(create: (context) => di.sl<OrderController>()),
-      ChangeNotifierProvider(create: (context) => di.sl<BankInfoController>()),
-      ChangeNotifierProvider(create: (context) => di.sl<ChatController>()),
-      ChangeNotifierProvider(create: (context) => di.sl<BusinessController>()),
+       ChangeNotifierProvider(create: (context) => di.sl<BankInfoController>()),
+       ChangeNotifierProvider(create: (context) => di.sl<BusinessController>()),
       ChangeNotifierProvider(create: (context) => di.sl<TransactionController>()),
       ChangeNotifierProvider(create: (context) => di.sl<AddProductController>()),
       ChangeNotifierProvider(create: (context) => di.sl<ProductController>()),
@@ -131,22 +123,18 @@ Future<void> main() async {
       ChangeNotifierProvider(create: (context) => di.sl<RefundController>()),
       ChangeNotifierProvider(create: (context) => di.sl<BottomMenuController>()),
       ChangeNotifierProvider(create: (context) => di.sl<EmergencyContactController>()),
-      ChangeNotifierProvider(create: (context) => di.sl<CouponController>()),
-      ChangeNotifierProvider(create: (context) => di.sl<LocationController>()),
+       ChangeNotifierProvider(create: (context) => di.sl<LocationController>()),
       ChangeNotifierProvider(create: (context) => di.sl<NotificationController>()),
       ChangeNotifierProvider(create: (context) => di.sl<WalletController>()),
       ChangeNotifierProvider(create: (context) => di.sl<OrderDetailsController>()),
       ChangeNotifierProvider(create: (context) => di.sl<ProductDetailsController>()),
-      ChangeNotifierProvider(create: (context) => di.sl<RestockController>()),
-      ChangeNotifierProvider(create: (context) => di.sl<ClearanceSaleController>()),
-      ChangeNotifierProvider(create: (context) => di.sl<AddProductImageController>()),
-      ChangeNotifierProvider(create: (context) => di.sl<VariationController>()),
-      ChangeNotifierProvider(create: (context) => di.sl<CategoryController>()),
+       ChangeNotifierProvider(create: (context) => di.sl<AddProductImageController>()),
+       ChangeNotifierProvider(create: (context) => di.sl<VariationController>()),
+       ChangeNotifierProvider(create: (context) => di.sl<CategoryController>()),
       ChangeNotifierProvider(create: (context) => di.sl<ShowBottomSheetController>()),
       ChangeNotifierProvider(create: (context) => di.sl<TutorialController>()),
-      ChangeNotifierProvider(create: (context) => di.sl<AddProductTaxController>()),
-      ChangeNotifierProvider(create: (context) => di.sl<VatController>()),
-      ChangeNotifierProvider(create: (context) => di.sl<PickupReservationController>()),
+       ChangeNotifierProvider(create: (context) => di.sl<AddProductTaxController>()),
+       ChangeNotifierProvider(create: (context) => di.sl<PickupReservationController>()),
     ],
     child: _GlobalScrollListener(
       child: MyApp(body: body)

@@ -2,18 +2,14 @@ import 'dart:io';
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
-import 'package:provider/provider.dart';
 import 'package:sixvalley_vendor_app/data/model/response/base/api_response.dart';
 import 'package:sixvalley_vendor_app/features/order/domain/models/order_model.dart';
 import 'package:sixvalley_vendor_app/features/order/domain/services/order_service_interface.dart';
-import 'package:sixvalley_vendor_app/features/order_details/controllers/order_details_controller.dart';
 import 'package:sixvalley_vendor_app/features/order_details/domain/models/order_list_filter_model.dart';
 
 import 'package:sixvalley_vendor_app/helper/api_checker.dart';
 import 'package:sixvalley_vendor_app/helper/validation_helper.dart';
-import 'package:sixvalley_vendor_app/localization/language_constrants.dart';
 import 'package:sixvalley_vendor_app/main.dart';
-import 'package:sixvalley_vendor_app/common/basewidgets/custom_snackbar_widget.dart';
 
 class OrderController extends ChangeNotifier {
   final OrderServiceInterface orderServiceInterface;
@@ -37,7 +33,6 @@ class OrderController extends ChangeNotifier {
   PlatformFile? fileNamed;
   File? file;
   int?  fileSize;
-  bool assigning = false;
   final int _offset = 1;
   int get offset => _offset;
   DateTime? _startDate;
@@ -59,10 +54,6 @@ class OrderController extends ChangeNotifier {
 
   List<String>? _paymentImageList;
   List<String>? get paymentImageList => _paymentImageList;
-
-
-  bool _isAddressLoading = false;
-  bool get isAddressLoading => _isAddressLoading;
 
   bool _isFilterActive = false;
   bool get isFilterActive => _isFilterActive;
@@ -153,27 +144,6 @@ class OrderController extends ChangeNotifier {
         _startDate = date;
       notifyListeners();
     });
-  }
-
-
-  Future<ApiResponse> editShippingAndBillingAddress({String? orderID, String? addressType, String? contactPersonName, String? phone,
-    String? city, String? zip, String? address, String? email, String? latitude, String? longitude,}) async {
-    assigning = true;
-    _isAddressLoading = true;
-    notifyListeners();
-    ApiResponse apiResponse = await orderServiceInterface.orderAddressEdit(orderID: orderID,addressType: addressType, contactPersonName: contactPersonName,
-    phone: phone, city: city, zip: zip, address: address, email: email, latitude: latitude, longitude: longitude);
-    if (apiResponse.response != null && apiResponse.response!.statusCode == 200) {
-      Navigator.of(Get.context!).pop();
-      showCustomSnackBarWidget(getTranslated('address_updated_successfully', Get.context!), Get.context!, isToaster: true, isError: false);
-      Provider.of<OrderDetailsController>(Get.context!, listen: false).getOrderDetails(orderID.toString());
-    } else {
-      assigning = false;
-      ApiChecker.checkApi(apiResponse);
-    }
-    _isAddressLoading = false;
-    notifyListeners();
-    return apiResponse;
   }
 
 

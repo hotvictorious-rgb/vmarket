@@ -37,7 +37,6 @@ class AddProductRepository implements AddProductRepositoryInterface{
   }
 
 
-
   @override
   Future<ApiResponse> getEditProduct(int? id) async {
     try {
@@ -321,26 +320,6 @@ class AddProductRepository implements AddProductRepositoryInterface{
       return ApiResponse.withError(ApiErrorHandler.getMessage(e));
     }
   }
-
-
-  @override
-  Future<ApiResponse> updateRestockProductQuantity(int? productId,int currentStock, List <Variation> variation) async {
-    try {
-      final response = await dioClient!.post(AppConstants.restockUpdateProductQuantity,
-          data: {
-            "product_id": productId,
-            "current_stock": currentStock,
-            "variation" : jsonEncode(variation),
-            // "_method":"put"
-          }
-      );
-      return ApiResponse.withSuccess(response);
-    } catch (e) {
-      return ApiResponse.withError(ApiErrorHandler.getMessage(e));
-    }
-  }
-
-
 
 
   @override

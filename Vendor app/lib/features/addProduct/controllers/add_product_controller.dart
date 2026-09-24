@@ -9,17 +9,14 @@ import 'package:sixvalley_vendor_app/features/addProduct/domain/models/add_produ
 import 'package:sixvalley_vendor_app/data/model/response/base/api_response.dart';
 import 'package:sixvalley_vendor_app/features/addProduct/domain/models/attribute_model.dart';
 import 'package:sixvalley_vendor_app/features/addProduct/domain/models/product_image_model.dart';
-import 'package:sixvalley_vendor_app/features/addProduct/domain/models/variant_type_model.dart';
 import 'package:sixvalley_vendor_app/features/addProduct/domain/services/add_product_service_interface.dart';
 import 'package:sixvalley_vendor_app/features/auth/controllers/auth_controller.dart';
 import 'package:sixvalley_vendor_app/features/product/controllers/category_controller.dart';
-import 'package:sixvalley_vendor_app/features/restock/controllers/restock_controller.dart';
 import 'package:sixvalley_vendor_app/features/splash/domain/models/config_model.dart';
 import 'package:sixvalley_vendor_app/features/addProduct/domain/models/edt_product_model.dart';
 import 'package:sixvalley_vendor_app/features/addProduct/domain/models/image_model.dart';
 import 'package:sixvalley_vendor_app/features/product/domain/models/product_model.dart';
 import 'package:sixvalley_vendor_app/helper/api_checker.dart';
-import 'package:sixvalley_vendor_app/helper/product_helper.dart';
 import 'package:sixvalley_vendor_app/localization/language_constrants.dart';
 import 'package:sixvalley_vendor_app/main.dart';
 import 'package:sixvalley_vendor_app/features/product/controllers/product_controller.dart';
@@ -423,36 +420,6 @@ final addProductImageController = Provider.of<AddProductImageController>(context
     }
     notifyListeners();
   }
-
-
-  Future<void> updateRestockProductQuantity(BuildContext context, int? productId, int currentStock, List<Variation> variations,{int? index}) async {
-    if(kDebugMode){
-      debugPrint("variation======>${variations.length}/${variations.toList()}");
-    }
-    List<Variation> updatedVariations = [];
-    for(int i=0; i<variations.length; i++){
-      updatedVariations.add(Variation(type: variations[i].type,
-          sku: variations[i].sku,
-          price: variations[i].price,
-          qty: int.parse(Provider.of<VariationController>(context, listen: false).variantTypeList[i].qtyController.text)
-      ));
-    }
-    _isLoading = true;
-    notifyListeners();
-    ApiResponse apiResponse = await shopServiceInterface.updateRestockProductQuantity(productId, currentStock, updatedVariations);
-    if (apiResponse.response != null && apiResponse.response!.statusCode == 200) {
-      _isLoading = false;
-      Navigator.pop(Get.context!);
-      showCustomSnackBarWidget(getTranslated('quantity_updated_successfully', Get.context!), Get.context!, isError: false);
-      await Provider.of<RestockController>(Get.context!, listen: false).getRestockProductList(1);
-      // Provider.of<RestockController>(Get.context!, listen: false).removeItem(index);
-    } else {
-      _isLoading = false;
-      ApiChecker.checkApi(apiResponse);
-    }
-    notifyListeners();
-  }
-
 
 
   List<String> imagesWithoutColor = [];

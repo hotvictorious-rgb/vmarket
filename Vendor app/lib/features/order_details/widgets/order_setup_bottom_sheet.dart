@@ -6,9 +6,7 @@ import 'package:sixvalley_vendor_app/common/basewidgets/custom_drop_down_item_wi
 import 'package:sixvalley_vendor_app/features/order/domain/models/order_model.dart';
 import 'package:sixvalley_vendor_app/features/order_details/controllers/order_details_controller.dart';
 import 'package:sixvalley_vendor_app/features/order_details/domain/models/order_setup_model.dart';
-import 'package:sixvalley_vendor_app/features/splash/controllers/splash_controller.dart';
 import 'package:sixvalley_vendor_app/localization/language_constrants.dart';
-import 'package:sixvalley_vendor_app/main.dart';
 import 'package:sixvalley_vendor_app/utill/dimensions.dart';
 import 'package:sixvalley_vendor_app/utill/styles.dart';
 
@@ -22,36 +20,13 @@ class OrderSetupBottomSheet extends StatefulWidget {
 }
 
 class _OrderSetupBottomSheetState extends State<OrderSetupBottomSheet> {
-  bool isSellerWiseShipping = false;
-  bool inHouseShipping = false;
-
   @override
   void initState() {
-    isSellerWiseShipping = Provider.of<SplashController>(context, listen: false).configModel!.shippingMethod == 'sellerwise_shipping';
-    _getShippingMethod();
-
-    final OrderDetailsController orderDetailsController = Provider.of<OrderDetailsController>(Get.context!, listen: false);
+    final OrderDetailsController orderDetailsController = Provider.of<OrderDetailsController>(context, listen: false);
     orderDetailsController.initializeOrderSetupModel(order: widget.orderModel);
 
     super.initState();
   }
-
-  void _getShippingMethod() {
-    String? shipping = Provider.of<SplashController>(context, listen: false).configModel?.shippingMethod;
-
-    if(shipping == 'inhouse_shipping'
-        && (widget.orderModel?.orderStatus == 'out_for_delivery'
-        || widget.orderModel?.orderStatus == 'delivered'
-        || widget.orderModel?.orderStatus == 'returned'
-        || widget.orderModel?.orderStatus == 'failed'
-        || widget.orderModel?.orderStatus == 'canceled')
-    ){
-      inHouseShipping = true;
-    }else{
-      inHouseShipping = false;
-    }
-  }
-
 
   @override
   Widget build(BuildContext context) {
@@ -78,18 +53,19 @@ class _OrderSetupBottomSheetState extends State<OrderSetupBottomSheet> {
         ),
         const SizedBox(height: Dimensions.paddingSizeMedium),
 
-        Consumer<OrderDetailsController>(
-          builder: (_, orderDetailsController, __) {
-            bool paymentActive = _isPaymentActive(orderDetailsController);
-
-            return Flexible(
+         Consumer<OrderDetailsController>(
+           builder: (_, orderDetailsController, __) {
+              final availableStatuses = _availableStatuses(widget.orderModel?.orderStatus)
+                  .where((status) => orderDetailsController.orderStatusList.isEmpty || orderDetailsController.orderStatusList.contains(status))
+                  .toList();
+             return Flexible(
               child: SingleChildScrollView(
                 child: Padding(
                   padding: EdgeInsets.only(bottom: keyBoardHeight),
                   child: Column(crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
 
-                      (inHouseShipping || ['out_for_delivery', 'delivered', 'returned', 'failed', 'canceled'].contains(widget.orderModel?.orderStatus)) ?
+                       (['ready_for_pickup', 'out_for_delivery', 'delivered', 'returned', 'failed', 'canceled'].contains(widget.orderModel?.orderStatus)) ?
                       Padding(
                         padding: const EdgeInsets.fromLTRB(
                             Dimensions.paddingSizeDefault,
@@ -113,14 +89,14 @@ class _OrderSetupBottomSheetState extends State<OrderSetupBottomSheet> {
                       CustomDropDownItemWidget(
                         title: 'order_status',
                         widget: DropdownButtonFormField<String>(
-                          initialValue: orderDetailsController.orderStatusList.contains(widget.orderModel!.orderStatus) ? widget.orderModel!.orderStatus : orderDetailsController.orderStatusList.firstOrNull,
-                          isExpanded: true,
-                          decoration: const InputDecoration(border: InputBorder.none),
-                          iconSize: 24, elevation: 16, style: robotoRegular,
-                          onChanged: (value){
-                            orderDetailsController.orderSetupModel.orderStatus = value;
-                          },
-                          items: orderDetailsController.orderStatusList.map<DropdownMenuItem<String>>((String value) {
+                           initialValue: availableStatuses.contains(widget.orderModel?.orderStatus) ? widget.orderModel?.orderStatus : availableStatuses.firstOrNull,
+                           isExpanded: true,
+                           decoration: const InputDecoration(border: InputBorder.none),
+                           iconSize: 24, elevation: 16, style: robotoRegular,
+                           onChanged: (value){
+                             orderDetailsController.orderSetupModel.orderStatus = value;
+                           },
+                           items: availableStatuses.map<DropdownMenuItem<String>>((String value) {
                             return DropdownMenuItem<String>(
                               value: value,
                               child: Text(getTranslated(value, context)!,
@@ -204,11 +180,25 @@ class _OrderSetupBottomSheetState extends State<OrderSetupBottomSheet> {
     );
   }
 
-  bool _canUpdate(OrderSetupModel orderSetUpModel, Order? order) {
-    return orderSetUpModel.orderStatus != null && order?.orderStatus != orderSetUpModel.orderStatus;
+  List<String> _availableStatuses(String? currentStatus) {
+    return switch (currentStatus) {
+      'pending' => const ['pending', 'confirmed', 'canceled'],
+      'confirmed' => const ['confirmed', 'processing', 'canceled'],
+      'processing' => const ['processing', 'ready_for_pickup', 'canceled'],
+      'ready_for_pickup' => const ['ready_for_pickup'],
+      _ => const [],
+    };
   }
 
-  bool _isPaymentActive(OrderDetailsController orderDetailsController) {
-    return false; // Backend is the sole payment authority.
+  bool _canUpdate(OrderSetupModel orderSetUpModel, Order? order) {
+    if (orderSetUpModel.orderStatus == null || order?.orderStatus == orderSetUpModel.orderStatus) {
+      return false;
+    }
+    return switch (order?.orderStatus) {
+      'pending' => const {'confirmed', 'canceled'}.contains(orderSetUpModel.orderStatus),
+      'confirmed' => const {'processing', 'canceled'}.contains(orderSetUpModel.orderStatus),
+      'processing' => const {'ready_for_pickup', 'canceled'}.contains(orderSetUpModel.orderStatus),
+      _ => false,
+    };
   }
 }

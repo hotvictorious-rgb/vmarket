@@ -2,7 +2,6 @@ import 'dart:async';
 import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import 'package:sixvalley_vendor_app/features/chat/screens/inbox_screen.dart';
 import 'package:sixvalley_vendor_app/features/maintenance/maintenance_screen.dart';
 import 'package:sixvalley_vendor_app/features/notification/screens/notification_screen.dart';
 import 'package:sixvalley_vendor_app/features/order_details/screens/order_details_screen.dart';
@@ -45,9 +44,8 @@ class SplashScreenState extends State<SplashScreen> {
     NetworkInfo.checkConnectivity(context);
     Provider.of<SplashController>(context, listen: false).initConfig().then((bool isSuccess) {
       if(isSuccess) {
-        Provider.of<SplashController>(Get.context!, listen: false).getBusinessPagesList('default');
-        Provider.of<SplashController>(Get.context!, listen: false).initShippingTypeList(Get.context!,'');
-        Timer(const Duration(seconds: 1), () async {
+         Provider.of<SplashController>(Get.context!, listen: false).getBusinessPagesList('default');
+         Timer(const Duration(seconds: 1), () async {
           final config = Provider.of<SplashController>(Get.context!, listen: false).configModel;
           SellerAppVersionControl? appVersion = Provider.of<SplashController>(Get.context!, listen: false).configModel?.sellerAppVersionControl;
           String? minimumVersion = '0';
@@ -70,13 +68,8 @@ class SplashScreenState extends State<SplashScreen> {
             if(widget.body != null) {
               String notificationType = widget.body?.type??"";
 
-              switch(notificationType.toLowerCase()) {
-                case 'chatting' : {
-                  Navigator.of(Get.context!).pushReplacement(MaterialPageRoute(builder: (context) => InboxScreen(fromNotification: true, initIndex: widget.body?.messageKey ==  'message_from_delivery_man' ? 1 : 0)));
-                }
-                break;
-
-                case 'theme' : {
+               switch(notificationType.toLowerCase()) {
+                 case 'theme' : {
                   Navigator.of(Get.context!).pushReplacement(MaterialPageRoute(builder: (context) => const NotificationScreen()));
                 }
                 break;

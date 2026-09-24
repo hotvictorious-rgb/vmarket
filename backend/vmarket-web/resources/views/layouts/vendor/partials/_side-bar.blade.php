@@ -358,16 +358,6 @@
                             <small class="nav-subtitle">{{ translate('promotion_management') }}</small>
                             <small class="tio-more-horizontal nav-subtitle-replacer"></small>
                         </li>
-                        <li class="navbar-vertical-aside-has-menu {{ Request::is('vendor/coupon*') ? 'active' : ''}}">
-                            <a class="nav-link"
-                               href="{{ route('vendor.coupon.index') }}" title="{{ translate('coupons') }}">
-                                <i class="tio-users-switch nav-icon"></i>
-                                <span class="navbar-vertical-aside-mini-mode-hidden-elements text-truncate">
-                                    {{ translate('coupons') }}
-                                </span>
-                            </a>
-                        </li>
-
                         <li class="navbar-vertical-aside-has-menu {{ Request::is('vendor/clearance-sale*')?'active' : ''}}">
                             <a class="nav-link"
                                href="{{ route('vendor.clearance-sale.index') }}" title="{{ translate('Clearance_Sale') }}">

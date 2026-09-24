@@ -131,21 +131,11 @@
                                             </button>
                                         </div>
                                     @endif
-                                    @if($isOrderEditable['status'] === true)
-                                        <buton type="button"
-                                               class="btn text-primary border-primary bg-transparent btn-sm"
-                                               data-toggle="modal"
-                                               data-target="#confirm-edit-order-modal">
-                                            <i class="fi fi-sr-pencil fs-12 d-flex"></i> {{ translate('Edit_Products') }}
-                                        </buton>
-                                    @else
-                                        <buton type="button"
-                                               class="btn text-primary border-primary bg-transparent btn-sm opacity--70"
-                                               data-toggle="tooltip" data-placement="top"
-                                               title="{{ $isOrderEditable['message'] }}" disabled>
-                                            <i class="fi fi-sr-pencil fs-12 d-flex"></i> {{ translate('Edit_Products') }}
-                                        </buton>
-                                    @endif
+                                    <button type="button"
+                                            class="btn text-primary border-primary bg-transparent btn-sm opacity--70"
+                                            disabled>
+                                        <i class="fi fi-sr-pencil fs-12 d-flex"></i> {{ translate('Edit_Products') }}
+                                    </button>
                                     <a class="btn btn-outline--primary btn-sm text-nowrap" target="_blank"
                                        href="{{ route('vendor.orders.generate-packing-slip', [$order['id']]) }}"
                                        title="{{ translate('Print Vendor Packing Manifest') }}">
@@ -166,7 +156,7 @@
                                         @elseif($order['order_status']=='failed')
                                             <span
                                                 class="badge badge-danger font-weight-bold radius-50 d-flex align-items-center py-1 px-2">{{str_replace('_',' ', translate('failed_To_Deliver'))}}</span>
-                                        @elseif($order['order_status']=='processing' || $order['order_status']=='out_for_delivery')
+                                        @elseif($order['order_status']=='processing' || $order['order_status']=='ready_for_pickup' || $order['order_status']=='out_for_delivery')
                                             <span
                                                 class="badge badge-soft-warning font-weight-bold radius-50 d-flex align-items-center py-1 px-2 fs-12">{{str_replace('_',' ', $order['order_status'] == 'processing' ? translate('Packaging') : translate($order['order_status']))}}</span>
 
@@ -888,16 +878,22 @@
                                     </span>
                                 </div>
                             @else
+                                @php
+                                    $availableOrderStatuses = match ($order->order_status) {
+                                        'pending' => ['pending', 'confirmed', 'canceled'],
+                                        'confirmed' => ['confirmed', 'processing', 'canceled'],
+                                        'processing' => ['processing', 'ready_for_pickup', 'canceled'],
+                                        'ready_for_pickup' => ['ready_for_pickup'],
+                                        default => [$order->order_status],
+                                    };
+                                @endphp
                                 <select name="order_status" id="order_status" class="status form-control"
                                         data-id="{{$order['id']}}">
-                                    <option
-                                        value="pending" {{$order->order_status == 'pending'?'selected':''}} > {{translate('pending')}}</option>
-                                    <option
-                                        value="confirmed" {{$order->order_status == 'confirmed'?'selected':''}} > {{translate('confirmed')}}</option>
-                                    <option
-                                        value="processing" {{$order->order_status == 'processing'?'selected':''}} >{{translate('packaging')}} </option>
-                                    <option
-                                        value="canceled" {{$order->order_status == 'canceled'?'selected':''}} >{{translate('canceled')}} </option>
+                                    @foreach($availableOrderStatuses as $availableOrderStatus)
+                                        <option value="{{ $availableOrderStatus }}" {{ $order->order_status == $availableOrderStatus ? 'selected' : '' }}>
+                                            {{ $availableOrderStatus == 'processing' ? translate('packaging') : translate($availableOrderStatus) }}
+                                        </option>
+                                    @endforeach
                                 </select>
                             @endif
                         </div>
@@ -1616,7 +1612,7 @@
 
                             <div class="mb-2">
                                 <img src="{{ dynamicAsset('assets/back-end/img/location-blue.png') }}" alt="">
-                                <span>{{ $shippingAddress->address ?? ($billing->address ?? '') }}</span>
+                                <span>{{ $maskAddress($shippingAddress->address ?? ($billing->address ?? '')) }}</span>
                             </div>
                             <div class="location-map" id="location-map">
                                 <div class="w-100 h-200" id="location_map_canvas"></div>
@@ -1627,43 +1623,6 @@
             </div>
         </div>
     </div>
-    <div class="modal" id="third_party_delivery_service_modal" role="dialog" tabindex="-1">
-        <div class="modal-dialog">
-            <div class="modal-content">
-                <div class="modal-header">
-                    <h5 class="modal-title">{{translate('update_third_party_delivery_info')}}</h5>
-                    <button type="button" class="close" data-dismiss="modal" aria-label="Close">
-                        <span aria-hidden="true">&times;</span>
-                    </button>
-                </div>
-                <div class="modal-body">
-                    <div class="row">
-                        <div class="col-12">
-                            <form action="{{route('vendor.orders.update-deliver-info')}}" method="POST">
-                                @csrf
-                                <input type="hidden" name="order_id" value="{{$order['id']}}">
-                                <div class="card-body">
-                                    <div class="form-group">
-                                        <label for="">{{translate('delivery_service_name')}}</label>
-                                        <input class="form-control" type="text" name="delivery_service_name"
-                                               value="{{$order['delivery_service_name']}}" id="" required>
-                                    </div>
-                                    <div class="form-group">
-                                        <label for="">{{translate('tracking_id')}} ({{translate('optional')}})</label>
-                                        <input class="form-control" type="text" name="third_party_delivery_tracking_id"
-                                               value="{{$order['third_party_delivery_tracking_id']}}" id="">
-                                    </div>
-                                    <button class="btn btn--primary" type="submit">{{translate('update')}}</button>
-                                </div>
-                            </form>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </div>
-
-
     {{-- change order status modal --}}
     <div class="modal fade" id="changeOrderStatusModal" tabindex="-1" aria-labelledby="changeOrderStatusModal"
          aria-hidden="true">

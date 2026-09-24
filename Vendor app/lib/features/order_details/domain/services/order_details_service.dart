@@ -12,8 +12,8 @@ class OrderDetailsService implements OrderDetailsServiceInterface {
   }
 
   @override
-  Future getOrderStatusList(String type) {
-    return orderDetailsRepositoryInterface.getOrderStatusList(type);
+  Future getOrderStatusList() {
+    return orderDetailsRepositoryInterface.getOrderStatusList();
   }
 
   @override

@@ -23,14 +23,15 @@ class OrderDetailsRepository implements OrderDetailsRepositoryInterface{
 
 
   @override
-  Future<ApiResponse> getOrderStatusList(String type) async {
+  Future<ApiResponse> getOrderStatusList() async {
     try {
       // [AI] In VMarket, platform logistics handles delivery and staff OTP handles in-shop pickup.
-      // Vendors are authorized to transition orders through packaging stages: pending, confirmed, processing, canceled.
+      // Vendors are authorized to transition orders through packaging stages: pending, confirmed, processing, ready_for_pickup, canceled.
       List<String> addressTypeList = [
         'pending',
         'confirmed',
         'processing',
+        'ready_for_pickup',
         'canceled',
       ];
 

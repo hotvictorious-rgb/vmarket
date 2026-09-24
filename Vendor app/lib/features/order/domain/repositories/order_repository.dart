@@ -43,30 +43,6 @@ class OrderRepository implements OrderRepositoryInterface{
     }
   }
 
-
-  @override
-  Future<ApiResponse> orderAddressEdit({String? orderID, String? addressType, String? contactPersonName, String? phone, String? city, String? zip,
-    String? address, String? email, String? latitude, String? longitude,
-  }) async {
-    try {
-      final response = await dioClient!.post(AppConstants.orderAddressEdit, data: {
-        "order_id": orderID,
-        "contact_person_name": contactPersonName,
-        "phone": phone,
-        "city" : city,
-        "zip" : zip,
-        "email" : email,
-        "address" : address,
-        "latitude": latitude,
-        "longitude": longitude,
-        "address_type" : addressType,
-      });
-      return ApiResponse.withSuccess(response);
-    } catch (e) {
-      return ApiResponse.withError(ApiErrorHandler.getMessage(e));
-    }
-  }
-
   @override
   Future add(value) {
     // TODO: implement add

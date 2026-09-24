@@ -5,7 +5,7 @@ import 'package:sixvalley_vendor_app/interface/repository_interface.dart';
 abstract class OrderDetailsRepositoryInterface implements RepositoryInterface{
   Future<ApiResponse> setUpOrder(OrderSetupModel orderSetUpModel);
   Future<ApiResponse> getOrderDetails(String orderID);
-  Future<ApiResponse> getOrderStatusList(String type);
+  Future<ApiResponse> getOrderStatusList();
   Future<dynamic> getOrderInvoice(String orderID);
   Future<ApiResponse> verifyPickupOtp(int orderId, String otp);
 }

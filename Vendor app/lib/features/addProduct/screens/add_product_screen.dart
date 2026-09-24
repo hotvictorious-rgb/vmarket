@@ -1452,9 +1452,7 @@ class AddProductScreenState extends State<AddProductScreen>
                                                         return Builder(
                                                             builder: (context) {
                                                           return InkWell(
-                                                            onTap: categoryController
-                                                                        .categoryList ==
-                                                                    null
+                                                            onTap: (categoryController.categoryList == null || resProvider.isLoading)
                                                                 ? null
                                                                 : () async {
                                                                     AddProductImageController
@@ -1839,9 +1837,7 @@ class AddProductScreenState extends State<AddProductScreen>
                                                               height: 40,
                                                               decoration:
                                                                   BoxDecoration(
-                                                                color: categoryController
-                                                                            .categoryList ==
-                                                                        null
+                                                                color: (categoryController.categoryList == null || resProvider.isLoading)
                                                                     ? Theme.of(
                                                                             context)
                                                                         .hintColor
@@ -1854,7 +1850,16 @@ class AddProductScreenState extends State<AddProductScreen>
                                                                             .paddingSizeExtraSmall),
                                                               ),
                                                               child: Center(
-                                                                  child: Text(
+                                                                  child: resProvider.isLoading
+                                                                      ? const SizedBox(
+                                                                          width: 20,
+                                                                          height: 20,
+                                                                          child: CircularProgressIndicator(
+                                                                            color: Colors.white,
+                                                                            strokeWidth: 2,
+                                                                          ),
+                                                                        )
+                                                                      : Text(
                                                                 getTranslated(
                                                                     'submit',
                                                                     context)!,

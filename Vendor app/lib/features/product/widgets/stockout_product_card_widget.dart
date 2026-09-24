@@ -6,8 +6,6 @@ import 'package:sixvalley_vendor_app/features/addProduct/screens/add_product_tab
 
 import 'package:sixvalley_vendor_app/features/product/domain/models/filter_model.dart';
 import 'package:sixvalley_vendor_app/features/product/domain/models/product_model.dart';
-import 'package:sixvalley_vendor_app/features/product/widgets/limited_stock_product_update_dialog.dart';
-import 'package:sixvalley_vendor_app/features/restock/controllers/restock_controller.dart';
 import 'package:sixvalley_vendor_app/helper/color_helper.dart';
 import 'package:sixvalley_vendor_app/localization/language_constrants.dart';
 import 'package:sixvalley_vendor_app/localization/controllers/localization_controller.dart';
@@ -20,7 +18,6 @@ import 'package:sixvalley_vendor_app/utill/images.dart';
 import 'package:sixvalley_vendor_app/utill/styles.dart';
 import 'package:sixvalley_vendor_app/common/basewidgets/confirmation_dialog_widget.dart';
 import 'package:sixvalley_vendor_app/common/basewidgets/custom_image_widget.dart';
-import 'package:sixvalley_vendor_app/common/basewidgets/custom_snackbar_widget.dart';
 import 'package:sixvalley_vendor_app/features/product_details/screens/product_details_screen.dart';
 
 
@@ -35,7 +32,6 @@ class StockOutProductWidget extends StatefulWidget {
 }
 
 class _StockOutProductWidgetState extends State<StockOutProductWidget> {
-  final TextEditingController _stockQuantityController = TextEditingController();
   @override
   Widget build(BuildContext context) {
 
@@ -216,55 +212,6 @@ class _StockOutProductWidgetState extends State<StockOutProductWidget> {
 
 
 
-              Consumer<RestockController>(
-                  builder: (context, productProvider, _) {
-                    return Positioned(bottom: 13, right: Provider.of<LocalizationController>(context, listen: false).isLtr? 15 : null,
-                      left: Provider.of<LocalizationController>(context, listen: false).isLtr? null : 5,
-                      child: Container(height: 35, width: 35,
-                      padding: const EdgeInsets.symmetric(horizontal: Dimensions.paddingSizeExtraSmall),
-                      decoration: BoxDecoration(
-                        color: Theme.of(context).primaryColor.withValues(alpha:.75),
-                        borderRadius: BorderRadius.circular(20),),
-                      child: Center(child:  InkWell(
-                          onTap: (){
-                            showDialog(
-                              context: context,
-                              builder: (BuildContext context) {
-                                return LimitedStockQuantityUpdateDialogWidget(
-                                    stockQuantityController: _stockQuantityController,
-                                    product: widget.productModel,
-                                    title: getTranslated('product_variations', context),
-                                    onYesPressed: () {
-                                      bool isEmpty = false;
-
-                                      if(productProvider.variationQuantityController.isNotEmpty){
-                                        for (int i=0; i< productProvider.variationQuantityController.length; i++) {
-                                          if(productProvider.variationQuantityController[i].text == '' && !isEmpty) {
-                                            isEmpty = true;
-                                          }
-                                        }
-                                      }
-
-                                      if(isEmpty) {
-                                        showCustomSnackBarWidget('variation_quantity_is_required', sanckBarType: SnackBarType.error, context);
-                                      } else if(_stockQuantityController.text.toString().isEmpty){
-                                        showCustomSnackBarWidget('product_quantity_is_required', context);
-                                        if (kDebugMode) {
-                                          print(widget.productModel.id);
-                                        }
-                                      }else{
-                                        productProvider.updateProductQuantity(context, widget.productModel.id, int.parse(_stockQuantityController.text.toString()), widget.productModel.variation!);
-                                      }
-                                    }
-                                );
-                              },
-                            );
-                          },
-                          child: const Center(child: Icon(Icons.add, color: Colors.white))),
-                      ),
-                    ),);
-                  }
-              ),
             ],
           ),
         ),

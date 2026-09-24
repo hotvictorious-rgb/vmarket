@@ -19,7 +19,6 @@ import 'package:sixvalley_vendor_app/features/splash/domain/models/config_model.
 import 'package:sixvalley_vendor_app/features/wallet/screens/wallet_screen.dart';
 import 'package:sixvalley_vendor_app/notification/models/notification_body.dart';
 import 'package:sixvalley_vendor_app/utill/app_constants.dart';
-import 'package:sixvalley_vendor_app/features/chat/screens/inbox_screen.dart';
 import 'package:sixvalley_vendor_app/features/notification/screens/notification_screen.dart';
 import 'package:sixvalley_vendor_app/features/order_details/screens/order_details_screen.dart';
 
@@ -41,9 +40,7 @@ class MyNotification {
         NotificationBody payload;
         if(data.payload != null && data.payload!.isNotEmpty) {
           payload = NotificationBody.fromJson(jsonDecode(data.payload!));
-          if(payload.type == 'chatting'){
-            Get.navigator!.push(MaterialPageRoute(builder: (context) => InboxScreen(fromNotification: true, initIndex: payload.messageKey ==  'message_from_delivery_man' ? 1 : 0)));
-          } else if(payload.type == 'Theme'){
+          if(payload.type == 'Theme'){
             Get.navigator!.push(MaterialPageRoute(builder: (context) => const NotificationScreen( )));
           } else if(payload.orderId != null && payload.type != 'refund'){
             Get.navigator!.push(MaterialPageRoute(builder: (context) => OrderDetailsScreen(orderId: payload.orderId, fromNotification: true)));
@@ -67,9 +64,7 @@ class MyNotification {
       if (kDebugMode) {
         debugPrint("onMessage: ${message.notification?.title}/${message.notification?.body}/${message.notification?.titleLocKey}");
       }
-      if(message.notification!.title!.contains('chatting')){
-        //Get.navigator!.push(MaterialPageRoute(builder: (context) => const InboxScreen( )));
-      }else if(message.notification!.title!.contains('Theme')){
+      if(message.notification!.title!.contains('Theme')){
         Get.navigator!.push(MaterialPageRoute(builder: (context) => const NotificationScreen( )));
       }
 
@@ -113,10 +108,7 @@ class MyNotification {
       if(message.data.isNotEmpty) {
         payload = NotificationBody.fromJson(message.data);
       }
-      if(message.notification!.title!.contains('chatting')) {
-        Get.navigator!.push(MaterialPageRoute(builder: (context) => InboxScreen(fromNotification: true, initIndex: payload?.messageKey ==  'message_from_delivery_man' ? 1 : 0)));
-
-      } else if(message.notification!.title!.contains('Theme')){
+      if(message.notification!.title!.contains('Theme')){
         Get.navigator!.push(MaterialPageRoute(builder: (context) => const NotificationScreen( )));
       } else if (message.notification!.title!.contains('Order') && payload != null && payload.orderId != null && payload.type != 'refund') {
         Get.navigator!.push(

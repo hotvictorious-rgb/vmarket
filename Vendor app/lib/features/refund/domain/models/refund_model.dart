@@ -1,5 +1,4 @@
 import 'package:sixvalley_vendor_app/data/model/image_full_url.dart';
-import 'package:sixvalley_vendor_app/features/chat/domain/models/chat_model.dart';
 
 class RefundModel {
   int? id;
@@ -221,8 +220,8 @@ class OrderDetails {
       variant = json['variant'];
     }
     paymentStatus = json['payment_status'];
-    paymentStatus = json['payment_method'];
-    paymentStatus = json['order_type'];
+    paymentMethod = json['payment_method'];
+    orderType = json['order_type'];
   }
 
   Map<String, dynamic> toJson() {
@@ -253,6 +252,44 @@ class Order {
     final Map<String, dynamic> data = <String, dynamic>{};
     data['id'] = id;
     data['payment_method'] = paymentMethod;
+    return data;
+  }
+}
+
+class Customer {
+  int? id;
+  String? fName;
+  String? lName;
+  String? phone;
+  String? image;
+  ImageFullUrl? imageFullUrl;
+  String? email;
+
+  Customer({this.id, this.fName, this.lName, this.phone, this.image, this.imageFullUrl, this.email});
+
+  Customer.fromJson(Map<String, dynamic> json) {
+    id = json['id'];
+    fName = json['f_name'];
+    lName = json['l_name'];
+    phone = json['phone'];
+    image = json['image'];
+    imageFullUrl = json['image_full_url'] != null
+        ? ImageFullUrl.fromJson(json['image_full_url'])
+        : null;
+    email = json['email'];
+  }
+
+  Map<String, dynamic> toJson() {
+    final Map<String, dynamic> data = <String, dynamic>{};
+    data['id'] = id;
+    data['f_name'] = fName;
+    data['l_name'] = lName;
+    data['phone'] = phone;
+    data['image'] = image;
+    data['email'] = email;
+    if (imageFullUrl != null) {
+      data['image_full_url'] = imageFullUrl!.toJson();
+    }
     return data;
   }
 }

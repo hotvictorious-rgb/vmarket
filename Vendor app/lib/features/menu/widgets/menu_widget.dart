@@ -2,11 +2,7 @@ import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:sixvalley_vendor_app/features/addProduct/screens/add_product_tab_view_screen.dart';
-import 'package:sixvalley_vendor_app/features/clearance_sale/screens/clearance_sale_screen.dart';
-import 'package:sixvalley_vendor_app/features/restock/screens/restock_list_screen.dart';
 import 'package:sixvalley_vendor_app/features/splash/domain/models/business_pages_model.dart';
-import 'package:sixvalley_vendor_app/features/splash/domain/models/config_model.dart';
-import 'package:sixvalley_vendor_app/features/vat_management/screens/vat_management_screen.dart';
 import 'package:sixvalley_vendor_app/localization/language_constrants.dart';
 import 'package:sixvalley_vendor_app/features/profile/controllers/profile_controller.dart';
 import 'package:sixvalley_vendor_app/features/splash/controllers/splash_controller.dart';
@@ -15,15 +11,12 @@ import 'package:sixvalley_vendor_app/utill/app_constants.dart';
 import 'package:sixvalley_vendor_app/utill/dimensions.dart';
 import 'package:sixvalley_vendor_app/utill/images.dart';
 import 'package:sixvalley_vendor_app/common/basewidgets/custom_bottom_sheet_widget.dart';
-import 'package:sixvalley_vendor_app/features/chat/screens/inbox_screen.dart';
-import 'package:sixvalley_vendor_app/features/coupon/screens/coupon_list_screen.dart';
 import 'package:sixvalley_vendor_app/features/menu/widgets/sign_out_confirmation_dialog_widget.dart';
 import 'package:sixvalley_vendor_app/features/more/screens/html_view_screen.dart';
 import 'package:sixvalley_vendor_app/features/pickup_reservation/screens/pickup_inspection_screen.dart';
 import 'package:sixvalley_vendor_app/features/product/screens/product_list_screen.dart';
 import 'package:sixvalley_vendor_app/features/profile/screens/profile_view_screen.dart';
 import 'package:sixvalley_vendor_app/features/review/screens/product_review_screen.dart';
-import 'package:sixvalley_vendor_app/features/settings/screens/setting_screen.dart';
 import 'package:sixvalley_vendor_app/features/shop/screens/shop_screen.dart';
 import 'package:sixvalley_vendor_app/features/wallet/screens/wallet_screen.dart';
 import 'package:sixvalley_vendor_app/features/bank_info/screens/bank_info_screen.dart';
@@ -35,10 +28,6 @@ class MenuBottomSheetWidget extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final ConfigModel? configModel = Provider.of<SplashController>(context, listen: false).configModel;
-
-
-
     return Consumer<SplashController>(
       builder: (context, splashController, _) {
 
@@ -64,45 +53,16 @@ class MenuBottomSheetWidget extends StatelessWidget {
             onTap: () => _handleMenuTap(context, const PickupInspectionScreen()),
           ),
 
-          CustomBottomSheetWidget(image: Images.reviewIcon, title: getTranslated('reviews', context),
-            onTap: () => _handleMenuTap(context, const ProductReviewScreen()),
-          ),
+           CustomBottomSheetWidget(image: Images.reviewIcon, title: getTranslated('reviews', context),
+             onTap: () => _handleMenuTap(context, const ProductReviewScreen()),
+           ),
 
-          CustomBottomSheetWidget(image: Images.couponIcon, title: getTranslated('coupons', context),
-            onTap: () => _handleMenuTap(context, const CouponListScreen()),
-          ),
-
-          CustomBottomSheetWidget(image: Images.settings, title: getTranslated('settings', context),
-            onTap: () => _handleMenuTap(context, const SettingsScreen()),
+           CustomBottomSheetWidget(image: Images.wallet, title: getTranslated('wallet', context),
+             onTap: () => _handleMenuTap(context, const WalletScreen()),
           ),
 
 
-          CustomBottomSheetWidget(image: Images.restockIcon, title: getTranslated('restock', context),
-            onTap: () => _handleMenuTap(context, const RestockListScreen()),
-          ),
-
-
-          CustomBottomSheetWidget(image: Images.clearanceSaleImage, title: getTranslated('clearance_sale', context),
-            onTap: () => _handleMenuTap(context, const ClearanceSaleScreen()),
-          ),
-
-
-          CustomBottomSheetWidget(image: Images.wallet, title: getTranslated('wallet', context),
-            onTap: () => _handleMenuTap(context, const WalletScreen()),
-          ),
-
-
-          CustomBottomSheetWidget(image: Images.message, title: getTranslated('message', context),
-            onTap: () => _handleMenuTap(context, const InboxScreen()),
-          ),
-
-
-          CustomBottomSheetWidget(image: Images.reportIcon, title: getTranslated('vat_management', context),
-            onTap: () => _handleMenuTap(context, const VatManagementScreen()),
-          ),
-
-
-          CustomBottomSheetWidget(image: Images.bankingInfo, title: getTranslated('bank_info', context),
+           CustomBottomSheetWidget(image: Images.bankingInfo, title: getTranslated('bank_info', context),
             onTap: () => _handleMenuTap(context, const BankInfoScreen()),
           ),
 

@@ -51,14 +51,7 @@ class AddProductService implements AddProductServiceInterface{
     return shopRepoInterface.updateProductQuantity(productId, currentStock, variation);
   }
 
-  // updateRestockProductQuantity
-  @override
-  Future updateRestockProductQuantity(int? productId, int currentStock, List<Variation> variation) {
-   return shopRepoInterface.updateRestockProductQuantity(productId, currentStock, variation);
-  }
-
-
-  @override
+        @override
   Future deleteProductImage(String id, String name, String? color) {
     return shopRepoInterface.deleteProductImage(id, name, color);
   }

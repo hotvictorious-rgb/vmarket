@@ -18,35 +18,29 @@ class SplashController extends ChangeNotifier {
   CurrencyList? _myCurrency;
   CurrencyList? _defaultCurrency;
   CurrencyList? _usdCurrency;
-  int? _currencyIndex;
-  int? _shippingIndex;
-  bool _hasConnection = true;
+   int? _currencyIndex;
+   bool _hasConnection = true;
   bool _fromSetting = false;
   bool _firstTimeConnectionCheck = true;
   List<String>? _unitList;
   List<ColorList>? _colorList;
   final int _unitIndex = 0;
-  final int _colorIndex = 0;
-  List<String>? get unitList => _unitList;
-  List<ColorList>? get colorList => _colorList;
-  int get unitIndex => _unitIndex;
-  int get colorIndex =>_colorIndex;
-  List<String?> _shippingTypeList = [];
-  final String _shippingStatusType = '';
-  List<String?> get shippingTypeList => _shippingTypeList;
-  String get shippingStatusType => _shippingStatusType;
-  List<BusinessPageModel>? _defaultBusinessPages;
+   final int _colorIndex = 0;
+   List<String>? get unitList => _unitList;
+   List<ColorList>? get colorList => _colorList;
+   int get unitIndex => _unitIndex;
+   int get colorIndex =>_colorIndex;
+   List<BusinessPageModel>? _defaultBusinessPages;
   List<BusinessPageModel>? get defaultBusinessPages => _defaultBusinessPages;
 
 
   ConfigModel? get configModel => _configModel;
   BaseUrls? get baseUrls => _baseUrls;
   CurrencyList? get myCurrency => _myCurrency;
-  CurrencyList? get defaultCurrency => _defaultCurrency;
-  CurrencyList? get usdCurrency => _usdCurrency;
-  int? get currencyIndex => _currencyIndex;
-  int? get shippingIndex => _shippingIndex;
-  bool get hasConnection => _hasConnection;
+   CurrencyList? get defaultCurrency => _defaultCurrency;
+   CurrencyList? get usdCurrency => _usdCurrency;
+   int? get currencyIndex => _currencyIndex;
+   bool get hasConnection => _hasConnection;
   bool get fromSetting => _fromSetting;
   bool get firstTimeConnectionCheck => _firstTimeConnectionCheck;
   final bool _isLoading = false;
@@ -156,18 +150,9 @@ class SplashController extends ChangeNotifier {
     getCurrencyData(_configModel!.currencyList![index].code);
     notifyListeners();
   }
-  void setShippingType(int index) {
-    serviceInterface.setShippingType(_shippingTypeList[index]!);
-    notifyListeners();
-  }
-
-  void initShippingType(String? type) {
-    _shippingIndex = _shippingTypeList.indexOf(type);
-    notifyListeners();
-  }
 
 
-  void initSharedPrefData() {
+   void initSharedPrefData() {
     serviceInterface.initSharedData();
   }
 
@@ -177,16 +162,7 @@ class SplashController extends ChangeNotifier {
 
 
 
-
-  void initShippingTypeList(BuildContext context, String type) async {
-    _shippingTypeList.clear();
-    _shippingTypeList =[];
-    ApiResponse apiResponse = await serviceInterface.getShippingTypeList(context,type);
-    _shippingTypeList.addAll(apiResponse.response!.data);
-    notifyListeners();
-  }
-
-  void _startTimer (DateTime startTime){
+   void _startTimer (DateTime startTime){
     Timer.periodic(const Duration(seconds: 30), (Timer timer) {
 
       DateTime now = DateTime.now();

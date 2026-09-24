@@ -3,6 +3,7 @@ import 'package:dio/dio.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:sixvalley_vendor_app/data/datasource/remote/dio/dio_client.dart';
 import 'package:sixvalley_vendor_app/data/datasource/remote/exception/api_error_handler.dart';
+import 'package:sixvalley_vendor_app/services/storage_service.dart';
 import 'package:sixvalley_vendor_app/data/model/response/base/api_response.dart';
 import 'package:sixvalley_vendor_app/features/product/domain/models/filter_model.dart';
 import 'package:sixvalley_vendor_app/features/product/domain/repositories/product_repository_interface.dart';
@@ -12,7 +13,8 @@ import 'package:sixvalley_vendor_app/utill/app_constants.dart';
 
 class ProductRepository implements ProductRepositoryInterface{
   final DioClient? dioClient;
-  ProductRepository({required this.dioClient});
+  final StorageService storageService;
+  ProductRepository({required this.dioClient, required this.storageService});
 
   @override
   Future<ApiResponse> getSellerProductList({
@@ -164,17 +166,17 @@ class ProductRepository implements ProductRepositoryInterface{
 
   @override
   bool isShowCookies() {
-    return sharedPreferences!.containsKey(AppConstants.showCookies);
+    return storageService.containsKey(AppConstants.showCookies);
   }
 
   @override
   Future<void> setIsShowCookies() async {
-    await sharedPreferences!.setString(AppConstants.showCookies, 'cookies');
+    await storageService.setString(AppConstants.showCookies, 'cookies');
   }
 
   @override
   Future<void> removeShowCookies() async {
-    await sharedPreferences!.remove(AppConstants.showCookies);
+    await storageService.remove(AppConstants.showCookies);
   }
 
   @override

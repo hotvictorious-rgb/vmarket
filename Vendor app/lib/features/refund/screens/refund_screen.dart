@@ -4,8 +4,6 @@ import 'package:shimmer/shimmer.dart';
 import 'package:sixvalley_vendor_app/common/basewidgets/custom_asset_image_widget.dart';
 import 'package:sixvalley_vendor_app/features/dashboard/screens/dashboard_screen.dart';
 import 'package:sixvalley_vendor_app/features/refund/domain/models/refund_model.dart';
-import 'package:sixvalley_vendor_app/features/vat_management/controllers/vat_controller.dart';
-import 'package:sixvalley_vendor_app/features/vat_management/widgets/vat_filter_bottomsheet.dart';
 import 'package:sixvalley_vendor_app/helper/color_helper.dart';
 import 'package:sixvalley_vendor_app/localization/language_constrants.dart';
 import 'package:sixvalley_vendor_app/features/refund/controllers/refund_controller.dart';
@@ -31,7 +29,6 @@ class _RefundScreenState extends State<RefundScreen> {
 
   @override
   void initState() {
-    Provider.of<VatController>(context, listen: false).resetReviewData(isUpdate: false);
     Provider.of<RefundController>(context, listen: false).setFilterActive(false, isUpdate: false);
     super.initState();
   }
@@ -117,23 +114,7 @@ class _RefundScreenState extends State<RefundScreen> {
                             } else if (selected == 'this_month') {
                               refundController.setFilterActive(true);
                               refundController.getRefundList(context, type: 'this_month', isReload: true);
-                            } else if (selected == 'custom_date') {
-                              refundController.setFilterActive(true);
-                              showModalBottomSheet(
-                                backgroundColor: Theme.of(context).cardColor,
-                                useSafeArea: true,
-                                shape: const RoundedRectangleBorder(
-                                  borderRadius: BorderRadius.vertical(
-                                    top: Radius.circular(20),
-                                  ),
-                                ),
-                                isScrollControlled: true,
-                                context: context,
-                                builder: (BuildContext context) {
-                                  return VatFilterBottomSheet(formRefund: true);
-                                },
-                              );
-                            }
+                             }
                           },
                           itemBuilder: (BuildContext context) => <PopupMenuEntry<String>>[
                             PopupMenuItem<String>(
@@ -191,33 +172,18 @@ class _RefundScreenState extends State<RefundScreen> {
                                       Theme.of(context).textTheme.bodyLarge?.color :
                                       Theme.of(context).textTheme.headlineLarge?.color
                                   )),
-                                ],
+                           ],
                               ),
                             ),
 
-                            PopupMenuItem<String>(
-                              height: 30,
-                              value: 'custom_date',
-                              child: Row(
-                                children: [
-                                  const SizedBox(width: Dimensions.paddingSizeSmall),
-                                  Text(getTranslated('custom_date', context)!, style: robotoRegular.copyWith(
-                                      color: result == 'custom_date' ?
-                                      Theme.of(context).textTheme.bodyLarge?.color :
-                                      Theme.of(context).textTheme.headlineLarge?.color
-                                  )),
-                                ],
-                              ),
-                            ),
-
-                          ],
-                        ),
-                      ),
-                    ],
-                  );
-                }
-              ),
-            ),
+                           ],
+                         ),
+                       ),
+                     ],
+                   );
+                 }
+               ),
+             ),
 
             refund.pendingList != null ? Padding(
               padding: const EdgeInsets.symmetric(horizontal: Dimensions.paddingSizeDefault, vertical: Dimensions.paddingSizeSmall),

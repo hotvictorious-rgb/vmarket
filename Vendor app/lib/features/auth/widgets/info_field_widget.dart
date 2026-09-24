@@ -41,7 +41,8 @@ class _InfoFieldVIewWidgetState extends State<InfoFieldVIewWidget> {
 
     final authController = Provider.of<AuthController>(context, listen: false);
 
-      _countryDialCode = CountryCode.fromCountryCode(Provider.of<SplashController>(context, listen: false).configModel!.countryCode!).dialCode;
+      final countryCode = Provider.of<SplashController>(context, listen: false).configModel?.countryCode ?? 'NG';
+      _countryDialCode = CountryCode.fromCountryCode(countryCode).dialCode ?? '+234';
       if (authController.countryDialCode != _countryDialCode) {
         _countryDialCode = authController.countryDialCode;
       }

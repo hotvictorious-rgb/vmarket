@@ -1,19 +1,16 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import 'package:sixvalley_vendor_app/common/basewidgets/custom_dialog_widget.dart';
 import 'package:sixvalley_vendor_app/common/basewidgets/custom_snackbar_widget.dart';
 import 'package:sixvalley_vendor_app/common/basewidgets/textfeild/custom_text_feild_widget.dart';
 import 'package:sixvalley_vendor_app/features/dashboard/screens/dashboard_screen.dart';
 import 'package:sixvalley_vendor_app/features/order/domain/models/order_model.dart';
 import 'package:sixvalley_vendor_app/features/order_details/controllers/order_details_controller.dart';
 import 'package:sixvalley_vendor_app/features/order_details/widgets/change_amount_widget.dart';
-import 'package:sixvalley_vendor_app/features/order_details/widgets/due_ampunt_card.dart';
 import 'package:sixvalley_vendor_app/features/order_details/widgets/order_details_shimmer.dart';
 import 'package:sixvalley_vendor_app/features/order_details/widgets/order_payment_info_widget.dart';
 import 'package:sixvalley_vendor_app/features/order_details/widgets/order_setup_bottom_sheet.dart';
 import 'package:sixvalley_vendor_app/features/order_details/widgets/product_list_widget.dart';
 import 'package:sixvalley_vendor_app/helper/color_helper.dart';
-import 'package:sixvalley_vendor_app/helper/date_converter.dart';
 import 'package:sixvalley_vendor_app/helper/price_converter.dart';
 import 'package:sixvalley_vendor_app/localization/language_constrants.dart';
 import 'package:sixvalley_vendor_app/main.dart';
@@ -33,7 +30,6 @@ import 'package:sixvalley_vendor_app/features/order_details/widgets/order_top_se
 import 'package:sixvalley_vendor_app/features/order_details/widgets/payment_status_widget.dart';
 import 'package:sixvalley_vendor_app/features/order_details/widgets/shipping_and_biilling_widget.dart';
 import 'package:sixvalley_vendor_app/features/order_details/widgets/third_party_delivery_info_widget.dart';
-import '../../../common/basewidgets/custom_confirmation_dialog_widget.dart' show CustomConfirmationDialogWidget;
 
 
 class OrderDetailsScreen extends StatefulWidget {
@@ -52,10 +48,7 @@ class _OrderDetailsScreenState extends State<OrderDetailsScreen> {
       await Provider.of<SplashController>(Get.context!, listen: false).initConfig();
     }
     Provider.of<OrderDetailsController>(Get.context!, listen: false).getOrderDetails(widget.orderId.toString());
-    final splashConfig = Provider.of<SplashController>(Get.context!, listen: false).configModel;
-    Provider.of<OrderDetailsController>(Get.context!, listen: false).initOrderStatusList(
-      splashConfig?.shippingMethod == 'inhouse_shipping' ?  'inhouse_shipping' : "seller_wise"
-    );
+     Provider.of<OrderDetailsController>(Get.context!, listen: false).initOrderStatusList();
   }
 
 
@@ -99,43 +92,19 @@ class _OrderDetailsScreenState extends State<OrderDetailsScreen> {
             builder:(context, orderController, child){
               return Consumer<OrderDetailsController>(
                 builder: (context, orderDetailsController, child) {
-                  double itemsPrice = 0;
-                  double discount = 0;
-                  double eeDiscount = 0;
-                  double tax = 0;
-                  double coupon = 0;
-                  double shipping = 0;
-                  double referAndEarnDiscount = 0;
-                  bool isFreeShipping = false;
+                   final firstOrder = orderDetailsController.orderDetails?.isNotEmpty == true
+                       ? orderDetailsController.orderDetails!.first.order
+                       : null;
+                   final tax = firstOrder?.totalTaxAmount ?? 0;
+                   final productDiscount = firstOrder?.totalProductDiscount ?? 0;
+                   final couponDiscount = firstOrder?.discountAmount ?? 0;
+                   final shipping = firstOrder?.shippingCost ?? 0;
+                   final isFreeShipping = firstOrder?.isShippingFree ?? false;
+                   final referAndEarnDiscount = firstOrder?.referAndEarnDiscount ?? 0;
+                   final extraDiscount = firstOrder?.extraDiscount ?? 0;
+                   final authoritativeOrderAmount = firstOrder?.orderAmount ?? firstOrder?.initOrderAmount ?? 0;
 
-                  if (orderDetailsController.orderDetails != null && orderDetailsController.orderDetails!.isNotEmpty) {
-                    final firstOrder = orderDetailsController.orderDetails![0].order;
-                    coupon = firstOrder?.discountAmount ?? 0;
-                    shipping = firstOrder?.shippingCost ?? 0;
-                    isFreeShipping = firstOrder?.isShippingFree ?? false;
-                    for (var orderDetails in orderDetailsController.orderDetails!) {
-                      itemsPrice += (orderDetails.price ?? 0) * (orderDetails.qty ?? 0);
-                      discount += orderDetails.discount ?? 0;
-                    }
-                    tax = firstOrder?.totalTaxAmount ?? 0;
-
-                    if(firstOrder?.orderType == 'POS') {
-                      if(firstOrder?.extraDiscountType == 'percent') {
-                        eeDiscount = (itemsPrice - coupon - discount) * ((firstOrder?.extraDiscount ?? 0) / 100);
-                      } else {
-                        eeDiscount = firstOrder?.extraDiscount ?? 0;
-                      }
-                    }
-
-                    if(firstOrder?.orderType != 'POS') {
-                      referAndEarnDiscount = firstOrder?.referAndEarnDiscount ?? 0;
-                    }
-                  }
-                  double subTotal = itemsPrice + tax - discount;
-
-                  double totalPrice = subTotal + (isFreeShipping ? 0 : shipping) - coupon - eeDiscount - referAndEarnDiscount;
-
-                  return orderDetailsController.orderDetails != null ? orderDetailsController.orderDetails!.isNotEmpty ?
+                   return orderDetailsController.orderDetails != null ? orderDetailsController.orderDetails!.isNotEmpty ?
                   CustomScrollView(slivers: [
                     SliverToBoxAdapter(child: Column(children: [
                       Container(height: 10, color: Theme.of(context).primaryColor.withValues(alpha:.1)),
@@ -360,21 +329,7 @@ class _OrderDetailsScreenState extends State<OrderDetailsScreen> {
                                       SizedBox(height: Dimensions.paddingSizeSmall) : SizedBox(),
 
 
-                                      // Total
-                                      Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
-                                        Text(getTranslated('sub_total', context)!,
-                                            style: titilliumRegular.copyWith(
-                                                color: ColorHelper.blendColors(Colors.white, Theme.of(context).textTheme.bodyLarge!.color!, 0.7)
-                                            )
-                                        ),
-
-                                        Text(PriceConverter.convertPrice(context, itemsPrice),
-                                            style: titilliumRegular.copyWith(
-                                                color: ColorHelper.blendColors(Colors.white, Theme.of(context).textTheme.bodyLarge!.color!, 0.7))),]),
-                                      const SizedBox(height: Dimensions.paddingSizeSmall),
-
-
-                                      Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
+                                       Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
                                         Text(getTranslated('tax', context)!,
                                             style: titilliumRegular.copyWith(
                                                 color: ColorHelper.blendColors(Colors.white, Theme.of(context).textTheme.bodyLarge!.color!, 0.7))
@@ -386,21 +341,34 @@ class _OrderDetailsScreenState extends State<OrderDetailsScreen> {
                                       const SizedBox(height: Dimensions.paddingSizeSmall,),
 
 
-                                      Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
-                                        Text(getTranslated('discount', context)!,
+                                      if (productDiscount > 0)
+                                        Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
+                                          Text(getTranslated('discount', context)!,
                                             style: titilliumRegular.copyWith(
                                                 color: ColorHelper.blendColors(Colors.white, Theme.of(context).textTheme.bodyLarge!.color!, 0.7))),
 
 
-                                        Text('- ${PriceConverter.convertPrice(context, discount)}',
+                                        Text('- ${PriceConverter.convertPrice(context, productDiscount)}',
                                             style: titilliumRegular.copyWith(
                                               color: ColorHelper.blendColors(Colors.white, Theme.of(context).textTheme.bodyLarge!.color!, 0.7),
                                             )),]),
-                                      const SizedBox(height: Dimensions.paddingSizeSmall),
+                                      if (productDiscount > 0)
+                                        const SizedBox(height: Dimensions.paddingSizeSmall),
 
+                                      if (couponDiscount > 0)
+                                        Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
+                                          Text(getTranslated('coupon_discount', context)!,
+                                              style: titilliumRegular.copyWith(
+                                                  color: ColorHelper.blendColors(Colors.white, Theme.of(context).textTheme.bodyLarge!.color!, 0.7))),
+                                          Text('- ${PriceConverter.convertPrice(context, couponDiscount)}',
+                                              style: titilliumRegular.copyWith(
+                                                  color: ColorHelper.blendColors(Colors.white, Theme.of(context).textTheme.bodyLarge!.color!, 0.7))),
+                                        ]),
+                                      if (couponDiscount > 0)
+                                        const SizedBox(height: Dimensions.paddingSizeSmall),
 
                                       if(referAndEarnDiscount > 0)
-                                        Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
+                                         Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
                                           Text(getTranslated('referral_discount', context)!,
                                               style: titilliumRegular.copyWith(
                                                   color: ColorHelper.blendColors(Colors.white, Theme.of(context).textTheme.bodyLarge!.color!, 0.7))
@@ -421,24 +389,14 @@ class _OrderDetailsScreenState extends State<OrderDetailsScreen> {
                                         Text(getTranslated('extra_discount', context)!,
                                             style: titilliumRegular.copyWith(
                                                 color: ColorHelper.blendColors(Colors.white, Theme.of(context).textTheme.bodyLarge!.color!, 0.7))),
-                                        Text('- ${PriceConverter.convertPrice(context, eeDiscount)}',
+                                         Text('- ${PriceConverter.convertPrice(context, extraDiscount)}',
                                             style: titilliumRegular.copyWith(
                                                 color: ColorHelper.blendColors(Colors.white, Theme.of(context).textTheme.bodyLarge!.color!, 0.7))),
                                       ]):const SizedBox(),
                                       SizedBox(height:  orderDetailsController.orderDetails![0].order!.orderType == "POS"? Dimensions.paddingSizeSmall: 0),
 
 
-                                      Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
-                                        Text(getTranslated('coupon_discount', context)!,
-                                            style: titilliumRegular.copyWith(
-                                                color: ColorHelper.blendColors(Colors.white, Theme.of(context).textTheme.bodyLarge!.color!, 0.7))),
-                                        Text('- ${PriceConverter.convertPrice(context, coupon)}',
-                                            style: titilliumRegular.copyWith(
-                                                color: ColorHelper.blendColors(Colors.white, Theme.of(context).textTheme.bodyLarge!.color!, 0.7))),]),
-                                      const SizedBox(height: Dimensions.paddingSizeSmall,),
-
-
-                                      Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
+                                       Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
                                         Text(getTranslated('shipping_fee', context)! + _shippingFreeText(orderDetailsController.orderDetails![0].order),
                                             style: titilliumRegular.copyWith(
                                                 color: ColorHelper.blendColors(Colors.white, Theme.of(context).textTheme.bodyLarge!.color!, 0.7))),
@@ -454,37 +412,26 @@ class _OrderDetailsScreenState extends State<OrderDetailsScreen> {
                                         Text(getTranslated('total_amount', context)!,
                                             style: titilliumSemiBold.copyWith(fontSize: Dimensions.fontSizeDefault)
                                         ),
-                                        Text(PriceConverter.convertPrice(context, totalPrice),
+                                         Text(PriceConverter.convertPrice(context, authoritativeOrderAmount),
                                           style: titilliumSemiBold.copyWith(fontSize: Dimensions.fontSizeExtraLarge,
                                               color: Theme.of(context).primaryColor),
                                         ),
                                       ]),
 
-                                      if (orderDetailsController.orderDetails![0].order!.orderType == 'POS')
-                                        Column(
-                                          children: [
-                                            const SizedBox(height: Dimensions.paddingSizeSmall),
-                                            Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
-                                              Text(getTranslated('paid_amount', context)!,
-                                                  style: titilliumRegular.copyWith(
-                                                      color: ColorHelper.blendColors(Colors.white, Theme.of(context).textTheme.bodyLarge!.color!, 0.7))),
-                                              Text(PriceConverter.convertPrice(context, orderDetailsController.orderDetails![0].order!.paidAmount),
-                                                  style: titilliumRegular.copyWith(
-                                                      color: ColorHelper.blendColors(Colors.white, Theme.of(context).textTheme.bodyLarge!.color!, 0.7))),]
-                                            ),
-                                            const SizedBox(height: Dimensions.paddingSizeSmall),
-
-                                            Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
-                                              Text(getTranslated('change_amount', context)!,
-                                                  style: titilliumRegular.copyWith(
-                                                      color: ColorHelper.blendColors(Colors.white, Theme.of(context).textTheme.bodyLarge!.color!, 0.7))),
-                                              Text(PriceConverter.convertPrice(context, orderDetailsController.orderDetails![0].order!.paidAmount! - double.parse(totalPrice.toStringAsFixed(2))),
-                                                  style: titilliumRegular.copyWith(
-                                                      color: ColorHelper.blendColors(Colors.white, Theme.of(context).textTheme.bodyLarge!.color!, 0.7))),]
-                                            ),
-                                            // const SizedBox(height: Dimensions.paddingSizeSmall),
-                                          ],
-                                        ),
+                                       if (orderDetailsController.orderDetails![0].order!.orderType == 'POS')
+                                         Column(
+                                           children: [
+                                             const SizedBox(height: Dimensions.paddingSizeSmall),
+                                             Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
+                                               Text(getTranslated('paid_amount', context)!,
+                                                   style: titilliumRegular.copyWith(
+                                                       color: ColorHelper.blendColors(Colors.white, Theme.of(context).textTheme.bodyLarge!.color!, 0.7))),
+                                               Text(PriceConverter.convertPrice(context, firstOrder?.paidAmount ?? 0),
+                                                   style: titilliumRegular.copyWith(
+                                                       color: ColorHelper.blendColors(Colors.white, Theme.of(context).textTheme.bodyLarge!.color!, 0.7))),]
+                                             ),
+                                           ],
+                                         ),
 
                                     ],
                                   ),
@@ -606,14 +553,14 @@ class _OrderDetailsScreenState extends State<OrderDetailsScreen> {
             quickActionText = getTranslated('confirm_order', context) ?? 'Confirm Order';
             onActionTap = () async {
               if (order?.id != null) {
-                await orderDetailsController.updateQuickOrderStatus(order!.id!, 'confirmed', paymentStatus: order?.paymentStatus);
+                await orderDetailsController.updateQuickOrderStatus(order!.id!, 'confirmed');
               }
             };
           } else if (status == 'confirmed') {
             quickActionText = getTranslated('mark_as_preparing', context) ?? 'Mark as Preparing';
             onActionTap = () async {
               if (order?.id != null) {
-                await orderDetailsController.updateQuickOrderStatus(order!.id!, 'processing', paymentStatus: order?.paymentStatus);
+                await orderDetailsController.updateQuickOrderStatus(order!.id!, 'processing');
               }
             };
           } else if (status == 'processing') {
@@ -621,7 +568,7 @@ class _OrderDetailsScreenState extends State<OrderDetailsScreen> {
             actionBgColor = const Color(0xFF00897B);
             onActionTap = () async {
               if (order?.id != null) {
-                await orderDetailsController.updateQuickOrderStatus(order!.id!, 'ready_for_pickup', paymentStatus: order?.paymentStatus);
+                await orderDetailsController.updateQuickOrderStatus(order!.id!, 'ready_for_pickup');
               }
             };
           } else if (status == 'ready_for_pickup') {
