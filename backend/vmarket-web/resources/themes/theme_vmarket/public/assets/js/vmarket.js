@@ -266,141 +266,141 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     });
 
-    // Fulfillment Mode Switcher (Doorstep Delivery vs In-Shop Pickup)
-    const optDelivery = document.getElementById('vmOptDelivery');
-    const optPickup = document.getElementById('vmOptPickup');
-    const deliverySection = document.getElementById('vmDeliverySection');
-    const pickupSection = document.getElementById('vmPickupSection');
-
-    function switchFulfillmentMode(mode) {
-        if (mode === 'delivery') {
-            if (optDelivery) optDelivery.classList.add('active');
-            if (optPickup) optPickup.classList.remove('active');
-            if (deliverySection) deliverySection.style.display = 'block';
-            if (pickupSection) pickupSection.style.display = 'none';
-            const radio = optDelivery ? optDelivery.querySelector('input') : null;
-            if (radio) radio.checked = true;
-        } else {
-            if (optPickup) optPickup.classList.add('active');
-            if (optDelivery) optDelivery.classList.remove('active');
-            if (pickupSection) pickupSection.style.display = 'block';
-            if (deliverySection) deliverySection.style.display = 'none';
-            const radio = optPickup ? optPickup.querySelector('input') : null;
-            if (radio) radio.checked = true;
+    // LGA Dataset & Autocomplete Engine
+    let lgaDataset = [];
+    const lgaDataScript = document.getElementById('vmLgaData');
+    if (lgaDataScript) {
+        try {
+            lgaDataset = JSON.parse(lgaDataScript.textContent) || [];
+        } catch (e) {
+            console.error('Error parsing LGA dataset:', e);
         }
     }
 
-    if (optDelivery) {
-        optDelivery.addEventListener('click', () => switchFulfillmentMode('delivery'));
-    }
-    if (optPickup) {
-        optPickup.addEventListener('click', () => switchFulfillmentMode('pickup'));
-    }
-
-    // LGA Chips & Select Synchronization
-    const cityChips = document.querySelectorAll('.vm-city-chip');
-    const selectLga = document.getElementById('vmSelectLga');
-    const selectState = document.getElementById('vmSelectState');
+    const lgaSearchInput = document.getElementById('vmLgaSearchInput');
+    const lgaDropdownList = document.getElementById('vmLgaDropdownList');
+    const lgaClearBtn = document.getElementById('vmLgaClearBtn');
     const hiddenCity = document.getElementById('vmHiddenCity');
     const hiddenState = document.getElementById('vmHiddenState');
     const hiddenLgaId = document.getElementById('vmHiddenLgaId');
+    const hiddenLgaName = document.getElementById('vmHiddenLgaName');
     const hiddenStateId = document.getElementById('vmHiddenStateId');
-    const laneAlertText = document.getElementById('vmDeliveryLaneText');
+    const previewCity = document.getElementById('vmPreviewCity');
+    const cityChips = document.querySelectorAll('.vm-city-chip');
 
-    function updateActiveLocationDisplay(lgaId, cityName, stateName, fee, time) {
-        if (hiddenLgaId) hiddenLgaId.value = lgaId || '';
-        if (hiddenCity) hiddenCity.value = cityName || '';
+    function selectLgaItem(id, name, stateName, stateId) {
+        if (hiddenLgaId) hiddenLgaId.value = id || '';
+        if (hiddenLgaName) hiddenLgaName.value = name || '';
+        if (hiddenCity) hiddenCity.value = name || '';
         if (hiddenState) hiddenState.value = stateName || '';
+        if (hiddenStateId) hiddenStateId.value = stateId || '';
+        if (lgaSearchInput) lgaSearchInput.value = name || '';
+        if (lgaClearBtn) lgaClearBtn.style.display = name ? 'block' : 'none';
+        if (previewCity) previewCity.textContent = `${name}, ${stateName || 'Nigeria'}`;
 
-        // Sync dropdown
-        if (selectLga && lgaId) {
-            selectLga.value = lgaId;
-        }
-
-        // Sync chips active state
+        // Sync chips
         cityChips.forEach(c => {
-            if (c.getAttribute('data-lga-id') == lgaId || c.getAttribute('data-city') == cityName) {
+            if (c.getAttribute('data-lga-id') == id || c.getAttribute('data-city') == name) {
                 c.classList.add('active');
             } else {
                 c.classList.remove('active');
             }
         });
 
-        // Update live preview alert
-        if (laneAlertText && (fee || time)) {
-            laneAlertText.textContent = `⚡ Direct LGA Lane: Delivery Fee ${fee || '₦500'} • Estimated Time: ${time || '2-6 hours'} (Direct dispatch to ${cityName})`;
-        }
+        // Hide dropdown
+        if (lgaDropdownList) lgaDropdownList.style.display = 'none';
     }
 
+    if (lgaSearchInput && lgaDropdownList) {
+        lgaSearchInput.addEventListener('input', (e) => {
+            const query = e.target.value.trim().toLowerCase();
+            if (lgaClearBtn) lgaClearBtn.style.display = query ? 'block' : 'none';
+
+            if (!query || query.length < 1) {
+                lgaDropdownList.style.display = 'none';
+                return;
+            }
+
+            // Filter LGAs matching query
+            const matches = lgaDataset.filter(item => {
+                const nameMatch = item.name.toLowerCase().includes(query);
+                const stateMatch = item.state_name && item.state_name.toLowerCase().includes(query);
+                return nameMatch || stateMatch;
+            }).slice(0, 15);
+
+            if (matches.length === 0) {
+                lgaDropdownList.innerHTML = `
+                    <div style="padding: 12px; text-align: center; color: #64748B; font-size: 12.5px;">
+                        No matching LGA found for "${e.target.value}"
+                    </div>
+                `;
+                lgaDropdownList.style.display = 'block';
+                return;
+            }
+
+            let html = '';
+            matches.forEach(item => {
+                html += `
+                    <div class="vm-lga-dropdown-item" 
+                         data-id="${item.id}" 
+                         data-name="${item.name}" 
+                         data-state="${item.state_name}" 
+                         data-state-id="${item.state_id}">
+                        <div>
+                            <strong>${item.name}</strong>
+                            <span class="vm-lga-dropdown-state">• ${item.state_name}</span>
+                        </div>
+                        <span class="vm-lga-coverage-badge">Select</span>
+                    </div>
+                `;
+            });
+
+            lgaDropdownList.innerHTML = html;
+            lgaDropdownList.style.display = 'block';
+
+            // Add click listeners to items
+            lgaDropdownList.querySelectorAll('.vm-lga-dropdown-item').forEach(el => {
+                el.addEventListener('click', () => {
+                    const id = el.getAttribute('data-id');
+                    const name = el.getAttribute('data-name');
+                    const state = el.getAttribute('data-state');
+                    const stateId = el.getAttribute('data-state-id');
+                    selectLgaItem(id, name, state, stateId);
+                });
+            });
+        });
+
+        // Hide dropdown when clicking outside
+        document.addEventListener('click', (e) => {
+            if (!lgaSearchInput.contains(e.target) && !lgaDropdownList.contains(e.target)) {
+                lgaDropdownList.style.display = 'none';
+            }
+        });
+    }
+
+    if (lgaClearBtn) {
+        lgaClearBtn.addEventListener('click', () => {
+            if (lgaSearchInput) {
+                lgaSearchInput.value = '';
+                lgaSearchInput.focus();
+            }
+            if (lgaClearBtn) lgaClearBtn.style.display = 'none';
+            if (lgaDropdownList) lgaDropdownList.style.display = 'none';
+        });
+    }
+
+    // Quick Chips click handling
     cityChips.forEach(chip => {
         chip.addEventListener('click', (e) => {
             e.preventDefault();
-            const lgaId = chip.getAttribute('data-lga-id');
+            const id = chip.getAttribute('data-lga-id');
             const city = chip.getAttribute('data-city');
             const state = chip.getAttribute('data-state');
-            const fee = chip.getAttribute('data-fee');
-            const time = chip.getAttribute('data-time');
-            updateActiveLocationDisplay(lgaId, city, state, fee, time);
+            selectLgaItem(id, city, state, '');
         });
     });
 
-    if (selectLga) {
-        selectLga.addEventListener('change', () => {
-            const selectedOpt = selectLga.options[selectLga.selectedIndex];
-            if (selectedOpt) {
-                const lgaId = selectedOpt.value;
-                const city = selectedOpt.getAttribute('data-city');
-                const state = selectedOpt.getAttribute('data-state');
-                const fee = selectedOpt.getAttribute('data-fee');
-                const time = selectedOpt.getAttribute('data-time');
-                updateActiveLocationDisplay(lgaId, city, state, fee, time);
-            }
-        });
-    }
-
-    // In-Shop Pickup Radio Selection
-    const pickupCards = document.querySelectorAll('.vm-pickup-shop-card');
-    pickupCards.forEach(card => {
-        card.addEventListener('click', () => {
-            pickupCards.forEach(c => c.classList.remove('active'));
-            card.classList.add('active');
-            const radio = card.querySelector('input');
-            if (radio) {
-                radio.checked = true;
-                const city = radio.getAttribute('data-city');
-                const state = radio.getAttribute('data-state');
-                const lgaId = radio.getAttribute('data-lga-id');
-                if (hiddenCity) hiddenCity.value = city;
-                if (hiddenState) hiddenState.value = state;
-                if (hiddenLgaId) hiddenLgaId.value = lgaId || '';
-            }
-        });
-    });
-
-    // Geolocation Auto-Detection
-    const geoBtn = document.getElementById('vmGeoDetectBtn');
-    if (geoBtn) {
-        geoBtn.addEventListener('click', (e) => {
-            e.preventDefault();
-            if ('geolocation' in navigator) {
-                geoBtn.innerHTML = '<span>Detecting...</span>';
-                navigator.geolocation.getCurrentPosition(
-                    (pos) => {
-                        // Successfully captured coordinates, set default flagship hub Uyo
-                        geoBtn.innerHTML = '<span>📍 Detected (Uyo)</span>';
-                        updateActiveLocationDisplay(69, 'Uyo', 'Akwa Ibom', '₦500.00', '2-6 hours');
-                    },
-                    (err) => {
-                        geoBtn.innerHTML = '<span>Auto-Detect</span>';
-                        alert('Could not detect exact location. Please select your LGA from the list.');
-                    },
-                    { timeout: 8000 }
-                );
-            }
-        });
-    }
-
-    // AJAX Submission of Location Preference
+    // AJAX Submission on "Done"
     const locForm = document.getElementById('vmLocationForm');
     if (locForm) {
         locForm.addEventListener('submit', (e) => {
@@ -408,7 +408,7 @@ document.addEventListener('DOMContentLoaded', () => {
             const submitBtn = document.getElementById('vmLocationModalSubmit');
             if (submitBtn) {
                 submitBtn.disabled = true;
-                submitBtn.innerHTML = '<span>Updating...</span>';
+                submitBtn.innerHTML = '<span>Saving...</span>';
             }
 
             const formData = new FormData(locForm);
@@ -429,13 +429,13 @@ document.addEventListener('DOMContentLoaded', () => {
                     cityLabels.forEach(el => el.textContent = data.city);
 
                     closeLocationModal();
-                    // Smooth page reload so proximity recommendations, nearby shops, and products align
+                    // Smooth page reload so proximity recommendations, nearby shops, and all products filter
                     window.location.reload();
                 } else {
                     alert(data.message || 'Unable to update location');
                     if (submitBtn) {
                         submitBtn.disabled = false;
-                        submitBtn.innerHTML = '<span>Confirm Location</span>';
+                        submitBtn.innerHTML = '<span>Done</span>';
                     }
                 }
             })
@@ -443,11 +443,31 @@ document.addEventListener('DOMContentLoaded', () => {
                 console.error(err);
                 if (submitBtn) {
                     submitBtn.disabled = false;
-                    submitBtn.innerHTML = '<span>Confirm Location</span>';
+                    submitBtn.innerHTML = '<span>Done</span>';
                 }
                 window.location.reload();
             });
         });
     }
+
+    // 7. Smooth Auth Modal Switching (Login <-> Register)
+    document.querySelectorAll('[data-bs-target="#registerModal"]').forEach(btn => {
+        btn.addEventListener('click', () => {
+            const loginEl = document.getElementById('loginModal');
+            if (loginEl && typeof bootstrap !== 'undefined') {
+                const modalInstance = bootstrap.Modal.getInstance(loginEl);
+                if (modalInstance) modalInstance.hide();
+            }
+        });
+    });
+    document.querySelectorAll('[data-bs-target="#loginModal"]').forEach(btn => {
+        btn.addEventListener('click', () => {
+            const regEl = document.getElementById('registerModal');
+            if (regEl && typeof bootstrap !== 'undefined') {
+                const modalInstance = bootstrap.Modal.getInstance(regEl);
+                if (modalInstance) modalInstance.hide();
+            }
+        });
+    });
 });
 

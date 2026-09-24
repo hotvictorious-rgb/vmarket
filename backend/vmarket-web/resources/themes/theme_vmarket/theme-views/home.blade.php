@@ -323,16 +323,16 @@
                 <div class="vm-proximity-info">
                     <span class="vm-proximity-icon">📍</span>
                     <div class="vm-proximity-text">
-                        <span class="vm-proximity-label">{{ translate('Active Marketplace Coverage') }}:</span>
+                        <span class="vm-proximity-label">{{ translate('Your Location') }}:</span>
                         <strong class="vm-proximity-highlight">{{ $activeCity ?? 'Uyo' }}, {{ $activeState ?? 'Akwa Ibom' }}</strong>
                         <span class="vm-proximity-dot">•</span>
-                        <span class="vm-proximity-mode-tag {{ ($fulfillmentMode ?? 'delivery') }}">
-                            {{ ($fulfillmentMode ?? 'delivery') === 'pickup' ? translate('🏪 In-Shop Inspection (Zero Delivery Fee)') : translate('⚡ Direct Doorstep LGA Logistics') }}
+                        <span class="vm-proximity-mode-tag delivery">
+                            {{ translate('⚡ Pickup & Delivery Active') }}
                         </span>
                     </div>
                 </div>
                 <button type="button" class="vm-proximity-switch-btn" id="vmProximityTrigger">
-                    <span>{{ translate('Change Location or Mode') }}</span>
+                    <span>{{ translate('Change Location') }}</span>
                     <span class="vm-caret">▾</span>
                 </button>
             </div>
@@ -357,7 +357,7 @@
             <div class="vm-discovery-quad-grid">
                 @if(isset($nearbyShops) && $nearbyShops->count() > 0)
                     @foreach($nearbyShops->take(4) as $nShop)
-                        <a href="{{ route('vendor-shop', $nShop->slug) }}" class="vm-discovery-tile">
+                        <a href="{{ route('vendor-shop', $nShop->slug ?: $nShop->id) }}" class="vm-discovery-tile">
                             <div class="vm-discovery-tile-thumb-wrap">
                                 <img src="{{ getStorageImages(path: $nShop->image_full_url, type: 'shop') }}" 
                                      alt="{{ $nShop->name }}" 
@@ -597,7 +597,7 @@
                         $shop = $product->seller?->shop;
                     @endphp
                     <div class="vm-product-card">
-                        <a href="{{ route('product', $product->slug) }}" class="vm-product-img-wrap">
+                        <a href="{{ route('product', $product->slug ?: $product->id) }}" class="vm-product-img-wrap">
                             <img src="{{ getStorageImages(path: $product->thumbnail_full_url, type: 'product') }}" 
                                  alt="{{ $product->name }}" 
                                  class="vm-product-img" 
@@ -614,12 +614,12 @@
                         </a>
                         <div class="vm-product-info">
                             @if($shop)
-                                <a href="{{ route('vendor-shop', $shop->slug) }}" class="vm-product-shop">
+                                <a href="{{ route('vendor-shop', $shop->slug ?: $shop->id) }}" class="vm-product-shop">
                                     <span>🏪</span>
                                     <span>{{ Str::limit($shop->name, 18) }}</span>
                                 </a>
                             @endif
-                            <a href="{{ route('product', $product->slug) }}" class="vm-product-name" title="{{ $product->name }}">
+                            <a href="{{ route('product', $product->slug ?: $product->id) }}" class="vm-product-name" title="{{ $product->name }}">
                                 {{ $product->name }}
                             </a>
                             <div class="vm-product-price-row">
@@ -689,7 +689,7 @@
                         $shop = $product->seller?->shop;
                     @endphp
                     <div class="vm-product-card">
-                        <a href="{{ route('product', $product->slug) }}" class="vm-product-img-wrap">
+                        <a href="{{ route('product', $product->slug ?: $product->id) }}" class="vm-product-img-wrap">
                             <img src="{{ getStorageImages(path: $product->thumbnail_full_url, type: 'product') }}" 
                                  alt="{{ $product->name }}" 
                                  class="vm-product-img" 
@@ -697,12 +697,12 @@
                         </a>
                         <div class="vm-product-info">
                             @if($shop)
-                                <a href="{{ route('vendor-shop', $shop->slug) }}" class="vm-product-shop">
+                                <a href="{{ route('vendor-shop', $shop->slug ?: $shop->id) }}" class="vm-product-shop">
                                     <span>🏪</span>
                                     <span>{{ Str::limit($shop->name, 18) }}</span>
                                 </a>
                             @endif
-                            <a href="{{ route('product', $product->slug) }}" class="vm-product-name" title="{{ $product->name }}">
+                            <a href="{{ route('product', $product->slug ?: $product->id) }}" class="vm-product-name" title="{{ $product->name }}">
                                 {{ $product->name }}
                             </a>
                             <div class="vm-product-price-row">

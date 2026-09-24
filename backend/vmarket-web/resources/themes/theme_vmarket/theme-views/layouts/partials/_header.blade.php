@@ -11,10 +11,16 @@
         <div>
             <span>👑 {{ translate('Welcome to Victorious MARKET — Seamless Shopping, Swift Logistics') }}</span>
         </div>
-        <div style="display: flex; gap: 16px;">
+        <div style="display: flex; gap: 16px; align-items: center;">
             <a href="{{ route('vendors') }}">{{ translate('Verified Merchants') }}</a>
             <span>•</span>
             <a href="{{ route('contacts') }}">{{ translate('Help & Support') }}</a>
+            @if(!$customer)
+                <span>•</span>
+                <a href="javascript:" data-bs-toggle="modal" data-bs-target="#loginModal">{{ translate('Sign In') }}</a>
+                <span>•</span>
+                <a href="javascript:" data-bs-toggle="modal" data-bs-target="#registerModal" style="color: var(--vm-gold); font-weight: 700;">{{ translate('Register') }}</a>
+            @endif
         </div>
     </div>
 </div>
@@ -38,8 +44,8 @@
             $headerMode = session('fulfillment_mode', 'delivery');
         @endphp
 
-        <!-- Amazon-Style Deliver to / Pickup Near Selector (Desktop) -->
-        <button type="button" class="vm-header-location-pill" id="vmHeaderLocationBtn" aria-label="{{ translate('Change Delivery or Pickup Location') }}">
+        <!-- Your Location Selector (Desktop) -->
+        <button type="button" class="vm-header-location-pill" id="vmHeaderLocationBtn" aria-label="{{ translate('Change Your Location') }}">
             <span class="vm-location-pin-icon">
                 <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
                     <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"></path>
@@ -48,7 +54,7 @@
             </span>
             <div class="vm-location-labels">
                 <span class="vm-location-sub">
-                    {{ $headerMode === 'pickup' ? translate('Pickup near') : translate('Deliver to') }}
+                    {{ translate('Your Location') }}
                 </span>
                 <span class="vm-location-main">
                     <strong class="vm-active-city-label">{{ $headerCity }}</strong>
@@ -76,9 +82,13 @@
                     <span>{{ Str::limit($customer->f_name, 10) }}</span>
                 </a>
             @else
-                <a href="{{ route('customer.auth.login') }}" class="vm-action-btn">
+                <a href="javascript:" data-bs-toggle="modal" data-bs-target="#loginModal" class="vm-action-btn" title="{{ translate('Sign In') }}">
                     <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4"></path><polyline points="10 17 15 12 10 7"></polyline><line x1="15" y1="12" x2="3" y2="12"></line></svg>
                     <span>{{ translate('Sign In') }}</span>
+                </a>
+                <a href="javascript:" data-bs-toggle="modal" data-bs-target="#registerModal" class="vm-action-btn vm-register-btn" title="{{ translate('Register') }}">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path><circle cx="8.5" cy="7" r="4"></circle><line x1="20" y1="8" x2="20" y2="14"></line><line x1="23" y1="11" x2="17" y2="11"></line></svg>
+                    <span>{{ translate('Register') }}</span>
                 </a>
             @endif
 
@@ -89,16 +99,16 @@
         </div>
     </div>
 
-    <!-- Mobile Quick Location & Search Strip (< 768px) -->
+    <!-- Mobile Location Strip (< 768px) - Clean Dedicated Location Button -->
     <div class="vm-mobile-search-strip">
-        <button type="button" class="vm-mobile-location-strip-btn" id="vmMobileLocationBtn" aria-label="{{ translate('Change Location') }}">
+        <button type="button" class="vm-mobile-location-strip-btn" id="vmMobileLocationBtn" aria-label="{{ translate('Choose Your Location') }}">
             <div class="vm-mobile-loc-left">
-                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>
-                <span>{{ $headerMode === 'pickup' ? translate('Pickup in') : translate('Deliver to') }}: <strong class="vm-active-city-label">{{ $headerCity }}</strong></span>
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>
+                <span>{{ translate('Your Location') }}: <strong class="vm-active-city-label">{{ $headerCity }}</strong></span>
                 <span class="vm-caret">▾</span>
             </div>
-            <span class="vm-mobile-loc-badge {{ $headerMode }}">
-                {{ $headerMode === 'pickup' ? '🏪 In-Shop' : '🚚 Doorstep' }}
+            <span class="vm-mobile-loc-badge">
+                {{ translate('Pickup & Delivery') }}
             </span>
         </button>
 

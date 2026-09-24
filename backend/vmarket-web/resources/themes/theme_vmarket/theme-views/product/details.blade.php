@@ -160,28 +160,32 @@
             </div>
 
             <!-- Quantity & Actions Form -->
-            <form action="{{ route('cart.add') }}" method="POST" id="add-to-cart-form">
+            <form action="{{ route('cart.add') }}" method="POST" class="add-to-cart-details-form addToCartDynamicForm" id="add-to-cart-form">
                 @csrf
                 <input type="hidden" name="id" value="{{ $product->id }}">
                 
                 <div style="display: flex; align-items: center; gap: 16px; margin: 12px 0 16px;">
                     <span style="font-size: 14px; font-weight: 600;">{{ translate('Quantity') }}:</span>
                     <div style="display: flex; align-items: center; border: 1.5px solid var(--vm-border); border-radius: var(--vm-radius-md); overflow: hidden; background: #FFFFFF;">
-                        <button type="button" id="vmQtyMinus" style="padding: 8px 14px; background: transparent; cursor: pointer; font-weight: 700; font-size: 16px;">-</button>
-                        <input type="number" name="quantity" id="vmQtyInput" value="1" min="1" max="{{ $product->current_stock }}" style="width: 44px; text-align: center; font-weight: 700; font-size: 14px;" readonly>
-                        <button type="button" id="vmQtyPlus" style="padding: 8px 14px; background: transparent; cursor: pointer; font-weight: 700; font-size: 16px;">+</button>
+                        <button type="button" class="btn-number" data-type="minus" data-field="quantity" id="vmQtyMinus" style="padding: 8px 14px; background: transparent; cursor: pointer; font-weight: 700; font-size: 16px;">-</button>
+                        <input type="number" name="quantity" id="vmQtyInput" class="input-number" value="{{ $product->minimum_order_qty ?? 1 }}" min="{{ $product->minimum_order_qty ?? 1 }}" max="{{ $product->current_stock }}" style="width: 50px; text-align: center; font-weight: 700; font-size: 14px;" readonly>
+                        <button type="button" class="btn-number" data-type="plus" data-field="quantity" id="vmQtyPlus" style="padding: 8px 14px; background: transparent; cursor: pointer; font-weight: 700; font-size: 16px;">+</button>
                     </div>
                 </div>
 
-                <div class="vm-detail-actions">
-                    <button type="submit" class="vm-btn-primary" {{ !$inStock ? 'disabled style=opacity:0.5;cursor:not-allowed;' : '' }}>
+                <div class="vm-detail-actions" style="display: flex; gap: 12px; flex-wrap: wrap;">
+                    <button type="button" class="vm-btn-primary product-add-to-cart-button add-to-cart" data-form=".addToCartDynamicForm" data-update="{{ translate('Update_Cart') }}" data-add="{{ translate('Add_to_Cart') }}" {{ !$inStock ? 'disabled style=opacity:0.5;cursor:not-allowed;' : '' }}>
                         <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="9" cy="21" r="1"></circle><circle cx="20" cy="21" r="1"></circle><path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"></path></svg>
                         <span>{{ translate('Add to Cart') }}</span>
                     </button>
+
+                    <button type="button" class="vm-btn-gold product-buy-now-button" data-form=".addToCartDynamicForm" data-url="{{ route('checkout-details') }}" {{ !$inStock ? 'disabled style=opacity:0.5;cursor:not-allowed;' : '' }}>
+                        <span>⚡ {{ translate('Buy Now') }}</span>
+                    </button>
                     
                     @if($shop && $shopSlug)
-                        <a href="{{ route('vendor-shop', $shopSlug) }}" class="vm-btn-gold">
-                            <span>🏪 {{ translate('View Merchant Store') }}</span>
+                        <a href="{{ route('vendor-shop', $shopSlug) }}" class="vm-btn-outline" style="padding: 10px 16px; border: 1.5px solid var(--vm-border); border-radius: var(--vm-radius-md); font-size: 13.5px; font-weight: 700; color: var(--vm-dark); text-decoration: none; display: inline-flex; align-items: center; gap: 6px;">
+                            <span>🏪 {{ translate('Store') }}</span>
                         </a>
                     @endif
                 </div>

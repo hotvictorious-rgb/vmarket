@@ -457,6 +457,27 @@ button, input, select, textarea {
     color: var(--vm-primary);
 }
 
+.vm-register-btn {
+    background: linear-gradient(135deg, var(--vm-primary) 0%, #430cb4 100%) !important;
+    color: #FFFFFF !important;
+    border-radius: var(--vm-radius-md) !important;
+    padding: 8px 16px !important;
+    font-weight: 700 !important;
+    box-shadow: 0 2px 8px rgba(94, 23, 235, 0.2);
+}
+
+.vm-register-btn svg {
+    color: #FFFFFF !important;
+    stroke: #FFFFFF !important;
+}
+
+.vm-register-btn:hover {
+    background: linear-gradient(135deg, #4d0ecf 0%, #360993 100%) !important;
+    color: #FFFFFF !important;
+    transform: translateY(-1px);
+    box-shadow: 0 4px 14px rgba(94, 23, 235, 0.35);
+}
+
 .vm-action-badge {
     position: absolute;
     top: 2px;
@@ -2854,46 +2875,41 @@ button, input, select, textarea {
     display: flex;
     align-items: center;
     justify-content: space-between;
-    padding: 7px 12px;
-    background: #F8FAFC;
-    border: 1px solid #E2E8F0;
-    border-radius: 8px;
+    padding: 9px 14px;
+    background: #FFFFFF;
+    border: 1.5px solid rgba(94, 23, 235, 0.15);
+    border-radius: 12px;
     margin-bottom: 8px;
     cursor: pointer;
-    transition: background 0.2s ease;
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.04);
+    transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
 .vm-mobile-location-strip-btn:hover {
-    background: #F1F5F9;
+    background: #F8FAFC;
+    border-color: rgba(94, 23, 235, 0.3);
 }
 
 .vm-mobile-loc-left {
     display: flex;
     align-items: center;
-    gap: 6px;
-    font-size: 12px;
-    color: #1E293B;
+    gap: 7px;
+    font-size: 13px;
+    color: #0F172A;
 }
 
 .vm-mobile-loc-left svg {
     color: #5E17EB;
+    filter: drop-shadow(0 1px 2px rgba(94, 23, 235, 0.3));
 }
 
 .vm-mobile-loc-badge {
-    font-size: 10.5px;
+    font-size: 11px;
     font-weight: 700;
-    padding: 2px 8px;
+    padding: 3px 10px;
     border-radius: 999px;
-}
-
-.vm-mobile-loc-badge.delivery {
-    background: rgba(94, 23, 235, 0.1);
+    background: rgba(94, 23, 235, 0.08);
     color: #5E17EB;
-}
-
-.vm-mobile-loc-badge.pickup {
-    background: rgba(217, 119, 6, 0.12);
-    color: #D97706;
 }
 
 /* Location Modal & Backdrop */
@@ -3195,94 +3211,225 @@ button, input, select, textarea {
     flex-shrink: 0;
 }
 
-/* In-Shop Pickup Shop List */
-.vm-pickup-shops-list {
-    display: flex;
-    flex-direction: column;
-    gap: 8px;
-    max-height: 220px;
-    overflow-y: auto;
-    padding-right: 4px;
-    margin-top: 6px;
-}
-
-.vm-pickup-shop-card {
-    border: 1.5px solid #E2E8F0;
-    border-radius: 12px;
-    padding: 10px 12px;
-    display: flex;
-    align-items: center;
-    gap: 12px;
-    cursor: pointer;
-    transition: all 0.2s ease;
-    background: #FFFFFF;
-}
-
-.vm-pickup-shop-card:hover {
-    border-color: #CBD5E1;
-    background: #FAFAFA;
-}
-
-.vm-pickup-shop-card.active {
-    border-color: #D97706;
-    background: rgba(217, 119, 6, 0.03);
-    box-shadow: 0 0 0 3px rgba(217, 119, 6, 0.12);
-}
-
-.vm-pickup-shop-thumb {
-    width: 44px;
-    height: 44px;
-    border-radius: 8px;
-    object-fit: cover;
-    border: 1px solid #E2E8F0;
-    flex-shrink: 0;
-}
-
-.vm-pickup-shop-info {
-    flex-grow: 1;
-}
-
-.vm-pickup-shop-name-row {
+/* Country Badge Bar */
+.vm-country-bar {
     display: flex;
     justify-content: space-between;
     align-items: center;
+    background: linear-gradient(135deg, rgba(94, 23, 235, 0.04) 0%, rgba(217, 119, 6, 0.04) 100%);
+    border: 1px solid rgba(94, 23, 235, 0.12);
+    border-radius: 12px;
+    padding: 10px 14px;
+    margin-bottom: 16px;
 }
 
-.vm-pickup-shop-name-row strong {
-    font-size: 13px;
+.vm-country-badge {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 13.5px;
+    font-weight: 700;
     color: #0F172A;
 }
 
-.vm-pickup-badge {
-    font-size: 10px;
-    font-weight: 700;
-    color: #16A34A;
-    background: rgba(22, 163, 74, 0.1);
-    padding: 2px 6px;
-    border-radius: 4px;
+.vm-flag-emoji {
+    font-size: 18px;
 }
 
-.vm-pickup-shop-address {
+.vm-country-sub {
     font-size: 11.5px;
     color: #64748B;
-    display: block;
-    margin-top: 2px;
+    font-weight: 500;
 }
 
-.vm-pickup-prep-time {
-    font-size: 11px;
-    color: #94A3B8;
-    display: block;
-    margin-top: 2px;
+/* LGA Search & Autocomplete Input */
+.vm-lga-search-group {
+    position: relative;
+    margin-bottom: 14px;
 }
 
-.vm-modal-footer {
+.vm-input-icon-wrap {
+    position: relative;
     display: flex;
-    justify-content: flex-end;
+    align-items: center;
+}
+
+.vm-input-lead-icon {
+    position: absolute;
+    left: 14px;
+    color: #94A3B8;
+    pointer-events: none;
+    display: flex;
+    align-items: center;
+}
+
+.vm-lga-search-input {
+    padding-left: 42px !important;
+    padding-right: 36px !important;
+    height: 46px !important;
+    font-size: 14px !important;
+    border-radius: 12px !important;
+    border: 1.5px solid #CBD5E1 !important;
+    background: #FFFFFF !important;
+    font-weight: 500 !important;
+    transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1) !important;
+}
+
+.vm-lga-search-input:focus {
+    border-color: #5E17EB !important;
+    box-shadow: 0 0 0 4px rgba(94, 23, 235, 0.12) !important;
+}
+
+.vm-input-clear-btn {
+    position: absolute;
+    right: 12px;
+    background: transparent;
+    border: none;
+    font-size: 18px;
+    color: #94A3B8;
+    cursor: pointer;
+    padding: 4px;
+    border-radius: 50%;
+    line-height: 1;
+}
+
+.vm-input-clear-btn:hover {
+    color: #0F172A;
+}
+
+/* Autocomplete Dropdown */
+.vm-lga-dropdown-list {
+    position: absolute;
+    top: calc(100% + 6px);
+    left: 0;
+    right: 0;
+    max-height: 220px;
+    overflow-y: auto;
+    background: #FFFFFF;
+    border: 1px solid #E2E8F0;
+    border-radius: 12px;
+    box-shadow: 0 14px 35px -5px rgba(0, 0, 0, 0.15);
+    z-index: 150;
+    padding: 6px;
+}
+
+.vm-lga-dropdown-item {
+    padding: 9px 12px;
+    border-radius: 8px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    cursor: pointer;
+    font-size: 13px;
+    color: #1E293B;
+    transition: all 0.15s ease;
+}
+
+.vm-lga-dropdown-item:hover, .vm-lga-dropdown-item.active {
+    background: rgba(94, 23, 235, 0.07);
+    color: #5E17EB;
+}
+
+.vm-lga-dropdown-item strong {
+    color: #0F172A;
+}
+
+.vm-lga-dropdown-state {
+    font-size: 11px;
+    color: #64748B;
+    margin-left: 6px;
+}
+
+.vm-lga-coverage-badge {
+    font-size: 10px;
+    font-weight: 700;
+    padding: 2px 6px;
+    border-radius: 4px;
+    background: rgba(22, 163, 74, 0.1);
+    color: #16A34A;
+}
+
+/* Quick Chips Heading */
+.vm-chips-heading {
+    font-size: 11px;
+    font-weight: 700;
+    color: #64748B;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    display: block;
+    margin-bottom: 6px;
+}
+
+/* Active Selected Location Feedback Card */
+.vm-selected-location-card {
+    background: #F8FAFC;
+    border: 1px solid #E2E8F0;
+    border-radius: 12px;
+    padding: 12px 14px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-top: 10px;
+}
+
+.vm-selected-loc-left {
+    display: flex;
+    align-items: center;
     gap: 10px;
-    margin-top: 20px;
-    padding-top: 16px;
+}
+
+.vm-selected-pin {
+    font-size: 20px;
+    flex-shrink: 0;
+}
+
+.vm-selected-city-text {
+    display: block;
+    font-size: 13.5px;
+    color: #0F172A;
+    font-weight: 700;
+}
+
+.vm-selected-status-text {
+    display: block;
+    font-size: 11px;
+    color: #16A34A;
+    font-weight: 600;
+    margin-top: 2px;
+}
+
+/* Modal Footer Single Done Button */
+.vm-modal-footer-single {
+    margin-top: 18px;
+    padding-top: 14px;
     border-top: 1px solid #F1F5F9;
+}
+
+.vm-btn-done {
+    width: 100%;
+    height: 48px;
+    border-radius: 12px;
+    background: linear-gradient(135deg, #5E17EB 0%, #4D0FD4 100%);
+    color: #FFFFFF;
+    border: none;
+    font-size: 15px;
+    font-weight: 700;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 4px 14px rgba(94, 23, 235, 0.35);
+    transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.vm-btn-done:hover {
+    background: linear-gradient(135deg, #4D0FD4 0%, #3C08AB 100%);
+    transform: translateY(-1px);
+    box-shadow: 0 6px 20px rgba(94, 23, 235, 0.45);
+}
+
+.vm-btn-done:active {
+    transform: translateY(0);
 }
 
 /* Proximity Strip on Homepage */
@@ -3574,3 +3721,128 @@ button, input, select, textarea {
 
 
 
+
+
+/* ==========================================================================
+   Victorious MARKET — Modal & Checkout Theme Enhancements
+   ========================================================================== */
+
+.modal-content {
+    border-radius: 20px !important;
+    border: 1px solid rgba(94, 23, 235, 0.12) !important;
+    box-shadow: 0 25px 50px -12px rgba(94, 23, 235, 0.25) !important;
+    overflow: hidden;
+}
+
+.modal-header .btn-close {
+    padding: 12px;
+    background-size: 10px;
+}
+
+.btn-primary {
+    background-color: var(--vm-primary, #5E17EB) !important;
+    border-color: var(--vm-primary, #5E17EB) !important;
+    color: #FFFFFF !important;
+    border-radius: var(--vm-radius-md, 10px) !important;
+    font-weight: 700 !important;
+    transition: all 0.2s ease-in-out !important;
+}
+
+.btn-primary:hover, .btn-primary:focus, .btn-primary:active {
+    background-color: var(--vm-primary-hover, #4B12BC) !important;
+    border-color: var(--vm-primary-hover, #4B12BC) !important;
+    box-shadow: 0 4px 14px rgba(94, 23, 235, 0.35) !important;
+    transform: translateY(-1px);
+}
+
+.btn-outline-primary {
+    color: var(--vm-primary, #5E17EB) !important;
+    border-color: var(--vm-primary, #5E17EB) !important;
+    border-radius: var(--vm-radius-md, 10px) !important;
+    font-weight: 700 !important;
+}
+
+.btn-outline-primary:hover {
+    background-color: var(--vm-primary, #5E17EB) !important;
+    color: #FFFFFF !important;
+}
+
+.form-control:focus {
+    border-color: var(--vm-primary, #5E17EB) !important;
+    box-shadow: 0 0 0 3px rgba(94, 23, 235, 0.15) !important;
+}
+
+.text-primary {
+    color: var(--vm-primary, #5E17EB) !important;
+}
+
+.bg-primary-light {
+    background-color: rgba(94, 23, 235, 0.08) !important;
+}
+
+/* Cart Step List */
+.cart-step-list {
+    display: flex;
+    justify-content: center;
+    gap: 16px;
+    list-style: none;
+    padding: 0;
+    margin: 0;
+}
+
+.cart-step-list li {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 13.5px;
+    font-weight: 700;
+    color: var(--vm-text-muted, #64748B);
+}
+
+.cart-step-list li.current {
+    color: var(--vm-primary, #5E17EB);
+}
+
+.cart-step-list li.done {
+    color: var(--vm-success, #10B981);
+}
+
+.cart-step-list li span {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 26px;
+    height: 26px;
+    border-radius: 50%;
+    background: #E2E8F0;
+    font-size: 12px;
+}
+
+.cart-step-list li.current span {
+    background: var(--vm-primary, #5E17EB);
+    color: #FFFFFF;
+}
+
+.cart-step-list li.done span {
+    background: var(--vm-success, #10B981);
+    color: #FFFFFF;
+}
+
+/* OTP fields styling */
+.otp-field {
+    width: 48px;
+    height: 52px;
+    font-size: 22px;
+    font-weight: 800;
+    text-align: center;
+    border: 2px solid var(--vm-border, #E2E8F0);
+    border-radius: 12px;
+    color: var(--vm-dark, #0F172A);
+    transition: all 0.2s;
+}
+
+.otp-field:focus {
+    border-color: var(--vm-primary, #5E17EB);
+    box-shadow: 0 0 0 3px rgba(94, 23, 235, 0.15);
+    outline: none;
+}
