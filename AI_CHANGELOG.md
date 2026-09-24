@@ -1,3 +1,16 @@
+### [2026-09-24 05:15 UTC] User App + Storefront Button Alignment (frontend-only, backend frozen) [user-app] [storefront] [AI]
+* **1. User app (`User app/`, 4 files, zero backend edits):**
+  - `features/checkout/widgets/guest_user_contact_information_widget.dart`: wired dead-end `search_order` button to `RouterHelper.getGuestTrackOrderRoute` (canonical guest tracking; backend authoritative for lookup).
+  - `features/product_details/widgets/cart_bottom_sheet_widget.dart`: `_navigateToCheckoutScreen` now passes `shippingFee: 0.0` (was legacy `shippingCost + cart.shippingCost - saved`); merchandise subtotal marked UX-estimate-only; authoritative fee via checkout `fulfillment/availability` lanes — consistent with cart flow.
+  - `features/order/widgets/order_widget.dart`: annotated POS-only local math; online orders already render backend `orderAmount` (line 222).
+  - `features/checkout/screens/checkout_screen.dart`: marked `estimatedCashback`/`totalPayable` as UX preview; authoritative cashback/fee/payable decided by backend checkout intent.
+* **2. Storefront (`theme_vmarket` views/assets only, 2 JS files):**
+  - `public/assets/js/vmarket.js`: quantity handler skips vanilla +1/-1 when clamped `.btn-number` handler present (fixes +2 double-fire on product details); vanilla fallback now respects `min`/`max`.
+  - `public/assets/js/custom.js`: live search extended to `.vm-search-input` / `.vm-mobile-search-input` (progressive enhancement; native form submit remains primary; no-op when result box absent).
+  - Public-asset mirror sync attempted but `public/themes/...` files locked by running process; `resources/themes/...` is source of truth, mirror sync deferred to deploy.
+* **3. Preservation (no-revert rule):**
+  - Concurrent work kept intact: prior cart decoupling commit `b154835c`, backend hardening `d610b934`, and in-progress backend `ShippingMethodController.php` deletion left unstaged/unreverted (not part of this commit).
+* **Verification:** `node --check` PASS on both edited JS files; `dart format --output=none` parses all 4 Dart files (no syntax errors; formatting drift pre-existing); `flutter analyze --no-pub` timed out on dependency resolve (no errors introduced).
 ### [2026-09-24 07:30 UTC] User App Cart Fulfillment Decoupling & Button Audit Baseline [user-app] [AI]
 * **1. Cart-stage legacy shipping decoupled (frontend-only, zero backend edits, zero reverts):**
   - `User app/lib/features/cart/screens/cart_screen.dart`: removed legacy admin/sellerwise shipping prefetch from `_loadData` and `build`; cart total now shows merchandise subtotal (`amount+tax`) only; authoritative delivery fee resolved at checkout via `POST fulfillment/availability` + `POST checkout/intent`.

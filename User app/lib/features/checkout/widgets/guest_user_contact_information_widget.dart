@@ -6,6 +6,7 @@ import 'package:flutter_sixvalley_ecommerce/utill/images.dart';
 import 'package:flutter_sixvalley_ecommerce/common/basewidget/custom_app_bar_widget.dart';
 import 'package:flutter_sixvalley_ecommerce/common/basewidget/custom_button_widget.dart';
 import 'package:flutter_sixvalley_ecommerce/common/basewidget/custom_textfield_widget.dart';
+import 'package:flutter_sixvalley_ecommerce/helper/route_healper.dart';
 
 class GuestUserContactInformationWidget extends StatefulWidget {
   const GuestUserContactInformationWidget({super.key});
@@ -47,7 +48,12 @@ class _GuestUserContactInformationWidgetState extends State<GuestUserContactInfo
             validator: (value) =>ValidateCheck.validateEmail(value),
             labelText: getTranslated('email', context),),
           const SizedBox(height: Dimensions.paddingSizeDefault),
-          CustomButton(buttonText: '${getTranslated('search_order', context)}'),
+          // [AI] VMarket V1: wire dead-end guest button to canonical guest tracking.
+          // Backend remains authoritative for order lookup; this only navigates.
+          CustomButton(
+            buttonText: '${getTranslated('search_order', context)}',
+            onTap: () => RouterHelper.getGuestTrackOrderRoute(action: RouteAction.push),
+          ),
 
 
         ],),

@@ -817,6 +817,8 @@ class CheckoutScreenState extends State<CheckoutScreen> {
                                   builder: (context, checkoutController, child) {
                                     return Consumer<ProfileController>(
                                       builder: (context, profileProvider, _) {
+                                        // [AI] VMarket V1: UX preview only. Authoritative cashback,
+                                        // fee, and payable are decided by backend checkout intent.
                                         double estimatedCashback = 0;
                                         if (checkoutController.isUseCashback && !checkoutController.isPickup) {
                                           final double userPoints = profileProvider.userInfoModel?.loyaltyPoint ?? 0;

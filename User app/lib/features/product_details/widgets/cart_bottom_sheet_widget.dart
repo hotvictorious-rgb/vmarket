@@ -651,18 +651,16 @@ class CartBottomSheetWidgetState extends State<CartBottomSheetWidget> {
   bool _isSelectShippingMethod(Response<dynamic>? response) => response?.data['status'] == 2;
 
   void _navigateToCheckoutScreen(BuildContext context, CartModel cart, double shippingCost) {
+    // [AI] VMarket V1: merchandise subtotal is a UX display estimate only.
+    // Authoritative delivery fee comes from backend fulfillment availability
+    // at checkout (directional DeliveryLane). Pass 0.0 to match cart flow.
     final double discount = cart.discount! * cart.quantity!;
     final double amount = (cart.price! - cart.discount!) * cart.quantity!;
     final int totalQuantity = cart.quantity ?? 0;
     double tax = 0.0;
-    double shippingAmount = (shippingCost + cart.shippingCost!);
 
     if(cart.taxModel == "exclude") {
       tax += cart.tax! * cart.quantity!;
-    }
-
-    if(cart.freeDeliveryOrderAmount != null  ){
-      shippingAmount = shippingAmount - cart.freeDeliveryOrderAmount!.shippingCostSaved!;
     }
 
 
@@ -671,7 +669,7 @@ class CartBottomSheetWidgetState extends State<CartBottomSheetWidget> {
       cartList: [cart],
       fromProductDetails: false,
       totalOrderAmount: amount,
-      shippingFee: shippingAmount,
+      shippingFee: 0.0,
       discount: discount,
 tax: tax,
       sellerId: null,

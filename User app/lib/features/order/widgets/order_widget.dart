@@ -33,6 +33,8 @@ class _OrderWidgetState extends State<OrderWidget> {
     double orderAmount = 0;
     double tax = 0;
 
+    // [AI] VMarket V1: online orders render backend orderAmount (line 222).
+    // Below math applies to POS legacy only, never overrides backend totals.
     if(widget.orderModel?.orderType == 'POS') {
       double itemsPrice = 0;
       double discount = 0;
