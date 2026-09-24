@@ -28,22 +28,22 @@
 ## 2. Open requests (User app + web)
 
 ### FAPI-001 — Direct checkout-intent status (crash-recovery polling)
-- [x] R · [ ] B · [ ] I
+- [x] R · [x] B · [x] I
 - **Date requested:** 2026-09-24 · **Needed by:** `User app/lib/features/checkout/screens/payment_status_screen.dart` (delivery path, "Check Again" button)
 - **Problem today:** app scans `GET /api/v1/customer/order/list?limit=5` and matches `order_group_id` client-side. Misses when customer has >5 orders; fragile.
 - **Suggested endpoint (backend team to confirm/design):** `GET /api/v1/checkout/intent/{orderGroupId}/status`
 - **Suggested response:** `{ order_group_id, intent_status, payment_status, authorization_url?, orders:[{id, status}] }`, auth-scoped to customer, `{success:false,code,message}` errors.
 - **Fallback until available:** keep list-scan; do NOT block checkout on it.
-- **Backend commit:** _pending_ · **Integrated in:** _pending_
+- **Backend commit:** `9f83f347` (`DeliveryCheckoutIntentController@status`) · **Integrated in:** `payment_status_screen.dart` direct status poll (404 → failed).
 
 ### FAPI-002 — Locked fulfillment response shape (delivery objects + ETA)
-- [x] R · [ ] B · [ ] I
+- [x] R · [x] B · [x] I
 - **Date requested:** 2026-09-24 · **Needed by:** `User app` fulfillment model + `checkout_screen.dart` fee/ETA display; storefront shipping step (generic notice only, never personalized SEO HTML)
 - **Problem today:** backend sends `delivery.origin_lga/destination_lga` as OBJECTS `{id,name,state}` + `estimated_time`, but app parses them as strings and drops ETA.
 - **Suggested contract (backend confirms, frontend adapts):** keep `fulfillment_options.{delivery,pickup}`; guarantee `delivery:{available,fee,estimated_time,eta_display?,origin_lga{id,name,state},destination_lga{id,name,state},reason,message?}` and `pickup:{available,available_times[],earliest_available?,reason,message?}`.
 - **Frontend work (ours):** parse objects + render ETA/slots. No backend edit.
 - **Verified 2026-09-24 vs backend `076415a9`:** service response shape unchanged (objects + `estimated_time` intact); still awaiting backend shape-lock confirmation.
-- **Backend commit:** _pending_ · **Integrated in:** _pending_
+- **Backend commit:** `422fd020` (registry §2 locked: float fee, `estimated_time`, LGA objects — matches FF-01 parser) · **Integrated in:** `fulfillment_availability_model.dart` + `shipping_details_widget.dart`.
 
 ### FAPI-003 — Canonical order-track contract (app + guest web)
 - [x] R · [ ] B · [ ] I
@@ -53,11 +53,11 @@
 - **Backend commit:** _pending_ · **Integrated in:** _pending_
 
 ### FAPI-004 — `cashback_earned` in delivery order details + web order-placed payload
-- [x] R · [ ] B · [ ] I
+- [x] R · [x] B · [x] I
 - **Date requested:** 2026-09-24 · **Needed by:** app `pickup_order_success_screen.dart` earn badge; storefront `checkout/complete` + order confirmation (currently no earn badge on web)
 - **Problem today:** pickup reservation exposes `cashback_earned`; delivery order + web confirmation don't consistently include it.
 - **Suggested:** include `cashback_earned:{amount,percent}` (nullable) in delivery order details AND web order-placed data. Backend owns eligibility/math.
-- **Backend commit:** _pending_ · **Integrated in:** _pending_
+- **Backend commit:** `9f83f347` (`WebController@getOrderPlaceView` passes `$cashback_earned`) · **Integrated in:** `theme-views/checkout/complete.blade.php` earn badge.
 
 ### FAPI-005 — Reservation `show` includes `order_id + payment status`
 - [x] R · [ ] B · [ ] I
@@ -67,11 +67,11 @@
 - **Backend commit:** _pending_ · **Integrated in:** _pending_
 
 ### FAPI-006 — Cart totals field for §12.2 zero-client-math compliance
-- [x] R · [ ] B · [ ] I
+- [x] R · [x] B · [x] I
 - **Date requested:** 2026-09-24 · **Needed by:** `cart_screen.dart` total row (currently sums `amount+tax` display-only)
 - **Problem today:** cart read returns per-item price/discount/tax with no cart-level total; new §12.2 forbids client subtotal math.
 - **Suggested:** backend-computed `{totals:{subtotal,tax,currency}}` on cart read, or explicit carve-out for display aggregation.
-- **Backend commit:** _pending_ · **Integrated in:** _pending_
+- **Backend commit:** `9f83f347` (`GET cart/totals` + in-band `cart_totals`; display aggregation permitted) · **Integrated in:** `CartModel.cartTotals` + `cart_screen.dart` backend-first total.
 
 ---
 

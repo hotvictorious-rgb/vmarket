@@ -19,6 +19,21 @@
                                     @endif
                                 </h3>
                                 <p class="text-muted">{{ translate('thank_you_for_your_order') }}! {{ translate('your_order_has_been_processed').'.'.translate('check_your_email_to_get_the_order_id_and_details').'.' }}</p>
+                                {{-- [AI] FAPI-004: Victorious Cashback earn badge (backend-computed $cashback_earned; null when guest/zero). Display only. --}}
+                                @if(!empty($cashback_earned) && !empty($cashback_earned['amount']) && (float) $cashback_earned['amount'] > 0)
+                                    <div class="d-inline-flex align-items-center gap-2 px-3 py-2 rounded-3 fw-bold"
+                                         style="background: linear-gradient(135deg, rgba(94,23,235,0.08), rgba(255,215,0,0.18)); border: 1.5px solid rgba(255,215,0,0.55); color: #1A0E2A;">
+                                        <span style="font-size: 18px;">🎉</span>
+                                        <span>
+                                            {{ translate('You earned') }}
+                                            {{ webCurrencyConverter($cashback_earned['amount']) }}
+                                            {{ translate('Victorious Cashback') }}
+                                            @if(!empty($cashback_earned['percent']))
+                                                ({{ rtrim(rtrim(number_format((float) $cashback_earned['percent'], 2), '0'), '.') }}%)
+                                            @endif
+                                        </span>
+                                    </div>
+                                @endif
                                 <div class="d-flex flex-wrap justify-content-center gap-3">
                                     <a href="{{route('home')}}" class="btn btn-outline-primary bg-primary-light border-transparent text-capitalize">{{ translate('continue_shopping') }}</a>
                                     <a href="{{ route('track-order.index') }}" class="btn btn-primary text-capitalize">{{ translate('track_order') }}</a>

@@ -46,6 +46,7 @@ class CartModel {
   double? appliedTax;
   String? appliedTaxType;
   double? shippingCostTax;
+  CartTotals? cartTotals; // [AI] FAPI-006: backend-computed totals attached in-band.
 
 
   CartModel(
@@ -164,6 +165,7 @@ class CartModel {
     appliedTaxType = json['applied_tax_type'];
     shippingCostTax = json['shipping_cost_tax'] != null ?
     double.tryParse(json['shipping_cost_tax'].toString()) : null;
+    cartTotals = json['cart_totals'] != null ? CartTotals.fromJson(json['cart_totals']) : null;
   }
 
   Map<String, dynamic> toJson() {
@@ -217,6 +219,26 @@ class CartModel {
     data['applied_tax_type'] = appliedTaxType;
     data['shipping_cost_tax'] = shippingCostTax;
     return data;
+  }
+}
+
+/// [AI] FAPI-006: backend-computed cart totals (in-band `cart_totals`).
+/// Displayed verbatim; never recomputed client-side.
+class CartTotals {
+  double? subtotal;
+  double? tax;
+  double? total;
+  String? currency;
+
+  CartTotals({this.subtotal, this.tax, this.total, this.currency});
+
+  CartTotals.fromJson(dynamic json) {
+    if (json is Map<String, dynamic>) {
+      subtotal = json['subtotal'] != null ? double.tryParse(json['subtotal'].toString()) : null;
+      tax = json['tax'] != null ? double.tryParse(json['tax'].toString()) : null;
+      total = json['total'] != null ? double.tryParse(json['total'].toString()) : null;
+      currency = json['currency']?.toString();
+    }
   }
 }
 

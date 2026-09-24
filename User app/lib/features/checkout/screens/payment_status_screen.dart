@@ -126,9 +126,10 @@ class _PaymentStatusScreenState extends State<PaymentStatusScreen> {
           }
         }
       } else if (widget.orderGroupId != null) {
-        // Check delivery order status
+        // [AI] FAPI-001: direct intent status (backend-fulfilled REQ-USERAPP-20260924-002).
+        // Replaces fragile order/list scan. IDOR enforced server-side (auth customer scope).
         final response = await http.get(
-          Uri.parse('${AppConstants.baseUrl}/api/v1/customer/order/list?limit=5&offset=0'),
+          Uri.parse('${AppConstants.baseUrl}${AppConstants.checkoutIntentStatusUri}${widget.orderGroupId}/status'),
           headers: {
             'Content-Type': 'application/json',
             'Authorization': 'Bearer $token',
@@ -137,25 +138,22 @@ class _PaymentStatusScreenState extends State<PaymentStatusScreen> {
 
         if (response.statusCode == 200) {
           final data = json.decode(response.body);
-          if (data['orders'] != null) {
-            final orders = data['orders'] as List;
-            // Look for order with matching order_group_id
-            final matchingOrder = orders.firstWhere(
-              (order) => order['order_group_id'] == widget.orderGroupId,
-              orElse: () => null,
-            );
-
-            if (matchingOrder != null) {
-              // Order found - payment successful
-              _pollTimer?.cancel();
-              setState(() {
-                _status = PaymentStatus.success;
-                _orderData = {
-                  'order_id': matchingOrder['id'],
-                };
-              });
-            }
+          final paymentStatus = data['payment_status']?.toString();
+          final orders = data['orders'] as List?;
+          if (paymentStatus == 'paid' && orders != null && orders.isNotEmpty) {
+            // Order placed - payment successful
+            _pollTimer?.cancel();
+            setState(() {
+              _status = PaymentStatus.success;
+              _orderData = {
+                'order_id': orders.first['id'],
+              };
+            });
           }
+        } else if (response.statusCode == 404) {
+          // Intent expired or unknown — stop polling, surface failure with retry.
+          _pollTimer?.cancel();
+          setState(() => _status = PaymentStatus.failed);
         }
       }
     } catch (e) {

@@ -213,6 +213,17 @@ class CartScreenState extends State<CartScreen> with AutomaticKeepAliveClientMix
               final requiredShippingCartModel = _getRequiredShippingCartModel(sellerGroupList, cartProductList);
               final requiredMinOrderAmountCart = _getRequiredMinOrderAmountCartModel(sellerGroupList, cartProductList);
 
+              // [AI] FAPI-006: backend-computed cart total preferred (in-band cart_totals);
+              // local amount+tax sum is fallback preview only.
+              double? backendTotal;
+              for (final c in cartList) {
+                if ((c.isChecked ?? false) && c.cartTotals?.total != null) {
+                  backendTotal = c.cartTotals!.total;
+                  break;
+                }
+              }
+              final double displayTotal = backendTotal ?? (amount + tax);
+
 
               return Scaffold(
                 backgroundColor: Theme.of(context).scaffoldBackgroundColor,
@@ -253,8 +264,8 @@ class CartScreenState extends State<CartScreen> with AutomaticKeepAliveClientMix
                                   fontSize: Dimensions.fontSizeSmall, color: Theme.of(context).hintColor)),
                             ]),
 
-                            // [AI] VMarket V1: merchandise subtotal only; delivery fee resolved at checkout.
-                            Text(PriceConverter.convertPrice(context, amount+tax), style: textBold.copyWith(
+                            // [AI] FAPI-006: backend cart total; delivery fee resolved at checkout.
+                            Text(PriceConverter.convertPrice(context, displayTotal), style: textBold.copyWith(
                               color: const Color(0xFF6A1B9A),
                               fontSize: Dimensions.fontSizeLarge + 2)
                             ),

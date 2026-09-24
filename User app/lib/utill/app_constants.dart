@@ -139,6 +139,8 @@ import 'package:flutter_sixvalley_ecommerce/common/enums/local_caches_type_enum.
   static const String fulfillmentDeliveryFeeUri = '/api/v1/fulfillment/delivery-fee';
   static const String checkoutIntentUri = '/api/v1/checkout/intent';
   static const String checkoutIntentPayUri = '/api/v1/checkout/intent/';
+  static const String checkoutIntentStatusUri = '/api/v1/checkout/intent/'; // + {orderGroupId}/status (FAPI-001)
+  static const String cartTotalsUri = '/api/v1/cart/totals'; // (FAPI-006: backend-computed totals)
 
 
   //address
