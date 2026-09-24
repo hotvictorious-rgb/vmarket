@@ -497,16 +497,27 @@ class HomeController extends Controller
             ->latest('id')
             ->first();
 
-        $featuredProductsList = Cache::remember('home_featured_products_vmarket', CACHE_FOR_3_HOURS, function () {
+        $activeCity = session('customer_city', 'Uyo');
+        $activeState = session('customer_state', 'Akwa Ibom');
+        $fulfillmentMode = session('fulfillment_mode', 'delivery');
+        $activeLgaId = session('customer_lga_id');
+        if (empty($activeLgaId)) {
+            $defaultLga = \App\Models\Lga::where('name', $activeCity)->first();
+            $activeLgaId = $defaultLga?->id ?? 69;
+        }
+
+        $featuredProductsList = Cache::remember('home_featured_products_vmarket_lga_' . $activeLgaId, CACHE_FOR_3_HOURS, function () use ($activeLgaId) {
             return Product::active()
                 ->where('featured', 1)
+                ->availableInLga($activeLgaId)
                 ->with(['seller.shop', 'rating'])
                 ->take(12)
                 ->get();
         });
 
-        $latestProductsList = Cache::remember('home_latest_products_vmarket', CACHE_FOR_3_HOURS, function () {
+        $latestProductsList = Cache::remember('home_latest_products_vmarket_lga_' . $activeLgaId, CACHE_FOR_3_HOURS, function () use ($activeLgaId) {
             return Product::active()
+                ->availableInLga($activeLgaId)
                 ->with(['seller.shop', 'rating'])
                 ->latest('id')
                 ->take(12)
@@ -516,32 +527,29 @@ class HomeController extends Controller
         $topVendorsList = ProductManager::getPriorityWiseTopVendorQuery(query: $this->cacheHomePageTopVendorsList());
         $brands = $this->cachePriorityWiseBrandList();
 
-        $activeCity = session('customer_city', 'Uyo');
-        $activeState = session('customer_state', 'Akwa Ibom');
-        $fulfillmentMode = session('fulfillment_mode', 'delivery');
+        // [AI] Verified Shops available for customer LGA (Delivery or Pickup)
+        $deliveryOriginLgaIds = \App\Models\DeliveryLane::where('destination_lga_id', $activeLgaId)
+            ->where('is_enabled', true)
+            ->pluck('origin_lga_id')
+            ->toArray();
 
-        // [AI] Proximity-based Verified Shops recommendation (Omnichannel: Delivery & Pickup)
         $nearbyShops = \App\Models\Shop::where('temporary_close', 0)
-            ->where(function ($q) use ($activeCity) {
-                $q->where('address', 'like', "%{$activeCity}%")
-                  ->orWhere('name', 'like', "%{$activeCity}%")
-                  ->orWhereHas('lga', function ($lQ) use ($activeCity) {
-                      $lQ->where('name', 'like', "%{$activeCity}%");
-                  });
-            })
-            ->when($fulfillmentMode === 'pickup', function ($q) {
-                $q->where('pickup_enabled', 1);
+            ->where(function ($q) use ($deliveryOriginLgaIds, $activeLgaId) {
+                if (!empty($deliveryOriginLgaIds)) {
+                    $q->whereIn('lga_id', $deliveryOriginLgaIds);
+                }
+                $q->orWhere(function ($pickupQ) use ($activeLgaId) {
+                    $pickupQ->where('lga_id', $activeLgaId)
+                            ->where('pickup_enabled', 1);
+                });
             })
             ->with(['seller'])
             ->take(8)
             ->get();
 
-        // Fallback to active shops if city query returns fewer than 4
+        // Fallback to active shops if query returns fewer than 4
         if ($nearbyShops->count() < 4) {
             $fallbackShops = \App\Models\Shop::where('temporary_close', 0)
-                ->when($fulfillmentMode === 'pickup', function ($q) {
-                    $q->where('pickup_enabled', 1);
-                })
                 ->whereNotIn('id', $nearbyShops->pluck('id'))
                 ->with(['seller'])
                 ->take(4 - $nearbyShops->count())

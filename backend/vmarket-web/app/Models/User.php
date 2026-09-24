@@ -2,7 +2,6 @@
 
 namespace App\Models;
 
-use App\Traits\DemoMaskingTrait;
 use App\Traits\StorageTrait;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
@@ -53,7 +52,7 @@ use Laravel\Passport\HasApiTokens;
  */
 class User extends Authenticatable
 {
-    use Notifiable, HasApiTokens,StorageTrait, DemoMaskingTrait;
+    use Notifiable, HasApiTokens, StorageTrait;
 
     /**
      * The attributes that are mass assignable.

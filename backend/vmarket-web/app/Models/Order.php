@@ -2,7 +2,6 @@
 
 namespace App\Models;
 
-use App\Traits\DemoMaskingTrait;
 use Carbon\Carbon;
 use DateTime;
 use Illuminate\Database\Eloquent\Model;
@@ -70,8 +69,6 @@ use Illuminate\Database\Eloquent\Relations\HasOne;
  */
 class Order extends Model
 {
-    use DemoMaskingTrait;
-
     protected $fillable = [
         'id',
         'customer_id',

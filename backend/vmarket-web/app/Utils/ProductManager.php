@@ -1692,7 +1692,12 @@ class ProductManager
             unset($request['search_category_value']);
         }
 
+        $activeCustomerLgaId = $request->get('lga_id') ?: session('customer_lga_id');
+
         $productListData = Product::marketplaceEligible()
+            ->when($activeCustomerLgaId, function ($query) use ($activeCustomerLgaId) {
+                return $query->availableInLga((int)$activeCustomerLgaId);
+            })
             ->with(['category', 'reviews' => function ($query) {
                 return $query->active();
             }, 'rating', 'seller.shop', 'clearanceSale' => function ($query) {

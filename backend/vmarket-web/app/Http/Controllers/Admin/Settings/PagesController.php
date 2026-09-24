@@ -19,8 +19,6 @@ use Illuminate\Http\Request;
 class PagesController extends BaseController
 {
 
-    use UpdateClass;
-
     public function __construct(
         private readonly BusinessSettingRepositoryInterface $businessSettingRepo,
         private readonly BusinessPageRepositoryInterface    $businessPageRepo,

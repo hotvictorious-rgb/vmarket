@@ -270,6 +270,72 @@ class Product extends Model
     }
 
     /**
+     * [AI] Filter products that can be delivered to or picked up in the given Local Government Area (LGA).
+     *
+     * A product is available in $lgaId if:
+     * 1. Delivery: An enabled DeliveryLane exists from the product shop's LGA to $lgaId.
+     * 2. Pickup: The product's shop is physically located in $lgaId, has pickup_enabled=1, and is not temporarily closed.
+     * 3. Admin: Platform-owned products with in-house fulfillment covering the target LGA.
+     */
+    public function scopeAvailableInLga(Builder $query, ?int $lgaId = null): Builder
+    {
+        if (empty($lgaId)) {
+            $lgaId = (int)session('customer_lga_id');
+        }
+
+        if (empty($lgaId)) {
+            // Default to flagship LGA Uyo if no session LGA is set
+            $defaultLga = \App\Models\Lga::where('name', 'Uyo')->first();
+            $lgaId = $defaultLga?->id ?? 69;
+        }
+
+        // 1. All origin LGA IDs that have an active delivery lane to this destination LGA
+        $deliveryOriginLgaIds = \App\Models\DeliveryLane::where('destination_lga_id', $lgaId)
+            ->where('is_enabled', true)
+            ->pluck('origin_lga_id')
+            ->toArray();
+
+        // 2. Eligible shops: either origin LGA has enabled delivery lane to $lgaId, OR shop is in $lgaId with pickup enabled
+        $eligibleShopsQuery = \App\Models\Shop::where('temporary_close', 0)
+            ->where(function ($q) use ($deliveryOriginLgaIds, $lgaId) {
+                if (!empty($deliveryOriginLgaIds)) {
+                    $q->whereIn('lga_id', $deliveryOriginLgaIds);
+                }
+                $q->orWhere(function ($pickupQ) use ($lgaId) {
+                    $pickupQ->where('lga_id', $lgaId)
+                            ->where('pickup_enabled', 1);
+                });
+            });
+
+        $eligibleSellerIds = (clone $eligibleShopsQuery)->where('seller_id', '>', 0)->pluck('seller_id')->toArray();
+        $adminShopEligible = (clone $eligibleShopsQuery)->where('author_type', 'admin')->exists();
+
+        return $query->where(function ($q) use ($eligibleSellerIds, $adminShopEligible) {
+            $hasConditions = false;
+            if (!empty($eligibleSellerIds)) {
+                $q->where(function ($sellerQ) use ($eligibleSellerIds) {
+                    $sellerQ->where('added_by', 'seller')
+                            ->whereIn('user_id', $eligibleSellerIds);
+                });
+                $hasConditions = true;
+            }
+            if ($adminShopEligible) {
+                if ($hasConditions) {
+                    $q->orWhere('added_by', 'admin');
+                } else {
+                    $q->where('added_by', 'admin');
+                }
+                $hasConditions = true;
+            }
+
+            if (!$hasConditions) {
+                // No shops can fulfill in this LGA
+                $q->whereRaw('1 = 0');
+            }
+        });
+    }
+
+    /**
      * [AI] Helper to check whether product is fresh according to admin configuration.
      */
     public function isMarketplaceFresh(): bool

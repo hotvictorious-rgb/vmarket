@@ -85,7 +85,7 @@ class SMSModuleController extends BaseController
 
         // [AI] Decouple WhatsApp from SMS exclusivity: WhatsApp can run concurrently with an SMS Gateway for dual-tier failover
         if ($request['status'] == 1 && $request['gateway'] !== 'whatsapp_meta') {
-            foreach (['termii', 'ebulksms', 'smart_sms', 'kudisms', 'sendchamp', 'releans', 'twilio', 'nexmo', '2factor', 'msg91', 'hubtel', 'paradox', 'signal_wire', '019_sms', 'viatech', 'global_sms', 'akandit_sms', 'sms_to', 'alphanet_sms'] as $gateway) {
+            foreach (GlobalConstant::DEFAULT_SMS_GATEWAYS as $gateway) {
                 $keep = $this->settingRepo->getFirstWhere(params: ['key_name' => $gateway, 'settings_type' => 'sms_config']);
                 if (isset($keep)) {
                     $hold = $keep['live_values'];

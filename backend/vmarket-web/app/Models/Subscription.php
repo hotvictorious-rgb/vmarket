@@ -2,7 +2,6 @@
 
 namespace App\Models;
 
-use App\Traits\DemoMaskingTrait;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Carbon;
@@ -19,7 +18,7 @@ use Illuminate\Support\Carbon;
  */
 class Subscription extends Model
 {
-    use HasFactory, DemoMaskingTrait;
+    use HasFactory;
 
     /**
      * The attributes that are mass assignable.

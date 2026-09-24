@@ -1374,13 +1374,14 @@ class WebController extends Controller
             'city' => 'nullable|string|max:100',
             'state' => 'nullable|string|max:100',
             'lga_id' => 'nullable|integer',
+            'lga_name' => 'nullable|string|max:100',
             'state_id' => 'nullable|integer',
             'fulfillment_mode' => 'nullable|in:delivery,pickup',
         ]);
 
         $lgaId = $request->lga_id ? (int)$request->lga_id : null;
         $stateId = $request->state_id ? (int)$request->state_id : null;
-        $city = $request->city ? trim($request->city) : null;
+        $city = $request->city ? trim($request->city) : ($request->lga_name ? trim($request->lga_name) : null);
         $state = $request->state ? trim($request->state) : null;
         $fulfillmentMode = in_array($request->fulfillment_mode, ['delivery', 'pickup']) ? $request->fulfillment_mode : 'delivery';
 
@@ -1392,8 +1393,9 @@ class WebController extends Controller
                 $state = $lga->state?->name ?? $state;
                 $stateId = $lga->state_id ?? $stateId;
             }
-        } elseif ($city && !$state) {
-            $matchingLga = \App\Models\Lga::where('name', 'like', "%{$city}%")->with('state')->first();
+        } elseif ($city) {
+            $matchingLga = \App\Models\Lga::where('name', $city)->with('state')->first()
+                ?: \App\Models\Lga::where('name', 'like', "%{$city}%")->with('state')->first();
             if ($matchingLga) {
                 $lgaId = $matchingLga->id;
                 $city = $matchingLga->name;

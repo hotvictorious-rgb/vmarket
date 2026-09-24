@@ -2,7 +2,6 @@
 
 namespace App\Models;
 
-use App\Traits\DemoMaskingTrait;
 use App\Traits\StorageTrait;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\HasOne;
@@ -37,7 +36,7 @@ use Illuminate\Support\Facades\DB;
  */
 class Seller extends Authenticatable
 {
-    use Notifiable, StorageTrait, DemoMaskingTrait;
+    use Notifiable, StorageTrait;
 
     protected $fillable = [
         'f_name',

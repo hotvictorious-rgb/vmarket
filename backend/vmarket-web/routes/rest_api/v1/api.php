@@ -26,7 +26,6 @@ use App\Http\Controllers\RestAPI\v1\OrderController;
 use App\Http\Controllers\RestAPI\v1\ProductController;
 use App\Http\Controllers\RestAPI\v1\ReviewController;
 use App\Http\Controllers\RestAPI\v1\SellerController;
-use App\Http\Controllers\RestAPI\v1\ShippingMethodController;
 use App\Http\Controllers\RestAPI\v1\FeedSyncController;
 use App\Http\Controllers\RestAPI\v1\DeliveryHubApiController;
 use Illuminate\Support\Facades\Route;
@@ -104,15 +103,6 @@ Route::group(['prefix' => 'v1', 'middleware' => ['api_lang']], function () {
         });
     });
 
-    Route::group(['prefix' => 'shipping-method', 'middleware' => 'apiGuestCheck'], function () {
-        Route::controller(ShippingMethodController::class)->group(function () {
-            Route::get('detail/{id}', 'get_shipping_method_info');
-            Route::get('by-seller/{id}/{seller_is}', 'shipping_methods_by_seller');
-            Route::post('choose-for-order', 'choose_for_order');
-            Route::get('chosen', 'chosen_shipping_methods');
-            Route::get('check-shipping-type', 'check_shipping_type');
-        });
-    });
 
     Route::group(['prefix' => 'cart', 'middleware' => 'apiGuestCheck'], function () {
         Route::controller(CartController::class)->group(function () {
