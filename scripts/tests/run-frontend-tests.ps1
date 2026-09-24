@@ -1,14 +1,18 @@
-# Victorious MARKET — Frontend Test Runner (PowerShell)
-# Part of Victorious MARKET Multi-AI Engineering Control System Specification v3 (§12, §19.4)
+# Victorious MARKET -- Frontend Test Runner (PowerShell)
+# Part of Victorious MARKET Multi-AI Engineering Control System Specification v3 (Sections 12, 19.4)
 
 param(
     [Parameter(Mandatory=$true)]
-    [ValidateSet("customer", "vendor", "operations")]
+    [ValidateSet("customer", "vendor", "operations", "delivery")]
     [string]$App,
     [string]$LogFile = ""
 )
 
 $ErrorActionPreference = "Stop"
+
+if ($App -eq "delivery") {
+    $App = "operations"
+}
 
 $AppDirMap = @{
     "customer"   = "User app"
@@ -18,7 +22,7 @@ $AppDirMap = @{
 
 $TargetDir = $AppDirMap[$App]
 if (-not (Test-Path $TargetDir)) {
-    Write-Host "[X] App directory not found: $TargetDir" -ForegroundColor Red
+    Write-Host "[FAIL] App directory not found: $TargetDir" -ForegroundColor Red
     exit 1
 }
 
@@ -38,13 +42,12 @@ try {
     }
 
     if ($exitCode -ne 0) {
-        Write-Host "[X] Frontend tests for $App failed with exit code $exitCode" -ForegroundColor Red
+        Write-Host "[FAIL] Frontend tests for $App failed with exit code $exitCode" -ForegroundColor Red
         exit $exitCode
     }
 
-    Write-Host "[✓] Frontend tests for $App passed successfully." -ForegroundColor Green
+    Write-Host "[OK] Frontend tests for $App passed successfully." -ForegroundColor Green
     exit 0
 } finally {
     Pop-Location
 }
-
