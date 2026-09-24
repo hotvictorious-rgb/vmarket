@@ -182,6 +182,29 @@ if (!$customerOTPLogin && $customerManualLogin && $customerSocialLogin) {
                                     </div>
                                 </form>
                             </div>
+                        @else
+                            {{-- [AI] Fallback: option combos above miss cases like social-only or all-off,
+                                 which rendered an EMPTY modal with no fields. Always show the manual
+                                 form (backend remains SSOT and rejects what it disabled). --}}
+                            <form action="{{ route('customer.auth.login') }}" id="customer-login-form" method="post"
+                                class="customer-centralize-login-form" autocomplete="off">
+                                @csrf
+                                <input type="hidden" name="keep_customer_login_redirect_url" value="{{ url()->full() }}">
+                                <input type="hidden" name="login_type" value="manual-login">
+                                @include('theme-views.layouts.auth-partials._email')
+                                @include('theme-views.layouts.auth-partials._password')
+                                @include('theme-views.layouts.auth-partials._remember-me', [
+                                    'forgotPassword' => true,
+                                ])
+                                @include('theme-views.layouts.auth-partials._recaptcha')
+                                <div class="d-flex justify-content-center mb-3">
+                                    <button type="submit" id="customerLoginBtn"
+                                        class="fs-16 btn btn-primary px-5 w-100">
+                                        {{ translate('login') }}
+                                    </button>
+                                </div>
+                                @include('theme-views.layouts.auth-partials._sign-up-instruction')
+                            </form>
                         @endif
                     </div>
 

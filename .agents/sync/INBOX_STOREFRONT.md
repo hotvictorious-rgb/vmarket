@@ -84,3 +84,10 @@
 - **Proposed Web Route / API**: deploy/runtime sync of `resources/themes/theme_vmarket/public/assets/` → `public/themes/theme_vmarket/public/assets/` (or serve resources copy directly).
 - **Required View Data / JSON Payload**: none — release action only.
 
+### [REQ-STOREFRONT-20260924-003] Login option config renders empty modal (no fields)
+- **Status**: `PENDING_BACKEND_REVIEW`
+- **Urgency**: `HIGH`
+- **Context**: Live `#loginModal` rendered with title but ZERO fields — active `customer_login_options` combo matches none of the 5 Blade branches (e.g. social-only or all-off). Frontend added an `@else` manual-form fallback so users always see fields, but if backend disabled manual login server-side, submits will be rejected.
+- **Proposed Web Route / API**: none — config decision: please enable a valid login method combination (manual and/or OTP) in `customer_login_options`, or confirm manual-login posts are accepted.
+- **Required View Data / JSON Payload**: none — config confirmation only.
+
