@@ -19,7 +19,6 @@ use App\Models\OrderDetail;
 use App\Models\Product;
 use App\Models\PublishingHouse;
 use App\Models\Review;
-use App\Models\ShippingMethod;
 use App\Models\Shop;
 use App\Models\StockClearanceProduct;
 use App\Models\Wishlist;
@@ -652,12 +651,6 @@ class ProductController extends Controller
             ]
         );
 
-    }
-
-    public function get_shipping_methods(Request $request)
-    {
-        $methods = ShippingMethod::where(['status' => 1])->get();
-        return response()->json($methods, 200);
     }
 
     public function get_discounted_product(Request $request):JsonResponse

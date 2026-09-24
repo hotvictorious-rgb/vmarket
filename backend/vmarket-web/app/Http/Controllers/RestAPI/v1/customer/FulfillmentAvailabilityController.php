@@ -3,6 +3,8 @@
 namespace App\Http\Controllers\RestAPI\v1\customer;
 
 use App\Http\Controllers\Controller;
+use App\Models\Cart;
+use App\Models\Product;
 use App\Models\Shop;
 use App\Models\ShippingAddress;
 use App\Services\FulfillmentAvailabilityService;
@@ -30,6 +32,56 @@ class FulfillmentAvailabilityController extends Controller
     }
 
     /**
+     * Resolve shop from shop_id, cart items, product_id, or active customer cart.
+     */
+    protected function resolveShop(Request $request, ?int $shopId, array $cartItems = []): ?Shop
+    {
+        if ($shopId) {
+            return Shop::with(['country', 'state', 'lga'])->find($shopId);
+        }
+
+        if (!empty($cartItems)) {
+            $firstItem = reset($cartItems);
+            $productId = $firstItem['product_id'] ?? null;
+            if ($productId) {
+                $product = Product::with(['seller.shop.country', 'seller.shop.state', 'seller.shop.lga'])->find($productId);
+                if ($product) {
+                    if ($product->added_by === 'admin') {
+                        return Shop::with(['country', 'state', 'lga'])->where('seller_id', 0)->first();
+                    }
+                    return $product->seller?->shop;
+                }
+            }
+        }
+
+        if ($request->filled('product_id')) {
+            $product = Product::with(['seller.shop.country', 'seller.shop.state', 'seller.shop.lga'])->find($request->product_id);
+            if ($product) {
+                if ($product->added_by === 'admin') {
+                    return Shop::with(['country', 'state', 'lga'])->where('seller_id', 0)->first();
+                }
+                return $product->seller?->shop;
+            }
+        }
+
+        $user = auth('api')->user();
+        if ($user) {
+            $cartItem = Cart::where('customer_id', $user->id)
+                ->where('is_checked', 1)
+                ->with(['product.seller.shop.country', 'product.seller.shop.state', 'product.seller.shop.lga'])
+                ->first();
+            if ($cartItem && $cartItem->product) {
+                if ($cartItem->product->added_by === 'admin') {
+                    return Shop::with(['country', 'state', 'lga'])->where('seller_id', 0)->first();
+                }
+                return $cartItem->product->seller?->shop;
+            }
+        }
+
+        return null;
+    }
+
+    /**
      * POST /api/v1/fulfillment/availability
      *
      * Check delivery and pickup availability for a shop + address
@@ -37,7 +89,7 @@ class FulfillmentAvailabilityController extends Controller
     public function checkAvailability(Request $request): JsonResponse
     {
         $validator = Validator::make($request->all(), [
-            'shop_id' => 'required|integer|exists:shops,id',
+            'shop_id' => 'nullable|integer|exists:shops,id',
             'shipping_address_id' => 'nullable|integer|exists:shipping_addresses,id',
             'cart_items' => 'nullable|array',
             'cart_items.*.product_id' => 'integer',
@@ -52,13 +104,14 @@ class FulfillmentAvailabilityController extends Controller
             ], 422);
         }
 
-        $shop = Shop::with(['country', 'state', 'lga'])->find($request->shop_id);
+        $cartItems = $request->cart_items ?? [];
+        $shop = $this->resolveShop($request, $request->shop_id, $cartItems);
 
         if (!$shop) {
             return response()->json([
                 'success' => false,
-                'message' => 'Shop not found',
-            ], 404);
+                'message' => 'Shop not found. Please provide a valid shop_id, product_id, or cart_items.',
+            ], 422);
         }
 
         $address = null;
@@ -73,8 +126,6 @@ class FulfillmentAvailabilityController extends Controller
                 ], 404);
             }
         }
-
-        $cartItems = $request->cart_items ?? [];
 
         $availability = $this->fulfillmentService->checkFulfillmentOptions(
             $shop,
@@ -109,7 +160,8 @@ class FulfillmentAvailabilityController extends Controller
     public function getDeliveryFee(Request $request): JsonResponse
     {
         $validator = Validator::make($request->all(), [
-            'shop_id' => 'required|integer|exists:shops,id',
+            'shop_id' => 'nullable|integer|exists:shops,id',
+            'product_id' => 'nullable|integer|exists:products,id',
             'shipping_address_id' => 'required|integer|exists:shipping_addresses,id',
         ]);
 
@@ -121,13 +173,20 @@ class FulfillmentAvailabilityController extends Controller
             ], 422);
         }
 
-        $shop = Shop::find($request->shop_id);
+        $shop = $this->resolveShop($request, $request->shop_id);
         $address = ShippingAddress::find($request->shipping_address_id);
 
-        if (!$shop || !$address) {
+        if (!$shop) {
             return response()->json([
                 'success' => false,
-                'message' => 'Shop or address not found',
+                'message' => 'Shop not found. Please provide a valid shop_id or product_id.',
+            ], 422);
+        }
+
+        if (!$address) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Shipping address not found',
             ], 404);
         }
 

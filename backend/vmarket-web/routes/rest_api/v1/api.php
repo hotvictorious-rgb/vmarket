@@ -160,7 +160,6 @@ Route::group(['prefix' => 'v1', 'middleware' => ['api_lang']], function () {
             Route::get('reviews/{slug}', 'get_product_reviews');
             Route::get('rating/{product_id}', 'get_product_rating');
             Route::get('counter/{slug}', 'counter');
-            Route::get('shipping-methods', 'get_shipping_methods');
             Route::get('social-share-link/{product_id}', 'socialShareLink');
             Route::post('reviews/submit', 'submit_product_review')->middleware('auth:api');
             Route::put('review/update', 'updateProductReview')->middleware('auth:api');
@@ -233,7 +232,6 @@ Route::group(['prefix' => 'v1', 'middleware' => ['api_lang']], function () {
                 Route::get('states', 'getStates');
                 Route::get('cities/{state_id}', 'getCities');
                 Route::get('hubs/{city_id}', 'getHubs');
-                Route::post('calculate-shipping', 'calculateHubShipping');
             });
         });
 

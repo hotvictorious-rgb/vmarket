@@ -1,3 +1,14 @@
+### [2026-09-24 05:25 UTC] Backend Spec Alignment & Legacy Duplicate Cleanup [backend] [AI]
+* **1. Dead & Duplicate Shipping Engine Removal:**
+  - Removed dead unrouted controller `app/Http/Controllers/RestAPI/v1/ShippingMethodController.php` (zero callers, replaced by directional `DeliveryLane` and `FulfillmentAvailabilityService`).
+  - Removed obsolete `get_shipping_methods` endpoint and route (`GET /api/v1/products/shipping-methods`) and cleaned up `ProductController.php` imports.
+  - Removed duplicate interim calculation engine `calculateHubShipping` and route (`POST /api/v1/delivery-hubs/calculate-shipping`) from `DeliveryHubApiController.php`; canonical fee calculation is strictly reserved for `FulfillmentAvailabilityService` / `DeliveryLane`.
+* **2. Fulfillment Availability API Spec Alignment (`VMARKET_BACKEND_SPEC.md` §6, §9, §15):**
+  - Updated `FulfillmentAvailabilityController.php` to derive the merchant shop from `cart_items`, `product_id`, or active cart when `shop_id` is omitted by client.
+* **3. Verification:**
+  - Verified PHP 8.4 syntax validation with 0 errors across all modified controllers and routes.
+  - Tested running server endpoints (`GET /api/v1/geography/countries`, `GET /api/v1/delivery-hubs/states`) with 200 OK responses.
+
 ### [2026-09-24 05:15 UTC] User App + Storefront Button Alignment (frontend-only, backend frozen) [user-app] [storefront] [AI]
 * **1. User app (`User app/`, 4 files, zero backend edits):**
   - `features/checkout/widgets/guest_user_contact_information_widget.dart`: wired dead-end `search_order` button to `RouterHelper.getGuestTrackOrderRoute` (canonical guest tracking; backend authoritative for lookup).
