@@ -29,6 +29,13 @@
    - Frontend AIs must never commit changes to the backend (`backend/vmarket-web/`).
    - The Backend AI must never modify or commit frontend UI/presentation code (`User app/`, `Vendor app/`, `Delivery Man App/`, or storefront theme Blade views) unless explicitly requested.
 
+5. **Strict Commit Isolation (COMMIT ONLY YOUR OWN CHANGES, NEVER ALL FILES) ⚠️**:
+   - Every AI MUST explicitly stage ONLY its own modified files using exact paths (e.g. `git add path/to/my/file.dart AI_CHANGELOG.md`).
+   - Running `git add .`, `git add -A`, or `git commit -a` is **STRICTLY FORBIDDEN**.
+   - In a concurrent multi-agent environment, uncommitted files from other platform actors (`User app/`, `Vendor app/`, `Delivery Man App/`, `backend/`, `storefront/`) will frequently appear in `git status`. **LEAVE THEM DIRTY AND UNSTAGED**.
+   - NEVER run `git restore .`, `git checkout -- .`, or `git clean` to wipe files modified by concurrent AIs.
+   - Every AI is solely responsible for committing only what it personally created or edited.
+
 ---
 
 ## 2. The Hub-and-Spoke Architecture
@@ -119,3 +126,4 @@ If a conflict arises between what a Frontend AI believes it needs and what the B
    - Directional LGA routing (`Origin LGA → Destination LGA`) takes precedence over legacy flat shipping or city assumptions.
    - Pay-After-Inspection Two-Code protocol takes precedence over direct pre-paid pickup orders.
 3. **Pessimistic Concurrency**: Any request that risks inventory overselling or double-payouts will be rejected or forced into pessimistic database locks (`lockForUpdate()`).
+

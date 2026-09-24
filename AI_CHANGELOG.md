@@ -1,3 +1,11 @@
+### [2026-09-24 06:35 UTC] Enforce Multi-Agent Strict Git Commit Isolation Across All Ecosystem Rules [ai-governance] [AI]
+* **1. Mandatory Commit Isolation Rule:**
+  - Updated Section 5 of `.agents/AGENTS.md` and Section 1 of `.agents/sync/CROSS_AGENT_COMMUNICATION_PROTOCOL.md` to strictly mandate that every AI must ONLY stage and commit its own specifically touched files.
+  - Formally banned `git add .`, `git add -A`, and `git commit -a` to prevent concurrent AIs from absorbing or reverting each other's work.
+  - Mandated that when uncommitted files from other platform actors (`User app/`, `Vendor app/`, `Delivery Man App/`, `backend/`, `storefront/`) appear in `git status`, they must remain dirty and untouched.
+* **2. Multi-Actor Inbox Broadcasting:**
+  - Posted cautionary broadcast banners across all 5 actor inboxes (`INBOX_USER_APP.md`, `INBOX_STOREFRONT.md`, `INBOX_VENDOR.md`, `INBOX_DELIVERY.md`, `INBOX_ADMIN.md`).
+
 ### [2026-09-24 06:20 UTC] Populate Exhaustive Canonical API Contract Registry & Exclude Legacy Endpoints [ai-governance] [AI]
 * **1. Authoritative API Contract Registry (`.agents/sync/API_CONTRACT_REGISTRY.md`):**
   - Expanded the living contract dictionary to cover all active production endpoints across 10 structured sections.

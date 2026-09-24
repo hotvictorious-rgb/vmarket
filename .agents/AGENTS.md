@@ -93,17 +93,21 @@ Use descriptive, atomic commits grouped by component. Follow this convention:
 **Types:** `feat`, `fix`, `security`, `perf`, `refactor`, `chore`
 **Scopes:** `user-app`, `vendor-app`, `delivery-man`, `backend`, `ai-governance`
 
-### Commit Procedure
-After completing any change:
-1. `git add <specific files>` — Stage only the files you changed (do NOT use `git add .` blindly).
-2. `git commit -m "<message> [AI]"` — Include `[AI]` tag so human developers know it was AI-authored.
-3. Log the changes in `AI_CHANGELOG.md` **before** committing (so the changelog itself is part of the commit).
-4. Verify with `git status` that the working tree is clean before ending your session.
+### Commit Procedure & Multi-Agent Strict Isolation ⚠️
+In this repository, multiple AI agents work concurrently across different platforms (`User app/`, `Vendor app/`, `Delivery Man App/`, `backend/vmarket-web/`, and `storefront`).
+**Every AI MUST strictly stage and commit ONLY its own changes. NEVER commit all files.**
+
+1. **Strict File Staging:** `git add <specific-file-1> <specific-file-2>` — You MUST explicitly name only the specific files you created or modified.
+2. **STRICTLY PROHIBITED:** NEVER run `git add .`, `git add -A`, `git commit -a`, or `git add *`. Using bulk staging is an immediate violation because it accidentally absorbs or breaks work in progress from concurrent AIs.
+3. **Leave Other Actors' Files Dirty:** If `git status` shows uncommitted files in directories or components you did not touch (e.g. you are Backend AI and see modified files in `Vendor app/` or `User app/`), **LEAVE THEM UNTOUCHED AND UNSTAGED**. Do NOT commit them, and NEVER run `git restore`, `git checkout -- .`, or `git clean` to wipe them.
+4. `git commit -m "<message> [AI]"` — Include the `[AI]` tag and proper scope.
+5. Log your changes in `AI_CHANGELOG.md` **before** committing (so the changelog entry is part of your commit).
+6. Verify with `git status` that ONLY your own files were committed and that you did not disturb other actors' working files.
 
 ### Grouping Strategy
-- Group commits by **component** (one commit per app, one for backend).
+- Group commits by **component** (one commit per app, one for backend, one for ai-governance).
 - Do NOT mix Flutter app changes with Laravel backend changes in a single commit.
-- New untracked files (widgets, screens) must be explicitly staged with `git add <path>`.
+- New untracked files (widgets, screens) must be explicitly staged by exact path with `git add <exact_path>`.
 
 ## 6. Code Commenting Standards
 - **AI Prefix:** All comments introduced by an AI must be prefixed with `[AI]` so human developers can easily identify AI-authored notes.
