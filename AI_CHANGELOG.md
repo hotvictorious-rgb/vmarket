@@ -1,3 +1,17 @@
+### [2026-09-24 07:45 UTC] Broadcast Backend Local Server Lifecycle Authority Across All Ecosystem Inboxes [ai-governance] [AI]
+* **1. Central Server Lifecycle Invariant (`CROSS_AGENT_COMMUNICATION_PROTOCOL.md` §1.6):**
+  - Clarified and formalized that the Backend AI runs, hosts, and maintains the central local PHP development server at `http://127.0.0.1:8000`.
+  - Stated explicitly that frontend AIs do NOT need to run or launch PHP or web server processes locally.
+* **2. Multi-Actor Inbox Broadcasting:**
+  - Added prominent `LOCAL BACKEND SERVER LIFECYCLE & TESTING DIRECTIVE` banners to all 5 communication channels:
+    - `INBOX_USER_APP.md` (Flutter Customer App): Configures API client `baseUrl` to `http://127.0.0.1:8000` (or `http://10.0.2.2:8000` for Android emulator).
+    - `INBOX_STOREFRONT.md` (Web Storefront): Live at `http://127.0.0.1:8000/`, with automatic static asset streaming via `server.php`.
+    - `INBOX_VENDOR.md` (Vendor Web & Mobile App): Vendor web panel at `http://127.0.0.1:8000/seller/auth/login`, Vendor Flutter app pointed to `http://127.0.0.1:8000`.
+    - `INBOX_DELIVERY.md` (Delivery Rider App): Configures API client `baseUrl` to `http://127.0.0.1:8000` for dispatch, orders, and OTP verification.
+    - `INBOX_ADMIN.md` (Admin Control Center): Live at `http://127.0.0.1:8000/admin` for delivery lane management, dispatch manifests, and audit controls.
+* **3. Isolation & Non-Interference:**
+  - Only governance/protocol files modified. Zero application code or other actor files touched or staged.
+
 ### [2026-09-24 07:15 UTC] Fulfill Cross-Actor RFC Tickets & Security Hardening [backend] [ai-governance] [AI]
 * **1. Customer App RFC Fulfillments (`INBOX_USER_APP.md`):**
   - `REQ-USERAPP-20260924-001` (Fulfillment Shape Lock): Locked live `FulfillmentAvailabilityService` schema in `API_CONTRACT_REGISTRY.md` §2 (`fee` float, `estimated_time` string, `origin_lga` and `destination_lga` as objects `{ id, name, state }`).

@@ -36,6 +36,12 @@
    - NEVER run `git restore .`, `git checkout -- .`, or `git clean` to wipe files modified by concurrent AIs.
    - Every AI is solely responsible for committing only what it personally created or edited.
 
+6. **Backend Server Lifecycle & Local Testing Authority**:
+   - The **Backend AI runs and maintains the central local server** (`http://127.0.0.1:8000`).
+   - Frontend AIs do **NOT** need to launch PHP or Apache/Nginx web server processes.
+   - Web Storefront (`http://127.0.0.1:8000/`) and Admin Command Center (`http://127.0.0.1:8000/admin`) are instantly live and accessible.
+   - Mobile Flutter applications (`User app/`, `Vendor app/`, `Delivery Man App/`) simply point their `baseUrl` to `http://127.0.0.1:8000` (or Android emulator loopback `http://10.0.2.2:8000`) to test against the unified live backend state.
+
 ---
 
 ## 2. The Hub-and-Spoke Architecture

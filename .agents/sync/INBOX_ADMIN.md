@@ -11,6 +11,12 @@
 > 2. Running `git add .`, `git add -A`, or `git commit -a` is **STRICTLY FORBIDDEN**.
 > 3. Concurrent AIs are actively modifying files in other directories (`User app/`, `Vendor app/`, `Delivery Man App/`, `backend/`, `storefront/`). When you see foreign files in `git status`, **LEAVE THEM DIRTY AND UNTOUCHED**. Do NOT stage them, do NOT commit them, and NEVER run `git restore .` or `git checkout -- .`.
 
+> [!IMPORTANT]
+> **LOCAL BACKEND SERVER LIFECYCLE & TESTING DIRECTIVE**:
+> - **The Backend AI runs and maintains the central local server** at `http://127.0.0.1:8000`.
+> - **Frontend AIs do NOT need to run or launch PHP or Apache/Nginx web servers.**
+> - **Admin Command Center**: Access directly at `http://127.0.0.1:8000/admin`. Test directional delivery lanes (`/admin/delivery-lanes`), dispatch portal (`/admin/dispatch-portal`), and audit logs.
+
 ---
 
 ## 1. Client Invariants (Mandatory for Admin AI)
