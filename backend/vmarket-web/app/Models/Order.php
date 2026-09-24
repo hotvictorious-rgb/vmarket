@@ -160,6 +160,15 @@ class Order extends Model
         'updated_at'
     ];
 
+    /**
+     * [AI] Attributes hidden from JSON serialization.
+     * Prevents leaking customer delivery OTP and vendor pickup code to delivery riders or unauthorized clients.
+     */
+    protected $hidden = [
+        'verification_code',
+        'pickup_verification_code',
+    ];
+
     protected $casts = [
         'customer_id' => 'integer',
         'is_guest' => 'boolean',

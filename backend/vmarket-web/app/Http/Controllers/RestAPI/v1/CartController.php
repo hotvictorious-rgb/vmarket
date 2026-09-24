@@ -130,9 +130,78 @@ class CartController extends Controller
                 unset($data['product']['variation']);
                 return $data;
             });
+
+            // [AI] Attach server-computed cart totals to checked items (RFC TICKET-USERAPP-003)
+            $checkedSubtotal = 0.0;
+            $checkedTax = 0.0;
+            foreach ($cart as $item) {
+                if ($item['is_checked']) {
+                    $effectivePrice = max(0, (float)$item['price'] - (float)($item['discount'] ?? 0));
+                    $checkedSubtotal += $effectivePrice * (int)$item['quantity'];
+                    $checkedTax += (float)($item['tax'] ?? 0) * (int)$item['quantity'];
+                }
+            }
+            $cartTotals = [
+                'subtotal' => (string) number_format($checkedSubtotal, 2, '.', ''),
+                'tax'      => (string) number_format($checkedTax, 2, '.', ''),
+                'total'    => (string) number_format($checkedSubtotal + $checkedTax, 2, '.', ''),
+                'currency' => 'NGN',
+            ];
+            foreach ($cart as $item) {
+                $item['cart_totals'] = $cartTotals;
+            }
         }
 
         return response()->json($cart, 200);
+    }
+
+    /**
+     * [AI] Authoritative Cart Totals (RFC TICKET-USERAPP-003)
+     * Provides backend-computed cart subtotal and tax for zero-client-math compliance.
+     * GET /api/v1/cart/totals
+     */
+    public function getCartTotals(Request $request): JsonResponse
+    {
+        $user = Helpers::getCustomerInformation($request);
+        ProductManager::updateProductPriceInCartList(request: $request);
+
+        $cart = Cart::whereHas('product', function ($query) {
+                return $query->active();
+            })
+            ->when($user == 'offline', function ($query) use ($request) {
+                return $query->where(['customer_id' => $request->guest_id, 'is_guest' => 1]);
+            })
+            ->when($user != 'offline', function ($query) use ($user) {
+                return $query->where(['customer_id' => $user->id, 'is_guest' => '0']);
+            })
+            ->where('is_checked', 1)
+            ->get();
+
+        $subtotal = 0.0;
+        $taxTotal = 0.0;
+        $itemCount = 0;
+
+        foreach ($cart as $item) {
+            $discount = getProductPriceByType(product: $item->product, type: 'discounted_amount', result: 'value', price: $item->price);
+            $effectivePrice = max(0, (float)$item->price - (float)$discount);
+            $subtotal += $effectivePrice * (int)$item->quantity;
+            $taxTotal += ((float)($item->tax ?? 0)) * (int)$item->quantity;
+            $itemCount += (int)$item->quantity;
+        }
+
+        $totalPayable = $subtotal + $taxTotal;
+
+        return response()->json([
+            'status' => true,
+            'message' => 'Cart totals calculated successfully.',
+            'data' => [
+                'item_count' => $itemCount,
+                'subtotal'   => (string) number_format($subtotal, 2, '.', ''),
+                'tax'        => (string) number_format($taxTotal, 2, '.', ''),
+                'total'      => (string) number_format($totalPayable, 2, '.', ''),
+                'currency'   => 'NGN',
+            ],
+        ], 200);
     }
 
     public function addToCart(Request $request): JsonResponse

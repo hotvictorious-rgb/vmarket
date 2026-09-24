@@ -8,6 +8,9 @@ use App\Exceptions\InvalidPaymentStateException;
 use App\Exceptions\PaymentInitializationException;
 use App\Exceptions\ProductUnavailableException;
 use App\Http\Controllers\Controller;
+use App\Models\CheckoutIntent;
+use App\Models\Order;
+use App\Models\PaymentRequest;
 use App\Services\DeliveryCheckoutIntentService;
 use App\Services\DeliveryPaymentInitializationService;
 use Illuminate\Http\JsonResponse;
@@ -188,5 +191,74 @@ class DeliveryCheckoutIntentController extends Controller
             ]);
             return response()->json(['errors' => ['Payment initialization failed. Please try again.']], 500);
         }
+    }
+
+    /**
+     * Poll status for an existing CheckoutIntent by order_group_id.
+     * Consumed by Customer Mobile App ("Check Again" button / recovery flow).
+     *
+     * GET /api/v1/checkout/intent/{orderGroupId}/status
+     *
+     * [AI] Clients: Customer Mobile App
+     */
+    public function status(Request $request, string $orderGroupId): JsonResponse
+    {
+        $customer = auth('api')->user();
+        if (!$customer) {
+            return response()->json([
+                'errors' => ['Authentication required.'],
+            ], 401);
+        }
+
+        $intent = CheckoutIntent::where('order_group_id', $orderGroupId)
+            ->where('customer_id', $customer->id)
+            ->first();
+
+        if (!$intent) {
+            return response()->json([
+                'errors' => ['Checkout agreement not found.'],
+            ], 404);
+        }
+
+        // Expire pending intent if TTL elapsed
+        if ($intent->status === 'pending' && $intent->expires_at && $intent->expires_at->isPast()) {
+            $intent->update([
+                'status' => 'expired',
+                'active_cart_token' => null,
+            ]);
+        }
+
+        // Locate latest payment attempt for this order group
+        $paymentRequest = PaymentRequest::where('order_group_id', $intent->order_group_id)
+            ->latest()
+            ->first();
+
+        $paymentStatus = 'unpaid';
+        $authorizationUrl = null;
+
+        if ($paymentRequest) {
+            if ((int)$paymentRequest->is_paid === 1) {
+                $paymentStatus = 'paid';
+            } else {
+                $paymentStatus = 'pending';
+                $additionalData = json_decode($paymentRequest->additional_data ?? '{}', true);
+                $authorizationUrl = $additionalData['authorization_url'] ?? null;
+            }
+        }
+
+        // Placed vendor orders (if converted)
+        $orders = Order::where('order_group_id', $intent->order_group_id)
+            ->where('customer_id', $customer->id)
+            ->get(['id', 'order_status', 'payment_status', 'order_amount', 'created_at']);
+
+        return response()->json([
+            'order_group_id'     => $intent->order_group_id,
+            'intent_status'      => $intent->status,
+            'payment_status'     => $paymentStatus,
+            'authorization_url'  => $authorizationUrl,
+            'total_amount'       => $intent->total_amount,
+            'currency'           => $intent->currency,
+            'orders'             => $orders,
+        ], 200);
     }
 }

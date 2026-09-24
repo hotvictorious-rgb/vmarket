@@ -107,6 +107,7 @@ Route::group(['prefix' => 'v1', 'middleware' => ['api_lang']], function () {
     Route::group(['prefix' => 'cart', 'middleware' => 'apiGuestCheck'], function () {
         Route::controller(CartController::class)->group(function () {
             Route::get('/', 'getCartList');
+            Route::get('totals', 'getCartTotals');
             Route::post('add', 'addToCart');
             Route::put('update', 'update_cart');
             Route::delete('remove', 'remove_from_cart');
@@ -359,6 +360,20 @@ Route::group(['prefix' => 'v1', 'middleware' => ['api_lang']], function () {
 
     });
 
+    // [AI] Direct aliases for cashback & pickup-reservations (RFC REQ-USERAPP-20260924-004 compat)
+    Route::group(['middleware' => 'auth:api'], function () {
+        Route::prefix('cashback')->controller(CustomerCashbackController::class)->group(function () {
+            Route::get('summary', 'getCashbackSummary');
+            Route::get('list', 'getCashbackList');
+        });
+        Route::prefix('pickup-reservations')->controller(\App\Http\Controllers\Customer\PickupReservationController::class)->group(function () {
+            Route::post('/', 'create');
+            Route::get('/', 'index');
+            Route::get('/{code}', 'show');
+            Route::post('/{code}/pay', 'pay');
+        });
+    });
+
 
 
     // [AI] Legacy delivery checkout payment endpoint — preserved for backwards compat.
@@ -375,6 +390,7 @@ Route::group(['prefix' => 'v1', 'middleware' => ['api_lang']], function () {
     Route::prefix('checkout')->middleware('auth:api')->group(function () {
         Route::post('intent', [DeliveryCheckoutIntentController::class, 'create'])->name('checkout.intent.create');
         Route::post('intent/{orderGroupId}/pay', [DeliveryCheckoutIntentController::class, 'initializePayment'])->name('checkout.intent.pay');
+        Route::get('intent/{orderGroupId}/status', [DeliveryCheckoutIntentController::class, 'status'])->name('checkout.intent.status');
     });
 
 

@@ -484,10 +484,29 @@ class WebController extends Controller
         session()->forget('newRegisterCustomerInfo');
 
         $orderIds = json_decode($request['orderIds'] ?? '', true);
+        if (!$orderIds && session()->has('order_id')) {
+            $orderIds = [session('order_id')];
+        }
+
+        // [AI] Storefront celebratory cashback earned summary (RFC REQ-STOREFRONT-20260924-001)
+        $cashbackEarned = null;
+        if (auth('customer')->check() && !empty($orderIds)) {
+            $ledgerEntry = \App\Models\CustomerCashbackLedger::where('customer_id', auth('customer')->id())
+                ->whereIn('order_id', (array)$orderIds)
+                ->latest()
+                ->first();
+            if ($ledgerEntry) {
+                $cashbackEarned = [
+                    'amount'  => (string) number_format((float)$ledgerEntry->cashback_amount, 2, '.', ''),
+                    'percent' => (int) round(((float)($ledgerEntry->cashback_rate ?? 0.05)) * 100),
+                ];
+            }
+        }
 
         return view(VIEW_FILE_NAMES['order_complete'], [
             'order_ids' => $orderIds,
             'isNewCustomerInSession' => $isNewCustomerInSession,
+            'cashback_earned' => $cashbackEarned,
         ]);
     }
 
@@ -495,7 +514,22 @@ class WebController extends Controller
     {
         $isNewCustomerInSession = session('newCustomerRegister');
         session()->forget('newCustomerRegister');
-        return view(VIEW_FILE_NAMES['order_complete'], compact('isNewCustomerInSession'));
+
+        $cashbackEarned = null;
+        if (auth('customer')->check() && session()->has('order_id')) {
+            $ledgerEntry = \App\Models\CustomerCashbackLedger::where('customer_id', auth('customer')->id())
+                ->where('order_id', session('order_id'))
+                ->latest()
+                ->first();
+            if ($ledgerEntry) {
+                $cashbackEarned = [
+                    'amount'  => (string) number_format((float)$ledgerEntry->cashback_amount, 2, '.', ''),
+                    'percent' => (int) round(((float)($ledgerEntry->cashback_rate ?? 0.05)) * 100),
+                ];
+            }
+        }
+
+        return view(VIEW_FILE_NAMES['order_complete'], compact('isNewCustomerInSession', 'cashbackEarned'));
     }
 
     public function shop_cart(Request $request): View|RedirectResponse

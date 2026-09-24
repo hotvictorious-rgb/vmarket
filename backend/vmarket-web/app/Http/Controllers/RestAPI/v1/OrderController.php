@@ -86,6 +86,10 @@ class OrderController extends Controller
             }
         }
 
+        if ($isOwner) {
+            $order->makeVisible(['verification_code', 'pickup_verification_code']);
+        }
+
         $data = json_decode(json_encode($order), true);
 
         // Sanitize sensitive PII if unauthenticated or non-owner caller
