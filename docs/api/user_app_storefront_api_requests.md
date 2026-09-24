@@ -42,6 +42,7 @@
 - **Problem today:** backend sends `delivery.origin_lga/destination_lga` as OBJECTS `{id,name,state}` + `estimated_time`, but app parses them as strings and drops ETA.
 - **Suggested contract (backend confirms, frontend adapts):** keep `fulfillment_options.{delivery,pickup}`; guarantee `delivery:{available,fee,estimated_time,eta_display?,origin_lga{id,name,state},destination_lga{id,name,state},reason,message?}` and `pickup:{available,available_times[],earliest_available?,reason,message?}`.
 - **Frontend work (ours):** parse objects + render ETA/slots. No backend edit.
+- **Verified 2026-09-24 vs backend `076415a9`:** service response shape unchanged (objects + `estimated_time` intact); still awaiting backend shape-lock confirmation.
 - **Backend commit:** _pending_ · **Integrated in:** _pending_
 
 ### FAPI-003 — Canonical order-track contract (app + guest web)
@@ -69,11 +70,11 @@
 
 ## 3. Frontend-owned fixes backlog (no API needed — do these in `User app/` / `theme_vmarket`)
 
-- [ ] **FF-01:** Parse fulfillment LGA objects + render `estimated_time` and `available_times` (model + checkout UI).
-- [ ] **FF-02:** `payment_status_screen.dart` token via `flutter_secure_storage` (never `SharedPreferences`).
-- [ ] **FF-03:** Standardize `use_cashback` to bool on intent path; keep legacy 1/0 shim untouched.
-- [ ] **FF-04:** Keep `estimatedCashback/totalPayable` in checkout labeled estimate-only; never send to backend (only `useCashback` bool is sent).
-- [ ] **FF-05:** Continue cart decoupling (done: `b154835c`) — no fee math in cart.
+- [x] **FF-01:** Parse fulfillment LGA objects + render `estimated_time` and `available_times` (model + checkout UI).
+- [x] **FF-02:** `payment_status_screen.dart` token via `flutter_secure_storage` (never `SharedPreferences`).
+- [x] **FF-03:** Intent-path `use_cashback` confirmed bool (verified 2026-09-24; legacy 1/0 shim is backend compat, untouched).
+- [x] **FF-04:** `estimatedCashback/totalPayable` labeled estimate-only (`Victorious Cashback (est.)`); only `useCashback` bool sent to backend.
+- [x] **FF-05:** Cart decoupling (done: `b154835c`) — no fee math in cart.
 
 ---
 

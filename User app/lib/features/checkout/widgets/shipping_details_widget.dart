@@ -191,9 +191,10 @@ class _ShippingDetailsWidgetState extends State<ShippingDetailsWidget> {
                                 final options = shippingProvider.fulfillmentAvailability?.data?.fulfillmentOptions;
                                 final delivery = options?.delivery;
                                 final bool isDeliveryAvailable = delivery?.available ?? false;
-                                final String originLga = delivery?.originLga ?? 'Vendor Store';
-                                final String destinationLga = delivery?.destinationLga ?? (locationProvider.addressList![shippingProvider.addressIndex!].lgaName ?? 'Destination LGA');
+                                final String originLga = delivery?.originLga?.display.isNotEmpty == true ? delivery!.originLga!.display : 'Vendor Store';
+                                final String destinationLga = delivery?.destinationLga?.display.isNotEmpty == true ? delivery!.destinationLga!.display : (locationProvider.addressList![shippingProvider.addressIndex!].lgaName ?? 'Destination LGA');
                                 final double? deliveryFee = delivery?.fee;
+                                final String? eta = delivery?.estimatedTime;
 
                                 return Container(
                                   margin: const EdgeInsets.only(top: 8),
@@ -233,7 +234,7 @@ class _ShippingDetailsWidgetState extends State<ShippingDetailsWidget> {
                                             const SizedBox(height: 2),
                                             Text(
                                               isDeliveryAvailable
-                                                  ? (deliveryFee != null ? 'Lane Shipping Fee: ₦${deliveryFee.toStringAsFixed(2)}' : 'Authoritative Lane Active')
+                                                  ? (deliveryFee != null ? 'Lane Shipping Fee: ₦${deliveryFee.toStringAsFixed(2)}${(eta ?? '').isNotEmpty ? ' • ETA $eta' : ''}' : 'Authoritative Lane Active')
                                                   : (delivery?.reason ?? 'Please choose in-store pickup or select a supported delivery LGA.'),
                                               style: textRegular.copyWith(
                                                 fontSize: Dimensions.fontSizeExtraSmall,

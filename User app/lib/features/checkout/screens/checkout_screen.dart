@@ -896,7 +896,8 @@ class CheckoutScreenState extends State<CheckoutScreen> {
 
                                             if (checkoutController.isUseCashback && estimatedCashback > 0 && !checkoutController.isPickup)
                                             AmountWidget(
-                                              title: 'Victorious Cashback',
+                                              // [AI] Estimate only — backend intent decides final cashback discount.
+                                              title: 'Victorious Cashback (est.)',
                                               amount: '- ${PriceConverter.convertPrice(context, estimatedCashback)}',
                                             ),
 

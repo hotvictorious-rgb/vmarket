@@ -58,6 +58,28 @@ class AddressLocation {
   }
 }
 
+class LgaRef {
+  int? id;
+  String? name;
+  String? state;
+
+  LgaRef({this.id, this.name, this.state});
+
+  LgaRef.fromJson(dynamic json) {
+    if (json is String) {
+      name = json;
+      return;
+    }
+    if (json is Map<String, dynamic>) {
+      id = json['id'] is int ? json['id'] : int.tryParse(json['id']?.toString() ?? '');
+      name = json['name']?.toString();
+      state = json['state']?.toString();
+    }
+  }
+
+  String get display => [name, state].where((e) => (e ?? '').isNotEmpty).join(', ');
+}
+
 class FulfillmentOptions {
   DeliveryOption? delivery;
   PickupOption? inShopPickup;
@@ -73,18 +95,22 @@ class FulfillmentOptions {
 class DeliveryOption {
   bool? available;
   double? fee;
-  String? originLga;
-  String? destinationLga;
+  LgaRef? originLga;
+  LgaRef? destinationLga;
+  String? estimatedTime;
   String? reason;
+  String? message;
 
-  DeliveryOption({this.available, this.fee, this.originLga, this.destinationLga, this.reason});
+  DeliveryOption({this.available, this.fee, this.originLga, this.destinationLga, this.estimatedTime, this.reason, this.message});
 
   DeliveryOption.fromJson(Map<String, dynamic> json) {
     available = json['available'] ?? false;
     fee = json['fee'] != null ? double.tryParse(json['fee'].toString()) : null;
-    originLga = json['origin_lga'];
-    destinationLga = json['destination_lga'];
-    reason = json['reason'];
+    originLga = json['origin_lga'] != null ? LgaRef.fromJson(json['origin_lga']) : null;
+    destinationLga = json['destination_lga'] != null ? LgaRef.fromJson(json['destination_lga']) : null;
+    estimatedTime = json['estimated_time']?.toString();
+    reason = json['reason']?.toString();
+    message = json['message']?.toString();
   }
 }
 
@@ -93,13 +119,19 @@ class PickupOption {
   bool? requiresVerification;
   String? reason;
   String? message;
+  List<String>? availableTimes;
+  String? earliestAvailable;
 
-  PickupOption({this.available, this.requiresVerification, this.reason, this.message});
+  PickupOption({this.available, this.requiresVerification, this.reason, this.message, this.availableTimes, this.earliestAvailable});
 
   PickupOption.fromJson(Map<String, dynamic> json) {
     available = json['available'] ?? false;
     requiresVerification = json['requires_verification'] ?? true;
-    reason = json['reason'];
-    message = json['message'];
+    reason = json['reason']?.toString();
+    message = json['message']?.toString();
+    if (json['available_times'] is List) {
+      availableTimes = (json['available_times'] as List).map((e) => e.toString()).toList();
+    }
+    earliestAvailable = json['earliest_available']?.toString();
   }
 }

@@ -30,6 +30,11 @@
 * **3. Preservation (no-revert rule):**
   - Concurrent work kept intact: prior cart decoupling commit `b154835c`, backend hardening `d610b934`, and in-progress backend `ShippingMethodController.php` deletion left unstaged/unreverted (not part of this commit).
 * **Verification:** `node --check` PASS on both edited JS files; `dart format --output=none` parses all 4 Dart files (no syntax errors; formatting drift pre-existing); `flutter analyze --no-pub` timed out on dependency resolve (no errors introduced).
+### [2026-09-24 07:45 UTC] User App Fulfillment Display + Secure Payment Recovery (FF-01/02/04) [user-app] [AI]
+* **FF-01 fulfillment objects (frontend-only):** `fulfillment_availability_model.dart` now parses backend LGA objects `{id,name,state}` via `LgaRef` (+ `estimated_time`, pickup `available_times`/`earliest_available`); `shipping_details_widget.dart` renders lane `origin → destination` + fee + ETA.
+* **FF-02 secure token:** `payment_status_screen.dart` reads auth token from `flutter_secure_storage` (`StorageService` via GetIt) instead of `SharedPreferences`.
+* **FF-04 estimate label:** checkout cashback row retitled `Victorious Cashback (est.)`; only `useCashback` bool sent to intent (FF-03 verified no-change; legacy 1/0 shim untouched).
+* **FAPI-002 verified vs backend `076415a9`:** service shape unchanged; `B` still pending backend shape-lock. Zero backend edits, zero reverts.
 ### [2026-09-24 07:30 UTC] User App Cart Fulfillment Decoupling & Button Audit Baseline [user-app] [AI]
 * **1. Cart-stage legacy shipping decoupled (frontend-only, zero backend edits, zero reverts):**
   - `User app/lib/features/cart/screens/cart_screen.dart`: removed legacy admin/sellerwise shipping prefetch from `_loadData` and `build`; cart total now shows merchandise subtotal (`amount+tax`) only; authoritative delivery fee resolved at checkout via `POST fulfillment/availability` + `POST checkout/intent`.

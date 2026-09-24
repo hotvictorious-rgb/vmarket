@@ -7,9 +7,10 @@ import 'package:flutter_sixvalley_ecommerce/localization/language_constrants.dar
 import 'package:flutter_sixvalley_ecommerce/utill/app_constants.dart';
 import 'package:flutter_sixvalley_ecommerce/utill/custom_themes.dart';
 import 'package:flutter_sixvalley_ecommerce/utill/dimensions.dart';
+import 'package:flutter_sixvalley_ecommerce/di_container.dart' as di;
+import 'package:flutter_sixvalley_ecommerce/services/storage_service.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
-import 'package:shared_preferences/shared_preferences.dart';
 
 /// Payment Status Screen — Recovery screen for app close/crash during payment
 class PaymentStatusScreen extends StatefulWidget {
@@ -66,8 +67,8 @@ class _PaymentStatusScreenState extends State<PaymentStatusScreen> {
 
   Future<void> _checkPaymentStatus() async {
     try {
-      final prefs = await SharedPreferences.getInstance();
-      final token = prefs.getString(AppConstants.userLoginToken);
+      // [AI] VMarket security: auth token ONLY from flutter_secure_storage via StorageService.
+      final token = di.sl<StorageService>().getString(AppConstants.userLoginToken);
 
       if (token == null || token.isEmpty) {
         _pollTimer?.cancel();
