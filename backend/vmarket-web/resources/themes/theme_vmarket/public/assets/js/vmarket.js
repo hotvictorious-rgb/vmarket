@@ -199,19 +199,25 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     // 5. Quantity Increment / Decrement
+    // [AI] VMarket V1: skip vanilla handler when authoritative clamped
+    // cartQuantityInitialize (.btn-number) is present to avoid double-fire.
     const qtyInput = document.getElementById('vmQtyInput');
     const qtyPlus = document.getElementById('vmQtyPlus');
     const qtyMinus = document.getElementById('vmQtyMinus');
 
-    if (qtyInput && qtyPlus && qtyMinus) {
+    if (qtyInput && qtyPlus && qtyMinus && !qtyPlus.classList.contains('btn-number')) {
         qtyPlus.addEventListener('click', () => {
             let current = parseInt(qtyInput.value) || 1;
-            qtyInput.value = current + 1;
+            const max = parseInt(qtyInput.getAttribute('max')) || 9999;
+            if (current < max) {
+                qtyInput.value = current + 1;
+            }
         });
 
         qtyMinus.addEventListener('click', () => {
             let current = parseInt(qtyInput.value) || 1;
-            if (current > 1) {
+            const min = parseInt(qtyInput.getAttribute('min')) || 1;
+            if (current > min) {
                 qtyInput.value = current - 1;
             }
         });

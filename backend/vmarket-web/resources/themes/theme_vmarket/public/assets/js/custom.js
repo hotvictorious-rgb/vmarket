@@ -69,7 +69,8 @@ $(".change-language").on("click", function () {
 
 $("#global-search").on("keyup", function () {
     $(".search-card").css("display", "block");
-    const name = $(".search-bar-input").val();
+    // [AI] VMarket V1: support both legacy (.search-bar-input) and theme_vmarket (.vm-search-input) headers.
+    const name = $(".search-bar-input").val() ?? $(".vm-search-input").first().val() ?? "";
     const category_id = $("#search_category_value").val();
     const base_url = $('meta[name="base-url"]').attr("content");
     if (name.length > 0) {
@@ -117,6 +118,31 @@ $(".search-bar-input-mobile").keyup(function () {
             },
         });
     } else {
+        $(".search-result-box").empty();
+    }
+});
+
+// [AI] VMarket V1: theme_vmarket header uses .vm-search-input / .vm-mobile-search-input.
+// Native form submit remains primary; live results are progressive enhancement only.
+$(document).on("keyup", ".vm-search-input, .vm-mobile-search-input", function () {
+    const name = $(this).val();
+    const base_url = $('meta[name="base-url"]').attr("content");
+    if (!base_url) {
+        return;
+    }
+    if (name && name.length > 0) {
+        $.get({
+            url: base_url + "/searched-products",
+            dataType: "json",
+            data: { name },
+            success: function (data) {
+                if ($(".search-result-box").length) {
+                    $(".search-card").css("display", "block");
+                    $(".search-result-box").show().empty().html(data.result);
+                }
+            },
+        });
+    } else if ($(".search-result-box").length) {
         $(".search-result-box").empty();
     }
 });
