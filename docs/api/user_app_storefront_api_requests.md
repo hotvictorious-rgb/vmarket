@@ -66,6 +66,24 @@
 - **Suggested:** guarantee `GET /api/v1/customer/pickup-reservations/{code}` returns `{reservation:{code,state,order_id?,payment_status?}}` (order_id null until settled). No OTP on reservation (stays on Order — IDOR-safe).
 - **Backend commit:** _pending_ · **Integrated in:** _pending_
 
+### FAPI-006 — Cart totals field for §12.2 zero-client-math compliance
+- [x] R · [ ] B · [ ] I
+- **Date requested:** 2026-09-24 · **Needed by:** `cart_screen.dart` total row (currently sums `amount+tax` display-only)
+- **Problem today:** cart read returns per-item price/discount/tax with no cart-level total; new §12.2 forbids client subtotal math.
+- **Suggested:** backend-computed `{totals:{subtotal,tax,currency}}` on cart read, or explicit carve-out for display aggregation.
+- **Backend commit:** _pending_ · **Integrated in:** _pending_
+
+---
+
+## 3b. RFC tickets filed to Backend AI (2026-09-24, per protocol §4)
+
+Filed in `.agents/sync/INBOX_USER_APP.md` §4 + `INBOX_STOREFRONT.md` §4 (no backend edits):
+- `[REQ-USERAPP-20260924-001]` fulfillment shape conflict (registry §2 vs live service) — maps to FAPI-002.
+- `[REQ-USERAPP-20260924-002]` intent status endpoint — maps to FAPI-001.
+- `[REQ-USERAPP-20260924-003]` cart totals — maps to FAPI-006.
+- `[REQ-USERAPP-20260924-004]` registry path corrections (`/customer/` prefix) — docs-only.
+- `[REQ-STOREFRONT-20260924-001]` web `cashback_earned` — maps to FAPI-004.
+
 ---
 
 ## 3. Frontend-owned fixes backlog (no API needed — do these in `User app/` / `theme_vmarket`)

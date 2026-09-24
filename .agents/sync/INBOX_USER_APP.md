@@ -53,3 +53,45 @@
   { ... }
   ```
 ```
+
+---
+
+## 4. Open RFC Tickets from User App AI (2026-09-24)
+
+### [REQ-USERAPP-20260924-001] Fulfillment availability shape: registry vs live service conflict
+- **Status**: `PENDING_BACKEND_REVIEW`
+- **Urgency**: `HIGH`
+- **Context**: Checkout `shipping_details_widget.dart` renders lane fee + ETA + origin→destination from `POST /api/v1/fulfillment/availability`. Registry §2 documents `delivery: {fee: string, currency, estimated_delivery_time, lane: {origin_lga, destination_lga strings}}`, but live `FulfillmentAvailabilityService.php` returns `fee` float, `estimated_time`, and `origin_lga/destination_lga` OBJECTS `{id,name,state}`. Frontend currently parses the live shape (FF-01, commit `c2ed372b`). One side must change; backend decides.
+- **Proposed Endpoint**: No new endpoint — reconcile existing `POST /api/v1/fulfillment/availability`.
+- **Required Request Payload**: unchanged (`shop_id?`, `shipping_address_id?`, `cart_items?`).
+- **Desired Response Fields**: single locked shape for `fulfillment_options.delivery` and `.pickup` (types for `fee`, ETA key name, LGA object-vs-string, guaranteed `available_times[]`), then mirrored into `API_CONTRACT_REGISTRY.md` §2.
+
+### [REQ-USERAPP-20260924-002] Direct checkout-intent status for crash-recovery polling
+- **Status**: `PENDING_BACKEND_REVIEW`
+- **Urgency**: `MEDIUM`
+- **Context**: `payment_status_screen.dart` ("Check Again" button) recovers app-killed-during-Paystack by scanning `GET /api/v1/customer/order/list?limit=5` and matching `order_group_id` client-side. Misses when the customer has >5 recent orders.
+- **Proposed Endpoint**: `GET /api/v1/checkout/intent/{orderGroupId}/status`
+- **Required Request Payload**: path param only, `auth:api` customer scope.
+- **Desired Response Fields**:
+  ```json
+  { "order_group_id": "...", "intent_status": "pending_payment", "payment_status": "...", "authorization_url": null, "orders": [{ "id": 1, "status": "..." }] }
+  ```
+
+### [REQ-USERAPP-20260924-003] Cart totals field for §12.2 zero-client-math compliance
+- **Status**: `PENDING_BACKEND_REVIEW`
+- **Urgency**: `MEDIUM`
+- **Context**: New §12.2 + inbox invariant forbid client-side cart subtotal math, but `GET cart` returns per-item price/discount/tax with no cart-level total, so `cart_screen.dart` sums `amount+tax` for display. Requesting a backend-computed total (or explicit carve-out for display-only line aggregation).
+- **Proposed Endpoint**: extend existing cart read (e.g. `GET /api/v1/cart`) — backend decides shape.
+- **Required Request Payload**: unchanged.
+- **Desired Response Fields**:
+  ```json
+  { "totals": { "subtotal": "20000.00", "tax": "1500.00", "currency": "NGN" } }
+  ```
+
+### [REQ-USERAPP-20260924-004] Registry path corrections: pickup + cashback `/customer/` prefix
+- **Status**: `PENDING_BACKEND_REVIEW`
+- **Urgency**: `LOW`
+- **Context**: Registry §§4-5 and TICKET-USERAPP-002 document `/api/v1/pickup-reservations/...` and `/api/v1/cashback/...`, but live routes are `/api/v1/customer/pickup-reservations/...` and `/api/v1/customer/cashback/...` (verified in `routes/rest_api/v1/api.php`). App already calls the `/customer/` paths. Requesting registry + ticket text correction only — no code change.
+- **Proposed Endpoint**: none (docs-only).
+- **Desired Response Fields**: corrected paths in `API_CONTRACT_REGISTRY.md` §§4-5 and `INBOX_USER_APP.md` TICKET-USERAPP-002.
+

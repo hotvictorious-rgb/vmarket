@@ -1,3 +1,11 @@
+### [2026-09-24 06:20 UTC] Populate Exhaustive Canonical API Contract Registry & Exclude Legacy Endpoints [ai-governance] [AI]
+* **1. Authoritative API Contract Registry (`.agents/sync/API_CONTRACT_REGISTRY.md`):**
+  - Expanded the living contract dictionary to cover all active production endpoints across 10 structured sections.
+  - Formulated full JSON request and response contracts for: Canonical Geography (`/api/v1/geography/*`), Dynamic Fulfillment & Lanes (`/api/v1/fulfillment/*`), Two-Phase Delivery Checkout & Paystack (`/api/v1/checkout/*`), In-Shop Pickup Two-Code Lifecycle (`/api/v1/pickup-reservations/*`, `/api/v3/seller/pickup-reservations/*`, `/api/v3/seller/orders/verify-pickup-otp`), Delivery Rider Logistics & Proof of Delivery (`/api/v2/delivery-man/*`), Omnichannel Vendor Operations & Relisting (`/api/v3/seller/*`), Victorious Points & Cashback (`/api/v1/cashback/*`, `/admin/cashback/*`), Customer Core Services & Catalog (`/api/v1/*`), and Admin Delivery Lanes & Dispatch Portal (`/admin/*`).
+  - Added Section 10: Explicit Exclusion & Decommission Catalog banning dead and deprecated patterns (`GET /api/v1/products/shipping-methods`, `POST /api/v1/delivery-hubs/calculate-shipping`, Flutterwave payment endpoints, blind direct pre-paid pickup, and client-side shipping calculation math).
+* **2. Compliance:**
+  - Strictly confined modifications to AI governance and backend documentation. No frontend code touched.
+
 ### [2026-09-24 06:05 UTC] Multi-Agent Concurrent Communication Protocol & Contract Hub [ai-governance] [AI]
 * **1. Cross-Agent Governance Infrastructure (`.agents/sync/`):**
   - Created `CROSS_AGENT_COMMUNICATION_PROTOCOL.md`: Formal Hub-and-Spoke coordination protocol where Backend AI acts as central SSOT authority and gatekeeper for all 5 client actors.
@@ -37,6 +45,9 @@
 * **3. Preservation (no-revert rule):**
   - Concurrent work kept intact: prior cart decoupling commit `b154835c`, backend hardening `d610b934`, and in-progress backend `ShippingMethodController.php` deletion left unstaged/unreverted (not part of this commit).
 * **Verification:** `node --check` PASS on both edited JS files; `dart format --output=none` parses all 4 Dart files (no syntax errors; formatting drift pre-existing); `flutter analyze --no-pub` timed out on dependency resolve (no errors introduced).
+### [2026-09-24 08:00 UTC] RFC Tickets to Backend AI via Protocol Inboxes (User App + Storefront) [ai-governance] [AI]
+* Filed 4 User App tickets in `.agents/sync/INBOX_USER_APP.md` §4 (`REQ-USERAPP-20260924-001..004`: fulfillment shape conflict, intent status, cart totals, registry path corrections) + 1 storefront ticket (`REQ-STOREFRONT-20260924-001`: web `cashback_earned`).
+* Mirrored as FAPI-006 + cross-refs in `docs/api/user_app_storefront_api_requests.md`. Registry `API_CONTRACT_REGISTRY.md` left untouched (backend-owned; has concurrent uncommitted backend changes). Zero backend edits, zero reverts.
 ### [2026-09-24 07:45 UTC] User App Fulfillment Display + Secure Payment Recovery (FF-01/02/04) [user-app] [AI]
 * **FF-01 fulfillment objects (frontend-only):** `fulfillment_availability_model.dart` now parses backend LGA objects `{id,name,state}` via `LgaRef` (+ `estimated_time`, pickup `available_times`/`earliest_available`); `shipping_details_widget.dart` renders lane `origin → destination` + fee + ETA.
 * **FF-02 secure token:** `payment_status_screen.dart` reads auth token from `flutter_secure_storage` (`StorageService` via GetIt) instead of `SharedPreferences`.
