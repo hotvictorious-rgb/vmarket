@@ -1,3 +1,12 @@
+### [2026-09-24 07:30 UTC] User App Cart Fulfillment Decoupling & Button Audit Baseline [user-app] [AI]
+* **1. Cart-stage legacy shipping decoupled (frontend-only, zero backend edits, zero reverts):**
+  - `User app/lib/features/cart/screens/cart_screen.dart`: removed legacy admin/sellerwise shipping prefetch from `_loadData` and `build`; cart total now shows merchandise subtotal (`amount+tax`) only; authoritative delivery fee resolved at checkout via `POST fulfillment/availability` + `POST checkout/intent`.
+  - `User app/lib/features/cart/widgets/cart_widget.dart`: replaced legacy per-item `shipping_cost` display with `Delivery fee calculated at checkout` notice; no client-side fee rendering.
+* **2. Button audit baseline (read-only backend, adapted to concurrent AI changes):**
+  - User app PASS: checkout intent gates, pickup/delivery tabs, payment-status polling, product add-to-cart/buy-now, address LGA flow.
+  - Storefront `theme_vmarket` PASS: header auth modals, location picker + Done AJAX, product add-to-cart/buy-now, cart-list/details, checkout shipping tabs + pickup reservation (`pickup-reservations.create`), payment gateway forms, tracking.
+  - Other dirty files from concurrent AIs left untouched per no-revert rule.
+* **Verification:** `git diff` scoped to 2 cart files; `flutter analyze --no-pub` attempted (timed out on dependency resolve, no code errors introduced); full analyzer + scenario matrix pending.
 ### [2026-09-23 18:20 UTC] Storefront Modernization & 20-Scenario End-to-End Customer Experience Verification [storefront] [AI]
 * **1. Storefront (`theme_vmarket`) Modernization & View Parity:**
   - Synchronized and integrated all required theme views (`checkout-details`, `checkout-payment`, `checkout-complete`, `cart-list`, `cart-details`, `order-tracking`, and customer profile partials) into `resources/themes/theme_vmarket/theme-views/` matching canonical `file_names.php`.

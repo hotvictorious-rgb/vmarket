@@ -54,9 +54,9 @@ class CartScreenState extends State<CartScreen> with AutomaticKeepAliveClientMix
   Future<void> _loadData() async {
     await Provider.of<CartController>(Get.context!, listen: false).getCartData(Get.context!);
      Provider.of<CartController>(Get.context!, listen: false).setCartData();
-      if( Provider.of<SplashController>(Get.context!,listen: false).configModel!.shippingMethod != 'sellerwise_shipping') {
-        Provider.of<ShippingController>(Get.context!, listen: false).getAdminShippingMethodList(Get.context!);
-      }
+      // [AI] VMarket V1: authoritative fulfillment is resolved at checkout via
+      // DeliveryLanes (POST fulfillment/availability). Legacy admin/sellerwise
+      // shipping method prefetch is intentionally not triggered from cart.
   }
 
   Color _currentColor = Theme.of(Get.context!).cardColor; // Initial color
@@ -116,7 +116,7 @@ class CartScreenState extends State<CartScreen> with AutomaticKeepAliveClientMix
             return Consumer<CartController>(builder: (context, cart, child) {
 
               double amount = 0.0;
-              double shippingAmount = 0.0;
+              // [AI] VMarket V1: no cart-stage delivery fee variable; fee resolved at checkout.
               double discount = 0.0;
               double tax = 0.0;
               int totalQuantity = 0;
@@ -183,7 +183,8 @@ class CartScreenState extends State<CartScreen> with AutomaticKeepAliveClientMix
               }
 
               if(cart.getData && configProvider.configModel!.shippingMethod == 'sellerwise_shipping') {
-                shippingController.getShippingMethod(context, cartProductList);
+                // [AI] VMarket V1: do NOT prefetch legacy sellerwise shipping methods from cart.
+                // Fulfillment availability + fee are resolved at checkout via DeliveryLanes.
               }
 
               for(int i=0; i<cart.cartList.length; i++) {
@@ -196,17 +197,11 @@ class CartScreenState extends State<CartScreen> with AutomaticKeepAliveClientMix
                   }
                 }
               }
+              // [AI] VMarket V1: cart shows merchandise subtotal only. No client-side
+              // delivery fee summation here; authoritative fee comes from backend
+              // fulfillment availability at checkout. Legacy shippingCost fields ignored.
               for(int i=0; i<shippingController.chosenShippingList.length; i++){
-                if(shippingController.chosenShippingList[i].isCheckItemExist == 1) {
-                  shippingAmount += shippingController.chosenShippingList[i].shippingCost!;
-                }
-              }
-
-
-              for(int j = 0; j< cartList.length; j++) {
-                if(cartList[j].isChecked!) {
-                  shippingAmount += cart.cartList[j].shippingCost ?? 0;
-                }
+                // intentionally no-op: legacy chosen shipping list not summed
               }
 
               sellerKeys.clear();
@@ -258,7 +253,8 @@ class CartScreenState extends State<CartScreen> with AutomaticKeepAliveClientMix
                                   fontSize: Dimensions.fontSizeSmall, color: Theme.of(context).hintColor)),
                             ]),
 
-                            Text(PriceConverter.convertPrice(context, amount+tax+shippingAmount-freeDeliveryAmountDiscount), style: textBold.copyWith(
+                            // [AI] VMarket V1: merchandise subtotal only; delivery fee resolved at checkout.
+                            Text(PriceConverter.convertPrice(context, amount+tax), style: textBold.copyWith(
                               color: const Color(0xFF6A1B9A),
                               fontSize: Dimensions.fontSizeLarge + 2)
                             ),

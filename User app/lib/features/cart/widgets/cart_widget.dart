@@ -385,35 +385,19 @@ class _CartProductDetailsWidget extends StatelessWidget {
         // ),
 
 
-        // Shipping cost
+        // [AI] VMarket V1: legacy per-item shipping_cost is NOT displayed in cart.
+        // Authoritative delivery fee is resolved at checkout via DeliveryLanes.
+        // Fee notice only — no client-side fee rendering.
         Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
-            cartModel!.shippingType != 'order_wise' ? Padding(
-              padding: const EdgeInsets.only(top: 0),
-              child: Row(
-                children: [
-                  Text(
-                    '${getTranslated('shipping_cost', context)}: ',
-                    style: titilliumSemiBold.copyWith(
-                      fontSize: Dimensions.fontSizeSmall,
-                      color: (cartModel!.shop != null && cartModel?.shop?.temporaryClose != null && cartModel?.shop?.vacationStatus != null &&
-                          (cartModel!.shop!.temporaryClose! ||
-                              cartModel!.shop!.vacationStatus!))
-                          ? Theme.of(context).hintColor
-                          : Theme.of(context).textTheme.bodyLarge?.color,
-                    ),
-                  ),
-                  Text(
-                    PriceConverter.convertPrice(context, cartModel!.shippingCost),
-                    style: textRegular.copyWith(
-                      fontSize: Dimensions.fontSizeSmall,
-                      color: Theme.of(context).disabledColor,
-                    ),
-                  ),
-                ],
+            Text(
+              getTranslated('delivery_fee_at_checkout', context) ?? 'Delivery fee calculated at checkout',
+              style: textRegular.copyWith(
+                fontSize: Dimensions.fontSizeSmall,
+                color: Theme.of(context).hintColor,
               ),
-            ) : const SizedBox(),
+            ),
           ],
         ),
 
