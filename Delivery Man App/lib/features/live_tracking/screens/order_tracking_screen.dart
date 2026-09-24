@@ -28,6 +28,9 @@ class _OrderLiveTrackingScreenState extends State<OrderLiveTrackingScreen> {
     super.initState();
     Get.find<RiderController>().initialPosition;
 
+    // [AI] VMarket §18: report one server-controlled location ping for the tracked order.
+    Get.find<RiderController>().reportLocationForOrder(widget.orderModel?.id);
+
     Future.delayed(const Duration(seconds: 10)).then((value){
       Get.find<RiderController>().getCurrentLocation();
     });

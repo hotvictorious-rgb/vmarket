@@ -26,7 +26,7 @@ class ForgotPasswordScreen extends StatefulWidget {
 class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
   final TextEditingController _numberController = TextEditingController();
   final FocusNode _numberFocus = FocusNode();
-  String? _countryDialCode = '880';
+  String? _countryDialCode = '234';
 
   @override
   void initState() {

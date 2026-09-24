@@ -38,6 +38,27 @@ class RiderController extends GetxController implements GetxService {
   int _reload = 0;
   int get reload => _reload;
 
+  // [AI] VMarket §18: single server-controlled location ping per actively tracked order.
+  // Never continuous transmission; backend decides retention/visibility.
+  void reportLocationForOrder(int? orderId) {
+    if (orderId == null) return;
+    if (_position != null) {
+      riderRepo.recordLocationData(
+        orderId: orderId,
+        position: LatLng(_position!.latitude, _position!.longitude),
+      ).ignore();
+    } else {
+      Geolocator.getCurrentPosition(
+        locationSettings: const LocationSettings(accuracy: LocationAccuracy.medium),
+      ).then((value) {
+        riderRepo.recordLocationData(
+          orderId: orderId,
+          position: LatLng(value.latitude, value.longitude),
+        ).ignore();
+      }).catchError((_) {});
+    }
+  }
+
   final bool _showCancelTripButton = false;
   bool get showCancelTripButton => _showCancelTripButton;
 

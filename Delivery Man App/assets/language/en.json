@@ -84,7 +84,7 @@
   "no_history_available": "No history available",
   "enter_email_address": "Enter email address",
   "enter_password": "Enter password",
-  "password_should_be": "Password should be equal or getter than 6 character",
+  "password_should_be": "Password should be at least 8 characters",
   "enter_valid_email": "Enter valid email",
   "settings": "Settings",
   "terms_and_condition": "Terms and Condition",
@@ -328,7 +328,6 @@
   "you_denied": "You denied location access permission",
   "you_denied_forever": "You denied location access permission forever. Please enable access from settings.",
   "prepaid_order": "Prepaid Order",
-  "amount_to_collect_from_customer": "Amount to Collect from Customer",
   "fully_paid_online_notice": "This order is fully paid online. Do NOT collect any cash from the customer. Customer must provide 6-digit delivery OTP for handover.",
   "your_delivery_earnings": "Your Delivery Earnings",
   "credited_upon_delivery": "Credited upon delivery"

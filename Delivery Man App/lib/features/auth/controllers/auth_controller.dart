@@ -21,7 +21,8 @@ class AuthController extends GetxController implements GetxService {
   bool get isLoading => _isLoading;
   bool get notification => _notification;
   XFile? get pickedFile => _pickedFile;
-  String _countryDialCode = "+1";
+  // [AI] Nigerian marketplace default dial code (VMarket is Akwa Ibom focused).
+  String _countryDialCode = "+234";
   String get countryCode => _countryDialCode;
 
   File? file;

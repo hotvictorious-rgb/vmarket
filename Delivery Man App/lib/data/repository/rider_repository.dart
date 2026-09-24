@@ -17,4 +17,15 @@ class RiderRepository {
     });
   }
 
+  // [AI] VMarket §18: report rider location for an actively tracked order.
+  // Backend stays authoritative on when tracking starts/stops and what is retained.
+  Future<Response> recordLocationData({int? orderId, LatLng? position, String? location}) async {
+    return await apiClient.postData(AppConstants.recordLocationDataUri, {
+      'order_id': orderId,
+      'longitude': position?.longitude,
+      'latitude': position?.latitude,
+      'location': location ?? '',
+    });
+  }
+
 }

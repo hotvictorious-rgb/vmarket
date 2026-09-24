@@ -117,7 +117,7 @@ class _OrderDetailsScreenState extends State<OrderDetailsScreen> {
                       physics: const BouncingScrollPhysics(),
                       padding:  EdgeInsets.all(Dimensions.paddingSizeSmall), children: [
 
-                      orderModel!.orderStatus == 'processing' || orderModel!.orderStatus == 'out_for_delivery'?
+                      orderModel!.orderStatus == 'processing' || orderModel!.orderStatus == 'confirmed' || orderModel!.orderStatus == 'out_for_delivery'?
                       OrderInfoWithDeliveryInfoWidget(orderModel: orderModel) : const SizedBox(),
 
                       orderModel!.sellerInfo != null ?
@@ -292,16 +292,18 @@ class _OrderDetailsScreenState extends State<OrderDetailsScreen> {
 
                 final isEndOfPage = orderDetailsController.endOfPage;
                 final imageUploadOff = config?.imageUpload == 0;
-                final isNotProcessing = orderModel?.orderStatus != 'processing';
+                // [AI] VMarket §11/§19: pickup (confirmed/processing) uses the swipe-to-pickup
+                // flow; only out_for_delivery proceeds to delivery verification.
+                final isOutForDelivery = orderModel?.orderStatus == 'out_for_delivery';
                 // [AI] V1 Invariant: marketplace delivery verification is ALWAYS mandatory.
                 // The admin 'order_verification' config must NEVER gate rider actions; backend enforces it.
 
                 return (orderDetailsController.orderDetails != null && orderModel?.orderStatus != null) ?
 
                 SizedBox(
-                  height: (orderModel?.orderStatus == 'processing' || orderModel?.orderStatus == 'out_for_delivery') && !orderModel!.isPause! ? 80 : 0,
+                  height: (orderModel?.orderStatus == 'processing' || orderModel?.orderStatus == 'confirmed' || orderModel?.orderStatus == 'out_for_delivery') && !orderModel!.isPause! ? 80 : 0,
 
-                  child : isEndOfPage || (imageUploadOff && isNotProcessing) ?
+                  child : isEndOfPage || (imageUploadOff && isOutForDelivery) ?
                     Padding(padding: EdgeInsets.all(Dimensions.paddingSizeDefault),
                       child: orderDetailsController.uploading ? const Center(child: CircularProgressIndicator()):
                       CustomButtonWidget(btnTxt: 'proceed_next'.tr,

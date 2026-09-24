@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:sixvalley_delivery_boy/features/order_details/widgets/payment_status_widget.dart';
-import 'package:sixvalley_delivery_boy/helper/price_converter.dart';
 import 'package:sixvalley_delivery_boy/utill/dimensions.dart';
 import 'package:sixvalley_delivery_boy/utill/images.dart';
 import 'package:sixvalley_delivery_boy/utill/styles.dart';
@@ -59,6 +58,8 @@ class PaymentInfoWidget extends StatelessWidget {
           ),
           const SizedBox(height: 8),
 
+          // [AI] VMarket §24: Rider views operational payment status ONLY.
+          // COD "amount to collect" affordance removed - V1 is fully prepaid digital.
           Container(
             width: double.infinity,
             padding: const EdgeInsets.all(14),
@@ -69,49 +70,18 @@ class PaymentInfoWidget extends StatelessWidget {
                 color: const Color(0xFF00A884).withValues(alpha: 0.25),
               ),
             ),
-            child: Column(
+            child: Row(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(
-                  'amount_to_collect_from_customer'.tr,
-                  style: rubikRegular.copyWith(
-                    color: isDark ? Colors.white70 : Colors.black87,
-                    fontSize: Dimensions.fontSizeDefault,
-                  ),
-                ),
-                const SizedBox(height: 6),
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    Text(
-                      PriceConverter.convertPrice(0),
-                      style: rubikBold.copyWith(
-                        fontSize: 22,
-                        color: const Color(0xFF00A884),
-                      ),
+                const Icon(Icons.verified_user_outlined, color: Color(0xFF00A884), size: 20),
+                const SizedBox(width: 10),
+                Expanded(
+                  child: Text(
+                    'fully_paid_online_notice'.tr,
+                    style: rubikRegular.copyWith(
+                      fontSize: Dimensions.fontSizeSmall,
+                      color: isDark ? Colors.white70 : Colors.grey[700],
                     ),
-                    Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-                      decoration: BoxDecoration(
-                        color: const Color(0xFF00A884).withValues(alpha: 0.15),
-                        borderRadius: BorderRadius.circular(8),
-                      ),
-                      child: Text(
-                        isPaid ? (paymentMethod?.isNotEmpty == true ? paymentMethod! : 'paid'.tr) : 'unpaid_payment_status'.tr,
-                        style: rubikMedium.copyWith(
-                          fontSize: Dimensions.fontSizeSmall,
-                          color: const Color(0xFF00A884),
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 8),
-                Text(
-                  'fully_paid_online_notice'.tr,
-                  style: rubikRegular.copyWith(
-                    fontSize: Dimensions.fontSizeSmall,
-                    color: isDark ? Colors.white60 : Colors.grey[700],
                   ),
                 ),
               ],

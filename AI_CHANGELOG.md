@@ -1,3 +1,10 @@
+### [2026-09-24 09:00 UTC] Delivery Man App ↔ Backend V2 Alignment Audit & Contract Fixes [delivery-man] [AI]
+* **1. Full audit executed against canonical v2 routes/controller + `VMARKET_DELIVERY_APP_SPEC.md` (31 sections).** Verified: no local OTP verification (all OTP server-side), no client-side fee/price/cashback math, secure token storage only, backend-fed status strings, and no pickup/self-pickup order processing in rider flows.
+* **2. Spec §24 fix — COD relic purged:** `payment_info_widget.dart` no longer renders an `Amount to Collect from Customer` row or payment-method/hardcoded-zero pill. Rider now sees only operational `Payment: Paid` status + `fully_paid_online_notice`. Removed obsolete `amount_to_collect_from_customer` localization key.
+* **3. `confirmed` orders now actionable (backend permits pickup from `processing`/`confirmed`):** pickup swipe + pickup-OTP sheet now render for `confirmed` orders; `proceed_next` (delivery verification) gate restricted to `out_for_delivery` in `order_details_screen.dart` and `order_status_change_custom_button_widget.dart`.
+* **4. Server-controlled location ingestion wired (§18):** new `RiderRepository.recordLocationData` → `POST /api/v2/delivery-man/record-location-data`; `RiderController.reportLocationForOrder` fires a single location ping from `OrderLiveTrackingScreen.initState`. No continuous transmission.
+* **5. Nigerian identity defaults aligned (login/forgot-password):** dial-code fallbacks `+1`/`880` → `234`; `defaultCountryCode` `US` → `NG`; login client password gate raised from 6 → 8 chars matching backend `min:8` (localization string updated).
+* **6. Verification:** `flutter analyze` clean (No issues found). No backend / Vendor-app / User-app files touched.
 ### [2026-09-24 06:35 UTC] Enforce Multi-Agent Strict Git Commit Isolation Across All Ecosystem Rules [ai-governance] [AI]
 * **1. Mandatory Commit Isolation Rule:**
   - Updated Section 5 of `.agents/AGENTS.md` and Section 1 of `.agents/sync/CROSS_AGENT_COMMUNICATION_PROTOCOL.md` to strictly mandate that every AI must ONLY stage and commit its own specifically touched files.

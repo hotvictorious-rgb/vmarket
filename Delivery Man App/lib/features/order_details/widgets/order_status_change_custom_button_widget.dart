@@ -23,7 +23,8 @@ class OrderStatusChangeCustomButtonWidget extends StatelessWidget {
   Widget build(BuildContext context) {
     bool isLtr = Get.find<LocalizationController>().isLtr;
     const double rotateAnglePi = 3.1416;
-    return (orderModel!.orderStatus == 'processing' || orderModel!.orderStatus == 'out_for_delivery') && !orderModel!.isPause! ?
+    // [AI] VMarket: 'confirmed' orders are actionable (backend permits pickup from processing/confirmed).
+    return (orderModel!.orderStatus == 'processing' || orderModel!.orderStatus == 'confirmed' || orderModel!.orderStatus == 'out_for_delivery') && !orderModel!.isPause! ?
     Padding(
       padding:  EdgeInsets.symmetric(horizontal: Dimensions.paddingSizeDefault,vertical: Dimensions.paddingSizeSmall),
       child: Column(
@@ -34,14 +35,14 @@ class OrderStatusChangeCustomButtonWidget extends StatelessWidget {
             child: SliderButtonWidget(
               isRtl: !isLtr,
               action:  ()  {
-                if(orderModel!.orderStatus == 'processing') {
+                if(orderModel!.orderStatus == 'processing' || orderModel!.orderStatus == 'confirmed') {
                   _handleProcessingStatus(context);
                 } else if(orderModel!.orderStatus == 'out_for_delivery') {
                   _handleOutForDeliveryStatus(context);
                 }
 
               },
-              label: Text(orderModel!.orderStatus == 'processing'? 'swipe_to_out_for_delivery_order'.tr : 'swip_to_deliver_order'.tr,
+              label: Text(orderModel!.orderStatus == 'processing' || orderModel!.orderStatus == 'confirmed' ? 'swipe_to_out_for_delivery_order'.tr : 'swip_to_deliver_order'.tr,
                 style: rubikMedium.copyWith(color: Theme.of(context).primaryColor, fontSize: Dimensions.fontSizeSmall),),
               dismissThresholds: 0.5,
               icon: RotationTransition(

@@ -28,6 +28,7 @@ class AppConstants {
   static const String reviewListUri = '/api/v2/delivery-man/review-list';
   static const String updateBankInfo = '/api/v2/delivery-man/bank-info';
   static const String distanceApi = '/api/v2/delivery-man/distance-api';
+  static const String recordLocationDataUri = '/api/v2/delivery-man/record-location-data';
   static const String addToSavedReviewList = '/api/v2/delivery-man/save-review';
   static const String deliveryVerificationImage = '/api/v2/delivery-man/order-delivery-verification';
   static const String otpVerificationForOrder = '/api/v2/delivery-man/verify-order-delivery-otp';
@@ -55,5 +56,6 @@ class AppConstants {
 
   // [AI] Only English localization ships with the Delivery Man App.
   static const String defaultLanguageCode = 'en';
-  static const String defaultCountryCode = 'US';
+  // [AI] Nigerian marketplace: default country metadata is NG (not US).
+  static const String defaultCountryCode = 'NG';
 }
