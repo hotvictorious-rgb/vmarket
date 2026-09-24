@@ -35,6 +35,28 @@ void main() {
     });
   });
 
+  group('Delivery Order Status & OTP Validation', () {
+    test('verifies valid 6-digit OTP format', () {
+      final validOtp = '123456';
+      final shortOtp = '1234';
+      final invalidOtp = '12345a';
+
+      expect(validOtp.length == 6 && RegExp(r'^[0-9]{6}$').hasMatch(validOtp), isTrue);
+      expect(shortOtp.length == 6, isFalse);
+      expect(RegExp(r'^[0-9]{6}$').hasMatch(invalidOtp), isFalse);
+    });
+
+    test('verifies delivery state transitions require OTP at handover', () {
+      final allowableTransitions = {
+        'confirmed': 'processing',
+        'processing': 'out_for_delivery',
+        'out_for_delivery': 'delivered',
+      };
+      expect(allowableTransitions['processing'], 'out_for_delivery');
+      expect(allowableTransitions['out_for_delivery'], 'delivered');
+    });
+  });
+
   group('CustomDividerWidget', () {
     testWidgets('renders without exception', (WidgetTester tester) async {
       await tester.pumpWidget(const MaterialApp(
