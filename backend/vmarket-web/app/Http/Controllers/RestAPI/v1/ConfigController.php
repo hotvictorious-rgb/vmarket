@@ -23,24 +23,36 @@ class ConfigController extends Controller
     {
         $responseConfig = Cache::remember('vmarket_api_v1_config_response', CACHE_FOR_3_HOURS, function () {
             $socialLoginConfig = [];
-        foreach (getWebConfig(name: 'social_login') as $social) {
+        $socialLogin = getWebConfig(name: 'social_login');
+        if (is_string($socialLogin)) {
+            $socialLogin = json_decode($socialLogin, true) ?? [];
+        }
+        foreach ($socialLogin ?? [] as $social) {
             $config = [
-                'login_medium' => $social['login_medium'],
-                'status' => (boolean)$social['status']
+                'login_medium' => $social['login_medium'] ?? '',
+                'status' => (boolean)($social['status'] ?? false)
             ];
             $socialLoginConfig[] = $config;
         }
 
-        foreach (getWebConfig(name: 'apple_login') as $social) {
+        $appleLogin = getWebConfig(name: 'apple_login');
+        if (is_string($appleLogin)) {
+            $appleLogin = json_decode($appleLogin, true) ?? [];
+        }
+        foreach ($appleLogin ?? [] as $social) {
             $config = [
-                'login_medium' => $social['login_medium'],
-                'status' => (boolean)$social['status']
+                'login_medium' => $social['login_medium'] ?? '',
+                'status' => (boolean)($social['status'] ?? false)
             ];
             $socialLoginConfig[] = $config;
         }
 
         $languageArray = [];
-        foreach (getWebConfig(name: 'pnc_language') as $language) {
+        $pncLanguage = getWebConfig(name: 'pnc_language');
+        if (is_string($pncLanguage)) {
+            $pncLanguage = json_decode($pncLanguage, true) ?? [$pncLanguage];
+        }
+        foreach ($pncLanguage ?? [] as $language) {
             $languageArray[] = [
                 'code' => $language,
                 'name' => Helpers::get_language_name($language)
@@ -80,9 +92,15 @@ class ConfigController extends Controller
 
         $loginOptions = getLoginConfig(key: 'login_options');
         $socialMediaLoginOptions = getLoginConfig(key: 'social_media_for_login');
-
-        foreach ($socialMediaLoginOptions as $socialMediaLoginKey => $socialMediaLogin) {
-            $socialMediaLoginOptions[$socialMediaLoginKey] = (int)$socialMediaLogin;
+        if (is_string($socialMediaLoginOptions)) {
+            $socialMediaLoginOptions = json_decode($socialMediaLoginOptions, true) ?? [];
+        }
+        if (is_array($socialMediaLoginOptions)) {
+            foreach ($socialMediaLoginOptions as $socialMediaLoginKey => $socialMediaLogin) {
+                $socialMediaLoginOptions[$socialMediaLoginKey] = (int)$socialMediaLogin;
+            }
+        } else {
+            $socialMediaLoginOptions = [];
         }
 
         $customerLogin = [
