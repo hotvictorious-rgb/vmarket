@@ -22,6 +22,8 @@ import 'package:flutter_sixvalley_ecommerce/features/home/widgets/just_for_you/j
 import 'package:flutter_sixvalley_ecommerce/features/home/widgets/product_list_widget.dart';
 import 'package:flutter_sixvalley_ecommerce/features/home/widgets/product_type_popup_menu_widget.dart';
 import 'package:flutter_sixvalley_ecommerce/features/home/widgets/search_home_page_widget.dart';
+import 'package:flutter_sixvalley_ecommerce/features/home/widgets/your_location_bar_widget.dart';
+import 'package:flutter_sixvalley_ecommerce/features/home/widgets/aster_theme/local_stores_grid_widget.dart';
 import 'package:flutter_sixvalley_ecommerce/features/notification/controllers/notification_controller.dart';
 import 'package:flutter_sixvalley_ecommerce/features/order/controllers/order_controller.dart';
 import 'package:flutter_sixvalley_ecommerce/features/product/controllers/product_controller.dart';
@@ -340,6 +342,9 @@ class _AsterThemeHomeScreenState extends State<AsterThemeHomeScreen>
                   ],
                 )),
 
+            // [AI] Omnichannel "Your Location" Bar (LGA Switcher & Fulfillment Mode Indicator)
+            const SliverToBoxAdapter(child: YourLocationBarWidget()),
+
             SliverToBoxAdapter(
                 child: Provider.of<SplashController>(context, listen: false)
                             .configModel!
@@ -462,33 +467,8 @@ class _AsterThemeHomeScreenState extends State<AsterThemeHomeScreen>
                 child: SizedBox(height: Dimensions.paddingSizeDefault)),
 
             if (!singleVendor)
-              SliverToBoxAdapter(
-                child: Consumer<ShopController>(
-                    builder: (context, shopController, _) {
-                  return shopController.topSellerModel != null
-                      ? (shopController.topSellerModel!.sellers != null &&
-                              shopController
-                                  .topSellerModel!.sellers!.isNotEmpty)
-                          ? Column(children: [
-                              TitleRowWidget(
-                                  title: getTranslated('top_stores', context),
-                                  onTap: () =>
-                                      RouterHelper.getAllTopSellerRoute(
-                                          action: RouteAction.push,
-                                          title: 'top_stores')),
-                              const SizedBox(
-                                  height: Dimensions.paddingSizeSmall),
-                              SizedBox(
-                                  height: ResponsiveHelper.isTab(context)
-                                      ? 180
-                                      : 165,
-                                  child: const TopSellerWidget()),
-                              const SizedBox(
-                                  height: Dimensions.paddingSizeDefault),
-                            ])
-                          : const SizedBox()
-                      : const TopStoreShimmer();
-                }),
+              const SliverToBoxAdapter(
+                child: LocalStoresGridWidget(),
               ),
 
 

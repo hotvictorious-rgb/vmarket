@@ -8,10 +8,59 @@ import 'package:flutter_sixvalley_ecommerce/main.dart';
 import 'package:geocoding/geocoding.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 class LocationController with ChangeNotifier {
   final LocationServiceInterface locationServiceInterface;
-  LocationController({required this.locationServiceInterface});
+  LocationController({required this.locationServiceInterface}) {
+    loadPersistedLga();
+  }
+
+  String _activeLgaName = 'Uyo';
+  int _activeLgaId = 142;
+  String _activeStateName = 'Akwa Ibom';
+  String _fulfillmentMode = 'delivery';
+
+  String get activeLgaName => _activeLgaName;
+  int get activeLgaId => _activeLgaId;
+  String get activeStateName => _activeStateName;
+  String get fulfillmentMode => _fulfillmentMode;
+
+  Future<void> loadPersistedLga() async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      _activeLgaName = prefs.getString('vm_customer_lga_name') ?? 'Uyo';
+      _activeLgaId = prefs.getInt('vm_customer_lga_id') ?? 142;
+      _activeStateName = prefs.getString('vm_customer_state_name') ?? 'Akwa Ibom';
+      _fulfillmentMode = prefs.getString('vm_fulfillment_mode') ?? 'delivery';
+      notifyListeners();
+    } catch (_) {}
+  }
+
+  Future<void> setCustomerLga({
+    required String lgaName,
+    required int lgaId,
+    String stateName = 'Akwa Ibom',
+    String fulfillmentMode = 'delivery',
+    bool notify = true,
+  }) async {
+    _activeLgaName = lgaName;
+    _activeLgaId = lgaId;
+    _activeStateName = stateName;
+    _fulfillmentMode = fulfillmentMode;
+
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.setString('vm_customer_lga_name', lgaName);
+      await prefs.setInt('vm_customer_lga_id', lgaId);
+      await prefs.setString('vm_customer_state_name', stateName);
+      await prefs.setString('vm_fulfillment_mode', fulfillmentMode);
+    } catch (_) {}
+
+    if (notify) {
+      notifyListeners();
+    }
+  }
 
 
 

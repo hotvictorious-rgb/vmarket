@@ -19,6 +19,7 @@ import 'package:flutter_sixvalley_ecommerce/theme/controllers/theme_controller.d
 import 'package:flutter_sixvalley_ecommerce/utill/custom_themes.dart';
 import 'package:flutter_sixvalley_ecommerce/utill/dimensions.dart';
 import 'package:flutter_sixvalley_ecommerce/utill/images.dart';
+import 'package:flutter_sixvalley_ecommerce/features/location/controllers/location_controller.dart';
 import 'package:flutter_sixvalley_ecommerce/common/basewidget/custom_app_bar_widget.dart';
 import 'package:flutter_sixvalley_ecommerce/common/basewidget/no_internet_screen_widget.dart';
 import 'package:flutter_sixvalley_ecommerce/common/basewidget/not_logged_in_bottom_sheet_widget.dart';
@@ -28,7 +29,6 @@ import 'package:flutter_sixvalley_ecommerce/features/product/enums/product_type.
 import 'package:flutter_sixvalley_ecommerce/common/basewidget/custom_button_widget.dart';
 import 'package:flutter_sixvalley_ecommerce/features/cart/widgets/cart_page_shimmer_widget.dart';
 import 'package:flutter_sixvalley_ecommerce/features/cart/widgets/cart_widget.dart';
-import 'package:flutter_sixvalley_ecommerce/features/shipping/widgets/shipping_method_bottom_sheet_widget.dart';
 import 'package:just_the_tooltip/just_the_tooltip.dart';
 import 'package:provider/provider.dart';
 
@@ -308,23 +308,7 @@ class CartScreenState extends State<CartScreen> with AutomaticKeepAliveClientMix
                                   bool closeShop = false;
                                   double total = 0;
 
-                                  if (configProvider.configModel!.shippingMethod =='sellerwise_shipping') {
-                                    for (int index = 0; index < sellerGroupList.length; index++) {
-                                      bool hasPhysical = false;
-                                      for(CartModel cart in cartProductList[index]) {
-                                        if(cart.productType == 'physical') {
-                                          hasPhysical = true;
-                                          break;
-                                        }
-                                      }
-
-                                      if(hasPhysical && sellerGroupList[index].isGroupItemChecked! && sellerGroupList[index].shippingType == 'order_wise'  &&
-                                          Provider.of<ShippingController>(context, listen: false).shippingList![index].shippingIndex == -1 && sellerGroupList[index].isGroupItemChecked!) {
-                                        hasNull = true;
-                                        break;
-                                      }
-                                    }
-                                  }
+                                  // [AI] VMarket V1: Shipping calculations are decoupled from Cart and dynamically computed at Checkout via DeliveryLanes.
 
                                   for(int index = 0; index < sellerGroupList.length; index++) {
                                     total = 0;
@@ -467,6 +451,7 @@ class CartScreenState extends State<CartScreen> with AutomaticKeepAliveClientMix
                             },
                             child: ListView(
                               children: [
+                                _buildDeliveryLaneNoticeBanner(context),
                                 ListView.separated(
                                   shrinkWrap: true,
                                   padding: const EdgeInsets.only(bottom: Dimensions.paddingSizeSmall),
@@ -517,16 +502,8 @@ class CartScreenState extends State<CartScreen> with AutomaticKeepAliveClientMix
                                     //}---');
 
 
-                                    bool showColor = (sellerGroupList[index].minimumOrderAmountInfo! > totalCost) || (configProvider.configModel!.shippingMethod == 'sellerwise_shipping' &&
-                                        sellerGroupList[index].shippingType == 'order_wise' &&
-                                        Provider.of<ShippingController>(context, listen: false).shippingList != null &&  Provider.of<ShippingController>(context, listen: false).shippingList!.isNotEmpty &&
-                                        requiredShippingCartModel?.sellerIndex == index &&
-                                        Provider.of<ShippingController>(context, listen: false).shippingList?[index].shippingIndex == -1 && sellerGroupList[index].isGroupItemChecked == true);
-
-                                    bool isNotValidated = (sellerGroupList[index].minimumOrderAmountInfo! > totalCost) || (configProvider.configModel!.shippingMethod == 'sellerwise_shipping' &&
-                                        sellerGroupList[index].shippingType == 'order_wise' &&
-                                        Provider.of<ShippingController>(context, listen: false).shippingList != null &&  Provider.of<ShippingController>(context, listen: false).shippingList!.isNotEmpty &&
-                                        Provider.of<ShippingController>(context, listen: false).shippingList?[index].shippingIndex == -1 && sellerGroupList[index].isGroupItemChecked == true);
+                                    bool showColor = (sellerGroupList[index].minimumOrderAmountInfo! > totalCost);
+                                    bool isNotValidated = (sellerGroupList[index].minimumOrderAmountInfo! > totalCost);
 
                                     return AnimatedContainer(
                                       key: sellerKeys[index],
@@ -618,53 +595,7 @@ class CartScreenState extends State<CartScreen> with AutomaticKeepAliveClientMix
                                                   )
                                                 ),
 
-                                                configProvider.configModel!.shippingMethod =='sellerwise_shipping' &&
-                                                    sellerGroupList[index].shippingType == 'order_wise' && hasPhysical ?
-                                                SizedBox(width: 180,
-                                                  child: configProvider.configModel!.shippingMethod =='sellerwise_shipping' &&
-                                                      sellerGroupList[index].shippingType == 'order_wise' && hasPhysical ?
-                                                  Padding(padding: const EdgeInsets.symmetric(horizontal: Dimensions.paddingSizeSmall),
-                                                    child: InkWell(onTap: () {
-                                                      showModalBottomSheet(
-                                                        context: context, isScrollControlled: true, backgroundColor: Colors.transparent,
-                                                        builder: (context) => ShippingMethodBottomSheetWidget(groupId: sellerGroupList[index].cartGroupId,
-                                                            sellerIndex: index, sellerId: sellerGroupList[index].id),
-                                                      );
-                                                    },
-                                                      child: Container(decoration: BoxDecoration(
-                                                          border: Border.all(width: 1.5, color: Theme.of(context).primaryColor.withValues(alpha: 0.15)),
-                                                          borderRadius: const BorderRadius.all(Radius.circular(Dimensions.radiusSmall))),
-                                                        child: Padding(padding: const EdgeInsets.all(Dimensions.paddingSizeExtraSmall),
-                                                          child: Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
-                                                            if(shippingController.shippingList == null || shippingController.shippingList!.isEmpty || shippingController.shippingList?[index].shippingMethodList == null ||
-                                                                shippingController.chosenShippingList.isEmpty || shippingController.shippingList![index].shippingIndex == -1)
-                                                              Row(children: [
-                                                                SizedBox(width: 15,height: 15, child: Image.asset(Images.delivery,color: Theme.of(context).textTheme.bodyLarge?.color)),
-                                                                const SizedBox(width: Dimensions.paddingSizeExtraSmall),
-                                                                Text(getTranslated('choose_shipping', context)!,
-                                                                  style: textRegular.copyWith(color: Theme.of(context).textTheme.bodySmall?.color),
-                                                                  overflow: TextOverflow.ellipsis,maxLines: 1,),]
-                                                              ),
-
-                                                            Expanded(child: Text(
-                                                              ((shippingController.shippingList != null && shippingController.shippingList!.isNotEmpty &&
-                                                                shippingController.shippingList?[index].shippingMethodList != null) &&
-                                                                (shippingController.chosenShippingList.isNotEmpty &&
-                                                                shippingController.shippingList![index].shippingIndex != -1)
-                                                              ) ?
-                                                              shippingController.shippingList![index].shippingMethodList![shippingController.shippingList![index].shippingIndex!].title.toString() : '',
-
-                                                              style: titilliumSemiBold.copyWith(color: Theme.of(context).hintColor),
-                                                              maxLines: 1, overflow: TextOverflow.ellipsis,textAlign: TextAlign.start)),
-
-                                                            SizedBox(width: 15, child: Icon(Icons.keyboard_arrow_down, color: Theme.of(context).textTheme.bodyLarge?.color)),
-                                                            SizedBox(width: Dimensions.paddingSizeExtraSmall)
-                                                          ]),
-                                                        ),
-                                                      ),
-                                                    ),
-                                                  ) : const SizedBox(),
-                                                ) : const SizedBox(),
+                                                const SizedBox(),
                                               ],
                                               ),
                                             ),
@@ -672,71 +603,17 @@ class CartScreenState extends State<CartScreen> with AutomaticKeepAliveClientMix
 
 
 
-                                          if((sellerGroupList[index].minimumOrderAmountInfo!> totalCost) || (configProvider.configModel!.shippingMethod == 'sellerwise_shipping' && sellerGroupList[index].shippingType == 'order_wise' && hasPhysical))
+                                          if (sellerGroupList[index].minimumOrderAmountInfo! > totalCost)
                                             Padding(
-                                              padding: EdgeInsets.only(
-                                                  left: Dimensions.paddingSizeDefault,
-                                                  right: Dimensions.paddingSizeDefault,
-                                                  top: Dimensions.paddingSizeSmall
+                                              padding: const EdgeInsets.only(
+                                                left: Dimensions.paddingSizeDefault,
+                                                right: Dimensions.paddingSizeDefault,
+                                                top: Dimensions.paddingSizeSmall,
                                               ),
-                                              child: Column(
-                                                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                                                crossAxisAlignment: CrossAxisAlignment.start,
-                                                children: [
-                                                  if(configProvider.configModel!.shippingMethod == 'sellerwise_shipping' && sellerGroupList[index].shippingType == 'order_wise' && hasPhysical)
-                                                    Container(
-                                                      child: ((shippingController.shippingList != null && shippingController.shippingList!.isNotEmpty &&
-                                                          shippingController.shippingList![index].shippingMethodList != null
-                                                          && shippingController.shippingList![index].shippingIndex != -1) &&
-                                                          shippingController.chosenShippingList.isNotEmpty) ?
-                                                      Row(
-                                                        crossAxisAlignment: CrossAxisAlignment.start, children: [
-                                                        Row(children: [
-                                                          Text((shippingController.shippingList == null ||
-                                                              shippingController.shippingList![index].shippingMethodList == null ||
-                                                              shippingController.chosenShippingList.isEmpty ||
-                                                              shippingController.shippingList![index].shippingIndex == -1) ? '':
-                                                          '${getTranslated('shipping_cost', context)??''} : ', style: textRegular.copyWith(color: Theme.of(context).textTheme.bodyLarge?.color, fontSize: Dimensions.fontSizeSmall),),
-
-                                                          Text((shippingController.shippingList == null ||
-                                                              shippingController.shippingList![index].shippingMethodList == null ||
-                                                              shippingController.chosenShippingList.isEmpty ||
-                                                              shippingController.shippingList![index].shippingIndex == -1) ? ''
-                                                              : PriceConverter.convertPrice(context,
-                                                              shippingController.shippingList![index].shippingMethodList![shippingController.shippingList![index].shippingIndex!].cost),
-                                                              style: textRegular.copyWith(color: Theme.of(context).textTheme.bodyLarge?.color, fontSize: Dimensions.fontSizeSmall),
-                                                              maxLines: 1, overflow: TextOverflow.ellipsis,textAlign: TextAlign.end),
-                                                          ],
-                                                        ),
-                                                        const SizedBox(width: Dimensions.paddingSizeSmall),
-
-                                                        Row(children: [
-                                                          Text((shippingController.shippingList == null ||
-                                                              shippingController.shippingList![index].shippingMethodList == null ||
-                                                              shippingController.chosenShippingList.isEmpty ||
-                                                              shippingController.shippingList![index].shippingIndex == -1) ? '':
-                                                          '${getTranslated('shipping_time', context)??''} : ', style: textRegular.copyWith(color: Theme.of(context).textTheme.bodyLarge?.color, fontSize: Dimensions.fontSizeSmall)),
-                                                          Text((shippingController.shippingList == null ||
-                                                              shippingController.shippingList![index].shippingMethodList == null ||
-                                                              shippingController.chosenShippingList.isEmpty ||
-                                                              shippingController.shippingList![index].shippingIndex == -1) ? ''
-                                                              : '${shippingController.shippingList![index].shippingMethodList![shippingController.shippingList![index].shippingIndex!].duration.toString()} '
-                                                              '',
-                                                              style: textRegular.copyWith(color: Theme.of(context).textTheme.bodyLarge?.color, fontSize: Dimensions.fontSizeSmall),
-                                                              maxLines: 1, overflow: TextOverflow.ellipsis,textAlign: TextAlign.end)
-                                                        ]),
-                                                      ]) : const SizedBox(),
-                                                    ),
-
-                                                  // if(configProvider.configModel!.shippingMethod == 'sellerwise_shipping' && sellerGroupList[index].shippingType == 'order_wise' && hasPhysical)
-                                                  //   SizedBox(height: Dimensions.paddingSizeSmall,),
-
-                                                  if(sellerGroupList[index].minimumOrderAmountInfo!> totalCost)
-                                                    Padding(padding: const EdgeInsets.symmetric(horizontal: 0, vertical: 0),
-                                                        child: Text('${getTranslated('minimum_order_amount_is', context)} '
-                                                            '${PriceConverter.convertPrice(context, sellerGroupList[index].minimumOrderAmountInfo)}',
-                                                            style: textRegular.copyWith(color: Theme.of(context).colorScheme.error, fontSize: 12))),
-                                                ],
+                                              child: Text(
+                                                '${getTranslated('minimum_order_amount_is', context)} '
+                                                '${PriceConverter.convertPrice(context, sellerGroupList[index].minimumOrderAmountInfo)}',
+                                                style: textRegular.copyWith(color: Theme.of(context).colorScheme.error, fontSize: 12),
                                               ),
                                             ),
 
@@ -827,47 +704,7 @@ class CartScreenState extends State<CartScreen> with AutomaticKeepAliveClientMix
                                   },
                                 ),
 
-                                (configProvider.configModel!.shippingMethod != 'sellerwise_shipping' && configProvider.configModel!.inhouseSelectedShippingType =='order_wise') ?
-                                InkWell(onTap: () {
-                                  showModalBottomSheet(
-                                      context: context, isScrollControlled: true, backgroundColor: Colors.transparent,
-                                      builder: (context) => const ShippingMethodBottomSheetWidget(groupId: 'all_cart_group',sellerIndex: 0, sellerId: 1)
-                                  );
-                                },
-                                  child: Padding(padding: const EdgeInsets.fromLTRB(Dimensions.paddingSizeDefault, Dimensions.paddingSizeSmall, Dimensions.paddingSizeDefault, Dimensions.paddingSizeDefault),
-                                    child: Container(decoration: BoxDecoration(
-                                        border: Border.all(width: 0.5, color: Colors.grey),
-                                        borderRadius: const BorderRadius.all(Radius.circular(10))),
-                                      child: Padding(padding: const EdgeInsets.all(8.0),
-                                        child: Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
-
-                                          Row(children: [
-                                            SizedBox(width: 15,height: 15, child: Image.asset(Images.delivery, color: Theme.of(context).textTheme.bodyLarge?.color)),
-                                            const SizedBox(width: Dimensions.paddingSizeExtraSmall),
-                                            Text(getTranslated('choose_shipping_method', context)!,
-                                              style: textRegular.copyWith(color: Theme.of(context).textTheme.bodyLarge?.color, fontSize: Dimensions.fontSizeSmall), overflow: TextOverflow.ellipsis, maxLines: 1
-                                            )
-                                          ]),
-                                          SizedBox(height: Dimensions.paddingSizeDefault),
-
-                                          Row(mainAxisAlignment: MainAxisAlignment.end, children: [
-                                            Text((shippingController.shippingList == null ||shippingController.chosenShippingList.isEmpty ||
-                                                shippingController.shippingList!.isEmpty || shippingController.shippingList![0].shippingMethodList == null ||
-                                                shippingController.shippingList![0].shippingIndex == -1) ? ''
-                                                : shippingController.shippingList![0].shippingMethodList![shippingController.shippingList![0].shippingIndex!].title.toString(),
-                                              style: titilliumSemiBold.copyWith(color: Theme.of(context).hintColor),
-                                              maxLines: 1, overflow: TextOverflow.ellipsis,),
-                                            const SizedBox(width: Dimensions.paddingSizeExtraSmall),
-                                            Icon(Icons.keyboard_arrow_down, color: Theme.of(context).primaryColor),
-                                          ]),
-
-
-
-                                        ]),
-                                      ),
-                                    ),
-                                  ),
-                                ):const SizedBox(),
+                                const SizedBox(),
                               ],
                             ),
                           ),
@@ -1110,4 +947,65 @@ class CartScreenState extends State<CartScreen> with AutomaticKeepAliveClientMix
   }
 }
 
+  Widget _buildDeliveryLaneNoticeBanner(BuildContext context) {
+    return Consumer<LocationController>(
+      builder: (context, locationController, child) {
+        final lgaName = locationController.activeLgaName ?? 'your LGA';
+        return Container(
+          margin: const EdgeInsets.symmetric(
+            horizontal: Dimensions.paddingSizeDefault,
+            vertical: Dimensions.paddingSizeSmall,
+          ),
+          padding: const EdgeInsets.all(12),
+          decoration: BoxDecoration(
+            color: const Color(0xFF6A1B9A).withValues(alpha: 0.06),
+            borderRadius: BorderRadius.circular(12),
+            border: Border.all(
+              color: const Color(0xFF6A1B9A).withValues(alpha: 0.2),
+            ),
+          ),
+          child: Row(
+            children: [
+              Container(
+                padding: const EdgeInsets.all(8),
+                decoration: BoxDecoration(
+                  color: const Color(0xFF6A1B9A).withValues(alpha: 0.12),
+                  shape: BoxShape.circle,
+                ),
+                child: const Icon(
+                  Icons.local_shipping_outlined,
+                  color: Color(0xFF6A1B9A),
+                  size: 20,
+                ),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'Fulfillment to $lgaName',
+                      style: textBold.copyWith(
+                        fontSize: Dimensions.fontSizeSmall,
+                        color: const Color(0xFF4A148C),
+                      ),
+                    ),
+                    const SizedBox(height: 2),
+                    Text(
+                      'Doorstep delivery fee and ₦0 in-shop pickup options will be calculated at checkout.',
+                      style: textRegular.copyWith(
+                        fontSize: Dimensions.fontSizeExtraSmall,
+                        color: Theme.of(context).hintColor,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+        );
+      },
+    );
+  }
 }
+

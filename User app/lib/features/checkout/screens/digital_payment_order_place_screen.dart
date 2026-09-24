@@ -13,6 +13,7 @@ import 'package:flutter_sixvalley_ecommerce/common/basewidget/animated_custom_di
 import 'package:flutter_sixvalley_ecommerce/features/checkout/widgets/order_place_dialog_widget.dart';
 import 'package:flutter_sixvalley_ecommerce/features/checkout/screens/payment_status_screen.dart';
 import 'package:flutter_sixvalley_ecommerce/common/basewidget/show_custom_snakbar_widget.dart';
+import 'package:flutter_sixvalley_ecommerce/features/cart/controllers/cart_controller.dart';
 import 'package:provider/provider.dart';
 
 class DigitalPaymentScreen extends StatefulWidget {
@@ -164,6 +165,9 @@ class DigitalPaymentScreenState extends State<DigitalPaymentScreen> {
     // }
 
     if (isSuccess) {
+      try {
+        Provider.of<CartController>(context, listen: false).getCartData(context);
+      } catch (_) {}
       if (widget.orderId.trim().isNotEmpty &&  orderIds == null) {
         RouterHelper.getOrderDetailsScreenRoute(
           orderId: int .parse(widget.orderId),

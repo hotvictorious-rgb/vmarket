@@ -849,6 +849,44 @@ class CheckoutScreenState extends State<CheckoutScreen> {
                                                   ? (getTranslated('free_pickup', context) ?? '₦0.00 (In-Store Pickup)')
                                                   : PriceConverter.convertPrice(context, activeShipping),
                                             ),
+                                            // [AI] Turnaround ETA Badge
+                                            Padding(
+                                              padding: const EdgeInsets.only(top: 2, bottom: 6),
+                                              child: Row(
+                                                mainAxisAlignment: MainAxisAlignment.end,
+                                                children: [
+                                                  Container(
+                                                    padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                                                    decoration: BoxDecoration(
+                                                      color: checkoutController.isPickup
+                                                          ? const Color(0xFF10B981).withValues(alpha: 0.1)
+                                                          : const Color(0xFF6A1B9A).withValues(alpha: 0.1),
+                                                      borderRadius: BorderRadius.circular(4),
+                                                    ),
+                                                    child: Row(
+                                                      mainAxisSize: MainAxisSize.min,
+                                                      children: [
+                                                        Icon(
+                                                          checkoutController.isPickup ? Icons.check_circle_outline : Icons.bolt,
+                                                          size: 12,
+                                                          color: checkoutController.isPickup ? const Color(0xFF10B981) : const Color(0xFF6A1B9A),
+                                                        ),
+                                                        const SizedBox(width: 4),
+                                                        Text(
+                                                          checkoutController.isPickup
+                                                              ? 'Instant Store Hold • Ready for Inspection'
+                                                              : 'Active LGA Lane: 24–48 hrs Delivery',
+                                                          style: titilliumRegular.copyWith(
+                                                            fontSize: 10,
+                                                            color: checkoutController.isPickup ? const Color(0xFF10B981) : const Color(0xFF6A1B9A),
+                                                          ),
+                                                        ),
+                                                      ],
+                                                    ),
+                                                  ),
+                                                ],
+                                              ),
+                                            ),
                                             AmountWidget(
                                               title: getTranslated('discount', context),
                                               amount: PriceConverter.convertPrice(context, widget.discount),

@@ -8,6 +8,9 @@ import 'package:flutter_sixvalley_ecommerce/utill/dimensions.dart';
 import 'package:flutter_sixvalley_ecommerce/common/basewidget/custom_button_widget.dart';
 import 'package:provider/provider.dart';
 
+/// [AI] @deprecated Victorious MARKET V1: Legacy shipping method selection bottom sheet is decommissioned.
+/// Marketplace shipping fees and fulfillment availability are computed dynamically by the backend via DeliveryLanes.
+@deprecated
 class ShippingMethodBottomSheetWidget extends StatefulWidget {
   final String? groupId;
   final int? sellerId;

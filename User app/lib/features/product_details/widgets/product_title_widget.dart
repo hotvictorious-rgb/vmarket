@@ -101,6 +101,55 @@ class ProductTitleWidget extends StatelessWidget {
             ]),
             const SizedBox(height: Dimensions.paddingSizeSmall),
 
+            // [AI] Omnichannel Fulfillment Trust Badges
+            Padding(
+              padding: const EdgeInsets.only(top: 4.0, bottom: 6.0),
+              child: Wrap(
+                spacing: 8,
+                runSpacing: 6,
+                children: [
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFFF3E8FF),
+                      borderRadius: BorderRadius.circular(12),
+                      border: Border.all(color: const Color(0xFFD8B4FE)),
+                    ),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        const Icon(Icons.local_shipping_outlined, color: Color(0xFF7E22CE), size: 14),
+                        const SizedBox(width: 5),
+                        Text(
+                          'Doorstep Delivery',
+                          style: textBold.copyWith(color: const Color(0xFF581C87), fontSize: 11),
+                        ),
+                      ],
+                    ),
+                  ),
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFFFFFBEB),
+                      borderRadius: BorderRadius.circular(12),
+                      border: Border.all(color: const Color(0xFFFDE68A)),
+                    ),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        const Icon(Icons.storefront_outlined, color: Color(0xFFB45309), size: 14),
+                        const SizedBox(width: 5),
+                        Text(
+                          'In-Shop Pickup (₦0 Fee)',
+                          style: textBold.copyWith(color: const Color(0xFF92400E), fontSize: 11),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+            ),
+
 
             if (productModel!.reviews != null && productModel!.reviews!.isNotEmpty)
               Row(

@@ -71,6 +71,9 @@ class _MoreScreenState extends State<MoreScreen> with AutomaticKeepAliveClientMi
                   const Padding(padding: EdgeInsets.symmetric(vertical: Dimensions.paddingSizeSmall),
                     child: Center(child: MoreHorizontalSection())),
 
+                  // [AI] 5% Victorious Cashback Gold & Purple Card
+                  _buildCashbackRewardCard(context),
+
                   Padding(padding: const EdgeInsets.fromLTRB( Dimensions.paddingSizeDefault,
                       Dimensions.paddingSizeDefault,  Dimensions.paddingSizeDefault,0),
                     child: Text(getTranslated('general', context)??'',
@@ -311,6 +314,139 @@ class _MoreScreenState extends State<MoreScreen> with AutomaticKeepAliveClientMi
       }
     }
     return pageModel;
+  }
+
+  Widget _buildCashbackRewardCard(BuildContext context) {
+    return Consumer<ProfileController>(
+      builder: (context, profile, child) {
+        final double walletBalance = profile.userInfoModel?.walletBalance ?? 0.0;
+        final bool isLoggedIn = Provider.of<AuthController>(context, listen: false).isLoggedIn();
+
+        return Container(
+          margin: const EdgeInsets.symmetric(
+            horizontal: Dimensions.paddingSizeDefault,
+            vertical: Dimensions.paddingSizeSmall,
+          ),
+          padding: const EdgeInsets.all(16),
+          decoration: BoxDecoration(
+            gradient: const LinearGradient(
+              colors: [Color(0xFF3E0075), Color(0xFF1F003B)],
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+            ),
+            borderRadius: BorderRadius.circular(16),
+            boxShadow: [
+              BoxShadow(
+                color: const Color(0xFF3E0075).withValues(alpha: 0.35),
+                blurRadius: 12,
+                offset: const Offset(0, 4),
+              ),
+            ],
+            border: Border.all(
+              color: const Color(0xFFFFD700).withValues(alpha: 0.35),
+              width: 1.2,
+            ),
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Row(
+                    children: [
+                      Container(
+                        padding: const EdgeInsets.all(6),
+                        decoration: BoxDecoration(
+                          color: const Color(0xFFFFD700).withValues(alpha: 0.15),
+                          shape: BoxShape.circle,
+                        ),
+                        child: const Icon(
+                          Icons.stars_rounded,
+                          color: Color(0xFFFFD700),
+                          size: 20,
+                        ),
+                      ),
+                      const SizedBox(width: 8),
+                      Text(
+                        'VICTORIOUS REWARDS',
+                        style: textBold.copyWith(
+                          fontSize: Dimensions.fontSizeExtraSmall,
+                          color: const Color(0xFFFFD700),
+                          letterSpacing: 1.2,
+                        ),
+                      ),
+                    ],
+                  ),
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFFFFD700),
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    child: Text(
+                      '5% CASHBACK',
+                      style: textBold.copyWith(
+                        fontSize: 10,
+                        color: const Color(0xFF3E0075),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 12),
+              Text(
+                '5% Guaranteed Cashback on All Orders',
+                style: textBold.copyWith(
+                  fontSize: Dimensions.fontSizeLarge,
+                  color: Colors.white,
+                ),
+              ),
+              const SizedBox(height: 4),
+              Text(
+                'Earn 5% automatic cashback credited directly to your wallet upon every completed pickup or delivery.',
+                style: textRegular.copyWith(
+                  fontSize: Dimensions.fontSizeSmall,
+                  color: Colors.white.withValues(alpha: 0.8),
+                ),
+              ),
+              if (isLoggedIn && walletBalance > 0) ...[
+                const SizedBox(height: 12),
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                  decoration: BoxDecoration(
+                    color: Colors.white.withValues(alpha: 0.1),
+                    borderRadius: BorderRadius.circular(8),
+                    border: Border.all(
+                      color: Colors.white.withValues(alpha: 0.15),
+                    ),
+                  ),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Text(
+                        'Wallet Balance Available',
+                        style: textRegular.copyWith(
+                          fontSize: Dimensions.fontSizeSmall,
+                          color: Colors.white70,
+                        ),
+                      ),
+                      Text(
+                        '₦${walletBalance.toStringAsFixed(2)}',
+                        style: textBold.copyWith(
+                          fontSize: Dimensions.fontSizeDefault,
+                          color: const Color(0xFFFFD700),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ],
+          ),
+        );
+      },
+    );
   }
 
 }

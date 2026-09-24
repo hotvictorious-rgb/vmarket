@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:url_launcher/url_launcher.dart';
 import 'package:flutter_sixvalley_ecommerce/common/basewidget/custom_app_bar_widget.dart';
 import 'package:flutter_sixvalley_ecommerce/common/basewidget/custom_button_widget.dart';
 import 'package:flutter_sixvalley_ecommerce/common/basewidget/show_custom_snakbar_widget.dart';
@@ -152,6 +153,8 @@ class ReservationDetailScreen extends StatelessWidget {
                           ],
                         ),
                       ),
+                      // [AI] 24-Hour Stock Hold Countdown Banner
+                      _buildExpiryCountdown(context),
                     ],
                   ),
                 ),
@@ -197,6 +200,65 @@ class ReservationDetailScreen extends StatelessWidget {
                             ),
                           ),
                         ],
+                      ),
+                      if (reservation.shop?.directionGuidance != null &&
+                          reservation.shop!.directionGuidance!.trim().isNotEmpty) ...[
+                        const SizedBox(height: 8),
+                        Row(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Icon(Icons.info_outline, size: 16, color: Theme.of(context).primaryColor),
+                            const SizedBox(width: 4),
+                            Expanded(
+                              child: Text(
+                                reservation.shop!.directionGuidance!,
+                                style: titilliumRegular.copyWith(
+                                  fontSize: Dimensions.fontSizeSmall,
+                                  color: Theme.of(context).textTheme.bodySmall?.color,
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ],
+                      const SizedBox(height: 12),
+                      InkWell(
+                        onTap: () async {
+                          final query = Uri.encodeComponent(
+                            '${reservation.shop?.name ?? ''} ${reservation.shop?.address ?? ''}'.trim(),
+                          );
+                          if (query.isNotEmpty) {
+                            final mapUri = Uri.parse('https://www.google.com/maps/search/?api=1&query=$query');
+                            try {
+                              await launchUrl(mapUri, mode: LaunchMode.externalApplication);
+                            } catch (_) {}
+                          }
+                        },
+                        borderRadius: BorderRadius.circular(8),
+                        child: Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+                          decoration: BoxDecoration(
+                            color: Theme.of(context).primaryColor.withValues(alpha: 0.08),
+                            borderRadius: BorderRadius.circular(8),
+                            border: Border.all(
+                              color: Theme.of(context).primaryColor.withValues(alpha: 0.25),
+                            ),
+                          ),
+                          child: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Icon(Icons.directions_outlined, size: 16, color: Theme.of(context).primaryColor),
+                              const SizedBox(width: 6),
+                              Text(
+                                'Get Directions on Map',
+                                style: titilliumSemiBold.copyWith(
+                                  fontSize: Dimensions.fontSizeSmall,
+                                  color: Theme.of(context).primaryColor,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
                       ),
                     ],
                   ),
@@ -513,4 +575,65 @@ class ReservationDetailScreen extends StatelessWidget {
       ),
     );
   }
+
+  Widget _buildExpiryCountdown(BuildContext context) {
+    if (reservation.status != 'pending_inspection' && reservation.status != 'inspected_accepted') {
+      return const SizedBox.shrink();
+    }
+
+    DateTime? expiry;
+    if (reservation.expiresAt != null && reservation.expiresAt!.trim().isNotEmpty) {
+      expiry = DateTime.tryParse(reservation.expiresAt!);
+    } else if (reservation.createdAt != null && reservation.createdAt!.trim().isNotEmpty) {
+      expiry = DateTime.tryParse(reservation.createdAt!)?.add(const Duration(hours: 24));
+    }
+
+    if (expiry == null) {
+      return const SizedBox.shrink();
+    }
+
+    final now = DateTime.now();
+    final difference = expiry.difference(now);
+    final isExpired = difference.isNegative;
+
+    final hours = difference.inHours;
+    final minutes = difference.inMinutes.remainder(60);
+
+    return Container(
+      margin: const EdgeInsets.only(top: 10),
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+      decoration: BoxDecoration(
+        color: isExpired
+            ? const Color(0xFFEF4444).withValues(alpha: 0.1)
+            : const Color(0xFFF59E0B).withValues(alpha: 0.12),
+        borderRadius: BorderRadius.circular(8),
+        border: Border.all(
+          color: isExpired
+              ? const Color(0xFFEF4444).withValues(alpha: 0.3)
+              : const Color(0xFFF59E0B).withValues(alpha: 0.3),
+        ),
+      ),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Icon(
+            isExpired ? Icons.timer_off_outlined : Icons.timer_outlined,
+            size: 16,
+            color: isExpired ? const Color(0xFFEF4444) : const Color(0xFFD97706),
+          ),
+          const SizedBox(width: 6),
+          Text(
+            isExpired
+                ? 'Stock hold expired'
+                : 'Stock held: ${hours > 0 ? '$hours hrs ' : ''}${minutes}m remaining',
+            style: titilliumSemiBold.copyWith(
+              fontSize: Dimensions.fontSizeSmall,
+              color: isExpired ? const Color(0xFFEF4444) : const Color(0xFFD97706),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
 }
+

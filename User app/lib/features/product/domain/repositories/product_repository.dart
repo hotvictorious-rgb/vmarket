@@ -10,6 +10,7 @@ import 'package:flutter_sixvalley_ecommerce/data/services/data_sync_service.dart
 import 'package:flutter_sixvalley_ecommerce/features/product/domain/repositories/product_repository_interface.dart';
 import 'package:flutter_sixvalley_ecommerce/features/product/enums/product_type.dart';
 import 'package:flutter_sixvalley_ecommerce/utill/app_constants.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 class ProductRepository extends DataSyncService implements ProductRepositoryInterface{
   final DioClient dioClient;
@@ -31,7 +32,16 @@ class ProductRepository extends DataSyncService implements ProductRepositoryInte
        endUrl = AppConstants.discountedProductUri;
      }
     try {
-      final response = await dioClient.get(endUrl+offset);
+      String targetUrl = endUrl + offset;
+      try {
+        final prefs = await SharedPreferences.getInstance();
+        final int? lgaId = prefs.getInt('vm_customer_lga_id');
+        if (lgaId != null && lgaId > 0) {
+          targetUrl += targetUrl.contains('?') ? '&lga_id=$lgaId' : '?lga_id=$lgaId';
+        }
+      } catch (_) {}
+
+      final response = await dioClient.get(targetUrl);
       return ApiResponseModel.withSuccess(response);
     } catch (e) {
       return ApiResponseModel.withError(ApiErrorHandler.getMessage(e));
@@ -47,8 +57,16 @@ class ProductRepository extends DataSyncService implements ProductRepositoryInte
   }) async {
 
     final String endUrl = _getApiEndUrlByType(productType);
+    String targetUrl = endUrl + offset.toString();
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final int? lgaId = prefs.getInt('vm_customer_lga_id');
+      if (lgaId != null && lgaId > 0) {
+        targetUrl += targetUrl.contains('?') ? '&lga_id=$lgaId' : '?lga_id=$lgaId';
+      }
+    } catch (_) {}
 
-    return await fetchData<T>(endUrl + offset.toString(), source);
+    return await fetchData<T>(targetUrl, source);
   }
 
   String _getApiEndUrlByType(ProductType type) {
