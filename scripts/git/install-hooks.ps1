@@ -1,10 +1,10 @@
-# Victorious MARKET — Git Pre-Commit Hook Installer (PowerShell)
-# Part of Victorious MARKET Multi-AI Engineering Control System Specification v3 (§4.2)
+# Victorious MARKET -- Git Pre-Commit Hook Installer (PowerShell)
+# Part of Victorious MARKET Multi-AI Engineering Control System Specification v3 (Section 4.2)
 
 $ErrorActionPreference = "Stop"
 
 Write-Host "==========================================================" -ForegroundColor Cyan
-Write-Host " Victorious MARKET — Git Hook Installer                  " -ForegroundColor Cyan
+Write-Host " Victorious MARKET -- Git Hook Installer                  " -ForegroundColor Cyan
 Write-Host "==========================================================" -ForegroundColor Cyan
 
 $HooksDir = ".git\hooks"
@@ -24,4 +24,5 @@ exit `$?
 "@
 
 Set-Content -Path $PreCommitPath -Value $HookScript -Encoding ASCII
-Write-Host "[✓] Successfully installed pre-commit hook at $PreCommitPath" -ForegroundColor Green
+Write-Host "[OK] Successfully installed pre-commit hook at $PreCommitPath" -ForegroundColor Green
+

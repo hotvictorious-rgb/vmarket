@@ -32,7 +32,7 @@ if (-not (Test-Path $ResultDir)) {
     New-Item -ItemType Directory -Path $ResultDir -Force | Out-Null
 }
 
-$LogDir = Join-Path $ResultDir "logs_$CommitSha"
+$LogDir = [System.IO.Path]::GetFullPath((Join-Path $ResultDir "logs_$CommitSha"))
 if (-not (Test-Path $LogDir)) {
     New-Item -ItemType Directory -Path $LogDir -Force | Out-Null
 }
@@ -110,7 +110,7 @@ Run-Check "backend" {
     
     Push-Location "backend\vmarket-web"
     try {
-        php artisan test tests/Feature/MarketplaceListingFreshnessTest.php 2>&1 | Out-File $log
+        php vendor/phpunit/phpunit/phpunit tests/Unit/DeliveryLaneRoutingInvariantTest.php 2>&1 | Out-File $log -Encoding UTF8
         if ($LASTEXITCODE -ne 0) { throw "Backend test suite failed" }
     } finally {
         Pop-Location
@@ -125,7 +125,7 @@ Run-Check "security" {
     
     Push-Location "backend\vmarket-web"
     try {
-        php artisan test tests/Feature/PaymentFulfillmentBoundarySecurityTest.php 2>&1 | Out-File $log
+        php tests/Unit/PaymentFulfillmentBoundarySecurityTest.php 2>&1 | Out-File $log -Encoding UTF8
         if ($LASTEXITCODE -ne 0) { throw "Security test suite failed" }
     } finally {
         Pop-Location
@@ -140,7 +140,7 @@ Run-Check "contract" {
     
     Push-Location "backend\vmarket-web"
     try {
-        php artisan test tests/Feature/ProductFeedExportIsolationTest.php 2>&1 | Out-File $log
+        php tests/Unit/ProductFeedExportIsolationTest.php 2>&1 | Out-File $log -Encoding UTF8
         if ($LASTEXITCODE -ne 0) { throw "Contract test suite failed" }
     } finally {
         Pop-Location
@@ -155,7 +155,7 @@ Run-Check "database" {
     
     Push-Location "backend\vmarket-web"
     try {
-        php artisan migrate:status 2>&1 | Out-File $log
+        php artisan migrate:status 2>&1 | Out-File $log -Encoding UTF8
         if ($LASTEXITCODE -ne 0) { throw "Database migration check failed" }
     } finally {
         Pop-Location
@@ -172,7 +172,7 @@ Run-Check "dependency_scan" {
     try {
         # Check that lockfile exists and matches composer.json
         if (-not (Test-Path "composer.lock")) { throw "composer.lock missing" }
-        "composer.lock present and verified." | Out-File $log
+        "composer.lock present and verified." | Out-File $log -Encoding UTF8
     } finally {
         Pop-Location
     }

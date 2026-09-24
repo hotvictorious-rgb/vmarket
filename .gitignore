@@ -37,6 +37,8 @@ Runner.xcuserstate
 # Laravel Backend
 backend/*/vendor/
 backend/**/.env
+backend/**/.env.ai
+backend/**/database/database_*.sqlite
 backend/**/node_modules/
 backend/**/public/storage
 backend/**/storage/*.key

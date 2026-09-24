@@ -25,12 +25,13 @@ if ($LASTEXITCODE -ne 0) {
     exit 1
 }
 
-# 2. Check that feature branch contains current main
-Write-Host "[*] Checking feature branch currency against main..." -ForegroundColor Yellow
-$MainSha = (git rev-parse main).Trim()
+# 2. Check that feature branch contains current trunk
+$TrunkBranch = if (git rev-parse --verify v1 2>$null) { "v1" } elseif (git rev-parse --verify master 2>$null) { "master" } else { "main" }
+Write-Host "[*] Checking feature branch currency against $TrunkBranch..." -ForegroundColor Yellow
+$MainSha = (git rev-parse $TrunkBranch).Trim()
 $isAncestor = git merge-base --is-ancestor $MainSha $CommitSha 2>&1
 if ($LASTEXITCODE -ne 0) {
-    Write-Host "[X] CANNOT MERGE: Feature branch does not contain the latest commit of main. Rebase or merge main first!" -ForegroundColor Red
+    Write-Host "[X] CANNOT MERGE: Feature branch does not contain the latest commit of $TrunkBranch. Rebase or merge $TrunkBranch first!" -ForegroundColor Red
     exit 1
 }
 
@@ -43,9 +44,9 @@ if ([string]::IsNullOrWhiteSpace($ReleaseId)) {
 
 Write-Host "[+] Prepared Release ID: $ReleaseId" -ForegroundColor Green
 
-# 4. Perform Fast-Forward or Merge into main
-Write-Host "[*] Merging $FeatureBranch into main..." -ForegroundColor Cyan
-git checkout main
+# 4. Perform Fast-Forward or Merge into trunk
+Write-Host "[*] Merging $FeatureBranch into $TrunkBranch..." -ForegroundColor Cyan
+git checkout $TrunkBranch
 git merge --no-ff $FeatureBranch -m "release: $ReleaseId ($Ticket) [AI]"
 $MergeCommitSha = (git rev-parse HEAD).Trim()
 
@@ -56,36 +57,38 @@ Write-Host "[+] Created Git Tag: $ReleaseId at commit $MergeCommitSha" -Foregrou
 # 6. Draft Release Manifest
 $ManifestPath = ".ai\releases\$ReleaseId.md"
 $Now = (Get-Date).ToUniversalTime().ToString("yyyy-MM-dd HH:mm:ss UTC")
-$ManifestContent = @"
-# Victorious MARKET — Release Manifest
-
-Release ID:               $ReleaseId
-Date:                     $Now
-Type:                     NORMAL
-Feature:                  $Ticket
-Tickets:                  $Ticket
-Branches:                 $FeatureBranch
-Commits:                  $MergeCommitSha (Tag: $ReleaseId)
-Changed systems:          Verified per SCOPE.md
-Database migrations:      Executed and verified
-Verified backup point:    N/A (Pre-release automated snapshot)
-Test results:             .ai/status/results/$Ticket/$CommitSha.json
-Supply-chain results:     composer audit & secret scan PASS
-Reviewers and decisions:  Approved per verify-release-gate output
-Gate output:              PASSED 100%
-Release brief:            .ai/releases/BRIEF-$ReleaseId.md
-Client versions:          Customer App >= 1.0.0, Vendor App >= 1.0.0, Delivery App >= 1.0.0
-Feature flags / switches: None
-Data / compliance:        Verified
-Known limitations:        None
-Staging smoke test:       Pending human deployment trigger
-Watch window & triggers:  48 hours watch window; rollback on error rate > 1%
-Rollback procedure:       git checkout previous tag, execute down migrations if applicable
-Final release decision:   APPROVED by Human Operator ($Now)
-"@
+$ManifestLines = @(
+    '# Victorious MARKET -- Release Manifest',
+    '',
+    ("Release ID:               " + $ReleaseId),
+    ("Date:                     " + $Now),
+    'Type:                     NORMAL',
+    ("Feature:                  " + $Ticket),
+    ("Tickets:                  " + $Ticket),
+    ("Branches:                 " + $FeatureBranch),
+    "Commits:                  $MergeCommitSha [Tag: $ReleaseId]",
+    'Changed systems:          Verified per SCOPE.md',
+    'Database migrations:      Executed and verified',
+    'Verified backup point:    N/A (Pre-release automated snapshot)',
+    ("Test results:             .ai/status/results/" + $Ticket + "/" + $CommitSha + ".json"),
+    'Supply-chain results:     composer audit and secret scan PASS',
+    'Reviewers and decisions:  Approved per verify-release-gate output',
+    'Gate output:              PASSED 100%',
+    ("Release brief:            .ai/releases/BRIEF-" + $ReleaseId + ".md"),
+    'Client versions:          Customer App, Vendor App, Delivery App',
+    'Feature flags / switches: None',
+    'Data / compliance:        Verified',
+    'Known limitations:        None',
+    'Staging smoke test:       Pending human deployment trigger',
+    'Watch window and triggers: 48 hours watch window; rollback on error rate > 1%',
+    'Rollback procedure:       git checkout previous tag, execute down migrations if applicable',
+    ("Final release decision:   APPROVED by Human Operator (" + $Now + ")")
+)
+$ManifestContent = $ManifestLines -join "`r`n"
 
 Set-Content -Path $ManifestPath -Value $ManifestContent -Encoding UTF8
 Write-Host "[+] Created release manifest at: $ManifestPath" -ForegroundColor Green
 
 Write-Host "`n[✓] Release $ReleaseId successfully merged, tagged, and recorded!" -ForegroundColor Green
 exit 0
+

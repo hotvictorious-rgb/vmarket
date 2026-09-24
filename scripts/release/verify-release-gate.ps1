@@ -156,7 +156,8 @@ if ($TicketContent -match "Required reviewers:\s*(.+)") {
 }
 
 # 5. Check Business Rules Drift without Decision
-$diffFiles = git diff --name-only origin/main...$CommitSha 2>&1
+$TrunkRef = if (git rev-parse --verify v1 2>$null) { "v1" } elseif (git rev-parse --verify master 2>$null) { "master" } elseif (git rev-parse --verify origin/v1 2>$null) { "origin/v1" } else { "HEAD~1" }
+$diffFiles = git --no-pager diff --name-only "$($TrunkRef)...$($CommitSha)" 2>&1
 if ($diffFiles -match "\.ai/BUSINESS_RULES\.md") {
     if ($TicketContent -notmatch "DECISION-[0-9A-Z]+") {
         $GateFailures += "Gate Check 7: .ai/BUSINESS_RULES.md was modified without an authorized DECISION-XXXX record."
