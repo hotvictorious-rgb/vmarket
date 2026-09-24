@@ -3850,12 +3850,20 @@ button, input, select, textarea {
 /* ==========================================================================
    [AI] Victorious MARKET — Premium Auth Modals (login + register)
    Purple reign + gold glow. Presentation only: routes, ids, names untouched.
+   Typing-safe: 16px inputs (no iOS zoom trap), scrollable dialogs,
+   no overlaying pseudo-elements over fields.
    ========================================================================== */
 .vm-auth-modal {
     border-radius: 24px !important;
     border: 1px solid rgba(255, 215, 0, 0.25) !important;
     box-shadow: 0 30px 60px -12px rgba(26, 14, 42, 0.45), 0 0 0 1px rgba(94, 23, 235, 0.08) !important;
     overflow: hidden;
+    max-height: calc(100vh - 3rem) !important;
+}
+
+.vm-auth-modal .modal-body {
+    overflow-y: auto !important;
+    -webkit-overflow-scrolling: touch;
 }
 
 .vm-auth-crown {
@@ -3866,6 +3874,12 @@ button, input, select, textarea {
     text-align: center;
     position: relative;
     overflow: hidden;
+    border-radius: 24px 24px 0 0;
+}
+
+.vm-auth-crown::after,
+.vm-auth-crown::before {
+    pointer-events: none !important;
 }
 
 .vm-auth-crown::after {
@@ -3952,8 +3966,9 @@ button, input, select, textarea {
     border-radius: 12px !important;
     border: 1.5px solid #E2E8F0 !important;
     padding: 12px 14px !important;
-    font-size: 14px !important;
+    font-size: 16px !important;
     transition: border-color 0.2s, box-shadow 0.2s;
+    pointer-events: auto !important;
 }
 
 .vm-auth-modal .form-control:focus {

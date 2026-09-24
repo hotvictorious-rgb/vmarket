@@ -108,6 +108,10 @@
 * **3. Preservation (no-revert rule):**
   - Concurrent work kept intact: prior cart decoupling commit `b154835c`, backend hardening `d610b934`, and in-progress backend `ShippingMethodController.php` deletion left unstaged/unreverted (not part of this commit).
 * **Verification:** `node --check` PASS on both edited JS files; `dart format --output=none` parses all 4 Dart files (no syntax errors; formatting drift pre-existing); `flutter analyze --no-pub` timed out on dependency resolve (no errors introduced).
+### [2026-09-24 09:20 UTC] Auth Usability Fix: scrollable modals, 16px inputs, phone affordance [storefront] [AI]
+* **Typing/scroll:** both auth dialogs now `modal-dialog-scrollable` + `max-height:100vh-3rem` (register fields reachable on small screens); inputs 16px (no iOS zoom trap) with `pointer-events:auto`; crown pseudos non-interactive.
+* **Phone/country:** register phone gets `inputmode=tel` + `tel` autocomplete; country picker deliberately NOT auto-initialized (would alter submitted format — backend behavior; filed for backend decision if wanted).
+* **Verified live** via local server HTML (scrollable dialogs, 16px, phone attrs present). Emoji bytes verified valid UTF-8 (earlier `??` was console font). Zero backend logic edits, zero reverts.
 ### [2026-09-24 09:00 UTC] Premium Auth Self-Styled + Remaining RFCs Filed [storefront] [AI]
 * **Root cause of 'not okay':** live server serves the stale public CSS/JS mirror (locked by concurrent process); resources source had the skin but it never rendered. Fix: critical premium styles inlined in both modals (crown, ring, inputs, gradient submits, trust rows) + gradient fallbacks — premium now renders independent of mirror sync.
 * **Filed:** `REQ-USERAPP-20260924-005` (canonical track), `-006` (reservation show lock), `REQ-STOREFRONT-20260924-002` (mirror sync — needs backend/deploy, files locked).
