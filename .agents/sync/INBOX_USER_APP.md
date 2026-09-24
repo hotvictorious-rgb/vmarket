@@ -126,3 +126,25 @@
   1. Updated `API_CONTRACT_REGISTRY.md` to reflect canonical `/api/v1/customer/pickup-reservations` and `/api/v1/customer/cashback/*`.
   2. Implemented root backward-compatibility route aliases in `routes/rest_api/v1/api.php` so both `/api/v1/pickup-reservations` AND `/api/v1/customer/pickup-reservations` work transparently.
 
+### [REQ-USERAPP-20260924-005] Canonical order-track contract (app + guest web)
+- **Status**: `PENDING_BACKEND_REVIEW`
+- **Urgency**: `MEDIUM`
+- **Context**: App carries three similar tracking paths (`order/track`, `order/track-order`, `order/track-order-details`) and web has `track-order.result` (order ID + phone). Unclear which is authoritative; guest tracking needs order_id + phone.
+- **Proposed Endpoint**: backend declares ONE canonical track contract — frontend migrates both clients to it.
+- **Required Request Payload**:
+  ```json
+  { "order_id": "100234", "phone": "+2348012345678" }
+  ```
+- **Desired Response Fields**: single locked timeline schema both clients render verbatim.
+
+### [REQ-USERAPP-20260924-006] Lock reservation `show` contract (`order_id` + payment state)
+- **Status**: `PENDING_BACKEND_REVIEW`
+- **Urgency**: `LOW`
+- **Context**: Payment recovery does reservation→order two-hop fetch depending on `GET /api/v1/customer/pickup-reservations/{code}` returning `order_id` once settled. Works today; requesting a locked guarantee (OTP stays on Order only — IDOR-safe).
+- **Proposed Endpoint**: `GET /api/v1/customer/pickup-reservations/{code}` — no change, contract lock only.
+- **Required Request Payload**: path param only, `auth:api` customer scope.
+- **Desired Response Fields**:
+  ```json
+  { "reservation": { "code": "RES-17B81659", "state": "paid", "order_id": 100234, "payment_status": "paid" } }
+  ```
+

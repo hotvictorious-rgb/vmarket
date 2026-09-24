@@ -77,3 +77,10 @@
   ```
   *(Returns `null` if guest or if order earned zero cashback).*
 
+### [REQ-STOREFRONT-20260924-002] Sync public theme asset mirrors (`vmarket.css` / `vmarket.js`)
+- **Status**: `PENDING_BACKEND_REVIEW`
+- **Urgency**: `HIGH`
+- **Context**: Storefront serves theme assets from `public/themes/theme_vmarket/...` but the files are newer under `resources/themes/theme_vmarket/...`. Frontend cannot overwrite the public copies — locked by the running server process. Premium auth skin + speed suite are committed in resources but not rendering live.
+- **Proposed Web Route / API**: deploy/runtime sync of `resources/themes/theme_vmarket/public/assets/` → `public/themes/theme_vmarket/public/assets/` (or serve resources copy directly).
+- **Required View Data / JSON Payload**: none — release action only.
+

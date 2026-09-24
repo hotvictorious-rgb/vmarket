@@ -100,6 +100,10 @@
 * **3. Preservation (no-revert rule):**
   - Concurrent work kept intact: prior cart decoupling commit `b154835c`, backend hardening `d610b934`, and in-progress backend `ShippingMethodController.php` deletion left unstaged/unreverted (not part of this commit).
 * **Verification:** `node --check` PASS on both edited JS files; `dart format --output=none` parses all 4 Dart files (no syntax errors; formatting drift pre-existing); `flutter analyze --no-pub` timed out on dependency resolve (no errors introduced).
+### [2026-09-24 09:00 UTC] Premium Auth Self-Styled + Remaining RFCs Filed [storefront] [AI]
+* **Root cause of 'not okay':** live server serves the stale public CSS/JS mirror (locked by concurrent process); resources source had the skin but it never rendered. Fix: critical premium styles inlined in both modals (crown, ring, inputs, gradient submits, trust rows) + gradient fallbacks — premium now renders independent of mirror sync.
+* **Filed:** `REQ-USERAPP-20260924-005` (canonical track), `-006` (reservation show lock), `REQ-STOREFRONT-20260924-002` (mirror sync — needs backend/deploy, files locked).
+* **Button map verified:** desktop 1×Sign In+1×Register, mobile 1×Sign In/Account (gated), contextual gates kept, modal switching intact. Zero backend logic edits, zero reverts.
 ### [2026-09-24 08:45 UTC] Integrate Fulfilled Backend RFCs: intent status, cart totals, web cashback (FAPI-001/002/004/006) [user-app+storefront] [AI]
 * **FAPI-001:** `payment_status_screen.dart` polls `GET checkout/intent/{id}/status` (404 → failed); list-scan removed. **FAPI-006:** `CartModel.cartTotals` parses in-band totals; `cart_screen.dart` displays backend total first, local sum fallback only.
 * **FAPI-002:** registry locked live shape (matches FF-01 parser, no change needed). **FAPI-004:** web `checkout/complete.blade.php` renders backend `$cashback_earned` badge. FAPI-003 (canonical track) + FAPI-005 still await explicit backend confirmation.

@@ -17,7 +17,20 @@ if (!$customerOTPLogin && $customerManualLogin && $customerSocialLogin) {
 ?>
 <div class="modal fade max-z-index-for-auth-modal" id="loginModal" tabindex="-1" aria-hidden="true">
     <div class="modal-dialog modal-dialog-centered {{ $multiColumn ? 'modal-lg' : '' }}">
-        {{-- [AI] Premium Victorious auth skin: cosmetic only, all routes/ids/names unchanged. --}}
+        {{-- [AI] Premium Victorious auth skin: cosmetic only, all routes/ids/names unchanged.
+             Critical styles inline so the premium look renders even before the public CSS mirror syncs. --}}
+        <style>
+            #loginModal .vm-auth-modal{border-radius:24px!important;overflow:hidden;border:1px solid rgba(255,215,0,.25)!important;box-shadow:0 30px 60px -12px rgba(26,14,42,.45)!important}
+            #loginModal .vm-auth-crown{margin:-1rem -1rem 0;padding:28px 24px 22px;background:linear-gradient(135deg,#2A0A5E 0%,#5E17EB 55%,#8B3DFF 100%);color:#fff;text-align:center;position:relative;overflow:hidden}
+            #loginModal .vm-auth-crown-badge{display:inline-block;font-size:11px;font-weight:800;letter-spacing:1.5px;text-transform:uppercase;color:#1A0E2A;background:linear-gradient(135deg,#FFD700,#FFB800);padding:5px 14px;border-radius:999px}
+            #loginModal .vm-auth-crown h3{margin:12px 0 4px;font-weight:800;font-size:22px;color:#fff}
+            #loginModal .vm-auth-crown p{margin:0;font-size:13px;opacity:.85;color:#fff}
+            #loginModal .vm-auth-logo-ring{width:64px;height:64px;margin:-32px auto 8px;border-radius:18px;background:#fff;display:flex;align-items:center;justify-content:center;box-shadow:0 8px 24px rgba(26,14,42,.25);border:2px solid rgba(255,215,0,.6);position:relative;z-index:2}
+            #loginModal .vm-auth-logo-ring img{max-width:44px;max-height:44px}
+            #loginModal .vm-auth-modal .form-control{border-radius:12px!important;padding:12px 14px!important;font-size:14px!important}
+            #loginModal #customer-login-form button[type="submit"]{background:linear-gradient(135deg,#5E17EB,#8B3DFF)!important;border:none!important;border-radius:14px!important;padding:14px!important;font-size:16px!important;font-weight:800!important;box-shadow:0 8px 20px rgba(94,23,235,.4)!important}
+            #loginModal .vm-auth-trust{display:flex;justify-content:center;gap:16px;margin-top:16px;padding-top:14px;border-top:1px dashed rgba(94,23,235,.2);font-size:11.5px;color:#94A3B8;flex-wrap:wrap}
+        </style>
         <div class="modal-content vm-auth-modal">
             <div class="vm-auth-crown">
                 <span class="vm-auth-crown-badge">👑 Victorious MARKET</span>
