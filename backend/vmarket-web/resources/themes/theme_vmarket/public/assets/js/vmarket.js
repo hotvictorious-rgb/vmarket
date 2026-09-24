@@ -475,5 +475,58 @@ document.addEventListener('DOMContentLoaded', () => {
             }
         });
     });
+
+    // 8. Instant feel: idle-preload hidden recommended-tab images + hover-prefetch links
+    // Presentation only: warms the browser cache so the first tab toggle and
+    // next-page clicks feel instant. No pricing, routing, or logic changes.
+    function vmIdle(cb) {
+        if ('requestIdleCallback' in window) {
+            requestIdleCallback(cb, { timeout: 2500 });
+        } else {
+            setTimeout(cb, 1200);
+        }
+    }
+
+    // Preload images inside inactive tab panes once the browser is idle.
+    vmIdle(() => {
+        try {
+            const hiddenImgs = document.querySelectorAll('#nav-tabContent .tab-pane:not(.active) img[loading="lazy"]');
+            hiddenImgs.forEach(img => {
+                if (img.dataset.vmPreloaded) return;
+                img.dataset.vmPreloaded = '1';
+                const pre = new Image();
+                pre.decoding = 'async';
+                pre.src = img.currentSrc || img.src;
+            });
+        } catch (e) { /* never break storefront */ }
+    });
+
+    // Prefetch same-origin GET links on hover (>120ms) or touchstart, once per URL.
+    const vmPrefetched = new Set();
+    function vmPrefetch(url) {
+        try {
+            if (!url || vmPrefetched.has(url)) return;
+            const u = new URL(url, window.location.origin);
+            if (u.origin !== window.location.origin) return;
+            vmPrefetched.add(url);
+            const link = document.createElement('link');
+            link.rel = 'prefetch';
+            link.href = u.href;
+            document.head.appendChild(link);
+        } catch (e) { /* ignore invalid URLs */ }
+    }
+
+    let vmHoverTimer = null;
+    document.addEventListener('mouseover', (e) => {
+        const a = e.target && e.target.closest ? e.target.closest('a[href]') : null;
+        if (!a || a.dataset.vmNoPrefetch !== undefined) return;
+        clearTimeout(vmHoverTimer);
+        vmHoverTimer = setTimeout(() => vmPrefetch(a.href), 120);
+    }, { passive: true });
+
+    document.addEventListener('touchstart', (e) => {
+        const a = e.target && e.target.closest ? e.target.closest('a[href]') : null;
+        if (a) vmPrefetch(a.href);
+    }, { passive: true });
 });
 

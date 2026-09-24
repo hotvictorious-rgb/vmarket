@@ -30,7 +30,7 @@
 
         <div>
             <img src="{{ getStorageImages(path: $product->thumbnail_full_url, type: 'product') }}"
-                 loading="lazy" class="img-fit dark-support rounded aspect-1" alt="">
+                 loading="lazy" decoding="async" class="img-fit dark-support rounded aspect-1" alt="">
         </div>
     </div>
     <div class="product__summary d-flex flex-column gap-1 cursor-pointer">

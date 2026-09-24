@@ -81,6 +81,11 @@
 * **3. Preservation (no-revert rule):**
   - Concurrent work kept intact: prior cart decoupling commit `b154835c`, backend hardening `d610b934`, and in-progress backend `ShippingMethodController.php` deletion left unstaged/unreverted (not part of this commit).
 * **Verification:** `node --check` PASS on both edited JS files; `dart format --output=none` parses all 4 Dart files (no syntax errors; formatting drift pre-existing); `flutter analyze --no-pub` timed out on dependency resolve (no errors introduced).
+### [2026-09-24 08:30 UTC] Storefront Instant-Feel Speed Suite (tabs + images + prefetch) [storefront] [AI]
+* **Lazy images:** `_product-large-card` thumbnail now `loading=lazy decoding=async` (+ medium card); hero already optimal (fetchpriority high first slide).
+* **Render skipping:** `content-visibility:auto` on below-fold sections/grids; tab panes fade in (220ms, reduced-motion safe); skeleton shimmer utility; aspect-ratio reserves kill CLS.
+* **Instant tabs/clicks:** idle-preload of hidden recommended-pane images (first toggle instant) + hover(120ms)/touch prefetch of same-origin links, once per URL, in `vmarket.js` (auth modal switching preserved; `node --check` clean).
+* **Pending:** public `public/themes/...` CSS/JS mirror sync blocked (locked by concurrent process); sync on release. Zero backend logic edits, zero reverts.
 ### [2026-09-24 08:15 UTC] Storefront Premium Auth Modals + Single Sign In/Register [storefront] [AI]
 * **Dedup:** removed top-bar duplicate Sign In/Register text links in `theme-views/layouts/partials/_header.blade.php`; the header action buttons remain the ONE Sign In + ONE Register (mobile keeps its single mobile-nav entry; guest-gated wishlist/orders/cart prompts untouched as contextual gates).
 * **Premium skin:** `vm-auth-*` suite in `vmarket.css` (gradient crown band, gold badge, logo ring, focused inputs, trust row) applied to `#loginModal` and `#registerModal`; all form actions/ids/names/JS hooks unchanged (backend-owned).
