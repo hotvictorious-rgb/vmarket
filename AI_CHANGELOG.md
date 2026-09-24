@@ -27,6 +27,14 @@
   - Marked all tickets in `INBOX_USER_APP.md`, `INBOX_STOREFRONT.md`, and `INBOX_DELIVERY.md` as `FULFILLED`.
   - Ticked off verified backend capabilities in `docs/api/vendor_web_app_api_requests.md` (`VAPI-002`, `004`, `005`) and `docs/api/delivery_app_api_requests.md` (`DAPI-003`, `005`, `006`).
 
+### [2026-09-24 10:15 UTC] Admin Panel Contract Gap Audit + 6 REQ-ADMIN RFC Tickets Filed [admin-panel] [AI]
+* **Full source-vs-spec audit (Admin Panel ↔ backend):** inventoried `routes/admin/`, `Admin` controllers, `admin-views/`, `AdminPolicy`, `AdminAuditService`, dashboard, pickup, refund, cashback flows against `VMARKET_ADMIN_PANEL_SPEC.md` (70 sections) and the A1-A10 alignment plan.
+* **MISSING (nothing exists):** payment exception triage queue (§31/A7), delivery exception queue (§39/A8), stock adjustment with mandatory reason+audit (§35/A9).
+* **PARTIAL:** command-center dashboard (only 3/13 operational metrics), pickup inspection accept/reject + OTP verification view (A5), admin auth hardening (no login audit/lockout/MFA, Spec §1), `AdminAuditService` coverage gaps (merchant suspend/reinstate, refund status changes, marketplace approval).
+* **ACTION — filed `REQ-ADMIN-20260924-001..006` (001-003 HIGH, 004-006 MEDIUM) in `.agents/sync/INBOX_ADMIN.md` §2** with exact routes, payloads, policies, and audit requirements; mirrored as `AAPI-001..006` (`R` ticked) in new `docs/api/admin_panel_api_requests.md`.
+* **Product decisions deferred (documented in tracker §3):** cashback manual-adjust invariant (Δ=0.00) vs spec §34 allowance; full merchant suspension scope; refund receipt-first evidence; global search + bulk-op safety past V1.
+* **Verification:** read-only audit (`php -l`/`flutter analyze` N/A — zero code changed); commit isolation — only Admin inbox, new tracker, and changelog staged.
+
 ### [2026-09-24 09:45 UTC] DAPI-006 Closed: Backend OTP Hardening Confirmed & Tracker Finalized [delivery-man] [AI]
 * **Backend fulfilled `REQ-DELIVERY-20260924-001` (`9f83f347` + governance `422fd020`):** `Order::$hidden` now covers `verification_code` + `pickup_verification_code` (Order.php L167-169); `verify_order_delivery_otp` reads DB attribute constant-time; customer tracking unhides via `v1/OrderController.php:90` gated to verified owner (customer_id match / constant-time guest token / exact-phone fallback), non-owners stripped of PII. Verified via source inspection.
 * **Delivery app integration:** N/A — app is server-OTP-only; no parser change required. Marked `DAPI-006` `[x] I (N/A)` in `docs/api/delivery_app_api_requests.md` so no stale pending work remains.
