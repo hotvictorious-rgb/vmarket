@@ -1,3 +1,18 @@
+### [2026-09-24 07:15 UTC] Fulfill Cross-Actor RFC Tickets & Security Hardening [backend] [ai-governance] [AI]
+* **1. Customer App RFC Fulfillments (`INBOX_USER_APP.md`):**
+  - `REQ-USERAPP-20260924-001` (Fulfillment Shape Lock): Locked live `FulfillmentAvailabilityService` schema in `API_CONTRACT_REGISTRY.md` §2 (`fee` float, `estimated_time` string, `origin_lga` and `destination_lga` as objects `{ id, name, state }`).
+  - `REQ-USERAPP-20260924-002` (Intent Status Recovery): Implemented `GET /api/v1/checkout/intent/{orderGroupId}/status` in `DeliveryCheckoutIntentController@status` with strict customer IDOR verification.
+  - `REQ-USERAPP-20260924-003` (Server-Computed Cart Totals): Added `GET /api/v1/cart/totals` and attached in-band `cart_totals: { subtotal, tax, total, currency }` to every item in `CartController@getCartList` for §12.2 zero-client-math compliance.
+  - `REQ-USERAPP-20260924-004` (Route Aliases): Added root backward-compatibility route aliases for `/api/v1/pickup-reservations` and `/api/v1/cashback` in `routes/rest_api/v1/api.php`.
+* **2. Web Storefront RFC Fulfillment (`INBOX_STOREFRONT.md`):**
+  - `REQ-STOREFRONT-20260924-001` (Cashback Earned View Data): Updated `WebController@getOrderPlaceView` and `@order_placed` to query `CustomerCashbackLedger` and pass `$cashback_earned` into `order_complete` Blade view.
+* **3. Delivery App RFC & Security Hardening (`INBOX_DELIVERY.md` & `DAPI-006`):**
+  - `REQ-DELIVERY-20260924-001` (OTP Leak Hardening): Added `verification_code` and `pickup_verification_code` to `Order::$hidden`. Riders will never receive customer POD OTPs or merchant pickup codes in serialized order lists or detail payloads.
+  - Updated `OrderController@track_by_order_id` to explicitly unhide verification codes (`makeVisible`) solely for the authenticated/verified order owner.
+* **4. Multi-Agent Governance Updates:**
+  - Marked all tickets in `INBOX_USER_APP.md`, `INBOX_STOREFRONT.md`, and `INBOX_DELIVERY.md` as `FULFILLED`.
+  - Ticked off verified backend capabilities in `docs/api/vendor_web_app_api_requests.md` (`VAPI-002`, `004`, `005`) and `docs/api/delivery_app_api_requests.md` (`DAPI-003`, `005`, `006`).
+
 ### [2026-09-24 09:30 UTC] Delivery App RFC: Harden OTP Exposure in Rider Order Payloads (Filed to Backend AI) [delivery-man] [AI]
 * **Finding (verified, backend read-only):** `backend/vmarket-web/app/Models/Order.php` L105-106 keep `verification_code` + `pickup_verification_code` in `$fillable` with **no `$hidden`**. Delivery endpoints JSON-serialize the bare `Order` model (`current-orders` L81, `all-orders` L423, `order-details` L361 `toArray`, `search` L538, `getOrderItem` L436), shipping the customer's 6-digit delivery OTP and vendor pickup code to the rider app. Defeats Spec §18/§19 POD OTP handshake (rider could self-verify without customer consent).
 * **ACTION — filed ticket `REQ-DELIVERY-20260924-001` (Status `PENDING_BACKEND_REVIEW`, Urgency `HIGH`) in `.agents/sync/INBOX_DELIVERY.md` §2** requesting: add both columns to `Order::$hidden`; keep OTP checks constant-time server-side (`hash_equals`) reading from DB only; confirm vendor/customer code-delivery paths source from DB/server not jailed JSON. Mirrored as `DAPI-006` row in `docs/api/delivery_app_api_requests.md` (`R` ticked).

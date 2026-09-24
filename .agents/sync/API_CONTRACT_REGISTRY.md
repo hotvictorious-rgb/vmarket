@@ -130,19 +130,25 @@ Replaces legacy flat shipping methods. The backend dynamically evaluates origin 
       "fulfillment_options": {
         "delivery": {
           "available": true,
-          "fee": "1500.00",
-          "currency": "NGN",
-          "estimated_delivery_time": "24-48 hours",
-          "lane": {
-            "origin_lga": "Uyo",
-            "destination_lga": "Eket"
+          "fee": 1500.0,
+          "estimated_time": "24-48 hours",
+          "origin_lga": {
+            "id": 48,
+            "name": "Uyo",
+            "state": "Akwa Ibom"
+          },
+          "destination_lga": {
+            "id": 49,
+            "name": "Eket",
+            "state": "Akwa Ibom"
           }
         },
         "pickup": {
           "available": true,
           "pickup_type": "in_shop_inspection",
           "cost": "0.00",
-          "estimated_ready_time": "Immediate / 24 hours"
+          "estimated_ready_time": "Immediate / 24 hours",
+          "available_times": []
         }
       }
     }
@@ -238,6 +244,30 @@ Fulfills delivery orders with two-phase commit:
   ```json
   {
     "redirect_link": "https://checkout.paystack.com/00abcdef..."
+  }
+  ```
+
+### Status Polling / Crash Recovery: `GET /api/v1/checkout/intent/{orderGroupId}/status`
+- **Purpose**: Polled by Customer Mobile App ("Check Again" button) to recover payment state after returning from external Paystack payment without scanning full order history.
+- **Auth**: `auth:api` (Scoped to authenticated customer).
+- **Response `200 OK`**:
+  ```json
+  {
+    "order_group_id": "ORD-GRP-89231849",
+    "intent_status": "pending_payment", // "pending_payment" | "converted" | "expired"
+    "payment_status": "unpaid",          // "unpaid" | "pending" | "paid"
+    "authorization_url": "https://checkout.paystack.com/00abcdef...",
+    "total_amount": "26500.00",
+    "currency": "NGN",
+    "orders": [
+      {
+        "id": 100234,
+        "order_status": "confirmed",
+        "payment_status": "paid",
+        "order_amount": 26500.00,
+        "created_at": "2026-09-24T18:05:00Z"
+      }
+    ]
   }
   ```
 
@@ -472,7 +502,8 @@ Governs instant pickup rewards, loyalty incentives, and order redemption.
 - `GET /api/v1/auth/logout` — Revoke Passport access token.
 
 ### Active Cart Lifecycle
-- `GET /api/v1/cart` — List items in active cart.
+- `GET /api/v1/cart` — List items in active cart (each item also includes backend-calculated `cart_totals: { subtotal, tax, total, currency }`).
+- `GET /api/v1/cart/totals` — Dedicated authoritative endpoint returning server-computed totals `{ item_count, subtotal, tax, total, currency }` for zero-client-math compliance (§12.2).
 - `POST /api/v1/cart/add` — Add item to cart with variant specifications.
 - `PUT /api/v1/cart/update` — Update quantity.
 - `DELETE /api/v1/cart/remove` — Remove single item.

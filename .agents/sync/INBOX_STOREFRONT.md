@@ -57,12 +57,17 @@
 ## 4. Open RFC Tickets from Storefront AI (2026-09-24)
 
 ### [REQ-STOREFRONT-20260924-001] `cashback_earned` in web order-placed payload
-- **Status**: `PENDING_BACKEND_REVIEW`
-- **Urgency**: `LOW`
-- **Context**: Customer app shows a "You earned ₦X Victorious Cashback" badge post-payment; storefront `checkout/complete` + order confirmation have no earn badge. Requesting `cashback_earned {amount, percent}` (nullable) in the web order-placed data so both clients celebrate identically. Backend owns eligibility/math; generic display only, nothing personalized in indexable HTML.
-- **Proposed Web Route / API**: extend existing web order-placed data — backend decides shape.
-- **Required View Data / JSON Payload**:
-  ```json
-  { "cashback_earned": { "amount": "1000.00", "percent": 5 } }
+- **Status**: `FULFILLED`
+- **Resolution**: Backend controller `WebController@getOrderPlaceView` and `@order_placed` now automatically query `CustomerCashbackLedger` for the placed order(s) and pass `$cashback_earned` to `VIEW_FILE_NAMES['order_complete']`.
+- **View Data Payload**:
+  ```php
+  // Available in Blade: $cashback_earned['amount'], $cashback_earned['percent']
+  [
+      'cashback_earned' => [
+          'amount'  => '1000.00',
+          'percent' => 5,
+      ]
+  ]
   ```
+  *(Returns `null` if guest or if order earned zero cashback).*
 

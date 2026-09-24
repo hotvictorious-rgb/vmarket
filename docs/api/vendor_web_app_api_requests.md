@@ -35,11 +35,11 @@
 - **Backend commit:** _pending_ · **Integrated web:** _pending_ · **Integrated app:** _pending_
 
 ### VAPI-002 — Pickup reservation verify / accept / reject (employee-scoped)
-- [x] R · [ ] B · [ ] I
+- [x] R · [x] B · [ ] I
 - **Date:** 2026-09-24 · **Needed by:** Vendor app `features/pickup_reservation/` + Vendor web pickup queue (Verify code, Accept, Reject buttons)
 - **Problem:** Branch 1 must never inspect Branch 2's reservations; OTP is backend-generated/verified.
 - **Suggested:** confirm canonical trio (`verify` / `accept` / `reject`) with employee+branch policy, idempotent accept, rejection releases hold. Both clients show identical states (`pending_inspection → accepted/rejected`).
-- **Backend commit:** _pending_ · **Integrated web:** _pending_ · **Integrated app:** _pending_
+- **Backend commit:** `API_CONTRACT_REGISTRY.md` §4 (`POST /api/v3/seller/pickup-reservations/*`) · **Integrated web:** _pending_ · **Integrated app:** _pending_
 
 ### VAPI-003 — Inventory + 24hr stock-hold visibility (reserved vs available)
 - [x] R · [ ] B · [ ] I
@@ -49,17 +49,17 @@
 - **Backend commit:** _pending_ · **Integrated web:** _pending_ · **Integrated app:** _pending_
 
 ### VAPI-004 — Payout statement (transactions + withdrawal lifecycle)
-- [x] R · [ ] B · [ ] I
+- [x] R · [x] B · [ ] I
 - **Date:** 2026-09-24 · **Needed by:** Vendor app `features/wallet|transaction|bank_info/` + web finance (Withdraw, status, history buttons)
 - **Problem:** balance math + 48-hr cooldown + OTP live in backend; clients must show identical states.
 - **Suggested:** confirm `transactions?status=`, `balance-withdraw`, `close-withdraw-request` shapes + cooldown/OTP errors in `{success:false,code,message}`; NUBAN resolve + KYC status shared by web/app.
-- **Backend commit:** _pending_ · **Integrated web:** _pending_ · **Integrated app:** _pending_
+- **Backend commit:** `API_CONTRACT_REGISTRY.md` §6 (`GET transactions`, `POST balance-withdraw`, `DELETE close-withdraw-request`) · **Integrated web:** _pending_ · **Integrated app:** _pending_
 
 ### VAPI-005 — KYC + bank-change status (single contract for web + app)
-- [x] R · [ ] B · [ ] I
+- [x] R · [x] B · [ ] I
 - **Date:** 2026-09-24 · **Needed by:** Vendor app `features/bank_info/` + web settings (Submit KYC, Resolve account, Send OTP buttons)
 - **Suggested:** one status endpoint consumed by both (`kyc/status` + bank-info state), identical cooldown messaging. No client-side approval logic.
-- **Backend commit:** _pending_ · **Integrated web:** _pending_ · **Integrated app:** _pending_
+- **Backend commit:** `API_CONTRACT_REGISTRY.md` §6 (`GET kyc/status`, `POST kyc/submit`, `GET paystack/banks`, `POST paystack/resolve-account`, `POST bank-info/send-otp`) · **Integrated web:** _pending_ · **Integrated app:** _pending_
 
 ---
 
