@@ -319,7 +319,7 @@ class _MoreScreenState extends State<MoreScreen> with AutomaticKeepAliveClientMi
   Widget _buildCashbackRewardCard(BuildContext context) {
     return Consumer<ProfileController>(
       builder: (context, profile, child) {
-        final double walletBalance = profile.userInfoModel?.walletBalance ?? 0.0;
+        final double loyaltyPoints = profile.userInfoModel?.loyaltyPoint ?? 0.0;
         final bool isLoggedIn = Provider.of<AuthController>(context, listen: false).isLoggedIn();
 
         return Container(
@@ -410,7 +410,7 @@ class _MoreScreenState extends State<MoreScreen> with AutomaticKeepAliveClientMi
                   color: Colors.white.withValues(alpha: 0.8),
                 ),
               ),
-              if (isLoggedIn && walletBalance > 0) ...[
+              if (isLoggedIn && loyaltyPoints > 0) ...[
                 const SizedBox(height: 12),
                 Container(
                   padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
@@ -425,14 +425,14 @@ class _MoreScreenState extends State<MoreScreen> with AutomaticKeepAliveClientMi
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
                       Text(
-                        'Wallet Balance Available',
+                        'Points Balance Available',
                         style: textRegular.copyWith(
                           fontSize: Dimensions.fontSizeSmall,
                           color: Colors.white70,
                         ),
                       ),
                       Text(
-                        '₦${walletBalance.toStringAsFixed(2)}',
+                        '₦${loyaltyPoints.toStringAsFixed(2)}',
                         style: textBold.copyWith(
                           fontSize: Dimensions.fontSizeDefault,
                           color: const Color(0xFFFFD700),

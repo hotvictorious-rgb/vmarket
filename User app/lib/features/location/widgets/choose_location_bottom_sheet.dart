@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter_sixvalley_ecommerce/features/location/controllers/location_controller.dart';
 import 'package:flutter_sixvalley_ecommerce/localization/language_constrants.dart';
 import 'package:flutter_sixvalley_ecommerce/utill/custom_themes.dart';
-import 'package:flutter_sixvalley_ecommerce/utill/dimensions.dart';
 import 'package:provider/provider.dart';
 
 class ChooseLocationBottomSheetWidget extends StatefulWidget {
@@ -43,7 +42,12 @@ class _ChooseLocationBottomSheetWidgetState extends State<ChooseLocationBottomSh
   ];
 
   static const List<String> _quickChips = [
-    'Uyo', 'Eket', 'Ikot Ekpene', 'Oron', 'Abak', 'Ikot Abasi'
+    'Uyo',
+    'Eket',
+    'Ikot Ekpene',
+    'Oron',
+    'Abak',
+    'Ikot Abasi',
   ];
 
   List<Map<String, dynamic>> _filteredLgas = [];
@@ -57,22 +61,25 @@ class _ChooseLocationBottomSheetWidgetState extends State<ChooseLocationBottomSh
     _selectedState = locCtrl.activeStateName;
     _filteredLgas = List.from(_allLgas);
 
-    _searchController.addListener(() {
-      final query = _searchController.text.trim().toLowerCase();
-      setState(() {
-        if (query.isEmpty) {
-          _filteredLgas = List.from(_allLgas);
-        } else {
-          _filteredLgas = _allLgas
-              .where((lga) => lga['name'].toString().toLowerCase().contains(query))
-              .toList();
-        }
-      });
+    _searchController.addListener(_onSearchChanged);
+  }
+
+  void _onSearchChanged() {
+    final query = _searchController.text.trim().toLowerCase();
+    setState(() {
+      if (query.isEmpty) {
+        _filteredLgas = List.from(_allLgas);
+      } else {
+        _filteredLgas = _allLgas
+            .where((lga) => lga['name'].toString().toLowerCase().contains(query))
+            .toList();
+      }
     });
   }
 
   @override
   void dispose() {
+    _searchController.removeListener(_onSearchChanged);
     _searchController.dispose();
     super.dispose();
   }
@@ -83,6 +90,41 @@ class _ChooseLocationBottomSheetWidgetState extends State<ChooseLocationBottomSh
       _selectedLgaId = id;
       _selectedState = state;
     });
+  }
+
+  Widget _buildQuickChip(String chip) {
+    final isSelected = _selectedLga.toLowerCase() == chip.toLowerCase();
+    return Padding(
+      padding: const EdgeInsets.only(right: 8),
+      child: InkWell(
+        onTap: () {
+          final match = _allLgas.firstWhere(
+            (l) => l['name'].toString().toLowerCase() == chip.toLowerCase(),
+            orElse: () => <String, dynamic>{'name': chip, 'id': 142, 'state': 'Akwa Ibom'},
+          );
+          _selectLga(match['name'].toString(), match['id'] as int, match['state'].toString());
+        },
+        borderRadius: BorderRadius.circular(20),
+        child: Container(
+          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
+          decoration: BoxDecoration(
+            color: isSelected ? const Color(0xFF4A148C) : Theme.of(context).cardColor,
+            borderRadius: BorderRadius.circular(20),
+            border: Border.all(
+              color: isSelected ? const Color(0xFFFFD700) : Colors.grey.withValues(alpha: 0.3),
+              width: isSelected ? 1.5 : 1,
+            ),
+          ),
+          child: Text(
+            chip,
+            style: textBold.copyWith(
+              fontSize: 12,
+              color: isSelected ? const Color(0xFFFFD700) : Theme.of(context).textTheme.bodyLarge?.color,
+            ),
+          ),
+        ),
+      ),
+    );
   }
 
   @override
@@ -115,7 +157,7 @@ class _ChooseLocationBottomSheetWidgetState extends State<ChooseLocationBottomSh
           // Header Title
           Text(
             getTranslated('choose_your_location', context) ?? 'Choose your location',
-            style: titleBold.copyWith(
+            style: titilliumBold.copyWith(
               fontSize: 18,
               color: Theme.of(context).textTheme.bodyLarge?.color,
             ),
@@ -137,7 +179,7 @@ class _ChooseLocationBottomSheetWidgetState extends State<ChooseLocationBottomSh
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
             decoration: BoxDecoration(
-              color: const Color(0xFFF3E8FF), // Light purple tint
+              color: const Color(0xFFF3E8FF),
               borderRadius: BorderRadius.circular(12),
               border: Border.all(color: const Color(0xFFD8B4FE)),
             ),
@@ -193,46 +235,7 @@ class _ChooseLocationBottomSheetWidgetState extends State<ChooseLocationBottomSh
           SingleChildScrollView(
             scrollDirection: Axis.horizontal,
             child: Row(
-              children: _quickChips.map((chip) {
-                final isSelected = _selectedLga.toLowerCase() == chip.toLowerCase();
-                return Padding(
-                  padding: const EdgeInsets.only(right: 8),
-                  child: InkWell(
-                    onTap: () {
-                      final match = _allLgas.firstWhere(
-                        (l) => l['name'].toString().toLowerCase() == chip.toLowerCase(),
-                        orElse: () => {'name': chip, 'id': 142, 'state': 'Akwa Ibom'},
-                      );
-                      _selectLga(match['name'], match['id'], match['state']);
-                    },
-                    borderRadius: BorderRadius.circular(20),
-                    child: Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
-                      decoration: BoxDecoration(
-                        color: isSelected
-                            ? const Color(0xFF4A148C)
-                            : Theme.of(context).cardColor,
-                        borderRadius: BorderRadius.circular(20),
-                        border: Border.all(
-                          color: isSelected
-                              ? const Color(0xFFFFD700)
-                              : Colors.grey.withValues(alpha: 0.3),
-                          width: isSelected ? 1.5 : 1,
-                        ),
-                      ),
-                      child: Text(
-                        chip,
-                        style: textBold.copyWith(
-                          fontSize: 12,
-                          color: isSelected
-                              ? const Color(0xFFFFD700)
-                              : Theme.of(context).textTheme.bodyLarge?.color,
-                        ),
-                      ),
-                    ),
-                  );
-                }).toList(),
-              ),
+              children: _quickChips.map(_buildQuickChip).toList(),
             ),
           ),
           const SizedBox(height: 14),

@@ -114,7 +114,7 @@ class _PickupPaymentScreenState extends State<PickupPaymentScreen> {
             builder: (_) => DigitalPaymentOrderPlaceScreen(
               paymentUrl: data['authorization_url'],
               isPickupPayment: true,
-              reservationCode: widget.reservation.reservationCode,
+              reservationCode: widget.reservation.reservationCode ?? '',
             ),
           ),
         );
@@ -566,6 +566,8 @@ class _PickupPaymentScreenState extends State<PickupPaymentScreen> {
                 ),
               ),
             ],
+          );
+            },
           );
         },
       ),
