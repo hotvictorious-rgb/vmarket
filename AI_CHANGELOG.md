@@ -13,6 +13,11 @@
   - Marked all tickets in `INBOX_USER_APP.md`, `INBOX_STOREFRONT.md`, and `INBOX_DELIVERY.md` as `FULFILLED`.
   - Ticked off verified backend capabilities in `docs/api/vendor_web_app_api_requests.md` (`VAPI-002`, `004`, `005`) and `docs/api/delivery_app_api_requests.md` (`DAPI-003`, `005`, `006`).
 
+### [2026-09-24 09:45 UTC] DAPI-006 Closed: Backend OTP Hardening Confirmed & Tracker Finalized [delivery-man] [AI]
+* **Backend fulfilled `REQ-DELIVERY-20260924-001` (`9f83f347` + governance `422fd020`):** `Order::$hidden` now covers `verification_code` + `pickup_verification_code` (Order.php L167-169); `verify_order_delivery_otp` reads DB attribute constant-time; customer tracking unhides via `v1/OrderController.php:90` gated to verified owner (customer_id match / constant-time guest token / exact-phone fallback), non-owners stripped of PII. Verified via source inspection.
+* **Delivery app integration:** N/A — app is server-OTP-only; no parser change required. Marked `DAPI-006` `[x] I (N/A)` in `docs/api/delivery_app_api_requests.md` so no stale pending work remains.
+* No `Delivery Man App/` code changed; backend untouched by Delivery AI.
+
 ### [2026-09-24 09:30 UTC] Delivery App RFC: Harden OTP Exposure in Rider Order Payloads (Filed to Backend AI) [delivery-man] [AI]
 * **Finding (verified, backend read-only):** `backend/vmarket-web/app/Models/Order.php` L105-106 keep `verification_code` + `pickup_verification_code` in `$fillable` with **no `$hidden`**. Delivery endpoints JSON-serialize the bare `Order` model (`current-orders` L81, `all-orders` L423, `order-details` L361 `toArray`, `search` L538, `getOrderItem` L436), shipping the customer's 6-digit delivery OTP and vendor pickup code to the rider app. Defeats Spec §18/§19 POD OTP handshake (rider could self-verify without customer consent).
 * **ACTION — filed ticket `REQ-DELIVERY-20260924-001` (Status `PENDING_BACKEND_REVIEW`, Urgency `HIGH`) in `.agents/sync/INBOX_DELIVERY.md` §2** requesting: add both columns to `Order::$hidden`; keep OTP checks constant-time server-side (`hash_equals`) reading from DB only; confirm vendor/customer code-delivery paths source from DB/server not jailed JSON. Mirrored as `DAPI-006` row in `docs/api/delivery_app_api_requests.md` (`R` ticked).

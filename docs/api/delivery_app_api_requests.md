@@ -63,11 +63,11 @@
 - **Backend commit:** `API_CONTRACT_REGISTRY.md` §5 (`PUT /api/v2/delivery-man/is-online`, `PUT /api/v2/delivery-man/update-fcm-token`, `PUT /api/v2/delivery-man/order-update-is-pause`) · **Integrated in:** _pending_
 
 ### DAPI-006 — Hide `verification_code` / `pickup_verification_code` from rider order payloads (security hardening, Backend AI)
-- [x] R · [x] B · [ ] I
+- [x] R · [x] B · [x] I (N/A — no app change required)
 - **Date:** 2026-09-24 · **Needed by:** POD §18/§19 integrity — rider must NOT see the customer 6-digit OTP or vendor pickup code
 - **Problem:** bare `Order` Eloquent serialization in delivery-man endpoints ships both OTP columns (`Order.php` `$fillable` L105-106, no `$hidden`) → rider can self-verify delivery without customer consent.
 - **Request:** add the two columns to `Order::$hidden`; verify OTPs only via server-side constant-time checks (`hash_equals`); confirm vendor/seller + customer code-delivery paths still source from DB/server, not jailed JSON. Full ticket: `REQ-DELIVERY-20260924-001` in `.agents/sync/INBOX_DELIVERY.md` §2.
-- **Backend commit:** `app/Models/Order.php` (`$hidden = ['verification_code', 'pickup_verification_code']`) · **Integrated in:** _pending_
+- **Backend commit:** `app/Models/Order.php` (`$hidden = ['verification_code', 'pickup_verification_code']`) · **Integrated:** no client change — app is server-OTP-only; verified live via `verify_order_delivery_otp` reading DB constant-time.
 
 ---
 
