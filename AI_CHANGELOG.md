@@ -1,3 +1,11 @@
+### [2026-09-24 05:52 UTC] Backend Built-In Server Static Asset Router Patch [backend] [AI]
+* **1. Server Router Asset Resolution Fix (`backend/vmarket-web/server.php`):**
+  - Resolved unstyled storefront caused by PHP built-in web server failing to locate assets under `/themes/.../public/...` when document root is set to the project root.
+  - Added robust static asset resolution that directly streams CSS, JS, image, font, and audio assets with accurate MIME types and cache headers.
+* **2. Verification:**
+  - Verified `HTTP 200 OK` on `vmarket.css` (81KB), `bootstrap.min.css` (257KB), `bootstrap-icons.min.css` (103KB), `vmarket.js` (18KB), and `vm_icon.jpg` (363KB).
+  - Storefront stylesheets and UI themes now render styled.
+
 ### [2026-09-24 05:25 UTC] Backend Spec Alignment & Legacy Duplicate Cleanup [backend] [AI]
 * **1. Dead & Duplicate Shipping Engine Removal:**
   - Removed dead unrouted controller `app/Http/Controllers/RestAPI/v1/ShippingMethodController.php` (zero callers, replaced by directional `DeliveryLane` and `FulfillmentAvailabilityService`).
