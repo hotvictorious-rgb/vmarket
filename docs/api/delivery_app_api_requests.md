@@ -62,6 +62,13 @@
 - **Suggested:** confirm `is-online`, `update-fcm-token`, pause/resume semantics + suspended/blocked error codes the app can render.
 - **Backend commit:** _pending_ · **Integrated in:** _pending_
 
+### DAPI-006 — Hide `verification_code` / `pickup_verification_code` from rider order payloads (security hardening, Backend AI)
+- [x] R · [ ] B · [ ] I
+- **Date:** 2026-09-24 · **Needed by:** POD §18/§19 integrity — rider must NOT see the customer 6-digit OTP or vendor pickup code
+- **Problem:** bare `Order` Eloquent serialization in delivery-man endpoints ships both OTP columns (`Order.php` `$fillable` L105-106, no `$hidden`) → rider can self-verify delivery without customer consent.
+- **Request:** add the two columns to `Order::$hidden`; verify OTPs only via server-side constant-time checks (`hash_equals`); confirm vendor/seller + customer code-delivery paths still source from DB/server, not jailed JSON. Full ticket: `REQ-DELIVERY-20260924-001` in `.agents/sync/INBOX_DELIVERY.md` §2.
+- **Backend commit:** _pending_ · **Integrated in:** _pending_
+
 ---
 
 ## 3. Delivery frontend fix backlog (no API needed)
