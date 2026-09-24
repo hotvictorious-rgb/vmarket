@@ -1,0 +1,33 @@
+name: Victorious MARKET AI Engineering Gate
+
+on:
+  push:
+    branches: [ "main", "feature/*", "hotfix/*", "ai*/*" ]
+  pull_request:
+    branches: [ "main" ]
+
+jobs:
+  governance-gate:
+    name: Verify AI Governance & Path Scope
+    runs-on: windows-latest
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Setup PHP Environment
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.4'
+          extensions: mbstring, xml, ctype, iconv, intl, pdo, pdo_mysql, bcmath, curl
+          coverage: none
+
+      - name: Validate Ticket Lifecycle & State Parity
+        run: powershell -ExecutionPolicy Bypass -NoProfile -File scripts/release/validate-tickets.ps1
+
+      - name: Validate Documentation Parity
+        run: powershell -ExecutionPolicy Bypass -NoProfile -File scripts/release/validate-docs.ps1
+
+      - name: Generate Status & Metrics
+        run: powershell -ExecutionPolicy Bypass -NoProfile -File scripts/release/generate-status.ps1

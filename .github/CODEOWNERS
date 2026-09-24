@@ -1,0 +1,39 @@
+# Victorious MARKET — Authoritative Code Ownership Rules
+# Part of Victorious MARKET Multi-AI Engineering Control System Specification v3 (§4.1, §4.2, §31)
+
+# Control Zone (Human Owner Only - Strict Enforcement)
+/.ai/BUSINESS_RULES.md          @hotvictorious
+/.ai/DATABASE_RULES.md          @hotvictorious
+/.ai/SECURITY_RULES.md          @hotvictorious
+/.ai/TESTING_RULES.md           @hotvictorious
+/.ai/RELEASE_RULES.md           @hotvictorious
+/.ai/DESIGN_RULES.md            @hotvictorious
+/.ai/LOCALIZATION.md            @hotvictorious
+/.ai/SCOPE.md                   @hotvictorious
+/.ai/GATED_AREAS.md             @hotvictorious
+/.ai/LEGACY_DEBT.md             @hotvictorious
+/.ai/DATA_INVENTORY.md          @hotvictorious
+/.ai/agents/                    @hotvictorious
+/.ai/templates/                 @hotvictorious
+/.ai/schemas/                   @hotvictorious
+/.ai/runbooks/                  @hotvictorious
+/scripts/                       @hotvictorious
+/.github/                       @hotvictorious
+/CODEOWNERS                     @hotvictorious
+
+# Application Subsystems (Assigned Implementation Roles)
+/backend/vmarket-web/           @AI-1-Backend
+/User app/                      @AI-2-Customer
+/Vendor app/                    @AI-3-Vendor
+/Delivery Man App/              @AI-4-Operations
+
+# Reviews (Assigned Independent Reviewers)
+/.ai/reviews/customer/          @AI-5-Customer-Reviewer
+/.ai/reviews/vendor/            @AI-6-Vendor-Reviewer
+/.ai/reviews/operations/        @AI-7-Operations-Reviewer
+
+# Tickets & Releases (Coordinator Role)
+/.ai/tickets/                   @AI-8-Coordinator
+/.ai/releases/                  @AI-8-Coordinator
+/.ai/decisions/                 @AI-8-Coordinator
+/.ai/incidents/                 @AI-8-Coordinator
