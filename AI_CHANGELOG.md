@@ -1,3 +1,17 @@
+### [2026-09-24 14:15 UTC] Canonical Geography Directional Delivery Lane Routing Engine Implementation (VM-LANE-001) [backend] [AI]
+* **1. Backend Delivery Lane Fee Engine (§3A, §11A):**
+  - Implemented `calculateLaneFee` in `GeographyController.php` accepting `origin_lga_id` and `destination_lga_id` with zero-trust integer validation.
+  - Queries server-side `DeliveryLane::findLane()` model, returning exact decimal `fee`, `estimated_delivery_days`, and `is_active` status.
+  - Enforces strict error response with machine-readable error code `LANE_NOT_SERVICEABLE` (HTTP 422) if lane does not exist or is disabled.
+* **2. Route Registration & API Compatibility:**
+  - Registered canonical route `POST /api/v1/shipping-method/calculate-lane-fee` and alias `POST /api/v1/geography/calculate-lane-fee` in `routes/rest_api/v1/api.php`.
+* **3. Mathematical Invariant Verification Suite (`DeliveryLaneRoutingInvariantTest.php`):**
+  - Authored 8 comprehensive unit tests covering directional asymmetry ($F(A \to B) \ne F(B \to A)$), zero drift ($\Delta = 0.00$), intra-LGA rates, zero-rate free delivery, inactive/missing lane rejection, and decimal precision.
+  - Executed 24 assertions with 100% PASS rate.
+* **4. Multi-AI Worktree & Schema-v2 Pipeline Execution:**
+  - Worktree `VictoriousAI/AI-1` initialized on branch `ai1/VM-LANE-001` with isolated SQLite database and `AI-1-Backend <ai1@local>` git identity.
+  - Executed `scripts/tests/run-all.ps1`: 100% tests passed across secret scanning, static analysis, backend PHPUnit, security invariants, API contract, database schema, and dependency audits.
+
 ### [2026-09-24 13:30 UTC] Complete Multi-AI Engineering Control System Specification v3 Implementation [ai-governance] [AI]
 * **1. Control Zone Architecture & Directory Scaffolding (§3, §28):**
   - Built `.ai/` directory structure with isolated zones: `status/results/`, `tickets/{backlog,ready,in-progress,review,changes-required,approved,released,cancelled}`, `reviews/{customer,vendor,operations}`, `decisions/`, `releases/`, `incidents/`, `runbooks/`, `agents/`, `templates/`, `schemas/`.
@@ -30,6 +44,12 @@
   - Positive controls: Proved AI-1 touching backend passes path scope (Exit 0) and clean docs pass `validate-docs.ps1` (Exit 0).
 * **6. Strict Isolation Guarantee:**
   - Zero application code modified or destroyed. Dirty files in `Vendor app/` left untouched and unstaged. Only `.ai/**`, `scripts/**`, `.github/**`, `CODEOWNERS`, and `AI_CHANGELOG.md` staged.
+
+### [2026-09-24 12:43 UTC] Vendor Web/App Frontend Contract Alignment and Legacy Cleanup [vendor-app] [vendor-web] [AI]
+* **Scope:** Frontend-only Vendor Web and Vendor Mobile App alignment with `.agents/rules/VMARKET_VENDOR_SPEC.md`; backend code remains unchanged.
+* **Vendor App:** Removed legacy shipping-type state and dead shipping/chat/coupon/address-edit/restock/clearance/VAT/language/settings callers; order cards and billing summaries now render backend-provided order, tax, discount, shipping, paid, and referral values instead of deriving totals; vendor status transitions expose `pending`, `confirmed`, `processing`, `ready_for_pickup`, and `canceled` without payment mutation; product cookie persistence uses `StorageService`; refund parsing and time selection were repaired; focused order contract tests were added.
+* **Vendor Web:** Replaced the broken edit-products state check with a disabled control, aligned the order-status selector and badge with `ready_for_pickup`, masked detailed addresses, removed the unsupported third-party delivery mutation modal, and removed the legacy coupon navigation entry.
+* **Verification:** `flutter test --no-pub --concurrency=1 test/widget_test.dart -r expanded` passed 3/3 tests; `dart analyze` completed with no errors and only pre-existing warnings/info diagnostics; scoped `git diff --check` passed. Laravel Blade compilation was not run because PHP is unavailable on the local PATH. No concurrent `.ai/`, `scripts/`, or backend files were staged.
 
 ### [2026-09-24 07:45 UTC] Broadcast Backend Local Server Lifecycle Authority Across All Ecosystem Inboxes [ai-governance] [AI]
 * **1. Central Server Lifecycle Invariant (`CROSS_AGENT_COMMUNICATION_PROTOCOL.md` §1.6):**

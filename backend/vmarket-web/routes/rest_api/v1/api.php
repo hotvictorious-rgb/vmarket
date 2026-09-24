@@ -240,8 +240,19 @@ Route::group(['prefix' => 'v1', 'middleware' => ['api_lang']], function () {
         Route::group(['prefix' => 'geography'], function () {
             Route::controller(GeographyController::class)->group(function () {
                 Route::get('countries', 'getCountries');
-                Route::get('states/{country_id}', 'getStates');
-                Route::get('lgas/{state_id}', 'getLgas');
+                Route::get('states/{country_id?}', 'getStates');
+                Route::get('lgas/{state_id?}', 'getLgas');
+                Route::post('calculate-lane-fee', 'calculateLaneFee');
+            });
+        });
+
+        // [AI] Shipping Method Canonical Geography & Lane Fee Aliases
+        Route::group(['prefix' => 'shipping-method'], function () {
+            Route::controller(GeographyController::class)->group(function () {
+                Route::get('countries', 'getCountries');
+                Route::get('states/{country_id?}', 'getStates');
+                Route::get('lgas/{state_id?}', 'getLgas');
+                Route::post('calculate-lane-fee', 'calculateLaneFee');
             });
         });
 
