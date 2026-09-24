@@ -19,8 +19,10 @@ Before taking ANY action, every AI **MUST** read:
 13. `.agents/rules/VMARKET_DELIVERY_APP_SPEC.md` — The 31-section canonical production contract for Delivery Rider Mobile App ↔ Backend.
 14. `.agents/rules/VMARKET_STOREFRONT_SPEC.md` — The canonical production specification for the VMarket Public Storefront (SEO/discovery layer). Governs Core Web Vitals, structured data, sitemap, Google Merchant Center sync, and backend-data authority.
 15. `.agents/rules/VMARKET_BACKEND_SPEC.md` — The master backend reference blueprint (Full Production Architecture: 54 sections). Backend is the Single Source of Truth (SSOT) and central operating system.
+16. `.agents/sync/CROSS_AGENT_COMMUNICATION_PROTOCOL.md` — The multi-agent communication protocol and request lifecycle across all 6 platform actors.
+17. `.agents/sync/API_CONTRACT_REGISTRY.md` — The authoritative living dictionary of frozen API schemas and endpoint contracts.
 
-**MANDATORY RULE FOR ALL AIs**: All AIs working on Victorious MARKET must strictly follow all 6 canonical production specifications (`VMARKET_BACKEND_SPEC.md`, `VMARKET_CUSTOMER_APP_SPEC.md`, `VMARKET_ADMIN_PANEL_SPEC.md`, `VMARKET_VENDOR_SPEC.md`, `VMARKET_DELIVERY_APP_SPEC.md`, `VMARKET_STOREFRONT_SPEC.md`) without exception. No AI is permitted to bypass, override, or alter these specification rules under any circumstances.
+**MANDATORY RULE FOR ALL AIs**: All AIs working on Victorious MARKET must strictly follow all 6 canonical production specifications (`VMARKET_BACKEND_SPEC.md`, `VMARKET_CUSTOMER_APP_SPEC.md`, `VMARKET_ADMIN_PANEL_SPEC.md`, `VMARKET_VENDOR_SPEC.md`, `VMARKET_DELIVERY_APP_SPEC.md`, `VMARKET_STOREFRONT_SPEC.md`) and the multi-agent communication protocol (`CROSS_AGENT_COMMUNICATION_PROTOCOL.md`) without exception. No AI is permitted to bypass, override, or alter these specification rules under any circumstances.
 
 ## 1. Golden Rule: Read Before Writing
 Before making ANY changes to this codebase, you MUST:
@@ -198,3 +200,18 @@ Never delete code aggressively based on filenames or assumptions. Follow this di
 ### E. Continuous Per-Phase Cleanup
 Cleanup is mandatory in **every** phase, not deferred to the end:
 $$\text{Build} \longrightarrow \text{Integrate} \longrightarrow \text{Test} \longrightarrow \text{Migrate} \longrightarrow \text{Remove Obsolete Code} \longrightarrow \text{Document} \longrightarrow \text{Git Commit}$$
+
+## 12. Multi-Agent Concurrent Communication Protocol (Hub-and-Spoke Governance) 📡
+
+To allow multiple AI agents to work concurrently and independently across all platform clients (Customer App, Storefront, Vendor Web/App, Delivery App, Admin Panel) without breaking business logic:
+
+1. **Backend as Protocol Hub**: The Backend AI is the sole protocol authority and Single Source of Truth (SSOT).
+2. **Strict Prohibition of Client-Side Business Math**: Frontend AIs must never implement fee calculations, pricing formulas, discount logic, commission cuts, or cryptographic OTP generation in client code.
+3. **Dedicated Actor Inboxes**: Every platform client communicates through its designated mailbox in `.agents/sync/`:
+   - `INBOX_USER_APP.md` (Customer App)
+   - `INBOX_STOREFRONT.md` (Web Storefront)
+   - `INBOX_VENDOR.md` (Vendor Web & Mobile App)
+   - `INBOX_DELIVERY.md` (Delivery Rider App)
+   - `INBOX_ADMIN.md` (Admin Control Center)
+4. **Authoritative Contract Registry**: All live, verified backend routes and JSON schemas are maintained in `.agents/sync/API_CONTRACT_REGISTRY.md`. Frontend AIs must consume these exact contracts and must never hallucinate unverified endpoints or JSON keys.
+5. **The 4-Step RFC Flow**: When a frontend AI needs an endpoint or field, it must post a structured Request Ticket in its inbox, await Backend AI fulfillment and schema registration, and only then bind the client UI. Full details are governed by `.agents/sync/CROSS_AGENT_COMMUNICATION_PROTOCOL.md`.

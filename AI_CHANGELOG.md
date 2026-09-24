@@ -1,3 +1,10 @@
+### [2026-09-24 06:05 UTC] Multi-Agent Concurrent Communication Protocol & Contract Hub [ai-governance] [AI]
+* **1. Cross-Agent Governance Infrastructure (`.agents/sync/`):**
+  - Created `CROSS_AGENT_COMMUNICATION_PROTOCOL.md`: Formal Hub-and-Spoke coordination protocol where Backend AI acts as central SSOT authority and gatekeeper for all 5 client actors.
+  - Created `API_CONTRACT_REGISTRY.md`: Authoritative living dictionary of live, frozen backend API contracts (geography, fulfillment, checkout intent, pickup two-code protocol, cashback ledger, proof of delivery).
+  - Established dedicated asynchronous mailboxes: `INBOX_USER_APP.md`, `INBOX_STOREFRONT.md`, `INBOX_VENDOR.md`, `INBOX_DELIVERY.md`, and `INBOX_ADMIN.md`.
+  - Added Section 12 to `.agents/AGENTS.md` enforcing the 4-step RFC ticket lifecycle for all concurrent AI agents.
+
 ### [2026-09-24 05:52 UTC] Backend Built-In Server Static Asset Router Patch [backend] [AI]
 * **1. Server Router Asset Resolution Fix (`backend/vmarket-web/server.php`):**
   - Resolved unstyled storefront caused by PHP built-in web server failing to locate assets under `/themes/.../public/...` when document root is set to the project root.
