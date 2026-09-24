@@ -6,6 +6,8 @@
 *.zip
 *.tar.gz
 scratch/
+.opencode/
+opencode.json
 
 # Flutter / Dart
 build/
