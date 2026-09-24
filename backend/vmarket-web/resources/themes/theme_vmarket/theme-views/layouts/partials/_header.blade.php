@@ -15,12 +15,7 @@
             <a href="{{ route('vendors') }}">{{ translate('Verified Merchants') }}</a>
             <span>•</span>
             <a href="{{ route('contacts') }}">{{ translate('Help & Support') }}</a>
-            @if(!$customer)
-                <span>•</span>
-                <a href="javascript:" data-bs-toggle="modal" data-bs-target="#loginModal">{{ translate('Sign In') }}</a>
-                <span>•</span>
-                <a href="javascript:" data-bs-toggle="modal" data-bs-target="#registerModal" style="color: var(--vm-gold); font-weight: 700;">{{ translate('Register') }}</a>
-            @endif
+            {{-- [AI] Single auth entry: header action buttons below are the one Sign In + one Register. Top-bar duplicates removed. --}}
         </div>
     </div>
 </div>

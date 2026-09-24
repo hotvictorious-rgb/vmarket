@@ -17,19 +17,25 @@ if (!$customerOTPLogin && $customerManualLogin && $customerSocialLogin) {
 ?>
 <div class="modal fade max-z-index-for-auth-modal" id="loginModal" tabindex="-1" aria-hidden="true">
     <div class="modal-dialog modal-dialog-centered {{ $multiColumn ? 'modal-lg' : '' }}">
-        <div class="modal-content">
+        {{-- [AI] Premium Victorious auth skin: cosmetic only, all routes/ids/names unchanged. --}}
+        <div class="modal-content vm-auth-modal">
+            <div class="vm-auth-crown">
+                <span class="vm-auth-crown-badge">👑 Victorious MARKET</span>
+                <h3>{{ translate('Welcome Back') }}</h3>
+                <p>{{ translate('Seamless Shopping, Swift Logistics') }}</p>
+            </div>
             <div class="modal-header border-0 pb-0">
                 <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
             <div class="modal-body px-4 px-sm-5">
-                <div class="mb-4 text-center d-flex justify-content-center align-items-center" style="height: 60px;">
-                    <img alt="logo" class="dark-support" style="max-height: 100%; max-width: 200px; width: auto; height: auto; object-fit: contain;"
+                <div class="vm-auth-logo-ring">
+                    <img alt="logo" class="dark-support"
                         src="{{ getStorageImages(path: $web_config['web_logo'], type: 'logo') }}">
                 </div>
 
-                <div class="mb-4">
-                    <h2 class="mb-2">{{ translate('login') }}</h2>
-                    <p class="text-muted">
+                <div class="mb-4 text-center">
+                    <h2 class="mb-2 fw-bold">{{ translate('login') }}</h2>
+                    <p class="text-muted vm-auth-switch" style="text-align:center;">
                         {{ translate('login_to_your_account.') }}
                         @if ($customerManualLogin)
                             {{ translate('do_not_have_account') . '?' }}
@@ -206,6 +212,13 @@ if (!$customerOTPLogin && $customerManualLogin && $customerSocialLogin) {
                             </div>
                         </div>
                     @endif
+                </div>
+
+                {{-- [AI] Trust row: display only, no logic. --}}
+                <div class="vm-auth-trust">
+                    <span>🔒 {{ translate('Secure Sign In') }}</span>
+                    <span>⚡ {{ translate('Swift Logistics') }}</span>
+                    <span>👑 {{ translate('Verified Merchants') }}</span>
                 </div>
 
             </div>

@@ -1,17 +1,23 @@
 <div class="modal fade max-z-index-for-auth-modal" id="registerModal" tabindex="-1" aria-hidden="true">
     <div class="modal-dialog modal-lg modal-dialog-centered">
-        <div class="modal-content">
+        {{-- [AI] Premium Victorious auth skin: cosmetic only, all routes/ids/names/JS hooks unchanged. --}}
+        <div class="modal-content vm-auth-modal">
+            <div class="vm-auth-crown">
+                <span class="vm-auth-crown-badge">👑 Victorious MARKET</span>
+                <h3>{{ translate('Join the Marketplace') }}</h3>
+                <p>{{ translate('Seamless Shopping, Swift Logistics') }}</p>
+            </div>
             <div class="modal-header border-0 pb-0">
                 <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
             <div class="modal-body px-4 px-lg-5">
-                <div class="mb-4 text-center d-flex justify-content-center align-items-center" style="height: 60px;">
-                    <img alt="logo" class="dark-support" style="max-height: 100%; max-width: 200px; width: auto; height: auto; object-fit: contain;"
+                <div class="vm-auth-logo-ring">
+                    <img alt="logo" class="dark-support"
                          src="{{ getStorageImages(path: $web_config['web_logo'], type: 'logo') }}">
                 </div>
-                <div class="mb-4">
-                    <h2 class="mb-2">{{ translate('sign_up') }}</h2>
-                    <p class="text-muted">
+                <div class="mb-4 text-center">
+                    <h2 class="mb-2 fw-bold">{{ translate('sign_up') }}</h2>
+                    <p class="text-muted vm-auth-switch" style="text-align:center;">
                         {{ translate('login_to_your_account.') }} {{ translate('Do_n’t_have_account') }}?
                         <span class="text-primary link-hover-base fw-bold" data-bs-toggle="modal" data-bs-target="#loginModal">
                             {{ translate('login') }}
@@ -141,10 +147,17 @@
                     </div>
 
                     <div class="d-flex justify-content-center mt-4 mb-3">
-                        <button type="submit" id="customer-sign-up-btn" class="btn btn-primary px-5 text-capitalize"
+                        <button type="submit" id="customer-sign-up-btn" class="btn btn-primary px-5 text-capitalize vm-auth-submit"
                                 disabled>{{ translate('sign_up') }}</button>
                     </div>
                 </form>
+
+                {{-- [AI] Trust row: display only, no logic. --}}
+                <div class="vm-auth-trust">
+                    <span>🔒 {{ translate('Secure Registration') }}</span>
+                    <span>⚡ {{ translate('Swift Logistics') }}</span>
+                    <span>👑 {{ translate('Verified Merchants') }}</span>
+                </div>
 
                 @if ($web_config['social_login_text'])
                     <p class="text-center text-muted">{{ translate('or_continue_with') }}</p>
