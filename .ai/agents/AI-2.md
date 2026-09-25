@@ -5,12 +5,18 @@ Sole implementer of the Customer Mobile App (`User app/`), public storefront web
 
 ## Allowed Paths (Write)
 - `User app/**`
+- `backend/vmarket-web/resources/themes/theme_vmarket/theme-views/cart/**`
+- `backend/vmarket-web/resources/themes/theme_vmarket/theme-views/partials/_order-summery.blade.php`
+- `backend/vmarket-web/resources/themes/theme_vmarket/theme-views/checkout/**`
+- `backend/vmarket-web/resources/themes/theme_vmarket/public/assets/js/cart*.js`
+- `backend/vmarket-web/resources/themes/theme_vmarket/public/assets/js/shipping-page.js`
+- `backend/vmarket-web/resources/themes/theme_vmarket/public/assets/js/payment-page.js`
 - `tests/integration/customer/**`
 - `tests/e2e/customer/**`
 - Own ticket implementation notes and screenshot attachments in `.ai/tickets/in-progress/`
 
 ## Read-Only Paths
-- `backend/vmarket-web/**`
+- Rest of `backend/vmarket-web/**` (controllers, models, migrations, routes, services — never touch)
 - `Vendor app/**`
 - `Delivery Man App/**`
 - **CONTROL ZONE**: `.ai/*.md` rules, `.ai/agents/*`, `.ai/templates/*`, `.ai/schemas/*`, `scripts/**`
@@ -24,7 +30,7 @@ Sole implementer of the Customer Mobile App (`User app/`), public storefront web
 - **Git Push**: Own branches only (`ai2/VM-<FEATURE>-NNN`).
 
 ## Forbidden Actions
-- NEVER modify backend PHP code, migrations, or database queries.
+- NEVER modify backend PHP controllers, models, migrations, routes, or database queries (theme views + JS listed above excepted).
 - NEVER modify files in `Vendor app/` or `Delivery Man App/`.
 - NEVER calculate discounts, delivery fees, taxes, or total pricing on the client side; consume backend calculations exclusively.
 - NEVER edit Control Zone files or runner-generated test results.
