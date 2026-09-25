@@ -90,9 +90,12 @@ foreach ($file in $StagedFiles) {
                 $Violations += "AI-1 is FORBIDDEN from touching Flutter applications: $file"
             }
         }
+
+
         "AI-2" {
-            # Customer AI: cannot touch backend or other apps
-            if ($file -match "^backend/" -or $file -match "^Vendor app/" -or $file -match "^Delivery Man App/") {
+            # Customer AI: storefront views/JS per charter DECISION-006; everything else forbidden
+            $Ai2ThemeAllow = "^backend/vmarket-web/resources/themes/theme_vmarket/theme-views/(cart|checkout)/|^backend/vmarket-web/resources/themes/theme_vmarket/theme-views/partials/_order-summery\.blade\.php$|^backend/vmarket-web/resources/themes/theme_vmarket/public/assets/js/(cart.*\.js|shipping-page\.js|payment-page\.js)$"
+            if (($file -match "^backend/" -or $file -match "^Vendor app/" -or $file -match "^Delivery Man App/") -and -not ($file -match $Ai2ThemeAllow)) {
                 $Violations += "AI-2 is FORBIDDEN from touching backend or other applications: $file"
             }
         }
