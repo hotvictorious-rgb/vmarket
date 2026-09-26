@@ -57,6 +57,20 @@ Human ──requirement──> [REVIEWER: ticket + exact-prompt work order] ─�
 
 ---
 
+## 2b. Transport: git is the mailbox (no copy-paste)
+
+Sessions cannot message each other, so all bulk content moves through the shared remote. The human sends only one-line triggers; everything else travels by fetch:
+
+1. **Reviewer dispatches:** writes the work order in the ticket file, commits, and pushes its metadata branch (`reviewer_ai/workspace`). Rule: no work order exists until it is pushed.
+2. **Worker starts:** on the human's one-line trigger, fetches Reviewer's branch FIRST and reads the work order from the file. Never works from a pasted copy.
+3. **Worker delivers:** pushes its feature branch (`backend/VM-*` / `frontend/VM-*`) with ticket notes included in the commits. DONE = branch name + commit SHA, nothing else.
+4. **Reviewer collects:** on the human's one-line trigger, fetches the feature branch and reads ticket notes, logs, and diff straight out of it (`git show <branch>:<path>`). Never asks for pasted logs.
+5. **Reviewer releases:** verdict in ticket + review file, gate, merge via `merge-release`, push `main`/`v1`, verify the push landed.
+
+Standing convention: push after every write (work order, verdict, DONE notes). Fetch before every read. Pasted content is never authoritative — the branch is.
+
+---
+
 ## 3. Dedicated Communication Channels
 
 All channels reside in `.agents/sync/`:

@@ -49,6 +49,10 @@ Ticket at `BACKEND_DONE`, fulfilled backend contract (OpenAPI + schemas), `VMARK
 - Commits on `frontend/VM-<FEATURE>-NNN`. `flutter analyze` clean where applicable. Loading/error/empty/offline states covered. Change notes in ticket (NOT `AI_CHANGELOG.md` — Reviewer is the single changelog writer).
 - Ticket transitioned to `FRONTEND_DONE` (ready for Reviewer AI). Never self-approve.
 
+## Transport (git is the mailbox — never paste content)
+- Before starting: fetch Reviewer's metadata branch (`reviewer_ai/workspace`) and read your work order from the ticket file. Never work from a pasted copy.
+- On DONE: push your feature branch with ticket notes included. DONE = branch name + commit SHA, nothing else. Reviewer collects by fetching.
+
 ## RFC Flow (need endpoint/field?)
 Append structured REQ to your actor inbox (`INBOX_USER_APP.md`, `INBOX_STOREFRONT.md`, `INBOX_VENDOR.md`, `INBOX_DELIVERY.md`, `INBOX_ADMIN.md`) with `PENDING_BACKEND_REVIEW`. Wait for `FULFILLED` + registry entry before binding UI.
 
