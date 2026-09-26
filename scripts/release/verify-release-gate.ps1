@@ -1,4 +1,4 @@
-# Victorious MARKET -- Hard Release Gate Engine (PowerShell)
+﻿# Victorious MARKET -- Hard Release Gate Engine (PowerShell)
 # Part of Victorious MARKET Multi-AI Engineering Control System Specification v3 (Sections 13.1, 20.2)
 
 param(

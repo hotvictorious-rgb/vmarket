@@ -1,3 +1,10 @@
+### [2026-09-26 06:40 UTC] PowerShell Encoding Fix for All Runners + VM-TEST-001 Filed [ai-governance] [AI]
+* **1. Root cause (not the checkmark):** 4 scripts were UTF-8 without BOM, so PowerShell 5.1 decoded them as Windows-1252. UTF-8 bytes landing on 0x93/0x94 decode to smart quotes that OPEN/CLOSE strings mid-line (`✓` opens, em-dash closes). This crashed `run-backend-tests.ps1` and would have crashed `merge-release.ps1` at release time.
+* **2. Fix:** re-encoded `validate-commit.ps1`, `merge-release.ps1`, `verify-release-gate.ps1`, `run-backend-tests.ps1` as UTF-8 with BOM (zero content change except the earlier `✓` → `[OK]` in 2 files). Full parse check: all scripts under `scripts/` now tokenize with 0 errors.
+* **3. Proof:** `run-backend-tests.ps1` now executes end to end (previously died at parse): reports 2 failed / 9 passed with correct non-zero exit, as designed.
+* **4. Ticket filed:** `.ai/tickets/backlog/VM-TEST-001.md` — seed migrations for sqlite `:memory:` test DB (2 feature suites fail on `no such table: guest_users`; invariants 23/23 + security 21/21 green). Ready for Reviewer dispatch to Backend AI.
+* **5. Verification:** staged + committed only own files; other actors' dirty files untouched.
+
 ### [2026-09-26 06:15 UTC] Per-Role Operating Rules for All 3 AIs [ai-governance] [AI]
 * **1. Backend charters:** contract-before-code, versioned breaking changes, machine-readable error codes, new-migrations-only + expand/contract, per-endpoint money checklist (lock → lockForUpdate → decimals → idempotency), no freelancing beyond the work order.
 * **2. Frontend charters:** display-never-derive, loud failure on contract drift (no silent nulls), 4 states per screen (loading/error/empty/offline), visual evidence attached, no new dependencies without Reviewer sign-off.

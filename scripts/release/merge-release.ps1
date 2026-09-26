@@ -1,4 +1,4 @@
-# Victorious MARKET — Safe Release Merge Executor (PowerShell)
+﻿# Victorious MARKET — Safe Release Merge Executor (PowerShell)
 # Part of Victorious MARKET Multi-AI Engineering Control System Specification v3 (§13.3, §20.3)
 
 param(
@@ -89,6 +89,6 @@ $ManifestContent = $ManifestLines -join "`r`n"
 Set-Content -Path $ManifestPath -Value $ManifestContent -Encoding UTF8
 Write-Host "[+] Created release manifest at: $ManifestPath" -ForegroundColor Green
 
-Write-Host "`n[✓] Release $ReleaseId successfully merged, tagged, and recorded!" -ForegroundColor Green
+Write-Host "`n[OK] Release $ReleaseId successfully merged, tagged, and recorded!" -ForegroundColor Green
 exit 0
 

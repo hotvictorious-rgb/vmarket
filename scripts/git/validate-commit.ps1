@@ -1,4 +1,4 @@
-# Victorious MARKET -- Path Scope & Secret Pre-Commit Validator (PowerShell)
+﻿# Victorious MARKET -- Path Scope & Secret Pre-Commit Validator (PowerShell)
 # Part of Victorious MARKET 3-AI Control System (Human -> Reviewer -> Backend/Frontend -> Reviewer pushes)
 
 param(
