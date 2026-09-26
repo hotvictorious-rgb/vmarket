@@ -2,6 +2,11 @@
 
 namespace Tests\Feature;
 
+// [AI][VM-TEST-001] Explicit require: vendor/ is a junction to a shared
+// checkout, so new test-support classes do not autoload (see
+// DumpSchemaTestCase.php header). Test-harness only.
+require_once __DIR__ . '/DumpSchemaTestCase.php';
+
 use App\Models\DeliveryMan;
 use App\Models\DeliverymanWallet;
 use App\Models\Order;
@@ -15,7 +20,6 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Str;
-use Tests\TestCase;
 
 /**
  * [AI] Comprehensive Delivery Flow & Settlement Lifecycle Test.
@@ -29,7 +33,7 @@ use Tests\TestCase;
  * 6. Rider withdrawable settlement with pessimistic balance invariants.
  * 7. Vendor settlement eligibility post 24-hour return window (Delta = 0.00).
  */
-class DeliveryFlowLifecycleTest extends TestCase
+class DeliveryFlowLifecycleTest extends DumpSchemaTestCase
 {
     public function testCompleteDeliveryFlowLifecycle(): void
     {

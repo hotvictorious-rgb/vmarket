@@ -2,10 +2,12 @@
 
 namespace Tests\Feature;
 
-use Illuminate\Foundation\Testing\RefreshDatabase;
-use Tests\TestCase;
+// [AI][VM-TEST-001] Explicit require: vendor/ is a junction to a shared
+// checkout, so new test-support classes do not autoload (see
+// DumpSchemaTestCase.php header). Test-harness only.
+require_once __DIR__ . '/DumpSchemaTestCase.php';
 
-class ExampleTest extends TestCase
+class ExampleTest extends DumpSchemaTestCase
 {
     /**
      * A basic test example.
