@@ -24,16 +24,11 @@ if (-not (Test-Path $TargetParent)) {
     Write-Host "[+] Created base directory: $TargetParent" -ForegroundColor Green
 }
 
-# Define the 8 roles plus MAIN reference checkout
+# Define the 3 AI roles plus MAIN reference checkout (3-AI Control System)
 $Roles = @(
-    @{ Id = "AI-1"; Name = "AI-1-Backend";            Email = "ai1@local"; Role = "Backend, DB & API";          Port = 8001; Db = "vmarket_test_ai1" },
-    @{ Id = "AI-2"; Name = "AI-2-Customer";           Email = "ai2@local"; Role = "Customer App & Web";         Port = 8002; Db = "vmarket_test_ai2" },
-    @{ Id = "AI-3"; Name = "AI-3-Vendor";             Email = "ai3@local"; Role = "Vendor App & Web";           Port = 8003; Db = "vmarket_test_ai3" },
-    @{ Id = "AI-4"; Name = "AI-4-Operations";         Email = "ai4@local"; Role = "Delivery App & Admin Web";   Port = 8004; Db = "vmarket_test_ai4" },
-    @{ Id = "AI-5"; Name = "AI-5-Customer-Reviewer";  Email = "ai5@local"; Role = "Customer Domain Reviewer";   Port = 8005; Db = "vmarket_test_ai5" },
-    @{ Id = "AI-6"; Name = "AI-6-Vendor-Reviewer";    Email = "ai6@local"; Role = "Vendor Domain Reviewer";     Port = 8006; Db = "vmarket_test_ai6" },
-    @{ Id = "AI-7"; Name = "AI-7-Operations-Reviewer";Email = "ai7@local"; Role = "Operations Domain Reviewer"; Port = 8007; Db = "vmarket_test_ai7" },
-    @{ Id = "AI-8"; Name = "AI-8-Coordinator";        Email = "ai8@local"; Role = "Lead Architect & Gatekeeper";Port = 8008; Db = "vmarket_test_ai8" }
+    @{ Id = "BACKEND_AI";  Name = "Backend-AI";  Email = "backend-ai@local";  Role = "Laravel PHP logic only (never UI)";      Port = 8001; Db = "vmarket_test_backend" },
+    @{ Id = "FRONTEND_AI"; Name = "Frontend-AI"; Email = "frontend-ai@local"; Role = "All UI: Flutter + Blade + assets";       Port = 8002; Db = "vmarket_test_frontend" },
+    @{ Id = "REVIEWER_AI"; Name = "Reviewer-AI"; Email = "reviewer-ai@local"; Role = "Coordinator + gatekeeper + push authority"; Port = 8003; Db = "vmarket_test_reviewer" }
 )
 
 foreach ($r in $Roles) {
@@ -117,6 +112,6 @@ VMARKET_WORKTREE_PORT=$($r.Port)
     }
 }
 
-Write-Host "`n[OK] All 8 AI worktrees successfully configured!" -ForegroundColor Green
+Write-Host "`n[OK] All 3 AI worktrees successfully configured!" -ForegroundColor Green
 Write-Host "Location: $TargetParent" -ForegroundColor Green
 

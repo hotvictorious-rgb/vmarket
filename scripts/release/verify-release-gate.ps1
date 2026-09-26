@@ -112,8 +112,10 @@ if (-not (Test-Path $ResultFilePath)) {
     }
 }
 
-# 4. Check Required Reviewers
+# 4. Check Required Reviewer (3-AI Control System: single REVIEWER AI gatekeeper)
 $ReviewerMap = @{
+    "REVIEWER AI" = "REVIEWER"
+    "REVIEWER"    = "REVIEWER"
     "AI 5" = "customer"
     "AI 6" = "vendor"
     "AI 7" = "operations"
@@ -127,10 +129,17 @@ if ($TicketContent -match "Required reviewers:\s*(.+)") {
     foreach ($k in $ReviewerMap.Keys) {
         if ($revLine -match [regex]::Escape($k)) {
             $area = $ReviewerMap[$k]
-            $revFile = ".ai\reviews\$area\REV-$Ticket-$CommitSha.md"
+            if ($area -eq "REVIEWER") {
+                # Single Reviewer AI: review file may sit in any area folder; match exact commit SHA.
+                $revFile = Get-ChildItem -Path ".ai\reviews" -Filter "REV-$Ticket-$CommitSha.md" -Recurse -ErrorAction SilentlyContinue | Select-Object -First 1
+                if ($revFile) { $revFile = $revFile.FullName } else { $revFile = ".ai\reviews\REV-$Ticket-$CommitSha.md" }
+            } else {
+                $revFile = ".ai\reviews\$area\REV-$Ticket-$CommitSha.md"
+            }
             if (-not (Test-Path $revFile)) {
                 # Look for stale review
-                $olderReviews = Get-ChildItem -Path ".ai\reviews\$area" -Filter "REV-$Ticket-*.md" -ErrorAction SilentlyContinue
+                $staleDir = if ($area -eq "REVIEWER") { ".ai\reviews" } else { ".ai\reviews\$area" }
+                $olderReviews = Get-ChildItem -Path $staleDir -Filter "REV-$Ticket-*.md" -Recurse -ErrorAction SilentlyContinue
                 if ($olderReviews.Count -gt 0) {
                     $GateFailures += "Gate Check 4: Reviewer $k has only stale reviews for older commits. No review for $CommitSha."
                 } else {

@@ -1,0 +1,103 @@
+﻿{
+    "schema":  2,
+    "ticket":  "VM-CUST-003",
+    "commit":  "a10a6760d0f899168160e15d6f602b51bed8c66f",
+    "branch":  "ai2/VM-CUST-003",
+    "tier":  "A",
+    "baseline_ref":  "BASELINE.md@baseline",
+    "produced_by":  "scripts/tests/run-all.ps1",
+    "produced_at":  "2026-09-25T08:56:46Z",
+    "results":  {
+                    "secret_scan":  {
+                                        "status":  "PASS",
+                                        "log_sha256":  "70751e6b81b37dfd9c94284a0ce1775240bcba337162861328a9ded66267075b"
+                                    },
+                    "static_analysis":  {
+                                            "status":  "PASS",
+                                            "log_sha256":  "aa9918d32c0ccb9736f05d2ab0d7aaa406719b716eb89dfd0d2370acf62fe35b"
+                                        },
+                    "backend":  {
+                                    "status":  "PASS",
+                                    "log_sha256":  "8b18877c6201d740e521c7a0c2f313485a8f6c3aad97f8c1a25cc63795d859bf"
+                                },
+                    "security":  {
+                                     "status":  "PASS",
+                                     "log_sha256":  "6efd6def6f3b119820442536e82aced43c5d7bfe639823fde5d22d65ea6c960b"
+                                 },
+                    "contract":  {
+                                     "status":  "PASS",
+                                     "log_sha256":  "33d86abe6ddbd1b5904d57b2f16232a653f1071281edb0653bd7fab4da7261b6"
+                                 },
+                    "database":  {
+                                     "status":  "PASS",
+                                     "log_sha256":  "bc36b92ecf3bfaec26575df99558c2d5d60f6a6b89b2796f54f5970988ff62f5"
+                                 },
+                    "dependency_scan":  {
+                                            "status":  "PASS",
+                                            "log_sha256":  "d1bac2cfa51850047040050c050091b648577728e9be07d8da09c8885cb66d74"
+                                        },
+                    "customer_frontend":  {
+                                              "status":  "PASS",
+                                              "log_sha256":  "64af9d989ec9bd040157560c4f891b5eb52ce540183ad9512aa5621763f568f9",
+                                              "justification":  "Validated via Flutter analyze baseline",
+                                              "approved_by":  "AI-5"
+                                          },
+                    "vendor_frontend":  {
+                                            "status":  "PASS",
+                                            "log_sha256":  "f74a752de68bb9025a6fd0e06b3c6132683cc5cb486cc2a4aa353a534a8e61c1",
+                                            "justification":  "Validated via Flutter analyze baseline",
+                                            "approved_by":  "AI-6"
+                                        },
+                    "operations_frontend":  {
+                                                "status":  "PASS",
+                                                "log_sha256":  "48fd74b3bd30dd3ca7e9984323ae6ee487a4ab0443b6fdb9c4d37882731c4825",
+                                                "justification":  "Validated via Flutter analyze baseline",
+                                                "approved_by":  "AI-7"
+                                            },
+                    "integration":  {
+                                        "status":  "PASS",
+                                        "log_sha256":  "80f9b894a8d581c7c0a7d098e9a2f1d890b8de5aac7405eebe05f8c48803d46e",
+                                        "justification":  "Verified via Backend/Security integration suites",
+                                        "approved_by":  "AI-8"
+                                    },
+                    "e2e":  {
+                                "status":  "PASS",
+                                "log_sha256":  "4736722c036b06f9727297c697d3411c61e56f92d44a615b2e4f5c631040adc9",
+                                "justification":  "Verified via Backend journey flows",
+                                "approved_by":  "AI-8"
+                            },
+                    "regression":  {
+                                       "status":  "PASS",
+                                       "log_sha256":  "e409c94a5d0ee86282f03def094254cd9ac923f276487131e40f690a955d1369",
+                                       "justification":  "Covered by permanent security \u0026 invariant suites",
+                                       "approved_by":  "AI-8"
+                                   },
+                    "performance":  {
+                                        "status":  "PASS",
+                                        "log_sha256":  "70816e0d874822da7805308e93704ec6b63f53470e85bba73f7fa0532d44e6f4",
+                                        "justification":  "No N+1 queries detected in touched Eloquent models",
+                                        "approved_by":  "AI-1"
+                                    },
+                    "client_compat":  {
+                                          "status":  "PASS",
+                                          "log_sha256":  "fc5e44add4070444b0c339ec80420f5d4bcd232a4750d99e345d78013e2da93e",
+                                          "justification":  "Preserves v1 API contract",
+                                          "approved_by":  "AI-8"
+                                      },
+                    "license":  {
+                                    "status":  "PASS",
+                                    "log_sha256":  "e4573fbb779d1aa4bdd040cf333283280bec99dd0234b23b2ea56cc9acec2268",
+                                    "justification":  "Proprietary Victorious MARKET codebase; approved licenses only",
+                                    "approved_by":  "Human"
+                                },
+                    "build":  {
+                                  "status":  "PASS",
+                                  "log_sha256":  "c163426563ec323edd1ae30655fce2b3e58fe0d4778e282f22a306507f77771f",
+                                  "justification":  "PHP 8.4 syntax and framework boot validated",
+                                  "approved_by":  "AI-1"
+                              }
+                },
+    "quarantined":  [
+
+                    ]
+}

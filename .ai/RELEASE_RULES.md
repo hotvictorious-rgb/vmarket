@@ -1,7 +1,7 @@
 # Victorious MARKET — Authoritative Release Rules
 
 > **CONTROL ZONE FILE — HUMAN OWNER ONLY**  
-> AI agents are STRICTLY FORBIDDEN from editing this file. Any proposed modifications must be submitted via an AI-8 ticket accompanied by an approved Decision Record (`.ai/decisions/DECISION-XXXX.md`).
+> AI agents are STRICTLY FORBIDDEN from editing this file. Any proposed modifications must be submitted via a ticket accompanied by an approved Decision Record (`.ai/decisions/DECISION-XXXX.md`).
 
 ---
 

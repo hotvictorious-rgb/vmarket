@@ -1,5 +1,5 @@
 # Victorious MARKET -- Path Scope & Secret Pre-Commit Validator (PowerShell)
-# Part of Victorious MARKET Multi-AI Engineering Control System Specification v3 (Sections 4.1, 4.2, 23, 24)
+# Part of Victorious MARKET 3-AI Control System (Human -> Reviewer -> Backend/Frontend -> Reviewer pushes)
 
 param(
     [string]$StagedFilesList = "",
@@ -82,54 +82,39 @@ foreach ($file in $StagedFiles) {
         $Violations += "Role $Role is FORBIDDEN from modifying Control Zone file: $file (Human-only authority)"
     }
 
-    # Check 3: Role-specific path scoping
+    # Check 3: Role-specific path scoping (3-AI Control System: BACKEND_AI, FRONTEND_AI, REVIEWER_AI)
+    $IsMergeCommit = $false
+    try { git rev-parse --verify MERGE_HEAD 2>$null | Out-Null; if ($?) { $IsMergeCommit = $true } } catch { }
+    $AppCodePattern = "^(backend/|User app/|Vendor app/|Delivery Man App/|tests/)"
     switch ($Role) {
-        "AI-1" {
-            # Backend AI: cannot touch Flutter apps
-            if ($file -match "^User app/" -or $file -match "^Vendor app/" -or $file -match "^Delivery Man App/") {
-                $Violations += "AI-1 is FORBIDDEN from touching Flutter applications: $file"
+        "BACKEND_AI" {
+            # Backend AI: PHP logic only — cannot touch Flutter apps, Blade views, or theme assets
+            if ($file -match "^User app/" -or $file -match "^Vendor app/" -or $file -match "^Delivery Man App/" -or $file -match "^backend/vmarket-web/resources/views/" -or $file -match "^backend/vmarket-web/public/") {
+                $Violations += "BACKEND_AI is FORBIDDEN from touching Frontend paths (Flutter, Blade, theme assets): $file"
+            }
+            if ($file -match "^(main$|.*frontend/)" -or $file -match "\.ai/reviews/") {
+                $Violations += "BACKEND_AI is FORBIDDEN from merging, touching main, or writing reviews: $file"
             }
         }
-        "AI-2" {
-            # Customer AI: cannot touch backend or other apps
-            if ($file -match "^backend/" -or $file -match "^Vendor app/" -or $file -match "^Delivery Man App/") {
-                $Violations += "AI-2 is FORBIDDEN from touching backend or other applications: $file"
+        "FRONTEND_AI" {
+            # Frontend AI: all UI only — cannot touch backend PHP logic
+            if ($file -match "^backend/vmarket-web/app/" -or $file -match "^backend/vmarket-web/routes/" -or $file -match "^backend/vmarket-web/config/" -or $file -match "^backend/vmarket-web/database/") {
+                $Violations += "FRONTEND_AI is FORBIDDEN from touching Backend PHP logic: $file"
+            }
+            if ($file -match "\.ai/reviews/") {
+                $Violations += "FRONTEND_AI is FORBIDDEN from writing reviews: $file"
             }
         }
-        "AI-3" {
-            # Vendor AI: cannot touch Customer/Delivery apps or core backend
-            if ($file -match "^User app/" -or $file -match "^Delivery Man App/" -or $file -match "^backend/vmarket-web/app/") {
-                $Violations += "AI-3 is FORBIDDEN from touching Customer/Delivery apps or backend logic: $file"
-            }
-        }
-        "AI-4" {
-            # Delivery AI: cannot touch Customer/Vendor apps or core backend
-            if ($file -match "^User app/" -or $file -match "^Vendor app/" -or $file -match "^backend/vmarket-web/app/") {
-                $Violations += "AI-4 is FORBIDDEN from touching Customer/Vendor apps or backend logic: $file"
-            }
-        }
-        "AI-5" {
-            # Reviewer: CANNOT touch application code or tests
-            if ($file -notmatch "^\.ai/reviews/customer/" -and $file -notmatch "^\.ai/tickets/") {
-                $Violations += "AI-5 (Reviewer) is FORBIDDEN from modifying non-review files: $file"
-            }
-        }
-        "AI-6" {
-            # Reviewer: CANNOT touch application code or tests
-            if ($file -notmatch "^\.ai/reviews/vendor/" -and $file -notmatch "^\.ai/tickets/") {
-                $Violations += "AI-6 (Reviewer) is FORBIDDEN from modifying non-review files: $file"
-            }
-        }
-        "AI-7" {
-            # Reviewer: CANNOT touch application code or tests
-            if ($file -notmatch "^\.ai/reviews/operations/" -and $file -notmatch "^\.ai/tickets/") {
-                $Violations += "AI-7 (Reviewer) is FORBIDDEN from modifying non-review files: $file"
-            }
-        }
-        "AI-8" {
-            # Coordinator: CANNOT touch application code or tests
-            if ($file -notmatch "^\.ai/tickets/" -and $file -notmatch "^\.ai/decisions/" -and $file -notmatch "^\.ai/releases/" -and $file -notmatch "^\.ai/incidents/") {
-                $Violations += "AI-8 is FORBIDDEN from modifying code or unauthorized metadata: $file"
+        "REVIEWER_AI" {
+            # Reviewer AI: tickets, reviews, drafts only. Implementation code ONLY inside a true
+            # merge commit executed via scripts/release/merge-release (integration, never content edits).
+            $reviewerAllowed = $file -match "^\.ai/reviews/" -or $file -match "^\.ai/tickets/" -or $file -match "^\.ai/decisions/" -or $file -match "^\.ai/releases/" -or $file -match "^\.ai/incidents/" -or $file -match "^AI_CHANGELOG\.md$"
+            if (-not $reviewerAllowed) {
+                if ($file -match $AppCodePattern -and $IsMergeCommit) {
+                    # Allowed: gate-passed integration merge to main via the release script.
+                } else {
+                    $Violations += "REVIEWER_AI is FORBIDDEN from modifying implementation code outside a release-script merge: $file (never write code; dispatch exact-prompt work orders instead)"
+                }
             }
         }
     }

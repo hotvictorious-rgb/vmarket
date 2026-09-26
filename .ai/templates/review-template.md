@@ -1,7 +1,7 @@
 # Review Template (Appendix B)
 
 Ticket:
-Reviewer:                 AI 5 | AI 6 | AI 7
+Reviewer:                 REVIEWER AI (sole gatekeeper for all backend + frontend code)
 Model/tool used:
 Commit reviewed:          <full SHA>
 Review cycle number:
