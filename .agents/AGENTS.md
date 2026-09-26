@@ -101,13 +101,14 @@ In this repository, multiple AI agents work concurrently across different platfo
 2. **STRICTLY PROHIBITED:** NEVER run `git add .`, `git add -A`, `git commit -a`, or `git add *`. Using bulk staging is an immediate violation because it accidentally absorbs or breaks work in progress from concurrent AIs.
 3. **Leave Other Actors' Files Dirty:** If `git status` shows uncommitted files in directories or components you did not touch (e.g. you are Backend AI and see modified files in `Vendor app/` or `User app/`), **LEAVE THEM UNTOUCHED AND UNSTAGED**. Do NOT commit them, and NEVER run `git restore`, `git checkout -- .`, or `git clean` to wipe them.
 4. `git commit -m "<message> [AI]"` — Include the `[AI]` tag and proper scope.
-5. Log your changes in `AI_CHANGELOG.md` **before** committing (so the changelog entry is part of your commit).
+5. Change notes go in your ticket notes, NOT in `AI_CHANGELOG.md`. Reviewer AI is the single changelog writer (one entry per release) so Backend + Frontend branches never conflict on it at integration.
 6. Verify with `git status` that ONLY your own files were committed and that you did not disturb other actors' working files.
 
 ### Grouping Strategy
 - Group commits by **component** (one commit per app, one for backend, one for ai-governance).
 - Do NOT mix Flutter app changes with Laravel backend changes in a single commit.
 - New untracked files (widgets, screens) must be explicitly staged by exact path with `git add <exact_path>`.
+- One branch per ticket per worker (`backend/VM-*`, `frontend/VM-*`); Reviewer deletes merged branches immediately.
 
 ## 6. Code Commenting Standards
 - **AI Prefix:** All comments introduced by an AI must be prefixed with `[AI]` so human developers can easily identify AI-authored notes.

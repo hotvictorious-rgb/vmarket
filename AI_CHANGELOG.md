@@ -1,3 +1,17 @@
+### [2026-09-26 06:40 UTC] PowerShell Encoding Fix for All Runners + VM-TEST-001 Filed [ai-governance] [AI]
+* **1. Root cause (not the checkmark):** 4 scripts were UTF-8 without BOM, so PowerShell 5.1 decoded them as Windows-1252. UTF-8 bytes landing on 0x93/0x94 decode to smart quotes that OPEN/CLOSE strings mid-line (`✓` opens, em-dash closes). This crashed `run-backend-tests.ps1` and would have crashed `merge-release.ps1` at release time.
+* **2. Fix:** re-encoded `validate-commit.ps1`, `merge-release.ps1`, `verify-release-gate.ps1`, `run-backend-tests.ps1` as UTF-8 with BOM (zero content change except the earlier `✓` → `[OK]` in 2 files). Full parse check: all scripts under `scripts/` now tokenize with 0 errors.
+* **3. Proof:** `run-backend-tests.ps1` now executes end to end (previously died at parse): reports 2 failed / 9 passed with correct non-zero exit, as designed.
+* **4. Ticket filed:** `.ai/tickets/backlog/VM-TEST-001.md` — seed migrations for sqlite `:memory:` test DB (2 feature suites fail on `no such table: guest_users`; invariants 23/23 + security 21/21 green). Ready for Reviewer dispatch to Backend AI.
+* **5. Verification:** staged + committed only own files; other actors' dirty files untouched.
+
+### [2026-09-26 06:15 UTC] Per-Role Operating Rules for All 3 AIs [ai-governance] [AI]
+* **1. Backend charters:** contract-before-code, versioned breaking changes, machine-readable error codes, new-migrations-only + expand/contract, per-endpoint money checklist (lock → lockForUpdate → decimals → idempotency), no freelancing beyond the work order.
+* **2. Frontend charters:** display-never-derive, loud failure on contract drift (no silent nulls), 4 states per screen (loading/error/empty/offline), visual evidence attached, no new dependencies without Reviewer sign-off.
+* **3. Reviewer charters:** ownership-boundary check first, review-means-run (checkout SHA + hostile probes), fixed release ritual (gate → merge → tag → manifest → push → verify → watch window), escape tracking back to ticket + review, immediate branch hygiene, disjoint dispatch scopes.
+* **4. Single-writer changelog:** workers log in ticket notes; only Reviewer writes `AI_CHANGELOG.md` (one entry per release) so integration merges stay conflict-free. One branch per ticket per worker; Reviewer deletes merged branches.
+* **5. Verification:** repaired a dropped section header in `vmarket-reviewer.md` before committing; staged + committed only own files.
+
 ### [2026-09-26 05:45 UTC] Reviewer-Led Control System: Sole Dispatcher + Sole Push Authority [ai-governance] [AI]
 * **1. Human authority removed from release path:** Reviewer `APPROVED` + gate PASS is now the push authority. Only Reviewer AI merges to `main` and pushes, via `scripts/release/merge-release` only. Workers push only their own feature branches, never merge, never touch `main`.
 * **2. Command chain:** Human → REVIEWER AI → BACKEND AI → REVIEWER AI → FRONTEND AI → REVIEWER AI (APPROVED) → REVIEWER AI pushes. Human talks only to Reviewer; Backend/Frontend take orders only from Reviewer exact-prompt work orders (new `.ai/templates/work-order-template.md`); no sideways communication.

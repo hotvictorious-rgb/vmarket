@@ -1,4 +1,4 @@
-# Victorious MARKET — Backend Test Runner (PowerShell)
+﻿# Victorious MARKET — Backend Test Runner (PowerShell)
 # Part of Victorious MARKET Multi-AI Engineering Control System Specification v3 (§12, §19.4)
 
 param(
@@ -43,7 +43,7 @@ try {
         exit $exitCode
     }
 
-    Write-Host "[✓] Backend tests passed successfully." -ForegroundColor Green
+    Write-Host "[OK] Backend tests passed successfully." -ForegroundColor Green
     exit 0
 } finally {
     Pop-Location
