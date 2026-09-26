@@ -1,3 +1,8 @@
+### [2026-09-26 07:20 UTC] Launch Sequence Filed: Money, Vendors, Transaction Path, Aster Removal [ai-governance] [AI]
+* **1. Filed 3 BACKLOG tickets:** `VM-PAY-001` (money-path audit: Paystack keys/webhook, intent freeze, cashback ledger, Tier A), `VM-VEND-002` (vendor onboarding proof: register → approve → publish → stock → order notify, Tier A), `VM-CUST-013` (transaction-path button audit: browse → cart → checkout → pay → track slice; full sweep stays in VM-CUST-012).
+* **2. Refreshed `VM-THEME-001` (READY):** premise corrected — `theme_aster/` is back on disk (restored in VM-CUST-003 close-out), so ticket rescoped to full ordered removal (fallbacks → seeder → conditionals → registry/UI → folder dead-last → Aster home screen). Migrated to 3-AI model (Backend-then-Frontend, REVIEWER sole gatekeeper + push). Launch-sequence ticket 4 of 4.
+* **3. Verification:** no ID collisions with existing tickets; staged + committed only own files.
+
 ### [2026-09-26 07:00 UTC] Git-Mailbox Transport: No More Copy-Paste Between Sessions [ai-governance] [AI]
 * **1. Protocol (§2b):** git is the mailbox. Reviewer pushes metadata branch after every work order/verdict; workers fetch before starting; workers push feature branches with ticket notes; Reviewer collects via fetch. Pasted content is never authoritative — the branch is. Human sends one-line triggers only.
 * **2. Charters:** transport rules added to all 3 `.ai/agents/` charters and all 3 `.opencode/agents/` charters (worktree copies re-synced).
