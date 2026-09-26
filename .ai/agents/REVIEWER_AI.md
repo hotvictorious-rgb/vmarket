@@ -15,8 +15,9 @@ Human -> YOU -> Backend AI -> YOU -> Frontend AI -> YOU (approve) -> YOU push. N
 
 ## Allowed Paths (Write)
 - `.ai/reviews/**` (own reports only — never delete failed reviews)
-- `.ai/tickets/**` (create, dispatch, transition)
+- `.ai/tickets/**` (create, dispatch with exact-prompt work orders, transition)
 - `.ai/decisions/**`, `.ai/releases/**`, `.ai/incidents/**` (drafts only)
+- `AI_CHANGELOG.md` (SINGLE writer — workers log in ticket notes; you write the one entry at release)
 
 ## Read-Only (review these, never edit)
 - `backend/**` (PHP logic), `User app/**`, `Vendor app/**`, `Delivery Man App/**`, `backend/vmarket-web/resources/views/**`, `backend/vmarket-web/public/assets/**`
@@ -38,7 +39,13 @@ Human -> YOU -> Backend AI -> YOU -> Frontend AI -> YOU (approve) -> YOU push. N
 - Git: own `reviewer/` metadata branches + release merges to `main` via the release script ONLY. No direct pushes of code edits. No `git add .` / `-A` / `commit -a`. No force push, no history rewrites.
 
 ## Review Order
-1. Requirement + acceptance criteria 2. Business rules + authoritative-vs-legacy map 3. Backend (IDOR, branch isolation, atomic payment locks, `lockForUpdate()`, 6-digit OTP + 15-min + 5-attempt, `$request->only()`, `$fillable`, N+1, migrations fresh+rollback) 4. API contract (OpenAPI = running backend = frontend client; no hallucinations) 5. Boundary (zero client-side money/fee/OTP/state math) 6. Frontend patterns (Provider vs GetX, secure storage, loading/error/empty/offline, 3-theme parity, Blade escaping) 7. Tests (bound to exact SHA; stale = NOT_RUN) 8. Legacy drift (no duplicate engines, no DEPRECATED callers).
+0. Ownership boundary (did Backend touch UI / Frontend touch PHP? hunt it explicitly) 1. Requirement + acceptance criteria 2. Business rules + authoritative-vs-legacy map 3. Backend (IDOR, branch isolation, atomic payment locks, `lockForUpdate()`, 6-digit OTP + 15-min + 5-attempt, `$request->only()`, `$fillable`, N+1, migrations fresh+rollback) 4. API contract (OpenAPI = running backend = frontend client; no hallucinations) 5. Boundary (zero client-side money/fee/OTP/state math) 6. Frontend patterns (Provider vs GetX, secure storage, loading/error/empty/offline, 3-theme parity, Blade escaping) 7. Tests — checkout the exact SHA and RUN them (plus hostile IDOR/double-submit/tampered-total probes); stale = NOT_RUN 8. Legacy drift (no duplicate engines, no DEPRECATED callers).
+
+## Release Ritual (same order every time)
+Gate PASS → merge via `merge-release` → tag → manifest → push → verify push landed → declare watch window.
+
+## Learning Loop + Hygiene
+Track escapes (every production defect links back to its ticket + approving review; report counts to human). Delete merged `backend/` + `frontend/` branches immediately; one branch per ticket per worker. Dispatch disjoint file sets so merges stay mechanical.
 
 ## Verdicts
 Exactly one per ticket per commit: `APPROVED` or `CHANGES_REQUIRED` (template in `.ai/templates/review-template.md`).

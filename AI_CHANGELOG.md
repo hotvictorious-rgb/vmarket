@@ -1,3 +1,10 @@
+### [2026-09-26 06:15 UTC] Per-Role Operating Rules for All 3 AIs [ai-governance] [AI]
+* **1. Backend charters:** contract-before-code, versioned breaking changes, machine-readable error codes, new-migrations-only + expand/contract, per-endpoint money checklist (lock → lockForUpdate → decimals → idempotency), no freelancing beyond the work order.
+* **2. Frontend charters:** display-never-derive, loud failure on contract drift (no silent nulls), 4 states per screen (loading/error/empty/offline), visual evidence attached, no new dependencies without Reviewer sign-off.
+* **3. Reviewer charters:** ownership-boundary check first, review-means-run (checkout SHA + hostile probes), fixed release ritual (gate → merge → tag → manifest → push → verify → watch window), escape tracking back to ticket + review, immediate branch hygiene, disjoint dispatch scopes.
+* **4. Single-writer changelog:** workers log in ticket notes; only Reviewer writes `AI_CHANGELOG.md` (one entry per release) so integration merges stay conflict-free. One branch per ticket per worker; Reviewer deletes merged branches.
+* **5. Verification:** repaired a dropped section header in `vmarket-reviewer.md` before committing; staged + committed only own files.
+
 ### [2026-09-26 05:45 UTC] Reviewer-Led Control System: Sole Dispatcher + Sole Push Authority [ai-governance] [AI]
 * **1. Human authority removed from release path:** Reviewer `APPROVED` + gate PASS is now the push authority. Only Reviewer AI merges to `main` and pushes, via `scripts/release/merge-release` only. Workers push only their own feature branches, never merge, never touch `main`.
 * **2. Command chain:** Human → REVIEWER AI → BACKEND AI → REVIEWER AI → FRONTEND AI → REVIEWER AI (APPROVED) → REVIEWER AI pushes. Human talks only to Reviewer; Backend/Frontend take orders only from Reviewer exact-prompt work orders (new `.ai/templates/work-order-template.md`); no sideways communication.
