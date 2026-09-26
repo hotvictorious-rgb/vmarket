@@ -56,10 +56,11 @@ class UpdateController extends Controller
             $newRouteServiceProvider = base_path('app/Providers/RouteServiceProvider.txt');
             copy($newRouteServiceProvider, $previousRouteServiceProvider);
 
-            if (DOMAIN_POINTED_DIRECTORY == 'public') {
-                shell_exec('ln -s ../resources/themes themes');
-                Artisan::call('storage:link');
-            }
+            // `storage:link` creates both `public/storage` and `public/themes`
+            // (defined in config/filesystems.php `links`) on all platforms.
+            // The old `ln -s ../resources/themes themes` shell_exec was Unix-only
+            // and has been superseded.
+            Artisan::call('storage:link');
 
             Artisan::call('optimize:clear');
             $this->getProcessAllVersionsUpdates();
