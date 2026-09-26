@@ -1,3 +1,11 @@
+### [2026-09-26 05:30 UTC] 3-AI Control System Redesign (Backend → Frontend → Reviewer) [ai-governance] [AI]
+* **1. Retired 8-role system:** deleted `.ai/agents/AI-1.md` through `AI-8.md`; retired `AI-8` coordinator (`INBOX_COORDINATOR.md` archived as history, no new posts).
+* **2. New charters:** `.ai/agents/BACKEND_AI.md` (Stage 1, PHP logic `app/routes/config/database` only), `.ai/agents/FRONTEND_AI.md` (Stage 2, Flutter + all Blade `resources/views` + `public/assets`, never PHP logic), `.ai/agents/REVIEWER_AI.md` (Stage 3 final gate, `.ai/reviews` only, never implements).
+* **3. Local runtime agents:** `.opencode/agents/vmarket-backend.md` + `vmarket-frontend.md` + `vmarket-reviewer.md` (replaced architect/builder; note: `.opencode/` is gitignored so these apply locally, not committed).
+* **4. Pipeline enforced:** every feature `BACKEND_DONE → FRONTEND_DONE → REVIEWER APPROVED → release`; branches `backend/VM-*` / `frontend/VM-*` / `reviewer/`; ticket template + review template updated.
+* **5. Governance updated:** `.agents/AGENTS.md` §12, `CROSS_AGENT_COMMUNICATION_PROTOCOL.md` (3-stage pipeline + RFC flow), `CLAUDE.md` (3-AI table), `.ai/README.md`, `.ai/ARCHITECTURE.md` (ownership table + worktrees), 7 Control Zone headers (`AI-8 ticket` → `ticket`). Historical tickets/reviews/decisions/releases left untouched as audit trail.
+* **6. Verification:** active governance scan clean for live `AI-N`/`aiN/` role refs (only intentional retirement notes, since reworded); `git status` confirms no other actors' files touched.
+
 ### [2026-09-24 14:15 UTC] Canonical Geography Directional Delivery Lane Routing Engine Implementation (VM-LANE-001) [backend] [AI]
 * **1. Backend Delivery Lane Fee Engine (§3A, §11A):**
   - Implemented `calculateLaneFee` in `GeographyController.php` accepting `origin_lga_id` and `destination_lga_id` with zero-trust integer validation.

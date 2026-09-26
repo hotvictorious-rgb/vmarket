@@ -41,6 +41,19 @@ Frontend applications (**User App**, **Vendor App**, **Delivery App**) are **con
 
 ---
 
+## 3-AI Control System (only 3 AIs, strictly independent)
+Exactly 3 AIs. The 8-role system is retired.
+
+| AI | Stage | Owns (only) | Never touches |
+|---|---|---|---|
+| **BACKEND AI** | 1 - starts every feature | `backend/vmarket-web/app/**`, `routes/**`, `config/**`, `database/**` (PHP logic only) | Flutter, Blade, theme assets, reviews |
+| **FRONTEND AI** | 2 - after `BACKEND_DONE` | `User app/**`, `Vendor app/**`, `Delivery Man App/**`, `backend/vmarket-web/resources/views/**`, `backend/vmarket-web/public/assets/**` | Backend PHP logic, reviews |
+| **REVIEWER AI** | 3 - final gate | Reviews all code, writes only `.ai/reviews/**` | Any implementation code |
+
+Pipeline for every feature: `BACKEND_DONE → FRONTEND_DONE → REVIEWER APPROVED → release`. Skipping a stage is forbidden. Charters: `.opencode/agents/vmarket-backend.md`, `vmarket-frontend.md`, `vmarket-reviewer.md` + `.ai/agents/BACKEND_AI.md`, `FRONTEND_AI.md`, `REVIEWER_AI.md`. Protocol: `.agents/sync/CROSS_AGENT_COMMUNICATION_PROTOCOL.md`.
+
+---
+
 ## Canonical Production Alignment References & Mandatory AI Rules
 - **Customer App ↔ Backend Contract:** `.agents/rules/VMARKET_CUSTOMER_APP_SPEC.md` (77-section canonical production contract)
 - **Customer App Rules:** `.agents/rules/CUSTOMER_APP_ALIGNMENT.md` (20 mandatory rules)

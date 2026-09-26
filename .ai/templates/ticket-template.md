@@ -25,15 +25,16 @@ Data impact:          yes | no
 Compliance impact:    yes | no
 Dependency changes:   none | list with justification (Section 24.3)
 Documents updated:    (list, or "none - justify")
-Assigned AI:
-Required reviewers:   (per Section 11.2)
-Branch / base commit:
+Assigned AI:          BACKEND AI | FRONTEND AI   (feature starts at BACKEND AI; frontend starts only after BACKEND_DONE)
+Required reviewers:   REVIEWER AI (single gatekeeper; verdict bound to exact commit SHA)
+Branch / base commit: backend/VM-<FEATURE>-NNN | frontend/VM-<FEATURE>-NNN
 Dependencies (tickets/features):
 Tests required:
 Security requirements:
 Acceptance criteria:  (checklist; each item gets an evidence link)
 
-Counters:             review_cycles: {AI5: 0, AI6: 0, AI7: 0}   integration_failures: 0   reopened_count: 0
+Counters:             review_cycles: 0   integration_failures: 0   reopened_count: 0
+Pipeline:             BACKEND_DONE → FRONTEND_DONE → REVIEWER APPROVED → release
 Screenshots:          (frontend tickets)
 
 Implementation notes:

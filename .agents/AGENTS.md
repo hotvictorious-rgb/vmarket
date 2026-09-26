@@ -205,17 +205,22 @@ Never delete code aggressively based on filenames or assumptions. Follow this di
 Cleanup is mandatory in **every** phase, not deferred to the end:
 $$\text{Build} \longrightarrow \text{Integrate} \longrightarrow \text{Test} \longrightarrow \text{Migrate} \longrightarrow \text{Remove Obsolete Code} \longrightarrow \text{Document} \longrightarrow \text{Git Commit}$$
 
-## 12. Multi-Agent Concurrent Communication Protocol (Hub-and-Spoke Governance) 📡
+## 12. 3-AI Control System (Backend → Frontend → Reviewer) 📡
 
-To allow multiple AI agents to work concurrently and independently across all platform clients (Customer App, Storefront, Vendor Web/App, Delivery App, Admin Panel) without breaking business logic:
+Exactly 3 independent AIs. No other AI roles exist.
 
-1. **Backend as Protocol Hub**: The Backend AI is the sole protocol authority and Single Source of Truth (SSOT).
-2. **Strict Prohibition of Client-Side Business Math**: Frontend AIs must never implement fee calculations, pricing formulas, discount logic, commission cuts, or cryptographic OTP generation in client code.
-3. **Dedicated Actor Inboxes**: Every platform client communicates through its designated mailbox in `.agents/sync/`:
+1. **BACKEND AI** (Stage 1, starts every feature): sole owner of Laravel PHP logic — `backend/vmarket-web/app/**`, `routes/**`, `config/**`, `database/**`. Never touches Flutter, Blade, or theme assets. SSOT for money, fees, inventory, OTP, state machines. Charters: `.opencode/agents/vmarket-backend.md`, `.ai/agents/BACKEND_AI.md`.
+2. **FRONTEND AI** (Stage 2, starts only after `BACKEND_DONE`): sole owner of ALL UI — `User app/**`, `Vendor app/**`, `Delivery Man App/**`, `backend/vmarket-web/resources/views/**` (all Blade), `backend/vmarket-web/public/assets/**`. Never touches backend PHP logic. Consumes backend contracts only, never calculates business rules. Charters: `.opencode/agents/vmarket-frontend.md`, `.ai/agents/FRONTEND_AI.md`.
+3. **REVIEWER AI** (Stage 3, final gate): reviews ALL backend + frontend code, edits nothing except `.ai/reviews/**`. Every feature must end with Reviewer `APPROVED` for the exact commit. Charters: `.opencode/agents/vmarket-reviewer.md`, `.ai/agents/REVIEWER_AI.md`.
+
+Mandatory pipeline for every feature: `BACKEND_DONE → FRONTEND_DONE → REVIEWER APPROVED → release`. Skipping a stage is forbidden.
+
+4. **Strict Prohibition of Client-Side Business Math**: Frontend AI must never implement fee calculations, pricing formulas, discount logic, commission cuts, or cryptographic OTP generation in client code.
+5. **Dedicated Actor Inboxes**: Frontend AI posts per-surface requests through the designated mailbox in `.agents/sync/`:
    - `INBOX_USER_APP.md` (Customer App)
    - `INBOX_STOREFRONT.md` (Web Storefront)
    - `INBOX_VENDOR.md` (Vendor Web & Mobile App)
    - `INBOX_DELIVERY.md` (Delivery Rider App)
    - `INBOX_ADMIN.md` (Admin Control Center)
-4. **Authoritative Contract Registry**: All live, verified backend routes and JSON schemas are maintained in `.agents/sync/API_CONTRACT_REGISTRY.md`. Frontend AIs must consume these exact contracts and must never hallucinate unverified endpoints or JSON keys.
-5. **The 4-Step RFC Flow**: When a frontend AI needs an endpoint or field, it must post a structured Request Ticket in its inbox, await Backend AI fulfillment and schema registration, and only then bind the client UI. Full details are governed by `.agents/sync/CROSS_AGENT_COMMUNICATION_PROTOCOL.md`.
+6. **Authoritative Contract Registry**: All live, verified backend routes and JSON schemas are maintained in `.agents/sync/API_CONTRACT_REGISTRY.md`. Frontend AI must consume these exact contracts and must never hallucinate unverified endpoints or JSON keys.
+7. **The RFC Flow**: When Frontend AI needs an endpoint or field, it posts a structured Request Ticket in its inbox, awaits Backend AI fulfillment and schema registration, and only then binds the client UI. Full details are governed by `.agents/sync/CROSS_AGENT_COMMUNICATION_PROTOCOL.md`.
