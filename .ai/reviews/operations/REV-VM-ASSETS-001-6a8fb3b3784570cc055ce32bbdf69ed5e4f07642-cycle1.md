@@ -3,7 +3,7 @@
 Ticket: VM-ASSETS-001 (split from VM-TEST-001; VM-THEME-001 ID taken on v1 by Aster removal)
 Reviewer:                 REVIEWER AI (sole gatekeeper for all backend + frontend code)
 Model/tool used:          Muse Spark / git collection (no implementation edits)
-Commit reviewed:          6a8fb3b3784570cc055ce32bbdf69ed5e4f07642 (local backend/VM-TEST-001 only; absent from origin/backend/VM-TEST-001@f0c73539 — unpushed)
+Commit reviewed:          6a8fb3b3784570cc055ce32bbdf69ed5e4f07642 (backend/VM-TEST-001; verified on origin/backend/VM-TEST-001 via fetch + rev-parse 2026-09-26 — pushed after cycle-1 collection)
 Review cycle number:      1
 Files reviewed:
 - backend/vmarket-web/config/filesystems.php (`links` array added: storage + themes)
@@ -21,7 +21,7 @@ Backend findings:
 - `links` array shape is standard (`public_path => storage_path/base_path`). Correct.
 - Single `Artisan::call('storage:link')` in try/catch in both controllers; pasted snippet showing a duplicate call is not present in the committed diff — verified clean.
 - Base staleness: commit sits on c55a74ef-era backend/VM-TEST-001; must be re-applied cleanly on v1@3976e8aa as backend/VM-ASSETS-001.
-Integration findings:     unpushed locally; origin/backend/VM-TEST-001 lacks it. Must never be pushed there — push only to backend/VM-ASSETS-001.
+Integration findings:     now pushed to origin/backend/VM-TEST-001 (verified 6a8fb3b3 on origin) — must be reverted/stripped from that branch on next Backend push; the fix itself must live only on backend/VM-ASSETS-001.
 Client compatibility findings: none.
 Testing findings (blockers):
 - Missing: `php -l` on all 3 files.
