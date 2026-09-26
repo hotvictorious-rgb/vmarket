@@ -1,8 +1,10 @@
-# Victorious MARKET — 3-AI Communication Protocol (Backend → Frontend → Reviewer)
+# Victorious MARKET — 3-AI Communication Protocol (Human → Reviewer → Workers → Reviewer pushes)
 
 > **MANDATORY GOVERNANCE FOR ALL WORK. Exactly 3 independent AIs. No other roles exist.**
-> 1. **BACKEND AI** (Stage 1) — Laravel PHP logic only. 2. **FRONTEND AI** (Stage 2) — all UI (Flutter + Blade + theme assets). 3. **REVIEWER AI** (Stage 3) — reviews everything, edits nothing.
-> Every feature flows `BACKEND_DONE → FRONTEND_DONE → REVIEWER APPROVED → release`. Skipping a stage is forbidden.
+> 1. **REVIEWER AI** — sole coordinator, gatekeeper, and push authority. The ONLY AI the human talks to.
+> 2. **BACKEND AI** — Laravel PHP logic only. Works ONLY from Reviewer work orders. Never pushes to `main`.
+> 3. **FRONTEND AI** — all UI (Flutter + Blade + theme assets). Works ONLY from Reviewer work orders. Never pushes to `main`.
+> Every feature flows `Human → REVIEWER AI → BACKEND AI → REVIEWER AI → FRONTEND AI → REVIEWER AI (APPROVED) → REVIEWER AI pushes`. Skipping a stage is forbidden. Backend and Frontend never communicate directly.
 
 ---
 
@@ -21,9 +23,9 @@
    - All state flows through the central backend API.
 
 4. **Strict Ownership Isolation**:
-   - Backend AI: `backend/vmarket-web/app/**`, `routes/**`, `config/**`, `database/**` ONLY. Never `User app/`, `Vendor app/`, `Delivery Man App/`, `resources/views/**`, `public/assets/**`.
-   - Frontend AI: `User app/**`, `Vendor app/**`, `Delivery Man App/**`, `backend/vmarket-web/resources/views/**`, `backend/vmarket-web/public/assets/**` ONLY. Never backend PHP logic.
-   - Reviewer AI: `.ai/reviews/**` ONLY. Never implementation code or tests.
+   - Backend AI: `backend/vmarket-web/app/**`, `routes/**`, `config/**`, `database/**` ONLY. Never `User app/`, `Vendor app/`, `Delivery Man App/`, `resources/views/**`, `public/assets/**`. Pushes only its own `backend/` branches. NEVER merges, NEVER pushes to `main`.
+   - Frontend AI: `User app/**`, `Vendor app/**`, `Delivery Man App/**`, `backend/vmarket-web/resources/views/**`, `backend/vmarket-web/public/assets/**` ONLY. Never backend PHP logic. Pushes only its own `frontend/` branches. NEVER merges, NEVER pushes to `main`.
+   - Reviewer AI: `.ai/reviews/**`, `.ai/tickets/**`, `.ai/decisions/**` (drafts), `.ai/releases/**` (drafts), `.ai/incidents/**` (drafts). Never implementation code or tests. ONLY Reviewer merges to `main` and pushes — after `APPROVED` + gate PASS, via `scripts/release/merge-release` only.
    - Control Zone (`.ai/*.md` rules, `.ai/agents/*`, templates, schemas, `scripts/**`, CI, `CODEOWNERS`): human only.
 
 5. **Strict Commit Isolation (COMMIT ONLY YOUR OWN CHANGES, NEVER ALL FILES) ⚠️**:
@@ -38,17 +40,20 @@
 
 ---
 
-## 2. The 3-Stage Pipeline
+## 2. The Reviewer-Led Pipeline
 
 ```
-[STAGE 1: BACKEND AI] ──BACKEND_DONE──> [STAGE 2: FRONTEND AI] ──FRONTEND_DONE──> [STAGE 3: REVIEWER AI] ──APPROVED──> release
-       backend/VM-XXX branch                       frontend/VM-XXX branch                         reviewer report @ exact SHA
+Human ──requirement──> [REVIEWER: ticket + exact-prompt work order] ──dispatch──> [BACKEND AI: backend/VM-XXX] ──BACKEND_DONE──>
+[REVIEWER: verify handoff] ──dispatch──> [FRONTEND AI: frontend/VM-XXX] ──FRONTEND_DONE──>
+[REVIEWER: review @ exact SHA ──APPROVED──> gate PASS ──> REVIEWER merges + pushes via merge-release] ──> release
 ```
 
-- Branch scheme: `backend/VM-<FEATURE>-NNN` (Backend AI), `frontend/VM-<FEATURE>-NNN` (Frontend AI), `reviewer/VM-<FEATURE>-NNN` (review metadata, `.ai/` files only).
-- Ticket flow: `BACKLOG → READY → BACKEND_DOING → BACKEND_DONE → FRONTEND_DOING → FRONTEND_DONE → UNDER_REVIEW → APPROVED | CHANGES_REQUIRED`. A `CHANGES_REQUIRED` verdict returns to the owning stage; any new commit invalidates prior approvals/results.
+- Branch scheme: `backend/VM-<FEATURE>-NNN` (Backend AI, pushes only here), `frontend/VM-<FEATURE>-NNN` (Frontend AI, pushes only here), `reviewer/VM-<FEATURE>-NNN` (review metadata, `.ai/` files only). ONLY Reviewer touches `main`, only via the release script.
+- Dispatch: Reviewer writes a copy-paste-ready exact-prompt work order into each ticket (`.ai/templates/work-order-template.md`) — goal, branch, allowed files, forbidden paths, acceptance criteria + evidence, tests, DONE definition. Workers take orders ONLY from Reviewer work orders.
+- Ticket flow: `BACKLOG → READY → BACKEND_DOING → BACKEND_DONE → FRONTEND_DOING → FRONTEND_DONE → UNDER_REVIEW → APPROVED | CHANGES_REQUIRED`. A `CHANGES_REQUIRED` verdict returns to the owning stage with a new exact-prompt fix order; any new commit invalidates prior approvals/results.
 - Reviewer verdict is exactly `APPROVED` or `CHANGES_REQUIRED`, bound to the exact commit SHA.
-- Escalation: 3 review cycles, same finding twice, 2 failed integrations at same stage, or >5 days in state → `Blocked: yes (ESCALATED)` + DECISION_REQUEST → human decides.
+- Push rule: no human approval sits in the release path. Reviewer `APPROVED` + `verify-release-gate` PASS = push authority, executed by Reviewer via `merge-release` (which refuses on gate failure).
+- Escalation: 3 review cycles, same finding twice, 2 failed integrations at same stage, or >5 days in state → `Blocked: yes (ESCALATED)` + DECISION_REQUEST → human decides. Workers report blockers to Reviewer, never to the human, never sideways.
 
 ---
 

@@ -21,19 +21,24 @@
 /.github/                       @hotvictorious
 /CODEOWNERS                     @hotvictorious
 
-# Application Subsystems (Assigned Implementation Roles)
-/backend/vmarket-web/           @AI-1-Backend
-/User app/                      @AI-2-Customer
-/Vendor app/                    @AI-3-Vendor
-/Delivery Man App/              @AI-4-Operations
+# Application Subsystems (3-AI Control System: Backend = PHP logic only, Frontend = all UI)
+# Backend AI: app/routes/config/database ONLY (never Flutter, Blade, or theme assets)
+/backend/vmarket-web/app/         @Backend-AI
+/backend/vmarket-web/routes/      @Backend-AI
+/backend/vmarket-web/config/      @Backend-AI
+/backend/vmarket-web/database/    @Backend-AI
+# Frontend AI: Flutter apps + ALL Blade views + theme assets (never PHP logic)
+/User app/                         @Frontend-AI
+/Vendor app/                       @Frontend-AI
+/Delivery Man App/                 @Frontend-AI
+/backend/vmarket-web/resources/views/  @Frontend-AI
+/backend/vmarket-web/public/assets/    @Frontend-AI
 
-# Reviews (Assigned Independent Reviewers)
-/.ai/reviews/customer/          @AI-5-Customer-Reviewer
-/.ai/reviews/vendor/            @AI-6-Vendor-Reviewer
-/.ai/reviews/operations/        @AI-7-Operations-Reviewer
+# Reviews + dispatch (Reviewer AI: sole coordinator, gatekeeper, and push authority)
+/.ai/reviews/                     @Reviewer-AI
 
-# Tickets & Releases (Coordinator Role)
-/.ai/tickets/                   @AI-8-Coordinator
-/.ai/releases/                  @AI-8-Coordinator
-/.ai/decisions/                 @AI-8-Coordinator
-/.ai/incidents/                 @AI-8-Coordinator
+# Tickets & Releases (Reviewer AI dispatches; ONLY Reviewer merges + pushes to main)
+/.ai/tickets/                     @Reviewer-AI
+/.ai/releases/                    @Reviewer-AI
+/.ai/decisions/                   @Reviewer-AI
+/.ai/incidents/                   @Reviewer-AI

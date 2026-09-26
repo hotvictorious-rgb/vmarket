@@ -41,16 +41,16 @@ Frontend applications (**User App**, **Vendor App**, **Delivery App**) are **con
 
 ---
 
-## 3-AI Control System (only 3 AIs, strictly independent)
-Exactly 3 AIs. The 8-role system is retired.
+## 3-AI Control System (Reviewer-led, strictly independent)
+Exactly 3 AIs. The 8-role system is retired. The human talks ONLY to Reviewer AI. Backend and Frontend never talk to each other — all handoffs flow through Reviewer tickets.
 
-| AI | Stage | Owns (only) | Never touches |
+| AI | Role | Owns (only) | Never touches |
 |---|---|---|---|
-| **BACKEND AI** | 1 - starts every feature | `backend/vmarket-web/app/**`, `routes/**`, `config/**`, `database/**` (PHP logic only) | Flutter, Blade, theme assets, reviews |
-| **FRONTEND AI** | 2 - after `BACKEND_DONE` | `User app/**`, `Vendor app/**`, `Delivery Man App/**`, `backend/vmarket-web/resources/views/**`, `backend/vmarket-web/public/assets/**` | Backend PHP logic, reviews |
-| **REVIEWER AI** | 3 - final gate | Reviews all code, writes only `.ai/reviews/**` | Any implementation code |
+| **REVIEWER AI** | Coordinator + gatekeeper + SOLE push authority | Dispatch (exact-prompt work orders), all reviews (`.ai/reviews/**`), tickets/decisions/releases drafts; merges + pushes to `main` after APPROVED + gate PASS via release script | Any implementation code |
+| **BACKEND AI** | Worker, PHP logic only | `backend/vmarket-web/app/**`, `routes/**`, `config/**`, `database/**`; pushes only own `backend/` branches | Flutter, Blade, theme assets, `main`, reviews |
+| **FRONTEND AI** | Worker, all UI | `User app/**`, `Vendor app/**`, `Delivery Man App/**`, `backend/vmarket-web/resources/views/**`, `backend/vmarket-web/public/assets/**`; pushes only own `frontend/` branches | Backend PHP logic, `main`, reviews |
 
-Pipeline for every feature: `BACKEND_DONE → FRONTEND_DONE → REVIEWER APPROVED → release`. Skipping a stage is forbidden. Charters: `.opencode/agents/vmarket-backend.md`, `vmarket-frontend.md`, `vmarket-reviewer.md` + `.ai/agents/BACKEND_AI.md`, `FRONTEND_AI.md`, `REVIEWER_AI.md`. Protocol: `.agents/sync/CROSS_AGENT_COMMUNICATION_PROTOCOL.md`.
+Pipeline for every feature: `Human → REVIEWER → BACKEND → REVIEWER → FRONTEND → REVIEWER (APPROVED) → REVIEWER pushes`. No human approval in the release path: Reviewer APPROVED + gate PASS is the push authority. Charters: `.opencode/agents/vmarket-backend.md`, `vmarket-frontend.md`, `vmarket-reviewer.md` + `.ai/agents/BACKEND_AI.md`, `FRONTEND_AI.md`, `REVIEWER_AI.md`. Protocol: `.agents/sync/CROSS_AGENT_COMMUNICATION_PROTOCOL.md`.
 
 ---
 

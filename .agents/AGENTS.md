@@ -205,15 +205,15 @@ Never delete code aggressively based on filenames or assumptions. Follow this di
 Cleanup is mandatory in **every** phase, not deferred to the end:
 $$\text{Build} \longrightarrow \text{Integrate} \longrightarrow \text{Test} \longrightarrow \text{Migrate} \longrightarrow \text{Remove Obsolete Code} \longrightarrow \text{Document} \longrightarrow \text{Git Commit}$$
 
-## 12. 3-AI Control System (Backend → Frontend → Reviewer) 📡
+## 12. 3-AI Control System (Human → Reviewer → Backend → Reviewer → Frontend → Reviewer pushes) 📡
 
 Exactly 3 independent AIs. No other AI roles exist.
 
-1. **BACKEND AI** (Stage 1, starts every feature): sole owner of Laravel PHP logic — `backend/vmarket-web/app/**`, `routes/**`, `config/**`, `database/**`. Never touches Flutter, Blade, or theme assets. SSOT for money, fees, inventory, OTP, state machines. Charters: `.opencode/agents/vmarket-backend.md`, `.ai/agents/BACKEND_AI.md`.
-2. **FRONTEND AI** (Stage 2, starts only after `BACKEND_DONE`): sole owner of ALL UI — `User app/**`, `Vendor app/**`, `Delivery Man App/**`, `backend/vmarket-web/resources/views/**` (all Blade), `backend/vmarket-web/public/assets/**`. Never touches backend PHP logic. Consumes backend contracts only, never calculates business rules. Charters: `.opencode/agents/vmarket-frontend.md`, `.ai/agents/FRONTEND_AI.md`.
-3. **REVIEWER AI** (Stage 3, final gate): reviews ALL backend + frontend code, edits nothing except `.ai/reviews/**`. Every feature must end with Reviewer `APPROVED` for the exact commit. Charters: `.opencode/agents/vmarket-reviewer.md`, `.ai/agents/REVIEWER_AI.md`.
+1. **REVIEWER AI** (coordinator, gatekeeper, SOLE push authority): the ONLY AI the human talks to. Receives every requirement, decomposes it into tickets, dispatches copy-paste-ready exact-prompt work orders (`.ai/templates/work-order-template.md`) to Backend AI then Frontend AI, reviews ALL code, and ONLY Reviewer merges to `main` and pushes — after its own `APPROVED` + gate PASS, via `scripts/release/merge-release`. Reviewer never writes implementation code. Charters: `.opencode/agents/vmarket-reviewer.md`, `.ai/agents/REVIEWER_AI.md`.
+2. **BACKEND AI** (worker, PHP logic only): sole owner of Laravel PHP logic — `backend/vmarket-web/app/**`, `routes/**`, `config/**`, `database/**`. Works ONLY from Reviewer work orders. Never touches Flutter, Blade, or theme assets. Never merges, never pushes to `main` (pushes only its own `backend/` branches for Reviewer inspection). SSOT for money, fees, inventory, OTP, state machines. Charters: `.opencode/agents/vmarket-backend.md`, `.ai/agents/BACKEND_AI.md`.
+3. **FRONTEND AI** (worker, all UI): sole owner of ALL UI — `User app/**`, `Vendor app/**`, `Delivery Man App/**`, `backend/vmarket-web/resources/views/**` (all Blade), `backend/vmarket-web/public/assets/**`. Works ONLY from Reviewer work orders, starting only after Reviewer confirms `BACKEND_DONE`. Never touches backend PHP logic. Never merges, never pushes to `main` (pushes only its own `frontend/` branches). Consumes backend contracts only, never calculates business rules. Charters: `.opencode/agents/vmarket-frontend.md`, `.ai/agents/FRONTEND_AI.md`.
 
-Mandatory pipeline for every feature: `BACKEND_DONE → FRONTEND_DONE → REVIEWER APPROVED → release`. Skipping a stage is forbidden.
+Mandatory pipeline for every feature: `Human → REVIEWER AI → BACKEND AI → REVIEWER AI → FRONTEND AI → REVIEWER AI (APPROVED) → REVIEWER AI pushes`. Skipping a stage is forbidden. Backend and Frontend never communicate directly — all handoffs flow through Reviewer tickets. No human approval sits in the release path: Reviewer `APPROVED` + gate PASS is the push authority.
 
 4. **Strict Prohibition of Client-Side Business Math**: Frontend AI must never implement fee calculations, pricing formulas, discount logic, commission cuts, or cryptographic OTP generation in client code.
 5. **Dedicated Actor Inboxes**: Frontend AI posts per-surface requests through the designated mailbox in `.agents/sync/`:

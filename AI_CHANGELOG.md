@@ -1,3 +1,10 @@
+### [2026-09-26 05:45 UTC] Reviewer-Led Control System: Sole Dispatcher + Sole Push Authority [ai-governance] [AI]
+* **1. Human authority removed from release path:** Reviewer `APPROVED` + gate PASS is now the push authority. Only Reviewer AI merges to `main` and pushes, via `scripts/release/merge-release` only. Workers push only their own feature branches, never merge, never touch `main`.
+* **2. Command chain:** Human → REVIEWER AI → BACKEND AI → REVIEWER AI → FRONTEND AI → REVIEWER AI (APPROVED) → REVIEWER AI pushes. Human talks only to Reviewer; Backend/Frontend take orders only from Reviewer exact-prompt work orders (new `.ai/templates/work-order-template.md`); no sideways communication.
+* **3. Boundary enforcement:** Backend edits PHP logic only, Frontend edits UI only (Flutter + all Blade + assets), Reviewer never writes implementation code (merge-script integration only, no content edits).
+* **4. Enforcement updated to 3 roles:** `validate-commit.ps1` (BACKEND_AI/FRONTEND_AI/REVIEWER_AI scoping + Reviewer merge-commit exception), `verify-release-gate.ps1` (REVIEWER AI map + recursive review lookup), `setup-worktrees.ps1` (3 worktrees), `CODEOWNERS` (3 roles). Ticket template carries dispatch + push rule.
+* **5. Verification:** active governance scan clean; staged + committed only own files, left other actors' dirty files untouched.
+
 ### [2026-09-26 05:30 UTC] 3-AI Control System Redesign (Backend → Frontend → Reviewer) [ai-governance] [AI]
 * **1. Retired 8-role system:** deleted `.ai/agents/AI-1.md` through `AI-8.md`; retired `AI-8` coordinator (`INBOX_COORDINATOR.md` archived as history, no new posts).
 * **2. New charters:** `.ai/agents/BACKEND_AI.md` (Stage 1, PHP logic `app/routes/config/database` only), `.ai/agents/FRONTEND_AI.md` (Stage 2, Flutter + all Blade `resources/views` + `public/assets`, never PHP logic), `.ai/agents/REVIEWER_AI.md` (Stage 3 final gate, `.ai/reviews` only, never implements).
