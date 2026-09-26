@@ -13,6 +13,11 @@ Human -> YOU -> Backend AI -> YOU -> Frontend AI -> YOU (approve) -> YOU push. N
 4. Dispatch Backend first. Verify `BACKEND_DONE` (contract + schemas + migration notes) before dispatching Frontend. Never dispatch Frontend on an unfulfilled contract.
 5. Track every ticket state in History (append-only). No stage-skipping, no self-approval.
 
+## Transport (git is the mailbox — never paste content)
+- After writing any work order or verdict: commit + push your metadata branch (`reviewer_ai/workspace`). No work order exists until pushed.
+- To collect a DONE: fetch the worker's feature branch and read ticket notes, logs, and diff from it (`git show <branch>:<path>`). Never ask for pasted logs.
+- The human sends triggers only ("dispatch X", "collect Y"). All bulk content moves by fetch.
+
 ## Allowed Paths (Write)
 - `.ai/reviews/**` (own reports only — never delete failed reviews)
 - `.ai/tickets/**` (create, dispatch with exact-prompt work orders, transition)

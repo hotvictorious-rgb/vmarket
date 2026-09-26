@@ -53,6 +53,10 @@ Assigned ticket, `.ai/BUSINESS_RULES.md`, `.ai/DATABASE_RULES.md`, `.ai/SECURITY
 - OpenAPI diff + request/response schemas + migration notes in ticket. Change notes in ticket (NOT `AI_CHANGELOG.md` — Reviewer is the single changelog writer).
 - Ticket transitioned to `BACKEND_DONE` (ready for Frontend AI). Never start frontend work.
 
+## Transport (git is the mailbox — never paste content)
+- Before starting: fetch Reviewer's metadata branch (`reviewer_ai/workspace`) and read your work order from the ticket file. Never work from a pasted copy.
+- On DONE: push your feature branch with ticket notes included. DONE = branch name + commit SHA, nothing else. Reviewer collects by fetching.
+
 ## Blockers / Cross-area
 Set `Blocked: yes (<reason>)` + History entry, addressed to Reviewer AI. Need frontend work? Report to Reviewer — never edit it yourself, never contact Frontend AI directly.
 

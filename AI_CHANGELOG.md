@@ -1,3 +1,8 @@
+### [2026-09-26 07:00 UTC] Git-Mailbox Transport: No More Copy-Paste Between Sessions [ai-governance] [AI]
+* **1. Protocol (§2b):** git is the mailbox. Reviewer pushes metadata branch after every work order/verdict; workers fetch before starting; workers push feature branches with ticket notes; Reviewer collects via fetch. Pasted content is never authoritative — the branch is. Human sends one-line triggers only.
+* **2. Charters:** transport rules added to all 3 `.ai/agents/` charters and all 3 `.opencode/agents/` charters (worktree copies re-synced).
+* **3. Verification:** staged + committed only own files.
+
 ### [2026-09-26 06:40 UTC] PowerShell Encoding Fix for All Runners + VM-TEST-001 Filed [ai-governance] [AI]
 * **1. Root cause (not the checkmark):** 4 scripts were UTF-8 without BOM, so PowerShell 5.1 decoded them as Windows-1252. UTF-8 bytes landing on 0x93/0x94 decode to smart quotes that OPEN/CLOSE strings mid-line (`✓` opens, em-dash closes). This crashed `run-backend-tests.ps1` and would have crashed `merge-release.ps1` at release time.
 * **2. Fix:** re-encoded `validate-commit.ps1`, `merge-release.ps1`, `verify-release-gate.ps1`, `run-backend-tests.ps1` as UTF-8 with BOM (zero content change except the earlier `✓` → `[OK]` in 2 files). Full parse check: all scripts under `scripts/` now tokenize with 0 errors.
