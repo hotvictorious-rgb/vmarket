@@ -3,7 +3,7 @@
 Ticket ID:            VM-ASSETS-001
 Title:                Permanent first-serve unstyled fix — public/themes via storage:link
 Type:                 BUG
-Status:               REVIEW_APPROVED
+Status:               RELEASED
 Blocked:              no
 Created by / date:    Reviewer AI / 2026-09-26 (from human report: unstyled on every first serve + Backend local commit 6a8fb3b3 on wrong ticket)
 Size estimate:        small (3 files, ~25 lines: filesystems.php links + 2 controllers)
@@ -61,8 +61,8 @@ Screenshots:          none - justify (bootstrap link fix; styled proof via link-
 
 Implementation notes:
 Review notes:
-Final decision:
-Release commit:
+Final decision:      APPROVED cycle-3 at 197e9059324f69bf0986294086fe1e8dec771b04 (code byte-identical to 02fb85de) + gate 18/18 PASS + human-authorized transcription release.
+Release commit:       c2c96a8bd38620e70f94fa1acbf3efd2aaeb3e0f (merge origin/backend/VM-ASSETS-001 into v1; tag RELEASE-2026-09-27-001; manifest .ai/releases/RELEASE-2026-09-27-001.md)
 
 History (append-only):
 - 2026-09-26  Reviewer AI  BACKLOG -> IN_PROGRESS  Filed from human first-serve unstyled report + Backend 6a8fb3b3 (correct 3-file direction, wrong ticket). ID VM-ASSETS-001 chosen because VM-THEME-001 is taken on v1 (Theme_Aster removal, READY). Dispatched to BACKEND AI on fresh branch backend/VM-ASSETS-001 from v1@3976e8aa.
@@ -73,3 +73,4 @@ History (append-only):
 - 2026-09-27  Reviewer AI  IN_PROGRESS (human-authorized reroute)  Human AUTHORIZED: (1) `git -c vmarket.role=RUNNER commit` of `.ai/status/results/` JSONs on worker branches, (2) `git push --force-with-lease` of rebased `backend/VM-TEST-001` + `backend/VM-ASSETS-001`. Finding: local backend/VM-ASSETS-001@77707187 IS correctly based on current v1 4f2c18c3 — commit pending JSON + ticket note, then push. Corrected order dispatched below.
 - 2026-09-27  Reviewer AI  IN_PROGRESS (collected reroute)  Human-pushed origin/backend/VM-ASSETS-001@02fb85de4d7442af5b556d38e2eece65c174afdb (fetch verified). Base = origin/v1@4f2c18c3, currency PASS. Scope: 3-file fix + ticket notes only, disjoint from VM-TEST-001.
 - 2026-09-27  Reviewer AI  IN_PROGRESS -> REVIEW_APPROVED (cycle-3)  Independent evidence at exact SHA in detached worktree: php -l 3/3 clean (PHP 8.4.25), zero live shell_exec, run-all.ps1 7/7 live PASS (17/17 suites, commit-match True; env: composer install + testing .env with scratch sqlite + migrate --force, disclosed). Reviews: `.ai/reviews/operations/REV-VM-ASSETS-001-02fb85de4d7442af5b556d38e2eece65c174afdb-cycle3.md` (+ gate-conforming copy). Gate 18/18 PASS. Human approved byte-identical transcription path for release (v1 lacks ticket file; worker currency forbids v1 pre-push).
+- 2026-09-27  Reviewer AI  REVIEW_APPROVED -> RELEASED  Backend transcribed Reviewer-finalized ticket (197e9059324f69bf0986294086fe1e8dec771b04, blob-identical, regular push). Evidence refreshed at tip: 7/7 live PASS, 17/17 suites. Cycle-3 reviews re-issued for tip SHA. Gate 18/18 PASS at tip in MAIN. Merged origin/backend/VM-ASSETS-001 into v1 (c2c96a8b, --no-ff, script-identical mechanics after script's merge step blocked on staged overlay — overlay removed pre-merge, documented). Tag RELEASE-2026-09-27-001. Ticket moved in-progress -> released. Worker branch backend/VM-ASSETS-001 deleted after merge per ticket rule.
