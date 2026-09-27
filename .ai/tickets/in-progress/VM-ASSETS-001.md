@@ -63,6 +63,7 @@ Release commit:
 History (append-only):
 - 2026-09-27  BACKEND AI  IN_PROGRESS  Created branch `backend/VM-ASSETS-001` from `v1@3976e8aa`.
 - 2026-09-27  BACKEND AI  BACKEND_DONE  Applied 3-file fix. Syntax checked (`php -l`) all files clean.
+- 2026-09-27  BACKEND AI  BACKEND_DONE  Reroute dispatch: branch holds at `77707187` against `v1@4f2c18c3`. Run-all.ps1 passes fully, Schema-v2 JSON stored locally.
 
   `php -l` proof (PHP 8.4.25):
   ```
