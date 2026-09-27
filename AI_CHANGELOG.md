@@ -5106,3 +5106,10 @@ ecord packages, created VoiceNoteBottomSheet and AudioPlayerWidget, and integrat
   - Fresh clone + `php artisan storage:link` now creates both `public/storage` and `public/themes` on Windows (junction, no admin) and Linux/macOS (symlink); first serve renders styled with zero manual steps.
   - Reviewer-verified: php -l 3/3 (PHP 8.4.25), zero live shell_exec, run-all 7/7 live PASS (17/17 suites) at 197e9059324f69bf0986294086fe1e8dec771b04, gate 18/18 PASS, merge c2c96a8bd38620e70f94fa1acbf3efd2aaeb3e0f.
 
+### [2026-09-27] SQLite Test Harness Green — VM-TEST-001 (RELEASE-2026-09-27-002)
+* **Component:** Backend test harness only (tests/Feature/DumpSchemaTestCase + 2 bootstrap base-class swaps)
+* **Action:** DumpSchemaTestCase bootstraps missing :memory: tables (guest_users et al.); DeliveryFlowLifecycleTest + ExampleTest extend it with zero assertion changes; stale evidence + duplicate ticket removed.
+* **Details:**
+  - Full suite green with zero product-code changes; no weakened assertions.
+  - Reviewer-verified: php -l 3/3 (PHP 8.4.25), run-all 7/7 live PASS (17/17 suites) at b3d1253a649471dd6e1360634a78dbd54fd72d51, gate 18/18 PASS, merge 31158a8f7613a98842b0f9637b45cc659c787e04.
+
