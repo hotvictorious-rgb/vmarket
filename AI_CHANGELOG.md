@@ -5099,3 +5099,10 @@ ecord packages, created VoiceNoteBottomSheet and AudioPlayerWidget, and integrat
   - **Vendor & Delivery Man Backends:** Updated controllers to prevent editing/deleting of bank info/withdrawal methods (server-side enforcement returning 403 errors).
   - **Vendor & Delivery Man Web/Apps:** Removed Edit/Delete UI buttons. Added "View Proof" buttons on withdrawal history cards to display the receipt/screenshot if the Admin attached one.
 
+### [2026-09-27] First-Serve Styled Bootstrap — VM-ASSETS-001 (RELEASE-2026-09-27-001)
+* **Component:** Backend install/update bootstrap (InstallController, UpdateController, config/filesystems.php)
+* **Action:** Declared `public/themes` in `filesystems.php` links; replaced Unix-only `shell_exec('ln -s')` with single `Artisan::call('storage:link')` in install step5 + update path.
+* **Details:**
+  - Fresh clone + `php artisan storage:link` now creates both `public/storage` and `public/themes` on Windows (junction, no admin) and Linux/macOS (symlink); first serve renders styled with zero manual steps.
+  - Reviewer-verified: php -l 3/3 (PHP 8.4.25), zero live shell_exec, run-all 7/7 live PASS (17/17 suites) at 197e9059324f69bf0986294086fe1e8dec771b04, gate 18/18 PASS, merge c2c96a8bd38620e70f94fa1acbf3efd2aaeb3e0f.
+
