@@ -29,7 +29,7 @@ Assigned AI:          BACKEND AI   (dispatched by REVIEWER AI with an exact-prom
 Required reviewers:   REVIEWER AI (sole coordinator, gatekeeper, and push authority; verdict bound to exact commit SHA)
 Branch / base commit: backend/VM-CUST-013 (from current `v1`)
 Work order:           (Reviewer AI pastes the exact-prompt work order here per `.ai/templates/work-order-template.md`)
-Dependencies (tickets/features): VM-CUST-011, VM-CUST-012 (narrower slice of the same chain; findings cross-reference, never duplicate)
+Dependencies (tickets/features): VM-TEST-001 landed (single-front rule); cross-references VM-STOREF-001/002/003/004 + VM-CATL-001 (audit confirms, never duplicate fixes — fixes ship under STOREF tickets); VM-CUST-011/VM-CUST-012 struck 2026-09-27 (do not exist)
 Tests required:       live click-chain walk per control; `php artisan route:list` resolved set attached
 Security requirements: state-changing GETs, missing auth middleware, and legacy-shipping cost leaks flagged as defects with file:line (see VM-CUST-011 F-01/F-02/F-03 for the pattern)
 Acceptance criteria:  (checklist; each item gets an evidence link)
@@ -50,3 +50,4 @@ Release commit:
 
 History (append-only):
 - 2026-09-26  Human  BACKLOG (created)  Launch-sequence ticket 3 of 4: transaction-path slice of the button audit; full sweep stays in VM-CUST-012.
+- 2026-09-27  Reviewer AI  BACKLOG (triaged)  Static wiring-map report reviewed: ROUTE_BOUND tags are NOT passes (one mis-tag confirmed: help-topics listed bound with no route) — live file:line + route + verb triples required, which this ticket already mandates. Third-party draft work order REJECTED as-is (garbled paths, Backend filing tickets, refs to non-existent CUST-012, no BLOCKED-past-first-dead rule). Corrected work order held by Reviewer; dispatch after VM-TEST-001 lands (single front). Three leads folded into scope: (1) _order-summery dual cart/payment contexts, (2) pickup-reservations.create + submitPickupReservation + ₦0 hold post, (3) switchFulfillment inline onclick. VM-CUST-011/012 struck (missing).
