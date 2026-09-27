@@ -7,13 +7,13 @@
 
 ## 1. Brand Identity & Color System
 
-Victorious MARKET uses an authoritative Purple & Gold luxury marketplace palette:
+Victorious MARKET uses an authoritative Purple & Gold luxury marketplace palette (human-ruled canonical brand codes 2026-09-26 — these three override any legacy values elsewhere):
 
 | Token | Name | HEX Code | Usage |
 |-------|------|----------|-------|
-| `color-primary` | Royal Purple | `#4A154B` | App bars, primary action buttons, header fills, brand accents |
+| `color-primary` | Royal Purple | `#5E17EB` | App bars, primary action buttons, header fills, brand accents |
 | `color-primary-dark` | Deep Purple | `#2E0A30` | Footers, dark overlays, high-contrast text |
-| `color-accent` | Imperial Gold | `#D4AF37` | Badges, discount tags, rating stars, luxury accents |
+| `color-accent` | Imperial Gold | `#FFD700` | Badges, discount tags, rating stars, luxury accents |
 | `color-accent-light` | Soft Gold | `#F5E8C7` | Highlight chips, banner backgrounds, active tab pills |
 | `color-surface` | Pure White | `#FFFFFF` | Card backgrounds, dialogs, main canvas |
 | `color-background` | Cool Light Gray | `#F8F9FA` | Screen background canvas |
