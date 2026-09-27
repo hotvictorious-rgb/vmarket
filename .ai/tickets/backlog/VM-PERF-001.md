@@ -50,3 +50,4 @@ Release commit:
 
 History (append-only):
 - 2026-09-26  Human  BACKLOG (created)  Measure the ceiling; runs after VM-PAY-001 against the audited money flow.
+- 2026-09-27  Reviewer AI  BACKLOG (triaged, synced v1@4f2c18c3)  Sequence confirmed: VM-PAY-001 (Tier A money-path audit, no deps) first, VM-PERF-001 second — load runs against the audited flow (intent freeze → atomic pay lock → settlement → cashback Δ=0.00), never against unaudited money. PERF-001 starts only after PAY-001 RELEASED, and after the in-flight TEST-001/ASSETS-001 reroutes land (no second front on Backend). Both tickets are measure/audit-only; any defect found ships under its own ticket.
