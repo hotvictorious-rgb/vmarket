@@ -52,12 +52,10 @@ class InstallController extends Controller
 
     public function step5(): View
     {
-        if (DOMAIN_POINTED_DIRECTORY == 'public' && function_exists('shell_exec')) {
-            try {
-                @shell_exec('ln -s ../resources/themes themes');
-            } catch (Exception $e) {}
-        }
-
+        // `storage:link` creates both `public/storage` and `public/themes`
+        // (defined in config/filesystems.php `links`) on all platforms.
+        // The old `ln -s ../resources/themes themes` shell_exec was Unix-only,
+        // ran from the project root (not public/), and has been superseded.
         try {
             Artisan::call('storage:link');
         } catch (Exception $exception) {}
