@@ -3,7 +3,7 @@
 Ticket ID:            VM-ASSETS-001
 Title:                Permanent first-serve unstyled fix — public/themes via storage:link
 Type:                 BUG
-Status:               IN_PROGRESS
+Status:               REVIEW_APPROVED
 Blocked:              no
 Created by / date:    Reviewer AI / 2026-09-26 (from human report: unstyled on every first serve + Backend local commit 6a8fb3b3 on wrong ticket)
 Size estimate:        small (3 files, ~25 lines: filesystems.php links + 2 controllers)

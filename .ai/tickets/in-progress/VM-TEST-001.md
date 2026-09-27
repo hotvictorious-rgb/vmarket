@@ -3,7 +3,7 @@
 Ticket ID:            VM-TEST-001
 Title:                Seed migrations for sqlite :memory: test DB (fix DeliveryFlowLifecycleTest + ExampleTest)
 Type:                 BUG
-Status:               IN_PROGRESS
+Status:               REVIEW_APPROVED
 Blocked:              no
 Created by / date:    Human operator / 2026-09-26 (filed from live test run: 2 failed, 9 passed)
 Size estimate:        small (test-harness only, zero product-code change expected)
