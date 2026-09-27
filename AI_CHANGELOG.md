@@ -1,3 +1,12 @@
+### [2026-09-26 08:10 UTC] VM-PERF-001 Filed: Baseline Load Ceiling [ai-governance] [AI]
+* **1. Filed `VM-PERF-001` (BACKLOG, Tier A):** measure staging ceiling on checkout/payment/order at stepped concurrency (p50/p95/p99, errors, queries-per-request, bottleneck + next scaling step). Sandbox only, measure-first (defects get own tickets). Runs after VM-PAY-001.
+* **2. Verification:** staged + committed only own files.
+
+### [2026-09-26 07:50 UTC] Canonical Brand Palette Ruled + VM-BRAND-001 Filed [ai-governance] [AI]
+* **1. Human ruling:** canonical brand is `#5E17EB` (Royal Purple) / `#FFD700` (Imperial Gold) / `#FFFFFF` (Crisp White) everywhere. `DESIGN_RULES.md` corrected (retired `#4A154B`/`#D4AF37`).
+* **2. Filed `VM-BRAND-001` (BACKLOG):** re-point non-canonical stragglers (README `#6A1B9A` claim, seed announcement default, Blade refs) to canonical tokens; Flutter themes verify-only (already canonical). Queued behind launch sequence.
+* **3. Verification:** staged + committed only own files.
+
 ### [2026-09-26 07:40 UTC] Gate Check-5 False Positive Fixed (Field-Anchored Blocked Match) [ai-governance] [AI]
 * **1. Bug:** gate matched `Blocked:\s*yes` anywhere, tripping on work-order instruction text inside tickets. Every template-carrying ticket failed Check 5 regardless of its actual field.
 * **2. Fix:** `(?m)^Blocked:` — field-anchored match. One-line change in `verify-release-gate.ps1`, found and proven by Reviewer's halted ritual (no merges cut, as designed).
