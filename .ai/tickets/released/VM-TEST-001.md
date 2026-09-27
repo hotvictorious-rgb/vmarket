@@ -3,7 +3,7 @@
 Ticket ID:            VM-TEST-001
 Title:                Seed migrations for sqlite :memory: test DB (fix DeliveryFlowLifecycleTest + ExampleTest)
 Type:                 BUG
-Status:               REVIEW_APPROVED
+Status:               RELEASED
 Blocked:              no
 Created by / date:    Human operator / 2026-09-26 (filed from live test run: 2 failed, 9 passed)
 Size estimate:        small (test-harness only, zero product-code change expected)
@@ -59,8 +59,8 @@ Screenshots:          none - justify (test-only ticket)
 
 Implementation notes:
 Review notes:
-Final decision:
-Release commit:
+Final decision:      APPROVED cycle-4 at b3d1253a649471dd6e1360634a78dbd54fd72d51 (cleanup + transcription, harness-only, zero product code) + gate 18/18 PASS + human-authorized transcription release.
+Release commit:       31158a8f7613a98842b0f9637b45cc659c787e04 (merge origin/backend/VM-TEST-001 into v1; tag RELEASE-2026-09-27-002; manifest .ai/releases/RELEASE-2026-09-27-002.md)
 
 History (append-only):
 - 2026-09-26 06:35  Human  BACKLOG (created)  Filed from live run evidence: invariants 23/23 PASS, security 21/21 PASS, 2 feature suites FAIL on missing :memory: tables.
@@ -80,3 +80,4 @@ History (append-only):
 - 2026-09-27  Reviewer AI  IN_PROGRESS (human-authorized reroute)  Human AUTHORIZED: (1) `git -c vmarket.role=RUNNER commit` of `.ai/status/results/` JSONs on worker branches, (2) `git push --force-with-lease` of rebased `backend/VM-TEST-001` + `backend/VM-ASSETS-001`. Finding: origin/backend/VM-TEST-001@418bf34a sits on stale ccb5599e, current v1 is 4f2c18c3 — TEST-001 must re-rebase onto 4f2c18c3 and regenerate evidence. Corrected order dispatched below.
 - 2026-09-27  Reviewer AI  IN_PROGRESS (collected fix round)  Human-pushed origin/backend/VM-TEST-001@fb3a4fb10e01f8a92dc42e0668e26ec6c2905e3a (fetch verified). Base = origin/v1@5259ed03, currency PASS. Scope: harness files only (DumpSchemaTestCase 513 new + 2x8-line bootstrap edits), zero product code. BUT: stale `.ai/status/results/VM-TEST-001/a5805de0.json` retained (not removed) + `.ai/tickets/backlog/VM-TEST-001.md` gutted-not-removed (gate duplicate risk) → CHANGES_REQUIRED, no rebase.
 - 2026-09-27  Reviewer AI  IN_PROGRESS (transcription path approved)  Human approved same transcription release path as ASSETS-001 for TEST-001 (v1 lacks in-progress ticket; worker currency forbids v1 pre-push). This file text is the transcription source: Backend copies this exact blob onto the branch, removes both stale files in the same commit, regenerates evidence (uncommitted), regular-pushes, reports SHA. New SHA needs cycle-4 review + fresh JSON + gate before ritual.
+- 2026-09-27  Reviewer AI  REVIEW_APPROVED -> RELEASED  Backend cleaned + transcribed (b3d1253a649471dd6e1360634a78dbd54fd72d51, blob-identical, stale JSON + backlog dup removed, regular push). Evidence refreshed at tip: 7/7 live PASS, 17/17 suites, zero weakened assertions. Cycle-4 reviews re-issued for tip SHA. Gate 18/18 PASS at tip in MAIN (backlog dup staged-removed for gate lookup, restored pre-merge; merge deleted it anyway). Merged origin/backend/VM-TEST-001 into v1 (31158a8f, --no-ff, script-identical mechanics). Tag RELEASE-2026-09-27-002. Ticket moved in-progress -> released (+ backlog original deleted by merge). Worker branch backend/VM-TEST-001 deleted after merge per ticket rule.
