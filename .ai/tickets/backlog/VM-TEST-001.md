@@ -3,7 +3,7 @@
 Ticket ID:            VM-TEST-001
 Title:                Seed migrations for sqlite :memory: test DB (fix DeliveryFlowLifecycleTest + ExampleTest)
 Type:                 BUG
-Status:               BACKEND_DONE
+Status:               BACKEND_DONE_V3
 Blocked:              no
 Created by / date:    Human operator / 2026-09-26 (filed from live test run: 2 failed, 9 passed)
 Size estimate:        small (test-harness only, zero product-code change expected)
@@ -121,3 +121,4 @@ History (append-only):
   The domain invariant suite (23/23) and security suite (21/21) run in the same invocation via their
   `testsuite` entries, both green with `Mathematical Drift: Δ = 0.00` — no regressions.
 - 2026-09-27  BACKEND AI  BACKEND_DONE  Reroute dispatch: rebased onto origin/v1@ccb5599e. Schema-v2 tests run via run-all.ps1; all PASS. Head is now 6d94adfa.
+- 2026-09-27  BACKEND AI  BACKEND_DONE_V3  Reroute-2 dispatch: rebased 4 commits onto v1@4f2c18c3 (includes VM-PERF-001). All 7 run-all.ps1 suites PASS. Schema-v2 JSON at `.ai/status/results/VM-TEST-001/a61aa4689792425f21c9e001b2bd00a3b850728a.json`. Full commit SHA: `a61aa4689792425f21c9e001b2bd00a3b850728a`. Zero test failures; 11/11 feature+unit pass, security Δ=0.00, invariants Δ=0.00.
