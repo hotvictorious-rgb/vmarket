@@ -33,8 +33,8 @@ $TicketPath = $TicketFiles[0].FullName
 $TicketContent = Get-Content -Path $TicketPath -Raw
 Write-Host "[OK] Located Ticket at: $TicketPath" -ForegroundColor Green
 
-# Check: Blocked status
-if ($TicketContent -match "Blocked:\s*yes") {
+# Check: Blocked status (field-anchored: instruction text elsewhere in the ticket must not match)
+if ($TicketContent -match "(?m)^Blocked:\s*yes") {
     $GateFailures += "Gate Check 5: Ticket is marked Blocked: yes"
 }
 
