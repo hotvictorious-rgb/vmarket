@@ -1,3 +1,9 @@
+### [2026-09-26 07:40 UTC] Gate Check-5 False Positive Fixed (Field-Anchored Blocked Match) [ai-governance] [AI]
+* **1. Bug:** gate matched `Blocked:\s*yes` anywhere, tripping on work-order instruction text inside tickets. Every template-carrying ticket failed Check 5 regardless of its actual field.
+* **2. Fix:** `(?m)^Blocked:` — field-anchored match. One-line change in `verify-release-gate.ps1`, found and proven by Reviewer's halted ritual (no merges cut, as designed).
+* **3. Remaining genuine gap:** no schema-v2 result JSONs for the two SHAs — Reviewer authorized to generate via `run-all.ps1` at exact SHAs, then re-run gate → merge.
+* **4. Verification:** staged + committed only own files.
+
 ### [2026-09-26 07:20 UTC] Launch Sequence Filed: Money, Vendors, Transaction Path, Aster Removal [ai-governance] [AI]
 * **1. Filed 3 BACKLOG tickets:** `VM-PAY-001` (money-path audit: Paystack keys/webhook, intent freeze, cashback ledger, Tier A), `VM-VEND-002` (vendor onboarding proof: register → approve → publish → stock → order notify, Tier A), `VM-CUST-013` (transaction-path button audit: browse → cart → checkout → pay → track slice; full sweep stays in VM-CUST-012).
 * **2. Refreshed `VM-THEME-001` (READY):** premise corrected — `theme_aster/` is back on disk (restored in VM-CUST-003 close-out), so ticket rescoped to full ordered removal (fallbacks → seeder → conditionals → registry/UI → folder dead-last → Aster home screen). Migrated to 3-AI model (Backend-then-Frontend, REVIEWER sole gatekeeper + push). Launch-sequence ticket 4 of 4.
