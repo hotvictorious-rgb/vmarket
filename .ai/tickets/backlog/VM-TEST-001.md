@@ -120,3 +120,4 @@ History (append-only):
 
   The domain invariant suite (23/23) and security suite (21/21) run in the same invocation via their
   `testsuite` entries, both green with `Mathematical Drift: Δ = 0.00` — no regressions.
+- 2026-09-27  BACKEND AI  BACKEND_DONE  Reroute dispatch: rebased onto origin/v1@ccb5599e. Schema-v2 tests run via run-all.ps1; all PASS. Head is now 6d94adfa.
