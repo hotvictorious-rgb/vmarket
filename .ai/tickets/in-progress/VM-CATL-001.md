@@ -4,7 +4,7 @@ Ticket ID:            VM-CATL-001
 Title:                Catalog discovery timeout — api/v1/products/latest hangs over HTTP while SQLite fast natively
 Type:                 BUG
 Status:               IN_PROGRESS
-Blocked:              no
+Blocked:              yes (Fatal HTTP 500 on Controller Instantiation due to purged App\Models\Author in constructor; out of scope for get_latest_products())
 Created by / date:    Reviewer AI / 2026-09-27 (filed from :8001 observation: native queries fast — 66 products / 58 categories — but api/v1/products/latest times out over HTTP; suspected single-threaded serve self-call or N+1)
 Size estimate:        small (diagnose + root-cause fix + proof; split if product-code + harness both change)
 
@@ -61,6 +61,25 @@ Push rule:            ONLY Reviewer AI merges to `v1` and pushes, after APPROVED
 Screenshots:          none - justify (API defect; evidence is timed probe + query logs)
 
 Implementation notes:
+- **Investigation Summary:**
+  1. **HTTP Routing & Instantiation Failure (Fatal 500)**:
+     - `GET /api/v1/products/latest` over HTTP throws `Illuminate\Contracts\Container\BindingResolutionException`: `Target class [App\Models\Author] does not exist.`
+     - Root cause: `App\Http\Controllers\RestAPI\v1\ProductController::__construct` (lines 45-46) auto-wires `AuthorRepositoryInterface` and `PublishingHouseRepositoryInterface`.
+     - `App\Repositories\AuthorRepository::__construct` injects `App\Models\Author`, which was purged from the codebase during legacy cleanup.
+     - Because Laravel's routing pipeline resolves the controller and its full constructor dependencies before invoking any method, the HTTP route cannot execute `get_latest_products()` at all.
+  2. **Native Performance & Query Bounding**:
+     - `ProductManager::get_latest_products()` executes in **30.46 ms** (2.88 ms DB time) across **10 bounded queries** on SQLite testing database.
+     - `Helpers::product_data_formatting()` processes 10 items in **4.11 ms**.
+     - There is no runaway query loop or query-level hang in SQLite.
+  3. **Zero Self-HTTP Calls**:
+     - Comprehensive grep for `Http::`, `curl_`, `file_get_contents('http')`, or Guzzle clients across `ProductController.php` and `ProductManager.php` returned **0 matches**.
+     - Zero loopback SSRF or self-calls in the allowed scopes.
+  4. **Scope Constraint & Blocker**:
+     - Work order permits modifying ONLY `ProductController.php::get_latest_products()` and `ProductManager.php::get_latest_products()`.
+     - Fixing the constructor of `ProductController.php` or `AuthorRepository.php` requires out-of-scope modifications.
+     - Per Reviewer AI instruction: `"Blocked → set Blocked: yes (<reason>) + History entry to REVIEWER AI, never to the human, never sideways."`
+     - Status updated to `Blocked: yes`.
+
 Review notes:
 Final decision:
 Release commit:
@@ -68,3 +87,4 @@ Release commit:
 History (append-only):
 - 2026-09-27  Reviewer AI  BACKLOG (filed)  Filed from :8001 observation (DB fast natively, latest-products timeout over HTTP). Queued behind TEST-001/ASSETS-001 reroutes per single-front + currency rule. No dispatch yet — work order pasted at dispatch after reroutes land.
 - 2026-09-27  Reviewer AI  BACKLOG -> IN_PROGRESS (dispatched)  Both reroutes RELEASED (v1@cb0779e6). Chain mapped by Reviewer: route api.php:175 → ProductController:55 → ProductManager:43 (+ in-process FeedSyncController:26). Work order pasted above; branch backend/VM-CATL-001 from v1@cb0779e6.
+- 2026-09-28  Backend AI   IN_PROGRESS -> BLOCKED (scope blocker reported)  Investigated catalog discovery timeout and HTTP failure. Native SQLite executes in ~30ms (10 queries, zero self-HTTP loopback). Direct HTTP probe on :8088 revealed fatal BindingResolutionException: Target class [App\Models\Author] does not exist triggered by ProductController::__construct injecting dead AuthorRepositoryInterface. Scope restricted to get_latest_products() only. Escalate to Reviewer AI for constructor cleanup scope authorization.
