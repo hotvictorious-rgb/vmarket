@@ -3,7 +3,7 @@
 Ticket ID:            VM-CATL-001
 Title:                Catalog discovery timeout — api/v1/products/latest hangs over HTTP while SQLite fast natively
 Type:                 BUG
-Status:               IN_PROGRESS
+Status:               BLOCKED (to REVIEWER AI)
 Blocked:              yes (Fatal HTTP 500 on Controller Instantiation due to purged App\Models\Author in constructor; out of scope for get_latest_products())
 Created by / date:    Reviewer AI / 2026-09-27 (filed from :8001 observation: native queries fast — 66 products / 58 categories — but api/v1/products/latest times out over HTTP; suspected single-threaded serve self-call or N+1)
 Size estimate:        small (diagnose + root-cause fix + proof; split if product-code + harness both change)
