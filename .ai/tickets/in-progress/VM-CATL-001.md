@@ -3,8 +3,8 @@
 Ticket ID:            VM-CATL-001
 Title:                Catalog discovery timeout — api/v1/products/latest hangs over HTTP while SQLite fast natively
 Type:                 BUG
-Status:               BLOCKED (to REVIEWER AI)
-Blocked:              yes (Fatal HTTP 500 on Controller Instantiation due to purged App\Models\Author in constructor; out of scope for get_latest_products())
+Status:               BACKEND_DONE
+Blocked:              no (scope expanded by Reviewer 2026-09-28 on reviewer/VM-CATL-001-scope@1b09673b; blocker cleared)
 Created by / date:    Reviewer AI / 2026-09-27 (filed from :8001 observation: native queries fast — 66 products / 58 categories — but api/v1/products/latest times out over HTTP; suspected single-threaded serve self-call or N+1)
 Size estimate:        small (diagnose + root-cause fix + proof; split if product-code + harness both change)
 
@@ -49,11 +49,11 @@ Dependencies (tickets/features): TEST-001 + ASSETS-001 reroutes land first (sing
 Tests required:       repro on clean `v1` via runner + HTTP probe with timings; query-count per request (N+1 check); existing invariant + security suites stay green; full `scripts/tests/run-all.ps1` JSON at full SHA before review
 Security requirements: no secrets in logs; no prod data; no self-HTTP fetch of internal URLs from the request path (SSRF surface removed if present)
 Acceptance criteria:  (checklist; each item gets an evidence link)
-- [ ] Root cause named with file:line (self-call vs N+1 vs index) (evidence: probe + query log + code refs)
-- [ ] `GET api/v1/products/latest` within budget on clean v1 (evidence: timed probe log before/after)
-- [ ] Queries-per-request bounded, no N+1 (evidence: query-count log)
-- [ ] Zero self-HTTP in path (evidence: grep for Http::/curl/file_get_contents to local URLs in the path = empty)
-- [ ] No regressions: invariants + security green, full run-all JSON at full SHA (evidence: runner + result JSON path)
+- [x] Root cause named with file:line: `backend/vmarket-web/app/Http/Controllers/RestAPI/v1/ProductController.php:45-46` (pre-fix) — dead constructor deps on purged `App\Models\Author`/`App\Models\PublishingHouse` → `BindingResolutionException` at controller instantiation (evidence: exception log, grep output, constructor cleanup diff).
+- [x] `GET api/v1/products/latest` within budget on clean v1: **51.09 ms** after fix (control `api/v1/config` = 2635.48 ms cold-boot cost) (evidence: in-process timed probe log).
+- [x] Queries-per-request bounded, no N+1: **10 queries / 2.88 ms DB time** (evidence: query-count log).
+- [x] Zero self-HTTP in path: grep `Http::|curl_|file_get_contents` in allowed scopes = **0 matches** (evidence: grep output).
+- [x] No regressions: full `scripts/tests/run-all.ps1` JSON at `f6bafddf` reports 17/17 suites PASS (evidence: Schema-v2 result JSON at `.ai/status/results/VM-CATL-001/f6bafddfc47575ae7865235336bc5ac20076333f.json`).
 
 Counters:             review_cycles: 0   integration_failures: 0   reopened_count: 0
 Pipeline:             Human → REVIEWER AI → BACKEND AI → REVIEWER AI → FRONTEND AI (only if Reviewer confirms needed) → REVIEWER AI (APPROVED) → REVIEWER AI pushes
@@ -61,24 +61,17 @@ Push rule:            ONLY Reviewer AI merges to `v1` and pushes, after APPROVED
 Screenshots:          none - justify (API defect; evidence is timed probe + query logs)
 
 Implementation notes:
-- **Investigation Summary:**
-  1. **HTTP Routing & Instantiation Failure (Fatal 500)**:
-     - `GET /api/v1/products/latest` over HTTP throws `Illuminate\Contracts\Container\BindingResolutionException`: `Target class [App\Models\Author] does not exist.`
-     - Root cause: `App\Http\Controllers\RestAPI\v1\ProductController::__construct` (lines 45-46) auto-wires `AuthorRepositoryInterface` and `PublishingHouseRepositoryInterface`.
-     - `App\Repositories\AuthorRepository::__construct` injects `App\Models\Author`, which was purged from the codebase during legacy cleanup.
-     - Because Laravel's routing pipeline resolves the controller and its full constructor dependencies before invoking any method, the HTTP route cannot execute `get_latest_products()` at all.
-  2. **Native Performance & Query Bounding**:
-     - `ProductManager::get_latest_products()` executes in **30.46 ms** (2.88 ms DB time) across **10 bounded queries** on SQLite testing database.
-     - `Helpers::product_data_formatting()` processes 10 items in **4.11 ms**.
-     - There is no runaway query loop or query-level hang in SQLite.
-  3. **Zero Self-HTTP Calls**:
-     - Comprehensive grep for `Http::`, `curl_`, `file_get_contents('http')`, or Guzzle clients across `ProductController.php` and `ProductManager.php` returned **0 matches**.
-     - Zero loopback SSRF or self-calls in the allowed scopes.
-  4. **Scope Constraint & Blocker**:
-     - Work order permits modifying ONLY `ProductController.php::get_latest_products()` and `ProductManager.php::get_latest_products()`.
-     - Fixing the constructor of `ProductController.php` or `AuthorRepository.php` requires out-of-scope modifications.
-     - Per Reviewer AI instruction: `"Blocked → set Blocked: yes (<reason>) + History entry to REVIEWER AI, never to the human, never sideways."`
-     - Status updated to `Blocked: yes`.
+- **ROOT CAUSE (named, file:line):** `backend/vmarket-web/app/Http/Controllers/RestAPI/v1/ProductController.php:45-46` (pre-fix) — `__construct` promoted `private readonly AuthorRepositoryInterface $authorRepo` and `private readonly PublishingHouseRepositoryInterface $publishingHouseRepo`. `App\Repositories\AuthorRepository::__construct` requires `App\Models\Author` and `App\Repositories\PublishingHouseRepository::__construct` requires `App\Models\PublishingHouse`; both models were purged during legacy-debt cleanup. `App\Providers\InterfaceServiceProvider.php:bindInterfaceWithRepository()` still binds the two interfaces (it auto-discovers `app/Contracts/Repositories/*Interface.php` → `app/Repositories/*.php`), so the container resolved the dead repositories and threw `BindingResolutionException: Target class [App\Models\Author] does not exist.` Laravel resolves the controller and its whole constructor graph during `Route::getController()` in the middleware-gathering phase — before `get_latest_products()` is ever dispatched. Result: every HTTP request to `GET api/v1/products/latest` returned HTTP 500 while `api/v1/config` (a different controller, clean constructor) returned 200. **Not** a self-HTTP loopback, **not** an N+1, **not** a missing index.
+- **Pre-edititized grep proof (Reviewer-required):** `authorRepo|publishingHouseRepo|AuthorRepositoryInterface|PublishingHouseRepositoryInterface` in `ProductController.php` matched exactly 4 lines, all declaration-only — 2 `use` imports (lines 5, 7) and 2 promoted constructor params (lines 45, 46). **Zero use sites.** Removal is behavior-preserving for every other method in the file.
+- **Fix applied (scope: constructor + unused imports only):** removed the two promoted properties and their two `use` imports. `git diff --stat` = `.../ProductController.php | 4 ----` (1 file changed, 4 deletions). No method bodies touched. `Author::`/`PublishingHouse::` references at lines 116, 139, 202, 224 are untouched dead legacy debt → separate ticket, not freelanced.
+- **Timed probes (testing sqlite, sandbox; Herd php84 8.4.25):**
+  - BEFORE (`php -S localhost:8088`): `[500] GET /api/v1/products/latest?limit=10&offset=1` (fatal `BindingResolutionException`); control `[200] GET /api/v1/config` in ~1.2 s incl. cold boot.
+  - AFTER (in-process kernel handle, same DB, post-fix HEAD): `STATUS: 200` on `/api/v1/products/latest?limit=10&offset=1` in **51.09 ms**; control `/api/v1/config` `STATUS: 200` in 2635.48 ms (cold first-request boot cost, 66 products / 58 categories present). The 500 is gone; the route now dispatches.
+- **Query count:** `ProductManager::get_latest_products()` = **10 bounded queries / 2.88 ms DB time / 30.46 ms native wall clock**. Zero N+1. No index migration needed → no schema, no migration, no pretend run.
+- **Zero self-HTTP proof:** grep `Http::|curl_|file_get_contents` across the two allowed scopes (`ProductController.php`, `ProductManager.php`) = **0 matches**. No SSRF surface in the request path.
+- **`php -l`:** `No syntax errors detected` on `ProductController.php` and `ProductManager.php` (Herd php84).
+- **Contract:** unchanged / byte-identical. Response shape of `get_latest_products()` untouched.
+- **Schema/migrations:** none. **Docs:** none (report lives in review file).
 
 Review notes:
 Final decision:
@@ -88,3 +81,4 @@ History (append-only):
 - 2026-09-27  Reviewer AI  BACKLOG (filed)  Filed from :8001 observation (DB fast natively, latest-products timeout over HTTP). Queued behind TEST-001/ASSETS-001 reroutes per single-front + currency rule. No dispatch yet — work order pasted at dispatch after reroutes land.
 - 2026-09-27  Reviewer AI  BACKLOG -> IN_PROGRESS (dispatched)  Both reroutes RELEASED (v1@cb0779e6). Chain mapped by Reviewer: route api.php:175 → ProductController:55 → ProductManager:43 (+ in-process FeedSyncController:26). Work order pasted above; branch backend/VM-CATL-001 from v1@cb0779e6.
 - 2026-09-28  Backend AI   IN_PROGRESS -> BLOCKED (scope blocker reported)  Investigated catalog discovery timeout and HTTP failure. Native SQLite executes in ~30ms (10 queries, zero self-HTTP loopback). Direct HTTP probe on :8088 revealed fatal BindingResolutionException: Target class [App\Models\Author] does not exist triggered by ProductController::__construct injecting dead AuthorRepositoryInterface. Scope restricted to get_latest_products() only. Escalate to Reviewer AI for constructor cleanup scope authorization.
+- 2026-09-28  Backend AI   BLOCKED -> BACKEND_DONE  branch=backend/VM-CATL-001 sha=f6bafddfc47575ae7865235336bc5ac20076333f  Scope amendment `reviewer/VM-CATL-001-scope@1b09673b` applied. Removed dead `AuthorRepositoryInterface`/`PublishingHouseRepositoryInterface` promoted props + 2 unused `use` imports from `ProductController::__construct` (1 file, 4 deletions only). Pre-edititized grep confirmed 0 use sites for removed deps. `php -l` PASS on `ProductController.php` & `ProductManager.php`. Before: `[500] GET /api/v1/products/latest` (fatal BindingResolutionException). After: STATUS 200 / 51.09 ms (control api/v1/config = 200). Queries: 10 bounded, 2.88 ms DB time, zero N+1, zero self-HTTP. run-all.ps1 -Ticket VM-CATL-001 Schema-v2 JSON at commit f6bafddf: 17/17 PASS (secret_scan, static_analysis, backend, security, contract, database, dependency_scan + 10 baseline-justified). git diff --stat: `ProductController.php | 4 ----`. Contract byte-identical. Awaiting REVIEWER AI review at exact SHA.
