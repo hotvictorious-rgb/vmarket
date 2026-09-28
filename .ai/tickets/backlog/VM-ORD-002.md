@@ -3,8 +3,8 @@
 Ticket ID:            VM-ORD-002
 Title:                Live Author/PublishingHouse repo usage in 2 controllers — purged models break resolution
 Type:                 BUG
-Status:               BACKLOG
-Blocked:              no
+Status:               BLOCKED (needs human product decision — see options below; reported by Reviewer AI, all backend investigation complete)
+Blocked:              yes (ESCALATED 2026-09-28: repoint target does not exist; creating entities vs dropping attribution is a product call, not an engineering call)
 Created by / date:    Reviewer AI / 2026-09-28 (found during VM-ORD-001 verification: fixing the import exposed the next binding failure `App\Models\Author`)
 Size estimate:        small (repoint-or-remove at 4 live call sites across 2 controllers)
 
@@ -50,9 +50,18 @@ Push rule:            ONLY Reviewer AI merges to `v1` and pushes, after APPROVED
 Screenshots:          none - justify (defect fix)
 
 Implementation notes:
+- **Class-existence proof** (autoload-only, no boot; `classcheck.php` temp, Herd php84): `App\Models\Author` MISSING, `App\Models\PublishingHouse` MISSING, `DigitalProductAuthorRepositoryInterface` MISSING, `DigitalProductPublishingHouseRepository` MISSING, `DigitalProductPublishingHouse` model MISSING. Only `App\Models\OrderDetail` EXISTS.
+- **Blast radius:** seller `v3 ProductController` injects all four missing classes as constructor deps (`:65-68` + `:5,:7,:9,:38`) → the WHOLE controller fails resolution, so every seller product endpoint (not just digital publish) 500s today. Admin `OrderController` quick-view digital section (`:775-779`) 500s on digital orders. (Live-auth probe not run; resolution failure is proven by class-existence + Laravel mandatory constructor injection.)
+- **Why not CATL-001-style removal:** call sites are LIVE (not dead). Seller `:947/:964` feed legacy ids into the pivot writes; dropping the lines silently changes stored attribution. Admin `:775/:777` feeds the quick-view partial.
+- **DECISION_REQUEST for human (pick one):**
+  - A. Create minimal `DigitalProductAuthor` + `DigitalProductPublishingHouse` entities (models + migrations + repos) and repoint all 4 sites. Preserves attribution. Largest scope (new tables).
+  - B. Drop author/publishing-house attribution from digital flows (delete legacy lines; pivot writes use name-keyed data or stop). Smallest scope; product accepts attribution loss.
+  - C. Restore legacy `Author`/`PublishingHouse` models (undo purge). Reverses legacy direction; not recommended.
+- Backend implements the chosen option under this ticket;rope stays 2 controllers + imports.
 Review notes:
 Final decision:
 Release commit:
 
 History (append-only):
 - 2026-09-28  Reviewer AI  BACKLOG (filed)  Exposed by VM-ORD-001 fix: next binding failure is live Author usage, not dead deps — needs repoint decision, own ticket.
+- 2026-09-28  Reviewer AI  BACKLOG -> BLOCKED (ESCALATED, single-coordinator session)  Class-existence proof banked above: models purged AND Digital replacements never created. Blast radius is the full seller product controller + admin quick-view digital section. Stopped per escalation rule (product decision required); no code touched.
