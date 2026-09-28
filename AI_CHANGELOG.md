@@ -1,3 +1,9 @@
+### [2026-09-28 15:30 UTC] VM-CATL-001 Released: Catalog latest-products timeout fixed (RELEASE-2026-09-28-001) [backend] [AI]
+* **1. Root cause:** `ProductController::__construct` injected dead `Author/PublishingHouse` repos (models purged) → `BindingResolutionException` before `get_latest_products()`; every HTTP hit 500 while `config` stayed 200. Fix: 4 deletions only (2 dead `use` + 2 dead promoted props), zero method bodies.
+* **2. Proof:** before 500 → after 200/51ms; 10 bounded queries, zero N+1, zero self-HTTP; `php -l` clean; runner 17/17 PASS at `06e02910` (Backend + independent Reviewer re-run); gate 18/18 PASS; contract byte-identical. No Frontend dispatch needed.
+* **3. Release:** merged `backend/VM-CATL-001` into `v1` --no-ff (`02bb0708`); ticket → `released/`; manifest + review recorded. Single-coordinator session; multi-terminal relay retired.
+* **4. Follow-up:** remaining `Author::/PublishingHouse::` references in other controller methods left for separate legacy-purge ticket.
+
 ### [2026-09-26 08:10 UTC] VM-PERF-001 Filed: Baseline Load Ceiling [ai-governance] [AI]
 * **1. Filed `VM-PERF-001` (BACKLOG, Tier A):** measure staging ceiling on checkout/payment/order at stepped concurrency (p50/p95/p99, errors, queries-per-request, bottleneck + next scaling step). Sandbox only, measure-first (defects get own tickets). Runs after VM-PAY-001.
 * **2. Verification:** staged + committed only own files.

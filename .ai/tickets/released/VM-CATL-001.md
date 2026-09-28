@@ -3,7 +3,7 @@
 Ticket ID:            VM-CATL-001
 Title:                Catalog discovery timeout — api/v1/products/latest hangs over HTTP while SQLite fast natively
 Type:                 BUG
-Status:               BACKEND_DONE
+Status:               RELEASED
 Blocked:              no (scope expanded by Reviewer 2026-09-28 on reviewer/VM-CATL-001-scope@1b09673b; blocker cleared)
 Created by / date:    Reviewer AI / 2026-09-27 (filed from :8001 observation: native queries fast — 66 products / 58 categories — but api/v1/products/latest times out over HTTP; suspected single-threaded serve self-call or N+1)
 Size estimate:        small (diagnose + root-cause fix + proof; split if product-code + harness both change)
@@ -73,12 +73,15 @@ Implementation notes:
 - **Contract:** unchanged / byte-identical. Response shape of `get_latest_products()` untouched.
 - **Schema/migrations:** none. **Docs:** none (report lives in review file).
 
-Review notes:
-Final decision:
-Release commit:
+Review notes: .ai/reviews/REV-VM-CATL-001-06e029100ab5e4737bf0c856f69b848509aa02a9.md (Decision APPROVED; independent re-run 17/17 PASS at exact SHA)
+Final decision: APPROVED → RELEASED as RELEASE-2026-09-28-001
+Release commit: 02bb0708307907a8227faab3db8be56301c8e681 (merge v1; feature 06e029100ab5e4737bf0c856f69b848509aa02a9)
 
 History (append-only):
 - 2026-09-27  Reviewer AI  BACKLOG (filed)  Filed from :8001 observation (DB fast natively, latest-products timeout over HTTP). Queued behind TEST-001/ASSETS-001 reroutes per single-front + currency rule. No dispatch yet — work order pasted at dispatch after reroutes land.
 - 2026-09-27  Reviewer AI  BACKLOG -> IN_PROGRESS (dispatched)  Both reroutes RELEASED (v1@cb0779e6). Chain mapped by Reviewer: route api.php:175 → ProductController:55 → ProductManager:43 (+ in-process FeedSyncController:26). Work order pasted above; branch backend/VM-CATL-001 from v1@cb0779e6.
 - 2026-09-28  Backend AI   IN_PROGRESS -> BLOCKED (scope blocker reported)  Investigated catalog discovery timeout and HTTP failure. Native SQLite executes in ~30ms (10 queries, zero self-HTTP loopback). Direct HTTP probe on :8088 revealed fatal BindingResolutionException: Target class [App\Models\Author] does not exist triggered by ProductController::__construct injecting dead AuthorRepositoryInterface. Scope restricted to get_latest_products() only. Escalate to Reviewer AI for constructor cleanup scope authorization.
 - 2026-09-28  Backend AI   BLOCKED -> BACKEND_DONE  branch=backend/VM-CATL-001 sha=f6bafddfc47575ae7865235336bc5ac20076333f  Scope amendment `reviewer/VM-CATL-001-scope@1b09673b` applied. Removed dead `AuthorRepositoryInterface`/`PublishingHouseRepositoryInterface` promoted props + 2 unused `use` imports from `ProductController::__construct` (1 file, 4 deletions only). Pre-edititized grep confirmed 0 use sites for removed deps. `php -l` PASS on `ProductController.php` & `ProductManager.php`. Before: `[500] GET /api/v1/products/latest` (fatal BindingResolutionException). After: STATUS 200 / 51.09 ms (control api/v1/config = 200). Queries: 10 bounded, 2.88 ms DB time, zero N+1, zero self-HTTP. run-all.ps1 -Ticket VM-CATL-001 Schema-v2 JSON at commit f6bafddf: 17/17 PASS (secret_scan, static_analysis, backend, security, contract, database, dependency_scan + 10 baseline-justified). git diff --stat: `ProductController.php | 4 ----`. Contract byte-identical. Awaiting REVIEWER AI review at exact SHA.
+- 2026-09-28  Backend AI   BACKEND_DONE docs  sha=06e029100ab5e4737bf0c856f69b848509aa02a9  Ticket evidence recorded; runner JSON regenerated at full HEAD 06e02910: 17/17 PASS uncommitted per hook.
+- 2026-09-28  Reviewer AI  BACKEND_DONE -> REVIEW_APPROVED (single-coordinator session; multi-terminal relay retired)  Independent verification at detached 06e02910: diff 4 deletions only, php -l PASS x2, zero self-HTTP grep empty, run-all.ps1 17/17 PASS bound to 06e02910. Gate 18/18 PASS. Review .ai/reviews/REV-VM-CATL-001-06e029100ab5e4737bf0c856f69b848509aa02a9.md Decision APPROVED. No Frontend dispatch (no client change required).
+- 2026-09-28  Reviewer AI  REVIEW_APPROVED -> RELEASED (RELEASE-2026-09-28-001)  Merged origin/backend/VM-CATL-001 into v1 --no-ff (02bb0708); tag on merge commit; manifest + review + released ticket recorded. Backend branch deleted after merge.
