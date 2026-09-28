@@ -44,9 +44,17 @@ Push rule:            ONLY Reviewer AI merges to `v1` and pushes, after APPROVED
 Screenshots:          none - justify (audit; evidence is handler/route triples)
 
 Implementation notes:
+- **Partial chain evidence banked 2026-09-28 (single-coordinator session, server :8000 testing sqlite, product code post-ORD-003):**
+  - browse: `GET api/v1/products/latest` 200/0.56s; category pages 200 (server log).
+  - cart: `cart/add|updateQuantity-guest|select-cart-items|remove` all HTTP 200 live with server-side totals (guest session walk, criterion proof on VM-CUST-003 branch). Full verb table from `route:list` (`cart.*` 13 routes incl. `add`, `updateQuantity[.guest]`, `select-cart-items`, `remove`, `nav-cart-items`).
+  - checkout: `checkout-details` 302→home for guest (auth gate, no fatal); route `web/routes.php:121`; CTA `data-goto-checkout` → `customer/choose-shipping-address-other` (POST-only: GET→405, method-guarded); `checkout-payment` route `:123`; `web-payment-request` POST `:353`.
+  - track: `GET track-order` 200, renders "Track order" heading guest-safe; group `track-order.*` at `:194`.
+  - pay: NOT walked — needs authenticated session + Paystack SANDBOX keys (same blocker as VM-PAY-001 live-fire). Static: callback+webhook converge on `settleVerifiedPayment` (see VM-PAY-001 audit branch).
+- **Defects filed from this chain so far:** VM-ORD-001 (released), VM-ORD-002 (released), VM-ORD-003 (released), VM-SEED-001 (backlog). Dependencies VM-CUST-011/012 named above do not exist as files — treating this ticket as the authoritative slice.
 Review notes:
 Final decision:
 Release commit:
 
 History (append-only):
 - 2026-09-26  Human  BACKLOG (created)  Launch-sequence ticket 3 of 4: transaction-path slice of the button audit; full sweep stays in VM-CUST-012.
+- 2026-09-28  Reviewer AI  BACKLOG (partial evidence, single-coordinator session)  Chain verified except live pay (keys). route:list unblocked by ORD-001→002→003 chain. 4 defects filed+3 released from this chain. Pay walk + per-control triple sheet deferred to Backend walk with sandbox keys.
