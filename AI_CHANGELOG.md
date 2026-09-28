@@ -1,3 +1,9 @@
+### [2026-09-28 18:20 UTC] VM-ORD-002 Released: Author/Digital classes restored (RELEASE-2026-09-28-003) [backend] [AI]
+* **1. Defect:** 8 Author/PublishingHouse/Digital classes referenced by live code (seller publish, admin quick-view) were purged with no replacements — full seller product controller + admin quick-view digital section unresolvable. Fix: faithful restoration from `828e6724^`, byte-identical 8/8, zero migrations, zero behavior change.
+* **2. Proof:** class-exists all-EXISTS; error-class change (Author fatal → Admin trait fatal, the latter owned by VM-ORD-003); run-all 17/17 PASS at `4f20fee6`; gate 18/18 PASS; review APPROVED. Filed VM-ORD-003 (trait conflict) + VM-TEST-002 (procedural-suite hardening) from the same verification pass.
+* **3. Release:** merged `backend/VM-ORD-002` into `v1` --no-ff (`95a82081`); ticket → `released/`; manifest + review recorded.
+* **4. Verification:** staged + committed only own files (ticket + review + manifest + changelog).
+
 ### [2026-09-28 17:45 UTC] VM-ORD-001 Released: OrderRepository missing import fixed (RELEASE-2026-09-28-002) [backend] [AI]
 * **1. Defect:** `OrderRepository.php:28` hinted bare `OrderDetail` with no import → resolved to non-existent `App\Repositories\OrderDetail`; container resolution fatal (found via `route:list` during VM-CUST-013 verification). Fix: 1 insertion (`use App\Models\OrderDetail;`), zero behavior delta.
 * **2. Proof:** `php -l` clean; error-class change (`Repositories\OrderDetail` → `Models\Author`, the latter owned by VM-ORD-002); run-all 17/17 PASS at `5179c7c9`; gate 18/18 PASS; review APPROVED.

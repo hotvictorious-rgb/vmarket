@@ -3,7 +3,7 @@
 Ticket ID:            VM-ORD-002
 Title:                Live Author/PublishingHouse repo usage in 2 controllers ΓÇö purged models break resolution
 Type:                 BUG
-Status:               BACKEND_DONE
+Status:               RELEASED
 Blocked:              no (escalation resolved by human run-order; Option A-minimal recorded below)
 Created by / date:    Reviewer AI / 2026-09-28 (found during VM-ORD-001 verification: fixing the import exposed the next binding failure `App\Models\Author`)
 Size estimate:        small (repoint-or-remove at 4 live call sites across 2 controllers)
@@ -59,9 +59,9 @@ Implementation notes:
   - C. Restore legacy `Author`/`PublishingHouse` models (undo purge). Reverses legacy direction; not recommended.
 - Backend implements the chosen option under this ticket; scope stays 2 controllers + imports.
 - **DECISION (2026-09-28, human run-order "execute recommended"):** Option A-minimal — NEITHER new tables (they exist) NOR repoint. Restore the 8 deleted files verbatim from `828e6724^` (4 models incl. pivots, 2 interfaces, 2 repos). Tables `authors`, `publishing_houses`, `digital_product_authors`, `digital_product_publishing_houses` all present with matching columns (`name` / `author_id+product_id` / `publishing_house_id+product_id`). Zero invention, zero migrations, zero behavior change — current code was written against these exact classes.
-Review notes:
-Final decision:
-Release commit:
+Review notes: .ai/reviews/REV-VM-ORD-002-4f20fee68782a7ca20abb6a1095ebed97604ae82.md (Decision APPROVED; 8/8 byte-identical, 17/17 at exact SHA)
+Final decision: APPROVED → RELEASED as RELEASE-2026-09-28-003
+Release commit: 95a82081 (merge v1; feature 4f20fee68782a7ca20abb6a1095ebed97604ae82)
 
 History (append-only):
 - 2026-09-28  Reviewer AI  BACKLOG (filed)  Exposed by VM-ORD-001 fix: next binding failure is live Author usage, not dead deps ΓÇö needs repoint decision, own ticket.
@@ -69,3 +69,4 @@ History (append-only):
 - 2026-09-28  Reviewer AI  SCOPE WIDENED (still BLOCKED)  Same-file sweep found MORE purge-family usages: seller `ProductController:160` (`publishingHouseProducts` relation), `:181-182` (`Author::withCount(digitalProductAuthor)`), plus `Author::`/`PublishingHouse::` model refs in `ProductManager`, `OrderManager`, `CustomerManager`, `CustomerTrait`, web `Web/Home/Cart/UserProfile/Review` controllers (static `Model::` calls ΓÇö fatal only when those code paths execute, unlike constructor deps which fatal at resolution). Implementer must disposition constructor deps (resolution-blocking) AND audit model call sites on touched paths. See also VM-SEED-001 (no writer for `marketplace_confirmed_at` ΓÇö seller listings can never become purchasable).
 - 2026-09-28  Backend AI  BLOCKED -> IN_PROGRESS (Option A-minimal)  Tables verified present with matching columns. Restoring 8 files verbatim from 828e6724^: 4 models, 2 interfaces, 2 repos. Zero invention, zero migrations.
 - 2026-09-28  Backend AI  IN_PROGRESS -> BACKEND_DONE (single-coordinator session)  8 files restored verbatim (403 insertions, all php -l clean), class-exists all-EXISTS, route:list past Author failure (trait conflict -> VM-ORD-003), run-all 17/17 PASS at fix commit 89855a3c. branch=backend/VM-ORD-002.
+- 2026-09-28  Reviewer AI  BACKEND_DONE -> REVIEW_APPROVED -> RELEASED (RELEASE-2026-09-28-003, single-coordinator session)  8/8 byte-identical verified, run-all 17/17 at 4f20fee6, gate 18/18 PASS. Merged --no-ff (95a82081); ticket released; branch deleted after merge.
