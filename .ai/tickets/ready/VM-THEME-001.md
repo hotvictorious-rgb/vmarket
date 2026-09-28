@@ -4,7 +4,7 @@ Ticket ID:            VM-THEME-001
 Title:                Theme_Aster Removal Finalization — Dangling Reference Normalization
 Type:                 FEATURE
 Status:               READY
-Blocked:              no
+Blocked:              yes (waiting VM-CUST-003 RELEASED — same theme area per Dependencies; do not dispatch before)
 Created by / date:    AI-8 / 2026-09-25
 Size estimate:        ~300 lines (conditional normalization + verification, no new features)
 
@@ -56,11 +56,11 @@ Counters:             review_cycles: 0   integration_failures: 0   reopened_coun
 Pipeline:             Human → REVIEWER AI → BACKEND AI → REVIEWER AI → FRONTEND AI → REVIEWER AI (APPROVED) → REVIEWER AI pushes
 Push rule:            ONLY Reviewer AI merges to `v1` and pushes, after APPROVED + gate PASS, via `scripts/release/merge-release`. Workers push only their own feature branches.
 Screenshots:          N/A
-
 Implementation notes:
-To be populated by AI-2 during implementation.
+- 2026-09-28 Reviewer trunk verification (no code changes): `theme_aster/` EXISTS on disk; 30+ live code refs (HomeController, ProductListController x5, ShopViewController x3, WebController, BannerService, PdfGenerator, AdvanceSearch x2, Constant.php, GlobalConstant, file_path.php x7+, FlashDeal/SubCategory requests, Installable/UpdatePackage). Seeder default `theme_name => theme_aster` (`seed_sqlite_core.php:31`). Full ordered-removal scope confirmed real. (Populated by Backend AI during implementation.)
+
 Review notes:
-To be populated by AI-5 during review.
+- (Populated by REVIEWER AI at exact-SHA review.)
 Final decision:
 Pending implementation and review.
 Release commit:
@@ -69,3 +69,4 @@ Pending.
 History (append-only):
 - 2026-09-25  AI-8  BACKLOG -> READY  Split from VM-CUST-003 per DECISION-001 (human approved Option A)
 - 2026-09-26  Human  READY (premise refreshed)  theme_aster/ folder is back on disk (restored in VM-CUST-003 close-out); ticket rescoped to full ordered removal. Migrated to 3-AI model: Backend-then-Frontend dispatch, REVIEWER AI sole gatekeeper + push authority. Launch-sequence ticket 4 of 4.
+- 2026-09-28  Reviewer AI  READY gated (single-coordinator session)  Trunk verification banked above (folder + 30+ refs + seeder default all confirm premise). Set `Blocked: yes` until VM-CUST-003 RELEASED per Dependencies. Retired `AI-2`/`AI-5` note placeholders.
