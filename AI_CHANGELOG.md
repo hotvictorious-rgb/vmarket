@@ -1,3 +1,9 @@
+### [2026-09-28 17:45 UTC] VM-ORD-001 Released: OrderRepository missing import fixed (RELEASE-2026-09-28-002) [backend] [AI]
+* **1. Defect:** `OrderRepository.php:28` hinted bare `OrderDetail` with no import → resolved to non-existent `App\Repositories\OrderDetail`; container resolution fatal (found via `route:list` during VM-CUST-013 verification). Fix: 1 insertion (`use App\Models\OrderDetail;`), zero behavior delta.
+* **2. Proof:** `php -l` clean; error-class change (`Repositories\OrderDetail` → `Models\Author`, the latter owned by VM-ORD-002); run-all 17/17 PASS at `5179c7c9`; gate 18/18 PASS; review APPROVED.
+* **3. Release:** merged `backend/VM-ORD-001` into `v1` --no-ff (`2b9c8d62`); ticket → `released/`; manifest + review recorded. Exposed follow-on VM-ORD-002 (4 live Author/PublishingHouse call sites needing repoint).
+* **4. Verification:** staged + committed only own files (ticket + review + manifest + changelog).
+
 ### [2026-09-28 15:30 UTC] VM-CATL-001 Released: Catalog latest-products timeout fixed (RELEASE-2026-09-28-001) [backend] [AI]
 * **1. Root cause:** `ProductController::__construct` injected dead `Author/PublishingHouse` repos (models purged) → `BindingResolutionException` before `get_latest_products()`; every HTTP hit 500 while `config` stayed 200. Fix: 4 deletions only (2 dead `use` + 2 dead promoted props), zero method bodies.
 * **2. Proof:** before 500 → after 200/51ms; 10 bounded queries, zero N+1, zero self-HTTP; `php -l` clean; runner 17/17 PASS at `06e02910` (Backend + independent Reviewer re-run); gate 18/18 PASS; contract byte-identical. No Frontend dispatch needed.
