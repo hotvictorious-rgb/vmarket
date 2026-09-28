@@ -5,6 +5,7 @@ namespace App\Repositories;
 use App\Contracts\Repositories\OrderRepositoryInterface;
 use App\Models\AdminWallet;
 use App\Models\Order;
+use App\Models\OrderDetail;
 use App\Models\OrderExpectedDeliveryHistory;
 use App\Models\OrderTransaction;
 use App\Models\Product;
