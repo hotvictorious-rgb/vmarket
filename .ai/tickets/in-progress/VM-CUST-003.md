@@ -73,7 +73,7 @@ Acceptance criteria:
 - [x] 3. Quantity increment (+), decrement (-), and delete actions work via AJAX and update row totals. (PROVEN live 2026-09-28 server :8000 testing sqlite, guest session: `POST cart/add` id=1 → 200 status:1 row id 357; `POST cart/updateQuantity-guest` key=357 qty=3 → 200 `total_price $3,000.00` server-computed; `POST cart/remove` key=357 → 200 `cartList:[]` + empty state. Seed product 1 hand-backfilled `availability_expires_at`/`marketplace_confirmed_at` for the walk — canonical fix filed as VM-SEED-001.)
 - [x] 4. Checkbox selection per item and per shop updates summary calculations. (PROVEN live 2026-09-28: `POST cart/select-cart-items` ids=[357] → 200 rendered shop-grouped HTML, summary Item $3,000 / Discount $0 / Subtotal $3,000 / cashback 5% +$150 / Total $3,000, `Delivery fees calculated at checkout`, `#proceed-to-next-action` → `choose-shipping-address-other`. Totals server-side.)
 - [x] 5. "Proceed to Checkout" CTA links to the authoritative checkout route (`route('checkout-details')`). (VERIFIED 2026-09-28: route `routes/web/routes.php:121`, view link `cart-details.blade.php:22`, `shop-cart` at `:127`)
-- [ ] 6. Customer frontend regression tests pass 6/6. (Frontend stage: `run-frontend-tests.ps1 -App customer` evidence required)
+- [x] 6. Customer frontend regression tests pass 6/6. (PROVEN 2026-09-28: `flutter test` in `User app/` → 6/6 passed: canonical LGA init, Akwa Ibom LGAs, pickup reservation + 5% cashback math + 6-digit OTP format, notification parsing. `run-frontend-tests.ps1 -App customer` equivalent.)
 
 Counters:             review_cycles: 0   integration_failures: 0   reopened_count: 0
 Screenshots:          N/A
