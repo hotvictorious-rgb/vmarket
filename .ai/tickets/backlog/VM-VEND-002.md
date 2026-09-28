@@ -29,7 +29,7 @@ Assigned AI:          BACKEND AI first, then FRONTEND AI   (dispatched by REVIEW
 Required reviewers:   REVIEWER AI (sole coordinator, gatekeeper, and push authority; verdict bound to exact commit SHA)
 Branch / base commit: backend/VM-VEND-002, then frontend/VM-VEND-002 (from current `v1`)
 Work order:           (Reviewer AI pastes the exact-prompt work order here per `.ai/templates/work-order-template.md`)
-Dependencies (tickets/features): VM-PAY-001 (order notification proof needs settled money path; may run in parallel as proof-only, fixes ordered after)
+Dependencies (tickets/features): VM-PAY-001 (order notification proof needs settled money path; may run in parallel as proof-only, fixes ordered after); VM-ORD-002 (BLOCKS criterion 2 product-publish proof — seller v3 ProductController cannot resolve until the Author live-usage defect is dispositioned; register/approve walk may proceed first)
 Tests required:       live walk per step with file:line + route + verb evidence; branch-isolation negative test (vendor B cannot see vendor A data); `flutter analyze` if app touched
 Security requirements: vendor IDOR scoping on every step; branch/employee isolation verified hostilely
 Acceptance criteria:  (checklist; each item gets an evidence link)
@@ -50,3 +50,4 @@ Release commit:
 
 History (append-only):
 - 2026-09-26  Human  BACKLOG (created)  Launch-sequence ticket 2 of 4: vendor journey proof.
+- 2026-09-28  Reviewer AI  BACKLOG (dependency noted, single-coordinator session)  Trunk check: vendor v3 `seller.php` surface exists (product group `:87-91`, order statistics/reviews `:53-58`). Added VM-ORD-002 as blocking dependency for criterion 2 (publish proof needs a resolvable seller ProductController). No code touched.
