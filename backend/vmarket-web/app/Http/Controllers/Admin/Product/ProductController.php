@@ -31,6 +31,7 @@ use App\Http\Requests\Admin\ProductDenyRequest;
 use App\Http\Requests\ProductAddRequest;
 use App\Http\Requests\ProductEditImageRequest;
 use App\Http\Requests\ProductUpdateRequest;
+use App\Services\ProductService;
 use App\Traits\FileManagerTrait;
 use App\Traits\ProductTrait;
 use App\Utils\CartManager;
@@ -78,9 +79,10 @@ class ProductController extends BaseController
         private readonly ReviewRepositoryInterface                  $reviewRepo,
         private readonly BannerRepositoryInterface                  $bannerRepo,
         private readonly ShopRepositoryInterface                    $shopRepo,
-        private readonly ProductService                             $productService,
+        ProductService                                              $productService,
     )
     {
+        $this->productService = $productService;
     }
 
     /**

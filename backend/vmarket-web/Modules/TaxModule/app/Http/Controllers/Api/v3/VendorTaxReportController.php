@@ -36,7 +36,10 @@ class VendorTaxReportController extends Controller
         private readonly ShopRepositoryInterface $shopRepo
     )
     {
-        DB::statement("SET sql_mode=(SELECT REPLACE(@@sql_mode,'ONLY_FULL_GROUP_BY',''));");
+        // [AI] MySQL-only session relax for GROUP BY tax rollups; skip on sqlite/pgsql (console tooling + testing).
+        if (DB::getDriverName() === 'mysql') {
+            DB::statement("SET sql_mode=(SELECT REPLACE(@@sql_mode,'ONLY_FULL_GROUP_BY',''));");
+        }
     }
 
 
