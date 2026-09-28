@@ -1,3 +1,9 @@
+### [2026-09-28 19:05 UTC] VM-ORD-003 Released: container boot chain fixed (RELEASE-2026-09-28-004) [backend] [AI]
+* **1. Defects:** Admin ProductController dual-promoted `$productService` (trait + own ctor) + missing `ProductService` import — class unloadable; twin TaxModule ctors issued MySQL-only `SET sql_mode` on every boot (sqlite fatal). Fix: demote+assign (2 lines) + import (1 line) + driver guard x2 (5+5 lines). Zero behavior delta.
+* **2. Proof:** class-load 5/5 LOADS; `route:list` full table exit 0 (was 255); run-all 17/17 PASS at `0858a94e`; gate 18/18 PASS; review APPROVED. Unblocks VM-CUST-013 route:list evidence chain (ORD-001 → ORD-002 → ORD-003).
+* **3. Release:** merged `backend/VM-ORD-003` into `v1` --no-ff (`fc08fc1e`); ticket → `released/`; manifest + review recorded.
+* **4. Verification:** staged + committed only own files (ticket + review + manifest + changelog).
+
 ### [2026-09-28 18:20 UTC] VM-ORD-002 Released: Author/Digital classes restored (RELEASE-2026-09-28-003) [backend] [AI]
 * **1. Defect:** 8 Author/PublishingHouse/Digital classes referenced by live code (seller publish, admin quick-view) were purged with no replacements — full seller product controller + admin quick-view digital section unresolvable. Fix: faithful restoration from `828e6724^`, byte-identical 8/8, zero migrations, zero behavior change.
 * **2. Proof:** class-exists all-EXISTS; error-class change (Author fatal → Admin trait fatal, the latter owned by VM-ORD-003); run-all 17/17 PASS at `4f20fee6`; gate 18/18 PASS; review APPROVED. Filed VM-ORD-003 (trait conflict) + VM-TEST-002 (procedural-suite hardening) from the same verification pass.

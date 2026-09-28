@@ -3,7 +3,7 @@
 Ticket ID:            VM-ORD-003
 Title:                Admin ProductController trait property conflict ΓÇö $productService promoted twice, class cannot load
 Type:                 BUG
-Status:               BACKEND_DONE
+Status:               RELEASED
 Blocked:              no
 Created by / date:    Reviewer AI / 2026-09-28 (found during VM-ORD-002 verification: after Author bindings resolved, `route:list` hits this fatal)
 Size estimate:        xs (2-line change in 1 file)
@@ -50,11 +50,12 @@ Push rule:            ONLY Reviewer AI merges to `v1` and pushes, after APPROVED
 Screenshots:          none - justify (composition fix)
 
 Implementation notes:
-Review notes:
-Final decision:
-Release commit:
+Review notes: .ai/reviews/REV-VM-ORD-003-0858a94e0e63c287dd02c46f7220ec086b56b646.md (Decision APPROVED; class-load 5/5, route:list exit 0, 17/17 at exact SHA)
+Final decision: APPROVED → RELEASED as RELEASE-2026-09-28-004
+Release commit: fc08fc1e (merge v1; feature 0858a94e0e63c287dd02c46f7220ec086b56b646)
 
 History (append-only):
 - 2026-09-28  Reviewer AI  BACKLOG (filed)  Exposed by VM-ORD-002 restoration: next fatal is the trait dual-promotion, not Author. Distinct root cause ΓåÆ own ticket.
 - 2026-09-28  Backend AI  BACKLOG -> BACKEND_DONE (single-coordinator session)  3 files: Admin ctor demote+assign (2 lines) + missing ProductService import (1 line) + twin MySQL-guard in both TaxModule ctors (5+5 lines). class-load 5/5 LOADS, route:list exit 0 (full table), run-all counts below. branch=backend/VM-ORD-003.
 - 2026-09-28  Backend AI  run-all 17/17 PASS at fix commit 092623fd (7 executed + 10 justified).
+- 2026-09-28  Reviewer AI  BACKEND_DONE -> REVIEW_APPROVED -> RELEASED (RELEASE-2026-09-28-004, single-coordinator session)  Class-load 5/5, route:list exit 0 full table, run-all 17/17 at 0858a94e, gate 18/18 PASS. Merged --no-ff (fc08fc1e); ticket released; branch deleted after merge.
