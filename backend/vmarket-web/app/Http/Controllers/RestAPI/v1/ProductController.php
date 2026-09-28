@@ -2,9 +2,7 @@
 
 namespace App\Http\Controllers\RestAPI\v1;
 
-use App\Contracts\Repositories\AuthorRepositoryInterface;
 use App\Contracts\Repositories\CategoryRepositoryInterface;
-use App\Contracts\Repositories\PublishingHouseRepositoryInterface;
 use App\Contracts\Repositories\RestockProductCustomerRepositoryInterface;
 use App\Contracts\Repositories\RestockProductRepositoryInterface;
 use App\Http\Controllers\Controller;
@@ -42,8 +40,6 @@ class ProductController extends Controller
         private Product                                            $product,
         private Order                                              $order,
         private MostDemanded                                       $most_demanded,
-        private readonly AuthorRepositoryInterface                 $authorRepo,
-        private readonly PublishingHouseRepositoryInterface        $publishingHouseRepo,
         private readonly ProductService                            $productService,
         private readonly RestockProductCustomerRepositoryInterface $restockProductCustomerRepo,
         private readonly RestockProductRepositoryInterface         $restockProductRepo,
