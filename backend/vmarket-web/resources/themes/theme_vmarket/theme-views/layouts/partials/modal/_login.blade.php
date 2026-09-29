@@ -44,7 +44,7 @@ if (!$customerOTPLogin && $customerManualLogin && $customerSocialLogin) {
             <div class="modal-body px-4 px-sm-5">
                 <div class="vm-auth-logo-ring">
                     <img alt="Victorious Market logo" class="dark-support"
-                        src="{{ theme_asset('assets/img/vic_logo.webp') }}">
+                        src="{{ theme_asset('assets/img/vm_icon.jpg') }}">
                 </div>
 
                 <div class="mb-4 text-center">

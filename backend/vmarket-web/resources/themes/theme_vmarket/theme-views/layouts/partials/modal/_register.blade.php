@@ -27,7 +27,7 @@
             <div class="modal-body px-4 px-lg-5">
                 <div class="vm-auth-logo-ring">
                     <img alt="Victorious Market logo" class="dark-support"
-                         src="{{ theme_asset('assets/img/vic_logo.webp') }}">
+                         src="{{ theme_asset('assets/img/vm_icon.jpg') }}">
                 </div>
                 <div class="mb-4 text-center">
                     <h2 class="mb-2 fw-bold">{{ translate('sign_up') }}</h2>
