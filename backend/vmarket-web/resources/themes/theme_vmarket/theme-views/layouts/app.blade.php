@@ -23,6 +23,8 @@
     
     <!-- VMarket Master Theme CSS (Loaded after Bootstrap to enforce bespoke design language) -->
     <link rel="stylesheet" href="{{ theme_asset('assets/css/vmarket.css') }}">
+    <!-- [AI] VM-STORE-004: intl-tel-input CSS so any initialized country picker renders styled, never as a raw list -->
+    <link rel="stylesheet" href="{{ theme_asset('assets/plugins/intl-tel-input/css/intlTelInput.min.css') }}">
     
     @stack('css_or_js')
 </head>
