@@ -129,13 +129,27 @@ class VendorService
 
     public function getAddData(object $request): array
     {
+        // [AI] VM-VEND-005: entity fields; CAC doc stored via KYC document path when present.
+        $cacDocument = null;
+        if ($request->file('cac_document')) {
+            $cacDocument = $this->upload(dir: 'seller/kyc/', format: 'webp', image: $request->file('cac_document'));
+        }
         return [
             'f_name' => $request['f_name'],
             'l_name' => $request['l_name'],
+            'business_type' => $request['business_type'] ?? 'individual',
+            'legal_name' => $request['legal_name'] ?? null,
             'phone' => $request['phone'],
             'email' => $request['email'],
             'image' => $request->file('image') ? $this->upload(dir: 'seller/', format: 'webp', image: $request->file('image')) : 'def.png',
             'password' => bcrypt($request['password']),
+            'cac_number' => !empty($request['cac_number']) ? strtoupper(trim($request['cac_number'])) : null,
+            'cac_document' => $cacDocument,
+            'cac_status' => 'pending',
+            'nin' => !empty($request['nin']) ? trim($request['nin']) : null,
+            'kyc_status' => 'pending',
+            'payout_status' => 'pending',
+            'marketplace_applied_at' => now(),
             'status' => 'pending', // [AI] Mandatory Super Admin KYC Verification Invariant
         ];
     }
