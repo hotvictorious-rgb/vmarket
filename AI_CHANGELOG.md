@@ -1,3 +1,9 @@
+### [2026-09-29 09:45 UTC] VM-STORE-009 Released: guest cart opens login + NG default (RELEASE-2026-09-29-008) [frontend] [AI]
+* **1. Answers:** yes, the header cart button opens items for authed users; guests dead-ended at home (guest-checkout off per V1 rule) — button now opens the login modal instead. Staging `country_code` was BD (stock default) → set NG; prod admin must set likewise.
+* **2. Proof:** served guest HTML carries the modal trigger; run-all 17/17 PASS; gate 18/18 PASS; review APPROVED.
+* **3. Release:** merged `frontend/VM-STORE-009` into `v1` --no-ff (`a65c643c`); ticket → `released/`; manifest + review recorded.
+* **4. Verification:** staged + committed only own files (ticket + review + manifest + changelog).
+
 ### [2026-09-29 09:20 UTC] VM-STORE-008 Released: Nigeria phone default (RELEASE-2026-09-29-007) [frontend] [AI]
 * **1. Ruling:** Nigeria default on all phone forms. Removed the duplicated default-country span and flipped the `us` fallback to `ng` (repo-wide grep: no other country fallback). Init wiring stays deferred (no blind value-rewriting).
 * **2. Proof:** run-all 17/17 PASS; gate 18/18 PASS; review APPROVED.
