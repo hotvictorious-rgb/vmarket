@@ -179,7 +179,7 @@
                         <span>{{ translate('Add to Cart') }}</span>
                     </button>
 
-                    <button type="button" class="vm-btn-gold product-buy-now-button" data-form=".addToCartDynamicForm" data-url="{{ route('checkout-details') }}" {{ !$inStock ? 'disabled style=opacity:0.5;cursor:not-allowed;' : '' }}>
+                    <button type="button" class="vm-btn-gold product-buy-now-button" data-form=".addToCartDynamicForm" data-auth="{{( getWebConfig(name: 'guest_checkout') == 1 || Auth::guard('customer')->check() ? 'true':'false')}}" data-route="{{ route('shop-cart') }}" data-url="{{ route('checkout-details') }}" {{ !$inStock ? 'disabled style=opacity:0.5;cursor:not-allowed;' : '' }}>
                         <span>⚡ {{ translate('Buy Now') }}</span>
                     </button>
                     

@@ -623,9 +623,11 @@ function addToCart(formSelector, redirectToCheckout = false, url = null) {
             },
         });
 
+        // [AI] VM-STORE-002: only reroute to quantity-update when the key holder EXISTS on this page and holds a key.
+        // Missing element yields undefined, which must NOT count as "exists" (first clicks on details pages).
         let existCartItem = $('.product-exist-in-cart-list[name="key"]').val();
         let formActionUrl = $(formSelector).attr("action");
-        if (existCartItem !== "" && !redirectToCheckout) {
+        if (typeof existCartItem !== "undefined" && existCartItem !== "" && !redirectToCheckout) {
             formActionUrl = $("#update_quantity_url").data("url");
         }
 
