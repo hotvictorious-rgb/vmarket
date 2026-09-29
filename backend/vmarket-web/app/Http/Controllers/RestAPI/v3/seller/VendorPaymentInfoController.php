@@ -73,9 +73,16 @@ class VendorPaymentInfoController extends Controller
 
     public function updateDefault(Request $request): JsonResponse
     {
-        $this->vendorWithdrawMethodInfoRepo->updateWhere(params: ['user_id' => $request['seller']?->id], data: ['is_default' => 0]);
+        $sellerId = $request['seller']?->id;
+        // [AI] Zero-Trust IDOR Guard: Verify ownership before mutating default status
+        $method = $this->vendorWithdrawMethodInfoRepo->getFirstWhere(params: ['id' => $request['id'], 'user_id' => $sellerId]);
+        if (!$method) {
+            return response()->json(['status' => false, 'message' => translate('Unauthorized_or_payment_method_not_found')], 403);
+        }
+
+        $this->vendorWithdrawMethodInfoRepo->updateWhere(params: ['user_id' => $sellerId], data: ['is_default' => 0]);
         $this->vendorWithdrawMethodInfoRepo->updateWhere(
-            params: ['id' => $request['id']],
+            params: ['id' => $request['id'], 'user_id' => $sellerId],
             data: ['is_default' => 1, 'is_active' => 1]
         );
         return response()->json(['status' => true], 200);
@@ -84,7 +91,17 @@ class VendorPaymentInfoController extends Controller
 
     public function updateStatus(Request $request): JsonResponse
     {
-        $this->vendorWithdrawMethodInfoRepo->updateWhere(params: ['id' => $request['id']], data: ['is_active' => $request['status'] ?? 0]);
+        $sellerId = $request['seller']?->id;
+        // [AI] Zero-Trust IDOR Guard: Verify ownership before mutating status
+        $method = $this->vendorWithdrawMethodInfoRepo->getFirstWhere(params: ['id' => $request['id'], 'user_id' => $sellerId]);
+        if (!$method) {
+            return response()->json(['status' => false, 'message' => translate('Unauthorized_or_payment_method_not_found')], 403);
+        }
+
+        $this->vendorWithdrawMethodInfoRepo->updateWhere(
+            params: ['id' => $request['id'], 'user_id' => $sellerId],
+            data: ['is_active' => $request['status'] ?? 0]
+        );
         return response()->json(['status' => true], 200);
     }
 
