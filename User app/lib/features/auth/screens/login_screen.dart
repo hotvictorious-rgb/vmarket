@@ -8,7 +8,7 @@ import 'package:flutter_sixvalley_ecommerce/features/auth/domain/models/user_log
 import 'package:flutter_sixvalley_ecommerce/features/auth/enums/from_page.dart';
 import 'package:flutter_sixvalley_ecommerce/features/auth/widgets/only_social_login_widget.dart';
 import 'package:flutter_sixvalley_ecommerce/features/auth/widgets/social_login_widget.dart';
-import 'package:flutter_sixvalley_ecommerce/features/home/screens/aster_theme_home_screen.dart';
+import 'package:flutter_sixvalley_ecommerce/features/home/screens/home_screen.dart';
 import 'package:flutter_sixvalley_ecommerce/features/splash/controllers/splash_controller.dart';
 import 'package:flutter_sixvalley_ecommerce/features/splash/domain/models/config_model.dart';
 import 'package:flutter_sixvalley_ecommerce/helper/number_checker_helper.dart';
@@ -527,7 +527,7 @@ class _LoginScreenState extends State<LoginScreen> {
                                                                 '/dashboard' &&
                                                             !widget
                                                                 .showBackButton) {
-                                                          AsterThemeHomeScreen
+                                                          HomeScreen
                                                               .loadData(false);
                                                         }
                                                         authProvider.navigateToHome(

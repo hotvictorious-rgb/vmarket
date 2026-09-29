@@ -17,8 +17,8 @@ import 'package:provider/provider.dart';
 
 
 class RecommendedProductWidget extends StatelessWidget {
-  final bool fromAsterTheme;
-  const RecommendedProductWidget({super.key,  this.fromAsterTheme = false});
+  final bool isHomeScreen;
+  const RecommendedProductWidget({super.key,  this.isHomeScreen = false});
 
 
   @override
@@ -45,7 +45,7 @@ class RecommendedProductWidget extends StatelessWidget {
                   ),
 
                   Column(children: [
-                    fromAsterTheme?
+                    isHomeScreen?
                       Column(children: [
                         Padding(padding: const EdgeInsets.symmetric(vertical: Dimensions.paddingSizeSmall),
                           child: Text(getTranslated('dont_miss_the_chance', context)??'',

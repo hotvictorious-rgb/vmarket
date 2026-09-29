@@ -13,17 +13,17 @@ import 'package:flutter_sixvalley_ecommerce/features/category/widgets/category_l
 import 'package:flutter_sixvalley_ecommerce/features/home/shimmers/order_again_shimmer.dart';
 import 'package:flutter_sixvalley_ecommerce/features/home/shimmers/top_store_shimmer.dart';
 import 'package:flutter_sixvalley_ecommerce/features/home/widgets/announcement_widget.dart';
-import 'package:flutter_sixvalley_ecommerce/features/home/widgets/aster_theme/find_what_you_need_shimmer.dart';
-import 'package:flutter_sixvalley_ecommerce/features/home/widgets/aster_theme/find_what_you_need_widget.dart';
-import 'package:flutter_sixvalley_ecommerce/features/home/widgets/aster_theme/more_store_list_view_widget.dart';
-import 'package:flutter_sixvalley_ecommerce/features/home/widgets/aster_theme/order_again_list_view_widget.dart';
+import 'package:flutter_sixvalley_ecommerce/features/home/widgets/find_what_you_need_shimmer.dart';
+import 'package:flutter_sixvalley_ecommerce/features/home/widgets/find_what_you_need_widget.dart';
+import 'package:flutter_sixvalley_ecommerce/features/home/widgets/more_store_list_view_widget.dart';
+import 'package:flutter_sixvalley_ecommerce/features/home/widgets/order_again_list_view_widget.dart';
 import 'package:flutter_sixvalley_ecommerce/features/home/widgets/featured_product_widget.dart';
 import 'package:flutter_sixvalley_ecommerce/features/home/widgets/just_for_you/just_for_you_widget.dart';
 import 'package:flutter_sixvalley_ecommerce/features/home/widgets/product_list_widget.dart';
 import 'package:flutter_sixvalley_ecommerce/features/home/widgets/product_type_popup_menu_widget.dart';
 import 'package:flutter_sixvalley_ecommerce/features/home/widgets/search_home_page_widget.dart';
 import 'package:flutter_sixvalley_ecommerce/features/home/widgets/your_location_bar_widget.dart';
-import 'package:flutter_sixvalley_ecommerce/features/home/widgets/aster_theme/local_stores_grid_widget.dart';
+import 'package:flutter_sixvalley_ecommerce/features/home/widgets/local_stores_grid_widget.dart';
 import 'package:flutter_sixvalley_ecommerce/features/notification/controllers/notification_controller.dart';
 import 'package:flutter_sixvalley_ecommerce/features/order/controllers/order_controller.dart';
 import 'package:flutter_sixvalley_ecommerce/features/product/controllers/product_controller.dart';
@@ -49,11 +49,11 @@ import 'package:flutter_sixvalley_ecommerce/utill/dimensions.dart';
 import 'package:provider/provider.dart';
 import 'package:url_launcher/url_launcher.dart';
 
-class AsterThemeHomeScreen extends StatefulWidget {
-  const AsterThemeHomeScreen({super.key});
+class HomeScreen extends StatefulWidget {
+  const HomeScreen({super.key});
 
   @override
-  State<AsterThemeHomeScreen> createState() => _AsterThemeHomeScreenState();
+  State<HomeScreen> createState() => _HomeScreenState();
 
   static Future<void> loadData(bool reload) async {
     final context = Get.context;
@@ -140,7 +140,7 @@ class AsterThemeHomeScreen extends StatefulWidget {
   }
 }
 
-class _AsterThemeHomeScreenState extends State<AsterThemeHomeScreen>
+class _HomeScreenState extends State<HomeScreen>
     with AutomaticKeepAliveClientMixin {
   final ScrollController _scrollController = ScrollController();
 
@@ -172,7 +172,7 @@ class _AsterThemeHomeScreenState extends State<AsterThemeHomeScreen>
       body: SafeArea(
         child: RefreshIndicator(
           onRefresh: () async {
-            await AsterThemeHomeScreen.loadData(true);
+            await HomeScreen.loadData(true);
           },
           child: CustomScrollView(controller: _scrollController, slivers: [
             SliverAppBar(
@@ -509,7 +509,7 @@ class _AsterThemeHomeScreenState extends State<AsterThemeHomeScreen>
                 child: Padding(
                     padding:
                         EdgeInsets.only(bottom: Dimensions.paddingSizeDefault),
-                    child: RecommendedProductWidget(fromAsterTheme: true))),
+                    child: RecommendedProductWidget(isHomeScreen: true))),
 
             SliverToBoxAdapter(child: const LatestProductListWidget()),
             SliverToBoxAdapter(

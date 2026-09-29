@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_sixvalley_ecommerce/features/address/controllers/address_controller.dart';
 import 'package:flutter_sixvalley_ecommerce/features/cart/controllers/cart_controller.dart';
-import 'package:flutter_sixvalley_ecommerce/features/home/screens/aster_theme_home_screen.dart';
+import 'package:flutter_sixvalley_ecommerce/features/home/screens/home_screen.dart';
 import 'package:flutter_sixvalley_ecommerce/features/order/controllers/order_controller.dart';
 import 'package:flutter_sixvalley_ecommerce/features/profile/controllers/profile_contrroller.dart';
 import 'package:flutter_sixvalley_ecommerce/features/splash/controllers/splash_controller.dart';
@@ -113,7 +113,7 @@ class LogoutCustomBottomSheetWidget extends StatelessWidget {
                                   Provider.of<WishListController>(context,
                                           listen: false)
                                       .emptyWishList();
-                                  AsterThemeHomeScreen.loadData(false);
+                                  HomeScreen.loadData(false);
                                   RouterHelper.getLoginRoute(
                                       action: RouteAction.push,
                                       isFromLogout: true,

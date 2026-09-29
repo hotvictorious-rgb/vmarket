@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_sixvalley_ecommerce/features/location/controllers/location_controller.dart';
 import 'package:flutter_sixvalley_ecommerce/features/location/widgets/choose_location_bottom_sheet.dart';
-import 'package:flutter_sixvalley_ecommerce/features/home/screens/aster_theme_home_screen.dart';
+import 'package:flutter_sixvalley_ecommerce/features/home/screens/home_screen.dart';
 import 'package:flutter_sixvalley_ecommerce/utill/custom_themes.dart';
 import 'package:provider/provider.dart';
 
@@ -22,7 +22,7 @@ class YourLocationBarWidget extends StatelessWidget {
               backgroundColor: Colors.transparent,
               builder: (ctx) => ChooseLocationBottomSheetWidget(
                 onLocationChanged: () {
-                  AsterThemeHomeScreen.loadData(true);
+                  HomeScreen.loadData(true);
                 },
               ),
             );

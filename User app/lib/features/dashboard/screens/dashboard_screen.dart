@@ -12,7 +12,7 @@ import 'package:flutter_sixvalley_ecommerce/main.dart';
 import 'package:flutter_sixvalley_ecommerce/utill/dimensions.dart';
 import 'package:flutter_sixvalley_ecommerce/features/dashboard/widgets/app_exit_card_widget.dart';
 import 'package:flutter_sixvalley_ecommerce/utill/images.dart';
-import 'package:flutter_sixvalley_ecommerce/features/home/screens/aster_theme_home_screen.dart';
+import 'package:flutter_sixvalley_ecommerce/features/home/screens/home_screen.dart';
 import 'package:flutter_sixvalley_ecommerce/features/more/screens/more_screen_view.dart';
 import 'package:flutter_sixvalley_ecommerce/features/order/controllers/order_controller.dart';
 import 'package:flutter_sixvalley_ecommerce/features/order/screens/order_screen.dart';
@@ -54,13 +54,13 @@ class DashBoardScreenState extends State<DashBoardScreen> {
       _pageIndex = widget.pageIndex!;
     }
 
-    AsterThemeHomeScreen.loadData(false);
+    HomeScreen.loadData(false);
 
     _screens = [
       NavigationModel(
         name: 'home',
         icon: Images.homeImage,
-        screen: const AsterThemeHomeScreen(),
+        screen: const HomeScreen(),
       ),
       NavigationModel(
           name: 'cart',

@@ -277,10 +277,10 @@ class ConfigModel {
     }
     offlinePayment = json['offline_payment'] != null ? OfflinePayment.fromJson(json['offline_payment']) : null;
     paymentMethodImagePath = json['payment_method_image_path'];
-    // [AI] Default to 'theme_aster' (Aster theme) so theme is preserved
+    // [AI] Default to 'theme_vmarket'
     activeTheme = (json['active_theme'] != null && json['active_theme'] != '' && json['active_theme'] != 'default')
         ? json['active_theme']
-        : 'theme_aster';
+        : 'theme_vmarket';
     if (json['popular_tags'] != null) {
       popularTags = <PopularTags>[];
       json['popular_tags'].forEach((v) {
