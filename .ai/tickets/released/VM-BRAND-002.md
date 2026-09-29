@@ -3,7 +3,7 @@
 Ticket ID:            VM-BRAND-002
 Title:                Per-app brand marks ΓÇö VM (customer+storefront), VV (vendor), VD (delivery)
 Type:                 FEATURE
-Status:               BACKEND_DONE
+Status:               RELEASED
 Blocked:              no (artwork found in brand_ecosystem_artifacts/ — human was right)
 Created by / date:    Reviewer AI / 2026-09-29 (human ruling: customer/storefront=VM, vendor=VV, delivery=VD)
 Size estimate:        small (asset swap + proof per app; zero code unless dimensions force layout touch)
@@ -51,11 +51,12 @@ Screenshots:          per-app splash + login with correct mark
 
 Implementation notes:
 - 2026-09-29 inventory: all three `logo.png` files byte-distinct paths but visually identical VM marks (viewed). Registries centralize paths ΓÇö swap is file-only.
-Review notes:
-Final decision:
-Release commit:
+Review notes: .ai/reviews/REV-VM-BRAND-002-63954402ee110a0f6dcea78074187d50b3749818.md (Decision APPROVED; visuals sighted + 17/17 at exact SHA)
+Final decision: APPROVED → RELEASED as RELEASE-2026-09-29-003
+Release commit: be81794e (merge v1; feature 63954402ee110a0f6dcea78074187d50b3749818)
 
 History (append-only):
 - 2026-09-29  Reviewer AI  BACKLOG (filed)  Human brand ruling. Storefront VM part executes immediately as VM-STORE-006 (vm_icon.jpg ships in theme). Vendor/VD wait on artwork.
 - 2026-09-29  Frontend AI  BACKLOG -> BACKEND_DONE (single-coordinator session)  Sources: vv_store_app_icon (VV store) + vd_parcel_app_icon (VD parcel). Swapped: vendor logo/whiteLogo/logoWithAppName + delivery logo/splashLogo/logoWithName + android mipmaps (48-192) + iOS AppIcon sets, via GD script (JPG->PNG, per-file dims preserved). 85 binary files, 0 Dart. Visual check: vendor logo.png = VV mark. Customer app untouched (already VM). branch=frontend/VM-BRAND-002.
 - 2026-09-29  Frontend AI  run-all 17/17 PASS at asset commit 45ab0ad7 (7 executed + 10 justified; first attempt hung on stale php lock, cleared, clean re-run). flutter analyze: asset-only change, zero Dart touched — recorded as not-applicable with diff proof.
+- 2026-09-29  Reviewer AI  BACKEND_DONE -> REVIEW_APPROVED -> RELEASED (RELEASE-2026-09-29-003, single-coordinator session)  Visuals sighted, run-all 17/17 at 63954402, gate 18/18 PASS. Merged --no-ff (be81794e); ticket released; branch deleted after merge.

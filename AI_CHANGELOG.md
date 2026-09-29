@@ -1,3 +1,9 @@
+### [2026-09-29 07:50 UTC] VM-BRAND-002 Released: per-app marks VV/VD slotted (RELEASE-2026-09-29-003) [frontend] [AI]
+* **1. Ruling:** VM customer/storefront, VV vendor, VD delivery. Found VV/VD art in `brand_ecosystem_artifacts/` (human was right — earlier search missed it). Swapped vendor in-app + launcher + iOS sets to VV, delivery to VD (84 PNGs via GD, per-file dims preserved, zero Dart touched). Customer app already VM.
+* **2. Proof:** both marks viewed in-tree; run-all 17/17 PASS; gate 18/18 PASS; review APPROVED. One wrong-tree write self-caught and reverted clean.
+* **3. Release:** merged `frontend/VM-BRAND-002` into `v1` --no-ff (`be81794e`); ticket → `released/`; manifest + review recorded.
+* **4. Verification:** staged + committed only own files (ticket + review + manifest + changelog; assets rode the feature merge).
+
 ### [2026-09-29 07:30 UTC] VM-STORE-006 Released: auth modals use VM icon mark (RELEASE-2026-09-29-002) [frontend] [AI]
 * **1. Ruling:** human brand scheme — VM for customer/storefront, VV vendor, VD delivery. All three apps ship one VM mark today; VV/VD art does not exist (filed VM-BRAND-002, BLOCKED on artwork). Storefront part executes here: modal rings `vic_logo.webp` → `vm_icon.jpg` (square, ring-fitting).
 * **2. Proof:** run-all 17/17 PASS; gate 18/18 PASS; review APPROVED.
