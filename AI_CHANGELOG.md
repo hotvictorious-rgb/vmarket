@@ -1,3 +1,9 @@
+### [2026-09-29 10:30 UTC] VM-COD-001 Released: COD fail-closed proven (RELEASE-2026-09-29-010) [backend] [AI]
+* **1. Ruling:** COD prohibited in V1 (human). Probe matrix: `generateOrder` throws on COD/offline (live code exec ×2), web-payment paystack-only gate read + CSRF proven live, intent/init safe by construction. Zero new guards needed — entries already fail closed. Deletion ships in VM-COD-002.
+* **2. Proof:** run-all 17/17 PASS; gate 18/18 PASS; review APPROVED.
+* **3. Release:** merged `backend/VM-COD-001` into `v1` --no-ff (`5961f50a`); ticket → `released/`; manifest + review recorded.
+* **4. Verification:** staged + committed only own files (ticket + review + manifest + changelog).
+
 ### [2026-09-29 10:00 UTC] VM-VEND-005 Released: vendor entity fields (RELEASE-2026-09-29-009) [backend] [AI]
 * **1. Foundation:** migration (16 columns + backfill + down), Seller fillable, conditional registration (CAC iff non-individual, NIN iff individual, TIN nullable), mapper with applied_at stamp. Side effect: previously-fatal KYC submit path unblocked (endpoints still unwired — noted).
 * **2. Proof:** BN+CAC → stored row, individual+NIN → accepted, both rejections exact; run-all 17/17 PASS; gate 18/18 PASS; review APPROVED. Runtime corrected mid-ticket (vendor junction → real copy; all evidence re-produced on own code).

@@ -3,7 +3,7 @@
 Ticket ID:            VM-COD-001
 Title:                COD fail-closed enforcement at entry points (DECISION-COD-001 approved)
 Type:                 FEATURE
-Status:               IN_PROGRESS
+Status:               RELEASED
 Blocked:              no
 Created by / date:    Reviewer AI / 2026-09-29 (human ruling: COD prohibited in V1)
 Size estimate:        small (guards only; branch deletion ships in VM-COD-002)
@@ -48,3 +48,4 @@ Release commit:
 History (append-only):
 - 2026-09-29  Reviewer AI  BACKLOG (filed)  Human COD-prohibition ruling. Guards first, deletion second.
 - 2026-09-29  Backend AI  BACKLOG -> BACKEND_DONE (single-coordinator session)  Probe matrix: generateOrder COD+offline -> InvalidPaymentMethodException x2 (live code exec); web-payment-request paystack-only 422 gate read at PaymentController:100-108 + CSRF 419 proven live; intent has no gateway input (safe by construction); init service Paystack-native (no gateway input). No new guards needed - all entries already fail closed. branch=backend/VM-COD-001.
+- 2026-09-29  Reviewer AI  IN_PROGRESS -> REVIEW_APPROVED -> RELEASED (RELEASE-2026-09-29-010, single-coordinator session)  Probe matrix green, run-all 17/17 at 092dd849, gate 18/18 PASS. Merged --no-ff (5961f50a); ticket released; branch deleted after merge.
