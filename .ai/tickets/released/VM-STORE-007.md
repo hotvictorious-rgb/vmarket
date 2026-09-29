@@ -3,7 +3,7 @@
 Ticket ID:            VM-STORE-007
 Title:                Top bar becomes vendor funnel ΓÇö "Become a Vendor" to registration/login
 Type:                 FEATURE
-Status:               BACKEND_DONE
+Status:               RELEASED
 Blocked:              no
 Created by / date:    Reviewer AI / 2026-09-29 (human ruling: vendors sign up from the top bar; isolated store links verified live)
 Size estimate:        xs (1-line button repoint)
@@ -51,11 +51,12 @@ Screenshots:          top bar (notes)
 
 Implementation notes:
 - Isolated storefront proof 2026-09-29: `GET vendor-shop/uyo-central-electronics` 200, SEO title + OG tags, no code changes needed. Vendor auth funnel: login 200 + register 200 + Login link on register page + submit validation + CSRF, all proven live earlier.
-Review notes:
-Final decision:
-Release commit:
+Review notes: .ai/reviews/REV-VM-STORE-007-89932ce53085c6827cad58557ea09bff8b772a0e.md (Decision APPROVED; funnel + storefront proofs, 17/17 at exact SHA)
+Final decision: APPROVED → RELEASED as RELEASE-2026-09-29-004
+Release commit: 1e08e029 (merge v1; feature 89932ce53085c6827cad58557ea09bff8b772a0e)
 
 History (append-only):
 - 2026-09-29  Reviewer AI  BACKLOG (filed)  Human vendor-funnel ruling.
 - 2026-09-29  Frontend AI  BACKLOG -> BACKEND_DONE (single-coordinator session)  1-line repoint; served home HTML carries new label+target; vendor-shop/{slug} 200 proven. branch=frontend/VM-STORE-007.
 - 2026-09-29  Frontend AI  run-all 17/17 PASS at fix commit 3486ba95 (7 executed + 10 justified).
+- 2026-09-29  Reviewer AI  BACKEND_DONE -> REVIEW_APPROVED -> RELEASED (RELEASE-2026-09-29-004, single-coordinator session)  Funnel + storefront proofs, run-all 17/17 at 89932ce5, gate 18/18 PASS. Merged --no-ff (1e08e029); ticket released; branch deleted after merge.

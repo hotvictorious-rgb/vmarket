@@ -1,3 +1,9 @@
+### [2026-09-29 08:10 UTC] VM-STORE-007 Released: vendor funnel top bar (RELEASE-2026-09-29-004) [frontend] [AI]
+* **1. Ruling:** top-bar "Verified Merchants" → "Become a Vendor" → vendor registration (carries Login link). Isolated vendor storefronts (`vendor-shop/{slug}`) verified 200 + SEO/OG — zero code needed. Nav discovery link untouched.
+* **2. Proof:** served header label+target; funnel pages 200 + validation; run-all 17/17 PASS; gate 18/18 PASS; review APPROVED.
+* **3. Release:** merged `frontend/VM-STORE-007` into `v1` --no-ff (`1e08e029`); ticket → `released/`; manifest + review recorded.
+* **4. Verification:** staged + committed only own files (ticket + review + manifest + changelog).
+
 ### [2026-09-29 07:50 UTC] VM-BRAND-002 Released: per-app marks VV/VD slotted (RELEASE-2026-09-29-003) [frontend] [AI]
 * **1. Ruling:** VM customer/storefront, VV vendor, VD delivery. Found VV/VD art in `brand_ecosystem_artifacts/` (human was right — earlier search missed it). Swapped vendor in-app + launcher + iOS sets to VV, delivery to VD (84 PNGs via GD, per-file dims preserved, zero Dart touched). Customer app already VM.
 * **2. Proof:** both marks viewed in-tree; run-all 17/17 PASS; gate 18/18 PASS; review APPROVED. One wrong-tree write self-caught and reverted clean.
