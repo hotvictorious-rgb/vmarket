@@ -3,7 +3,7 @@
 Ticket ID:            VM-STORE-002
 Title:                Product-page cart defects ΓÇö first-click misroute, buy-now missing attrs, country picker never initializes
 Type:                 BUG
-Status:               BACKEND_DONE
+Status:               RELEASED
 Blocked:              no
 Created by / date:    Reviewer AI / 2026-09-28 (user-reported live symptoms reproduced in code)
 Size estimate:        xs (JS guard + button attrs + picker wiring)
@@ -52,11 +52,12 @@ Push rule:            ONLY Reviewer AI merges to `v1` and pushes, after APPROVED
 Screenshots:          modal + picker renders (notes)
 
 Implementation notes:
-Review notes:
-Final decision:
-Release commit:
+Review notes: .ai/reviews/REV-VM-STORE-002-56e351f8d8da1742cb6cccfaeeb19f69a2041671.md (Decision APPROVED; live endpoint proofs + 17/17 at exact SHA)
+Final decision: APPROVED → RELEASED as RELEASE-2026-09-28-006
+Release commit: e7a913d1 (merge v1; feature 56e351f8d8da1742cb6cccfaeeb19f69a2041671)
 
 History (append-only):
 - 2026-09-28  Reviewer AI  BACKLOG (filed)  User-reported symptoms root-caused in code before any edit. Fixes execute under this ticket.
 - 2026-09-28  Frontend AI  BACKLOG -> BACKEND_DONE (single-coordinator session)  Fix 1: existCartItem undefined-guard (custom.js). Fix 2: details buy-now data-auth+data-route (mirrors quick-view). Fix 3 investigation: picker fully dead in v1 (no init call, no script include, no main-layout CSS) -> plain tel input is correct current render; raw-list symptom must be production-old-code or unseen surface (asked user). branch=frontend/VM-STORE-002-cart.
 - 2026-09-28  Frontend AI  run-all 17/17 PASS at fix commit 8bc37b43 (7 executed + 10 justified). Served-HTML proof: details page carries data-auth=data-route; production mirror sync required at deploy (public/themes).
+- 2026-09-28  Reviewer AI  BACKEND_DONE -> REVIEW_APPROVED -> RELEASED (RELEASE-2026-09-28-006, single-coordinator session)  Live endpoint proofs + run-all 17/17 at 56e351f8, gate 18/18 PASS (cycle 2 after hollow-ticket recovery). Merged --no-ff (e7a913d1); ticket released; branch deleted after merge.

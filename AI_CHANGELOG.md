@@ -1,3 +1,9 @@
+### [2026-09-28 20:10 UTC] VM-STORE-002 Released: product-page cart defects fixed (RELEASE-2026-09-28-006) [frontend] [AI]
+* **1. Defects (user-reported, root-caused in code):** first add-to-cart click misrouted to quantity-update (missing-element `undefined !== ""`) → status-0 popup, nothing added; Buy Now missing `data-auth`/`data-route` → degraded to plain add. Fix: undefined-guard in `addToCart()` + button attrs mirroring quick-view. Country picker traced: fully dead init path in v1 (clean tel input renders); raw-list symptom needs exact surface.
+* **2. Proof:** live endpoint chain (add status 1, buy-now status 2 → status 1 + redirect_to checkout); served details HTML carries new attrs; run-all 17/17 PASS; gate 18/18 PASS (cycle 2 — cycle 1 caught a hollow working-copy ticket, restored and re-evidenced); review APPROVED.
+* **3. Release:** merged `frontend/VM-STORE-002-cart` into `v1` --no-ff (`e7a913d1`); ticket → `released/`; manifest + review recorded. Deploy note: theme JS ships via `public/themes` mirror sync.
+* **4. Verification:** staged + committed only own files (ticket + review + manifest + changelog).
+
 ### [2026-09-28 19:40 UTC] VM-STORE-001 Released: storefront dead routes fixed (RELEASE-2026-09-28-005) [frontend] [AI]
 * **1. Defects:** 6 dead named routes 500'd live views — support-ticket (checkout shipping + order summary), offline spans/forms (tracking views), dead pay modals (order list/details), chat modal+sidebar (no backend). Fix: 2 repoints to `account-tickets`, 6 removals, 2 auth-modal registry keys. +13/-107 lines across 8 Blade files. Purge-history confirms removal is faithful (backend routes deliberately purged).
 * **2. Proof:** dead-name grep-zero; login-modal endpoint 500→200; vendor login/register 200 + CSRF 419 + field validation live; customer signup validation live; home/product/track 200; run-all 17/17 PASS; gate 18/18 PASS; review APPROVED.
