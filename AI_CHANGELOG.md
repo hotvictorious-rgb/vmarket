@@ -1,3 +1,9 @@
+### [2026-09-29 07:05 UTC] VM-STORE-005 Released: auth modal logos fixed (RELEASE-2026-09-29-001) [frontend] [AI]
+* **1. Defect:** login/register modal rings used storage `web_logo` with missing file → fallback `placeholder/*.png` also missing from theme → broken images. Fix: theme brand mark (`vic_logo.webp`, visually verified) in both rings.
+* **2. Proof:** rendered modal HTML carries both marks; run-all 17/17 PASS; gate 18/18 PASS; review APPROVED.
+* **3. Release:** merged `frontend/VM-STORE-005` into `v1` --no-ff (`b040c09a`); ticket → `released/`; manifest + review recorded.
+* **4. Verification:** staged + committed only own files (ticket + review + manifest + changelog).
+
 ### [2026-09-28 21:00 UTC] VM-STORE-004 Released: picker stylesheet gap closed (RELEASE-2026-09-28-008) [frontend] [AI]
 * **1. Finding:** user-reported raw country list traced — plugin present but init never called anywhere, no script include, and `intlTelInput.css` absent from main layout. v1 renders clean tel inputs; symptom matches production-old-code (stock BD/+880 default observed). Fix: stylesheet link in layout head (zero logic risk); init wiring explicitly deferred pending browser proof + exact surface.
 * **2. Proof:** served home HTML carries iti.css link, home 200; run-all 17/17 PASS; gate 18/18 PASS; review APPROVED.
