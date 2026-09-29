@@ -60,3 +60,5 @@ History (append-only):
 - 2026-09-29  Backend AI  BACKLOG -> BACKEND_DONE (stage 1 validation only; single-coordinator session)  Removed banner+bottom_banner rules (+2 orphan messages). Live: full registration minus banners -> status 1, redirect login; seller id 10 pending + shop id 12 with def.png fallbacks. branch=backend/VM-VEND-003.
 - 2026-09-29  Backend AI  run-all 17/17 PASS at stage-1 commit 5dcb2c9f (7 executed + 10 justified).
 - 2026-09-29  Reviewer AI  BACKEND_DONE -> REVIEW_APPROVED -> STAGE-1 RELEASED (RELEASE-2026-09-29-005)  run-all 17/17, gate 18/18 PASS. Ticket STAYS in-progress for stage 2 (form blocks).
+- 2026-09-29  Frontend AI  Stage-2 BACKEND_DONE (single-coordinator session)  Removed banner + bottom_banner upload blocks (66 lines); TIN section intact; register page 200 with zero banner strings. branch=frontend/VM-VEND-003.
+- 2026-09-29  Frontend AI  run-all 17/17 PASS at stage-2 commit 0779b770 (7 executed + 10 justified).

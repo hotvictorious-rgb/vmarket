@@ -114,75 +114,10 @@
                                          </div>
                                      </div>
                                  </div>
-                             </div>
+                              </div>
 
-                             <div class="border p-3 p-xl-4 rounded mb-4">
-                                 <div class="d-flex flex-column gap-3 align-items-center">
-                                     <div class="upload-file">
-                                         <input type="file" class="upload-file__input" name="banner"
-                                                data-max-size="{{ getFileUploadMaxSize() }}"
-                                             accept="{{getFileUploadFormats(skip: '.svg,.gif')}}" >
-                                         <div class="upload-file__img style--two">
-                                             <div class="temp-img-box">
-                                                 <div class="d-flex align-items-center flex-column gap-2">
-                                                     <i class="bi bi-upload fs-30"></i>
-                                                     <div class="fs-12 text-muted text-capitalize">
-                                                         {{ translate('upload_file') }}
-                                                     </div>
-                                                 </div>
-                                             </div>
-                                             <img src="#" class="dark-support img-fit-contain border"
-                                                 alt="" hidden>
-                                         </div>
-                                     </div>
-                                     <div class="d-flex flex-column gap-1 upload-img-content text-center">
-                                         <h6 class="text-uppercase mb-1">
-                                             {{ translate('store_banner') }}
-                                             <span class="text-danger">*</span>
-                                         </h6>
-                                         <div class="text-muted text-capitalize">
-                                             {{ translate('image_ratio') . ' ' . '1:1' }}
-                                         </div>
-                                         <div class="text-muted text-capitalize">
-                                             {{ translate('Image Size : Max 2 MB') }}
-                                         </div>
-                                     </div>
-                                 </div>
-                             </div>
-                             <div class="border p-3 p-xl-4 rounded mb-4">
-                                 <div class="d-flex flex-column gap-3 align-items-center">
-                                     <div class="upload-file">
-                                         <input type="file" class="upload-file__input" name="bottom_banner"
-                                                data-max-size="{{ getFileUploadMaxSize() }}"
-                                                accept="{{getFileUploadFormats(skip: '.svg,.gif')}}">
-                                         <div class="upload-file__img style--two">
-                                             <div class="temp-img-box">
-                                                 <div class="d-flex align-items-center flex-column gap-2">
-                                                     <i class="bi bi-upload fs-30"></i>
-                                                     <div class="fs-12 text-muted text-capitalize">
-                                                         {{ translate('upload_file') }}
-                                                     </div>
-                                                 </div>
-                                             </div>
-                                             <img src="#" class="dark-support img-fit-contain border"
-                                                 alt="" hidden>
-                                         </div>
-                                     </div>
-                                     <div class="d-flex flex-column gap-1 upload-img-content text-center">
-                                         <h6 class="text-uppercase mb-1">
-                                             {{ translate('store_secondary_banner') }}
-                                             <span class="text-danger">*</span>
-                                         </h6>
-                                         <div class="text-muted text-capitalize">
-                                             {{ translate('image_ratio') . ' ' . '1:1' }}
-                                         </div>
-                                         <div class="text-muted text-capitalize">
-                                             {{ translate('Image Size : Max 2 MB') }}
-                                         </div>
-                                     </div>
-                                 </div>
-                             </div>
-                             <div class="border p-3 p-xl-4 rounded">
+                              {{-- [AI] VM-VEND-003: store banner + secondary banner blocks retired for vendors --}}
+                              <div class="border p-3 p-xl-4 rounded">
                                  <div class="row gy-4">
                                      <div class="col-lg-6">
                                          <div>
