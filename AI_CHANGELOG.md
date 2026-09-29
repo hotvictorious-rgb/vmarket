@@ -1,3 +1,9 @@
+### [2026-09-29 09:20 UTC] VM-STORE-008 Released: Nigeria phone default (RELEASE-2026-09-29-007) [frontend] [AI]
+* **1. Ruling:** Nigeria default on all phone forms. Removed the duplicated default-country span and flipped the `us` fallback to `ng` (repo-wide grep: no other country fallback). Init wiring stays deferred (no blind value-rewriting).
+* **2. Proof:** run-all 17/17 PASS; gate 18/18 PASS; review APPROVED.
+* **3. Release:** merged `frontend/VM-STORE-008` into `v1` --no-ff (`529fdb0b`); ticket → `released/`; manifest + review recorded.
+* **4. Verification:** staged + committed only own files (ticket + review + manifest + changelog).
+
 ### [2026-09-29 09:00 UTC] VM-VEND-003 stage-2 Released: banner uploads removed from form (RELEASE-2026-09-29-006) [frontend] [AI]
 * **1. Retirement complete:** removed banner + bottom_banner upload blocks (-65 lines) from vendor registration; TIN/image/logo sections intact. Form fields now exactly match stage-1 validation.
 * **2. Proof:** register page 200 with zero banner strings; run-all 17/17 PASS; gate 18/18 PASS; review APPROVED.
