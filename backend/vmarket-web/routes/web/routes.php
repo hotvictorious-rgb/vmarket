@@ -201,7 +201,7 @@ Route::group(['middleware' => ['maintenance_mode', 'guestCheck']], function () {
     });
 
     Route::controller(UserProfileController::class)->group(function () {
-        Route::get('user-profile', 'user_profile')->name('user-profile')->middleware('customer'); //theme_aster
+        Route::get('user-profile', 'user_profile')->name('user-profile')->middleware('customer');
         Route::get('user-account', 'user_account')->name('user-account')->middleware('customer');
         Route::post('user-account-update', 'getUserProfileUpdate')->name('user-update')->middleware('customer');
         Route::post('user-account-picture', 'getUserProfileUpdate')->name('user-picture');

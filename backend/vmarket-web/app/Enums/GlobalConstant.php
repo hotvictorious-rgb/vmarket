@@ -487,23 +487,6 @@ enum GlobalConstant
             'Seller Image' => 'Ratio 1:1 (500 x 500 px)',
             'Meta Thumbnail' => 'Ratio 2:1 (1200 x 600 px)'
         ],
-        'theme_aster' => [
-            'Main Banner' => 'Ratio 2:1 (2000 x 1000 px)',
-            'Footer Banner' => 'Ratio 4.1:1 (2500 x 602 px)',
-            'Popup Banner' => 'Ratio 1:1 (1200 x 1200 px)',
-            'Main Section Banner' => 'Ratio 3.2:1 (2000 x 618 px)',
-            'Store cover Image' => 'Ratio 4:1 (2000 x 500 px)',
-            'Store Banner Image' => 'Ratio 5.3:1 (2000 x 377 px)',
-            'Header Banner' => 'Ratio 3.6:1 (585 x 160 px)',
-            'Sidebar Banner' => 'Ratio 1:1.8 (280 x 500 px)',
-            'Top Side Banner' => 'Ratio 1:2.4 (205 x 500 px)',
-            'Main website Logo' => 'Ratio 3.2:1 (1000 x 308 px)',
-            'Product Image' => 'Ratio 1:1 (800 x 800 px)',
-            'Category Image' => 'Ratio 1:1 (500 x 500 px)',
-            'Brand Image' => 'Ratio 1:1 (500 x 500 px)',
-            'Seller Image' => 'Ratio 1:1 (500 x 500 px)',
-            'Meta Thumbnail' => 'Ratio 2:1 (1200 x 600 px)'
-        ],
         'theme_fashion' => [
             'Main Banner' => 'Ratio 1:1 (1000 x 1000 px Transparent PNG)',
             'Footer Banner' => 'Ratio 4:1 (2000 x 500 px)',

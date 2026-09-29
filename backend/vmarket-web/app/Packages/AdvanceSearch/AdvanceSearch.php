@@ -85,10 +85,6 @@ class AdvanceSearch
             return array_merge($asterThemeRoutes, $lifestyleThemeRoutes);
         }
 
-        if (theme_root_path() == 'theme_aster') {
-            return array_merge($defaultThemeRoutes, $lifestyleThemeRoutes);
-        }
-
         if (theme_root_path() == 'theme_fashion') {
             return array_merge($defaultThemeRoutes, $asterThemeRoutes);
         }

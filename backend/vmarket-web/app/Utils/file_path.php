@@ -37,52 +37,52 @@ if (!function_exists('getStorageImages')) {
             'backend-payment' => 'back-end/img/placeholder/placeholder-4-1.png',
             'backend-placeholder' => 'back-end/img/placeholder/placeholder-8-1.png',
             'product' => [
-                'theme_aster' => 'assets/img/placeholder/placeholder-1-1.png',
+                'theme_vmarket' => 'assets/img/placeholder/placeholder-1-1.png',
                 'theme_fashion' => 'assets/img/placeholder/placeholder-1-1.png',
                 'default' => 'public/assets/front-end/img/placeholder/placeholder-1-1.png',
             ],
             'avatar' => [
-                'theme_aster' => 'assets/img/placeholder/user.png',
+                'theme_vmarket' => 'assets/img/placeholder/user.png',
                 'theme_fashion' => 'assets/img/placeholder/user.png',
                 'default' => 'public/assets/front-end/img/placeholder/user.png',
             ],
             'banner' => [
-                'theme_aster' => 'assets/img/placeholder/placeholder-2-1.png',
+                'theme_vmarket' => 'assets/img/placeholder/placeholder-2-1.png',
                 'theme_fashion' => 'assets/img/placeholder/placeholder-2-1.png',
                 'default' => 'public/assets/front-end/img/placeholder/placeholder-2-1.png',
             ],
             'wide-banner' => [
-                'theme_aster' => 'assets/img/placeholder/placeholder-4-1.png',
+                'theme_vmarket' => 'assets/img/placeholder/placeholder-4-1.png',
                 'theme_fashion' => 'assets/img/placeholder/placeholder-4-1.png',
                 'default' => 'public/assets/front-end/img/placeholder/placeholder-4-1.png',
             ],
             'brand' => [
-                'theme_aster' => 'assets/img/placeholder/placeholder-1-1.png',
+                'theme_vmarket' => 'assets/img/placeholder/placeholder-1-1.png',
                 'theme_fashion' => 'assets/img/placeholder/placeholder-2-1.png',
                 'default' => 'public/assets/front-end/img/placeholder/placeholder-1-1.png',
             ],
             'category' => [
-                'theme_aster' => 'assets/img/placeholder/placeholder-1-1.png',
+                'theme_vmarket' => 'assets/img/placeholder/placeholder-1-1.png',
                 'theme_fashion' => 'assets/img/placeholder/placeholder-1-1.png',
                 'default' => 'public/assets/front-end/img/placeholder/placeholder-1-1.png',
             ],
             'logo' => [
-                'theme_aster' => 'assets/img/placeholder/placeholder-4-1.png',
+                'theme_vmarket' => 'assets/img/placeholder/placeholder-4-1.png',
                 'theme_fashion' => 'assets/img/placeholder/placeholder-4-1.png',
                 'default' => 'public/assets/front-end/img/placeholder/placeholder-4-1.png',
             ],
             'shop' => [
-                'theme_aster' => 'assets/img/placeholder/shop.png',
+                'theme_vmarket' => 'assets/img/placeholder/shop.png',
                 'theme_fashion' => 'assets/img/placeholder/shop.png',
                 'default' => 'public/assets/front-end/img/placeholder/shop.png',
             ],
             'shop-banner' => [
-                'theme_aster' => 'assets/img/placeholder/placeholder-4-1.png',
+                'theme_vmarket' => 'assets/img/placeholder/placeholder-4-1.png',
                 'theme_fashion' => 'assets/img/placeholder/placeholder-4-1.png',
                 'default' => 'public/assets/front-end/img/placeholder/seller-banner.png',
             ],
             'business-page' => [
-                'theme_aster' => 'assets/img/placeholder/business-page.png',
+                'theme_vmarket' => 'assets/img/placeholder/business-page.png',
                 'theme_fashion' => 'assets/img/placeholder/business-page.png',
                 'default' => 'public/assets/front-end/img/placeholder/business-page.png',
             ],
@@ -90,7 +90,7 @@ if (!function_exists('getStorageImages')) {
         if (isset($placeholderMap[$type])) {
             if (is_array($placeholderMap[$type])) {
                 $theme = theme_root_path();
-                $targetAsset = $placeholderMap[$type][$theme] ?? ($placeholderMap[$type]['theme_aster'] ?? ($placeholderMap[$type]['default'] ?? ''));
+                $targetAsset = $placeholderMap[$type][$theme] ?? ($placeholderMap[$type]['theme_vmarket'] ?? ($placeholderMap[$type]['default'] ?? ''));
                 $placeholderPath = theme_asset(path: $targetAsset);
                 return (!empty($path) && $path['status'] == 200) ? $path['path'] : $placeholderPath;
             } else {
@@ -162,47 +162,47 @@ if (!function_exists('getValidImage')) {
             'backend-profile' => 'back-end/img/placeholder/user.png',
             'backend-payment' => 'back-end/img/placeholder/placeholder-4-1.png',
             'product' => [
-                'theme_aster' => 'assets/img/placeholder/placeholder-1-1.png',
+                'theme_vmarket' => 'assets/img/placeholder/placeholder-1-1.png',
                 'theme_fashion' => 'assets/img/placeholder/placeholder-1-1.png',
                 'default' => 'public/assets/front-end/img/placeholder/placeholder-1-1.png',
             ],
             'avatar' => [
-                'theme_aster' => 'assets/img/placeholder/user.png',
+                'theme_vmarket' => 'assets/img/placeholder/user.png',
                 'theme_fashion' => 'assets/img/placeholder/user.png',
                 'default' => 'public/assets/front-end/img/placeholder/user.png',
             ],
             'banner' => [
-                'theme_aster' => 'assets/img/placeholder/placeholder-2-1.png',
+                'theme_vmarket' => 'assets/img/placeholder/placeholder-2-1.png',
                 'theme_fashion' => 'assets/img/placeholder/placeholder-2-1.png',
                 'default' => 'public/assets/front-end/img/placeholder/placeholder-2-1.png',
             ],
             'wide-banner' => [
-                'theme_aster' => 'assets/img/placeholder/placeholder-4-1.png',
+                'theme_vmarket' => 'assets/img/placeholder/placeholder-4-1.png',
                 'theme_fashion' => 'assets/img/placeholder/placeholder-4-1.png',
                 'default' => 'public/assets/front-end/img/placeholder/placeholder-4-1.png',
             ],
             'brand' => [
-                'theme_aster' => 'assets/img/placeholder/placeholder-2-1.png',
+                'theme_vmarket' => 'assets/img/placeholder/placeholder-2-1.png',
                 'theme_fashion' => 'assets/img/placeholder/placeholder-2-1.png',
                 'default' => 'public/assets/front-end/img/placeholder/placeholder-1-1.png',
             ],
             'category' => [
-                'theme_aster' => 'assets/img/placeholder/placeholder-1-1.png',
+                'theme_vmarket' => 'assets/img/placeholder/placeholder-1-1.png',
                 'theme_fashion' => 'assets/img/placeholder/placeholder-1-1.png',
                 'default' => 'public/assets/front-end/img/placeholder/placeholder-1-1.png',
             ],
             'logo' => [
-                'theme_aster' => 'assets/img/placeholder/placeholder-4-1.png',
+                'theme_vmarket' => 'assets/img/placeholder/placeholder-4-1.png',
                 'theme_fashion' => 'assets/img/placeholder/placeholder-4-1.png',
                 'default' => 'public/assets/front-end/img/placeholder/placeholder-4-1.png',
             ],
             'shop' => [
-                'theme_aster' => 'assets/img/placeholder/shop.png',
+                'theme_vmarket' => 'assets/img/placeholder/shop.png',
                 'theme_fashion' => 'assets/img/placeholder/shop.png',
                 'default' => 'public/assets/front-end/img/placeholder/shop.png',
             ],
             'shop-banner' => [
-                'theme_aster' => 'assets/img/placeholder/placeholder-4-1.png',
+                'theme_vmarket' => 'assets/img/placeholder/placeholder-4-1.png',
                 'theme_fashion' => 'assets/img/placeholder/placeholder-4-1.png',
                 'default' => 'public/assets/front-end/img/placeholder/seller-banner.png',
             ],
@@ -211,7 +211,7 @@ if (!function_exists('getValidImage')) {
         if (isset($placeholderMap[$type])) {
             if (is_array($placeholderMap[$type])) {
                 $theme = theme_root_path();
-                $targetAsset = $placeholderMap[$type][$theme] ?? ($placeholderMap[$type]['theme_aster'] ?? ($placeholderMap[$type]['default'] ?? ''));
+                $targetAsset = $placeholderMap[$type][$theme] ?? ($placeholderMap[$type]['theme_vmarket'] ?? ($placeholderMap[$type]['default'] ?? ''));
                 $placeholderPath = theme_asset(path: $targetAsset);
 
                 return is_file($path) ? $givenPath : $placeholderPath;

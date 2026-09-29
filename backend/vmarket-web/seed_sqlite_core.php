@@ -28,7 +28,7 @@ $settings = [
     'delivery_boy_registration' => '1',
     'maintenance_mode' => '0',
     'decimal_point_settings' => '2',
-    'theme_name' => 'theme_aster',
+    'theme_name' => 'theme_vmarket',
     'admin_login_url' => 'admin',
     'employee_login_url' => 'admin',
     'mail_config' => json_encode(['status' => 0]),

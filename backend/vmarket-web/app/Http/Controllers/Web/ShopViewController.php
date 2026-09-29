@@ -87,9 +87,9 @@ class ShopViewController extends Controller
 
         return match ($themeName) {
             'default' => self::default_theme($request, $shop),
-            'theme_aster' => self::theme_aster($request, $shop),
             'theme_fashion' => self::theme_fashion($request, $shop),
-            'theme_vmarket' => self::theme_aster($request, $shop),
+            'theme_vmarket' => self::theme_vmarket($request, $shop),
+            default => self::theme_vmarket($request, $shop),
         };
     }
 
@@ -127,7 +127,7 @@ class ShopViewController extends Controller
         ]);
     }
 
-    public function theme_aster($request, $shop): View|JsonResponse|Redirector|RedirectResponse
+    public function theme_vmarket($request, $shop): View|JsonResponse|Redirector|RedirectResponse
     {
         self::checkShopExistence($shop);
         $productAddedBy = $shop['author_type'] == 'admin' ? 'admin' : 'seller';
