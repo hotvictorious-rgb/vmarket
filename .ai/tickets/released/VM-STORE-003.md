@@ -3,7 +3,7 @@
 Ticket ID:            VM-STORE-003
 Title:                Contact-us form posts to GET-only view route (405 on every submit)
 Type:                 BUG
-Status:               BACKEND_DONE
+Status:               RELEASED
 Blocked:              no
 Created by / date:    Reviewer AI / 2026-09-28 (found during storefront button audit: live 405 proof)
 Size estimate:        xs (1-line form action)
@@ -49,11 +49,12 @@ Push rule:            ONLY Reviewer AI merges to `v1` and pushes, after APPROVED
 Screenshots:          none - justify (1-line fix; evidence is live log)
 
 Implementation notes:
-Review notes:
-Final decision:
-Release commit:
+Review notes: .ai/reviews/REV-VM-STORE-003-850f2a5e9dc111b374c6cc36fc1f6da33a16ab5f.md (Decision APPROVED; live 405→302 + 17/17 at exact SHA)
+Final decision: APPROVED → RELEASED as RELEASE-2026-09-28-007
+Release commit: 057f40d8 (merge v1; feature 850f2a5e9dc111b374c6cc36fc1f6da33a16ab5f)
 
 History (append-only):
 - 2026-09-28  Reviewer AI  BACKLOG (filed)  Live 405 proof on :8002 during button audit. Handler field match verified.
 - 2026-09-28  Frontend AI  BACKLOG -> BACKEND_DONE (single-coordinator session)  1-line action repoint contacts->contact.store (handler field match verified). Live: POST contact/store 302 back (was 405). branch=frontend/VM-STORE-003.
 - 2026-09-28  Frontend AI  run-all 17/17 PASS at fix commit 83080fdb (7 executed + 10 justified).
+- 2026-09-28  Reviewer AI  BACKEND_DONE -> REVIEW_APPROVED -> RELEASED (RELEASE-2026-09-28-007, single-coordinator session)  Live 405->302 proof, run-all 17/17 at 850f2a5e, gate 18/18 PASS. Merged --no-ff (057f40d8); ticket released; branch deleted after merge.

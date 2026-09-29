@@ -1,3 +1,9 @@
+### [2026-09-28 20:40 UTC] VM-STORE-003 Released: contact form 405 fixed (RELEASE-2026-09-28-007) [frontend] [AI]
+* **1. Defect:** contact-us form posted to GET-only view route `contacts` → 405 on every submit; handler lives at `POST contact/store` with matching fields. Fix: 1-line action repoint.
+* **2. Proof:** live `POST contact/store` 302 (was 405); run-all 17/17 PASS; gate 18/18 PASS; review APPROVED.
+* **3. Release:** merged `frontend/VM-STORE-003` into `v1` --no-ff (`057f40d8`); ticket → `released/`; manifest + review recorded.
+* **4. Verification:** staged + committed only own files (ticket + review + manifest + changelog).
+
 ### [2026-09-28 20:10 UTC] VM-STORE-002 Released: product-page cart defects fixed (RELEASE-2026-09-28-006) [frontend] [AI]
 * **1. Defects (user-reported, root-caused in code):** first add-to-cart click misrouted to quantity-update (missing-element `undefined !== ""`) → status-0 popup, nothing added; Buy Now missing `data-auth`/`data-route` → degraded to plain add. Fix: undefined-guard in `addToCart()` + button attrs mirroring quick-view. Country picker traced: fully dead init path in v1 (clean tel input renders); raw-list symptom needs exact surface.
 * **2. Proof:** live endpoint chain (add status 1, buy-now status 2 → status 1 + redirect_to checkout); served details HTML carries new attrs; run-all 17/17 PASS; gate 18/18 PASS (cycle 2 — cycle 1 caught a hollow working-copy ticket, restored and re-evidenced); review APPROVED.
