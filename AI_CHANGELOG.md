@@ -1,3 +1,9 @@
+### [2026-09-29 07:30 UTC] VM-STORE-006 Released: auth modals use VM icon mark (RELEASE-2026-09-29-002) [frontend] [AI]
+* **1. Ruling:** human brand scheme — VM for customer/storefront, VV vendor, VD delivery. All three apps ship one VM mark today; VV/VD art does not exist (filed VM-BRAND-002, BLOCKED on artwork). Storefront part executes here: modal rings `vic_logo.webp` → `vm_icon.jpg` (square, ring-fitting).
+* **2. Proof:** run-all 17/17 PASS; gate 18/18 PASS; review APPROVED.
+* **3. Release:** merged `frontend/VM-STORE-006-logo` into `v1` --no-ff (`710f0542`); ticket → `released/`; manifest + review recorded.
+* **4. Verification:** staged + committed only own files (ticket + review + manifest + changelog).
+
 ### [2026-09-29 07:05 UTC] VM-STORE-005 Released: auth modal logos fixed (RELEASE-2026-09-29-001) [frontend] [AI]
 * **1. Defect:** login/register modal rings used storage `web_logo` with missing file → fallback `placeholder/*.png` also missing from theme → broken images. Fix: theme brand mark (`vic_logo.webp`, visually verified) in both rings.
 * **2. Proof:** rendered modal HTML carries both marks; run-all 17/17 PASS; gate 18/18 PASS; review APPROVED.

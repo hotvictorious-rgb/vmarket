@@ -3,7 +3,7 @@
 Ticket ID:            VM-STORE-006
 Title:                Auth modal rings use VM icon mark (not vic wordmark)
 Type:                 FEATURE
-Status:               BACKEND_DONE
+Status:               RELEASED
 Blocked:              no
 Created by / date:    Reviewer AI / 2026-09-29 (human ruling: VM mark for customer/storefront; ring fits square icon)
 Size estimate:        xs (2-line src swap)
@@ -33,11 +33,12 @@ Push rule:            ONLY Reviewer AI merges to `v1` and pushes, after APPROVED
 Screenshots:          modal rings (notes)
 
 Implementation notes:
-Review notes:
-Final decision:
-Release commit:
+Review notes: .ai/reviews/REV-VM-STORE-006-b12ddf629f66f80ddba0a740b51fa85c060159cc.md (Decision APPROVED; 17/17 at exact SHA)
+Final decision: APPROVED → RELEASED as RELEASE-2026-09-29-002
+Release commit: 710f0542 (merge v1; feature b12ddf629f66f80ddba0a740b51fa85c060159cc)
 
 History (append-only):
 - 2026-09-29  Reviewer AI  BACKLOG (filed, executed same-session)  Human VM ruling.
 - 2026-09-29  Frontend AI  BACKLOG -> BACKEND_DONE (single-coordinator session)  2 src swaps vic_logo.webp -> vm_icon.jpg. branch=frontend/VM-STORE-006-logo.
 - 2026-09-29  Frontend AI  run-all 17/17 PASS at fix commit 0936ba93 (7 executed + 10 justified).
+- 2026-09-29  Reviewer AI  BACKEND_DONE -> REVIEW_APPROVED -> RELEASED (RELEASE-2026-09-29-002, single-coordinator session)  run-all 17/17 at b12ddf62, gate 18/18 PASS. Merged --no-ff (710f0542); ticket released; branch deleted after merge.
