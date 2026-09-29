@@ -99,9 +99,8 @@
       data-refundmessage="{{ translate('you_can_refund_request_after_the_product_is_delivered') }}"
       data-textshoptemporaryclose="{{ translate('This_shop_is_temporary_closed_or_on_vacation').' '.translate('You_cannot_add_product_to_cart_from_this_shop_for_now') }}"
 ></span>
-<span class="system-default-country-code" data-value="{{ getWebConfig(name: 'country_code') ?? 'us' }}"></span>
+<span class="system-default-country-code" data-value="{{ getWebConfig(name: 'country_code') ?? 'ng' }}"></span>
 <span class="cannot_use_zero" data-text="{{ translate('cannot_Use_0_only') }}"></span>
-<span class="system-default-country-code" data-value="{{ getWebConfig(name: 'country_code') ?? 'us' }}"></span>
 
 @include('theme-views.layouts.partials._translate-text-for-js')
 @include('theme-views.layouts.partials._route-for-js')
