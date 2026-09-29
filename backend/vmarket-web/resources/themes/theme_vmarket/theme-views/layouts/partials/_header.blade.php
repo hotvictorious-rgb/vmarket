@@ -12,7 +12,7 @@
             <span>👑 {{ translate('Welcome to Victorious MARKET — Seamless Shopping, Swift Logistics') }}</span>
         </div>
         <div style="display: flex; gap: 16px; align-items: center;">
-            <a href="{{ route('vendors') }}">{{ translate('Verified Merchants') }}</a>
+            <a href="{{ route('vendor.auth.registration.index') }}">{{ translate('Become a Vendor') }}</a>
             <span>•</span>
             <a href="{{ route('contacts') }}">{{ translate('Help & Support') }}</a>
             {{-- [AI] Single auth entry: header action buttons below are the one Sign In + one Register. Top-bar duplicates removed. --}}
