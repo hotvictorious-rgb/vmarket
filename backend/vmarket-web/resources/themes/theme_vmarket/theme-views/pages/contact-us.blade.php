@@ -41,7 +41,7 @@
 
         <div style="background: #FFFFFF; border: 1px solid var(--vm-border); border-radius: var(--vm-radius-lg); padding: 32px;">
             <h2 style="font-size: 20px; font-weight: 800; margin-bottom: 20px;">{{ translate('Send Us a Message') }}</h2>
-            <form action="{{ route('contacts') }}" method="POST" style="display: flex; flex-direction: column; gap: 16px;">
+            <form action="{{ route('contact.store') }}" method="POST" style="display: flex; flex-direction: column; gap: 16px;">
                 @csrf
                 <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px;">
                     <div>
