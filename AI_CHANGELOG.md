@@ -1,3 +1,9 @@
+### [2026-09-29 08:40 UTC] VM-VEND-003 stage-1 Released: banner validation retired (RELEASE-2026-09-29-005) [backend] [AI]
+* **1. Ruling:** store banners retired for vendors. Removed `banner` (required) + `bottom_banner` rules (+2 orphan messages) from `VendorAddRequest`; image/logo/password/shop rules strict as before. Null-safe service path pre-verified.
+* **2. Proof:** live full registration minus banners → status 1 + login redirect; seller pending + shop `def.png` fallbacks; run-all 17/17 PASS; gate 18/18 PASS; review APPROVED. Ticket stays IN_PROGRESS for stage-2 form blocks.
+* **3. Release:** merged `backend/VM-VEND-003` into `v1` --no-ff (`4141e924`).
+* **4. Verification:** staged + committed only own files.
+
 ### [2026-09-29 08:10 UTC] VM-STORE-007 Released: vendor funnel top bar (RELEASE-2026-09-29-004) [frontend] [AI]
 * **1. Ruling:** top-bar "Verified Merchants" → "Become a Vendor" → vendor registration (carries Login link). Isolated vendor storefronts (`vendor-shop/{slug}`) verified 200 + SEO/OG — zero code needed. Nav discovery link untouched.
 * **2. Proof:** served header label+target; funnel pages 200 + validation; run-all 17/17 PASS; gate 18/18 PASS; review APPROVED.
