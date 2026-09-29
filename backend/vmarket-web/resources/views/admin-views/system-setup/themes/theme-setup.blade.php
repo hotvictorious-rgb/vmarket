@@ -42,7 +42,7 @@
                                         </h5>
                                     </div>
 
-                                    @if($key == 'theme_aster')
+                                    @if($key == 'theme_vmarket')
                                         <div class="d-flex gap-2 gap-sm-3 align-items-center">
                                             <span class="badge bg-primary text-white px-2 py-1 fs-12">{{ translate('Authoritative') }}</span>
                                             <input class="form-check-input radio--input radio--input_lg" type="radio" checked disabled>

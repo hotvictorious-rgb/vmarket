@@ -2763,7 +2763,7 @@
             "Main_Category_Name": "Main Category Name",
             "priority": "Priority",
             "action": "Action",
-            "theme_aster": "Theme aster",
+            "theme_vmarket": "Theme VMarket",
             "ID": "ID",
             "Edit": "Edit",
             "delete": "Delete",
@@ -2961,7 +2961,7 @@
         "page_title_value": "banner",
         "keywords": {
             "banner_Setup": "Banner Setup",
-            "theme_aster": "Theme aster",
+            "theme_vmarket": "Theme VMarket",
             "banner_type": "Banner type",
             "select_banner_type": "Select banner type",
             "resource_type": "Resource type",

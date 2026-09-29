@@ -51,7 +51,7 @@
         </div>
         @endif
 
-        @if(($key != 'default' && $key != 'theme_aster') && theme_root_path() != $key)
+        @if(($key != 'default' && $key != 'theme_vmarket') && theme_root_path() != $key)
             <div class="modal fade" id="deleteThemeModal_{{ $key }}" tabindex="-1" aria-hidden="true"
                  aria-labelledby="deleteThemeModal_{{ $key }}">
                 <div class="modal-dialog modal-dialog-centered">

@@ -174,9 +174,7 @@ class WebController extends Controller
 
     function getPriorityWiseBrandProductsQuery($request, $query)
     {
-        if (theme_root_path() == 'theme_aster') {
-            $paginateLimit = 12;
-        } elseif (theme_root_path() == 'theme_fashion') {
+        if (theme_root_path() == 'theme_fashion') {
             $paginateLimit = 10;
         } else {
             $paginateLimit = 18;

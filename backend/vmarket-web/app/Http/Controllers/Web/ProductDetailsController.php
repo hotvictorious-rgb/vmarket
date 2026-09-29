@@ -53,9 +53,9 @@ class ProductDetailsController extends Controller
 
         return match ($theme_name) {
             'default' => self::getDefaultTheme(slug: $slug),
-            'theme_aster' => self::getThemeAster(slug: $slug),
             'theme_fashion' => self::getThemeFashion(slug: $slug),
-            'theme_vmarket' => self::getThemeAster(slug: $slug),
+            'theme_vmarket' => self::getThemeVmarket(slug: $slug),
+            default => self::getThemeVmarket(slug: $slug),
         };
     }
 
@@ -136,7 +136,7 @@ class ProductDetailsController extends Controller
         return back();
     }
 
-    public function getThemeAster(string $slug): View|RedirectResponse
+    public function getThemeVmarket(string $slug): View|RedirectResponse
     {
         $product = $this->productRepo->getWebFirstWhereActive(
             params: ['slug' => $slug, 'customer_id' => Auth::guard('customer')->user()->id ?? 0],
