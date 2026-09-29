@@ -640,7 +640,7 @@ class ProductController extends Controller
     public function details(Request $request, $id): JsonResponse
     {
         $seller = $request->seller;
-        $product = Product::withoutGlobalScopes()->with(['seoInfo', 'digitalProductAuthors', 'digitalProductPublishingHouse', 'clearanceSale' => function ($query) {
+        $product = Product::withoutGlobalScopes()->with(['seoInfo', 'clearanceSale' => function ($query) {
             return $query->active();
         }, 'taxVats' => function ($query) {
             return $query->with(['tax'])->wherehas('tax', function ($query) {
@@ -652,9 +652,11 @@ class ProductController extends Controller
 
         if (isset($product)) {
             $product = Helpers::product_data_formatting($product, false);
+            return response()->json($product, 200);
         }
-        return response()->json($product, 200);
+        return response()->json(null, 404);
     }
+
 
     public function getProductImages(Request $request, $id):JsonResponse
     {
@@ -1036,7 +1038,18 @@ class ProductController extends Controller
 
     public function edit(Request $request, $id)
     {
-        $product = Product::withoutGlobalScopes()->with('translations', 'tags', 'digitalVariation', 'seoInfo')->withCount('reviews')->find($id);
+        $seller = $request->seller;
+        // [AI] Zero-Trust IDOR Authorization: Product must belong to authenticated seller
+        $product = Product::withoutGlobalScopes()
+            ->with('translations', 'tags', 'digitalVariation', 'seoInfo')
+            ->withCount('reviews')
+            ->where(['added_by' => 'seller', 'user_id' => $seller->id])
+            ->find($id);
+
+        if (!$product) {
+            return response()->json(['message' => translate('Product not found or unauthorized')], 403);
+        }
+
         $product = Helpers::product_data_formatting($product);
 
         return response()->json($product, 200);
@@ -1581,7 +1594,15 @@ class ProductController extends Controller
 
     public function deleteImage(Request $request):JsonResponse
     {
-        $product = Product::withCount('reviews')->find($request['id']);
+        $seller = $request->seller;
+        // [AI] Zero-Trust IDOR Authorization: Product must belong to authenticated seller
+        $product = Product::withCount('reviews')
+            ->where(['id' => $request['id'], 'added_by' => 'seller', 'user_id' => $seller->id])
+            ->first();
+
+        if (!$product) {
+            return response()->json(['message' => translate('Product not found or unauthorized')], 403);
+        }
         $array = [];
         if (count(json_decode($product['images'])) < 2) {
             return response()->json(['message' => translate('you_can_not_delete_all_images')], 403);
@@ -1617,7 +1638,7 @@ class ProductController extends Controller
                 $this->deleteFile('/product/' . $request['name']);
             }
         }
-        Product::withCount('reviews')->where('id', $request['id'])->update([
+        Product::withCount('reviews')->where(['id' => $request['id'], 'added_by' => 'seller', 'user_id' => $seller->id])->update([
             'images' => json_encode($array),
             'color_image' => json_encode($color_image_arr),
         ]);
@@ -1645,7 +1666,12 @@ class ProductController extends Controller
 
     public function deletePreviewFile(Request $request): JsonResponse
     {
-        $product = $this->productRepo->getFirstWhereWithoutGlobalScope(params: ['id' => $request['product_id']]);
+        $seller = $request->seller;
+        // [AI] Zero-Trust IDOR Authorization: Product must belong to authenticated seller
+        $product = Product::where(['id' => $request['product_id'], 'added_by' => 'seller', 'user_id' => $seller->id])->first();
+        if (!$product) {
+            return response()->json(['message' => translate('Product not found or unauthorized')], 403);
+        }
         $this->productService->deletePreviewFile(product: $product);
         $this->productRepo->update(id: $request['product_id'], data: ['preview_file' => null]);
         return response()->json([

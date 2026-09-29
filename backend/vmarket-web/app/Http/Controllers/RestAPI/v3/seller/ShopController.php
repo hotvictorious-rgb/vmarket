@@ -79,5 +79,29 @@ class ShopController extends Controller
         ];
     }
 
+    /**
+     * [AI] Update setup guide progress from Vendor Mobile App
+     */
+    public function updateSetupGuideApp(Request $request): JsonResponse
+    {
+        $seller = $request->seller;
+        $key = $request->input('key');
+        $value = $request->input('value', 1);
 
+        if ($key) {
+            $shop = Shop::where('seller_id', $seller->id)->first();
+            if ($shop) {
+                $setupData = json_decode($shop->setup_guide ?? '{}', true) ?: [];
+                $setupData[$key] = $value;
+                $shop->setup_guide = json_encode($setupData);
+                $shop->save();
+            }
+        }
+
+        return response()->json([
+            'status' => true,
+            'message' => translate('Setup guide updated successfully.'),
+        ], 200);
+    }
 }
+

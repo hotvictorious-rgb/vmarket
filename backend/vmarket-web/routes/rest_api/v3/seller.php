@@ -24,7 +24,7 @@ use Illuminate\Support\Facades\Route;
 |*/
 
 Route::group(['prefix' => 'v3/seller', 'middleware' => ['api_lang']], function () {
-    Route::group(['prefix' => 'auth', 'middleware' => ['throttle:10,1']], function () {
+    Route::group(['prefix' => 'auth', 'middleware' => ['throttle:120,1']], function () {
 
         Route::controller(VendorLoginController::class)->group(function () {
             Route::post('login', 'login');
@@ -76,6 +76,7 @@ Route::group(['prefix' => 'v3/seller', 'middleware' => ['api_lang']], function (
         Route::controller(ShopController::class)->group(function () {
             Route::put('vacation-add', 'vacation_add');
             Route::put('temporary-close', 'temporary_close');
+            Route::post('update-setup-guide-app', 'updateSetupGuideApp');
         });
 
         Route::group(['prefix' => 'brands'], function () {
@@ -104,6 +105,8 @@ Route::group(['prefix' => 'v3/seller', 'middleware' => ['api_lang']], function (
                 Route::get('top-selling-product', 'top_selling_products');
                 Route::get('most-popular-product', 'most_popular_products');
                 Route::get('delete-image', 'deleteImage');
+                Route::get('delete-images', 'deleteImage');
+                Route::get('delete-preview-file', 'deletePreviewFile');
                 Route::get('get-product-images/{id}', 'getProductImages');
                 Route::get('stock-limit-status', 'getStockLimitStatus');
                 Route::post('restock-request-list', 'getRestockRequestList');
@@ -226,6 +229,16 @@ Route::group(['prefix' => 'v3/seller', 'middleware' => ['api_lang']], function (
             Route::post('verify', [\App\Http\Controllers\Vendor\Order\PickupReservationController::class, 'verify']);
             Route::post('accept', [\App\Http\Controllers\Vendor\Order\PickupReservationController::class, 'accept']);
             Route::post('reject', [\App\Http\Controllers\Vendor\Order\PickupReservationController::class, 'reject']);
+        });
+
+        /* [AI] Vendor Staff & Employee Management API */
+        Route::group(['prefix' => 'employee'], function () {
+            Route::controller(\App\Http\Controllers\RestAPI\v3\seller\EmployeeController::class)->group(function () {
+                Route::get('list', 'list');
+                Route::post('store', 'store');
+                Route::post('status', 'status');
+                Route::post('delete', 'delete');
+            });
         });
 
     });

@@ -84,15 +84,11 @@ class OrderController extends Controller
             searchValue: $request['search_value'],
             filters: $filters,
             whereIn: $filterWhereIn,
-            relations: ['customer', 'shipping', 'deliveryMan', 'orderDetails', 'offlinePayments'],
+            relations: ['customer', 'shipping', 'deliveryMan', 'orderDetails'],
             dataLimit: $request['limit']
         );
 
         $orders?->map(function ($data) {
-            if (isset($data['offlinePayments'])) {
-                $data['offlinePayments']->payment_info = $data->offlinePayments->payment_info;
-            }
-
             $totalTaxAmount = 0;
             $totalProductPrice = 0;
             $totalProductDiscount = 0;
@@ -119,7 +115,7 @@ class OrderController extends Controller
     public function details(Request $request, $id): JsonResponse
     {
         $seller = $request->seller;
-        $detailsList = OrderDetail::with(['order.offlinePayments', 'order.customer', 'order.deliveryMan', 'order.shippingAddress', 'order.billingAddress', 'verificationImages'])->where(['seller_id' => $seller['id'], 'order_id' => $id])->get();
+        $detailsList = OrderDetail::with(['order.customer', 'order.deliveryMan', 'order.shippingAddress', 'order.billingAddress', 'verificationImages'])->where(['seller_id' => $seller['id'], 'order_id' => $id])->get();
 
         $productList = $this->getProductListWithAllDetails(ids: $detailsList?->pluck('product_id')->toArray());
 
