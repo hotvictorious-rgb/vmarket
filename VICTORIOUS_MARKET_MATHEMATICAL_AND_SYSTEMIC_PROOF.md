@@ -1,3 +1,7 @@
+﻿> **[AI] EVIDENCE STATUS (2026-09-29): HISTORICAL - this document certifies code as of its writing (Sept-18 era and later appends), NOT current v1. Per VM-DOC-ALIGN-001, proof never outranks the rule it proves: current certification lives in per-release gate JSONs (.ai/status/results/<TICKET>/<SHA>.json) + review files. Re-certification happens per release; see AI_CHANGELOG.md. Do not cite past 100/100 claims as current.
+
+---
+
 # 🧮 VICTORIOUS MARKET MATHEMATICAL & SYSTEMIC VERIFICATION PROOF
 ## *Exhaustive Mathematical Invariants, Double-Entry Balance Proofs, Searchability Indices, Notification Triggers & Subsystem Parity*
 
