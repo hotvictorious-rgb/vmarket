@@ -3,7 +3,7 @@
 Ticket ID:            VM-VEND-003
 Title:                Vendor banner retirement ΓÇö drop banner/bottom_banner from registration (form + validation)
 Type:                 FEATURE
-Status:               BACKEND_DONE
+Status:               RELEASED
 Blocked:              no
 Created by / date:    Reviewer AI / 2026-09-29 (human ruling: store banners retired for vendors)
 Size estimate:        xs (2 validation rules + 2 Blade blocks; backend ships first)
@@ -51,9 +51,9 @@ Screenshots:          registration form (notes)
 
 Implementation notes:
 - Null-safety verified 2026-09-29: `upload(null)` ΓåÆ `def.png`; storage-type guards use `$request->has()`; no migration needed.
-Review notes:
-Final decision:
-Release commit:
+Review notes: stage 1 `.ai/reviews/REV-VM-VEND-003-29ef2f9afff5129f7ab9744292ca37b35a6d0e8f.md`; stage 2 `.ai/reviews/REV-VM-VEND-003-eb939755118b653afb2dd248dc1961919c02c9bf.md` (both APPROVED; 17/17 at exact SHAs)
+Final decision: APPROVED → RELEASED as RELEASE-2026-09-29-006 (stage 2; stage 1 shipped as RELEASE-2026-09-29-005)
+Release commit: 8d9ad132 (merge v1; feature eb939755118b653afb2dd248dc1961919c02c9bf)
 
 History (append-only):
 - 2026-09-29  Reviewer AI  BACKLOG (filed)  Human banner-retirement ruling. Staged backend-first.
@@ -62,3 +62,4 @@ History (append-only):
 - 2026-09-29  Reviewer AI  BACKEND_DONE -> REVIEW_APPROVED -> STAGE-1 RELEASED (RELEASE-2026-09-29-005)  run-all 17/17, gate 18/18 PASS. Ticket STAYS in-progress for stage 2 (form blocks).
 - 2026-09-29  Frontend AI  Stage-2 BACKEND_DONE (single-coordinator session)  Removed banner + bottom_banner upload blocks (66 lines); TIN section intact; register page 200 with zero banner strings. branch=frontend/VM-VEND-003.
 - 2026-09-29  Frontend AI  run-all 17/17 PASS at stage-2 commit 0779b770 (7 executed + 10 justified).
+- 2026-09-29  Reviewer AI  BACKEND_DONE -> REVIEW_APPROVED -> RELEASED (RELEASE-2026-09-29-006 stage 2, single-coordinator session)  Form blocks removed, register 200 banner-free, run-all 17/17 at eb939755, gate 18/18 PASS. Merged --no-ff (8d9ad132); ticket released; branch deleted after merge.

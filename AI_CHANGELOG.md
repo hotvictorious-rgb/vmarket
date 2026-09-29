@@ -1,3 +1,9 @@
+### [2026-09-29 09:00 UTC] VM-VEND-003 stage-2 Released: banner uploads removed from form (RELEASE-2026-09-29-006) [frontend] [AI]
+* **1. Retirement complete:** removed banner + bottom_banner upload blocks (-65 lines) from vendor registration; TIN/image/logo sections intact. Form fields now exactly match stage-1 validation.
+* **2. Proof:** register page 200 with zero banner strings; run-all 17/17 PASS; gate 18/18 PASS; review APPROVED.
+* **3. Release:** merged `frontend/VM-VEND-003` into `v1` --no-ff (`8d9ad132`); ticket → `released/` (both stages); manifest + review recorded.
+* **4. Verification:** staged + committed only own files (ticket + review + manifest + changelog).
+
 ### [2026-09-29 08:40 UTC] VM-VEND-003 stage-1 Released: banner validation retired (RELEASE-2026-09-29-005) [backend] [AI]
 * **1. Ruling:** store banners retired for vendors. Removed `banner` (required) + `bottom_banner` rules (+2 orphan messages) from `VendorAddRequest`; image/logo/password/shop rules strict as before. Null-safe service path pre-verified.
 * **2. Proof:** live full registration minus banners → status 1 + login redirect; seller pending + shop `def.png` fallbacks; run-all 17/17 PASS; gate 18/18 PASS; review APPROVED. Ticket stays IN_PROGRESS for stage-2 form blocks.
