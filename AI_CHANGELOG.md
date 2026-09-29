@@ -1,3 +1,9 @@
+### [2026-09-29 12:00 UTC] VM-THEME-001 backend stage Released: aster removal (RELEASE-2026-09-29-012) [backend] [AI]
+* **1. Removal:** `theme_aster/` deleted (840+ files) with fallbacks re-pointed first (file_path, seeder, registry); 34 changed PHP files lint-clean; zero live aster refs in app/routes/vmarket-blades; admin/vendor copy normalized.
+* **2. Proof:** run-all 17/17 PASS at `de7f7c33` (fixed runtime); gate 18/18 PASS; CUST-003 dependency formally closed; review APPROVED (backend stage).
+* **3. Release:** merged `backend/VM-THEME-001` into `v1` --no-ff (`e0d99e43`); ticket stays IN PROGRESS for Flutter aster-screen stage; manifest + review recorded.
+* **4. Verification:** staged + committed only own files.
+
 ### [2026-09-29 11:00 UTC] VM-CUST-003 Re-released: cart alignment re-proven (RELEASE-2026-09-29-011) [frontend] [AI]
 * **1. Context:** 2026-09-25 release stood with a gate check-3 exception. Re-verified from scratch under 3-role model: all 6 criteria with live + framework evidence, gate 18/18 with zero exceptions this time.
 * **2. Proof:** trunk grep-clean, live AJAX lifecycle all-200, flutter 6/6, run-all 17/17 PASS; review APPROVED.
