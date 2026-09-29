@@ -3,7 +3,7 @@
 Ticket ID:            VM-STORE-004
 Title:                Country-picker stylesheet missing from main layout (+NG default audit)
 Type:                 BUG
-Status:               BACKEND_DONE
+Status:               RELEASED
 Blocked:              no
 Created by / date:    Reviewer AI / 2026-09-28 (user-reported raw country list in register popup)
 Size estimate:        xs (1 CSS link + audit notes; init wiring explicitly deferred)
@@ -50,11 +50,12 @@ Screenshots:          none - justify (stylesheet link; browser proof of picker p
 
 Implementation notes:
 - Default-country audit: `initializePhoneInput` falls back to `.system-default-country-code[data-value]` (rendered only in `blog-layouts`) else `'us'`; observed user default `+880` (BD) matches stock config, not v1 code. Correct default for NG marketplace (config `country_code` ΓåÆ NG, or explicit `initialCountry`) to be set when init is wired with browser proof ΓÇö NOT in this ticket.
-Review notes:
-Final decision:
-Release commit:
+Review notes: .ai/reviews/REV-VM-STORE-004-1291a1de9ba8a6a7e27bb5bdda5a0c69159cd09f.md (Decision APPROVED; served-HTML proof + 17/17 at exact SHA)
+Final decision: APPROVED → RELEASED as RELEASE-2026-09-28-008
+Release commit: ed488aea (merge v1; feature 1291a1de9ba8a6a7e27bb5bdda5a0c69159cd09f)
 
 History (append-only):
 - 2026-09-28  Reviewer AI  BACKLOG (filed)  Full picker trace (plugin present, init dead, CSS absent on main layout). Stylesheet-only fix; init wiring deferred pending browser proof + exact user surface.
 - 2026-09-28  Frontend AI  BACKLOG -> BACKEND_DONE (single-coordinator session)  1 link added; served home HTML carries iti.css URL; home still 200. branch=frontend/VM-STORE-004.
 - 2026-09-28  Frontend AI  run-all 17/17 PASS at fix commit eb64480a (7 executed + 10 justified).
+- 2026-09-28  Reviewer AI  BACKEND_DONE -> REVIEW_APPROVED -> RELEASED (RELEASE-2026-09-28-008, single-coordinator session)  Served-HTML proof, run-all 17/17 at 1291a1de, gate 18/18 PASS. Merged --no-ff (ed488aea); ticket released; branch deleted after merge.

@@ -1,3 +1,9 @@
+### [2026-09-28 21:00 UTC] VM-STORE-004 Released: picker stylesheet gap closed (RELEASE-2026-09-28-008) [frontend] [AI]
+* **1. Finding:** user-reported raw country list traced — plugin present but init never called anywhere, no script include, and `intlTelInput.css` absent from main layout. v1 renders clean tel inputs; symptom matches production-old-code (stock BD/+880 default observed). Fix: stylesheet link in layout head (zero logic risk); init wiring explicitly deferred pending browser proof + exact surface.
+* **2. Proof:** served home HTML carries iti.css link, home 200; run-all 17/17 PASS; gate 18/18 PASS; review APPROVED.
+* **3. Release:** merged `frontend/VM-STORE-004` into `v1` --no-ff (`ed488aea`); ticket → `released/`; manifest + review recorded.
+* **4. Verification:** staged + committed only own files (ticket + review + manifest + changelog).
+
 ### [2026-09-28 20:40 UTC] VM-STORE-003 Released: contact form 405 fixed (RELEASE-2026-09-28-007) [frontend] [AI]
 * **1. Defect:** contact-us form posted to GET-only view route `contacts` → 405 on every submit; handler lives at `POST contact/store` with matching fields. Fix: 1-line action repoint.
 * **2. Proof:** live `POST contact/store` 302 (was 405); run-all 17/17 PASS; gate 18/18 PASS; review APPROVED.
