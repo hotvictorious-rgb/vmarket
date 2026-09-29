@@ -34,6 +34,8 @@ return [
     'customer_auth_verify_otp_update_info' => 'theme-views.customer-views.auth._otp-update-info',
     'customer_auth_verify_firebase_auth_verify' => 'theme-views.customer-views.auth._firebase-login-verify',
     'modal_for_social_media_user_view' => 'theme-views.layouts.partials.modal._social-media-user-modal',
+    'get_login_modal_data' => 'theme-views.layouts.partials.modal._login',
+    'get_register_modal_data' => 'theme-views.layouts.partials.modal._register',
     'products_details' => 'theme-views.product.details',
     'products_cart_partials' => 'theme-views.layouts.partials._cart',
     'products_cart_details_partials' => 'theme-views.cart.cart-details',

@@ -376,7 +376,4 @@ foreach ($order->details as $key => $detail) {
         </div>
     </div>
 @endif
-@include('theme-views.order.partials._choose-payment-method-order-details',[
-  'order' => $order,
-  'paymentGatewayList' => $paymentGatewayList,
- ])
+{{-- [AI] VM-STORE-001: dead pay-modal include removed (customer-order-edit-pay-amount route purged; retry-pay needs a backend endpoint — follow-up) --}}

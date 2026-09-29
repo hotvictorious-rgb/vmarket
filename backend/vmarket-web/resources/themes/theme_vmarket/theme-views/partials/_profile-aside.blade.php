@@ -70,13 +70,7 @@
                             <span>{{translate('Wish_List')}}</span>
                         </a>
                     </li>
-                    <li class="{{Request::is ('chat/delivery-man') ? 'active' : ''}}">
-                        <a href="{{route('chat', ['type' => 'delivery-man'])}}">
-                            <img width="20" src="{{theme_asset('assets/img/icons/profile-icon7.png')}}"
-                                 class="dark-support" alt="">
-                            <span>{{translate('inbox')}}</span>
-                        </a>
-                    </li>
+                    {{-- [AI] VM-STORE-001: inbox/chat item removed (chat route purged; no chat backend) --}}
                     <li class="{{Request::is ('account-tickets') || Request::is('support-ticket*') ? 'active' : ''}}">
                         <a href="{{route('account-tickets')}}">
                             <img width="20" src="{{theme_asset('assets/img/icons/profile-icon8.png')}}"

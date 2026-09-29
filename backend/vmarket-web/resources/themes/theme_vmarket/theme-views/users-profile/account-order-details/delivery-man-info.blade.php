@@ -44,10 +44,7 @@
                                                 </div>
                                             </div>
                                             <div class="d-flex flex-wrap flex-md-column gap-3">
-                                                <button data-bs-toggle="modal" data-bs-target="#chatModal" class="btn btn-outline-primary flex-grow-1 text-capitalize">
-                                                    <i class="bi bi-chat-square-fill"></i>
-                                                    {{translate('chat_with_delivery')}}
-                                                </button>
+                                                {{-- [AI] VM-STORE-001: chat UI removed (messages/chat routes purged; no chat backend). Review action below stays. --}}
                                                 @if($order->payment_status == 'paid' && $order->order_type == 'default_type' && $order->order_status=='delivered' && $order->delivery_man_id)
                                                 <button  class="btn btn-primary flex-grow-1"
                                                             data-bs-toggle="modal" data-bs-target="#reviewModal">
@@ -56,39 +53,7 @@
                                                 </button>
                                                 @endif
                                             </div>
-                                            <div class="modal fade" id="chatModal" tabindex="-1" aria-labelledby="reviewModalLabel" aria-hidden="true">
-                                                <div class="modal-dialog ">
-                                                    <div class="modal-content">
-                                                        <div class="modal-header px-sm-5">
-                                                            <h1 class="modal-title fs-5">{{translate('Write_something')}}</h1>
-                                                        </div>
-                                                        <div class="modal-body px-sm-5">
-                                                            <form action="{{route('messages')}}" method="post" id="chat-form">
-                                                                @csrf
-                                                                @if($order->deliveryMan->id != 0)
-                                                                    <input value="{{$order->deliveryMan->id}}" name="delivery_man_id" hidden>
-                                                                @endif
-                                                                <textarea name="message" class="form-control min-height-100px max-height-200px" required></textarea>
-                                                                <br>
-                                                                @if($order->deliveryMan->id != 0)
-                                                                    <button class="btn btn-secondary m-0 ">{{translate('send')}}</button>
-                                                                @else
-                                                                    <button class="btn btn-secondary m-0"
-                                                                            disabled>{{translate('send')}}</button>
-                                                                @endif
-                                                            </form>
-                                                        </div>
-                                                        <div class="modal-footer gap-3 pb-4 px-sm-5">
-                                                            <a href="{{route('chat',['type' => 'delivery-man'])}}" class="btn btn-secondary m-0">
-                                                                {{translate('go_to_chatbox')}}
-                                                            </a>
-                                                            <button type="button" class="btn btn-primary m-0"
-                                                                    data-bs-dismiss="modal">{{translate('close')}}
-                                                            </button>
-                                                        </div>
-                                                    </div>
-                                                </div>
-                                            </div>
+                                            {{-- [AI] VM-STORE-001: chat modal removed with its trigger above (messages/chat routes purged; no chat backend) --}}
                                             <div class="modal fade" id="reviewModal" tabindex="-1" aria-labelledby="reviewModalLabel" aria-hidden="true">
                                             <div class="modal-dialog modal-lg">
                                                 <div class="modal-content">
