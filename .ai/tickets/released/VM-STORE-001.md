@@ -3,7 +3,7 @@
 Ticket ID:            VM-STORE-001
 Title:                Storefront dead-route remediation ΓÇö 6 missing named routes 500 live order/checkout views
 Type:                 BUG
-Status:               BACKEND_DONE
+Status:               RELEASED
 Blocked:              no
 Created by / date:    Reviewer AI / 2026-09-28 (found during storefront button/form audit: 109 view route refs vs 904 registry names)
 Size estimate:        small (Blade-only; exact-path edits, zero behavior change beyond restoring render)
@@ -51,11 +51,12 @@ Push rule:            ONLY Reviewer AI merges to `v1` and pushes, after APPROVED
 Screenshots:          before/after render pair for shipping step (500 ΓåÆ renders)
 
 Implementation notes:
-Review notes:
-Final decision:
-Release commit:
+Review notes: .ai/reviews/REV-VM-STORE-001-0981f68bb6ed935e76c431d175fca5cbce410fdc.md (Decision APPROVED; grep-zero + live smoke, 17/17 at exact SHA)
+Final decision: APPROVED → RELEASED as RELEASE-2026-09-28-005
+Release commit: 94a23740 (merge v1; feature 0981f68bb6ed935e76c431d175fca5cbce410fdc)
 
 History (append-only):
 - 2026-09-28  Reviewer AI  BACKLOG (filed)  109 refs vs 904 names cross-check (JSON route dump, truncation-safe). 6 dead named. Render-fatal analysis per site (unconditional vs gated). Dispositions above.
 - 2026-09-28  Frontend AI  BACKLOG -> BACKEND_DONE (single-coordinator session)  8 files: 2 support repoints, 2 offline-span removals, tracking offline-block removal, 3 dead-include removals, chat trigger+modal removal, sidebar inbox removal, modal registry keys added (scope amendment: same dead-auth-surface class). Grep-zero verified (guarded/or orphaned exceptions listed). branch=frontend/VM-STORE-001.
 - 2026-09-28  Frontend AI  run-all 17/17 PASS at fix commit 71849069 (7 executed + 10 justified). Live smoke: login-modal 500->200, vendor login/register 200 with valid actions, customer+vendor submit validation proven, CSRF 419 proven.
+- 2026-09-28  Reviewer AI  BACKEND_DONE -> REVIEW_APPROVED -> RELEASED (RELEASE-2026-09-28-005, single-coordinator session)  Grep-zero + live smoke verified, run-all 17/17 at 0981f68b, gate 18/18 PASS. Merged --no-ff (94a23740); ticket released; branch deleted after merge.

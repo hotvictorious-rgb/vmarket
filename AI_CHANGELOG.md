@@ -1,3 +1,9 @@
+### [2026-09-28 19:40 UTC] VM-STORE-001 Released: storefront dead routes fixed (RELEASE-2026-09-28-005) [frontend] [AI]
+* **1. Defects:** 6 dead named routes 500'd live views — support-ticket (checkout shipping + order summary), offline spans/forms (tracking views), dead pay modals (order list/details), chat modal+sidebar (no backend). Fix: 2 repoints to `account-tickets`, 6 removals, 2 auth-modal registry keys. +13/-107 lines across 8 Blade files. Purge-history confirms removal is faithful (backend routes deliberately purged).
+* **2. Proof:** dead-name grep-zero; login-modal endpoint 500→200; vendor login/register 200 + CSRF 419 + field validation live; customer signup validation live; home/product/track 200; run-all 17/17 PASS; gate 18/18 PASS; review APPROVED.
+* **3. Release:** merged `frontend/VM-STORE-001` into `v1` --no-ff (`94a23740`); ticket → `released/`; manifest + review recorded. Follow-up: order retry-pay backend endpoint.
+* **4. Verification:** staged + committed only own files (ticket + review + manifest + changelog).
+
 ### [2026-09-28 19:05 UTC] VM-ORD-003 Released: container boot chain fixed (RELEASE-2026-09-28-004) [backend] [AI]
 * **1. Defects:** Admin ProductController dual-promoted `$productService` (trait + own ctor) + missing `ProductService` import — class unloadable; twin TaxModule ctors issued MySQL-only `SET sql_mode` on every boot (sqlite fatal). Fix: demote+assign (2 lines) + import (1 line) + driver guard x2 (5+5 lines). Zero behavior delta.
 * **2. Proof:** class-load 5/5 LOADS; `route:list` full table exit 0 (was 255); run-all 17/17 PASS at `0858a94e`; gate 18/18 PASS; review APPROVED. Unblocks VM-CUST-013 route:list evidence chain (ORD-001 → ORD-002 → ORD-003).
