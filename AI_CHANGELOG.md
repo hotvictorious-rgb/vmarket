@@ -1,3 +1,9 @@
+### [2026-09-29 10:00 UTC] VM-VEND-005 Released: vendor entity fields (RELEASE-2026-09-29-009) [backend] [AI]
+* **1. Foundation:** migration (16 columns + backfill + down), Seller fillable, conditional registration (CAC iff non-individual, NIN iff individual, TIN nullable), mapper with applied_at stamp. Side effect: previously-fatal KYC submit path unblocked (endpoints still unwired — noted).
+* **2. Proof:** BN+CAC → stored row, individual+NIN → accepted, both rejections exact; run-all 17/17 PASS; gate 18/18 PASS; review APPROVED. Runtime corrected mid-ticket (vendor junction → real copy; all evidence re-produced on own code).
+* **3. Release:** merged `backend/VM-VEND-005` into `v1` --no-ff (`6310f981`); ticket → `released/`; manifest + review recorded. Unblocks VM-VEND-004.
+* **4. Verification:** staged + committed only own files (ticket + review + manifest + changelog; code rode the feature merge).
+
 ### [2026-09-29 09:45 UTC] VM-STORE-009 Released: guest cart opens login + NG default (RELEASE-2026-09-29-008) [frontend] [AI]
 * **1. Answers:** yes, the header cart button opens items for authed users; guests dead-ended at home (guest-checkout off per V1 rule) — button now opens the login modal instead. Staging `country_code` was BD (stock default) → set NG; prod admin must set likewise.
 * **2. Proof:** served guest HTML carries the modal trigger; run-all 17/17 PASS; gate 18/18 PASS; review APPROVED.

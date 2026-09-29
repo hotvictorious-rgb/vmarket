@@ -3,7 +3,7 @@
 Ticket ID:            VM-VEND-005
 Title:                Vendor entity fields â€” business type, CAC, NIN, payout + verification audit (Phase 1)
 Type:                 FEATURE
-Status:               BACKEND_DONE
+Status:               RELEASED
 Blocked:              no
 Created by / date:    Reviewer AI / 2026-09-29 (Phase 1 of the vendor onboarding model; unblocks VM-VEND-004)
 Size estimate:        medium (migration + fillable + registration acceptance; admin UI read-only follows)
@@ -44,11 +44,12 @@ Pipeline:             Human â†’ REVIEWER AI â†’ BACKEND AI â†’ RE
 Push rule:            ONLY Reviewer AI merges to `v1` and pushes, after APPROVED + gate PASS, via `scripts/release/merge-release`. Workers push only their own feature branches.
 
 Implementation notes:
-Review notes:
-Final decision:
-Release commit:
+Review notes: .ai/reviews/REV-VM-VEND-005-10bab123ba79d2ce1ce66ac96855c8968e4bea4f.md (Decision APPROVED; live walks + 17/17 at exact SHA, fixed runtime)
+Final decision: APPROVED → RELEASED as RELEASE-2026-09-29-009
+Release commit: 6310f981 (merge v1; feature 10bab123ba79d2ce1ce66ac96855c8968e4bea4f)
 
 History (append-only):
 - 2026-09-29  Reviewer AI  BACKLOG (filed)  Phase 1 of onboarding model. Unblocks VM-VEND-004 checklist.
 - 2026-09-29  Human ruling (policy, recorded by Reviewer AI)  (1) NO unregistered selling: only approved + verified vendors sell; registration stays open to all (apply â†’ verify â†’ approve â†’ list). (2) TIN deferred (nullable at onboarding; required later per compliance rollout). (3) No auto-approve tiers: every vendor admin-reviewed (current pending flow stays). CAC number/document REQUIRED at application (no unregistered selling means no unverified path to market).
 - 2026-09-29  Backend AI  BACKLOG -> BACKEND_DONE (single-coordinator session; RUNTIME CORRECTED mid-ticket: worktree vendor/ was a junction into the user checkout, so early walks executed foreign code — junction replaced with real copy, class identity re-proven by ReflectionClass, all walks below re-ran green on own code)  Migration (fresh+rollback+rerun clean) + Seller fillable + conditional rules (CAC iff non-individual, NIN iff individual, TIN nullable) + getAddData mapper. Walks on :8000 own code: BN+CAC -> status 1 row id 14 fully stored; individual+NIN -> status 1; BN w/o CAC doc rejected; individual w/o NIN rejected. Sell-gate inventory: SellerMiddleware approved-only, API pending 401, marketplacePurchasable approved-seller, publish scopes approved. branch=backend/VM-VEND-005.
+- 2026-09-29  Reviewer AI  BACKEND_DONE -> REVIEW_APPROVED -> RELEASED (RELEASE-2026-09-29-009, single-coordinator session)  Live walks + run-all 17/17 at 10bab123 (fixed runtime), gate 18/18 PASS. Merged --no-ff (6310f981); ticket released; branch deleted after merge.
