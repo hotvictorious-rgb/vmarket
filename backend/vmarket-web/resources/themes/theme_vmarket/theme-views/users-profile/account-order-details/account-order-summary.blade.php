@@ -243,7 +243,7 @@
                                                                     <strong>{{ translate('Need directions?') }}</strong>
                                                                     {{ translate('Please message customer support for step-by-step guidance to this store.') }}
                                                                     <div class="mt-2">
-                                                                        <a href="{{ route('support-ticket') }}" class="btn btn-primary btn-sm fs-11 px-3 py-1 text-white">
+                                                                        <a href="{{ route('account-tickets') }}" class="btn btn-primary btn-sm fs-11 px-3 py-1 text-white">
                                                                             <i class="bi bi-chat-dots-fill me-1"></i> {{ translate('Message Support') }}
                                                                         </a>
                                                                     </div>
@@ -490,7 +490,7 @@
             </div>
         </div>
     </main>
-    <span class="get-payment-method-list" data-action="{{ route('pay-offline-method-list') }}"></span>
+{{-- [AI] VM-STORE-001: dead offline surface removed (pay-offline-method-list route purged; V1 prepaid only) --}}
 @endsection
 
 @push('script')

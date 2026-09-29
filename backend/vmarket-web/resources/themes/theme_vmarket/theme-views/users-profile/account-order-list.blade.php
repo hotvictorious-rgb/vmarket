@@ -286,15 +286,7 @@
                 </div>
             </div>
         </div>
-        @if($orders->count() > 0)
-            @foreach($orders as $key => $order)
-                @include('theme-views.order.partials._choose-payment-method-order-details',[
-               'order' => $order,
-               'orderDueAmount' => $order?->latestEditHistory?->order_due_amount ?? 0,
-               'paymentGatewayList' => $paymentGatewayList,
-              ])
-            @endforeach
-        @endif
+        {{-- [AI] VM-STORE-001: dead pay-modal loop removed with its include below (customer-order-edit-pay-amount route purged; retry-pay needs a backend endpoint — follow-up) --}}
     </main>
     <?php
     $orderSuccessIds = session('order_success_ids') ?? [];

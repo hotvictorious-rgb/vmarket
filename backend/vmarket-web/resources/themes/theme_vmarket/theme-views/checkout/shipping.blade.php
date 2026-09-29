@@ -85,7 +85,7 @@
                                                         <i class="bi bi-compass text-primary fs-15"></i>
                                                         <span>{{ translate('need_help_finding_this_store') ?? 'Need help finding this store? Message Customer Support for step-by-step guidance.' }}</span>
                                                     </div>
-                                                    <a href="{{ route('support-ticket') }}" class="btn btn-sm btn-primary rounded-2 text-nowrap py-1 px-2 fs-12">
+                                                    <a href="{{ route('account-tickets') }}" class="btn btn-sm btn-primary rounded-2 text-nowrap py-1 px-2 fs-12">
                                                         <i class="bi bi-chat-dots me-1"></i>{{ translate('message_support') ?? 'Message Support' }}
                                                     </a>
                                                 </div>

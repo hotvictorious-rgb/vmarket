@@ -483,58 +483,14 @@ use function App\Utils\order_status_history;
                         </div>
                     </div>
                     <div class="modal-body px-sm-4 pt-0 d-none" id="payment-method-section">
-                        <div class="">
-                            <button type="button" class="btn p-0 bg-transparent border-0 shadow-none text-primary fw-semibold fs-18 lh-1 back-to-order"
-                                    data-theme="aster">
-                                <i class="fi fi-sr-angle-left d-flex"></i> {{ translate('Go_Back') }}
-                            </button>
-                        </div>
-                        @include('theme-views.order.partials._choose-payment-method-modal', ['order' => $orderDetails])
+                        {{-- [AI] VM-STORE-001: dead pay-modal include removed (customer-order-edit-pay-amount route purged; retry-pay needs a backend endpoint — follow-up) --}}
                     </div>
-                    <!-- OFFLINE PAYMENT SECTION -->
-                    @if (isset($offlinePaymentMethods) && $offlinePaymentStatus['status'])
-                        <div class="modal-body px-5 pt-0 d-none" id="offline-payment-section">
-                            <div class="">
-                                <button type="button"
-                                        class="btn p-0 bg-transparent border-0 shadow-none text-primary fw-semibold fs-18 lh-1 back-to-payment-method"
-                                        data-theme="aster">
-                                    <i class="fi fi-sr-angle-left d-flex"></i> {{ translate('Go_Back') }}
-                                </button>
-                            </div>
-                            <form action="{{ route('customer.customer-order-edit-pay-amount') }}" method="post"
-                                  class="needs-validation form-loading-button-form">
-                                @csrf
-                                <input type="hidden" name="payment_method" value="offline">
-                                <input type="hidden" name="order_id" value="{{ $orderDetails['id'] }}">
-                                <input type="hidden" name="payment_platform" value="web">
-                                <div class="d-flex justify-content-center mb-2">
-                                    <img width="52"
-                                         src="{{ dynamicAsset(path: 'public/assets/front-end/img/select-payment-method.png') }}"
-                                         alt="">
-                                </div>
-                                <p class="fs-14 text-center">
-                                    {{ translate('pay_your_bill_using_any_of_the_payment_method_below_and_input_the_required_information_in_the_form') }}
-                                </p>
-
-                                <select class="form-select custom-select pay_offline_method"
-                                        id="pay_offline_method_{{ $orderDetails['id'] }}"
-                                        data-edit-due="{{ $orderDetails['edit_due_amount'] }}"
-                                        data-order-id="{{ $orderDetails['id'] }}" name="payment_by" required>
-                                    <option value="" disabled selected>{{ translate('select_Payment_Method') }}</option>
-                                    @foreach ($offlinePaymentMethods as $method)
-                                        <option value="{{ $method->id }}">{{ translate('payment_Method') }}
-                                            : {{ $method->method_name }}</option>
-                                    @endforeach
-                                </select>
-                                <div class="" id="payment_method_field_{{$orderDetails['id']}}"></div>
-                            </form>
-                        </div>
-                    @endif
+                    {{-- [AI] VM-STORE-001: dead offline surface removed (offline routes purged; V1 prepaid only) --}}
                 </div>
             </div>
         </div>
     </main>
-    <span class="get-payment-method-list" data-action="{{ route('pay-offline-method-list') }}"></span>
+    {{-- [AI] VM-STORE-001: dead offline span removed (pay-offline-method-list route purged) --}}
 @endsection
 
 @push('script')
