@@ -1,7 +1,7 @@
-# Ticket Template (Appendix A)
+﻿# Ticket Template (Appendix A)
 
 Ticket ID:            VM-VEND-005
-Title:                Vendor entity fields — business type, CAC, NIN, payout + verification audit (Phase 1)
+Title:                Vendor entity fields â€” business type, CAC, NIN, payout + verification audit (Phase 1)
 Type:                 FEATURE
 Status:               BACKLOG
 Blocked:              no
@@ -25,7 +25,7 @@ Work order:
 - **Branch:** `backend/VM-VEND-005` from current `v1`.
 - **Allowed files:** new migration (timestamped, default fallbacks), `Seller` model (`$fillable` only), registration service validation/data-mapper (new optional fields only), seeder backfill if needed; own ticket notes.
 - **FORBIDDEN:** gating/approval logic, bank moves, Flutter/Blade/assets, Control Zone, results/reviews/changelog.
-- **Acceptance:** (1) `migrate` + `migrate:rollback` clean on testing sqlite; (2) registration with BN+Ltd payloads stores all fields (evidence: DB rows); (3) existing sellers read as individual/PENDING; (4) suites green.
+- **Acceptance:** (1) `migrate` + `migrate:rollback` clean on testing sqlite; (2) registration with BN/Ltd/individual payloads stores all fields (evidence: DB rows); (3) conditional rules proven: CAC number+document required when type != individual, NIN required when individual, TIN stays nullable; (4) existing sellers read as individual/PENDING; (5) sell-gate inventory attached (publish/list/order endpoints enforcing approved+verified — code refs, no changes here); (6) suites green.
 - **Tests + DONE:** `run-all.ps1 -Ticket VM-VEND-005` full HEAD (JSON uncommitted, report counts); push; BACKEND_DONE branch+SHA.
 - **Rules:** exact-path `git add` only; testing sqlite + sandbox only.
 Dependencies (tickets/features): none (unblocks VM-VEND-004)
@@ -34,11 +34,13 @@ Security requirements: NIN/CAC document paths never serialized to public payload
 Acceptance criteria:
 - [ ] Migration + rollback clean
 - [ ] BN/Ltd/individual payloads persist correctly
+- [ ] Conditional CAC/NIN rules proven
+- [ ] Sell-gate inventory attached
 - [ ] Backfill correct, no flow change
 - [ ] Suites green, run-all JSON at full SHA
 
 Counters:             review_cycles: 0   integration_failures: 0   reopened_count: 0
-Pipeline:             Human → REVIEWER AI → BACKEND AI → REVIEWER AI (APPROVED) → REVIEWER AI pushes
+Pipeline:             Human â†’ REVIEWER AI â†’ BACKEND AI â†’ REVIEWER AI (APPROVED) â†’ REVIEWER AI pushes
 Push rule:            ONLY Reviewer AI merges to `v1` and pushes, after APPROVED + gate PASS, via `scripts/release/merge-release`. Workers push only their own feature branches.
 
 Implementation notes:
@@ -48,3 +50,4 @@ Release commit:
 
 History (append-only):
 - 2026-09-29  Reviewer AI  BACKLOG (filed)  Phase 1 of onboarding model. Unblocks VM-VEND-004 checklist.
+- 2026-09-29  Human ruling (policy, recorded by Reviewer AI)  (1) NO unregistered selling: only approved + verified vendors sell; registration stays open to all (apply â†’ verify â†’ approve â†’ list). (2) TIN deferred (nullable at onboarding; required later per compliance rollout). (3) No auto-approve tiers: every vendor admin-reviewed (current pending flow stays). CAC number/document REQUIRED at application (no unregistered selling means no unverified path to market).

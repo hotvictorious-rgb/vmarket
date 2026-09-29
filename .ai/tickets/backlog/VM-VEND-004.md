@@ -47,3 +47,4 @@ Release commit:
 
 History (append-only):
 - 2026-09-29  Reviewer AI  BACKLOG (filed, blocked)  Human awaiting-approval ruling. Waits on Phase-1 fields.
+- 2026-09-29  Human ruling (policy, recorded by Reviewer AI)  Pending/suspended vendors sign in to a status dashboard (states mirror seller/verification columns incl. suspended/not-approved) but CANNOT sell — enforced backend (publish/list/order gates) AND frontend (vendor app + storefront hide/disable sell surfaces for unapproved). No unregistered selling, no auto-approve tiers.
