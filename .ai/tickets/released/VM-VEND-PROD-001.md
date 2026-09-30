@@ -3,7 +3,7 @@
 Ticket ID:            VM-VEND-PROD-001
 Title:                Vendor Product Flow Hardening — Auth Login Guards, COD Fail-Closed, Recaptcha Fail-Closed, Dead Due-Payment Excision
 Type:                 FEATURE
-Status:               REVIEW_APPROVED
+Status:               RELEASED
 Blocked:              no (backend stage RELEASED as RELEASE-2026-09-30-002; frontend stage approved for v1 merge)
 Created by / date:    Human operator / 2026-09-30 (filed per human "File ticket + finish" run-order; work spanned prior sessions)
 Size estimate:        ~400 lines (backend guards + storefront dead-UI excision, no new features)

@@ -3,8 +3,8 @@
 Ticket ID:            VM-VEND-002
 Title:                Vendor Onboarding Proof — register, catalog publish, inventory, order notification
 Type:                 FEATURE
-Status:               REVIEW_APPROVED
-Blocked:              no (backend proof stage approved for v1 merge; vendor-views walk deferred to frontend stage per pipeline)
+Status:               IN_PROGRESS
+Blocked:              no (backend proof stage released as RELEASE-2026-09-30-007; open for frontend vendor-views walk per pipeline)
 Created by / date:    Human operator / 2026-09-26
 Size estimate:        medium (backend validation + vendor-views proof; split if over 400 lines)
 
@@ -49,9 +49,9 @@ Review notes:
 - Cycle 1 (REVIEWER AI): backend proof APPROVED on validated artifacts (JSON binding re-checked, test code-skimmed for stage coverage + sandbox rollback, php -l clean, dummy creds only). 31-suite live re-execution witnessed via banked logs, not re-run by reviewer. See .ai/reviews/REV-VM-VEND-002-f7cb6619.md.
 Final decision:
 - Backend proof stage APPROVED for v1 merge; vendor-views walk stays open for frontend stage.
-Release commit:
-- Pending gate PASS + merge-release.
+Release commit:       0c2b04ab (RELEASE-2026-09-30-007, backend proof stage)
 
 History (append-only):
 - 2026-09-26  Human  BACKLOG (created)  Launch-sequence ticket 2 of 4: vendor journey proof.
 - 2026-09-30  REVIEWER  BACKLOG -> REVIEW_APPROVED (backend proof stage)  Proof suite + runner JSON validated; backend stage merges to v1.
+- 2026-09-30  REVIEWER  REVIEW_APPROVED -> IN_PROGRESS  Backend proof stage released in RELEASE-2026-09-30-007; ticket open in-progress for frontend vendor-views walk.
