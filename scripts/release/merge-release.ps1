@@ -1,5 +1,5 @@
-﻿# Victorious MARKET — Safe Release Merge Executor (PowerShell)
-# Part of Victorious MARKET Multi-AI Engineering Control System Specification v3 (§13.3, §20.3)
+# Victorious MARKET -- Safe Release Merge Executor (PowerShell)
+# Part of Victorious MARKET Multi-AI Engineering Control System Specification v3 (Section 13.3, Section 20.3)
 
 param(
     [Parameter(Mandatory=$true)]
@@ -12,7 +12,7 @@ param(
 $ErrorActionPreference = "Stop"
 
 Write-Host "==========================================================" -ForegroundColor Cyan
-Write-Host " Victorious MARKET — Safe Release Merge Executor          " -ForegroundColor Cyan
+Write-Host " Victorious MARKET -- Safe Release Merge Executor          " -ForegroundColor Cyan
 Write-Host "==========================================================" -ForegroundColor Cyan
 
 # 1. Run Gate Verification First
@@ -26,10 +26,10 @@ if ($LASTEXITCODE -ne 0) {
 }
 
 # 2. Check that feature branch contains current trunk
-$TrunkBranch = if (git rev-parse --verify v1 2>$null) { "v1" } elseif (git rev-parse --verify master 2>$null) { "master" } else { "main" }
+$TrunkBranch = if (git rev-parse --verify --quiet v1) { "v1" } elseif (git rev-parse --verify --quiet master) { "master" } else { "main" }
 Write-Host "[*] Checking feature branch currency against $TrunkBranch..." -ForegroundColor Yellow
 $MainSha = (git rev-parse $TrunkBranch).Trim()
-$isAncestor = git merge-base --is-ancestor $MainSha $CommitSha 2>&1
+git merge-base --is-ancestor $MainSha $CommitSha 2>&1 | Out-Null
 if ($LASTEXITCODE -ne 0) {
     Write-Host "[X] CANNOT MERGE: Feature branch does not contain the latest commit of $TrunkBranch. Rebase or merge $TrunkBranch first!" -ForegroundColor Red
     exit 1

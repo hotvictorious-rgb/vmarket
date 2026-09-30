@@ -56,7 +56,9 @@ class CustomerAuthController extends Controller
         if ($result && !$result['status']) {
             if ($request->ajax()) {
                 return response()->json([
+                    'status' => 'error',
                     'error' => $result['message'],
+                    'message' => $result['message'],
                 ]);
             }
             Toastr::error($result['message']);
@@ -70,13 +72,38 @@ class CustomerAuthController extends Controller
         }
         $authAttemptRedirectUrl = $this->customerAuthService->getCustomerAuthReturnURL();
 
-        $loginOptions = json_decode($this->loginSetupRepo->getFirstWhere(params: ['key' => 'login_options'])?->value ?? [], true);
+        $rawLoginOptions = $this->loginSetupRepo->getFirstWhere(params: ['key' => 'login_options'])?->value ?? [];
+        if (is_string($rawLoginOptions)) {
+            $loginOptions = json_decode($rawLoginOptions, true) ?? json_decode(stripslashes($rawLoginOptions), true);
+        } else {
+            $loginOptions = $rawLoginOptions;
+        }
+        $loginOptions = is_array($loginOptions) ? $loginOptions : [];
+
         session()->forget('tempCustomerInfo');
         if (isset($loginOptions['otp_login']) && $loginOptions['otp_login'] && $request['login_type'] == 'otp-login') {
             return $this->loginByOTP(request: $request);
-        } elseif (isset($loginOptions['manual_login']) && $loginOptions['manual_login'] && $request['login_type'] == 'manual-login') {
+        } elseif ($request['login_type'] == 'manual-login' || !isset($request['login_type'])) {
+            if (isset($loginOptions['manual_login']) && !$loginOptions['manual_login']) {
+                if ($request->ajax()) {
+                    return response()->json([
+                        'status' => 'error',
+                        'error' => translate('manual_login_is_disabled'),
+                        'message' => translate('manual_login_is_disabled'),
+                    ]);
+                }
+                Toastr::error(translate('manual_login_is_disabled'));
+                return back();
+            }
             return $this->loginByEmailOrPhone(request: $request);
         } else {
+            if ($request->ajax()) {
+                return response()->json([
+                    'status' => 'error',
+                    'error' => translate('login_is_currently_disabled_or_invalid_type'),
+                    'message' => translate('login_is_currently_disabled_or_invalid_type'),
+                ]);
+            }
             return redirect($authAttemptRedirectUrl);
         }
     }

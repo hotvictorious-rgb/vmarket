@@ -149,7 +149,7 @@ class AppServiceProvider extends ServiceProvider
 
                         $customerSocialLoginOptions = Cache::remember('global_storefront_social_login_options', 3600, function () {
                             $raw = LoginSetup::where(['key' => 'social_media_for_login'])->first()?->value ?? '';
-                            return json_decode($raw, true) ?? [];
+                            return json_decode($raw, true) ?? json_decode(stripslashes($raw), true) ?? [];
                         });
 
                         $socialLoginConfigStatus = $this->checkCustomerSocialMediaLoginAbility();
@@ -207,7 +207,7 @@ class AppServiceProvider extends ServiceProvider
                             'header_banner' => $this->cacheBannerTable(bannerType: 'Header Banner'),
                             'payments_list' => $paymentsGatewaysList, // Fashion_theme
                             'ref_earning_status' => getWebConfig('ref_earning_status'),
-                            'customer_login_options' => json_decode($customerLoginOptions, true),
+                            'customer_login_options' => is_array($customerLoginOptions) ? $customerLoginOptions : (json_decode($customerLoginOptions, true) ?? json_decode(stripslashes($customerLoginOptions), true) ?? []),
                             'customer_social_login_options' => $customerSocialLoginOptions,
                             'customer_phone_verification' => getLoginConfig(key: 'phone_verification'),
                             'customer_email_verification' => getLoginConfig(key: 'email_verification'),

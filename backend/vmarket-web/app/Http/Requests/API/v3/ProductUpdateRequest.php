@@ -30,13 +30,17 @@ class ProductUpdateRequest extends FormRequest
             'name' => 'required',
             'category_id' => 'required|exists:categories,id',
             'unit_price' => 'required|numeric|gt:0',
-            'code' => 'nullable|string|max:50|unique:products,code,' . $productId,
+            'discount' => 'nullable|numeric|gte:0',
+            'discount_type' => 'nullable|in:percent,flat,amount',
+            'code' => 'nullable|regex:/^[a-zA-Z0-9-]+$/|min:3|max:50|unique:products,code,' . $productId,
             'thumbnail' => 'nullable',
             'lang' => 'nullable',
             'product_type' => 'nullable|string',
             'unit' => 'nullable|string',
             'minimum_order_qty' => 'nullable|numeric|min:1',
             'shipping_cost' => 'nullable|numeric',
+            'nafdac_number' => 'nullable|string|max:50',
+            'expiry_date' => 'nullable|date|after:today',
         ];
     }
 
@@ -51,6 +55,8 @@ class ProductUpdateRequest extends FormRequest
             'category_id.exists' => 'Selected category does not exist!',
             'unit_price.required' => 'Product price is required!',
             'unit_price.gt' => 'Product price must be greater than zero!',
+            'discount_type.in' => 'Discount type must be percent or flat!',
+            'expiry_date.after' => 'Expiry date must be a future date!',
         ];
     }
 
@@ -60,6 +66,21 @@ class ProductUpdateRequest extends FormRequest
     public function withValidator($validator): void
     {
         $validator->after(function ($validator) {
+            // [AI] Discount ceiling: percent capped at 99; flat/amount must stay below unit_price.
+            $discountTypeRaw = $this->input('discount_type');
+            $discountValue = $this->input('discount');
+            if ($discountTypeRaw !== null && $discountTypeRaw !== '' && $discountValue !== null && $discountValue !== '' && is_numeric($discountValue)) {
+                $discountType = strtolower((string)$discountTypeRaw);
+                if (in_array($discountType, ['percent', 'percentage'], true) && (float)$discountValue > 99) {
+                    $validator->errors()->add('discount', translate('discount_can_not_be_more_than_99_percent!'));
+                }
+                if (in_array($discountType, ['flat', 'amount'], true)
+                    && is_numeric($this->input('unit_price')) && (float)$this->input('unit_price') > 0
+                    && (float)$discountValue >= (float)$this->input('unit_price')) {
+                    $validator->errors()->add('discount', translate('discount_can_not_be_more_or_equal_to_the_price!'));
+                }
+            }
+
             // [AI] Strict 1 to 5 images bound enforcement if images provided
             if ($this->has('images')) {
                 $images = is_array($this->images) ? $this->images : json_decode($this->images, true);

@@ -200,14 +200,25 @@ if (!function_exists('fileCheck')) {
 }
 
 if (!function_exists('getLoginConfig')) {
-    function getLoginConfig($key): string|object|array|null
+    function getLoginConfig($key): string|object|array|int|bool|null
     {
         $config = null;
         $settings = Cache::remember(CACHE_LOGIN_SETUP_TABLE, CACHE_FOR_3_HOURS, function () {
             return LoginSetup::all();
         });
         $data = $settings?->firstWhere('key', $key);
-        return isset($data) ? json_decode($data['value'], true) : $config;
+        if (!isset($data)) {
+            return $config;
+        }
+        $val = $data['value'];
+        if (is_string($val)) {
+            $decoded = json_decode($val, true);
+            if (is_null($decoded)) {
+                $decoded = json_decode(stripslashes($val), true);
+            }
+            return !is_null($decoded) ? $decoded : $val;
+        }
+        return $val;
     }
 }
 
