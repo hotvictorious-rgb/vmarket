@@ -10,6 +10,18 @@
 * **3. Release:** merged `backend/VM-VEND-PROD-001` into `v1` --no-ff (`82b3f06f`); ticket stays IN_PROGRESS for frontend stage; manifest + review recorded.
 * **4. Verification:** release executed in isolated worktree; shared tree left untouched.
 
+### [2026-09-30 16:05 UTC] VM-PAY-001 AUDIT APPROVED: Money-Path Proof on Actual XAMP PHP Runtime [backend] [AI]
+* **1. Audit Execution:** Executed end-to-end money-path audit suite on actual XAMP PHP runtime (`C:\xamp\php\php.exe` - PHP 8.2.12) with live Paystack test credentials (`pk_test_...` / `sk_test_...`).
+* **2. Proof Matrix (42/42 PASS):**
+  - Gateway credentials authenticated against Paystack live API directory (`HTTP 200`).
+  - CheckoutIntent snapshot immutability proven against background catalog tampering ($\Delta = 0.00$).
+  - Canonical `VM-{orderedUuid}` reference generated with zero underscores.
+  - Paystack HMAC-SHA512 cryptographic webhook signature validation (invalid signature rejected with 401; valid signature accepted).
+  - Atomic payment row lock (`where('is_paid', 0)->update(...)`) verified under duplicate webhook replay: delivery 1 claimed and generated exactly 1 order with physical stock decrement; duplicate delivery 2 returned `ALREADY_PAID` with zero duplicate orders and zero stock leakage ($\Delta = 0$).
+  - CustomerCashbackLedger credited exactly 5.00% of merchandise with zero mathematical drift ($\Delta = 0.0000$) and lifetime order uniqueness.
+* **3. Invariant Suites Validated:** `DeliveryLaneRoutingInvariantTest` (8/8 PASS), `PaymentFulfillmentBoundarySecurityTest` (21/21 PASS), `MarketplaceListingFreshnessTest` (23/23 PASS), `ProductFeedExportIsolationTest` (31/31 PASS).
+* **4. Status:** Ticket `VM-PAY-001` moved to `approved/` as `REVIEW_APPROVED`. Unblocks `VM-VEND-002` (Launch Sequence 2/4).
+
 ### [2026-09-30 05:30 UTC] VM-THEME-001 CLOSED: frontend alignment (RELEASE-2026-09-30-001, LD-002 RETIRED) [frontend] [AI]
 * **1. Change:** User app `config_model` default identifier `theme_aster` → `theme_vmarket` (3-line diff, string literal, zero routing effect). Sole-home screen + call sites deliberately retained (deletion would destroy the app's home; no switch exists anywhere).
 * **2. Proof:** run-all 17/17 PASS at `b70449f7` (clean detached worktree at exact SHA; vendor junctioned for harness only); gate 18/18 PASS; review APPROVED.
