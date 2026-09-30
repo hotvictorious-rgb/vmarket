@@ -94,7 +94,7 @@ Run-Check "secret_scan" {
 Run-Check "static_analysis" {
     param($log)
     $TestPhp = "C:\xamp\php"
-    if (Test-Path $HerdPhp) { $env:PATH = "$TestPhp;$env:PATH" }
+    if (Test-Path $TestPhp) { $env:PATH = "$TestPhp;$env:PATH" }
     
     # Check syntax on core models/services
     $syntaxOut = php -l backend/vmarket-web/app/Models/Order.php 2>&1
@@ -106,7 +106,7 @@ Run-Check "static_analysis" {
 Run-Check "backend" {
     param($log)
     $TestPhp = "C:\xamp\php"
-    if (Test-Path $HerdPhp) { $env:PATH = "$TestPhp;$env:PATH" }
+    if (Test-Path $TestPhp) { $env:PATH = "$TestPhp;$env:PATH" }
     
     Push-Location "backend\vmarket-web"
     try {
@@ -121,7 +121,7 @@ Run-Check "backend" {
 Run-Check "security" {
     param($log)
     $TestPhp = "C:\xamp\php"
-    if (Test-Path $HerdPhp) { $env:PATH = "$TestPhp;$env:PATH" }
+    if (Test-Path $TestPhp) { $env:PATH = "$TestPhp;$env:PATH" }
     
     Push-Location "backend\vmarket-web"
     try {
@@ -136,7 +136,7 @@ Run-Check "security" {
 Run-Check "contract" {
     param($log)
     $TestPhp = "C:\xamp\php"
-    if (Test-Path $HerdPhp) { $env:PATH = "$TestPhp;$env:PATH" }
+    if (Test-Path $TestPhp) { $env:PATH = "$TestPhp;$env:PATH" }
     
     Push-Location "backend\vmarket-web"
     try {
@@ -151,7 +151,7 @@ Run-Check "contract" {
 Run-Check "database" {
     param($log)
     $TestPhp = "C:\xamp\php"
-    if (Test-Path $HerdPhp) { $env:PATH = "$TestPhp;$env:PATH" }
+    if (Test-Path $TestPhp) { $env:PATH = "$TestPhp;$env:PATH" }
     
     Push-Location "backend\vmarket-web"
     try {
@@ -166,7 +166,7 @@ Run-Check "database" {
 Run-Check "dependency_scan" {
     param($log)
     $TestPhp = "C:\xamp\php"
-    if (Test-Path $HerdPhp) { $env:PATH = "$TestPhp;$env:PATH" }
+    if (Test-Path $TestPhp) { $env:PATH = "$TestPhp;$env:PATH" }
     
     Push-Location "backend\vmarket-web"
     try {
