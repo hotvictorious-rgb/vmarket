@@ -44,8 +44,11 @@ Push rule:            ONLY Reviewer AI merges to `v1` and pushes, after APPROVED
 Screenshots:          none - justify (audit; evidence is handler/route triples)
 
 Implementation notes:
+- Live walk executed 2026-09-30 on artisan serve :8001 (XAMP PHP 8.2.12, dev sqlite): home/products/detail/cart/track all 200; cart/add fail-closed + happy-path; Uyo lane fee 500 from DB; track result renders order 100171. Test cart row removed after (zero drift). Server stopped after walk.
 Review notes:
+- Audit report: .ai/reviews/customer/REV-VM-CUST-013-chain-audit.md (LIVE verdicts per stage; web-payment click + qty happy-path honestly UNVERIFIED-live).
 Final decision:
+- Chain LIVE-PROVEN except noted items; 2 defects filed (VM-CUST-014, VM-CUST-015).
 Release commit:
 
 History (append-only):
