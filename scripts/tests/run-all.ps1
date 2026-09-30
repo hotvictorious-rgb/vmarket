@@ -93,8 +93,8 @@ Run-Check "secret_scan" {
 # 2. Static Analysis / PHP Syntax
 Run-Check "static_analysis" {
     param($log)
-    $HerdPhp = "C:\Users\SOOQEL~1\.config\herd\bin\php84"
-    if (Test-Path $HerdPhp) { $env:PATH = "$HerdPhp;$env:PATH" }
+    $TestPhp = "C:\xamp\php"
+    if (Test-Path $TestPhp) { $env:PATH = "$TestPhp;$env:PATH" }
     
     # Check syntax on core models/services
     $syntaxOut = php -l backend/vmarket-web/app/Models/Order.php 2>&1
@@ -105,8 +105,8 @@ Run-Check "static_analysis" {
 # 3. Backend Invariant Tests
 Run-Check "backend" {
     param($log)
-    $HerdPhp = "C:\Users\SOOQEL~1\.config\herd\bin\php84"
-    if (Test-Path $HerdPhp) { $env:PATH = "$HerdPhp;$env:PATH" }
+    $TestPhp = "C:\xamp\php"
+    if (Test-Path $TestPhp) { $env:PATH = "$TestPhp;$env:PATH" }
     
     Push-Location "backend\vmarket-web"
     try {
@@ -120,8 +120,8 @@ Run-Check "backend" {
 # 4. Security Tests
 Run-Check "security" {
     param($log)
-    $HerdPhp = "C:\Users\SOOQEL~1\.config\herd\bin\php84"
-    if (Test-Path $HerdPhp) { $env:PATH = "$HerdPhp;$env:PATH" }
+    $TestPhp = "C:\xamp\php"
+    if (Test-Path $TestPhp) { $env:PATH = "$TestPhp;$env:PATH" }
     
     Push-Location "backend\vmarket-web"
     try {
@@ -135,8 +135,8 @@ Run-Check "security" {
 # 5. Contract Tests
 Run-Check "contract" {
     param($log)
-    $HerdPhp = "C:\Users\SOOQEL~1\.config\herd\bin\php84"
-    if (Test-Path $HerdPhp) { $env:PATH = "$HerdPhp;$env:PATH" }
+    $TestPhp = "C:\xamp\php"
+    if (Test-Path $TestPhp) { $env:PATH = "$TestPhp;$env:PATH" }
     
     Push-Location "backend\vmarket-web"
     try {
@@ -150,8 +150,8 @@ Run-Check "contract" {
 # 6. Database Check (Migration pretend)
 Run-Check "database" {
     param($log)
-    $HerdPhp = "C:\Users\SOOQEL~1\.config\herd\bin\php84"
-    if (Test-Path $HerdPhp) { $env:PATH = "$HerdPhp;$env:PATH" }
+    $TestPhp = "C:\xamp\php"
+    if (Test-Path $TestPhp) { $env:PATH = "$TestPhp;$env:PATH" }
     
     Push-Location "backend\vmarket-web"
     try {
@@ -165,8 +165,8 @@ Run-Check "database" {
 # 7. Supply Chain / Dependency Scan (Baseline comparison)
 Run-Check "dependency_scan" {
     param($log)
-    $HerdPhp = "C:\Users\SOOQEL~1\.config\herd\bin\php84"
-    if (Test-Path $HerdPhp) { $env:PATH = "$HerdPhp;$env:PATH" }
+    $TestPhp = "C:\xamp\php"
+    if (Test-Path $TestPhp) { $env:PATH = "$TestPhp;$env:PATH" }
     
     Push-Location "backend\vmarket-web"
     try {

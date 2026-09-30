@@ -41,10 +41,13 @@ class ProductAddRequest extends Request
             'unit' => 'required_if' . ':' . 'product_type' . ',==,' . 'physical',
             'unit_price' => 'required' . '|' . 'numeric' . '|' . 'gt' . ':0',
             'discount' => 'nullable|numeric|gte:0',
+            'discount_type' => 'nullable|in:percent,flat,amount',
             'shipping_cost' => 'nullable|numeric|gte:0',
             'code' => 'nullable' . '|' . 'regex:/^[a-zA-Z0-9-]+$/' . '|' . 'min' . ':3|' . 'max' . ':50|' . 'unique' . ':products,code',
             'minimum_order_qty' => 'nullable|numeric|min:1',
             'video_url' => 'nullable|url',
+            'nafdac_number' => 'nullable|string|max:50',
+            'expiry_date' => 'nullable|date|after:today',
         ];
 
         if (!isset($this['existing_thumbnail'])) {
@@ -60,8 +63,8 @@ class ProductAddRequest extends Request
             'image' . '.' . 'required' => translate('product_thumbnail_is_required!'),
             'category_id' . '.' . 'required' => translate('category_is_required!'),
             'unit' . '.' . 'required_if' => translate('unit_is_required!'),
-            'code.max' => translate('please_ensure_your_code_does_not_exceed_20_characters'),
-            'code.min' => translate('code_with_a_minimum_length_requirement_of_6_characters'),
+            'code.max' => translate('please_ensure_your_code_does_not_exceed_50_characters'),
+            'code.min' => translate('code_with_a_minimum_length_requirement_of_3_characters'),
             'minimum_order_qty' . '.' . 'required' => translate('minimum_order_quantity_is_required!'),
             'minimum_order_qty' . '.' . 'min' => translate('minimum_order_quantity_must_be_positive!'),
             // 'digital_file_ready' . '.' . 'required_if' => translate('ready_product_upload_is_required!'),
@@ -123,6 +126,25 @@ class ProductAddRequest extends Request
                     $validator->errors()->add(
                         'unit_price', translate('discount_can_not_be_more_or_equal_to_the_price') . '!'
                     );
+                }
+
+                // [AI] Discount ceiling: percent capped at 99; flat/amount must stay below unit_price.
+                $discountTypeRaw = $this->input('discount_type');
+                $discountValue = $this->input('discount');
+                if ($discountTypeRaw !== null && $discountTypeRaw !== '' && $discountValue !== null && $discountValue !== '' && is_numeric($discountValue)) {
+                    $discountType = strtolower((string)$discountTypeRaw);
+                    if (in_array($discountType, ['percent', 'percentage'], true) && (float)$discountValue > 99) {
+                        $validator->errors()->add(
+                            'discount', translate('discount_can_not_be_more_than_99_percent') . '!'
+                        );
+                    }
+                    if (in_array($discountType, ['flat', 'amount'], true) && $this['product_type'] !== 'physical'
+                        && is_numeric($this->input('unit_price')) && (float)$this->input('unit_price') > 0
+                        && (float)$discountValue >= (float)$this->input('unit_price')) {
+                        $validator->errors()->add(
+                            'discount', translate('discount_can_not_be_more_or_equal_to_the_price') . '!'
+                        );
+                    }
                 }
 
                 if (is_null($this['name'][array_search('EN', $this['lang'])])) {

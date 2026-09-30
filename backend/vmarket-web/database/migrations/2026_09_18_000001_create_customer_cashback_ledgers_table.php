@@ -32,6 +32,27 @@ return new class extends Migration
 
                 $table->foreign('order_id')->references('id')->on('orders')->onDelete('cascade');
             });
+        } else {
+            Schema::table('customer_cashback_ledgers', function (Blueprint $table) {
+                if (!Schema::hasColumn('customer_cashback_ledgers', 'merchandise_amount')) {
+                    $table->decimal('merchandise_amount', 14, 4)->default(0.0000);
+                }
+                if (!Schema::hasColumn('customer_cashback_ledgers', 'cashback_rate')) {
+                    $table->decimal('cashback_rate', 5, 2)->default(5.00);
+                }
+                if (!Schema::hasColumn('customer_cashback_ledgers', 'available_at')) {
+                    $table->timestamp('available_at')->nullable();
+                }
+                if (!Schema::hasColumn('customer_cashback_ledgers', 'redeemed_at')) {
+                    $table->timestamp('redeemed_at')->nullable();
+                }
+                if (!Schema::hasColumn('customer_cashback_ledgers', 'redeemed_order_id')) {
+                    $table->unsignedBigInteger('redeemed_order_id')->nullable();
+                }
+                if (!Schema::hasColumn('customer_cashback_ledgers', 'description')) {
+                    $table->string('description', 255)->nullable();
+                }
+            });
         }
     }
 
