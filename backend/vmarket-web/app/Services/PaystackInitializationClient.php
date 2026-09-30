@@ -37,6 +37,20 @@ class PaystackInitializationClient
         array $metadata = []
     ): array {
         $secretKey = Config::get('paystack.secretKey');
+        if (empty($secretKey)) {
+            $secretKey = env('PAYSTACK_SECRET_KEY');
+        }
+        if (empty($secretKey)) {
+            $addon = \Illuminate\Support\Facades\DB::table('addon_settings')->where('key_name', 'paystack')->where('settings_type', 'payment_config')->first();
+            if ($addon) {
+                $vals = json_decode($addon->mode === 'live' ? $addon->live_values : $addon->test_values);
+                $secretKey = $vals->secret_key ?? null;
+                if (!empty($secretKey)) {
+                    Config::set('paystack.secretKey', $secretKey);
+                    Config::set('paystack.publicKey', env('PAYSTACK_PUBLIC_KEY', $vals->public_key ?? ''));
+                }
+            }
+        }
         $url = "https://api.paystack.co/transaction/initialize";
 
         $fields = [
@@ -114,6 +128,6 @@ class PaystackInitializationClient
      */
     public function verifyExistingTransaction(string $reference): array
     {
-        return PaystackController::getPayStackPaymentData($reference);
+        return PaystackController::getPayStackPaymentData(['reference' => $reference]);
     }
 }

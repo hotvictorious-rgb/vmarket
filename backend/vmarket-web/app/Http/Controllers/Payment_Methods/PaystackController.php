@@ -240,7 +240,7 @@ class PaystackController extends Controller
         return $this->payment_response($payment_data, 'fail');
     }
 
-    protected function getPayStackPaymentData(Request|array $request): array
+    public static function getPayStackPaymentData(Request|array $request): array
     {
         $reference = $request instanceof Request ? $request->query('reference') : ($request['reference'] ?? ($request['trxref'] ?? null));
 
@@ -260,6 +260,18 @@ class PaystackController extends Controller
             ];
         }
 
+        $secretKey = Config::get('paystack.secretKey');
+        if (empty($secretKey)) {
+            $secretKey = env('PAYSTACK_SECRET_KEY');
+        }
+        if (empty($secretKey)) {
+            $addon = DB::table('addon_settings')->where('key_name', 'paystack')->where('settings_type', 'payment_config')->first();
+            if ($addon) {
+                $vals = json_decode($addon->mode === 'live' ? $addon->live_values : $addon->test_values);
+                $secretKey = $vals->secret_key ?? null;
+            }
+        }
+
         $curl = curl_init();
         curl_setopt_array($curl, array(
             CURLOPT_URL => "https://api.paystack.co/transaction/verify/" . rawurlencode($reference),
@@ -271,7 +283,7 @@ class PaystackController extends Controller
             CURLOPT_HTTP_VERSION => CURL_HTTP_VERSION_1_1,
             CURLOPT_CUSTOMREQUEST => "GET",
             CURLOPT_HTTPHEADER => array(
-                "Authorization: Bearer " . Config::get('paystack.secretKey'),
+                "Authorization: Bearer " . $secretKey,
                 "Cache-Control: no-cache",
             ),
         ));
