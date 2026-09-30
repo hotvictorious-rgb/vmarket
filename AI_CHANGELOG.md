@@ -1,3 +1,9 @@
+### [2026-09-30 18:30 UTC] VM-VEND-PROD-001 backend stage Released: auth/vendor-order guards + validation parity (RELEASE-2026-09-30-002) [backend] [AI]
+* **1. Change:** login-options JSON hardening + manual-login-disabled guard; vendors cannot mark ANY order paid / deliver unpaid; recaptcha fail-closed; `getLoginConfig` hardening; vendor validation parity + NAFDAC/expiry (rode branch); cashback ledger idempotent columns; runner pinned to XAMP PHP 8.2.
+* **2. Proof:** run-all 17/17 PASS at `2f028cdb` (XAMP PHP; binding independently re-validated); php -l 6/6 clean; gate 18/18 PASS in isolated clean worktree; review APPROVED (cycle 2 tip review + cycle 1 for 422811ca).
+* **3. Release:** merged `backend/VM-VEND-PROD-001` into `v1` --no-ff (`82b3f06f`); ticket stays IN_PROGRESS for frontend stage; manifest + review recorded.
+* **4. Verification:** release executed in isolated worktree; shared tree left untouched.
+
 ### [2026-09-30 05:30 UTC] VM-THEME-001 CLOSED: frontend alignment (RELEASE-2026-09-30-001, LD-002 RETIRED) [frontend] [AI]
 * **1. Change:** User app `config_model` default identifier `theme_aster` → `theme_vmarket` (3-line diff, string literal, zero routing effect). Sole-home screen + call sites deliberately retained (deletion would destroy the app's home; no switch exists anywhere).
 * **2. Proof:** run-all 17/17 PASS at `b70449f7` (clean detached worktree at exact SHA; vendor junctioned for harness only); gate 18/18 PASS; review APPROVED.
