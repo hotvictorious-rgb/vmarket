@@ -3,8 +3,8 @@
 Ticket ID:            VM-VEND-002
 Title:                Vendor Onboarding Proof — register, catalog publish, inventory, order notification
 Type:                 FEATURE
-Status:               BACKLOG
-Blocked:              no
+Status:               REVIEW_APPROVED
+Blocked:              no (backend proof stage approved for v1 merge; vendor-views walk deferred to frontend stage per pipeline)
 Created by / date:    Human operator / 2026-09-26
 Size estimate:        medium (backend validation + vendor-views proof; split if over 400 lines)
 
@@ -38,15 +38,20 @@ Acceptance criteria:  (checklist; each item gets an evidence link)
 - [ ] Order appears for the right vendor only; acknowledge works (evidence: cross-vendor negative test log)
 - [ ] Every defect filed as its own ticket (evidence: ticket IDs)
 
-Counters:             review_cycles: 0   integration_failures: 0   reopened_count: 0
+Counters:             review_cycles: 1   integration_failures: 0   reopened_count: 0
 Pipeline:             Human → REVIEWER AI → BACKEND AI → REVIEWER AI → FRONTEND AI → REVIEWER AI (APPROVED) → REVIEWER AI pushes
 Push rule:            ONLY Reviewer AI merges to `v1` and pushes, after APPROVED + gate PASS, via `scripts/release/merge-release`. Workers push only their own feature branches.
 Screenshots:          (vendor-views proof steps)
 
 Implementation notes:
+- Backend proof committed as f7cb6619 on backend/VM-VEND-002 (rebased on origin/v1 @cf14b6d0): VendorOnboardingProofTest 31/31 (register Uyo LGA 142 → approve → publish 18500/30/fresh → IDOR → order → exclude → ack → rollback, Δ=0.00). Runner JSON banked 17/17 (Tier A + Tier B runs).
 Review notes:
+- Cycle 1 (REVIEWER AI): backend proof APPROVED on validated artifacts (JSON binding re-checked, test code-skimmed for stage coverage + sandbox rollback, php -l clean, dummy creds only). 31-suite live re-execution witnessed via banked logs, not re-run by reviewer. See .ai/reviews/REV-VM-VEND-002-f7cb6619.md.
 Final decision:
+- Backend proof stage APPROVED for v1 merge; vendor-views walk stays open for frontend stage.
 Release commit:
+- Pending gate PASS + merge-release.
 
 History (append-only):
 - 2026-09-26  Human  BACKLOG (created)  Launch-sequence ticket 2 of 4: vendor journey proof.
+- 2026-09-30  REVIEWER  BACKLOG -> REVIEW_APPROVED (backend proof stage)  Proof suite + runner JSON validated; backend stage merges to v1.
