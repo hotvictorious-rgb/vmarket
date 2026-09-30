@@ -3,7 +3,7 @@
 Ticket ID:            VM-CUST-013
 Title:                Transaction-Path Button Audit — browse, cart, checkout, pay, track (storefront slice)
 Type:                 FEATURE
-Status:               BACKLOG
+Status:               IN_PROGRESS
 Blocked:              no
 Created by / date:    Human operator / 2026-09-26
 Size estimate:        audit (report + defect tickets; fixes ship under own tickets; full 136-control sweep stays in VM-CUST-012)
@@ -25,7 +25,7 @@ Data impact:          no
 Compliance impact:    no
 Dependency changes:   none
 Documents updated:    none - justify (audit only; report lives in review file)
-Assigned AI:          BACKEND AI   (dispatched by REVIEWER AI with an exact-prompt work order; Backend owns the live server so it walks the chain)
+Assigned AI:          FRONTEND AI   (human-approved: click-chain is storefront UI; static triple-mapping first, live walk second)
 Required reviewers:   REVIEWER AI (sole coordinator, gatekeeper, and push authority; verdict bound to exact commit SHA)
 Branch / base commit: backend/VM-CUST-013 (from current `v1`)
 Work order:           (Reviewer AI pastes the exact-prompt work order here per `.ai/templates/work-order-template.md`)
@@ -50,3 +50,4 @@ Release commit:
 
 History (append-only):
 - 2026-09-26  Human  BACKLOG (created)  Launch-sequence ticket 3 of 4: transaction-path slice of the button audit; full sweep stays in VM-CUST-012.
+- 2026-09-30  Human  BACKLOG -> IN_PROGRESS  Dispatched to FRONTEND AI per human "take it" order (branch backend/VM-CUST-013 @origin/v1 0c2b04ab).
