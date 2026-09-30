@@ -1,5 +1,5 @@
-### [2026-09-30 16:05 UTC] VM-PAY-001 AUDIT APPROVED: Money-Path Proof on Actual PHP 8.4 Runtime [backend] [AI]
-* **1. Audit Execution:** Executed end-to-end money-path audit suite on actual PHP 8.4 runtime (`C:\Users\SOOQ ELASER\.config\herd\bin\php84\php.exe`) with live Paystack test credentials (`pk_test_...` / `sk_test_...`).
+### [2026-09-30 16:05 UTC] VM-PAY-001 AUDIT APPROVED: Money-Path Proof on Actual XAMP PHP Runtime [backend] [AI]
+* **1. Audit Execution:** Executed end-to-end money-path audit suite on actual XAMP PHP runtime (`C:\xamp\php\php.exe` - PHP 8.2.12) with live Paystack test credentials (`pk_test_...` / `sk_test_...`).
 * **2. Proof Matrix (42/42 PASS):**
   - Gateway credentials authenticated against Paystack live API directory (`HTTP 200`).
   - CheckoutIntent snapshot immutability proven against background catalog tampering ($\Delta = 0.00$).

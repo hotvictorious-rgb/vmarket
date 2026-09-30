@@ -28,7 +28,7 @@ Documents updated:    .ai/reviews/customer/REV-VM-PAY-001-money-path-audit.md, V
 Assigned AI:          BACKEND AI   (dispatched by REVIEWER AI with an exact-prompt work order)
 Required reviewers:   REVIEWER AI (sole coordinator, gatekeeper, and push authority; verdict bound to exact commit SHA)
 Branch / base commit: backend/VM-PAY-001 (from current `v1`)
-Work order:           Exact-prompt execution on actual PHP 8.4 runtime (`backend/vmarket-web/scratch/test_money_path_paystack_audit.php` & `scratch/test_money_path_live.php`)
+Work order:           Exact-prompt execution on actual XAMP PHP runtime (`C:\xamp\php\php.exe` - PHP 8.2.12; `backend/vmarket-web/scratch/test_money_path_paystack_audit.php`)
 Dependencies (tickets/features): none
 Tests required:       sandbox-only end-to-end walk with per-step evidence (element/handler/route/controller/service/table/verdict); existing invariant + security suites stay green
 Security requirements: atomic payment locks + double-execution guard verified live; no real credentials; sandbox only
@@ -44,7 +44,7 @@ Push rule:            ONLY Reviewer AI merges to `v1` and pushes, after APPROVED
 Screenshots:          none - justify (audit; evidence is logs + ledger rows)
 
 Implementation notes:
-Executed via actual PHP 8.4 runtime (`C:\Users\SOOQ ELASER\.config\herd\bin\php84\php.exe`) with live Paystack test credentials, database transactions, atomic row locks, and double-delivery simulation. All 42 assertions passed with 100% integrity.
+Executed via actual XAMP PHP runtime (`C:\xamp\php\php.exe` - PHP 8.2.12) with live Paystack test credentials, database transactions, atomic row locks, and double-delivery simulation. All 42 assertions passed with 100% integrity.
 Review notes:
 Review documented in `.ai/reviews/customer/REV-VM-PAY-001-money-path-audit.md`. Invariants verified:
 1. Paystack live credentials and bank listing HTTP 200.
@@ -60,4 +60,4 @@ Pending Reviewer merge.
 
 History (append-only):
 - 2026-09-26  Human  BACKLOG (created)  Launch-sequence ticket 1 of 4: money path must be proven before vendors onboard.
-- 2026-09-30  AI     BACKLOG -> IN_PROGRESS -> REVIEW_APPROVED  Executed on actual PHP 8.4 runtime; 42/42 assertions PASS with zero mathematical drift.
+- 2026-09-30  AI     BACKLOG -> IN_PROGRESS -> REVIEW_APPROVED  Executed on actual XAMP PHP runtime; 42/42 assertions PASS with zero mathematical drift.
