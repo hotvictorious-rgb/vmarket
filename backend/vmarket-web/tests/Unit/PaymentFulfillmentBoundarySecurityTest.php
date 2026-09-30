@@ -105,22 +105,15 @@ class PaymentFulfillmentSecurityTestSuite {
                 return ['status' => false, 'code' => 403, 'message' => 'cannot change paid to unpaid'];
             }
 
-            // P1-A Guard 1: Vendor CANNOT establish payment for non-COD digital/offline methods
+            // P1-A Guard 1: Vendor CANNOT manually establish payment status
             if (isset($request['payment_status']) && $request['payment_status'] === 'paid' && $order->payment_status !== 'paid') {
-                if ($order->payment_method !== 'cash_on_delivery') {
-                    return ['status' => false, 'code' => 403, 'message' => 'Only platform admin or payment gateways can verify digital payments'];
-                }
-                // COD can only be marked paid at fulfillment point (order_status == delivered)
-                $targetOrderStatus = $request['order_status'] ?? $order->order_status;
-                if ($targetOrderStatus !== 'delivered') {
-                    return ['status' => false, 'code' => 403, 'message' => 'COD can only be marked paid at delivery point'];
-                }
+                return ['status' => false, 'code' => 403, 'message' => 'Only platform admin or payment gateways can verify payments'];
             }
 
-            // P1-A Guard 2: If vendor attempts order_status = delivered while unpaid non-COD
+            // P1-A Guard 2: If vendor attempts order_status = delivered while unpaid
             if (isset($request['order_status']) && $request['order_status'] === 'delivered') {
-                if ($order->payment_status !== 'paid' && $order->payment_method !== 'cash_on_delivery') {
-                    return ['status' => false, 'code' => 403, 'message' => 'Unpaid digital or offline orders cannot be marked as delivered until payment confirmed'];
+                if ($order->payment_status !== 'paid') {
+                    return ['status' => false, 'code' => 403, 'message' => 'Unpaid orders cannot be marked as delivered until payment confirmed'];
                 }
             }
 
@@ -128,23 +121,11 @@ class PaymentFulfillmentSecurityTestSuite {
             if (isset($request['order_status'])) {
                 $order->order_status = $request['order_status'];
                 if ($order->order_status === 'delivered') {
-                    // Only COD orders transition payment_status to 'paid' upon delivery
-                    $newPaymentStatus = ($order->payment_method === 'cash_on_delivery') ? 'paid' : $order->payment_status;
-                    $order->payment_status = $newPaymentStatus;
-
                     // Settlement Guard: Settlement occurs only if order is verified as paid
                     if ($order->payment_status === 'paid' && $walletDisburse !== null) {
                         $walletDisburse[$order->id] = ($walletDisburse[$order->id] ?? 0) + 1;
                     }
                 }
-            }
-
-            // Trailing payment_status update handler
-            if (isset($request['payment_status']) && $request['payment_status'] === 'paid' && $order->payment_status !== 'paid') {
-                if ($order->payment_method !== 'cash_on_delivery') {
-                    return ['status' => false, 'code' => 403, 'message' => 'Only platform admin or payment gateways can verify digital payments'];
-                }
-                $order->payment_status = 'paid';
             }
 
             return ['status' => true, 'code' => 200, 'message' => 'Order updated successfully'];
@@ -187,24 +168,24 @@ class PaymentFulfillmentSecurityTestSuite {
         $this->assert($res4['code'] === 403 && $unpaidDigital->payment_status === 'unpaid' && empty($disburseLog4),
             'Test 4: Vendor cannot mark unpaid non-COD order delivered to trigger paid transition or settlement (HTTP 403)');
 
-        // Test 5: Vendor can still perform legitimate COD flow at the permitted fulfillment point
+        // Test 5: Vendor CANNOT mark unpaid COD order delivered (fail-closed, HTTP 403)
         $codOrder = new MockOrder([
             'id' => 105, 'seller_id' => 7, 'seller_is' => 'seller', 'payment_status' => 'unpaid',
             'payment_method' => 'cash_on_delivery', 'order_status' => 'processing'
         ]);
         $disburseLog5 = [];
-        $res5 = $apiUpdateOrderDetails($codOrder, 7, ['order_id' => 105, 'order_status' => 'delivered', 'payment_status' => 'paid'], $disburseLog5);
-        $this->assert($res5['code'] === 200 && $codOrder->order_status === 'delivered' && $codOrder->payment_status === 'paid' && ($disburseLog5[105] ?? 0) === 1,
-            'Test 5: Vendor can still perform legitimate COD flow at permitted fulfillment point (HTTP 200, paid, settlement x1)');
+        $res5 = $apiUpdateOrderDetails($codOrder, 7, ['order_id' => 105, 'order_status' => 'delivered'], $disburseLog5);
+        $this->assert($res5['code'] === 403 && $codOrder->payment_status === 'unpaid' && empty($disburseLog5),
+            'Test 5: Vendor CANNOT mark unpaid COD order delivered (fail-closed, HTTP 403, settlement 0)');
 
-        // Additional: COD cannot be marked paid before delivered
+        // Additional: COD cannot be marked paid by vendor under any order_status
         $codEarly = new MockOrder([
             'id' => 106, 'seller_id' => 7, 'seller_is' => 'seller', 'payment_status' => 'unpaid',
             'payment_method' => 'cash_on_delivery', 'order_status' => 'processing'
         ]);
         $resEarly = $apiUpdateOrderDetails($codEarly, 7, ['order_id' => 106, 'payment_status' => 'paid']);
         $this->assert($resEarly['code'] === 403 && $codEarly->payment_status === 'unpaid',
-            'Extra Guard: COD order CANNOT be marked paid before order_status is delivered (HTTP 403)');
+            'Extra Guard: COD order CANNOT be marked paid by vendor under any order_status (HTTP 403)');
 
         // =============================================================
         // SECTION 2: WEB VENDOR DUE AMOUNT ENDPOINT (P1-B)
@@ -220,17 +201,8 @@ class PaymentFulfillmentSecurityTestSuite {
             if ($order->payment_status === 'paid') {
                 return ['status' => false, 'code' => 400, 'message' => 'Order already paid'];
             }
-            // P1-B: Vendors CANNOT manually verify non-COD digital/offline payments
-            if ($order->payment_method !== 'cash_on_delivery') {
-                return ['status' => false, 'code' => 403, 'message' => 'Only platform administrators or payment gateways can verify digital payments'];
-            }
-            // COD may only be marked as paid upon delivery
-            if ($order->order_status !== 'delivered') {
-                return ['status' => false, 'code' => 403, 'message' => 'Cash on Delivery can only be marked as paid upon order delivery'];
-            }
-            $order->payment_status = 'paid';
-            $order->edit_due_amount = 0;
-            return ['status' => true, 'code' => 200, 'message' => 'Order due marked as paid'];
+            // P1-B: In V1, vendors cannot manually establish payment for any order (COD decommissioned)
+            return ['status' => false, 'code' => 403, 'message' => 'Vendors cannot manually mark due amounts as paid. Settle via online checkout or admin reconciliation.'];
         };
 
         // Test 6: Vendor cannot use customer-due-amount-mark-as-paid to verify Paystack
@@ -260,14 +232,14 @@ class PaymentFulfillmentSecurityTestSuite {
         $this->assert($res8['code'] === 403 && $stripeDue->payment_status === 'unpaid',
             'Test 8: Vendor cannot use customer-due-amount-mark-as-paid to verify another digital payment (HTTP 403)');
 
-        // Legitimate COD via due-amount endpoint once delivered
+        // Test 9: COD order cannot be marked paid via customer-due-amount-mark-as-paid (fail-closed, HTTP 403)
         $codDueDelivered = new MockOrder([
             'id' => 304, 'seller_id' => 12, 'seller_is' => 'seller', 'payment_status' => 'unpaid',
             'payment_method' => 'cash_on_delivery', 'order_status' => 'delivered', 'edit_due_amount' => 500
         ]);
         $resCodDue = $webVendorMarkDuePaid($codDueDelivered, 12);
-        $this->assert($resCodDue['code'] === 200 && $codDueDelivered->payment_status === 'paid' && $codDueDelivered->edit_due_amount === 0,
-            'Extra Guard: Legitimate COD order can be marked paid via customer-due-amount-mark-as-paid upon delivery (HTTP 200)');
+        $this->assert($resCodDue['code'] === 403 && $codDueDelivered->payment_status === 'unpaid',
+            'Test 9: COD order CANNOT be marked paid via customer-due-amount-mark-as-paid (fail-closed, HTTP 403)');
 
         // =============================================================
         // SECTION 3: CANONICAL SELF-PICKUP OTP FLOW & IN-SHOP HANDOVER (P1-C)
@@ -285,8 +257,8 @@ class PaymentFulfillmentSecurityTestSuite {
             if (in_array($order->order_status, ['delivered', 'canceled', 'returned', 'failed'])) {
                 return ['status' => false, 'code' => 400, 'message' => 'Order is already completed or closed'];
             }
-            // Unpaid non-COD guard
-            if ($order->payment_status !== 'paid' && $order->payment_method !== 'cash_on_delivery') {
+            // Unpaid guard (prepayment required for pickup)
+            if ($order->payment_status !== 'paid') {
                 return ['status' => false, 'code' => 403, 'message' => 'Unpaid order cannot be handed over'];
             }
 
