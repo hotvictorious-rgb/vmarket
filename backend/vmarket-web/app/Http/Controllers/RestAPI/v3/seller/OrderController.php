@@ -525,23 +525,20 @@ class OrderController extends Controller
                 return response()->json(['success' => 0, 'message' => translate('when_payment_status_paid_then_you_can_not_change_payment_status_paid_to_unpaid.')], 403);
             }
 
-            // [AI] Payment Authority Invariant (P1-A): Vendors CANNOT establish payment for non-COD digital/offline methods
+            // [AI] Payment Authority Invariant (P1-A): Vendors CANNOT establish payment for any order
             if ($request->has('payment_status') && $request['payment_status'] === 'paid' && $order['payment_status'] !== 'paid') {
-                if ($order['payment_method'] !== 'cash_on_delivery') {
-                    return response()->json([
-                        'status' => false,
-                        'message' => translate('Only_platform_administrators_or_payment_gateways_can_verify_digital_payments._Vendors_cannot_manually_mark_non-COD_orders_as_paid.'),
-                    ], 403);
-                }
+                return response()->json([
+                    'status' => false,
+                    'message' => translate('Only_platform_administrators_or_payment_gateways_can_verify_payments._Vendors_cannot_manually_mark_orders_as_paid.'),
+                ], 403);
             }
 
-
             if ($request['order_status'] == 'delivered') {
-                // [AI] Guard: An unpaid non-COD order CANNOT be marked as delivered by a vendor
-                if ($order['payment_status'] !== 'paid' && $order['payment_method'] !== 'cash_on_delivery') {
+                // [AI] Guard: An unpaid order CANNOT be marked as delivered by a vendor
+                if ($order['payment_status'] !== 'paid') {
                     return response()->json([
                         'status' => false,
-                        'message' => translate('Unpaid_digital_or_offline_orders_cannot_be_marked_as_delivered_until_payment_is_confirmed_by_gateway_or_admin.'),
+                        'message' => translate('Unpaid_orders_cannot_be_marked_as_delivered_until_payment_is_confirmed_by_gateway_or_admin.'),
                     ], 403);
                 }
 
@@ -631,15 +628,12 @@ class OrderController extends Controller
 
                 Order::where('id', $request['order_id'])->update(['order_status' => $request['order_status']]);
                 if ($request['order_status'] == 'delivered') {
-                    // [AI] Only COD orders transition payment_status to 'paid' upon vendor delivery
-                    $newPaymentStatus = ($order['payment_method'] === 'cash_on_delivery') ? 'paid' : $order['payment_status'];
+                    // [AI] In V1, all orders must be prepaid; payment status is immutable during delivery
                     Order::where('id', $request['order_id'])->update([
-                        'payment_status' => $newPaymentStatus,
                         'is_pause' => 0,
                     ]);
                     OrderDetail::where('order_id', $order->id)->update([
                         'delivery_status' => 'delivered',
-                        'payment_status' => $newPaymentStatus,
                     ]);
                 }
                 OrderManager::getStockUpdateOnOrderStatusChange($order, $request['order_status']);

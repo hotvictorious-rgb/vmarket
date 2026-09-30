@@ -1907,6 +1907,7 @@ $('.customer-centralize-login-form').on('submit', async function (event) {
         }
     }
 
+    let $form = $(this);
     $.ajax({
         url: $(this).attr('action'),
         method: $(this).attr('method'),
@@ -1915,7 +1916,21 @@ $('.customer-centralize-login-form').on('submit', async function (event) {
             $("#loading").addClass("d-grid");
         },
         success: function (response) {
-            responseManager(response)
+            responseManager(response);
+            if (response && response.status !== 'success' && !response.redirect_url && !response.redirectRoute) {
+                $form.find('.default-captcha-container .captcha-image-container').trigger('click');
+            }
+        },
+        error: function (xhr) {
+            $("#loading").removeClass("d-grid");
+            if (xhr.responseJSON && xhr.responseJSON.message) {
+                toastr.error(xhr.responseJSON.message);
+            } else if (xhr.responseJSON && xhr.responseJSON.error) {
+                toastr.error(xhr.responseJSON.error);
+            } else {
+                toastr.error('An unexpected error occurred. Please try again.');
+            }
+            $form.find('.default-captcha-container .captcha-image-container').trigger('click');
         },
         complete: function () {
             $("#loading").removeClass("d-grid");

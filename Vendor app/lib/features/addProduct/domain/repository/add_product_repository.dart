@@ -229,6 +229,14 @@ class AddProductRepository implements AddProductRepositoryInterface{
       'product_type': product.productType,
       'tags': jsonEncode(tags),
     });
+
+    // [AI] Optional regulatory fields: omit when empty so backend keeps existing values.
+    if (product.nafdacNumber != null && product.nafdacNumber!.isNotEmpty) {
+      fields['nafdac_number'] = product.nafdacNumber;
+    }
+    if (product.expiryDate != null && product.expiryDate!.isNotEmpty) {
+      fields['expiry_date'] = product.expiryDate;
+    }
   }
 
   void _addMetaSeoFields(Map<String, dynamic> fields, MetaSeoInfo metaSeoInfo) {

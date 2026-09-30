@@ -9,9 +9,9 @@
                 @csrf
             <div class="modal-body px-sm-5">
                 <div class="form-group mb-4">
-                    <label for="rating">{{translate('rating')}}</label>
+                    <label for="rating-{{$id}}">{{translate('rating')}}</label>
                     @if ($order_details->reviewData)
-                        <select name="rating" id="rating" class="form-select">
+                        <select name="rating" id="rating-{{$id}}" class="form-select">
                             <option value="1" {{ $order_details?->reviewData?->rating == 1 ? 'selected' : '' }}>
                                 {{ translate('1') }}
                             </option>
@@ -29,7 +29,7 @@
                             </option>
                         </select>
                     @else
-                        <select name="rating" id="rating" class="form-select">
+                        <select name="rating" id="rating-{{$id}}" class="form-select">
                             <option value="1">{{translate('1')}}</option>
                             <option value="2">{{translate('2')}}</option>
                             <option value="3">{{translate('3')}}</option>
@@ -39,11 +39,11 @@
                     @endif
                 </div>
                 <div class="form-group mb-4">
-                    <label for="comment">{{translate('comment')}}</label>
+                    <label for="comment-{{$id}}">{{translate('comment')}}</label>
                     <input name="product_id" value="{{$order_details->product_id}}" hidden>
                     <input name="order_id" value="{{$order_details->order_id}}" hidden>
                     <input name="review_id" value="{{ $order_details->reviewData?->id ?? '' }}" hidden>
-                    <textarea name="comment" id="comment" class="form-control" rows="4"
+                    <textarea name="comment" id="comment-{{$id}}" class="form-control" rows="4"
                               placeholder="{{ translate('Leave_a_comment') }}">{{ $order_details->reviewData?->comment ?? '' }}</textarea>
                 </div>
                 <div class="form-group">
