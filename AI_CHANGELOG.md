@@ -1,3 +1,9 @@
+### [2026-09-30 20:00 UTC] VM-PAY-001 CLOSED: money-path audit certified (RELEASE-2026-09-30-006, ticket RELEASED) [backend] [AI]
+* **1. Audit:** 42/42 money-path proofs on XAMP PHP 8.2.12 (Paystack test auth HTTP 200, intent freeze Δ=0.00, HMAC webhook, CLAIMED/ALREADY_PAID double-delivery, 5.00% cashback Δ=0.0000, 0 defects); invariant suites 8+21+23+31 green.
+* **2. Proof:** run-all 17/17 PASS at `d91fd4b6` (binding independently re-validated); gate 18/18 PASS in isolated clean worktree; review APPROVED. Audit-only merge, zero runtime delta. Tag 006 (005 reserved locally by parallel session, unpushed).
+* **3. Release:** merged `reviewer/VM-PAY-001` into `v1` --no-ff (`5a59d1c1`); ticket → `released/`; manifest + review recorded.
+* **4. Verification:** release executed in isolated worktree; shared tree left untouched.
+
 ### [2026-09-30 19:15 UTC] VM-VEND-PROD-001 CLOSED: frontend dead-UI excision (RELEASE-2026-09-30-004, ticket RELEASED) [frontend] [AI]
 * **1. Change:** deleted 2 dead due-payment partials (zero-@include grep proof) + 5 dead vendor SEO/variation widgets; orphan Pay_Now removed (support redirect); V1-gateway rationale recorded; login/captcha hardening; unique modal IDs.
 * **2. Proof:** run-all 17/17 PASS at `6c3a820d` (XAMP PHP, runner executed live, binding re-validated); gate 18/18 PASS in isolated clean worktree; review APPROVED (cycle 3).
