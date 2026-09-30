@@ -45,9 +45,9 @@ class CustomerCashbackLedger extends Model
     protected $casts = [
         'customer_id' => 'integer',
         'order_id' => 'integer',
-        'merchandise_amount' => 'float',
-        'cashback_rate' => 'float',
-        'cashback_amount' => 'float',
+        'merchandise_amount' => 'decimal:2',
+        'cashback_rate' => 'decimal:2',
+        'cashback_amount' => 'decimal:2',
         'status' => 'string',
         'available_at' => 'datetime',
         'redeemed_at' => 'datetime',

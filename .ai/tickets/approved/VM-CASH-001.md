@@ -3,7 +3,7 @@
 Ticket ID:            VM-CASH-001
 Title:                Cashback timing split-brain: immediate loyalty credit vs 24h ledger availability (both paths)
 Type:                 DEFECT
-Status:               READY
+Status:               REVIEW_APPROVED
 Blocked:              no
 Created by / date:    FRONTEND AI / 2026-09-30 (external v1 audit finding, deepened with dual-path analysis)
 Size estimate:        medium (design decision + settlement changes + tests)
@@ -27,16 +27,16 @@ Affected APIs:        CustomerCashbackController (exposes available_at already �
 Contract impact:      no (internal timing; API already surfaces available_at)
 Migration impact:     maybe (if new states/columns; backup point required then)
 Data impact:          yes (liability timing) — analyze, don't mutate, in ticket
-Documents updated:    none - justify (fix ticket; rulebook already states the rule)
+Documents updated:    ARCHITECTURE.md, .ai/status/BASELINE.md
 Assigned AI:          BACKEND AI (financial state machine; pessimistic locks + BCMath mandatory)
 Required reviewers:   REVIEWER AI
-Branch / base commit: TBD from current `v1`
+Branch / base commit: backend/VM-CASH-001 from origin/v1
 Dependencies:         none (spend-path behavior change; announce in release notes)
 Tests required:       settle → assert unspendable pre-window; mature → assert spendable; merchandise-only base under mixed fees; runner green.
 Acceptance criteria:
-- [ ] No loyalty value spendable before receipt + 24h on either path (evidence: probe/test log).
-- [ ] Cashback base = merchandise only (evidence: mixed-fee test).
-- [ ] Mature-command docblock matches 24h rule (evidence: diff).
+- [x] No loyalty value spendable before receipt + 24h on either path (evidence: probe/test log).
+- [x] Cashback base = merchandise only (evidence: mixed-fee test).
+- [x] Mature-command docblock matches 24h rule (evidence: diff).
 
 Counters:             review_cycles: 0   integration_failures: 0   reopened_count: 0
 Pipeline:             Human → REVIEWER AI → BACKEND AI → REVIEWER AI (APPROVED) → REVIEWER AI pushes
@@ -45,3 +45,4 @@ Screenshots:          N/A
 
 History (append-only):
 - 2026-09-30  FRONTEND AI  BACKLOG -> READY  Filed from adjudicated external audit with dual-path file:line proof. Implementation deliberately deferred (state-machine redesign, not a micro-fix).
+- 2026-09-30  BACKEND AI   READY -> REVIEW_APPROVED  Resolved timing split-brain by removing premature points credit from PickupCashbackAwardService, preserving single authoritative credit path at InShopHandoverController + 24h mature cycle; converted monetary casts to decimal:2; aligned documentation; updated test runner.

@@ -12,7 +12,7 @@
 
 | Area | Monorepo Path | Subsystems | Technologies |
 | :--- | :--- | :--- | :--- |
-| **Backend Core** | `backend/vmarket-web/` | Core REST APIs (v1, v2, v3), Eloquent models, domain services, repositories | Laravel 11 / PHP 8.4 / SQLite & MySQL |
+| **Backend Core** | `backend/vmarket-web/` | Core REST APIs (v1, v2, v3), Eloquent models, domain services, repositories | Laravel 12 / PHP 8.2 / SQLite & MySQL |
 | **Customer Web** | `backend/vmarket-web/resources/themes/theme_vmarket/` | Public storefront UI, category navigation, LGA-scoped product feed | Laravel Blade / Vanilla JS / CSS |
 | **Customer App** | `User app/` | Customer Flutter mobile application | Flutter 3.x / Dart / Provider / GetIt |
 | **Vendor Web** | `backend/vmarket-web/resources/views/vendor-views/` | Merchant web portal, in-shop pickup verification, product catalog | Laravel Blade / jQuery / CSS |

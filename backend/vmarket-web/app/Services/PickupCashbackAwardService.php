@@ -95,8 +95,8 @@ class PickupCashbackAwardService
                 'awarded' => false,
                 'points' => '0.0000',
                 'cashback_amount' => '0.00',
-                'cashback_rate_percent' => $cashbackRatePercent,
-                'exchange_rate' => $exchangeRate,
+                'cashback_rate_percent' => (string) $cashbackRatePercent,
+                'exchange_rate' => (string) $exchangeRate,
                 'cashback_redemption_id' => null,
             ];
         }
@@ -104,50 +104,32 @@ class PickupCashbackAwardService
         // points = cashbackNaira ÷ exchangeRate  (BCMath, 4 decimal places)
         $points = bcdiv($cashbackNaira, (string) $exchangeRate, 4);
 
-        // [AI] 1. Insert cashback_redemptions row (status='captured' — no reserve phase for earning)
+        // [AI] 1. Insert cashback_redemptions record in 'pending' status.
+        // Per V1 Rulebook §19/§20: Cashback is NOT immediately spendable upon reservation payment.
+        // It matures into customer availability strictly after physical handover and the 24-hour return window.
+        // Authoritative ledger credit is managed by InShopHandoverController upon verified customer pickup.
         $redemption = CashbackRedemption::create([
             'customer_id'          => $customerId,
-            'checkout_intent_id'   => null,   // delivery FK; null for pickup
+            'checkout_intent_id'   => null,
             'pickup_reservation_id'=> $reservation->id,
             'order_group_id'       => 'pickup-' . $reservation->reservation_code,
             'points'               => $points,
             'cashback_amount'      => $cashbackNaira,
-            'status'               => 'captured',   // earned immediately on settlement
-            'captured_at'          => now(),
+            'status'               => 'pending',
+            'captured_at'          => null,
             'released_at'          => null,
         ]);
 
-        // [AI] 2. Increment customer's loyalty_point balance (under caller's lockForUpdate())
-        // Using DB::table for atomic increment to avoid float model accumulation drift
-        DB::table('users')
-            ->where('id', $customerId)
-            ->increment('loyalty_point', (float) $points);
-
-        // [AI] 3. Insert immutable audit record in loyalty_point_transactions
-        // Re-read fresh loyalty balance for the audit row
-        $freshBalance = (float) DB::table('users')->where('id', $customerId)->value('loyalty_point');
-
-        DB::table('loyalty_point_transactions')->insert([
-            'user_id'          => $customerId,
-            'transaction_id'   => Str::uuid()->toString(),
-            'credit'           => (float) $points,  // earning = credit
-            'debit'            => 0.0000,
-            'balance'          => $freshBalance,
-            'reference'        => 'pickup-' . $reservation->reservation_code,
-            'transaction_type' => 'order_place',    // [AI] standard earn type, same as delivery
-            'created_at'       => now(),
-            'updated_at'       => now(),
-        ]);
-
-        Log::info("[AI] PickupCashbackAward: Awarded {$points} pts (₦{$cashbackNaira}) to customer #{$customerId} " .
-            "for Reservation #{$reservation->id} (Order #{$order->id}). Rate: {$cashbackRatePercent}%.");
+        Log::info("[AI] PickupCashbackAward: Scheduled {$points} pts (₦{$cashbackNaira}) pending cashback for customer #{$customerId} " .
+            "on Reservation #{$reservation->id} (Order #{$order->id}). Matures after physical handover + 24-hour return window.");
 
         return [
-            'awarded'               => true,
+            'awarded'               => false,
+            'status'                => 'pending_handover',
             'points'                => $points,
             'cashback_amount'       => $cashbackNaira,
-            'cashback_rate_percent' => $cashbackRatePercent,
-            'exchange_rate'         => $exchangeRate,
+            'cashback_rate_percent' => (string) $cashbackRatePercent,
+            'exchange_rate'         => (string) $exchangeRate,
             'cashback_redemption_id'=> $redemption->id,
         ];
     }
