@@ -10,7 +10,20 @@ class RecaptchaService
 {
     public static function verify(string $token, ?string $action = null): bool
     {
-        $secretKey = getWebConfig(name: 'recaptcha')['secret_key'];
+        $recaptchaRaw = getWebConfig(name: 'recaptcha');
+        if (is_string($recaptchaRaw)) {
+            $decoded = json_decode($recaptchaRaw, true);
+            $recaptchaRaw = is_array($decoded) ? $decoded : [];
+        }
+
+        if (!is_array($recaptchaRaw)) {
+            return false;
+        }
+
+        $secretKey = $recaptchaRaw['secret_key'] ?? '';
+        if (empty($secretKey)) {
+            return false;
+        }
 
         $response = Http::asForm()->post('https://www.google.com/recaptcha/api/siteverify', [
             'secret' => $secretKey,
@@ -38,23 +51,50 @@ class RecaptchaService
 
     public static function verificationStatus(object|array $request, string $session, ?string $action = 'default', ?bool $firebase = false): array
     {
-        $firebaseOTPVerification = getWebConfig(name: 'firebase_otp_verification') ?? [];
-        if ($firebase && $firebaseOTPVerification && $firebaseOTPVerification['status']) {
-            if (empty($request['g-recaptcha-response'])) {
-                return [
-                    'status' => false,
-                    'message' => translate('ReCAPTCHA_Failed'),
-                ];
-            } else {
-                return [
-                    'status' => true,
-                    'message' => translate('ReCAPTCHA_verification_success.'),
-                ];
-            }
+        $firebaseOTPVerificationRaw = getWebConfig(name: 'firebase_otp_verification');
+        $firebaseOTPVerification = $firebaseOTPVerificationRaw;
+
+        // getWebConfig sometimes returns a JSON string instead of an array.
+        if (is_string($firebaseOTPVerificationRaw)) {
+            $decoded = json_decode($firebaseOTPVerificationRaw, true);
+            $firebaseOTPVerification = is_array($decoded) ? $decoded : [];
         }
 
-        $recaptcha = getWebConfig(name: 'recaptcha');
-        if (isset($recaptcha) && $recaptcha['status'] == 1 && !$request['default_captcha_value']) {
+        if (!is_array($firebaseOTPVerification)) {
+            $firebaseOTPVerification = [];
+        }
+
+        $defaultCaptchaValue = $request['default_captcha_value'] ?? '';
+        $sessionCaptchaValue = session($session);
+
+        $firebaseBranchEnabled = (bool) ($firebase && !empty($firebaseOTPVerification['status']));
+        if ($firebaseBranchEnabled) {
+            // Firebase reCAPTCHA uses a different input name than Google reCAPTCHA.
+            $firebaseToken = $request['firebase-auth-recaptcha-response'] ?? null;
+            $googleToken = $request['g-recaptcha-response'] ?? null;
+            $token = $firebaseToken ?: $googleToken;
+
+            if (empty($token)) {
+                return [
+                    'status' => false,
+                    'message' => translate('please_check_the_recaptcha'),
+                ];
+            }
+
+            return [
+                'status' => true,
+                'message' => translate('ReCAPTCHA_verification_success.'),
+            ];
+        }
+
+        $recaptchaRaw = getWebConfig(name: 'recaptcha');
+        if (is_string($recaptchaRaw)) {
+            $decoded = json_decode($recaptchaRaw, true);
+            $recaptchaRaw = is_array($decoded) ? $decoded : [];
+        }
+        $recaptcha = is_array($recaptchaRaw) ? $recaptchaRaw : [];
+
+        if (($recaptcha['status'] ?? 0) == 1 && empty($defaultCaptchaValue)) {
             try {
                 $request->validate([
                     'g-recaptcha-response' => [
@@ -76,15 +116,16 @@ class RecaptchaService
                     'message' => $e->validator->errors()->first('g-recaptcha-response'),
                 ];
             }
-        } else if (strtolower(session($session)) != strtolower($request['default_captcha_value'])) {
-            return [
-                'status' => false,
-                'message' => translate('ReCAPTCHA_failed.'),
-            ];
-        }
+        } else {
+            $defaultCaptchaValue = (string) $defaultCaptchaValue;
+            $sessionCaptchaValue = (string) ($sessionCaptchaValue ?? '');
 
-        if (isset($request['default_captcha_value']) && strtolower(session($session)) == strtolower($request['default_captcha_value'])) {
-            session()->forget($session);
+            if ($sessionCaptchaValue === '' || strtolower($sessionCaptchaValue) !== strtolower($defaultCaptchaValue)) {
+                return [
+                    'status' => false,
+                    'message' => translate('ReCAPTCHA_failed.'),
+                ];
+            }
         }
 
         session()->forget($session);

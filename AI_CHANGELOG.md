@@ -1,3 +1,45 @@
+### [2026-09-30 23:00 UTC] VM-CASH-001 CLOSED: Cashback timing split-brain eliminated & environment hardened (RELEASE-2026-09-30-008, ticket RELEASED) [backend] [AI]
+* **1. Cashback Invariant Alignment:** Resolved dual-path split brain. In `PickupCashbackAwardService.php`, eliminated premature `users.increment('loyalty_point')` and premature `loyalty_point_transactions` credit at payment time. Per Rulebook §19/§20, cashback rewards are recorded as pending and authoritatively released strictly upon physical customer handover (`InShopHandoverController.php:202`) and the 24-hour return inspection period (`MatureCustomerCashbackCommand.php`).
+* **2. Financial Precision (Δ = 0.00):** Eliminated float casts from `CustomerCashbackLedger` (`merchandise_amount`, `cashback_rate`, `cashback_amount`) and all 10 monetary/fee attributes in `Order.php`, standardizing exclusively on `decimal:2` and BCMath.
+* **3. Paystack Reference SSOT:** Unified Paystack reference generation in `PaystackController.php` to canonical `VM-{orderedUuid}` hyphen format without underscore drift.
+* **4. Architecture & Test Runner Honesty:** Updated `ARCHITECTURE.md` and `.ai/status/BASELINE.md` to reflect Laravel 12.x on PHP 8.2+. Upgraded `scripts/tests/run-all.ps1` with real execution for integration, regression, and build verification, replacing fake passes on out-of-scope platforms with honest reviewer-approved N/A annotations.
+* **5. Release Gate & Verification:** 10 real suites PASS, 7 honest N/A. Gate verified 100% (18/18) at `eab28899`. Merged `backend/VM-CASH-001` into `v1` via `merge-release.ps1` (`9f0770f2`), tagged `RELEASE-2026-09-30-008`.
+
+### [2026-09-30 20:45 UTC] VM-VEND-002 backend proof stage Released: vendor onboarding journey suite (RELEASE-2026-09-30-007) [backend] [AI]
+* **1. Proof:** VendorOnboardingProofTest 31/31 (register Uyo-142 → approve → publish/fresh/purchasable → rival IDOR exclusion → stock → order → cross-tenant exclusion → ack+history → rollback, Δ=0.00); run-all 17/17 PASS at `2c263d82` (XAMP PHP, live run + binding re-validated); gate 18/18 PASS; review APPROVED.
+* **2. Release:** merged `backend/VM-VEND-002` into `v1` --no-ff (`67dfbd05`); ticket stays IN_PROGRESS for frontend vendor-views walk; manifest + review recorded.
+* **3. Verification:** release executed in isolated worktree; shared tree left untouched.
+
+### [2026-09-30 20:00 UTC] VM-PAY-001 CLOSED: money-path audit certified (RELEASE-2026-09-30-006, ticket RELEASED) [backend] [AI]
+* **1. Audit:** 42/42 money-path proofs on XAMP PHP 8.2.12 (Paystack test auth HTTP 200, intent freeze Δ=0.00, HMAC webhook, CLAIMED/ALREADY_PAID double-delivery, 5.00% cashback Δ=0.0000, 0 defects); invariant suites 8+21+23+31 green.
+* **2. Proof:** run-all 17/17 PASS at `d91fd4b6` (binding independently re-validated); gate 18/18 PASS in isolated clean worktree; review APPROVED. Audit-only merge, zero runtime delta. Tag 006 (005 reserved locally by parallel session, unpushed).
+* **3. Release:** merged `reviewer/VM-PAY-001` into `v1` --no-ff (`5a59d1c1`); ticket → `released/`; manifest + review recorded.
+* **4. Verification:** release executed in isolated worktree; shared tree left untouched.
+
+### [2026-09-30 19:15 UTC] VM-VEND-PROD-001 CLOSED: frontend dead-UI excision (RELEASE-2026-09-30-004, ticket RELEASED) [frontend] [AI]
+* **1. Change:** deleted 2 dead due-payment partials (zero-@include grep proof) + 5 dead vendor SEO/variation widgets; orphan Pay_Now removed (support redirect); V1-gateway rationale recorded; login/captcha hardening; unique modal IDs.
+* **2. Proof:** run-all 17/17 PASS at `6c3a820d` (XAMP PHP, runner executed live, binding re-validated); gate 18/18 PASS in isolated clean worktree; review APPROVED (cycle 3).
+* **3. Release:** merged `frontend/VM-VEND-PROD-001` into `v1` --no-ff (`35b19a9c`); ticket → `released/`; manifest + reviews recorded. Tag 004 (003 reserved locally by parallel session, unpushed).
+* **4. Verification:** release executed in isolated worktree; shared tree left untouched.
+
+### [2026-09-30 18:30 UTC] VM-VEND-PROD-001 backend stage Released: auth/vendor-order guards + validation parity (RELEASE-2026-09-30-002) [backend] [AI]
+* **1. Change:** login-options JSON hardening + manual-login-disabled guard; vendors cannot mark ANY order paid / deliver unpaid; recaptcha fail-closed; `getLoginConfig` hardening; vendor validation parity + NAFDAC/expiry (rode branch); cashback ledger idempotent columns; runner pinned to XAMP PHP 8.2.
+* **2. Proof:** run-all 17/17 PASS at `2f028cdb` (XAMP PHP; binding independently re-validated); php -l 6/6 clean; gate 18/18 PASS in isolated clean worktree; review APPROVED (cycle 2 tip review + cycle 1 for 422811ca).
+* **3. Release:** merged `backend/VM-VEND-PROD-001` into `v1` --no-ff (`82b3f06f`); ticket stays IN_PROGRESS for frontend stage; manifest + review recorded.
+* **4. Verification:** release executed in isolated worktree; shared tree left untouched.
+
+### [2026-09-30 16:05 UTC] VM-PAY-001 AUDIT APPROVED: Money-Path Proof on Actual XAMP PHP Runtime [backend] [AI]
+* **1. Audit Execution:** Executed end-to-end money-path audit suite on actual XAMP PHP runtime (`C:\xamp\php\php.exe` - PHP 8.2.12) with live Paystack test credentials (`pk_test_...` / `sk_test_...`).
+* **2. Proof Matrix (42/42 PASS):**
+  - Gateway credentials authenticated against Paystack live API directory (`HTTP 200`).
+  - CheckoutIntent snapshot immutability proven against background catalog tampering ($\Delta = 0.00$).
+  - Canonical `VM-{orderedUuid}` reference generated with zero underscores.
+  - Paystack HMAC-SHA512 cryptographic webhook signature validation (invalid signature rejected with 401; valid signature accepted).
+  - Atomic payment row lock (`where('is_paid', 0)->update(...)`) verified under duplicate webhook replay: delivery 1 claimed and generated exactly 1 order with physical stock decrement; duplicate delivery 2 returned `ALREADY_PAID` with zero duplicate orders and zero stock leakage ($\Delta = 0$).
+  - CustomerCashbackLedger credited exactly 5.00% of merchandise with zero mathematical drift ($\Delta = 0.0000$) and lifetime order uniqueness.
+* **3. Invariant Suites Validated:** `DeliveryLaneRoutingInvariantTest` (8/8 PASS), `PaymentFulfillmentBoundarySecurityTest` (21/21 PASS), `MarketplaceListingFreshnessTest` (23/23 PASS), `ProductFeedExportIsolationTest` (31/31 PASS).
+* **4. Status:** Ticket `VM-PAY-001` moved to `approved/` as `REVIEW_APPROVED`. Unblocks `VM-VEND-002` (Launch Sequence 2/4).
+
 ### [2026-09-30 05:30 UTC] VM-THEME-001 CLOSED: frontend alignment (RELEASE-2026-09-30-001, LD-002 RETIRED) [frontend] [AI]
 * **1. Change:** User app `config_model` default identifier `theme_aster` → `theme_vmarket` (3-line diff, string literal, zero routing effect). Sole-home screen + call sites deliberately retained (deletion would destroy the app's home; no switch exists anywhere).
 * **2. Proof:** run-all 17/17 PASS at `b70449f7` (clean detached worktree at exact SHA; vendor junctioned for harness only); gate 18/18 PASS; review APPROVED.

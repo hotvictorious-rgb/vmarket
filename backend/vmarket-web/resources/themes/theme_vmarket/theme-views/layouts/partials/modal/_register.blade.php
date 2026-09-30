@@ -201,6 +201,11 @@
 @push('script')
     <script>
         "use strict";
+
+        $('#registerModal').on('show.bs.modal', function() {
+            $(this).find('.default-captcha-container .captcha-image-container').trigger('click');
+        });
+
         $('#input-checked').change(function () {
             if ($(this).is(':checked')) {
                 $('#customer-sign-up-btn').removeAttr('disabled');
@@ -224,8 +229,10 @@
                         for (let index = 0; index < response.errors.length; index++) {
                             toastr.error(response.errors[index].message);
                         }
+                        $('#customer-form').find('.default-captcha-container .captcha-image-container').trigger('click');
                     } else if (response.error) {
                         toastr.error(response.error);
+                        $('#customer-form').find('.default-captcha-container .captcha-image-container').trigger('click');
                     } else if (response.status === 1) {
                         toastr.success(response.message);
                     }
@@ -255,6 +262,7 @@
                             ProgressBar: true
                         });
                     }
+                    $('#customer-form').find('.default-captcha-container .captcha-image-container').trigger('click');
                 },
                 complete: function () {
                     $("#loading").removeClass("d-grid");

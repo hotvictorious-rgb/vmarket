@@ -138,6 +138,10 @@ $('.default-captcha-container').each(function () {
             <span class="refresh-icon">${htmlIcon}</span></div>`;
     defaultCaptchaContainer.append(html);
 
+    // In dev mode, auto-fill the captcha phrase from the server on initial render.
+    // (In non-dev mode, users are expected to read the captcha image and type the value.)
+    getSessionRecaptchaCode(session, defaultCaptchaContainer.find('input'));
+
     defaultCaptchaContainer.find('.captcha-image-container').on('click', function () {
         if (defaultCaptchaContainer?.find(".refresh-icon")?.hasClass('rotate-active')) {
             defaultCaptchaContainer.find(".refresh-icon").removeClass('rotate-active');
@@ -154,7 +158,7 @@ function getSessionRecaptchaCode(sessionKey, inputSelector) {
         let routeGetSessionRecaptchaCode = $(
             "#route-get-session-recaptcha-code"
         );
-        let csrfToken = $('meta[name="_token"]').attr("content");
+        let csrfToken = $('meta[name="_token"]').attr("content") || $('meta[name="csrf-token"]').attr("content");
         if (routeGetSessionRecaptchaCode.data("mode").toString() === "dev") {
             let string = ".";
             let intervalId = setInterval(() => {

@@ -18,7 +18,7 @@ graph TD
     end
 
     subgraph API & Gateway Tier
-        AGW[Laravel 10 Routing & Middleware]
+        AGW[Laravel 12 Routing & Middleware]
         AUTH[Sanctum & Custom Token Auth]
         THROT[Rate Limiting & Anti-Abuse]
     end
@@ -49,7 +49,7 @@ graph TD
 ## 2. Component Specifications
 
 ### A. Backend (`backend/vmarket-web`)
-* **Framework:** Laravel 10.x running on PHP 8.1+
+* **Framework:** Laravel 12.x running on PHP 8.2+
 * **Pattern:** Service-Repository Pattern with Eloquent ORM.
 * **Database Access:** Eager loading (`with()`) enforced in Repositories to eliminate N+1 queries.
 * **Authentication:** API Bearer tokens with AES encryption for sensitive endpoints.

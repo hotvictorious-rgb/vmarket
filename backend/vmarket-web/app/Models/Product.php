@@ -57,6 +57,8 @@ use Modules\TaxModule\app\Models\Taxable;
  * @property string $meta_title
  * @property string $meta_description
  * @property string $meta_image
+ * @property string $nafdac_number
+ * @property string $expiry_date
  * @property int $is_shipping_cost_updated
  */
 class Product extends Model
@@ -116,6 +118,8 @@ class Product extends Model
         'gtin',
         'mpn',
         'google_category_id',
+        'nafdac_number',
+        'expiry_date',
         'marketplace_listing_status',
         'marketplace_availability',
         'marketplace_confirmed_at',
@@ -172,6 +176,8 @@ class Product extends Model
         'specifications' => 'array',
         'thumbnail_storage_type' => 'string',
         'marketplace_confirmed_at'  => 'datetime',
+        // [AI] NAFDAC / perishable-goods compliance fields
+        'expiry_date' => 'date',
         // [AI] Canonical availability lifecycle casts
         'availability_confirmed_at' => 'datetime',
         'availability_expires_at'   => 'datetime',

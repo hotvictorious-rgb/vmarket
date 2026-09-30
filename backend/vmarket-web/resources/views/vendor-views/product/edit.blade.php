@@ -35,9 +35,7 @@
             @include('vendor-views.product.update._basic-setup')
             @include("vendor-views.product.update._general-setup")
             @include("vendor-views.product.update._pricing-others")
-            @include("vendor-views.product.update._product-variation-setup")
             @include("vendor-views.product.update._product-video")
-            @include("vendor-views.product.update._seo-section")
 
             @if(getActiveAIProviderConfigCache())
             <div class="floating-ai-button">
@@ -75,8 +73,6 @@
     </div>
 
     <span id="route-vendor-products-sku-combination" data-url="{{ route('vendor.products.sku-combination') }}"></span>
-    <span id="route-vendor-products-digital-variation-combination" data-url="{{ route('vendor.products.digital-variation-combination') }}"></span>
-    <span id="route-vendor-products-digital-variation-file-delete" data-url="{{ route('vendor.products.digital-variation-file-delete') }}"></span>
     <span id="image-path-of-product-upload-icon" data-path="{{ dynamicAsset(path: 'public/assets/back-end/img/icons/product-upload-icon.svg') }}"></span>
     <span id="image-path-of-product-upload-icon-two" data-path="{{ dynamicAsset(path: 'public/assets/back-end/img/400x400/img2.jpg') }}"></span>
     <span id="message-enter-choice-values" data-text="{{ translate('enter_choice_values') }}"></span>
@@ -87,7 +83,6 @@
     <span id="message-want-to-add-or-update-this-product" data-text="{{ translate('want_to_update_this_product') }}"></span>
     <span id="message-please-only-input-png-or-jpg" data-text="{{ translate('please_only_input_png_or_jpg_type_file') }}"></span>
     <span id="message-product-added-successfully" data-text="{{ translate('product_added_successfully') }}"></span>
-    <span id="message-discount-will-not-larger-then-variant-price" data-text="{{ translate('the_discount_price_will_not_larger_then_Variant_Price') }}"></span>
     <span id="system-currency-code" data-value="{{ getCurrencySymbol(currencyCode: getCurrencyCode()) }}"></span>
     <span id="system-session-direction" data-value="{{ Session::get('direction') }}"></span>
 
@@ -111,29 +106,6 @@
 
     <script>
         "use strict";
-
-        $(function () {
-            $('.product_variation_toggle').each(function () {
-                toggleVisibility($(this));
-            });
-
-            $(document).on('change', '.product_variation_toggle', function () {
-                toggleVisibility($(this));
-            });
-
-            function toggleVisibility($toggle) {
-                const $wrapper = $toggle.closest('.variation_wrapper');
-                const $content = $wrapper.find('.product_variation_content');
-
-                if ($toggle.is(':checked')) {
-                    $content.removeClass('d--none').stop(true, true).slideDown(200);
-                } else {
-                    $content.stop(true, true).slideUp(200, function () {
-                        $content.addClass('d--none');
-                    });
-                }
-            }
-        });
 
         let colors = {{ count($product->colors) }};
         let imageCount = {{15-count(json_decode($product->images)) }};

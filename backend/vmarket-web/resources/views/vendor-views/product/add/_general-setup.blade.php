@@ -186,6 +186,21 @@
                                 </select>
                             </div>
                         </div>
+                        <div class="col-md-6 col-lg-4">
+                            <div class="form-group mb-0">
+                                <label class="title-color">{{ translate('NAFDAC_Number') }}</label>
+                                <input type="text" name="nafdac_number" class="form-control"
+                                        value="{{ old('nafdac_number') }}"
+                                        placeholder="{{ translate('e.g._A1-2345') }}">
+                            </div>
+                        </div>
+                        <div class="col-md-6 col-lg-4">
+                            <div class="form-group mb-0">
+                                <label class="title-color">{{ translate('Expiry_Date') }}</label>
+                                <input type="date" name="expiry_date" class="form-control"
+                                        value="{{ old('expiry_date') }}">
+                            </div>
+                        </div>
                         <div class="col-lg-8">
                             <div class="form-group mb-0">
                                 <label class="title-color d-flex align-items-center gap-2">

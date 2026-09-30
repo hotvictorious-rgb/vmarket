@@ -842,18 +842,14 @@
                         <h4 class="mb-0 text-center fw-bold">{{translate('order_&_Shipping_Info')}}</h4>
                     </div>
                     <div class="card-body d-flex flex-column gap-4">
-                        @if ($editDueAmount > 0 && !in_array($paymentMethod, ['cash_on_delivery']) && ($order?->latestEditHistory?->order_due_payment_method != "cash_on_delivery" && $order?->latestEditHistory?->order_due_payment_method == ''))
+                        @if ($editDueAmount > 0)
                             <div class="bg-section rounded-10 p-12 p-sm-20 text-center">
                                 <h5 class="text-danger mb-3">{{ translate('Amount_Due') }}</h5>
                                 <h4 class="fw-bold">{{ webCurrencyConverter(amount: $order['edit_due_amount']) }}</h4>
                                 <p class="fs-12 mb-0">
                                     {{ translate('after_editing,_the_order_amount_has_increased.') }}
-                                    {{ translate('to_collect_the_due_amount,_switch_the_payment_method_to_cash_on_delivery') }}
-                                    (COD)
-                                    {{ translate('or_contact_with_customer_to_pay_the_bill_from_order_details_page') }}
+                                    {{ translate('please_contact_the_customer_to_settle_the_balance_online_or_contact_admin.') }}
                                 </p>
-                                <button type="button" class="btn btn--primary mt-3" data-toggle="modal"
-                                        data-target="#switchToCODModal">{{ translate('Switch_to_COD') }}</button>
                             </div>
                         @elseif(($editReturnAmount ?? 0) > 0)
                             <div class="bg-section rounded-10 p-12 p-sm-20 text-center">
@@ -906,15 +902,6 @@
                                 <span class="badge badge-soft-{{ $order->payment_status == 'paid' ? 'success' : 'danger' }} font-weight-bold text-uppercase px-2 py-1">
                                     {{ translate($order->payment_status) }}
                                 </span>
-                                @if($order->payment_method === 'cash_on_delivery' && $order->order_status === 'delivered' && $order->payment_status !== 'paid')
-                                    <label
-                                        class="switcher payment-status-text">
-                                        <input class="switcher_input payment-status" type="checkbox" name="status"
-                                               data-id="{{$order->id}}"
-                                               value="{{$order->payment_status}}" >
-                                        <span class="switcher_control switcher_control_add unchecked"></span>
-                                    </label>
-                                @endif
                             </div>
                         </div>
 

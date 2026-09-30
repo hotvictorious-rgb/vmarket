@@ -30,13 +30,9 @@ import 'package:sixvalley_vendor_app/utill/dimensions.dart';
 import 'package:sixvalley_vendor_app/utill/images.dart';
 import 'package:sixvalley_vendor_app/utill/styles.dart';
 import 'package:sixvalley_vendor_app/common/basewidgets/custom_snackbar_widget.dart';
-import 'package:sixvalley_vendor_app/features/addProduct/widgets/select_category_widget.dart';
 import 'package:sixvalley_vendor_app/features/addProduct/widgets/title_and_description_widget.dart';
-import 'package:sixvalley_vendor_app/features/addProduct/widgets/meta_seo_widget.dart';
 import 'package:textfield_tags/textfield_tags.dart';
 import 'package:flutter_switch/flutter_switch.dart';
-import 'package:sixvalley_vendor_app/common/basewidgets/attribute_view_widget.dart';
-import 'package:sixvalley_vendor_app/features/addProduct/widgets/color_variation_image_widget.dart';
 import 'package:sixvalley_vendor_app/common/basewidgets/discount_text_field_widget.dart';
 import 'package:sixvalley_vendor_app/features/addProduct/domain/models/tax_vat_model.dart';
 import 'package:sixvalley_vendor_app/helper/price_converter.dart';
@@ -85,6 +81,29 @@ class AddProductScreenState extends State<AddProductScreen>
   List<String> tagList = [];
   TextfieldTagsController? _controller;
   bool _publishToMarketplace = true;
+  final TextEditingController _nafdacController = TextEditingController();
+  final TextEditingController _expiryDateController = TextEditingController();
+  DateTime? _expiryDate;
+
+  String _formatExpiryDate(DateTime date) {
+    return '${date.year.toString().padLeft(4, '0')}-${date.month.toString().padLeft(2, '0')}-${date.day.toString().padLeft(2, '0')}';
+  }
+
+  Future<void> _pickExpiryDate(BuildContext context) async {
+    final DateTime now = DateTime.now();
+    final DateTime? picked = await showDatePicker(
+      context: context,
+      initialDate: _expiryDate ?? now,
+      firstDate: DateTime(now.year - 5),
+      lastDate: DateTime(now.year + 20),
+    );
+    if (picked != null) {
+      setState(() {
+        _expiryDate = picked;
+        _expiryDateController.text = _formatExpiryDate(picked);
+      });
+    }
+  }
 
   Future<void> _load() async {
     Provider.of<CategoryController>(context, listen: false).resetCategory();
@@ -220,6 +239,14 @@ class AddProductScreenState extends State<AddProductScreen>
           .setValueForUnit(widget.product!.unit.toString());
       Provider.of<AddProductController>(context, listen: false)
           .setProductTypeIndex(0, false);
+      _nafdacController.text = widget.product?.nafdacNumber ?? '';
+      if (widget.product?.expiryDate != null &&
+          widget.product!.expiryDate!.isNotEmpty) {
+        _expiryDate = DateTime.tryParse(widget.product!.expiryDate!);
+        if (_expiryDate != null) {
+          _expiryDateController.text = _formatExpiryDate(_expiryDate!);
+        }
+      }
 
       addProductController.unitPriceController.text =
           PriceConverter.convertPriceWithoutSymbol(
@@ -317,6 +344,13 @@ class AddProductScreenState extends State<AddProductScreen>
 
   @override
   bool get wantKeepAlive => true;
+
+  @override
+  void dispose() {
+    _nafdacController.dispose();
+    _expiryDateController.dispose();
+    super.dispose();
+  }
 
   int addColor = 0;
 
@@ -1009,6 +1043,63 @@ class AddProductScreenState extends State<AddProductScreen>
                                                     const SizedBox(
                                                         height: Dimensions
                                                             .paddingSizeLarge),
+                                                    CustomTextFieldWidget(
+                                                      formProduct: true,
+                                                      border: true,
+                                                      borderColor:
+                                                          Theme.of(context)
+                                                              .primaryColor
+                                                              .withValues(
+                                                                  alpha: .25),
+                                                      controller:
+                                                          _nafdacController,
+                                                      textInputAction:
+                                                          TextInputAction.next,
+                                                      textInputType:
+                                                          TextInputType.text,
+                                                      isAmount: false,
+                                                      hintText: getTranslated(
+                                                              'nafdac_number',
+                                                              context) ??
+                                                          'NAFDAC Number (Optional)',
+                                                    ),
+                                                    const SizedBox(
+                                                        height: Dimensions
+                                                            .paddingSizeLarge),
+                                                    InkWell(
+                                                      onTap: () =>
+                                                          _pickExpiryDate(
+                                                              context),
+                                                      child: AbsorbPointer(
+                                                        child:
+                                                            CustomTextFieldWidget(
+                                                          formProduct: true,
+                                                          border: true,
+                                                          borderColor: Theme.of(
+                                                                  context)
+                                                              .primaryColor
+                                                              .withValues(
+                                                                  alpha: .25),
+                                                          controller:
+                                                              _expiryDateController,
+                                                          readOnly: true,
+                                                          textInputAction:
+                                                              TextInputAction
+                                                                  .done,
+                                                          textInputType:
+                                                              TextInputType
+                                                                  .text,
+                                                          hintText:
+                                                              getTranslated(
+                                                                      'expiry_date',
+                                                                      context) ??
+                                                                  'Expiry Date (Optional)',
+                                                        ),
+                                                      ),
+                                                    ),
+                                                    const SizedBox(
+                                                        height: Dimensions
+                                                            .paddingSizeLarge),
                                                   ],
                                                 ),
                                               ),
@@ -1662,6 +1753,23 @@ class AddProductScreenState extends State<AddProductScreen>
                                                                               : 0;
                                                                       productModel
                                                                           .minimumOrderQty = 1;
+                                                                      final String
+                                                                          nafdacNumber =
+                                                                          _nafdacController
+                                                                              .text
+                                                                              .trim();
+                                                                      productModel
+                                                                              .nafdacNumber =
+                                                                          nafdacNumber
+                                                                              .isNotEmpty
+                                                                              ? nafdacNumber
+                                                                              : null;
+                                                                      productModel
+                                                                              .expiryDate =
+                                                                          _expiryDate !=
+                                                                              null
+                                                                              ? _formatExpiryDate(_expiryDate!)
+                                                                              : null;
                                                                       productModel
                                                                               .discountType =
                                                                           'flat';

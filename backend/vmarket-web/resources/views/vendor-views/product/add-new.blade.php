@@ -38,9 +38,7 @@
             @include('vendor-views.product.add._basic-setup')
             @include("vendor-views.product.add._general-setup")
             @include("vendor-views.product.add._pricing-others")
-            @include("vendor-views.product.add._product-variation-setup")
             @include("vendor-views.product.add._product-video")
-            @include("vendor-views.product.add._seo-section")
 
             <div class="d-flex justify-content-end trans3 mt-4">
                 <div class="d-flex justify-content-sm-end justify-content-center gap-3 flex-grow-1 flex-grow-sm-0 bg-white action-btn-wrapper trans3">
@@ -74,7 +72,6 @@
     </div>
 
     <span id="route-vendor-products-sku-combination" data-url="{{ route('vendor.products.sku-combination') }}"></span>
-    <span id="route-vendor-products-digital-variation-combination" data-url="{{ route('vendor.products.digital-variation-combination') }}"></span>
     <span id="image-path-of-product-upload-icon" data-path="{{ dynamicAsset(path: 'public/assets/back-end/img/icons/product-upload-icon.svg') }}"></span>
     <span id="image-path-of-product-upload-icon-two" data-path="{{ dynamicAsset(path: 'public/assets/back-end/img/400x400/img2.jpg') }}"></span>
     <span id="message-enter-choice-values" data-text="{{ translate('enter_choice_values') }}"></span>
@@ -86,7 +83,6 @@
     <span id="message-want-to-add-or-update-this-product" data-text="{{ translate('want_to_add_this_product') }}"></span>
     <span id="message-please-only-input-png-or-jpg" data-text="{{ translate('please_only_input_png_or_jpg_type_file') }}"></span>
     <span id="message-product-added-successfully" data-text="{{ translate('product_added_successfully') }}"></span>
-    <span id="message-discount-will-not-larger-then-variant-price" data-text="{{ translate('the_discount_price_will_not_larger_then_Variant_Price') }}"></span>
     <span id="system-currency-code" data-value="{{ getCurrencySymbol(currencyCode: getCurrencyCode()) }}"></span>
     <span id="system-session-direction" data-value="{{ Session::get('direction') }}"></span>
 
@@ -109,31 +105,6 @@
     <script src="{{ dynamicAsset(path: 'public/assets/back-end/js/file-upload/pdf.min.js') }}"></script>
     <script src="{{ dynamicAsset(path: 'public/assets/back-end/js/file-upload/pdf-worker.min.js') }}"></script>
     <script src="{{ dynamicAsset(path: 'public/assets/back-end/js/file-upload/multiple-document-upload.js') }}"></script>
-
-    <script>
-        $(function () {
-            $('.product_variation_toggle').each(function () {
-                toggleVisibility($(this));
-            });
-
-            $(document).on('change', '.product_variation_toggle', function () {
-                toggleVisibility($(this));
-            });
-
-            function toggleVisibility($toggle) {
-                const $wrapper = $toggle.closest('.variation_wrapper');
-                const $content = $wrapper.find('.product_variation_content');
-
-                if ($toggle.is(':checked')) {
-                    $content.removeClass('d--none').stop(true, true).slideDown(200);
-                } else {
-                    $content.stop(true, true).slideUp(200, function () {
-                        $content.addClass('d--none');
-                    });
-                }
-            }
-        });
-    </script>
 
 
 
