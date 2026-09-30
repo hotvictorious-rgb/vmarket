@@ -203,12 +203,9 @@ foreach ($order->details as $key => $detail) {
                                     <h5 class="fw-bold">{{ webCurrencyConverter(amount: $order['edit_due_amount']) }}</h5>
                                     <p class="fs-12">
                                         {{ translate('after_editing_your_product_list,_the_order_total_has_increased._please_pay_the_amount_to_continue_processing_the_order.') }}
+                                        {{-- [AI] VM-VEND-PROD-001: due-payment modal excised (customer-order-edit-pay-amount route purged); contact support until retry-pay backend endpoint ships --}}
+                                        {{ translate('please_contact_support_to_complete_your_payment.') }}
                                     </p>
-                                    <button type="button" class="btn btn-primary py-2 px-3 fw-semibold"
-                                            data-bs-toggle="modal"
-                                            data-bs-target="#choosePaymentMethodModal-{{ $order['id'] }}">
-                                        {{ translate('Pay_Now') }}
-                                    </button>
                                 </div>
                             </div>
                         </div>

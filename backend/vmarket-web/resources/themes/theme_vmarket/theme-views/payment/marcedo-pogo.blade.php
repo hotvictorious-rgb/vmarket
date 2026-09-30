@@ -163,6 +163,7 @@
                             identificationNumber,
                             identificationType,
                         } = cardForm.getCardFormData();
+                        {{-- [AI] VM-VEND-PROD-001: non-V1 gateway disabled (V1 is Paystack-only per rulebook #36); page retained for future gateway work --}}
                         fetch("#", {
                             method: "POST",
                             headers: {
