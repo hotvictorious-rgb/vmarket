@@ -3,8 +3,9 @@
 Ticket ID:            VM-CASH-001
 Title:                Cashback timing split-brain: immediate loyalty credit vs 24h ledger availability (both paths)
 Type:                 DEFECT
-Status:               REVIEW_APPROVED
+Status:               RELEASED
 Blocked:              no
+Release:              RELEASE-2026-09-30-008
 Created by / date:    FRONTEND AI / 2026-09-30 (external v1 audit finding, deepened with dual-path analysis)
 Size estimate:        medium (design decision + settlement changes + tests)
 
@@ -46,3 +47,4 @@ Screenshots:          N/A
 History (append-only):
 - 2026-09-30  FRONTEND AI  BACKLOG -> READY  Filed from adjudicated external audit with dual-path file:line proof. Implementation deliberately deferred (state-machine redesign, not a micro-fix).
 - 2026-09-30  BACKEND AI   READY -> REVIEW_APPROVED  Resolved timing split-brain by removing premature points credit from PickupCashbackAwardService, preserving single authoritative credit path at InShopHandoverController + 24h mature cycle; converted monetary casts to decimal:2; aligned documentation; updated test runner.
+- 2026-09-30  REVIEWER AI  REVIEW_APPROVED -> RELEASED  Released as RELEASE-2026-09-30-008. Gate verified 100% (18/18), merged to v1.
