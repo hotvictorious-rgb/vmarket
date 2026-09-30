@@ -1,3 +1,8 @@
+### [2026-09-30 20:45 UTC] VM-VEND-002 backend proof stage Released: vendor onboarding journey suite (RELEASE-2026-09-30-007) [backend] [AI]
+* **1. Proof:** VendorOnboardingProofTest 31/31 (register Uyo-142 → approve → publish/fresh/purchasable → rival IDOR exclusion → stock → order → cross-tenant exclusion → ack+history → rollback, Δ=0.00); run-all 17/17 PASS at `2c263d82` (XAMP PHP, live run + binding re-validated); gate 18/18 PASS; review APPROVED.
+* **2. Release:** merged `backend/VM-VEND-002` into `v1` --no-ff (`67dfbd05`); ticket stays IN_PROGRESS for frontend vendor-views walk; manifest + review recorded.
+* **3. Verification:** release executed in isolated worktree; shared tree left untouched.
+
 ### [2026-09-30 20:00 UTC] VM-PAY-001 CLOSED: money-path audit certified (RELEASE-2026-09-30-006, ticket RELEASED) [backend] [AI]
 * **1. Audit:** 42/42 money-path proofs on XAMP PHP 8.2.12 (Paystack test auth HTTP 200, intent freeze Δ=0.00, HMAC webhook, CLAIMED/ALREADY_PAID double-delivery, 5.00% cashback Δ=0.0000, 0 defects); invariant suites 8+21+23+31 green.
 * **2. Proof:** run-all 17/17 PASS at `d91fd4b6` (binding independently re-validated); gate 18/18 PASS in isolated clean worktree; review APPROVED. Audit-only merge, zero runtime delta. Tag 006 (005 reserved locally by parallel session, unpushed).
