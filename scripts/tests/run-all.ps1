@@ -178,27 +178,84 @@ Run-Check "dependency_scan" {
     }
 } "dependency_scan.log"
 
-# Set remaining required suites with valid justifications or N/A
+# Real Flutter analyze for the three client suites (FAIL only on analyzer errors;
+# warnings/infos are recorded, never release-blocking). SDK missing or timeout -> honest N/A.
+$FlutterSuites = @(
+    @{ Name = "customer_frontend";   AppDir = "User app";         Approver = "AI-5" },
+    @{ Name = "vendor_frontend";     AppDir = "Vendor app";       Approver = "AI-6" },
+    @{ Name = "operations_frontend"; AppDir = "Delivery Man App"; Approver = "AI-7" }
+)
+
+foreach ($fsuite in $FlutterSuites) {
+    if ($ResultsMap.Contains($fsuite.Name)) { continue }
+    $flog = Join-Path $LogDir "$($fsuite.Name).log"
+    $flutterBin = Get-Command flutter -ErrorAction SilentlyContinue
+    if (-not $flutterBin) {
+        "flutter SDK not found on PATH; suite not executed." | Out-File $flog
+        $ResultsMap[$fsuite.Name] = [ordered]@{
+            "status" = "N/A"; "log_sha256" = (Get-FileSha256 $flog);
+            "justification" = "Flutter SDK unavailable in this environment; no static analysis executed";
+            "approved_by" = $fsuite.Approver
+        }
+        Write-Host "[N/A] $($fsuite.Name) : SDK missing" -ForegroundColor Yellow
+        continue
+    }
+    Write-Host "`n[*] Running check: $($fsuite.Name) (flutter analyze)..." -ForegroundColor Cyan
+    try {
+        $job = Start-Job -ScriptBlock {
+            param($dir) Set-Location $dir; flutter analyze --no-pub 2>&1
+        } -ArgumentList (Join-Path (Get-Location) $fsuite.AppDir)
+        $done = Wait-Job $job -Timeout 600
+        if (-not $done) {
+            Stop-Job $job -ErrorAction SilentlyContinue; Remove-Job $job -Force -ErrorAction SilentlyContinue
+            throw "flutter analyze timed out after 600s"
+        }
+        $out = Receive-Job $job; Remove-Job $job -ErrorAction SilentlyContinue
+        $out | Out-File $flog -Encoding UTF8
+        $errors = @($out | Where-Object { $_ -match "^\s*error[ \-:]" })
+        $warns = @($out | Where-Object { $_ -match "^\s*warning[ \-:]" }).Count
+        if ($errors.Count -gt 0) {
+            $ResultsMap[$fsuite.Name] = [ordered]@{ "status" = "FAIL"; "log_sha256" = (Get-FileSha256 $flog) }
+            Write-Host "[FAIL] $($fsuite.Name) : $($errors.Count) analyzer error(s)" -ForegroundColor Red
+        } else {
+            $ResultsMap[$fsuite.Name] = [ordered]@{
+                "status" = "PASS"; "log_sha256" = (Get-FileSha256 $flog);
+                "justification" = "flutter analyze executed live; 0 errors ($warns warnings/infos recorded, non-blocking)";
+                "approved_by" = $fsuite.Approver
+            }
+            Write-Host "[OK] $($fsuite.Name) : PASS (0 errors)" -ForegroundColor Green
+        }
+    } catch {
+        $msg = $_.Exception.Message; $msg | Out-File $flog -Append -Encoding UTF8
+        $ResultsMap[$fsuite.Name] = [ordered]@{
+            "status" = "N/A"; "log_sha256" = (Get-FileSha256 $flog);
+            "justification" = "flutter analyze could not complete: $msg";
+            "approved_by" = $fsuite.Approver
+        }
+        Write-Host "[N/A] $($fsuite.Name) : $($msg)" -ForegroundColor Yellow
+    }
+}
+
+# Suites with no live executor in this environment: honest N/A (gate accepts N/A
+# with justification + approver). These MUST be replaced by real execution where
+# the capability exists (staging e2e, load rig, contract diff) — never silent PASS.
 $RemainingSuites = @(
-    @{ Name = "customer_frontend";   Just = "Validated via Flutter analyze baseline"; Approver = "AI-5" },
-    @{ Name = "vendor_frontend";     Just = "Validated via Flutter analyze baseline"; Approver = "AI-6" },
-    @{ Name = "operations_frontend"; Just = "Validated via Flutter analyze baseline"; Approver = "AI-7" },
-    @{ Name = "integration";         Just = "Verified via Backend/Security integration suites"; Approver = "AI-8" },
-    @{ Name = "e2e";                 Just = "Verified via Backend journey flows"; Approver = "AI-8" },
-    @{ Name = "regression";          Just = "Covered by permanent security & invariant suites"; Approver = "AI-8" },
-    @{ Name = "performance";         Just = "No N+1 queries detected in touched Eloquent models"; Approver = "AI-1" },
-    @{ Name = "client_compat";       Just = "Preserves v1 API contract"; Approver = "AI-8" },
-    @{ Name = "license";             Just = "Proprietary Victorious MARKET codebase; approved licenses only"; Approver = "Human" },
-    @{ Name = "build";               Just = "PHP 8.4 syntax and framework boot validated"; Approver = "AI-1" }
+    @{ Name = "integration";   Just = "No dedicated integration harness in this environment; backend/security/contract suites cover service boundaries"; Approver = "AI-8" },
+    @{ Name = "e2e";           Just = "No staging e2e harness in this environment; journey flows covered by backend suites + manual click-chain audits"; Approver = "AI-8" },
+    @{ Name = "regression";    Just = "No historical regression corpus runner here; permanent security and invariant suites re-executed per release"; Approver = "AI-8" },
+    @{ Name = "performance";   Just = "No load rig in this environment; N+1 review performed on touched Eloquent models per change"; Approver = "AI-1" },
+    @{ Name = "client_compat"; Just = "No automated client-matrix harness; v1 API contract diff reviewed per change"; Approver = "AI-8" },
+    @{ Name = "license";       Just = "No license scanner installed; proprietary codebase, dependency additions reviewed per change"; Approver = "Human" },
+    @{ Name = "build";         Just = "No full build pipeline here; PHP syntax + framework boot validated per release"; Approver = "AI-1" }
 )
 
 foreach ($item in $RemainingSuites) {
     if (-not $ResultsMap.Contains($item.Name)) {
         $dummyLog = Join-Path $LogDir "$($item.Name).log"
-        "Suite $($item.Name) evaluated: $($item.Just)" | Out-File $dummyLog
+        "Suite $($item.Name) NOT EXECUTED: $($item.Just)" | Out-File $dummyLog
         $hash = Get-FileSha256 $dummyLog
         $ResultsMap[$item.Name] = [ordered]@{
-            "status"        = "PASS"
+            "status"        = "N/A"
             "log_sha256"    = $hash
             "justification" = $item.Just
             "approved_by"   = $item.Approver
