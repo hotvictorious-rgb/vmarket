@@ -1,3 +1,9 @@
+### [2026-09-30 05:30 UTC] VM-THEME-001 CLOSED: frontend alignment (RELEASE-2026-09-30-001, LD-002 RETIRED) [frontend] [AI]
+* **1. Change:** User app `config_model` default identifier `theme_aster` → `theme_vmarket` (3-line diff, string literal, zero routing effect). Sole-home screen + call sites deliberately retained (deletion would destroy the app's home; no switch exists anywhere).
+* **2. Proof:** run-all 17/17 PASS at `b70449f7` (clean detached worktree at exact SHA; vendor junctioned for harness only); gate 18/18 PASS; review APPROVED.
+* **3. Release:** merged `frontend/VM-THEME-001` into `v1` --no-ff (`3380ec55`); ticket → `released/`; manifest + review recorded. Rename consolidation deferred to `frontend/VM-THEME-002` (separate ticket + review; must rebase after this merge).
+* **4. Verification:** staged + committed only own files.
+
 ### [2026-09-29 12:00 UTC] VM-THEME-001 backend stage Released: aster removal (RELEASE-2026-09-29-012) [backend] [AI]
 * **1. Removal:** `theme_aster/` deleted (840+ files) with fallbacks re-pointed first (file_path, seeder, registry); 34 changed PHP files lint-clean; zero live aster refs in app/routes/vmarket-blades; admin/vendor copy normalized.
 * **2. Proof:** run-all 17/17 PASS at `de7f7c33` (fixed runtime); gate 18/18 PASS; CUST-003 dependency formally closed; review APPROVED (backend stage).
