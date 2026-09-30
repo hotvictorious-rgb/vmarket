@@ -3,7 +3,7 @@
 Ticket ID:            VM-THEME-001
 Title:                Theme_Aster Removal Finalization â€” Dangling Reference Normalization
 Type:                 FEATURE
-Status:               IN_PROGRESS (backend stage RELEASED, frontend stage pending)
+Status:               RELEASED
 Blocked:              no
 Created by / date:    AI-8 / 2026-09-25
 Size estimate:        ~300 lines (conditional normalization + verification, no new features)
@@ -70,3 +70,5 @@ History (append-only):
 - 2026-09-25  AI-8  BACKLOG -> READY  Split from VM-CUST-003 per DECISION-001 (human approved Option A)
 - 2026-09-26  Human  READY (premise refreshed)  theme_aster/ folder is back on disk (restored in VM-CUST-003 close-out); ticket rescoped to full ordered removal. Migrated to 3-AI model: Backend-then-Frontend dispatch, REVIEWER AI sole gatekeeper + push authority. Launch-sequence ticket 4 of 4.
 - 2026-09-29  Reviewer AI  READY -> IN_PROGRESS, backend stage RELEASED (RELEASE-2026-09-29-012, single-coordinator session)  Backend content verified file-by-file (34/34 lint, zero live refs, folder gone), run-all 17/17 at de7f7c33 (fixed runtime), gate 18/18 PASS, CUST-003 dependency closed. Merged (e0d99e43). Frontend stage (aster home screen + admin toggle) dispatches next.
+- 2026-09-29  Frontend AI  BACKEND_DONE -> FRONTEND_DONE (single-coordinator session)  Full aster inventory: screen is the SOLE home (dashboard/login/location/logout all bind it) - deletion would destroy the app, so the screen + call sites + fromAsterTheme flag (default false) stay with rationale recorded. Changed: config_model default identifier theme_aster -> theme_vmarket (no routing effect; no switch exists). Admin theme-setup: no aster toggle found (dynamic theme list; folder deletion removed it). branch=frontend/VM-THEME-001.
+- 2026-09-30  Reviewer AI  FRONTEND_DONE -> RELEASED (single-coordinator session)  Identifier-only change verified (3-line diff), run-all 17/17 at b70449f7 (clean worktree), gate 18/18 PASS, review APPROVED. Merged (3380ec55). VM-THEME-001 CLOSED; LD-002 RETIRED.
