@@ -207,6 +207,8 @@ class Product {
   String? marketplaceConfirmedAt;
   bool? isMarketplaceFresh;
   int? daysUntilExpiry;
+  String? nafdacNumber;
+  String? expiryDate;
 
   Product(
       {this.id,
@@ -281,6 +283,8 @@ class Product {
         this.marketplaceConfirmedAt,
         this.isMarketplaceFresh,
         this.daysUntilExpiry,
+        this.nafdacNumber,
+        this.expiryDate,
       }) {
     if (digitalProductType != null) {
       this.digitalProductType = digitalProductType;
@@ -528,6 +532,8 @@ class Product {
     marketplaceConfirmedAt = json['marketplace_confirmed_at'];
     isMarketplaceFresh = json['is_marketplace_fresh'] == true || json['is_marketplace_fresh'] == 1 || json['is_marketplace_fresh'] == '1';
     daysUntilExpiry = json['days_until_marketplace_expiry'] != null ? int.tryParse(json['days_until_marketplace_expiry'].toString()) : null;
+    nafdacNumber = json['nafdac_number']?.toString();
+    expiryDate = json['expiry_date']?.toString();
 
   }
 
@@ -614,6 +620,8 @@ class Product {
     data['marketplace_listing_status'] = marketplaceListingStatus;
     data['marketplace_availability'] = marketplaceAvailability;
     data['marketplace_confirmed_at'] = marketplaceConfirmedAt;
+    data['nafdac_number'] = nafdacNumber;
+    data['expiry_date'] = expiryDate;
 
     return data;
   }
