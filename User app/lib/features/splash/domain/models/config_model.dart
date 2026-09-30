@@ -277,10 +277,11 @@ class ConfigModel {
     }
     offlinePayment = json['offline_payment'] != null ? OfflinePayment.fromJson(json['offline_payment']) : null;
     paymentMethodImagePath = json['payment_method_image_path'];
-    // [AI] Default to 'theme_aster' (Aster theme) so theme is preserved
+    // [AI] VM-THEME-001: default to 'theme_vmarket' (single storefront theme; backend aster removed).
+    // No runtime home switch exists — the app renders AsterThemeHomeScreen as its sole home; this identifier carries no routing.
     activeTheme = (json['active_theme'] != null && json['active_theme'] != '' && json['active_theme'] != 'default')
         ? json['active_theme']
-        : 'theme_aster';
+        : 'theme_vmarket';
     if (json['popular_tags'] != null) {
       popularTags = <PopularTags>[];
       json['popular_tags'].forEach((v) {

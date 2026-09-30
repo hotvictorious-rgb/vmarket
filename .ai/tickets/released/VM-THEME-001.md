@@ -1,9 +1,9 @@
-# Ticket: VM-THEME-001
+﻿# Ticket: VM-THEME-001
 
 Ticket ID:            VM-THEME-001
-Title:                Theme_Aster Removal Finalization — Dangling Reference Normalization
+Title:                Theme_Aster Removal Finalization â€” Dangling Reference Normalization
 Type:                 FEATURE
-Status:               READY
+Status:               RELEASED
 Blocked:              no
 Created by / date:    AI-8 / 2026-09-25
 Size estimate:        ~300 lines (conditional normalization + verification, no new features)
@@ -14,7 +14,7 @@ Problem:
 PREMISE UPDATE 2026-09-26: `resources/themes/theme_aster/` EXISTS on disk again (a prior bulk deletion was reverted during the VM-CUST-003 close-out to protect the release). So this ticket now covers the FULL removal, in dependency order: (1) re-point `file_path.php` placeholder fallbacks from `theme_aster` to `theme_vmarket`; (2) change `seed_sqlite_core.php` default `theme_name` to `theme_vmarket`; (3) normalize `theme_root_path() == 'theme_aster'` conditionals (WebController, BannerService, PdfGenerator, AdvanceSearch, admin/vendor blades, validation requests) to their current effective (else-branch) behavior; (4) remove `theme_aster` from `Constant.php` registry + admin theme-setup UI; (5) delete `resources/themes/theme_aster/` dead-last; (6) Frontend removes the Aster home screen + admin toggle option. ~20+ code references plus the folder itself. All currently evaluate to safe fallbacks or parallel screens, but they are dead weight inviting future misuse.
 Expected behavior:
 - Repo-wide grep for `theme_aster` returns only historical docs/changelog hits (explicitly listed as retained history).
-- Fallbacks re-pointed BEFORE deletion: `file_path.php` → `theme_vmarket` keys; seeder default → `theme_vmarket`; registry + admin UI → sole theme.
+- Fallbacks re-pointed BEFORE deletion: `file_path.php` â†’ `theme_vmarket` keys; seeder default â†’ `theme_vmarket`; registry + admin UI â†’ sole theme.
 - Conditionals normalize to current effective behavior (paginate limits, banner service, category/flash-deal guards keep else-branch values).
 - `theme_root_path()` default + `ThemeServiceProvider` fallback remain `theme_vmarket` (verify, don't change).
 - Folder `theme_aster/` deleted dead-last, only after grep + smoke prove zero live references.
@@ -40,7 +40,7 @@ Assigned AI:          BACKEND AI first, then FRONTEND AI   (dispatched by REVIEW
 Required reviewers:   REVIEWER AI (sole coordinator, gatekeeper, and push authority; verdict bound to exact commit SHA)
 Branch / base commit: backend/VM-THEME-001, then frontend/VM-THEME-001 (from current `v1`)
 Work order:           (Reviewer AI pastes the exact-prompt work order here per `.ai/templates/work-order-template.md`)
-Dependencies (tickets/features): VM-CUST-003 (must be RELEASED first — same theme area)
+Dependencies (tickets/features): VM-CUST-003 (must be RELEASED first â€” same theme area)
 Tests required:
 - Repo-wide grep evidence: zero live `theme_aster` code refs (docs/history excepted with list).
 - Storefront smoke: home, product, cart, checkout-details render without errors.
@@ -53,7 +53,7 @@ Acceptance criteria:
 - [ ] 3. LD-002 marked RETIRED in follow-up (human-owned file; Backend AI proposes text).
 
 Counters:             review_cycles: 0   integration_failures: 0   reopened_count: 0
-Pipeline:             Human → REVIEWER AI → BACKEND AI → REVIEWER AI → FRONTEND AI → REVIEWER AI (APPROVED) → REVIEWER AI pushes
+Pipeline:             Human â†’ REVIEWER AI â†’ BACKEND AI â†’ REVIEWER AI â†’ FRONTEND AI â†’ REVIEWER AI (APPROVED) â†’ REVIEWER AI pushes
 Push rule:            ONLY Reviewer AI merges to `v1` and pushes, after APPROVED + gate PASS, via `scripts/release/merge-release`. Workers push only their own feature branches.
 Screenshots:          N/A
 
@@ -69,3 +69,6 @@ Pending.
 History (append-only):
 - 2026-09-25  AI-8  BACKLOG -> READY  Split from VM-CUST-003 per DECISION-001 (human approved Option A)
 - 2026-09-26  Human  READY (premise refreshed)  theme_aster/ folder is back on disk (restored in VM-CUST-003 close-out); ticket rescoped to full ordered removal. Migrated to 3-AI model: Backend-then-Frontend dispatch, REVIEWER AI sole gatekeeper + push authority. Launch-sequence ticket 4 of 4.
+- 2026-09-29  Reviewer AI  READY -> IN_PROGRESS, backend stage RELEASED (RELEASE-2026-09-29-012, single-coordinator session)  Backend content verified file-by-file (34/34 lint, zero live refs, folder gone), run-all 17/17 at de7f7c33 (fixed runtime), gate 18/18 PASS, CUST-003 dependency closed. Merged (e0d99e43). Frontend stage (aster home screen + admin toggle) dispatches next.
+- 2026-09-29  Frontend AI  BACKEND_DONE -> FRONTEND_DONE (single-coordinator session)  Full aster inventory: screen is the SOLE home (dashboard/login/location/logout all bind it) - deletion would destroy the app, so the screen + call sites + fromAsterTheme flag (default false) stay with rationale recorded. Changed: config_model default identifier theme_aster -> theme_vmarket (no routing effect; no switch exists). Admin theme-setup: no aster toggle found (dynamic theme list; folder deletion removed it). branch=frontend/VM-THEME-001.
+- 2026-09-30  Reviewer AI  FRONTEND_DONE -> RELEASED (single-coordinator session)  Identifier-only change verified (3-line diff), run-all 17/17 at b70449f7 (clean worktree), gate 18/18 PASS, review APPROVED. Merged (3380ec55). VM-THEME-001 CLOSED; LD-002 RETIRED.

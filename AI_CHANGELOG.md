@@ -1,3 +1,27 @@
+### [2026-09-30 05:30 UTC] VM-THEME-001 CLOSED: frontend alignment (RELEASE-2026-09-30-001, LD-002 RETIRED) [frontend] [AI]
+* **1. Change:** User app `config_model` default identifier `theme_aster` → `theme_vmarket` (3-line diff, string literal, zero routing effect). Sole-home screen + call sites deliberately retained (deletion would destroy the app's home; no switch exists anywhere).
+* **2. Proof:** run-all 17/17 PASS at `b70449f7` (clean detached worktree at exact SHA; vendor junctioned for harness only); gate 18/18 PASS; review APPROVED.
+* **3. Release:** merged `frontend/VM-THEME-001` into `v1` --no-ff (`3380ec55`); ticket → `released/`; manifest + review recorded. Rename consolidation deferred to `frontend/VM-THEME-002` (separate ticket + review; must rebase after this merge).
+* **4. Verification:** staged + committed only own files.
+
+### [2026-09-29 12:00 UTC] VM-THEME-001 backend stage Released: aster removal (RELEASE-2026-09-29-012) [backend] [AI]
+* **1. Removal:** `theme_aster/` deleted (840+ files) with fallbacks re-pointed first (file_path, seeder, registry); 34 changed PHP files lint-clean; zero live aster refs in app/routes/vmarket-blades; admin/vendor copy normalized.
+* **2. Proof:** run-all 17/17 PASS at `de7f7c33` (fixed runtime); gate 18/18 PASS; CUST-003 dependency formally closed; review APPROVED (backend stage).
+* **3. Release:** merged `backend/VM-THEME-001` into `v1` --no-ff (`e0d99e43`); ticket stays IN PROGRESS for Flutter aster-screen stage; manifest + review recorded.
+* **4. Verification:** staged + committed only own files.
+
+### [2026-09-29 11:00 UTC] VM-CUST-003 Re-released: cart alignment re-proven (RELEASE-2026-09-29-011) [frontend] [AI]
+* **1. Context:** 2026-09-25 release stood with a gate check-3 exception. Re-verified from scratch under 3-role model: all 6 criteria with live + framework evidence, gate 18/18 with zero exceptions this time.
+* **2. Proof:** trunk grep-clean, live AJAX lifecycle all-200, flutter 6/6, run-all 17/17 PASS; review APPROVED.
+* **3. Release:** merged `reviewer/VM-CUST-003-migrate` into `v1` --no-ff (`e5d92514`); history consolidated into `released/`; manifest + review recorded.
+* **4. Verification:** staged + committed only own files.
+
+### [2026-09-29 10:30 UTC] VM-COD-001 Released: COD fail-closed proven (RELEASE-2026-09-29-010) [backend] [AI]
+* **1. Ruling:** COD prohibited in V1 (human). Probe matrix: `generateOrder` throws on COD/offline (live code exec ×2), web-payment paystack-only gate read + CSRF proven live, intent/init safe by construction. Zero new guards needed — entries already fail closed. Deletion ships in VM-COD-002.
+* **2. Proof:** run-all 17/17 PASS; gate 18/18 PASS; review APPROVED.
+* **3. Release:** merged `backend/VM-COD-001` into `v1` --no-ff (`5961f50a`); ticket → `released/`; manifest + review recorded.
+* **4. Verification:** staged + committed only own files (ticket + review + manifest + changelog).
+
 ### [2026-09-29 10:00 UTC] VM-VEND-005 Released: vendor entity fields (RELEASE-2026-09-29-009) [backend] [AI]
 * **1. Foundation:** migration (16 columns + backfill + down), Seller fillable, conditional registration (CAC iff non-individual, NIN iff individual, TIN nullable), mapper with applied_at stamp. Side effect: previously-fatal KYC submit path unblocked (endpoints still unwired — noted).
 * **2. Proof:** BN+CAC → stored row, individual+NIN → accepted, both rejections exact; run-all 17/17 PASS; gate 18/18 PASS; review APPROVED. Runtime corrected mid-ticket (vendor junction → real copy; all evidence re-produced on own code).
