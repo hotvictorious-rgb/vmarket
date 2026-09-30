@@ -1,3 +1,9 @@
+### [2026-09-30 19:15 UTC] VM-VEND-PROD-001 CLOSED: frontend dead-UI excision (RELEASE-2026-09-30-004, ticket RELEASED) [frontend] [AI]
+* **1. Change:** deleted 2 dead due-payment partials (zero-@include grep proof) + 5 dead vendor SEO/variation widgets; orphan Pay_Now removed (support redirect); V1-gateway rationale recorded; login/captcha hardening; unique modal IDs.
+* **2. Proof:** run-all 17/17 PASS at `6c3a820d` (XAMP PHP, runner executed live, binding re-validated); gate 18/18 PASS in isolated clean worktree; review APPROVED (cycle 3).
+* **3. Release:** merged `frontend/VM-VEND-PROD-001` into `v1` --no-ff (`35b19a9c`); ticket → `released/`; manifest + reviews recorded. Tag 004 (003 reserved locally by parallel session, unpushed).
+* **4. Verification:** release executed in isolated worktree; shared tree left untouched.
+
 ### [2026-09-30 18:30 UTC] VM-VEND-PROD-001 backend stage Released: auth/vendor-order guards + validation parity (RELEASE-2026-09-30-002) [backend] [AI]
 * **1. Change:** login-options JSON hardening + manual-login-disabled guard; vendors cannot mark ANY order paid / deliver unpaid; recaptcha fail-closed; `getLoginConfig` hardening; vendor validation parity + NAFDAC/expiry (rode branch); cashback ledger idempotent columns; runner pinned to XAMP PHP 8.2.
 * **2. Proof:** run-all 17/17 PASS at `2f028cdb` (XAMP PHP; binding independently re-validated); php -l 6/6 clean; gate 18/18 PASS in isolated clean worktree; review APPROVED (cycle 2 tip review + cycle 1 for 422811ca).
