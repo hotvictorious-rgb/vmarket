@@ -149,15 +149,6 @@
                                                     <td>
                                                         <div
                                                             class="d-flex justify-content-center gap-2 align-items-center">
-                                                            @if($order->edited_status == 1 && $order?->latestEditHistory?->order_due_payment_status == 'unpaid' && $order?->latestEditHistory?->order_due_payment_method != "offline_payment" && $order?->latestEditHistory?->order_due_payment_method != "cash_on_delivery" && $order?->latestEditHistory?->order_due_amount > 0)
-                                                                <button type="button"
-                                                                        class="btn btn-outline-warning btn-action choose-payment-method-modal-btn"
-                                                                        data-bs-toggle="modal"
-                                                                        data-bs-target="#choosePaymentMethodModal-{{ $order['id'] }}"
-                                                                        title="{{ translate('Pay Due Amount') }}">
-                                                                    <i class="fi fi-sr-usd-circle d-flex"></i>
-                                                                </button>
-                                                            @endif
                                                             <a href="{{ route('account-order-details', ['id'=>$order->id]) }}"
                                                                class="btn btn-outline-info btn-action"
                                                                title="{{ translate('View Details') }}"

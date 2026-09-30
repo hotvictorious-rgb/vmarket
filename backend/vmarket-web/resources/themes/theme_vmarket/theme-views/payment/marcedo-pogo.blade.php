@@ -163,7 +163,7 @@
                             identificationNumber,
                             identificationType,
                         } = cardForm.getCardFormData();
-                        fetch("{{route('mercadopago.make_payment')}}", {
+                        fetch("#", {
                             method: "POST",
                             headers: {
                                 "Content-Type": "application/json",

@@ -444,13 +444,13 @@
                                     @if(auth('customer')->check())
                                         <div class="modal fade" id="billingSavedAddressModal"
                                              data-bs-backdrop="static" data-bs-keyboard="false" tabindex="-1"
-                                             aria-hidden="true">
+                                             aria-labelledby="billing_contact_sellerModalLabel" aria-hidden="true">
                                             <div
                                                 class="modal-dialog modal-lg modal-dialog-centered justify-content-center">
                                                 <div class="modal-content border-0 max-width-500">
                                                     <div class="modal-header">
                                                         <h5 class="text-capitalize"
-                                                            id="contact_sellerModalLabel">{{translate('saved_addresses')}}</h5>
+                                                            id="billing_contact_sellerModalLabel">{{translate('saved_addresses')}}</h5>
                                                         <button type="button" class="btn-close"
                                                                 data-bs-dismiss="modal"
                                                                 aria-label="Close"></button>

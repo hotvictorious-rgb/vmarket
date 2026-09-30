@@ -10,7 +10,7 @@
                 <span class="loader"></span>
             </div>
             <div class="cash-on-delivery-section">
-                <form action="{{ route('customer.customer-order-edit-pay-amount') }}" method="POST"
+                <form action="#" method="POST"
                       class="needs-validation px-4" id="cash_on_delivery_form">
                     @csrf
                     <div class="modal-header border-0 p-2 d-block">

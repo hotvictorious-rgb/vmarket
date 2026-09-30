@@ -174,7 +174,7 @@ if (!$customerOTPLogin && $customerManualLogin && $customerSocialLogin) {
 
                                     <div class="otp-login-items d-none">
                                         <div class="d-flex justify-content-center mb-3 w-100">
-                                            <button type="submit" id=""
+                                            <button type="submit" id="customerOtpLoginSubmitBtn"
                                                 class="fs-16 btn btn-primary px-5 w-100">
                                                 {{ translate('Get_OTP') }}
                                             </button>
@@ -265,18 +265,22 @@ if (!$customerOTPLogin && $customerManualLogin && $customerSocialLogin) {
 
 
 @push('script')
-    @if ($multiColumn)
-        <script>
-            "use strict";
+    <script>
+        "use strict";
 
+        @if ($multiColumn)
             function resizeFunc() {
                 $('.or-sign-in-with').css('width', $('.or-sign-in-with-row').height())
             }
-            $('#loginModal').on('show.bs.modal', function() {
+        @endif
+
+        $('#loginModal').on('show.bs.modal', function() {
+            @if ($multiColumn)
                 resizeFunc();
                 const resizeObserver = new ResizeObserver(resizeFunc);
                 resizeObserver.observe(document.querySelector('.or-sign-in-with-row'));
-            });
-        </script>
-    @endif
+            @endif
+            $(this).find('.default-captcha-container .captcha-image-container').trigger('click');
+        });
+    </script>
 @endpush

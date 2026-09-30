@@ -1,6 +1,6 @@
 @php($couponAmount = session()->has('coupon_discount') ? session('coupon_discount') : 0)
 @php($totalAmount = $order['order_amount'] - $couponAmount)
-<form action="{{ route('customer.customer-order-edit-pay-amount') }}" method="POST"
+<form action="#" method="POST"
       class="needs-validation px-4 pb-3" id="cash_on_delivery_form">
     @csrf
     <div>
