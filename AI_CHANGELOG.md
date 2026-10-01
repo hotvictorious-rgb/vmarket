@@ -1,3 +1,9 @@
+### [2026-10-01 09:30 UTC] VM-CUST-014 CLOSED: lane-authority shipping setter (RELEASE-2026-10-01-012, ticket RELEASED) [backend] [AI]
+* **1. Fix:** set-shipping-method POST-only + 422 fail-closed without destination LGA + fee from DeliveryLane (legacy ShippingMethod cost removed with import); JS caller POST+CSRF+422 toast; node --check clean.
+* **2. Proof:** live probes (GET 405, POST lane fee 500 = lane with tampered id, 422 paths); probe caught missing-return 500 pre-release, fix-forward re-proven; run-all 10 executed suites PASS + honest N/As at `2dca4397`; gate 18/18 PASS; review APPROVED.
+* **3. Release:** merged `backend/VM-CUST-014` into `v1` --no-ff (`3be60ffe`); ticket → `released/`; manifest + review recorded.
+* **4. Verification:** release executed in isolated worktree; shared tree left untouched.
+
 ### [2026-10-01 09:00 UTC] VM-CUST-013 CLOSED: click-chain audit proven live (RELEASE-2026-10-01-011, ticket RELEASED) [frontend] [AI]
 * **1. Walk:** live artisan-serve probes (XAMP PHP): home/products/detail/cart/track 200s; cart/add fail-closed + happy-path JSON; Uyo lane fee 500 from DB; track renders order 100171; guest 302s correct; zero drift after (test row deleted, scratch removed, server stopped).
 * **2. Proof:** run-all 10 executed suites PASS + honest N/As at `6ffddf5d`; gate 18/18 PASS; review APPROVED. Audit-only merge. Web-payment click + qty happy-path honestly UNVERIFIED.
