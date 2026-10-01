@@ -3,8 +3,8 @@
 Ticket ID:            VM-CUST-013
 Title:                Transaction-Path Button Audit — browse, cart, checkout, pay, track (storefront slice)
 Type:                 FEATURE
-Status:               IN_PROGRESS
-Blocked:              no
+Status:               REVIEW_APPROVED
+Blocked:              no (audit record; no code fixes under this ticket)
 Created by / date:    Human operator / 2026-09-26
 Size estimate:        audit (report + defect tickets; fixes ship under own tickets; full 136-control sweep stays in VM-CUST-012)
 
@@ -33,12 +33,12 @@ Dependencies (tickets/features): VM-CUST-011, VM-CUST-012 (narrower slice of the
 Tests required:       live click-chain walk per control; `php artisan route:list` resolved set attached
 Security requirements: state-changing GETs, missing auth middleware, and legacy-shipping cost leaks flagged as defects with file:line (see VM-CUST-011 F-01/F-02/F-03 for the pattern)
 Acceptance criteria:  (checklist; each item gets an evidence link)
-- [ ] Every transaction-chain control recorded with handler → route → controller → service triple (evidence: audit report)
-- [ ] No control marked PASS on static read alone (evidence: reviewer spot-check)
-- [ ] Duplicate/dead controls listed as defects (evidence: defect ticket IDs)
-- [ ] Every defect filed as its own ticket (evidence: ticket IDs)
+- [x] Every transaction-chain control recorded with handler → route → controller → service triple (evidence: audit report)
+- [x] No control marked PASS on static read alone (evidence: live 200s + JSON probes; UNVERIFIED items explicitly labeled, never passed)
+- [x] Duplicate/dead controls listed as defects (evidence: none live on chain — prior excisions verified absent)
+- [x] Every defect filed as its own ticket (evidence: VM-CUST-014, VM-CUST-015)
 
-Counters:             review_cycles: 0   integration_failures: 0   reopened_count: 0
+Counters:             review_cycles: 1   integration_failures: 0   reopened_count: 0
 Pipeline:             Human → REVIEWER AI → BACKEND AI → REVIEWER AI (APPROVED) → REVIEWER AI pushes (Frontend stage only if fixes need UI)
 Push rule:            ONLY Reviewer AI merges to `v1` and pushes, after APPROVED + gate PASS, via `scripts/release/merge-release`. Workers push only their own feature branches.
 Screenshots:          none - justify (audit; evidence is handler/route triples)
@@ -48,9 +48,11 @@ Implementation notes:
 Review notes:
 - Audit report: .ai/reviews/customer/REV-VM-CUST-013-chain-audit.md (LIVE verdicts per stage; web-payment click + qty happy-path honestly UNVERIFIED-live).
 Final decision:
-- Chain LIVE-PROVEN except noted items; 2 defects filed (VM-CUST-014, VM-CUST-015).
+- Chain LIVE-PROVEN except noted items; 2 defects filed (VM-CUST-014, VM-CUST-015). APPROVED as audit record for v1 merge.
 Release commit:
+- Pending gate PASS + merge-release.
 
 History (append-only):
 - 2026-09-26  Human  BACKLOG (created)  Launch-sequence ticket 3 of 4: transaction-path slice of the button audit; full sweep stays in VM-CUST-012.
 - 2026-09-30  Human  BACKLOG -> IN_PROGRESS  Dispatched to FRONTEND AI per human "take it" order (branch backend/VM-CUST-013 @origin/v1 0c2b04ab).
+- 2026-10-01  REVIEWER  IN_PROGRESS -> REVIEW_APPROVED  Live walk + report verified; audit record merges to v1.
