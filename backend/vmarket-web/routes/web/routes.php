@@ -339,7 +339,7 @@ Route::group(['prefix' => 'customer', 'as' => 'customer.'], function () {
 
     Route::controller(SystemController::class)->group(function () {
         Route::get('set-payment-method/{name}', 'setPaymentMethod')->name('set-payment-method');
-        Route::get('set-shipping-method', 'setShippingMethod')->name('set-shipping-method');
+        Route::post('set-shipping-method', 'setShippingMethod')->name('set-shipping-method'); // [AI] VM-CUST-014: POST only (was state-changing GET)
         Route::post('choose-shipping-address', 'getChooseShippingAddress')->name('choose-shipping-address');
         Route::post('choose-shipping-address-other', 'getChooseShippingAddressOther')->name('choose-shipping-address-other');
         Route::post('choose-billing-address', 'getChooseShippingAddress')->name('choose-billing-address');

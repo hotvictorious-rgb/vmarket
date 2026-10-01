@@ -6,8 +6,9 @@ use App\Models\User;
 use App\Utils\Helpers;
 use App\Http\Controllers\Controller;
 use App\Models\ShippingAddress;
-use App\Models\ShippingMethod;
 use App\Models\CartShipping;
+use App\Models\Cart;
+use App\Models\DeliveryLane;
 use App\Traits\CommonTrait;
 use App\Utils\CartManager;
 use App\Utils\OrderManager;
@@ -30,26 +31,56 @@ class SystemController extends Controller
 
     public function setShippingMethod(Request $request): JsonResponse
     {
+        // [AI] VM-CUST-014: destination LGA is mandatory — fail closed so no lane-less quote is ever stored.
+        $destinationLgaId = (int) session('customer_lga_id');
+        if ($destinationLgaId < 1) {
+            return response()->json([
+                'status' => 0,
+                'message' => translate('please_select_delivery_location_first'),
+            ], 422);
+        }
         if ($request['cart_group_id'] == 'all_cart_group') {
             foreach (CartManager::get_cart_group_ids() as $groupId) {
                 $request['cart_group_id'] = $groupId;
-                self::insertIntoCartShipping($request);
+                if (!self::insertIntoCartShipping($request, $destinationLgaId)) {
+                    return response()->json([
+                        'status' => 0,
+                        'message' => translate('delivery_not_available_for_your_location'),
+                    ], 422);
+                }
             }
         } else {
-            self::insertIntoCartShipping($request);
+            if (!self::insertIntoCartShipping($request, $destinationLgaId)) {
+                return response()->json([
+                    'status' => 0,
+                    'message' => translate('delivery_not_available_for_your_location'),
+                ], 422);
+            }
         }
         return response()->json(['status' => 1]);
     }
 
-    public static function insertIntoCartShipping($request): void
+    public static function insertIntoCartShipping($request, ?int $destinationLgaId = null): bool
     {
+        $destinationLgaId = $destinationLgaId ?? (int) session('customer_lga_id');
+        // [AI] VM-CUST-014: fee is authoritative from DeliveryLane (origin shop LGA → destination LGA).
+        // Legacy ShippingMethod cost on the client-supplied id is never trusted.
+        $originLgaId = (int) Cart::where(['cart_group_id' => $request['cart_group_id']])
+            ->with('shop')->first()?->shop?->lga_id;
+        if ($originLgaId < 1 || $destinationLgaId < 1) {
+            return false;
+        }
+        $laneFee = DeliveryLane::getDeliveryFee($originLgaId, $destinationLgaId);
+        if ($laneFee === null) {
+            return false;
+        }
         $shipping = CartShipping::where(['cart_group_id' => $request['cart_group_id']])->first();
         if (isset($shipping) == false) {
             $shipping = new CartShipping();
         }
         $shipping['cart_group_id'] = $request['cart_group_id'];
         $shipping['shipping_method_id'] = $request['id'];
-        $shipping['shipping_cost'] = ShippingMethod::find($request['id'])->cost;
+        $shipping['shipping_cost'] = $laneFee;
         $shipping->save();
 
         if (session('coupon_code') && session('coupon_discount')) {
@@ -62,6 +93,8 @@ class SystemController extends Controller
                 session()->forget('coupon_seller_id');
             }
         }
+
+        return true;
     }
 
     /*
