@@ -92,7 +92,20 @@ class VendorPaymentInfoController extends Controller
 
     public function getUpdateView($id): JsonResponse
     {
-        $vendorWithdrawMethods = $this->vendorWithdrawMethodInfoRepo->getListWhere(filters: ['id' => $id], relations: ['withdraw_method']);
+        $vendorId = auth('seller')->id();
+        if (!$vendorId) {
+            return response()->json([
+                'status' => false,
+                'data' => []
+            ], 403);
+        }
+
+        // [AI] Zero-Trust IDOR Guard: Scope lookup to authenticated vendor
+        $vendorWithdrawMethods = $this->vendorWithdrawMethodInfoRepo->getListWhere(
+            filters: ['id' => $id, 'user_id' => $vendorId],
+            relations: ['withdraw_method'],
+            dataLimit: 'all'
+        );
         return response()->json([
             'status' => count($vendorWithdrawMethods) > 0,
             'data' => $vendorWithdrawMethods
@@ -107,9 +120,17 @@ class VendorPaymentInfoController extends Controller
 
     public function updateDefault(Request $request): RedirectResponse
     {
-        $this->vendorWithdrawMethodInfoRepo->updateWhere(params: ['user_id' => auth('seller')->id()], data: ['is_default' => 0]);
+        $vendorId = auth('seller')->id();
+        // [AI] Zero-Trust IDOR Guard: Verify ownership before mutating default status
+        $method = $this->vendorWithdrawMethodInfoRepo->getFirstWhere(params: ['id' => $request['id'], 'user_id' => $vendorId]);
+        if (!$method) {
+            ToastMagic::error(translate("Payment_method_not_found_or_unauthorized"));
+            return redirect()->back();
+        }
+
+        $this->vendorWithdrawMethodInfoRepo->updateWhere(params: ['user_id' => $vendorId], data: ['is_default' => 0]);
         $this->vendorWithdrawMethodInfoRepo->updateWhere(
-            params: ['id' => $request['id']],
+            params: ['id' => $request['id'], 'user_id' => $vendorId],
             data: ['is_default' => 1, 'is_active' => 1]
         );
         ToastMagic::success(translate("Payment_method_set_as_default"));
@@ -119,7 +140,18 @@ class VendorPaymentInfoController extends Controller
 
     public function updateStatus(Request $request): RedirectResponse
     {
-        $this->vendorWithdrawMethodInfoRepo->updateWhere(params: ['id' => $request['id']], data: ['is_active' => $request['status'] ?? 0]);
+        $vendorId = auth('seller')->id();
+        // [AI] Zero-Trust IDOR Guard: Verify ownership before mutating status
+        $method = $this->vendorWithdrawMethodInfoRepo->getFirstWhere(params: ['id' => $request['id'], 'user_id' => $vendorId]);
+        if (!$method) {
+            ToastMagic::error(translate("Payment_method_not_found_or_unauthorized"));
+            return redirect()->back();
+        }
+
+        $this->vendorWithdrawMethodInfoRepo->updateWhere(
+            params: ['id' => $request['id'], 'user_id' => $vendorId],
+            data: ['is_active' => $request['status'] ?? 0]
+        );
         ToastMagic::success(translate("status_updated_successfully"));
         return redirect()->back();
     }

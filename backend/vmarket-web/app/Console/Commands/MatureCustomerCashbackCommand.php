@@ -11,7 +11,7 @@ use Illuminate\Support\Facades\Log;
  * [AI] Mature Customer Cashback Reward Ledgers Command.
  *
  * Automatically matures 5% customer cashback reward records from 'pending' to 'available'
- * once the 7-day return inspection period has elapsed (available_at <= now()).
+ * once the 24-hour return inspection period has elapsed (available_at <= now()).
  *
  * Schedule: Daily in bootstrap/app.php or Kernel.php.
  */
@@ -29,7 +29,7 @@ class MatureCustomerCashbackCommand extends Command
      *
      * @var string
      */
-    protected $description = '[AI] Automatically transition eligible customer cashback rewards from pending to available after the 7-day inspection window';
+    protected $description = '[AI] Automatically transition eligible customer cashback rewards from pending to available after the 24-hour inspection window';
 
     /**
      * Execute the console command.

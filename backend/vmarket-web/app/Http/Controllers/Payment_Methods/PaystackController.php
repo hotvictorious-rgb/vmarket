@@ -89,8 +89,8 @@ class PaystackController extends Controller
 
         $url = "https://api.paystack.co/transaction/initialize";
 
-        // High-Entropy Cryptographic Reference: Collision-Free Within Same Second (Step 2 - L)
-        $highEntropyReference = 'VM_' . \Illuminate\Support\Str::orderedUuid()->toString();
+        // High-Entropy Cryptographic Reference: Collision-Free Within Same Second (Canonical VM- hyphen format)
+        $highEntropyReference = 'VM-' . \Illuminate\Support\Str::orderedUuid()->toString();
 
         $fields = [
             'email' => $payer['email'] ?? "customer@email.com",
