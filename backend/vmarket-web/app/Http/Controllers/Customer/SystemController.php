@@ -93,6 +93,8 @@ class SystemController extends Controller
                 session()->forget('coupon_seller_id');
             }
         }
+
+        return true;
     }
 
     /*
