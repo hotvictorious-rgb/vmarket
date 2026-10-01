@@ -4,6 +4,11 @@
 * **3. Paystack Reference SSOT:** Unified Paystack reference generation in `PaystackController.php` to canonical `VM-{orderedUuid}` hyphen format without underscore drift.
 * **4. Architecture & Test Runner Honesty:** Updated `ARCHITECTURE.md` and `.ai/status/BASELINE.md` to reflect Laravel 12.x on PHP 8.2+. Upgraded `scripts/tests/run-all.ps1` with real execution for integration, regression, and build verification, replacing fake passes on out-of-scope platforms with honest reviewer-approved N/A annotations.
 * **5. Release Gate & Verification:** 10 real suites PASS, 7 honest N/A. Gate verified 100% (18/18) at `eab28899`. Merged `backend/VM-CASH-001` into `v1` via `merge-release.ps1` (`9f0770f2`), tagged `RELEASE-2026-09-30-008`.
+### [2026-09-30 21:30 UTC] VM-VEND-IDOR-001 CLOSED: payout IDOR eliminated (RELEASE-2026-09-30-009, ticket RELEASED) [backend] [AI]
+* **1. Fix:** ownership-first load + 403 + user_id-scoped writes on all 5 payout-mutating methods (Web + API). Hostile default/status flips now impossible; owner flows unchanged.
+* **2. Proof:** scratch IDOR proof re-executed live 9/9 (hostile 403s, victim rows intact, owner 200s); run-all 17/17 PASS at `3b0d4380`; gate 18/18 PASS; review APPROVED. Completed cross-worktree per human order (branch synced, evidence produced here).
+* **3. Release:** merged `backend/VM-VEND-IDOR-001` into `v1` --no-ff (`3345c612`, rebased onto 008 line); ticket → `released/`; manifest + review recorded. Tag 009.
+* **4. Verification:** release executed in isolated worktree; all worktrees left clean.
 
 ### [2026-09-30 20:45 UTC] VM-VEND-002 backend proof stage Released: vendor onboarding journey suite (RELEASE-2026-09-30-007) [backend] [AI]
 * **1. Proof:** VendorOnboardingProofTest 31/31 (register Uyo-142 → approve → publish/fresh/purchasable → rival IDOR exclusion → stock → order → cross-tenant exclusion → ack+history → rollback, Δ=0.00); run-all 17/17 PASS at `2c263d82` (XAMP PHP, live run + binding re-validated); gate 18/18 PASS; review APPROVED.
