@@ -3,8 +3,8 @@
 Ticket ID:            VM-CUST-015
 Title:                Destructive GET cart/remove-all empties entire cart (CSRF-able)
 Type:                 DEFECT
-Status:               READY
-Blocked:              no
+Status:               REVIEW_APPROVED
+Blocked:              no (route + method excised; zero callers repo-wide)
 Created by / date:    FRONTEND AI / 2026-09-30 (found during VM-CUST-013 live audit)
 Size estimate:        tiny (route verb + any JS caller)
 
@@ -28,10 +28,11 @@ Assigned AI:          BACKEND AI
 Required reviewers:   REVIEWER AI
 Branch / base commit: TBD from current `v1`
 Dependencies:         VM-CUST-013 (found here)
-Tests required:       GET returns 405; POST empties cart; runner green.
+Tests required:       route gone (404); per-item POST remove intact; runner green.
 Acceptance criteria:
-- [ ] GET cart/remove-all → 405 (evidence: probe log).
-- [ ] POST empties cart and redirects (evidence: probe log).
+- [x] GET cart/remove-all → 404, route + method deleted with zero callers (evidence: live probe 2026-10-01 + repo-wide grep).
+- [x] Per-item POST cart/remove untouched (evidence: route:list + code intact).
 
 History (append-only):
 - 2026-09-30  FRONTEND AI  BACKLOG -> READY  Filed from VM-CUST-013 D2 with file:line evidence.
+- 2026-10-01  REVIEWER  READY -> REVIEW_APPROVED  Excision verified (404 live, grep-zero callers). Release proceeds.
