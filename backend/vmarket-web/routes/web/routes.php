@@ -263,7 +263,7 @@ Route::group(['prefix' => 'cart', 'as' => 'cart.'], function () {
         Route::post('add-all-to-cart', 'addAllToCartFromWishtList')->name('add-all-to-cart');
         Route::post('update-variation', 'update_variation')->name('update-variation'); //theme fashion
         Route::post('remove', 'removeFromCart')->name('remove');
-        Route::get('remove-all', 'remove_all_cart')->name('remove-all'); //theme fashion
+        // [AI] VM-CUST-015: remove-all route excised (was destructive state-changing GET, zero callers; per-item POST remove remains)
         Route::post('nav-cart-items', 'updateNavCart')->name('nav-cart');
         Route::post('floating-nav-cart-items', 'update_floating_nav')->name('floating-nav-cart-items'); // theme fashion floating nav
         Route::post('updateQuantity', 'updateQuantity')->name('updateQuantity');
