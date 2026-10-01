@@ -147,10 +147,13 @@ function setShippingIdFunction(){
         setShippingId(Id, cartGroupId);
     })
     function setShippingId(Id, cartGroupId) {
-        $.get({
+        // [AI] VM-CUST-014: POST with CSRF (was state-changing GET)
+        $.ajax({
             url: $('#set-shipping-url').data('url'),
+            method: 'POST',
             dataType: 'json',
             data: {
+                _token: $('meta[name="_token"]').attr('content'),
                 id: Id,
                 cart_group_id: cartGroupId
             },
@@ -159,6 +162,11 @@ function setShippingIdFunction(){
             },
             success: function () {
                 location.reload();
+            },
+            error: function (xhr) {
+                if (window.toastr && xhr.responseJSON && xhr.responseJSON.message) {
+                    toastr.error(xhr.responseJSON.message);
+                }
             },
             complete: function () {
                 $('#loading').removeClass('d-grid');
