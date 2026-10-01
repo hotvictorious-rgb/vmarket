@@ -1,3 +1,9 @@
+### [2026-10-01 10:00 UTC] VM-CUST-015 CLOSED: destructive GET excised (RELEASE-2026-10-01-013, ticket RELEASED) [backend] [AI]
+* **1. Fix:** deleted cart/remove-all GET route + controller method (zero callers repo-wide; per-item POST remove intact); removed stale ready/VM-CUST-014.md duplicate left by 012 close.
+* **2. Proof:** live probe GET → 404; grep-zero callers; run-all 10 executed suites PASS + honest N/As at `ba047adb`; gate 18/18 PASS; review APPROVED.
+* **3. Release:** merged `backend/VM-CUST-015` into `v1` --no-ff (`35808df1`); ticket → `released/`; manifest + review recorded.
+* **4. Verification:** release executed in isolated worktree; shared tree left untouched.
+
 ### [2026-10-01 09:30 UTC] VM-CUST-014 CLOSED: lane-authority shipping setter (RELEASE-2026-10-01-012, ticket RELEASED) [backend] [AI]
 * **1. Fix:** set-shipping-method POST-only + 422 fail-closed without destination LGA + fee from DeliveryLane (legacy ShippingMethod cost removed with import); JS caller POST+CSRF+422 toast; node --check clean.
 * **2. Proof:** live probes (GET 405, POST lane fee 500 = lane with tampered id, 422 paths); probe caught missing-return 500 pre-release, fix-forward re-proven; run-all 10 executed suites PASS + honest N/As at `2dca4397`; gate 18/18 PASS; review APPROVED.
