@@ -477,18 +477,7 @@ class CartController extends Controller
         return self::addToCartPhysicalProduct($request, $product);
     }
 
-    public function remove_all_cart()
-    {
-        $user = Helpers::getCustomerInformation();
-
-        Cart::where([
-            'customer_id' => ($user == 'offline' ? session('guest_id') : auth('customer')->id()),
-            'is_guest' => ($user == 'offline' ? 1 : '0'),
-        ])->delete();
-        return redirect()->back();
-    }
-
-
+    // [AI] VM-CUST-015: remove_all_cart excised (was destructive GET with zero callers; per-item POST removeFromCart remains)
     public function updateCheckedCartItems(Request $request): JsonResponse
     {
         $user = Helpers::getCustomerInformation();
