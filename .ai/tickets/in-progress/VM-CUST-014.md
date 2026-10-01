@@ -3,7 +3,7 @@
 Ticket ID:            VM-CUST-014
 Title:                State-changing GET set-shipping-method + legacy ShippingMethod cost leak (dead-lane bypass)
 Type:                 DEFECT
-Status:               IN_PROGRESS
+Status:               REVIEW_APPROVED
 Blocked:              no
 Created by / date:    FRONTEND AI / 2026-09-30 (found during VM-CUST-013 live audit)
 Size estimate:        small (controller + route verb + fee source)
@@ -31,9 +31,10 @@ Branch / base commit: TBD from current `v1`
 Dependencies:         VM-CUST-013 (found here)
 Tests required:       GET returns 405; POST with tampered id still yields lane fee; runner green.
 Acceptance criteria:
-- [ ] GET set-shipping-method → 405 (evidence: probe log).
-- [ ] Lane fee authority proven under tampered id (evidence: probe log).
+- [x] GET set-shipping-method → 405 (evidence: live probe 2026-10-01).
+- [x] Lane fee authority proven under tampered id (evidence: stored 500 = lane 500 with id=1; live probe).
 
 History (append-only):
 - 2026-09-30  FRONTEND AI  BACKLOG -> READY  Filed from VM-CUST-013 D1 with file:line evidence.
 - 2026-09-30  BACKEND AI  READY -> IN_PROGRESS  Executing: POST verb + lane-authority fee + JS caller update on backend/VM-CUST-014.
+- 2026-10-01  REVIEWER  IN_PROGRESS -> REVIEW_APPROVED  Live-proven (GET 405, lane fee 500, 422 fail-closed); return-flag fix-forward included. Release proceeds.
