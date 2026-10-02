@@ -575,6 +575,10 @@ class _AddNewAddressScreenState extends State<AddNewAddressScreen> {
                                     showCustomSnackBarWidget('Please select an LGA (Local Government Area)', Get.context!, snackBarType: SnackBarType.warning);
                                     return;
                                   }
+                                  if (!addressController.isStateLgaMatched()) {
+                                    showCustomSnackBarWidget('Selected LGA does not belong to the chosen State', Get.context!, snackBarType: SnackBarType.warning);
+                                    return;
+                                  }
 
                                   AddressModel addressModel = AddressModel(
                                     addressType: addressController.addressTypeList[addressController.selectAddressIndex].title,
