@@ -16,22 +16,54 @@ return new class extends Migration
     public function up(): void
     {
         Schema::table('sellers', function (Blueprint $table) {
-            $table->string('business_type', 20)->default('individual')->after('l_name');
-            $table->string('legal_name', 255)->nullable()->after('business_type');
-            $table->string('country_code', 10)->nullable()->after('phone');
-            $table->string('nin', 30)->nullable()->after('country_code');
-            $table->string('nin_document', 255)->nullable()->after('nin');
-            $table->string('cac_number', 60)->nullable()->after('nin_document');
-            $table->string('cac_document', 255)->nullable()->after('cac_number');
-            $table->string('cac_status', 20)->default('pending')->after('cac_document');
-            $table->string('kyc_status', 20)->default('pending')->after('cac_status');
-            $table->string('verification_method', 40)->nullable()->after('kyc_status');
-            $table->unsignedBigInteger('verified_by')->nullable()->after('verification_method');
-            $table->timestamp('verified_at')->nullable()->after('verified_by');
-            $table->text('verification_notes')->nullable()->after('verified_at');
-            $table->string('payout_status', 20)->default('pending')->after('verification_notes');
-            $table->timestamp('marketplace_applied_at')->nullable()->after('payout_status');
-            $table->timestamp('marketplace_approved_at')->nullable()->after('marketplace_applied_at');
+            if (!Schema::hasColumn('sellers', 'business_type')) {
+                $table->string('business_type', 20)->default('individual')->after('l_name');
+            }
+            if (!Schema::hasColumn('sellers', 'legal_name')) {
+                $table->string('legal_name', 255)->nullable()->after('business_type');
+            }
+            if (!Schema::hasColumn('sellers', 'country_code')) {
+                $table->string('country_code', 10)->nullable()->after('phone');
+            }
+            if (!Schema::hasColumn('sellers', 'nin')) {
+                $table->string('nin', 30)->nullable()->after('country_code');
+            }
+            if (!Schema::hasColumn('sellers', 'nin_document')) {
+                $table->string('nin_document', 255)->nullable()->after('nin');
+            }
+            if (!Schema::hasColumn('sellers', 'cac_number')) {
+                $table->string('cac_number', 60)->nullable()->after('nin_document');
+            }
+            if (!Schema::hasColumn('sellers', 'cac_document')) {
+                $table->string('cac_document', 255)->nullable()->after('cac_number');
+            }
+            if (!Schema::hasColumn('sellers', 'cac_status')) {
+                $table->string('cac_status', 20)->default('pending')->after('cac_document');
+            }
+            if (!Schema::hasColumn('sellers', 'kyc_status')) {
+                $table->string('kyc_status', 20)->default('pending')->after('cac_status');
+            }
+            if (!Schema::hasColumn('sellers', 'verification_method')) {
+                $table->string('verification_method', 40)->nullable()->after('kyc_status');
+            }
+            if (!Schema::hasColumn('sellers', 'verified_by')) {
+                $table->unsignedBigInteger('verified_by')->nullable()->after('verification_method');
+            }
+            if (!Schema::hasColumn('sellers', 'verified_at')) {
+                $table->timestamp('verified_at')->nullable()->after('verified_by');
+            }
+            if (!Schema::hasColumn('sellers', 'verification_notes')) {
+                $table->text('verification_notes')->nullable()->after('verified_at');
+            }
+            if (!Schema::hasColumn('sellers', 'payout_status')) {
+                $table->string('payout_status', 20)->default('pending')->after('verification_notes');
+            }
+            if (!Schema::hasColumn('sellers', 'marketplace_applied_at')) {
+                $table->timestamp('marketplace_applied_at')->nullable()->after('payout_status');
+            }
+            if (!Schema::hasColumn('sellers', 'marketplace_approved_at')) {
+                $table->timestamp('marketplace_approved_at')->nullable()->after('marketplace_applied_at');
+            }
         });
 
         // Backfill: every existing seller is an individual with pending verification.

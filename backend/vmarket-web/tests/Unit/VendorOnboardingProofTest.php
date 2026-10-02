@@ -229,6 +229,16 @@ try {
     echo "\n--- STAGE 5: CUSTOMER ORDER PLACEMENT FOR VENDOR ---\n";
 
     $customer = User::where('email', 'like', 'cust01@vmarket.%')->first();
+    if (!$customer) {
+        $customer = User::create([
+            'f_name' => 'Customer',
+            'l_name' => 'One',
+            'email' => 'cust01@vmarket.ng',
+            'phone' => '08011112222',
+            'password' => bcrypt('password123'),
+            'is_active' => 1,
+        ]);
+    }
     assertAudit("Customer 1 located for placing test order", $customer !== null);
 
     $orderGroupId = 'OG-TEST-' . strtoupper(Str::random(10));
