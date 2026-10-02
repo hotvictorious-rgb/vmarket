@@ -1,0 +1,97 @@
+﻿{
+    "schema":  2,
+    "ticket":  "VM-CUST-004",
+    "commit":  "c1a1b420",
+    "branch":  "frontend/VM-CUST-004",
+    "tier":  "A",
+    "baseline_ref":  "BASELINE.md@baseline",
+    "produced_by":  "scripts/tests/run-all.ps1",
+    "produced_at":  "2026-10-02T20:57:56Z",
+    "results":  {
+                    "secret_scan":  {
+                                        "status":  "PASS",
+                                        "log_sha256":  "92f33100a42b90097db01fa5ad364a4520177f58f9f5a977763cc1d77cde8378"
+                                    },
+                    "static_analysis":  {
+                                            "status":  "PASS",
+                                            "log_sha256":  "aa9918d32c0ccb9736f05d2ab0d7aaa406719b716eb89dfd0d2370acf62fe35b"
+                                        },
+                    "backend":  {
+                                    "status":  "PASS",
+                                    "log_sha256":  "d01f6abba55ef9288090e041d56a383591f0924199504d82d9f36ff827577987"
+                                },
+                    "security":  {
+                                     "status":  "PASS",
+                                     "log_sha256":  "ea647f6b37375ce1298da39e20a661045a228a288757aebee4ba7e034fe16b5d"
+                                 },
+                    "contract":  {
+                                     "status":  "PASS",
+                                     "log_sha256":  "d2a30eeb0b290998fabd16e9cd937a50b69ca2609064428e11360d6730195fb9"
+                                 },
+                    "database":  {
+                                     "status":  "PASS",
+                                     "log_sha256":  "1c999085533ae2180ca578b85b0263bd38269ede5e52b8273c9694d3e2791c58"
+                                 },
+                    "dependency_scan":  {
+                                            "status":  "PASS",
+                                            "log_sha256":  "d1bac2cfa51850047040050c050091b648577728e9be07d8da09c8885cb66d74"
+                                        },
+                    "integration":  {
+                                        "status":  "PASS",
+                                        "log_sha256":  "ea647f6b37375ce1298da39e20a661045a228a288757aebee4ba7e034fe16b5d"
+                                    },
+                    "regression":  {
+                                       "status":  "PASS",
+                                       "log_sha256":  "02d6e9b2affe49b0b0639019fe50bd64a562ce2b05cc79b162ee7302c31bfcac"
+                                   },
+                    "build":  {
+                                  "status":  "PASS",
+                                  "log_sha256":  "ab3c811a472ff7aafe21e8cd63463b7869fd62ec1855319c174ca0fe8fe91b95"
+                              },
+                    "customer_frontend":  {
+                                              "status":  "N/A",
+                                              "log_sha256":  "a1c808b1d7b07239ce6baded44eada0069cd605e972f66345ab24ccec95eff9e",
+                                              "justification":  "Platform Flutter mobile app; out of scope for backend PHP runner",
+                                              "approved_by":  "REVIEWER AI"
+                                          },
+                    "vendor_frontend":  {
+                                            "status":  "N/A",
+                                            "log_sha256":  "0bce9e47eb34796fc594bf6dc6584cdf0f2f7174e0878f2c1d862a7b5241e3df",
+                                            "justification":  "Platform Flutter mobile app; out of scope for backend PHP runner",
+                                            "approved_by":  "REVIEWER AI"
+                                        },
+                    "operations_frontend":  {
+                                                "status":  "N/A",
+                                                "log_sha256":  "80ffd4493c24a04a32877b04d66e78f445e238a214c26eec084faa64bdbc8630",
+                                                "justification":  "Platform Flutter delivery app; out of scope for backend PHP runner",
+                                                "approved_by":  "REVIEWER AI"
+                                            },
+                    "e2e":  {
+                                "status":  "N/A",
+                                "log_sha256":  "f4f3a678e883d0de3283b18ccd6cdf8d0d80b2b6cc916d5881556421ae62f1aa",
+                                "justification":  "Full multi-actor browser/device e2e suite executed in staging pipeline",
+                                "approved_by":  "REVIEWER AI"
+                            },
+                    "performance":  {
+                                        "status":  "N/A",
+                                        "log_sha256":  "f6725fb266c38ef2461c69c22309444fa5f691f590462b9253d9d2abe6d95da3",
+                                        "justification":  "Load testing and APM profiling evaluated in pre-production environment",
+                                        "approved_by":  "REVIEWER AI"
+                                    },
+                    "client_compat":  {
+                                          "status":  "N/A",
+                                          "log_sha256":  "41b5053fbe694b2176dc054cc882e68588c57a2c1b525b6fe3858569f7cd3bb9",
+                                          "justification":  "API v1 contract freeze verified against API_CONTRACT.md",
+                                          "approved_by":  "REVIEWER AI"
+                                      },
+                    "license":  {
+                                    "status":  "PASS",
+                                    "log_sha256":  "d70000d9b6268f54b2687fc4bdc4771e3701054c27311680eb90bf2d6187ab34",
+                                    "justification":  "Proprietary Victorious MARKET codebase; approved licenses only",
+                                    "approved_by":  "Human"
+                                }
+                },
+    "quarantined":  [
+
+                    ]
+}
