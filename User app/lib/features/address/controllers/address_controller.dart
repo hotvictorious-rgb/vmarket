@@ -258,9 +258,28 @@ class AddressController with ChangeNotifier {
     notifyListeners();
   }
 
+  String? _geographyErrorMessage;
+  String? get geographyErrorMessage => _geographyErrorMessage;
+
+  void clearGeographyError() {
+    _geographyErrorMessage = null;
+    notifyListeners();
+  }
+
+  bool isStateLgaMatched({StateModel? state, LgaModel? lga}) {
+    final s = state ?? _selectedState;
+    final l = lga ?? _selectedLga;
+    if (s == null || l == null) return true;
+    if (s.id != null && l.stateId != null) {
+      return s.id == l.stateId;
+    }
+    return true;
+  }
+
   void setSelectedState(StateModel? state, {bool loadLgas = true}) {
     _selectedState = state;
     _selectedLga = null;
+    _geographyErrorMessage = null;
     _lgaList = [];
     if (loadLgas && state?.id != null) {
       getLgas(state!.id!);
@@ -268,9 +287,19 @@ class AddressController with ChangeNotifier {
     notifyListeners();
   }
 
-  void setSelectedLga(LgaModel? lga) {
+  bool setSelectedLga(LgaModel? lga) {
+    if (lga != null && _selectedState != null && lga.stateId != null && _selectedState!.id != null) {
+      if (lga.stateId != _selectedState!.id) {
+        _geographyErrorMessage = 'Selected LGA does not belong to the chosen State (${_selectedState!.name ?? ''})';
+        _selectedLga = null;
+        notifyListeners();
+        return false;
+      }
+    }
+    _geographyErrorMessage = null;
     _selectedLga = lga;
     notifyListeners();
+    return true;
   }
 
   Future<void> initEditAddress(AddressModel address) async {
