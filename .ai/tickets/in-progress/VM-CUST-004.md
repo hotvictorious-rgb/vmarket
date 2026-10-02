@@ -3,8 +3,8 @@
 Ticket ID:            VM-CUST-004
 Title:                Customer Cart Widget Proof — Qty, Selection, Summary CTA Contract
 Type:                 FEATURE
-Status:               IN_PROGRESS
-Blocked:              no (AI-2 staffed 2026-09-25, branch ai2/VM-CUST-004 @9e1758eb)
+Status:               RELEASE_CANDIDATE
+Blocked:              no
 Created by / date:    AI-8 / 2026-09-25
 Size estimate:        ~300 lines (1 test file + minor test hooks)
 
