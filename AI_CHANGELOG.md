@@ -1,3 +1,8 @@
+### [2026-10-02 22:00 UTC] VM-CUST-005 CLOSED: customer address Country-State-LGA cascade & mismatch guard (RELEASE-2026-10-02-002, ticket RELEASED) [user-app] [AI]
+* **1. Implementation:** Implemented production mismatch guard in `AddressController` (`isStateLgaMatched()` and `setSelectedLga`) and `AddNewAddressScreen`. Implemented comprehensive test suite in `User app/test/address_lga_test.dart` (valid Nigeria -> Akwa Ibom -> Uyo cascade with Abak/Eket/Ikot Abasi/Ikot Ekpene/Oron, client-side mismatch rejection with error messaging, zero fee/origin fields in save payload, zero-trust IDOR ownership scoping, free-text address without leaking logistics hubs).
+* **2. Proof:** 18/18 frontend customer tests pass; flutter analyze clean (0 issues); unified test runner 10/10 suites PASS at `e987a59f`; gate 18/18 PASS; review APPROVED.
+* **3. Release:** merged `frontend/VM-CUST-005` into `v1` --no-ff (`ac2307b7`); ticket → `released/`; manifest + review recorded (RELEASE-2026-10-02-002).
+
 ### [2026-10-02 21:00 UTC] VM-CUST-004 CLOSED: customer cart journey widget proofs (RELEASE-2026-10-02-001, ticket RELEASED) [user-app] [AI]
 * **1. Implementation:** Added comprehensive widget and contract test suite in `User app/test/cart_journey_test.dart` (qty +/- buttons, decrement at minOrderQty calling `removeFromCartAPI`, checkbox toggles, backend cart_totals and 5% cashback assertions with zero client delivery fee calculation, empty cart CTA, and quantity fuzzing).
 * **2. Proof:** 13/13 frontend customer tests pass in 2.2s; flutter analyze clean (0 issues); unified test runner 10/10 suites PASS at `26753984`; gate 18/18 PASS; review APPROVED.

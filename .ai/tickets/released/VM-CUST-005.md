@@ -3,7 +3,7 @@
 Ticket ID:            VM-CUST-005
 Title:                Customer Address LGA Widget Proof — Country-State-LGA Cascade
 Type:                 FEATURE
-Status:               RELEASE_CANDIDATE
+Status:               RELEASED
 Blocked:              no
 Created by / date:    AI-8 / 2026-09-25
 Size estimate:        ~250 lines (1 test file + fixtures)
