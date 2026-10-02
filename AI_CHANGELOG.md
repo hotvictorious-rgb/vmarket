@@ -1,3 +1,8 @@
+### [2026-10-02 21:00 UTC] VM-CUST-004 CLOSED: customer cart journey widget proofs (RELEASE-2026-10-02-001, ticket RELEASED) [user-app] [AI]
+* **1. Implementation:** Added comprehensive widget and contract test suite in `User app/test/cart_journey_test.dart` (qty +/- buttons, decrement at minOrderQty calling `removeFromCartAPI`, checkbox toggles, backend cart_totals and 5% cashback assertions with zero client delivery fee calculation, empty cart CTA, and quantity fuzzing).
+* **2. Proof:** 13/13 frontend customer tests pass in 2.2s; flutter analyze clean (0 issues); unified test runner 10/10 suites PASS at `26753984`; gate 18/18 PASS; review APPROVED.
+* **3. Release:** merged `frontend/VM-CUST-004` into `v1` --no-ff (`0cb8ca05`); ticket → `released/`; manifest + review recorded (RELEASE-2026-10-02-001).
+
 ### [2026-10-01 10:00 UTC] VM-CUST-015 CLOSED: destructive GET excised (RELEASE-2026-10-01-013, ticket RELEASED) [backend] [AI]
 * **1. Fix:** deleted cart/remove-all GET route + controller method (zero callers repo-wide; per-item POST remove intact); removed stale ready/VM-CUST-014.md duplicate left by 012 close.
 * **2. Proof:** live probe GET → 404; grep-zero callers; run-all 10 executed suites PASS + honest N/As at `ba047adb`; gate 18/18 PASS; review APPROVED.

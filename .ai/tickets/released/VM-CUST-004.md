@@ -3,7 +3,7 @@
 Ticket ID:            VM-CUST-004
 Title:                Customer Cart Widget Proof — Qty, Selection, Summary CTA Contract
 Type:                 FEATURE
-Status:               RELEASE_CANDIDATE
+Status:               RELEASED
 Blocked:              no
 Created by / date:    AI-8 / 2026-09-25
 Size estimate:        ~300 lines (1 test file + minor test hooks)
