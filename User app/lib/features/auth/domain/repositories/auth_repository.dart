@@ -323,11 +323,11 @@ class AuthRepository implements AuthRepoInterface{
 
 
   @override
-  Future<ApiResponseModel> registerWithSocialMedia(String name, {required String email,String? phone}) async {
+  Future<ApiResponseModel> registerWithSocialMedia(String name, {required String email, String? phone, String? tempToken}) async {
     try {
       Response response = await dioClient!.post(
         AppConstants.registerWithSocialMedia,
-        data: {"name": name, "email": email, "phone": phone},
+        data: {"name": name, "email": email, "phone": phone, "temp_token": tempToken},
       );
       return ApiResponseModel.withSuccess(response);
     } catch (e) {

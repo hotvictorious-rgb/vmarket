@@ -704,11 +704,11 @@ class AuthController with ChangeNotifier {
     return (responseModel, tempToken);
   }
 
-  Future<(ResponseModel, String?)> registerWithSocialMedia (String name, {required String email, String? phone}) async {
+  Future<(ResponseModel, String?)> registerWithSocialMedia (String name, {required String email, String? phone, String? tempToken}) async {
     _isPhoneNumberVerificationButtonLoading = true;
     _loginErrorMessage = '';
     notifyListeners();
-    ApiResponseModel apiResponse  = await authServiceInterface.registerWithSocialMedia(name, email: email, phone: phone);
+    ApiResponseModel apiResponse  = await authServiceInterface.registerWithSocialMedia(name, email: email, phone: phone, tempToken: tempToken);
     ResponseModel responseModel;
     String? token;
     String? tempToken;

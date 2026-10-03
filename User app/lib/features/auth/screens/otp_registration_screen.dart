@@ -202,7 +202,7 @@ class _OtpRegistrationScreenState extends State<OtpRegistrationScreen> {
                                         }else {
                                           phone = countryCode! + phone;
 
-                                          authProvider.registerWithSocialMedia(name, email: widget.userInput, phone: phone).then((value) {
+                                          authProvider.registerWithSocialMedia(name, email: widget.userInput, phone: phone, tempToken: widget.tempToken).then((value) {
                                             final (responseModel, tempToken) = value;
                                             if(responseModel.isSuccess && tempToken == null) {
                                               authProvider.saveUserEmailAndPassword(UserLogData(
