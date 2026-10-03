@@ -70,6 +70,10 @@
                                                                    value="{{ auth('customer')->check() ? auth('customer')->id() : session('guest_id') }}">
                                                             <input type="text" hidden name="customer_id"
                                                                    value="{{ auth('customer')->check() ? auth('customer')->id() : session('guest_id') }}">
+                                                            <input type="text" hidden name="address_id"
+                                                                   value="{{ session('address_id') }}">
+                                                            <input type="text" hidden name="billing_address_id"
+                                                                   value="{{ session('billing_address_id') }}">
                                                             <input type="radio" hidden name="payment_method"
                                                                    value="{{ $payment_gateway->key_name }}"
                                                                    data-form=".checkout-payment-{{ $payment_gateway->key_name }}">

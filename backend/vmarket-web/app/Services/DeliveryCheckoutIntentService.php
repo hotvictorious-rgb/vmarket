@@ -152,11 +152,14 @@ class DeliveryCheckoutIntentService
             foreach ($sortedItems as $item) {
                 $unitPrice = $this->toDecimalString($item->price);
                 $quantity = max(1, (int) $item->quantity);
-                $linePrice = bcmul($unitPrice, (string) $quantity, 2);
-                $lineDiscount = $this->toDecimalString($item->discount ?? '0.00');
-                $lineTax = $this->toDecimalString($item->tax ?? '0.00');
+                $unitDiscount = $this->toDecimalString($item->discount ?? '0.00');
+                $unitTax = $this->toDecimalString($item->tax ?? '0.00');
 
-                // line_total = (unit_price * qty) - discount + tax
+                $linePrice = bcmul($unitPrice, (string) $quantity, 2);
+                $lineDiscount = bcmul($unitDiscount, (string) $quantity, 2);
+                $lineTax = bcmul($unitTax, (string) $quantity, 2);
+
+                // line_total = (unit_price * qty) - (unit_discount * qty) + (unit_tax * qty)
                 $lineTotal = bcadd(bcsub($linePrice, $lineDiscount, 2), $lineTax, 2);
                 $groupItemsSubtotal = bcadd($groupItemsSubtotal, $lineTotal, 2);
 

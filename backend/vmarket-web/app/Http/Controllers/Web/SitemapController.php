@@ -41,7 +41,11 @@ class SitemapController extends Controller
     public function products(): Response
     {
         $baseUrl = config('app.url');
-        $products = Product::where('status', 1)->select('id', 'slug', 'updated_at')->get();
+        $products = Product::active()
+            ->marketplaceEligible()
+            ->select('id', 'slug', 'updated_at', 'added_by', 'marketplace_availability', 'availability_expires_at', 'availability_confirmed_at')
+            ->get()
+            ->filter(fn ($p) => $p->isMarketplacePurchasable());
 
         $xml = '<?xml version="1.0" encoding="UTF-8"?>';
         $xml .= '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">';
@@ -107,13 +111,15 @@ class SitemapController extends Controller
     public function shops(): Response
     {
         $baseUrl = config('app.url');
-        $shops = Shop::where('vacation_status', 0)->select('id', 'slug', 'updated_at')->get();
+        $shops = Shop::whereHas('seller', function ($q) {
+            $q->where('status', 'approved')->where('marketplace_status', 'approved');
+        })->where('temporary_close', 0)->select('id', 'slug', 'updated_at')->get();
 
         $xml = '<?xml version="1.0" encoding="UTF-8"?>';
         $xml .= '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">';
 
         foreach ($shops as $shop) {
-            $loc = $baseUrl . '/shopView/' . $shop->id;
+            $loc = $baseUrl . '/vendor-shop/' . ($shop->slug ?? $shop->id);
             $lastmod = $shop->updated_at ? $shop->updated_at->toAtomString() : date('c');
             $xml .= "<url><loc>{$loc}</loc><lastmod>{$lastmod}</lastmod><changefreq>daily</changefreq><priority>0.7</priority></url>";
         }

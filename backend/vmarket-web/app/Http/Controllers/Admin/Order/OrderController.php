@@ -792,7 +792,16 @@ class OrderController extends BaseController
             'notes' => 'nullable|string|max:500',
         ]);
 
-        $adminId = auth('admin')->id() ?? 1;
+        $admin = auth('admin')->user();
+        $isSuperAdmin = $admin && ($admin->id == 1 || $admin->admin_role_id == 1);
+        if (!$isSuperAdmin) {
+            return response()->json([
+                'status' => false,
+                'message' => translate('Unauthorized. Only Super Administrators can execute manual vendor settlements.'),
+            ], 403);
+        }
+
+        $adminId = $admin->id;
 
         try {
             $result = $settlementService->executeManualSettlement(

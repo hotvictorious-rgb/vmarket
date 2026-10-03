@@ -57,6 +57,20 @@ class InShopHandoverController extends Controller
             return response()->json(['status' => false, 'message' => translate('order_not_found')], 404);
         }
 
+        // Branch Isolation: if employee is assigned to a specific shop, verify order branch
+        $employeeShopId = session('is_vendor_employee') ? (session('vendor_employee_data')['shop_id'] ?? null) : ($request['employee_shop_id'] ?? null);
+        if (!empty($employeeShopId)) {
+            $reservation = \App\Models\PickupReservation::where('order_id', $order->id)->first();
+            if ($reservation && (int) $reservation->shop_id !== (int) $employeeShopId) {
+                $branchMsg = translate('Access Denied: This pickup order belongs to another physical branch.');
+                if ($request->ajax() || $request->wantsJson() || $request->is('api/*')) {
+                    return response()->json(['status' => false, 'message' => $branchMsg], 403);
+                }
+                ToastMagic::error($branchMsg);
+                return back();
+            }
+        }
+
         // [AI] Guard: Order already completed or closed cannot be replayed
         if (in_array($order->order_status, ['delivered', 'canceled', 'returned', 'failed'])) {
             $message = translate('Order_is_already_completed_or_closed.');
@@ -150,6 +164,14 @@ class InShopHandoverController extends Controller
         $branchId = is_object($seller)
             ? ($seller->shop->id ?? null)
             : ($seller['shop']['id'] ?? null);
+
+        if (session('is_vendor_employee') && !empty(session('vendor_employee_data')['shop_id'])) {
+            $branchId = (int) session('vendor_employee_data')['shop_id'];
+            $staffName = (session('vendor_employee_data')['name'] ?? 'Staff') . ' (Staff)';
+        } elseif (!empty($request['employee_shop_id'])) {
+            $branchId = (int) $request['employee_shop_id'];
+            $staffName = ($request['vendor_employee']->name ?? 'Staff') . ' (Staff)';
+        }
 
         DB::transaction(function () use ($order, $sellerId, $staffName, $branchId, $request, $isCustomerPickup) {
             if ($isCustomerPickup) {

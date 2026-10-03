@@ -42,6 +42,38 @@ class PaystackRefundService
     }
 
     /**
+     * Resolves the authoritative Paystack gateway reference for an Order.
+     * New delivery & pickup orders store the Paystack reference in payment_requests.gateway_reference
+     * and an internal OrderManager ID in orders.transaction_ref.
+     */
+    public static function resolvePaystackReferenceForOrder(Order $order): ?string
+    {
+        // 1. Check PaymentRequest via order_group_id
+        if (!empty($order->order_group_id)) {
+            $pr = \App\Models\PaymentRequest::where('order_group_id', $order->order_group_id)
+                ->where('is_paid', 1)
+                ->first();
+            if ($pr && !empty($pr->gateway_reference)) {
+                return $pr->gateway_reference;
+            }
+        }
+
+        // 2. Check if pickup reservation exists
+        $reservation = \App\Models\PickupReservation::where('order_id', $order->id)->first();
+        if ($reservation) {
+            $pr = \App\Models\PaymentRequest::where('active_pickup_reservation_id', $reservation->id)
+                ->orWhere('order_group_id', $reservation->reservation_code)
+                ->first();
+            if ($pr && !empty($pr->gateway_reference)) {
+                return $pr->gateway_reference;
+            }
+        }
+
+        // 3. Fallback to order's transaction_ref (legacy orders)
+        return !empty($order->transaction_ref) ? $order->transaction_ref : null;
+    }
+
+    /**
      * Check for existing refund on Paystack using strict multi-tier correlation hierarchy.
      * FORBIDDEN IDENTITY RULE: Never match by amount alone or transaction+amount alone!
      */
@@ -375,9 +407,19 @@ class PaystackRefundService
 
         // Tier 3: Authoritative fallback via transaction reference and order lookup
         if (!$refundRequest && !empty($txRef)) {
-            $matchedOrder = Order::where('transaction_ref', $txRef)->first();
-            if ($matchedOrder) {
-                $candidates = RefundRequest::where('order_id', $matchedOrder->id)
+            $paymentRequest = \App\Models\PaymentRequest::where('gateway_reference', $txRef)->first();
+            $orderIds = [];
+            if ($paymentRequest && !empty($paymentRequest->order_group_id)) {
+                $orderIds = Order::where('order_group_id', $paymentRequest->order_group_id)->pluck('id')->toArray();
+            }
+            if (empty($orderIds)) {
+                $matchedOrder = Order::where('transaction_ref', $txRef)->first();
+                if ($matchedOrder) {
+                    $orderIds = [$matchedOrder->id];
+                }
+            }
+            if (!empty($orderIds)) {
+                $candidates = RefundRequest::whereIn('order_id', $orderIds)
                     ->whereIn('execution_status', ['pending_provider_processing', 'idle', 'needs_attention'])
                     ->get();
                 if ($candidates->count() === 1) {
@@ -388,7 +430,7 @@ class PaystackRefundService
                     }
                 } elseif ($candidates->count() > 1) {
                     // Ambiguous candidate refunds on order -> Flag for reconciliation rather than guess
-                    Log::warning("[AI] Paystack Refund Webhook: Ambiguous refund requests on Order #{$matchedOrder->id}. Setting reconciliation_required.");
+                    Log::warning("[AI] Paystack Refund Webhook: Ambiguous refund requests on Orders " . json_encode($orderIds) . ". Setting reconciliation_required.");
                     foreach ($candidates as $cand) {
                         $cand->execution_status = 'reconciliation_required';
                         $cand->save();
@@ -414,13 +456,16 @@ class PaystackRefundService
 
         // Transaction reference validation
         $order = Order::find($refundRequest->order_id);
-        if ($order && !empty($txRef) && !empty($order->transaction_ref) && $txRef !== $order->transaction_ref) {
-            Log::warning("[AI] Paystack Refund Webhook: Transaction reference mismatch for RefundRequest #{$refundRequest->id}.");
-            return [
-                'status' => false,
-                'code' => 400,
-                'message' => 'Transaction reference mismatch.',
-            ];
+        if ($order && !empty($txRef)) {
+            $expectedGatewayRef = self::resolvePaystackReferenceForOrder($order);
+            if (!empty($expectedGatewayRef) && $txRef !== $expectedGatewayRef && $txRef !== $order->transaction_ref) {
+                Log::warning("[AI] Paystack Refund Webhook: Transaction reference mismatch for RefundRequest #{$refundRequest->id}. Expected '{$expectedGatewayRef}', got '{$txRef}'.");
+                return [
+                    'status' => false,
+                    'code' => 400,
+                    'message' => 'Transaction reference mismatch.',
+                ];
+            }
         }
 
         // Amount validation

@@ -27,7 +27,7 @@ class RefundStatusService
         ];
     }
 
-    public function getRefundStatusProcessData(object $request, object $orderDetails, object $refund, string|float|int $loyaltyPoint): array
+    public function getRefundStatusProcessData(object $request, object $orderDetails, object $refund, string|float|int $loyaltyPoint = 0): array
     {
         $refundStatus = [
             'refund_request_id' => $refund['id'],

@@ -7,7 +7,7 @@
     $shop = $product->seller?->shop;
     $shopName = $shop?->name ?? (getWebConfig(name: 'company_name') ?? 'Victorious MARKET');
     $shopSlug = $shop?->slug ?? '';
-    $inStock = $product->current_stock > 0;
+    $inStock = $product->isMarketplacePurchasable() && $product->current_stock > 0;
     $images = $product->images_full_url ?? [];
     $mainImage = $product->thumbnail_full_url ?? ['path' => ''];
 @endphp
@@ -143,7 +143,11 @@
                     <div>
                         <strong>{{ translate('Directional LGA Delivery Available') }}</strong>
                         <p style="font-size: 12px; color: var(--vm-text-muted); margin-top: 1px;">
-                            {{ translate('Deliverable directly to your door in Uyo, Eket, and nationwide. Exact fee calculated at checkout based on authoritative delivery lanes.') }}
+                            @if($shop && $shop->lga)
+                                {{ translate('Deliverable from') }} {{ $shop->lga->name }} ({{ $shop->state?->name }}) {{ translate('across active logistics lanes. Enter your destination LGA at checkout to verify route eligibility.') }}
+                            @else
+                                {{ translate('Deliverable across active logistics lanes. Enter your destination LGA at checkout to verify route eligibility.') }}
+                            @endif
                         </p>
                     </div>
                 </div>

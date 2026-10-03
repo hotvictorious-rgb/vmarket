@@ -105,66 +105,111 @@ class DispatchPortalController extends Controller
             'delivery_man_id' => 'required|exists:delivery_men,id',
         ]);
 
-        $deliveryMan = DeliveryMan::withCount(['orders' => function ($q) {
-            $q->whereIn('order_status', ['confirmed', 'processing', 'out_for_delivery']);
-        }])->findOrFail($request->delivery_man_id);
-
+        $customRiderFee = $request->filled('custom_rider_fee') ? (float) $request->custom_rider_fee : null;
+        $batchId = 'BATCH-' . strtoupper(Str::random(6)) . '-' . time();
         $selectedCount = count($request->order_ids);
-        $currentLoad = $deliveryMan->orders_count;
-        $maxCapacity = $deliveryMan->max_active_orders_limit ?? 4;
+        $assignedOrders = [];
+        $deliveryMan = null;
 
-        // Rider Capacity Guard Check
-        if (($currentLoad + $selectedCount) > $maxCapacity) {
-            $availableSlots = max(0, $maxCapacity - $currentLoad);
-            ToastMagic::error(translate("Capacity limit exceeded for {$deliveryMan->f_name}. Available slots: {$availableSlots}, selected: {$selectedCount}. Max capacity is {$maxCapacity}."));
+        try {
+            DB::transaction(function () use ($request, $customRiderFee, $batchId, $selectedCount, &$assignedOrders, &$deliveryMan) {
+                // Lock rider and enforce active status
+                $deliveryMan = DeliveryMan::where('id', $request->delivery_man_id)
+                    ->lockForUpdate()
+                    ->firstOrFail();
+
+                if (isset($deliveryMan->is_active) && !$deliveryMan->is_active) {
+                    throw new \Exception(translate("Selected rider {$deliveryMan->f_name} is currently inactive and cannot be assigned orders."));
+                }
+
+                if (isset($deliveryMan->application_status) && $deliveryMan->application_status !== 'approved') {
+                    throw new \Exception(translate("Selected rider {$deliveryMan->f_name} does not have an approved application."));
+                }
+
+                // Lock and count active orders for capacity
+                $currentLoad = Order::where('delivery_man_id', $deliveryMan->id)
+                    ->whereIn('order_status', ['confirmed', 'processing', 'out_for_delivery'])
+                    ->lockForUpdate()
+                    ->count();
+
+                $maxCapacity = $deliveryMan->max_active_orders_limit ?? 4;
+                if (($currentLoad + $selectedCount) > $maxCapacity) {
+                    $availableSlots = max(0, $maxCapacity - $currentLoad);
+                    throw new \Exception(translate("Capacity limit exceeded for {$deliveryMan->f_name}. Available slots: {$availableSlots}, selected: {$selectedCount}. Max capacity is {$maxCapacity}."));
+                }
+
+                // Lock selected orders
+                $orders = Order::with(['originHub', 'destinationHub'])
+                    ->whereIn('id', $request->order_ids)
+                    ->lockForUpdate()
+                    ->get();
+
+                if ($orders->count() !== $selectedCount) {
+                    throw new \Exception(translate('One or more selected orders could not be found.'));
+                }
+
+                foreach ($orders as $order) {
+                    // 1. Must be delivery type (not pickup)
+                    if ($order->order_type === 'in_house_pickup' || $order->order_type === 'pickup') {
+                        throw new \Exception(translate("Order #{$order->id} is an in-store pickup order and cannot be assigned to a delivery rider."));
+                    }
+
+                    // 2. Must be paid
+                    if ($order->payment_status !== 'paid') {
+                        throw new \Exception(translate("Order #{$order->id} is unpaid. Only paid orders can be dispatched."));
+                    }
+
+                    // 3. Must be in assignable status
+                    if (!in_array($order->order_status, ['confirmed', 'processing'])) {
+                        throw new \Exception(translate("Order #{$order->id} has status '{$order->order_status}'. Only confirmed or processing orders can be dispatched."));
+                    }
+
+                    // Ensure Pickup OTP exists (6 digits, CSPRNG)
+                    if (empty($order->pickup_verification_code)) {
+                        $order->pickup_verification_code = (string) random_int(100000, 999999);
+                    }
+                    // Ensure Delivery OTP exists (6 digits, CSPRNG)
+                    if (empty($order->verification_code)) {
+                        $order->verification_code = (string) random_int(100000, 999999);
+                    }
+
+                    // Standard Rider Payout Fee (capped at order shipping_cost if authority exists)
+                    if ($customRiderFee !== null) {
+                        $order->deliveryman_charge = min($customRiderFee, (float)($order->shipping_cost > 0 ? $order->shipping_cost : $customRiderFee));
+                    } elseif ($order->destinationHub && $order->destinationHub->rider_delivery_fee > 0) {
+                        $order->deliveryman_charge = min((float)$order->destinationHub->rider_delivery_fee, (float)($order->shipping_cost > 0 ? $order->shipping_cost : $order->destinationHub->rider_delivery_fee));
+                    } else {
+                        $isInterstate = ($order->destinationHub && $order->destinationHub->type == 'motor_park')
+                            || ($order->originHub && $order->destinationHub && $order->originHub->lga_id != $order->destinationHub->lga_id);
+                        $defaultFee = $isInterstate ? 1000.00 : 500.00;
+                        $order->deliveryman_charge = min((float)$defaultFee, (float)($order->shipping_cost > 0 ? $order->shipping_cost : $defaultFee));
+                    }
+
+                    $order->delivery_man_id = $deliveryMan->id;
+                    $order->deliveryman_assigned_at = Carbon::now();
+                    $order->batch_dispatch_id = $batchId;
+                    $order->save();
+
+                    $assignedOrders[] = $order;
+                }
+            });
+        } catch (\Throwable $e) {
+            ToastMagic::error($e->getMessage());
             return back();
         }
 
-        // [AI] V1 Invariant: Cash-in-hand is decommissioned. All orders are prepaid digital.
-        $batchId = 'BATCH-' . strtoupper(Str::random(6)) . '-' . time();
-        $customRiderFee = $request->filled('custom_rider_fee') ? (float) $request->custom_rider_fee : null;
-
-        foreach ($request->order_ids as $orderId) {
-            $order = Order::with(['originHub', 'destinationHub'])->find($orderId);
-            if ($order) {
-                // Ensure Pickup OTP exists (6 digits, CSPRNG)
-                if (empty($order->pickup_verification_code)) {
-                    $order->pickup_verification_code = (string) random_int(100000, 999999);
-                }
-                // Ensure Delivery OTP exists (6 digits, CSPRNG)
-                if (empty($order->verification_code)) {
-                    $order->verification_code = (string) random_int(100000, 999999);
-                }
-
-                // [AI] Standard Rider Payout Fee (Independent from Customer Shipping Fee)
-                if ($customRiderFee !== null) {
-                    $order->deliveryman_charge = $customRiderFee;
-                } elseif ($order->destinationHub && $order->destinationHub->rider_delivery_fee > 0) {
-                    $order->deliveryman_charge = $order->destinationHub->rider_delivery_fee;
-                } else {
-                    $isInterstate = ($order->destinationHub && $order->destinationHub->type == 'motor_park')
-                        || ($order->originHub && $order->destinationHub && $order->originHub->lga_id != $order->destinationHub->lga_id);
-                    $order->deliveryman_charge = $isInterstate ? 1000.00 : 500.00;
-                }
-
-                $order->delivery_man_id = $deliveryMan->id;
-                $order->deliveryman_assigned_at = Carbon::now();
-                $order->batch_dispatch_id = $batchId;
-                $order->save();
-
-                // Send Push Notification to Delivery Man
+        // Send Push Notifications outside transaction
+        if ($deliveryMan && !empty($deliveryMan->fcm_token)) {
+            foreach ($assignedOrders as $order) {
                 try {
-                    $fcmToken = $deliveryMan->fcm_token;
-                    if (!empty($fcmToken)) {
-                        $data = [
-                            'title' => translate('New Order Batch Assigned'),
-                            'description' => translate("Order #{$order->id} assigned to you in batch {$batchId}"),
-                            'order_id' => $order->id,
-                            'image' => '',
-                            'type' => 'order',
-                        ];
-                        Helpers::send_push_notif_to_device($fcmToken, $data);
-                    }
+                    $data = [
+                        'title' => translate('New Order Batch Assigned'),
+                        'description' => translate("Order #{$order->id} assigned to you in batch {$batchId}"),
+                        'order_id' => $order->id,
+                        'image' => '',
+                        'type' => 'order',
+                    ];
+                    Helpers::send_push_notif_to_device($deliveryMan->fcm_token, $data);
                 } catch (\Exception $e) {
                     // Fail-safe notification catch
                 }

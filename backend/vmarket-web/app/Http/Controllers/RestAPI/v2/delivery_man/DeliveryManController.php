@@ -78,6 +78,7 @@ class DeliveryManController extends Controller
             ->where(['delivery_man_id' => $deliveryMan['id']])
             ->orderBy('expected_delivery_date', 'asc')
             ->get();
+        $orders->each(fn ($o) => self::sanitizeOrderForRider($o));
         return response()->json($orders, 200);
     }
 
@@ -237,11 +238,13 @@ class DeliveryManController extends Controller
             }
 
             if (isset($deliveryMan['id']) && $request['status'] == 'delivered') {
-                $deliveryManWallet = DeliverymanWallet::where('delivery_man_id', $deliveryMan['id'])->first();
                 $charge = $order->deliveryman_charge ?? 0;
+                $deliveryManWallet = DeliverymanWallet::where('delivery_man_id', $deliveryMan['id'])
+                    ->lockForUpdate()
+                    ->first();
 
                 if (empty($deliveryManWallet)) {
-                    DeliverymanWallet::create([
+                    $deliveryManWallet = DeliverymanWallet::create([
                         'delivery_man_id' => $deliveryMan['id'],
                         'current_balance' => $charge,
                         'cash_in_hand' => 0,
@@ -249,8 +252,7 @@ class DeliveryManController extends Controller
                         'total_withdraw' => 0,
                     ]);
                 } else {
-                    $deliveryManWallet->current_balance += $charge;
-                    $deliveryManWallet->save();
+                    $deliveryManWallet->increment('current_balance', $charge);
                 }
 
                 if ($charge > 0) {
@@ -420,6 +422,7 @@ class DeliveryManController extends Controller
             })
             ->latest()->get();
 
+        $orders->each(fn ($o) => self::sanitizeOrderForRider($o));
         return response()->json($orders, 200);
     }
 
@@ -433,6 +436,7 @@ class DeliveryManController extends Controller
         if (!$order) {
             return response()->json(['message' => translate('order_not_found')], 404);
         }
+        self::sanitizeOrderForRider($order);
         return response()->json($order, 200);
     }
 
@@ -445,7 +449,11 @@ class DeliveryManController extends Controller
             return response()->json(['errors' => Helpers::validationErrorProcessor($validator)], 403);
         }
 
-        $last_data = DeliveryHistory::where(['order_id' => $request['order_id']])->latest()->first();
+        $deliveryMan = $request['delivery_man'];
+        $last_data = DeliveryHistory::where([
+            'order_id' => $request['order_id'],
+            'deliveryman_id' => $deliveryMan['id'],
+        ])->latest()->first();
         return response()->json($last_data, 200);
     }
 
@@ -772,6 +780,12 @@ class DeliveryManController extends Controller
     /**Order Delivery verification */
     public function order_delivery_verification(DeliveryManOrderDeliveryVerificationRequest $request):JsonResponse
     {
+        $deliveryMan = $request['delivery_man'];
+        $order = Order::where(['id' => $request->order_id, 'delivery_man_id' => $deliveryMan['id']])->first();
+        if (!$order) {
+            return response()->json(['message' => translate('order_not_found_or_not_assigned_to_you')], 403);
+        }
+
         if($request->hasFile('image')){
             foreach ($request->file('image') as $key => $img) {
                 $data = [
@@ -808,6 +822,7 @@ class DeliveryManController extends Controller
 
         $fcm_token = $order->customer->cm_firebase_token ?? null;
         $verification_code = rand(100000, 999999);
+        $order->verification_status = 0;
         $order->verification_code = $verification_code;
         if ($order->save()) {
             if (!$order->is_guest && $fcm_token) {
@@ -833,5 +848,21 @@ class DeliveryManController extends Controller
         $delivery_man->save();
 
         return response()->json(['message' => 'Successfully change'], 200);
+    }
+
+    /**
+     * [AI] Sanitize financial margins and order amounts for rider privacy
+     */
+    public static function sanitizeOrderForRider(Order $order): Order
+    {
+        $order->order_amount = 0.00;
+        $order->init_order_amount = 0.00;
+        $order->paid_amount = 0.00;
+        $order->admin_commission = 0.00;
+        $order->discount_amount = 0.00;
+        $order->extra_discount = 0.00;
+        $order->total_tax_amount = 0.00;
+        $order->makeHidden(['admin_commission', 'order_amount', 'init_order_amount', 'paid_amount', 'discount_amount', 'extra_discount', 'total_tax_amount']);
+        return $order;
     }
 }

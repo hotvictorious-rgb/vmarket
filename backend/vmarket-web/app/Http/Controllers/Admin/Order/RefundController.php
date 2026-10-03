@@ -133,23 +133,26 @@ class RefundController extends BaseController
             ], 403);
         }
 
-        if ($request['refund_status'] === 'approved') {
-            $refundRequestModel = RefundRequest::find($refund['id']);
-            if ($order && $order['payment_method'] === 'paystack' && !empty($order['transaction_ref'])) {
-                $paystackRefundService = app(\App\Services\PaystackRefundService::class);
-                $initResult = $paystackRefundService->initiateRefund($refundRequestModel, $order['transaction_ref']);
-                Log::info("[AI] Paystack refund initiated for RefundRequest #{$refund['id']}: " . ($initResult['message'] ?? ''));
-            }
-        }
-
         if ($refund['status'] != 'refunded') {
             $orderDetails = $this->orderDetailRepo->getFirstWhere(params: ['id' => $refund['order_details_id']]);
+            $loyaltyPoint = 0;
             $dataArray = $refundStatusService->getRefundStatusProcessData(request: $request, orderDetails: $orderDetails, refund: $refund, loyaltyPoint: $loyaltyPoint);
-
 
             $this->orderDetailRepo->update(id: $refund['order_details_id'], data: ['refund_request' => $dataArray['orderDetails']['refund_request']]);
             $this->refundRequestRepo->update(id: $request['id'], data: $dataArray['refund']);
             $this->refundStatusRepos->add(data: $dataArray['refundStatus']);
+
+            if ($request['refund_status'] === 'approved') {
+                $refundRequestModel = RefundRequest::find($refund['id']);
+                $orderModel = Order::find($refund['order_id']);
+                $gatewayRef = $orderModel ? \App\Services\PaystackRefundService::resolvePaystackReferenceForOrder($orderModel) : null;
+
+                if ($order && $order['payment_method'] === 'paystack' && !empty($gatewayRef)) {
+                    $paystackRefundService = app(\App\Services\PaystackRefundService::class);
+                    $initResult = $paystackRefundService->initiateRefund($refundRequestModel, $gatewayRef);
+                    Log::info("[AI] Paystack refund initiated for RefundRequest #{$refund['id']}: " . ($initResult['message'] ?? ''));
+                }
+            }
 
             event(new RefundEvent(status: $request['refund_status'], order: $order, refund: $refund, orderDetails: $orderDetails));
             return response()->json(['message' => translate('refund_status_updated') . '.']);

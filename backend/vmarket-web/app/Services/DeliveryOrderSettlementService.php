@@ -336,6 +336,18 @@ class DeliveryOrderSettlementService
 
             $capturedNaira = bcdiv((string) ($gatewayData['amount'] ?? 0), '100', 4);
 
+            // [AI] Idempotency Guard: return existing reconciliation if already recorded
+            $existingRec = PaymentReconciliation::where('gateway_reference', $verifiedReference)->first();
+            if ($existingRec) {
+                return [
+                    'status' => 'reconciliation_required',
+                    'anomaly_type' => $existingRec->initial_anomaly_type,
+                    'message' => $reason,
+                    'reconciliation_case' => $existingRec->case_number,
+                    'payment_request' => $paymentRequest->fresh(),
+                ];
+            }
+
             $reconciliation = PaymentReconciliation::create([
                 'case_number' => 'REC-' . Str::orderedUuid()->toString(),
                 'gateway_reference' => $verifiedReference,

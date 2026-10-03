@@ -198,7 +198,7 @@ class ShopViewController extends Controller
         ])->when($shop['author_type'] == 'admin', function ($query) {
             return $query->where(['added_by' => 'admin']);
         })->when($shop['author_type'] != 'admin', function ($query) use ($shop) {
-            $seller = Seller::find($shop['id']);
+            $seller = $shop->seller ?? Seller::find($shop['seller_id']);
             if ($seller) {
                 return $query->where(['added_by' => 'seller', 'user_id' => $seller->id]);
             } else {
@@ -210,7 +210,7 @@ class ShopViewController extends Controller
             $totalOrder = Order::where('seller_is', 'admin')->where('order_type', 'default_type')->count();
             $products_for_review = Product::active()->where('added_by', 'admin')->withCount('reviews')->count();
         } else {
-            $seller = Seller::find($shop['id']);
+            $seller = $shop->seller ?? Seller::find($shop['seller_id']);
             if ($seller) {
                 $totalOrder = $seller->orders
                     ->where('seller_is', 'seller')

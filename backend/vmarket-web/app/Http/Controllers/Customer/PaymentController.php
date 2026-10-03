@@ -81,6 +81,14 @@ class PaymentController extends Controller
         }
 
         // ── 3. Validate Core Payment Request Params ──────────────────────────────────────────
+        // [AI] Web Storefront Session Fallback: If address_id not submitted in request body, resolve from session
+        if (!$request->filled('address_id') && session()->has('address_id')) {
+            $request->merge(['address_id' => session('address_id')]);
+        }
+        if (!$request->filled('billing_address_id') && session()->has('billing_address_id')) {
+            $request->merge(['billing_address_id' => session('billing_address_id')]);
+        }
+
         $validator = Validator::make($request->all(), [
             'payment_method'   => 'required|string',
             'payment_platform' => 'required|string',

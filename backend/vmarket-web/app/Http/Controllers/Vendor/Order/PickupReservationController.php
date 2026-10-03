@@ -100,7 +100,8 @@ class PickupReservationController extends Controller
 
         $shopId = $request->header('X-Branch-ID')
             ?? $request->input('shop_id')
-            ?? ($request['employee_shop_id'] ?? null);
+            ?? ($request['employee_shop_id'] ?? null)
+            ?? (session('is_vendor_employee') ? (session('vendor_employee_data')['shop_id'] ?? null) : null);
 
         if (!$shopId && $sellerId) {
             $shop = Shop::where('seller_id', $sellerId)->first();
