@@ -283,7 +283,7 @@
                                                         </div>
                                                         <div class="col-sm-6">
                                                             <div class="form-group mb-4">
-                                                                <label for="city"
+                                                                <label for="zip"
                                                                        class="text-capitalize">{{ translate('zip_code') }} <span class="text-danger">*</span></label>
                                                                 @if($zip_restrict_status == 1)
                                                                     <select name="zip" id="zip"
