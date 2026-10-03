@@ -88,10 +88,10 @@ class AppServiceProvider extends ServiceProvider
 
                     $systemColors = getWebConfig('colors');
                     $web_config = [
-                        'primary_color' => (is_array($systemColors) ? ($systemColors['primary'] ?? '#5e2e85') : '#5e2e85'),
-                        'secondary_color' => (is_array($systemColors) ? ($systemColors['secondary'] ?? '#f1c40f') : '#f1c40f'),
-                        'primary_color_light' => (is_array($systemColors) ? ($systemColors['primary_light'] ?? '#7a42a7') : '#7a42a7'),
-                        'panel_sidebar_color' => (is_array($systemColors) ? ($systemColors['panel-sidebar'] ?? '#5e2e85') : '#5e2e85'),
+                        'primary_color' => (is_array($systemColors) ? ($systemColors['primary'] ?? '#5E17EB') : '#5E17EB'),
+                        'secondary_color' => (is_array($systemColors) ? ($systemColors['secondary'] ?? '#FFD700') : '#FFD700'),
+                        'primary_color_light' => (is_array($systemColors) ? ($systemColors['primary_light'] ?? '#7E3FF2') : '#7E3FF2'),
+                        'panel_sidebar_color' => (is_array($systemColors) ? ($systemColors['panel-sidebar'] ?? '#5E17EB') : '#5E17EB'),
                         'name' => Helpers::get_settings($web, 'company_name'),
                         'company_name' => getWebConfig(name: 'company_name'),
                         'phone' => getWebConfig(name: 'company_phone'),
@@ -113,7 +113,7 @@ class AppServiceProvider extends ServiceProvider
                         'brand_setting' => getWebConfig(name: 'product_brand') ?? 1,
                         'firebase_otp_verification' => $firebaseOTPVerification,
                         'firebase_otp_verification_status' => $firebaseOTPVerificationStatus,
-                        'announcement' => getWebConfig(name: 'announcement') ?: ['status' => 0, 'color' => '#5e2e85', 'text_color' => '#ffffff', 'announcement' => ''],
+                        'announcement' => getWebConfig(name: 'announcement') ?: ['status' => 0, 'color' => '#5E17EB', 'text_color' => '#ffffff', 'announcement' => ''],
                         'meta_title' => getWebConfig(name: 'meta_title') ?: (getWebConfig(name: 'company_name').' || Your Trusted Online Market in Uyo, Akwa Ibom State'),
                         'meta_description' => getWebConfig(name: 'meta_description') ?: 'Victorious MARKET || Your Trusted Online Market in Uyo, Akwa Ibom State. Shop quality electronics, groceries, fashion, beauty, and home essentials with fast delivery in Uyo.',
                     ];

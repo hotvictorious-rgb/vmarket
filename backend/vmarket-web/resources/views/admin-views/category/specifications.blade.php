@@ -5,7 +5,7 @@
 @section('content')
 <div class="content container-fluid">
     <div class="mb-3">
-        <h2 class="h1 mb-0 text-capitalize d-flex align-items-center gap-2" style="color: #4A154B;">
+        <h2 class="h1 mb-0 text-capitalize d-flex align-items-center gap-2" style="color: #5E17EB;">
             <i class="tio-help-outlined"></i>
             {{ translate('Smart Category Specifications & Questionnaires') }}
         </h2>
@@ -52,7 +52,7 @@
         <div class="col-lg-4">
             <div class="card">
                 <div class="card-header bg-light py-3">
-                    <h5 class="mb-0 text-capitalize font-weight-bold" style="color: #4A154B;">
+                    <h5 class="mb-0 text-capitalize font-weight-bold" style="color: #5E17EB;">
                         <i class="tio-add-circle mr-1"></i> {{ translate('Add Specification Question') }}
                     </h5>
                 </div>
@@ -105,7 +105,7 @@
                             </label>
                         </div>
 
-                        <button type="submit" class="btn btn--primary btn-block text-capitalize" style="background-color: #4A154B; border-color: #4A154B;">
+                        <button type="submit" class="btn btn--primary btn-block text-capitalize" style="background-color: #5E17EB; border-color: #5E17EB;">
                             <i class="tio-save"></i> {{ translate('Save Specification Question') }}
                         </button>
                     </form>
@@ -216,7 +216,7 @@
     <div class="modal-dialog" role="document">
         <div class="modal-content">
             <div class="modal-header">
-                <h5 class="modal-title font-weight-bold" style="color: #4A154B;">{{ translate('Edit Specification Question') }}</h5>
+                <h5 class="modal-title font-weight-bold" style="color: #5E17EB;">{{ translate('Edit Specification Question') }}</h5>
                 <button type="button" class="close" data-dismiss="modal" data-bs-dismiss="modal" aria-label="Close">
                     <span aria-hidden="true">&times;</span>
                 </button>
@@ -269,7 +269,7 @@
                 </div>
                 <div class="modal-footer">
                     <button type="button" class="btn btn-secondary" data-dismiss="modal" data-bs-dismiss="modal">{{ translate('Cancel') }}</button>
-                    <button type="submit" class="btn btn--primary" style="background: #4A154B; border-color: #4A154B;">{{ translate('Update Question') }}</button>
+                    <button type="submit" class="btn btn--primary" style="background: #5E17EB; border-color: #5E17EB;">{{ translate('Update Question') }}</button>
                 </div>
             </form>
         </div>

@@ -5,11 +5,11 @@
 @endphp
 
 <div class="col-12 mt-3" id="smart-specs-wrapper" style="display: none;">
-    <div class="card border border-primary-light shadow-sm" style="border: 1.5px solid #4A154B25 !important; border-radius: 12px;">
-        <div class="card-header py-3 d-flex flex-wrap justify-content-between align-items-center gap-2" style="background: linear-gradient(135deg, #FAF4FB 0%, #FFFFFF 100%); border-bottom: 1px solid #4A154B15;">
+    <div class="card border border-primary-light shadow-sm" style="border: 1.5px solid #5E17EB25 !important; border-radius: 12px;">
+        <div class="card-header py-3 d-flex flex-wrap justify-content-between align-items-center gap-2" style="background: linear-gradient(135deg, #FAF4FB 0%, #FFFFFF 100%); border-bottom: 1px solid #5E17EB15;">
             <div>
-                <h4 class="mb-0 font-weight-bold d-flex align-items-center gap-2" style="color: #4A154B;">
-                    <i class="tio-tune" style="font-size: 20px; color: #D4AF37;"></i>
+                <h4 class="mb-0 font-weight-bold d-flex align-items-center gap-2" style="color: #5E17EB;">
+                    <i class="tio-tune" style="font-size: 20px; color: #FFD700;"></i>
                     {{ translate('Product Specifications & Attributes') }}
                 </h4>
                 <p class="fs-12 text-muted mb-0">
