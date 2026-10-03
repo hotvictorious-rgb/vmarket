@@ -5,6 +5,7 @@ on:
     branches:
       - master
       - main
+      - v1
   workflow_dispatch: # Allows you to trigger the build manually from the GitHub webpage
 
 jobs:
@@ -71,7 +72,7 @@ jobs:
       - name: Run Tests
         run: |
           cd "User app"
-          flutter test || echo "No tests found or tests failed, continuing..."
+          flutter test
 
       - name: Configure Keystore
         run: |
@@ -140,7 +141,7 @@ jobs:
       - name: Run Tests
         run: |
           cd "Vendor app"
-          flutter test || echo "No tests found or tests failed, continuing..."
+          flutter test
 
       - name: Configure Keystore
         run: |
@@ -209,7 +210,7 @@ jobs:
       - name: Run Tests
         run: |
           cd "Delivery Man App"
-          flutter test || echo "No tests found or tests failed, continuing..."
+          flutter test
 
       - name: Configure Keystore
         run: |

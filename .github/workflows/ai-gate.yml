@@ -2,9 +2,9 @@ name: Victorious MARKET AI Engineering Gate
 
 on:
   push:
-    branches: [ "main", "feature/*", "hotfix/*", "ai*/*" ]
+    branches: [ "main", "master", "v1", "feature/*", "hotfix/*", "ai*/*" ]
   pull_request:
-    branches: [ "main" ]
+    branches: [ "main", "master", "v1" ]
 
 jobs:
   governance-gate:
