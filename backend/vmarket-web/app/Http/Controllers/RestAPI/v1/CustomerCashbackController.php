@@ -43,11 +43,20 @@ class CustomerCashbackController extends Controller
         );
         $pendingCashback = (string)($pendingResult[0]->total ?? '0.00');
 
+        $exchangeRate = (float) (getWebConfig(name: 'loyalty_point_exchange_rate') ?: 1.0);
+        $userPoints = (string) ($customer->loyalty_point ?? '0.0000');
+        $availableFromPoints = bcmul($userPoints, (string) $exchangeRate, 2);
+
         $availableResult = DB::select(
             'SELECT CAST(COALESCE(SUM(cashback_amount), 0.00) AS CHAR) AS total FROM customer_cashback_ledgers WHERE customer_id = ? AND status = ?',
             [$customerId, 'available']
         );
-        $availableCashback = (string)($availableResult[0]->total ?? '0.00');
+        $availableFromLedgers = (string)($availableResult[0]->total ?? '0.00');
+        // Authoritative spendable available cashback strictly reflects customer loyalty point balance
+        $availableCashback = bccomp($availableFromPoints, $availableFromLedgers, 2) < 0 ? $availableFromPoints : $availableFromLedgers;
+        if (bccomp($availableCashback, '0.00', 2) < 0) {
+            $availableCashback = '0.00';
+        }
 
         $redeemedResult = DB::select(
             'SELECT CAST(COALESCE(SUM(cashback_amount), 0.00) AS CHAR) AS total FROM customer_cashback_ledgers WHERE customer_id = ? AND status = ?',

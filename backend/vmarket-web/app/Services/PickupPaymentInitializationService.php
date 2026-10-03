@@ -203,7 +203,7 @@ class PickupPaymentInitializationService
                         'action' => 'RECOVER_EXISTING',
                         'payment_request' => $existingActive,
                         'reservation' => $reservation,
-                        'amount_kobo' => $amountKobo,
+                        'amount_kobo' => (int) bcmul(bcadd((string) $existingActive->payment_amount, '0', 2), '100', 0),
                         'customer' => $customerRecord,
                         'ttl_minutes' => $ttlMinutes,
                     ];
@@ -527,7 +527,7 @@ class PickupPaymentInitializationService
                     return PaymentRequest::create([
                         'id' => Str::orderedUuid()->toString(),
                         'payer_id' => (string) $customerRecord->id,
-                        'payment_amount' => bcadd((string) $reservation->total_amount, '0', 2),
+                        'payment_amount' => bcdiv((string) $amountKobo, '100', 2),
                         'currency_code' => 'NGN',
                         'payment_method' => 'paystack',
                         'payment_platform' => 'web',
@@ -708,7 +708,7 @@ class PickupPaymentInitializationService
         // Exact points corresponding to the cashback amount
         $pointsToReserve = bcdiv($cashbackAmount, (string) $exchangeRate, 4);
 
-        // Create CashbackRedemption reservation record
+        // Create CashbackRedemption reservation record (points held in status 'reserved' without premature balance deduction)
         $redemption = CashbackRedemption::create([
             'customer_id' => $customerId,
             'checkout_intent_id' => null, // delivery FK; null for pickup
@@ -717,26 +717,6 @@ class PickupPaymentInitializationService
             'points' => $pointsToReserve,
             'cashback_amount' => $cashbackAmount,
             'status' => 'reserved',
-        ]);
-
-        // Decrement user's loyalty_point balance atomically
-        DB::table('users')
-            ->where('id', $customerId)
-            ->decrement('loyalty_point', (float) $pointsToReserve);
-
-        // Insert audit trail in loyalty_point_transactions
-        $freshBalance = (float) DB::table('users')->where('id', $customerId)->value('loyalty_point');
-
-        DB::table('loyalty_point_transactions')->insert([
-            'user_id' => $customerId,
-            'transaction_id' => Str::uuid()->toString(),
-            'credit' => 0.0000,
-            'debit' => (float) $pointsToReserve, // spending = debit
-            'balance' => $freshBalance,
-            'reference' => $orderGroupId,
-            'transaction_type' => 'order_place', // standard type for order-related transactions
-            'created_at' => now(),
-            'updated_at' => now(),
         ]);
 
         Log::info("[AI] PickupPayment: Reserved {$pointsToReserve} pts (₦{$cashbackAmount}) from customer #{$customerId} " .
@@ -761,24 +741,7 @@ class PickupPaymentInitializationService
             ->get();
 
         foreach ($activeRedemptions as $redemption) {
-            $pointsToRestore = (float) $redemption->points;
-            if ($pointsToRestore > 0) {
-                DB::table('users')->where('id', $customerId)->increment('loyalty_point', $pointsToRestore);
-                $freshBalance = (float) DB::table('users')->where('id', $customerId)->value('loyalty_point');
-
-                DB::table('loyalty_point_transactions')->insert([
-                    'user_id' => $customerId,
-                    'transaction_id' => Str::uuid()->toString(),
-                    'credit' => $pointsToRestore,
-                    'debit' => 0.0000,
-                    'balance' => $freshBalance,
-                    'reference' => 'pickup-' . $reservation->reservation_code,
-                    'transaction_type' => 'point_transfer',
-                    'created_at' => now(),
-                    'updated_at' => now(),
-                ]);
-            }
-            $redemption->update(['status' => 'cancelled']);
+            $redemption->release();
         }
     }
 }

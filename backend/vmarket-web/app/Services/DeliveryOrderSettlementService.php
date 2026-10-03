@@ -6,6 +6,7 @@ use App\Exceptions\PostPaymentStockFailureException;
 use App\Models\AdminWallet;
 use App\Models\Cart;
 use App\Models\CashbackRedemption;
+use App\Models\CustomerCashbackLedger;
 use App\Models\CheckoutIntent;
 use App\Models\Order;
 use App\Models\OrderDetail;
@@ -250,6 +251,9 @@ class DeliveryOrderSettlementService
                             'created_at' => now(),
                             'updated_at' => now(),
                         ]);
+
+                        // [AI] Transition available customer cashback ledger records to 'redeemed'
+                        CustomerCashbackLedger::markRedeemed($intent->customer_id, (string) $redemption->cashback_amount, $createdOrderIds[0] ?? null);
                     }
                 }
 

@@ -147,4 +147,56 @@ class CustomerCashbackLedger extends Model
         $this->description = "5% Victorious Cashback Reward for Order #{$this->order_id} (Adjusted for partial refund)";
         $this->save();
     }
+
+    /**
+     * [AI] Transitions customer's available cashback ledger entries to 'redeemed' up to $redeemedNaira.
+     */
+    public static function markRedeemed(int $customerId, string $redeemedNaira, ?int $redeemedOrderId = null): void
+    {
+        $remainingToRedeem = bcadd($redeemedNaira, '0', 2);
+        if (bccomp($remainingToRedeem, '0.00', 2) <= 0) {
+            return;
+        }
+
+        $availableLedgers = self::where('customer_id', $customerId)
+            ->where('status', 'available')
+            ->orderBy('available_at', 'asc')
+            ->lockForUpdate()
+            ->get();
+
+        foreach ($availableLedgers as $ledger) {
+            $ledgerAmount = bcadd((string) $ledger->cashback_amount, '0', 2);
+            if (bccomp($remainingToRedeem, $ledgerAmount, 2) >= 0) {
+                $ledger->update([
+                    'status' => 'redeemed',
+                    'redeemed_at' => now(),
+                    'redeemed_order_id' => $redeemedOrderId,
+                ]);
+                $remainingToRedeem = bcsub($remainingToRedeem, $ledgerAmount, 2);
+            } else {
+                $leftover = bcsub($ledgerAmount, $remainingToRedeem, 2);
+                $ledger->update([
+                    'cashback_amount' => $leftover,
+                ]);
+                self::create([
+                    'customer_id' => $customerId,
+                    'order_id' => $ledger->order_id,
+                    'merchandise_amount' => '0.00',
+                    'cashback_rate' => $ledger->cashback_rate,
+                    'cashback_amount' => $remainingToRedeem,
+                    'status' => 'redeemed',
+                    'available_at' => $ledger->available_at,
+                    'redeemed_at' => now(),
+                    'redeemed_order_id' => $redeemedOrderId,
+                    'description' => "Redeemed for Order #{$redeemedOrderId}",
+                ]);
+                $remainingToRedeem = '0.00';
+                break;
+            }
+
+            if (bccomp($remainingToRedeem, '0.00', 2) <= 0) {
+                break;
+            }
+        }
+    }
 }

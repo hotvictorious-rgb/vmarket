@@ -5,6 +5,7 @@ namespace App\Services;
 use App\Exceptions\PostPaymentStockFailureException;
 use App\Models\Cart;
 use App\Models\CashbackRedemption;
+use App\Models\CustomerCashbackLedger;
 use App\Models\Order;
 use App\Models\PaymentReconciliation;
 use App\Models\PaymentRequest;
@@ -273,7 +274,29 @@ class PickupOrderSettlementService
                     $redemptionId = $additional['cashback_reservation']['redemption_id'];
                     $redemption = CashbackRedemption::find($redemptionId);
                     if ($redemption && $redemption->status === 'reserved') {
-                        $redemption->capture(); // captures immediately, no points returned
+                        $redemption->capture(); // captures immediately
+
+                        $customer = User::where('id', $customerId)->lockForUpdate()->first();
+                        if ($customer) {
+                            $customer->decrement('loyalty_point', (float) $redemption->points);
+                            $freshBalance = (float) DB::table('users')->where('id', $customerId)->value('loyalty_point');
+
+                            DB::table('loyalty_point_transactions')->insert([
+                                'user_id' => $customerId,
+                                'transaction_id' => Str::uuid()->toString(),
+                                'credit' => 0.0000,
+                                'debit' => (float) $redemption->points,
+                                'balance' => $freshBalance,
+                                'reference' => 'pickup-' . $reservation->reservation_code,
+                                'transaction_type' => 'cashback_redemption',
+                                'created_at' => now(),
+                                'updated_at' => now(),
+                            ]);
+
+                            // Transition customer_cashback_ledgers rows to 'redeemed'
+                            CustomerCashbackLedger::markRedeemed($customerId, (string) $redemption->cashback_amount, $createdOrderId);
+                        }
+
                         $cashbackRedeemed = [
                             'captured' => true,
                             'points' => $redemption->points,
