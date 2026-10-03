@@ -286,6 +286,18 @@ class PickupPaymentInitializationService
                 $discountedNaira = '0.00';
             }
 
+            // [AI] 100% Fully Reward-Funded Pickup Order:
+            // Settle internally without external Paystack gateway call
+            if (bccomp($discountedNaira, '0.00', 2) === 0 && bccomp($cashbackAmount, '0.00', 2) > 0) {
+                return $this->settleFullyFundedPickupInternally(
+                    $reservation,
+                    $customerId,
+                    $lockedCustomer,
+                    $cashbackReserved,
+                    $twoDecimals
+                );
+            }
+
             // Recalculate kobo amount after discount
             if (bccomp($cashbackAmount, '0.00', 2) > 0) {
                 $amountKoboString = bcmul($discountedNaira, '100', 0);
@@ -414,6 +426,10 @@ class PickupPaymentInitializationService
                 $phaseAResult['ttl_minutes'],
                 $callbackUrl
             );
+        }
+
+        if ($action === 'SETTLED_INTERNALLY') {
+            return $phaseAResult;
         }
 
         // Action === INITIALIZE_NEW
@@ -669,7 +685,7 @@ class PickupPaymentInitializationService
 
         // Load config
         $exchangeRate = (float) (getWebConfig(name: 'loyalty_point_exchange_rate') ?: 1.0);
-        $maxCapPercentage = (float) (getWebConfig(name: 'loyalty_point_max_order_redemption_percentage') ?: 10.0);
+        $maxCapPercentage = (float) (getWebConfig(name: 'loyalty_point_max_order_redemption_percentage') ?: 100.0);
         $minPoint = (float) (getWebConfig(name: 'loyalty_point_minimum_point') ?: 0.0);
 
         // Calculate effective available points (excluding already reserved points from other checkouts)
@@ -690,7 +706,7 @@ class PickupPaymentInitializationService
             return $defaultResult;
         }
 
-        // Calculate maximum discount allowed (e.g. 10% of reservation total)
+        // Calculate maximum discount allowed (e.g. 100% of reservation total)
         $reservationTotal = bcadd((string) $reservation->total_amount, '0', 2);
         $maxNairaDiscount = bcmul($reservationTotal, bcdiv((string) $maxCapPercentage, '100', 4), 2);
 
@@ -743,5 +759,100 @@ class PickupPaymentInitializationService
         foreach ($activeRedemptions as $redemption) {
             $redemption->release();
         }
+    }
+
+    /**
+     * [AI] Settles a 100% cashback-funded pickup order internally without external Paystack call.
+     */
+    protected function settleFullyFundedPickupInternally(
+        PickupReservation $reservation,
+        int $customerId,
+        User $lockedCustomer,
+        array $cashbackReserved,
+        string $grossAmount
+    ): array {
+        $redemptionId = $cashbackReserved['redemption_id'] ?? null;
+        $points = $cashbackReserved['points'] ?? '0.0000';
+        $now = now();
+
+        // 1. Deduct customer points and create transaction log
+        $currentPoints = (string) ($lockedCustomer->loyalty_point ?? '0.0000');
+        $newPoints = bcsub($currentPoints, $points, 4);
+        if (bccomp($newPoints, '0.0000', 4) < 0) {
+            $newPoints = '0.0000';
+        }
+        $lockedCustomer->update(['loyalty_point' => $newPoints]);
+
+        DB::table('loyalty_point_transactions')->insert([
+            'user_id' => $customerId,
+            'transaction_id' => Str::uuid()->toString(),
+            'credit' => 0.0000,
+            'debit' => (float) $points,
+            'balance' => (float) $newPoints,
+            'reference' => 'pickup-100cb-' . $reservation->reservation_code,
+            'transaction_type' => 'point_transfer',
+            'created_at' => $now,
+            'updated_at' => $now,
+        ]);
+
+        // 2. Capture CashbackRedemption record
+        if ($redemptionId) {
+            CashbackRedemption::where('id', $redemptionId)->update([
+                'status' => 'captured',
+                'captured_at' => $now,
+            ]);
+        }
+
+        // 3. Create Order
+        $orderId = \App\Utils\OrderManager::generateNewOrderID();
+        $verificationCode = random_int(100000, 999999);
+        $pickupCode = random_int(100000, 999999);
+
+        $order = \App\Models\Order::create([
+            'id' => $orderId,
+            'verification_code' => $verificationCode,
+            'pickup_verification_code' => $pickupCode,
+            'customer_id' => $customerId,
+            'is_guest' => 0,
+            'seller_id' => $reservation->seller_id,
+            'seller_is' => 'seller',
+            'customer_type' => 'customer',
+            'payment_status' => 'paid',
+            'order_status' => 'confirmed',
+            'vendor_settlement_status' => 'held',
+            'payment_method' => 'cashback',
+            'transaction_ref' => 'INT-CB-' . Str::orderedUuid()->toString(),
+            'order_group_id' => $reservation->reservation_code,
+            'discount_amount' => $grossAmount,
+            'discount_type' => 'cashback',
+            'order_amount' => '0.00',
+            'init_order_amount' => $grossAmount,
+            'shipping_cost' => 0.00,
+            'order_type' => 'pickup',
+            'created_at' => $now,
+            'updated_at' => $now,
+        ]);
+
+        // 4. Update PickupReservation
+        $reservation->update([
+            'status' => 'converted_to_order',
+            'order_id' => $order->id,
+            'active_reservation_token' => null,
+        ]);
+
+        Log::info("[AI] PickupPayment: Order #{$order->id} settled internally using 100% cashback rewards.");
+
+        return [
+            'action' => 'SETTLED_INTERNALLY',
+            'is_replayed' => false,
+            'status' => 'settled',
+            'order_id' => $order->id,
+            'verification_code' => (string) $verificationCode,
+            'paid_amount' => '0.00',
+            'cashback_redeemed' => $grossAmount,
+            'gateway_reference' => 'INTERNAL-CB-' . $reservation->reservation_code,
+            'authorization_url' => null,
+            'message' => 'Pickup order settled internally with 100% Victorious Cashback rewards.',
+        ];
     }
 }

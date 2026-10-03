@@ -32,7 +32,7 @@ class SellerApiAuthMiddleware
                 return $next($request);
             }
 
-            // Check if token belongs to an active Vendor Employee
+                // Check if token belongs to an active Vendor Employee
             $employee = \App\Models\VendorEmployee::with('seller', 'role', 'shop')->where(['auth_token' => $token['1']])->first();
             if (isset($employee)) {
                 if (!$employee->status) {
@@ -46,13 +46,65 @@ class SellerApiAuthMiddleware
                     ], 403);
                 }
 
-                // [AI] Branch Security Isolation:
-                // If route/payload targets a specific shop_id, verify employee is authorized for that branch
-                $targetShopId = $request->header('X-Branch-ID') ?? $request->input('shop_id') ?? $request->route('shop_id');
-                if ($targetShopId && !$employee->canAccessShop((int)$targetShopId)) {
+                // 1. Strict Owner-Only Boundary: Employees cannot perform withdrawals, banking, or employee administration
+                if (
+                    $request->is('*seller/withdraw*') ||
+                    $request->is('*seller/shop/update-bank*') ||
+                    $request->is('*seller/payment-info*') ||
+                    $request->is('*seller/business-settings*') ||
+                    $request->is('*seller/employee*') ||
+                    $request->is('*seller/roles*') ||
+                    $request->is('*seller/custom-role*') ||
+                    $request->is('*seller/profile/delete*')
+                ) {
                     return response()->json([
-                        'auth-001' => translate('Access Denied: You are not authorized to access or modify this physical branch.')
+                        'auth-001' => translate('Access Denied: This operation is restricted exclusively to the primary shop owner.')
                     ], 403);
+                }
+
+                // 2. Branch Security Isolation:
+                $targetShopId = $request->header('X-Branch-ID') ?? $request->input('shop_id') ?? $request->route('shop_id');
+                if (!empty($employee->shop_id)) {
+                    if ($targetShopId && !$employee->canAccessShop((int)$targetShopId)) {
+                        return response()->json([
+                            'auth-001' => translate('Access Denied: You are not authorized to access or modify this physical branch.')
+                        ], 403);
+                    }
+                    // Auto-bind employee's assigned branch to enforce downstream isolation
+                    $request->headers->set('X-Branch-ID', (string) $employee->shop_id);
+                    $request->merge(['shop_id' => (int) $employee->shop_id]);
+                }
+
+                // 3. Module Permission Enforcement:
+                $module = null;
+                if ($request->is('*seller/products*') || $request->is('*seller/product*')) {
+                    $module = 'product';
+                } elseif ($request->is('*seller/orders*') || $request->is('*seller/order*')) {
+                    $module = 'order';
+                } elseif ($request->is('*seller/pos*')) {
+                    $module = 'pos';
+                } elseif ($request->is('*seller/refund*')) {
+                    $module = 'refund';
+                } elseif ($request->is('*seller/pickup*')) {
+                    $module = 'pickup';
+                } elseif ($request->is('*seller/messages*') || $request->is('*seller/chat*')) {
+                    $module = 'message';
+                }
+
+                if ($module) {
+                    $variants = [$module, $module . 's', rtrim($module, 's'), $module . '_management'];
+                    $hasAccess = false;
+                    foreach ($variants as $v) {
+                        if ($employee->hasModuleAccess($v)) {
+                            $hasAccess = true;
+                            break;
+                        }
+                    }
+                    if (!$hasAccess) {
+                        return response()->json([
+                            'auth-001' => translate("Access Denied: Your employee role does not have permission to access the {$module} module.")
+                        ], 403);
+                    }
                 }
 
                 $request['seller'] = $employee->seller;

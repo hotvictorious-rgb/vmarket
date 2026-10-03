@@ -660,6 +660,8 @@ class PickupOrderSettlementService
                 ];
             }
 
+            $capturedNaira = isset($gatewayData['amount']) ? bcdiv((string) $gatewayData['amount'], '100', 4) : bcadd((string) $paymentRequest->payment_amount, '0', 4);
+
             $reconciliation = PaymentReconciliation::create([
                 'case_number' => 'REC-' . Str::orderedUuid()->toString(),
                 'gateway_reference' => $verifiedReference,
@@ -733,6 +735,8 @@ class PickupOrderSettlementService
                 'payment_request' => $paymentRequest->fresh(),
             ];
         }
+
+        $capturedNaira = isset($gatewayData['amount']) ? bcdiv((string) $gatewayData['amount'], '100', 4) : bcadd((string) $paymentRequest->payment_amount, '0', 4);
 
         $reconciliation = PaymentReconciliation::create([
             'case_number' => 'REC-' . Str::orderedUuid()->toString(),

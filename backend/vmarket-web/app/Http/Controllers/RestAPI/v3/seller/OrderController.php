@@ -238,14 +238,12 @@ class OrderController extends Controller
         }
         $db_expected_date = $order->expected_delivery_date;
 
-        // [AI] Rate Authority Guard: deliveryman_charge cannot exceed the order's authoritative shipping cost
+        // [AI] Rate Authority Guard: Rider compensation is strictly platform-managed and cannot be altered by vendors
         if ($request->filled('deliveryman_charge')) {
-            $proposedCharge = BackEndHelper::currency_to_usd($request->deliveryman_charge);
-            $maxAllowed = (float)($order->shipping_cost ?? 0);
-            if ($proposedCharge < 0 || $proposedCharge > $maxAllowed) {
-                return response()->json(['success' => 0, 'message' => translate('Delivery man charge cannot exceed authoritative order shipping cost.')], 422);
-            }
-            $order->deliveryman_charge = $proposedCharge;
+            return response()->json([
+                'success' => 0,
+                'message' => translate('Rider compensation is strictly controlled by platform delivery lane authority and cannot be modified by merchants.')
+            ], 403);
         }
         $order->expected_delivery_date = $request->expected_delivery_date;
 

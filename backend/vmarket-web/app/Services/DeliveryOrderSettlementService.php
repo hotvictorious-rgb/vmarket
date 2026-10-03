@@ -436,6 +436,8 @@ class DeliveryOrderSettlementService
             ];
         }
 
+        $capturedNaira = isset($gatewayData['amount']) ? bcdiv((string) $gatewayData['amount'], '100', 4) : bcadd((string) $paymentRequest->payment_amount, '0', 4);
+
         $reconciliation = PaymentReconciliation::create([
             'case_number' => 'REC-' . Str::orderedUuid()->toString(),
             'gateway_reference' => $paymentRequest->gateway_reference,
@@ -513,6 +515,13 @@ class DeliveryOrderSettlementService
             $authoritativeFee = isset($vendor['shipping_cost']) ? bcadd((string) $vendor['shipping_cost'], '0', 4) : null;
             $estimatedTime = $vendor['estimated_delivery_time'] ?? null;
 
+            $allocatedCashback = isset($vendor['allocated_cashback']) ? bcadd((string)$vendor['allocated_cashback'], '0', 2) : '0.00';
+            $hasCashbackDiscount = bccomp($allocatedCashback, '0.00', 2) > 0;
+            $childNetPayable = bcsub($orderAmount, $allocatedCashback, 2);
+            if (bccomp($childNetPayable, '0.00', 2) < 0) {
+                $childNetPayable = '0.00';
+            }
+
             $ordersData = [
                 'id' => $orderId,
                 'verification_code' => $verificationCode,
@@ -529,11 +538,11 @@ class DeliveryOrderSettlementService
                 'payment_method' => 'paystack',
                 'transaction_ref' => $internalTxRef, // strictly internal ID; NEVER the Paystack reference
                 'order_group_id' => $intent->order_group_id,
-                'discount_amount' => 0.00,
-                'discount_type' => null,
+                'discount_amount' => $hasCashbackDiscount ? $allocatedCashback : 0.00,
+                'discount_type' => $hasCashbackDiscount ? 'cashback' : null,
                 'coupon_code' => null,
                 'coupon_discount_bearer' => 'inhouse',
-                'order_amount' => $orderAmount,
+                'order_amount' => $childNetPayable,
                 'init_order_amount' => $orderAmount,
                 'total_tax_amount' => 0.00,
                 'tax_type' => 'percent',

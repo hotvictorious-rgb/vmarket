@@ -89,6 +89,7 @@ class User extends Authenticatable
         'temporary_token',
         'is_email_verified',
         'wallet_balance',
+        'loyalty_point',
         'login_hit_count',
         'is_temp_blocked',
         'temp_block_time',

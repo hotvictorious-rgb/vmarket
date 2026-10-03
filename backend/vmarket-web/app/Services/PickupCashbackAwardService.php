@@ -53,8 +53,8 @@ class PickupCashbackAwardService
      */
     public function award(PickupReservation $reservation, Order $order, int $customerId): array
     {
-        // [AI] Guard: loyalty must be enabled in admin config
-        $loyaltyStatus = (int) (getWebConfig(name: 'loyalty_point_status') ?: 0);
+        // [AI] Guard: loyalty must be enabled in admin config (defaults to enabled for VMarket)
+        $loyaltyStatus = (int) (getWebConfig(name: 'loyalty_point_status') ?? 1);
         if ($loyaltyStatus !== 1) {
             Log::info("[AI] PickupCashbackAward: Loyalty is disabled in admin config. No cashback awarded for Reservation #{$reservation->id}.");
             return [
@@ -71,8 +71,6 @@ class PickupCashbackAwardService
         $exchangeRate = (float) (getWebConfig(name: 'loyalty_point_exchange_rate') ?: 1.0);
         $cashbackRatePercent = (float) (getWebConfig(name: 'loyalty_point_earn_rate_percent') ?: 5.0);
 
-        // Fallback: if earn_rate_percent is not set, use the stock loyalty earn formula
-        // (loyalty_point per unit order amount, or fallback to 5%)
         if ($cashbackRatePercent <= 0) {
             $cashbackRatePercent = 5.0;
         }
@@ -80,11 +78,29 @@ class PickupCashbackAwardService
             $exchangeRate = 1.0;
         }
 
-        // [AI] BCMath Zero-Drift Calculation
-        // cashbackNaira = totalAmount × (cashbackRatePercent ÷ 100)
+        // [AI] BCMath Zero-Drift Calculation: Rewards apply ONLY to NEW MONEY paid!
+        // Subtract any redeemed cashback applied to this pickup order
         $totalAmount = bcadd((string) $reservation->total_amount, '0', 2);
+        $redeemedCashback = '0.00';
+        if ($order->discount_type === 'cashback' && !empty($order->discount_amount)) {
+            $redeemedCashback = bcadd((string) $order->discount_amount, '0', 2);
+        }
+        $netNewMoney = bcsub($totalAmount, $redeemedCashback, 2);
+
+        if (bccomp($netNewMoney, '0.00', 2) <= 0) {
+            Log::info("[AI] PickupCashbackAward: Order #{$order->id} was 100% funded with rewards (net new money = ₦0.00). Zero new rewards earned.");
+            return [
+                'awarded' => false,
+                'points' => '0.0000',
+                'cashback_amount' => '0.00',
+                'cashback_rate_percent' => (string) $cashbackRatePercent,
+                'exchange_rate' => (string) $exchangeRate,
+                'cashback_redemption_id' => null,
+            ];
+        }
+
         $cashbackNaira = bcmul(
-            $totalAmount,
+            $netNewMoney,
             bcdiv((string) $cashbackRatePercent, '100', 6),
             2
         );

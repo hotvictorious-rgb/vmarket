@@ -37,6 +37,7 @@ class CustomerCashbackLedger extends Model
         'cashback_amount',
         'status',
         'available_at',
+        'expires_at',
         'redeemed_at',
         'redeemed_order_id',
         'description',
@@ -50,6 +51,7 @@ class CustomerCashbackLedger extends Model
         'cashback_amount' => 'decimal:2',
         'status' => 'string',
         'available_at' => 'datetime',
+        'expires_at' => 'datetime',
         'redeemed_at' => 'datetime',
         'redeemed_order_id' => 'integer',
     ];
@@ -108,19 +110,75 @@ class CustomerCashbackLedger extends Model
             return null;
         }
 
-        // 5% Cashback Reward calculated via BCMath string arithmetic
+        // [AI] Strictly enforce: New rewards apply ONLY to NEW MONEY paid for merchandise!
+        // Subtract any redeemed cashback applied to this order.
+        $redeemedCashbackOnOrder = '0.00';
+        if ($order->discount_type === 'cashback' && !empty($order->discount_amount)) {
+            $redeemedCashbackOnOrder = bcadd((string)($order->getRawOriginal('discount_amount') ?? '0.00'), '0', 2);
+        } else {
+            if (!empty($order->order_group_id)) {
+                $redemption = CashbackRedemption::where('order_group_id', $order->order_group_id)
+                    ->where('status', 'captured')
+                    ->first();
+                if ($redemption) {
+                    $groupOrdersCount = Order::where('order_group_id', $order->order_group_id)->count();
+                    if ($groupOrdersCount <= 1) {
+                        $redeemedCashbackOnOrder = bcadd((string)$redemption->cashback_amount, '0', 2);
+                    } else {
+                        $groupSubtotal = Order::where('order_group_id', $order->order_group_id)->sum('order_amount');
+                        if (bccomp((string)$groupSubtotal, '0.00', 2) > 0) {
+                            $ratio = bcdiv((string)$order->order_amount, (string)$groupSubtotal, 4);
+                            $redeemedCashbackOnOrder = bcmul((string)$redemption->cashback_amount, $ratio, 2);
+                        }
+                    }
+                }
+            }
+
+            $pickupRes = PickupReservation::where('order_id', $order->id)->first();
+            if ($pickupRes) {
+                $pRedemption = CashbackRedemption::where('pickup_reservation_id', $pickupRes->id)
+                    ->where('status', 'captured')
+                    ->first();
+                if ($pRedemption) {
+                    $redeemedCashbackOnOrder = bcadd((string)$pRedemption->cashback_amount, '0', 2);
+                }
+            }
+        }
+
+        $rawOrderAmount = bcadd((string)($order->getRawOriginal('order_amount') ?? '0.00'), '0', 2);
+        $rawInitAmount = bcadd((string)($order->getRawOriginal('init_order_amount') ?? '0.00'), '0', 2);
+        $shippingCost = bcadd((string)($order->getRawOriginal('shipping_cost') ?? '0.00'), '0', 2);
+        $taxAmount = bcadd((string)($order->getRawOriginal('total_tax_amount') ?? '0.00'), '0', 2);
+
+        // Check if order_amount was already discounted or represents gross total
+        if (bccomp($rawInitAmount, $rawOrderAmount, 2) > 0) {
+            // order_amount is already net of cashback discount
+            $netNewMoney = bcsub(bcsub($rawOrderAmount, $shippingCost, 2), $taxAmount, 2);
+        } else {
+            // order_amount is gross total; explicitly subtract redeemed cashback
+            $merchandiseGross = bcsub(bcsub($rawOrderAmount, $shippingCost, 2), $taxAmount, 2);
+            $netNewMoney = bcsub($merchandiseGross, $redeemedCashbackOnOrder, 2);
+        }
+
+        if (bccomp($netNewMoney, '0.00', 2) <= 0) {
+            return null; // Entire merchandise was paid using rewards; zero new reward earned
+        }
+
+        // 5% Cashback Reward calculated strictly on new money via BCMath string arithmetic
         $cashbackRate = '5.00';
-        $cashbackAmount = bcmul($merchandiseAmount, '0.05', 2);
+        $cashbackAmount = bcmul($netNewMoney, '0.05', 2);
+        $expiresAt = $order->refund_window_expires_at ? \Carbon\Carbon::parse($order->refund_window_expires_at)->addMonths(6) : null;
 
         return self::create([
             'customer_id' => $order->customer_id,
             'order_id' => $order->id,
-            'merchandise_amount' => $merchandiseAmount,
+            'merchandise_amount' => $netNewMoney,
             'cashback_rate' => $cashbackRate,
             'cashback_amount' => $cashbackAmount,
             'status' => 'pending',
             'available_at' => $order->refund_window_expires_at,
-            'description' => "5% Victorious Cashback Reward for Order #{$order->id}",
+            'expires_at' => $expiresAt,
+            'description' => "5% Victorious Cashback Reward for Order #{$order->id} (Earned on ₦{$netNewMoney} new money paid)",
         ]);
     }
 

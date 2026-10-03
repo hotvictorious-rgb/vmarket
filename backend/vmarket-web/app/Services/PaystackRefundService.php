@@ -728,6 +728,47 @@ class PaystackRefundService
                 }
             }
 
+            // [AI] Restores redeemed cashback spent on this order back to customer pool
+            $redeemedCashbackOnOrder = '0.00';
+            if ($order->discount_type === 'cashback' && bccomp((string)($order->discount_amount ?? '0.00'), '0.00', 2) > 0) {
+                $redeemedCashbackOnOrder = bcadd((string)$order->discount_amount, '0', 2);
+            }
+
+            if (bccomp($redeemedCashbackOnOrder, '0.00', 2) > 0) {
+                // Calculate proportional restoration share
+                $rawOrderPaid = (string)($order->getRawOriginal('order_amount') ?? '0.00');
+                if (bccomp($remainingMerchandise, '0.00', 2) <= 0 || bccomp($rawOrderPaid, '0.00', 2) === 0) {
+                    $cashbackToRestore = $redeemedCashbackOnOrder;
+                } else {
+                    $ratio = bcdiv($refundAmount, $rawOrderPaid, 4);
+                    $cashbackToRestore = bcmul($redeemedCashbackOnOrder, $ratio, 2);
+                }
+
+                if (bccomp($cashbackToRestore, '0.00', 2) > 0) {
+                    $exchangeRate = (float) (getWebConfig(name: 'loyalty_point_exchange_rate') ?: 1.0);
+                    $pointsToRestore = (float) bcdiv($cashbackToRestore, (string) $exchangeRate, 4);
+
+                    if ($pointsToRestore > 0) {
+                        DB::table('users')->where('id', $order->customer_id)->increment('loyalty_point', $pointsToRestore);
+                        $freshBalance = (float) DB::table('users')->where('id', $order->customer_id)->value('loyalty_point');
+
+                        DB::table('loyalty_point_transactions')->insert([
+                            'user_id' => $order->customer_id,
+                            'transaction_id' => \Illuminate\Support\Str::uuid()->toString(),
+                            'credit' => $pointsToRestore,
+                            'debit' => 0.0000,
+                            'balance' => $freshBalance,
+                            'reference' => 'refund-cashback-restore-' . $order->id,
+                            'transaction_type' => 'point_transfer',
+                            'created_at' => now(),
+                            'updated_at' => now(),
+                        ]);
+
+                        Log::info("[AI] PaystackRefundService: Restored {$pointsToRestore} cashback points (₦{$cashbackToRestore}) to customer #{$order->customer_id} for refunded Order #{$order->id}.");
+                    }
+                }
+            }
+
             // 5. Create Auditable RefundTransaction (Exact Decimal String)
             $paystackId = $providerData['id'] ?? ($lockedRequest->paystack_refund_id ?? '');
             RefundTransaction::create([

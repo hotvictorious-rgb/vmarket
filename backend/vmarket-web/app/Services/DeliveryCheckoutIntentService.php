@@ -255,9 +255,13 @@ class DeliveryCheckoutIntentService
             return strcmp($a['seller_is'], $b['seller_is']);
         });
 
-        // Calculate gross total across all vendor groups
+        // Calculate gross and subtotal breakdown across all vendor groups
+        $merchandiseSubtotal = '0.00';
+        $shippingTotal = '0.00';
         foreach ($vendorGroups as $vg) {
             $grossAmount = bcadd($grossAmount, $vg['total'], 2);
+            $merchandiseSubtotal = bcadd($merchandiseSubtotal, (string)($vg['subtotal'] ?? '0.00'), 2);
+            $shippingTotal = bcadd($shippingTotal, (string)($vg['shipping_cost'] ?? '0.00'), 2);
         }
 
         // 6. Generate Canonical Fingerprint Payload
@@ -278,6 +282,8 @@ class DeliveryCheckoutIntentService
             $idempotencyKey,
             $cartFingerprint,
             $grossAmount,
+            $merchandiseSubtotal,
+            $shippingTotal,
             $useCashback,
             $canonicalShippingAddress,
             $canonicalBillingAddress,
@@ -334,7 +340,7 @@ class DeliveryCheckoutIntentService
             $cashbackAmount = '0.00';
             $pointsToReserve = '0.0000';
             $exchangeRate = (float) (getWebConfig(name: 'loyalty_point_exchange_rate') ?: 1);
-            $maxCapPercentage = (float) (getWebConfig(name: 'loyalty_point_max_order_redemption_percentage') ?: 10);
+            $maxCapPercentage = (float) (getWebConfig(name: 'loyalty_point_max_order_redemption_percentage') ?: 100);
             $loyaltyStatus = (int) (getWebConfig(name: 'loyalty_point_status') ?: 0);
             $minPoint = (float) (getWebConfig(name: 'loyalty_point_minimum_point') ?: 0);
 
@@ -352,8 +358,9 @@ class DeliveryCheckoutIntentService
                 }
 
                 if (bccomp($effectiveAvailable, (string) $minPoint, 4) >= 0) {
-                    // Maximum Naira discount allowed on this order (e.g. 10% cap)
-                    $maxNairaDiscount = bcmul($grossAmount, bcdiv((string) $maxCapPercentage, '100', 4), 2);
+                    // [AI] Ceiling is strictly calculated from eligible merchandise, NOT gross amount!
+                    // Shipping must ALWAYS be paid with real money.
+                    $maxNairaDiscount = bcmul($merchandiseSubtotal, bcdiv((string) $maxCapPercentage, '100', 4), 2);
                     // Value of customer's effective points in Naira
                     $pointsInNaira = bcmul($effectiveAvailable, (string) $exchangeRate, 2);
                     // Actual cashback discount is min(pointsInNaira, maxNairaDiscount)
@@ -363,10 +370,30 @@ class DeliveryCheckoutIntentService
                 }
             }
 
-            // Final net payable amount (Gross - Cashback)
-            $totalAmount = bcsub($grossAmount, $cashbackAmount, 2);
+            // Final net payable amount: (Merchandise - Cashback) + Shipping
+            $netMerchandise = bcsub($merchandiseSubtotal, $cashbackAmount, 2);
+            if (bccomp($netMerchandise, '0.00', 2) < 0) {
+                $netMerchandise = '0.00';
+            }
+            $totalAmount = bcadd($netMerchandise, $shippingTotal, 2);
             if (bccomp($totalAmount, '0.00', 2) < 0) {
                 $totalAmount = '0.00';
+            }
+
+            // Distribute allocated cashback across vendor groups proportionally
+            if (bccomp($cashbackAmount, '0.00', 2) > 0 && bccomp($merchandiseSubtotal, '0.00', 2) > 0) {
+                $allocatedSoFar = '0.00';
+                $vgCount = count($vendorGroups);
+                for ($i = 0; $i < $vgCount; $i++) {
+                    if ($i === $vgCount - 1) {
+                        $vendorGroups[$i]['allocated_cashback'] = bcsub($cashbackAmount, $allocatedSoFar, 2);
+                    } else {
+                        $ratio = bcdiv((string)($vendorGroups[$i]['subtotal'] ?? '0.00'), $merchandiseSubtotal, 4);
+                        $share = bcmul($cashbackAmount, $ratio, 2);
+                        $vendorGroups[$i]['allocated_cashback'] = $share;
+                        $allocatedSoFar = bcadd($allocatedSoFar, $share, 2);
+                    }
+                }
             }
 
             // Generate Strong Unique Order Group ID
