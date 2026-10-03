@@ -1,3 +1,18 @@
+### [2026-10-03 10:00 UTC] VM-CUST-006 CLOSED: customer fulfillment widget proofs & core security/settlement hardening (RELEASE-2026-10-03-001, ticket RELEASED) [user-app, backend] [AI]
+* **1. Implementation & Security Patches:**
+  - Implemented comprehensive customer fulfillment test suite in `User app/test/fulfillment_test.dart` (available lane display-only fee/ETA, mixed vendor delivery/pickup independent selection, unavailable lane reason rendering, availability-to-checkout race condition locking).
+  - Fixed Customer App onboarding broken relative import (`route_healper.dart` outside `lib/`) and aligned pickup success OTP display with backend customer handover `verification_code`.
+  - Neutralized vendor employee privilege escalation: blocked employee tokens from owner-only routes (`withdraw_request`, `close_withdraw_request`, `seller_info_update`, `shop_info_update`, `account_delete`) in `SellerController` and tagged `is_vendor_employee` in `SellerApiAuthMiddleware`.
+  - Repaired pickup cashback settlement: persisted net gateway payable amount on `PaymentRequest.payment_amount` and replayed active attempts before cashback deduction to prevent point draining.
+  - Added idempotency guards on `PaymentReconciliation` across both delivery and pickup settlement engines, preventing duplicate key 500 crashes on webhook replays.
+  - Routed late/duplicate delivery captures to `PaymentReconciliation` for automated refund audit instead of silently swallowing money.
+  - Enforced rate authority guard on `deliveryman_charge` capped to authoritative order `shipping_cost`.
+  - Bridged `cashback:mature` command to credit customer `loyalty_point` balance and `loyalty_point_transactions` audit ledger.
+  - Hardened `OrderManager::generateNewOrderID()` using `max()` across orders and order_details.
+  - Declared `ext-bcmath` requirement in `backend/vmarket-web/composer.json`.
+* **2. Proof:** 16/16 customer app frontend tests pass (0 failures); 31/31 vendor journey tests pass; 23/23 freshness tests pass; 21/21 security tests pass; unified test runner 10/10 suites PASS at `5a7edf1f`; hard release gate 18/18 PASS; review APPROVED.
+* **3. Release:** merged `frontend/VM-CUST-006` into `v1` --no-ff (`c75f2634`); ticket → `released/`; manifest + review recorded (RELEASE-2026-10-03-001).
+
 ### [2026-10-02 22:00 UTC] VM-CUST-005 CLOSED: customer address Country-State-LGA cascade & mismatch guard (RELEASE-2026-10-02-002, ticket RELEASED) [user-app] [AI]
 * **1. Implementation:** Implemented production mismatch guard in `AddressController` (`isStateLgaMatched()` and `setSelectedLga`) and `AddNewAddressScreen`. Implemented comprehensive test suite in `User app/test/address_lga_test.dart` (valid Nigeria -> Akwa Ibom -> Uyo cascade with Abak/Eket/Ikot Abasi/Ikot Ekpene/Oron, client-side mismatch rejection with error messaging, zero fee/origin fields in save payload, zero-trust IDOR ownership scoping, free-text address without leaking logistics hubs).
 * **2. Proof:** 18/18 frontend customer tests pass; flutter analyze clean (0 issues); unified test runner 10/10 suites PASS at `e987a59f`; gate 18/18 PASS; review APPROVED.
