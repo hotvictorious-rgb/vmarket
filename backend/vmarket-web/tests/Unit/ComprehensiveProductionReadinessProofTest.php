@@ -2488,8 +2488,8 @@ class ComprehensiveProductionReadinessProofTest
                 'description' => 'Protected lot',
             ]);
 
-            // Capture redemption post-expiry
-            CustomerCashbackLedger::markRedeemed($customer->id, '1000.00', $seedOrder->id);
+            // Capture redemption post-expiry for reservation created 2 hours ago (predating lot expiry 1 hour ago)
+            CustomerCashbackLedger::markRedeemed($customer->id, '1000.00', $seedOrder->id, now()->subHours(2));
             $expiredLot->refresh();
             $this->assert(
                 "Round 3 Finding 5.1: Post-expiry capture consumes protected lot (status transitioned to redeemed)",
@@ -2730,6 +2730,22 @@ class ComprehensiveProductionReadinessProofTest
             $refundStatusService = app(RefundStatusService::class);
             $refundTransactionService = app(RefundTransactionService::class);
 
+            // Proof 1: Direct payment confirmation bypass attempt MUST be rejected with HTTP 400
+            $bypassReq = new RefundStatusRequest();
+            $bypassReq->merge([
+                'id' => $refundReq->id,
+                'refund_status' => 'refunded',
+                'payment_method' => 'bank_transfer',
+                'amount' => 10000.00,
+                'payment_reference' => 'NIP-BYPASS-ATTEMPT',
+                'payment_date' => now()->toDateString(),
+            ]);
+            $bypassResponse = $controller->updateRefundStatus($bypassReq, $refundStatusService, $refundTransactionService);
+            $this->assert(
+                "Round 4 Proof 1.1: Direct payment confirmation on pending request is rejected with HTTP 400 (bypass blocked)",
+                $bypassResponse->getStatusCode() === 400
+            );
+
             // Step 1: Admin approves the refund request (approval without payment)
             $approveReq = new RefundStatusRequest();
             $approveReq->merge([
@@ -2743,30 +2759,62 @@ class ComprehensiveProductionReadinessProofTest
             $detail->refresh();
 
             $this->assert(
-                "Round 4 Proof 1.1: Approval transitions refund status to 'approved'",
+                "Round 4 Proof 1.2: Approval transitions refund status to 'approved'",
                 $refundReq->status === 'approved'
             );
             $this->assert(
-                "Round 4 Proof 1.2: Approval sets execution_status to 'awaiting_manual_payment'",
+                "Round 4 Proof 1.3: Approval sets execution_status to 'awaiting_manual_payment'",
                 $refundReq->execution_status === 'awaiting_manual_payment'
             );
             $this->assert(
-                "Round 4 Proof 1.3: Approval transitions order_detail refund_request to 2 (approved)",
+                "Round 4 Proof 1.4: Approval transitions order_detail refund_request to 2 (approved)",
                 (int)$detail->refund_request === 2
             );
             $this->assert(
-                "Round 4 Proof 1.4: Zero premature paid transactions created upon approval",
+                "Round 4 Proof 1.5: Zero premature paid transactions created upon approval",
                 RefundTransaction::where('order_id', $order->id)->count() === 0
             );
 
-            // Step 2: Payment Confirmation (Admin confirms manual offline payout)
+            // Proof 2: Transferred amount mismatch MUST be rejected with HTTP 400
+            $underpayReq = new RefundStatusRequest();
+            $underpayReq->merge([
+                'id' => $refundReq->id,
+                'refund_status' => 'refunded',
+                'payment_method' => 'bank_transfer',
+                'amount' => 1000.00, // Owed ₦10,000, confirming ₦1,000
+                'payment_reference' => 'NIP-UNDERPAY',
+                'payment_date' => now()->toDateString(),
+            ]);
+            $underpayResponse = $controller->updateRefundStatus($underpayReq, $refundStatusService, $refundTransactionService);
+            $this->assert(
+                "Round 4 Proof 2.1: Payment confirmation with underpaid amount (₦1,000 vs ₦10,000 owed) is rejected with HTTP 400",
+                $underpayResponse->getStatusCode() === 400
+            );
+
+            $overpayReq = new RefundStatusRequest();
+            $overpayReq->merge([
+                'id' => $refundReq->id,
+                'refund_status' => 'refunded',
+                'payment_method' => 'bank_transfer',
+                'amount' => 20000.00, // Owed ₦10,000, confirming ₦20,000
+                'payment_reference' => 'NIP-OVERPAY',
+                'payment_date' => now()->toDateString(),
+            ]);
+            $overpayResponse = $controller->updateRefundStatus($overpayReq, $refundStatusService, $refundTransactionService);
+            $this->assert(
+                "Round 4 Proof 2.2: Payment confirmation with excessive amount (₦20,000 vs ₦10,000 owed) is rejected with HTTP 400",
+                $overpayResponse->getStatusCode() === 400
+            );
+
+            // Step 2: Valid Payment Confirmation (Admin confirms manual offline payout with exact amount)
             $confirmReq = new RefundStatusRequest();
             $confirmReq->merge([
                 'id' => $refundReq->id,
                 'refund_status' => 'refunded',
                 'payment_method' => 'bank_transfer',
-                'payment_info' => 'NIP-REF-20261003-998877',
+                'payment_reference' => 'NIP-REF-20261003-998877',
                 'amount' => 10000.00,
+                'payment_date' => '2026-10-03',
             ]);
 
             $confirmResponse = $controller->updateRefundStatus($confirmReq, $refundStatusService, $refundTransactionService);
@@ -2775,52 +2823,62 @@ class ComprehensiveProductionReadinessProofTest
             $sellerWallet->refresh();
 
             $this->assert(
-                "Round 4 Proof 2.1: Payment confirmation transitions refund status to 'refunded'",
+                "Round 4 Proof 2.3: Payment confirmation transitions refund status to 'refunded'",
                 $refundReq->status === 'refunded'
             );
             $this->assert(
-                "Round 4 Proof 2.2: Payment confirmation transitions execution_status to 'succeeded'",
+                "Round 4 Proof 2.4: Payment confirmation transitions execution_status to 'succeeded'",
                 $refundReq->execution_status === 'succeeded'
             );
             $this->assert(
-                "Round 4 Proof 2.3: OrderDetail transitions to canonical 4 (refunded)",
+                "Round 4 Proof 2.5: OrderDetail transitions to canonical 4 (refunded)",
                 (int)$detail->refund_request === 4
             );
 
             $refundTx = RefundTransaction::where('order_id', $order->id)->where('refund_id', $refundReq->id)->first();
             $this->assert(
-                "Round 4 Proof 2.4: RefundTransaction created with bank_transfer and status paid",
+                "Round 4 Proof 2.6: RefundTransaction created with bank_transfer and status paid",
                 $refundTx && $refundTx->payment_method === 'bank_transfer' && $refundTx->payment_status === 'paid'
             );
             $this->assertDecimal(
-                "Round 4 Proof 2.5: RefundTransaction records exact confirmed ₦10,000.00 money amount",
+                "Round 4 Proof 2.7: RefundTransaction records exact confirmed ₦10,000.00 money amount",
                 (string)$refundTx->amount,
                 '10000.00',
                 2
             );
 
+            // Verify confirmed metadata persistence in RefundRequest
+            $savedPayInfo = json_decode($refundReq->payment_info ?? '{}', true) ?: [];
+            $this->assert(
+                "Round 4 Proof 2.8: RefundRequest persists confirmed payment_reference, payment_date, and confirming admin ID",
+                ($savedPayInfo['payment_reference'] ?? '') === 'NIP-REF-20261003-998877'
+                && ($savedPayInfo['payment_date'] ?? '') === '2026-10-03'
+                && isset($savedPayInfo['confirmed_by_admin_id'])
+            );
+
             $vendorDebited = bcsub('20000.00', (string)$sellerWallet->total_earning, 2);
             $commDebited = bcsub('2000.00', (string)$sellerWallet->commission_given, 2);
             $this->assertDecimal(
-                "Round 4 Proof 2.6: Vendor wallet debited 90% (₦9,000.00) on confirmed merchandise return",
+                "Round 4 Proof 2.9: Vendor wallet debited 90% (₦9,000.00) on confirmed merchandise return",
                 (string)$vendorDebited,
                 '9000.00',
                 2
             );
             $this->assertDecimal(
-                "Round 4 Proof 2.7: Commission debited 10% (₦1,000.00) on confirmed merchandise return",
+                "Round 4 Proof 2.10: Commission debited 10% (₦1,000.00) on confirmed merchandise return",
                 (string)$commDebited,
                 '1000.00',
                 2
             );
 
-            // Step 3: Duplicate Confirmation Guard
+            // Step 3: Duplicate Confirmation Guard & Completed State Reopen Guard
             $dupReq = new RefundStatusRequest();
             $dupReq->merge([
                 'id' => $refundReq->id,
                 'refund_status' => 'refunded',
                 'payment_method' => 'bank_transfer',
-                'payment_info' => 'NIP-DUPLICATE-ATTEMPT',
+                'amount' => 10000.00,
+                'payment_reference' => 'NIP-DUPLICATE-ATTEMPT',
             ]);
             $dupResponse = $controller->updateRefundStatus($dupReq, $refundStatusService, $refundTransactionService);
             $this->assert(
@@ -2830,6 +2888,19 @@ class ComprehensiveProductionReadinessProofTest
             $this->assert(
                 "Round 4 Proof 3.2: RefundTransaction count remains strictly 1 (zero double payouts)",
                 RefundTransaction::where('order_id', $order->id)->count() === 1
+            );
+
+            // Reopening attempt on completed refund MUST be rejected
+            $reopenReq = new RefundStatusRequest();
+            $reopenReq->merge([
+                'id' => $refundReq->id,
+                'refund_status' => 'approved',
+                'approved_note' => 'Attempting to reopen completed refund',
+            ]);
+            $reopenResponse = $controller->updateRefundStatus($reopenReq, $refundStatusService, $refundTransactionService);
+            $this->assert(
+                "Round 4 Proof 3.3: Attempting to reopen a completed refund is rejected with HTTP 400",
+                $reopenResponse->getStatusCode() === 400
             );
 
             // Step 4: Partial Return Recalculates Pending Cashback Earnings
@@ -2896,9 +2967,11 @@ class ComprehensiveProductionReadinessProofTest
                 'status' => 'pending',
                 'amount' => 5000.00,
                 'payment_info' => json_encode([
+                    'refundable_merchandise_value' => '5000.00',
                     'merchandise_value' => '5000.00',
                     'merchandise_money' => '5000.00',
                     'tax_amount' => '0.00',
+                    'refundable_money_amount' => '5000.00',
                     'money_amount' => '5000.00',
                     'cashback_amount' => '0.00',
                     'total_refundable' => '5000.00',
@@ -2920,7 +2993,8 @@ class ComprehensiveProductionReadinessProofTest
                 'id' => $partialRefundReq->id,
                 'refund_status' => 'refunded',
                 'payment_method' => 'bank_transfer',
-                'payment_info' => 'PARTIAL-REF-1',
+                'payment_reference' => 'PARTIAL-REF-1',
+                'payment_date' => now()->toDateString(),
                 'amount' => 5000.00,
             ]);
             $controller->updateRefundStatus($confirmPartialReq, $refundStatusService, $refundTransactionService);
@@ -2941,7 +3015,7 @@ class ComprehensiveProductionReadinessProofTest
                 $orderPartial->fresh()->order_status === 'delivered'
             );
 
-            // Step 5: Full Return on remaining Item 2 cancels pending cashback
+            // Step 5: Full Return on remaining Item 2 (Approving first, then confirming payment)
             $fullRefundReq = RefundRequest::create([
                 'order_details_id' => $item2->id,
                 'customer_id' => $customer->id,
@@ -2950,33 +3024,277 @@ class ComprehensiveProductionReadinessProofTest
                 'status' => 'pending',
                 'amount' => 5000.00,
                 'payment_info' => json_encode([
+                    'refundable_merchandise_value' => '5000.00',
                     'merchandise_value' => '5000.00',
                     'merchandise_money' => '5000.00',
                     'tax_amount' => '0.00',
+                    'refundable_money_amount' => '5000.00',
                     'money_amount' => '5000.00',
                     'cashback_amount' => '0.00',
                     'total_refundable' => '5000.00',
                 ]),
             ]);
 
+            // Attempting direct confirmation without approval MUST fail with 400
+            $directConfirmFailReq = new RefundStatusRequest();
+            $directConfirmFailReq->merge([
+                'id' => $fullRefundReq->id,
+                'refund_status' => 'refunded',
+                'payment_method' => 'bank_transfer',
+                'payment_reference' => 'DIRECT-FAIL',
+                'payment_date' => now()->toDateString(),
+                'amount' => 5000.00,
+            ]);
+            $directConfirmFailResp = $controller->updateRefundStatus($directConfirmFailReq, $refundStatusService, $refundTransactionService);
+            $this->assert(
+                "Round 4 Proof 5.1: Direct confirmation of item 2 without approval is blocked with HTTP 400",
+                $directConfirmFailResp->getStatusCode() === 400
+            );
+
+            // Approve item 2
+            $approveFullReq = new RefundStatusRequest();
+            $approveFullReq->merge([
+                'id' => $fullRefundReq->id,
+                'refund_status' => 'approved',
+                'approved_note' => 'Item 2 approved',
+            ]);
+            $controller->updateRefundStatus($approveFullReq, $refundStatusService, $refundTransactionService);
+
+            // Confirm payment for item 2
             $confirmFullReq = new RefundStatusRequest();
             $confirmFullReq->merge([
                 'id' => $fullRefundReq->id,
                 'refund_status' => 'refunded',
                 'payment_method' => 'bank_transfer',
-                'payment_info' => 'PARTIAL-REF-2',
+                'payment_reference' => 'PARTIAL-REF-2',
+                'payment_date' => now()->toDateString(),
                 'amount' => 5000.00,
             ]);
             $controller->updateRefundStatus($confirmFullReq, $refundStatusService, $refundTransactionService);
 
             $pendingLot->refresh();
             $this->assert(
-                "Round 4 Proof 5.1: Full order return cancels pending cashback status",
+                "Round 4 Proof 5.2: Full order return cancels pending cashback status",
                 $pendingLot->status === 'cancelled'
             );
             $this->assert(
-                "Round 4 Proof 5.2: Order status transitions to terminal 'refunded'",
+                "Round 4 Proof 5.3: Order status transitions to terminal 'refunded'",
                 $orderPartial->fresh()->order_status === 'refunded'
+            );
+
+            // Step 6: Reviewer Issue 5 Proof - Successive Taxed Returns Merchandise Allocation
+            // 3 items of ₦1,000 each with ₦75 tax each (Order total merchandise ₦3,000 + ₦225 tax = ₦3,225).
+            $taxOrder = Order::create([
+                'customer_id' => $customer->id,
+                'seller_id' => 1,
+                'seller_is' => 'seller',
+                'is_guest' => 0,
+                'order_amount' => 3225.00,
+                'shipping_cost' => 0.00,
+                'total_tax_amount' => 225.00,
+                'discount_amount' => 0.00,
+                'discount_type' => null,
+                'order_status' => 'delivered',
+                'payment_status' => 'paid',
+                'payment_method' => 'paystack',
+                'vendor_settlement_status' => 'settled',
+                'transaction_ref' => 'ref_order_tax_proof',
+            ]);
+
+            $taxItem1 = OrderDetail::create([
+                'order_id' => $taxOrder->id,
+                'product_id' => 201,
+                'seller_id' => 1,
+                'qty' => 1,
+                'price' => 1000.00,
+                'discount' => 0.00,
+                'tax' => 75.00,
+                'delivery_status' => 'delivered',
+                'payment_status' => 'paid',
+                'refund_request' => 0,
+            ]);
+            $taxItem2 = OrderDetail::create([
+                'order_id' => $taxOrder->id,
+                'product_id' => 202,
+                'seller_id' => 1,
+                'qty' => 1,
+                'price' => 1000.00,
+                'discount' => 0.00,
+                'tax' => 75.00,
+                'delivery_status' => 'delivered',
+                'payment_status' => 'paid',
+                'refund_request' => 0,
+            ]);
+            $taxItem3 = OrderDetail::create([
+                'order_id' => $taxOrder->id,
+                'product_id' => 203,
+                'seller_id' => 1,
+                'qty' => 1,
+                'price' => 1000.00,
+                'discount' => 0.00,
+                'tax' => 75.00,
+                'delivery_status' => 'delivered',
+                'payment_status' => 'paid',
+                'refund_request' => 0,
+            ]);
+
+            $taxPendingLot = CustomerCashbackLedger::create([
+                'customer_id' => $customer->id,
+                'order_id' => $taxOrder->id,
+                'merchandise_amount' => '3000.00',
+                'cashback_rate' => '5.00',
+                'cashback_amount' => '150.00', // 5% of ₦3,000 pure merchandise
+                'status' => 'pending',
+                'available_at' => now()->addDays(2),
+                'description' => 'Pending reward on ₦3,000 taxed merchandise',
+            ]);
+
+            // Return Item 1 (₦1,000 merch + ₦75 tax = ₦1,075 cash refund)
+            $taxRefund1 = RefundRequest::create([
+                'order_details_id' => $taxItem1->id,
+                'customer_id' => $customer->id,
+                'order_id' => $taxOrder->id,
+                'product_id' => $taxItem1->product_id,
+                'status' => 'pending',
+                'amount' => 1075.00,
+                'payment_info' => json_encode([
+                    'refundable_merchandise_value' => '1000.00',
+                    'refundable_tax_amount' => '75.00',
+                    'refundable_money_amount' => '1075.00',
+                    'cashback_amount' => '0.00',
+                ]),
+            ]);
+            $cApp1 = new RefundStatusRequest();
+            $cApp1->merge(['id' => $taxRefund1->id, 'refund_status' => 'approved', 'approved_note' => 'Approve 1']);
+            $controller->updateRefundStatus($cApp1, $refundStatusService, $refundTransactionService);
+            $cConf1 = new RefundStatusRequest();
+            $cConf1->merge([
+                'id' => $taxRefund1->id,
+                'refund_status' => 'refunded',
+                'payment_method' => 'bank_transfer',
+                'payment_reference' => 'TAX-REF-1',
+                'payment_date' => now()->toDateString(),
+                'amount' => 1075.00,
+            ]);
+            $controller->updateRefundStatus($cConf1, $refundStatusService, $refundTransactionService);
+
+            // Return Item 2 (₦1,000 merch + ₦75 tax = ₦1,075 cash refund)
+            $taxRefund2 = RefundRequest::create([
+                'order_details_id' => $taxItem2->id,
+                'customer_id' => $customer->id,
+                'order_id' => $taxOrder->id,
+                'product_id' => $taxItem2->product_id,
+                'status' => 'pending',
+                'amount' => 1075.00,
+                'payment_info' => json_encode([
+                    'refundable_merchandise_value' => '1000.00',
+                    'refundable_tax_amount' => '75.00',
+                    'refundable_money_amount' => '1075.00',
+                    'cashback_amount' => '0.00',
+                ]),
+            ]);
+            $cApp2 = new RefundStatusRequest();
+            $cApp2->merge(['id' => $taxRefund2->id, 'refund_status' => 'approved', 'approved_note' => 'Approve 2']);
+            $controller->updateRefundStatus($cApp2, $refundStatusService, $refundTransactionService);
+            $cConf2 = new RefundStatusRequest();
+            $cConf2->merge([
+                'id' => $taxRefund2->id,
+                'refund_status' => 'refunded',
+                'payment_method' => 'bank_transfer',
+                'payment_reference' => 'TAX-REF-2',
+                'payment_date' => now()->toDateString(),
+                'amount' => 1075.00,
+            ]);
+            $controller->updateRefundStatus($cConf2, $refundStatusService, $refundTransactionService);
+
+            $taxPendingLot->refresh();
+            // Remaining merchandise must be strictly ₦1,000.00 (NOT ₦925.00!)
+            // Adjusted cashback must be strictly 5% of ₦1,000 = ₦50.00 (NOT ₦46.25!)
+            $this->assertDecimal(
+                "Round 4 Proof 6.1: Successive taxed returns calculate remaining merchandise strictly as ₦1,000.00 (tax excluded)",
+                (string)$taxPendingLot->merchandise_amount,
+                '1000.00',
+                2
+            );
+            $this->assertDecimal(
+                "Round 4 Proof 6.2: Successive taxed returns produce exactly ₦50.00 pending reward (5% of ₦1,000; NOT ₦46.25)",
+                (string)$taxPendingLot->cashback_amount,
+                '50.00',
+                2
+            );
+
+            // Step 7: Vendor settlement excludes refunded items & discounts (Table Issue 1)
+            $vendorOrder = Order::create([
+                'customer_id' => $customer->id,
+                'seller_id' => 1,
+                'seller_is' => 'seller',
+                'is_guest' => 0,
+                'order_amount' => 10000.00,
+                'shipping_cost' => 0.00,
+                'total_tax_amount' => 0.00,
+                'discount_amount' => 0.00,
+                'discount_type' => null,
+                'order_status' => 'delivered',
+                'payment_status' => 'paid',
+                'payment_method' => 'paystack',
+                'vendor_settlement_status' => 'held',
+                'transaction_ref' => 'ref_order_vendor_settle',
+            ]);
+            OrderDetail::create([
+                'order_id' => $vendorOrder->id,
+                'product_id' => 401,
+                'seller_id' => 1,
+                'qty' => 1,
+                'price' => 5000.00,
+                'discount' => 0.00,
+                'tax' => 0.00,
+                'delivery_status' => 'delivered',
+                'payment_status' => 'paid',
+                'refund_request' => 4, // Item 1 already refunded
+            ]);
+            OrderDetail::create([
+                'order_id' => $vendorOrder->id,
+                'product_id' => 402,
+                'seller_id' => 1,
+                'qty' => 1,
+                'price' => 5000.00,
+                'discount' => 0.00,
+                'tax' => 0.00,
+                'delivery_status' => 'delivered',
+                'payment_status' => 'paid',
+                'refund_request' => 0, // Item 2 active
+            ]);
+
+            $sellerWalletBefore = (float)$sellerWallet->fresh()->total_earning;
+            \App\Utils\OrderManager::disburseSettledVendorOrder($vendorOrder, 'SETTLE-PARTIAL-VENDOR', 1);
+            $sellerWalletAfter = (float)$sellerWallet->fresh()->total_earning;
+            $vendorDisbursed = bcsub((string)$sellerWalletAfter, (string)$sellerWalletBefore, 2);
+            $this->assertDecimal(
+                "Round 4 Proof 7.1: Vendor settlement on partially refunded order disburses 90% of remaining ₦5,000 (₦4,500.00; NOT ₦9,000.00)",
+                (string)$vendorDisbursed,
+                '4500.00',
+                2
+            );
+
+            // Step 8: Multi-unit tax not doubled (Table Issue 2)
+            $multiUnitItem = OrderDetail::create([
+                'order_id' => $taxOrder->id,
+                'product_id' => 301,
+                'seller_id' => 1,
+                'qty' => 3,
+                'price' => 1000.00,
+                'discount' => 0.00,
+                'tax' => 225.00, // Total line tax for 3 units
+                'delivery_status' => 'delivered',
+                'payment_status' => 'paid',
+                'refund_request' => 0,
+            ]);
+            $refundDetails = \App\Utils\OrderManager::getRefundDetailsForSingleOrderDetails($multiUnitItem->id);
+            $this->assertDecimal(
+                "Round 4 Proof 8.1: Multi-unit line tax is ₦225.00 (not multiplied by quantity twice to ₦675.00)",
+                (string)$refundDetails['tax'],
+                '225.00',
+                2
             );
 
         } finally {

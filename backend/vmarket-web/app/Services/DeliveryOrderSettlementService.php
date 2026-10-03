@@ -253,7 +253,7 @@ class DeliveryOrderSettlementService
                         ]);
 
                         // [AI] Transition available customer cashback ledger records to 'redeemed'
-                        CustomerCashbackLedger::markRedeemed($intent->customer_id, (string) $redemption->cashback_amount, $createdOrderIds[0] ?? null);
+                        CustomerCashbackLedger::markRedeemed($intent->customer_id, (string) $redemption->cashback_amount, $createdOrderIds[0] ?? null, $intent->created_at);
                     }
                 }
 

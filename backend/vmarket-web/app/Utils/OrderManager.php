@@ -432,10 +432,29 @@ class OrderManager
                 throw new \RuntimeException("Cannot disburse vendor earnings for order in status '{$lockedOrder->vendor_settlement_status}'.");
             }
 
-            $order_summary = OrderManager::getOrderTotalAndSubTotalAmountSummary($lockedOrder);
-            $subtotal = bcadd((string)($order_summary['subtotal'] ?? '0.00'), '0', 2);
-            if (bccomp($subtotal, '0.00', 2) <= 0) {
+            // Calculate active vendor subtotal: exclude refunded items (refund_request == 4) and subtract product discounts
+            $activeVendorSubtotal = '0.00';
+            $lockedOrder->load('details');
+            if ($lockedOrder->details && $lockedOrder->details->count() > 0) {
+                foreach ($lockedOrder->details as $detail) {
+                    if ((int)$detail->refund_request === 4) {
+                        continue;
+                    }
+                    $qty = (string)($detail->qty ?? '1');
+                    $price = (string)($detail->price ?? '0.00');
+                    $discount = (string)($detail->discount ?? '0.00');
+                    $itemNet = bcsub(bcmul($qty, $price, 2), $discount, 2);
+                    if (bccomp($itemNet, '0.00', 2) > 0) {
+                        $activeVendorSubtotal = bcadd($activeVendorSubtotal, $itemNet, 2);
+                    }
+                }
+            }
+            $subtotal = $activeVendorSubtotal;
+            if (bccomp($subtotal, '0.00', 2) <= 0 && (!$lockedOrder->details || $lockedOrder->details->count() === 0)) {
                 $subtotal = bcsub((string)($lockedOrder->order_amount ?? '0.00'), (string)($lockedOrder->shipping_cost ?? '0.00'), 2);
+            }
+            if (bccomp($subtotal, '0.00', 2) < 0) {
+                $subtotal = '0.00';
             }
             $rawCommission = bcdiv(bcmul($subtotal, '10', 4), '100', 4);
             $commission = bcadd($rawCommission, '0', 2);
@@ -2130,7 +2149,8 @@ class OrderManager
         if (bccomp($detailMerchandise, '0.00', 4) < 0) {
             $detailMerchandise = '0.00';
         }
-        $detailTaxTotal = bcmul($detailQty, $detailTax, 4);
+        // Stored OrderDetail.tax is already the total line tax - do not multiply by qty twice
+        $detailTaxTotal = $detailTax;
 
         // [AI] Segregate promotional coupons from customer cashback redemptions
         $isCashbackDiscount = ($order->discount_type === 'cashback');

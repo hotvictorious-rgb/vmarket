@@ -225,7 +225,7 @@ class CustomerCashbackLedger extends Model
      * Consumes unexpired lots FIFO and protected available lots backing in-flight reservations.
      * Enforces complete ledger coverage: throws an exception if available coverage is insufficient.
      */
-    public static function markRedeemed(int $customerId, string $redeemedNaira, ?int $redeemedOrderId = null): void
+    public static function markRedeemed(int $customerId, string $redeemedNaira, ?int $redeemedOrderId = null, ?\DateTimeInterface $reservationCreatedAt = null): void
     {
         $remainingToRedeem = bcadd($redeemedNaira, '0', 2);
         if (bccomp($remainingToRedeem, '0.00', 2) <= 0) {
@@ -241,6 +241,16 @@ class CustomerCashbackLedger extends Model
             ->get();
 
         foreach ($availableLedgers as $ledger) {
+            // [AI] Strict Expiry Guard: An expired lot (expires_at in the past) can ONLY be consumed
+            // if protected by a verified reservation that predated the lot's expiry date!
+            // Fresh checkouts without a prior unexpired reservation cannot consume expired rewards.
+            if ($ledger->expires_at && $ledger->expires_at->isPast()) {
+                $isProtectedByReservation = ($reservationCreatedAt !== null && $ledger->expires_at->gte($reservationCreatedAt));
+                if (!$isProtectedByReservation) {
+                    $ledger->update(['status' => 'expired']);
+                    continue;
+                }
+            }
             $ledgerAmount = bcadd((string) $ledger->cashback_amount, '0', 2);
             if (bccomp($remainingToRedeem, $ledgerAmount, 2) >= 0) {
                 $ledger->update([

@@ -984,6 +984,20 @@ class PaystackRefundService
                 return ['status' => false, 'message' => 'Order detail already has an active completed refund request.'];
             }
 
+            // State Machine Transition Guard:
+            // Payment confirmation requires the request to be 'approved' with 'awaiting_manual_payment'
+            // (Exception: Pure cashback refunds completing internally during approval)
+            $isPureCashbackFlow = (!empty($paymentData['payment_method']) && $paymentData['payment_method'] === 'cashback');
+            if (!$isPureCashbackFlow) {
+                if ($lockedRequest->status !== 'approved' || $lockedRequest->execution_status !== 'awaiting_manual_payment') {
+                    Log::warning("[AI] finalizeManualPaymentConfirmation rejected: Request #{$lockedRequest->id} is in status '{$lockedRequest->status}' ('{$lockedRequest->execution_status}'), not approved/awaiting_manual_payment.");
+                    return [
+                        'status' => false,
+                        'message' => "Payment confirmation can only be executed for requests in 'approved' status awaiting manual payment. Current status: {$lockedRequest->status} ({$lockedRequest->execution_status}).",
+                    ];
+                }
+            }
+
             $lockedOrder = Order::where('id', $order->id)->lockForUpdate()->first();
             if (!$lockedOrder) {
                 return ['status' => false, 'message' => 'Order not found.'];
@@ -1011,7 +1025,9 @@ class PaystackRefundService
 
             // Determine pure returned merchandise value (strictly tax-exclusive)
             $returnedMerchandiseValue = '0.00';
-            if (!empty($payInfo['merchandise_value']) && bccomp((string)$payInfo['merchandise_value'], '0.00', 2) > 0) {
+            if (!empty($payInfo['refundable_merchandise_value']) && bccomp((string)$payInfo['refundable_merchandise_value'], '0.00', 2) > 0) {
+                $returnedMerchandiseValue = bcadd((string)$payInfo['refundable_merchandise_value'], '0', 2);
+            } elseif (!empty($payInfo['merchandise_value']) && bccomp((string)$payInfo['merchandise_value'], '0.00', 2) > 0) {
                 $returnedMerchandiseValue = bcadd((string)$payInfo['merchandise_value'], '0', 2);
             } elseif ($lockedDetail) {
                 $qty = (string)($lockedDetail->qty ?? '1');
@@ -1022,19 +1038,33 @@ class PaystackRefundService
                 $returnedMerchandiseValue = $refundAmount;
             }
 
-            // Determine money portion to record for manual offline refund
-            $moneyToRefund = '0.00';
-            if (isset($paymentData['amount']) && bccomp((string)$paymentData['amount'], '0.00', 2) > 0) {
-                $moneyToRefund = bcadd((string)$paymentData['amount'], '0', 2);
-            } elseif (isset($payInfo['money_amount']) && bccomp((string)$payInfo['money_amount'], '0.00', 2) > 0) {
-                $moneyToRefund = bcadd((string)$payInfo['money_amount'], '0', 2);
-            } elseif (isset($payInfo['refundable_money_amount']) && bccomp((string)$payInfo['refundable_money_amount'], '0.00', 2) > 0) {
-                $moneyToRefund = bcadd((string)$payInfo['refundable_money_amount'], '0', 2);
-            } elseif ($lockedOrder->payment_method !== 'cashback') {
-                $moneyToRefund = bcsub($refundAmount, $cashbackToRestore, 2);
-                if (bccomp($moneyToRefund, '0.00', 2) < 0) {
-                    $moneyToRefund = '0.00';
+            // Determine money portion to record for manual offline refund with exact amount validation
+            $expectedMoney = (string)($payInfo['refundable_money_amount'] ?? ($payInfo['money_amount'] ?? '0.00'));
+            if (bccomp($expectedMoney, '0.00', 2) <= 0 && $lockedOrder->payment_method !== 'cashback') {
+                $expectedMoney = bcsub($refundAmount, $cashbackToRestore, 2);
+                if (bccomp($expectedMoney, '0.00', 2) < 0) {
+                    $expectedMoney = '0.00';
                 }
+            }
+
+            $moneyToRefund = '0.00';
+            if (!$isPureCashbackFlow && bccomp($expectedMoney, '0.00', 2) > 0) {
+                if (!isset($paymentData['amount']) || $paymentData['amount'] === '' || $paymentData['amount'] === null) {
+                    return [
+                        'status' => false,
+                        'message' => 'The confirmed payment amount is required for money refunds.',
+                    ];
+                }
+                $submittedAmount = bcadd((string)$paymentData['amount'], '0', 2);
+                if (bccomp($submittedAmount, $expectedMoney, 2) !== 0) {
+                    return [
+                        'status' => false,
+                        'message' => "Confirmed amount (₦{$submittedAmount}) does not match the exact refundable money amount (₦{$expectedMoney}).",
+                    ];
+                }
+                $moneyToRefund = $submittedAmount;
+            } elseif ($isPureCashbackFlow) {
+                $moneyToRefund = '0.00';
             }
 
             // Calculate order subtotal and pure merchandise money paid
@@ -1203,7 +1233,10 @@ class PaystackRefundService
             if ($moneyPaymentMethod === 'cashback') {
                 $moneyPaymentMethod = 'manual_offline';
             }
-            $paymentInfoStr = $paymentData['payment_info'] ?? ($paymentData['payment_reference'] ?? ('manual_refund_' . $lockedRequest->id));
+            $paymentRef = $paymentData['payment_reference'] ?? ($paymentData['payment_info'] ?? ('manual_refund_' . $lockedRequest->id));
+            $paymentDate = !empty($paymentData['payment_date']) ? \Carbon\Carbon::parse($paymentData['payment_date'])->toDateString() : now()->toDateString();
+            $paymentEvidence = $paymentData['payment_evidence'] ?? null;
+            $confirmingAdminId = $paymentData['confirmed_by'] ?? (auth('admin')->id() ?? 1);
 
             if (bccomp($moneyToRefund, '0.00', 2) > 0) {
                 RefundTransaction::create([
@@ -1222,14 +1255,23 @@ class PaystackRefundService
                 ]);
             }
 
-            // 4. Update RefundRequest status and record immutable restored amounts
+            // 4. Update RefundRequest status and record immutable confirmed payment details
             $payInfo['cashback_restored'] = $cashbackToRestore;
             $payInfo['money_refunded'] = $moneyToRefund;
+            $payInfo['confirmed_amount'] = $moneyToRefund;
             $payInfo['confirmed_payment_method'] = $moneyPaymentMethod;
-            $payInfo['confirmed_payment_info'] = $paymentInfoStr;
+            $payInfo['confirmed_payment_info'] = $paymentRef;
+            $payInfo['payment_reference'] = $paymentRef;
+            $payInfo['payment_date'] = $paymentDate;
+            if ($paymentEvidence) {
+                $payInfo['payment_evidence'] = $paymentEvidence;
+            }
+            $payInfo['confirmed_by_admin_id'] = $confirmingAdminId;
+
             $lockedRequest->payment_info = json_encode($payInfo);
             $lockedRequest->execution_status = 'succeeded';
             $lockedRequest->status = 'refunded';
+            $lockedRequest->change_by = 'admin';
             $lockedRequest->save();
 
             // 5. Update OrderDetail to canonical 4 (4 = refunded)
@@ -1248,12 +1290,26 @@ class PaystackRefundService
                 ->count();
             $isFullOrderRefund = ($unrefundedItemsCount === 0);
 
-            $totalMerchandiseRefundedSoFar = (string)(RefundTransaction::where('order_id', $lockedOrder->id)
-                ->where('payment_status', 'paid')
-                ->where('refund_id', '!=', $lockedRequest->id)
-                ->sum('amount') ?: '0.00');
+            // [AI] Sum immutable merchandise-return allocations separately from tax refunds and payment transactions
+            $previouslyRefundedRequests = RefundRequest::where('order_id', $lockedOrder->id)
+                ->where('id', '!=', $lockedRequest->id)
+                ->where('status', 'refunded')
+                ->get();
 
-            $cumulativeRefundedValue = bcadd($totalMerchandiseRefundedSoFar, $returnedMerchandiseValue, 2);
+            $previouslyReturnedMerchandise = '0.00';
+            foreach ($previouslyRefundedRequests as $prevReq) {
+                $prevPayInfo = json_decode($prevReq->payment_info ?? '{}', true) ?: [];
+                $prevMerch = (string)($prevPayInfo['refundable_merchandise_value'] ?? '0.00');
+                if (bccomp($prevMerch, '0.00', 2) <= 0 && $prevReq->orderDetails) {
+                    $prevQty = (string)($prevReq->orderDetails->qty ?? 1);
+                    $prevPrice = (string)($prevReq->orderDetails->price ?? 0);
+                    $prevDiscount = (string)($prevReq->orderDetails->discount ?? 0);
+                    $prevMerch = bcsub(bcmul($prevQty, $prevPrice, 2), $prevDiscount, 2);
+                }
+                $previouslyReturnedMerchandise = bcadd($previouslyReturnedMerchandise, $prevMerch, 2);
+            }
+
+            $cumulativeRefundedValue = bcadd($previouslyReturnedMerchandise, $returnedMerchandiseValue, 2);
             $remainingMerchandise = bcsub($orderSubtotal, $cumulativeRefundedValue, 2);
             if ($isFullOrderRefund || bccomp($remainingMerchandise, '0.00', 2) <= 0) {
                 $remainingMerchandise = '0.00';

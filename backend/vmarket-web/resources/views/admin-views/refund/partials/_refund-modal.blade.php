@@ -1,8 +1,12 @@
+@php
+    $modalPayInfo = json_decode($refund->payment_info ?? '{}', true) ?: [];
+    $modalRefundableMoney = $modalPayInfo['refundable_money_amount'] ?? ($modalPayInfo['money_amount'] ?? ($refund->amount ?? '0.00'));
+@endphp
 <div class="modal fade" id="refundModal-{{ $refund['id'] }}">
     <div class="modal-dialog modal-dialog-centered">
         <div class="modal-content">
             <form action="{{ route('admin.refund-section.refund.refund-status-update') }}" method="post"
-                  id="submit-refund-form-{{$refund['id']}}">
+                  enctype="multipart/form-data" id="submit-refund-form-{{$refund['id']}}">
                 @csrf
                 <div class="modal-body">
                     <input type="hidden" name="id" value="{{ $refund->id}}">
@@ -12,32 +16,51 @@
                              src="{{ dynamicAsset(path: 'public/assets/new/back-end/img/refund-approve.png') }}"
                              alt="{{ translate('refund_approve') }}">
                         <h4 class="mb-4 mx-auto max-w-283">
-                            {{ translate('once_you_refund_that_refund_request').', '.translate('then_you_would_not_able_change_any_status') }}
+                            {{ translate('confirm_offline_manual_refund_payment') }}
                         </h4>
                     </div>
-                    <div class="form-group">
+
+                    <div class="form-group mb-3">
+                        <label class="form-label" for="amount">{{ translate('transferred_amount') }} (₦)</label>
+                        <input type="number" step="0.01" class="form-control" name="amount" id="amount-{{ $refund['id'] }}"
+                               value="{{ $modalRefundableMoney }}" required>
+                        <small class="text-muted">{{ translate('must_equal_the_exact_refundable_money_amount') }}: ₦{{ number_format((float)$modalRefundableMoney, 2) }}</small>
+                    </div>
+
+                    <div class="form-group mb-3">
                         <label class="form-label" for="">{{ translate('payment_method') }}</label>
                         <div class="select-wrapper">
-                            <select class="form-select" name="payment_method">
+                            <select class="form-select" name="payment_method" required>
+                                <option value="bank_transfer">{{ translate('bank_transfer') }}</option>
+                                <option value="manual_offline">{{ translate('manual_offline') }}</option>
                                 <option value="cash">{{ translate('cash') }}</option>
-                                <option value="digitally_paid">{{ translate('digitally_paid') }}</option>
-                                @if ($walletStatus == 1 && $walletAddRefund == 1)
-                                    <option value="customer_wallet">{{ translate('customer_wallet') }}</option>
-                                @endif
+                                <option value="pos_card">{{ translate('pos_card') }}</option>
                             </select>
                         </div>
                     </div>
-                    <div class="form-group">
-                        <label class="form-label" for="">{{ translate('payment_info') }}
-                            <span class="tooltip-icon cursor-pointer" data-bs-toggle="tooltip"
-                                  data-bs-placement="right"
-                                  area-label="{{ translate('please_enter_the_payment_information_according_to_your_chosen_payment_method').'.'.translate('without_a_proper_payment_info,you_cannot_change_the_Refund_Status').'.'}}"
-                                  data-bs-title="{{ translate('please_enter_the_payment_information_according_to_your_chosen_payment_method').'.'.translate('without_a_proper_payment_info,you_cannot_change_the_Refund_Status').'.'}}">
-                                    <i class="fi fi-sr-info"></i>
-                                </span>
-                        </label>
+
+                    <div class="form-group mb-3">
+                        <label class="form-label" for="">{{ translate('payment_reference') }} / {{ translate('transfer_id') }}</label>
+                        <input type="text" class="form-control" name="payment_reference"
+                               placeholder="{{ translate('ex').' : '.'NIBSS_SESSION_ID_123456' }}" required>
+                    </div>
+
+                    <div class="form-group mb-3">
+                        <label class="form-label" for="">{{ translate('payment_date') }}</label>
+                        <input type="date" class="form-control" name="payment_date"
+                               value="{{ date('Y-m-d') }}" max="{{ date('Y-m-d') }}" required>
+                    </div>
+
+                    <div class="form-group mb-3">
+                        <label class="form-label" for="">{{ translate('supporting_evidence') }} ({{ translate('receipt') }})</label>
+                        <input type="file" class="form-control" name="payment_evidence" accept="image/jpeg,image/png,image/jpg,application/pdf">
+                        <small class="text-muted">{{ translate('optional_supported_formats') }}: JPG, PNG, PDF (Max: 5MB)</small>
+                    </div>
+
+                    <div class="form-group mb-3">
+                        <label class="form-label" for="">{{ translate('additional_notes') }}</label>
                         <input type="text" class="form-control" name="payment_info"
-                               placeholder="{{ translate('ex').' : '.'Paypal'}}">
+                               placeholder="{{ translate('optional_internal_notes') }}">
                     </div>
                     <div class="d-flex flex-wrap justify-content-end gap-3 mt-3">
                         <button type="button" class="btn btn-secondary px-3"

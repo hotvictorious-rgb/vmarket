@@ -30,8 +30,12 @@ class RefundStatusRequest extends FormRequest
             'id' => 'required',
             'refund_status' => 'required|in:pending,approved,rejected,refunded',
             'approved_note' => $this->input('refund_status') == 'approved' ? 'required' : '',
-            'rejected_note' => $this->input('refund_status') == 'rejected' ? 'required': '',
-            'payment_method' => $this->input('refund_status') == 'refunded' ? 'required': '',
+            'rejected_note' => $this->input('refund_status') == 'rejected' ? 'required' : '',
+            'payment_method' => $this->input('refund_status') == 'refunded' ? 'required' : '',
+            'amount' => $this->input('refund_status') == 'refunded' ? 'required|numeric|min:0.01' : 'nullable|numeric',
+            'payment_reference' => $this->input('refund_status') == 'refunded' ? 'required|string|max:255' : 'nullable|string',
+            'payment_date' => $this->input('refund_status') == 'refunded' ? 'required|date' : 'nullable|date',
+            'payment_evidence' => 'nullable|file|mimes:jpg,jpeg,png,pdf|max:5120',
         ];
     }
     public function messages(): array
@@ -40,6 +44,9 @@ class RefundStatusRequest extends FormRequest
             'approved_note.required' => translate('The_approved_note_field_is_required'),
             'rejected_note.required' => translate('The_rejected_note_field_is_required'),
             'payment_method.required' => translate('The_payment_method_field_is_required'),
+            'amount.required' => translate('The_transferred_amount_is_required'),
+            'payment_reference.required' => translate('The_payment_reference_field_is_required'),
+            'payment_date.required' => translate('The_payment_date_field_is_required'),
         ];
     }
     protected function failedValidation(Validator $validator)

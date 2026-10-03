@@ -295,7 +295,7 @@ class PickupOrderSettlementService
                             ]);
 
                             // Transition customer_cashback_ledgers rows to 'redeemed'
-                            CustomerCashbackLedger::markRedeemed($customerId, (string) $redemption->cashback_amount, $createdOrderId);
+                            CustomerCashbackLedger::markRedeemed($customerId, (string) $redemption->cashback_amount, $createdOrderId, $reservation->created_at);
                         }
 
                         $cashbackRedeemed = [
@@ -548,8 +548,8 @@ class PickupOrderSettlementService
                 'product_details' => json_encode($product ? $product->toArray() : ['name' => $item['product_name'] ?? 'Item']),
                 'qty' => $qty,
                 'price' => bcadd((string) ($item['unit_price'] ?? '0.00'), '0', 2),
-                'discount' => bcadd((string) ($item['discount'] ?? '0.00'), '0', 2),
-                'tax' => bcadd((string) ($item['tax'] ?? '0.00'), '0', 2),
+                'discount' => bcmul((string) ($item['discount'] ?? '0.00'), (string) $qty, 2),
+                'tax' => bcmul((string) ($item['tax'] ?? '0.00'), (string) $qty, 2),
                 'discount_type' => 'discount_on_product',
                 'variant' => $item['variant'] ?? null,
                 'delivery_status' => 'pending',
