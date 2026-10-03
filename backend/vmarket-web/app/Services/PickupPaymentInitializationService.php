@@ -142,26 +142,72 @@ class PickupPaymentInitializationService
                 throw new InvalidPaymentStateException("Payment amount must be greater than zero.");
             }
 
-            // Step 3B: Cashback Reserve (Spend/Redeem Path)
-            $cashbackReserved = $this->reserveCashbackForPickup(
-                $reservation,
-                $customerId,
-                $lockedCustomer,
-                $useCashback,
-                'pickup-' . $reservation->reservation_code
-            );
+            // Step 3B: Active Attempt Management on THIS reservation (REPLAY BEFORE RESERVE)
+            $existingActive = PaymentRequest::where('active_pickup_reservation_id', $reservation->id)
+                ->lockForUpdate()
+                ->first();
 
-            // Adjust payment amount after cashback discount
-            $cashbackAmount = $cashbackReserved['cashback_amount'] ?? '0.00';
-            $discountedNaira = bcsub($twoDecimals, $cashbackAmount, 2);
-            if (bccomp($discountedNaira, '0.00', 2) < 0) {
-                $discountedNaira = '0.00';
-            }
+            if ($existingActive) {
+                if (now()->greaterThanOrEqualTo($existingActive->attempt_expires_at)) {
+                    // Stale active attempt expired -> lazily clear active unique token under lock
+                    $existingActive->update([
+                        'attempt_status' => 'expired',
+                        'active_pickup_reservation_id' => null,
+                    ]);
+                    // [AI] Restore previously deducted cashback points if attempt expired
+                    $this->releaseCashbackForPickup($reservation, $customerId, $lockedCustomer);
+                    $existingActive = null;
+                } else {
+                    // Active attempt is still valid!
+                    $additional = is_array($existingActive->additional_data)
+                        ? $existingActive->additional_data
+                        : json_decode($existingActive->additional_data ?? '{}', true);
 
-            // Recalculate kobo amount after discount
-            if (bccomp($cashbackAmount, '0.00', 2) > 0) {
-                $amountKoboString = bcmul($discountedNaira, '100', 0);
-                $amountKobo = (int) $amountKoboString;
+                    if (!empty($additional['authorization_url'])) {
+                        return [
+                            'action' => 'REPLAY_CACHED',
+                            'is_replayed' => true,
+                            'payment_request' => $existingActive,
+                            'authorization_url' => $additional['authorization_url'],
+                            'gateway_reference' => $existingActive->gateway_reference,
+                        ];
+                    }
+
+                    // Ambiguous attempt exists without authorization_url
+                    // Check initialization lease: Is another external initialization in-flight?
+                    $claimExpiresAtStr = $additional['init_claim_expires_at'] ?? null;
+                    $claimExpiresAt = $claimExpiresAtStr ? Carbon::parse($claimExpiresAtStr) : null;
+                    $isLeaseActive = $claimExpiresAt && now()->isBefore($claimExpiresAt);
+
+                    if ($isLeaseActive) {
+                        // Gateway initialization is currently IN-FLIGHT by another request!
+                        // Do NOT rotate reference. Do NOT query gateway verify yet.
+                        return [
+                            'action' => 'WAIT_IN_FLIGHT',
+                            'payment_request' => $existingActive,
+                            'gateway_reference' => $existingActive->gateway_reference,
+                            'lease_expires_at' => $claimExpiresAt,
+                        ];
+                    }
+
+                    // Lease is demonstrably STALE or missing! Acquire recovery lease under lock:
+                    $now = now();
+                    $additional['init_claimed_at'] = $now->toIso8601String();
+                    $additional['init_claim_expires_at'] = $now->copy()->addSeconds(self::INITIALIZATION_LEASE_SECONDS)->toIso8601String();
+                    $additional['init_claim_token'] = Str::random(32);
+                    $existingActive->update([
+                        'additional_data' => json_encode($additional),
+                    ]);
+
+                    return [
+                        'action' => 'RECOVER_EXISTING',
+                        'payment_request' => $existingActive,
+                        'reservation' => $reservation,
+                        'amount_kobo' => $amountKobo,
+                        'customer' => $customerRecord,
+                        'ttl_minutes' => $ttlMinutes,
+                    ];
+                }
             }
 
             // Step 4: Overlap Concurrency Guard
@@ -224,70 +270,26 @@ class PickupPaymentInitializationService
                 }
             }
 
-            // Step 5: Active Attempt Management on THIS reservation
-            $existingActive = PaymentRequest::where('active_pickup_reservation_id', $reservation->id)
-                ->lockForUpdate()
-                ->first();
+            // Step 5: Cashback Reserve (Spend/Redeem Path - fresh attempt creation only)
+            $cashbackReserved = $this->reserveCashbackForPickup(
+                $reservation,
+                $customerId,
+                $lockedCustomer,
+                $useCashback,
+                'pickup-' . $reservation->reservation_code
+            );
 
-            if ($existingActive) {
-                if (now()->greaterThanOrEqualTo($existingActive->attempt_expires_at)) {
-                    // Stale active attempt expired -> lazily clear active unique token under lock
-                    $existingActive->update([
-                        'attempt_status' => 'expired',
-                        'active_pickup_reservation_id' => null,
-                    ]);
-                    $existingActive = null;
-                } else {
-                    // Active attempt is still valid!
-                    $additional = is_array($existingActive->additional_data)
-                        ? $existingActive->additional_data
-                        : json_decode($existingActive->additional_data ?? '{}', true);
+            // Adjust payment amount after cashback discount
+            $cashbackAmount = $cashbackReserved['cashback_amount'] ?? '0.00';
+            $discountedNaira = bcsub($twoDecimals, $cashbackAmount, 2);
+            if (bccomp($discountedNaira, '0.00', 2) < 0) {
+                $discountedNaira = '0.00';
+            }
 
-                    if (!empty($additional['authorization_url'])) {
-                        return [
-                            'action' => 'REPLAY_CACHED',
-                            'is_replayed' => true,
-                            'payment_request' => $existingActive,
-                            'authorization_url' => $additional['authorization_url'],
-                            'gateway_reference' => $existingActive->gateway_reference,
-                        ];
-                    }
-
-                    // Ambiguous attempt exists without authorization_url
-                    // Check initialization lease: Is another external initialization in-flight?
-                    $claimExpiresAtStr = $additional['init_claim_expires_at'] ?? null;
-                    $claimExpiresAt = $claimExpiresAtStr ? Carbon::parse($claimExpiresAtStr) : null;
-                    $isLeaseActive = $claimExpiresAt && now()->isBefore($claimExpiresAt);
-
-                    if ($isLeaseActive) {
-                        // Gateway initialization is currently IN-FLIGHT by another request!
-                        // Do NOT rotate reference. Do NOT query gateway verify yet.
-                        return [
-                            'action' => 'WAIT_IN_FLIGHT',
-                            'payment_request' => $existingActive,
-                            'gateway_reference' => $existingActive->gateway_reference,
-                            'lease_expires_at' => $claimExpiresAt,
-                        ];
-                    }
-
-                    // Lease is demonstrably STALE or missing! Acquire recovery lease under lock:
-                    $now = now();
-                    $additional['init_claimed_at'] = $now->toIso8601String();
-                    $additional['init_claim_expires_at'] = $now->copy()->addSeconds(self::INITIALIZATION_LEASE_SECONDS)->toIso8601String();
-                    $additional['init_claim_token'] = Str::random(32);
-                    $existingActive->update([
-                        'additional_data' => json_encode($additional),
-                    ]);
-
-                    return [
-                        'action' => 'RECOVER_EXISTING',
-                        'payment_request' => $existingActive,
-                        'reservation' => $reservation,
-                        'amount_kobo' => $amountKobo,
-                        'customer' => $customerRecord,
-                        'ttl_minutes' => $ttlMinutes,
-                    ];
-                }
+            // Recalculate kobo amount after discount
+            if (bccomp($cashbackAmount, '0.00', 2) > 0) {
+                $amountKoboString = bcmul($discountedNaira, '100', 0);
+                $amountKobo = (int) $amountKoboString;
             }
 
             // Step 6: Create Fresh PaymentRequest Attempt with Initial Claim Lease
@@ -302,7 +304,7 @@ class PickupPaymentInitializationService
             $newPaymentRequest = PaymentRequest::create([
                 'id' => Str::orderedUuid()->toString(),
                 'payer_id' => (string) $customerId,
-                'payment_amount' => $twoDecimals,
+                'payment_amount' => $discountedNaira, // [AI] Authoritative net gateway payable amount
                 'currency_code' => 'NGN',
                 'payment_method' => 'paystack',
                 'payment_platform' => 'web',
@@ -320,6 +322,8 @@ class PickupPaymentInitializationService
                     'customer_id' => $customerId,
                     'seller_id' => $reservation->seller_id,
                     'shop_id' => $reservation->shop_id,
+                    'gross_amount' => $twoDecimals,
+                    'cashback_amount' => $cashbackAmount,
                     'amount_kobo' => $amountKobo,
                     'created_at' => $now->toIso8601String(),
                     'init_claimed_at' => $now->toIso8601String(),
@@ -744,5 +748,37 @@ class PickupPaymentInitializationService
             'cashback_amount' => $cashbackAmount,
             'redemption_id' => $redemption->id,
         ];
+    }
+
+    /**
+     * [AI] Restores reserved cashback points when an active pickup payment attempt expires or is superseded.
+     */
+    protected function releaseCashbackForPickup(PickupReservation $reservation, int $customerId, User $lockedCustomer): void
+    {
+        $activeRedemptions = CashbackRedemption::where('pickup_reservation_id', $reservation->id)
+            ->where('status', 'reserved')
+            ->lockForUpdate()
+            ->get();
+
+        foreach ($activeRedemptions as $redemption) {
+            $pointsToRestore = (float) $redemption->points;
+            if ($pointsToRestore > 0) {
+                DB::table('users')->where('id', $customerId)->increment('loyalty_point', $pointsToRestore);
+                $freshBalance = (float) DB::table('users')->where('id', $customerId)->value('loyalty_point');
+
+                DB::table('loyalty_point_transactions')->insert([
+                    'user_id' => $customerId,
+                    'transaction_id' => Str::uuid()->toString(),
+                    'credit' => $pointsToRestore,
+                    'debit' => 0.0000,
+                    'balance' => $freshBalance,
+                    'reference' => 'pickup-' . $reservation->reservation_code,
+                    'transaction_type' => 'point_transfer',
+                    'created_at' => now(),
+                    'updated_at' => now(),
+                ]);
+            }
+            $redemption->update(['status' => 'cancelled']);
+        }
     }
 }

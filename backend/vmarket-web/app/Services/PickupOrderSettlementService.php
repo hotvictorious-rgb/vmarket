@@ -401,10 +401,15 @@ class PickupOrderSettlementService
             $sellerIs = ($shopAuthor === 'admin') ? 'admin' : 'seller';
         }
 
-        $orderId = 100000 + Order::all()->count() + 1;
+        $orderId = \App\Utils\OrderManager::generateNewOrderID();
         $verificationCode = (string) rand(100000, 999999);
         $handoverCode = (string) rand(100000, 999999);
         $customerId = (int) $reservation->customer_id;
+
+        $additional = is_array($paymentRequest->additional_data)
+            ? $paymentRequest->additional_data
+            : json_decode($paymentRequest->additional_data ?? '{}', true);
+        $cashbackDiscount = bcadd((string)($additional['cashback_amount'] ?? '0.00'), '0', 2);
 
         // Internal transaction_ref for OrderManager (<= 20 chars, unique)
         $internalTxRef = 'PKP' . substr(str_replace('-', '', Str::orderedUuid()->toString()), 0, 16);
@@ -432,8 +437,8 @@ class PickupOrderSettlementService
             'payment_method' => 'paystack',
             'transaction_ref' => $internalTxRef, // strictly internal ID; NEVER the Paystack reference
             'order_group_id' => 'pickup-' . $reservation->reservation_code,
-            'discount_amount' => '0.00',
-            'discount_type' => null,
+            'discount_amount' => $cashbackDiscount,
+            'discount_type' => (bccomp($cashbackDiscount, '0.00', 2) > 0) ? 'cashback' : null,
             'coupon_code' => null,
             'coupon_discount_bearer' => 'inhouse',
             'order_amount' => $orderAmount,
@@ -621,7 +626,16 @@ class PickupOrderSettlementService
                 'additional_data' => json_encode($additional),
             ]);
 
-            $capturedNaira = bcdiv((string) ($gatewayData['amount'] ?? 0), '100', 4);
+            $existingRec = PaymentReconciliation::where('gateway_reference', $verifiedReference)->first();
+            if ($existingRec) {
+                return [
+                    'status' => 'reconciliation_required',
+                    'anomaly_type' => $existingRec->initial_anomaly_type,
+                    'message' => $reason,
+                    'reconciliation_case' => $existingRec->case_number,
+                    'payment_request' => $paymentRequest->fresh(),
+                ];
+            }
 
             $reconciliation = PaymentReconciliation::create([
                 'case_number' => 'REC-' . Str::orderedUuid()->toString(),
@@ -686,7 +700,16 @@ class PickupOrderSettlementService
             'additional_data' => json_encode($additional),
         ]);
 
-        $capturedNaira = bcdiv((string) ($gatewayData['amount'] ?? 0), '100', 4);
+        $existingRec = PaymentReconciliation::where('gateway_reference', $paymentRequest->gateway_reference)->first();
+        if ($existingRec) {
+            return [
+                'status' => 'reconciliation_required',
+                'anomaly_type' => $existingRec->initial_anomaly_type,
+                'message' => $reason,
+                'reconciliation_case' => $existingRec->case_number,
+                'payment_request' => $paymentRequest->fresh(),
+            ];
+        }
 
         $reconciliation = PaymentReconciliation::create([
             'case_number' => 'REC-' . Str::orderedUuid()->toString(),

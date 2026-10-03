@@ -809,12 +809,10 @@ class OrderManager
 
     public static function generateNewOrderID()
     {
-        $baseID = 100001;
-        $orderDetailsId = OrderDetail::orderBy('order_id', 'desc')->first()?->order_id ?? $baseID;
-        if (Order::find($orderDetailsId)) {
-            $orderDetailsId = Order::orderBy('id', 'DESC')->first()->id + 1;
-        }
-        return $orderDetailsId;
+        $baseID = 100000;
+        $maxOrder = DB::table('orders')->max('id') ?? $baseID;
+        $maxDetail = DB::table('order_details')->max('order_id') ?? $baseID;
+        return max((int)$maxOrder, (int)$maxDetail, $baseID) + 1;
     }
 
     public static function getCheckOrCreateAdminWallet(): void

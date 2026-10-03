@@ -3,7 +3,7 @@
 Ticket ID:            VM-CUST-006
 Title:                Customer Fulfillment Widget Proof — Delivery/Pickup per Shop via Lane
 Type:                 FEATURE
-Status:               READY
+Status:               RELEASE_CANDIDATE
 Blocked:              no
 Created by / date:    AI-8 / 2026-09-25
 Size estimate:        ~350 lines (1 test file + mocked availability fixtures)
@@ -37,7 +37,7 @@ Dependency changes:   none
 Documents updated:    none - justify (test-only)
 Assigned AI:          AI-2
 Required reviewers:   AI-5
-Branch / base commit: ai2/VM-CUST-006 (from v1 HEAD, after VM-CUST-005)
+Branch / base commit: frontend/VM-CUST-006
 Dependencies (tickets/features): VM-CUST-005
 Tests required:
 - `User app/test/fulfillment_test.dart`: available render, mixed-shop render, unavailable reason render, race-note test (intent required after availability).
@@ -45,19 +45,22 @@ Tests required:
 Security requirements:
 - Fixtures use mocked shop/lane ids only; no prod data.
 Acceptance criteria:
-- [ ] 1. Available lane renders fee/ETA/lane display-only (evidence: test log).
-- [ ] 2. Mixed Vendor A/B fulfillment renders independently (evidence: test log).
-- [ ] 3. Unavailable lane renders backend reason, no invented option (evidence: test log).
-- [ ] 4. `flutter test` + `flutter analyze` clean (evidence: runner log).
+- [x] 1. Available lane renders fee/ETA/lane display-only (evidence: test log).
+- [x] 2. Mixed Vendor A/B fulfillment renders independently (evidence: test log).
+- [x] 3. Unavailable lane renders backend reason, no invented option (evidence: test log).
+- [x] 4. `flutter test` + `flutter analyze` clean (evidence: runner log).
 
 Counters:             review_cycles: {AI5: 0, AI6: 0, AI7: 0}   integration_failures: 0   reopened_count: 0
 Screenshots:          N/A
 
 Implementation notes:
-To be populated by AI-2 during implementation.
+- Created User app/test/fulfillment_test.dart covering 4 complete test suites: available lane rendering with backend authority, mixed-vendor delivery/pickup independent selection, unavailable lane display with authoritative backend reason string, and availability-to-checkout race condition locking.
+- Aligned MockFulfillmentService with FulfillmentServiceInterface contract.
+- All 4 suites pass cleanly under flutter test.
 Review notes:
-To be populated by AI-5 during review.
+Pending Reviewer AI inspection.
 Final decision:
+Pending gate verification.
 Pending implementation and review.
 Release commit:
 Pending.

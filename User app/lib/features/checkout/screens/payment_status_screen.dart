@@ -105,7 +105,9 @@ class _PaymentStatusScreenState extends State<PaymentStatusScreen> {
                 );
                 if (orderResponse.statusCode == 200) {
                   final orderData = json.decode(orderResponse.body);
-                  pickupVerificationCode = orderData['pickup_verification_code'];
+                  pickupVerificationCode = (orderData['verification_code'] != null && orderData['verification_code'].toString().isNotEmpty)
+                      ? orderData['verification_code'].toString()
+                      : (orderData['pickup_verification_code']?.toString());
                 }
               } catch (e) {
                 debugPrint('Pickup order OTP fetch error: $e');

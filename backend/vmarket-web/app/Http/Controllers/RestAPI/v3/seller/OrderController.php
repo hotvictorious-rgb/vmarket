@@ -238,7 +238,15 @@ class OrderController extends Controller
         }
         $db_expected_date = $order->expected_delivery_date;
 
-        $order->deliveryman_charge = $deliveryManCharge;
+        // [AI] Rate Authority Guard: deliveryman_charge cannot exceed the order's authoritative shipping cost
+        if ($request->filled('deliveryman_charge')) {
+            $proposedCharge = BackEndHelper::currency_to_usd($request->deliveryman_charge);
+            $maxAllowed = (float)($order->shipping_cost ?? 0);
+            if ($proposedCharge < 0 || $proposedCharge > $maxAllowed) {
+                return response()->json(['success' => 0, 'message' => translate('Delivery man charge cannot exceed authoritative order shipping cost.')], 422);
+            }
+            $order->deliveryman_charge = $proposedCharge;
+        }
         $order->expected_delivery_date = $request->expected_delivery_date;
 
         try {

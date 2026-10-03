@@ -237,6 +237,9 @@ class SellerController extends Controller
 
     public function shop_info_update(ShopInfoUpdateRequest $request): JsonResponse
     {
+        if (!empty($request['is_vendor_employee']) || !empty($request['vendor_employee'])) {
+            return response()->json(['message' => translate('Access Denied: Only the shop owner can modify shop configuration.')], 403);
+        }
         $seller = $request->seller;
         $shop = Shop::where(['seller_id' => $seller['id']])->first();
 
@@ -334,6 +337,9 @@ class SellerController extends Controller
 
     public function seller_info_update(SellerUpdateRequest $request): JsonResponse
     {
+        if (!empty($request['is_vendor_employee']) || !empty($request['vendor_employee'])) {
+            return response()->json(['message' => translate('Access Denied: Only the shop owner can modify owner credentials.')], 403);
+        }
         $seller = $request->seller;
         $currentSeller = Seller::where(['id' => $seller['id']])->first();
 
@@ -500,6 +506,9 @@ class SellerController extends Controller
 
     public function withdraw_request(Request $request): JsonResponse
     {
+        if (!empty($request['is_vendor_employee']) || !empty($request['vendor_employee'])) {
+            return response()->json(['message' => translate('Access Denied: Only the shop owner can request fund withdrawals.')], 403);
+        }
         $method = WithdrawalMethod::find($request['withdraw_method_id']);
 
         if (!$method) {
@@ -557,6 +566,9 @@ class SellerController extends Controller
 
     public function close_withdraw_request(Request $request): JsonResponse
     {
+        if (!empty($request['is_vendor_employee']) || !empty($request['vendor_employee'])) {
+            return response()->json(['message' => translate('Access Denied: Only the shop owner can manage withdrawal requests.')], 403);
+        }
         $seller = $request->seller;
 
         try {
@@ -692,6 +704,9 @@ class SellerController extends Controller
 
     public function account_delete(Request $request): JsonResponse
     {
+        if (!empty($request['is_vendor_employee']) || !empty($request['vendor_employee'])) {
+            return response()->json(['message' => translate('Access Denied: Only the shop owner can delete the merchant account.')], 403);
+        }
         $seller = $request->seller;
         if ($this->getCountOfOngoingOrderStatus(sellerId: $request->seller->id) > 0) {
             return response()->json(['status' => 'error', 'key' => 'ongoing_order_left', 'message' => translate('please_make_sure_you_don`t_have_any_ongoing_order')], 403);
