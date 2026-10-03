@@ -222,7 +222,8 @@ class CustomerCashbackLedger extends Model
 
     /**
      * [AI] Transitions customer's available cashback ledger entries to 'redeemed' up to $redeemedNaira.
-     * Enforces FIFO by earliest expiration date and strictly ignores expired records.
+     * Consumes unexpired lots FIFO and protected available lots backing in-flight reservations.
+     * Enforces complete ledger coverage: throws an exception if available coverage is insufficient.
      */
     public static function markRedeemed(int $customerId, string $redeemedNaira, ?int $redeemedOrderId = null): void
     {
@@ -231,13 +232,11 @@ class CustomerCashbackLedger extends Model
             return;
         }
 
+        // [AI] Fetch available lots. Include unexpired lots and lots preserved in status 'available' (protected for active reservations).
+        // Order by: unexpired first (FIFO), then expired-but-available (protected reservations)
         $availableLedgers = self::where('customer_id', $customerId)
             ->where('status', 'available')
-            ->where(function ($query) {
-                $query->whereNull('expires_at')
-                      ->orWhere('expires_at', '>', now());
-            })
-            ->orderByRaw('CASE WHEN expires_at IS NULL THEN 1 ELSE 0 END, expires_at ASC, available_at ASC')
+            ->orderByRaw('CASE WHEN expires_at IS NULL THEN 1 WHEN expires_at > NOW() THEN 0 ELSE 2 END, expires_at ASC, available_at ASC')
             ->lockForUpdate()
             ->get();
 
@@ -248,6 +247,7 @@ class CustomerCashbackLedger extends Model
                     'status' => 'redeemed',
                     'redeemed_at' => now(),
                     'redeemed_order_id' => $redeemedOrderId,
+                    'description' => "Redeemed for Order #{$redeemedOrderId}",
                 ]);
                 $remainingToRedeem = bcsub($remainingToRedeem, $ledgerAmount, 2);
             } else {
@@ -274,6 +274,11 @@ class CustomerCashbackLedger extends Model
             if (bccomp($remainingToRedeem, '0.00', 2) <= 0) {
                 break;
             }
+        }
+
+        // [AI] Reject uncovered redemptions: throw exception inside transaction to rollback settlement if ledger coverage is incomplete
+        if (bccomp($remainingToRedeem, '0.00', 2) > 0) {
+            throw new \RuntimeException("[AI] Invariant Violation: Insufficient cashback ledger coverage. Shortfall of ₦{$remainingToRedeem} for customer #{$customerId}. Transaction rolled back.");
         }
     }
 }

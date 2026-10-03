@@ -2107,21 +2107,30 @@ class OrderManager
         }
         $order = Order::where(['id' => $orderDetails['order_id']])->with('details')->first();
 
-        $totalProductPrice = '0.00';
+        $totalProductMerchandise = '0.00';
         foreach ($order->details as $key => $orderDetail) {
             $qty = (string)($orderDetail->getRawOriginal('qty') ?? '1');
             $price = (string)($orderDetail->getRawOriginal('price') ?? '0.00');
-            $tax = (string)($orderDetail->getRawOriginal('tax') ?? '0.00');
             $discount = (string)($orderDetail->getRawOriginal('discount') ?? '0.00');
-            $itemTotal = bcsub(bcadd(bcmul($qty, $price, 4), $tax, 4), $discount, 4);
-            $totalProductPrice = bcadd($totalProductPrice, $itemTotal, 4);
+            // Strict pure merchandise subtotal excluding tax
+            $itemMerchandise = bcsub(bcmul($qty, $price, 4), $discount, 4);
+            if (bccomp($itemMerchandise, '0.00', 4) < 0) {
+                $itemMerchandise = '0.00';
+            }
+            $totalProductMerchandise = bcadd($totalProductMerchandise, $itemMerchandise, 4);
         }
 
         $detailQty = (string)($orderDetails->getRawOriginal('qty') ?? '1');
         $detailPrice = (string)($orderDetails->getRawOriginal('price') ?? '0.00');
         $detailTax = (string)($orderDetails->getRawOriginal('tax') ?? '0.00');
         $detailDiscount = (string)($orderDetails->getRawOriginal('discount') ?? '0.00');
-        $subtotal = bcsub(bcadd(bcmul($detailQty, $detailPrice, 4), $detailTax, 4), $detailDiscount, 4);
+
+        // Pure merchandise subtotal (strictly tax-exclusive)
+        $detailMerchandise = bcsub(bcmul($detailQty, $detailPrice, 4), $detailDiscount, 4);
+        if (bccomp($detailMerchandise, '0.00', 4) < 0) {
+            $detailMerchandise = '0.00';
+        }
+        $detailTaxTotal = bcmul($detailQty, $detailTax, 4);
 
         // [AI] Segregate promotional coupons from customer cashback redemptions
         $isCashbackDiscount = ($order->discount_type === 'cashback');
@@ -2136,9 +2145,10 @@ class OrderManager
             $promotionalCouponDiscount = $orderDiscountAmount;
         }
 
-        if (bccomp($totalProductPrice, '0.00', 4) > 0) {
-            $couponDiscount = bcdiv(bcmul($promotionalCouponDiscount, $subtotal, 4), $totalProductPrice, 4);
-            $allocatedCashback = bcdiv(bcmul($orderCashbackRedeemed, $subtotal, 4), $totalProductPrice, 4);
+        // Promotional coupon discount allocated across pure merchandise
+        if (bccomp($totalProductMerchandise, '0.00', 4) > 0) {
+            $couponDiscount = bcdiv(bcmul($promotionalCouponDiscount, $detailMerchandise, 4), $totalProductMerchandise, 4);
+            $allocatedCashback = bcdiv(bcmul($orderCashbackRedeemed, $detailMerchandise, 4), $totalProductMerchandise, 4);
         } else {
             $couponDiscount = '0.00';
             $allocatedCashback = '0.00';
@@ -2146,28 +2156,39 @@ class OrderManager
 
         $referAndEarnDiscount = (string)OrderManager::getReferDiscountAmountForSingleOrderDetails(orderDetailsId: $orderDetailsId);
 
-        // Net merchandise refundable value of this item (excluding promotional coupons and referral discounts)
-        $refundableMerchandiseValue = bcsub(bcsub($subtotal, $couponDiscount, 4), $referAndEarnDiscount, 4);
+        // Pure net merchandise refundable value of this item (excluding promotional coupons and referral discounts, strictly tax-exclusive)
+        $refundableMerchandiseValue = bcsub(bcsub($detailMerchandise, $couponDiscount, 4), $referAndEarnDiscount, 4);
         if (bccomp($refundableMerchandiseValue, '0.00', 2) < 0) {
             $refundableMerchandiseValue = '0.00';
         }
 
         // Segregate money allocation and cashback allocation:
         $refundableCashbackAmount = (bccomp($allocatedCashback, $refundableMerchandiseValue, 4) > 0) ? $refundableMerchandiseValue : $allocatedCashback;
-        $refundableMoneyAmount = bcsub($refundableMerchandiseValue, $refundableCashbackAmount, 4);
-        if (bccomp($refundableMoneyAmount, '0.00', 2) < 0) {
-            $refundableMoneyAmount = '0.00';
+        $refundableMerchandiseMoney = bcsub($refundableMerchandiseValue, $refundableCashbackAmount, 4);
+        if (bccomp($refundableMerchandiseMoney, '0.00', 2) < 0) {
+            $refundableMerchandiseMoney = '0.00';
         }
+
+        // Tax refund is strictly separated
+        $refundableTaxAmount = $detailTaxTotal;
+
+        // Total money to refund = pure merchandise money + tax
+        $refundableMoneyAmount = bcadd($refundableMerchandiseMoney, $refundableTaxAmount, 4);
+
+        // Total refundable value = refundable merchandise value + tax
+        $totalRefundable = bcadd($refundableMerchandiseValue, $refundableTaxAmount, 4);
 
         return [
             'product_price' => bcadd($detailPrice, '0', 2),
             'product_discount' => bcadd($detailDiscount, '0', 2),
-            'tax' => bcadd($detailTax, '0', 2),
-            'sub_total' => bcadd($subtotal, '0', 2),
+            'tax' => bcadd($refundableTaxAmount, '0', 2),
+            'sub_total' => bcadd($detailMerchandise, '0', 2),
             'coupon_discount' => bcadd($couponDiscount, '0', 2),
             'referral_discount' => bcadd($referAndEarnDiscount, '0', 2),
-            'total_refundable_amount' => bcadd($refundableMerchandiseValue, '0', 2),
+            'total_refundable_amount' => bcadd($totalRefundable, '0', 2),
             'refundable_merchandise_value' => bcadd($refundableMerchandiseValue, '0', 2),
+            'refundable_merchandise_money' => bcadd($refundableMerchandiseMoney, '0', 2),
+            'refundable_tax_amount' => bcadd($refundableTaxAmount, '0', 2),
             'refundable_money_amount' => bcadd($refundableMoneyAmount, '0', 2),
             'refundable_cashback_amount' => bcadd($refundableCashbackAmount, '0', 2),
         ];

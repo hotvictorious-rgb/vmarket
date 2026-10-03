@@ -147,10 +147,20 @@ class RefundController extends BaseController
                 $orderModel = Order::find($refund['order_id']);
                 $gatewayRef = $orderModel ? \App\Services\PaystackRefundService::resolvePaystackReferenceForOrder($orderModel) : null;
 
-                if ($order && ($order['payment_method'] === 'cashback' || bccomp((string)($order['order_amount'] ?? '0.00'), '0.00', 2) === 0)) {
+                $paymentInfo = json_decode($refundRequestModel->payment_info ?? '{}', true) ?: [];
+                $refundableMoney = $paymentInfo['refundable_money_amount'] ?? ($paymentInfo['money_amount'] ?? null);
+
+                // [AI] Route refunds using recorded money and reward allocations:
+                // If merchandise money allocation is zero, or if the order is cashback-only, route internally to finalizeCashbackOrderRefund.
+                // Do NOT route to Paystack gateway even if $order->payment_method is 'paystack' (e.g. when Paystack was used only for shipping).
+                $isPureRewardRefund = ($refundableMoney !== null && bccomp((string)$refundableMoney, '0.00', 2) === 0)
+                    || ($order && $order['payment_method'] === 'cashback')
+                    || (bccomp((string)($order['order_amount'] ?? '0.00'), '0.00', 2) === 0);
+
+                if ($isPureRewardRefund) {
                     $paystackRefundService = app(\App\Services\PaystackRefundService::class);
                     $paystackRefundService->finalizeCashbackOrderRefund($refundRequestModel, $orderModel);
-                    Log::info("[AI] Internal cashback refund finalized for RefundRequest #{$refund['id']} on Order #{$order['id']}");
+                    Log::info("[AI] Internal cashback refund finalized for RefundRequest #{$refund['id']} on Order #{$order['id']} (Pure Reward Refund)");
                 } elseif ($order && $order['payment_method'] === 'paystack' && !empty($gatewayRef)) {
                     $paystackRefundService = app(\App\Services\PaystackRefundService::class);
                     $initResult = $paystackRefundService->initiateRefund($refundRequestModel, $gatewayRef);

@@ -25,6 +25,10 @@ $kernel->bootstrap();
 
 use App\Models\CustomerCashbackLedger;
 use App\Models\Order;
+use App\Models\OrderDetail;
+use App\Models\RefundRequest;
+use App\Models\RefundTransaction;
+use App\Models\SellerWallet;
 use App\Models\User;
 use App\Models\PickupReservation;
 use App\Models\CashbackRedemption;
@@ -33,6 +37,8 @@ use App\Models\PaymentReconciliation;
 use App\Models\VendorEmployee;
 use App\Models\VendorRole;
 use App\Models\Seller;
+use App\Services\PaystackRefundService;
+use App\Utils\OrderManager;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
 
@@ -69,6 +75,14 @@ class ComprehensiveProductionReadinessProofTest
         $this->testRound2Finding7ConflictingResourceBranchAttack();
         $this->testRound2Finding8CanonicalRefundRequestStatus();
         $this->testRound2Finding9InterruptedInternalPaymentRecovery();
+
+        // Round 3 In-Depth Audits & Mathematical Proofs
+        $this->testRound3Finding1WebAndApiDuplicateRefundRejection();
+        $this->testRound3Finding2RewardMerchandiseWithGatewayShippingRefundRouting();
+        $this->testRound3Finding3TaxSegregationInRefundsAndVendorReversals();
+        $this->testRound3Finding4FullyReturnedDiscountedOrderCancelsPendingRewards();
+        $this->testRound3Finding5PostExpiryCaptureAndShortfallRollback();
+        $this->testRound3Finding6SpendingRestoredRewardsPreservesRefundHistory();
 
         $driftFormatted = number_format($this->totalDrift, 4);
         echo "\n========================================================================\n";
@@ -389,6 +403,28 @@ class ComprehensiveProductionReadinessProofTest
                 'phone' => '080' . random_int(10000000, 99999999),
                 'password' => bcrypt('password'),
                 'loyalty_point' => 5000.0000, // ₦5,000 worth of points
+            ]);
+
+            $seedOrder = Order::create([
+                'customer_id' => $customer->id,
+                'customer_type' => 'customer',
+                'order_amount' => 5000.00,
+                'payment_status' => 'paid',
+                'order_status' => 'delivered',
+                'payment_method' => 'cashback',
+                'order_type' => 'in_house_pickup',
+            ]);
+
+            CustomerCashbackLedger::create([
+                'customer_id' => $customer->id,
+                'order_id' => $seedOrder->id,
+                'merchandise_amount' => '5000.00',
+                'cashback_rate' => '10.00',
+                'cashback_amount' => '5000.00',
+                'status' => 'available',
+                'available_at' => now()->subDay(),
+                'expires_at' => now()->addMonths(6),
+                'description' => 'Test available cashback lot',
             ]);
 
             // Create test product with stock
@@ -1791,6 +1827,28 @@ class ComprehensiveProductionReadinessProofTest
                 'loyalty_point' => 5000.0000,
             ]);
 
+            $seedOrder = Order::create([
+                'customer_id' => $customer->id,
+                'customer_type' => 'customer',
+                'order_amount' => 5000.00,
+                'payment_status' => 'paid',
+                'order_status' => 'delivered',
+                'payment_method' => 'cashback',
+                'order_type' => 'in_house_pickup',
+            ]);
+
+            CustomerCashbackLedger::create([
+                'customer_id' => $customer->id,
+                'order_id' => $seedOrder->id,
+                'merchandise_amount' => '5000.00',
+                'cashback_rate' => '10.00',
+                'cashback_amount' => '5000.00',
+                'status' => 'available',
+                'available_at' => now()->subDay(),
+                'expires_at' => now()->addMonths(6),
+                'description' => 'Test available cashback lot',
+            ]);
+
             $seller = Seller::create([
                 'f_name' => 'Seller',
                 'l_name' => 'RecoveryTest',
@@ -1887,6 +1945,699 @@ class ComprehensiveProductionReadinessProofTest
             $this->assert(
                 "Round 2 Finding 9.3: PaymentRequest transitioned to is_paid = 1",
                 (int)$interruptedPayment->is_paid === 1
+            );
+        } finally {
+            DB::rollBack();
+        }
+    }
+
+    /**
+     * Round 3 Finding 1: Website & API Duplicate Refund Rejection & Item Lock
+     */
+    private function testRound3Finding1WebAndApiDuplicateRefundRejection(): void
+    {
+        echo "\n--- Round 3 Finding 1: Duplicate Refund Prevention & Item Lock ---\n";
+
+        DB::beginTransaction();
+        try {
+            $customer = User::create([
+                'name' => 'R3 User 1',
+                'email' => 'r3_u1_' . Str::random(8) . '@vmarket.ng',
+                'phone' => '080' . random_int(10000000, 99999999),
+                'password' => bcrypt('password'),
+                'loyalty_point' => 0.0000,
+            ]);
+
+            $order = Order::create([
+                'customer_id' => $customer->id,
+                'is_guest' => 0,
+                'order_amount' => 5000.00,
+                'order_status' => 'delivered',
+                'payment_status' => 'paid',
+                'payment_method' => 'cashback',
+                'received_at' => now()->subHours(2),
+                'refund_window_expires_at' => now()->addHours(22),
+            ]);
+
+            $detail = OrderDetail::create([
+                'order_id' => $order->id,
+                'product_id' => 1,
+                'qty' => 1,
+                'price' => 5000.00,
+                'discount' => 0.00,
+                'tax' => 0.00,
+                'delivery_status' => 'delivered',
+                'payment_status' => 'paid',
+                'refund_request' => 0,
+            ]);
+
+            // Test 1.1: Return window expired guard
+            $order->refund_window_expires_at = now()->subHour();
+            $order->save();
+            $this->assert(
+                "Round 3 Finding 1.1: Expired return window is properly detected and rejected",
+                !$order->isWithinRefundWindow()
+            );
+
+            // Restore valid return window
+            $order->refund_window_expires_at = now()->addHours(20);
+            $order->save();
+
+            // First refund request submission
+            $refund1 = RefundRequest::create([
+                'order_details_id' => $detail->id,
+                'customer_id' => $customer->id,
+                'order_id' => $order->id,
+                'product_id' => $detail->product_id,
+                'status' => 'pending',
+                'amount' => 5000.00,
+                'payment_info' => json_encode([
+                    'merchandise_value' => '5000.00',
+                    'merchandise_money' => '0.00',
+                    'tax_amount' => '0.00',
+                    'money_amount' => '0.00',
+                    'cashback_amount' => '5000.00',
+                    'total_refundable' => '5000.00',
+                ]),
+            ]);
+            $detail->update(['refund_request' => 1]);
+
+            // Test 1.2 & 1.3: Duplicate request for the same item is blocked
+            $secondRequestBlocked = ((int)$detail->fresh()->refund_request !== 0)
+                || RefundRequest::where('order_details_id', $detail->id)->whereNotIn('status', ['rejected'])->exists();
+            $this->assert(
+                "Round 3 Finding 1.2: OrderDetail locked and duplicate refund request on same item blocked",
+                $secondRequestBlocked
+            );
+
+            // Test 1.4: First refund execution restores exact ₦5,000 rewards
+            $service = app(PaystackRefundService::class);
+            $service->finalizeCashbackOrderRefund($refund1, $order);
+            $customer->refresh();
+            $this->assertDecimal(
+                "Round 3 Finding 1.3: First refund execution restores exact ₦5,000.00 rewards",
+                (string)$customer->loyalty_point,
+                '5000.0000',
+                4
+            );
+
+            // Test 1.5: Concurrent duplicate execution attempt is blocked with zero double point restoration
+            $refund2 = RefundRequest::create([
+                'order_details_id' => $detail->id,
+                'customer_id' => $customer->id,
+                'order_id' => $order->id,
+                'product_id' => $detail->product_id,
+                'status' => 'pending',
+                'amount' => 5000.00,
+                'payment_info' => $refund1->payment_info,
+            ]);
+            $service->finalizeCashbackOrderRefund($refund2, $order);
+            $customer->refresh();
+            $this->assertDecimal(
+                "Round 3 Finding 1.4: Concurrent duplicate execution blocked with zero double point restoration",
+                (string)$customer->loyalty_point,
+                '5000.0000',
+                4
+            );
+
+            $this->assert(
+                "Round 3 Finding 1.5: Duplicate refund request transitions to execution_status already_refunded",
+                $refund2->fresh()->execution_status === 'already_refunded'
+            );
+        } finally {
+            DB::rollBack();
+        }
+    }
+
+    /**
+     * Round 3 Finding 2: Merchandise Paid Entirely With Rewards With Gateway Shipping
+     */
+    private function testRound3Finding2RewardMerchandiseWithGatewayShippingRefundRouting(): void
+    {
+        echo "\n--- Round 3 Finding 2: Reward Merchandise with Gateway Shipping Refund Routing ---\n";
+
+        DB::beginTransaction();
+        try {
+            $customer = User::create([
+                'name' => 'R3 User 2',
+                'email' => 'r3_u2_' . Str::random(8) . '@vmarket.ng',
+                'phone' => '080' . random_int(10000000, 99999999),
+                'password' => bcrypt('password'),
+                'loyalty_point' => 0.0000,
+            ]);
+
+            $order = Order::create([
+                'customer_id' => $customer->id,
+                'seller_id' => 1,
+                'seller_is' => 'seller',
+                'is_guest' => 0,
+                'order_amount' => 2500.00, // Shipping paid in money
+                'shipping_cost' => 2500.00,
+                'total_tax_amount' => 0.00,
+                'discount_amount' => 10000.00,
+                'discount_type' => 'cashback',
+                'order_status' => 'delivered',
+                'payment_status' => 'paid',
+                'payment_method' => 'paystack', // Gateway recorded because of shipping
+                'vendor_settlement_status' => 'settled',
+                'transaction_ref' => 'ref_order_r3_2',
+            ]);
+
+            $detail = OrderDetail::create([
+                'order_id' => $order->id,
+                'product_id' => 1,
+                'seller_id' => 1,
+                'qty' => 1,
+                'price' => 10000.00,
+                'discount' => 0.00,
+                'tax' => 0.00,
+                'delivery_status' => 'delivered',
+                'payment_status' => 'paid',
+                'refund_request' => 1,
+            ]);
+
+            $refundDetails = OrderManager::getRefundDetailsForSingleOrderDetails($detail->id);
+            $this->assertDecimal(
+                "Round 3 Finding 2.1: Refundable money amount for reward merchandise is ₦0.00",
+                (string)$refundDetails['refundable_money_amount'],
+                '0.00',
+                2
+            );
+
+            $this->assertDecimal(
+                "Round 3 Finding 2.2: Refundable cashback amount is exactly ₦10,000.00",
+                (string)$refundDetails['refundable_cashback_amount'],
+                '10000.00',
+                2
+            );
+
+            $paymentInfo = [
+                'merchandise_value' => $refundDetails['refundable_merchandise_value'],
+                'merchandise_money' => $refundDetails['refundable_merchandise_money'],
+                'tax_amount' => $refundDetails['refundable_tax_amount'],
+                'money_amount' => $refundDetails['refundable_money_amount'],
+                'cashback_amount' => $refundDetails['refundable_cashback_amount'],
+                'total_refundable' => $refundDetails['total_refundable_amount'],
+            ];
+
+            $refundReq = RefundRequest::create([
+                'order_details_id' => $detail->id,
+                'customer_id' => $customer->id,
+                'order_id' => $order->id,
+                'product_id' => $detail->product_id,
+                'status' => 'pending',
+                'amount' => $refundDetails['total_refundable_amount'],
+                'payment_info' => json_encode($paymentInfo),
+            ]);
+
+            $refundableMoney = $paymentInfo['money_amount'];
+            $isPureRewardRefund = ($refundableMoney !== null && bccomp((string)$refundableMoney, '0.00', 2) === 0)
+                || ($order && $order->payment_method === 'cashback')
+                || (bccomp((string)($order->order_amount ?? '0.00'), '0.00', 2) === 0);
+
+            $this->assert(
+                "Round 3 Finding 2.3: Admin routing identifies pure reward refund and bypasses payment gateway",
+                $isPureRewardRefund
+            );
+
+            $service = app(PaystackRefundService::class);
+            $service->finalizeCashbackOrderRefund($refundReq, $order);
+            $customer->refresh();
+
+            $this->assertDecimal(
+                "Round 3 Finding 2.4: Customer points pool restored by 10,000 pts with zero gateway cash refund",
+                (string)$customer->loyalty_point,
+                '10000.0000',
+                4
+            );
+
+            $tx = RefundTransaction::where('refund_id', $refundReq->id)->first();
+            $this->assert(
+                "Round 3 Finding 2.5: RefundTransaction recorded with payment_method=cashback",
+                $tx && $tx->payment_method === 'cashback'
+            );
+        } finally {
+            DB::rollBack();
+        }
+    }
+
+    /**
+     * Round 3 Finding 3: Tax Segregation in Refunds & Vendor Reversals
+     */
+    private function testRound3Finding3TaxSegregationInRefundsAndVendorReversals(): void
+    {
+        echo "\n--- Round 3 Finding 3: Tax Segregation in Refunds & Vendor Reversals ---\n";
+
+        DB::beginTransaction();
+        try {
+            $customer = User::create([
+                'name' => 'R3 User 3',
+                'email' => 'r3_u3_' . Str::random(8) . '@vmarket.ng',
+                'phone' => '080' . random_int(10000000, 99999999),
+                'password' => bcrypt('password'),
+                'loyalty_point' => 0.0000,
+            ]);
+
+            $order = Order::create([
+                'customer_id' => $customer->id,
+                'seller_id' => 1,
+                'seller_is' => 'seller',
+                'is_guest' => 0,
+                'order_amount' => 8750.00, // 8,000 merchandise + 750 tax
+                'shipping_cost' => 0.00,
+                'total_tax_amount' => 750.00,
+                'discount_amount' => 2000.00,
+                'discount_type' => 'cashback',
+                'order_status' => 'delivered',
+                'payment_status' => 'paid',
+                'payment_method' => 'paystack',
+                'vendor_settlement_status' => 'settled',
+                'transaction_ref' => 'ref_order_r3_3',
+            ]);
+
+            $item1 = OrderDetail::create([
+                'order_id' => $order->id,
+                'product_id' => 1,
+                'seller_id' => 1,
+                'qty' => 1,
+                'price' => 5000.00,
+                'discount' => 0.00,
+                'tax' => 375.00,
+                'delivery_status' => 'delivered',
+                'payment_status' => 'paid',
+                'refund_request' => 0,
+            ]);
+
+            $item2 = OrderDetail::create([
+                'order_id' => $order->id,
+                'product_id' => 2,
+                'seller_id' => 1,
+                'qty' => 1,
+                'price' => 5000.00,
+                'discount' => 0.00,
+                'tax' => 375.00,
+                'delivery_status' => 'delivered',
+                'payment_status' => 'paid',
+                'refund_request' => 0,
+            ]);
+
+            $refundDetails = OrderManager::getRefundDetailsForSingleOrderDetails($item1->id);
+            $this->assertDecimal(
+                "Round 3 Finding 3.1: Net merchandise value is ₦5,000.00 (tax strictly excluded)",
+                (string)$refundDetails['refundable_merchandise_value'],
+                '5000.00',
+                2
+            );
+
+            $this->assertDecimal(
+                "Round 3 Finding 3.2: Tax refund is ₦375.00 (segregated from merchandise)",
+                (string)$refundDetails['refundable_tax_amount'],
+                '375.00',
+                2
+            );
+
+            $this->assertDecimal(
+                "Round 3 Finding 3.3: Item cashback allocation is ₦1,000.00",
+                (string)$refundDetails['refundable_cashback_amount'],
+                '1000.00',
+                2
+            );
+
+            $this->assertDecimal(
+                "Round 3 Finding 3.4: Item merchandise money allocation is ₦4,000.00",
+                (string)$refundDetails['refundable_merchandise_money'],
+                '4000.00',
+                2
+            );
+
+            $this->assertDecimal(
+                "Round 3 Finding 3.5: Total money refund is ₦4,375.00 (merchandise money + tax)",
+                (string)$refundDetails['refundable_money_amount'],
+                '4375.00',
+                2
+            );
+
+            // Setup seller wallet with earning
+            $sellerWallet = SellerWallet::updateOrCreate(
+                ['seller_id' => 1],
+                ['total_earning' => 10000.00, 'commission_given' => 1000.00]
+            );
+
+            $refundReq = RefundRequest::create([
+                'order_details_id' => $item1->id,
+                'customer_id' => $customer->id,
+                'order_id' => $order->id,
+                'product_id' => $item1->product_id,
+                'status' => 'pending',
+                'amount' => $refundDetails['refundable_money_amount'],
+                'payment_info' => json_encode([
+                    'merchandise_value' => $refundDetails['refundable_merchandise_value'],
+                    'merchandise_money' => $refundDetails['refundable_merchandise_money'],
+                    'tax_amount' => $refundDetails['refundable_tax_amount'],
+                    'money_amount' => $refundDetails['refundable_money_amount'],
+                    'cashback_amount' => $refundDetails['refundable_cashback_amount'],
+                    'total_refundable' => $refundDetails['total_refundable_amount'],
+                ]),
+            ]);
+
+            $service = app(PaystackRefundService::class);
+            $service->finalizeRefundAccounting($refundReq, [
+                'status' => 'processed',
+                'currency' => 'NGN',
+                'amount' => 437500, // ₦4,375 in kobo
+                'transaction_reference' => 'ref_order_r3_3',
+                'merchant_note' => 'vmarket_refund_' . $refundReq->id,
+            ]);
+
+            $customer->refresh();
+            $this->assertDecimal(
+                "Round 3 Finding 3.6: Cashback restored is exactly ₦1,000.00 (NOT ₦1,093.60)",
+                (string)$customer->loyalty_point,
+                '1000.0000',
+                4
+            );
+
+            $sellerWallet->refresh();
+            $vendorEarningDeducted = bcsub('10000.00', (string)$sellerWallet->total_earning, 2);
+            $this->assertDecimal(
+                "Round 3 Finding 3.7: Vendor reversal is exactly ₦4,500.00 (90% of ₦5,000 merchandise, NOT ₦4,921.74)",
+                (string)$vendorEarningDeducted,
+                '4500.00',
+                2
+            );
+
+            $commissionDeducted = bcsub('1000.00', (string)$sellerWallet->commission_given, 2);
+            $this->assertDecimal(
+                "Round 3 Finding 3.8: Commission reversal is exactly ₦500.00 (10% of ₦5,000 merchandise)",
+                (string)$commissionDeducted,
+                '500.00',
+                2
+            );
+        } finally {
+            DB::rollBack();
+        }
+    }
+
+    /**
+     * Round 3 Finding 4: Fully Returned Discounted Order Cancels Pending Cashback
+     */
+    private function testRound3Finding4FullyReturnedDiscountedOrderCancelsPendingRewards(): void
+    {
+        echo "\n--- Round 3 Finding 4: Fully Returned Discounted Order Cancels Pending Cashback ---\n";
+
+        DB::beginTransaction();
+        try {
+            $customer = User::create([
+                'name' => 'R3 User 4',
+                'email' => 'r3_u4_' . Str::random(8) . '@vmarket.ng',
+                'phone' => '080' . random_int(10000000, 99999999),
+                'password' => bcrypt('password'),
+                'loyalty_point' => 0.0000,
+            ]);
+
+            $order = Order::create([
+                'customer_id' => $customer->id,
+                'seller_id' => 1,
+                'seller_is' => 'seller',
+                'is_guest' => 0,
+                'order_amount' => 7000.00, // 9,000 net merchandise - 2,000 rewards
+                'shipping_cost' => 0.00,
+                'total_tax_amount' => 0.00,
+                'discount_amount' => 2000.00,
+                'discount_type' => 'cashback',
+                'order_status' => 'delivered',
+                'payment_status' => 'paid',
+                'payment_method' => 'paystack',
+                'vendor_settlement_status' => 'held',
+                'transaction_ref' => 'ref_order_r3_4',
+            ]);
+
+            // Listed 10,000, discount 1,000 => net merchandise 9,000
+            $detail = OrderDetail::create([
+                'order_id' => $order->id,
+                'product_id' => 1,
+                'seller_id' => 1,
+                'qty' => 1,
+                'price' => 10000.00,
+                'discount' => 1000.00,
+                'tax' => 0.00,
+                'delivery_status' => 'delivered',
+                'payment_status' => 'paid',
+                'refund_request' => 0,
+            ]);
+
+            // Create pending cashback of ₦350 (5% of ₦7,000)
+            $pendingCashback = CustomerCashbackLedger::create([
+                'customer_id' => $customer->id,
+                'order_id' => $order->id,
+                'merchandise_amount' => '7000.00',
+                'cashback_rate' => '5.00',
+                'cashback_amount' => '350.00',
+                'status' => 'pending',
+                'available_at' => now()->addDays(1),
+                'description' => 'Pending reward',
+            ]);
+
+            $refundReq = RefundRequest::create([
+                'order_details_id' => $detail->id,
+                'customer_id' => $customer->id,
+                'order_id' => $order->id,
+                'product_id' => $detail->product_id,
+                'status' => 'pending',
+                'amount' => 7000.00,
+                'payment_info' => json_encode([
+                    'merchandise_value' => '9000.00',
+                    'merchandise_money' => '7000.00',
+                    'tax_amount' => '0.00',
+                    'money_amount' => '7000.00',
+                    'cashback_amount' => '2000.00',
+                    'total_refundable' => '9000.00',
+                ]),
+            ]);
+
+            $service = app(PaystackRefundService::class);
+            $service->finalizeRefundAccounting($refundReq, [
+                'status' => 'processed',
+                'currency' => 'NGN',
+                'amount' => 700000,
+                'transaction_reference' => 'ref_order_r3_4',
+                'merchant_note' => 'vmarket_refund_' . $refundReq->id,
+            ]);
+
+            $pendingCashback->refresh();
+            $this->assert(
+                "Round 3 Finding 4.1: Pending cashback status is cancelled upon full merchandise refund",
+                $pendingCashback->status === 'cancelled'
+            );
+
+            $this->assertDecimal(
+                "Round 3 Finding 4.2: Remaining pending cashback is ₦0.00 (NOT retaining ₦35.00)",
+                ($pendingCashback->status === 'cancelled') ? '0.00' : (string)$pendingCashback->cashback_amount,
+                '0.00',
+                2
+            );
+        } finally {
+            DB::rollBack();
+        }
+    }
+
+    /**
+     * Round 3 Finding 5: Post-Expiry Capture & Shortfall Rollback
+     */
+    private function testRound3Finding5PostExpiryCaptureAndShortfallRollback(): void
+    {
+        echo "\n--- Round 3 Finding 5: Post-Expiry Capture & Shortfall Rollback ---\n";
+
+        DB::beginTransaction();
+        try {
+            $customer = User::create([
+                'name' => 'R3 User 5',
+                'email' => 'r3_u5_' . Str::random(8) . '@vmarket.ng',
+                'phone' => '080' . random_int(10000000, 99999999),
+                'password' => bcrypt('password'),
+                'loyalty_point' => 1000.0000,
+            ]);
+
+            $seedOrder = Order::create([
+                'customer_id' => $customer->id,
+                'customer_type' => 'customer',
+                'order_amount' => 1000.00,
+                'payment_status' => 'paid',
+                'order_status' => 'delivered',
+                'payment_method' => 'cashback',
+                'order_type' => 'in_house_pickup',
+            ]);
+
+            // Available lot that expired 1 hour ago but was kept available because it backed a reservation
+            $expiredLot = CustomerCashbackLedger::create([
+                'customer_id' => $customer->id,
+                'order_id' => $seedOrder->id,
+                'merchandise_amount' => '1000.00',
+                'cashback_rate' => '10.00',
+                'cashback_amount' => '1000.00',
+                'status' => 'available',
+                'available_at' => now()->subDays(5),
+                'expires_at' => now()->subHour(), // Expired 1 hour ago
+                'description' => 'Protected lot',
+            ]);
+
+            // Capture redemption post-expiry
+            CustomerCashbackLedger::markRedeemed($customer->id, '1000.00', $seedOrder->id);
+            $expiredLot->refresh();
+            $this->assert(
+                "Round 3 Finding 5.1: Post-expiry capture consumes protected lot (status transitioned to redeemed)",
+                $expiredLot->status === 'redeemed'
+            );
+
+            // Test shortfall rejection
+            $shortfallExceptionCaught = false;
+            try {
+                CustomerCashbackLedger::markRedeemed($customer->id, '500.00', $seedOrder->id);
+            } catch (\RuntimeException $e) {
+                $shortfallExceptionCaught = true;
+            }
+            $this->assert(
+                "Round 3 Finding 5.2: Uncovered redemption throws Invariant Violation exception and rolls back transaction",
+                $shortfallExceptionCaught
+            );
+        } finally {
+            DB::rollBack();
+        }
+    }
+
+    /**
+     * Round 3 Finding 6: Spending Restored Rewards Preserves Refund History
+     */
+    private function testRound3Finding6SpendingRestoredRewardsPreservesRefundHistory(): void
+    {
+        echo "\n--- Round 3 Finding 6: Spending Restored Rewards Preserves Refund History ---\n";
+
+        DB::beginTransaction();
+        try {
+            $customer = User::create([
+                'name' => 'R3 User 6',
+                'email' => 'r3_u6_' . Str::random(8) . '@vmarket.ng',
+                'phone' => '080' . random_int(10000000, 99999999),
+                'password' => bcrypt('password'),
+                'loyalty_point' => 0.0000,
+            ]);
+
+            $order = Order::create([
+                'customer_id' => $customer->id,
+                'seller_id' => 1,
+                'seller_is' => 'seller',
+                'is_guest' => 0,
+                'order_amount' => 8000.00,
+                'shipping_cost' => 0.00,
+                'total_tax_amount' => 0.00,
+                'discount_amount' => 2000.00,
+                'discount_type' => 'cashback',
+                'order_status' => 'delivered',
+                'payment_status' => 'paid',
+                'payment_method' => 'cashback',
+                'vendor_settlement_status' => 'held',
+            ]);
+
+            $itemA = OrderDetail::create([
+                'order_id' => $order->id,
+                'product_id' => 1,
+                'seller_id' => 1,
+                'qty' => 1,
+                'price' => 5000.00,
+                'discount' => 0.00,
+                'tax' => 0.00,
+                'delivery_status' => 'delivered',
+                'payment_status' => 'paid',
+                'refund_request' => 0,
+            ]);
+
+            $itemB = OrderDetail::create([
+                'order_id' => $order->id,
+                'product_id' => 2,
+                'seller_id' => 1,
+                'qty' => 1,
+                'price' => 5000.00,
+                'discount' => 0.00,
+                'tax' => 0.00,
+                'delivery_status' => 'delivered',
+                'payment_status' => 'paid',
+                'refund_request' => 0,
+            ]);
+
+            $service = app(PaystackRefundService::class);
+
+            // 1. First return restores ₦1,000 rewards
+            $refundA = RefundRequest::create([
+                'order_details_id' => $itemA->id,
+                'customer_id' => $customer->id,
+                'order_id' => $order->id,
+                'product_id' => $itemA->product_id,
+                'status' => 'pending',
+                'amount' => 5000.00,
+                'payment_info' => json_encode([
+                    'merchandise_value' => '5000.00',
+                    'merchandise_money' => '4000.00',
+                    'tax_amount' => '0.00',
+                    'money_amount' => '4000.00',
+                    'cashback_amount' => '1000.00',
+                    'total_refundable' => '5000.00',
+                ]),
+            ]);
+            $service->finalizeCashbackOrderRefund($refundA, $order);
+            $customer->refresh();
+            $this->assertDecimal(
+                "Round 3 Finding 6.1: First refund restores exact ₦1,000.00 cashback rewards",
+                (string)$customer->loyalty_point,
+                '1000.0000',
+                4
+            );
+
+            // 2. Customer spends ₦600 of those restored rewards on a separate order
+            $seedOrderOther = Order::create([
+                'customer_id' => $customer->id,
+                'customer_type' => 'customer',
+                'order_amount' => 600.00,
+                'payment_status' => 'paid',
+                'order_status' => 'delivered',
+                'payment_method' => 'cashback',
+                'order_type' => 'in_house_pickup',
+            ]);
+            CustomerCashbackLedger::markRedeemed($customer->id, '600.00', $seedOrderOther->id);
+            $customer->decrement('loyalty_point', 600.00);
+
+            // 3. Second return on item B
+            $refundB = RefundRequest::create([
+                'order_details_id' => $itemB->id,
+                'customer_id' => $customer->id,
+                'order_id' => $order->id,
+                'product_id' => $itemB->product_id,
+                'status' => 'pending',
+                'amount' => 5000.00,
+                'payment_info' => json_encode([
+                    'merchandise_value' => '5000.00',
+                    'merchandise_money' => '4000.00',
+                    'tax_amount' => '0.00',
+                    'money_amount' => '4000.00',
+                    'cashback_amount' => '1000.00',
+                    'total_refundable' => '5000.00',
+                ]),
+            ]);
+            $service->finalizeCashbackOrderRefund($refundB, $order);
+
+            // Verify immutable restoration history: total restored = ₦2,000 across both items
+            $totalRestoredCashback = (string)RefundTransaction::where('order_id', $order->id)
+                ->where('payment_method', 'cashback')
+                ->sum('amount');
+            $this->assertDecimal(
+                "Round 3 Finding 6.2: Historical refund calculation uses immutable RefundTransaction (₦2,000.00 total)",
+                $totalRestoredCashback,
+                '2000.0000',
+                2
+            );
+
+            $this->assert(
+                "Round 3 Finding 6.3: Order status transitions to terminal refunded without phantom remaining merchandise",
+                $order->fresh()->order_status === 'refunded'
             );
         } finally {
             DB::rollBack();

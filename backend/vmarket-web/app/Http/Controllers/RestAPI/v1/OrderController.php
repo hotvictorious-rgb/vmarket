@@ -280,57 +280,85 @@ class OrderController extends Controller
 
         // [AI] Loyalty points decommissioned in V1 - customer refund check removed.
 
-        if ($orderDetails->refund_request != 0) {
-            return response()->json(
-                translate('already_applied_for_refund_request!!'),
-                302
-            );
-        }
+        $refund_request = null;
+        try {
+            DB::transaction(function () use ($request, $user, $parentOrder, &$refund_request, &$orderDetails) {
+                // [AI] Row-level lock on OrderDetail to prevent concurrent duplicate submissions
+                $lockedDetail = OrderDetail::where('id', $request->order_details_id)->lockForUpdate()->first();
+                if (!$lockedDetail) {
+                    throw new \Exception('order_details_not_found');
+                }
 
-        $refundDetails = OrderManager::getRefundDetailsForSingleOrderDetails(orderDetailsId: $orderDetails->id);
-        $moneyAmount = $refundDetails['refundable_money_amount'] ?? '0.00';
-        $cashbackAmount = $refundDetails['refundable_cashback_amount'] ?? '0.00';
-        $totalRefundable = $refundDetails['total_refundable_amount'] ?? '0.00';
+                if ((int)$lockedDetail->refund_request !== 0) {
+                    throw new \Exception('already_applied_for_refund_request!!');
+                }
 
-        $refund_request = new RefundRequest();
-        $refund_request->order_details_id = $request->order_details_id;
-        $refund_request->customer_id = $user->id;
-        $refund_request->status = 'pending';
-        // For cashback-only orders or 0 money allocation: amount is total merchandise/reward value
-        // For mixed or money orders: amount is money refund amount sent to gateway
-        if ($parentOrder->payment_method === 'cashback' || bccomp((string)$moneyAmount, '0.00', 2) === 0) {
-            $refund_request->amount = $totalRefundable;
-        } else {
-            $refund_request->amount = $moneyAmount;
-        }
-        $refund_request->product_id = $orderDetails->product_id;
-        $refund_request->order_id = $orderDetails->order_id;
-        $refund_request->refund_reason = $request->refund_reason;
-        $refund_request->payment_info = json_encode([
-            'merchandise_value' => $totalRefundable,
-            'money_amount' => $moneyAmount,
-            'cashback_amount' => $cashbackAmount,
-        ]);
+                $hasExisting = RefundRequest::where('order_details_id', $lockedDetail->id)
+                    ->whereNotIn('status', ['rejected'])
+                    ->exists();
+                if ($hasExisting) {
+                    throw new \Exception('already_applied_for_refund_request!!');
+                }
 
-        if ($request->hasFile('images')) {
-            $images = [];
+                $refundDetails = OrderManager::getRefundDetailsForSingleOrderDetails(orderDetailsId: $lockedDetail->id);
+                $moneyAmount = $refundDetails['refundable_money_amount'] ?? '0.00';
+                $cashbackAmount = $refundDetails['refundable_cashback_amount'] ?? '0.00';
+                $totalRefundable = $refundDetails['total_refundable_amount'] ?? '0.00';
+                $merchandiseValue = $refundDetails['refundable_merchandise_value'] ?? '0.00';
+                $merchandiseMoney = $refundDetails['refundable_merchandise_money'] ?? '0.00';
+                $taxAmount = $refundDetails['refundable_tax_amount'] ?? '0.00';
 
-            foreach ($request->file('images') as $img) {
-                $images[] = [
-                    'image_name' => ImageManager::upload('refund/', 'webp', $img),
-                    'storage' => getWebConfig(name: 'storage_connection_type') ?? 'public',
-                ];
+                $newRefundRequest = new RefundRequest();
+                $newRefundRequest->order_details_id = $lockedDetail->id;
+                $newRefundRequest->customer_id = $user->id;
+                $newRefundRequest->status = 'pending';
+                // For cashback-only orders or 0 money allocation: amount is total merchandise/reward value
+                // For mixed or money orders: amount is money refund amount sent to gateway
+                if ($parentOrder->payment_method === 'cashback' || bccomp((string)$moneyAmount, '0.00', 2) === 0) {
+                    $newRefundRequest->amount = $totalRefundable;
+                } else {
+                    $newRefundRequest->amount = $moneyAmount;
+                }
+                $newRefundRequest->product_id = $lockedDetail->product_id;
+                $newRefundRequest->order_id = $lockedDetail->order_id;
+                $newRefundRequest->refund_reason = $request->refund_reason;
+                $newRefundRequest->payment_info = json_encode([
+                    'merchandise_value' => $merchandiseValue,
+                    'merchandise_money' => $merchandiseMoney,
+                    'tax_amount' => $taxAmount,
+                    'money_amount' => $moneyAmount,
+                    'cashback_amount' => $cashbackAmount,
+                    'total_refundable' => $totalRefundable,
+                ]);
+
+                if ($request->hasFile('images')) {
+                    $images = [];
+
+                    foreach ($request->file('images') as $img) {
+                        $images[] = [
+                            'image_name' => ImageManager::upload('refund/', 'webp', $img),
+                            'storage' => getWebConfig(name: 'storage_connection_type') ?? 'public',
+                        ];
+                    }
+                    $newRefundRequest->images = $images;
+                }
+
+                $newRefundRequest->save();
+                $lockedDetail->update(['refund_request' => 1]);
+                $orderDetails = $lockedDetail;
+                $refund_request = $newRefundRequest;
+
+                // [AI] Transition third-party order to disputed during refund dispute window
+                if ($parentOrder->seller_is === 'seller') {
+                    $parentOrder->vendor_settlement_status = 'disputed';
+                    $parentOrder->save();
+                }
+            });
+        } catch (\Exception $e) {
+            if ($e->getMessage() === 'already_applied_for_refund_request!!') {
+                return response()->json(translate('already_applied_for_refund_request!!'), 302);
             }
-            $refund_request->images = $images;
-        }
-
-        $refund_request->save();
-        $orderDetails->update(['refund_request' => 1]);
-
-        // [AI] Transition third-party order to disputed during refund dispute window
-        if ($parentOrder->seller_is === 'seller') {
-            $parentOrder->vendor_settlement_status = 'disputed';
-            $parentOrder->save();
+            return response()->json(['message' => translate($e->getMessage())], 400);
         }
 
         $order = Order::find($orderDetails->order_id);
