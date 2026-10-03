@@ -20,7 +20,7 @@ class CashbackCardWidget extends StatelessWidget {
           padding: const EdgeInsets.all(Dimensions.paddingSizeDefault),
           decoration: BoxDecoration(
             gradient: const LinearGradient(
-              colors: [Color(0xFF4A148C), Color(0xFF6A1B9A)],
+              colors: [Color(0xFF4A148C), Color(0xFF5E17EB)],
               begin: Alignment.topLeft,
               end: Alignment.bottomRight,
             ),

@@ -862,7 +862,7 @@ class CheckoutScreenState extends State<CheckoutScreen> {
                                                     decoration: BoxDecoration(
                                                       color: checkoutController.isPickup
                                                           ? const Color(0xFF10B981).withValues(alpha: 0.1)
-                                                          : const Color(0xFF6A1B9A).withValues(alpha: 0.1),
+                                                          : const Color(0xFF5E17EB).withValues(alpha: 0.1),
                                                       borderRadius: BorderRadius.circular(4),
                                                     ),
                                                     child: Row(
@@ -871,7 +871,7 @@ class CheckoutScreenState extends State<CheckoutScreen> {
                                                         Icon(
                                                           checkoutController.isPickup ? Icons.check_circle_outline : Icons.bolt,
                                                           size: 12,
-                                                          color: checkoutController.isPickup ? const Color(0xFF10B981) : const Color(0xFF6A1B9A),
+                                                          color: checkoutController.isPickup ? const Color(0xFF10B981) : const Color(0xFF5E17EB),
                                                         ),
                                                         const SizedBox(width: 4),
                                                         Text(
@@ -880,7 +880,7 @@ class CheckoutScreenState extends State<CheckoutScreen> {
                                                               : 'Active LGA Lane: 24–48 hrs Delivery',
                                                           style: titilliumRegular.copyWith(
                                                             fontSize: 10,
-                                                            color: checkoutController.isPickup ? const Color(0xFF10B981) : const Color(0xFF6A1B9A),
+                                                            color: checkoutController.isPickup ? const Color(0xFF10B981) : const Color(0xFF5E17EB),
                                                           ),
                                                         ),
                                                       ],

@@ -266,7 +266,7 @@ class CartScreenState extends State<CartScreen> with AutomaticKeepAliveClientMix
 
                             // [AI] FAPI-006: backend cart total; delivery fee resolved at checkout.
                             Text(PriceConverter.convertPrice(context, displayTotal), style: textBold.copyWith(
-                              color: const Color(0xFF6A1B9A),
+                              color: const Color(0xFF5E17EB),
                               fontSize: Dimensions.fontSizeLarge + 2)
                             ),
                           ]),
@@ -285,10 +285,10 @@ class CartScreenState extends State<CartScreen> with AutomaticKeepAliveClientMix
                                   child: Container(
                                     padding: const EdgeInsets.all(8),
                                     decoration: BoxDecoration(
-                                      color: const Color(0xFF6A1B9A).withValues(alpha: 0.08),
+                                      color: const Color(0xFF5E17EB).withValues(alpha: 0.08),
                                       borderRadius: BorderRadius.circular(12),
                                     ),
-                                    child: const Icon(Icons.shopping_bag_outlined, color: Color(0xFF6A1B9A), size: 22),
+                                    child: const Icon(Icons.shopping_bag_outlined, color: Color(0xFF5E17EB), size: 22),
                                   ),
                                 ),
 
@@ -411,7 +411,7 @@ class CartScreenState extends State<CartScreen> with AutomaticKeepAliveClientMix
                                   height: 48,
                                   decoration: BoxDecoration(
                                     gradient: const LinearGradient(
-                                      colors: [Color(0xFF6A1B9A), Color(0xFF4A148C)],
+                                      colors: [Color(0xFF5E17EB), Color(0xFF4A148C)],
                                       begin: Alignment.topLeft,
                                       end: Alignment.bottomRight,
                                     ),
@@ -965,10 +965,10 @@ class CartScreenState extends State<CartScreen> with AutomaticKeepAliveClientMix
           ),
           padding: const EdgeInsets.all(12),
           decoration: BoxDecoration(
-            color: const Color(0xFF6A1B9A).withValues(alpha: 0.06),
+            color: const Color(0xFF5E17EB).withValues(alpha: 0.06),
             borderRadius: BorderRadius.circular(12),
             border: Border.all(
-              color: const Color(0xFF6A1B9A).withValues(alpha: 0.2),
+              color: const Color(0xFF5E17EB).withValues(alpha: 0.2),
             ),
           ),
           child: Row(
@@ -976,12 +976,12 @@ class CartScreenState extends State<CartScreen> with AutomaticKeepAliveClientMix
               Container(
                 padding: const EdgeInsets.all(8),
                 decoration: BoxDecoration(
-                  color: const Color(0xFF6A1B9A).withValues(alpha: 0.12),
+                  color: const Color(0xFF5E17EB).withValues(alpha: 0.12),
                   shape: BoxShape.circle,
                 ),
                 child: const Icon(
                   Icons.local_shipping_outlined,
-                  color: Color(0xFF6A1B9A),
+                  color: Color(0xFF5E17EB),
                   size: 20,
                 ),
               ),

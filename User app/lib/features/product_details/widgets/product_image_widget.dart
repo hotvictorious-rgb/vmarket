@@ -60,7 +60,7 @@ class ProductImageWidget extends StatelessWidget {
                   child: Container(decoration:  BoxDecoration(
                       color: Theme.of(context).cardColor,
                       border: Border.all(color: Provider.of<ThemeController>(context, listen: false).darkTheme?
-                      Theme.of(context).hintColor.withValues(alpha:.25) : const Color(0xFF6A1B9A).withValues(alpha:.12)),
+                      Theme.of(context).hintColor.withValues(alpha:.25) : const Color(0xFF5E17EB).withValues(alpha:.12)),
                       borderRadius: BorderRadius.circular(16),
                       boxShadow: [
                         BoxShadow(

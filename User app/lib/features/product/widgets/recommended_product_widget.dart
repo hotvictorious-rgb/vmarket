@@ -197,7 +197,7 @@ class RecommendedProductWidget extends StatelessWidget {
                                                     discount: (recommended.recommendedProduct?.clearanceSale?.discountAmount ?? 0) > 0
                                                        ?  recommended.recommendedProduct?.clearanceSale?.discountAmount
                                                        : recommended.recommendedProduct?.discount),
-                                                    style: textBold.copyWith(color: const Color(0xFF6A1B9A),
+                                                    style: textBold.copyWith(color: const Color(0xFF5E17EB),
                                                       fontSize: Dimensions.fontSizeLarge)) : const SizedBox(),
                                                 ],
                                               ),

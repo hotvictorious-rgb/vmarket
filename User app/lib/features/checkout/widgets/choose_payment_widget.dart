@@ -50,10 +50,10 @@ class ChoosePaymentWidget extends StatelessWidget {
                             Container(
                               padding: const EdgeInsets.all(6),
                               decoration: BoxDecoration(
-                                color: const Color(0xFF6A1B9A).withValues(alpha: 0.08),
+                                color: const Color(0xFF5E17EB).withValues(alpha: 0.08),
                                 shape: BoxShape.circle,
                               ),
-                              child: const Icon(Icons.payment, size: 16, color: Color(0xFF6A1B9A)),
+                              child: const Icon(Icons.payment, size: 16, color: Color(0xFF5E17EB)),
                             ),
                             const SizedBox(width: 10),
                             Text(
@@ -75,14 +75,14 @@ class ChoosePaymentWidget extends StatelessWidget {
                           child: Container(
                             padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
                             decoration: BoxDecoration(
-                              color: const Color(0xFF6A1B9A).withValues(alpha: 0.08),
+                              color: const Color(0xFF5E17EB).withValues(alpha: 0.08),
                               borderRadius: BorderRadius.circular(12),
                             ),
                             child: Text(
                               hasSelection ? 'Change' : 'Select',
                               style: textBold.copyWith(
                                 fontSize: Dimensions.fontSizeSmall,
-                                color: const Color(0xFF6A1B9A),
+                                color: const Color(0xFF5E17EB),
                               ),
                             ),
                           ),
@@ -108,12 +108,12 @@ class ChoosePaymentWidget extends StatelessWidget {
                         padding: const EdgeInsets.all(12),
                         decoration: BoxDecoration(
                           color: hasSelection
-                              ? const Color(0xFF6A1B9A).withValues(alpha: 0.04)
+                              ? const Color(0xFF5E17EB).withValues(alpha: 0.04)
                               : Theme.of(context).cardColor,
                           borderRadius: BorderRadius.circular(14),
                           border: Border.all(
                             color: hasSelection
-                                ? const Color(0xFF6A1B9A)
+                                ? const Color(0xFF5E17EB)
                                 : Theme.of(context).hintColor.withValues(alpha: 0.2),
                             width: hasSelection ? 1.5 : 1,
                           ),
@@ -181,7 +181,7 @@ class ChoosePaymentWidget extends StatelessWidget {
                                 height: 22, width: 22,
                                 decoration: const BoxDecoration(
                                   shape: BoxShape.circle,
-                                  color: Color(0xFF6A1B9A),
+                                  color: Color(0xFF5E17EB),
                                 ),
                                 child: const Icon(Icons.check, color: Colors.white, size: 14),
                               )

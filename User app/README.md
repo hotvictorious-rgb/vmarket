@@ -20,7 +20,7 @@ The Customer App is an **untrusted presentation client**. It must strictly repre
 - **Dependency Injection:** **GetIt** (`lib/di_container.dart`)
 - **Secure Token Storage:** `StorageService` (`lib/services/storage_service.dart`) backed by `flutter_secure_storage`
 - **Network Client:** `DioClient` with centralized error handling and automatic bearer token injection
-- **Design System:** Victorious MARKET Purple (`#6A1B9A`) & Gold (`#FFD700`) brand palette
+- **Design System:** Victorious MARKET Purple (`#5E17EB`) & Gold (`#FFD700`) brand palette
 
 ---
 

@@ -86,7 +86,7 @@ class OrderPaymentInfoWidget extends StatelessWidget {
                                 children: [
                                   Row(
                                     children: [
-                                      const Icon(Icons.shield_rounded, color: Color(0xFF6A1B9A), size: 20),
+                                      const Icon(Icons.shield_rounded, color: Color(0xFF5E17EB), size: 20),
                                       const SizedBox(width: 6),
                                       Text(
                                         titleText,
@@ -125,7 +125,7 @@ class OrderPaymentInfoWidget extends StatelessWidget {
                                         child: Icon(
                                           isCodeHidden ? Icons.visibility_off : Icons.visibility,
                                           size: 22,
-                                          color: const Color(0xFF6A1B9A),
+                                          color: const Color(0xFF5E17EB),
                                         ),
                                       ),
                                     ],

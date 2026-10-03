@@ -196,7 +196,7 @@ class _BottomCartWidgetState extends State<BottomCartWidget> {
               decoration: BoxDecoration(
                 borderRadius: BorderRadius.circular(14),
                 gradient: const LinearGradient(
-                  colors: [Color(0xFF6A1B9A), Color(0xFF4A148C)],
+                  colors: [Color(0xFF5E17EB), Color(0xFF4A148C)],
                   begin: Alignment.topLeft,
                   end: Alignment.bottomRight,
                 ),

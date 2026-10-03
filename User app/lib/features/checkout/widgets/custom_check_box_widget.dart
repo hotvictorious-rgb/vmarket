@@ -25,10 +25,10 @@ class CustomCheckBoxWidget extends StatelessWidget {
             margin: const EdgeInsets.symmetric(vertical: 4),
             padding: const EdgeInsets.symmetric(horizontal: Dimensions.paddingSizeDefault, vertical: Dimensions.paddingSizeSmall),
             decoration: BoxDecoration(
-              color: isSelected ? const Color(0xFF6A1B9A).withValues(alpha: 0.05) : Theme.of(context).cardColor,
+              color: isSelected ? const Color(0xFF5E17EB).withValues(alpha: 0.05) : Theme.of(context).cardColor,
               borderRadius: BorderRadius.circular(14),
               border: Border.all(
-                color: isSelected ? const Color(0xFF6A1B9A) : Theme.of(context).primaryColor.withValues(alpha: 0.10),
+                color: isSelected ? const Color(0xFF5E17EB) : Theme.of(context).primaryColor.withValues(alpha: 0.10),
                 width: isSelected ? 1.5 : 1,
               ),
               boxShadow: [
@@ -68,9 +68,9 @@ class CustomCheckBoxWidget extends StatelessWidget {
                   height: 20, width: 20,
                   decoration: BoxDecoration(
                     shape: BoxShape.circle,
-                    color: isSelected ? const Color(0xFF6A1B9A) : Colors.transparent,
+                    color: isSelected ? const Color(0xFF5E17EB) : Colors.transparent,
                     border: Border.all(
-                      color: isSelected ? const Color(0xFF6A1B9A) : Theme.of(context).hintColor.withValues(alpha: 0.4),
+                      color: isSelected ? const Color(0xFF5E17EB) : Theme.of(context).hintColor.withValues(alpha: 0.4),
                       width: 2,
                     ),
                   ),

@@ -270,10 +270,10 @@ class FilterItemWidget extends StatelessWidget {
       child: Container(
         decoration: BoxDecoration(
           borderRadius: BorderRadius.circular(14),
-          color: isSelected ? const Color(0xFF6A1B9A).withValues(alpha: 0.05) : Theme.of(context).cardColor,
+          color: isSelected ? const Color(0xFF5E17EB).withValues(alpha: 0.05) : Theme.of(context).cardColor,
           border: Border.all(
             width: 1.2,
-            color: isSelected ? const Color(0xFF6A1B9A) : Theme.of(context).hintColor.withValues(alpha: .25),
+            color: isSelected ? const Color(0xFF5E17EB) : Theme.of(context).hintColor.withValues(alpha: .25),
           ),
         ),
         child: Padding(
@@ -285,7 +285,7 @@ class FilterItemWidget extends StatelessWidget {
                   title ?? '',
                   style: textMedium.copyWith(
                     fontSize: Dimensions.fontSizeDefault,
-                    color: isSelected ? const Color(0xFF6A1B9A) : Theme.of(context).textTheme.bodyLarge?.color,
+                    color: isSelected ? const Color(0xFF5E17EB) : Theme.of(context).textTheme.bodyLarge?.color,
                   ),
                 ),
               ),
@@ -293,7 +293,7 @@ class FilterItemWidget extends StatelessWidget {
                 onTap: () => Provider.of<SearchProductController>(context, listen: false).setFilterIndex(index),
                 child: Icon(
                   isSelected ? Icons.radio_button_checked : Icons.radio_button_off,
-                  color: isSelected ? const Color(0xFF6A1B9A) : Theme.of(context).hintColor.withValues(alpha: .3),
+                  color: isSelected ? const Color(0xFF5E17EB) : Theme.of(context).hintColor.withValues(alpha: .3),
                 ),
               ),
             ],

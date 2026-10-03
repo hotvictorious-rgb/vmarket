@@ -82,7 +82,7 @@ class CartWidget extends StatelessWidget {
                 border: Border.all(
                   color: (isValidate && (cartModel?.isChecked ?? false) && minOrderQty)
                       ? Theme.of(context).colorScheme.error
-                      : const Color(0xFF6A1B9A).withValues(alpha: 0.08),
+                      : const Color(0xFF5E17EB).withValues(alpha: 0.08),
                   width: 1,
                 ),
               ),
@@ -191,9 +191,9 @@ class _CartQuantityControlsWidget extends StatelessWidget {
   Widget build(BuildContext context) {
     return Container(
       decoration: BoxDecoration(
-        color: const Color(0xFF6A1B9A).withValues(alpha: 0.06),
+        color: const Color(0xFF5E17EB).withValues(alpha: 0.06),
         borderRadius: BorderRadius.circular(14),
-        border: Border.all(color: const Color(0xFF6A1B9A).withValues(alpha: 0.12)),
+        border: Border.all(color: const Color(0xFF5E17EB).withValues(alpha: 0.12)),
       ),
       margin: const EdgeInsets.symmetric(vertical: Dimensions.paddingSizeSmall, horizontal: Dimensions.paddingSizeExtraSmall),
       child: Padding(

@@ -23,7 +23,7 @@ class ProfileInfoSectionWidget extends StatelessWidget {
               gradient: LinearGradient(
                 colors: Provider.of<ThemeController>(context).darkTheme
                     ? [const Color(0xFF4A148C).withValues(alpha: 0.6), const Color(0xFF311B92).withValues(alpha: 0.6)]
-                    : const [Color(0xFF6A1B9A), Color(0xFF4A148C)],
+                    : const [Color(0xFF5E17EB), Color(0xFF4A148C)],
                 begin: Alignment.topLeft,
                 end: Alignment.bottomRight,
               ),
