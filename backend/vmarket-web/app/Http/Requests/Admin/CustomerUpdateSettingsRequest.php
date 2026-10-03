@@ -62,6 +62,8 @@ class CustomerUpdateSettingsRequest extends FormRequest
             'ref_earning_exchange_rate' => 'nullable|numeric|min:0',
             'ref_earning_min_order_amount' => 'nullable|numeric|min:0',
             'loyalty_point_max_order_redemption_percentage' => 'nullable|numeric|min:1|max:100',
+            'loyalty_point_earn_rate_percent' => 'nullable|numeric|min:0.01|max:100',
+            'loyalty_point_validity_months' => 'nullable|numeric|min:1|max:120',
             'maximum_add_fund_amount' => 'nullable|numeric|min:0',
             'minimum_add_fund_amount' => 'nullable|numeric|min:1',
             'item_purchase_point' => 'nullable|numeric|min:0',

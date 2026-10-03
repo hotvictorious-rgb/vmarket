@@ -6,6 +6,7 @@ use App\Exceptions\InvalidCartException;
 use App\Exceptions\InvalidPaymentStateException;
 use App\Exceptions\PaymentInitializationException;
 use App\Models\CashbackRedemption;
+use App\Models\Order;
 use App\Models\PaymentRequest;
 use App\Models\PickupReservation;
 use App\Models\User;
@@ -98,15 +99,25 @@ class PickupPaymentInitializationService
                 throw new InvalidCartException("IDOR Violation: Reservation does not belong to customer #{$customerId}.");
             }
 
+            if ($reservation->order_id !== null || $reservation->status === 'order_placed') {
+                $existingOrder = Order::find($reservation->order_id);
+                return [
+                    'action' => 'SETTLED_INTERNALLY',
+                    'is_replayed' => true,
+                    'status' => 'settled',
+                    'order_id' => $reservation->order_id,
+                    'verification_code' => (string) ($existingOrder?->verification_code ?? ''),
+                    'paid_amount' => '0.00',
+                    'cashback_redeemed' => (string) ($existingOrder?->discount_amount ?? $reservation->total_amount),
+                    'gateway_reference' => (string) ($existingOrder?->transaction_ref ?? ''),
+                    'authorization_url' => null,
+                    'message' => 'Pickup order already placed and settled.',
+                ];
+            }
+
             if ($reservation->status !== 'inspected_accepted') {
                 throw new InvalidPaymentStateException(
                     "Pickup reservation cannot be paid: status is '{$reservation->status}', expected 'inspected_accepted'."
-                );
-            }
-
-            if ($reservation->order_id !== null) {
-                throw new InvalidPaymentStateException(
-                    "Pickup reservation has already been converted to Order #{$reservation->order_id}."
                 );
             }
 
@@ -287,15 +298,56 @@ class PickupPaymentInitializationService
             }
 
             // [AI] 100% Fully Reward-Funded Pickup Order:
-            // Settle internally without external Paystack gateway call
             if (bccomp($discountedNaira, '0.00', 2) === 0 && bccomp($cashbackAmount, '0.00', 2) > 0) {
-                return $this->settleFullyFundedPickupInternally(
-                    $reservation,
-                    $customerId,
-                    $lockedCustomer,
-                    $cashbackReserved,
-                    $twoDecimals
-                );
+                $now = now();
+                $ttlTarget = $now->copy()->addMinutes($ttlMinutes);
+                $resExpiry = Carbon::parse($reservation->expires_at);
+                $boundedExpiry = $ttlTarget->isBefore($resExpiry) ? $ttlTarget : $resExpiry;
+
+                $gatewayReference = 'CB-' . substr(str_replace('-', '', Str::orderedUuid()->toString()), 0, 18);
+
+                $newPaymentRequest = PaymentRequest::create([
+                    'id' => Str::orderedUuid()->toString(),
+                    'payer_id' => (string) $customerId,
+                    'payment_amount' => '0.00',
+                    'currency_code' => 'NGN',
+                    'payment_method' => 'cashback',
+                    'payment_platform' => 'web',
+                    'payment_domain' => 'marketplace_pickup',
+                    'gateway_reference' => $gatewayReference,
+                    'attempt_status' => 'pending',
+                    'is_paid' => 0,
+                    'pickup_reservation_id' => $reservation->id,
+                    'active_pickup_reservation_id' => $reservation->id,
+                    'attempt_expires_at' => $boundedExpiry,
+                    'additional_data' => json_encode([
+                        'payment_domain' => 'marketplace_pickup',
+                        'reservation_id' => $reservation->id,
+                        'reservation_code' => $reservation->reservation_code,
+                        'customer_id' => $customerId,
+                        'seller_id' => $reservation->seller_id,
+                        'shop_id' => $reservation->shop_id,
+                        'gross_amount' => $twoDecimals,
+                        'cashback_amount' => $cashbackAmount,
+                        'amount_kobo' => 0,
+                        'created_at' => $now->toIso8601String(),
+                        'cashback_reservation' => [
+                            'redemption_id' => $cashbackReserved['redemption_id'],
+                            'points' => $cashbackReserved['points'],
+                            'cashback_amount' => $cashbackReserved['cashback_amount'],
+                        ],
+                    ]),
+                ]);
+
+                return [
+                    'action' => 'SETTLE_INTERNALLY',
+                    'payment_request' => $newPaymentRequest,
+                    'reservation' => $reservation,
+                    'customer' => $customerRecord,
+                    'gateway_reference' => $gatewayReference,
+                    'gross_amount' => $twoDecimals,
+                    'cashback_amount' => $cashbackAmount,
+                ];
             }
 
             // Recalculate kobo amount after discount
@@ -426,6 +478,38 @@ class PickupPaymentInitializationService
                 $phaseAResult['ttl_minutes'],
                 $callbackUrl
             );
+        }
+
+        if ($action === 'SETTLE_INTERNALLY') {
+            // Settle immediately using the authoritative SHARED PickupOrderSettlementService pipeline!
+            $settlementService = new PickupOrderSettlementService();
+            $settlementResult = $settlementService->settleVerifiedPayment(
+                $phaseAResult['gateway_reference'],
+                [
+                    'status' => 'success',
+                    'amount' => 0,
+                    'currency' => 'NGN',
+                    'reference' => $phaseAResult['gateway_reference'],
+                ]
+            );
+
+            if (($settlementResult['status'] ?? '') === 'CLAIMED' || ($settlementResult['status'] ?? '') === 'ALREADY_SETTLED') {
+                $orderId = $settlementResult['order_id'];
+                $order = Order::find($orderId);
+                return [
+                    'action' => 'SETTLED_INTERNALLY',
+                    'status' => 'settled',
+                    'order_id' => $orderId,
+                    'verification_code' => (string) ($order?->verification_code ?? ($settlementResult['verification_code'] ?? '')),
+                    'paid_amount' => '0.00',
+                    'cashback_redeemed' => $phaseAResult['gross_amount'],
+                    'gateway_reference' => $phaseAResult['gateway_reference'],
+                    'authorization_url' => null,
+                    'message' => 'Pickup order settled internally with 100% Victorious Cashback rewards.',
+                ];
+            }
+
+            throw new PaymentInitializationException("Internal settlement failed: " . ($settlementResult['message'] ?? 'Unknown error'));
         }
 
         if ($action === 'SETTLED_INTERNALLY') {
@@ -760,99 +844,5 @@ class PickupPaymentInitializationService
             $redemption->release();
         }
     }
-
-    /**
-     * [AI] Settles a 100% cashback-funded pickup order internally without external Paystack call.
-     */
-    protected function settleFullyFundedPickupInternally(
-        PickupReservation $reservation,
-        int $customerId,
-        User $lockedCustomer,
-        array $cashbackReserved,
-        string $grossAmount
-    ): array {
-        $redemptionId = $cashbackReserved['redemption_id'] ?? null;
-        $points = $cashbackReserved['points'] ?? '0.0000';
-        $now = now();
-
-        // 1. Deduct customer points and create transaction log
-        $currentPoints = (string) ($lockedCustomer->loyalty_point ?? '0.0000');
-        $newPoints = bcsub($currentPoints, $points, 4);
-        if (bccomp($newPoints, '0.0000', 4) < 0) {
-            $newPoints = '0.0000';
-        }
-        $lockedCustomer->update(['loyalty_point' => $newPoints]);
-
-        DB::table('loyalty_point_transactions')->insert([
-            'user_id' => $customerId,
-            'transaction_id' => Str::uuid()->toString(),
-            'credit' => 0.0000,
-            'debit' => (float) $points,
-            'balance' => (float) $newPoints,
-            'reference' => 'pickup-100cb-' . $reservation->reservation_code,
-            'transaction_type' => 'point_transfer',
-            'created_at' => $now,
-            'updated_at' => $now,
-        ]);
-
-        // 2. Capture CashbackRedemption record
-        if ($redemptionId) {
-            CashbackRedemption::where('id', $redemptionId)->update([
-                'status' => 'captured',
-                'captured_at' => $now,
-            ]);
-        }
-
-        // 3. Create Order
-        $orderId = \App\Utils\OrderManager::generateNewOrderID();
-        $verificationCode = random_int(100000, 999999);
-        $pickupCode = random_int(100000, 999999);
-
-        $order = \App\Models\Order::create([
-            'id' => $orderId,
-            'verification_code' => $verificationCode,
-            'pickup_verification_code' => $pickupCode,
-            'customer_id' => $customerId,
-            'is_guest' => 0,
-            'seller_id' => $reservation->seller_id,
-            'seller_is' => 'seller',
-            'customer_type' => 'customer',
-            'payment_status' => 'paid',
-            'order_status' => 'confirmed',
-            'vendor_settlement_status' => 'held',
-            'payment_method' => 'cashback',
-            'transaction_ref' => 'INT-CB-' . Str::orderedUuid()->toString(),
-            'order_group_id' => $reservation->reservation_code,
-            'discount_amount' => $grossAmount,
-            'discount_type' => 'cashback',
-            'order_amount' => '0.00',
-            'init_order_amount' => $grossAmount,
-            'shipping_cost' => 0.00,
-            'order_type' => 'pickup',
-            'created_at' => $now,
-            'updated_at' => $now,
-        ]);
-
-        // 4. Update PickupReservation
-        $reservation->update([
-            'status' => 'converted_to_order',
-            'order_id' => $order->id,
-            'active_reservation_token' => null,
-        ]);
-
-        Log::info("[AI] PickupPayment: Order #{$order->id} settled internally using 100% cashback rewards.");
-
-        return [
-            'action' => 'SETTLED_INTERNALLY',
-            'is_replayed' => false,
-            'status' => 'settled',
-            'order_id' => $order->id,
-            'verification_code' => (string) $verificationCode,
-            'paid_amount' => '0.00',
-            'cashback_redeemed' => $grossAmount,
-            'gateway_reference' => 'INTERNAL-CB-' . $reservation->reservation_code,
-            'authorization_url' => null,
-            'message' => 'Pickup order settled internally with 100% Victorious Cashback rewards.',
-        ];
-    }
 }
+

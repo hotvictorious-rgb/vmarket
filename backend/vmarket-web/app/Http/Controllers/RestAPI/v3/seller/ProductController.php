@@ -80,11 +80,15 @@ class ProductController extends Controller
     public function getProductList(Request $request): JsonResponse
     {
         $seller = $request->seller;
+        $employeeShopId = $request['employee_shop_id'] ?? ($request['vendor_employee']?->shop_id ?? null);
         $products = Product::with(['clearanceSale' => function ($query) {
                 return $query->active();
             }])
             ->withCount('reviews')
             ->where(['added_by' => 'seller', 'user_id' => $seller['id']])
+            ->when(!empty($employeeShopId), function ($query) use ($employeeShopId) {
+                return $query->where('shop_id', $employeeShopId);
+            })
             ->when(isset($request['filter_category_ids']) && !empty($request['filter_category_ids']) && is_array($request['filter_category_ids']) && count($request['filter_category_ids']) > 0,
                 function ($query) use ($request) {
                     return \App\Utils\ProductManager::filterQueryForCategoryWithSubCategories(

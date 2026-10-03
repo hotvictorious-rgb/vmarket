@@ -108,14 +108,19 @@ class MatureCustomerCashbackCommand extends Command
         }
 
         // =========================================================================
-        // PART 2: 6-MONTH EXPIRATION (Unredeemed Available Rewards > 6 Months)
+        // PART 2: EXPIRATION (Unredeemed Available Rewards > Validity Period)
         // =========================================================================
         $sixMonthsAgo = $now->copy()->subMonths(6);
         $expiredLedgers = CustomerCashbackLedger::where('status', 'available')
             ->where(function ($q) use ($now, $sixMonthsAgo) {
                 if (\Illuminate\Support\Facades\Schema::hasColumn('customer_cashback_ledgers', 'expires_at')) {
-                    $q->where('expires_at', '<=', $now)
-                      ->orWhere('available_at', '<=', $sixMonthsAgo);
+                    $q->where(function ($sub) use ($now) {
+                        $sub->whereNotNull('expires_at')
+                            ->where('expires_at', '<=', $now);
+                    })->orWhere(function ($sub) use ($sixMonthsAgo) {
+                        $sub->whereNull('expires_at')
+                            ->where('available_at', '<=', $sixMonthsAgo);
+                    });
                 } else {
                     $q->where('available_at', '<=', $sixMonthsAgo);
                 }
@@ -125,34 +130,51 @@ class MatureCustomerCashbackCommand extends Command
         $expiredCount = 0;
         foreach ($expiredLedgers as $expLedger) {
             DB::transaction(function () use ($expLedger, $exchangeRate, $now, &$expiredCount) {
-                $updated = CustomerCashbackLedger::where('id', $expLedger->id)
+                $lockedLedger = CustomerCashbackLedger::where('id', $expLedger->id)
                     ->where('status', 'available')
-                    ->update([
-                        'status' => 'expired',
-                        'updated_at' => $now,
-                        'description' => $expLedger->description . ' (Expired after 6 months validity)',
-                    ]);
+                    ->lockForUpdate()
+                    ->first();
+                if (!$lockedLedger) {
+                    return;
+                }
+
+                $updated = $lockedLedger->update([
+                    'status' => 'expired',
+                    'updated_at' => $now,
+                    'description' => $lockedLedger->description . ' (Expired after validity period)',
+                ]);
 
                 if ($updated) {
-                    $points = (float) bcdiv((string) $expLedger->cashback_amount, (string) $exchangeRate, 4);
+                    // Calculate points strictly using current locked ledger amount
+                    $points = (float) bcdiv((string) $lockedLedger->cashback_amount, (string) $exchangeRate, 4);
                     if ($points > 0) {
-                        $currentPoints = (float) DB::table('users')->where('id', $expLedger->customer_id)->value('loyalty_point');
-                        $deductPoints = min($points, $currentPoints);
-                        if ($deductPoints > 0) {
-                            DB::table('users')->where('id', $expLedger->customer_id)->decrement('loyalty_point', $deductPoints);
-                            $freshBalance = (float) DB::table('users')->where('id', $expLedger->customer_id)->value('loyalty_point');
+                        $customer = DB::table('users')->where('id', $lockedLedger->customer_id)->lockForUpdate()->first();
+                        if ($customer) {
+                            $currentPoints = (float) ($customer->loyalty_point ?? 0.0);
+                            // Protect reserved points from active in-flight checkouts
+                            $activeReservedPoints = (float) (DB::table('cashback_redemptions')
+                                ->where('customer_id', $lockedLedger->customer_id)
+                                ->where('status', 'reserved')
+                                ->sum('points') ?: 0.0);
 
-                            DB::table('loyalty_point_transactions')->insert([
-                                'user_id' => $expLedger->customer_id,
-                                'transaction_id' => \Illuminate\Support\Str::uuid()->toString(),
-                                'credit' => 0.0000,
-                                'debit' => $deductPoints,
-                                'balance' => $freshBalance,
-                                'reference' => 'cashback-expired-' . $expLedger->order_id,
-                                'transaction_type' => 'point_expired',
-                                'created_at' => $now,
-                                'updated_at' => $now,
-                            ]);
+                            $unreservedPoints = max(0.0, $currentPoints - $activeReservedPoints);
+                            $deductPoints = min($points, $unreservedPoints);
+                            if ($deductPoints > 0) {
+                                DB::table('users')->where('id', $lockedLedger->customer_id)->decrement('loyalty_point', $deductPoints);
+                                $freshBalance = (float) DB::table('users')->where('id', $lockedLedger->customer_id)->value('loyalty_point');
+
+                                DB::table('loyalty_point_transactions')->insert([
+                                    'user_id' => $lockedLedger->customer_id,
+                                    'transaction_id' => \Illuminate\Support\Str::uuid()->toString(),
+                                    'credit' => 0.0000,
+                                    'debit' => $deductPoints,
+                                    'balance' => $freshBalance,
+                                    'reference' => 'cashback-expired-' . $lockedLedger->order_id,
+                                    'transaction_type' => 'point_expired',
+                                    'created_at' => $now,
+                                    'updated_at' => $now,
+                                ]);
+                            }
                         }
                     }
                     $expiredCount++;

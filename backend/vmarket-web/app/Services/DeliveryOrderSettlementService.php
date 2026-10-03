@@ -515,12 +515,17 @@ class DeliveryOrderSettlementService
             $authoritativeFee = isset($vendor['shipping_cost']) ? bcadd((string) $vendor['shipping_cost'], '0', 4) : null;
             $estimatedTime = $vendor['estimated_delivery_time'] ?? null;
 
+            $groupTax = isset($vendor['tax']) ? bcadd((string)$vendor['tax'], '0', 2) : '0.00';
+            $groupMerchandise = isset($vendor['merchandise']) ? bcadd((string)$vendor['merchandise'], '0', 2) : bcsub($subtotal, $groupTax, 2);
             $allocatedCashback = isset($vendor['allocated_cashback']) ? bcadd((string)$vendor['allocated_cashback'], '0', 2) : '0.00';
             $hasCashbackDiscount = bccomp($allocatedCashback, '0.00', 2) > 0;
-            $childNetPayable = bcsub($orderAmount, $allocatedCashback, 2);
-            if (bccomp($childNetPayable, '0.00', 2) < 0) {
-                $childNetPayable = '0.00';
+
+            // Pure merchandise minus cashback discount; Tax & shipping are paid in money
+            $netGroupMerchandise = bcsub($groupMerchandise, $allocatedCashback, 2);
+            if (bccomp($netGroupMerchandise, '0.00', 2) < 0) {
+                $netGroupMerchandise = '0.00';
             }
+            $childNetPayable = bcadd(bcadd($netGroupMerchandise, $groupTax, 2), $shippingCost, 2);
 
             $ordersData = [
                 'id' => $orderId,
@@ -544,7 +549,7 @@ class DeliveryOrderSettlementService
                 'coupon_discount_bearer' => 'inhouse',
                 'order_amount' => $childNetPayable,
                 'init_order_amount' => $orderAmount,
-                'total_tax_amount' => 0.00,
+                'total_tax_amount' => $groupTax,
                 'tax_type' => 'percent',
                 'tax_model' => 'exclude',
                 'admin_commission' => $adminCommission,

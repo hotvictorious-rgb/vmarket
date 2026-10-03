@@ -48,7 +48,7 @@ class CustomerCashbackController extends Controller
         $availableFromPoints = bcmul($userPoints, (string) $exchangeRate, 2);
 
         $availableResult = DB::select(
-            'SELECT CAST(COALESCE(SUM(cashback_amount), 0.00) AS CHAR) AS total FROM customer_cashback_ledgers WHERE customer_id = ? AND status = ?',
+            'SELECT CAST(COALESCE(SUM(cashback_amount), 0.00) AS CHAR) AS total FROM customer_cashback_ledgers WHERE customer_id = ? AND status = ? AND (expires_at IS NULL OR expires_at > NOW())',
             [$customerId, 'available']
         );
         $availableFromLedgers = (string)($availableResult[0]->total ?? '0.00');

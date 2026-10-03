@@ -1599,7 +1599,7 @@ class OrderManager
                 'transaction_id' => OrderManager::generateUniqueOrderID(),
                 'customer_id' => $order['customer_id'],
                 'seller_id' => $order['seller_id'],
-                'shop_id' => $shop['id'],
+                'shop_id' => $shop?->id ?? ($shop['id'] ?? 1),
                 'seller_is' => $order['seller_is'],
                 'order_id' => $order['id'],
                 'order_amount' => $orderAmount,

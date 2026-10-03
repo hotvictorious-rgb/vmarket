@@ -63,6 +63,12 @@ class OrderController extends Controller
             'seller_is' => 'seller',
             'whereIn_order_status' => $orderStatus,
         ];
+
+        $employeeShopId = $request['employee_shop_id'] ?? ($request['vendor_employee']?->shop_id ?? null);
+        if (!empty($employeeShopId)) {
+            $filters['shop_id'] = (int) $employeeShopId;
+        }
+
         $orderAmountSettlement = json_decode($request['order_amount_settlement'] ?? '');
 
         if (!empty($orderAmountSettlement)) {
@@ -119,6 +125,26 @@ class OrderController extends Controller
     public function details(Request $request, $id): JsonResponse
     {
         $seller = $request->seller;
+        $employeeShopId = $request['employee_shop_id'] ?? ($request['vendor_employee']?->shop_id ?? null);
+        if (!empty($employeeShopId)) {
+            $belongsToBranch = Order::where('id', $id)
+                ->where(function ($sub) use ($employeeShopId) {
+                    $sub->whereHas('details.product', function ($p) use ($employeeShopId) {
+                        $p->where('shop_id', $employeeShopId);
+                    })->orWhereExists(function ($pr) use ($employeeShopId, $id) {
+                        $pr->select(DB::raw(1))
+                           ->from('pickup_reservations')
+                           ->whereColumn('pickup_reservations.order_id', 'orders.id')
+                           ->where('pickup_reservations.shop_id', $employeeShopId);
+                    });
+                })->exists();
+            if (!$belongsToBranch) {
+                return response()->json([
+                    'auth-001' => translate('Access Denied: You are not authorized to view orders belonging to another branch.')
+                ], 403);
+            }
+        }
+
         $detailsList = OrderDetail::with(['order.offlinePayments', 'order.customer', 'order.deliveryMan', 'order.shippingAddress', 'order.billingAddress', 'verificationImages'])->where(['seller_id' => $seller['id'], 'order_id' => $id])->get();
 
         $productList = $this->getProductListWithAllDetails(ids: $detailsList?->pluck('product_id')->toArray());

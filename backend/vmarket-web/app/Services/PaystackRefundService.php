@@ -683,7 +683,56 @@ class PaystackRefundService
                 [$order->id, 'refunded', $lockedRequest->id]
             );
             $totalRefundedSoFar = (string)(isset($totalRefundedSoFarResult[0]) ? $totalRefundedSoFarResult[0]->total : '0.00');
-            $cumulativeRefunded = bcadd($totalRefundedSoFar, $refundAmount, 2);
+
+            // [AI] Calculate redeemed cashback spent on this order
+            $redeemedCashbackOnOrder = '0.00';
+            if ($order->discount_type === 'cashback' && bccomp((string)($order->discount_amount ?? '0.00'), '0.00', 2) > 0) {
+                $redeemedCashbackOnOrder = bcadd((string)$order->discount_amount, '0', 2);
+            }
+
+            // Determine actual new money paid by customer on this order (distinguishing gross vs net order_amount)
+            $rawOrderAmount = (string)($order->getRawOriginal('order_amount') ?? '0.00');
+            $rawInitAmount = (string)($order->getRawOriginal('init_order_amount') ?? '0.00');
+            if (bccomp($rawInitAmount, $rawOrderAmount, 2) > 0) {
+                // order_amount was stored as net of discount
+                $actualMoneyPaid = $rawOrderAmount;
+            } else {
+                // order_amount was stored as gross reservation/order total; actual money paid = order_amount - discount_amount
+                $actualMoneyPaid = bcsub($rawOrderAmount, $redeemedCashbackOnOrder, 2);
+            }
+            if (bccomp($actualMoneyPaid, '0.00', 2) < 0) {
+                $actualMoneyPaid = '0.00';
+            }
+
+            // [AI] Calculate proportional cashback restoration based strictly on money refunded vs actual money paid
+            $cashbackToRestore = '0.00';
+            $alreadyRestored = '0.00';
+            if (bccomp($redeemedCashbackOnOrder, '0.00', 2) > 0) {
+                if (bccomp($actualMoneyPaid, '0.00', 2) <= 0) {
+                    // 100% cashback-funded order: refund restores cashback 1:1 with refunded amount
+                    $cashbackToRestore = $refundAmount;
+                } else {
+                    $ratio = bcdiv($refundAmount, $actualMoneyPaid, 4);
+                    if (bccomp($ratio, '1.0000', 4) > 0) {
+                        $ratio = '1.0000';
+                    }
+                    $cashbackToRestore = bcmul($redeemedCashbackOnOrder, $ratio, 2);
+                }
+
+                // Cumulative restoration guard across all refunds on this order
+                $alreadyRestoredResult = DB::select(
+                    'SELECT CAST(COALESCE(SUM(cashback_amount), 0.00) AS CHAR) AS total FROM customer_cashback_ledgers WHERE customer_id = ? AND order_id = ? AND description LIKE ?',
+                    [$order->customer_id, $order->id, 'Restored cashback reward%']
+                );
+                $alreadyRestored = (string)(isset($alreadyRestoredResult[0]) ? $alreadyRestoredResult[0]->total : '0.00');
+                $maxRestorable = bcsub($redeemedCashbackOnOrder, $alreadyRestored, 2);
+                if (bccomp($maxRestorable, '0.00', 2) < 0) {
+                    $maxRestorable = '0.00';
+                }
+                if (bccomp($cashbackToRestore, $maxRestorable, 2) > 0) {
+                    $cashbackToRestore = $maxRestorable;
+                }
+            }
 
             // Calculate merchandise subtotal using BCMath on raw original attributes — no float reads
             $orderSubtotal = '0.00';
@@ -696,11 +745,17 @@ class PaystackRefundService
                 }
             }
             if (bccomp($orderSubtotal, '0.00', 2) <= 0) {
-                $rawOrderAmount = (string)($order->getRawOriginal('order_amount') ?? '0.00');
                 $rawShippingCost = (string)($order->getRawOriginal('shipping_cost') ?? '0.00');
                 $orderSubtotal = bcsub($rawOrderAmount, $rawShippingCost, 2);
             }
-            $remainingMerchandise = bcsub($orderSubtotal, $cumulativeRefunded, 2);
+
+            // Cumulative total value refunded (money refunded + restored cashback)
+            $totalRefundValueThisTime = bcadd($refundAmount, $cashbackToRestore, 2);
+            $cumulativeRefundedValue = bcadd(bcadd($totalRefundedSoFar, $alreadyRestored, 2), $totalRefundValueThisTime, 2);
+            $remainingMerchandise = bcsub($orderSubtotal, $cumulativeRefundedValue, 2);
+            if (bccomp($remainingMerchandise, '0.00', 2) <= 0) {
+                $remainingMerchandise = '0.00';
+            }
 
             // Cashback Adjustment & Settlement Status (Scoped strictly to pending rewards)
             $cashback = CustomerCashbackLedger::where('order_id', $order->id)->where('status', 'pending')->lockForUpdate()->first();
@@ -728,44 +783,41 @@ class PaystackRefundService
                 }
             }
 
-            // [AI] Restores redeemed cashback spent on this order back to customer pool
-            $redeemedCashbackOnOrder = '0.00';
-            if ($order->discount_type === 'cashback' && bccomp((string)($order->discount_amount ?? '0.00'), '0.00', 2) > 0) {
-                $redeemedCashbackOnOrder = bcadd((string)$order->discount_amount, '0', 2);
-            }
+            // [AI] Restores redeemed cashback spent on this order back to customer pool and ledger
+            if (bccomp($cashbackToRestore, '0.00', 2) > 0) {
+                $exchangeRate = (float) (getWebConfig(name: 'loyalty_point_exchange_rate') ?: 1.0);
+                $pointsToRestore = (float) bcdiv($cashbackToRestore, (string) $exchangeRate, 4);
 
-            if (bccomp($redeemedCashbackOnOrder, '0.00', 2) > 0) {
-                // Calculate proportional restoration share
-                $rawOrderPaid = (string)($order->getRawOriginal('order_amount') ?? '0.00');
-                if (bccomp($remainingMerchandise, '0.00', 2) <= 0 || bccomp($rawOrderPaid, '0.00', 2) === 0) {
-                    $cashbackToRestore = $redeemedCashbackOnOrder;
-                } else {
-                    $ratio = bcdiv($refundAmount, $rawOrderPaid, 4);
-                    $cashbackToRestore = bcmul($redeemedCashbackOnOrder, $ratio, 2);
-                }
+                if ($pointsToRestore > 0) {
+                    DB::table('users')->where('id', $order->customer_id)->increment('loyalty_point', $pointsToRestore);
+                    $freshBalance = (float) DB::table('users')->where('id', $order->customer_id)->value('loyalty_point');
 
-                if (bccomp($cashbackToRestore, '0.00', 2) > 0) {
-                    $exchangeRate = (float) (getWebConfig(name: 'loyalty_point_exchange_rate') ?: 1.0);
-                    $pointsToRestore = (float) bcdiv($cashbackToRestore, (string) $exchangeRate, 4);
+                    DB::table('loyalty_point_transactions')->insert([
+                        'user_id' => $order->customer_id,
+                        'transaction_id' => \Illuminate\Support\Str::uuid()->toString(),
+                        'credit' => $pointsToRestore,
+                        'debit' => 0.0000,
+                        'balance' => $freshBalance,
+                        'reference' => 'refund-cashback-restore-' . $order->id,
+                        'transaction_type' => 'point_transfer',
+                        'created_at' => now(),
+                        'updated_at' => now(),
+                    ]);
 
-                    if ($pointsToRestore > 0) {
-                        DB::table('users')->where('id', $order->customer_id)->increment('loyalty_point', $pointsToRestore);
-                        $freshBalance = (float) DB::table('users')->where('id', $order->customer_id)->value('loyalty_point');
+                    $validityMonths = (int) (getWebConfig(name: 'loyalty_point_validity_months') ?: 6);
+                    CustomerCashbackLedger::create([
+                        'customer_id' => $order->customer_id,
+                        'order_id' => $order->id,
+                        'merchandise_amount' => '0.00',
+                        'cashback_rate' => '0.00',
+                        'cashback_amount' => $cashbackToRestore,
+                        'status' => 'available',
+                        'available_at' => now(),
+                        'expires_at' => now()->addMonths($validityMonths),
+                        'description' => "Restored cashback reward from refunded Order #{$order->id}",
+                    ]);
 
-                        DB::table('loyalty_point_transactions')->insert([
-                            'user_id' => $order->customer_id,
-                            'transaction_id' => \Illuminate\Support\Str::uuid()->toString(),
-                            'credit' => $pointsToRestore,
-                            'debit' => 0.0000,
-                            'balance' => $freshBalance,
-                            'reference' => 'refund-cashback-restore-' . $order->id,
-                            'transaction_type' => 'point_transfer',
-                            'created_at' => now(),
-                            'updated_at' => now(),
-                        ]);
-
-                        Log::info("[AI] PaystackRefundService: Restored {$pointsToRestore} cashback points (₦{$cashbackToRestore}) to customer #{$order->customer_id} for refunded Order #{$order->id}.");
-                    }
+                    Log::info("[AI] PaystackRefundService: Restored {$pointsToRestore} cashback points (₦{$cashbackToRestore}) and ledger lot to customer #{$order->customer_id} for refunded Order #{$order->id}.");
                 }
             }
 
@@ -801,6 +853,147 @@ class PaystackRefundService
                 'remaining_merchandise' => $remainingMerchandise,
                 'paystack_id' => $paystackId,
             ]);
+        });
+    }
+
+    /**
+     * [AI] Finalize Refund Accounting for Cashback-Funded Orders
+     * Executes atomic internal reward restoration, accounting reversal, and marks refund completed
+     * without requiring an external payment provider webhook.
+     */
+    public function finalizeCashbackOrderRefund(RefundRequest $refundRequest, Order $order): void
+    {
+        DB::transaction(function () use ($refundRequest, $order) {
+            $lockedRequest = RefundRequest::where('id', $refundRequest->id)->lockForUpdate()->first();
+            if (!$lockedRequest || $lockedRequest->execution_status === 'succeeded' || $lockedRequest->status === 'refunded') {
+                return;
+            }
+
+            $lockedOrder = Order::where('id', $order->id)->lockForUpdate()->first();
+            if (!$lockedOrder) {
+                return;
+            }
+
+            $refundAmount = bcadd((string)($lockedRequest->getRawOriginal('amount') ?? '0.00'), '0', 2);
+            $isSettled = ($lockedOrder->vendor_settlement_status === 'settled');
+
+            // 1. Reversals: Pre-Settlement Escrow vs Post-Settlement
+            if (!$isSettled) {
+                $adminWallet = AdminWallet::where('admin_id', 1)->lockForUpdate()->first();
+                if ($adminWallet) {
+                    $currentPending = bcadd((string)($adminWallet->getRawOriginal('pending_amount') ?? '0.00'), '0', 2);
+                    $newPendingDiff = bcsub($currentPending, $refundAmount, 2);
+                    $adminWallet->pending_amount = (bccomp($newPendingDiff, '0.00', 2) < 0) ? '0.00' : $newPendingDiff;
+                    $adminWallet->save();
+                }
+            } else {
+                $vendorShare = bcmul($refundAmount, '0.90', 2);
+                $commissionShare = bcmul($refundAmount, '0.10', 2);
+
+                $sellerWallet = SellerWallet::where('seller_id', $lockedOrder->seller_id)->lockForUpdate()->first();
+                if ($sellerWallet) {
+                    $currentEarning = bcadd((string)($sellerWallet->getRawOriginal('total_earning') ?? '0.00'), '0', 2);
+                    if (bccomp($currentEarning, $vendorShare, 2) >= 0) {
+                        $newEarning = bcsub($currentEarning, $vendorShare, 2);
+                        $unrecoveredDebt = '0.00';
+                    } else {
+                        $newEarning = '0.00';
+                        $unrecoveredDebt = bcsub($vendorShare, $currentEarning, 2);
+                    }
+                    $sellerWallet->total_earning = $newEarning;
+                    if (bccomp($unrecoveredDebt, '0.00', 2) > 0) {
+                        $currentCollectedCash = bcadd((string)($sellerWallet->getRawOriginal('collected_cash') ?? '0.00'), '0', 2);
+                        $sellerWallet->collected_cash = bcadd($currentCollectedCash, $unrecoveredDebt, 2);
+                    }
+                    $currentCommissionGiven = bcadd((string)($sellerWallet->getRawOriginal('commission_given') ?? '0.00'), '0', 2);
+                    $commDiff = bcsub($currentCommissionGiven, $commissionShare, 2);
+                    $sellerWallet->commission_given = (bccomp($commDiff, '0.00', 2) < 0) ? '0.00' : $commDiff;
+                    $sellerWallet->save();
+                }
+
+                $adminWallet = AdminWallet::where('admin_id', 1)->lockForUpdate()->first();
+                if ($adminWallet) {
+                    $currentCommissionEarned = bcadd((string)($adminWallet->getRawOriginal('commission_earned') ?? '0.00'), '0', 2);
+                    $adminCommDiff = bcsub($currentCommissionEarned, $commissionShare, 2);
+                    $adminWallet->commission_earned = (bccomp($adminCommDiff, '0.00', 2) < 0) ? '0.00' : $adminCommDiff;
+                    $adminWallet->save();
+                }
+            }
+
+            // 2. Restore Cashback Points and Ledger Lot
+            $exchangeRate = (float) (getWebConfig(name: 'loyalty_point_exchange_rate') ?: 1.0);
+            $pointsToRestore = (float) bcdiv($refundAmount, (string) $exchangeRate, 4);
+
+            if ($pointsToRestore > 0) {
+                DB::table('users')->where('id', $lockedOrder->customer_id)->increment('loyalty_point', $pointsToRestore);
+                $freshBalance = (float) DB::table('users')->where('id', $lockedOrder->customer_id)->value('loyalty_point');
+
+                DB::table('loyalty_point_transactions')->insert([
+                    'user_id' => $lockedOrder->customer_id,
+                    'transaction_id' => \Illuminate\Support\Str::uuid()->toString(),
+                    'credit' => $pointsToRestore,
+                    'debit' => 0.0000,
+                    'balance' => $freshBalance,
+                    'reference' => 'cashback-refund-' . $lockedOrder->id,
+                    'transaction_type' => 'point_transfer',
+                    'created_at' => now(),
+                    'updated_at' => now(),
+                ]);
+
+                $validityMonths = (int) (getWebConfig(name: 'loyalty_point_validity_months') ?: 6);
+                CustomerCashbackLedger::create([
+                    'customer_id' => $lockedOrder->customer_id,
+                    'order_id' => $lockedOrder->id,
+                    'merchandise_amount' => '0.00',
+                    'cashback_rate' => '0.00',
+                    'cashback_amount' => $refundAmount,
+                    'status' => 'available',
+                    'available_at' => now(),
+                    'expires_at' => now()->addMonths($validityMonths),
+                    'description' => "Restored cashback from internal refund on Order #{$lockedOrder->id}",
+                ]);
+            }
+
+            // 3. Create RefundTransaction
+            RefundTransaction::create([
+                'order_id' => $lockedRequest->order_id,
+                'payment_for' => 'Refund Request',
+                'payer_id' => $lockedOrder->seller_id ?? 1,
+                'payment_receiver_id' => $lockedRequest->customer_id,
+                'paid_by' => $lockedOrder->seller_is ?? 'admin',
+                'paid_to' => 'customer',
+                'payment_method' => 'cashback',
+                'payment_status' => 'paid',
+                'amount' => $refundAmount,
+                'transaction_type' => 'Refund',
+                'order_details_id' => $lockedRequest->order_details_id,
+                'refund_id' => $lockedRequest->id,
+            ]);
+
+            // 4. Update RefundRequest status
+            $lockedRequest->execution_status = 'succeeded';
+            $lockedRequest->status = 'refunded';
+            $lockedRequest->save();
+
+            // 5. Update OrderDetail and Order status
+            \App\Models\OrderDetail::where('id', $lockedRequest->order_details_id)->update([
+                'refund_request' => 3, // Refunded
+            ]);
+
+            // Check if all order details are refunded
+            $allDetailsRefunded = !\App\Models\OrderDetail::where('order_id', $lockedOrder->id)
+                ->where('refund_request', '!=', 3)
+                ->exists();
+
+            if ($allDetailsRefunded) {
+                $lockedOrder->order_status = 'refunded';
+                if ($lockedOrder->seller_is === 'seller') {
+                    $lockedOrder->vendor_settlement_status = 'refunded';
+                }
+                $lockedOrder->save();
+            }
+
+            Log::info("[AI] PaystackRefundService: Completed internal cashback refund for RefundRequest #{$lockedRequest->id} on Order #{$lockedOrder->id}.");
         });
     }
 }

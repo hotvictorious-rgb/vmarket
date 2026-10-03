@@ -73,6 +73,39 @@ class SellerApiAuthMiddleware
                     // Auto-bind employee's assigned branch to enforce downstream isolation
                     $request->headers->set('X-Branch-ID', (string) $employee->shop_id);
                     $request->merge(['shop_id' => (int) $employee->shop_id]);
+
+                    // Resource-level branch ownership enforcement:
+                    $pathBase = basename($request->path());
+                    // A) Product resource check
+                    $targetProductId = $request->route('id') ?? $request->route('product_id') ?? $request->input('product_id') ?? $request->input('id') ?? (is_numeric($pathBase) && ($request->is('*seller/product*') || $request->is('*seller/products*')) ? $pathBase : null);
+                    if ($targetProductId && ($request->is('*seller/product*') || $request->is('*seller/products*'))) {
+                        $targetProduct = \App\Models\Product::find($targetProductId);
+                        if ($targetProduct && !empty($targetProduct->shop_id) && (int)$targetProduct->shop_id !== (int)$employee->shop_id) {
+                            return response()->json([
+                                'auth-001' => translate('Access Denied: You are not authorized to access or modify resources belonging to another branch.')
+                            ], 403);
+                        }
+                    }
+
+                    // B) Order resource check
+                    $targetOrderId = $request->route('id') ?? $request->route('order_id') ?? $request->input('order_id') ?? $request->input('id') ?? (is_numeric($pathBase) && ($request->is('*seller/order*') || $request->is('*seller/orders*')) ? $pathBase : null);
+                    if ($targetOrderId && ($request->is('*seller/order*') || $request->is('*seller/orders*'))) {
+                        $pickupReservation = \App\Models\PickupReservation::where('order_id', $targetOrderId)->first();
+                        if ($pickupReservation && !empty($pickupReservation->shop_id) && (int)$pickupReservation->shop_id !== (int)$employee->shop_id) {
+                            return response()->json([
+                                'auth-001' => translate('Access Denied: You are not authorized to access or modify orders belonging to another branch.')
+                            ], 403);
+                        }
+                        $otherBranchProductCount = \App\Models\OrderDetail::where('order_id', $targetOrderId)
+                            ->whereHas('product', function ($q) use ($employee) {
+                                $q->whereNotNull('shop_id')->where('shop_id', '!=', $employee->shop_id);
+                            })->count();
+                        if ($otherBranchProductCount > 0) {
+                            return response()->json([
+                                'auth-001' => translate('Access Denied: You are not authorized to access or modify orders belonging to another branch.')
+                            ], 403);
+                        }
+                    }
                 }
 
                 // 3. Module Permission Enforcement:

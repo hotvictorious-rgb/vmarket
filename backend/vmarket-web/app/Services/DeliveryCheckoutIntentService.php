@@ -143,6 +143,8 @@ class DeliveryCheckoutIntentService
 
             $groupItems = [];
             $groupItemsSubtotal = '0.00';
+            $groupMerchandiseTotal = '0.00';
+            $groupTaxTotal = '0.00';
 
             // Sort items deterministically by product_id and variant
             $sortedItems = $items->sortBy(function ($item) {
@@ -159,8 +161,12 @@ class DeliveryCheckoutIntentService
                 $lineDiscount = bcmul($unitDiscount, (string) $quantity, 2);
                 $lineTax = bcmul($unitTax, (string) $quantity, 2);
 
-                // line_total = (unit_price * qty) - (unit_discount * qty) + (unit_tax * qty)
-                $lineTotal = bcadd(bcsub($linePrice, $lineDiscount, 2), $lineTax, 2);
+                // Pure merchandise = price - discount; Tax is segregated and must be paid with real money
+                $itemMerchandise = bcsub($linePrice, $lineDiscount, 2);
+                $lineTotal = bcadd($itemMerchandise, $lineTax, 2);
+
+                $groupMerchandiseTotal = bcadd($groupMerchandiseTotal, $itemMerchandise, 2);
+                $groupTaxTotal = bcadd($groupTaxTotal, $lineTax, 2);
                 $groupItemsSubtotal = bcadd($groupItemsSubtotal, $lineTotal, 2);
 
                 $groupItems[] = [
@@ -241,6 +247,8 @@ class DeliveryCheckoutIntentService
                 'cart_group_id' => $cartGroupId,
                 'shipping_method_id' => $shippingMethodId,
                 'shipping_cost' => $shippingCost,
+                'merchandise' => $groupMerchandiseTotal,
+                'tax' => $groupTaxTotal,
                 'subtotal' => $groupItemsSubtotal,
                 'total' => $groupTotal,
                 'items' => $groupItems,
@@ -257,10 +265,12 @@ class DeliveryCheckoutIntentService
 
         // Calculate gross and subtotal breakdown across all vendor groups
         $merchandiseSubtotal = '0.00';
+        $taxTotal = '0.00';
         $shippingTotal = '0.00';
         foreach ($vendorGroups as $vg) {
             $grossAmount = bcadd($grossAmount, $vg['total'], 2);
-            $merchandiseSubtotal = bcadd($merchandiseSubtotal, (string)($vg['subtotal'] ?? '0.00'), 2);
+            $merchandiseSubtotal = bcadd($merchandiseSubtotal, (string)($vg['merchandise'] ?? '0.00'), 2);
+            $taxTotal = bcadd($taxTotal, (string)($vg['tax'] ?? '0.00'), 2);
             $shippingTotal = bcadd($shippingTotal, (string)($vg['shipping_cost'] ?? '0.00'), 2);
         }
 
@@ -283,6 +293,7 @@ class DeliveryCheckoutIntentService
             $cartFingerprint,
             $grossAmount,
             $merchandiseSubtotal,
+            $taxTotal,
             $shippingTotal,
             $useCashback,
             $canonicalShippingAddress,
@@ -370,17 +381,17 @@ class DeliveryCheckoutIntentService
                 }
             }
 
-            // Final net payable amount: (Merchandise - Cashback) + Shipping
+            // Final net payable amount: (Pure Merchandise - Cashback) + Tax + Shipping
             $netMerchandise = bcsub($merchandiseSubtotal, $cashbackAmount, 2);
             if (bccomp($netMerchandise, '0.00', 2) < 0) {
                 $netMerchandise = '0.00';
             }
-            $totalAmount = bcadd($netMerchandise, $shippingTotal, 2);
+            $totalAmount = bcadd(bcadd($netMerchandise, $taxTotal, 2), $shippingTotal, 2);
             if (bccomp($totalAmount, '0.00', 2) < 0) {
                 $totalAmount = '0.00';
             }
 
-            // Distribute allocated cashback across vendor groups proportionally
+            // Distribute allocated cashback across vendor groups proportionally based on pure merchandise
             if (bccomp($cashbackAmount, '0.00', 2) > 0 && bccomp($merchandiseSubtotal, '0.00', 2) > 0) {
                 $allocatedSoFar = '0.00';
                 $vgCount = count($vendorGroups);
@@ -388,7 +399,8 @@ class DeliveryCheckoutIntentService
                     if ($i === $vgCount - 1) {
                         $vendorGroups[$i]['allocated_cashback'] = bcsub($cashbackAmount, $allocatedSoFar, 2);
                     } else {
-                        $ratio = bcdiv((string)($vendorGroups[$i]['subtotal'] ?? '0.00'), $merchandiseSubtotal, 4);
+                        $vgMerch = (string)($vendorGroups[$i]['merchandise'] ?? '0.00');
+                        $ratio = bcdiv($vgMerch, $merchandiseSubtotal, 4);
                         $share = bcmul($cashbackAmount, $ratio, 2);
                         $vendorGroups[$i]['allocated_cashback'] = $share;
                         $allocatedSoFar = bcadd($allocatedSoFar, $share, 2);
@@ -406,6 +418,9 @@ class DeliveryCheckoutIntentService
                 'order_group_id' => $orderGroupId,
                 'currency' => 'NGN',
                 'gross_amount' => $grossAmount,
+                'merchandise_subtotal' => $merchandiseSubtotal,
+                'tax_total' => $taxTotal,
+                'shipping_total' => $shippingTotal,
                 'total_amount' => $totalAmount,
                 'shipping_address' => $canonicalShippingAddress,
                 'billing_address' => $canonicalBillingAddress,

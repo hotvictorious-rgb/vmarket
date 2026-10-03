@@ -164,10 +164,13 @@ class CustomerCashbackLedger extends Model
             return null; // Entire merchandise was paid using rewards; zero new reward earned
         }
 
-        // 5% Cashback Reward calculated strictly on new money via BCMath string arithmetic
-        $cashbackRate = '5.00';
-        $cashbackAmount = bcmul($netNewMoney, '0.05', 2);
-        $expiresAt = $order->refund_window_expires_at ? \Carbon\Carbon::parse($order->refund_window_expires_at)->addMonths(6) : null;
+        // [AI] Configurable Cashback Reward calculated strictly on new money via BCMath string arithmetic
+        $rawRate = (string) (getWebConfig(name: 'loyalty_point_earn_rate_percent') ?: (getWebConfig(name: 'cashback_earn_rate_percent') ?: '5.00'));
+        $cashbackRate = bcadd($rawRate, '0', 2);
+        $rateMultiplier = bcdiv($cashbackRate, '100', 4);
+        $cashbackAmount = bcmul($netNewMoney, $rateMultiplier, 2);
+        $validityMonths = (int) (getWebConfig(name: 'loyalty_point_validity_months') ?: 6);
+        $expiresAt = $order->refund_window_expires_at ? \Carbon\Carbon::parse($order->refund_window_expires_at)->addMonths($validityMonths) : null;
 
         return self::create([
             'customer_id' => $order->customer_id,
@@ -178,7 +181,7 @@ class CustomerCashbackLedger extends Model
             'status' => 'pending',
             'available_at' => $order->refund_window_expires_at,
             'expires_at' => $expiresAt,
-            'description' => "5% Victorious Cashback Reward for Order #{$order->id} (Earned on ₦{$netNewMoney} new money paid)",
+            'description' => "{$cashbackRate}% Victorious Cashback Reward for Order #{$order->id} (Earned on ₦{$netNewMoney} new money paid)",
         ]);
     }
 
@@ -199,15 +202,17 @@ class CustomerCashbackLedger extends Model
             return;
         }
 
-        $adjustedCashback = bcmul($remainingMerchandise, '0.05', 2);
+        $rateMultiplier = bcdiv((string) ($this->cashback_rate ?: '5.00'), '100', 4);
+        $adjustedCashback = bcmul($remainingMerchandise, $rateMultiplier, 2);
         $this->merchandise_amount = $remainingMerchandise;
         $this->cashback_amount = $adjustedCashback;
-        $this->description = "5% Victorious Cashback Reward for Order #{$this->order_id} (Adjusted for partial refund)";
+        $this->description = "{$this->cashback_rate}% Victorious Cashback Reward for Order #{$this->order_id} (Adjusted for partial refund)";
         $this->save();
     }
 
     /**
      * [AI] Transitions customer's available cashback ledger entries to 'redeemed' up to $redeemedNaira.
+     * Enforces FIFO by earliest expiration date and strictly ignores expired records.
      */
     public static function markRedeemed(int $customerId, string $redeemedNaira, ?int $redeemedOrderId = null): void
     {
@@ -218,7 +223,11 @@ class CustomerCashbackLedger extends Model
 
         $availableLedgers = self::where('customer_id', $customerId)
             ->where('status', 'available')
-            ->orderBy('available_at', 'asc')
+            ->where(function ($query) {
+                $query->whereNull('expires_at')
+                      ->orWhere('expires_at', '>', now());
+            })
+            ->orderByRaw('CASE WHEN expires_at IS NULL THEN 1 ELSE 0 END, expires_at ASC, available_at ASC')
             ->lockForUpdate()
             ->get();
 

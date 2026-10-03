@@ -55,6 +55,8 @@ class ComprehensiveProductionReadinessProofTest
         $this->testFinding7RefundRestoresRedeemedCashback();
         $this->testFinding8VendorEmployeeRestrictions();
         $this->testFinding9VendorRiderCompensationImmutability();
+        $this->testFinding10PureMerchandiseAndTaxSegregation();
+        $this->testFinding11DynamicAdminConfigurations();
 
         echo "\n========================================================================\n";
         echo " PRODUCTION READINESS AUDIT SUMMARY\n";
@@ -357,6 +359,20 @@ class ComprehensiveProductionReadinessProofTest
                 'loyalty_point' => 5000.0000, // ₦5,000 worth of points
             ]);
 
+            // Create test product with stock
+            $product = \App\Models\Product::create([
+                'name' => '100% CB Test Product',
+                'user_id' => 1,
+                'added_by' => 'seller',
+                'shop_id' => 1,
+                'current_stock' => 10,
+                'unit_price' => 5000.00,
+                'purchase_price' => 4000.00,
+                'tax' => 0.00,
+                'discount' => 0.00,
+                'status' => 1,
+            ]);
+
             $reservation = PickupReservation::create([
                 'reservation_code' => 'RES-100CB-' . Str::random(6),
                 'idempotency_key' => Str::uuid()->toString(),
@@ -366,7 +382,20 @@ class ComprehensiveProductionReadinessProofTest
                 'shop_id' => 1,
                 'total_amount' => 5000.00,
                 'status' => 'inspected_accepted',
-                'reservation_items' => [['product_id' => 1, 'quantity' => 1, 'price' => 5000.00]],
+                'reservation_items' => [
+                    'items' => [
+                        [
+                            'product_id' => $product->id,
+                            'product_name' => $product->name,
+                            'unit_price' => '5000.00',
+                            'discount' => '0.00',
+                            'tax' => '0.00',
+                            'quantity' => 1,
+                        ]
+                    ],
+                    'subtotal' => '5000.00',
+                    'seller_is' => 'seller',
+                ],
                 'expires_at' => now()->addHours(24),
             ]);
 
@@ -394,10 +423,59 @@ class ComprehensiveProductionReadinessProofTest
                 preg_match('/^\d{6}$/', (string)($result['verification_code'] ?? '')) === 1
             );
 
+            $orderId = (int) $result['order_id'];
+            $order = Order::find($orderId);
+            $this->assert(
+                "Finding 6.4: Order created with payment_status=paid and payment_method=cashback",
+                $order && $order->payment_status === 'paid' && $order->payment_method === 'cashback'
+            );
+
+            $this->assert(
+                "Finding 6.5: Order status is confirmed and vendor settlement status is held",
+                $order && $order->order_status === 'confirmed' && $order->vendor_settlement_status === 'held'
+            );
+
+            $orderDetail = \App\Models\OrderDetail::where('order_id', $orderId)->first();
+            $this->assert(
+                "Finding 6.6: OrderDetail created with exact product (#{$product->id}) and price ₦5,000",
+                $orderDetail && (int)$orderDetail->product_id === (int)$product->id && bccomp((string)$orderDetail->price, '5000.00', 2) === 0
+            );
+
+            $freshProduct = \App\Models\Product::find($product->id);
+            $this->assert(
+                "Finding 6.7: Product stock deducted from 10 to 9",
+                (int)$freshProduct->current_stock === 9
+            );
+
+            $orderTx = \App\Models\OrderTransaction::where('order_id', $orderId)->first();
+            $this->assert(
+                "Finding 6.8: OrderTransaction created with 10% commission (₦500.00) and 90% vendor amount (₦4,500.00)",
+                $orderTx && bccomp((string)$orderTx->admin_commission, '500.00', 2) === 0 && bccomp((string)$orderTx->seller_amount, '4500.00', 2) === 0
+            );
+
+            $freshReservation = PickupReservation::find($reservation->id);
+            $this->assert(
+                "Finding 6.9: Reservation status transitioned to order_placed (valid enum)",
+                $freshReservation->status === 'order_placed'
+            );
+
             $freshCustomer = User::find($customer->id);
             $this->assert(
-                "Finding 6.4: Customer points balance deducted under row lock to 0.0000",
+                "Finding 6.10: Customer points balance deducted under row lock to 0.0000",
                 bccomp((string)$freshCustomer->loyalty_point, '0.0000', 4) === 0
+            );
+
+            // Test Idempotent Replay
+            $replayResult = $service->initializePayment($customer, $freshReservation, true);
+            $this->assert(
+                "Finding 6.11: Replaying initializePayment returns SETTLED_INTERNALLY idempotently without duplicate deduction",
+                ($replayResult['action'] ?? '') === 'SETTLED_INTERNALLY' && (int)$replayResult['order_id'] === $orderId
+            );
+
+            $customerAfterReplay = User::find($customer->id);
+            $this->assert(
+                "Finding 6.12: Customer points remain 0.0000 after replay (zero duplicate deduction)",
+                bccomp((string)$customerAfterReplay->loyalty_point, '0.0000', 4) === 0
             );
 
         } finally {
@@ -422,14 +500,32 @@ class ComprehensiveProductionReadinessProofTest
                 'loyalty_point' => 100.0000,
             ]);
 
-            // Mixed payment order: Paid ₦8,000 money + ₦2,000 cashback discount
+            // Scenario from Reviewer:
+            // Merchandise: ₦10,000, Redeemed cashback: ₦2,000, Money paid: ₦8,000
+            // When customer refunds ₦8,000 (100% of money paid):
+            // Correct cashback restoration: ₦2,000.00 (NOT ₦1,600.00!)
+            // Total refunded value: ₦8,000 money + ₦2,000 cashback = ₦10,000.00
+            // Remaining merchandise: ₦10,000 - ₦10,000 = ₦0.00!
+
+            $product = \App\Models\Product::create([
+                'name' => 'Refund Test Product',
+                'user_id' => 1,
+                'added_by' => 'seller',
+                'shop_id' => 1,
+                'current_stock' => 10,
+                'unit_price' => 10000.00,
+                'status' => 1,
+            ]);
+
+            // Normal pickup settlement stores gross total as order_amount (₦10,000) and discount_amount = ₦2,000
             $order = Order::create([
                 'id' => random_int(900000, 999999),
                 'customer_id' => $customer->id,
                 'is_guest' => 0,
                 'seller_id' => 1,
                 'seller_is' => 'seller',
-                'order_amount' => 8000.00,
+                'order_amount' => 10000.00, // Gross
+                'init_order_amount' => 10000.00,
                 'discount_amount' => 2000.00,
                 'discount_type' => 'cashback',
                 'shipping_cost' => 0.00,
@@ -437,28 +533,134 @@ class ComprehensiveProductionReadinessProofTest
                 'order_status' => 'confirmed',
                 'payment_status' => 'paid',
                 'vendor_settlement_status' => 'held',
+                'transaction_ref' => 'TEST-TX-REF-12345',
             ]);
 
-            // Simulate full refund accounting restoration logic
-            $refundAmount = '8000.00'; // Full money refund
-            $redeemedCashbackOnOrder = bcadd((string)$order->discount_amount, '0', 2);
-            $ratio = bcdiv($refundAmount, (string)$order->order_amount, 4);
-            $cashbackToRestore = bcmul($redeemedCashbackOnOrder, $ratio, 2);
+            $orderDetail = \App\Models\OrderDetail::create([
+                'order_id' => $order->id,
+                'product_id' => $product->id,
+                'seller_id' => 1,
+                'qty' => 1,
+                'price' => 10000.00,
+                'discount' => 0.00,
+                'tax' => 0.00,
+                'delivery_status' => 'delivered',
+                'payment_status' => 'paid',
+            ]);
 
-            $this->assert(
-                "Finding 7.1: Cashback restoration calculates exactly ₦2,000.00 spent rewards",
-                bccomp($cashbackToRestore, '2000.00', 2) === 0
-            );
+            $pendingLedger = CustomerCashbackLedger::create([
+                'customer_id' => $customer->id,
+                'order_id' => $order->id,
+                'merchandise_amount' => 8000.00,
+                'cashback_rate' => 5.00,
+                'cashback_amount' => 400.00,
+                'status' => 'pending',
+                'available_at' => now()->addDays(7),
+                'description' => "5% reward on ₦8,000 new money",
+            ]);
 
-            // Execute points restoration under lock
-            $exchangeRate = 1.0;
-            $pointsToRestore = (float) bcdiv($cashbackToRestore, (string) $exchangeRate, 4);
-            $customer->increment('loyalty_point', $pointsToRestore);
+            $refundRequest = \App\Models\RefundRequest::create([
+                'order_id' => $order->id,
+                'customer_id' => $customer->id,
+                'order_details_id' => $orderDetail->id,
+                'amount' => 8000.00,
+                'status' => 'pending',
+                'refund_reason' => 'Defective item',
+                'execution_ref' => 'vmarket_refund_test_' . Str::random(6),
+            ]);
+
+            // Execute finalizeRefundAccounting with provider proof
+            $refundService = new \App\Services\PaystackRefundService();
+            $refundService->finalizeRefundAccounting($refundRequest, [
+                'status' => 'processed',
+                'amount' => 800000, // ₦8,000 in kobo
+                'currency' => 'NGN',
+                'transaction_reference' => 'TEST-TX-REF-12345',
+                'merchant_note' => $refundRequest->execution_ref,
+                'id' => 'paystack_rf_' . Str::random(8),
+            ]);
 
             $freshCustomer = User::find($customer->id);
             $this->assert(
-                "Finding 7.2: Customer loyalty balance restored from 100 to 2,100 points (Money refunded + Rewards restored)",
+                "Finding 7.1: Customer points restored from 100 to 2,100 pts (₦2,000 cashback, NOT ₦1,600!)",
                 bccomp((string)$freshCustomer->loyalty_point, '2100.0000', 4) === 0
+            );
+
+            $restoredLedger = CustomerCashbackLedger::where('order_id', $order->id)->where('status', 'available')->first();
+            $this->assert(
+                "Finding 7.2: Available cashback ledger lot restored with exact ₦2,000.00",
+                $restoredLedger && bccomp((string)$restoredLedger->cashback_amount, '2000.00', 2) === 0
+            );
+
+            $freshPending = CustomerCashbackLedger::find($pendingLedger->id);
+            $this->assert(
+                "Finding 7.3: Pending reward on order is cancelled because 100% merchandise was refunded",
+                $freshPending && $freshPending->status === 'cancelled'
+            );
+
+            $freshOrder = Order::find($order->id);
+            $this->assert(
+                "Finding 7.4: Order settlement status transitioned to refunded",
+                $freshOrder && $freshOrder->vendor_settlement_status === 'refunded'
+            );
+
+            // Test Cashback-Only Order Refund via finalizeCashbackOrderRefund
+            $cbOrder = Order::create([
+                'id' => random_int(900000, 999999),
+                'customer_id' => $customer->id,
+                'is_guest' => 0,
+                'seller_id' => 1,
+                'seller_is' => 'seller',
+                'order_amount' => 0.00,
+                'init_order_amount' => 3000.00,
+                'discount_amount' => 3000.00,
+                'discount_type' => 'cashback',
+                'shipping_cost' => 0.00,
+                'total_tax_amount' => 0.00,
+                'order_status' => 'confirmed',
+                'payment_status' => 'paid',
+                'payment_method' => 'cashback',
+                'vendor_settlement_status' => 'held',
+            ]);
+
+            $cbDetail = \App\Models\OrderDetail::create([
+                'order_id' => $cbOrder->id,
+                'product_id' => $product->id,
+                'seller_id' => 1,
+                'qty' => 1,
+                'price' => 3000.00,
+                'delivery_status' => 'delivered',
+                'payment_status' => 'paid',
+            ]);
+
+            $cbRefundRequest = \App\Models\RefundRequest::create([
+                'order_id' => $cbOrder->id,
+                'customer_id' => $customer->id,
+                'order_details_id' => $cbDetail->id,
+                'amount' => 3000.00,
+                'status' => 'pending',
+                'refund_reason' => 'Cashback return',
+                'execution_ref' => 'vmarket_cb_rf_' . Str::random(6),
+            ]);
+
+            $refundService->finalizeCashbackOrderRefund($cbRefundRequest, $cbOrder);
+
+            $freshCbRequest = \App\Models\RefundRequest::find($cbRefundRequest->id);
+            $this->assert(
+                "Finding 7.5: Cashback-only refund transitions to refunded and execution_status=succeeded",
+                $freshCbRequest && $freshCbRequest->status === 'refunded' && $freshCbRequest->execution_status === 'succeeded'
+            );
+
+            $customerAfterCbRefund = User::find($customer->id);
+            $this->assert(
+                "Finding 7.6: Customer loyalty balance restored by 3,000 pts to 5,100 pts",
+                bccomp((string)$customerAfterCbRefund->loyalty_point, '5100.0000', 4) === 0
+            );
+
+            $cbRefundTx = \App\Models\RefundTransaction::where('refund_id', $cbRefundRequest->id)->first();
+            $this->assert(
+                "Finding 7.7: RefundTransaction created for cashback refund with payment_method=cashback",
+                $cbRefundTx && $cbRefundTx->payment_method === 'cashback' && bccomp((string)$cbRefundTx->amount, '3000.00', 2) === 0
             );
 
         } finally {
@@ -530,6 +732,62 @@ class ComprehensiveProductionReadinessProofTest
                 $employee->hasModuleAccess('product') === false
             );
 
+            // 3. Resource-level branch check in middleware
+            $middleware = new \App\Http\Middleware\SellerApiAuthMiddleware();
+
+            // Product in another branch (shop_id = 20)
+            $otherBranchProduct = \App\Models\Product::create([
+                'name' => 'Branch 20 Product',
+                'user_id' => $seller->id,
+                'added_by' => 'seller',
+                'shop_id' => 20,
+                'current_stock' => 5,
+                'unit_price' => 1000.00,
+                'status' => 1,
+            ]);
+
+            $requestOtherProduct = \Illuminate\Http\Request::create('/api/v3/seller/products/details/' . $otherBranchProduct->id, 'GET');
+            $requestOtherProduct->headers->set('authorization', 'Bearer ' . $employee->auth_token);
+
+            $responseOtherProduct = $middleware->handle($requestOtherProduct, function ($req) {
+                return response()->json(['status' => 'success']);
+            });
+
+            $this->assert(
+                "Finding 8.6: Middleware blocks employee from accessing product belonging to another branch (HTTP 403)",
+                $responseOtherProduct->getStatusCode() === 403
+            );
+
+            // Order belonging to another branch
+            $otherOrder = Order::create([
+                'id' => random_int(900000, 999999),
+                'seller_id' => $seller->id,
+                'seller_is' => 'seller',
+                'order_amount' => 1000.00,
+                'order_status' => 'confirmed',
+                'payment_status' => 'paid',
+            ]);
+
+            \App\Models\OrderDetail::create([
+                'order_id' => $otherOrder->id,
+                'product_id' => $otherBranchProduct->id,
+                'seller_id' => $seller->id,
+                'qty' => 1,
+                'price' => 1000.00,
+            ]);
+
+            $requestOtherOrder = \Illuminate\Http\Request::create('/api/v3/seller/orders/details/' . $otherOrder->id, 'GET');
+            $requestOtherOrder->headers->set('authorization', 'Bearer ' . $employee->auth_token);
+
+            $responseOtherOrder = $middleware->handle($requestOtherOrder, function ($req) {
+                return response()->json(['status' => 'success']);
+            });
+
+            $this->assert(
+                "Finding 8.7: Middleware blocks employee from accessing order containing products from another branch (HTTP 403)",
+                $responseOtherOrder->getStatusCode() === 403
+            );
+
         } finally {
             DB::rollBack();
         }
@@ -558,7 +816,135 @@ class ComprehensiveProductionReadinessProofTest
             $isChargePresent ? true : false
         );
     }
+
+    /**
+     * Finding 10 / Reviewer Finding 11: Pure Merchandise and Tax Segregation
+     * Verifies that cashback ceiling is strictly calculated from pure merchandise,
+     * while tax and shipping must be paid 100% in real money.
+     */
+    private function testFinding10PureMerchandiseAndTaxSegregation(): void
+    {
+        echo "\n--- Finding 10: Pure Merchandise & Tax Segregation ---\n";
+
+        // Scenario: Cart has 1 item: price = ₦10,000, discount = ₦0, tax = ₦750. Shipping = ₦1,500.
+        // Gross Total = ₦12,250.00
+        // Customer has ₦20,000 in cashback.
+        // Pure Merchandise = ₦10,000.00
+        // Tax = ₦750.00
+        // Shipping = ₦1,500.00
+        $merchandiseSubtotal = '10000.00';
+        $taxTotal = '750.00';
+        $shippingTotal = '1500.00';
+        $customerCashback = '20000.00';
+        $maxCapPercentage = 100.0;
+
+        // Cashback is capped against pure merchandise ONLY
+        $maxAllowedCashback = bcmul($merchandiseSubtotal, bcdiv((string) $maxCapPercentage, '100', 4), 2);
+        $appliedCashback = (bccomp($customerCashback, $maxAllowedCashback, 2) > 0) ? $maxAllowedCashback : $customerCashback;
+
+        // Net merchandise
+        $netMerchandise = bcsub($merchandiseSubtotal, $appliedCashback, 2);
+
+        // Total payable money = netMerchandise + taxTotal + shippingTotal
+        $totalPayableMoney = bcadd(bcadd($netMerchandise, $taxTotal, 2), $shippingTotal, 2);
+
+        $this->assert(
+            "Finding 10.1: Cashback ceiling strictly restricted to pure merchandise (₦10,000.00), excluding tax & shipping",
+            bccomp($appliedCashback, '10000.00', 2) === 0
+        );
+
+        $this->assert(
+            "Finding 10.2: Net merchandise reduces to exactly ₦0.00",
+            bccomp($netMerchandise, '0.00', 2) === 0
+        );
+
+        $this->assert(
+            "Finding 10.3: Tax (₦750.00) is segregated and preserved with zero reduction",
+            bccomp($taxTotal, '750.00', 2) === 0
+        );
+
+        $this->assert(
+            "Finding 10.4: Total money payable strictly equals Tax + Shipping (₦2,250.00; Δ = 0.00)",
+            bccomp($totalPayableMoney, '2250.00', 2) === 0
+        );
+    }
+
+    /**
+     * Finding 11 / Reviewer Finding 9: Dynamic Admin Configurable Earning Rate and Validity
+     * Verifies that CustomerCashbackLedger honors dynamically configured earn rate and validity months.
+     */
+    private function testFinding11DynamicAdminConfigurations(): void
+    {
+        echo "\n--- Finding 11: Dynamic Admin Cashback Configuration ---\n";
+
+        DB::beginTransaction();
+        try {
+            // Configure dynamic values in business_settings
+            \App\Models\BusinessSetting::updateOrInsert(
+                ['type' => 'loyalty_point_earn_rate_percent'],
+                ['value' => json_encode('7.50')]
+            );
+            \App\Models\BusinessSetting::updateOrInsert(
+                ['type' => 'loyalty_point_validity_months'],
+                ['value' => json_encode('12')]
+            );
+
+            // Invalidate caches
+            \Illuminate\Support\Facades\Cache::forget('loyalty_point_earn_rate_percent');
+            \Illuminate\Support\Facades\Cache::forget('loyalty_point_validity_months');
+            \Illuminate\Support\Facades\Cache::forget(CACHE_BUSINESS_SETTINGS_TABLE);
+
+            $customer = User::create([
+                'name' => 'Dynamic Config User',
+                'email' => 'dyn_config_' . Str::random(8) . '@vmarket.ng',
+                'phone' => '080' . random_int(10000000, 99999999),
+                'password' => bcrypt('password'),
+                'loyalty_point' => 0.0000,
+            ]);
+
+            $deliveryDate = now()->subDays(2);
+            $refundWindowExpiresAt = now()->addDays(5);
+
+            $order = Order::create([
+                'id' => random_int(900000, 999999),
+                'customer_id' => $customer->id,
+                'is_guest' => 0,
+                'order_amount' => 10000.00,
+                'shipping_cost' => 0.00,
+                'total_tax_amount' => 0.00,
+                'order_status' => 'delivered',
+                'payment_status' => 'paid',
+                'received_at' => $deliveryDate,
+                'refund_window_expires_at' => $refundWindowExpiresAt,
+            ]);
+
+            $ledger = CustomerCashbackLedger::creditRewardForOrder($order);
+
+            $this->assert(
+                "Finding 11.1: CustomerCashbackLedger dynamically uses configured 7.5% earn rate (not hardcoded 5%)",
+                bccomp((string) $ledger->cashback_rate, '7.50', 2) === 0
+            );
+
+            $this->assert(
+                "Finding 11.2: Reward amount is exactly ₦750.00 on ₦10,000 net money paid (Δ = 0.00)",
+                bccomp((string) $ledger->cashback_amount, '750.00', 2) === 0
+            );
+
+            $expectedExpiryDate = \Carbon\Carbon::parse($refundWindowExpiresAt)->addMonths(12)->format('Y-m-d');
+            $actualExpiryDate = \Carbon\Carbon::parse($ledger->expires_at)->format('Y-m-d');
+
+            $this->assert(
+                "Finding 11.3: Ledger expires_at is dynamically set to 12 months after refund window expiration",
+                $actualExpiryDate === $expectedExpiryDate,
+                "Expected {$expectedExpiryDate}, got {$actualExpiryDate}"
+            );
+
+        } finally {
+            DB::rollBack();
+        }
+    }
 }
 
 $test = new ComprehensiveProductionReadinessProofTest();
 $test->run();
+

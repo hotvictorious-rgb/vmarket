@@ -11,6 +11,7 @@ use App\Models\PaymentReconciliation;
 use App\Models\PaymentRequest;
 use App\Models\PickupReservation;
 use App\Models\Product;
+use App\Models\Shop;
 use App\Models\User;
 use App\Utils\OrderManager;
 use Illuminate\Support\Facades\DB;
@@ -412,7 +413,7 @@ class PickupOrderSettlementService
             ? $reservation->snapshot
             : json_decode($reservation->snapshot ?? '{}', true));
 
-        $items = $snapshot['items'] ?? [];
+        $items = $snapshot['items'] ?? (isset($snapshot[0]) ? $snapshot : []);
         if (empty($items)) {
             throw new \RuntimeException("Reservation snapshot contains zero items.");
         }
@@ -457,7 +458,7 @@ class PickupOrderSettlementService
             'payment_status' => 'paid',
             'order_status' => 'confirmed',
             'vendor_settlement_status' => ($sellerIs === 'seller') ? 'held' : null,
-            'payment_method' => 'paystack',
+            'payment_method' => (!empty($paymentRequest->payment_method) ? $paymentRequest->payment_method : 'paystack'),
             'transaction_ref' => $internalTxRef, // strictly internal ID; NEVER the Paystack reference
             'order_group_id' => 'pickup-' . $reservation->reservation_code,
             'discount_amount' => $cashbackDiscount,

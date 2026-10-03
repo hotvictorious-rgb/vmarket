@@ -63,6 +63,18 @@ class OrderRepository implements OrderRepositoryInterface
             ->when(isset($filters['seller_id']) && $filters['seller_id'] != 'all', function ($query) use ($filters) {
                 return $query->where('seller_id', $filters['seller_id']);
             })
+            ->when(isset($filters['shop_id']), function ($query) use ($filters) {
+                return $query->where(function ($sub) use ($filters) {
+                    $sub->whereHas('details.product', function ($p) use ($filters) {
+                        $p->where('shop_id', $filters['shop_id']);
+                    })->orWhereExists(function ($pr) use ($filters) {
+                        $pr->select(\Illuminate\Support\Facades\DB::raw(1))
+                           ->from('pickup_reservations')
+                           ->whereColumn('pickup_reservations.order_id', 'orders.id')
+                           ->where('pickup_reservations.shop_id', $filters['shop_id']);
+                    });
+                });
+            })
             ->when(isset($filters['order_type']) && $filters['order_type'] != 'all', function ($query) use ($filters) {
                 return $query->where('order_type', $filters['order_type']);
             })
@@ -164,6 +176,18 @@ class OrderRepository implements OrderRepositoryInterface
             })
             ->when(isset($filters['seller_id']) && $filters['seller_id'] != 'all', function ($query) use ($filters) {
                 return $query->where('seller_id', $filters['seller_id']);
+            })
+            ->when(isset($filters['shop_id']), function ($query) use ($filters) {
+                return $query->where(function ($sub) use ($filters) {
+                    $sub->whereHas('details.product', function ($p) use ($filters) {
+                        $p->where('shop_id', $filters['shop_id']);
+                    })->orWhereExists(function ($pr) use ($filters) {
+                        $pr->select(\Illuminate\Support\Facades\DB::raw(1))
+                           ->from('pickup_reservations')
+                           ->whereColumn('pickup_reservations.order_id', 'orders.id')
+                           ->where('pickup_reservations.shop_id', $filters['shop_id']);
+                    });
+                });
             })
             ->when(isset($filters['order_type']) && $filters['order_type'] != 'all', function ($query) use ($filters) {
                 return $query->where('order_type', $filters['order_type']);

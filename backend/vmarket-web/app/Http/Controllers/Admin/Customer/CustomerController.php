@@ -340,7 +340,9 @@ class CustomerController extends BaseController
         $this->businessSettingRepo->updateOrInsert(type: 'loyalty_point_exchange_rate', value: $request->get('loyalty_point_exchange_rate', getWebConfig('loyalty_point_exchange_rate')));
         $this->businessSettingRepo->updateOrInsert(type: 'loyalty_point_item_purchase_point', value: $request->get('item_purchase_point', getWebConfig('loyalty_point_item_purchase_point')));
         $this->businessSettingRepo->updateOrInsert(type: 'loyalty_point_minimum_point', value: $request->get('minimum_transfer_point', getWebConfig('loyalty_point_minimum_point')));
-        $this->businessSettingRepo->updateOrInsert(type: 'loyalty_point_max_order_redemption_percentage', value: $request->get('loyalty_point_max_order_redemption_percentage', getWebConfig('loyalty_point_max_order_redemption_percentage') ?? 10));
+        $this->businessSettingRepo->updateOrInsert(type: 'loyalty_point_max_order_redemption_percentage', value: $request->get('loyalty_point_max_order_redemption_percentage', getWebConfig('loyalty_point_max_order_redemption_percentage') ?? 100));
+        $this->businessSettingRepo->updateOrInsert(type: 'loyalty_point_earn_rate_percent', value: $request->get('loyalty_point_earn_rate_percent', getWebConfig('loyalty_point_earn_rate_percent') ?? '5.00'));
+        $this->businessSettingRepo->updateOrInsert(type: 'loyalty_point_validity_months', value: $request->get('loyalty_point_validity_months', getWebConfig('loyalty_point_validity_months') ?? 6));
         $this->businessSettingRepo->updateOrInsert(type: 'ref_earning_status', value: $request->get('ref_earning_status', 0));
         $this->businessSettingRepo->updateOrInsert(type: 'ref_earning_exchange_rate', value: $request->get('ref_earning_exchange_rate', getWebConfig('ref_earning_exchange_rate')));
         $this->businessSettingRepo->updateOrInsert(type: 'ref_earning_min_order_amount', value: $request->get('ref_earning_min_order_amount', getWebConfig('ref_earning_min_order_amount') ?? 5000));

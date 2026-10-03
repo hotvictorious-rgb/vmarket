@@ -178,9 +178,25 @@
                                             </span>
                                         </label>
                                         <input type="number" class="form-control" name="loyalty_point_max_order_redemption_percentage"
-                                            id="loyalty_point_max_order_redemption_percentage" placeholder="{{ translate('ex') . ': ' . '10' }}"
+                                            id="loyalty_point_max_order_redemption_percentage" placeholder="{{ translate('ex') . ': ' . '100' }}"
                                             min="1" max="100" step="any"
-                                            value="{{ $loyaltyPointMaxRedemption ?? 10 }}" required>
+                                            value="{{ $loyaltyPointMaxRedemption ?? 100 }}" required>
+                                    </div>
+                                </div>
+                                @php($loyaltyPointValidityMonths = getWebConfig(name: 'loyalty_point_validity_months'))
+                                <div class="col-xl-4 col-md-6">
+                                    <div class="form-group">
+                                        <label class="form-label text-capitalize" for="loyalty_point_validity_months">
+                                            {{ translate('Cashback_Validity_Window') }} ({{ translate('Months') }})
+                                            <span class="tooltip-icon" data-bs-toggle="tooltip" data-bs-placement="right"
+                                                data-bs-title="{{ translate('number_of_months_before_unredeemed_cashback_rewards_expire') }}">
+                                                <i class="fi fi-sr-info"></i>
+                                            </span>
+                                        </label>
+                                        <input type="number" class="form-control" name="loyalty_point_validity_months"
+                                            id="loyalty_point_validity_months" placeholder="{{ translate('ex') . ': ' . '6' }}"
+                                            min="1" max="120"
+                                            value="{{ $loyaltyPointValidityMonths ?? 6 }}" required>
                                     </div>
                                 </div>
                             </div>

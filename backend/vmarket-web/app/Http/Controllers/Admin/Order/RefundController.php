@@ -147,7 +147,11 @@ class RefundController extends BaseController
                 $orderModel = Order::find($refund['order_id']);
                 $gatewayRef = $orderModel ? \App\Services\PaystackRefundService::resolvePaystackReferenceForOrder($orderModel) : null;
 
-                if ($order && $order['payment_method'] === 'paystack' && !empty($gatewayRef)) {
+                if ($order && ($order['payment_method'] === 'cashback' || bccomp((string)($order['order_amount'] ?? '0.00'), '0.00', 2) === 0)) {
+                    $paystackRefundService = app(\App\Services\PaystackRefundService::class);
+                    $paystackRefundService->finalizeCashbackOrderRefund($refundRequestModel, $orderModel);
+                    Log::info("[AI] Internal cashback refund finalized for RefundRequest #{$refund['id']} on Order #{$order['id']}");
+                } elseif ($order && $order['payment_method'] === 'paystack' && !empty($gatewayRef)) {
                     $paystackRefundService = app(\App\Services\PaystackRefundService::class);
                     $initResult = $paystackRefundService->initiateRefund($refundRequestModel, $gatewayRef);
                     Log::info("[AI] Paystack refund initiated for RefundRequest #{$refund['id']}: " . ($initResult['message'] ?? ''));
