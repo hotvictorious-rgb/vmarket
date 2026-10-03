@@ -16,6 +16,8 @@ use App\Events\RefundEvent;
 use App\Exports\RefundRequestExport;
 use App\Http\Controllers\BaseController;
 use App\Http\Requests\Admin\RefundStatusRequest;
+use App\Models\Order;
+use App\Models\RefundRequest;
 use App\Services\RefundStatusService;
 use App\Services\RefundTransactionService;
 use App\Traits\CustomerTrait;
@@ -106,8 +108,8 @@ class RefundController extends BaseController
     public function updateRefundStatus(RefundStatusRequest $request, RefundStatusService $refundStatusService, RefundTransactionService $refundTransactionService): JsonResponse
     {
         $refund = $this->refundRequestRepo->getFirstWhere(params: ['id' => $request['id']]);
-        if ($refund['status'] == 'refunded') {
-            return response()->json(['error' => translate('when_refund_status_refunded') . ',' . translate('then_you_can`t_change_refund_status') . '.']);
+        if ($refund['status'] == 'refunded' || ($refund['execution_status'] ?? '') === 'succeeded') {
+            return response()->json(['error' => translate('when_refund_status_refunded') . ',' . translate('then_you_can`t_change_refund_status') . '.'], 400);
         }
         $user = $this->customerRepo->getFirstWhere(params: ['id' => $refund['customer_id']]);
 
@@ -124,34 +126,113 @@ class RefundController extends BaseController
             return response()->json(['error' => translate('Customer wallet is not a supported refund method.')], 400);
         }
 
-        if ($refund['status'] != 'refunded') {
-            $orderDetails = $this->orderDetailRepo->getFirstWhere(params: ['id' => $refund['order_details_id']]);
-            $loyaltyPoint = 0;
-            $dataArray = $refundStatusService->getRefundStatusProcessData(request: $request, orderDetails: $orderDetails, refund: $refund, loyaltyPoint: $loyaltyPoint);
+        $orderDetails = $this->orderDetailRepo->getFirstWhere(params: ['id' => $refund['order_details_id']]);
+        if (!$orderDetails) {
+            return response()->json(['error' => translate('order_details_not_found') . '.'], 404);
+        }
 
-            $this->orderDetailRepo->update(id: $refund['order_details_id'], data: ['refund_request' => $dataArray['orderDetails']['refund_request']]);
-            $this->refundRequestRepo->update(id: $request['id'], data: $dataArray['refund']);
-            $this->refundStatusRepos->add(data: $dataArray['refundStatus']);
+        $refundRequestModel = RefundRequest::find($refund['id']);
+        $orderModel = Order::find($refund['order_id']);
 
-            // [AI] Manual Offline Refund Execution:
-            // When admin approves or marks refund as refunded, execute internal accounting (vendor reversal,
-            // reward restoration, ledger settlement) completely offline WITHOUT triggering Paystack API calls.
-            if (in_array($request['refund_status'], ['approved', 'refunded'], true)) {
-                $refundRequestModel = RefundRequest::find($refund['id']);
-                $orderModel = Order::find($refund['order_id']);
+        // Check if pure cashback/reward refund (zero money involved)
+        $paymentInfo = json_decode($refundRequestModel->payment_info ?? '{}', true) ?: [];
+        $refundableMoney = $paymentInfo['refundable_money_amount'] ?? ($paymentInfo['money_amount'] ?? null);
+        $isPureRewardRefund = ($refundableMoney !== null && bccomp((string)$refundableMoney, '0.00', 2) === 0)
+            || ($orderModel && $orderModel->payment_method === 'cashback')
+            || (bccomp((string)($orderModel->order_amount ?? '0.00'), '0.00', 2) === 0);
 
-                if ($refundRequestModel && $orderModel) {
-                    $paystackRefundService = app(\App\Services\PaystackRefundService::class);
-                    $paystackRefundService->finalizeManualOrderRefund($refundRequestModel, $orderModel);
-                    Log::info("[AI] Manual offline refund finalized for RefundRequest #{$refund['id']} on Order #{$order['id']} (External Paystack gateway call bypassed by administrative policy)");
-                }
+        // CASE 1: APPROVAL
+        if ($request['refund_status'] === 'approved') {
+            if ($isPureRewardRefund) {
+                // Pure cashback refunds do not require offline manual bank transfers; complete immediately
+                $paystackRefundService = app(\App\Services\PaystackRefundService::class);
+                $result = $paystackRefundService->finalizeManualPaymentConfirmation($refundRequestModel, $orderModel, [
+                    'payment_method' => 'cashback',
+                    'approved_note' => $request['approved_note'] ?? 'Approved cashback refund',
+                ]);
+                $this->refundStatusRepos->add(data: [
+                    'refund_request_id' => $refund['id'],
+                    'change_by' => 'admin',
+                    'change_by_id' => auth('admin')->id() ?? 1,
+                    'status' => 'refunded',
+                    'message' => $request['approved_note'] ?? 'Pure reward refund completed internally',
+                ]);
+                event(new RefundEvent(status: 'refunded', order: $order, refund: $refund, orderDetails: $orderDetails));
+                return response()->json(['message' => translate('cashback_refund_approved_and_completed_internally') . '.']);
             }
 
-            event(new RefundEvent(status: $request['refund_status'], order: $order, refund: $refund, orderDetails: $orderDetails));
-            return response()->json(['message' => translate('refund_status_updated') . '.']);
-        } else {
-            return response()->json(['error' => translate('refunded_status_can_not_be_changed') . '.']);
+            // Money refund or mixed refund: Transition to approved / awaiting manual payment
+            $this->orderDetailRepo->update(id: $refund['order_details_id'], data: ['refund_request' => 2]); // 2 = Approved
+            $this->refundRequestRepo->update(id: $request['id'], data: [
+                'status' => 'approved',
+                'execution_status' => 'awaiting_manual_payment',
+                'approved_note' => $request['approved_note'] ?? null,
+                'change_by' => 'admin',
+            ]);
+            $this->refundStatusRepos->add(data: [
+                'refund_request_id' => $refund['id'],
+                'change_by' => 'admin',
+                'change_by_id' => auth('admin')->id() ?? 1,
+                'status' => 'approved',
+                'message' => $request['approved_note'] ?? 'Refund approved, awaiting manual payment',
+            ]);
+
+            event(new RefundEvent(status: 'approved', order: $order, refund: $refund, orderDetails: $orderDetails));
+            return response()->json(['message' => translate('refund_request_approved_and_awaiting_manual_payment') . '.']);
         }
+
+        // CASE 2: PAYMENT CONFIRMATION (REFUNDED)
+        if ($request['refund_status'] === 'refunded') {
+            // Require payment confirmation details
+            $paymentMethod = $request['payment_method'] ?? 'manual_offline';
+            $paymentInfoVal = $request['payment_info'] ?? ($request['payment_reference'] ?? '');
+
+            $paystackRefundService = app(\App\Services\PaystackRefundService::class);
+            $result = $paystackRefundService->finalizeManualPaymentConfirmation($refundRequestModel, $orderModel, [
+                'payment_method' => $paymentMethod,
+                'payment_info' => $paymentInfoVal,
+                'amount' => $request['amount'] ?? null,
+                'payment_date' => $request['payment_date'] ?? now(),
+            ]);
+
+            if (!$result['status']) {
+                return response()->json(['error' => $result['message']], 400);
+            }
+
+            $this->refundStatusRepos->add(data: [
+                'refund_request_id' => $refund['id'],
+                'change_by' => 'admin',
+                'change_by_id' => auth('admin')->id() ?? 1,
+                'status' => 'refunded',
+                'message' => $paymentInfoVal ?: translate('payment_confirmed_manually'),
+            ]);
+
+            event(new RefundEvent(status: 'refunded', order: $order, refund: $refund, orderDetails: $orderDetails));
+            return response()->json(['message' => translate('refund_payment_confirmed_and_completed_successfully') . '.']);
+        }
+
+        // CASE 3: REJECTION
+        if ($request['refund_status'] === 'rejected') {
+            $this->orderDetailRepo->update(id: $refund['order_details_id'], data: ['refund_request' => 3]); // 3 = Rejected
+            $this->refundRequestRepo->update(id: $request['id'], data: [
+                'status' => 'rejected',
+                'execution_status' => 'rejected',
+                'rejected_note' => $request['rejected_note'] ?? null,
+                'change_by' => 'admin',
+            ]);
+            $this->refundStatusRepos->add(data: [
+                'refund_request_id' => $refund['id'],
+                'change_by' => 'admin',
+                'change_by_id' => auth('admin')->id() ?? 1,
+                'status' => 'rejected',
+                'message' => $request['rejected_note'] ?? 'Refund rejected',
+            ]);
+
+            event(new RefundEvent(status: 'rejected', order: $order, refund: $refund, orderDetails: $orderDetails));
+            return response()->json(['message' => translate('refund_status_updated') . '.']);
+        }
+
+        return response()->json(['error' => translate('invalid_refund_status') . '.'], 400);
     }
 
     public function exportList(Request $request, $status): BinaryFileResponse

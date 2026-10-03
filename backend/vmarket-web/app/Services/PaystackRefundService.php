@@ -942,27 +942,32 @@ class PaystackRefundService
     }
 
     /**
-     * [AI] Finalize Manual Offline Refund (Paystack API Bypassed)
+     * [AI] Finalize Manual Payment Confirmation (Executing Accounting and Status Change Atomically)
      * Executes atomic internal accounting reversal, vendor/admin wallet deductions,
      * customer cashback/loyalty points restoration, immutable RefundTransaction creation,
-     * and status transitions WITHOUT calling external payment gateways.
+     * proportional partial-refund pending cashback recalculation, and status transitions
+     * WITHOUT calling external payment gateways.
      */
-    public function finalizeManualOrderRefund(RefundRequest $refundRequest, Order $order): void
+    public function finalizeManualPaymentConfirmation(RefundRequest $refundRequest, Order $order, array $paymentData = []): array
     {
-        DB::transaction(function () use ($refundRequest, $order) {
+        return DB::transaction(function () use ($refundRequest, $order, $paymentData) {
             $lockedRequest = RefundRequest::where('id', $refundRequest->id)->lockForUpdate()->first();
-            if (!$lockedRequest || $lockedRequest->execution_status === 'succeeded' || $lockedRequest->status === 'refunded') {
-                return;
+            if (!$lockedRequest) {
+                return ['status' => false, 'message' => 'Refund request not found.'];
             }
 
-            // [AI] Item-Level Duplicate Guard & Pessimistic Row Lock on OrderDetail
+            if ($lockedRequest->execution_status === 'succeeded' || $lockedRequest->status === 'refunded') {
+                return ['status' => false, 'message' => 'Refund payment has already been confirmed and completed.'];
+            }
+
+            // Item-Level Duplicate Guard & Pessimistic Row Lock on OrderDetail
             $lockedDetail = \App\Models\OrderDetail::where('id', $lockedRequest->order_details_id)->lockForUpdate()->first();
             if ($lockedDetail && (int)$lockedDetail->refund_request === 4) {
-                Log::warning("[AI] finalizeManualOrderRefund blocked: OrderDetail #{$lockedDetail->id} already refunded.");
+                Log::warning("[AI] finalizeManualPaymentConfirmation blocked: OrderDetail #{$lockedDetail->id} already refunded.");
                 $lockedRequest->execution_status = 'already_refunded';
                 $lockedRequest->status = 'refunded';
                 $lockedRequest->save();
-                return;
+                return ['status' => false, 'message' => 'Order detail is already marked as refunded.'];
             }
 
             $otherExecuted = RefundRequest::where('order_details_id', $lockedRequest->order_details_id)
@@ -972,16 +977,16 @@ class PaystackRefundService
                 })
                 ->exists();
             if ($otherExecuted) {
-                Log::warning("[AI] finalizeManualOrderRefund blocked: OrderDetail #{$lockedRequest->order_details_id} already has a completed refund request.");
+                Log::warning("[AI] finalizeManualPaymentConfirmation blocked: OrderDetail #{$lockedRequest->order_details_id} already has a completed refund request.");
                 $lockedRequest->execution_status = 'already_refunded';
                 $lockedRequest->status = 'refunded';
                 $lockedRequest->save();
-                return;
+                return ['status' => false, 'message' => 'Order detail already has an active completed refund request.'];
             }
 
             $lockedOrder = Order::where('id', $order->id)->lockForUpdate()->first();
             if (!$lockedOrder) {
-                return;
+                return ['status' => false, 'message' => 'Order not found.'];
             }
 
             $payInfo = json_decode($lockedRequest->payment_info ?? '{}', true) ?: [];
@@ -1019,7 +1024,9 @@ class PaystackRefundService
 
             // Determine money portion to record for manual offline refund
             $moneyToRefund = '0.00';
-            if (isset($payInfo['money_amount']) && bccomp((string)$payInfo['money_amount'], '0.00', 2) > 0) {
+            if (isset($paymentData['amount']) && bccomp((string)$paymentData['amount'], '0.00', 2) > 0) {
+                $moneyToRefund = bcadd((string)$paymentData['amount'], '0', 2);
+            } elseif (isset($payInfo['money_amount']) && bccomp((string)$payInfo['money_amount'], '0.00', 2) > 0) {
                 $moneyToRefund = bcadd((string)$payInfo['money_amount'], '0', 2);
             } elseif (isset($payInfo['refundable_money_amount']) && bccomp((string)$payInfo['refundable_money_amount'], '0.00', 2) > 0) {
                 $moneyToRefund = bcadd((string)$payInfo['refundable_money_amount'], '0', 2);
@@ -1028,6 +1035,31 @@ class PaystackRefundService
                 if (bccomp($moneyToRefund, '0.00', 2) < 0) {
                     $moneyToRefund = '0.00';
                 }
+            }
+
+            // Calculate order subtotal and pure merchandise money paid
+            $orderSubtotal = '0.00';
+            if ($lockedOrder->details && $lockedOrder->details->count() > 0) {
+                foreach ($lockedOrder->details as $detail) {
+                    $itemPrice = (string)($detail->getRawOriginal('price') ?? '0.00');
+                    $itemQty = (string)($detail->getRawOriginal('qty') ?? '1');
+                    $itemDiscount = (string)($detail->getRawOriginal('discount') ?? '0.00');
+                    $lineTotal = bcsub(bcmul($itemPrice, $itemQty, 2), $itemDiscount, 2);
+                    if (bccomp($lineTotal, '0.00', 2) < 0) {
+                        $lineTotal = '0.00';
+                    }
+                    $orderSubtotal = bcadd($orderSubtotal, $lineTotal, 2);
+                }
+            }
+            if ($lockedOrder->discount_type !== 'cashback') {
+                $couponDiscount = (string)($lockedOrder->getRawOriginal('discount_amount') ?? '0.00');
+                $orderSubtotal = bcsub($orderSubtotal, $couponDiscount, 2);
+            }
+            if (bccomp($orderSubtotal, '0.00', 2) <= 0) {
+                $shippingCost = bcadd((string)($lockedOrder->getRawOriginal('shipping_cost') ?? '0.00'), '0', 2);
+                $taxAmount = bcadd((string)($lockedOrder->getRawOriginal('total_tax_amount') ?? '0.00'), '0', 2);
+                $rawOrderAmount = (string)($lockedOrder->getRawOriginal('order_amount') ?? '0.00');
+                $orderSubtotal = bcsub(bcsub($rawOrderAmount, $shippingCost, 2), $taxAmount, 2);
             }
 
             // Cumulative restoration guard across all refunds on this order using immutable RefundTransaction records
@@ -1064,6 +1096,11 @@ class PaystackRefundService
                 if (bccomp($cashbackToRestore, $maxRestorable, 2) > 0) {
                     $cashbackToRestore = $maxRestorable;
                 }
+            }
+
+            $actualMerchandiseMoneyPaid = bcsub($orderSubtotal, $redeemedCashbackOnOrder, 2);
+            if (bccomp($actualMerchandiseMoneyPaid, '0.00', 2) < 0) {
+                $actualMerchandiseMoneyPaid = '0.00';
             }
 
             $isSettled = ($lockedOrder->vendor_settlement_status === 'settled');
@@ -1162,6 +1199,12 @@ class PaystackRefundService
             }
 
             // 3. Create Immutable RefundTransaction for Manual Money Refund
+            $moneyPaymentMethod = $paymentData['payment_method'] ?? 'manual_offline';
+            if ($moneyPaymentMethod === 'cashback') {
+                $moneyPaymentMethod = 'manual_offline';
+            }
+            $paymentInfoStr = $paymentData['payment_info'] ?? ($paymentData['payment_reference'] ?? ('manual_refund_' . $lockedRequest->id));
+
             if (bccomp($moneyToRefund, '0.00', 2) > 0) {
                 RefundTransaction::create([
                     'order_id' => $lockedRequest->order_id,
@@ -1170,7 +1213,7 @@ class PaystackRefundService
                     'payment_receiver_id' => $lockedRequest->customer_id,
                     'paid_by' => $lockedOrder->seller_is ?? 'admin',
                     'paid_to' => 'customer',
-                    'payment_method' => 'manual_offline',
+                    'payment_method' => $moneyPaymentMethod,
                     'payment_status' => 'paid',
                     'amount' => $moneyToRefund,
                     'transaction_type' => 'Refund',
@@ -1182,6 +1225,8 @@ class PaystackRefundService
             // 4. Update RefundRequest status and record immutable restored amounts
             $payInfo['cashback_restored'] = $cashbackToRestore;
             $payInfo['money_refunded'] = $moneyToRefund;
+            $payInfo['confirmed_payment_method'] = $moneyPaymentMethod;
+            $payInfo['confirmed_payment_info'] = $paymentInfoStr;
             $lockedRequest->payment_info = json_encode($payInfo);
             $lockedRequest->execution_status = 'succeeded';
             $lockedRequest->status = 'refunded';
@@ -1194,23 +1239,49 @@ class PaystackRefundService
                 ]);
             }
 
-            // Check if all order details are refunded
-            $allDetailsRefunded = !\App\Models\OrderDetail::where('order_id', $lockedOrder->id)
+            // 6. Proportional Partial-Refund vs Full-Refund Settlement & Pending Cashback Adjustment
+            $unrefundedItemsCount = \App\Models\OrderDetail::where('order_id', $lockedOrder->id)
                 ->where('id', '!=', $lockedRequest->order_details_id)
                 ->where(function ($q) {
                     $q->where('refund_request', '!=', 4)->orWhereNull('refund_request');
                 })
-                ->exists();
+                ->count();
+            $isFullOrderRefund = ($unrefundedItemsCount === 0);
 
-            if ($allDetailsRefunded) {
+            $totalMerchandiseRefundedSoFar = (string)(RefundTransaction::where('order_id', $lockedOrder->id)
+                ->where('payment_status', 'paid')
+                ->where('refund_id', '!=', $lockedRequest->id)
+                ->sum('amount') ?: '0.00');
+
+            $cumulativeRefundedValue = bcadd($totalMerchandiseRefundedSoFar, $returnedMerchandiseValue, 2);
+            $remainingMerchandise = bcsub($orderSubtotal, $cumulativeRefundedValue, 2);
+            if ($isFullOrderRefund || bccomp($remainingMerchandise, '0.00', 2) <= 0) {
+                $remainingMerchandise = '0.00';
+            }
+
+            $cashback = CustomerCashbackLedger::where('order_id', $lockedOrder->id)->where('status', 'pending')->lockForUpdate()->first();
+
+            if (bccomp($remainingMerchandise, '0.00', 2) > 0) {
+                // Partial refund: adjust pending reward to remaining eligible new money
+                if ($cashback) {
+                    $moneyRatio = (bccomp($orderSubtotal, '0.00', 2) > 0)
+                        ? bcdiv($actualMerchandiseMoneyPaid, $orderSubtotal, 4)
+                        : '1.0000';
+                    $remainingNewMoney = bcmul($remainingMerchandise, $moneyRatio, 2);
+                    $cashback->adjustForPartialRefund($remainingNewMoney);
+                }
+                if (empty($lockedOrder->vendor_settlement_status) && $lockedOrder->seller_is === 'seller') {
+                    $lockedOrder->vendor_settlement_status = 'held';
+                    $lockedOrder->save();
+                }
+            } else {
+                // Full refund: order transitions to refunded
                 $lockedOrder->order_status = 'refunded';
                 if ($lockedOrder->seller_is === 'seller') {
                     $lockedOrder->vendor_settlement_status = 'refunded';
                 }
                 $lockedOrder->save();
 
-                // Cancel pending rewards on order upon 100% refund
-                $cashback = CustomerCashbackLedger::where('order_id', $lockedOrder->id)->where('status', 'pending')->lockForUpdate()->first();
                 if ($cashback) {
                     $cashback->status = 'cancelled';
                     $cashback->description = "Cancelled due to full merchandise refund for Order #{$lockedOrder->id}";
@@ -1218,8 +1289,14 @@ class PaystackRefundService
                 }
             }
 
-            Log::info("[AI] PaystackRefundService: Completed manual offline refund for RefundRequest #{$lockedRequest->id} on Order #{$lockedOrder->id}.");
+            Log::info("[AI] PaystackRefundService: Completed manual payment confirmation for RefundRequest #{$lockedRequest->id} on Order #{$lockedOrder->id}.");
+            return ['status' => true, 'message' => 'Refund payment confirmed and finalized successfully.'];
         });
+    }
+
+    public function finalizeManualOrderRefund(RefundRequest $refundRequest, Order $order): void
+    {
+        $this->finalizeManualPaymentConfirmation($refundRequest, $order);
     }
 
     /**
@@ -1227,7 +1304,7 @@ class PaystackRefundService
      */
     public function finalizeCashbackOrderRefund(RefundRequest $refundRequest, Order $order): void
     {
-        $this->finalizeManualOrderRefund($refundRequest, $order);
+        $this->finalizeManualPaymentConfirmation($refundRequest, $order, ['payment_method' => 'cashback']);
     }
 }
 

@@ -37,7 +37,11 @@ use App\Models\PaymentReconciliation;
 use App\Models\VendorEmployee;
 use App\Models\VendorRole;
 use App\Models\Seller;
+use App\Http\Controllers\Admin\Order\RefundController;
+use App\Http\Requests\Admin\RefundStatusRequest;
 use App\Services\PaystackRefundService;
+use App\Services\RefundStatusService;
+use App\Services\RefundTransactionService;
 use App\Utils\OrderManager;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
@@ -83,6 +87,9 @@ class ComprehensiveProductionReadinessProofTest
         $this->testRound3Finding4FullyReturnedDiscountedOrderCancelsPendingRewards();
         $this->testRound3Finding5PostExpiryCaptureAndShortfallRollback();
         $this->testRound3Finding6SpendingRestoredRewardsPreservesRefundHistory();
+ 
+        // Round 4 In-Depth Audits & Mathematical Proofs: Manual Refund Lifecycle & Admin Endpoint
+        $this->testRound4ManualRefundLifecycleAndEndpointProofs();
 
         $driftFormatted = number_format($this->totalDrift, 4);
         echo "\n========================================================================\n";
@@ -2639,6 +2646,339 @@ class ComprehensiveProductionReadinessProofTest
                 "Round 3 Finding 6.3: Order status transitions to terminal refunded without phantom remaining merchandise",
                 $order->fresh()->order_status === 'refunded'
             );
+        } finally {
+            DB::rollBack();
+        }
+    }
+
+    /**
+     * Round 4: Manual Refund Lifecycle & Admin Endpoint Proofs
+     * 1. Approval without payment leaves refund awaiting manual payment (zero premature paid transaction).
+     * 2. Payment confirmation records actual transferred amount, payment method, reference, and executes accounting atomically.
+     * 3. Cannot skip confirmation or duplicate confirm (idempotency guard).
+     * 4. Partial returns reduce pending earnings to configured rate (5%) on remaining eligible new money.
+     * 5. Full returns cancel pending earnings and transition order to refunded.
+     */
+    private function testRound4ManualRefundLifecycleAndEndpointProofs(): void
+    {
+        echo "\n--- Round 4: Manual Refund Lifecycle & Admin Endpoint Proofs ---\n";
+
+        DB::beginTransaction();
+        try {
+            $customer = User::create([
+                'name' => 'R4 User 1',
+                'email' => 'r4_u1_' . Str::random(8) . '@vmarket.ng',
+                'phone' => '080' . random_int(10000000, 99999999),
+                'password' => bcrypt('password'),
+                'loyalty_point' => 0.0000,
+            ]);
+
+            $sellerWallet = SellerWallet::updateOrCreate(
+                ['seller_id' => 1],
+                ['total_earning' => 20000.00, 'commission_given' => 2000.00]
+            );
+
+            // Order 1: ₦10,000 merchandise paid with Paystack
+            $order = Order::create([
+                'customer_id' => $customer->id,
+                'seller_id' => 1,
+                'seller_is' => 'seller',
+                'is_guest' => 0,
+                'order_amount' => 10000.00,
+                'shipping_cost' => 0.00,
+                'total_tax_amount' => 0.00,
+                'discount_amount' => 0.00,
+                'discount_type' => null,
+                'order_status' => 'delivered',
+                'payment_status' => 'paid',
+                'payment_method' => 'paystack',
+                'vendor_settlement_status' => 'settled',
+                'transaction_ref' => 'ref_order_r4_1',
+            ]);
+
+            $detail = OrderDetail::create([
+                'order_id' => $order->id,
+                'product_id' => 1,
+                'seller_id' => 1,
+                'qty' => 1,
+                'price' => 10000.00,
+                'discount' => 0.00,
+                'tax' => 0.00,
+                'delivery_status' => 'delivered',
+                'payment_status' => 'paid',
+                'refund_request' => 1,
+            ]);
+
+            $refundReq = RefundRequest::create([
+                'order_details_id' => $detail->id,
+                'customer_id' => $customer->id,
+                'order_id' => $order->id,
+                'product_id' => $detail->product_id,
+                'status' => 'pending',
+                'amount' => 10000.00,
+                'payment_info' => json_encode([
+                    'merchandise_value' => '10000.00',
+                    'merchandise_money' => '10000.00',
+                    'tax_amount' => '0.00',
+                    'money_amount' => '10000.00',
+                    'cashback_amount' => '0.00',
+                    'total_refundable' => '10000.00',
+                ]),
+            ]);
+
+            $controller = app(RefundController::class);
+            $refundStatusService = app(RefundStatusService::class);
+            $refundTransactionService = app(RefundTransactionService::class);
+
+            // Step 1: Admin approves the refund request (approval without payment)
+            $approveReq = new RefundStatusRequest();
+            $approveReq->merge([
+                'id' => $refundReq->id,
+                'refund_status' => 'approved',
+                'approved_note' => 'Item inspected and approved by warehouse manager',
+            ]);
+
+            $approveResponse = $controller->updateRefundStatus($approveReq, $refundStatusService, $refundTransactionService);
+            $refundReq->refresh();
+            $detail->refresh();
+
+            $this->assert(
+                "Round 4 Proof 1.1: Approval transitions refund status to 'approved'",
+                $refundReq->status === 'approved'
+            );
+            $this->assert(
+                "Round 4 Proof 1.2: Approval sets execution_status to 'awaiting_manual_payment'",
+                $refundReq->execution_status === 'awaiting_manual_payment'
+            );
+            $this->assert(
+                "Round 4 Proof 1.3: Approval transitions order_detail refund_request to 2 (approved)",
+                (int)$detail->refund_request === 2
+            );
+            $this->assert(
+                "Round 4 Proof 1.4: Zero premature paid transactions created upon approval",
+                RefundTransaction::where('order_id', $order->id)->count() === 0
+            );
+
+            // Step 2: Payment Confirmation (Admin confirms manual offline payout)
+            $confirmReq = new RefundStatusRequest();
+            $confirmReq->merge([
+                'id' => $refundReq->id,
+                'refund_status' => 'refunded',
+                'payment_method' => 'bank_transfer',
+                'payment_info' => 'NIP-REF-20261003-998877',
+                'amount' => 10000.00,
+            ]);
+
+            $confirmResponse = $controller->updateRefundStatus($confirmReq, $refundStatusService, $refundTransactionService);
+            $refundReq->refresh();
+            $detail->refresh();
+            $sellerWallet->refresh();
+
+            $this->assert(
+                "Round 4 Proof 2.1: Payment confirmation transitions refund status to 'refunded'",
+                $refundReq->status === 'refunded'
+            );
+            $this->assert(
+                "Round 4 Proof 2.2: Payment confirmation transitions execution_status to 'succeeded'",
+                $refundReq->execution_status === 'succeeded'
+            );
+            $this->assert(
+                "Round 4 Proof 2.3: OrderDetail transitions to canonical 4 (refunded)",
+                (int)$detail->refund_request === 4
+            );
+
+            $refundTx = RefundTransaction::where('order_id', $order->id)->where('refund_id', $refundReq->id)->first();
+            $this->assert(
+                "Round 4 Proof 2.4: RefundTransaction created with bank_transfer and status paid",
+                $refundTx && $refundTx->payment_method === 'bank_transfer' && $refundTx->payment_status === 'paid'
+            );
+            $this->assertDecimal(
+                "Round 4 Proof 2.5: RefundTransaction records exact confirmed ₦10,000.00 money amount",
+                (string)$refundTx->amount,
+                '10000.00',
+                2
+            );
+
+            $vendorDebited = bcsub('20000.00', (string)$sellerWallet->total_earning, 2);
+            $commDebited = bcsub('2000.00', (string)$sellerWallet->commission_given, 2);
+            $this->assertDecimal(
+                "Round 4 Proof 2.6: Vendor wallet debited 90% (₦9,000.00) on confirmed merchandise return",
+                (string)$vendorDebited,
+                '9000.00',
+                2
+            );
+            $this->assertDecimal(
+                "Round 4 Proof 2.7: Commission debited 10% (₦1,000.00) on confirmed merchandise return",
+                (string)$commDebited,
+                '1000.00',
+                2
+            );
+
+            // Step 3: Duplicate Confirmation Guard
+            $dupReq = new RefundStatusRequest();
+            $dupReq->merge([
+                'id' => $refundReq->id,
+                'refund_status' => 'refunded',
+                'payment_method' => 'bank_transfer',
+                'payment_info' => 'NIP-DUPLICATE-ATTEMPT',
+            ]);
+            $dupResponse = $controller->updateRefundStatus($dupReq, $refundStatusService, $refundTransactionService);
+            $this->assert(
+                "Round 4 Proof 3.1: Duplicate confirmation attempt is rejected with HTTP 400",
+                $dupResponse->getStatusCode() === 400
+            );
+            $this->assert(
+                "Round 4 Proof 3.2: RefundTransaction count remains strictly 1 (zero double payouts)",
+                RefundTransaction::where('order_id', $order->id)->count() === 1
+            );
+
+            // Step 4: Partial Return Recalculates Pending Cashback Earnings
+            $orderPartial = Order::create([
+                'customer_id' => $customer->id,
+                'seller_id' => 1,
+                'seller_is' => 'seller',
+                'is_guest' => 0,
+                'order_amount' => 10000.00, // 2 items of ₦5,000 = ₦10,000
+                'shipping_cost' => 0.00,
+                'total_tax_amount' => 0.00,
+                'discount_amount' => 0.00,
+                'discount_type' => null,
+                'order_status' => 'delivered',
+                'payment_status' => 'paid',
+                'payment_method' => 'paystack',
+                'vendor_settlement_status' => 'settled',
+                'transaction_ref' => 'ref_order_r4_partial',
+            ]);
+
+            $item1 = OrderDetail::create([
+                'order_id' => $orderPartial->id,
+                'product_id' => 101,
+                'seller_id' => 1,
+                'qty' => 1,
+                'price' => 5000.00,
+                'discount' => 0.00,
+                'tax' => 0.00,
+                'delivery_status' => 'delivered',
+                'payment_status' => 'paid',
+                'refund_request' => 0,
+            ]);
+
+            $item2 = OrderDetail::create([
+                'order_id' => $orderPartial->id,
+                'product_id' => 102,
+                'seller_id' => 1,
+                'qty' => 1,
+                'price' => 5000.00,
+                'discount' => 0.00,
+                'tax' => 0.00,
+                'delivery_status' => 'delivered',
+                'payment_status' => 'paid',
+                'refund_request' => 0,
+            ]);
+
+            // Pending cashback lot: ₦500.00 (5% of ₦10,000)
+            $pendingLot = CustomerCashbackLedger::create([
+                'customer_id' => $customer->id,
+                'order_id' => $orderPartial->id,
+                'merchandise_amount' => '10000.00',
+                'cashback_rate' => '5.00',
+                'cashback_amount' => '500.00',
+                'status' => 'pending',
+                'available_at' => now()->addDays(2),
+                'description' => 'Pending reward on ₦10k order',
+            ]);
+
+            $partialRefundReq = RefundRequest::create([
+                'order_details_id' => $item1->id,
+                'customer_id' => $customer->id,
+                'order_id' => $orderPartial->id,
+                'product_id' => $item1->product_id,
+                'status' => 'pending',
+                'amount' => 5000.00,
+                'payment_info' => json_encode([
+                    'merchandise_value' => '5000.00',
+                    'merchandise_money' => '5000.00',
+                    'tax_amount' => '0.00',
+                    'money_amount' => '5000.00',
+                    'cashback_amount' => '0.00',
+                    'total_refundable' => '5000.00',
+                ]),
+            ]);
+
+            // Approve partial return
+            $approvePartialReq = new RefundStatusRequest();
+            $approvePartialReq->merge([
+                'id' => $partialRefundReq->id,
+                'refund_status' => 'approved',
+                'approved_note' => 'Partial item 1 return approved',
+            ]);
+            $controller->updateRefundStatus($approvePartialReq, $refundStatusService, $refundTransactionService);
+
+            // Confirm payment for item 1
+            $confirmPartialReq = new RefundStatusRequest();
+            $confirmPartialReq->merge([
+                'id' => $partialRefundReq->id,
+                'refund_status' => 'refunded',
+                'payment_method' => 'bank_transfer',
+                'payment_info' => 'PARTIAL-REF-1',
+                'amount' => 5000.00,
+            ]);
+            $controller->updateRefundStatus($confirmPartialReq, $refundStatusService, $refundTransactionService);
+
+            $pendingLot->refresh();
+            $this->assertDecimal(
+                "Round 4 Proof 4.1: Partial return recalculates pending cashback strictly to 5% of remaining ₦5,000 new money (₦250.00)",
+                (string)$pendingLot->cashback_amount,
+                '250.00',
+                2
+            );
+            $this->assert(
+                "Round 4 Proof 4.2: Pending cashback lot remains 'pending' on partial return",
+                $pendingLot->status === 'pending'
+            );
+            $this->assert(
+                "Round 4 Proof 4.3: Order status remains delivered (not prematurely cancelled/refunded)",
+                $orderPartial->fresh()->order_status === 'delivered'
+            );
+
+            // Step 5: Full Return on remaining Item 2 cancels pending cashback
+            $fullRefundReq = RefundRequest::create([
+                'order_details_id' => $item2->id,
+                'customer_id' => $customer->id,
+                'order_id' => $orderPartial->id,
+                'product_id' => $item2->product_id,
+                'status' => 'pending',
+                'amount' => 5000.00,
+                'payment_info' => json_encode([
+                    'merchandise_value' => '5000.00',
+                    'merchandise_money' => '5000.00',
+                    'tax_amount' => '0.00',
+                    'money_amount' => '5000.00',
+                    'cashback_amount' => '0.00',
+                    'total_refundable' => '5000.00',
+                ]),
+            ]);
+
+            $confirmFullReq = new RefundStatusRequest();
+            $confirmFullReq->merge([
+                'id' => $fullRefundReq->id,
+                'refund_status' => 'refunded',
+                'payment_method' => 'bank_transfer',
+                'payment_info' => 'PARTIAL-REF-2',
+                'amount' => 5000.00,
+            ]);
+            $controller->updateRefundStatus($confirmFullReq, $refundStatusService, $refundTransactionService);
+
+            $pendingLot->refresh();
+            $this->assert(
+                "Round 4 Proof 5.1: Full order return cancels pending cashback status",
+                $pendingLot->status === 'cancelled'
+            );
+            $this->assert(
+                "Round 4 Proof 5.2: Order status transitions to terminal 'refunded'",
+                $orderPartial->fresh()->order_status === 'refunded'
+            );
+
         } finally {
             DB::rollBack();
         }
