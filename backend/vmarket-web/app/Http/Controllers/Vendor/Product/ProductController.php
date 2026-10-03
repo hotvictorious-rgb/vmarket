@@ -619,6 +619,17 @@ class ProductController extends BaseController
         $product = $this->productRepo->getFirstWhere(params: ['id' => $id, 'user_id' => auth('seller')->id()]);
 
         if ($product) {
+            // [AI] In-Flight Checkout & Reservation Guard: Block deletion if product has pending checkout or reservation
+            $hasInFlightCheckout = \Illuminate\Support\Facades\DB::table('pickup_reservations')
+                ->where('product_id', $id)
+                ->whereIn('status', ['pending', 'active', 'pending_inspection'])
+                ->exists();
+
+            if ($hasInFlightCheckout) {
+                ToastMagic::error(translate('cannot_delete_product_with_active_in_flight_reservations'));
+                return back();
+            }
+
             $this->translationRepo->delete(model: 'App\Models\Product', id: $id);
             $this->cartRepo->delete(params: ['product_id' => $id]);
             $this->wishlistRepo->delete(params: ['product_id' => $id]);

@@ -167,6 +167,7 @@ class Order extends Model
     protected $hidden = [
         'verification_code',
         'pickup_verification_code',
+        'guest_access_token',
     ];
 
     protected $casts = [

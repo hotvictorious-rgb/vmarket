@@ -189,6 +189,18 @@ class ForgotPasswordController extends Controller
             return response()->json(['errors' => Helpers::validationErrorProcessor($validator)], 403);
         }
 
+        // [AI] Strict Rate Limiting & Account-Level Brute Force Protection:
+        // Enforce the same per-account attempt limits, block times, and failed hit counters as tokenVerificationSubmit
+        $verificationData = $this->passwordResetRepo->getFirstWhere(params: ['identity' => $request['identity'], 'user_type' => 'customer']);
+        $verifyStatus = $this->checkPasswordResetOTPBlockTimeOrInvalid(verificationData: $verificationData, identity: $request['identity']);
+        if ($verifyStatus['status'] == 1) {
+            return response()->json([
+                'errors' => [
+                    ['code' => $verifyStatus['code'], 'message' => $verifyStatus['message']]
+                ]
+            ], 403);
+        }
+
         $data = DB::table('password_resets')
             ->where('user_type','customer')
             ->where('identity', $request['identity'])
@@ -218,14 +230,15 @@ class ForgotPasswordController extends Controller
             DB::table('password_resets')
                 ->where('user_type','customer')
                 ->where('identity', $request['identity'])
-                ->where(['token' => $request['otp']])->delete();
+                ->delete();
 
             DB::table('phone_or_email_verifications')
                 ->where('phone_or_email', $request['identity'])
-                ->where(['token' => $request['otp']])->delete();
+                ->delete();
 
             return response()->json(['message' => translate('password_changed_successfully')], 200);
         }
+
         return response()->json(['errors' => [
             ['code' => 'invalid', 'message' => translate('invalid_token')]
         ]], 400);

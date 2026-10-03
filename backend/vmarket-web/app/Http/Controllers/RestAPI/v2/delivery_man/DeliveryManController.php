@@ -360,7 +360,22 @@ class DeliveryManController extends Controller
             ->where(['delivery_man_id' => $deliveryMan['id'], 'id' => $request['order_id']])->first();
 
         $details = $order?->details?->map(function ($detail) use ($order) {
+            // [AI] Sanitize nested order relationship to prevent leaking merchant margins/commission to riders
+            if ($detail->order) {
+                self::sanitizeOrderForRider($detail->order);
+            }
             $data = $detail->toArray();
+            if (isset($data['order']) && is_array($data['order'])) {
+                unset(
+                    $data['order']['admin_commission'],
+                    $data['order']['order_amount'],
+                    $data['order']['init_order_amount'],
+                    $data['order']['paid_amount'],
+                    $data['order']['discount_amount'],
+                    $data['order']['extra_discount'],
+                    $data['order']['total_tax_amount']
+                );
+            }
             $data['is_pause'] = $order['is_pause'];
             $data['variation'] = is_array($data['variation']) ? $data['variation'] : json_decode($data['variation'], true);
 

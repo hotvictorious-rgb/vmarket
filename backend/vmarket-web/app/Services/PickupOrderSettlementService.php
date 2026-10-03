@@ -445,13 +445,16 @@ class PickupOrderSettlementService
         $adminCommission = bcadd($rawCommission, '0', 2);
         $sellerAmount = bcsub($orderAmount, $adminCommission, 2);
 
+        $isGuest = !empty($reservation->is_guest) || !empty($snapshot['is_guest']);
+        $guestToken = $isGuest ? bin2hex(random_bytes(32)) : null;
+
         $ordersData = [
             'id' => $orderId,
             'verification_code' => $verificationCode,
             'pickup_verification_code' => $handoverCode,
             'customer_id' => $customerId,
-            'is_guest' => 0,
-            'guest_access_token' => null,
+            'is_guest' => $isGuest ? 1 : 0,
+            'guest_access_token' => $guestToken,
             'seller_id' => $reservation->seller_id,
             'seller_is' => $sellerIs,
             'customer_type' => 'customer',
@@ -494,8 +497,16 @@ class PickupOrderSettlementService
             $qty = (int) $item['quantity'];
             $product = Product::find($productId);
 
+            // [AI] Missing/Deleted Product Guard:
+            // If a product was deleted between reservation and payment capture,
+            // quarantine the capture for reconciliation rather than treating fulfillment as successful!
+            if (!$product) {
+                $prodName = $item['product_name'] ?? "Deleted Product #{$productId}";
+                throw new PostPaymentStockFailureException("{$prodName} was removed/deleted prior to fulfillment", $productId, $qty, 0);
+            }
+
             // Atomic Physical Inventory Deduction Guard with Ownership Scoping:
-            if ($product && $product->product_type === 'physical') {
+            if ($product->product_type === 'physical') {
                 $stockQuery = Product::where('id', $productId)
                     ->where('current_stock', '>=', $qty);
 

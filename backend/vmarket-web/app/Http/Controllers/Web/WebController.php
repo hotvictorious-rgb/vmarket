@@ -624,7 +624,8 @@ class WebController extends Controller
         $more_product_from_seller = Product::marketplaceEligible()->withCount('reviews')->where('added_by', $product->added_by)->where('id', '!=', $product->id)->where('user_id', $product->user_id)->latest()->take(5)->get();
         $compareList = ProductCompare::where(['product_id' => $product->id, 'user_id' => auth('customer')->id()])->count();
 
-        // [AI] Marketplace Stock Privacy: Never expose exact warehouse current_stock or fake 999
+        // [AI] Marketplace Stock & Pricing Privacy: Never expose wholesale purchase_price or exact warehouse current_stock in public JSON responses
+        $product->makeHidden(['purchase_price', 'current_stock']);
         $firstVariationQuantity = ($product['marketplace_availability'] ?? 'in_stock') === 'in_stock' ? 1 : 0;
         return response()->json([
             'success' => 1,

@@ -298,6 +298,11 @@ class SocialAuthController extends Controller
         $temporaryToken = Str::random(40);
 
         if (!$existingUser) {
+            // [AI] Cryptographically bind the verified email from the OAuth provider challenge to temporaryToken
+            \Illuminate\Support\Facades\Cache::put('social_verified_email_' . $temporaryToken, [
+                'email' => $data['email'],
+                'medium' => $request['medium'] ?? 'social'
+            ], now()->addMinutes(15));
             return response()->json(['temp_token' => $temporaryToken, 'status' => false, 'new_user' => 0, 'socialResponse' => $socialResponse]);
         }
 
@@ -377,6 +382,17 @@ class SocialAuthController extends Controller
                 ['code' => 'phone', 'message' => translate('This_phone_has_already_been_used_in_another_account!')]
             ]], 403);
         }
+
+        // [AI] Verify OAuth identity challenge: Only grant email_verified_at if caller proves possession
+        // of a valid temporary_token established by a real OAuth callback for this exact email.
+        $tempToken = $request->header('X-Temp-Token') ?? ($request['temp_token'] ?? null);
+        $socialClaim = $tempToken ? \Illuminate\Support\Facades\Cache::get('social_verified_email_' . $tempToken) : null;
+        $isOAuthEmailVerified = ($socialClaim && !empty($socialClaim['email']) && hash_equals(strtolower($socialClaim['email']), strtolower($request['email'])));
+
+        $emailVerifiedAt = $isOAuthEmailVerified ? now() : null;
+        $isEmailVerified = $isOAuthEmailVerified ? 1 : 0;
+        $loginMedium = ($isOAuthEmailVerified && !empty($socialClaim['medium'])) ? $socialClaim['medium'] : 'social';
+
         $temporaryToken = Str::random(40);
 
         $user = $this->customerRepo->add(data: [
@@ -387,13 +403,21 @@ class SocialAuthController extends Controller
             'phone' => $request['phone'],
             'password' => bcrypt(rand(11111111, 99999999)),
             'temporary_token' => $temporaryToken,
-            'email_verified_at' => now(),
+            'is_email_verified' => $isEmailVerified,
+            'email_verified_at' => $emailVerifiedAt,
             'referral_code' => Helpers::generate_referer_code(),
-            'login_medium' => 'social',
+            'login_medium' => $loginMedium,
         ]);
 
+        if ($tempToken && $isOAuthEmailVerified) {
+            \Illuminate\Support\Facades\Cache::forget('social_verified_email_' . $tempToken);
+        }
+
         $phoneVerificationStatus = getLoginConfig(key: 'phone_verification') ?? 0;
-        if ($phoneVerificationStatus) {
+        $emailVerificationStatus = getLoginConfig(key: 'email_verification') ?? 0;
+
+        // If email was not verified via OAuth challenge and email verification is enabled, or phone verification is enabled, require verification
+        if ($phoneVerificationStatus || ($emailVerificationStatus && !$isOAuthEmailVerified)) {
             return response()->json(['temp_token' => $temporaryToken, 'status' => false]);
         }
 

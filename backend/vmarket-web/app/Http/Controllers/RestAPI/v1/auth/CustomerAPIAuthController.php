@@ -800,6 +800,16 @@ class CustomerAPIAuthController extends Controller
             ]], 403);
         }
 
+        // [AI] Verify OAuth identity challenge: Only grant email_verified_at if caller proves possession
+        // of a valid temporary_token established by a real OAuth callback for this exact email.
+        $tempToken = $request->header('X-Temp-Token') ?? ($request['temp_token'] ?? null);
+        $socialClaim = $tempToken ? \Illuminate\Support\Facades\Cache::get('social_verified_email_' . $tempToken) : null;
+        $isOAuthEmailVerified = ($socialClaim && !empty($socialClaim['email']) && hash_equals(strtolower($socialClaim['email']), strtolower($request['email'])));
+
+        $emailVerifiedAt = $isOAuthEmailVerified ? now() : null;
+        $isEmailVerified = $isOAuthEmailVerified ? 1 : 0;
+        $loginMedium = ($isOAuthEmailVerified && !empty($socialClaim['medium'])) ? $socialClaim['medium'] : 'social';
+
         $temporaryToken = Str::random(40);
         $user = $this->customerRepo->add([
             'name' => $request['name'],
@@ -809,13 +819,19 @@ class CustomerAPIAuthController extends Controller
             'password' => bcrypt(rand(11111111, 99999999)),
             'temporary_token' => $temporaryToken,
             'app_language' => 'en',
-            'email_verified_at' => now(),
+            'is_email_verified' => $isEmailVerified,
+            'email_verified_at' => $emailVerifiedAt,
             'referral_code' => Helpers::generate_referer_code(),
-            'login_medium' => 'social',
+            'login_medium' => $loginMedium,
         ]);
 
+        if ($tempToken && $isOAuthEmailVerified) {
+            \Illuminate\Support\Facades\Cache::forget('social_verified_email_' . $tempToken);
+        }
+
         $phoneVerificationStatus = getLoginConfig(key: 'phone_verification') ?? 0;
-        if ($phoneVerificationStatus) {
+        $emailVerificationStatus = getLoginConfig(key: 'email_verification') ?? 0;
+        if ($phoneVerificationStatus || ($emailVerificationStatus && !$isOAuthEmailVerified)) {
             return response()->json(['temp_token' => $temporaryToken, 'status' => false]);
         }
 

@@ -583,11 +583,24 @@ class CustomerController extends Controller
         }
 
         // [AI] Ownership Guard: Prevent IDOR leak of customer PII and invoice data
+        // Numeric IDs are identifiers, not authentication. Require secret order-scoped guest credential or phone verification.
         $isOwner = false;
         if ($user != 'offline' && $order->customer_id == $user->id) {
             $isOwner = true;
-        } elseif ($order->is_guest && $request->has('guest_id') && $order->customer_id == $request['guest_id'] && is_numeric($request['guest_id'])) {
-            $isOwner = true;
+        } elseif ($order->is_guest) {
+            $guestToken = $request->get('guest_token') ?? $request->header('X-Guest-Token');
+            if (!empty($order->guest_access_token) && !empty($guestToken) && hash_equals((string)$order->guest_access_token, (string)$guestToken)) {
+                $isOwner = true;
+            } else {
+                $shippingData = is_array($order->shipping_address_data) ? $order->shipping_address_data : (json_decode($order->shipping_address_data, true) ?? []);
+                $billingData = is_array($order->billing_address_data) ? $order->billing_address_data : (json_decode($order->billing_address_data, true) ?? []);
+                $expectedPhone = $shippingData['phone'] ?? ($billingData['phone'] ?? null);
+
+                $providedPhone = $request->get('phone');
+                if (!empty($expectedPhone) && !empty($providedPhone) && preg_replace('/[^0-9]/', '', $expectedPhone) === preg_replace('/[^0-9]/', '', $providedPhone)) {
+                    $isOwner = true;
+                }
+            }
         }
 
         if (!$isOwner) {
@@ -628,17 +641,35 @@ class CustomerController extends Controller
         }
 
         // [AI] Ownership Guard: Prevent unauthorized customer from viewing full order details
+        // Numeric IDs are identifiers, not authentication. Require secret order-scoped guest credential or phone verification.
         $isOwner = false;
         if ($user != 'offline' && $order->customer_id == $user->id) {
             $isOwner = true;
-        } elseif ($order->is_guest && $request->has('guest_id') && $order->customer_id == $request['guest_id'] && is_numeric($request['guest_id'])) {
-            $isOwner = true;
+        } elseif ($order->is_guest) {
+            $guestToken = $request->get('guest_token') ?? $request->header('X-Guest-Token');
+            if (!empty($order->guest_access_token) && !empty($guestToken) && hash_equals((string)$order->guest_access_token, (string)$guestToken)) {
+                $isOwner = true;
+            } else {
+                $shippingData = is_array($order->shipping_address_data) ? $order->shipping_address_data : (json_decode($order->shipping_address_data, true) ?? []);
+                $billingData = is_array($order->billing_address_data) ? $order->billing_address_data : (json_decode($order->billing_address_data, true) ?? []);
+                $expectedPhone = $shippingData['phone'] ?? ($billingData['phone'] ?? null);
+
+                $providedPhone = $request->get('phone');
+                if (!empty($expectedPhone) && !empty($providedPhone) && preg_replace('/[^0-9]/', '', $expectedPhone) === preg_replace('/[^0-9]/', '', $providedPhone)) {
+                    $isOwner = true;
+                }
+            }
         }
 
         if (!$isOwner) {
             return response()->json(['message' => translate('unauthorized_access')], 403);
         }
 
+        // [AI] Privacy Protection: Never expose secret internal tokens or guest credentials on serialization
+        $order->makeHidden(['guest_access_token']);
+        if ($isOwner && !empty($order->order_type) && $order->order_type === 'pickup') {
+            $order->makeVisible(['pickup_verification_code']);
+        }
 
         $order = json_decode(json_encode($order), true);
         return response()->json($order, 200);

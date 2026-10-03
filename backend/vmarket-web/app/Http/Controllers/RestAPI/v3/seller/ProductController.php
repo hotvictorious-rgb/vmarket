@@ -1406,6 +1406,16 @@ class ProductController extends Controller
         if (!empty($employeeShopId) && !empty($product->shop_id) && (int)$product->shop_id !== (int)$employeeShopId) {
             return response()->json(['message' => translate('unauthorized_access')], 403);
         }
+
+        // [AI] In-Flight Checkout & Reservation Guard: Block deletion if product has pending checkout or reservation
+        $hasInFlightCheckout = DB::table('pickup_reservations')
+            ->where('product_id', $id)
+            ->whereIn('status', ['pending', 'active', 'pending_inspection'])
+            ->exists();
+
+        if ($hasInFlightCheckout) {
+            return response()->json(['message' => translate('cannot_delete_product_with_active_in_flight_reservations')], 400);
+        }
         foreach (json_decode($product['images'], true) as $image) {
             $imageName = is_string($image) ? $image : $image['image_name'];
             $this->deleteFile('/product/' . $imageName);

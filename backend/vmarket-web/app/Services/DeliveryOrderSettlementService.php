@@ -527,13 +527,16 @@ class DeliveryOrderSettlementService
             }
             $childNetPayable = bcadd(bcadd($netGroupMerchandise, $groupTax, 2), $shippingCost, 2);
 
+            $isGuest = !empty($intent->is_guest) || !empty($snapshot['is_guest']);
+            $guestToken = $isGuest ? bin2hex(random_bytes(32)) : null;
+
             $ordersData = [
                 'id' => $orderId,
                 'verification_code' => $verificationCode,
                 'pickup_verification_code' => $pickupCode,
                 'customer_id' => $customerId,
-                'is_guest' => 0,
-                'guest_access_token' => null,
+                'is_guest' => $isGuest ? 1 : 0,
+                'guest_access_token' => $guestToken,
                 'seller_id' => $vendor['seller_id'],
                 'seller_is' => $vendor['seller_is'],
                 'customer_type' => 'customer',
@@ -584,8 +587,16 @@ class DeliveryOrderSettlementService
                 $qty = (int) $item['quantity'];
                 $product = Product::find($productId);
 
+                // [AI] Missing/Deleted Product Guard:
+                // If a product was deleted between checkout initialization and payment capture,
+                // quarantine the capture for reconciliation rather than treating fulfillment as successful!
+                if (!$product) {
+                    $prodName = $item['product_name'] ?? "Deleted Product #{$productId}";
+                    throw new PostPaymentStockFailureException("{$prodName} was removed/deleted prior to fulfillment", $productId, $qty, 0);
+                }
+
                 // Atomic Inventory Deduction Guard:
-                if ($product && $product->product_type === 'physical') {
+                if ($product->product_type === 'physical') {
                     $affected = Product::where('id', $productId)
                         ->where('current_stock', '>=', $qty)
                         ->decrement('current_stock', $qty);

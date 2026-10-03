@@ -91,8 +91,8 @@ Route::group(['prefix' => 'v1', 'middleware' => ['api_lang']], function () {
             Route::post('resend-otp-check-email', 'resend_otp_check_email');
         });
         Route::controller(ForgotPasswordController::class)->group(function () {
-            Route::post('verify-token', 'tokenVerificationSubmit');
-            Route::put('reset-password', 'reset_password_submit');
+            Route::post('verify-token', 'tokenVerificationSubmit')->middleware('throttle:10,1');
+            Route::put('reset-password', 'reset_password_submit')->middleware('throttle:10,1');
         });
         Route::controller(SocialAuthController::class)->group(function () {
             Route::post('social-login', 'social_login');
