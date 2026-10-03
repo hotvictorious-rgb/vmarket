@@ -1,5 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_sixvalley_ecommerce/common/basewidget/custom_app_bar_widget.dart';
+import 'package:flutter_sixvalley_ecommerce/data/datasource/remote/dio/dio_client.dart';
+import 'package:flutter_sixvalley_ecommerce/di_container.dart';
+import 'package:flutter_sixvalley_ecommerce/features/auth/controllers/auth_controller.dart';
 import 'package:flutter_sixvalley_ecommerce/features/checkout/domain/models/pickup_reservation_model.dart';
 import 'package:flutter_sixvalley_ecommerce/helper/price_converter.dart';
 import 'package:flutter_sixvalley_ecommerce/helper/route_healper.dart';
@@ -7,9 +10,8 @@ import 'package:flutter_sixvalley_ecommerce/localization/language_constrants.dar
 import 'package:flutter_sixvalley_ecommerce/utill/app_constants.dart';
 import 'package:flutter_sixvalley_ecommerce/utill/custom_themes.dart';
 import 'package:flutter_sixvalley_ecommerce/utill/dimensions.dart';
-import 'package:http/http.dart' as http;
+import 'package:provider/provider.dart';
 import 'dart:convert';
-import 'package:shared_preferences/shared_preferences.dart';
 
 /// My Pickup Reservations — List active and historical reservations
 class MyReservationsScreen extends StatefulWidget {
@@ -45,28 +47,20 @@ class _MyReservationsScreenState extends State<MyReservationsScreen> with Single
       _errorMessage = null;
     });
 
+    final authController = Provider.of<AuthController>(context, listen: false);
+    if (!authController.isLoggedIn()) {
+      setState(() {
+        _isLoading = false;
+        _errorMessage = 'Please log in to view your reservations';
+      });
+      return;
+    }
+
     try {
-      final prefs = await SharedPreferences.getInstance();
-      final token = prefs.getString(AppConstants.userLoginToken);
-
-      if (token == null || token.isEmpty) {
-        setState(() {
-          _isLoading = false;
-          _errorMessage = 'Please log in to view your reservations';
-        });
-        return;
-      }
-
-      final response = await http.get(
-        Uri.parse('${AppConstants.baseUrl}${AppConstants.pickupReservationsUri}'),
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': 'Bearer $token',
-        },
-      );
+      final response = await sl<DioClient>().get(AppConstants.pickupReservationsUri);
 
       if (response.statusCode == 200) {
-        final data = json.decode(response.body);
+        final data = response.data is String ? json.decode(response.data) : response.data;
         if (data['status'] == true) {
           final List reservationsList = data['reservations'] ?? [];
           final List<PickupReservationModel> allReservations = reservationsList
