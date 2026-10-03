@@ -110,7 +110,11 @@ class SocialAuthController extends Controller
                 $user->temporary_token = Str::random(40);
                 $user->save();
             }
-            if (!isset($user->phone)) {
+            if (!isset($user->phone) || empty($user->phone)) {
+                \Illuminate\Support\Facades\Cache::put('social_verified_email_' . $user->temporary_token, [
+                    'email' => $data['email'],
+                    'medium' => $request['medium'] ?? 'apple'
+                ], now()->addMinutes(15));
                 return response()->json([
                     'token_type' => 'update phone number',
                     'temporary_token' => $user->temporary_token]);
@@ -154,7 +158,11 @@ class SocialAuthController extends Controller
                 $user->temporary_token = Str::random(40);
                 $user->save();
             }
-            if (!isset($user->phone)) {
+            if (!isset($user->phone) || empty($user->phone)) {
+                \Illuminate\Support\Facades\Cache::put('social_verified_email_' . $user->temporary_token, [
+                    'email' => $email,
+                    'medium' => $request['medium'] ?? 'social'
+                ], now()->addMinutes(15));
                 return response()->json([
                     'token_type' => 'update phone number',
                     'temporary_token' => $user->temporary_token]);
@@ -383,15 +391,23 @@ class SocialAuthController extends Controller
             ]], 403);
         }
 
-        // [AI] Verify OAuth identity challenge: Only grant email_verified_at if caller proves possession
-        // of a valid temporary_token established by a real OAuth callback for this exact email.
+        // [AI] Verify OAuth identity challenge: Strictly require valid temporary_token established
+        // by a verified OAuth callback for this exact email. Reject arbitrary unverified registrations.
         $tempToken = $request->header('X-Temp-Token') ?? ($request['temp_token'] ?? null);
         $socialClaim = $tempToken ? \Illuminate\Support\Facades\Cache::get('social_verified_email_' . $tempToken) : null;
         $isOAuthEmailVerified = ($socialClaim && !empty($socialClaim['email']) && hash_equals(strtolower($socialClaim['email']), strtolower($request['email'])));
 
-        $emailVerifiedAt = $isOAuthEmailVerified ? now() : null;
-        $isEmailVerified = $isOAuthEmailVerified ? 1 : 0;
-        $loginMedium = ($isOAuthEmailVerified && !empty($socialClaim['medium'])) ? $socialClaim['medium'] : 'social';
+        if (!$isOAuthEmailVerified) {
+            return response()->json([
+                'errors' => [
+                    ['code' => 'auth-001', 'message' => translate('invalid_or_expired_social_verification_token')]
+                ]
+            ], 403);
+        }
+
+        $emailVerifiedAt = now();
+        $isEmailVerified = 1;
+        $loginMedium = (!empty($socialClaim['medium'])) ? $socialClaim['medium'] : 'social';
 
         $temporaryToken = Str::random(40);
 

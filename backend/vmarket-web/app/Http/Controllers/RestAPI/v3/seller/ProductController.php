@@ -1407,11 +1407,47 @@ class ProductController extends Controller
             return response()->json(['message' => translate('unauthorized_access')], 403);
         }
 
-        // [AI] In-Flight Checkout & Reservation Guard: Block deletion if product has pending checkout or reservation
-        $hasInFlightCheckout = DB::table('pickup_reservations')
-            ->where('product_id', $id)
-            ->whereIn('status', ['pending', 'active', 'pending_inspection'])
-            ->exists();
+        // [AI] In-Flight Checkout & Reservation Guard: Block deletion if product has active in-flight checkout or reservation
+        $productId = (int)$id;
+        $hasInFlightCheckout = false;
+
+        if (\Illuminate\Support\Facades\Schema::hasTable('pickup_reservations')) {
+            $activeReservations = DB::table('pickup_reservations')
+                ->whereIn('status', ['pending_inspection', 'inspected_accepted'])
+                ->where('expires_at', '>', now())
+                ->get(['reservation_items']);
+
+            foreach ($activeReservations as $res) {
+                $items = is_array($res->reservation_items) ? $res->reservation_items : (json_decode($res->reservation_items, true) ?: []);
+                foreach ($items as $item) {
+                    if ((int)($item['product_id'] ?? 0) === $productId) {
+                        $hasInFlightCheckout = true;
+                        break 2;
+                    }
+                }
+            }
+        }
+
+        if (!$hasInFlightCheckout && \Illuminate\Support\Facades\Schema::hasTable('checkout_intents')) {
+            $activeIntents = DB::table('checkout_intents')
+                ->where('status', 'pending')
+                ->where('expires_at', '>', now())
+                ->get(['checkout_snapshot']);
+
+            foreach ($activeIntents as $intent) {
+                $snapshot = is_array($intent->checkout_snapshot) ? $intent->checkout_snapshot : (json_decode($intent->checkout_snapshot, true) ?: []);
+                $vendors = $snapshot['vendors'] ?? [];
+                foreach ($vendors as $vendor) {
+                    $items = $vendor['items'] ?? [];
+                    foreach ($items as $item) {
+                        if ((int)($item['product_id'] ?? 0) === $productId) {
+                            $hasInFlightCheckout = true;
+                            break 3;
+                        }
+                    }
+                }
+            }
+        }
 
         if ($hasInFlightCheckout) {
             return response()->json(['message' => translate('cannot_delete_product_with_active_in_flight_reservations')], 400);

@@ -69,20 +69,10 @@ class OrderController extends Controller
         } elseif ($order->is_guest) {
             // [AI] Cryptographically Guarded Guest Ownership Verification:
             // Protects customer PII and secret pickup verification code from sequential IDOR scraping.
-            // 1. Primary Authority: Unguessable 64-char guest access token (constant-time comparison)
-            // 2. Secondary/Fallback: Exact phone number matching order address
+            // Authority: Unguessable 64-char guest access token (constant-time comparison). Plain phone matching is forbidden.
             $guestToken = $request->get('guest_token') ?? $request->header('X-Guest-Token');
             if (!empty($order->guest_access_token) && !empty($guestToken) && hash_equals((string)$order->guest_access_token, (string)$guestToken)) {
                 $isOwner = true;
-            } else {
-                $shippingData = is_array($order->shipping_address_data) ? $order->shipping_address_data : (json_decode($order->shipping_address_data, true) ?? []);
-                $billingData = is_array($order->billing_address_data) ? $order->billing_address_data : (json_decode($order->billing_address_data, true) ?? []);
-                $expectedPhone = $shippingData['phone'] ?? ($billingData['phone'] ?? null);
-
-                $providedPhone = $request->get('phone');
-                if (!empty($expectedPhone) && !empty($providedPhone) && preg_replace('/[^0-9]/', '', $expectedPhone) === preg_replace('/[^0-9]/', '', $providedPhone)) {
-                    $isOwner = true;
-                }
             }
         }
 
@@ -150,18 +140,10 @@ class OrderController extends Controller
             $isOwner = true;
         } elseif ($order->is_guest) {
             // [AI] Cryptographically Guarded Guest Ownership Verification:
+            // Authority: Unguessable 64-char guest access token (constant-time comparison). Plain phone matching is forbidden.
             $guestToken = $request->get('guest_token') ?? $request->header('X-Guest-Token');
             if (!empty($order->guest_access_token) && !empty($guestToken) && hash_equals((string)$order->guest_access_token, (string)$guestToken)) {
                 $isOwner = true;
-            } else {
-                $shippingData = is_array($order->shipping_address_data) ? $order->shipping_address_data : (json_decode($order->shipping_address_data, true) ?? []);
-                $billingData = is_array($order->billing_address_data) ? $order->billing_address_data : (json_decode($order->billing_address_data, true) ?? []);
-                $expectedPhone = $shippingData['phone'] ?? ($billingData['phone'] ?? null);
-
-                $providedPhone = $request->get('phone');
-                if (!empty($expectedPhone) && !empty($providedPhone) && preg_replace('/[^0-9]/', '', $expectedPhone) === preg_replace('/[^0-9]/', '', $providedPhone)) {
-                    $isOwner = true;
-                }
             }
         }
 

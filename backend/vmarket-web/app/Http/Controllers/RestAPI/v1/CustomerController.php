@@ -583,7 +583,7 @@ class CustomerController extends Controller
         }
 
         // [AI] Ownership Guard: Prevent IDOR leak of customer PII and invoice data
-        // Numeric IDs are identifiers, not authentication. Require secret order-scoped guest credential or phone verification.
+        // Numeric IDs and phone numbers are NOT authentication. Require secret order-scoped guest credential (guest_access_token).
         $isOwner = false;
         if ($user != 'offline' && $order->customer_id == $user->id) {
             $isOwner = true;
@@ -591,15 +591,6 @@ class CustomerController extends Controller
             $guestToken = $request->get('guest_token') ?? $request->header('X-Guest-Token');
             if (!empty($order->guest_access_token) && !empty($guestToken) && hash_equals((string)$order->guest_access_token, (string)$guestToken)) {
                 $isOwner = true;
-            } else {
-                $shippingData = is_array($order->shipping_address_data) ? $order->shipping_address_data : (json_decode($order->shipping_address_data, true) ?? []);
-                $billingData = is_array($order->billing_address_data) ? $order->billing_address_data : (json_decode($order->billing_address_data, true) ?? []);
-                $expectedPhone = $shippingData['phone'] ?? ($billingData['phone'] ?? null);
-
-                $providedPhone = $request->get('phone');
-                if (!empty($expectedPhone) && !empty($providedPhone) && preg_replace('/[^0-9]/', '', $expectedPhone) === preg_replace('/[^0-9]/', '', $providedPhone)) {
-                    $isOwner = true;
-                }
             }
         }
 
@@ -641,7 +632,7 @@ class CustomerController extends Controller
         }
 
         // [AI] Ownership Guard: Prevent unauthorized customer from viewing full order details
-        // Numeric IDs are identifiers, not authentication. Require secret order-scoped guest credential or phone verification.
+        // Numeric IDs and phone numbers are NOT authentication. Require secret order-scoped guest credential (guest_access_token).
         $isOwner = false;
         if ($user != 'offline' && $order->customer_id == $user->id) {
             $isOwner = true;
@@ -649,15 +640,6 @@ class CustomerController extends Controller
             $guestToken = $request->get('guest_token') ?? $request->header('X-Guest-Token');
             if (!empty($order->guest_access_token) && !empty($guestToken) && hash_equals((string)$order->guest_access_token, (string)$guestToken)) {
                 $isOwner = true;
-            } else {
-                $shippingData = is_array($order->shipping_address_data) ? $order->shipping_address_data : (json_decode($order->shipping_address_data, true) ?? []);
-                $billingData = is_array($order->billing_address_data) ? $order->billing_address_data : (json_decode($order->billing_address_data, true) ?? []);
-                $expectedPhone = $shippingData['phone'] ?? ($billingData['phone'] ?? null);
-
-                $providedPhone = $request->get('phone');
-                if (!empty($expectedPhone) && !empty($providedPhone) && preg_replace('/[^0-9]/', '', $expectedPhone) === preg_replace('/[^0-9]/', '', $providedPhone)) {
-                    $isOwner = true;
-                }
             }
         }
 
