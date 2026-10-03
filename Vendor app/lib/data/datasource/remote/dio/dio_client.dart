@@ -107,7 +107,7 @@ class DioClient {
     ProgressCallback? onReceiveProgress,
     Map<String, dynamic>? otherFiles
   }) async {
-    debugPrint('apiCall ==> url=> $uri \nparams---> $queryParameters\nheader=> ${dio!.options.headers}');
+    debugPrint('apiCall ==> url=> $uri');
 
     try {
       // List<MultipartFile> fileList = [];
