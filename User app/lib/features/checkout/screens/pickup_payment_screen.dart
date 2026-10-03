@@ -3,6 +3,7 @@ import 'package:flutter_sixvalley_ecommerce/common/basewidget/custom_app_bar_wid
 import 'package:flutter_sixvalley_ecommerce/common/basewidget/custom_button_widget.dart';
 import 'package:flutter_sixvalley_ecommerce/features/checkout/domain/models/pickup_reservation_model.dart';
 import 'package:flutter_sixvalley_ecommerce/features/checkout/screens/digital_payment_order_place_screen.dart';
+import 'package:flutter_sixvalley_ecommerce/features/order_details/screens/order_details_screen.dart';
 import 'package:flutter_sixvalley_ecommerce/features/checkout/controllers/checkout_controller.dart';
 import 'package:flutter_sixvalley_ecommerce/features/profile/controllers/profile_contrroller.dart';
 import 'package:flutter_sixvalley_ecommerce/features/splash/controllers/splash_controller.dart';
@@ -102,9 +103,30 @@ class _PickupPaymentScreenState extends State<PickupPaymentScreen> {
     if (apiResponse.response != null && apiResponse.response!.statusCode == 200) {
       final data = apiResponse.response!.data;
 
+      // [AI] Handle 100% cashback internal settlement or already settled replay
+      if (data['action'] == 'SETTLED_INTERNALLY' || data['action'] == 'ALREADY_ORDERED' || (data['status'] == 'settled' && data['order_id'] != null)) {
+        final int? orderId = data['order_id'] is int ? data['order_id'] : int.tryParse(data['order_id']?.toString() ?? '');
+        if (!mounted) return;
+        showCustomSnackBarWidget(
+          data['message'] ?? 'Pickup order placed successfully with Victorious Cashback!',
+          context,
+          snackBarType: SnackBarType.success,
+        );
+        Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(
+            builder: (_) => OrderDetailsScreen(
+              orderId: orderId,
+              isNotification: true,
+            ),
+          ),
+        );
+        return;
+      }
+
       // Since pay endpoint could potentially just return the authorization_url
       // or return a final validation result, we proceed if we have a URL.
-      if (data['status'] == true && data['authorization_url'] != null) {
+      if ((data['status'] == true || data['status'] == 'success') && data['authorization_url'] != null) {
 
         _extractAuthoritativeAmounts(data);
         if (!mounted) return;
