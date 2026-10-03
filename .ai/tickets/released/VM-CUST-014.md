@@ -3,7 +3,7 @@
 Ticket ID:            VM-CUST-014
 Title:                State-changing GET set-shipping-method + legacy ShippingMethod cost leak (dead-lane bypass)
 Type:                 DEFECT
-Status:               REVIEW_APPROVED
+Status:               RELEASED
 Blocked:              no
 Created by / date:    FRONTEND AI / 2026-09-30 (found during VM-CUST-013 live audit)
 Size estimate:        small (controller + route verb + fee source)

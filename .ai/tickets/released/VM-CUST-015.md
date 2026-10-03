@@ -3,7 +3,7 @@
 Ticket ID:            VM-CUST-015
 Title:                Destructive GET cart/remove-all empties entire cart (CSRF-able)
 Type:                 DEFECT
-Status:               REVIEW_APPROVED
+Status:               RELEASED
 Blocked:              no (route + method excised; zero callers repo-wide)
 Created by / date:    FRONTEND AI / 2026-09-30 (found during VM-CUST-013 live audit)
 Size estimate:        tiny (route verb + any JS caller)

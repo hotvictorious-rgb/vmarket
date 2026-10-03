@@ -3,7 +3,7 @@
 Ticket ID:            VM-VEND-IDOR-001
 Title:                Zero-trust user_id scoping on vendor payout methods (DISC-01 IDOR elimination)
 Type:                 SECURITY
-Status:               REVIEW_APPROVED
+Status:               RELEASED
 Blocked:              no
 Created by / date:    BACKEND AI / 2026-09-29 (DISC-01 discovery; completed 2026-09-30)
 Size estimate:        small (5 controller methods + proof)

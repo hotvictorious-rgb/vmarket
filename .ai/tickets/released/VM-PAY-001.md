@@ -3,7 +3,7 @@
 Ticket ID:            VM-PAY-001
 Title:                Money-Path Audit — Paystack live keys, webhook, intent freeze, cashback ledger
 Type:                 FEATURE
-Status:               REVIEW_APPROVED
+Status:               RELEASED
 Blocked:              no
 Created by / date:    Human operator / 2026-09-26
 Size estimate:        audit (report + defect tickets; fixes ship under own tickets)

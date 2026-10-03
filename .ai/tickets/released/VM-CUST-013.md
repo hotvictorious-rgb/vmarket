@@ -3,7 +3,7 @@
 Ticket ID:            VM-CUST-013
 Title:                Transaction-Path Button Audit — browse, cart, checkout, pay, track (storefront slice)
 Type:                 FEATURE
-Status:               REVIEW_APPROVED
+Status:               RELEASED
 Blocked:              no (audit record; no code fixes under this ticket)
 Created by / date:    Human operator / 2026-09-26
 Size estimate:        audit (report + defect tickets; fixes ship under own tickets; full 136-control sweep stays in VM-CUST-012)
