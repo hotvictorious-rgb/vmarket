@@ -7,7 +7,7 @@ import 'package:flutter_sixvalley_ecommerce/features/splash/controllers/splash_c
 import 'package:flutter_sixvalley_ecommerce/utill/custom_themes.dart';
 import 'package:flutter_sixvalley_ecommerce/utill/dimensions.dart';
 import 'package:provider/provider.dart';
-import '../../../../helper/route_healper.dart';
+import 'package:flutter_sixvalley_ecommerce/helper/route_healper.dart';
 
 class OnBoardingScreen extends StatelessWidget {
   final Color indicatorColor;
