@@ -165,11 +165,20 @@ class CustomerCashbackLedger extends Model
         }
 
         // [AI] Configurable Cashback Reward calculated strictly on new money via BCMath string arithmetic
-        $rawRate = (string) (getWebConfig(name: 'loyalty_point_earn_rate_percent') ?: (getWebConfig(name: 'cashback_earn_rate_percent') ?: '5.00'));
+        $configRate = getWebConfig(name: 'loyalty_point_earn_rate_percent');
+        if (is_null($configRate) || $configRate === '') {
+            $configRate = getWebConfig(name: 'cashback_earn_rate_percent');
+        }
+        $rawRate = (!is_null($configRate) && $configRate !== '') ? (string)$configRate : '5.00';
         $cashbackRate = bcadd($rawRate, '0', 2);
         $rateMultiplier = bcdiv($cashbackRate, '100', 4);
         $cashbackAmount = bcmul($netNewMoney, $rateMultiplier, 2);
-        $validityMonths = (int) (getWebConfig(name: 'loyalty_point_validity_months') ?: 6);
+
+        $rawMonths = getWebConfig(name: 'loyalty_point_validity_months');
+        $validityMonths = (!is_null($rawMonths) && $rawMonths !== '') ? (int)$rawMonths : 6;
+        if ($validityMonths <= 0) {
+            $validityMonths = 6;
+        }
         $expiresAt = $order->refund_window_expires_at ? \Carbon\Carbon::parse($order->refund_window_expires_at)->addMonths($validityMonths) : null;
 
         return self::create([
@@ -186,16 +195,17 @@ class CustomerCashbackLedger extends Model
     }
 
     /**
-     * [AI] Adjust pending cashback proportionally upon partial refund
+     * [AI] Adjust pending cashback proportionally upon partial refund.
+     * Recalculates earning strictly against the remaining NEW MONEY allocation!
      */
-    public function adjustForPartialRefund(string $remainingMerchandise): void
+    public function adjustForPartialRefund(string $remainingNewMoney): void
     {
         if ($this->status !== 'pending') {
             return;
         }
 
-        $remainingMerchandise = bcadd($remainingMerchandise, '0', 2);
-        if (bccomp($remainingMerchandise, '0.00', 2) <= 0) {
+        $remainingNewMoney = bcadd($remainingNewMoney, '0', 2);
+        if (bccomp($remainingNewMoney, '0.00', 2) <= 0) {
             $this->status = 'cancelled';
             $this->description = "Cancelled due to full merchandise refund for Order #{$this->order_id}";
             $this->save();
@@ -203,10 +213,10 @@ class CustomerCashbackLedger extends Model
         }
 
         $rateMultiplier = bcdiv((string) ($this->cashback_rate ?: '5.00'), '100', 4);
-        $adjustedCashback = bcmul($remainingMerchandise, $rateMultiplier, 2);
-        $this->merchandise_amount = $remainingMerchandise;
+        $adjustedCashback = bcmul($remainingNewMoney, $rateMultiplier, 2);
+        $this->merchandise_amount = $remainingNewMoney;
         $this->cashback_amount = $adjustedCashback;
-        $this->description = "{$this->cashback_rate}% Victorious Cashback Reward for Order #{$this->order_id} (Adjusted for partial refund)";
+        $this->description = "{$this->cashback_rate}% Victorious Cashback Reward for Order #{$this->order_id} (Earned on remaining ₦{$remainingNewMoney} new money)";
         $this->save();
     }
 

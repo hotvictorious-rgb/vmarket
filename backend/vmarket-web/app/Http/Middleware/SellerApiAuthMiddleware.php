@@ -76,9 +76,17 @@ class SellerApiAuthMiddleware
 
                     // Resource-level branch ownership enforcement:
                     $pathBase = basename($request->path());
-                    // A) Product resource check
-                    $targetProductId = $request->route('id') ?? $request->route('product_id') ?? $request->input('product_id') ?? $request->input('id') ?? (is_numeric($pathBase) && ($request->is('*seller/product*') || $request->is('*seller/products*')) ? $pathBase : null);
-                    if ($targetProductId && ($request->is('*seller/product*') || $request->is('*seller/products*'))) {
+                    // A) Product resource check: inspect ALL provided product identifiers to reject conflicting IDs
+                    $productIdsToCheck = [];
+                    if ($request->is('*seller/product*') || $request->is('*seller/products*')) {
+                        if ($request->route('id')) $productIdsToCheck[] = $request->route('id');
+                        if ($request->route('product_id')) $productIdsToCheck[] = $request->route('product_id');
+                        if ($request->has('id') && is_numeric($request->input('id'))) $productIdsToCheck[] = $request->input('id');
+                        if ($request->has('product_id') && is_numeric($request->input('product_id'))) $productIdsToCheck[] = $request->input('product_id');
+                        if (is_numeric($pathBase)) $productIdsToCheck[] = $pathBase;
+                    }
+
+                    foreach (array_unique($productIdsToCheck) as $targetProductId) {
                         $targetProduct = \App\Models\Product::find($targetProductId);
                         if ($targetProduct && !empty($targetProduct->shop_id) && (int)$targetProduct->shop_id !== (int)$employee->shop_id) {
                             return response()->json([
@@ -87,9 +95,17 @@ class SellerApiAuthMiddleware
                         }
                     }
 
-                    // B) Order resource check
-                    $targetOrderId = $request->route('id') ?? $request->route('order_id') ?? $request->input('order_id') ?? $request->input('id') ?? (is_numeric($pathBase) && ($request->is('*seller/order*') || $request->is('*seller/orders*')) ? $pathBase : null);
-                    if ($targetOrderId && ($request->is('*seller/order*') || $request->is('*seller/orders*'))) {
+                    // B) Order resource check: inspect ALL provided order identifiers
+                    $orderIdsToCheck = [];
+                    if ($request->is('*seller/order*') || $request->is('*seller/orders*')) {
+                        if ($request->route('id')) $orderIdsToCheck[] = $request->route('id');
+                        if ($request->route('order_id')) $orderIdsToCheck[] = $request->route('order_id');
+                        if ($request->has('id') && is_numeric($request->input('id'))) $orderIdsToCheck[] = $request->input('id');
+                        if ($request->has('order_id') && is_numeric($request->input('order_id'))) $orderIdsToCheck[] = $request->input('order_id');
+                        if (is_numeric($pathBase)) $orderIdsToCheck[] = $pathBase;
+                    }
+
+                    foreach (array_unique($orderIdsToCheck) as $targetOrderId) {
                         $pickupReservation = \App\Models\PickupReservation::where('order_id', $targetOrderId)->first();
                         if ($pickupReservation && !empty($pickupReservation->shop_id) && (int)$pickupReservation->shop_id !== (int)$employee->shop_id) {
                             return response()->json([

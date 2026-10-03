@@ -1376,9 +1376,14 @@ class ProductController extends Controller
     public function status_update(Request $request):JsonResponse
     {
         $seller = $request->seller;
-        $product = Product::withCount('reviews')->where(['added_by' => 'seller', 'user_id' => $seller->id])->find($request->id);
+        $sellerId = is_array($seller) ? ($seller['id'] ?? null) : ($seller->id ?? null);
+        $employeeShopId = $request['employee_shop_id'] ?? ($request['vendor_employee']?->shop_id ?? (is_array($seller) ? ($seller['shop_id'] ?? null) : ($seller->shop_id ?? null)));
+        $product = Product::withCount('reviews')->where(['added_by' => 'seller', 'user_id' => $sellerId])->find($request->id);
         if (!$product) {
             return response()->json(['message' => translate('invalid_prodcut')], 403);
+        }
+        if (!empty($employeeShopId) && !empty($product->shop_id) && (int)$product->shop_id !== (int)$employeeShopId) {
+            return response()->json(['message' => translate('unauthorized_access')], 403);
         }
         $product->status = $request->status;
         $product->save();
@@ -1391,9 +1396,14 @@ class ProductController extends Controller
     public function delete(Request $request, $id):JsonResponse
     {
         $seller = $request->seller;
+        $sellerId = is_array($seller) ? ($seller['id'] ?? null) : ($seller->id ?? null);
+        $employeeShopId = $request['employee_shop_id'] ?? ($request['vendor_employee']?->shop_id ?? (is_array($seller) ? ($seller['shop_id'] ?? null) : ($seller->shop_id ?? null)));
         // [AI] Ownership Guard: Product must belong to authenticated seller
-        $product = Product::withCount('reviews')->where(['id' => $id, 'added_by' => 'seller', 'user_id' => $seller->id])->first();
+        $product = Product::withCount('reviews')->where(['id' => $id, 'added_by' => 'seller', 'user_id' => $sellerId])->first();
         if (!$product) {
+            return response()->json(['message' => translate('unauthorized_access')], 403);
+        }
+        if (!empty($employeeShopId) && !empty($product->shop_id) && (int)$product->shop_id !== (int)$employeeShopId) {
             return response()->json(['message' => translate('unauthorized_access')], 403);
         }
         foreach (json_decode($product['images'], true) as $image) {

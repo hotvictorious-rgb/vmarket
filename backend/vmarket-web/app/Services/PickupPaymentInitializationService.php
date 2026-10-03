@@ -470,6 +470,38 @@ class PickupPaymentInitializationService
         }
 
         if ($action === 'RECOVER_EXISTING') {
+            $paymentRequest = $phaseAResult['payment_request'];
+            if ($paymentRequest->payment_method === 'cashback' || bccomp((string)$paymentRequest->payment_amount, '0.00', 2) === 0) {
+                // [AI] Recover interrupted internal cashback settlement through shared authoritative pipeline!
+                $settlementService = new PickupOrderSettlementService();
+                $settlementResult = $settlementService->settleVerifiedPayment(
+                    $paymentRequest->gateway_reference,
+                    [
+                        'status' => 'success',
+                        'amount' => 0,
+                        'currency' => 'NGN',
+                        'reference' => $paymentRequest->gateway_reference,
+                    ]
+                );
+
+                if (($settlementResult['status'] ?? '') === 'CLAIMED' || ($settlementResult['status'] ?? '') === 'ALREADY_SETTLED') {
+                    $orderId = $settlementResult['order_id'];
+                    $order = Order::find($orderId);
+                    return [
+                        'action' => 'SETTLED_INTERNALLY',
+                        'is_replayed' => true,
+                        'status' => 'settled',
+                        'order_id' => $orderId,
+                        'verification_code' => (string) ($order?->verification_code ?? ($settlementResult['verification_code'] ?? '')),
+                        'paid_amount' => '0.00',
+                        'cashback_redeemed' => (string) ($order?->discount_amount ?? $phaseAResult['reservation']->total_amount),
+                        'gateway_reference' => $paymentRequest->gateway_reference,
+                        'authorization_url' => null,
+                        'message' => 'Pickup order settled internally upon recovery of interrupted attempt.',
+                    ];
+                }
+            }
+
             return $this->recoverAmbiguousAttempt(
                 $phaseAResult['payment_request'],
                 $phaseAResult['reservation'],

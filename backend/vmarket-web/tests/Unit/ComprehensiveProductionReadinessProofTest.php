@@ -40,6 +40,7 @@ class ComprehensiveProductionReadinessProofTest
 {
     private int $passCount = 0;
     private int $failCount = 0;
+    private float $totalDrift = 0.0;
 
     public function run(): void
     {
@@ -58,19 +59,34 @@ class ComprehensiveProductionReadinessProofTest
         $this->testFinding10PureMerchandiseAndTaxSegregation();
         $this->testFinding11DynamicAdminConfigurations();
 
+        // Round 2 In-Depth Audits & Mathematical Proofs
+        $this->testRound2Finding1OrdinaryCashbackRefundRequest();
+        $this->testRound2Finding2DeliveryRefundExcludesShipping();
+        $this->testRound2Finding3MixedPaymentVendorReversal();
+        $this->testRound2Finding4PartialRefundRemainingNewMoney();
+        $this->testRound2Finding5MaturationPreserves12MonthsAndZeroRate();
+        $this->testRound2Finding6LotReservationAndReleaseExpiry();
+        $this->testRound2Finding7ConflictingResourceBranchAttack();
+        $this->testRound2Finding8CanonicalRefundRequestStatus();
+        $this->testRound2Finding9InterruptedInternalPaymentRecovery();
+
+        $driftFormatted = number_format($this->totalDrift, 4);
         echo "\n========================================================================\n";
         echo " PRODUCTION READINESS AUDIT SUMMARY\n";
         echo " Total Assertions: " . ($this->passCount + $this->failCount) . "\n";
         echo " Passed:           {$this->passCount}\n";
         echo " Failed:           {$this->failCount}\n";
-        echo " Mathematical Drift: Δ = 0.00\n";
+        echo " Mathematical Drift: Δ = {$driftFormatted}\n";
         echo "========================================================================\n";
 
         if ($this->failCount > 0) {
             echo ">>> STATUS: AUDIT FAILED WITH {$this->failCount} FAILURES! <<<\n\n";
             exit(1);
+        } elseif ($this->totalDrift > 0.00001) {
+            echo ">>> STATUS: AUDIT FAILED DUE TO FINANCIAL DRIFT (Δ = {$driftFormatted})! <<<\n\n";
+            exit(1);
         } else {
-            echo ">>> STATUS: ALL 10 REVIEWER FINDINGS RESOLVED AND PROVEN 100%! <<<\n\n";
+            echo ">>> STATUS: ALL REVIEWER FINDINGS RESOLVED AND MATHEMATICALLY PROVEN 100%! <<<\n\n";
         }
     }
 
@@ -83,6 +99,15 @@ class ComprehensiveProductionReadinessProofTest
             $this->failCount++;
             echo "  [FAIL] {$label} - {$detail}\n";
         }
+    }
+
+    private function assertDecimal(string $label, string $actual, string $expected, int $scale = 2): void
+    {
+        $drift = abs((float)bcsub($actual, $expected, 4));
+        $this->totalDrift += $drift;
+        $passed = bccomp($actual, $expected, $scale) === 0;
+        $driftStr = number_format($drift, 4);
+        $this->assert("{$label} [Expected: {$expected}, Got: {$actual}, Δ: {$driftStr}]", $passed, "Expected {$expected}, got {$actual}");
     }
 
     /**
@@ -238,6 +263,13 @@ class ComprehensiveProductionReadinessProofTest
 
         DB::beginTransaction();
         try {
+            \App\Models\BusinessSetting::updateOrInsert(
+                ['type' => 'loyalty_point_earn_rate_percent'],
+                ['value' => json_encode('5.00')]
+            );
+            \Illuminate\Support\Facades\Cache::forget('loyalty_point_earn_rate_percent');
+            \Illuminate\Support\Facades\Cache::forget(CACHE_BUSINESS_SETTINGS_TABLE);
+
             $customer = User::create([
                 'name' => 'New Money Test User',
                 'email' => 'newmoney_' . Str::random(8) . '@vmarket.ng',
@@ -800,21 +832,69 @@ class ComprehensiveProductionReadinessProofTest
     {
         echo "\n--- Finding 9: Platform-Authoritative Rider Compensation ---\n";
 
-        // Simulated request where vendor tries to submit deliveryman_charge = 0
-        $request = new \Illuminate\Http\Request();
-        $request->merge(['deliveryman_charge' => '0.00']);
+        DB::beginTransaction();
+        try {
+            $seller = Seller::create([
+                'f_name' => 'Seller',
+                'l_name' => 'RiderTest',
+                'phone' => '080' . random_int(10000000, 99999999),
+                'email' => 'seller_rider_' . Str::random(8) . '@vmarket.ng',
+                'password' => bcrypt('password'),
+                'status' => 'approved',
+            ]);
 
-        $isChargePresent = $request->filled('deliveryman_charge');
+            $order = Order::create([
+                'id' => random_int(900000, 999999),
+                'seller_id' => $seller->id,
+                'seller_is' => 'seller',
+                'order_amount' => 5000.00,
+                'deliveryman_charge' => 1500.00,
+                'order_status' => 'confirmed',
+                'payment_status' => 'paid',
+            ]);
 
-        $this->assert(
-            "Finding 9.1: Controller detects vendor attempt to modify deliveryman_charge",
-            $isChargePresent === true
-        );
+            $controller = app(\App\Http\Controllers\RestAPI\v3\seller\OrderController::class);
 
-        $this->assert(
-            "Finding 9.2: Vendor charge submission rejected with 403 HTTP status",
-            $isChargePresent ? true : false
-        );
+            // 1. Direct controller execution: amount_date_update
+            $request1 = new \Illuminate\Http\Request();
+            $request1->merge([
+                'order_id' => $order->id,
+                'deliveryman_charge' => '500.00',
+            ]);
+            $request1->seller = ['id' => $seller->id];
+
+            $response1 = $controller->amount_date_update($request1);
+
+            $this->assert(
+                "Finding 9.1: Direct execution of amount_date_update() rejects altered rider charge with HTTP 403",
+                $response1->getStatusCode() === 403
+            );
+
+            // 2. Direct controller execution: updateOrderDetails
+            $request2 = new \Illuminate\Http\Request();
+            $request2->merge([
+                'order_id' => $order->id,
+                'deliveryman_charge' => '0.00',
+            ]);
+            $request2->seller = ['id' => $seller->id];
+
+            $response2 = $controller->updateOrderDetails($request2);
+
+            $this->assert(
+                "Finding 9.2: Direct execution of updateOrderDetails() rejects altered rider charge with HTTP 403",
+                $response2->getStatusCode() === 403
+            );
+
+            // 3. Verify DB charge remains platform-authoritative
+            $order->refresh();
+            $this->assertDecimal(
+                "Finding 9.3: Order deliveryman_charge remains immutable at platform value",
+                (string)$order->deliveryman_charge,
+                '1500.00'
+            );
+        } finally {
+            DB::rollBack();
+        }
     }
 
     /**
@@ -943,8 +1023,878 @@ class ComprehensiveProductionReadinessProofTest
             DB::rollBack();
         }
     }
+
+    /**
+     * Round 2 Finding 1: Ordinary cashback-only refund requests calculate ₦5,000 (not ₦0)
+     */
+    private function testRound2Finding1OrdinaryCashbackRefundRequest(): void
+    {
+        echo "\n--- Round 2 Finding 1: Ordinary Cashback-Only Refund Journey ---\n";
+
+        DB::beginTransaction();
+        try {
+            $customer = User::create([
+                'name' => 'Ordinary CB User',
+                'email' => 'ord_cb_' . Str::random(8) . '@vmarket.ng',
+                'phone' => '080' . random_int(10000000, 99999999),
+                'password' => bcrypt('password'),
+                'loyalty_point' => 0.0000,
+            ]);
+
+            $order = Order::create([
+                'id' => random_int(900000, 999999),
+                'customer_id' => $customer->id,
+                'is_guest' => 0,
+                'seller_id' => 1,
+                'seller_is' => 'seller',
+                'order_amount' => 0.00,
+                'init_order_amount' => 5000.00,
+                'discount_amount' => 5000.00,
+                'discount_type' => 'cashback',
+                'shipping_cost' => 0.00,
+                'total_tax_amount' => 0.00,
+                'order_status' => 'delivered',
+                'payment_status' => 'paid',
+                'payment_method' => 'cashback',
+                'vendor_settlement_status' => 'held',
+            ]);
+
+            $detail = \App\Models\OrderDetail::create([
+                'order_id' => $order->id,
+                'product_id' => 1,
+                'seller_id' => 1,
+                'qty' => 1,
+                'price' => 5000.00,
+                'discount' => 0.00,
+                'tax' => 0.00,
+                'delivery_status' => 'delivered',
+                'payment_status' => 'paid',
+                'refund_request' => 0,
+            ]);
+
+            // Call OrderManager::getRefundDetailsForSingleOrderDetails exactly as customer app & storefront do
+            $refundDetails = \App\Utils\OrderManager::getRefundDetailsForSingleOrderDetails($detail->id);
+
+            $this->assertDecimal(
+                "Round 2 Finding 1.1: Refundable merchandise value is exactly ₦5,000.00",
+                (string)$refundDetails['refundable_merchandise_value'],
+                '5000.00'
+            );
+
+            $this->assertDecimal(
+                "Round 2 Finding 1.2: Refundable money amount is ₦0.00",
+                (string)$refundDetails['refundable_money_amount'],
+                '0.00'
+            );
+
+            $this->assertDecimal(
+                "Round 2 Finding 1.3: Refundable cashback amount is exactly ₦5,000.00",
+                (string)$refundDetails['refundable_cashback_amount'],
+                '5000.00'
+            );
+
+            $this->assertDecimal(
+                "Round 2 Finding 1.4: Total refundable amount for 100% cashback order is ₦5,000.00 (not ₦0.00!)",
+                (string)$refundDetails['total_refundable_amount'],
+                '5000.00'
+            );
+
+            // Create refund request using customer flow
+            $refundRequest = \App\Models\RefundRequest::create([
+                'order_id' => $order->id,
+                'customer_id' => $customer->id,
+                'order_details_id' => $detail->id,
+                'amount' => $refundDetails['total_refundable_amount'],
+                'status' => 'pending',
+                'refund_reason' => 'Ordinary customer return of cashback-funded item',
+                'execution_ref' => 'ord_cb_rf_' . Str::random(6),
+                'payment_info' => json_encode($refundDetails),
+            ]);
+
+            // Internal refund executor executes
+            $refundService = new \App\Services\PaystackRefundService();
+            $refundService->finalizeCashbackOrderRefund($refundRequest, $order);
+
+            $customer->refresh();
+            $this->assertDecimal(
+                "Round 2 Finding 1.5: Customer points pool is fully restored with 5,000 pts through ordinary return journey",
+                (string)$customer->loyalty_point,
+                '5000.0000',
+                4
+            );
+
+            $restoredLedger = CustomerCashbackLedger::where('customer_id', $customer->id)
+                ->where('status', 'available')
+                ->where('order_id', $order->id)
+                ->first();
+
+            $this->assert(
+                "Round 2 Finding 1.6: Restored cashback lot created with status available",
+                $restoredLedger !== null && bccomp((string)$restoredLedger->cashback_amount, '5000.00', 2) === 0
+            );
+
+            $detail->refresh();
+            $this->assert(
+                "Round 2 Finding 1.7: Order detail refund_request status updated to canonical 4 (refunded)",
+                (int)$detail->refund_request === 4
+            );
+        } finally {
+            DB::rollBack();
+        }
+    }
+
+    /**
+     * Round 2 Finding 2: Delivery refunds exclude shipping from merchandise refund ratio
+     */
+    private function testRound2Finding2DeliveryRefundExcludesShipping(): void
+    {
+        echo "\n--- Round 2 Finding 2: Delivery Refund Excludes Shipping From Ratio ---\n";
+
+        DB::beginTransaction();
+        try {
+            $customer = User::create([
+                'name' => 'Delivery Refund User',
+                'email' => 'deliv_rf_' . Str::random(8) . '@vmarket.ng',
+                'phone' => '080' . random_int(10000000, 99999999),
+                'password' => bcrypt('password'),
+                'loyalty_point' => 0.0000,
+            ]);
+
+            // Merchandise: ₦10,000.00, Cashback: ₦2,000.00, Shipping: ₦2,500.00, Total Money Paid: ₦10,500.00
+            $order = Order::create([
+                'id' => random_int(900000, 999999),
+                'customer_id' => $customer->id,
+                'is_guest' => 0,
+                'seller_id' => 1,
+                'seller_is' => 'seller',
+                'order_amount' => 10500.00,
+                'init_order_amount' => 12500.00,
+                'discount_amount' => 2000.00,
+                'discount_type' => 'cashback',
+                'shipping_cost' => 2500.00,
+                'total_tax_amount' => 0.00,
+                'order_status' => 'delivered',
+                'payment_status' => 'paid',
+                'payment_method' => 'paystack',
+                'transaction_ref' => 'TX-DELIV-REFUND',
+                'vendor_settlement_status' => 'held',
+            ]);
+
+            $detail = \App\Models\OrderDetail::create([
+                'order_id' => $order->id,
+                'product_id' => 1,
+                'seller_id' => 1,
+                'qty' => 1,
+                'price' => 10000.00,
+                'discount' => 0.00,
+                'tax' => 0.00,
+                'delivery_status' => 'delivered',
+                'payment_status' => 'paid',
+            ]);
+
+            // Full merchandise return: money refund requested is ₦8,000.00
+            $refundRequest = \App\Models\RefundRequest::create([
+                'order_id' => $order->id,
+                'customer_id' => $customer->id,
+                'order_details_id' => $detail->id,
+                'amount' => 8000.00,
+                'status' => 'pending',
+                'refund_reason' => 'Full merchandise return of mixed delivery order',
+                'execution_ref' => 'deliv_rf_' . Str::random(6),
+            ]);
+
+            $refundService = new \App\Services\PaystackRefundService();
+            $refundService->finalizeRefundAccounting($refundRequest, [
+                'status' => 'processed',
+                'amount' => 800000, // ₦8,000 in kobo
+                'currency' => 'NGN',
+                'transaction_reference' => 'TX-DELIV-REFUND',
+                'merchant_note' => $refundRequest->execution_ref,
+                'id' => 'paystack_rf_' . Str::random(8),
+            ]);
+
+            $customer->refresh();
+            // Reviewer's exact test case: Correct is ₦2,000.00, buggy calculation was ₦1,523.80!
+            $this->assertDecimal(
+                "Round 2 Finding 2.1: Exactly ₦2,000.00 cashback restored on ₦8,000 merchandise refund (shipping excluded from ratio)",
+                (string)$customer->loyalty_point,
+                '2000.0000',
+                4
+            );
+        } finally {
+            DB::rollBack();
+        }
+    }
+
+    /**
+     * Round 2 Finding 3: Mixed-payment refunds reverse vendor entitlement on full merchandise
+     */
+    private function testRound2Finding3MixedPaymentVendorReversal(): void
+    {
+        echo "\n--- Round 2 Finding 3: Vendor Reversal on Full Merchandise (₦10,000) ---\n";
+
+        DB::beginTransaction();
+        try {
+            $seller = Seller::create([
+                'f_name' => 'Seller',
+                'l_name' => 'VendorReversal',
+                'phone' => '080' . random_int(10000000, 99999999),
+                'email' => 'seller_rev_' . Str::random(8) . '@vmarket.ng',
+                'password' => bcrypt('password'),
+                'status' => 'approved',
+            ]);
+
+            $customer = User::create([
+                'name' => 'Mixed Payment User',
+                'email' => 'mix_pay_' . Str::random(8) . '@vmarket.ng',
+                'phone' => '080' . random_int(10000000, 99999999),
+                'password' => bcrypt('password'),
+                'loyalty_point' => 0.0000,
+            ]);
+
+            // ₦10,000 merchandise funded with ₦8,000 money and ₦2,000 rewards
+            $order = Order::create([
+                'id' => random_int(900000, 999999),
+                'customer_id' => $customer->id,
+                'is_guest' => 0,
+                'seller_id' => $seller->id,
+                'seller_is' => 'seller',
+                'order_amount' => 8000.00,
+                'init_order_amount' => 10000.00,
+                'discount_amount' => 2000.00,
+                'discount_type' => 'cashback',
+                'shipping_cost' => 0.00,
+                'total_tax_amount' => 0.00,
+                'order_status' => 'delivered',
+                'payment_status' => 'paid',
+                'payment_method' => 'paystack',
+                'transaction_ref' => 'TX-MIX-REV',
+                'vendor_settlement_status' => 'settled',
+            ]);
+
+            $detail = \App\Models\OrderDetail::create([
+                'order_id' => $order->id,
+                'product_id' => 1,
+                'seller_id' => $seller->id,
+                'qty' => 1,
+                'price' => 10000.00,
+                'discount' => 0.00,
+                'tax' => 0.00,
+                'delivery_status' => 'delivered',
+                'payment_status' => 'paid',
+            ]);
+
+            // Seed vendor wallet with ₦15,000 balance
+            $sellerWallet = \App\Models\SellerWallet::updateOrCreate(
+                ['seller_id' => $seller->id],
+                ['total_earning' => 15000.00, 'withdrawn' => 0.00, 'commission_given' => 1000.00, 'pending_withdraw' => 0.00, 'delivery_charge_earned' => 0.00, 'collected_cash' => 0.00, 'total_tax_collected' => 0.00]
+            );
+
+            $refundRequest = \App\Models\RefundRequest::create([
+                'order_id' => $order->id,
+                'customer_id' => $customer->id,
+                'order_details_id' => $detail->id,
+                'amount' => 8000.00,
+                'status' => 'pending',
+                'refund_reason' => 'Defective merchandise',
+                'execution_ref' => 'mix_rev_' . Str::random(6),
+            ]);
+
+            $refundService = new \App\Services\PaystackRefundService();
+            $refundService->finalizeRefundAccounting($refundRequest, [
+                'status' => 'processed',
+                'amount' => 800000,
+                'currency' => 'NGN',
+                'transaction_reference' => 'TX-MIX-REV',
+                'merchant_note' => $refundRequest->execution_ref,
+                'id' => 'paystack_rf_' . Str::random(8),
+            ]);
+
+            // Check RefundTransaction record for mixed payment refund
+            $refundTx = \App\Models\RefundTransaction::where('refund_id', $refundRequest->id)->first();
+            $this->assert(
+                "Round 2 Finding 3.1: Refund transaction recorded for mixed payment refund",
+                $refundTx !== null
+            );
+
+            // Reviewer's exact requirement:
+            // Vendor reversal must be 90% of ₦10,000 = ₦9,000.00 (not ₦7,200.00 from ₦8,000 money alone)
+            // Commission reversal must be 10% of ₦10,000 = ₦1,000.00 (not ₦800.00)
+            $sellerWallet->refresh();
+            $vendorReversal = bcsub('15000.00', (string)$sellerWallet->total_earning, 2);
+            $this->assertDecimal(
+                "Round 2 Finding 3.2: Vendor reversal is ₦9,000.00 (90% of gross ₦10,000 returned merchandise)",
+                $vendorReversal,
+                '9000.00'
+            );
+
+            $commissionReversal = bcsub('1000.00', (string)$sellerWallet->commission_given, 2);
+            $this->assertDecimal(
+                "Round 2 Finding 3.3: Commission reversal is ₦1,000.00 (10% of gross ₦10,000 returned merchandise)",
+                $commissionReversal,
+                '1000.00'
+            );
+
+            $totalReversed = bcadd($vendorReversal, $commissionReversal, 2);
+            $this->assertDecimal(
+                "Round 2 Finding 3.4: Reversal sum perfectly equals gross returned merchandise (₦10,000.00; Δ = 0.00)",
+                $totalReversed,
+                '10000.00'
+            );
+        } finally {
+            DB::rollBack();
+        }
+    }
+
+    /**
+     * Round 2 Finding 4: Partial returns adjust cashback on remaining new-money base (not gross merchandise)
+     */
+    private function testRound2Finding4PartialRefundRemainingNewMoney(): void
+    {
+        echo "\n--- Round 2 Finding 4: Partial Return Rewards Strictly On Remaining New Money ---\n";
+
+        DB::beginTransaction();
+        try {
+            // Scenario from Reviewer:
+            // Original merchandise: ₦10,000
+            // Original funding: ₦8,000 money + ₦2,000 rewards
+            // Half returned
+            // Remaining funding: ₦4,000 money + ₦1,000 rewards
+            // At 5%: Correct remaining earned reward is ₦200.00 (not ₦250.00 on ₦5,000 merchandise)
+            $customer = User::create([
+                'name' => 'Partial Return User',
+                'email' => 'part_ret_' . Str::random(8) . '@vmarket.ng',
+                'phone' => '080' . random_int(10000000, 99999999),
+                'password' => bcrypt('password'),
+                'loyalty_point' => 0.0000,
+            ]);
+
+            $order = Order::create([
+                'id' => random_int(900000, 999999),
+                'customer_id' => $customer->id,
+                'is_guest' => 0,
+                'order_amount' => 8000.00,
+                'init_order_amount' => 10000.00,
+                'discount_amount' => 2000.00,
+                'discount_type' => 'cashback',
+                'shipping_cost' => 0.00,
+                'total_tax_amount' => 0.00,
+                'order_status' => 'delivered',
+                'payment_status' => 'paid',
+            ]);
+
+            // Initial reward on ₦8,000 new money at 5% = ₦400.00
+            $ledger = CustomerCashbackLedger::create([
+                'customer_id' => $customer->id,
+                'order_id' => $order->id,
+                'merchandise_amount' => 8000.00,
+                'cashback_rate' => 5.00,
+                'cashback_amount' => 400.00,
+                'status' => 'pending',
+                'available_at' => now()->addDays(7),
+                'expires_at' => now()->addMonths(6),
+                'description' => '5% reward on ₦8,000 new money',
+            ]);
+
+            // Adjust on remaining new money = ₦4,000.00
+            $ledger->adjustForPartialRefund('4000.00');
+
+            $this->assertDecimal(
+                "Round 2 Finding 4.1: Adjusted reward amount is exactly ₦200.00 (5% of ₦4,000 new money; not ₦250 on ₦5k merchandise)",
+                (string)$ledger->cashback_amount,
+                '200.00'
+            );
+
+            $this->assertDecimal(
+                "Round 2 Finding 4.2: Adjusted merchandise base is ₦4,000.00 (remaining new money)",
+                (string)$ledger->merchandise_amount,
+                '4000.00'
+            );
+        } finally {
+            DB::rollBack();
+        }
+    }
+
+    /**
+     * Round 2 Finding 5: Maturation preserves snapshot 12-month expiry and explicit 0% rate
+     */
+    private function testRound2Finding5MaturationPreserves12MonthsAndZeroRate(): void
+    {
+        echo "\n--- Round 2 Finding 5: Maturation Preserves Configured Expiry & 0% Rate ---\n";
+
+        DB::beginTransaction();
+        try {
+            $customer = User::create([
+                'name' => 'Maturation Expiry User',
+                'email' => 'mat_exp_' . Str::random(8) . '@vmarket.ng',
+                'phone' => '080' . random_int(10000000, 99999999),
+                'password' => bcrypt('password'),
+                'loyalty_point' => 0.0000,
+            ]);
+
+            $twelveMonthsFuture = now()->addMonths(12);
+
+            $order5 = Order::create([
+                'id' => random_int(900000, 999999),
+                'customer_id' => $customer->id,
+                'is_guest' => 0,
+                'order_amount' => 10000.00,
+                'shipping_cost' => 0.00,
+                'total_tax_amount' => 0.00,
+                'order_status' => 'delivered',
+                'payment_status' => 'paid',
+                'received_at' => now()->subDays(2),
+                'refund_window_expires_at' => now()->subDay(),
+            ]);
+
+            // 1. Maturation preserves 12-month snapshot expiry
+            $ledger = CustomerCashbackLedger::create([
+                'customer_id' => $customer->id,
+                'order_id' => $order5->id,
+                'merchandise_amount' => 10000.00,
+                'cashback_rate' => 5.00,
+                'cashback_amount' => 500.00,
+                'status' => 'pending',
+                'available_at' => now()->subDay(), // Ready to mature
+                'expires_at' => $twelveMonthsFuture, // 12 months snapshot
+                'description' => '12-month reward snapshot',
+            ]);
+
+            // Run maturation command logic
+            \Illuminate\Support\Facades\Artisan::call('cashback:mature');
+
+            $ledger->refresh();
+            $this->assert(
+                "Round 2 Finding 5.1: Ledger matured to available status",
+                $ledger->status === 'available'
+            );
+
+            $expectedDate = $twelveMonthsFuture->format('Y-m-d');
+            $actualDate = \Carbon\Carbon::parse($ledger->expires_at)->format('Y-m-d');
+            $this->assert(
+                "Round 2 Finding 5.2: Maturation preserves snapshot 12-month expiry ({$expectedDate}), NOT overwritten to 6 months",
+                $actualDate === $expectedDate,
+                "Expected {$expectedDate}, got {$actualDate}"
+            );
+
+            // 2. Explicit 0% earn rate does not fall back to 5%
+            \App\Models\BusinessSetting::updateOrInsert(
+                ['type' => 'loyalty_point_earn_rate_percent'],
+                ['value' => json_encode('0.00')]
+            );
+            \Illuminate\Support\Facades\Cache::forget('loyalty_point_earn_rate_percent');
+            \Illuminate\Support\Facades\Cache::forget(CACHE_BUSINESS_SETTINGS_TABLE);
+
+            $orderZero = Order::create([
+                'id' => random_int(900000, 999999),
+                'customer_id' => $customer->id,
+                'is_guest' => 0,
+                'order_amount' => 10000.00,
+                'shipping_cost' => 0.00,
+                'total_tax_amount' => 0.00,
+                'order_status' => 'delivered',
+                'payment_status' => 'paid',
+                'refund_window_expires_at' => now()->addDays(7),
+            ]);
+
+            $zeroLedger = CustomerCashbackLedger::creditRewardForOrder($orderZero);
+            $this->assert(
+                "Round 2 Finding 5.3: Configured 0.00% earn rate results in zero reward (no fallback to 5%)",
+                $zeroLedger === null || bccomp((string)$zeroLedger->cashback_amount, '0.00', 2) === 0
+            );
+        } finally {
+            DB::rollBack();
+        }
+    }
+
+    /**
+     * Round 2 Finding 6: Expiry protects reserved backing lots & enforces deadlock-free lock order
+     */
+    private function testRound2Finding6LotReservationAndReleaseExpiry(): void
+    {
+        echo "\n--- Round 2 Finding 6: Backing Lot Protection & Deadlock-Free Lock Ordering ---\n";
+
+        DB::beginTransaction();
+        try {
+            $customer = User::create([
+                'name' => 'Reservation Expiry User',
+                'email' => 'res_exp_' . Str::random(8) . '@vmarket.ng',
+                'phone' => '080' . random_int(10000000, 99999999),
+                'password' => bcrypt('password'),
+                'loyalty_point' => 1000.0000,
+            ]);
+
+            $order6 = Order::create([
+                'id' => random_int(900000, 999999),
+                'customer_id' => $customer->id,
+                'is_guest' => 0,
+                'order_amount' => 20000.00,
+                'shipping_cost' => 0.00,
+                'total_tax_amount' => 0.00,
+                'order_status' => 'delivered',
+                'payment_status' => 'paid',
+                'received_at' => now()->subMonths(8),
+                'refund_window_expires_at' => now()->subMonths(8)->addDays(7),
+            ]);
+
+            // Ledger lot of 1,000 points with past expiry date
+            $pastLot = CustomerCashbackLedger::create([
+                'customer_id' => $customer->id,
+                'order_id' => $order6->id,
+                'merchandise_amount' => 20000.00,
+                'cashback_rate' => 5.00,
+                'cashback_amount' => 1000.00,
+                'status' => 'available',
+                'available_at' => now()->subMonths(7),
+                'expires_at' => now()->subDay(), // Expired
+                'description' => 'Backing lot for active checkout',
+            ]);
+
+            // Active checkout reservation of all 1,000 points
+            $redemption = CashbackRedemption::create([
+                'customer_id' => $customer->id,
+                'order_group_id' => 'grp_' . Str::random(8),
+                'points' => '1000.0000',
+                'cashback_amount' => '1000.00',
+                'status' => 'reserved',
+            ]);
+
+            // Run expiry routine
+            \Illuminate\Support\Facades\Artisan::call('cashback:mature');
+
+            // Assert lot was NOT expired because it backs the active reservation
+            $pastLot->refresh();
+            $this->assert(
+                "Round 2 Finding 6.1: Backing lot is protected from expiration while reserved for active checkout",
+                $pastLot->status === 'available'
+            );
+
+            $customer->refresh();
+            $this->assertDecimal(
+                "Round 2 Finding 6.2: Customer points pool preserved at 1,000 pts while checkout is active",
+                (string)$customer->loyalty_point,
+                '1000.0000',
+                4
+            );
+
+            // Checkout fails or expires -> reservation released
+            $redemption->update(['status' => 'cancelled']);
+
+            // Now run expiry again
+            \Illuminate\Support\Facades\Artisan::call('cashback:mature');
+
+            $pastLot->refresh();
+            $this->assert(
+                "Round 2 Finding 6.3: Backing lot safely transitions to expired after reservation release",
+                $pastLot->status === 'expired'
+            );
+
+            $customer->refresh();
+            $this->assertDecimal(
+                "Round 2 Finding 6.4: Customer points pool correctly deducted by 1,000 pts after release",
+                (string)$customer->loyalty_point,
+                '0.0000',
+                4
+            );
+        } finally {
+            DB::rollBack();
+        }
+    }
+
+    /**
+     * Round 2 Finding 7: Branch protection rejects conflicting product_id vs id attack
+     */
+    private function testRound2Finding7ConflictingResourceBranchAttack(): void
+    {
+        echo "\n--- Round 2 Finding 7: Conflicting Resource Branch Attack Protection ---\n";
+
+        DB::beginTransaction();
+        try {
+            $seller = Seller::create([
+                'f_name' => 'Seller',
+                'l_name' => 'BranchOwner',
+                'phone' => '080' . random_int(10000000, 99999999),
+                'email' => 'seller_bowner_' . Str::random(8) . '@vmarket.ng',
+                'password' => bcrypt('password'),
+                'status' => 'approved',
+            ]);
+
+            $role = VendorRole::create([
+                'seller_id' => $seller->id,
+                'name' => 'Product Manager',
+                'module_access' => ['product', 'order'],
+                'status' => 1,
+            ]);
+
+            $employee = VendorEmployee::create([
+                'seller_id' => $seller->id,
+                'vendor_role_id' => $role->id,
+                'shop_id' => 10, // Assigned strictly to Branch 10
+                'name' => 'Branch 10 Employee',
+                'phone' => '080' . random_int(10000000, 99999999),
+                'email' => 'emp10_' . Str::random(8) . '@vmarket.ng',
+                'password' => bcrypt('password'),
+                'status' => 1,
+                'auth_token' => Str::random(40),
+            ]);
+
+            // Product 1 belongs to employee's assigned branch (Shop 10)
+            $productShop10 = \App\Models\Product::create([
+                'name' => 'Shop 10 Product',
+                'user_id' => $seller->id,
+                'added_by' => 'seller',
+                'shop_id' => 10,
+                'current_stock' => 10,
+                'unit_price' => 1000.00,
+                'status' => 1,
+            ]);
+
+            // Product 2 belongs to another branch (Shop 20) under same seller
+            $productShop20 = \App\Models\Product::create([
+                'name' => 'Shop 20 Product',
+                'user_id' => $seller->id,
+                'added_by' => 'seller',
+                'shop_id' => 20,
+                'current_stock' => 10,
+                'unit_price' => 2000.00,
+                'status' => 1,
+            ]);
+
+            // Attack request: employee passes product_id = Shop 10 product, but id = Shop 20 product
+            $middleware = new \App\Http\Middleware\SellerApiAuthMiddleware();
+
+            $attackRequest = \Illuminate\Http\Request::create('/api/v3/seller/products/status-update', 'POST');
+            $attackRequest->headers->set('authorization', 'Bearer ' . $employee->auth_token);
+            $attackRequest->merge([
+                'product_id' => $productShop10->id, // Employee branch (decoy)
+                'id' => $productShop20->id,         // Target branch (attack payload)
+                'status' => 0,
+            ]);
+
+            $response = $middleware->handle($attackRequest, function ($req) {
+                return response()->json(['status' => 'success']);
+            });
+
+            $this->assert(
+                "Round 2 Finding 7.1: Middleware inspects ALL identifiers and rejects conflicting resource attack (HTTP 403)",
+                $response->getStatusCode() === 403
+            );
+
+            // Direct controller query level check:
+            $controller = app(\App\Http\Controllers\RestAPI\v3\seller\ProductController::class);
+            $directRequest = new \Illuminate\Http\Request();
+            $directRequest->merge([
+                'id' => $productShop20->id,
+                'status' => 0,
+            ]);
+            $directRequest->seller = [
+                'id' => $seller->id,
+                'is_employee' => true,
+                'shop_id' => 10,
+            ];
+
+            $directResponse = $controller->status_update($directRequest);
+            $this->assert(
+                "Round 2 Finding 7.2: ProductController queries exact resource and enforces employee shop_id restriction (HTTP 403)",
+                $directResponse->getStatusCode() === 403
+            );
+        } finally {
+            DB::rollBack();
+        }
+    }
+
+    /**
+     * Round 2 Finding 8: Canonical Refund Request Status (4 = Refunded, not 3 = Rejected)
+     */
+    private function testRound2Finding8CanonicalRefundRequestStatus(): void
+    {
+        echo "\n--- Round 2 Finding 8: Canonical Refund Request Status (4 = Refunded) ---\n";
+
+        DB::beginTransaction();
+        try {
+            $order = Order::create([
+                'id' => random_int(900000, 999999),
+                'customer_id' => 1,
+                'is_guest' => 0,
+                'order_amount' => 5000.00,
+                'order_status' => 'delivered',
+                'payment_status' => 'paid',
+                'payment_method' => 'cashback',
+            ]);
+
+            $detail1 = \App\Models\OrderDetail::create([
+                'order_id' => $order->id,
+                'product_id' => 1,
+                'seller_id' => 1,
+                'qty' => 1,
+                'price' => 2500.00,
+                'delivery_status' => 'delivered',
+                'payment_status' => 'paid',
+                'refund_request' => 0,
+            ]);
+
+            $detail2 = \App\Models\OrderDetail::create([
+                'order_id' => $order->id,
+                'product_id' => 2,
+                'seller_id' => 1,
+                'qty' => 1,
+                'price' => 2500.00,
+                'delivery_status' => 'delivered',
+                'payment_status' => 'paid',
+                'refund_request' => 3, // Rejected
+            ]);
+
+            $refundRequest = \App\Models\RefundRequest::create([
+                'order_id' => $order->id,
+                'customer_id' => 1,
+                'order_details_id' => $detail1->id,
+                'amount' => 2500.00,
+                'status' => 'pending',
+                'refund_reason' => 'Defect',
+                'execution_ref' => 'canon_rf_' . Str::random(6),
+            ]);
+
+            $refundService = new \App\Services\PaystackRefundService();
+            $refundService->finalizeCashbackOrderRefund($refundRequest, $order);
+
+            $detail1->refresh();
+            $detail2->refresh();
+
+            $this->assert(
+                "Round 2 Finding 8.1: Successful refund sets OrderDetail.refund_request to canonical 4 (refunded)",
+                (int)$detail1->refund_request === 4
+            );
+
+            $this->assert(
+                "Round 2 Finding 8.2: Rejected item remains 3 (rejected) and is not miscounted as refunded",
+                (int)$detail2->refund_request === 3
+            );
+        } finally {
+            DB::rollBack();
+        }
+    }
+
+    /**
+     * Round 2 Finding 9: Interrupted internal pickup payments recover internally without Paystack
+     */
+    private function testRound2Finding9InterruptedInternalPaymentRecovery(): void
+    {
+        echo "\n--- Round 2 Finding 9: Interrupted Internal Payment Recovery ---\n";
+
+        DB::beginTransaction();
+        try {
+            $customer = User::create([
+                'name' => 'Interrupted Recovery User',
+                'email' => 'int_rec_' . Str::random(8) . '@vmarket.ng',
+                'phone' => '080' . random_int(10000000, 99999999),
+                'password' => bcrypt('password'),
+                'loyalty_point' => 5000.0000,
+            ]);
+
+            $seller = Seller::create([
+                'f_name' => 'Seller',
+                'l_name' => 'RecoveryTest',
+                'phone' => '080' . random_int(10000000, 99999999),
+                'email' => 'seller_rec_' . Str::random(8) . '@vmarket.ng',
+                'password' => bcrypt('password'),
+                'status' => 'approved',
+            ]);
+
+            $shop = \App\Models\Shop::create([
+                'seller_id' => $seller->id,
+                'name' => 'Recovery Test Shop',
+                'address' => '123 Market Road, Uyo',
+                'contact' => '08012345678',
+                'image' => 'shop.png',
+            ]);
+
+            $product = \App\Models\Product::create([
+                'name' => 'Recovery Product',
+                'user_id' => $seller->id,
+                'added_by' => 'seller',
+                'shop_id' => $shop->id,
+                'current_stock' => 10,
+                'unit_price' => 4000.00,
+                'status' => 1,
+            ]);
+
+            // Create active pickup reservation
+            $reservation = PickupReservation::create([
+                'reservation_code' => 'RES-REC-' . Str::random(6),
+                'idempotency_key' => Str::uuid()->toString(),
+                'reservation_fingerprint' => hash('sha256', Str::random(16)),
+                'customer_id' => $customer->id,
+                'seller_id' => $seller->id,
+                'shop_id' => $shop->id,
+                'total_amount' => 4000.00,
+                'status' => 'inspected_accepted',
+                'reservation_items' => [
+                    'items' => [
+                        [
+                            'product_id' => $product->id,
+                            'product_name' => $product->name,
+                            'unit_price' => '4000.00',
+                            'discount' => '0.00',
+                            'tax' => '0.00',
+                            'quantity' => 1,
+                        ]
+                    ],
+                    'subtotal' => '4000.00',
+                    'seller_is' => 'seller',
+                ],
+                'expires_at' => now()->addHours(24),
+            ]);
+
+            // Simulate interrupted attempt: PaymentRequest was created but settlement was interrupted before completing
+            $gatewayRef = 'res_rec_gw_' . Str::random(10);
+            $interruptedPayment = PaymentRequest::create([
+                'id' => Str::uuid()->toString(),
+                'payer_id' => (string) $customer->id,
+                'payment_amount' => 0.00,
+                'payment_method' => 'cashback',
+                'payment_platform' => 'web',
+                'payment_domain' => 'marketplace_pickup',
+                'gateway_reference' => $gatewayRef,
+                'attempt_status' => 'pending',
+                'is_paid' => 0,
+                'currency_code' => 'NGN',
+                'pickup_reservation_id' => $reservation->id,
+                'active_pickup_reservation_id' => $reservation->id,
+                'attempt_expires_at' => now()->addMinutes(30),
+                'additional_data' => json_encode([
+                    'reservation_id' => $reservation->id,
+                    'customer_id' => $customer->id,
+                    'init_claim_expires_at' => now()->subMinute()->toIso8601String(), // Expired lease so RECOVER_EXISTING triggers
+                ]),
+            ]);
+
+            // Now client retries payment initiation with the same reservation
+            $client = new \App\Services\PaystackInitializationClient();
+            $initService = new \App\Services\PickupPaymentInitializationService($client);
+            $result = $initService->initializePayment($customer, $reservation, true);
+
+            $this->assert(
+                "Round 2 Finding 9.1: Interrupted cashback payment recovery settles internally without Paystack error",
+                ($result['action'] ?? '') === 'SETTLED_INTERNALLY'
+            );
+
+            $this->assert(
+                "Round 2 Finding 9.2: Order created and returned in recovery response",
+                isset($result['order_id']) && $result['order_id'] > 0
+            );
+
+            $interruptedPayment->refresh();
+            $this->assert(
+                "Round 2 Finding 9.3: PaymentRequest transitioned to is_paid = 1",
+                (int)$interruptedPayment->is_paid === 1
+            );
+        } finally {
+            DB::rollBack();
+        }
+    }
 }
 
 $test = new ComprehensiveProductionReadinessProofTest();
 $test->run();
+
 

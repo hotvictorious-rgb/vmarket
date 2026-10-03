@@ -605,10 +605,12 @@ class OrderController extends Controller
                 OrderStatusEvent::dispatch('new_order_assigned_message', 'delivery_man', $order);
             }
 
+            // [AI] Rate Authority Guard: Rider compensation is strictly platform-managed and cannot be altered by vendors
             if ($request->has('deliveryman_charge') && !is_null($request['deliveryman_charge']) && ($order['deliveryman_charge'] != $request['deliveryman_charge'])) {
-                Order::where(['id' => $request['order_id']])->update([
-                    'deliveryman_charge' => $request['deliveryman_charge'],
-                ]);
+                return response()->json([
+                    'success' => 0,
+                    'message' => translate('Rider compensation is strictly controlled by platform delivery lane authority and cannot be modified by merchants.')
+                ], 403);
             }
 
             $orderInfo = Order::with('deliveryMan')->find($request['order_id']);

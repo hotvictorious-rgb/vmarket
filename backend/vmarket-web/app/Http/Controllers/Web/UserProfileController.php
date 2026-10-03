@@ -986,14 +986,28 @@ class UserProfileController extends Controller
         }
 
         // [AI] Loyalty points decommissioned in V1 - customer refund check removed.
+        $refundDetails = OrderManager::getRefundDetailsForSingleOrderDetails(orderDetailsId: $orderDetails['id']);
+        $moneyAmount = $refundDetails['refundable_money_amount'] ?? '0.00';
+        $cashbackAmount = $refundDetails['refundable_cashback_amount'] ?? '0.00';
+        $totalRefundable = $refundDetails['total_refundable_amount'] ?? '0.00';
+
         $refundRequest = new RefundRequest;
         $refundRequest->order_details_id = $request->order_details_id;
         $refundRequest->customer_id = auth('customer')->id();
         $refundRequest->status = 'pending';
-        $refundRequest->amount = OrderManager::getRefundDetailsForSingleOrderDetails(orderDetailsId: $orderDetails['id'])['total_refundable_amount'];
+        if ($order && ($order->payment_method === 'cashback' || bccomp((string)$moneyAmount, '0.00', 2) === 0)) {
+            $refundRequest->amount = $totalRefundable;
+        } else {
+            $refundRequest->amount = $moneyAmount;
+        }
         $refundRequest->product_id = $orderDetails->product_id;
         $refundRequest->order_id = $orderDetails->order_id;
         $refundRequest->refund_reason = $request->refund_reason;
+        $refundRequest->payment_info = json_encode([
+            'merchandise_value' => $totalRefundable,
+            'money_amount' => $moneyAmount,
+            'cashback_amount' => $cashbackAmount,
+        ]);
 
         if ($request->file('images')) {
             $images = [];

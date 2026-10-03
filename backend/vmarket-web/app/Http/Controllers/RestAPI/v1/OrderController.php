@@ -287,14 +287,30 @@ class OrderController extends Controller
             );
         }
 
+        $refundDetails = OrderManager::getRefundDetailsForSingleOrderDetails(orderDetailsId: $orderDetails->id);
+        $moneyAmount = $refundDetails['refundable_money_amount'] ?? '0.00';
+        $cashbackAmount = $refundDetails['refundable_cashback_amount'] ?? '0.00';
+        $totalRefundable = $refundDetails['total_refundable_amount'] ?? '0.00';
+
         $refund_request = new RefundRequest();
         $refund_request->order_details_id = $request->order_details_id;
         $refund_request->customer_id = $user->id;
         $refund_request->status = 'pending';
-        $refund_request->amount = OrderManager::getRefundDetailsForSingleOrderDetails(orderDetailsId: $orderDetails->id)['total_refundable_amount'];
+        // For cashback-only orders or 0 money allocation: amount is total merchandise/reward value
+        // For mixed or money orders: amount is money refund amount sent to gateway
+        if ($parentOrder->payment_method === 'cashback' || bccomp((string)$moneyAmount, '0.00', 2) === 0) {
+            $refund_request->amount = $totalRefundable;
+        } else {
+            $refund_request->amount = $moneyAmount;
+        }
         $refund_request->product_id = $orderDetails->product_id;
         $refund_request->order_id = $orderDetails->order_id;
         $refund_request->refund_reason = $request->refund_reason;
+        $refund_request->payment_info = json_encode([
+            'merchandise_value' => $totalRefundable,
+            'money_amount' => $moneyAmount,
+            'cashback_amount' => $cashbackAmount,
+        ]);
 
         if ($request->hasFile('images')) {
             $images = [];

@@ -619,100 +619,61 @@ class PaystackRefundService
             $refundAmount = bcadd((string)($lockedRequest->getRawOriginal('amount') ?? '0.00'), '0', 2);
             $isSettled = ($order->vendor_settlement_status === 'settled');
 
-            // 3. Financial Reversals: Pre-Settlement Escrow vs Post-Settlement (Pure BCMath Precision)
-            if (!$isSettled) {
-                // Pre-Settlement Reversal:
-                // Full funds still sit in platform escrow (AdminWallet.pending_amount).
-                // Seller has NOT been paid; commission has NOT been recognized.
-                // Reversal releases funds strictly from AdminWallet.pending_amount.
-                // SellerWallet: 0.00 movement; Admin commission: 0.00 movement.
-                $adminWallet = AdminWallet::where('admin_id', 1)->lockForUpdate()->first();
-                if ($adminWallet) {
-                    // getRawOriginal() bypasses the float cast on AdminWallet.pending_amount
-                    $currentPending = bcadd((string)($adminWallet->getRawOriginal('pending_amount') ?? '0.00'), '0', 2);
-                    $newPendingDiff = bcsub($currentPending, $refundAmount, 2);
-                    $adminWallet->pending_amount = (bccomp($newPendingDiff, '0.00', 2) < 0) ? '0.00' : $newPendingDiff;
-                    $adminWallet->save();
-                }
-            } else {
-                // Post-Settlement Reversal:
-                // Vendor was already paid (90%) and Commission was earned (10%).
-                // Reverse 90% from SellerWallet.total_earning, and 10% from AdminWallet.commission_earned.
-                $vendorShare = bcmul($refundAmount, '0.90', 2);
-                $commissionShare = bcmul($refundAmount, '0.10', 2);
-
-                $sellerWallet = SellerWallet::where('seller_id', $order->seller_id)->lockForUpdate()->first();
-                if ($sellerWallet) {
-                    // getRawOriginal() bypasses float casts on all SellerWallet monetary columns
-                    $currentEarning = bcadd((string)($sellerWallet->getRawOriginal('total_earning') ?? '0.00'), '0', 2);
-                    // Merchant Recoverable Debt Accounting:
-                    // If vendor earnings are insufficient to cover vendorShare,
-                    // floor wallet balance at 0.00 and post unrecovered variance to collected_cash.
-                    if (bccomp($currentEarning, $vendorShare, 2) >= 0) {
-                        $newEarning = bcsub($currentEarning, $vendorShare, 2);
-                        $unrecoveredDebt = '0.00';
-                    } else {
-                        $newEarning = '0.00';
-                        $unrecoveredDebt = bcsub($vendorShare, $currentEarning, 2);
-                    }
-                    $sellerWallet->total_earning = $newEarning;
-                    if (bccomp($unrecoveredDebt, '0.00', 2) > 0) {
-                        $currentCollectedCash = bcadd((string)($sellerWallet->getRawOriginal('collected_cash') ?? '0.00'), '0', 2);
-                        $sellerWallet->collected_cash = bcadd($currentCollectedCash, $unrecoveredDebt, 2);
-                    }
-                    $currentCommissionGiven = bcadd((string)($sellerWallet->getRawOriginal('commission_given') ?? '0.00'), '0', 2);
-                    $commDiff = bcsub($currentCommissionGiven, $commissionShare, 2);
-                    $sellerWallet->commission_given = (bccomp($commDiff, '0.00', 2) < 0) ? '0.00' : $commDiff;
-                    $sellerWallet->save();
-                }
-
-                $adminWallet = AdminWallet::where('admin_id', 1)->lockForUpdate()->first();
-                if ($adminWallet) {
-                    // getRawOriginal() bypasses float cast on AdminWallet.commission_earned
-                    $currentCommissionEarned = bcadd((string)($adminWallet->getRawOriginal('commission_earned') ?? '0.00'), '0', 2);
-                    $adminCommDiff = bcsub($currentCommissionEarned, $commissionShare, 2);
-                    $adminWallet->commission_earned = (bccomp($adminCommDiff, '0.00', 2) < 0) ? '0.00' : $adminCommDiff;
-                    $adminWallet->save();
-                }
-            }
-
-            // 4. Proportional Partial Refund vs Full 100% Refund
-            // Raw SQL CAST(SUM AS CHAR) avoids PHP float aggregation from Eloquent sum()
-            $totalRefundedSoFarResult = DB::select(
-                'SELECT CAST(COALESCE(SUM(amount), 0.00) AS CHAR) AS total FROM refund_requests WHERE order_id = ? AND status = ? AND id != ?',
-                [$order->id, 'refunded', $lockedRequest->id]
-            );
-            $totalRefundedSoFar = (string)(isset($totalRefundedSoFarResult[0]) ? $totalRefundedSoFarResult[0]->total : '0.00');
-
             // [AI] Calculate redeemed cashback spent on this order
             $redeemedCashbackOnOrder = '0.00';
             if ($order->discount_type === 'cashback' && bccomp((string)($order->discount_amount ?? '0.00'), '0.00', 2) > 0) {
                 $redeemedCashbackOnOrder = bcadd((string)$order->discount_amount, '0', 2);
             }
 
-            // Determine actual new money paid by customer on this order (distinguishing gross vs net order_amount)
+            // Exclude shipping and tax to get pure merchandise value of the order
             $rawOrderAmount = (string)($order->getRawOriginal('order_amount') ?? '0.00');
             $rawInitAmount = (string)($order->getRawOriginal('init_order_amount') ?? '0.00');
-            if (bccomp($rawInitAmount, $rawOrderAmount, 2) > 0) {
-                // order_amount was stored as net of discount
-                $actualMoneyPaid = $rawOrderAmount;
-            } else {
-                // order_amount was stored as gross reservation/order total; actual money paid = order_amount - discount_amount
-                $actualMoneyPaid = bcsub($rawOrderAmount, $redeemedCashbackOnOrder, 2);
+            $shippingCost = bcadd((string)($order->getRawOriginal('shipping_cost') ?? '0.00'), '0', 2);
+            $taxAmount = bcadd((string)($order->getRawOriginal('total_tax_amount') ?? '0.00'), '0', 2);
+
+            // Calculate merchandise subtotal using BCMath on raw original attributes — no float reads
+            $orderSubtotal = '0.00';
+            if ($order->details && $order->details->count() > 0) {
+                foreach ($order->details as $detail) {
+                    $itemPrice = (string)($detail->getRawOriginal('price') ?? '0.00');
+                    $itemQty = (string)($detail->getRawOriginal('qty') ?? '1');
+                    $lineTotal = bcmul($itemPrice, $itemQty, 2);
+                    $orderSubtotal = bcadd($orderSubtotal, $lineTotal, 2);
+                }
             }
-            if (bccomp($actualMoneyPaid, '0.00', 2) < 0) {
-                $actualMoneyPaid = '0.00';
+            if (bccomp($orderSubtotal, '0.00', 2) <= 0) {
+                $orderSubtotal = bcsub(bcsub($rawOrderAmount, $shippingCost, 2), $taxAmount, 2);
             }
 
-            // [AI] Calculate proportional cashback restoration based strictly on money refunded vs actual money paid
+            // Determine pure merchandise money paid by customer (strictly excluding shipping and tax)
+            if (bccomp($rawInitAmount, $rawOrderAmount, 2) > 0) {
+                // order_amount was stored as net of discount
+                $actualMerchandiseMoneyPaid = bcsub(bcsub($rawOrderAmount, $shippingCost, 2), $taxAmount, 2);
+            } else {
+                // order_amount was stored as gross reservation/order total; actual money paid = order_amount - discount_amount - shipping - tax
+                $merchandiseGross = bcsub(bcsub($rawOrderAmount, $shippingCost, 2), $taxAmount, 2);
+                $actualMerchandiseMoneyPaid = bcsub($merchandiseGross, $redeemedCashbackOnOrder, 2);
+            }
+            if (bccomp($actualMerchandiseMoneyPaid, '0.00', 2) < 0) {
+                $actualMerchandiseMoneyPaid = '0.00';
+            }
+
+            // 4. Proportional Partial Refund vs Full 100% Refund
+            $totalRefundedSoFarResult = DB::select(
+                'SELECT CAST(COALESCE(SUM(amount), 0.00) AS CHAR) AS total FROM refund_requests WHERE order_id = ? AND status = ? AND id != ?',
+                [$order->id, 'refunded', $lockedRequest->id]
+            );
+            $totalRefundedSoFar = (string)(isset($totalRefundedSoFarResult[0]) ? $totalRefundedSoFarResult[0]->total : '0.00');
+
+            // [AI] Calculate proportional cashback restoration based strictly on merchandise money refunded vs merchandise money paid
             $cashbackToRestore = '0.00';
             $alreadyRestored = '0.00';
             if (bccomp($redeemedCashbackOnOrder, '0.00', 2) > 0) {
-                if (bccomp($actualMoneyPaid, '0.00', 2) <= 0) {
+                if (bccomp($actualMerchandiseMoneyPaid, '0.00', 2) <= 0) {
                     // 100% cashback-funded order: refund restores cashback 1:1 with refunded amount
                     $cashbackToRestore = $refundAmount;
                 } else {
-                    $ratio = bcdiv($refundAmount, $actualMoneyPaid, 4);
+                    $ratio = bcdiv($refundAmount, $actualMerchandiseMoneyPaid, 4);
                     if (bccomp($ratio, '1.0000', 4) > 0) {
                         $ratio = '1.0000';
                     }
@@ -734,24 +695,55 @@ class PaystackRefundService
                 }
             }
 
-            // Calculate merchandise subtotal using BCMath on raw original attributes — no float reads
-            $orderSubtotal = '0.00';
-            if ($order->details && $order->details->count() > 0) {
-                foreach ($order->details as $detail) {
-                    $itemPrice = (string)($detail->getRawOriginal('price') ?? '0.00');
-                    $itemQty = (string)($detail->getRawOriginal('qty') ?? '1');
-                    $lineTotal = bcmul($itemPrice, $itemQty, 2);
-                    $orderSubtotal = bcadd($orderSubtotal, $lineTotal, 2);
+            // Total returned merchandise value (Money Refund + Cashback Restored)
+            $returnedMerchandiseValue = bcadd($refundAmount, $cashbackToRestore, 2);
+
+            // 3. Financial Reversals: Pre-Settlement Escrow vs Post-Settlement (Pure BCMath Precision)
+            // Reversal is strictly based on the returned merchandise value independent of customer payment tender
+            if (!$isSettled) {
+                $adminWallet = AdminWallet::where('admin_id', 1)->lockForUpdate()->first();
+                if ($adminWallet) {
+                    $currentPending = bcadd((string)($adminWallet->getRawOriginal('pending_amount') ?? '0.00'), '0', 2);
+                    $newPendingDiff = bcsub($currentPending, $returnedMerchandiseValue, 2);
+                    $adminWallet->pending_amount = (bccomp($newPendingDiff, '0.00', 2) < 0) ? '0.00' : $newPendingDiff;
+                    $adminWallet->save();
                 }
-            }
-            if (bccomp($orderSubtotal, '0.00', 2) <= 0) {
-                $rawShippingCost = (string)($order->getRawOriginal('shipping_cost') ?? '0.00');
-                $orderSubtotal = bcsub($rawOrderAmount, $rawShippingCost, 2);
+            } else {
+                $vendorShare = bcmul($returnedMerchandiseValue, '0.90', 2);
+                $commissionShare = bcmul($returnedMerchandiseValue, '0.10', 2);
+
+                $sellerWallet = SellerWallet::where('seller_id', $order->seller_id)->lockForUpdate()->first();
+                if ($sellerWallet) {
+                    $currentEarning = bcadd((string)($sellerWallet->getRawOriginal('total_earning') ?? '0.00'), '0', 2);
+                    if (bccomp($currentEarning, $vendorShare, 2) >= 0) {
+                        $newEarning = bcsub($currentEarning, $vendorShare, 2);
+                        $unrecoveredDebt = '0.00';
+                    } else {
+                        $newEarning = '0.00';
+                        $unrecoveredDebt = bcsub($vendorShare, $currentEarning, 2);
+                    }
+                    $sellerWallet->total_earning = $newEarning;
+                    if (bccomp($unrecoveredDebt, '0.00', 2) > 0) {
+                        $currentCollectedCash = bcadd((string)($sellerWallet->getRawOriginal('collected_cash') ?? '0.00'), '0', 2);
+                        $sellerWallet->collected_cash = bcadd($currentCollectedCash, $unrecoveredDebt, 2);
+                    }
+                    $currentCommissionGiven = bcadd((string)($sellerWallet->getRawOriginal('commission_given') ?? '0.00'), '0', 2);
+                    $commDiff = bcsub($currentCommissionGiven, $commissionShare, 2);
+                    $sellerWallet->commission_given = (bccomp($commDiff, '0.00', 2) < 0) ? '0.00' : $commDiff;
+                    $sellerWallet->save();
+                }
+
+                $adminWallet = AdminWallet::where('admin_id', 1)->lockForUpdate()->first();
+                if ($adminWallet) {
+                    $currentCommissionEarned = bcadd((string)($adminWallet->getRawOriginal('commission_earned') ?? '0.00'), '0', 2);
+                    $adminCommDiff = bcsub($currentCommissionEarned, $commissionShare, 2);
+                    $adminWallet->commission_earned = (bccomp($adminCommDiff, '0.00', 2) < 0) ? '0.00' : $adminCommDiff;
+                    $adminWallet->save();
+                }
             }
 
             // Cumulative total value refunded (money refunded + restored cashback)
-            $totalRefundValueThisTime = bcadd($refundAmount, $cashbackToRestore, 2);
-            $cumulativeRefundedValue = bcadd(bcadd($totalRefundedSoFar, $alreadyRestored, 2), $totalRefundValueThisTime, 2);
+            $cumulativeRefundedValue = bcadd(bcadd($totalRefundedSoFar, $alreadyRestored, 2), $returnedMerchandiseValue, 2);
             $remainingMerchandise = bcsub($orderSubtotal, $cumulativeRefundedValue, 2);
             if (bccomp($remainingMerchandise, '0.00', 2) <= 0) {
                 $remainingMerchandise = '0.00';
@@ -761,9 +753,13 @@ class PaystackRefundService
             $cashback = CustomerCashbackLedger::where('order_id', $order->id)->where('status', 'pending')->lockForUpdate()->first();
 
             if (bccomp($remainingMerchandise, '0.00', 2) > 0) {
-                // Partial refund: order preserves remaining entitlement; NOT terminal refunded
+                // Partial refund: adjust earning against remaining NEW MONEY allocation
                 if ($cashback) {
-                    $cashback->adjustForPartialRefund($remainingMerchandise);
+                    $moneyRatio = (bccomp($orderSubtotal, '0.00', 2) > 0)
+                        ? bcdiv($actualMerchandiseMoneyPaid, $orderSubtotal, 4)
+                        : '1.0000';
+                    $remainingNewMoney = bcmul($remainingMerchandise, $moneyRatio, 2);
+                    $cashback->adjustForPartialRefund($remainingNewMoney);
                 }
                 // Order settlement status remains held/eligible
                 if (empty($order->vendor_settlement_status) && $order->seller_is === 'seller') {
@@ -798,7 +794,7 @@ class PaystackRefundService
                         'credit' => $pointsToRestore,
                         'debit' => 0.0000,
                         'balance' => $freshBalance,
-                        'reference' => 'refund-cashback-restore-' . $order->id,
+                        'reference' => 'cashback-refund-' . $order->id,
                         'transaction_type' => 'point_transfer',
                         'created_at' => now(),
                         'updated_at' => now(),
@@ -847,6 +843,11 @@ class PaystackRefundService
             $lockedRequest->paystack_processed_at = now();
             $lockedRequest->save();
 
+            // 7. Update OrderDetail to canonical 4 (4 = refunded)
+            \App\Models\OrderDetail::where('id', $lockedRequest->order_details_id)->update([
+                'refund_request' => 4,
+            ]);
+
             Log::info("[AI] Finalized refund accounting for RefundRequest #{$lockedRequest->id} on Order #{$order->id}.", [
                 'refund_amount' => $refundAmount,
                 'is_settled' => $isSettled,
@@ -875,6 +876,22 @@ class PaystackRefundService
             }
 
             $refundAmount = bcadd((string)($lockedRequest->getRawOriginal('amount') ?? '0.00'), '0', 2);
+            // If amount is zero, fallback to payment_info or order details merchandise value
+            if (bccomp($refundAmount, '0.00', 2) <= 0) {
+                $payInfo = json_decode($lockedRequest->payment_info ?? '{}', true);
+                if (!empty($payInfo['merchandise_value']) && bccomp((string)$payInfo['merchandise_value'], '0.00', 2) > 0) {
+                    $refundAmount = bcadd((string)$payInfo['merchandise_value'], '0', 2);
+                } elseif (!empty($lockedRequest->order_details_id)) {
+                    $detail = \App\Models\OrderDetail::find($lockedRequest->order_details_id);
+                    if ($detail) {
+                        $qty = (string)($detail->qty ?? '1');
+                        $price = (string)($detail->price ?? '0.00');
+                        $discount = (string)($detail->discount ?? '0.00');
+                        $refundAmount = bcsub(bcmul($qty, $price, 2), $discount, 2);
+                    }
+                }
+            }
+
             $isSettled = ($lockedOrder->vendor_settlement_status === 'settled');
 
             // 1. Reversals: Pre-Settlement Escrow vs Post-Settlement
@@ -975,14 +992,14 @@ class PaystackRefundService
             $lockedRequest->status = 'refunded';
             $lockedRequest->save();
 
-            // 5. Update OrderDetail and Order status
+            // 5. Update OrderDetail to canonical 4 (4 = refunded)
             \App\Models\OrderDetail::where('id', $lockedRequest->order_details_id)->update([
-                'refund_request' => 3, // Refunded
+                'refund_request' => 4, // 4 = Refunded (canonical)
             ]);
 
             // Check if all order details are refunded
             $allDetailsRefunded = !\App\Models\OrderDetail::where('order_id', $lockedOrder->id)
-                ->where('refund_request', '!=', 3)
+                ->where('refund_request', '!=', 4)
                 ->exists();
 
             if ($allDetailsRefunded) {

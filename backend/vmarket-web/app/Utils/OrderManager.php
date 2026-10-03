@@ -2100,6 +2100,9 @@ class OrderManager
                 'coupon_discount' => '0.00',
                 'referral_discount' => '0.00',
                 'total_refundable_amount' => '0.00',
+                'refundable_merchandise_value' => '0.00',
+                'refundable_money_amount' => '0.00',
+                'refundable_cashback_amount' => '0.00',
             ];
         }
         $order = Order::where(['id' => $orderDetails['order_id']])->with('details')->first();
@@ -2120,18 +2123,40 @@ class OrderManager
         $detailDiscount = (string)($orderDetails->getRawOriginal('discount') ?? '0.00');
         $subtotal = bcsub(bcadd(bcmul($detailQty, $detailPrice, 4), $detailTax, 4), $detailDiscount, 4);
 
+        // [AI] Segregate promotional coupons from customer cashback redemptions
+        $isCashbackDiscount = ($order->discount_type === 'cashback');
         $orderDiscountAmount = (string)($order->getRawOriginal('discount_amount') ?? '0.00');
+
+        $promotionalCouponDiscount = '0.00';
+        $orderCashbackRedeemed = '0.00';
+
+        if ($isCashbackDiscount) {
+            $orderCashbackRedeemed = $orderDiscountAmount;
+        } else {
+            $promotionalCouponDiscount = $orderDiscountAmount;
+        }
+
         if (bccomp($totalProductPrice, '0.00', 4) > 0) {
-            $couponDiscount = bcdiv(bcmul($orderDiscountAmount, $subtotal, 4), $totalProductPrice, 4);
+            $couponDiscount = bcdiv(bcmul($promotionalCouponDiscount, $subtotal, 4), $totalProductPrice, 4);
+            $allocatedCashback = bcdiv(bcmul($orderCashbackRedeemed, $subtotal, 4), $totalProductPrice, 4);
         } else {
             $couponDiscount = '0.00';
+            $allocatedCashback = '0.00';
         }
 
         $referAndEarnDiscount = (string)OrderManager::getReferDiscountAmountForSingleOrderDetails(orderDetailsId: $orderDetailsId);
 
-        $refundable = bcsub(bcsub($subtotal, $couponDiscount, 4), $referAndEarnDiscount, 4);
-        if (bccomp($refundable, '0.00', 2) < 0) {
-            $refundable = '0.00';
+        // Net merchandise refundable value of this item (excluding promotional coupons and referral discounts)
+        $refundableMerchandiseValue = bcsub(bcsub($subtotal, $couponDiscount, 4), $referAndEarnDiscount, 4);
+        if (bccomp($refundableMerchandiseValue, '0.00', 2) < 0) {
+            $refundableMerchandiseValue = '0.00';
+        }
+
+        // Segregate money allocation and cashback allocation:
+        $refundableCashbackAmount = (bccomp($allocatedCashback, $refundableMerchandiseValue, 4) > 0) ? $refundableMerchandiseValue : $allocatedCashback;
+        $refundableMoneyAmount = bcsub($refundableMerchandiseValue, $refundableCashbackAmount, 4);
+        if (bccomp($refundableMoneyAmount, '0.00', 2) < 0) {
+            $refundableMoneyAmount = '0.00';
         }
 
         return [
@@ -2141,7 +2166,10 @@ class OrderManager
             'sub_total' => bcadd($subtotal, '0', 2),
             'coupon_discount' => bcadd($couponDiscount, '0', 2),
             'referral_discount' => bcadd($referAndEarnDiscount, '0', 2),
-            'total_refundable_amount' => bcadd($refundable, '0', 2),
+            'total_refundable_amount' => bcadd($refundableMerchandiseValue, '0', 2),
+            'refundable_merchandise_value' => bcadd($refundableMerchandiseValue, '0', 2),
+            'refundable_money_amount' => bcadd($refundableMoneyAmount, '0', 2),
+            'refundable_cashback_amount' => bcadd($refundableCashbackAmount, '0', 2),
         ];
     }
 
