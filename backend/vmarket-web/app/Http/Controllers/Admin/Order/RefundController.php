@@ -124,15 +124,6 @@ class RefundController extends BaseController
             return response()->json(['error' => translate('Customer wallet is not a supported refund method.')], 400);
         }
 
-        // [AI] Distributed Asynchronous Refund Execution:
-        // Internal financial finalization is strictly prohibited from administrative status endpoints.
-        // Financial movement occurs exclusively upon verified Paystack completion (refund.processed webhook).
-        if ($request['refund_status'] === 'refunded' && $refund['status'] !== 'refunded') {
-            return response()->json([
-                'error' => translate('Manual transition to refunded is disabled. Refunds transition to refunded automatically upon authoritative Paystack completion confirmation.'),
-            ], 403);
-        }
-
         if ($refund['status'] != 'refunded') {
             $orderDetails = $this->orderDetailRepo->getFirstWhere(params: ['id' => $refund['order_details_id']]);
             $loyaltyPoint = 0;
@@ -142,29 +133,17 @@ class RefundController extends BaseController
             $this->refundRequestRepo->update(id: $request['id'], data: $dataArray['refund']);
             $this->refundStatusRepos->add(data: $dataArray['refundStatus']);
 
-            if ($request['refund_status'] === 'approved') {
+            // [AI] Manual Offline Refund Execution:
+            // When admin approves or marks refund as refunded, execute internal accounting (vendor reversal,
+            // reward restoration, ledger settlement) completely offline WITHOUT triggering Paystack API calls.
+            if (in_array($request['refund_status'], ['approved', 'refunded'], true)) {
                 $refundRequestModel = RefundRequest::find($refund['id']);
                 $orderModel = Order::find($refund['order_id']);
-                $gatewayRef = $orderModel ? \App\Services\PaystackRefundService::resolvePaystackReferenceForOrder($orderModel) : null;
 
-                $paymentInfo = json_decode($refundRequestModel->payment_info ?? '{}', true) ?: [];
-                $refundableMoney = $paymentInfo['refundable_money_amount'] ?? ($paymentInfo['money_amount'] ?? null);
-
-                // [AI] Route refunds using recorded money and reward allocations:
-                // If merchandise money allocation is zero, or if the order is cashback-only, route internally to finalizeCashbackOrderRefund.
-                // Do NOT route to Paystack gateway even if $order->payment_method is 'paystack' (e.g. when Paystack was used only for shipping).
-                $isPureRewardRefund = ($refundableMoney !== null && bccomp((string)$refundableMoney, '0.00', 2) === 0)
-                    || ($order && $order['payment_method'] === 'cashback')
-                    || (bccomp((string)($order['order_amount'] ?? '0.00'), '0.00', 2) === 0);
-
-                if ($isPureRewardRefund) {
+                if ($refundRequestModel && $orderModel) {
                     $paystackRefundService = app(\App\Services\PaystackRefundService::class);
-                    $paystackRefundService->finalizeCashbackOrderRefund($refundRequestModel, $orderModel);
-                    Log::info("[AI] Internal cashback refund finalized for RefundRequest #{$refund['id']} on Order #{$order['id']} (Pure Reward Refund)");
-                } elseif ($order && $order['payment_method'] === 'paystack' && !empty($gatewayRef)) {
-                    $paystackRefundService = app(\App\Services\PaystackRefundService::class);
-                    $initResult = $paystackRefundService->initiateRefund($refundRequestModel, $gatewayRef);
-                    Log::info("[AI] Paystack refund initiated for RefundRequest #{$refund['id']}: " . ($initResult['message'] ?? ''));
+                    $paystackRefundService->finalizeManualOrderRefund($refundRequestModel, $orderModel);
+                    Log::info("[AI] Manual offline refund finalized for RefundRequest #{$refund['id']} on Order #{$order['id']} (External Paystack gateway call bypassed by administrative policy)");
                 }
             }
 

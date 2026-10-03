@@ -942,11 +942,12 @@ class PaystackRefundService
     }
 
     /**
-     * [AI] Finalize Refund Accounting for Cashback-Funded Orders
-     * Executes atomic internal reward restoration, accounting reversal, and marks refund completed
-     * without requiring an external payment provider webhook.
+     * [AI] Finalize Manual Offline Refund (Paystack API Bypassed)
+     * Executes atomic internal accounting reversal, vendor/admin wallet deductions,
+     * customer cashback/loyalty points restoration, immutable RefundTransaction creation,
+     * and status transitions WITHOUT calling external payment gateways.
      */
-    public function finalizeCashbackOrderRefund(RefundRequest $refundRequest, Order $order): void
+    public function finalizeManualOrderRefund(RefundRequest $refundRequest, Order $order): void
     {
         DB::transaction(function () use ($refundRequest, $order) {
             $lockedRequest = RefundRequest::where('id', $refundRequest->id)->lockForUpdate()->first();
@@ -957,7 +958,7 @@ class PaystackRefundService
             // [AI] Item-Level Duplicate Guard & Pessimistic Row Lock on OrderDetail
             $lockedDetail = \App\Models\OrderDetail::where('id', $lockedRequest->order_details_id)->lockForUpdate()->first();
             if ($lockedDetail && (int)$lockedDetail->refund_request === 4) {
-                Log::warning("[AI] finalizeCashbackOrderRefund blocked: OrderDetail #{$lockedDetail->id} already refunded.");
+                Log::warning("[AI] finalizeManualOrderRefund blocked: OrderDetail #{$lockedDetail->id} already refunded.");
                 $lockedRequest->execution_status = 'already_refunded';
                 $lockedRequest->status = 'refunded';
                 $lockedRequest->save();
@@ -971,7 +972,7 @@ class PaystackRefundService
                 })
                 ->exists();
             if ($otherExecuted) {
-                Log::warning("[AI] finalizeCashbackOrderRefund blocked: OrderDetail #{$lockedRequest->order_details_id} already has a completed refund request.");
+                Log::warning("[AI] finalizeManualOrderRefund blocked: OrderDetail #{$lockedRequest->order_details_id} already has a completed refund request.");
                 $lockedRequest->execution_status = 'already_refunded';
                 $lockedRequest->status = 'refunded';
                 $lockedRequest->save();
@@ -986,25 +987,48 @@ class PaystackRefundService
             $payInfo = json_decode($lockedRequest->payment_info ?? '{}', true) ?: [];
             $refundAmount = bcadd((string)($lockedRequest->getRawOriginal('amount') ?? '0.00'), '0', 2);
 
-            // Determine exact cashback allocation to restore and merchandise value returned
-            if (!empty($payInfo['cashback_amount']) && bccomp((string)$payInfo['cashback_amount'], '0.00', 2) > 0) {
+            // Determine exact cashback allocation to restore
+            $cashbackToRestore = '0.00';
+            if (isset($payInfo['cashback_amount']) && bccomp((string)$payInfo['cashback_amount'], '0.00', 2) > 0) {
                 $cashbackToRestore = bcadd((string)$payInfo['cashback_amount'], '0', 2);
-            } elseif (!empty($payInfo['merchandise_value']) && bccomp((string)$payInfo['merchandise_value'], '0.00', 2) > 0) {
-                $cashbackToRestore = bcadd((string)$payInfo['merchandise_value'], '0', 2);
-            } elseif (bccomp($refundAmount, '0.00', 2) > 0) {
-                $cashbackToRestore = $refundAmount;
+            } elseif ($lockedOrder->payment_method === 'cashback') {
+                if (!empty($payInfo['merchandise_value']) && bccomp((string)$payInfo['merchandise_value'], '0.00', 2) > 0) {
+                    $cashbackToRestore = bcadd((string)$payInfo['merchandise_value'], '0', 2);
+                } elseif (bccomp($refundAmount, '0.00', 2) > 0) {
+                    $cashbackToRestore = $refundAmount;
+                } elseif ($lockedDetail) {
+                    $qty = (string)($lockedDetail->qty ?? '1');
+                    $price = (string)($lockedDetail->price ?? '0.00');
+                    $discount = (string)($lockedDetail->discount ?? '0.00');
+                    $cashbackToRestore = bcsub(bcmul($qty, $price, 2), $discount, 2);
+                }
+            }
+
+            // Determine pure returned merchandise value (strictly tax-exclusive)
+            $returnedMerchandiseValue = '0.00';
+            if (!empty($payInfo['merchandise_value']) && bccomp((string)$payInfo['merchandise_value'], '0.00', 2) > 0) {
+                $returnedMerchandiseValue = bcadd((string)$payInfo['merchandise_value'], '0', 2);
             } elseif ($lockedDetail) {
                 $qty = (string)($lockedDetail->qty ?? '1');
                 $price = (string)($lockedDetail->price ?? '0.00');
                 $discount = (string)($lockedDetail->discount ?? '0.00');
-                $cashbackToRestore = bcsub(bcmul($qty, $price, 2), $discount, 2);
+                $returnedMerchandiseValue = bcsub(bcmul($qty, $price, 2), $discount, 2);
             } else {
-                $cashbackToRestore = '0.00';
+                $returnedMerchandiseValue = $refundAmount;
             }
 
-            $returnedMerchandiseValue = !empty($payInfo['merchandise_value'])
-                ? bcadd((string)$payInfo['merchandise_value'], '0', 2)
-                : $cashbackToRestore;
+            // Determine money portion to record for manual offline refund
+            $moneyToRefund = '0.00';
+            if (isset($payInfo['money_amount']) && bccomp((string)$payInfo['money_amount'], '0.00', 2) > 0) {
+                $moneyToRefund = bcadd((string)$payInfo['money_amount'], '0', 2);
+            } elseif (isset($payInfo['refundable_money_amount']) && bccomp((string)$payInfo['refundable_money_amount'], '0.00', 2) > 0) {
+                $moneyToRefund = bcadd((string)$payInfo['refundable_money_amount'], '0', 2);
+            } elseif ($lockedOrder->payment_method !== 'cashback') {
+                $moneyToRefund = bcsub($refundAmount, $cashbackToRestore, 2);
+                if (bccomp($moneyToRefund, '0.00', 2) < 0) {
+                    $moneyToRefund = '0.00';
+                }
+            }
 
             // Cumulative restoration guard across all refunds on this order using immutable RefundTransaction records
             $redeemedCashbackOnOrder = ($lockedOrder->discount_type === 'cashback')
@@ -1119,26 +1143,45 @@ class PaystackRefundService
                     'expires_at' => now()->addMonths($validityMonths),
                     'description' => "Restored cashback from internal refund on Order #{$lockedOrder->id}",
                 ]);
+
+                // Create Immutable RefundTransaction for Cashback Restoration
+                RefundTransaction::create([
+                    'order_id' => $lockedRequest->order_id,
+                    'payment_for' => 'Refund Request',
+                    'payer_id' => $lockedOrder->seller_id ?? 1,
+                    'payment_receiver_id' => $lockedRequest->customer_id,
+                    'paid_by' => $lockedOrder->seller_is ?? 'admin',
+                    'paid_to' => 'customer',
+                    'payment_method' => 'cashback',
+                    'payment_status' => 'paid',
+                    'amount' => $cashbackToRestore,
+                    'transaction_type' => 'Refund',
+                    'order_details_id' => $lockedRequest->order_details_id,
+                    'refund_id' => $lockedRequest->id,
+                ]);
             }
 
-            // 3. Create Immutable RefundTransaction for Cashback Restoration
-            RefundTransaction::create([
-                'order_id' => $lockedRequest->order_id,
-                'payment_for' => 'Refund Request',
-                'payer_id' => $lockedOrder->seller_id ?? 1,
-                'payment_receiver_id' => $lockedRequest->customer_id,
-                'paid_by' => $lockedOrder->seller_is ?? 'admin',
-                'paid_to' => 'customer',
-                'payment_method' => 'cashback',
-                'payment_status' => 'paid',
-                'amount' => $cashbackToRestore,
-                'transaction_type' => 'Refund',
-                'order_details_id' => $lockedRequest->order_details_id,
-                'refund_id' => $lockedRequest->id,
-            ]);
+            // 3. Create Immutable RefundTransaction for Manual Money Refund
+            if (bccomp($moneyToRefund, '0.00', 2) > 0) {
+                RefundTransaction::create([
+                    'order_id' => $lockedRequest->order_id,
+                    'payment_for' => 'Refund Request',
+                    'payer_id' => $lockedOrder->seller_id ?? 1,
+                    'payment_receiver_id' => $lockedRequest->customer_id,
+                    'paid_by' => $lockedOrder->seller_is ?? 'admin',
+                    'paid_to' => 'customer',
+                    'payment_method' => 'manual_offline',
+                    'payment_status' => 'paid',
+                    'amount' => $moneyToRefund,
+                    'transaction_type' => 'Refund',
+                    'order_details_id' => $lockedRequest->order_details_id,
+                    'refund_id' => $lockedRequest->id,
+                ]);
+            }
 
-            // 4. Update RefundRequest status and record immutable restored cashback
+            // 4. Update RefundRequest status and record immutable restored amounts
             $payInfo['cashback_restored'] = $cashbackToRestore;
+            $payInfo['money_refunded'] = $moneyToRefund;
             $lockedRequest->payment_info = json_encode($payInfo);
             $lockedRequest->execution_status = 'succeeded';
             $lockedRequest->status = 'refunded';
@@ -1175,7 +1218,16 @@ class PaystackRefundService
                 }
             }
 
-            Log::info("[AI] PaystackRefundService: Completed internal cashback refund for RefundRequest #{$lockedRequest->id} on Order #{$lockedOrder->id}.");
+            Log::info("[AI] PaystackRefundService: Completed manual offline refund for RefundRequest #{$lockedRequest->id} on Order #{$lockedOrder->id}.");
         });
     }
+
+    /**
+     * [AI] Backward compatibility wrapper for cashback-funded orders.
+     */
+    public function finalizeCashbackOrderRefund(RefundRequest $refundRequest, Order $order): void
+    {
+        $this->finalizeManualOrderRefund($refundRequest, $order);
+    }
 }
+
