@@ -111,13 +111,24 @@ class DeliveryOrderSettlementService
                 }
 
                 if ($intent && $intent->status === 'converted_to_orders') {
-                    return [
-                        'status' => 'ALREADY_PAID',
-                        'is_replayed' => true,
-                        'message' => 'CheckoutIntent has already been converted to orders.',
-                        'payment_request' => $paymentRequest,
-                        'orders' => $this->getSettledOrderIds($paymentRequest),
-                    ];
+                    if ($paymentRequest->is_paid == 1 && $paymentRequest->attempt_status === 'successful') {
+                        return [
+                            'status' => 'ALREADY_PAID',
+                            'is_replayed' => true,
+                            'message' => 'CheckoutIntent has already been converted to orders.',
+                            'payment_request' => $paymentRequest,
+                            'orders' => $this->getSettledOrderIds($paymentRequest),
+                        ];
+                    }
+
+                    // [AI] Another payment attempt converted the intent; record this late/duplicate capture for reconciliation
+                    return $this->handlePermanentAnomaly(
+                        $paymentRequest,
+                        $intent,
+                        'duplicate_capture_already_settled',
+                        $gatewayData,
+                        "Duplicate capture: CheckoutIntent #{$intent->id} was already converted to orders by another payment attempt."
+                    );
                 }
 
                 // ANOMALY CHECK 1: Stale or superseded payment attempt
@@ -397,7 +408,17 @@ class DeliveryOrderSettlementService
                 'released_at' => now(),
             ]);
 
-        $capturedNaira = bcdiv((string) ($gatewayData['amount'] ?? 0), '100', 4);
+        // [AI] Idempotency Guard: return existing reconciliation if already recorded
+        $existingRec = PaymentReconciliation::where('gateway_reference', $paymentRequest->gateway_reference)->first();
+        if ($existingRec) {
+            return [
+                'status' => 'reconciliation_required',
+                'anomaly_type' => $existingRec->initial_anomaly_type,
+                'message' => $reason,
+                'reconciliation_case' => $existingRec->case_number,
+                'payment_request' => $paymentRequest->fresh(),
+            ];
+        }
 
         $reconciliation = PaymentReconciliation::create([
             'case_number' => 'REC-' . Str::orderedUuid()->toString(),

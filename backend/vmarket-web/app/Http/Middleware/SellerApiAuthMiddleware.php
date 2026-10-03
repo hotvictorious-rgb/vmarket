@@ -58,6 +58,13 @@ class SellerApiAuthMiddleware
                 $request['seller'] = $employee->seller;
                 $request['vendor_employee'] = $employee;
                 $request['employee_shop_id'] = $employee->shop_id;
+                $request['is_vendor_employee'] = true;
+                $request->merge([
+                    'seller' => $employee->seller,
+                    'vendor_employee' => $employee,
+                    'is_vendor_employee' => true,
+                    'employee_shop_id' => $employee->shop_id
+                ]);
                 return $next($request);
             }
         }

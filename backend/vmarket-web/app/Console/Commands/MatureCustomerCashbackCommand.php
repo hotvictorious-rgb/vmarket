@@ -65,15 +65,46 @@ class MatureCustomerCashbackCommand extends Command
             return Command::SUCCESS;
         }
 
-        // 3. Perform atomic batch update
-        $affected = CustomerCashbackLedger::whereIn('id', $eligibleLedgerIds)
+        // 3. Perform atomic per-ledger transition and balance credit
+        $exchangeRate = (float) (getWebConfig(name: 'loyalty_point_exchange_rate') ?: 1.0);
+        $eligibleLedgers = CustomerCashbackLedger::whereIn('id', $eligibleLedgerIds)
             ->where('status', 'pending')
-            ->update([
-                'status' => 'available',
-                'updated_at' => $now,
-            ]);
+            ->get();
 
-        $message = "[AI] Customer Cashback Maturation: Successfully transitioned {$affected} reward ledger records to 'available'.";
+        $affected = 0;
+        foreach ($eligibleLedgers as $ledger) {
+            DB::transaction(function () use ($ledger, $exchangeRate, $now, &$affected) {
+                $updated = CustomerCashbackLedger::where('id', $ledger->id)
+                    ->where('status', 'pending')
+                    ->update([
+                        'status' => 'available',
+                        'updated_at' => $now,
+                    ]);
+
+                if ($updated) {
+                    $points = (float) bcdiv((string) $ledger->cashback_amount, (string) $exchangeRate, 4);
+                    if ($points > 0) {
+                        DB::table('users')->where('id', $ledger->customer_id)->increment('loyalty_point', $points);
+                        $freshBalance = (float) DB::table('users')->where('id', $ledger->customer_id)->value('loyalty_point');
+
+                        DB::table('loyalty_point_transactions')->insert([
+                            'user_id' => $ledger->customer_id,
+                            'transaction_id' => \Illuminate\Support\Str::uuid()->toString(),
+                            'credit' => $points,
+                            'debit' => 0.0000,
+                            'balance' => $freshBalance,
+                            'reference' => 'cashback-reward-' . $ledger->order_id,
+                            'transaction_type' => 'point_transfer',
+                            'created_at' => $now,
+                            'updated_at' => $now,
+                        ]);
+                    }
+                    $affected++;
+                }
+            });
+        }
+
+        $message = "[AI] Customer Cashback Maturation: Successfully transitioned {$affected} reward ledger records to 'available' and credited loyalty points.";
         $this->info($message);
         Log::info($message, [
             'affected_records' => $affected,
