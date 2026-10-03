@@ -8,7 +8,7 @@ This document serves as the permanent reference guide for the **Victorious MARKE
 
 | Design Token | Hex Code | Purpose & Usage |
 | :--- | :--- | :--- |
-| **Primary Royal Purple** | `#6A1B9A` / `#4A148C` | Top App Bar, Primary Buttons, Active Navigation Tabs |
+| **Primary Royal Purple** | `#5E17EB` / `#4A148C` | Top App Bar, Primary Buttons, Active Navigation Tabs |
 | **Secondary Gold Accent**| `#FFD700` / `#FFA000` | Discount Badges, VIP Highlights, Rating Stars, Handover OTP |
 | **Scaffold Background** | `#F8F9FA` | Modern high-contrast clean surface |
 | **Card Surface** | `#FFFFFF` | Product cards, Search containers, Cart items |

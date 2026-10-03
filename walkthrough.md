@@ -33,7 +33,7 @@ A custom database migration file was created:
 - Updated package namespace and `applicationId` to `com.victoriousmarket.customer` in [build.gradle.kts](file:///c:/Users/USER/Downloads/vmarket/User%20app/android/app/build.gradle.kts).
 - Updated package declaration in [MainActivity.kt](file:///c:/Users/USER/Downloads/vmarket/User%20app/android/app/src/main/kotlin/com/victoriousmarket/customer/MainActivity.kt) and reorganized Kotlin folders to match.
 - Renamed display name to `"Victorious MARKET"` in [AndroidManifest.xml](file:///c:/Users/USER/Downloads/vmarket/User%20app/android/app/src/main/AndroidManifest.xml) and [Info.plist](file:///c:/Users/USER/Downloads/vmarket/User%20app/ios/Runner/Info.plist).
-- Changed brand primary and secondary colors to Purple (`#6A1B9A`) and Gold (`#D4AF37`) in light and dark themes.
+- Changed brand primary and secondary colors to Purple (`#5E17EB`) and Gold (`#FFD700`) in light and dark themes.
 
 ---
 
