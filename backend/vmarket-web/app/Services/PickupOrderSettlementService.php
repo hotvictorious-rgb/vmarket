@@ -434,8 +434,8 @@ class PickupOrderSettlementService
         }
 
         $orderId = \App\Utils\OrderManager::generateNewOrderID();
-        $verificationCode = (string) rand(100000, 999999);
-        $handoverCode = (string) rand(100000, 999999);
+        $verificationCode = (string) random_int(100000, 999999);
+        $handoverCode = (string) random_int(100000, 999999);
         $customerId = (int) $reservation->customer_id;
 
         $additional = is_array($paymentRequest->additional_data)

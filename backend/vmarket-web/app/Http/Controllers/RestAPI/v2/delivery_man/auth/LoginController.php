@@ -71,7 +71,7 @@ class LoginController extends Controller
         $verificationBy = getWebConfig(name: 'deliveryman_forgot_password_method') ?? 'phone';
 
         if (isset($deliveryMan)) {
-            $otp = (env('APP_MODE') == 'live') ? rand(100000, 999999) : 123456;
+            $otp = (env('APP_MODE') == 'live') ? random_int(100000, 999999) : 123456;
 
             PasswordReset::insert([
                 'identity' => $request['identity'],

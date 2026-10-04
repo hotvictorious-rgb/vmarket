@@ -121,7 +121,7 @@ class PaystackBankService
      */
     public function sendBankUpdateOtp(Seller $seller, array $newBankDetails): array
     {
-        $otp = (string) rand(100000, 999999);
+        $otp = (string) random_int(100000, 999999);
         $cacheKey = 'seller_bank_otp_' . $seller->id;
 
         // Store OTP & intended bank details in cache for 10 minutes
