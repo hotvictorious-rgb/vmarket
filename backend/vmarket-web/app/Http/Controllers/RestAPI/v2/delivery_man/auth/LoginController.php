@@ -71,14 +71,9 @@ class LoginController extends Controller
         $verificationBy = getWebConfig(name: 'deliveryman_forgot_password_method') ?? 'phone';
 
         if (isset($deliveryMan)) {
-            $otp = (env('APP_MODE') == 'live') ? random_int(100000, 999999) : 123456;
+            $otp = random_int(100000, 999999);
 
-            PasswordReset::insert([
-                'identity' => $request['identity'],
-                'token' => $otp,
-                'user_type' => 'delivery_man',
-                'created_at' => now(),
-            ]);
+            app(\App\Services\PasswordResetCredentialService::class)->issue('delivery_man', $deliveryMan, $request['identity'], (string)$otp);
 
             if ($verificationBy == 'email') {
                 $emailServices_smtp = getWebConfig(name: 'mail_config');
@@ -117,60 +112,22 @@ class LoginController extends Controller
         ]], 403);
     }
 
-    public function otp_verification_submit(Request $request)
+    public function otp_verification_submit(Request $request): JsonResponse
     {
-        $validator = Validator::make($request->all(), [
-            'otp' => 'required',
-            'identity' => 'required',
-        ]);
-
-        if ($validator->fails()) {
-            return response()->json(['errors' => Helpers::validationErrorProcessor($validator)], 403);
-        }
-
-        $data = PasswordReset::where(['token' => $request['otp'], 'identity' => $request['identity'], 'user_type' => 'delivery_man'])->first();
-        if (!$data) {
-            return response()->json(['message' => translate('Invalid_OTP')], 403);
-        }
-
-        $timeDiff = $data->created_at->diffInMinutes(Carbon::now());
-
-        if ($timeDiff > 15) {
-            PasswordReset::where(['token' => $request['otp'], 'user_type' => 'delivery_man'])->delete();
-            return response()->json(['message' => translate('OTP_expired')], 403);
-        }
-
-        $deliveryManPhone = DeliveryMan::where(['phone' => $request['identity']])->orWhere(['email' => $request['identity']])->first();
-        return response()->json([
-            'message' => translate('OTP_verified_successfully'),
-            'phone' => $deliveryManPhone['phone'],
-            'email' => $deliveryManPhone['email'],
-        ], 200);
+        $identity=$request->input('identity'); $token=$request->input('otp');
+        $ok=is_string($identity) && is_string($token) && app(\App\Services\PasswordResetCredentialService::class)->verify('delivery_man',$identity,$token);
+        return response()->json(['message'=>$ok ? 'OTP verified.' : 'Invalid or expired password-reset credential.'], $ok ? 200 : 403);
     }
-
 
     public function reset_password_submit(Request $request)
     {
-        $validator = Validator::make($request->all(), [
-            'phone' => 'required',
-            'password' => 'required|same:confirm_password|min:8',
+        $identity = $request->input('identity', $request->input('phone'));
+        $validator = Validator::make($request->all() + ['identity'=>$identity], [
+            'identity'=>'required|string','otp'=>'required|string','password'=>'required|string|same:confirm_password|min:8',
         ]);
-
-        if ($validator->fails()) {
-            return response()->json(['errors' => Helpers::validationErrorProcessor($validator)], 403);
-        }
-
-        $deliveryMan = DeliveryMan::where(['phone' => $request['phone']])->first();
-        if (!$deliveryMan) {
-            return response()->json(['message' => translate('user_not_found')], 404);
-        }
-
-        $deliveryMan->password = bcrypt(str_replace(' ', '', $request['password']));
-        $deliveryMan->save();
-
-        PasswordReset::where(['identity' => $request['phone'], 'user_type' => 'delivery_man'])->delete();
-
-        return response()->json(['message' => translate('Password_changed_successfully')], 200);
-
+        if ($validator->fails()) return response()->json(['errors'=>Helpers::validationErrorProcessor($validator)], 403);
+        $ok = app(\App\Services\PasswordResetCredentialService::class)->consume('delivery_man', $identity, $request->otp, $request->password);
+        return response()->json(['message'=>$ok ? 'Password changed successfully.' : 'Invalid or expired password-reset credential.'], $ok ? 200 : 403);
     }
+
 }

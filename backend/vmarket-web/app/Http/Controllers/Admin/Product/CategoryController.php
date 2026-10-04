@@ -141,7 +141,8 @@ class CategoryController extends BaseController
                 ['sub_category_id' => $category['id']],
                 [
                     'category_id' => $request['parent_id'],
-                    'category_ids' => DB::raw("JSON_SET(CAST(category_ids AS JSON), '$[0].id', '{$request['parent_id']}')")
+                    // [AI] Laravel compiles this JSON path with bound values, preserving the string ID.
+                    'category_ids->[0]->id' => (string)$request['parent_id']
                 ]
             );
         }

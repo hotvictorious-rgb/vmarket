@@ -241,7 +241,7 @@ class CustomerAPIAuthController extends Controller
             ], 403);
         }
 
-        $token = (env('APP_MODE') == 'live') ? random_int(100000, 999999) : 123456;
+        $token = random_int(100000, 999999);
         $this->phoneOrEmailVerificationRepo->updateOrCreate(params: ['phone_or_email' => $request['phone']], value: [
             'phone_or_email' => $request['phone'],
             'token' => $token,
@@ -293,7 +293,7 @@ class CustomerAPIAuthController extends Controller
                 ], 403);
             }
 
-            $token = (env('APP_MODE') == 'live') ? random_int(100000, 999999) : 123456;
+            $token = random_int(100000, 999999);
 
             $this->phoneOrEmailVerificationRepo->updateOrCreate(params: ['phone_or_email' => $request['email']], value: [
                 'phone_or_email' => $request['email'],
@@ -509,16 +509,6 @@ class CustomerAPIAuthController extends Controller
             return response()->json(['errors' => Helpers::validationErrorProcessor($validator)], 403);
         }
 
-        $verificationData = $this->phoneOrEmailVerificationRepo->getFirstWhere(params: ['phone_or_email' => $request['phoneNumber']]);
-        $verifyStatus = $this->checkCustomerOTPBlockTimeOrInvalid(verificationData: $verificationData, identity: $request['phoneNumber']);
-        if ($verifyStatus['status'] == 1) {
-            return response()->json([
-                'errors' => [
-                    ['code' => $verifyStatus['code'], 'message' => $verifyStatus['message']]
-                ]
-            ], 403);
-        }
-
         $firebaseOTPVerification = getWebConfig(name: 'firebase_otp_verification');
         $webApiKey = $firebaseOTPVerification ? $firebaseOTPVerification['web_api_key'] : '';
 
@@ -536,17 +526,15 @@ class CustomerAPIAuthController extends Controller
             return response()->json(['errors' => $errors], 403);
         }
 
+        if (!$response->successful() || empty($responseData['phoneNumber']) || $responseData['phoneNumber'] !== $request->phoneNumber) return response()->json(['message'=>'Firebase phone proof does not match reset identity.'],403);
         $user = $this->customerRepo->getByIdentity(filters: ['identity' => $responseData['phoneNumber']]);
 
         if (isset($user)) {
+            if (!$user->is_active) return response()->json(['message'=>'Account is suspended.'],403);
             if ($request['is_reset_token'] == 1) {
-                DB::table('password_resets')
-                    ->where('user_type', 'customer')
-                    ->updateOrInsert(['identity' => $request['phoneNumber']], [
-                        'identity' => $request['phoneNumber'],
-                        'token' => $request['code'],
-                        'created_at' => now(),
-                    ]);
+                $resetToken = Str::random(64);
+                app(\App\Services\PasswordResetCredentialService::class)->issue('customer', $user, $responseData['phoneNumber'], $resetToken);
+                return response()->json(['errors'=>null,'reset_token'=>$resetToken,'identity'=>$responseData['phoneNumber']],200);
             } else {
                 $token = $user->createToken('LaravelAuthApp')->accessToken;
                 $user['is_phone_verified'] = 1;
@@ -868,7 +856,7 @@ class CustomerAPIAuthController extends Controller
 
         if (isset($customer)) {
             $OTPIntervalTime = getWebConfig(name: 'otp_resend_time') ?? 60; // seconds
-            $passwordVerificationData = DB::table('password_resets')->where('identity', $request['email_or_phone'])->first();
+            $passwordVerificationData = DB::table('password_resets')->where('user_type','customer')->where('identity', $request['email_or_phone'])->first();
 
             if (isset($passwordVerificationData) && Carbon::parse($passwordVerificationData?->created_at)->DiffInSeconds() < $OTPIntervalTime) {
                 $time = $OTPIntervalTime - Carbon::parse($passwordVerificationData?->created_at)->DiffInSeconds();
@@ -881,18 +869,9 @@ class CustomerAPIAuthController extends Controller
                 return response()->json(['errors' => $errors], 403);
             }
 
-            $token = (env('APP_MODE') == 'live') ? random_int(100000, 999999) : 123456;
+            $token = random_int(100000, 999999);
 
-            DB::table('password_resets')->updateOrInsert(['identity' => $request['email_or_phone']], [
-                'token' => $token,
-                'created_at' => now(),
-            ]);
-
-            DB::table('phone_or_email_verifications')->insert([
-                'phone_or_email' => $request['email_or_phone'],
-                'token' => $token,
-                'created_at' => now(),
-            ]);
+            app(\App\Services\PasswordResetCredentialService::class)->issue('customer', $customer, $request['email_or_phone'], (string)$token);
 
             if ($request['type'] == 'phone') {
                 $response = SMSModule::sendCentralizedSMS($customer['phone'], $token);
@@ -999,11 +978,7 @@ class CustomerAPIAuthController extends Controller
 
     public function firebaseAuthTokenStore(Request $request): JsonResponse
     {
-        $this->phoneOrEmailVerificationRepo->updateOrCreate(params: ['phone_or_email' => $request['identity']], value: [
-            'phone_or_email' => $request['identity'],
-            'token' => $request['token'],
-        ]);
-        return response()->json(['message' => translate('Token_is_successfully_Saved')], 200);
+        return response()->json(['message'=>'Caller-provided verification tokens are not accepted.'],403);
     }
 
 }

@@ -94,6 +94,8 @@ class Seller extends Authenticatable
     ];
 
     protected $hidden = [
+        'auth_token',
+        'remember_token',
         'password',
         'feed_token',
     ];

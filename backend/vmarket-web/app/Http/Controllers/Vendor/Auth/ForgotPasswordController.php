@@ -25,6 +25,7 @@ use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Pagination\LengthAwarePaginator;
 use Illuminate\Support\Str;
+use Illuminate\Support\Carbon;
 
 class ForgotPasswordController extends BaseController
 {
@@ -94,7 +95,7 @@ class ForgotPasswordController extends BaseController
                 }
                 if ($emailServicesSmtp['status'] == 1) {
                     $token = Str::random(120);
-                    $this->passwordResetRepo->add($this->passwordResetService->getAddData(identity: $request['identity'], token: $token, userType: 'seller'));
+                    app(\App\Services\PasswordResetCredentialService::class)->issue('seller',$vendor,$request['identity'],(string)$token);
                     $resetUrl = route('vendor.auth.forgot-password.reset-password', ['token' => $token]);
                     try {
                         $data = [
@@ -134,7 +135,7 @@ class ForgotPasswordController extends BaseController
             if (isset($vendor)) {
                 $response = "not_found";
                 $smsErrorMsg = translate('something_went_wrong.') . ' ' . translate('please_try_again_after_sometime');
-                $token = (env('APP_MODE') == 'live') ? random_int(100000, 999999) : 123456;
+                $token = random_int(100000, 999999);
 
                 $firebaseOTPVerification = getWebConfig(name: 'firebase_otp_verification') ?? [];
                 if ($firebaseOTPVerification && $firebaseOTPVerification['status']) {
@@ -157,7 +158,11 @@ class ForgotPasswordController extends BaseController
                     }
                 }
 
-                $this->passwordResetRepo->add($this->passwordResetService->getAddData(identity: $request['identity'], token: $token, userType: 'seller'));
+                if (($firebaseOTPVerification['status']??false)) {
+                    $this->passwordResetRepo->add($this->passwordResetService->getAddData(identity: $request['identity'], token: $token, userType: 'seller'));
+                } else {
+                    app(\App\Services\PasswordResetCredentialService::class)->issue('seller',$vendor,$request['identity'],(string)$token);
+                }
 
                 if (env('APP_MODE') == 'dev') {
                     if ($request->ajax()) {
@@ -215,35 +220,21 @@ class ForgotPasswordController extends BaseController
     public function submitOTPVerificationCode(Request $request): RedirectResponse
     {
         $identity = session(SessionKey::FORGOT_PASSWORD_IDENTIFY);
-        $verificationData = $this->passwordResetRepo->getFirstWhere(params: ['user_type' => 'seller', 'identity' => $identity]);
-        $OTPVerificationData = $this->passwordResetRepo->getFirstWhere(params: ['user_type' => 'seller', 'identity' => $identity, 'token' => $request['token']]);
-
-        $tokenVerifyStatus = false;
-        $firebaseOTPVerification = getWebConfig(name: 'firebase_otp_verification') ?? [];
-        if ($firebaseOTPVerification && $firebaseOTPVerification['status']) {
-            $firebaseVerify = $this->firebaseService->verifyOtp($verificationData['token'], $verificationData['identity'], $request['token']);
-            $tokenVerifyStatus = (bool)($firebaseVerify['status'] == 'success');
-            if (!$tokenVerifyStatus) {
-                $verificationData = $this->passwordResetRepo->getFirstWhere(params: ['user_type' => 'seller', 'identity' => $identity]);
-                $this->passwordResetRepo->updateOrCreate(params: ['user_type' => 'seller', 'identity' => $identity], value: [
-                    'otp_hit_count' => ($verificationData['otp_hit_count'] + 1),
-                    'updated_at' => now(),
-                    'temp_block_time' => null,
-                ]);
-                ToastMagic::error(translate(strtolower($firebaseVerify['errors'])));
-                return redirect()->back();
-            }
-        } else {
-            $tokenVerifyStatus = (bool)$OTPVerificationData;
+        $record = $this->passwordResetRepo->getFirstWhere(params: ['user_type'=>'seller','identity'=>$identity]);
+        $proof=(string)$request->token;
+        $service=app(\App\Services\PasswordResetCredentialService::class);
+        if ($record && $record->purpose==='firebase_pending') {
+            if (!($record->created_at && Carbon::parse($record->created_at)->addMinutes(15)->gt(now()))) return back();
+            $verified=$this->firebaseService->verifyOtp($record->token,$identity,$proof);
+            if (($verified['status']??'')!=='success' || ($verified['result']['phoneNumber']??null)!==$identity) return back();
+            $vendor=\App\Models\Seller::find($record->account_id);
+            if (!$vendor || $vendor->phone!==$identity) return back();
+            $proof=Str::random(64); $service->issue('seller',$vendor,$identity,$proof);
         }
-
-        if ($tokenVerifyStatus) {
-            return redirect()->route('vendor.auth.forgot-password.reset-password', [
-                'token' => $verificationData['token']
-            ]);
+        if ($service->verify('seller',(string)$identity,$proof)) {
+            return redirect()->route('vendor.auth.forgot-password.reset-password',['token'=>$proof]);
         }
-        ToastMagic::error(translate('invalid_otp'));
-        return redirect()->back();
+        ToastMagic::error(translate('invalid_otp')); return back();
     }
 
     /**
@@ -253,8 +244,8 @@ class ForgotPasswordController extends BaseController
      */
     public function getPasswordResetView(Request $request): View|RedirectResponse
     {
-        $passwordResetData = $this->passwordResetRepo->getFirstWhere(params: ['user_type' => 'seller', 'token' => $request['token']]);
-        if (isset($passwordResetData)) {
+        $passwordResetData = $this->passwordResetRepo->getFirstWhere(params: ['user_type' => 'seller', 'purpose'=>'password_reset', 'token' => hash('sha256',(string)$request['token'])]);
+        if ($passwordResetData && app(\App\Services\PasswordResetCredentialService::class)->verify('seller',$passwordResetData->identity,(string)$request->token)) {
             // [AI] Expiration Guard: Ensure reset token is not older than 15 minutes
             if (Carbon::parse($passwordResetData['created_at'] ?? $passwordResetData['updated_at'])->addMinutes(15)->isPast()) {
                 ToastMagic::error(translate('OTP_expired_please_request_a_new_one'));
@@ -274,7 +265,7 @@ class ForgotPasswordController extends BaseController
      */
     public function resetPassword(VendorPasswordRequest $request): JsonResponse|RedirectResponse
     {
-        $passwordResetData = $this->passwordResetRepo->getFirstWhere(params: ['user_type' => 'seller', 'token' => $request['reset_token']]);
+        $passwordResetData = $this->passwordResetRepo->getFirstWhere(params: ['user_type' => 'seller', 'purpose'=>'password_reset', 'token' => hash('sha256',(string)$request['reset_token'])]);
         if ($passwordResetData) {
             // [AI] Expiration Guard: Ensure reset token is not older than 15 minutes
             if (Carbon::parse($passwordResetData['created_at'] ?? $passwordResetData['updated_at'])->addMinutes(15)->isPast()) {
@@ -285,9 +276,10 @@ class ForgotPasswordController extends BaseController
                 return redirect()->route('vendor.auth.login');
             }
 
-            $vendor = $this->vendorRepo->getFirstWhere(params: ['identity' => $passwordResetData['identity']]);
-            $this->vendorRepo->update(id: $vendor['id'], data: ['password' => bcrypt($request['password'])]);
-            $this->passwordResetRepo->delete(params: ['id' => $passwordResetData['id']]);
+            if (!app(\App\Services\PasswordResetCredentialService::class)->consume('seller',$passwordResetData->identity,(string)$request->reset_token,(string)$request->password)) {
+                if ($request->ajax()) return response()->json(['error'=>'Invalid or expired reset credential.'],403);
+                return back();
+            }
             if ($request->ajax()) {
                 return response()->json([
                     'passwordUpdate' => 1,

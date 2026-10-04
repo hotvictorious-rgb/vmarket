@@ -33,6 +33,8 @@ class VendorEmployee extends Authenticatable
     protected $table = 'vendor_employees';
 
     protected $hidden = [
+        'auth_token',
+        'remember_token',
         'password',
         'remember_token',
     ];

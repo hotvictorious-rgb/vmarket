@@ -7,6 +7,7 @@ use App\Contracts\Repositories\VendorRepositoryInterface;
 use App\Events\PasswordResetEvent;
 use App\Http\Controllers\Controller;
 use App\Models\Seller;
+use Illuminate\Support\Carbon;
 use App\Traits\CustomerTrait;
 use App\Utils\Helpers;
 use App\Utils\SMSModule;
@@ -40,18 +41,13 @@ class ForgotPasswordController extends Controller
         }
 
         $verification_by = getWebConfig(name: 'vendor_forgot_password_method');
-        DB::table('password_resets')->where('user_type', 'seller')->where('identity', 'like', "%{$request['identity']}%")->delete();
+
 
         if ($verification_by == 'email') {
             $seller = Seller::Where(['email' => $request['identity']])->first();
             if (isset($seller)) {
                 $token = Str::random(120);
-                DB::table('password_resets')->insert([
-                    'identity' => $seller['email'],
-                    'token' => $token,
-                    'user_type' => 'seller',
-                    'created_at' => now(),
-                ]);
+                app(\App\Services\PasswordResetCredentialService::class)->issue('seller', $seller, $seller['email'], (string)$token);
                 $reset_url = route('vendor.auth.forgot-password.reset-password', ['token' => $token]);
 
                 $emailServices_smtp = getWebConfig(name: 'mail_config');
@@ -77,13 +73,8 @@ class ForgotPasswordController extends Controller
         } elseif ($verification_by == 'phone') {
             $seller = Seller::where('phone', $request['identity'])->first();
             if (isset($seller)) {
-                $token = (env('APP_MODE') == 'live') ? random_int(100000, 999999) : 123456;
-                DB::table('password_resets')->insert([
-                    'identity' => $seller['phone'],
-                    'token' => $token,
-                    'user_type' => 'seller',
-                    'created_at' => now(),
-                ]);
+                $token = random_int(100000, 999999);
+                app(\App\Services\PasswordResetCredentialService::class)->issue('seller', $seller, $seller['phone'], (string)$token);
 
                 $response = SMSModule::sendCentralizedSMS($seller->phone, $token);
                 if (env('APP_MODE') == 'dev') {
@@ -103,101 +94,26 @@ class ForgotPasswordController extends Controller
 
     public function otp_verification_submit(Request $request): JsonResponse
     {
-        $validator = Validator::make($request->all(), [
-            'identity' => 'required',
-            'otp' => 'required'
-        ]);
-
-        if ($validator->fails()) {
-            return response()->json(['errors' => Helpers::validationErrorProcessor($validator)], 403);
-        }
-
-        $id = $request['identity'];
-        $data = DB::table('password_resets')
-            ->where('user_type', 'seller')
-            ->where(['token' => $request['otp']])
-            ->where('identity', $id)
-            ->orderBy('created_at', 'desc')
-            ->first();
-
-        if (isset($data)) {
-            if (Carbon::parse($data->created_at)->addMinutes(15)->isPast()) {
-                return response()->json(['errors' => [
-                    ['code' => 'expired', 'message' => translate('OTP_expired_please_request_a_new_one')]
-                ]], 403);
-            }
-            return response()->json(['message' => 'otp verified.'], 200);
-        }
-
-        return response()->json(['errors' => [
-            ['code' => 'not-found', 'message' => 'invalid OTP']
-        ]], 404);
+        $identity=$request->input('identity'); $token=$request->input('otp');
+        $ok=is_string($identity) && is_string($token) && app(\App\Services\PasswordResetCredentialService::class)->verify('seller',$identity,$token);
+        return response()->json(['message'=>$ok ? 'OTP verified.' : 'Invalid or expired password-reset credential.'], $ok ? 200 : 403);
     }
 
-    public function reset_password_submit(Request $request): JsonResponse
+    public function reset_password_submit(Request $request)
     {
-        $validator = Validator::make($request->all(), [
-            'identity' => 'required',
-            'otp' => 'required',
-            'password' => 'required|same:confirm_password|min:8',
+        $identity = $request->input('identity', $request->input('phone'));
+        $validator = Validator::make($request->all() + ['identity'=>$identity], [
+            'identity'=>'required|string','otp'=>'required|string','password'=>'required|string|same:confirm_password|min:8',
         ]);
-
-        if ($validator->fails()) {
-            return response()->json(['errors' => Helpers::validationErrorProcessor($validator)], 403);
-        }
-
-        $data = DB::table('password_resets')
-            ->where('user_type', 'seller')
-            ->where('identity', $request['identity'])
-            ->where(['token' => $request['otp']])
-            ->orderBy('created_at', 'desc')
-            ->first();
-
-        $data2 = DB::table('phone_or_email_verifications')
-            ->where(['token' => $request['otp']])
-            ->where('phone_or_email', $request['identity'])
-            ->orderBy('created_at', 'desc')
-            ->first();
-
-        $targetRecord = $data ?? $data2;
-
-        if ($targetRecord) {
-            // [AI] Expiration Guard: Ensure OTP is not older than 15 minutes
-            if (Carbon::parse($targetRecord->created_at)->addMinutes(15)->isPast()) {
-                return response()->json(['errors' => [
-                    ['code' => 'expired', 'message' => translate('OTP_expired_please_request_a_new_one')]
-                ]], 403);
-            }
-
-            DB::table('sellers')->where('phone', $request['identity'])->orWhere('email', $request['identity'])
-                ->update([
-                    'password' => bcrypt(str_replace(' ', '', $request['password']))
-                ]);
-
-            DB::table('password_resets')
-                ->where('user_type', 'seller')
-                ->where('identity', $request['identity'])
-                ->delete();
-
-            DB::table('phone_or_email_verifications')
-                ->where(['token' => $request['otp']])
-                ->where('phone_or_email', $request['identity'])
-                ->delete();
-
-            return response()->json(['message' => 'Password changed successfully.'], 200);
-        }
-        return response()->json(['errors' => [
-            ['code' => 'invalid', 'message' => 'Invalid token.']
-        ]], 400);
+        if ($validator->fails()) return response()->json(['errors'=>Helpers::validationErrorProcessor($validator)], 403);
+        $ok = app(\App\Services\PasswordResetCredentialService::class)->consume('seller', $identity, $request->otp, $request->password);
+        return response()->json(['message'=>$ok ? 'Password changed successfully.' : 'Invalid or expired password-reset credential.'], $ok ? 200 : 403);
     }
 
     public function firebaseAuthTokenStore(Request $request): JsonResponse
     {
-        $this->phoneOrEmailVerificationRepo->updateOrCreate(params: ['phone_or_email' => $request['identity']], value: [
-            'phone_or_email' => $request['identity'],
-            'token' => $request['token'],
-        ]);
-        return response()->json(['message' => translate('Token_is_successfully_Saved')], 200);
+        // [AI] A caller-provided Firebase session is not an identity or password-reset credential.
+        return response()->json(['message'=>'Caller-provided verification tokens are not accepted.'],403);
     }
 
     public function firebaseAuthVerify(Request $request): JsonResponse
@@ -210,16 +126,6 @@ class ForgotPasswordController extends Controller
 
         if ($validator->fails()) {
             return response()->json(['errors' => Helpers::validationErrorProcessor($validator)], 403);
-        }
-
-        $verificationData = $this->phoneOrEmailVerificationRepo->getFirstWhere(params: ['phone_or_email' => $request['phoneNumber']]);
-        $verifyStatus = $this->checkCustomerOTPBlockTimeOrInvalid(verificationData: $verificationData, identity: $request['phoneNumber']);
-        if ($verifyStatus['status'] == 1) {
-            return response()->json([
-                'errors' => [
-                    ['code' => $verifyStatus['code'], 'message' => $verifyStatus['message']]
-                ]
-            ], 403);
         }
 
         $firebaseOTPVerification = getWebConfig(name: 'firebase_otp_verification');
@@ -239,20 +145,14 @@ class ForgotPasswordController extends Controller
             return response()->json(['errors' => $errors], 403);
         }
 
-        $seller = $this->vendorRepo->getFirstWhere(params: ['identity' => $request['phoneNumber']]);
-
-        $check = DB::table('phone_or_email_verifications')
-            ->where(['token' => $request['sessionInfo']])
-            ->where('phone_or_email', 'like', "%{$request['phoneNumber']}%")
-            ->first();
-
-        if ($seller && isset($check)) {
-            return response()->json(['message' => 'otp verified.'], 200);
+        if (!$response->successful() || empty($responseData['phoneNumber']) || $responseData['phoneNumber'] !== $request->phoneNumber) {
+            return response()->json(['message'=>'Firebase phone proof does not match reset identity.'],403);
         }
-
-        return response()->json(['errors' => [
-            ['code' => 'not-found', 'message' => 'invalid OTP']
-        ]], 404);
+        $seller = Seller::where('phone',$responseData['phoneNumber'])->first();
+        if (!$seller) return response()->json(['message'=>'Account not found.'],403);
+        $resetToken=Str::random(64);
+        app(\App\Services\PasswordResetCredentialService::class)->issue('seller',$seller,$responseData['phoneNumber'],$resetToken);
+        return response()->json(['message'=>'OTP verified.','reset_token'=>$resetToken,'identity'=>$responseData['phoneNumber']],200);
     }
 
     public function checkVendorExistInfo(Request $request): JsonResponse

@@ -66,6 +66,12 @@ class AppServiceProvider extends ServiceProvider
 
     public function boot(): void
     {
+        // [AI] Only successful login establishes a fresh session version; ordinary authenticated reads never renew stale sessions.
+        \Illuminate\Support\Facades\Event::listen(\Illuminate\Auth\Events\Login::class, function ($event) {
+            if (in_array($event->guard, ['customer','seller'], true) && request()->hasSession()) {
+                request()->session()->put('credential_version_'.$event->guard, (int)$event->user->getRawOriginal('credential_version'));
+            }
+        });
         if (!in_array(request()->ip(), ['127.0.0.1', '::1']) && env('FORCE_HTTPS')) {
             \URL::forceScheme('https');
         }

@@ -475,7 +475,7 @@ class CustomerAuthController extends Controller
             $tokenVerifyStatus = false;
             if ($firebaseOTPVerification && $firebaseOTPVerification['status']) {
                 $firebaseVerify = $this->firebaseService->verifyOtp($verificationData['token'], $verificationData['phone_or_email'], $request['token']);
-                $tokenVerifyStatus = (bool)($firebaseVerify['status'] == 'success');
+                $tokenVerifyStatus = ($firebaseVerify['status']??'')==='success' && ($firebaseVerify['result']['phoneNumber']??null)===$identity;
                 if (!$tokenVerifyStatus) {
                     $verificationData = $this->phoneOrEmailVerificationRepo->getFirstWhere(params: ['phone_or_email' => $identity]);
                     $this->phoneOrEmailVerificationRepo->updateOrCreate(params: ['phone_or_email' => $identity], value: [
@@ -510,9 +510,15 @@ class CustomerAuthController extends Controller
                 $user = $this->customerRepo->getByIdentity(filters: ['identity' => $identity]);
                 $this->phoneOrEmailVerificationRepo->delete(params: ['phone_or_email' => $identity]);
                 if (isset($request['type']) && $request['type'] == 'password-reset') {
-                    auth('customer')->login($user);
-                    CustomerManager::updateCustomerSessionData(userId: auth('customer')->id());
-                    return redirect($authAttemptRedirectUrl);
+                    if (!$user || !$user->is_active) return back();
+                    $proof=(string)$request->token;
+                    $resetService=app(\App\Services\PasswordResetCredentialService::class);
+                    if (($firebaseOTPVerification['status']??false)) {
+                        $proof=Str::random(64);$resetService->issue('customer',$user,$identity,$proof);
+                    } elseif (!$resetService->verify('customer',$identity,$proof)) {
+                        Toastr::error(translate('Invalid_credentials'));return back();
+                    }
+                    return redirect()->route('customer.auth.reset-password',['identity'=>base64_encode($identity),'token'=>$proof]);
                 } elseif ($user && ($user['name'] == null)) {
                     return redirect()->route('customer.auth.login.update-info', ['identity' => base64_encode($identity)]);
                 } elseif ($user && $user['name']) {

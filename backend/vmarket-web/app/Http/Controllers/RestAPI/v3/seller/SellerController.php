@@ -52,10 +52,11 @@ class SellerController extends Controller
 
     public function logout(Request $request): JsonResponse
     {
-        if ($request->has('seller') && $request->seller) {
-            Seller::where('id', $request->seller->id)->update(['auth_token' => null]);
-        } elseif ($request->has('employee') && $request->employee) {
-            \App\Models\VendorEmployee::where('id', $request->employee->id)->update(['auth_token' => null]);
+        // [AI] Middleware binds the actual principal independently of its owning seller context.
+        if ($request->attributes->get('authenticated_vendor_employee')) {
+            \App\Models\VendorEmployee::whereKey($request->attributes->get('authenticated_vendor_employee')->id)->update(['auth_token'=>null]);
+        } elseif ($request->attributes->get('authenticated_seller')) {
+            Seller::whereKey($request->attributes->get('authenticated_seller')->id)->update(['auth_token'=>null]);
         }
         return response()->json(['message' => translate('Successfully logged out')], 200);
     }
@@ -242,7 +243,13 @@ class SellerController extends Controller
             $data['branch_id'] = $data->shop?->id;
         }
 
-        return response()->json($data, 200);
+        // [AI] Explicit presentation DTO; bearer digests and owner banking credentials never reach employee clients.
+        $dto = $data->only(['id','f_name','l_name','email','phone','image','status','country_code','shop','wallet',
+            'product_count','orders_count','minimum_order_amount','free_delivery_over_amount','free_delivery_status',
+            'free_delivery_features_status','free_delivery_responsibility','minimum_order_amount_by_seller',
+            'is_employee','employee_shop_id','branch_id','employee_name','employee_role','pos_status']);
+        if ($data['is_employee']) unset($dto['wallet']);
+        return response()->json($dto, 200);
     }
 
     public function shop_info_update(ShopInfoUpdateRequest $request): JsonResponse

@@ -23,13 +23,16 @@ class SellerApiAuthMiddleware
         if (count($token) > 1 && strlen($token[1]) > 30) {
             $rawToken = $token[1];
             $hashedToken = hash('sha256', $rawToken);
-            $seller = Seller::where('auth_token', $hashedToken)->orWhere('auth_token', $rawToken)->first();
+            $seller = Seller::where('auth_token', $hashedToken)->first();
             if (isset($seller)) {
                 if ($seller->status !== 'approved') {
                     return response()->json([
                         'auth-001' => translate('Your account is not approved or has been suspended.')
                     ], 403);
                 }
+                $request->attributes->set('authenticated_seller', $seller);
+                $request->attributes->set('authenticated_vendor_employee', null);
+                $request->merge(['vendor_employee'=>null,'employee'=>null,'is_vendor_employee'=>false]);
                 $request['seller'] = $seller;
                 return $next($request);
             }
@@ -37,7 +40,7 @@ class SellerApiAuthMiddleware
                 // Check if token belongs to an active Vendor Employee
             $employee = \App\Models\VendorEmployee::with('seller', 'role', 'shop')
                 ->where('auth_token', $hashedToken)
-                ->orWhere('auth_token', $rawToken)
+
                 ->first();
             if (isset($employee)) {
                 if (!$employee->status) {
@@ -103,7 +106,7 @@ class SellerApiAuthMiddleware
 
                     // B) Order resource check: inspect ALL provided order identifiers
                     $orderIdsToCheck = [];
-                    if ($request->is('*seller/order*') || $request->is('*seller/orders*')) {
+                    if ($request->is('*seller/order*') || $request->is('*seller/orders*') || $request->is('*seller/delivery-man/order-status-history/*')) {
                         if ($request->route('id')) $orderIdsToCheck[] = $request->route('id');
                         if ($request->route('order_id')) $orderIdsToCheck[] = $request->route('order_id');
                         if ($request->has('id') && is_numeric($request->input('id'))) $orderIdsToCheck[] = $request->input('id');
@@ -134,7 +137,7 @@ class SellerApiAuthMiddleware
                 $module = null;
                 if ($request->is('*seller/products*') || $request->is('*seller/product*')) {
                     $module = 'product';
-                } elseif ($request->is('*seller/orders*') || $request->is('*seller/order*')) {
+                } elseif ($request->is('*seller/orders*') || $request->is('*seller/order*') || $request->is('*seller/delivery-man/order-status-history/*')) {
                     $module = 'order';
                 } elseif ($request->is('*seller/pos*')) {
                     $module = 'pos';
@@ -163,6 +166,8 @@ class SellerApiAuthMiddleware
                 }
 
                 $request['seller'] = $employee->seller;
+                $request->attributes->set('authenticated_vendor_employee', $employee);
+                $request->attributes->set('authenticated_seller', $employee->seller);
                 $request['vendor_employee'] = $employee;
                 $request['employee_shop_id'] = $employee->shop_id;
                 $request['is_vendor_employee'] = true;

@@ -21,7 +21,7 @@ class DeliveryManAuth
         if (count($token) > 1 && strlen($token[1]) > 30) {
             $rawToken = $token[1];
             $hashedToken = hash('sha256', $rawToken);
-            $d_man = DeliveryMan::where('auth_token', $hashedToken)->orWhere('auth_token', $rawToken)->first();
+            $d_man = DeliveryMan::where('auth_token', $hashedToken)->first();
             if (isset($d_man)) {
                 if ($d_man->is_active != 1) {
                     return response()->json([

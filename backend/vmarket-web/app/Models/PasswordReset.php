@@ -27,6 +27,7 @@ class PasswordReset extends Model
 {
     use HasFactory;
     protected $fillable = [
+        'account_id', 'purpose', 'reset_attempts', 'reset_blocked_until',
         'identity',
         'token',
         'otp_hit_count',

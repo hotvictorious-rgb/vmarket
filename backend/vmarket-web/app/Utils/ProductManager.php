@@ -1330,10 +1330,16 @@ class ProductManager
 
     public static function getLocateSql(string $keyword, string $column = 'name'): string
     {
-        if (DB::getDriverName() === 'sqlite') {
-            return "INSTR({$column}, '{$keyword}')";
+        // [AI] SQL templates contain placeholders only; callers must bind $keyword separately.
+        // There are no current production callers. Retain the signature for compatibility.
+        if (!preg_match('/^[A-Za-z_][A-Za-z0-9_]*(\.[A-Za-z_][A-Za-z0-9_]*)?$/D', $column)) {
+            throw new \InvalidArgumentException('Invalid search ranking column.');
         }
-        return "LOCATE('{$keyword}', {$column})";
+        $column = DB::connection()->getQueryGrammar()->wrap($column);
+        if (DB::getDriverName() === 'sqlite') {
+            return "INSTR({$column}, ?)";
+        }
+        return "LOCATE(?, {$column})";
     }
 
     public static function getPriorityWiseSearchedProductQuery($query, $keyword, $dataLimit = 'all', $offset = 1, $appends = null, $type = null)

@@ -292,7 +292,7 @@ class WebController extends Controller
         }
 
         $seller_products = Product::marketplaceEligible()->withCount('reviews')->whereIn('id', $product_ids)
-            ->orderByRaw("LOCATE('{$request['name']}', name), name")->get();
+            ->orderByRaw('LOCATE(?, name), name', [(string)$request['name']])->get();
 
         return response()->json([
             'result' => view(VIEW_FILE_NAMES['product_search_result'], compact('products', 'seller_products'))->render(),
@@ -1470,4 +1470,3 @@ class WebController extends Controller
     }
 
 }
-

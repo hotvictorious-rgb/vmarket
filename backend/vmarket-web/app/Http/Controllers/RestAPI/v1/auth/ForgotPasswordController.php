@@ -53,21 +53,7 @@ class ForgotPasswordController extends Controller
                     return response()->json(['message' => translate('please_try_again_after').' '.CarbonInterval::seconds($time)->cascade()->forHumans()], 200);
                 }else {
                     $token = Str::random(120);
-                    $reset_data = PasswordReset::where(['identity' => $customer['email']])->latest()->first();
-                    if($reset_data){
-                        $reset_data->token = $token;
-                        $reset_data->created_at = now();
-                        $reset_data->updated_at = now();
-                        $reset_data->save();
-                    }else{
-                        $reset_data = new PasswordReset();
-                        $reset_data->identity = $customer['email'];
-                        $reset_data->token = $token;
-                        $reset_data->user_type = 'customer';
-                        $reset_data->created_at = now();
-                        $reset_data->updated_at = now();
-                        $reset_data->save();
-                    }
+                    app(\App\Services\PasswordResetCredentialService::class)->issue('customer', $customer, $customer['email'], (string)$token);
 
                     $reset_url = url('/') . '/customer/auth/reset-password?token=' . $token;
 
@@ -107,22 +93,8 @@ class ForgotPasswordController extends Controller
 
                     return response()->json(['message' => translate('please_try_again_after').' '.CarbonInterval::seconds($time)->cascade()->forHumans()], 200);
                 }else {
-                    $token = (env('APP_MODE') == 'live') ? random_int(100000, 999999) : 123456;
-                    $reset_data = PasswordReset::where(['identity' => $customer['phone']])->latest()->first();
-                    if($reset_data){
-                        $reset_data->token = $token;
-                        $reset_data->created_at = now();
-                        $reset_data->updated_at = now();
-                        $reset_data->save();
-                    }else{
-                        $reset_data = new PasswordReset();
-                        $reset_data->identity = $customer['phone'];
-                        $reset_data->token = $token;
-                        $reset_data->user_type = 'customer';
-                        $reset_data->created_at = now();
-                        $reset_data->updated_at = now();
-                        $reset_data->save();
-                    }
+                    $token = random_int(100000, 999999);
+                    app(\App\Services\PasswordResetCredentialService::class)->issue('customer', $customer, $customer['phone'], (string)$token);
 
                     SMSModule::sendCentralizedSMS($customer->phone, $token);
                     return response()->json([
@@ -139,108 +111,20 @@ class ForgotPasswordController extends Controller
 
     public function tokenVerificationSubmit(Request $request): JsonResponse
     {
-        $validator = Validator::make($request->all(), [
-            'email_or_phone' => 'required',
-            'reset_token' => 'required'
-        ]);
-
-        if ($validator->fails()) {
-            return response()->json(['errors' => Helpers::validationErrorProcessor($validator)], 403);
-        }
-
-        $verificationData = $this->passwordResetRepo->getFirstWhere(params: ['identity' => $request['email_or_phone']]);
-        $verifyStatus = $this->checkPasswordResetOTPBlockTimeOrInvalid(verificationData: $verificationData, identity: $request['email_or_phone']);
-        if ($verifyStatus['status'] == 1) {
-            return response()->json([
-                'errors' => [
-                    ['code' => $verifyStatus['code'], 'message' => $verifyStatus['message']]
-                ]
-            ], 403);
-        }
-
-        $verify = $this->passwordResetRepo->getFirstWhere(params: ['identity' => $request['email_or_phone'], 'token' => $request['reset_token']]);
-        if ($verify) {
-            if (Carbon::parse($verify->created_at ?? $verify->updated_at)->addMinutes(15)->isPast()) {
-                return response()->json([
-                    'errors' => [
-                        ['code' => 'expired', 'message' => translate('OTP_expired_please_request_a_new_one')]
-                    ]
-                ], 403);
-            }
-            return response()->json(['message' => translate('otp_verified')], 200);
-        }
-
-        return response()->json([
-            'errors' => [
-                ['code' => 'token', 'message' => translate('OTP_is_not_matched')]
-            ]
-        ], 403);
+        $identity=$request->input('email_or_phone'); $token=$request->input('reset_token');
+        $ok=is_string($identity) && is_string($token) && app(\App\Services\PasswordResetCredentialService::class)->verify('customer',$identity,$token);
+        return response()->json(['message'=>$ok ? 'OTP verified.' : 'Invalid or expired password-reset credential.'], $ok ? 200 : 403);
     }
 
     public function reset_password_submit(Request $request)
     {
-        $validator = Validator::make($request->all(), [
-            'identity' => 'required',
-            'otp' => 'required',
-            'password' => 'required|same:confirm_password|min:8',
+        $identity = $request->input('identity', $request->input('phone'));
+        $validator = Validator::make($request->all() + ['identity'=>$identity], [
+            'identity'=>'required|string','otp'=>'required|string','password'=>'required|string|same:confirm_password|min:8',
         ]);
-
-        if ($validator->fails()) {
-            return response()->json(['errors' => Helpers::validationErrorProcessor($validator)], 403);
-        }
-
-        // [AI] Strict Rate Limiting & Account-Level Brute Force Protection:
-        // Enforce the same per-account attempt limits, block times, and failed hit counters as tokenVerificationSubmit
-        $verificationData = $this->passwordResetRepo->getFirstWhere(params: ['identity' => $request['identity'], 'user_type' => 'customer']);
-        $verifyStatus = $this->checkPasswordResetOTPBlockTimeOrInvalid(verificationData: $verificationData, identity: $request['identity']);
-        if ($verifyStatus['status'] == 1) {
-            return response()->json([
-                'errors' => [
-                    ['code' => $verifyStatus['code'], 'message' => $verifyStatus['message']]
-                ]
-            ], 403);
-        }
-
-        $data = DB::table('password_resets')
-            ->where('user_type','customer')
-            ->where('identity', $request['identity'])
-            ->where(['token' => $request['otp']])->first();
-
-        if (!$data) {
-            $data = DB::table('phone_or_email_verifications')
-                ->where('phone_or_email', $request['identity'])
-                ->where(['token' => $request['otp']])->first();
-        }
-
-        if (isset($data)) {
-            // [AI] Expiration Guard: Ensure OTP is not older than 15 minutes
-            if (Carbon::parse($data->created_at ?? $data->updated_at)->addMinutes(15)->isPast()) {
-                return response()->json(['errors' => [
-                    ['code' => 'expired', 'message' => translate('OTP_expired_please_request_a_new_one')]
-                ]], 403);
-            }
-
-            $identity = $data->identity ?? ($data->phone_or_email ?? $request['identity']);
-            User::where('email', $identity)
-                ->orWhere('phone', $identity)
-                ->update([
-                    'password' => bcrypt(str_replace(' ', '', $request['password']))
-                ]);
-
-            DB::table('password_resets')
-                ->where('user_type','customer')
-                ->where('identity', $request['identity'])
-                ->delete();
-
-            DB::table('phone_or_email_verifications')
-                ->where('phone_or_email', $request['identity'])
-                ->delete();
-
-            return response()->json(['message' => translate('password_changed_successfully')], 200);
-        }
-
-        return response()->json(['errors' => [
-            ['code' => 'invalid', 'message' => translate('invalid_token')]
-        ]], 400);
+        if ($validator->fails()) return response()->json(['errors'=>Helpers::validationErrorProcessor($validator)], 403);
+        $ok = app(\App\Services\PasswordResetCredentialService::class)->consume('customer', $identity, $request->otp, $request->password);
+        return response()->json(['message'=>$ok ? 'Password changed successfully.' : 'Invalid or expired password-reset credential.'], $ok ? 200 : 403);
     }
+
 }

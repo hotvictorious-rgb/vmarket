@@ -248,6 +248,25 @@ class DeliveryManController extends Controller
 
     public function order_status_history(Request $request, $id): JsonResponse
     {
+        // [AI] History is a nested order resource; rider ownership alone cannot grant order access.
+        $sellerId = (int)data_get($request->attributes->get('authenticated_seller'), 'id', 0);
+        $order = Order::where('id', $id)->where('seller_id', $sellerId)->where('seller_is', 'seller')->first();
+        if (!$sellerId || !$order) { return response()->json(['message' => 'Order not found.'], 404); }
+        $employee = $request->attributes->get('authenticated_vendor_employee');
+        if ($employee) {
+            $access = false;
+            foreach (['order','orders','order_management'] as $module) { $access = $access || $employee->hasModuleAccess($module); }
+            if ((int)$employee->seller_id !== $sellerId || !$access) { return response()->json(['message' => 'Order access denied.'], 403); }
+            if ($employee->shop_id) {
+                $pickup = \App\Models\PickupReservation::where('order_id', $order->id)->first();
+                $products = $order->details()->with('product')->get();
+                $knownBranch = $pickup ? $employee->canAccessShop((int)$pickup->shop_id) : $products->isNotEmpty();
+                foreach ($products as $detail) {
+                    if (!$detail->product || !$employee->canAccessShop($detail->product->shop_id)) { $knownBranch = false; }
+                }
+                if (!$knownBranch) { return response()->json(['message' => 'Order branch access denied.'], 403); }
+            }
+        }
         $histories = OrderStatusHistory::where(['order_id' => $id])
             ->latest()
             ->get();
