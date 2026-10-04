@@ -814,6 +814,7 @@
                 },
                 success: function(response) {
                     if (response.status) {
+                        window.location.assign("{{ route('pickup-reservations.index') }}");
                         toastr.success(response.message || "{{ translate('reservation_created_successfully') ?? 'Reservation created successfully!' }}");
                         window.location.href = "{{ route('account-oder') }}";
                     } else {

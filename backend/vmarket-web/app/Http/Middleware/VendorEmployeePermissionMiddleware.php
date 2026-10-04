@@ -42,7 +42,7 @@ class VendorEmployeePermissionMiddleware
             if ($request->is('*vendor/employee*') || $request->is('*seller/employee*') ||
                 $request->is('*vendor/roles*') || $request->is('*seller/roles*') ||
                 $request->is('*vendor/custom-role*') || $request->is('*seller/custom-role*') ||
-                $request->is('*vendor/withdraw*') || $request->is('*seller/withdraw*') ||
+                $request->is('*vendor/withdraw*') || $request->is('*vendor/delivery-man/withdraw*') || $request->is('*seller/withdraw*') ||
                 $request->is('*vendor/payment-info*') || $request->is('*seller/payment-info*') ||
                 $request->is('*vendor/shop/update-bank*') || $request->is('*seller/shop/update-bank*') ||
                 $request->is('*vendor/business-settings*') || $request->is('*seller/business-settings*') ||

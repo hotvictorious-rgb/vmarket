@@ -11,6 +11,8 @@ use App\Models\CashbackRedemption;
 use App\Models\CheckoutIntent;
 use App\Models\DeliveryLane;
 use App\Models\Product;
+use App\Models\PaymentRequest;
+use App\Exceptions\InvalidPaymentStateException;
 use App\Models\Shop;
 use App\Models\ShippingAddress;
 use App\Models\User;
@@ -300,6 +302,8 @@ class DeliveryCheckoutIntentService
             $canonicalBillingAddress,
             $vendorGroups
         ) {
+            // [AI] Serialize customer funding before intent/payment locks, matching settlement.
+            $lockedCustomer = User::where('id', $customerId)->lockForUpdate()->firstOrFail();
             // Check for existing intent with the SAME idempotency key
             $existingByKey = CheckoutIntent::where('idempotency_key', $idempotencyKey)
                 ->lockForUpdate()
@@ -323,7 +327,9 @@ class DeliveryCheckoutIntentService
                 ->first();
 
             if ($existingActive) {
-                if (now()->greaterThanOrEqualTo($existingActive->expires_at)) {
+                if ($existingActive->status !== 'pending') {
+                    throw new InvalidPaymentStateException('Existing checkout is terminal. Refresh checkout status.');
+                } elseif (now()->greaterThanOrEqualTo($existingActive->expires_at)) {
                     // Stale active intent expired -> Release active token and any reserved cashback under lock
                     $existingActive->update([
                         'status' => 'expired',
@@ -336,6 +342,10 @@ class DeliveryCheckoutIntentService
                     // Active intent for identical cart state already exists
                     return $existingActive;
                 } else {
+                    // [AI] A second device cannot supersede an unresolved payable attempt.
+                    if (PaymentRequest::where('order_group_id', $existingActive->order_group_id)->where('attempt_status', 'pending')->lockForUpdate()->exists()) {
+                        throw new InvalidPaymentStateException('An existing payment attempt must finish before changing checkout.');
+                    }
                     // Customer updated cart items or shipping address -> Supersede previous pending intent
                     $existingActive->update([
                         'status' => 'canceled',
@@ -351,18 +361,26 @@ class DeliveryCheckoutIntentService
             $cashbackAmount = '0.00';
             $pointsToReserve = '0.0000';
             $exchangeRate = (float) (getWebConfig(name: 'loyalty_point_exchange_rate') ?: 1);
-            $maxCapPercentage = (float) (getWebConfig(name: 'loyalty_point_max_order_redemption_percentage') ?: 100);
+            $maxCapPercentage = (float) (getWebConfig(name: 'loyalty_point_max_order_redemption_percentage') ?? 100);
             $loyaltyStatus = (int) (getWebConfig(name: 'loyalty_point_status') ?: 0);
             $minPoint = (float) (getWebConfig(name: 'loyalty_point_minimum_point') ?: 0);
 
             if ($useCashback && $loyaltyStatus === 1) {
-                $lockedCustomer = User::where('id', $customerId)->lockForUpdate()->first();
-                $activeReservedPoints = CashbackRedemption::where('customer_id', $customerId)
-                    ->where('status', 'reserved')
-                    ->lockForUpdate()
-                    ->sum('points') ?: '0.0000';
-
-                $userPoints = (string) ($lockedCustomer->loyalty_point ?? '0.0000');
+                // [AI] User anchor serializes expiry, reservation and capture; sum raw locked decimals, never SQL floats.
+                $reserved = CashbackRedemption::where('customer_id', $customerId)->where('status', 'reserved')->lockForUpdate()->get();
+                $activeReservedPoints = '0.0000'; $activeReservedCash = '0.00';
+                foreach ($reserved as $reservation) {
+                    $activeReservedPoints = bcadd($activeReservedPoints, (string)$reservation->getRawOriginal('points'), 4);
+                    $activeReservedCash = bcadd($activeReservedCash, (string)$reservation->getRawOriginal('cashback_amount'), 2);
+                }
+                $eligibleBacking = '0.00';
+                $lots = \App\Models\CustomerCashbackLedger::where('customer_id', $customerId)->where('status', 'available')
+                    ->where(fn($q) => $q->whereNull('expires_at')->orWhere('expires_at', '>', now()))
+                    ->orderBy('id')->lockForUpdate()->get();
+                foreach ($lots as $lot) $eligibleBacking = bcadd($eligibleBacking, (string)$lot->getRawOriginal('cashback_amount'), 2);
+                $eligibleBacking = bcsub($eligibleBacking, $activeReservedCash, 2);
+                if (bccomp($eligibleBacking, '0', 2) < 0) $eligibleBacking = '0.00';
+                $userPoints = (string) ($lockedCustomer->getRawOriginal('loyalty_point') ?? '0.0000');
                 $effectiveAvailable = bcsub($userPoints, (string) $activeReservedPoints, 4);
                 if (bccomp($effectiveAvailable, '0.0000', 4) < 0) {
                     $effectiveAvailable = '0.0000';
@@ -374,6 +392,7 @@ class DeliveryCheckoutIntentService
                     $maxNairaDiscount = bcmul($merchandiseSubtotal, bcdiv((string) $maxCapPercentage, '100', 4), 2);
                     // Value of customer's effective points in Naira
                     $pointsInNaira = bcmul($effectiveAvailable, (string) $exchangeRate, 2);
+                    if (bccomp($pointsInNaira, $eligibleBacking, 2) > 0) $pointsInNaira = $eligibleBacking;
                     // Actual cashback discount is min(pointsInNaira, maxNairaDiscount)
                     $cashbackAmount = (bccomp($pointsInNaira, $maxNairaDiscount, 2) > 0) ? $maxNairaDiscount : $pointsInNaira;
                     // Exact points corresponding to the cashback amount

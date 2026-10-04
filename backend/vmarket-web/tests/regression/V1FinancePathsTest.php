@@ -54,6 +54,8 @@ class V1FinancePathsTest extends \Tests\Feature\DumpSchemaTestCase
         $this->assertSame('sqlite', DB::connection()->getDriverName());
         $this->assertSame(':memory:', config('database.connections.sqlite.database'));
         Http::preventStrayRequests(); Event::fake();
+        (require base_path('database/migrations/2026_08_11_111907_add_proof_of_payment_to_withdraw_requests_table.php'))->up();
+        (require base_path('database/migrations/2026_10_04_000001_add_frozen_refund_allocations.php'))->up();
         (require base_path('database/migrations/2026_10_03_000001_add_expires_at_to_customer_cashback_ledgers_table.php'))->up();
         foreach (['vendor_settlement_status' => 'string', 'received_at' => 'timestamp', 'refund_window_expires_at' => 'timestamp',
             'settled_at' => 'timestamp', 'settlement_reference' => 'string', 'settled_by_id' => 'integer',

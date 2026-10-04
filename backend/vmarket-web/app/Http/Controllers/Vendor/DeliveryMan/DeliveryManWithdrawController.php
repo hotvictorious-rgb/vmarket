@@ -126,6 +126,7 @@ class DeliveryManWithdrawController extends BaseController
                 // [AI] Ownership & Idempotency Guard: Ensure withdraw belongs to vendor and is pending
                 $withdraw = \App\Models\WithdrawRequest::where('id', $withdrawId)
                     ->where('seller_id', $vendorId)
+                    ->whereNotNull('delivery_man_id')
                     ->where('approved', 0)
                     ->lockForUpdate()
                     ->first();
@@ -139,17 +140,10 @@ class DeliveryManWithdrawController extends BaseController
                     return ['status' => false, 'error' => translate('delivery_man_wallet_not_found')];
                 }
 
-                $updateWalletData = $this->deliveryManWalletService->getDeliveryManWalletData(
-                    request: $request, wallet: $wallet, withdraw: $withdraw
-                );
-
-                $this->withdrawRequestRepo->update(
-                    id: $withdraw->id,
-                    data: $this->deliveryManWithdrawService->getDeliveryManWithdrawData(request: $request)
-                );
-                $this->deliveryManWalletRepo->update(
-                    id: $wallet->id, data: $updateWalletData
-                );
+                $format = $this->deliveryManWithdrawService->getUpdateData($request, $wallet, $withdraw);
+                $this->withdrawRequestRepo->update(id: $withdraw->id, data: $format['withdraw']);
+                $this->deliveryManWalletRepo->update(id: $wallet->id, data: $format['wallet']);
+                \App\Services\AdminAuditService::log('vendor.rider_withdrawal_decision', \App\Models\WithdrawRequest::class, $withdraw->id, ['approved' => 0], ['approved' => (int)$request->approved, 'actor_type' => 'seller', 'actor_id' => $vendorId, 'amount' => (string)$withdraw->getRawOriginal('amount')], $request->note);
 
                 return ['status' => true, 'withdraw' => $withdraw];
             });

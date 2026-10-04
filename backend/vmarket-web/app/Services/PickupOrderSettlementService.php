@@ -194,7 +194,7 @@ class PickupOrderSettlementService
                 }
 
                 // ANOMALY CHECK 6: Currency Mismatch
-                $gatewayCurrency = strtoupper((string) ($gatewayData['currency'] ?? 'NGN'));
+                $gatewayCurrency = strtoupper((string) ($gatewayData['currency'] ?? ''));
                 if ($gatewayCurrency !== 'NGN' || strtoupper((string) $paymentRequest->currency_code) !== 'NGN') {
                     return $this->handlePermanentAnomaly(
                         $paymentRequest,
@@ -273,20 +273,27 @@ class PickupOrderSettlementService
 
                 if (!empty($additional['cashback_reservation']['redemption_id'])) {
                     $redemptionId = $additional['cashback_reservation']['redemption_id'];
-                    $redemption = CashbackRedemption::find($redemptionId);
+                    $redemption = CashbackRedemption::where('id', $redemptionId)->where('customer_id', $customerId)->where('pickup_reservation_id', $reservationId)->lockForUpdate()->first();
+                    if (!$redemption || $redemption->status !== 'reserved' || bccomp((string)$redemption->cashback_amount, (string)($additional['cashback_amount'] ?? '0'), 2) !== 0) {
+                        throw new \RuntimeException('Pickup reward funding reservation is unavailable.');
+                    }
                     if ($redemption && $redemption->status === 'reserved') {
                         $redemption->capture(); // captures immediately
 
                         $customer = User::where('id', $customerId)->lockForUpdate()->first();
                         if ($customer) {
-                            $customer->decrement('loyalty_point', (float) $redemption->points);
-                            $freshBalance = (float) DB::table('users')->where('id', $customerId)->value('loyalty_point');
+                            if (bccomp((string)$customer->getRawOriginal('loyalty_point'), (string)$redemption->points, 4) < 0) {
+                                throw new \RuntimeException('Insufficient pickup reward points at capture.');
+                            }
+                            $customer->loyalty_point = bcsub((string)$customer->getRawOriginal('loyalty_point'), (string)$redemption->points, 4);
+                            $customer->save();
+                            $freshBalance = (string) DB::table('users')->where('id', $customerId)->value('loyalty_point');
 
                             DB::table('loyalty_point_transactions')->insert([
                                 'user_id' => $customerId,
                                 'transaction_id' => Str::uuid()->toString(),
                                 'credit' => 0.0000,
-                                'debit' => (float) $redemption->points,
+                                'debit' => (string) $redemption->points,
                                 'balance' => $freshBalance,
                                 'reference' => 'pickup-' . $reservation->reservation_code,
                                 'transaction_type' => 'cashback_redemption',
@@ -295,7 +302,7 @@ class PickupOrderSettlementService
                             ]);
 
                             // Transition customer_cashback_ledgers rows to 'redeemed'
-                            CustomerCashbackLedger::markRedeemed($customerId, (string) $redemption->cashback_amount, $createdOrderId, $reservation->created_at);
+                            CustomerCashbackLedger::markRedeemed($customerId, (string) $redemption->cashback_amount, $createdOrderId, $redemption->created_at);
                         }
 
                         $cashbackRedeemed = [
@@ -393,11 +400,12 @@ class PickupOrderSettlementService
             }
 
             return $result;
-        } catch (PostPaymentStockFailureException $e) {
+        } catch (\Throwable $e) {
             // PHASE 1 COMPLETED: Settlement transaction rolled back completely. Zero partial orders or holds.
             // PHASE 2: Start a NEW independent transaction to persist the reconciliation anomaly record.
-            Log::warning("PickupOrderSettlement: Post-payment stock failure detected. Entering Phase 2 reconciliation: " . $e->getMessage());
-            return $this->persistStockFailureReconciliation($verifiedReference, $gatewayData, $e->getMessage());
+            $anomaly = $e instanceof PostPaymentStockFailureException ? 'post_payment_stock_failure' : 'post_payment_settlement_failure';
+            Log::warning('PickupOrderSettlement: Verified capture settlement failed; recording reconciliation.', ['anomaly' => $anomaly, 'reason' => $e->getMessage()]);
+            return $this->persistStockFailureReconciliation($verifiedReference, $gatewayData, $e->getMessage(), $anomaly);
         }
     }
 
@@ -440,7 +448,11 @@ class PickupOrderSettlementService
 
         // Exact Money Calculations via BCMath (Zero Float Drift: Δ = ₦0.00)
         $subtotal = bcadd((string) ($snapshot['subtotal'] ?? '0.00'), '0', 2);
-        $orderAmount = bcadd((string) $reservation->total_amount, '0', 2);
+        // [AI] Cash and rewards are separate funding legs of the same gross escrow.
+        $orderAmount = bcadd((string) $paymentRequest->payment_amount, '0', 2);
+        if (bccomp(bcadd($orderAmount, $cashbackDiscount, 2), (string)$reservation->total_amount, 2) !== 0) {
+            throw new \RuntimeException('Pickup cash and reward funding do not match snapshot total.');
+        }
         $pickupTax = bcadd((string)($snapshot['tax'] ?? '0.00'), '0', 2);
         $pickupMerchandise = $subtotal;
         $rawCommission = bcdiv(bcmul($pickupMerchandise, '10', 4), '100', 4);
@@ -471,7 +483,7 @@ class PickupOrderSettlementService
             'coupon_code' => null,
             'coupon_discount_bearer' => 'inhouse',
             'order_amount' => $orderAmount,
-            'init_order_amount' => $orderAmount,
+            'init_order_amount' => bcadd((string)$reservation->total_amount, '0', 2),
             'total_tax_amount' => $pickupTax,
             'tax_type' => 'percent',
             'tax_model' => 'exclude',
@@ -610,6 +622,8 @@ class PickupOrderSettlementService
             }
 
             if (!empty(array_intersect($cartIds, $compCartIds))) {
+                // [AI] Release the competing unspent hold without changing aggregate points.
+                CashbackRedemption::where('pickup_reservation_id', $comp->id)->where('status', 'reserved')->update(['status' => 'released', 'released_at' => now()]);
                 // Cancel competing reservation using existing 'canceled' enum
                 $comp->update([
                     'status' => 'canceled',
@@ -638,9 +652,16 @@ class PickupOrderSettlementService
     protected function persistStockFailureReconciliation(
         string $verifiedReference,
         array $gatewayData,
-        string $reason
+        string $reason,
+        string $anomalyType = 'post_payment_stock_failure'
     ): array {
-        return DB::transaction(function () use ($verifiedReference, $gatewayData, $reason) {
+        return DB::transaction(function () use ($verifiedReference, $gatewayData, $reason, $anomalyType) {
+            // [AI] Reacquire the same hierarchy after rollback; a completed replay must not regress.
+            $initial = PaymentRequest::where('gateway_reference', $verifiedReference)->first();
+            if ($initial) {
+                User::where('id', $initial->payer_id)->lockForUpdate()->first();
+                PickupReservation::where('id', $this->resolveReservationIdFromPR($initial))->lockForUpdate()->first();
+            }
             $paymentRequest = PaymentRequest::where('gateway_reference', $verifiedReference)
                 ->lockForUpdate()
                 ->first();
@@ -648,13 +669,17 @@ class PickupOrderSettlementService
             if (!$paymentRequest) {
                 return ['status' => 'not_found', 'message' => 'PaymentRequest not found during stock failure reconciliation.'];
             }
+            if ($paymentRequest->attempt_status === 'successful') {
+                $reservation = PickupReservation::find($this->resolveReservationIdFromPR($paymentRequest));
+                return ['status' => 'ALREADY_SETTLED', 'order_id' => $reservation?->order_id, 'payment_request' => $paymentRequest];
+            }
 
             $additional = is_array($paymentRequest->additional_data)
                 ? $paymentRequest->additional_data
                 : json_decode($paymentRequest->additional_data ?? '{}', true);
 
-            $additional['failure_reason'] = 'post_payment_stock_failure';
-            $additional['stock_failure_detail'] = $reason;
+            $additional['failure_reason'] = $anomalyType;
+            $additional['settlement_failure_detail'] = $reason;
 
             $paymentRequest->update([
                 'attempt_status' => 'reconciliation_required',
@@ -687,11 +712,11 @@ class PickupOrderSettlementService
                 'captured_amount' => $capturedNaira,
                 'expected_amount' => $paymentRequest->payment_amount,
                 'currency' => strtoupper((string) ($gatewayData['currency'] ?? 'NGN')),
-                'initial_anomaly_type' => 'post_payment_stock_failure',
+                'initial_anomaly_type' => $anomalyType === 'post_payment_settlement_failure' ? 'other' : $anomalyType,
                 'current_status' => 'open',
                 'audit_events' => json_encode([[
                     'event' => 'ANOMALY_DETECTED',
-                    'type' => 'post_payment_stock_failure',
+                    'type' => $anomalyType,
                     'reason' => $reason,
                     'gateway_data' => $gatewayData,
                     'timestamp' => now()->toIso8601String(),
@@ -700,7 +725,7 @@ class PickupOrderSettlementService
 
             return [
                 'status' => 'reconciliation_required',
-                'anomaly_type' => 'post_payment_stock_failure',
+                'anomaly_type' => $anomalyType,
                 'message' => $reason,
                 'reconciliation_case' => $reconciliation->case_number,
                 'payment_request' => $paymentRequest->fresh(),

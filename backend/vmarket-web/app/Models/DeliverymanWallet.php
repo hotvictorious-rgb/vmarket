@@ -28,10 +28,10 @@ class DeliverymanWallet extends Model
     protected $casts = [
         'id' => 'integer',
         'delivery_man_id' => 'integer',
-        'current_balance' => 'float',
-        'cash_in_hand' => 'float',
-        'pending_withdraw' => 'float',
-        'total_withdraw' => 'float',
+        'current_balance' => 'decimal:2',
+        'cash_in_hand' => 'decimal:2',
+        'pending_withdraw' => 'decimal:2',
+        'total_withdraw' => 'decimal:2',
         'created_at' => 'datetime',
         'updated_at' => 'datetime',
     ];

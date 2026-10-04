@@ -703,6 +703,19 @@ class PaystackRefundService
 
             // Read item allocation breakdown from payment_info (if available)
             $payInfo = json_decode($lockedRequest->payment_info ?? '{}', true) ?: [];
+            // [AI] Versioned requests execute the frozen allocation, including valid zero money/reward portions.
+            if (($payInfo['refund_allocation_version'] ?? null) === 1) {
+                $allocation = app(OrderRefundAllocationService::class)->forDetail((int)$lockedRequest->order_details_id);
+                if (bccomp((string)$lockedRequest->getRawOriginal('amount'), $allocation['refundable_money_amount'], 2) !== 0) {
+                    throw new \RuntimeException('Provider refund amount differs from immutable money allocation.');
+                }
+                foreach (['refundable_merchandise_value', 'refundable_money_amount', 'refundable_cashback_amount'] as $field) {
+                    if (!isset($payInfo[$field]) || bccomp((string)$payInfo[$field], $allocation[$field], 2) !== 0) {
+                        throw new \RuntimeException('Refund request allocation does not match immutable funding.');
+                    }
+                }
+            }
+
             $itemMerchandiseMoney = (string)($payInfo['merchandise_money'] ?? '');
             $itemCashbackAllocated = (string)($payInfo['cashback_amount'] ?? '');
             $itemMerchandiseValue = (string)($payInfo['merchandise_value'] ?? '');
@@ -786,10 +799,16 @@ class PaystackRefundService
             $isFullOrderRefund = ($unrefundedItemsCount === 0);
 
             // Cumulative total merchandise value refunded across all items
-            $totalMerchandiseRefundedSoFar = (string)(RefundTransaction::where('order_id', $order->id)
-                ->where('payment_status', 'paid')
-                ->where('refund_id', '!=', $lockedRequest->id)
-                ->sum('amount') ?: '0.00');
+            // [AI] Paid transaction amounts include tax and rewards; only immutable merchandise allocations reduce eligibility.
+            $totalMerchandiseRefundedSoFar = '0.00';
+            foreach (RefundRequest::where('order_id', $order->id)->where('status', 'refunded')
+                ->where('id', '!=', $lockedRequest->id)->get() as $prior) {
+                $priorInfo = json_decode($prior->payment_info ?? '{}', true) ?: [];
+                if (!isset($priorInfo['refundable_merchandise_value'])) {
+                    throw new \RuntimeException('Historical refund merchandise allocation requires reconciliation.');
+                }
+                $totalMerchandiseRefundedSoFar = bcadd($totalMerchandiseRefundedSoFar, (string)$priorInfo['refundable_merchandise_value'], 2);
+            }
 
             $cumulativeRefundedValue = bcadd($totalMerchandiseRefundedSoFar, $returnedMerchandiseValue, 2);
             $remainingMerchandise = bcsub($orderSubtotal, $cumulativeRefundedValue, 2);
@@ -999,6 +1018,16 @@ class PaystackRefundService
             DB::table('users')->where('id', $lockedOrder->customer_id)->lockForUpdate()->first();
 
             $payInfo = json_decode($lockedRequest->payment_info ?? '{}', true) ?: [];
+            // [AI] Versioned requests execute the frozen allocation, including valid zero money/reward portions.
+            if (($payInfo['refund_allocation_version'] ?? null) === 1) {
+                $allocation = app(OrderRefundAllocationService::class)->forDetail((int)$lockedRequest->order_details_id);
+                foreach (['refundable_merchandise_value', 'refundable_money_amount', 'refundable_cashback_amount'] as $field) {
+                    if (!isset($payInfo[$field]) || bccomp((string)$payInfo[$field], $allocation[$field], 2) !== 0) {
+                        throw new \RuntimeException('Refund request allocation does not match immutable funding.');
+                    }
+                }
+            }
+
             $refundAmount = bcadd((string)($lockedRequest->getRawOriginal('amount') ?? '0.00'), '0', 2);
 
             // Determine exact cashback allocation to restore
@@ -1035,7 +1064,7 @@ class PaystackRefundService
 
             // Determine money portion to record for manual offline refund with exact amount validation
             $expectedMoney = (string)($payInfo['refundable_money_amount'] ?? ($payInfo['money_amount'] ?? '0.00'));
-            if (bccomp($expectedMoney, '0.00', 2) <= 0 && $lockedOrder->payment_method !== 'cashback') {
+            if (!array_key_exists('refundable_money_amount', $payInfo) && !array_key_exists('money_amount', $payInfo) && $lockedOrder->payment_method !== 'cashback') {
                 $expectedMoney = bcsub($refundAmount, $cashbackToRestore, 2);
                 if (bccomp($expectedMoney, '0.00', 2) < 0) {
                     $expectedMoney = '0.00';

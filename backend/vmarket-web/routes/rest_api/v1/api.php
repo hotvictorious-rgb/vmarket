@@ -365,6 +365,8 @@ Route::group(['prefix' => 'v1', 'middleware' => ['api_lang']], function () {
                 Route::post('/', 'create');
                 Route::get('/', 'index');
                 Route::get('/{code}', 'show');
+                Route::post('/{code}/quote', 'quote');
+                Route::get('/{code}/status', 'status');
                 Route::post('/{code}/pay', 'pay');
             });
         });
@@ -381,7 +383,9 @@ Route::group(['prefix' => 'v1', 'middleware' => ['api_lang']], function () {
             Route::post('/', 'create');
             Route::get('/', 'index');
             Route::get('/{code}', 'show');
-            Route::post('/{code}/pay', 'pay');
+            Route::post('/{code}/quote', 'quote');
+                Route::get('/{code}/status', 'status');
+                Route::post('/{code}/pay', 'pay');
         });
     });
 

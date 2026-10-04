@@ -189,34 +189,12 @@ class OrderController extends Controller
             return response()->json(['message' => translate('unauthorized_access')], 403);
         }
 
-        $loyaltyPointStatus = getWebConfig(name: 'loyalty_point_status');
-        if ($loyaltyPointStatus == 1) {
-            $loyaltyPoint = CustomerManager::countLoyaltyPointForAmount($request->order_details_id);
-            if (($user->loyalty_point ?? 0) < $loyaltyPoint) {
-                return response()->json(['message' => translate('you_have_not_sufficient_loyalty_point_to_refund_this_order')], 202);
-            }
-        }
-
         if ($orderDetails->delivery_status == 'delivered') {
-            $total_product_price = 0;
-            $data = [];
-            foreach ($order->details as $key => $or_d) {
-                $total_product_price += ($or_d->qty * $or_d->price) + $or_d->tax - $or_d->discount;
-            }
-
-            $subtotal = ($order_details->price * $order_details->qty) - $order_details->discount + $order_details->tax;
-            $coupon_discount = ($order->discount_amount * $subtotal) / $total_product_price;
-
             $refundInfo = OrderManager::getRefundDetailsForSingleOrderDetails(orderDetailsId: $request['order_details_id']);
-
-            $data['product_price'] = $order_details->price;
-            $data['quntity'] = $order_details->qty;
-            $data['product_total_discount'] = $order_details->discount;
-            $data['product_total_tax'] = $order_details->tax;
-            $data['subtotal'] = $subtotal;
-            $data['coupon_discount'] = $coupon_discount;
-            $data['refund_amount'] = $refundInfo['total_refundable_amount'];
-            $data['referral_discount'] = $refundInfo['referral_discount'];
+            $data = $refundInfo + ['quntity' => $orderDetails->qty,
+                'product_total_discount' => $refundInfo['product_discount'], 'product_total_tax' => $refundInfo['tax'],
+                'subtotal' => bcadd($refundInfo['sub_total'], $refundInfo['tax'], 2),
+                'refund_amount' => $refundInfo['total_refundable_amount']];
 
             $expired = false;
             $already_requested = false;
@@ -266,13 +244,15 @@ class OrderController extends Controller
         try {
             DB::transaction(function () use ($request, $user, $parentOrder, &$refund_request, &$orderDetails) {
                 // [AI] Serialize new customer disputes against cashback maturity and vendor release.
-                Order::whereKey($parentOrder->id)->lockForUpdate()->firstOrFail();
+                $lockedOrder = Order::whereKey($parentOrder->id)->lockForUpdate()->firstOrFail();
+                if (!$lockedOrder->isWithinRefundWindow()) throw new \RuntimeException('Refund window has closed.');
                 // [AI] Row-level lock on OrderDetail to prevent concurrent duplicate submissions
                 $lockedDetail = OrderDetail::where('id', $request->order_details_id)->lockForUpdate()->first();
                 if (!$lockedDetail) {
                     throw new \Exception('order_details_not_found');
                 }
 
+                if ($lockedDetail->delivery_status !== 'delivered') throw new \RuntimeException('Delivery receipt is required.');
                 if ((int)$lockedDetail->refund_request !== 0) {
                     throw new \Exception('already_applied_for_refund_request!!');
                 }
@@ -306,7 +286,7 @@ class OrderController extends Controller
                 $newRefundRequest->product_id = $lockedDetail->product_id;
                 $newRefundRequest->order_id = $lockedDetail->order_id;
                 $newRefundRequest->refund_reason = $request->refund_reason;
-                $newRefundRequest->payment_info = json_encode([
+                $newRefundRequest->payment_info = json_encode($refundDetails + [
                     'merchandise_value' => $merchandiseValue,
                     'merchandise_money' => $merchandiseMoney,
                     'tax_amount' => $taxAmount,

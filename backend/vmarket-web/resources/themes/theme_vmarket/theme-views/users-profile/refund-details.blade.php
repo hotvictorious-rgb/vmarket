@@ -29,7 +29,9 @@
                                                         <a href="{{route('product',[$product['slug']])}}" class="fs-18 mb-1 fw-semibold">
                                                             {{isset($product['name']) ? Str::limit($product['name'],40) : ''}}
                                                         </a>
-                                                        @if($order_details->refund_request == 1)
+                                                        @if(($refund['change_by'] ?? null) === 'seller' && in_array($refund['status'] ?? null, ['approved', 'rejected']))
+                                                            <small class="badge text-primary">Awaiting administrator review (vendor recommends {{ $refund['status'] === 'approved' ? 'approval' : 'rejection' }})</small><br>
+                                                        @elseif($order_details->refund_request == 1)
                                                             <small class="text-center mb-1 badge text-primary border-primary-1 text-bg-primary rounded-1 fw-normal fs-12 bg-opacity-10">
                                                                 {{translate('refund_pending')}} </small> <br>
                                                         @elseif($order_details->refund_request == 2)

@@ -60,67 +60,24 @@ class DeliverymanWithdrawController extends Controller
 
     public function status_update(Request $request): JsonResponse
     {
-        $id = $request->id;
-        $seller = $request->seller;
-
+        // [AI] Nested rider withdrawals are owner-only and use the common reserved-funds payout protocol.
+        if ($request->boolean('is_vendor_employee') || !in_array((string)$request->approved, ['1', '2'], true)) {
+            return response()->json(['message' => 'Invalid or unauthorized withdrawal decision.'], 422);
+        }
         try {
-            return DB::transaction(function () use ($request, $id, $seller) {
-                // [AI] Ownership & Idempotency Guard: Ensure withdraw belongs to seller and is pending
-                $withdraw = WithdrawRequest::where(['seller_id' => $seller->id, 'approved' => 0])
-                    ->lockForUpdate()
-                    ->find($id);
-
-                if (!$withdraw) {
-                    return response()->json(['message' => translate('withdraw_request_already_processed_or_invalid')], 403);
-                }
-
-                $wallet = DeliverymanWallet::where('delivery_man_id', $withdraw->delivery_man_id)
-                    ->lockForUpdate()
-                    ->first();
-
-                if (!$wallet) {
-                    return response()->json(['message' => translate('delivery_man_wallet_not_found')], 404);
-                }
-
-                $withdraw->approved = $request->approved;
-                $withdraw->transaction_note = $request->note;
-
-                $lang = Helpers::default_lang();
-                $delivery_man = DeliveryMan::find($withdraw->delivery_man_id);
-                $delivery_man_fcm_token = $delivery_man?->fcm_token;
-
-                if (!empty($delivery_man_fcm_token)) {
-                    $lang = $delivery_man?->app_language ?? $lang;
-                    $value_delivery_man = Helpers::push_notificatoin_message('withdraw_request_status_message', 'delivery_man', $lang);
-                    if ($value_delivery_man != null) {
-                        $data = [
-                            'title' => translate('withdraw_request_' . ($request->approved == 1 ? 'approved' : 'denied')),
-                            'description' => $value_delivery_man,
-                            'image' => '',
-                            'type' => 'notification'
-                        ];
-                        Helpers::send_push_notif_to_device($delivery_man_fcm_token, $data);
-                    }
-                }
-
-                if ($request->approved == 1) {
-                    $wallet->total_withdraw += $withdraw['amount'];
-                    $wallet->pending_withdraw -= $withdraw['amount'];
-                    $wallet->current_balance -= $withdraw['amount'];
-                    $wallet->save();
-                    $withdraw->save();
-
-                    return response()->json(['message' => translate('Delivery_man_payment_has_been_approved_successfully!')], 200);
-                } else {
-                    $wallet->pending_withdraw -= $withdraw['amount'];
-                    $wallet->save();
-                    $withdraw->save();
-
-                    return response()->json(['message' => translate('Delivery_man_payment_request_has_been_Denied_successfully!')], 200);
-                }
+            return DB::transaction(function () use ($request) {
+                $withdraw = WithdrawRequest::where('seller_id', $request->seller->id)
+                    ->whereNotNull('delivery_man_id')->lockForUpdate()->find($request->id);
+                if (!$withdraw) return response()->json(['message' => 'Withdrawal not found.'], 404);
+                $wallet = DeliverymanWallet::where('delivery_man_id', $withdraw->delivery_man_id)->lockForUpdate()->first();
+                $data = app(\App\Services\DeliveryManWithdrawService::class)->getUpdateData($request, $wallet, $withdraw);
+                $wallet->forceFill($data['wallet'])->save();
+                $withdraw->forceFill($data['withdraw'])->save();
+                \App\Services\AdminAuditService::log('vendor.rider_withdrawal_decision', \App\Models\WithdrawRequest::class, $withdraw->id, ['approved' => 0], ['approved' => (int)$request->approved, 'actor_type' => 'seller', 'actor_id' => $request->seller->id, 'amount' => (string)$withdraw->getRawOriginal('amount')], $request->note);
+                return response()->json(['message' => 'Withdrawal decision recorded.'], 200);
             });
-        } catch (\Exception $e) {
-            return response()->json(['message' => translate('something_went_wrong')], 500);
+        } catch (\InvalidArgumentException|\RuntimeException $e) {
+            return response()->json(['message' => $e->getMessage()], 422);
         }
     }
 }

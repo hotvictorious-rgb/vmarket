@@ -647,6 +647,7 @@ class OrderController extends BaseController
     {
         $userId = auth('seller')->id();
         $status = $this->orderRepo->updateAmountDate(request: $request, userId: $userId, userType: 'seller');
+        if (!$status) return response()->json(['status' => false, 'message' => 'Invalid or unauthorized order scheduling update.'], 403);
         $order = $this->orderRepo->getFirstWhere(params: ['id' => $request['order_id']], relations: ['customer', 'deliveryMan']);
 
         $fieldName = $request['field_name'];

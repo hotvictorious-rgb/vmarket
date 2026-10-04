@@ -94,6 +94,7 @@ class DeliveryFlowLifecycleTest extends DumpSchemaTestCase
                 'is_online' => 1,
             ]);
 
+            $rider->forceFill(['bank_name' => 'Regression Bank', 'account_no' => '1234567890', 'holder_name' => 'Chidi Okafor'])->save();
             $this->assertTrue($rider->exists && $rider->is_active == 1);
 
             $riderWallet = DeliverymanWallet::create([

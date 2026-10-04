@@ -112,6 +112,8 @@ function formSubmit(){
             reverseButtons: true
         }).then((result) => {
             if (result.value) {
+                const approvalForm = document.getElementById(getFormId);
+                if (!approvalForm.checkValidity()) { approvalForm.reportValidity(); return; }
                 $.ajaxSetup({
                     headers: {
                         'X-XSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
@@ -119,7 +121,9 @@ function formSubmit(){
                 });
                 $.post({
                     url: $('#'+getFormId).attr('action'),
-                    data: $('#'+getFormId).serialize(),
+                    data: new FormData(approvalForm),
+                    contentType: false,
+                    processData: false,
                     beforeSend: function () {
                         $('#loading').fadeIn();
                     },
@@ -149,4 +153,3 @@ $('.withdraw-request-file-export').on('click',function (){
     let queryParams = '&status=' +checkedStatusValuesArray;
     window.location.href = $(this).data('action')+queryParams;
 });
-

@@ -12,6 +12,7 @@ use App\Models\PickupReservation;
 use App\Models\User;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Str;
 
@@ -42,6 +43,80 @@ class PickupPaymentInitializationService
     ) {
     }
 
+    /** [AI] Customer web/mobile review uses backend totals; this call never contacts a gateway. */
+    public function quote(int $customerId, string $code, bool $useCashback): array
+    {
+        return DB::transaction(function () use ($customerId, $code, $useCashback) {
+            $customer = User::where('id', $customerId)->lockForUpdate()->first();
+            $reservation = PickupReservation::where('customer_id', $customerId)->where('reservation_code', $code)->lockForUpdate()->first();
+            if (!$customer || !$reservation || $reservation->status !== 'inspected_accepted' || $reservation->isExpired()) {
+                throw new InvalidPaymentStateException('Pickup reservation must be accepted and unexpired before quoting.');
+            }
+            $attempt = PaymentRequest::where('active_pickup_reservation_id', $reservation->id)->lockForUpdate()->first();
+            $additional = $attempt ? json_decode($attempt->additional_data ?? '{}', true) : [];
+            if ($attempt) {
+                $cashback = (string)($additional['cashback_amount'] ?? '0');
+                if (!$useCashback && bccomp($cashback, '0', 2) > 0) {
+                    throw new InvalidPaymentStateException('An existing payment attempt must finish before changing funding.');
+                }
+            } else {
+                $cashback = $this->reserveCashbackForPickup($reservation, $customerId, $customer, $useCashback, 'pickup-'.$code, false)['cashback_amount'];
+            }
+            $snapshot = $reservation->reservation_items ?: [];
+            $expires = now()->addMinutes(5)->min($reservation->expires_at);
+            $token = Str::random(64);
+            $quote = ['currency' => 'NGN', 'merchandise_subtotal' => bcadd((string)($snapshot['subtotal'] ?? '0'), '0', 2),
+                'tax_total' => bcadd((string)($snapshot['tax'] ?? '0'), '0', 2), 'shipping_total' => '0.00',
+                'gross_amount' => bcadd((string)$reservation->total_amount, '0', 2), 'cashback_amount' => bcadd($cashback, '0', 2),
+                'total_amount' => bcsub((string)$reservation->total_amount, $cashback, 2), 'items' => $snapshot['items'] ?? [],
+                'expires_at' => $expires->toIso8601String(), 'reservation_code' => $code];
+            Cache::put('pickup_quote_'.$token, ['customer_id' => $customerId, 'reservation_id' => (int)$reservation->id,
+                'use_cashback' => $useCashback, 'gross_amount' => $quote['gross_amount'], 'cashback_amount' => $quote['cashback_amount']], $expires);
+            return ['status' => true, 'quote_token' => $token, 'quote' => $quote];
+        });
+    }
+
+    /** [AI] Persist gateway responses only against the still-owned lease and current state. */
+    protected function finishInitialization(PaymentRequest $original, array $response): array
+    {
+        $result = DB::transaction(function () use ($original, $response) {
+            $customer = User::where('id', $original->payer_id)->lockForUpdate()->first();
+            $reservation = PickupReservation::where('id', $original->pickup_reservation_id)->lockForUpdate()->first();
+            $payment = PaymentRequest::where('id', $original->id)->lockForUpdate()->firstOrFail();
+            if ($payment->attempt_status !== 'pending' || (int)$payment->is_paid === 1) {
+                return ['status' => $payment->attempt_status === 'successful' ? 'settled' : $payment->attempt_status,
+                    'payment_request' => $payment, 'order_id' => $reservation?->order_id, 'gateway_reference' => $payment->gateway_reference];
+            }
+            $additional = json_decode($payment->additional_data ?? '{}', true);
+            $old = json_decode($original->additional_data ?? '{}', true);
+            if (($additional['init_claim_token'] ?? null) !== ($old['init_claim_token'] ?? null)) {
+                return ['status' => 'initialization_in_progress', 'payment_request' => $payment, 'gateway_reference' => $payment->gateway_reference];
+            }
+            if (!$reservation || $reservation->status !== 'inspected_accepted' || $reservation->isExpired() || now()->greaterThanOrEqualTo($payment->attempt_expires_at)) {
+                $payment->update(['attempt_status' => 'expired', 'active_pickup_reservation_id' => null]);
+                if ($reservation && $customer) { $this->releaseCashbackForPickup($reservation, (int)$customer->id, $customer); }
+                return ['status' => 'expired', 'payment_request' => $payment];
+            }
+            if (($response['status'] ?? '') === 'SUCCESS') {
+                $additional['authorization_url'] = $response['authorization_url'];
+                $additional['access_code'] = $response['access_code'] ?? null;
+                $additional['init_claim_expires_at'] = null;
+                $payment->update(['additional_data' => json_encode($additional)]);
+                return ['status' => 'success', 'payment_request' => $payment, 'is_replayed' => false,
+                    'gateway_reference' => $payment->gateway_reference, 'authorization_url' => $response['authorization_url']];
+            }
+            if (($response['status'] ?? '') === 'GATEWAY_REJECTED') {
+                $additional['failure_reason'] = $response['message'] ?? 'Gateway rejected initialization';
+                $additional['init_claim_expires_at'] = null;
+                $payment->update(['attempt_status' => 'failed', 'active_pickup_reservation_id' => null, 'additional_data' => json_encode($additional)]);
+                if ($customer) { $this->releaseCashbackForPickup($reservation, (int)$customer->id, $customer); }
+                return ['status' => 'failed', 'message' => $additional['failure_reason'], 'payment_request' => $payment];
+            }
+            return ['status' => 'ambiguous_transport', 'is_ambiguous' => true, 'payment_request' => $payment, 'gateway_reference' => $payment->gateway_reference];
+        });
+        return $result;
+    }
+
     /**
      * Initiates or replays a payment attempt for an inspected & accepted pickup reservation.
      *
@@ -57,7 +132,8 @@ class PickupPaymentInitializationService
         string|int|PickupReservation $reservationInput,
         bool $useCashback = false,
         int $ttlMinutes = 30,
-        ?string $callbackUrl = null
+        ?string $callbackUrl = null,
+        ?string $quoteToken = null
     ): array {
         // 1. Resolve Authenticated Customer
         $customerId = $customer instanceof User ? (int) $customer->id : (int) $customer;
@@ -71,12 +147,16 @@ class PickupPaymentInitializationService
         }
 
         $ttlMinutes = max(5, $ttlMinutes);
-        $callbackUrl = $callbackUrl ?: url('/paystack/callback');
+        $callbackUrl = $callbackUrl ?: route('paystack.callback');
+        $confirmed = $quoteToken ? Cache::get('pickup_quote_'.$quoteToken) : null;
+        if ($quoteToken && (!$confirmed || $confirmed['customer_id'] !== $customerId || $confirmed['use_cashback'] !== $useCashback)) {
+            throw new InvalidPaymentStateException('Pickup quote expired or changed. Request a new quote.');
+        }
 
         // =========================================================================
         // PHASE A: Short Database Transaction (Zero External Network Calls)
         // =========================================================================
-        $phaseAResult = DB::transaction(function () use ($customerId, $customerRecord, $reservationInput, $useCashback, $ttlMinutes) {
+        $phaseAResult = DB::transaction(function () use ($customerId, $customerRecord, $reservationInput, $useCashback, $ttlMinutes, $confirmed) {
             // Step 1: Pessimistic Row Lock on Customer Serialization Anchor
             $lockedCustomer = User::where('id', $customerId)->lockForUpdate()->first();
 
@@ -98,6 +178,9 @@ class PickupPaymentInitializationService
             if ((int) $reservation->customer_id !== $customerId) {
                 throw new InvalidCartException("IDOR Violation: Reservation does not belong to customer #{$customerId}.");
             }
+            if ($confirmed && $confirmed['reservation_id'] !== (int)$reservation->id) {
+                throw new InvalidPaymentStateException('Pickup quote belongs to another reservation.');
+            }
 
             if ($reservation->order_id !== null || $reservation->status === 'order_placed') {
                 $existingOrder = Order::find($reservation->order_id);
@@ -106,7 +189,7 @@ class PickupPaymentInitializationService
                     'is_replayed' => true,
                     'status' => 'settled',
                     'order_id' => $reservation->order_id,
-                    'verification_code' => (string) ($existingOrder?->verification_code ?? ''),
+                    'verification_code' => (string) ($existingOrder?->pickup_verification_code ?? ''),
                     'paid_amount' => '0.00',
                     'cashback_redeemed' => (string) ($existingOrder?->discount_amount ?? $reservation->total_amount),
                     'gateway_reference' => (string) ($existingOrder?->transaction_ref ?? ''),
@@ -293,6 +376,9 @@ class PickupPaymentInitializationService
             // Adjust payment amount after cashback discount
             $cashbackAmount = $cashbackReserved['cashback_amount'] ?? '0.00';
             $discountedNaira = bcsub($twoDecimals, $cashbackAmount, 2);
+            if ($confirmed && (bccomp($confirmed['gross_amount'], $twoDecimals, 2) !== 0 || bccomp($confirmed['cashback_amount'], $cashbackAmount, 2) !== 0)) {
+                throw new InvalidPaymentStateException('Pickup funding changed. Request and confirm a new quote.');
+            }
             if (bccomp($discountedNaira, '0.00', 2) < 0) {
                 $discountedNaira = '0.00';
             }
@@ -492,7 +578,7 @@ class PickupPaymentInitializationService
                         'is_replayed' => true,
                         'status' => 'settled',
                         'order_id' => $orderId,
-                        'verification_code' => (string) ($order?->verification_code ?? ($settlementResult['verification_code'] ?? '')),
+                        'verification_code' => (string) ($order?->pickup_verification_code ?? ($settlementResult['verification_code'] ?? '')),
                         'paid_amount' => '0.00',
                         'cashback_redeemed' => (string) ($order?->discount_amount ?? $phaseAResult['reservation']->total_amount),
                         'gateway_reference' => $paymentRequest->gateway_reference,
@@ -532,7 +618,7 @@ class PickupPaymentInitializationService
                     'action' => 'SETTLED_INTERNALLY',
                     'status' => 'settled',
                     'order_id' => $orderId,
-                    'verification_code' => (string) ($order?->verification_code ?? ($settlementResult['verification_code'] ?? '')),
+                    'verification_code' => (string) ($order?->pickup_verification_code ?? ($settlementResult['verification_code'] ?? '')),
                     'paid_amount' => '0.00',
                     'cashback_redeemed' => $phaseAResult['gross_amount'],
                     'gateway_reference' => $phaseAResult['gateway_reference'],
@@ -571,47 +657,7 @@ class PickupPaymentInitializationService
             $metadata
         );
 
-        if ($initData['status'] === 'SUCCESS') {
-            $additional = json_decode($paymentRequest->additional_data ?? '{}', true);
-            $additional['authorization_url'] = $initData['authorization_url'];
-            $additional['access_code'] = $initData['access_code'] ?? null;
-            $additional['init_claim_expires_at'] = null; // Release lease upon success
-            $paymentRequest->update([
-                'additional_data' => json_encode($additional),
-            ]);
-
-            return [
-                'status' => 'success',
-                'is_replayed' => false,
-                'payment_request' => $paymentRequest->fresh(),
-                'authorization_url' => $initData['authorization_url'],
-                'gateway_reference' => $gatewayReference,
-            ];
-        }
-
-        if ($initData['status'] === 'GATEWAY_REJECTED') {
-            $additional = json_decode($paymentRequest->additional_data ?? '{}', true);
-            $additional['failure_reason'] = $initData['message'] ?? 'Gateway rejected initialization';
-            $additional['closed_at'] = now()->toIso8601String();
-            $additional['init_claim_expires_at'] = null;
-            $paymentRequest->update([
-                'attempt_status' => 'failed',
-                'active_pickup_reservation_id' => null,
-                'additional_data' => json_encode($additional),
-            ]);
-
-            throw new PaymentInitializationException("Paystack rejected initialization: " . ($initData['message'] ?? 'Unknown gateway rejection'));
-        }
-
-        // Ambiguous transport failure (CURL timeout, disconnect)
-        // Keep PaymentRequest as 'pending' with active token so recovery works
-        return [
-            'status' => 'ambiguous_transport',
-            'message' => $initData['message'] ?? 'Paystack initialization ambiguous / timed out.',
-            'payment_request' => $paymentRequest->fresh(),
-            'gateway_reference' => $gatewayReference,
-            'is_ambiguous' => true,
-        ];
+        return $this->finishInitialization($paymentRequest, $initData);
     }
 
     /**
@@ -636,7 +682,13 @@ class PickupPaymentInitializationService
                 // Safely mark old attempt failed, release token, and create fresh attempt in short DB transaction.
                 $newAttempt = DB::transaction(function () use ($paymentRequest, $reservation, $customerRecord, $amountKobo, $ttlMinutes) {
                     User::where('id', $customerRecord->id)->lockForUpdate()->first();
+                    $freshReservation = PickupReservation::where('id', $reservation->id)->lockForUpdate()->first();
                     $pr = PaymentRequest::where('id', $paymentRequest->id)->lockForUpdate()->first();
+                    $originalAdd = json_decode($paymentRequest->additional_data ?? '{}', true);
+                    $currentAdd = $pr ? json_decode($pr->additional_data ?? '{}', true) : [];
+                    if (!$freshReservation || $freshReservation->status !== 'inspected_accepted' || $freshReservation->isExpired() || !$pr || $pr->attempt_status !== 'pending' || (int)$pr->is_paid === 1 || now()->greaterThanOrEqualTo($pr->attempt_expires_at) || ($currentAdd['init_claim_token'] ?? null) !== ($originalAdd['init_claim_token'] ?? null)) {
+                        throw new InvalidPaymentStateException('Pickup attempt changed during gateway recovery. Poll its status.');
+                    }
 
                     if ($pr && $pr->attempt_status === 'pending') {
                         $add = json_decode($pr->additional_data ?? '{}', true);
@@ -678,6 +730,9 @@ class PickupPaymentInitializationService
                             'seller_id' => $reservation->seller_id,
                             'shop_id' => $reservation->shop_id,
                             'amount_kobo' => $amountKobo,
+                            'gross_amount' => $add['gross_amount'] ?? (string)$reservation->total_amount,
+                            'cashback_amount' => $add['cashback_amount'] ?? '0.00',
+                            'cashback_reservation' => $add['cashback_reservation'] ?? null,
                             'supersedes_attempt_id' => $paymentRequest->id,
                             'created_at' => $now->toIso8601String(),
                             'init_claimed_at' => $now->toIso8601String(),
@@ -705,32 +760,14 @@ class PickupPaymentInitializationService
                     $metadata
                 );
 
-                if ($initData['status'] === 'SUCCESS') {
-                    $add = json_decode($newAttempt->additional_data ?? '{}', true);
-                    $add['authorization_url'] = $initData['authorization_url'];
-                    $add['access_code'] = $initData['access_code'] ?? null;
-                    $add['init_claim_expires_at'] = null; // Release lease upon success
-                    $newAttempt->update(['additional_data' => json_encode($add)]);
+                return $this->finishInitialization($newAttempt, $initData);
 
-                    return [
-                        'status' => 'success',
-                        'is_replayed' => false,
-                        'payment_request' => $newAttempt->fresh(),
-                        'authorization_url' => $initData['authorization_url'],
-                        'gateway_reference' => $newAttempt->gateway_reference,
-                    ];
-                }
-
-                return [
-                    'status' => 'ambiguous_transport',
-                    'message' => $initData['message'] ?? 'Paystack initialization timed out.',
-                    'payment_request' => $newAttempt->fresh(),
-                    'gateway_reference' => $newAttempt->gateway_reference,
-                    'is_ambiguous' => true,
-                ];
-
-            case 'NON_FINAL':
             case 'SUCCESS':
+                // [AI] Verified captured recovery uses the same settlement/reconciliation pipeline.
+                $settlement = (new PickupOrderSettlementService())->settleVerifiedPayment($reference, $verifyData['data'] ?? []);
+                return ['status' => in_array($settlement['status'] ?? '', ['CLAIMED', 'ALREADY_SETTLED']) ? 'settled' : ($settlement['status'] ?? 'reconciliation_required'),
+                    'is_replayed' => true, 'order_id' => $settlement['order_id'] ?? null, 'payment_request' => $paymentRequest->fresh(), 'gateway_reference' => $reference];
+            case 'NON_FINAL':
                 // Transaction exists on Paystack! Safely reuse existing attempt without rotating reference.
                 return [
                     'status' => 'pending_on_gateway',
@@ -741,14 +778,7 @@ class PickupPaymentInitializationService
                 ];
 
             case 'GATEWAY_FAILURE':
-                $additional = json_decode($paymentRequest->additional_data ?? '{}', true);
-                $additional['failure_reason'] = 'GATEWAY_TERMINAL_FAILURE';
-                $paymentRequest->update([
-                    'attempt_status' => 'failed',
-                    'active_pickup_reservation_id' => null,
-                    'additional_data' => json_encode($additional),
-                ]);
-                throw new PaymentInitializationException("Paystack reports transaction failed on gateway.");
+                return $this->finishInitialization($paymentRequest, ['status' => 'GATEWAY_REJECTED', 'message' => 'Gateway terminal failure']);
 
             default:
                 // Ambiguous / Transport / HTTP error during verification -> preserve pending state and reference
@@ -778,7 +808,8 @@ class PickupPaymentInitializationService
         int $customerId,
         User $lockedCustomer,
         bool $useCashback,
-        string $orderGroupId
+        string $orderGroupId,
+        bool $persist = true
     ): array {
         // Default: no cashback reserved
         $defaultResult = [
@@ -801,7 +832,7 @@ class PickupPaymentInitializationService
 
         // Load config
         $exchangeRate = (float) (getWebConfig(name: 'loyalty_point_exchange_rate') ?: 1.0);
-        $maxCapPercentage = (float) (getWebConfig(name: 'loyalty_point_max_order_redemption_percentage') ?: 100.0);
+        $maxCapPercentage = (float) (getWebConfig(name: 'loyalty_point_max_order_redemption_percentage') ?? 100.0);
         $minPoint = (float) (getWebConfig(name: 'loyalty_point_minimum_point') ?: 0.0);
 
         // Calculate effective available points (excluding already reserved points from other checkouts)
@@ -823,11 +854,21 @@ class PickupPaymentInitializationService
         }
 
         // Calculate maximum discount allowed (e.g. 100% of reservation total)
-        $reservationTotal = bcadd((string) $reservation->total_amount, '0', 2);
+        $snapshot = $reservation->reservation_items ?: [];
+        $reservationTotal = bcadd((string)($snapshot['subtotal'] ?? '0'), '0', 2);
         $maxNairaDiscount = bcmul($reservationTotal, bcdiv((string) $maxCapPercentage, '100', 4), 2);
 
         // Convert customer's effective points to Naira
         $pointsInNaira = bcmul($effectiveAvailable, (string) $exchangeRate, 2);
+        // [AI] New funding cannot consume expired or unbacked aggregate points before gateway I/O.
+        $coverage = '0.00';
+        $lots = \App\Models\CustomerCashbackLedger::where('customer_id', $customerId)->where('status', 'available')
+            ->where(fn($q) => $q->whereNull('expires_at')->orWhere('expires_at', '>', now()))->lockForUpdate()->get();
+        foreach ($lots as $lot) { $coverage = bcadd($coverage, (string)$lot->getRawOriginal('cashback_amount'), 2); }
+        $heldMoney = CashbackRedemption::where('customer_id', $customerId)->where('status', 'reserved')->sum('cashback_amount');
+        $coverage = bcsub($coverage, (string)$heldMoney, 2);
+        if (bccomp($coverage, '0', 2) < 0) { $coverage = '0.00'; }
+        if (bccomp($pointsInNaira, $coverage, 2) > 0) { $pointsInNaira = $coverage; }
 
         // Actual cashback discount: min(pointsInNaira, maxNairaDiscount)
         $cashbackAmount = (bccomp($pointsInNaira, $maxNairaDiscount, 2) > 0) ? $maxNairaDiscount : $pointsInNaira;
@@ -841,7 +882,7 @@ class PickupPaymentInitializationService
         $pointsToReserve = bcdiv($cashbackAmount, (string) $exchangeRate, 4);
 
         // Create CashbackRedemption reservation record (points held in status 'reserved' without premature balance deduction)
-        $redemption = CashbackRedemption::create([
+        $redemption = $persist ? CashbackRedemption::create([
             'customer_id' => $customerId,
             'checkout_intent_id' => null, // delivery FK; null for pickup
             'pickup_reservation_id' => $reservation->id,
@@ -849,16 +890,16 @@ class PickupPaymentInitializationService
             'points' => $pointsToReserve,
             'cashback_amount' => $cashbackAmount,
             'status' => 'reserved',
-        ]);
+        ]) : null;
 
         Log::info("[AI] PickupPayment: Reserved {$pointsToReserve} pts (₦{$cashbackAmount}) from customer #{$customerId} " .
-            "for Reservation #{$reservation->id}. Redemption #{$redemption->id}.");
+            "for Reservation #{$reservation->id}.");
 
         return [
             'reserved' => true,
             'points' => $pointsToReserve,
             'cashback_amount' => $cashbackAmount,
-            'redemption_id' => $redemption->id,
+            'redemption_id' => $redemption?->id,
         ];
     }
 
@@ -877,4 +918,3 @@ class PickupPaymentInitializationService
         }
     }
 }
-

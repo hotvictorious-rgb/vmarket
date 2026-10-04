@@ -83,6 +83,7 @@ class DeliverymanWithdrawController extends Controller
                 // [AI] Idempotency Guard: Ensure withdraw request exists and is strictly pending
                 $withdraw = \App\Models\WithdrawRequest::where('id', $withdrawId)
                     ->where('approved', 0)
+                    ->whereNotNull('delivery_man_id')
                     ->lockForUpdate()
                     ->first();
 
@@ -100,13 +101,6 @@ class DeliverymanWithdrawController extends Controller
                 $formatData = $deliveryManWithdrawService->getUpdateData(request: $request, wallet: $wallet, withdraw: $withdraw);
                 $walletData = $formatData['wallet'];
                 $withdrawData = $formatData['withdraw'];
-
-                if ($request['approved'] == 1) {
-                    if (!$request->hasFile('proof_of_payment')) {
-                        return ['status' => false, 'error' => translate('Proof_of_payment_screenshot_is_required_when_approving_delivery_man_payout')];
-                    }
-                    $withdrawData['proof_of_payment'] = \App\Utils\ImageManager::upload('withdraw_requests/', 'png', $request->file('proof_of_payment'));
-                }
 
                 \App\Services\AdminAuditService::log('rider.withdrawal_decision', \App\Models\WithdrawRequest::class, $withdrawId, ['approved' => 0], ['approved' => (int)$request['approved'], 'amount' => (string)$withdraw->getRawOriginal('amount')], $request->input('note'));
                 $this->deliveryManWalletRepo->update(id: $wallet->id, data: $walletData);

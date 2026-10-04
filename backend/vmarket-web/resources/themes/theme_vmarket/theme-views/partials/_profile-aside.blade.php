@@ -42,6 +42,7 @@
                     <i class="bi bi-x-lg text-primary"></i>
                 </div>
                 <ul class="list-unstyled profile-menu gap-1 mt-3">
+                    <li><a href="{{ route('pickup-reservations.index') }}">{{ translate('pickup_reservations') }}</a></li>
                     <li class="{{Request::is('user-profile') || Request::is('user-account') ||Request::is('account-address-*') ? 'active' :''}}">
                         <a href="{{ route('user-profile') }}">
                             <img width="20" src="{{ theme_asset('assets/img/icons/profile-icon.png') }}"

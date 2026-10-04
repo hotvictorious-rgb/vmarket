@@ -113,6 +113,8 @@ Route::group(['middleware' => ['maintenance_mode', 'guestCheck']], function () {
             Route::post('pickup-reservations', 'create')->name('pickup-reservations.create');
             Route::get('pickup-reservations', 'index')->name('pickup-reservations.index');
             Route::get('pickup-reservations/{code}', 'show')->name('pickup-reservations.show');
+            Route::post('pickup-reservations/{code}/quote', 'quote')->name('pickup-reservations.quote');
+            Route::get('pickup-reservations/{code}/status', 'status')->name('pickup-reservations.status');
             Route::post('pickup-reservations/{code}/pay', 'pay')->name('pickup-reservations.pay');
         });
     });

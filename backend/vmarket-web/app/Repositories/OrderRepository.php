@@ -388,35 +388,39 @@ class OrderRepository implements OrderRepositoryInterface
 
     public function updateAmountDate(object $request, string|int $userId, string $userType): bool
     {
-        $fieldName = $request['field_name'];
-        $fieldValues = $request['field_val'];
-        $cause = $request['cause'] ?? null;
-
-        if ($fieldName == 'deliveryman_charge') {
-            $fieldValues = currencyConverter(amount: $fieldValues);
+        // [AI] This endpoint edits scheduling fields only; raw order/accounting column writes are forbidden.
+        if (!in_array($userType, ['admin', 'seller'], true)) return false;
+        $field = $request['field_name'];
+        if (!in_array($field, ['expected_delivery_date', 'deliveryman_charge'], true)) return false;
+        if ($userType === 'admin' && !auth('admin')->user()?->hasExactModuleAccess(
+            $field === 'deliveryman_charge' ? 'payments.manage' : 'orders.manage')) return false;
+        // [AI] V1 riders and their charges are centrally administered.
+        if ($userType !== 'admin' && $field === 'deliveryman_charge') return false;
+        $value = (string)$request['field_val'];
+        if ($field === 'deliveryman_charge' && !preg_match('/^(?:0|[1-9][0-9]{0,12})(?:\.[0-9]{1,2})?$/D', $value)) return false;
+        if ($field === 'expected_delivery_date') {
+            $date = \DateTimeImmutable::createFromFormat('!Y-m-d', $value);
+            if (!$date || $date->format('Y-m-d') !== $value) return false;
         }
-
-        try {
-            DB::beginTransaction();
-
-            if ($fieldName == 'expected_delivery_date') {
-                $this->orderExpectedDeliveryHistory->create([
-                    'order_id' => $request['order_id'],
-                    'user_id' => $userId,
-                    'user_type' => $userType,
-                    'expected_delivery_date' => $fieldValues,
-                    'cause' => $cause
-                ]);
-            }
-
-            $this->order->where(['id' => $request['order_id']])->update([$fieldName => $fieldValues]);
-
-            DB::commit();
-        } catch (Exception $ex) {
-            DB::rollback();
-            return false;
-        }
-        return true;
+        return DB::transaction(function () use ($request, $userId, $userType, $field, $value) {
+            $query = $this->order->whereKey($request['order_id']);
+            if ($userType === 'seller') $query->where('seller_id', $userId)->where('seller_is', 'seller');
+            $order = $query->lockForUpdate()->first();
+            if (!$order || $order->received_at || in_array($order->order_status, ['delivered', 'canceled', 'returned', 'failed'], true)
+                || in_array($order->vendor_settlement_status, ['settled', 'refunded'], true)) return false;
+            if ($field === 'deliveryman_charge' && ($order->order_status === 'out_for_delivery'
+                || bccomp($value, (string)$order->getRawOriginal('shipping_cost'), 2) > 0)) return false;
+            $before = [$field => $order->getRawOriginal($field)];
+            if ($field === 'expected_delivery_date') $this->orderExpectedDeliveryHistory->create([
+                'order_id' => $order->id, 'user_id' => $userId, 'user_type' => $userType,
+                'expected_delivery_date' => $value, 'cause' => $request['cause'] ?? null,
+            ]);
+            $order->setAttribute($field, $field === 'deliveryman_charge' ? bcadd($value, '0', 2) : $value);
+            $order->save();
+            \App\Services\AdminAuditService::log('order.schedule_update',
+                \App\Models\Order::class, $order->id, $before, [$field => $order->getRawOriginal($field), 'actor_type' => $userType, 'actor_id' => $userType === 'admin' ? auth('admin')->id() : $userId], $request['cause'] ?? null);
+            return true;
+        });
     }
 
     public function updateStockOnOrderStatusChange(string|int $orderId, string $status): bool

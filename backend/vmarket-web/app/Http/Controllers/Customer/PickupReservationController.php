@@ -22,6 +22,13 @@ use App\Exceptions\InvalidPaymentStateException;
 use App\Exceptions\InvalidCartException;
 use App\Exceptions\PaymentInitializationException;
 use App\Services\PickupPaymentInitializationService;
+use App\Models\PickupReservation;
+use App\Models\PaymentRequest;
+use App\Models\Order;
+use App\Models\CashbackRedemption;
+use App\Models\CustomerCashbackLedger;
+use App\Models\User;
+use Illuminate\Support\Facades\DB;
 
 class PickupReservationController extends Controller
 {
@@ -65,9 +72,10 @@ class PickupReservationController extends Controller
 
             // [AI] Build authoritative per-reservation response payload.
             // The app MUST use these fields — not local cart data — as the authoritative source.
-            $cashbackRatePercent = (float) (getWebConfig(name: 'loyalty_point_earn_rate_percent') ?? 5.0);
+            $cashbackRatePercent = (float) CustomerCashbackLedger::configuredEarnRate();
             $exchangeRate        = (float) (getWebConfig(name: 'loyalty_point_exchange_rate') ?? 1.0);
             $loyaltyStatus       = (int)   (getWebConfig(name: 'loyalty_point_status') ?? 0);
+            if ((int)(getWebConfig(name: 'loyalty_point_for_each_order') ?? 1) !== 1) { $loyaltyStatus = 0; }
 
             $mappedReservations = array_map(function ($reservation) use ($cashbackRatePercent, $exchangeRate, $loyaltyStatus) {
                 $snapshot = is_array($reservation->reservation_items)
@@ -81,11 +89,11 @@ class PickupReservationController extends Controller
                     'shop_address' => $snapshot['shop']['address'] ?? null,
                 ];
 
-                // Compute estimated cashback (informational only — awarded at settlement)
+                // [AI] Informational merchandise estimate; receipt and actual new funding govern issuance.
                 $estimatedCashbackNaira = '0.00';
                 if ($loyaltyStatus === 1 && $cashbackRatePercent > 0 && $exchangeRate > 0) {
                     $estimatedCashbackNaira = bcmul(
-                        bcadd((string) $reservation->total_amount, '0', 2),
+                        bcadd((string) ($snapshot['subtotal'] ?? '0'), '0', 2),
                         bcdiv((string) $cashbackRatePercent, '100', 6),
                         2
                     );
@@ -101,8 +109,10 @@ class PickupReservationController extends Controller
                     'seller_id'        => $reservation->seller_id,
                     'shop_snapshot'    => $shopSnapshot,
                     'items'            => $snapshot['items'] ?? [],
-                    // [AI] Cashback to earn when paying at store — app shows this as a promise
+                    // [AI] Estimate only; confirmed receipt starts the reward lifecycle.
                     'cashback_to_earn' => [
+                        'award_trigger'    => 'confirmed_receipt',
+                        'award_status'     => 'estimate',
                         'percent'          => $loyaltyStatus === 1 ? $cashbackRatePercent : 0.0,
                         'estimated_naira'  => $estimatedCashbackNaira,
                     ],
@@ -139,7 +149,7 @@ class PickupReservationController extends Controller
     /**
      * Lists active and historical pickup reservations for the authenticated customer.
      */
-    public function index(Request $request): JsonResponse
+    public function index(Request $request): JsonResponse|\Illuminate\Contracts\View\View
     {
         $customerId = auth('customer')->id() ?? (int) ($request->user('customer')?->id ?? 0);
         if (!$customerId && auth('api')->check()) {
@@ -151,6 +161,9 @@ class PickupReservationController extends Controller
         }
 
         $reservations = $this->reservationService->listReservationsForCustomer($customerId);
+        if (!$request->expectsJson() && !$request->is('api/*')) {
+            return view('theme-views.users-profile.pickup-reservations', ['reservations' => $reservations]);
+        }
 
         return response()->json([
             'status' => true,
@@ -204,6 +217,7 @@ class PickupReservationController extends Controller
         $ttlMinutes = (int) ($request->input('ttl_minutes', 30));
         $callbackUrl = $request->input('callback_url');
         $useCashback = (bool) ($request->input('use_cashback', false));
+        $validated = $request->validate(['quote_token' => 'required|string|size:64', 'use_cashback' => 'nullable|boolean']);
 
         try {
             $result = $this->paymentInitService->initializePayment(
@@ -211,7 +225,8 @@ class PickupReservationController extends Controller
                 $reservationCode,
                 $useCashback,
                 $ttlMinutes,
-                $callbackUrl
+                $callbackUrl,
+                $validated['quote_token']
             );
 
             return response()->json(array_merge($result, [
@@ -239,5 +254,54 @@ class PickupReservationController extends Controller
                 'message' => 'Payment initialization failed: ' . $e->getMessage(),
             ], 500);
         }
+    }
+
+    /** [AI] Frozen server funding review for customer storefront and mobile. */
+    public function quote(Request $request, string $reservationCode): JsonResponse
+    {
+        $customerId = (int)(auth('customer')->id() ?? auth('api')->id() ?? 0);
+        if (!$customerId) { return response()->json(['status' => false], 401); }
+        $request->validate(['use_cashback' => 'nullable|boolean']);
+        try {
+            return response()->json($this->paymentInitService->quote($customerId, $reservationCode, $request->boolean('use_cashback')));
+        } catch (InvalidPaymentStateException $e) {
+            return response()->json(['status' => false, 'message' => $e->getMessage()], 409);
+        }
+    }
+
+    /** [AI] Authoritative polling never equates a captured anomaly with fulfilled pickup. */
+    public function status(Request $request, string $reservationCode): JsonResponse
+    {
+        $customerId = (int)(auth('customer')->id() ?? auth('api')->id() ?? 0);
+        if (!$customerId) { return response()->json(['status' => false], 401); }
+        $state = DB::transaction(function () use ($customerId, $reservationCode) {
+            User::where('id', $customerId)->lockForUpdate()->first();
+            $reservation = PickupReservation::where('customer_id', $customerId)->where('reservation_code', $reservationCode)->lockForUpdate()->first();
+            if (!$reservation) { return null; }
+            $payment = PaymentRequest::where('pickup_reservation_id', $reservation->id)->latest('created_at')->lockForUpdate()->first();
+            $order = $reservation->order_id ? Order::find($reservation->order_id) : null;
+            $canonicalOrder = $order && (int)$order->customer_id === $customerId && $order->order_type === 'pickup' && $order->order_group_id === 'pickup-'.$reservation->reservation_code;
+            $paid = $reservation->status === 'order_placed' && $payment && (int)$payment->payer_id === $customerId && $payment->attempt_status === 'successful' && (int)$payment->is_paid === 1 && $canonicalOrder && $order->payment_status === 'paid' && in_array($order->order_status, ['confirmed', 'processing', 'out_for_delivery', 'delivered']);
+            if (!$paid && $reservation->isExpired() && !in_array($reservation->status, ['order_placed', 'expired'])) {
+                $reservation->update(['status' => 'expired', 'active_reservation_token' => null]);
+                if ($payment && $payment->attempt_status === 'pending' && !(int)$payment->is_paid) {
+                    $payment->update(['attempt_status' => 'expired', 'active_pickup_reservation_id' => null]);
+                }
+                CashbackRedemption::where('pickup_reservation_id', $reservation->id)->where('status', 'reserved')->update(['status' => 'released', 'released_at' => now()]);
+            }
+            $additional = $payment ? json_decode($payment->additional_data ?? '{}', true) : [];
+            // [AI] A provider attempt label cannot certify fulfillment or an unsupported cancellation.
+            $paymentStatus = $paid ? 'paid' : ($payment?->attempt_status ?? ($reservation->status === 'expired' ? 'expired' : 'unpaid'));
+            if (!$paid && ($paymentStatus === 'successful' || $reservation->status === 'order_placed')) {
+                $paymentStatus = $canonicalOrder && $order->payment_status === 'refunded' ? 'refunded' : 'reconciliation_required';
+            }
+            return ['status' => true, 'reservation_status' => $reservation->status,
+                'payment_status' => $paymentStatus,
+                'order_id' => $paid ? $order->id : null, 'pickup_verification_code' => $paid ? (string)$order->pickup_verification_code : null,
+                'expires_at' => $reservation->expires_at, 'payment_request_id' => $payment?->id,
+                'gateway_reference' => $payment?->gateway_reference,
+                'authorization_url' => !$paid && $payment?->attempt_status === 'pending' ? ($additional['authorization_url'] ?? null) : null];
+        });
+        return response()->json($state ?? ['status' => false, 'message' => 'Reservation not found.'], $state ? 200 : 404);
     }
 }

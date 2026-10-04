@@ -49,6 +49,7 @@ class SellerApiAuthMiddleware
                 // 1. Strict Owner-Only Boundary: Employees cannot perform withdrawals, banking, or employee administration
                 if (
                     $request->is('*seller/withdraw*') ||
+                    $request->is('*seller/delivery-man/withdraw*') ||
                     $request->is('*seller/shop/update-bank*') ||
                     $request->is('*seller/payment-info*') ||
                     $request->is('*seller/business-settings*') ||

@@ -995,13 +995,15 @@ class UserProfileController extends Controller
         try {
             DB::transaction(function () use ($request, $order, &$refundRequest) {
                 // [AI] Storefront disputes use the same Order-first financial lock.
-                Order::whereKey($order->id)->lockForUpdate()->firstOrFail();
+                $lockedOrder = Order::whereKey($order->id)->lockForUpdate()->firstOrFail();
+                if (!$lockedOrder->isWithinRefundWindow()) throw new \RuntimeException('Refund window has closed.');
                 // [AI] Row-level lock on OrderDetail to prevent concurrent duplicate submissions
                 $lockedDetail = OrderDetail::where('id', $request->order_details_id)->lockForUpdate()->first();
                 if (!$lockedDetail) {
                     throw new \Exception('order_details_not_found');
                 }
 
+                if ($lockedDetail->delivery_status !== 'delivered') throw new \RuntimeException('Delivery receipt is required.');
                 // Guard: Check if refund already requested or processed on this item
                 if ((int)$lockedDetail->refund_request !== 0) {
                     throw new \Exception('already_applied_for_refund_request!!');
@@ -1034,7 +1036,7 @@ class UserProfileController extends Controller
                 $newRefundRequest->product_id = $lockedDetail->product_id;
                 $newRefundRequest->order_id = $lockedDetail->order_id;
                 $newRefundRequest->refund_reason = $request->refund_reason;
-                $newRefundRequest->payment_info = json_encode([
+                $newRefundRequest->payment_info = json_encode($refundDetails + [
                     'merchandise_value' => $merchandiseValue,
                     'merchandise_money' => $merchandiseMoney,
                     'tax_amount' => $taxAmount,

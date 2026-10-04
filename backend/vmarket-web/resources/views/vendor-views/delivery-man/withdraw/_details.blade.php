@@ -1,3 +1,4 @@
+@php($payoutBank = (array) ($details->withdrawal_method_fields ?? []))
 <div class="withdraw-info-sidebar-overlay"></div>
 <div class="withdraw-info-sidebar d-flex justify-content-between flex-column">
     <div class="withdraw-details">
@@ -10,7 +11,7 @@
             <h3 class="mb-3 text-capitalize">{{translate('withdraw_information')}}</h3>
             <div class="d-flex gap-2 align-items-center mb-1 flex-wrap">
                 <span class="text-capitalize">{{translate('withdraw_Amount').' : '}}</span>
-                <span class="font-semibold">{{setCurrencySymbol(amount: usdToDefaultCurrency(amount: $details['amount']), currencyCode: getCurrencyCode())}}</span>
+                <span class="font-semibold">{{setCurrencySymbol(amount: $details['amount'], currencyCode: 'NGN')}}</span>
                 <label class="badge {{$details['approved'] == 1 ? 'badge-success-2' : ($details['approved'] == 0 ? 'badge--primary-2':'badge--danger-2')}} mb-0">{{translate($details['approved'] == 1 ? 'approved' : ($details['approved'] == 0 ? 'pending':'denied'))}}</label>
             </div>
             <div class="d-flex gap-2 align-items-center fs-12">
@@ -26,19 +27,19 @@
                 <div class="key-val-list d-flex flex-column gap-2 min-width--60px">
                     <div class="key-val-list-item d-flex gap-3">
                         <span class="text-capitalize">{{translate('bank_name')}}</span>:
-                        <span>{{$details?->deliveryMan?->bank_name ?? translate('no_data_found')}}</span>
+                        <span>{{($payoutBank['bank_name'] ?? null) ?? translate('no_data_found')}}</span>
                     </div>
                     <div class="key-val-list-item d-flex gap-3">
                         <span>{{translate('branch')}}</span>:
-                        <span>{{$details?->deliveryMan?->branch ?? translate('no_data_found') }}</span>
+                        <span>{{($payoutBank['branch'] ?? null) ?? translate('no_data_found') }}</span>
                     </div>
                     <div class="key-val-list-item d-flex gap-3">
                         <span class="text-capitalize">{{translate('holder_name')}} </span>:
-                        <span>{{$details?->deliveryMan?->holder_name ?? translate('no_data_found') }}</span>
+                        <span>{{($payoutBank['holder_name'] ?? null) ?? translate('no_data_found') }}</span>
                     </div>
                     <div class="key-val-list-item d-flex gap-3">
                         <span class="text-capitalize">{{translate('account_no')}}</span>:
-                        <span>{{$details?->deliveryMan?->account_no ??  translate('no_data_found') }}</span>
+                        <span>{{($payoutBank['account_no'] ?? null) ??  translate('no_data_found') }}</span>
                     </div>
                 </div>
             </div>
@@ -78,6 +79,9 @@
                 </div>
             </div>
         @endif
+        @if($details['proof_of_payment'])
+            <a href="{{ $details->proof_of_payment_url }}" target="_blank" rel="noopener">View proof of payment</a>
+        @endif
     </div>
     <div class="d-none note-section">
         <div class="d-flex pb-3">
@@ -85,11 +89,14 @@
                 <i class="tio-clear"></i>
             </span>
         </div>
-        <form action="{{route('vendor.delivery-man.withdraw.update-status',[$details['id']])}}" method="POST" id="approval-note-form">
+        <form action="{{route('vendor.delivery-man.withdraw.update-status',[$details['id']])}}" method="POST" id="approval-note-form" enctype="multipart/form-data">
             @csrf
             <input name="approved" value="1" hidden="">
             <div class="mt-5 d-none note-area" id="approval-note" >
                 <h5 class="font-semibold text-center mb-3">{{translate('approval_note')}} </h5>
+                <label for="proof_of_payment">{{translate('proof_of_payment')}} ({{translate('required')}})</label>
+                <input type="file" class="form-control mb-3" name="proof_of_payment" id="proof_of_payment" accept="image/jpeg,image/png,application/pdf" required>
+                <small>JPEG, PNG or PDF, up to 5 MB.</small>
                 <textarea name="note" class="form-control" rows="6" placeholder="{{translate('type_a_note_about_request_approval').'.'}}"></textarea>
                 <div class="d-flex gap-2 pt-3 justify-content-center">
                     <button type="button" class="btn btn-soft-secondary min-w-100px back-to-details mx-2">{{translate('back')}} </button>

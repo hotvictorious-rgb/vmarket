@@ -15,7 +15,7 @@
         @foreach($withdrawRequests as $key=>$withdrawRequest)
             <tr>
                 <td>{{$withdrawRequests->firstItem()+$key}}</td>
-                <td>{{setCurrencySymbol(amount: usdToDefaultCurrency(amount: $withdrawRequest['amount']), currencyCode: getCurrencyCode(type: 'default'))}}</td>
+                <td>{{setCurrencySymbol(amount: $withdrawRequest['amount'], currencyCode: 'NGN')}}</td>
 
                 <td>
                     @if (isset($withdrawRequest->deliveryMan))

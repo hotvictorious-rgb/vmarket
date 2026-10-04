@@ -169,6 +169,10 @@ class PaymentController extends Controller
             }
             Toastr::error(translate('Checkout parameters changed. Please restart checkout.'));
             return redirect()->route('shop-cart');
+        } catch (InvalidPaymentStateException $e) {
+            if ($isApp) { return response()->json(['errors' => [['code' => 'payment-pending', 'message' => $e->getMessage()]]], 409); }
+            Toastr::error(translate($e->getMessage()));
+            return redirect()->route('shop-cart');
         } catch (InvalidCartException | ProductUnavailableException $e) {
             $err = ['code' => 'cart-error', 'message' => $e->getMessage()];
             if ($isApp) {

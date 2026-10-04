@@ -153,7 +153,7 @@
                                            <i class="fi fi-sr-eye d-flex"></i>
                                        </span>
                                     </a>
-                                    @if(($refund['change_by'] ?? null) != 'admin' && in_array($refund['status'], ['pending', 'approved', 'rejected']))
+                                    @if(($refund['change_by'] ?? null) != 'admin' && $refund['status'] === 'pending')
                                         @if($refund['status'] != 'rejected')
                                             <button class="btn btn-outline-danger icon-btn"
                                                     data-toggle="modal"

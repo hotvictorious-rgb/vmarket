@@ -20,7 +20,7 @@ class WithdrawController extends Controller
     public function sendWithdrawRequest(Request $request): JsonResponse
     {
         $validator = Validator::make($request->all(), [
-            'amount' => 'required|numeric|min:1',
+            'amount' => ['required', 'regex:/^(?:0|[1-9][0-9]{0,12})(?:\.[0-9]{1,2})?$/D', 'numeric', 'min:1'],
         ]);
         if ($validator->fails()) {
             return response()->json(['errors' => Helpers::validationErrorProcessor($validator)], 403);
@@ -29,7 +29,7 @@ class WithdrawController extends Controller
         $deliveryMan = $request->delivery_man;
         $parentId = $request->delivery_man->seller_id;
         // [AI] Victorious Market operates natively in NGN. Delivery charges and wallet balances are stored in NGN.
-        $requestedAmount = floatval($request['amount']);
+        $requestedAmount = bcadd((string)$request['amount'], '0', 2);
 
         return DB::transaction(function () use ($deliveryMan, $parentId, $requestedAmount, $request) {
             $wallet = DeliverymanWallet::where('delivery_man_id', $deliveryMan['id'])->lockForUpdate()->first();
@@ -39,12 +39,19 @@ class WithdrawController extends Controller
             }
 
             // [AI] Directive 57326: cash_in_hand removed — V1 riders do not collect cash.
-            $withdrawable = ($wallet->current_balance ?? 0) - ($wallet->pending_withdraw ?? 0);
-            if ($withdrawable < $requestedAmount) {
+            $withdrawable = bcsub((string)$wallet->getRawOriginal('current_balance'), (string)$wallet->getRawOriginal('pending_withdraw'), 2);
+            if (bccomp($withdrawable, $requestedAmount, 2) < 0) {
                 return response()->json(['message' => translate('withdraw_request_amount_can_not_be_more_than_withdrawable_balance')], 403);
             }
 
+            // [AI] Freeze bank details from the authenticated profile; submitted beneficiary fields are never authoritative.
+            $profile = \App\Models\DeliveryMan::whereKey($deliveryMan['id'])->lockForUpdate()->firstOrFail();
+            if (empty($profile->bank_name) || empty($profile->account_no) || empty($profile->holder_name)) {
+                return response()->json(['message' => 'Complete your bank beneficiary before requesting a payout.'], 422);
+            }
             WithdrawRequest::create([
+                'withdrawal_method_fields' => ['currency' => 'NGN', 'bank_name' => $profile->bank_name,
+                    'account_no' => $profile->account_no, 'holder_name' => $profile->holder_name, 'captured_at' => now()->toIso8601String()],
                 'delivery_man_id' => $deliveryMan['id'],
                 ($parentId == 0) ? 'admin_id' : 'seller_id' => $parentId,
                 'amount' => $requestedAmount,
@@ -53,7 +60,7 @@ class WithdrawController extends Controller
                 'updated_at' => now()
             ]);
 
-            $wallet->pending_withdraw += $requestedAmount;
+            $wallet->pending_withdraw = bcadd((string)$wallet->getRawOriginal('pending_withdraw'), $requestedAmount, 2);
             $wallet->save();
 
             return response()->json(['message' => translate('Withdraw_request_sent_successfully!')], 200);

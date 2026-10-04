@@ -17,22 +17,12 @@
         <div class="card p-4">
             <p class="text-muted">Vendor approval or rejection is a recommendation. The administrator reviews the dispute and controls refund payment. A vendor rejection does not close the financial dispute.</p>
 
-            @if ($refund['change_by'] !='admin' && in_array($refund['status'], ['pending', 'approved', 'rejected']))
+            @if ($refund['change_by'] !='admin' && $refund['status'] === 'pending')
             <div class="mb-3 alert--message">
                 <div class="d-flex justify-content-between w-100">
                     <span class="">
                         <img class="mb-1" src="{{dynamicAsset(path: 'public/assets/back-end/img/warning-icon.png')}}" alt="{{translate('warning')}}">
-                        @if($refund['status'] != 'pending' && ($refund['approved_count']<2 || $refund['denied_count']<2))
-                            @if($refund['status'] == 'approved' && $refund['approved_count']<2 )
-                                {{translate('you_have_already_denied_refund_status_once').'.'}}
-                            @elseif($refund['status'] == 'rejected' && $refund['denied_count']<2)
-                                {{translate('you_have_already_approved_refund_status_once').'.'}}
-                            @endif
-                        @elseif($refund['approved_count']>=2 || $refund['denied_count']>=2)
-                            {{translate('you_have_already_').$refund['status'].translate('_refund_status_twice').'.'}}
-                        @else
-                            {{translate('you_can_change_refund_status_maximum_2_times').'.'}}
-                        @endif
+                        Submit one recommendation for administrator review. It cannot be changed after submission.
                     </span>
                     <a href="javascript:" class="align-items-center close-alert-message">
                         <i class="tio-clear"></i>
@@ -83,7 +73,7 @@
                             <div class="gap-3 mb-4 d-flex justify-content-between flex-wrap align-items-center">
                                 <h4 class="m-0">{{translate('product_details')}}</h4>
                                 <div class="d-flex flex-wrap gap-3">
-                                    @if ($refund->change_by !='admin' && in_array($refund['status'], ['pending', 'approved', 'rejected']))
+                                    @if ($refund->change_by !='admin' && $refund['status'] === 'pending')
                                         @if($refund['status'] != 'rejected' && $refund['denied_count'] < 2)
                                             <button class="btn btn-soft-danger min-w--100 p-2 px-3" data-toggle="modal" data-target="#rejectModal">
                                                 Recommend rejection
@@ -337,7 +327,7 @@
             </div>
         </div>
     </div>
-    @if ($refund['change_by'] !='admin' && in_array($refund['status'], ['pending', 'approved', 'rejected']))
+    @if ($refund['change_by'] !='admin' && $refund['status'] === 'pending')
         @if($refund['denied_count'] < 2)
             <div class="modal fade" id="rejectModal">
                 <div class="modal-dialog">
@@ -350,7 +340,7 @@
                                 <div class="text-center">
                                     <img class="mb-3" src="{{dynamicAsset(path: 'public/assets/back-end/img/refund-reject.png')}}" alt="{{translate('refund_reject')}}">
                                     <h4 class="mb-4 mx-auto max-w-283">
-                                        {{translate('you_can_reject_that_refund_request_two_times').', '.translate('then_you_can_not_change_this_status').'.'}}
+                                        Recommend rejection for administrator review? This does not close the financial dispute.
                                     </h4>
                                 </div>
                                 <textarea class="form-control text-area-max-min" placeholder="{{translate('please_write_the_reject_reason').'...'}}" name="rejected_note" rows="3"></textarea>
@@ -376,7 +366,7 @@
                                 <div class="text-center">
                                     <img class="mb-3" src="{{dynamicAsset(path: 'public/assets/back-end/img/refund-approve.png')}}" alt="{{translate('refund_approve')}}">
                                     <h4 class="mb-4 mx-auto max-w-283">
-                                        {{translate('you_can_approve_that_refund_request_two_times').', '.translate('then_you_can_not_change_this_status').'.'}}
+                                        Recommend approval for administrator review? The administrator controls refund payment.
                                     </h4>
                                 </div>
                                 <textarea class="form-control text-area-max-min" placeholder="{{translate('please_write_the_approve_reason').'...'}}" name="approved_note" rows="3"></textarea>

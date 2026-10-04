@@ -104,6 +104,8 @@ class DeliveryCheckoutIntentController extends Controller
 
         } catch (IdempotencyConflictException $e) {
             return response()->json(['errors' => [$e->getMessage()]], 409);
+        } catch (InvalidPaymentStateException $e) {
+            return response()->json(['errors' => [$e->getMessage()]], 409);
         } catch (InvalidCartException | ProductUnavailableException $e) {
             return response()->json(['errors' => [$e->getMessage()]], 422);
         } catch (\Exception $e) {

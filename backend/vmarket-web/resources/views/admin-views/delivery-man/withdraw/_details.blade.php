@@ -1,3 +1,4 @@
+@php($payoutBank = (array) ($details->withdrawal_method_fields ?? []))
 <div class="withdraw-info-sidebar-overlay"></div>
 <div class="withdraw-info-sidebar d-flex justify-content-between flex-column">
     <div class="withdraw-details">
@@ -10,7 +11,7 @@
             <h3 class="mb-3 text-capitalize">{{translate('withdraw_information')}}</h3>
             <div class="d-flex gap-2 align-items-center mb-1 flex-wrap">
                 <span class="text-capitalize">{{translate('withdraw_Amount').' : '}}</span>
-                <span class="font-semibold">{{setCurrencySymbol(amount: usdToDefaultCurrency(amount: $details['amount']), currencyCode: getCurrencyCode())}}</span>
+                <span class="font-semibold">{{setCurrencySymbol(amount: $details['amount'], currencyCode: 'NGN')}}</span>
                 <label class="badge {{$details['approved'] == 1 ? 'badge-success-2' : ($details['approved'] == 0 ? 'badge--primary-2':'badge--danger-2')}} mb-0">{{translate($details['approved'] == 1 ? 'approved' : ($details['approved'] == 0 ? 'pending':'denied'))}}</label>
             </div>
             <div class="d-flex gap-2 align-items-center fs-12">
@@ -26,19 +27,19 @@
                 <div class="key-val-list d-flex flex-column gap-2 min-width--60px">
                     <div class="key-val-list-item d-flex gap-3">
                         <span class="text-capitalize">{{translate('bank_name')}}</span>:
-                        <span>{{$details?->deliveryMan?->bank_name ?? translate('no_data_found')}}</span>
+                        <span>{{($payoutBank['bank_name'] ?? null) ?? translate('no_data_found')}}</span>
                     </div>
                     <div class="key-val-list-item d-flex gap-3">
                         <span>{{translate('branch')}}</span>:
-                        <span>{{$details?->deliveryMan?->branch ?? translate('no_data_found') }}</span>
+                        <span>{{($payoutBank['branch'] ?? null) ?? translate('no_data_found') }}</span>
                     </div>
                     <div class="key-val-list-item d-flex gap-3">
                         <span class="text-capitalize">{{translate('holder_name')}} </span>:
-                        <span>{{$details?->deliveryMan?->holder_name ?? translate('no_data_found') }}</span>
+                        <span>{{($payoutBank['holder_name'] ?? null) ?? translate('no_data_found') }}</span>
                     </div>
                     <div class="key-val-list-item d-flex gap-3">
                         <span class="text-capitalize">{{translate('account_no')}}</span>:
-                        <span>{{$details?->deliveryMan?->account_no ??  translate('no_data_found') }}</span>
+                        <span>{{($payoutBank['account_no'] ?? null) ??  translate('no_data_found') }}</span>
                     </div>
                 </div>
             </div>
@@ -77,6 +78,7 @@
                     </div>
                 </div>
             </div>
+        @endif
         @if($details['proof_of_payment'])
             <div class="card mb-3">
                 <div class="card-header">
@@ -84,7 +86,7 @@
                 </div>
                 <div class="card-body">
                     <a href="{{asset('storage/app/public/withdraw_requests')}}/{{$details['proof_of_payment']}}" target="_blank">
-                        <img src="{{asset('storage/app/public/withdraw_requests')}}/{{$details['proof_of_payment']}}" alt="Proof of Payment" class="img-fluid" style="max-height: 100px;">
+                        View proof of payment
                     </a>
                 </div>
             </div>
@@ -103,7 +105,8 @@
                 <h4 class="text-center mb-3">{{translate('approval_note')}} </h4>
                 <div class="mb-3 text-start">
                     <label for="proof_of_payment" class="font-medium text-capitalize">{{translate('proof_of_payment')}} ({{translate('required')}})</label>
-                    <input type="file" class="form-control" name="proof_of_payment" id="proof_of_payment" accept="image/*" required>
+                    <input type="file" class="form-control" name="proof_of_payment" id="proof_of_payment" accept="image/jpeg,image/png,application/pdf" required>
+                    <small>JPEG, PNG or PDF, up to 5 MB.</small>
                 </div>
                 <textarea name="note" class="form-control" rows="6" placeholder="{{translate('type_a_note_about_request_approval').'.'}}"></textarea>
                 <div class="d-flex gap-2 pt-3 justify-content-center">
