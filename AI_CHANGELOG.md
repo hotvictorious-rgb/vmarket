@@ -5329,3 +5329,10 @@ ecord packages, created VoiceNoteBottomSheet and AudioPlayerWidget, and integrat
   - Full suite green with zero product-code changes; no weakened assertions.
   - Reviewer-verified: php -l 3/3 (PHP 8.4.25), run-all 7/7 live PASS (17/17 suites) at b3d1253a649471dd6e1360634a78dbd54fd72d51, gate 18/18 PASS, merge 31158a8f7613a98842b0f9637b45cc659c787e04.
 
+
+### [2026-10-04] V1 money-path repair [AI]
+- Scope: audited F01–F16 across backend, customer app/storefront and vendor refund portals; repairs on v1 only.
+- Order-specific escrow and recognized accounting replace aggregate deductions; refund proof, terminal payouts, replay guards and debt holds protect money movement. Settlement releases wallet entitlement; bank payout remains the withdrawal step.
+- Registered scheduler, canonical gateway linkage, durable unmatched-capture reconciliation and payment recovery; clients confirm frozen backend quotes and use authoritative status/OTP.
+- Reviewer combined real-code regressions: 30 tests /243 assertions passed; 50 PHP syntax checks passed. Focused customer tests and vendor analysis passed. See .ai/reviews/customer/V1-MONEY-REPAIR-2026-10-04.md and runner log.
+- Code/migration deployment, MySQL contention, live gateway/device checks and historical bank reconciliation remain operational requirements. No live transfers, wallet reset or deployment performed.

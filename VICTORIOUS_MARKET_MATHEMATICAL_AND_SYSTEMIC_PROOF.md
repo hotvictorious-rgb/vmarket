@@ -1034,3 +1034,12 @@ The same invariant applies to status actions: the UI exposes only the permitted 
 | Laravel Blade view compilation | PHP unavailable on local PATH | **NOT RUN** |
 
 **Zero-drift conclusion:** Vendor frontend order values and state transitions remain backend-authoritative; unresolved backend contract gaps remain tracked in `docs/api/vendor_web_app_api_requests.md`.
+
+## 18. V1 repair evidence and limits — 2026-10-04 [AI]
+This section supersedes earlier universal zero-drift/production-certification wording. Modeled arithmetic and copied helper tests do not prove every production path or concurrency invariant.
+
+Reviewer actual-controller/service integration run: **30 tests /243 assertions passed** on isolated SQLite memory databases, PHP 8.2.12; see `.ai/reviews/customer/v1-money-final.log`. Customer quote/recovery regressions and vendor targeted analysis also passed. MySQL two-connection contention, live gateway behavior, deployed cron and historical bank reconciliation remain unverified.
+
+For merchandise NGN100, tax7.50, delivery2 and redeemed rewards10, funding is cash99.50 + redeemed liability10 =109.50. Vendor entitlement90, gross commission10, tax7.50 and delivery2 sum to109.50. New-money reward at5% is4.50, leaving retained commission5.50. This illustrative conservation equation is not a bank-balance certificate.
+
+Per-order remaining backing prevents refund A consuming hold B. Recognized merchandise/commission/tax counters cap subsequent reversals; final penny residual is allocated once. Unknown historical counters remain NULL until evidence-backed reconciliation. Settlement wallet release is distinct from withdrawal bank payout. Owned-inventory revenue is not profit without cost data.

@@ -1,0 +1,10 @@
+PHPUnit 11.5.53 by Sebastian Bergmann and contributors.
+
+Runtime:       PHP 8.2.12
+Configuration: C:\Users\USER\Downloads\vmarket\.ai\reviews\customer\v1-money.phpunit.xml
+
+..............................                                    30 / 30 (100%)
+
+Time: 00:43.663, Memory: 82.00 MB
+
+OK (30 tests, 243 assertions)

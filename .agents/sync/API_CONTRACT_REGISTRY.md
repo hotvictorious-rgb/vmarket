@@ -206,7 +206,7 @@ Fulfills delivery orders with two-phase commit:
     "order_group_id": "ORD-GRP-89231849",
     "total_amount": "26500.00",
     "currency": "NGN",
-    "status": "pending_payment",
+    "status": "pending",
     "expires_at": "2026-09-24T18:00:00Z",
     "fingerprint": "sha256_hash_of_items_and_prices"
   }
@@ -254,8 +254,8 @@ Fulfills delivery orders with two-phase commit:
   ```json
   {
     "order_group_id": "ORD-GRP-89231849",
-    "intent_status": "pending_payment", // "pending_payment" | "converted" | "expired"
-    "payment_status": "unpaid",          // "unpaid" | "pending" | "paid"
+    "intent_status": "pending", // "pending" | "converted_to_orders" | "canceled" | "expired"
+    "payment_status": "unpaid",          // "unpaid" | "pending" | "paid" | "reconciliation_required" | "expired" | "failed" | "superseded"
     "authorization_url": "https://checkout.paystack.com/00abcdef...",
     "total_amount": "26500.00",
     "currency": "NGN",
@@ -360,7 +360,7 @@ Governs the zero-risk physical store inspection flow:
     "otp": "784912"
   }
   ```
-- **Behavior**: Verifies 6-digit code inside atomic DB transaction, updates order status to `delivered`, triggers instant cashback reward, and unlocks vendor wallet settlement.
+- **Behavior**: Verifies 6-digit code inside atomic DB transaction, updates order status to `delivered`, records receipt and starts the 24-hour return window. Rewards remain pending and vendor entitlement release waits for expiry and admin resolution of disputes.
 
 ---
 
@@ -564,3 +564,14 @@ Frontend developers and AI agents must NEVER call, re-implement, or re-introduce
 | Direct pre-paid pickup without Code #1 | **REPLACED**. Direct payment for pickup without inspection creates fraud and disputes. | `POST /api/v1/pickup-reservations` (Two-Code Flow) |
 | Admin `store-state` / `store-city` CRUD | **REMOVED**. Public geography is governed by canonical seeders, not admin UI forms. | Seeded `Country → State → LGA` hierarchy |
 | Client-side shipping fee math | **PROHIBITED**. Clients must never calculate delivery fees using distance formulas or hardcoded rates. | Server-side `/fulfillment/delivery-fee` |
+
+## V1 money repair contract amendment — 2026-10-04
+
+- `POST /api/v1/checkout/intent` retains existing response fields and adds `quote`: currency, merchandise_subtotal, tax_total, shipping_total, gross_amount, total_amount, cashback_amount, nested cashback snapshot and vendors. Vendor quote rows include merchandise, tax, shipping_cost and allocated_cashback. All amounts are backend decimal strings. Clients confirm this frozen quote before payment initialization.
+- Delivery status uses actual intent states `pending`, `converted_to_orders`, `canceled`, `expired`. Fulfillment success requires a successful paid canonical attempt, converted intent, and paid child orders. A captured attempt needing reconciliation is not a completed order. Expiry releases reserved reward allocations under the intent lock.
+- Seller Web/API refund decisions accept `approved` or `rejected` as recommendations only. Sellers cannot reset to pending, financially finalize, reopen admin decisions or mark refunded. Seller rejection retains a dispute hold until admin resolution. Admin refund approval and payment confirmation require their financial capabilities.
+- Admin settlement uses `payment_method=wallet_release`, an audit reference and optional notes. It releases the vendor merchandise entitlement once; it does not certify a bank transfer. The existing withdrawal approval, with payment proof and immutable beneficiary snapshot, is the external payout.
+- Payout approval decisions are terminal integers `1` (approve) or `2` (deny); `0` is pending and cannot be submitted as a financial decision. Invalid or repeated actions cannot change balances. New V1 payout amounts use NGN decimal values; cancellation restores the exact recorded reservation.
+- Pickup recovery displays only `pickup_verification_code`; delivery verification_code is not a pickup fallback.
+- Reward earning settings permit 0–5%. Normal V1 points conversion cannot revalue existing liabilities; changing configured conversion requires an explicit ledger migration.
+- New per-order hold tracking requires migration 2026_10_03_000010. Historical unknown holds require verified reconciliation before release/refund; aggregate balances are never reset or inferred.

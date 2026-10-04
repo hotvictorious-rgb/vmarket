@@ -112,21 +112,21 @@ Effect: running the ordinary scheduler alone will not mature cashback or promote
 
 **Repair:** register the schedules using the actual Laravel 12 bootstrap; use one authoritative schedule definition. Verify `schedule:list`, run due jobs in staging, and prove deployment cron invokes schedule:run. Add overlap protection and monitoring for delayed jobs.
 
-### F04 — P1: the vendor settlement lifecycle has no reachable completion action
+### F04 — P1: vendor settlement conflates wallet release and external payout
 
-**Confirmed production caller gap; payout semantics also require a decision before wiring it.**
+**Correction recorded during repair on 2026-10-03: the original missing-caller assertion was incorrect. The payout semantics and replay defects remain valid.**
 
-[VendorSettlementService.executeManualSettlement](C:/Users/USER/Downloads/vmarket/backend/vmarket-web/app/Services/VendorSettlementService.php:127) exists, but repository tracing found no application controller/route caller. Its only call into [OrderManager.disburseSettledVendorOrder](C:/Users/USER/Downloads/vmarket/backend/vmarket-web/app/Utils/OrderManager.php:415) is internal. Third-party automatic disbursement is deliberately blocked on receipt. The eligibility command only promotes `held/disputed` to `eligible`.
+[VendorSettlementService.executeManualSettlement](C:/Users/USER/Downloads/vmarket/backend/vmarket-web/app/Services/VendorSettlementService.php:127) is called by `Admin/Order/OrderController::settleVendorOrder`, with the `admin.orders.settle-vendor-order` route and an order-details form. This caller was also present at audit baseline `74845a6d`. Third-party automatic disbursement is deliberately blocked on receipt; the eligibility command promotes `held/disputed` to `eligible` before the admin action.
 
-Effect: a new vendor order can reach eligible but cannot finish the specified manual settlement through the implemented portals/API. Existing wallet withdrawal screens do not solve the missing order-to-vendor balance transition.
+The existing admin action is reachable and therefore exposes the following conflicting payout meanings. Findings F05/F06 are reachable through this action, rather than latent behind a missing route.
 
-There is a second boundary to resolve: the service describes an **external manual vendor payment**, yet credits SellerWallet.total_earning, which can subsequently be withdrawn through the separate payout flow. It writes an expense Transaction for the **entire order_amount**, rather than the vendor's 90%, while its `paymentMethod` and `notes` arguments are not persisted in that transaction. Connecting it unchanged would create conflicting meanings for "settled" and could support paying the same entitlement twice operationally. The wrapper also writes a new expense after an inner repeated-settlement no-op.
+The service describes an **external manual vendor payment**, yet credits SellerWallet.total_earning, which can subsequently be withdrawn through the separate payout flow. It writes an expense Transaction for the **entire order_amount**, rather than the vendor's 90%, while its `paymentMethod` and `notes` arguments are not persisted in that transaction. Using it unchanged creates conflicting meanings for "settled" and could support paying the same entitlement twice operationally. The wrapper also writes a new expense after an inner repeated-settlement no-op.
 
-**Repair:** decide whether this action releases an entitlement into a withdrawable wallet or confirms an external transfer. Implement exactly one payout path. Persist actual payable amount, currency, beneficiary snapshot, method, bank reference, date, actor, evidence, and an idempotency key. Add the portal action only after F05/F06 are fixed; recheck receipt, expiry and dispute state under the order lock.
+**Repair:** decide whether this action releases an entitlement into a withdrawable wallet or confirms an external transfer. Implement exactly one payout path. Persist the release amount, actor, reference and notes; keep external payment and beneficiary evidence on the subsequent payout. Correct the existing portal action alongside F05/F06; recheck receipt, expiry and dispute state under the order lock.
 
 ### F05 — P1: partial-refund settlement consumes funds belonging to other orders
 
-**Confirmed by actual settlement probe. Currently latent behind F04, and a blocker to enabling settlement.**
+**Confirmed by actual settlement probe. Reachable through the existing admin settlement action; see the F04 correction.**
 
 [Refund accounting](C:/Users/USER/Downloads/vmarket/backend/vmarket-web/app/Services/PaystackRefundService.php:1138) reduces AdminWallet.pending_amount by returned merchandise. Later [disburseSettledVendorOrder](C:/Users/USER/Downloads/vmarket/backend/vmarket-web/app/Utils/OrderManager.php:477) subtracts the original full order_amount, even though its vendor subtotal excludes refunded items.
 
