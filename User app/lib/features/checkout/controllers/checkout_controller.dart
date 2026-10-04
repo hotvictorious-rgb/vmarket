@@ -1,7 +1,5 @@
 import 'package:flutter_sixvalley_ecommerce/data/model/api_response.dart';
-import 'package:flutter_sixvalley_ecommerce/features/auth/controllers/auth_controller.dart';
 import 'package:flutter_sixvalley_ecommerce/features/cart/domain/models/cart_model.dart';
-import 'package:flutter_sixvalley_ecommerce/features/checkout/domain/models/pickup_reservation_model.dart';
 import 'package:flutter_sixvalley_ecommerce/features/fulfillment/domain/models/fulfillment_availability_model.dart';
 import 'package:flutter_sixvalley_ecommerce/features/checkout/domain/services/checkout_service_interface.dart';
 import 'package:flutter_sixvalley_ecommerce/features/splash/controllers/splash_controller.dart';
@@ -10,6 +8,7 @@ import 'package:flutter_sixvalley_ecommerce/helper/route_healper.dart';
 import 'package:flutter_sixvalley_ecommerce/localization/language_constrants.dart';
 import 'package:flutter_sixvalley_ecommerce/main.dart';
 import 'dart:async';
+import 'package:flutter_sixvalley_ecommerce/features/checkout/domain/models/pickup_payment_state.dart';
 import 'dart:convert';
 import 'dart:math';
 import 'package:flutter_sixvalley_ecommerce/di_container.dart' as di;
@@ -20,7 +19,6 @@ import 'package:flutter_sixvalley_ecommerce/features/checkout/screens/digital_pa
 import 'package:flutter_sixvalley_ecommerce/features/checkout/screens/payment_status_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_sixvalley_ecommerce/common/basewidget/show_custom_snakbar_widget.dart';
-import 'package:provider/provider.dart';
 
 class CheckoutController with ChangeNotifier {
   final CheckoutServiceInterface checkoutServiceInterface;
@@ -32,7 +30,6 @@ class CheckoutController with ChangeNotifier {
   int? _shippingIndex;
   bool _isLoading = false;
   bool _isCheckCreateAccount = false;
-  bool _newUser = false;
 
   bool _isPickup = false;
   bool get isPickup => _isPickup;
@@ -312,24 +309,26 @@ class CheckoutController with ChangeNotifier {
     return apiResponse;
   }
 
-  Future<ApiResponseModel> payPickupReservation({
-    required String reservationCode,
-    bool useCashback = false,
-  }) async {
-    _isLoading = true;
-    notifyListeners();
+  PickupPaymentState? get pendingPickupPayment {
+    final storage = di.sl<StorageService>();
+    return PickupPaymentState.decode(storage.getString(PickupPaymentState.storageKey), storage.getString(AppConstants.userLoginToken));
+  }
 
-    ApiResponseModel apiResponse =
-        await checkoutServiceInterface.payPickupReservation(
-      reservationCode: reservationCode,
-      useCashback: useCashback,
-      paymentGateway: 'paystack',
-      ttlMinutes: 30,
-    );
+  Future<ApiResponseModel> quotePickupReservation({required String reservationCode, bool useCashback = false}) =>
+    checkoutServiceInterface.quotePickupReservation(reservationCode: reservationCode, useCashback: useCashback).then((value) => value as ApiResponseModel);
 
-    _isLoading = false;
-    notifyListeners();
-    return apiResponse;
+  Future<ApiResponseModel> payPickupReservation({required String quoteToken, required String reservationCode, bool useCashback = false}) async {
+    _isLoading = true; notifyListeners();
+    try {
+      final storage = di.sl<StorageService>();
+      final owner = storage.getString(AppConstants.userLoginToken) ?? '';
+      if (owner.isEmpty) return ApiResponseModel.withError('Sign in to pay');
+      final pending = pendingPickupPayment;
+      if (pending != null && pending.reservationCode != reservationCode) return ApiResponseModel.withError('Check your previous pickup payment first');
+      await storage.setString(PickupPaymentState.storageKey, PickupPaymentState(ownerToken: owner, reservationCode: reservationCode, quoteToken: quoteToken, useCashback: useCashback).encode());
+      return await checkoutServiceInterface.payPickupReservation(quoteToken: quoteToken, reservationCode: reservationCode, useCashback: useCashback, paymentGateway: 'paystack', ttlMinutes: 30);
+    } catch (e) { return ApiResponseModel.withError(e.toString()); }
+    finally { _isLoading = false; notifyListeners(); }
   }
 
   // [AI] Authoritative Fulfillment & Delivery Intent Methods

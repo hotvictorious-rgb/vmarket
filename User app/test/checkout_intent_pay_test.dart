@@ -118,7 +118,23 @@ class FakeCheckoutService implements CheckoutServiceInterface {
   }
 
   @override
-  Future<ApiResponseModel> payPickupReservation({
+  Future<dynamic> quotePickupReservation({required String reservationCode, bool useCashback = false}) async {
+    return ApiResponseModel.withSuccess(
+      FakeResponse(
+        data: {
+          'status': true,
+          'quote': {
+            'quote_token': 'test_quote_token',
+            'net_payable': 10000.0,
+          },
+        },
+        statusCode: 200,
+      ),
+    );
+  }
+
+  @override
+  Future<ApiResponseModel> payPickupReservation({String? quoteToken, 
     required String reservationCode,
     bool useCashback = false,
     String paymentGateway = 'paystack',

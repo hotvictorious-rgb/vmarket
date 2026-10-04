@@ -27,8 +27,11 @@ class CheckoutService implements CheckoutServiceInterface{
   }
 
   @override
-  Future payPickupReservation({required String reservationCode, bool useCashback = false, String paymentGateway = 'paystack', int ttlMinutes = 30}) async {
-    return await checkoutRepositoryInterface.payPickupReservation(reservationCode: reservationCode, useCashback: useCashback, paymentGateway: paymentGateway, ttlMinutes: ttlMinutes);
+  Future quotePickupReservation({required String reservationCode, bool useCashback = false}) => checkoutRepositoryInterface.quotePickupReservation(reservationCode: reservationCode, useCashback: useCashback);
+
+  @override
+  Future payPickupReservation({String? quoteToken, required String reservationCode, bool useCashback = false, String paymentGateway = 'paystack', int ttlMinutes = 30}) async {
+    return await checkoutRepositoryInterface.payPickupReservation(quoteToken: quoteToken, reservationCode: reservationCode, useCashback: useCashback, paymentGateway: paymentGateway, ttlMinutes: ttlMinutes);
   }
 
   // [AI] Authoritative Fulfillment & Delivery Intent Methods

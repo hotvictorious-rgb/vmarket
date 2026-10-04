@@ -1,5 +1,6 @@
 
 import 'package:flutter/material.dart';
+import 'package:flutter_sixvalley_ecommerce/features/refund/domain/models/refund_display_status.dart';
 import 'package:flutter_sixvalley_ecommerce/common/basewidget/custom_image_widget.dart';
 import 'package:flutter_sixvalley_ecommerce/features/order_details/controllers/order_details_controller.dart';
 import 'package:flutter_sixvalley_ecommerce/features/order_details/domain/models/order_details_model.dart';
@@ -42,16 +43,19 @@ class RefundDetailsWidgetState extends State<RefundDetailsWidget> {
       appBar:  CustomAppBar(title: getTranslated('refund_request_details', context),
         showActionButton: true,showResetIcon: true, reset: Consumer<RefundController>(
           builder: (context, refund,_) {
+            final request = refund.refundResultModel?.refundRequest?.first;
+            final display = refundDisplayStatus(request?.status, request?.changeBy);
+            final label = display == request?.status ? (getTranslated(display, context) ?? display) : display;
             return refund.refundResultModel != null ?  Padding(
               padding: const EdgeInsets.symmetric(horizontal : Dimensions.paddingSizeDefault),
               child: Container(padding: const EdgeInsets.symmetric(horizontal: Dimensions.paddingSizeSmall, vertical: Dimensions.paddingSizeExtraSmall),
                 decoration: BoxDecoration(
                 borderRadius: BorderRadius.circular(Dimensions.paddingSizeEight),
                 border: Border.all(
-                 color: refund.refundResultModel?.refundRequest?[0].status == 'rejected' ? Colors.red : Colors.green, width: 1)
+                 color: refund.refundResultModel?.refundRequest?[0].status == 'rejected' && refund.refundResultModel?.refundRequest?[0].changeBy == 'admin' ? Colors.red : Colors.green, width: 1)
               ),
-                child:  refund.refundResultModel != null ? Text("${getTranslated("${refund.refundResultModel!.refundRequest![0].status}", context)}".toCapitalized(),
-                    style:  textRegular.copyWith(fontSize: Dimensions.fontSizeSmall, color : refund.refundResultModel!.refundRequest![0].status == 'rejected' ? Colors.red : Colors.green)) : const Center(child: CircularProgressIndicator())),
+                child:  refund.refundResultModel != null ? Text(label,
+                    style:  textRegular.copyWith(fontSize: Dimensions.fontSizeSmall, color : refund.refundResultModel!.refundRequest![0].status == 'rejected' && refund.refundResultModel!.refundRequest![0].changeBy == 'admin' ? Colors.red : Colors.green)) : const Center(child: CircularProgressIndicator())),
             ) : const SizedBox();
           }
         )),

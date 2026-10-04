@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'package:flutter_sixvalley_ecommerce/features/checkout/domain/models/pickup_payment_state.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_sixvalley_ecommerce/common/basewidget/custom_app_bar_widget.dart';
 import 'package:flutter_sixvalley_ecommerce/features/checkout/screens/pickup_order_success_screen.dart';
@@ -85,57 +86,17 @@ class _PaymentStatusScreenState extends State<PaymentStatusScreen> {
       }
 
       if (widget.isPickup && widget.reservationCode != null) {
-        // Check pickup reservation status
-        final response = await http.get(
-          Uri.parse(
-              '${AppConstants.baseUrl}/api/v1/customer/pickup-reservations/${widget.reservationCode}'),
-          headers: {
-            'Content-Type': 'application/json',
-            'Authorization': 'Bearer $token',
-          },
-        );
-
+        final response = await http.get(Uri.parse('4{AppConstants.baseUrl}4{AppConstants.pickupReservationsUri}/4{widget.reservationCode}/status'), headers: {'Authorization': 'Bearer 4token'});
         if (response.statusCode == 200) {
-          final data = json.decode(response.body);
-          if (data['status'] == true && data['reservation'] != null) {
-            final reservation = data['reservation'];
-            if (reservation['order_id'] != null) {
-              // Payment successful - order created.
-              // The OTP (pickup_verification_code) is NOT exposed on the reservation
-              // show endpoint; it lives only on the Order. Fetch it authoritatively.
-              String? pickupVerificationCode;
-              try {
-                final orderResponse = await http.get(
-                  Uri.parse(
-                      '${AppConstants.baseUrl}${AppConstants.getOrderFromOrderId}${reservation['order_id']}'),
-                  headers: {
-                    'Content-Type': 'application/json',
-                    'Authorization': 'Bearer $token',
-                  },
-                );
-                if (orderResponse.statusCode == 200) {
-                  final orderData = json.decode(orderResponse.body);
-                  pickupVerificationCode =
-                      pickupHandoverCode(Map<String, dynamic>.from(orderData));
-                }
-              } catch (e) {
-                debugPrint('Pickup order OTP fetch error: $e');
-              }
-
-              if (pickupVerificationCode == null || !mounted) return;
-              _pollTimer?.cancel();
-              setState(() {
-                _status = PaymentStatus.success;
-                _orderData = {
-                  'order_id': reservation['order_id'],
-                  'pickup_verification_code': pickupVerificationCode,
-                  'cashback_earned': reservation['cashback_earned'],
-                  'shop_name':
-                      reservation['shop']?['name'] ?? 'Victorious Store',
-                  'shop_address': reservation['shop']?['address'],
-                };
-              });
-            }
+          final data = Map<String, dynamic>.from(json.decode(response.body));
+          _authorizationUrl = data['authorization_url']?.toString();
+          if (pickupPaymentCompleted(data)) {
+            _pollTimer?.cancel(); await _clearResolvedPickup();
+            if (!mounted) return;
+            setState(() { _status = PaymentStatus.success; _orderData = data; });
+          } else if (data['payment_status'] == 'expired' || data['payment_status'] == 'failed') {
+            _pollTimer?.cancel(); await _clearResolvedPickup();
+            if (mounted) setState(() => _status = PaymentStatus.failed);
           }
         }
       } else if (widget.orderGroupId != null) {
@@ -182,6 +143,13 @@ class _PaymentStatusScreenState extends State<PaymentStatusScreen> {
     } finally {
       _requestInFlight = false;
     }
+  }
+
+  Future<void> _clearResolvedPickup() async {
+    if (!mounted) return;
+    final storage = di.sl<StorageService>();
+    final pending = PickupPaymentState.decode(storage.getString(PickupPaymentState.storageKey), storage.getString(AppConstants.userLoginToken));
+    if (pending?.reservationCode == widget.reservationCode) await storage.remove(PickupPaymentState.storageKey);
   }
 
   Future<void> _clearResolvedDelivery() async {
@@ -418,6 +386,8 @@ class _PaymentStatusScreenState extends State<PaymentStatusScreen> {
       case PaymentStatus.pending:
         return Column(
           children: [
+            if (widget.isPickup && _authorizationUrl != null)
+              TextButton(onPressed: () => Navigator.of(context).pushReplacement(MaterialPageRoute(builder: (_) => DigitalPaymentOrderPlaceScreen(paymentUrl: _authorizationUrl!, isPickupPayment: true, reservationCode: widget.reservationCode!))), child: const Text('Continue payment')),
             if (!widget.isPickup && _authorizationUrl != null && widget.orderGroupId != null)
               ElevatedButton(
                 onPressed: () => Navigator.of(context).pushReplacement(MaterialPageRoute(builder: (_) =>

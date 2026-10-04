@@ -4,7 +4,6 @@ import 'package:flutter_sixvalley_ecommerce/features/cart/controllers/cart_contr
 import 'package:flutter_sixvalley_ecommerce/features/cart/screens/cart_screen.dart';
 import 'package:flutter_sixvalley_ecommerce/features/dashboard/models/navigation_model.dart';
 import 'package:flutter_sixvalley_ecommerce/features/dashboard/widgets/dashboard_menu_widget.dart';
-import 'package:flutter_sixvalley_ecommerce/features/search_product/controllers/search_product_controller.dart';
 import 'package:flutter_sixvalley_ecommerce/features/wishlist/controllers/wishlist_controller.dart';
 import 'package:flutter_sixvalley_ecommerce/helper/network_info.dart';
 import 'package:flutter_sixvalley_ecommerce/features/splash/controllers/splash_controller.dart';
@@ -30,7 +29,6 @@ class DashBoardScreen extends StatefulWidget {
 class DashBoardScreenState extends State<DashBoardScreen> {
   int _pageIndex = 0;
   late List<NavigationModel> _screens;
-  final GlobalKey<ScaffoldMessengerState> _scaffoldKey = GlobalKey();
   final PageStorageBucket bucket = PageStorageBucket();
 
   bool singleVendor = false;
@@ -109,6 +107,12 @@ class DashBoardScreenState extends State<DashBoardScreen> {
                 index: _pageIndex,
                 children: _screens.map((screen) => screen.screen).toList(),
               ),
+              if (context.watch<CheckoutController>().pendingPickupPayment != null)
+                SafeArea(child: Align(alignment: Alignment.topCenter, child: Material(child: ListTile(title: const Text('A pickup payment needs verification'), trailing: TextButton(child: const Text('Check payment'), onPressed: () async {
+                  final code = context.read<CheckoutController>().pendingPickupPayment!.reservationCode;
+                  await Navigator.of(context).push(MaterialPageRoute(builder: (_) => PaymentStatusScreen(reservationCode: code, isPickup: true)));
+                  if (mounted) setState(() {});
+                }))))),
               if (Provider.of<CheckoutController>(context)
                       .pendingDeliveryPayment
                       ?.orderGroupId !=

@@ -10,7 +10,8 @@ abstract class CheckoutRepositoryInterface implements RepositoryInterface{
   Future<dynamic> getReferralAmount(String? amount);
 
   Future<dynamic> createPickupReservation({required String idempotencyKey, List<int>? cartIds, bool? checkedOnly});
-  Future<dynamic> payPickupReservation({required String reservationCode, bool useCashback = false, String paymentGateway = 'paystack', int ttlMinutes = 30});
+  Future<dynamic> quotePickupReservation({required String reservationCode, bool useCashback = false});
+  Future<dynamic> payPickupReservation({String? quoteToken, required String reservationCode, bool useCashback = false, String paymentGateway = 'paystack', int ttlMinutes = 30});
 
   // [AI] Authoritative Fulfillment & Delivery Intent Methods
   Future<dynamic> checkFulfillmentAvailability({required int shopId, int? shippingAddressId, List<Map<String, dynamic>>? cartItems});

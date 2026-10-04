@@ -5,8 +5,6 @@ import 'package:flutter_sixvalley_ecommerce/features/checkout/controllers/checko
 import 'package:flutter_sixvalley_ecommerce/features/checkout/domain/models/pickup_reservation_model.dart';
 import 'package:flutter_sixvalley_ecommerce/features/checkout/screens/pickup_reservation_success_screen.dart';
 import 'package:flutter_sixvalley_ecommerce/features/checkout/widgets/checkout_condition_checkbox.dart';
-import 'package:flutter_sixvalley_ecommerce/features/checkout/widgets/order_place_bottomsheet_widget.dart';
-import 'package:flutter_sixvalley_ecommerce/features/checkout/widgets/payment_method_bottom_sheet_widget.dart';
 import 'package:flutter_sixvalley_ecommerce/features/profile/controllers/profile_contrroller.dart';
 import 'package:flutter_sixvalley_ecommerce/features/shipping/controllers/shipping_controller.dart';
 import 'package:flutter_sixvalley_ecommerce/helper/cart_healper.dart';
@@ -21,7 +19,6 @@ import 'package:flutter_sixvalley_ecommerce/features/splash/controllers/splash_c
 import 'package:flutter_sixvalley_ecommerce/utill/custom_themes.dart';
 import 'package:flutter_sixvalley_ecommerce/utill/dimensions.dart';
 import 'package:flutter_sixvalley_ecommerce/common/basewidget/amount_widget.dart';
-import 'package:flutter_sixvalley_ecommerce/common/basewidget/animated_custom_dialog_widget.dart';
 import 'package:flutter_sixvalley_ecommerce/common/basewidget/custom_app_bar_widget.dart';
 import 'package:flutter_sixvalley_ecommerce/common/basewidget/custom_button_widget.dart';
 import 'package:flutter_sixvalley_ecommerce/common/basewidget/show_custom_snakbar_widget.dart';
@@ -954,7 +951,7 @@ class CheckoutScreenState extends State<CheckoutScreen> {
                                             orderProvider.toggleUseCashback();
                                           }
                                         : null,
-                                    activeColor: Theme.of(context).primaryColor,
+                                    activeThumbColor: Theme.of(context).primaryColor,
                                   ),
                                 ],
                               ),
@@ -1306,64 +1303,4 @@ class CheckoutScreenState extends State<CheckoutScreen> {
     );
   }
 
-  void _callback(bool isSuccess, String message, String orderID,
-      bool createAccount) async {
-    setState(() => _isSubmitting = false);
-    if (isSuccess) {
-      WidgetsBinding.instance.addPostFrameCallback((_) {
-        bool isLoggedIn =
-            Provider.of<AuthController>(context, listen: false).isLoggedIn();
-        String? orderId =
-            Provider.of<CheckoutController>(context, listen: false)
-                .getFirstOrderId(orderID);
-
-        if (isLoggedIn && orderId != null) {
-          RouterHelper.getOrderScreenRoute(
-              isBackButtonExist: true,
-              action: RouteAction.push,
-              fromPlaceOrder: true);
-        } else {
-          RouterHelper.getDashboardRoute(
-              action: RouteAction.pushReplacement, page: 'home');
-        }
-
-        Future.delayed(Duration(milliseconds: 300), () {
-          showModalBottomSheet(
-            isDismissible: false,
-            enableDrag: false,
-            context: Get.context!,
-            isScrollControlled: true,
-            backgroundColor: Colors.transparent,
-            shape: const RoundedRectangleBorder(
-              borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
-            ),
-            builder: (context) {
-              return Container(
-                decoration: BoxDecoration(
-                  color: Theme.of(context).cardColor,
-                  borderRadius:
-                      const BorderRadius.vertical(top: Radius.circular(20)),
-                ),
-                child: OrderPlaceBottomSheetWidget(
-                  orderID: orderID,
-                  icon: Icons.check,
-                  title: getTranslated(
-                    createAccount
-                        ? 'order_placed_Account_Created'
-                        : 'order_placed',
-                    Get.context!,
-                  ),
-                  description: getTranslated('your_order_placed', Get.context!),
-                  isFailed: false,
-                ),
-              );
-            },
-          );
-        });
-      });
-    } else {
-      showCustomSnackBarWidget(message, context,
-          snackBarType: SnackBarType.error);
-    }
-  }
 }

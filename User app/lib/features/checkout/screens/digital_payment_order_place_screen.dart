@@ -344,7 +344,7 @@ class DigitalPaymentOrderPlaceScreen extends StatefulWidget {
   });
 
   @override
-  _DigitalPaymentOrderPlaceScreenState createState() =>
+  State<DigitalPaymentOrderPlaceScreen> createState() =>
       _DigitalPaymentOrderPlaceScreenState();
 }
 
@@ -354,7 +354,7 @@ class _DigitalPaymentOrderPlaceScreenState
   bool _isLoading = true;
   bool _canRedirect = true;
   bool _isInitialized = false;
-  bool _hasResult = false;
+
 
   @override
   void didChangeDependencies() {
@@ -391,44 +391,22 @@ class _DigitalPaymentOrderPlaceScreenState
   }
 
   bool _isRedirectUrl(String url) {
-    return (url.contains('success') ||
-            url.contains('fail') ||
-            url.contains('cancel')) &&
-        url.contains(AppConstants.baseUrl);
+    final uri = Uri.tryParse(url); final origin = Uri.parse(AppConstants.baseUrl);
+    return uri != null && uri.scheme == origin.scheme && uri.host == origin.host && uri.port == origin.port &&
+      (uri.path.contains('success') || uri.path.contains('fail') || uri.path.contains('cancel'));
   }
-
+  void _openStatus() {
+    if (!_canRedirect || !mounted) return;
+    _canRedirect = false;
+    Navigator.of(context).pushReplacement(MaterialPageRoute(builder: (_) => PaymentStatusScreen(reservationCode: widget.reservationCode, isPickup: true)));
+  }
   void _checkRedirect(String url) {
-    if (_canRedirect && _isRedirectUrl(url)) {
-      _canRedirect = false;
-      bool isSuccess = url.contains('success');
-      bool isFailed = url.contains('fail') || url.contains('cancel');
-
-      WidgetsBinding.instance.addPostFrameCallback((_) {
-        if (isSuccess) {
-          Navigator.of(context).pushReplacement(
-            MaterialPageRoute(
-              builder: (_) => PaymentStatusScreen(
-                reservationCode: widget.reservationCode,
-                isPickup: true,
-              ),
-            ),
-          );
-        } else {
-          showCustomSnackBarWidget(
-            getTranslated('payment_failed', Get.context!) ??
-                'Payment not completed',
-            Get.context!,
-            snackBarType: SnackBarType.error,
-          );
-          Navigator.of(context).pop();
-        }
-      });
-    }
+    if (_isRedirectUrl(url)) WidgetsBinding.instance.addPostFrameCallback((_) => _openStatus());
   }
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
+    return PopScope(canPop: false, onPopInvokedWithResult: (didPop, result) { if (!didPop) _openStatus(); }, child: Scaffold(
       backgroundColor: Theme.of(context).cardColor,
       appBar: AppBar(
         title: Text(getTranslated('payment', Get.context!) ?? 'Payment'),
@@ -437,12 +415,12 @@ class _DigitalPaymentOrderPlaceScreenState
         centerTitle: true,
         leading: IconButton(
           icon: const Icon(Icons.arrow_back_ios, size: 18),
-          onPressed: () => Navigator.of(context).pop(),
+          onPressed: _openStatus,
         ),
       ),
       body: _isLoading
           ? const Center(child: CircularProgressIndicator())
           : WebViewWidget(controller: controller),
-    );
+    ));
   }
 }

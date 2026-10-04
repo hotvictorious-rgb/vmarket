@@ -1,7 +1,7 @@
 
-import 'dart:convert';
+
 import 'package:dio/dio.dart';
-import 'package:flutter/cupertino.dart';
+
 import 'package:flutter_sixvalley_ecommerce/data/datasource/remote/dio/dio_client.dart';
 import 'package:flutter_sixvalley_ecommerce/data/datasource/remote/exception/api_error_handler.dart';
 import 'package:flutter_sixvalley_ecommerce/data/model/api_response.dart';
@@ -96,7 +96,13 @@ class CheckoutRepository implements CheckoutRepositoryInterface{
   }
 
   @override
+  Future<ApiResponseModel> quotePickupReservation({required String reservationCode, bool useCashback = false}) async {
+    try { return ApiResponseModel.withSuccess(await dioClient!.post('4{AppConstants.pickupReservationsUri}/4reservationCode/quote', data: {'use_cashback': useCashback})); }
+    catch (e) { return ApiResponseModel.withError(ApiErrorHandler.getMessage(e)); }
+  }
+  @override
   Future<ApiResponseModel> payPickupReservation({
+    String? quoteToken,
     required String reservationCode,
     bool useCashback = false,
     String paymentGateway = 'paystack',
@@ -109,6 +115,7 @@ class CheckoutRepository implements CheckoutRepositoryInterface{
           'use_cashback': useCashback ? 1 : 0,
           'payment_gateway': paymentGateway,
           'ttl_minutes': ttlMinutes,
+          'quote_token': quoteToken,
         },
       );
       return ApiResponseModel.withSuccess(response);

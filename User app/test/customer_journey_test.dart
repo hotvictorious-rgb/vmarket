@@ -128,7 +128,7 @@ class FakeCustomerJourneyService implements CheckoutServiceInterface {
   }
 
   @override
-  Future<ApiResponseModel> payPickupReservation({
+  Future<ApiResponseModel> payPickupReservation({String? quoteToken, 
     required String reservationCode,
     bool useCashback = false,
     String paymentGateway = 'paystack',
