@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- [AI] Explicit real production HTTP/query regressions; copied-logic/custom proof runners are not included. -->
+<phpunit bootstrap="../../../backend/vmarket-web/vendor/autoload.php" colors="false" cacheResult="false">
+  <testsuites>
+    <testsuite name="V1SecurityAndMoneyRepair">
+      <file>../../../backend/vmarket-web/tests/Feature/AuthCredentialSecurityTest.php</file>
+      <file>../../../backend/vmarket-web/tests/regression/V1QueryAndSellerHistorySecurityTest.php</file>
+      <file>../../../backend/vmarket-web/tests/regression/V1FinancePathsTest.php</file>
+      <file>../../../backend/vmarket-web/tests/Feature/GatewayMoneyRepairTest.php</file>
+      <file>../../../backend/vmarket-web/tests/Feature/DeliveryFlowLifecycleTest.php</file>
+      <file>../../../backend/vmarket-web/tests/Feature/PickupMoneyRepairTest.php</file>
+      <file>../../../backend/vmarket-web/tests/regression/V1SecondPassFinanceTest.php</file>
+    </testsuite>
+  </testsuites>
+  <php>
+    <env name="APP_ENV" value="testing" force="true"/>
+    <env name="DB_CONNECTION" value="sqlite" force="true"/>
+    <env name="DB_DATABASE" value=":memory:" force="true"/>
+    <env name="CACHE_STORE" value="array" force="true"/>
+    <env name="CACHE_DRIVER" value="array" force="true"/>
+    <env name="SESSION_DRIVER" value="array" force="true"/>
+    <env name="QUEUE_CONNECTION" value="sync" force="true"/>
+    <env name="MAIL_MAILER" value="array" force="true"/>
+  </php>
+</phpunit>
