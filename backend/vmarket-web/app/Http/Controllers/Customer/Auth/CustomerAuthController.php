@@ -522,7 +522,7 @@ class CustomerAuthController extends Controller
                 } else {
                     session()->put('tempCustomerInfo', [
                         'phone' => $identity,
-                        'password' => bcrypt(random_int(10000000, 99999999)),
+                        'password' => bcrypt(Str::random(64)),
                         'referral_code' => Helpers::generate_referer_code(),
                     ]);
                     return redirect()->route('customer.auth.login.update-info', ['identity' => base64_encode($identity)]);
@@ -728,7 +728,7 @@ class CustomerAuthController extends Controller
         } else {
             $user = $this->customerRepo->updateOrCreate(params: ['phone' => $responseData['phoneNumber']], data: [
                 'phone' => $responseData['phoneNumber'],
-                'password' => bcrypt(random_int(10000000, 99999999)),
+                'password' => bcrypt(Str::random(64)),
                 'referral_code' => Helpers::generate_referer_code(),
             ]);
             return redirect()->route('customer.auth.login.update-info', ['identity' => base64_encode($responseData['phoneNumber'])]);

@@ -111,8 +111,10 @@ class PassportAuthController extends Controller
         ];
         $user = User::where([$medium => $userId])->first();
 
-        $maxLoginHit = (int)getWebConfig(name: 'maximum_login_hit') > 0 ? (int)getWebConfig(name: 'maximum_login_hit') : 5;
-        $tempBlockTime = (int)getWebConfig(name: 'temporary_login_block_time') > 0 ? (int)getWebConfig(name: 'temporary_login_block_time') : 600; // seconds
+        $configuredMaxHit = (int)getWebConfig(name: 'maximum_login_hit');
+        $maxLoginHit = max(3, min($configuredMaxHit > 0 ? $configuredMaxHit : 5, 10));
+        $configuredBlock = (int)getWebConfig(name: 'temporary_login_block_time');
+        $tempBlockTime = max(60, min($configuredBlock > 0 ? $configuredBlock : 600, 3600)); // seconds
 
         if (isset($user)) {
             if (isset($user->temp_block_time) && \Illuminate\Support\Carbon::parse($user->temp_block_time)->DiffInSeconds() <= $tempBlockTime) {

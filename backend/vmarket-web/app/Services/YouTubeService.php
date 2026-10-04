@@ -87,7 +87,10 @@ class YouTubeService
                 return true;
             }
 
-            Log::error('YouTube OAuth token exchange failed: ' . $response->body());
+            Log::error('YouTube OAuth token exchange failed', [
+                'status' => $response->status(),
+                'error' => $response->json('error_description') ?? $response->json('error') ?? 'Token exchange failed',
+            ]);
             return false;
         } catch (\Exception $e) {
             Log::error('YouTube OAuth Callback Exception: ' . $e->getMessage());
@@ -120,7 +123,10 @@ class YouTubeService
                 return $accessToken;
             }
 
-            Log::error('YouTube token refresh failed: ' . $response->body());
+            Log::error('YouTube token refresh failed', [
+                'status' => $response->status(),
+                'error' => $response->json('error_description') ?? $response->json('error') ?? 'Token refresh failed',
+            ]);
             return null;
         } catch (\Exception $e) {
             Log::error('YouTube Token Refresh Exception: ' . $e->getMessage());
@@ -167,7 +173,10 @@ class YouTubeService
             ]);
 
             if (!$metadataResponse->successful()) {
-                Log::error('YouTube Upload Session initiation failed: ' . $metadataResponse->body());
+                Log::error('YouTube Upload Session initiation failed', [
+                    'status' => $metadataResponse->status(),
+                    'error' => $metadataResponse->json('error.message') ?? 'Upload session initiation failed',
+                ]);
                 return null;
             }
 
@@ -197,7 +206,10 @@ class YouTubeService
                 }
             }
 
-            Log::error('YouTube Upload PUT request failed: ' . $uploadResponse->body());
+            Log::error('YouTube Upload PUT request failed', [
+                'status' => $uploadResponse->status(),
+                'error' => $uploadResponse->json('error.message') ?? 'Video stream PUT failed',
+            ]);
             return null;
         } catch (\Exception $e) {
             Log::error('YouTube Upload Exception: ' . $e->getMessage());

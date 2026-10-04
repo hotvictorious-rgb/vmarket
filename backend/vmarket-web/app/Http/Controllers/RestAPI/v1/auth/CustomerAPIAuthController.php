@@ -114,8 +114,10 @@ class CustomerAPIAuthController extends Controller
 
         $type = $request['type'];
         $user = $this->customerRepo->getByIdentity(filters: ['identity' => $request['email_or_phone']]);
-        $maxLoginHit = (int)getWebConfig(name: 'maximum_login_hit') > 0 ? (int)getWebConfig(name: 'maximum_login_hit') : 5;
-        $tempBlockTime = (int)getWebConfig(name: 'temporary_login_block_time') > 0 ? (int)getWebConfig(name: 'temporary_login_block_time') : 600; // seconds
+        $configuredMaxHit = (int)getWebConfig(name: 'maximum_login_hit');
+        $maxLoginHit = max(3, min($configuredMaxHit > 0 ? $configuredMaxHit : 5, 10));
+        $configuredBlock = (int)getWebConfig(name: 'temporary_login_block_time');
+        $tempBlockTime = max(60, min($configuredBlock > 0 ? $configuredBlock : 600, 3600)); // seconds
 
         if (isset($user)) {
             if (isset($user->temp_block_time) && Carbon::parse($user->temp_block_time)->DiffInSeconds() <= $tempBlockTime) {
@@ -637,7 +639,7 @@ class CustomerAPIAuthController extends Controller
             'f_name' => $request['name'],
             'email' => $request['email'],
             'phone' => $request['phone'],
-            'password' => bcrypt(random_int(10000000, 99999999)),
+            'password' => bcrypt(Str::random(64)),
             'temporary_token' => $temporaryToken,
             'app_language' => 'en',
             'is_phone_verified' => 1,
@@ -824,7 +826,7 @@ class CustomerAPIAuthController extends Controller
             'f_name' => $request['name'],
             'email' => $request['email'],
             'phone' => $request['phone'],
-            'password' => bcrypt(random_int(10000000, 99999999)),
+            'password' => bcrypt(Str::random(64)),
             'temporary_token' => $temporaryToken,
             'app_language' => 'en',
             'is_email_verified' => $isEmailVerified,

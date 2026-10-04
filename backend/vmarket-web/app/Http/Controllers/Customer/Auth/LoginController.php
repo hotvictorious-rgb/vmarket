@@ -57,9 +57,10 @@ class LoginController extends Controller
         $user = User::where(['phone' => $request->user_id])->orWhere(['email' => $request->user_id])->first();
         $remember = (bool)$request['remember'];
 
-        //login attempt check start
-        $max_login_hit = (int)getWebConfig(name: 'maximum_login_hit') > 0 ? (int)getWebConfig(name: 'maximum_login_hit') : 5;
-        $temp_block_time = (int)getWebConfig(name: 'temporary_login_block_time') > 0 ? (int)getWebConfig(name: 'temporary_login_block_time') : 600; //seconds
+        $configuredMaxHit = (int)getWebConfig(name: 'maximum_login_hit');
+        $max_login_hit = max(3, min($configuredMaxHit > 0 ? $configuredMaxHit : 5, 10));
+        $configuredBlock = (int)getWebConfig(name: 'temporary_login_block_time');
+        $temp_block_time = max(60, min($configuredBlock > 0 ? $configuredBlock : 600, 3600)); //seconds
         if (!isset($user)) {
             if ($request->ajax()) {
                 return response()->json([

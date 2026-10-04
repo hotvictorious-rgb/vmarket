@@ -46,12 +46,16 @@ class CategoryManager
                     }
                 }
 
-                $searchName = str_ireplace(['\'', '"', ',', ';', '<', '>', '?'], ' ', preg_replace('/\s\s+/', ' ', $searchKey));
+                $searchName = trim($searchKey);
+                $locateFunc = DB::getDriverName() === 'sqlite' ? 'INSTR(name, ?)' : 'LOCATE(?, name)';
                 return $query->when(!empty($productsIDArray), function ($query) use ($productsIDArray) {
                     return $query->whereIn('id', $productsIDArray);
                 })->when(empty($productsIDArray), function ($query) use ($productsIDArray) {
                     return $query->whereIn('id', [0]);
-                })->orderByRaw("CASE WHEN name LIKE '%{$searchName}%' THEN 1 ELSE 2 END, LOCATE('{$searchName}', name), name");
+                })->orderByRaw("CASE WHEN name LIKE ? THEN 1 ELSE 2 END, {$locateFunc}, name", [
+                    '%' . $searchName . '%',
+                    $searchName,
+                ]);
             });
 
         $products = ProductManager::getPriorityWiseCategoryWiseProductsQuery(query: $products, dataLimit: $dataLimit ?? 'all', offset: $request['offset'] ?? 1);
