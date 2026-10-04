@@ -83,13 +83,28 @@ trait  Processor
     public function payment_response($payment_info, $payment_flag): Application|JsonResponse|Redirector|RedirectResponse|\Illuminate\Contracts\Foundation\Application
     {
         $getNewUser = 0;
+        // [AI] Invalid/unknown callbacks still produce a safe recovery redirect.
+        if (!$payment_info) {
+            return redirect()->route('payment-fail', ['token' => '', 'new_user' => 0, 'order_ids' => base64_encode('[]')]);
+        }
         $additionalData = json_decode($payment_info->additional_data, true);
 
         if (isset($additionalData['new_customer_id']) && isset($additionalData['is_guest_in_order'])) {
             $getNewUser = ($additionalData['new_customer_id'] != 0) ? 1 : 0;
         }
 
-        $orderIds = Order::where(['transaction_ref' => $payment_info['transaction_id']])->get()->pluck('id')->toArray();
+        // [AI] Redirect IDs come from canonical settlement linkage, scoped to the actual payer.
+        $orderIds = [];
+        if ($payment_info->attempt_status === 'successful' && (int) $payment_info->is_paid === 1) {
+            if ($payment_info->payment_domain === 'marketplace_delivery') {
+                $orderIds = Order::where('order_group_id', $payment_info->order_group_id)
+                    ->where('customer_id', $payment_info->payer_id)->pluck('id')->toArray();
+            } elseif ($payment_info->payment_domain === 'marketplace_pickup') {
+                $orderId = \App\Models\PickupReservation::where('id', $payment_info->pickup_reservation_id)
+                    ->where('customer_id', $payment_info->payer_id)->value('order_id');
+                $orderIds = $orderId ? [(int) $orderId] : [];
+            }
+        }
         $encodedOrderIds = base64_encode(json_encode($orderIds));
 
         $token_string = 'payment_method=' . $payment_info->payment_method . '&&transaction_reference=' . $payment_info->transaction_id;

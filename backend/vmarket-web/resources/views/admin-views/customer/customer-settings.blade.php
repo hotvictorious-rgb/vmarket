@@ -148,7 +148,10 @@
                                             {{ $loyaltyPointStatus == 0 ? '' : 'required' }}
                                             id="loyalty_point_exchange_rate"
                                             placeholder="{{ translate('ex') . ': ' . '1' }}"
-                                            value="{{ $loyaltyPointExchangeRate ?? 1 }}" required>
+                                            value="{{ $loyaltyPointExchangeRate ?? 1 }}" required
+                                            @if($loyaltyPointExchangeRate !== null && $loyaltyPointExchangeRate !== '') readonly @endif>
+                                        {{-- [AI] Existing point lots retain their NGN face value throughout V1. --}}
+                                        <small class="text-muted">The configured point value is fixed for V1. Changing it requires a ledger migration.</small>
                                     </div>
                                 </div>
                                 @php($loyaltyPointMinimumPoint = getWebConfig(name: 'loyalty_point_minimum_point'))
@@ -231,14 +234,14 @@
                                     </div>
                                 </div>
                                 <div class="col-12">
-                                    @php($loyaltyPointItemPurchasePoint = getWebConfig(name: 'loyalty_point_item_purchase_point'))
+                                    @php($loyaltyPointItemPurchasePoint = getWebConfig(name: 'loyalty_point_earn_rate_percent'))
                                     <div class="form-group">
                                         <label class="form-label text-capitalize" for="">
                                             {{ translate('Cashback_Earning_Percentage') }} (%)
                                         </label>
-                                        <input type="number" class="form-control" name="item_purchase_point"
+                                        <input type="number" class="form-control" name="loyalty_point_earn_rate_percent"
                                             id="" placeholder="{{ translate('ex') . ': ' . '1' }}"
-                                            value="{{ $loyaltyPointItemPurchasePoint ?? 1 }}" min="0" step="any"
+                                            value="{{ $loyaltyPointItemPurchasePoint ?? 5 }}" min="0" max="5" step="0.01"
                                             {{ $loyaltyPointStatus == 1 ? 'required' : '' }}>
                                     </div>
                                 </div>

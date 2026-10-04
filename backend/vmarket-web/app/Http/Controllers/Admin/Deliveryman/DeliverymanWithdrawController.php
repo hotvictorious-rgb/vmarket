@@ -76,6 +76,8 @@ class DeliverymanWithdrawController extends Controller
 
     public function updateStatus(DeliveryManWithdrawRequest $request, string|int $withdrawId, DeliveryManWithdrawService $deliveryManWithdrawService, DeliveryManWalletService $deliveryManWalletService): JsonResponse
     {
+        // [AI] Admin payout requires explicit finance authority, not merely rider management access.
+        abort_unless(auth('admin')->user()?->hasExactModuleAccess('payments.manage'), 403);
         try {
             $result = \Illuminate\Support\Facades\DB::transaction(function () use ($request, $withdrawId, $deliveryManWithdrawService, $deliveryManWalletService) {
                 // [AI] Idempotency Guard: Ensure withdraw request exists and is strictly pending
@@ -106,6 +108,7 @@ class DeliverymanWithdrawController extends Controller
                     $withdrawData['proof_of_payment'] = \App\Utils\ImageManager::upload('withdraw_requests/', 'png', $request->file('proof_of_payment'));
                 }
 
+                \App\Services\AdminAuditService::log('rider.withdrawal_decision', \App\Models\WithdrawRequest::class, $withdrawId, ['approved' => 0], ['approved' => (int)$request['approved'], 'amount' => (string)$withdraw->getRawOriginal('amount')], $request->input('note'));
                 $this->deliveryManWalletRepo->update(id: $wallet->id, data: $walletData);
                 $this->withdrawRequestRepo->update(id: $withdrawId, data: $withdrawData);
 

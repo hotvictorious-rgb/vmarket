@@ -15,8 +15,9 @@
             </h2>
         </div>
         <div class="card p-4">
+            <p class="text-muted">Vendor approval or rejection is a recommendation. The administrator reviews the dispute and controls refund payment. A vendor rejection does not close the financial dispute.</p>
 
-            @if ($refund['change_by'] !='admin')
+            @if ($refund['change_by'] !='admin' && in_array($refund['status'], ['pending', 'approved', 'rejected']))
             <div class="mb-3 alert--message">
                 <div class="d-flex justify-content-between w-100">
                     <span class="">
@@ -82,15 +83,15 @@
                             <div class="gap-3 mb-4 d-flex justify-content-between flex-wrap align-items-center">
                                 <h4 class="m-0">{{translate('product_details')}}</h4>
                                 <div class="d-flex flex-wrap gap-3">
-                                    @if ($refund->change_by !='admin')
+                                    @if ($refund->change_by !='admin' && in_array($refund['status'], ['pending', 'approved', 'rejected']))
                                         @if($refund['status'] != 'rejected' && $refund['denied_count'] < 2)
                                             <button class="btn btn-soft-danger min-w--100 p-2 px-3" data-toggle="modal" data-target="#rejectModal">
-                                                {{ translate('reject') }}
+                                                Recommend rejection
                                             </button>
                                         @endif
                                         @if($refund['status'] != 'approved' && $refund['approved_count'] < 2)
                                             <button class="btn btn-soft-primary min-w--100 p-2 px-3" data-toggle="modal" data-target="#approveModal">
-                                                {{ translate('approve') }}
+                                                Recommend approval
                                             </button>
                                         @endif
                                     @endif
@@ -336,7 +337,7 @@
             </div>
         </div>
     </div>
-    @if ($refund['change_by'] !='admin')
+    @if ($refund['change_by'] !='admin' && in_array($refund['status'], ['pending', 'approved', 'rejected']))
         @if($refund['denied_count'] < 2)
             <div class="modal fade" id="rejectModal">
                 <div class="modal-dialog">

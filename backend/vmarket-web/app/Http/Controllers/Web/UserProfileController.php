@@ -994,6 +994,8 @@ class UserProfileController extends Controller
         $refundRequest = null;
         try {
             DB::transaction(function () use ($request, $order, &$refundRequest) {
+                // [AI] Storefront disputes use the same Order-first financial lock.
+                Order::whereKey($order->id)->lockForUpdate()->firstOrFail();
                 // [AI] Row-level lock on OrderDetail to prevent concurrent duplicate submissions
                 $lockedDetail = OrderDetail::where('id', $request->order_details_id)->lockForUpdate()->first();
                 if (!$lockedDetail) {

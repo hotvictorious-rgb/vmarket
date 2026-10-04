@@ -11,7 +11,7 @@ class WithdrawRequestService
     {
         return [
             'seller_id' => $addedBy === 'vendor' ? $vendorId : '',
-            'amount' => currencyConverter($request['amount']),
+            'amount' => bcadd((string)$request['amount'], '0', 2),
             'transaction_note' => null,
             'withdrawal_method_id' => $request['withdraw_method'],
             'withdrawal_method_fields' => json_encode($this->getWithdrawMethodFields(request: $request, withdrawMethod: $withdrawMethod)),

@@ -42,13 +42,6 @@
                 <div class="fw-semibold">{{ webCurrencyConverter($product_price_total - $total_discount_on_product) }}</div>
             </div>
 
-            @php($estimatedCashbackRate = (float) (getWebConfig(name: 'loyalty_point_earn_rate_percent') ?: 5.0))
-            @php($estimatedCashback = ($product_price_total - $total_discount_on_product) * $estimatedCashbackRate / 100)
-            <div class="d-flex flex-wrap justify-content-between align-items-center gap-2 fs-16">
-                <div class="opacity-75 text-capitalize">{{ translate('estimated_victorious_points_cashback') }} ({{ rtrim(rtrim(number_format($estimatedCashbackRate, 2), '0'), '.') }}%)</div>
-                <div class="fw-semibold text-success">+{{ webCurrencyConverter($estimatedCashback) }}</div>
-            </div>
-
             @php($totalAmount = $product_price_total + $totalTax['item_tax'] - $total_discount_on_product)
 
             @if($systemTaxConfig['SystemTaxVat']['is_active'] && !$systemTaxConfig['is_included'])
@@ -62,14 +55,14 @@
 
             <div class="d-flex flex-wrap justify-content-between align-items-center gap-2 fs-16">
                 <h5>
-                    {{ translate('total') }}
+                    {{ translate('sub_total') }}
                     @if($systemTaxConfig['SystemTaxVat']['is_active'] && $systemTaxConfig['is_included'])
                         <span class="fs-12 fw-semibold">({{ translate('Tax_:_Inc.') }})</span>
                     @endif
                 </h5>
                 <h4 class="text-primary">{{ webCurrencyConverter($totalAmount) }}</h4>
             </div>
-            <div class="fs-12 text-muted">{{ translate('delivery_fees_calculated_at_checkout') }}</div>
+            <div class="fs-12 text-muted">The final quote includes delivery and any eligible Victorious Points. Review it before confirming payment.</div>
 
             <div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mt-3">
                 @if (str_contains(request()->url(), 'checkout-payment'))

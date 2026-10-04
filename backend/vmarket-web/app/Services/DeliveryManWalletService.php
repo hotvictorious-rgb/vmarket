@@ -16,10 +16,7 @@ class DeliveryManWalletService
     }
     public function getDeliveryManWalletData(object $request, object $wallet, object $withdraw):array
     {
-       return [
-           'total_withdraw' => $request['approved'] == 1 ? ($wallet['total_withdraw'] + $withdraw['amount']) : $wallet['total_withdraw'],
-           'pending_withdraw' => $wallet['pending_withdraw'] - $withdraw['amount'],
-           'current_balance' =>  $request['approved'] == 1 ? ($wallet['current_balance'] - $withdraw['amount']) : $wallet['current_balance'],
-        ];
+       // [AI] Vendor rider payouts share the same terminal decision and exact-money validation as Admin.
+       return (new DeliveryManWithdrawService())->getUpdateData($request, $wallet, $withdraw)['wallet'];
     }
 }

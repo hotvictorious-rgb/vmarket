@@ -584,6 +584,10 @@ class VendorController extends BaseController
 
     public function withdrawStatus(Request $request, $id): RedirectResponse
     {
+        // [AI] Finance authorization is enforced even when the coarse vendor route is accessible.
+        abort_unless(auth('admin')->user()?->hasExactModuleAccess('payments.manage'), 403);
+        // [AI] Admin payout actions are terminal; pending is never an accounting decision.
+        $request->validate(['approved' => 'required|integer|in:1,2', 'note' => 'nullable|string|max:2000']);
         $withdrawData = [
             'approved' => $request['approved'],
             'transaction_note' => $request['note'],
@@ -615,7 +619,15 @@ class VendorController extends BaseController
                     return ['status' => false, 'message' => translate('vendor_wallet_not_found')];
                 }
 
+                if (bccomp((string)$wallet->getRawOriginal('pending_withdraw'), (string)$withdraw->getRawOriginal('amount'), 2) < 0) {
+                    throw new \RuntimeException('Withdrawal reservation is insufficient; reconciliation required.');
+                }
+
+                \App\Services\AdminAuditService::log('vendor.withdrawal_decision', \App\Models\WithdrawRequest::class, $id, ['approved' => 0], ['approved' => (int)$request['approved'], 'amount' => (string)$withdraw->getRawOriginal('amount'), 'beneficiary' => $withdraw->withdrawal_method_fields], $request->input('note'));
                 if ($request['approved'] == 1) {
+                    if (bccomp((string)$wallet->getRawOriginal('collected_cash'), '0', 2) > 0) {
+                        throw new \RuntimeException('Outstanding vendor debt requires reconciliation before payout.');
+                    }
                     $wallet->increment('withdrawn', $withdraw->amount);
                     $wallet->decrement('pending_withdraw', $withdraw->amount);
                     $this->withdrawRequestRepo->update(id: $id, data: $withdrawData);

@@ -121,68 +121,11 @@ class RefundController extends BaseController
      */
     public function updateStatus(RefundStatusRequest $request): JsonResponse
     {
-        $vendorId = auth('seller')->id();
-        // [AI] Ownership Guard: Only update refund status on own seller orders
-        $refund = $this->refundRequestRepo->getFirstWhereHas(
-            params: ['id' => $request['id']],
-            whereHas: 'order',
-            whereHasFilters: ['seller_is' => 'seller', 'seller_id' => $vendorId],
-        );
-        if (!$refund) {
-            return response()->json(['error' => translate('unauthorized_access')], 403);
-        }
-        if (($request['refund_status'] == 'approved' && $refund['approved_count'] >= 2) || $request['refund_status'] == 'rejected' && $refund['denied_count'] >= 2) {
-            return response()->json(['error' => translate('you_already_changed_') . ($request['refund_status'] == 'approved' ? 'approve' : 'reject') . translate('_status_two_times') . '!!']);
-        }
-        $customer = $this->customerRepo->getFirstWhere(params: ['id' => $refund['customer_id']]);
-        if (!isset($customer)) {
-            return response()->json(['error' => translate('this_account_has_been_deleted') . ',' . translate('you_can_not_modify_the_status') . '!!']);
-        }
-
-        $orderDetails = $this->orderDetailRepo->getFirstWhere(['id' => $refund['order_details_id']]);
-        // [AI] Loyalty points decommissioned in V1 - customer refund check removed.
-
-        if ($refund['change_by'] == 'admin') {
-            return response()->json([
-                'error' => translate('refunded_status_can_not_be_changed'). '!! ' . translate('admin_already_changed_the_status') . ': ' . $refund['status'] . '!!'
-            ]);
-        }
-
-        if ($refund['status'] != 'refunded') {
-
-
-            $statusMapping = [
-                'pending' => 1,
-                'approved' => 2,
-                'rejected' => 3,
-                'refunded' => 4,
-            ];
-            $this->orderDetailRepo->update(
-                id: $orderDetails['id'],
-                data: ['refund_request' => $statusMapping[$request['refund_status']]]
-            );
-            $this->refundStatusRepo->add($this->refundStatusService->getRefundStatusData(
-                request: $request,
-                refund: $refund,
-                changeBy: 'seller'
-            ));
-            $this->refundRequestRepo->update(
-                id: $refund['id'],
-                data: [
-                    'status' => $request['refund_status'],
-                    'approved_count' => $request['refund_status'] == 'approved' ? ($refund['approved_count'] + 1) : $refund['approved_count'],
-                    'denied_count' => $request['refund_status'] == 'rejected' ? ($refund['denied_count'] + 1) : $refund['denied_count'],
-                    'rejected_note' => $request['refund_status'] == 'rejected' ? $request['rejected_note'] : null,
-                    'approved_note' => $request['refund_status'] == 'approved' ? $request['approved_note'] : null,
-                    'change_by' => 'seller',
-                ]
-            );
-            $order = $this->orderRepo->getFirstWhere(params: ['id' => $refund['order_id']]);
-            event(new RefundEvent(status: $request['refund_status'], order: $order, refund: $refund, orderDetails: $orderDetails));
-            return response()->json(['message' => translate('refund_status_updated') . '!!']);
-        } else {
-            return response()->json(['message' => translate('refunded_status_can_not_be_changed') . '!!']);
-        }
+        // [AI] Vendor Web shares the same order-locked recommendation boundary as Seller Mobile.
+        $decision = (string)$request->input('refund_status');
+        $result = app(\App\Services\VendorRefundDecisionService::class)->decide((int)auth('seller')->id(),
+            (int)$request->input('id'), $decision, $request->input($decision === 'approved' ? 'approved_note' : 'rejected_note'));
+        return response()->json(['message' => $result['message']], $result['status'] ? 200 : $result['code']);
     }
 
     public function exportList(Request $request, $status): BinaryFileResponse

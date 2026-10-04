@@ -53,7 +53,7 @@ class PaymentController extends Controller
      *
      * [AI] Clients: Customer Mobile App, Web Storefront
      */
-    public function payment(Request $request): JsonResponse|Redirector|RedirectResponse
+    public function payment(Request $request): JsonResponse|Redirector|RedirectResponse|\Illuminate\Contracts\View\View
     {
         $isApp = in_array($request->input('payment_request_from'), ['app']);
 
@@ -187,6 +187,29 @@ class PaymentController extends Controller
             }
             Toastr::error(translate('Something went wrong. Please try again.'));
             return back();
+        }
+
+        // [AI] Storefront confirms the frozen server quote before opening the payment gateway.
+        if (!$isApp) {
+            if ($intent->status !== 'pending' || $intent->isExpired()) {
+                Toastr::error(translate('This checkout quote has expired. Please review your cart again.'));
+                return redirect()->route('shop-cart');
+            }
+            if (!$request->boolean('quote_confirmed')) {
+                return view('theme-views.checkout.quote-review', [
+                    'quote' => $intent->checkout_snapshot,
+                    'order_group_id' => $intent->order_group_id,
+                    'idempotency_key' => $idempotencyKey,
+                    'address_id' => $addressId,
+                    'billing_address_id' => $billingAddressId,
+                    'use_cashback' => $useCashback,
+                    'form_action' => route('customer.web-payment-request'),
+                ]);
+            }
+            if ((string) $request->input('order_group_id') !== (string) $intent->order_group_id) {
+                Toastr::error(translate('Checkout parameters changed. Please review the current quote.'));
+                return redirect()->route('shop-cart');
+            }
         }
 
         // ── 7. Phase 2: Initialize Paystack Payment Attempt ──────────────────────────────────

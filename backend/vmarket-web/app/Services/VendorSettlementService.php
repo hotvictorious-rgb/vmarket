@@ -34,6 +34,10 @@ class VendorSettlementService
      */
     public function evaluateOrderSettlementEligibility(Order $order): bool
     {
+        return DB::transaction(function () use ($order) {
+            // [AI] Scheduler and admin eligibility cannot overwrite a concurrent terminal settlement/refund.
+            $order = Order::whereKey($order->id)->lockForUpdate()->first();
+            if (!$order || $order->payment_status !== 'paid') return false;
         // Boundary: In-house VMarket orders do not undergo vendor settlement
         if ($order->seller_is !== 'seller') {
             return false;
@@ -75,6 +79,7 @@ class VendorSettlementService
         }
 
         return true;
+        });
     }
 
     /**
@@ -84,41 +89,15 @@ class VendorSettlementService
      */
     public function resolveRefundDispute(Order $order, string $decision): void
     {
+        // [AI] Approval is a decision, not evidence of a completed financial refund.
         if ($decision === 'approved') {
-            // Cancel pending cashback reward (vocabulary lock: double-L 'cancelled')
-            CustomerCashbackLedger::where('order_id', $order->id)
-                ->where('status', 'pending')
-                ->update([
-                    'status' => 'cancelled',
-                    'updated_at' => now(),
-                ]);
-
-            if ($order->seller_is === 'seller') {
-                $order->vendor_settlement_status = 'refunded';
-            }
-            // For seller_is === 'admin', vendor_settlement_status remains NULL
-
-            // Delivery fee refund rule
-            if ($order->received_at === null) {
-                // Actual customer delivery never occurred: refund includes delivery fee
-                $this->executeUndeliveredOrderRefund($order, 'Refund dispute approved for undelivered order');
-            } else {
-                // Actual delivery occurred: merchandise-only refund; delivery fee remains in AdminWallet
-                $order->is_delivery_fee_refunded = 0;
-            }
-
-            $order->save();
-        } elseif ($decision === 'rejected') {
-            if ($order->seller_is === 'seller') {
-                if ($order->isRefundWindowExpired()) {
-                    $order->vendor_settlement_status = 'eligible';
-                } else {
-                    $order->vendor_settlement_status = 'held';
-                }
-                $order->save();
-            }
-            // For seller_is === 'admin', vendor_settlement_status remains NULL
+            throw new \LogicException('Use approved refund requests and canonical manual/provider accounting confirmation.');
         }
+        if ($decision !== 'rejected') throw new \InvalidArgumentException('Invalid dispute decision.');
+        DB::transaction(function () use ($order) {
+            $locked = Order::whereKey($order->id)->lockForUpdate()->firstOrFail();
+            $this->evaluateOrderSettlementEligibility($locked);
+        });
     }
 
     /**
@@ -131,57 +110,28 @@ class VendorSettlementService
         string $paymentReference,
         string $notes = ''
     ): array {
-        $order = Order::find($orderId);
-        if (!$order) {
-            return ['status' => false, 'message' => 'Order not found.'];
+        if ($paymentMethod !== 'wallet_release' || trim($paymentReference) === '') {
+            return ['status' => false, 'message' => 'Use wallet_release and an audit reference.'];
         }
-
-        // Boundary Guard: In-house orders do not undergo vendor settlement
-        if ($order->seller_is !== 'seller') {
-            return ['status' => false, 'message' => 'In-house VMarket orders do not undergo vendor settlement.'];
-        }
-
-        // Terminal Guard: Refunded orders cannot be disbursed
-        if ($order->vendor_settlement_status === 'refunded') {
-            throw new \RuntimeException("Cannot settle order #{$orderId}: order has been refunded.");
-        }
-
-        // Legacy Sentinel Guard
-        if ($order->vendor_settlement_status === 'legacy_hold') {
-            throw new \RuntimeException("Cannot settle order #{$orderId}: order is on legacy hold and requires manual review resolution.");
-        }
-
-        // Eligibility Check
-        if ($order->vendor_settlement_status !== 'eligible') {
-            return [
-                'status' => false,
-                'message' => "Order #{$orderId} is not eligible for settlement (status: {$order->vendor_settlement_status}).",
-            ];
-        }
-
-        DB::transaction(function () use ($order, $adminId, $paymentReference, $notes) {
-            OrderManager::disburseSettledVendorOrder($order, $paymentReference, $adminId);
-
-            // Create auditable settlement transaction
-            $transaction = new Transaction();
-            $transaction->order_id = $order->id;
-            $transaction->payment_for = 'vendor_settlement';
-            $transaction->payer_id = $adminId;
-            $transaction->payment_receiver_id = $order->seller_id;
-            $transaction->paid_by = 'admin';
-            $transaction->paid_to = 'seller';
-            $transaction->payment_status = 'disburse';
-            $transaction->amount = $order->order_amount;
-            $transaction->transaction_type = 'expense';
-            $transaction->save();
+        return DB::transaction(function () use ($orderId, $adminId, $paymentReference, $notes) {
+            $order = Order::whereKey($orderId)->lockForUpdate()->first();
+            if (!$order) return ['status' => false, 'message' => 'Order not found.'];
+            $amount = OrderManager::disburseSettledVendorOrder($order, $paymentReference, $adminId);
+            if ($amount === null) return ['status' => true, 'message' => 'Wallet entitlement already released.', 'replayed' => true];
+            $order->refresh();
+            $order->settlement_notes = $notes;
+            $order->settlement_method = 'wallet_release';
+            $order->save();
+            AdminAuditService::log('vendor.wallet_release', Order::class, $orderId, null, ['amount' => $amount, 'reference' => $paymentReference, 'currency' => 'NGN'], $notes);
+            // [AI] Accounting event records vendor entitlement, never a second bank payment.
+            Transaction::create(['order_id' => $orderId, 'payment_for' => 'vendor_settlement', 'payer_id' => $adminId,
+                'payment_receiver_id' => $order->seller_id, 'paid_by' => 'admin', 'paid_to' => 'seller',
+                'payment_status' => 'wallet_release', 'amount' => $amount, 'transaction_type' => 'wallet_release']);
+            Log::info('[AUDIT] Vendor wallet entitlement released', ['order_id' => $orderId, 'admin_id' => $adminId,
+                'reference' => $paymentReference, 'notes' => $notes, 'amount' => $amount, 'currency' => 'NGN']);
+            return ['status' => true, 'message' => 'Vendor earnings released to wallet. Pay through withdrawal approval.',
+                'order_id' => $orderId, 'reference' => $paymentReference, 'vendor_amount' => $amount];
         });
-
-        return [
-            'status' => true,
-            'message' => 'Vendor settlement executed successfully.',
-            'order_id' => $orderId,
-            'reference' => $paymentReference,
-        ];
     }
 
     /**
@@ -190,82 +140,8 @@ class VendorSettlementService
      */
     public function executeUndeliveredOrderRefund(Order $order, string $reason = ''): array
     {
-        if ($order->received_at !== null) {
-            return [
-                'status' => false,
-                'message' => 'Cannot execute undelivered order refund on an order with confirmed customer receipt.',
-            ];
-        }
-
-        // Idempotency guard
-        if ($order->is_delivery_fee_refunded) {
-            return [
-                'status' => false,
-                'message' => 'Delivery fee has already been refunded for this order.',
-            ];
-        }
-
-        // getRawOriginal() bypasses float casts on Order.order_amount and Order.shipping_cost
-        $fullAmountStr = bcadd((string)($order->getRawOriginal('order_amount') ?? '0.00'), '0', 2);
-        $shippingCostStr = bcadd((string)($order->getRawOriginal('shipping_cost') ?? '0.00'), '0', 2);
-
-        DB::transaction(function () use ($order, $shippingCostStr, $fullAmountStr) {
-            // Reverse delivery fee from AdminWallet if shipping cost > 0
-            if (bccomp($shippingCostStr, '0.00', 2) > 0) {
-                $adminWallet = AdminWallet::where('admin_id', 1)->lockForUpdate()->first();
-                if ($adminWallet) {
-                    // getRawOriginal() bypasses float cast on AdminWallet.delivery_charge_earned
-                    $currentDeliveryEarned = bcadd((string)($adminWallet->getRawOriginal('delivery_charge_earned') ?? '0.00'), '0', 2);
-                    $newDeliveryEarned = bcsub($currentDeliveryEarned, $shippingCostStr, 2);
-                    $adminWallet->delivery_charge_earned = (bccomp($newDeliveryEarned, '0.00', 2) < 0) ? '0.00' : $newDeliveryEarned;
-                    $adminWallet->save();
-                }
-
-                $tx = new Transaction();
-                $tx->order_id = $order->id;
-                $tx->payment_for = 'delivery_fee_refund';
-                $tx->payer_id = 1;
-                $tx->payment_receiver_id = $order->customer_id ?? 0;
-                $tx->paid_by = 'admin';
-                $tx->paid_to = 'customer';
-                $tx->payment_status = 'disburse';
-                $tx->amount = $shippingCostStr;
-                $tx->transaction_type = 'refund';
-                $tx->save();
-            }
-
-            // Record customer refund transaction (Customer cash wallet is decommissioned in Victorious MARKET)
-            if ($order->customer_id && bccomp($fullAmountStr, '0.00', 2) > 0) {
-                $custTx = new Transaction();
-                $custTx->order_id = $order->id;
-                $custTx->payment_for = 'order_refund';
-                $custTx->payer_id = 1;
-                $custTx->payment_receiver_id = $order->customer_id;
-                $custTx->paid_by = 'admin';
-                $custTx->paid_to = 'customer';
-                $custTx->payment_status = 'disburse';
-                $custTx->amount = $fullAmountStr;
-                $custTx->transaction_type = 'refund';
-                $custTx->save();
-            }
-
-            $order->is_delivery_fee_refunded = 1;
-
-            // Safeguard 2: Only mark vendor_settlement_status = 'refunded' for third-party sellers
-            if ($order->seller_is === 'seller') {
-                $order->vendor_settlement_status = 'refunded';
-            }
-            // For seller_is === 'admin', vendor_settlement_status remains NULL
-
-            $order->save();
-        });
-
-        return [
-            'status' => true,
-            'message' => 'Undelivered order full refund processed successfully.',
-            'refunded_amount' => $fullAmountStr,
-            'is_delivery_fee_refunded' => 1,
-        ];
+        // [AI] Retired synthetic refund path: it cannot create payment proof or reverse funds without verified accounting.
+        return ['status' => false, 'message' => 'Create and approve a refund request, then confirm actual payment through canonical refund accounting.'];
     }
 
     /**

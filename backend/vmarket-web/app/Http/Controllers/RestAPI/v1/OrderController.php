@@ -265,6 +265,8 @@ class OrderController extends Controller
         $refund_request = null;
         try {
             DB::transaction(function () use ($request, $user, $parentOrder, &$refund_request, &$orderDetails) {
+                // [AI] Serialize new customer disputes against cashback maturity and vendor release.
+                Order::whereKey($parentOrder->id)->lockForUpdate()->firstOrFail();
                 // [AI] Row-level lock on OrderDetail to prevent concurrent duplicate submissions
                 $lockedDetail = OrderDetail::where('id', $request->order_details_id)->lockForUpdate()->first();
                 if (!$lockedDetail) {

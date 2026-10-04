@@ -71,7 +71,7 @@ class DeliveryPaymentInitializationService
 
         $ttlMinutes = max(5, $ttlMinutes ?? 30);
 
-        return DB::transaction(function () use ($customerId, $customerRecord, $intentInput, $ttlMinutes) {
+        $phase = DB::transaction(function () use ($customerId, $customerRecord, $intentInput, $ttlMinutes) {
             // 2. Fetch and Lock CheckoutIntent (IDOR Protected)
             $intentQuery = CheckoutIntent::query()->lockForUpdate();
             if ($intentInput instanceof CheckoutIntent) {
@@ -102,7 +102,11 @@ class DeliveryPaymentInitializationService
                     'status' => 'expired',
                     'active_cart_token' => null,
                 ]);
-                throw new InvalidPaymentStateException("CheckoutIntent has expired. Please initiate a new checkout.");
+                \App\Models\CashbackRedemption::where('checkout_intent_id', $intent->id)->where('status', 'reserved')
+                    ->update(['status' => 'released', 'released_at' => now()]);
+                PaymentRequest::where('order_group_id', $intent->order_group_id)->where('is_paid', 0)->where('attempt_status', 'pending')
+                    ->update(['attempt_status' => 'expired', 'active_order_group_id' => null]);
+                return ['action' => 'EXPIRED'];
             }
 
             // 3. Monetary Invariants: Exact Integer Kobo via BCMath & Fail-Closed NGN
@@ -161,8 +165,15 @@ class DeliveryPaymentInitializationService
                         ];
                     }
 
-                    // Ambiguous attempt exists without authorization_url -> perform safe recovery
-                    return $this->recoverAmbiguousAttempt($existingActive, $intent, $customerRecord, $amountKobo, $ttlMinutes);
+                    // [AI] A short lease prevents verification/rotation while initialization is in flight.
+                    if (!empty($additional['initialization_lease_until']) && now()->isBefore(Carbon::parse($additional['initialization_lease_until']))) {
+                        return ['status' => 'pending_on_gateway', 'payment_request' => $existingActive,
+                            'gateway_reference' => $existingActive->gateway_reference, 'is_replayed' => true];
+                    }
+                    $additional['initialization_lease_until'] = now()->addSeconds(45)->toIso8601String();
+                    $existingActive->update(['additional_data' => json_encode($additional)]);
+                    return ['action' => 'RECOVER', 'payment' => $existingActive, 'intent' => $intent,
+                        'customer' => $customerRecord, 'amount_kobo' => $amountKobo, 'ttl' => $ttlMinutes];
                 }
             }
 
@@ -174,6 +185,25 @@ class DeliveryPaymentInitializationService
                 $ttlMinutes
             );
         });
+        return $this->completeNetworkAction($phase);
+    }
+
+    /** [AI] Execute provider I/O only after the short reservation transaction has committed. */
+    protected function completeNetworkAction(array $phase): array
+    {
+        if (($phase['action'] ?? '') === 'EXPIRED') {
+            throw new InvalidPaymentStateException('CheckoutIntent has expired. Please initiate a new checkout.');
+        }
+        if (($phase['action'] ?? '') === 'FAILED') {
+            throw new PaymentInitializationException($phase['message']);
+        }
+        if (($phase['action'] ?? '') === 'RECOVER') {
+            return $this->completeNetworkAction($this->recoverAmbiguousAttempt($phase['payment'], $phase['intent'], $phase['customer'], $phase['amount_kobo'], $phase['ttl']));
+        }
+        if (($phase['action'] ?? '') === 'INITIALIZE') {
+            return $this->initializeReservedAttempt($phase);
+        }
+        return $phase;
     }
 
     /**
@@ -203,7 +233,15 @@ class DeliveryPaymentInitializationService
         // Check if Paystack actually created the transaction using Step 1 verification helper
         $verifyData = $this->paystackClient->verifyExistingTransaction($reference);
 
-        switch ($verifyData['class']) {
+        // [AI] Recovery never mutates a payment from an unlocked pre-provider snapshot.
+        return DB::transaction(function () use ($paymentRequest, $intent, $customerRecord, $amountKobo, $ttlMinutes, $verifyData, $reference, $additional) {
+        $intent = CheckoutIntent::where('id', $intent->id)->lockForUpdate()->firstOrFail();
+        $paymentRequest = PaymentRequest::where('id', $paymentRequest->id)->lockForUpdate()->firstOrFail();
+        if ($intent->status !== 'pending' || $intent->isExpired() || $paymentRequest->attempt_status !== 'pending' || (int)$paymentRequest->is_paid === 1) {
+            return ['status' => 'pending_on_gateway', 'payment_request' => $paymentRequest, 'gateway_reference' => $reference, 'is_replayed' => true];
+        }
+
+        switch ($verifyData['class'] ?? 'UNKNOWN') {
             case 'REFERENCE_NOT_FOUND':
                 // Paystack definitively confirms this reference does not exist on the gateway.
                 // Invariant: Do NOT re-initialize Paystack with the same reference (prevents duplicate-reference collisions).
@@ -245,7 +283,7 @@ class DeliveryPaymentInitializationService
                     'active_order_group_id' => null,
                     'additional_data' => json_encode($additional),
                 ]);
-                throw new PaymentInitializationException("Paystack reports transaction failed on gateway.");
+                return ['action' => 'FAILED', 'message' => 'Paystack reports transaction failed on gateway.'];
 
             default:
                 // Ambiguous / Transport error during verification -> preserve pending state and original reference
@@ -256,6 +294,7 @@ class DeliveryPaymentInitializationService
                     'gateway_reference' => $reference,
                 ];
         }
+        });
     }
 
     /**
@@ -290,6 +329,7 @@ class DeliveryPaymentInitializationService
             'checkout_intent_id' => $intent->id,
             'order_group_id' => $intent->order_group_id,
             'created_at' => $now->toIso8601String(),
+            'initialization_lease_until' => $now->copy()->addSeconds(45)->toIso8601String(),
         ];
 
         if ($supersedesAttemptId !== null) {
@@ -315,20 +355,53 @@ class DeliveryPaymentInitializationService
             'additional_data' => json_encode($initialAdditional),
         ]);
 
+        return ['action' => 'INITIALIZE', 'payment_request' => $paymentRequest, 'intent_id' => $intent->id,
+            'email' => $customerRecord->email, 'amount_kobo' => $amountKobo, 'additional' => $initialAdditional,
+            'supersedes_attempt_id' => $supersedesAttemptId];
+    }
+
+    /** [AI] Customer web/app initialization, guarded post-provider persistence. */
+    protected function initializeReservedAttempt(array $phase): array
+    {
+        $paymentRequest = $phase['payment_request'];
+        $paymentRequestId = $paymentRequest->id;
+        $gatewayReference = $paymentRequest->gateway_reference;
+        $initialAdditional = $phase['additional'];
+        $supersedesAttemptId = $phase['supersedes_attempt_id'];
         $callbackUrl = route('paystack.callback', ['payment_id' => $paymentRequestId]);
         $metadata = [
             'payment_id' => $paymentRequestId,
-            'order_group_id' => $intent->order_group_id,
-            'customer_id' => (int) $customerRecord->id,
+            'order_group_id' => $paymentRequest->order_group_id,
+            'customer_id' => (int) $paymentRequest->payer_id,
         ];
 
         $initResult = $this->paystackClient->initializeTransaction(
-            email: $customerRecord->email,
-            amountKobo: $amountKobo,
+            email: $phase['email'],
+            amountKobo: $phase['amount_kobo'],
             reference: $gatewayReference,
             callbackUrl: $callbackUrl,
             metadata: $metadata
         );
+
+        return DB::transaction(function () use ($phase, $paymentRequest, $gatewayReference, $initialAdditional, $supersedesAttemptId, $initResult) {
+        $intent = CheckoutIntent::where('id', $phase['intent_id'])->lockForUpdate()->firstOrFail();
+        $paymentRequest = PaymentRequest::where('id', $paymentRequest->id)->lockForUpdate()->firstOrFail();
+        if ($paymentRequest->attempt_status !== 'pending' || (int)$paymentRequest->is_paid === 1) {
+            return ['status' => 'pending_on_gateway', 'payment_request' => $paymentRequest,
+                'gateway_reference' => $gatewayReference, 'is_replayed' => true];
+        }
+        // [AI] A quote may expire while the provider initializes; do not return a payable URL for that stale agreement.
+        if ($intent->status !== 'pending' || $intent->isExpired()
+            || ($paymentRequest->attempt_expires_at && now()->greaterThanOrEqualTo($paymentRequest->attempt_expires_at))) {
+            if ($intent->status === 'pending' && $intent->isExpired()) {
+                $intent->update(['status' => 'expired', 'active_cart_token' => null]);
+                \App\Models\CashbackRedemption::where('checkout_intent_id', $intent->id)->where('status', 'reserved')
+                    ->update(['status' => 'released', 'released_at' => now()]);
+            }
+            $paymentRequest->update(['attempt_status' => 'expired', 'active_order_group_id' => null]);
+            return ['status' => 'expired', 'payment_request' => $paymentRequest, 'gateway_reference' => $gatewayReference];
+        }
+        $initialAdditional['initialization_lease_until'] = null;
 
         if ($initResult['status'] === 'SUCCESS') {
             $initialAdditional['authorization_url'] = $initResult['authorization_url'];
@@ -380,5 +453,6 @@ class DeliveryPaymentInitializationService
             'payment_request' => $paymentRequest,
             'gateway_reference' => $gatewayReference,
         ];
+        });
     }
 }

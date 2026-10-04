@@ -109,7 +109,13 @@ class RefundController extends BaseController
 
     public function updateRefundStatus(RefundStatusRequest $request, RefundStatusService $refundStatusService, RefundTransactionService $refundTransactionService): JsonResponse
     {
+        // [AI] Admin financial mutations require exact capabilities beyond the order-management route.
+        $permission = $request->input('refund_status') === 'refunded' ? 'payments.manage' : 'refunds.approve';
+        abort_unless(auth('admin')->user()?->hasExactModuleAccess($permission), 403);
         return DB::transaction(function () use ($request) {
+            // [AI] Admin refund approval shares Order-first lock order with maturity and settlement.
+            $orderId = RefundRequest::whereKey($request['id'])->value('order_id');
+            $lockedOrder = Order::whereKey($orderId)->lockForUpdate()->first();
             $lockedRequest = RefundRequest::where('id', $request['id'])->lockForUpdate()->first();
             if (!$lockedRequest) {
                 return response()->json(['error' => translate('refund_request_not_found') . '.'], 404);
@@ -121,7 +127,7 @@ class RefundController extends BaseController
             }
 
             // Terminal Lock 2: Once rejected, it cannot be approved or refunded
-            if ($lockedRequest->status === 'rejected') {
+            if (($lockedRequest->status === 'rejected' && $lockedRequest->change_by === 'admin')) {
                 return response()->json(['error' => translate('refund_request_already_rejected') . '.'], 400);
             }
 
@@ -135,7 +141,7 @@ class RefundController extends BaseController
                 return response()->json(['error' => translate('Customer wallet is not a supported refund method.')], 400);
             }
 
-            $lockedOrder = Order::where('id', $lockedRequest->order_id)->lockForUpdate()->first();
+            // [AI] Parent order is already locked above.
             if (!$lockedOrder) {
                 return response()->json(['error' => translate('order_not_found') . '.'], 404);
             }
@@ -148,25 +154,32 @@ class RefundController extends BaseController
             // Check if pure cashback/reward refund (zero money involved)
             $paymentInfo = json_decode($lockedRequest->payment_info ?? '{}', true) ?: [];
             $refundableMoney = $paymentInfo['refundable_money_amount'] ?? ($paymentInfo['money_amount'] ?? null);
-            $isPureRewardRefund = ($refundableMoney !== null && bccomp((string)$refundableMoney, '0.00', 2) === 0)
-                || ($lockedOrder && $lockedOrder->payment_method === 'cashback')
-                || (bccomp((string)($lockedOrder->order_amount ?? '0.00'), '0.00', 2) === 0);
+            $isPureRewardRefund = $refundableMoney !== null && bccomp((string)$refundableMoney, '0.00', 2) === 0
+                && bccomp((string)($paymentInfo['cashback_amount'] ?? '0'), '0', 2) > 0;
 
             // TRANSITION 1: APPROVAL
             if ($request['refund_status'] === 'approved') {
                 // Must currently be in 'pending' status
-                if ($lockedRequest->status !== 'pending') {
+                if (!($lockedRequest->status === 'pending' || ($lockedRequest->change_by === 'seller' && in_array($lockedRequest->status, ['approved', 'rejected'], true)))) {
                     return response()->json(['error' => "Only pending refund requests can be approved. Current status: {$lockedRequest->status}."], 400);
                 }
 
                 if ($isPureRewardRefund) {
-                    // Pure cashback refunds do not require offline manual bank transfers; complete internally
+                    // [AI] Trusted approval precedes internal reward restoration; failures roll back every transition.
+                    $lockedRequest->update(['status' => 'approved', 'execution_status' => 'awaiting_manual_payment', 'change_by' => 'admin']);
                     $paystackRefundService = app(\App\Services\PaystackRefundService::class);
                     $result = $paystackRefundService->finalizeManualPaymentConfirmation($lockedRequest, $lockedOrder, [
                         'payment_method' => 'cashback',
                         'approved_note' => $request['approved_note'] ?? 'Approved cashback refund',
                         'confirmed_by' => auth('admin')->id() ?? 1,
                     ]);
+
+                    if (!$result['status']) {
+                        throw new \RuntimeException($result['message']);
+                    }
+                    $lockedRequest->refresh(); $lockedDetail->refresh(); $lockedOrder->refresh();
+                    \App\Services\AdminAuditService::log('refund.completed', RefundRequest::class, $lockedRequest->id,
+                        ['status' => 'pending'], ['status' => 'refunded', 'method' => 'cashback'], $request->input('approved_note'));
 
                     $this->refundStatusRepos->add(data: [
                         'refund_request_id' => $lockedRequest->id,
@@ -197,6 +210,8 @@ class RefundController extends BaseController
                     'message' => $request['approved_note'] ?? 'Refund approved, awaiting manual payment',
                 ]);
 
+                \App\Services\AdminAuditService::log('refund.approved', RefundRequest::class, $lockedRequest->id,
+                    null, ['status' => 'approved', 'execution_status' => 'awaiting_manual_payment'], $request->input('approved_note'));
                 event(new RefundEvent(status: 'approved', order: $lockedOrder, refund: $lockedRequest, orderDetails: $lockedDetail));
                 return response()->json(['message' => translate('refund_request_approved_and_awaiting_manual_payment') . '.']);
             }
@@ -232,6 +247,10 @@ class RefundController extends BaseController
                 if (!$result['status']) {
                     return response()->json(['error' => $result['message']], 400);
                 }
+                $lockedRequest->refresh(); $lockedDetail->refresh(); $lockedOrder->refresh();
+                \App\Services\AdminAuditService::log('refund.completed', RefundRequest::class, $lockedRequest->id,
+                    ['status' => 'approved'], ['status' => 'refunded', 'method' => $request->input('payment_method'),
+                        'reference' => $request->input('payment_reference'), 'amount' => $request->input('amount')], $request->input('approved_note'));
 
                 $refMsg = 'Payment confirmed via ' . ($request['payment_method'] ?? 'manual_offline');
                 if (!empty($request['payment_reference'])) {
@@ -271,6 +290,8 @@ class RefundController extends BaseController
                     'message' => $request['rejected_note'] ?? 'Refund rejected',
                 ]);
 
+                \App\Services\AdminAuditService::log('refund.rejected', RefundRequest::class, $lockedRequest->id,
+                    null, ['status' => 'rejected'], $request->input('rejected_note'));
                 event(new RefundEvent(status: 'rejected', order: $lockedOrder, refund: $lockedRequest, orderDetails: $lockedDetail));
                 return response()->json(['message' => translate('refund_status_updated') . '.']);
             }

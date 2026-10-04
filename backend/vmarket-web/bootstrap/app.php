@@ -22,6 +22,10 @@ use Illuminate\Http\Middleware\TrustProxies;
 use Illuminate\Routing\Middleware\SubstituteBindings;
 
 return Application::configure(basePath: dirname(__DIR__))
+    ->withSingletons([
+        // [AI] Use the application's schedules and command discovery in Laravel 12.
+        \Illuminate\Contracts\Console\Kernel::class => \App\Console\Kernel::class,
+    ])
     ->withMiddleware(function (Middleware $middleware) {
         $middleware->use([
             TrustProxies::class,

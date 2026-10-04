@@ -146,71 +146,15 @@ class RefundController extends Controller
 
     }
 
-    public function refund_status_update(Request $request):JsonResponse
+    public function refund_status_update(Request $request): JsonResponse
     {
-        $seller = $request->seller;
-        $validator = Validator::make($request->all(), [
-            'refund_status' => 'required',
-            'refund_request_id' => 'required',
-            'note' => 'required_if:refund_status,rejected',
-        ]);
-
-        if ($validator->errors()->count() > 0) {
-            return response()->json(['errors' => Helpers::validationErrorProcessor($validator)]);
-        }
-
-        $refund = RefundRequest::whereHas('order', function ($query) use ($seller) {
-            $query->where('seller_is', 'seller')->where('seller_id', $seller['id']);
-        })->find($request->refund_request_id);
-
-        if (!$refund) {
-            return response()->json(['message' => translate('unauthorized_access')], 403);
-        }
-
-        $user = User::find($refund->customer_id);
-
-
-
-        if ($refund->change_by == 'admin') {
-
-            return response()->json(['message' => 'refunded status can not be changed!! Admin already changed the status : ' . $refund->status . '!!'], 403);
-        }
-        if ($refund->status != 'refunded') {
-            $orderDetails = OrderDetail::find($refund->order_details_id);
-            $refund_status = new RefundStatus;
-            $refund_status->refund_request_id = $refund->id;
-            $refund_status->change_by = 'seller';
-            $refund_status->change_by_id = $seller['id'];
-            $refund_status->status = $request->refund_status;
-
-            if ($request->refund_status == 'pending') {
-                $orderDetails->refund_request = 1;
-            } elseif ($request->refund_status == 'approved') {
-                $orderDetails->refund_request = 2;
-                $refund->approved_note = $request->note;
-
-                $refund_status->message = $request->note;
-            } elseif ($request->refund_status == 'rejected') {
-                $orderDetails->refund_request = 3;
-                $refund->rejected_note = $request->note;
-
-                $refund_status->message = $request->note;
-            }
-
-            $orderDetails->save();
-
-            $refund->status = $request->refund_status;
-            $refund->change_by = 'seller';
-            $refund->save();
-            $refund_status->save();
-
-            $order = Order::find($refund->order_id);
-            event(new RefundEvent(status: $request['refund_status'], order: $order, refund: $refund, orderDetails: $orderDetails));
-            return response()->json(['message' => 'refund status updated successfully!'], 200);
-        } else {
-            return response()->json(['message' => 'refunded status can not be changed!!'], 403);
-        }
-
+        // [AI] Seller Mobile uses the shared recommendation service, never financial finalization.
+        $validator = Validator::make($request->all(), ['refund_status' => 'required|in:approved,rejected',
+            'refund_request_id' => 'required|integer', 'note' => 'nullable|string|max:2000']);
+        if ($validator->fails()) return response()->json(['errors' => Helpers::validationErrorProcessor($validator)], 422);
+        $result = app(\App\Services\VendorRefundDecisionService::class)->decide((int)$request->seller['id'],
+            (int)$request->refund_request_id, $request->refund_status, $request->note);
+        return response()->json(['message' => $result['message']], $result['status'] ? 200 : $result['code']);
     }
 
     /**

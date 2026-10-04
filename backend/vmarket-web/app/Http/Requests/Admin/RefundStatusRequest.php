@@ -32,7 +32,7 @@ class RefundStatusRequest extends FormRequest
             'approved_note' => $this->input('refund_status') == 'approved' ? 'required' : '',
             'rejected_note' => $this->input('refund_status') == 'rejected' ? 'required' : '',
             'payment_method' => $this->input('refund_status') == 'refunded' ? 'required' : '',
-            'amount' => $this->input('refund_status') == 'refunded' ? 'required|numeric|min:0.01' : 'nullable|numeric',
+            'amount' => $this->input('refund_status') == 'refunded' ? 'required|numeric|min:0.01|regex:/^\d+(?:\.\d{1,2})?$/' : 'nullable|numeric',
             'payment_reference' => $this->input('refund_status') == 'refunded' ? 'required|string|max:255' : 'nullable|string',
             'payment_date' => $this->input('refund_status') == 'refunded' ? 'required|date' : 'nullable|date',
             'payment_evidence' => 'nullable|file|mimes:jpg,jpeg,png,pdf|max:5120',

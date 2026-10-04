@@ -48,83 +48,25 @@ class PaystackController extends Controller
         $this->user = $user;
     }
 
+    // [AI] Legacy GET entry only replays an authorized canonical initialization; it never creates a new reference.
     public function index(Request $request): JsonResponse|Redirector|RedirectResponse
     {
-        $validator = Validator::make($request->all(), [
-            'payment_id' => 'required|uuid'
-        ]);
-
-        if ($validator->fails()) {
-            return response()->json($this->response_formatter(GATEWAYS_DEFAULT_400, null, $this->error_processor($validator)), 400);
+        $data = $this->payment::where('id', $request->input('payment_id'))->first();
+        $customerId = auth('customer')->id() ?? auth('api')->id();
+        if (!$data || !$customerId || (string) $data->payer_id !== (string) $customerId) {
+            return response()->json(['message' => 'Unauthorized payment request.'], 403);
         }
-
-        $data = $this->payment::where(['id' => $request['payment_id']])->where(['is_paid' => 0])->first();
-        if (!isset($data)) {
-            return response()->json($this->response_formatter(GATEWAYS_DEFAULT_204), 200);
+        if (!in_array($data->payment_domain, ['marketplace_delivery', 'marketplace_pickup'], true)) {
+            return response()->json(['message' => 'This legacy payment path has been retired.'], 410);
         }
-
-        // Fail-Closed Currency Policy: Explicitly Require NGN (Step 2 - L)
-        $currencyCode = strtoupper((string)($data['currency_code'] ?? ''));
-        if ($currencyCode !== 'NGN') {
-            Log::error("Paystack initialize: Unsupported or missing currency '{$currencyCode}' on payment #{$data['id']}. Victorious MARKET requires NGN.");
-            return response()->json($this->response_formatter(GATEWAYS_DEFAULT_400, null, ['message' => 'Unsupported currency. Victorious MARKET requires NGN.']), 400);
+        $additional = json_decode($data->additional_data ?? '{}', true) ?: [];
+        if ($data->is_paid || $data->attempt_status !== 'pending' || empty($data->gateway_reference)
+            || empty($additional['authorization_url']) || !$data->attempt_expires_at
+            || now()->greaterThanOrEqualTo($data->attempt_expires_at)) {
+            return response()->json(['message' => 'Resume payment through the checkout agreement.'], 409);
         }
-
-        // [AI] Customer Ownership Check — UUID secrecy is NOT a sufficient authorization mechanism.
-        // For marketplace payments (delivery/pickup), verify the authenticated customer owns this PaymentRequest.
-        if (in_array($data->payment_domain, ['marketplace_delivery', 'marketplace_pickup'], true)) {
-            $authenticatedCustomerId = auth('customer')->id() ?? auth('api')->id();
-            if ($authenticatedCustomerId && (string) $data->payer_id !== (string) $authenticatedCustomerId) {
-                Log::warning('Paystack initialize: Customer ownership check failed.', [
-                    'payment_id'             => $data->id,
-                    'payment_domain'         => $data->payment_domain,
-                    'expected_payer_id'      => $data->payer_id,
-                    'authenticated_customer' => $authenticatedCustomerId,
-                ]);
-                return response()->json($this->response_formatter(GATEWAYS_DEFAULT_400, null, ['message' => 'Unauthorized payment request.']), 403);
-            }
-        }
-
-        $payer = json_decode($data['payer_information'], true);
-
-        $url = "https://api.paystack.co/transaction/initialize";
-
-        // High-Entropy Cryptographic Reference: Collision-Free Within Same Second (Canonical VM- hyphen format)
-        $highEntropyReference = 'VM-' . \Illuminate\Support\Str::orderedUuid()->toString();
-
-        $fields = [
-            'email' => $payer['email'] ?? "customer@email.com",
-            'amount' => (int) round(($data['payment_amount'] ?? 0) * 100),
-            'currency' => 'NGN',
-            'reference' => $highEntropyReference,
-            'callback_url' => route('paystack.callback', ['payment_id' => $data['id']]),
-            'metadata' => [
-                'payment_id' => $data['id'],
-            ]
-        ];
-
-        $fields_string = http_build_query($fields);
-        $ch = curl_init();
-
-        //set the url, number of POST vars, POST data
-        curl_setopt($ch, CURLOPT_URL, $url);
-        curl_setopt($ch, CURLOPT_POST, true);
-        curl_setopt($ch, CURLOPT_POSTFIELDS, $fields_string);
-        curl_setopt($ch, CURLOPT_HTTPHEADER, array(
-            "Authorization: Bearer " . Config::get('paystack.secretKey'),
-            "Cache-Control: no-cache",
-        ));
-
-        curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
-        $response = json_decode(curl_exec($ch), true);
-
-        if ($response['status'] && isset($response['data']['authorization_url'])) {
-            return redirect($response['data']['authorization_url']);
-        }
-
-        return response()->json($this->response_formatter(GATEWAYS_DEFAULT_204), 200);
+        return redirect($additional['authorization_url']);
     }
-
     public function handleGatewayCallback(Request $request): Redirector|RedirectResponse
     {
         $paymentDetails = self::getPayStackPaymentData(request: $request);
@@ -213,9 +155,7 @@ class PaystackController extends Controller
                     'requested_reference' => $paymentDetails['requested_reference'] ?? null,
                 ]);
                 $paymentRequest = !empty($routePaymentId) ? $this->payment::where('id', $routePaymentId)->first() : null;
-                if ($paymentRequest && function_exists($paymentRequest->failure_hook)) {
-                    call_user_func($paymentRequest->failure_hook, $paymentRequest);
-                }
+                // [AI] Provider failure presentation does not authorize legacy hooks or financial reversal.
                 return $this->payment_response($paymentRequest, 'fail');
 
             case 'TRANSPORT_ERROR':
@@ -234,9 +174,7 @@ class PaystackController extends Controller
     public function cancel(Request $request): Application|JsonResponse|Redirector|RedirectResponse
     {
         $payment_data = $this->payment::where(['id' => $request['payments_id']])->first();
-        if (isset($payment_data) && function_exists($payment_data->failure_hook)) {
-            call_user_func($payment_data->failure_hook, $payment_data);
-        }
+        // [AI] Closing checkout is not proof that a capture failed; authoritative settlement/recovery owns the state.
         return $this->payment_response($payment_data, 'fail');
     }
 
@@ -558,15 +496,17 @@ class PaystackController extends Controller
             $data = $event['data'] ?? [];
             $reference = $data['reference'] ?? null;
             $amountPaid = $data['amount'] ?? 0; // in kobo
-            $metadata = $data['metadata'] ?? [];
+            $metadata = is_array($data['metadata'] ?? null) ? $data['metadata'] : [];
 
             // A. Check standard e-commerce PaymentRequest
             $paymentId = $metadata['payment_id'] ?? null;
             $paymentRequest = null;
-            if ($paymentId) {
-                $paymentRequest = $this->payment::where('id', $paymentId)->first();
-            } elseif ($reference) {
+            if ($reference) {
                 $paymentRequest = $this->payment::where('gateway_reference', $reference)->first();
+            }
+            if ($paymentId && (!$paymentRequest || (string)$paymentRequest->id !== (string)$paymentId)) {
+                \App\Services\PaymentExceptionRecorder::record($reference, $data, 'metadata_reference_mismatch', $paymentRequest);
+                return response()->json(['status' => true, 'settlement' => 'reconciliation_required'], 200);
             }
 
             if ($paymentRequest) {
@@ -601,30 +541,10 @@ class PaystackController extends Controller
                 ]);
             }
 
-            // B. Check Delivery Rider Cash-on-Delivery Order Payment Link
-            $orderId = $metadata['order_id'] ?? null;
-            $type = $metadata['type'] ?? null;
-            if ($orderId && $type === 'delivery_payment') {
-                $order = Order::with(['customer', 'deliveryMan'])->find($orderId);
-                if ($order) {
-                    $expectedAmount = (int) round($order['order_amount'] * 100);
-                    $amountPaid = (int) ($data['amount'] ?? 0);
-                    if ($amountPaid === $expectedAmount) {
-                        // [AI] Receipt Authority Invariant:
-                        // Payment confirmation marks payment_status = 'paid', but NEVER marks order_status = 'delivered'.
-                        // Customer receipt requires physical OTP code verification at the doorstep.
-                        $order->update([
-                            'payment_status' => 'paid',
-                            'payment_method' => 'paystack',
-                            'transaction_ref' => $reference,
-                        ]);
-
-                        Log::info("Paystack Webhook: Successfully processed Payment for Delivery Order #{$orderId} with ref {$reference}.");
-                    }
-                }
-            }
+            // [AI] V1 retired direct delivery_payment postings. Signed uncoupled captures require reconciliation.
+            \App\Services\PaymentExceptionRecorder::record($reference, $data,
+                ($metadata['type'] ?? '') === 'delivery_payment' ? 'retired_delivery_payment' : 'uncorrelated_capture', $paymentRequest);
         }
-
         // 3. Process Refund Lifecycle Events (refund.pending, refund.processing, refund.needs-attention, refund.failed, refund.processed)
         if (str_starts_with($event['event'], 'refund.')) {
             $refundService = app(\App\Services\PaystackRefundService::class);

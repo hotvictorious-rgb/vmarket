@@ -3,9 +3,10 @@
 namespace Tests\Unit;
 
 /**
- * [AI] Comprehensive Production Readiness & Defect Resolution Proof Suite
+ * [AI] Selected service assertions and modeled financial scenarios.
  *
- * Verifies all 10 reviewer findings with mathematical and systemic proofs (Δ = 0.00):
+ * [AI] These assertions do not certify routed end-to-end behavior or MySQL concurrency.
+ * Covered scenarios include:
  * 1. Cashback maturity command executes DB transaction & loyalty points credit without missing class error.
  * 2. 6-Month (180 days) cashback expiration transitions overdue available rewards to expired.
  * 3. Payment reconciliation paths populate captured_amount without undefined variable error.
@@ -96,7 +97,7 @@ class ComprehensiveProductionReadinessProofTest
 
         $driftFormatted = number_format($this->totalDrift, 4);
         echo "\n========================================================================\n";
-        echo " PRODUCTION READINESS AUDIT SUMMARY\n";
+        echo " SELECTED ASSERTIONS AND MODELED SCENARIOS SUMMARY\n";
         echo " Total Assertions: " . ($this->passCount + $this->failCount) . "\n";
         echo " Passed:           {$this->passCount}\n";
         echo " Failed:           {$this->failCount}\n";
@@ -110,7 +111,7 @@ class ComprehensiveProductionReadinessProofTest
             echo ">>> STATUS: AUDIT FAILED DUE TO FINANCIAL DRIFT (Δ = {$driftFormatted})! <<<\n\n";
             exit(1);
         } else {
-            echo ">>> STATUS: ALL REVIEWER FINDINGS RESOLVED AND MATHEMATICALLY PROVEN 100%! <<<\n\n";
+            echo ">>> STATUS: EXECUTED ASSERTIONS PASSED; NO PRODUCTION OR MYSQL CONTENTION CERTIFICATION. <<<\n\n";
         }
     }
 
@@ -3504,5 +3505,4 @@ class ComprehensiveProductionReadinessProofTest
 
 $test = new ComprehensiveProductionReadinessProofTest();
 $test->run();
-
 

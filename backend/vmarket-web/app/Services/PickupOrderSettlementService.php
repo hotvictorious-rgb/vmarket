@@ -441,9 +441,11 @@ class PickupOrderSettlementService
         // Exact Money Calculations via BCMath (Zero Float Drift: Δ = ₦0.00)
         $subtotal = bcadd((string) ($snapshot['subtotal'] ?? '0.00'), '0', 2);
         $orderAmount = bcadd((string) $reservation->total_amount, '0', 2);
-        $rawCommission = bcdiv(bcmul($subtotal, '10', 4), '100', 4);
+        $pickupTax = bcadd((string)($snapshot['tax'] ?? '0.00'), '0', 2);
+        $pickupMerchandise = $subtotal;
+        $rawCommission = bcdiv(bcmul($pickupMerchandise, '10', 4), '100', 4);
         $adminCommission = bcadd($rawCommission, '0', 2);
-        $sellerAmount = bcsub($orderAmount, $adminCommission, 2);
+        $sellerAmount = bcsub($pickupMerchandise, $adminCommission, 2);
 
         $isGuest = !empty($reservation->is_guest) || !empty($snapshot['is_guest']);
         $guestToken = $isGuest ? bin2hex(random_bytes(32)) : null;
@@ -470,7 +472,7 @@ class PickupOrderSettlementService
             'coupon_discount_bearer' => 'inhouse',
             'order_amount' => $orderAmount,
             'init_order_amount' => $orderAmount,
-            'total_tax_amount' => '0.00',
+            'total_tax_amount' => $pickupTax,
             'tax_type' => 'percent',
             'tax_model' => 'exclude',
             'admin_commission' => $adminCommission,

@@ -273,7 +273,14 @@ class Order extends Model
     public function hasUnresolvedRefund(): bool
     {
         return \App\Models\RefundRequest::where('order_id', $this->id)
-            ->whereNotIn('status', ['rejected', 'refunded'])
+            ->where(function ($query) {
+                $query->whereNotIn('status', ['rejected', 'refunded'])
+                    ->orWhere(function ($rejected) {
+                        $rejected->where('status', 'rejected')->where(function ($actor) {
+                            $actor->whereNull('change_by')->orWhere('change_by', '!=', 'admin');
+                        });
+                    });
+            })
             ->exists();
     }
 

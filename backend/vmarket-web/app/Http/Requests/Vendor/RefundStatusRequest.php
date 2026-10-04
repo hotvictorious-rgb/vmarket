@@ -28,7 +28,7 @@ class RefundStatusRequest extends FormRequest
         {
             return [
                 'id' => 'required',
-                'refund_status' => 'required|in:pending,approved,rejected,refunded',
+                'refund_status' => 'required|in:approved,rejected',
                 'approved_note' => $this->input('refund_status') == 'approved' ? 'required' : '',
                 'rejected_note' => $this->input('refund_status') == 'rejected' ? 'required': '',
             ];

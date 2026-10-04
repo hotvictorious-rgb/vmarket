@@ -163,17 +163,14 @@ class WithdrawController extends BaseController
                     return false;
                 }
 
-                $amount = $withdrawRequest->amount;
-                $totalEarning = $wallet->total_earning + $amount;
-                $pendingWithdraw = max(0, $wallet->pending_withdraw - $amount);
-
-                $this->vendorWalletRepo->update(
-                    id: $wallet->id,
-                    data: $this->vendorWalletService->getVendorWalletData(
-                        totalEarning: $totalEarning,
-                        pendingWithdraw: $pendingWithdraw
-                    )
-                );
+                // [AI] Restore exact stored NGN with no float clamp or second conversion.
+                $amount = (string)$withdrawRequest->getRawOriginal('amount');
+                if (bccomp((string)$wallet->getRawOriginal('pending_withdraw'), $amount, 2) < 0) {
+                    throw new \RuntimeException('Withdrawal reservation is insufficient.');
+                }
+                $wallet->total_earning = bcadd((string)$wallet->getRawOriginal('total_earning'), $amount, 2);
+                $wallet->pending_withdraw = bcsub((string)$wallet->getRawOriginal('pending_withdraw'), $amount, 2);
+                $wallet->save();
                 $withdrawRequest->delete();
                 return true;
             });

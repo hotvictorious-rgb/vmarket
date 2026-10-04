@@ -52,6 +52,7 @@ class PaystackRefundService
         if (!empty($order->order_group_id)) {
             $pr = \App\Models\PaymentRequest::where('order_group_id', $order->order_group_id)
                 ->where('is_paid', 1)
+                ->where('attempt_status', 'successful')
                 ->first();
             if ($pr && !empty($pr->gateway_reference)) {
                 return $pr->gateway_reference;
@@ -61,8 +62,9 @@ class PaystackRefundService
         // 2. Check if pickup reservation exists
         $reservation = \App\Models\PickupReservation::where('order_id', $order->id)->first();
         if ($reservation) {
-            $pr = \App\Models\PaymentRequest::where('active_pickup_reservation_id', $reservation->id)
-                ->orWhere('order_group_id', $reservation->reservation_code)
+            $pr = \App\Models\PaymentRequest::where('pickup_reservation_id', $reservation->id)
+                ->where('is_paid', 1)
+                ->where('attempt_status', 'successful')
                 ->first();
             if ($pr && !empty($pr->gateway_reference)) {
                 return $pr->gateway_reference;
@@ -70,7 +72,9 @@ class PaystackRefundService
         }
 
         // 3. Fallback to order's transaction_ref (legacy orders)
-        return !empty($order->transaction_ref) ? $order->transaction_ref : null;
+        // [AI] Canonical orders must never fall back to their internal accounting reference.
+        return empty($order->order_group_id) && !$reservation && !empty($order->transaction_ref)
+            ? $order->transaction_ref : null;
     }
 
     /**
@@ -447,6 +451,7 @@ class PaystackRefundService
         // If not found or ambiguous
         if (!$refundRequest) {
             Log::warning("[AI] Paystack Refund Webhook: Could not correlate refund ID '{$refundId}' or ref '{$providerRefundRef}' to local request.");
+            PaymentExceptionRecorder::record($txRef, $fullRefund, 'uncorrelated_refund', null, $event);
             return [
                 'status' => true,
                 'code' => 200,
@@ -454,11 +459,16 @@ class PaystackRefundService
             ];
         }
 
+        // [AI] Late provider notifications cannot reopen completed accounting.
+        if ($refundRequest->status === 'refunded' || in_array($refundRequest->execution_status, ['succeeded', 'already_refunded'], true)) {
+            return ['status' => true, 'code' => 200, 'message' => 'Completed refund already recorded.'];
+        }
+
         // Transaction reference validation
         $order = Order::find($refundRequest->order_id);
         if ($order && !empty($txRef)) {
             $expectedGatewayRef = self::resolvePaystackReferenceForOrder($order);
-            if (!empty($expectedGatewayRef) && $txRef !== $expectedGatewayRef && $txRef !== $order->transaction_ref) {
+            if (empty($expectedGatewayRef) || $txRef !== $expectedGatewayRef) {
                 Log::warning("[AI] Paystack Refund Webhook: Transaction reference mismatch for RefundRequest #{$refundRequest->id}. Expected '{$expectedGatewayRef}', got '{$txRef}'.");
                 return [
                     'status' => false,
@@ -472,8 +482,9 @@ class PaystackRefundService
         $expectedKobo = (int) round(bcmul((string)($refundRequest->getRawOriginal('amount') ?? '0.00'), '100', 2));
         if ($amountInKobo > 0 && $amountInKobo !== $expectedKobo) {
             Log::warning("[AI] Paystack Refund Webhook: Amount mismatch for RefundRequest #{$refundRequest->id}. Expected {$expectedKobo}, got {$amountInKobo}.");
-            $refundRequest->execution_status = 'reconciliation_required';
-            $refundRequest->save();
+            RefundRequest::where('id', $refundRequest->id)->where('status', '!=', 'refunded')
+                ->whereNotIn('execution_status', ['succeeded', 'already_refunded'])
+                ->update(['execution_status' => 'reconciliation_required']);
             return [
                 'status' => false,
                 'code' => 400,
@@ -483,27 +494,26 @@ class PaystackRefundService
 
         // Update paystack_refund_id if not stored
         if (empty($refundRequest->paystack_refund_id) && !empty($refundId)) {
-            $refundRequest->paystack_refund_id = $refundId;
-            $refundRequest->save();
+            RefundRequest::where('id', $refundRequest->id)->whereNull('paystack_refund_id')
+                ->update(['paystack_refund_id' => $refundId]);
         }
 
         // Process Event Transitions
+        $transition = RefundRequest::where('id', $refundRequest->id)->where('status', '!=', 'refunded')
+            ->whereNotIn('execution_status', ['succeeded', 'already_refunded']);
         switch ($event) {
             case 'refund.pending':
             case 'refund.processing':
-                $refundRequest->execution_status = 'pending_provider_processing';
-                $refundRequest->save();
+                $transition->update(['execution_status' => 'pending_provider_processing']);
                 break;
 
             case 'refund.needs-attention':
-                $refundRequest->execution_status = 'needs_attention';
-                $refundRequest->save();
+                $transition->update(['execution_status' => 'needs_attention']);
                 break;
 
             case 'refund.failed':
-                $refundRequest->execution_status = 'failed';
-                $refundRequest->rejected_note = $fullRefund['provider_response'] ?? ($fullRefund['status'] ?? 'Provider failed refund');
-                $refundRequest->save();
+                $transition->update(['execution_status' => 'failed',
+                    'rejected_note' => $fullRefund['provider_response'] ?? ($fullRefund['status'] ?? 'Provider failed refund')]);
                 break;
 
             case 'refund.processed':
@@ -525,6 +535,12 @@ class PaystackRefundService
     public function finalizeRefundAccounting(RefundRequest $refundRequest, array $providerData = []): void
     {
         DB::transaction(function () use ($refundRequest, $providerData) {
+            // [AI] Order is the common serialization anchor for refunds and cashback maturation.
+            $orderId = RefundRequest::where('id', $refundRequest->id)->value('order_id');
+            $order = Order::where('id', $orderId)->lockForUpdate()->first();
+            if (!$order) {
+                return;
+            }
             // 1. Pessimistic Row-Level Lock
             $lockedRequest = RefundRequest::where('id', $refundRequest->id)->lockForUpdate()->first();
             if (!$lockedRequest) {
@@ -559,7 +575,10 @@ class PaystackRefundService
                 return;
             }
 
-            $order = Order::where('id', $lockedRequest->order_id)->lockForUpdate()->first();
+            // [AI] Lock customer before reward lots; shared with maturation and redemption.
+            if ($order) {
+                DB::table('users')->where('id', $order->customer_id)->lockForUpdate()->first();
+            }
             if (!$order) {
                 return;
             }
@@ -602,7 +621,7 @@ class PaystackRefundService
             }
 
             // 4. Provider transaction reference must be present and exactly match order transaction reference
-            $orderTxRef = (string)($order->getRawOriginal('transaction_ref') ?? '');
+            $orderTxRef = (string) self::resolvePaystackReferenceForOrder($order);
             $providerTxRef = (string)($providerData['transaction_reference'] ?? ($providerData['transaction']['reference'] ?? ''));
             if (empty($providerTxRef) || empty($orderTxRef) || $providerTxRef !== $orderTxRef) {
                 Log::warning("[AI] Paystack finalizeRefundAccounting blocked: Missing or mismatched transaction reference for RefundRequest #{$lockedRequest->id}. Expected '{$orderTxRef}', got '{$providerTxRef}'");
@@ -640,7 +659,7 @@ class PaystackRefundService
 
             // Seed BCMath from raw DB decimal string — bypasses the float cast on RefundRequest.amount
             $refundAmount = bcadd((string)($lockedRequest->getRawOriginal('amount') ?? '0.00'), '0', 2);
-            $isSettled = ($order->vendor_settlement_status === 'settled');
+            $isSettled = ($order->vendor_settlement_status === 'settled') || \App\Models\OrderTransaction::where('order_id', $order->id)->where('status', 'disburse')->exists();
 
             // [AI] Calculate redeemed cashback spent on this order
             $redeemedCashbackOnOrder = '0.00';
@@ -751,47 +770,12 @@ class PaystackRefundService
             // 3. Financial Reversals: Pre-Settlement Escrow vs Post-Settlement (Pure BCMath Precision)
             // Reversal is strictly based on the returned merchandise value (90% vendor, 10% commission, 0% tax)
             if (!$isSettled) {
-                $adminWallet = AdminWallet::where('admin_id', 1)->lockForUpdate()->first();
-                if ($adminWallet) {
-                    $currentPending = bcadd((string)($adminWallet->getRawOriginal('pending_amount') ?? '0.00'), '0', 2);
-                    $newPendingDiff = bcsub($currentPending, $returnedMerchandiseValue, 2);
-                    $adminWallet->pending_amount = (bccomp($newPendingDiff, '0.00', 2) < 0) ? '0.00' : $newPendingDiff;
-                    $adminWallet->save();
-                }
+                // [AI] Release only this order's funded hold including returned cash, tax and rewards.
+                OrderManager::releaseRefundEscrow($order, bcadd($refundAmount, $cashbackToRestore, 2));
             } else {
-                $vendorShare = bcmul($returnedMerchandiseValue, '0.90', 2);
-                $commissionShare = bcmul($returnedMerchandiseValue, '0.10', 2);
-
-                $sellerWallet = SellerWallet::where('seller_id', $order->seller_id)->lockForUpdate()->first();
-                if ($sellerWallet) {
-                    $currentEarning = bcadd((string)($sellerWallet->getRawOriginal('total_earning') ?? '0.00'), '0', 2);
-                    if (bccomp($currentEarning, $vendorShare, 2) >= 0) {
-                        $newEarning = bcsub($currentEarning, $vendorShare, 2);
-                        $unrecoveredDebt = '0.00';
-                    } else {
-                        $newEarning = '0.00';
-                        $unrecoveredDebt = bcsub($vendorShare, $currentEarning, 2);
-                    }
-                    $sellerWallet->total_earning = $newEarning;
-                    if (bccomp($unrecoveredDebt, '0.00', 2) > 0) {
-                        $currentCollectedCash = bcadd((string)($sellerWallet->getRawOriginal('collected_cash') ?? '0.00'), '0', 2);
-                        $sellerWallet->collected_cash = bcadd($currentCollectedCash, $unrecoveredDebt, 2);
-                    }
-                    $currentCommissionGiven = bcadd((string)($sellerWallet->getRawOriginal('commission_given') ?? '0.00'), '0', 2);
-                    $commDiff = bcsub($currentCommissionGiven, $commissionShare, 2);
-                    $sellerWallet->commission_given = (bccomp($commDiff, '0.00', 2) < 0) ? '0.00' : $commDiff;
-                    $sellerWallet->save();
-                }
-
-                $adminWallet = AdminWallet::where('admin_id', 1)->lockForUpdate()->first();
-                if ($adminWallet) {
-                    $currentCommissionEarned = bcadd((string)($adminWallet->getRawOriginal('commission_earned') ?? '0.00'), '0', 2);
-                    $adminCommDiff = bcsub($currentCommissionEarned, $commissionShare, 2);
-                    $adminWallet->commission_earned = (bccomp($adminCommDiff, '0.00', 2) < 0) ? '0.00' : $adminCommDiff;
-                    $adminWallet->save();
-                }
+                // [AI] Reverse the recognized merchandise/tax partition through the shared accounting helper.
+                OrderManager::reverseRecognizedRefund($order, $returnedMerchandiseValue, bcadd($refundAmount, $cashbackToRestore, 2));
             }
-
             // Check if all items in order have been refunded
             $unrefundedItemsCount = \App\Models\OrderDetail::where('order_id', $order->id)
                 ->where('id', '!=', $lockedRequest->order_details_id)
@@ -951,6 +935,12 @@ class PaystackRefundService
     public function finalizeManualPaymentConfirmation(RefundRequest $refundRequest, Order $order, array $paymentData = []): array
     {
         return DB::transaction(function () use ($refundRequest, $order, $paymentData) {
+            // [AI] Persisted identity and common Order -> RefundRequest lock order.
+            $orderId = RefundRequest::where('id', $refundRequest->id)->value('order_id');
+            $lockedOrder = Order::where('id', $orderId)->lockForUpdate()->first();
+            if (!$lockedOrder || (int) $lockedOrder->id !== (int) $order->id) {
+                return ['status' => false, 'message' => 'Order not found or mismatched.'];
+            }
             $lockedRequest = RefundRequest::where('id', $refundRequest->id)->lockForUpdate()->first();
             if (!$lockedRequest) {
                 return ['status' => false, 'message' => 'Refund request not found.'];
@@ -987,7 +977,11 @@ class PaystackRefundService
             // State Machine Transition Guard:
             // Payment confirmation requires the request to be 'approved' with 'awaiting_manual_payment'
             // (Exception: Pure cashback refunds completing internally during approval)
-            $isPureCashbackFlow = (!empty($paymentData['payment_method']) && $paymentData['payment_method'] === 'cashback');
+            // [AI] Only persisted reward funding may use internal completion; caller labels have no authority.
+            $isPureCashbackFlow = $lockedOrder->payment_method === 'cashback';
+            if ($lockedRequest->status !== 'approved') {
+                return ['status' => false, 'message' => 'Refund must be approved before completion.'];
+            }
             if (!$isPureCashbackFlow) {
                 if ($lockedRequest->status !== 'approved' || $lockedRequest->execution_status !== 'awaiting_manual_payment') {
                     Log::warning("[AI] finalizeManualPaymentConfirmation rejected: Request #{$lockedRequest->id} is in status '{$lockedRequest->status}' ('{$lockedRequest->execution_status}'), not approved/awaiting_manual_payment.");
@@ -998,10 +992,11 @@ class PaystackRefundService
                 }
             }
 
-            $lockedOrder = Order::where('id', $order->id)->lockForUpdate()->first();
             if (!$lockedOrder) {
                 return ['status' => false, 'message' => 'Order not found.'];
             }
+            // [AI] Lock customer before reward lots; shared with maturation and redemption.
+            DB::table('users')->where('id', $lockedOrder->customer_id)->lockForUpdate()->first();
 
             $payInfo = json_decode($lockedRequest->payment_info ?? '{}', true) ?: [];
             $refundAmount = bcadd((string)($lockedRequest->getRawOriginal('amount') ?? '0.00'), '0', 2);
@@ -1048,6 +1043,9 @@ class PaystackRefundService
             }
 
             $moneyToRefund = '0.00';
+            if (bccomp($expectedMoney, '0.00', 2) > 0 && ($isPureCashbackFlow || ($paymentData['payment_method'] ?? '') === 'cashback')) {
+                return ['status' => false, 'message' => 'Cash-backed refunds require confirmation of the exact money payment.'];
+            }
             if (!$isPureCashbackFlow && bccomp($expectedMoney, '0.00', 2) > 0) {
                 if (!isset($paymentData['amount']) || $paymentData['amount'] === '' || $paymentData['amount'] === null) {
                     return [
@@ -1133,51 +1131,16 @@ class PaystackRefundService
                 $actualMerchandiseMoneyPaid = '0.00';
             }
 
-            $isSettled = ($lockedOrder->vendor_settlement_status === 'settled');
+            $isSettled = ($lockedOrder->vendor_settlement_status === 'settled') || \App\Models\OrderTransaction::where('order_id', $lockedOrder->id)->where('status', 'disburse')->exists();
 
             // 1. Reversals: Pre-Settlement Escrow vs Post-Settlement (based on pure returned merchandise value)
             if (!$isSettled) {
-                $adminWallet = AdminWallet::where('admin_id', 1)->lockForUpdate()->first();
-                if ($adminWallet) {
-                    $currentPending = bcadd((string)($adminWallet->getRawOriginal('pending_amount') ?? '0.00'), '0', 2);
-                    $newPendingDiff = bcsub($currentPending, $returnedMerchandiseValue, 2);
-                    $adminWallet->pending_amount = (bccomp($newPendingDiff, '0.00', 2) < 0) ? '0.00' : $newPendingDiff;
-                    $adminWallet->save();
-                }
+                // [AI] Release only this order's funded hold including returned cash, tax and rewards.
+                OrderManager::releaseRefundEscrow($lockedOrder, bcadd($moneyToRefund, $cashbackToRestore, 2));
             } else {
-                $vendorShare = bcmul($returnedMerchandiseValue, '0.90', 2);
-                $commissionShare = bcmul($returnedMerchandiseValue, '0.10', 2);
-
-                $sellerWallet = SellerWallet::where('seller_id', $lockedOrder->seller_id)->lockForUpdate()->first();
-                if ($sellerWallet) {
-                    $currentEarning = bcadd((string)($sellerWallet->getRawOriginal('total_earning') ?? '0.00'), '0', 2);
-                    if (bccomp($currentEarning, $vendorShare, 2) >= 0) {
-                        $newEarning = bcsub($currentEarning, $vendorShare, 2);
-                        $unrecoveredDebt = '0.00';
-                    } else {
-                        $newEarning = '0.00';
-                        $unrecoveredDebt = bcsub($vendorShare, $currentEarning, 2);
-                    }
-                    $sellerWallet->total_earning = $newEarning;
-                    if (bccomp($unrecoveredDebt, '0.00', 2) > 0) {
-                        $currentCollectedCash = bcadd((string)($sellerWallet->getRawOriginal('collected_cash') ?? '0.00'), '0', 2);
-                        $sellerWallet->collected_cash = bcadd($currentCollectedCash, $unrecoveredDebt, 2);
-                    }
-                    $currentCommissionGiven = bcadd((string)($sellerWallet->getRawOriginal('commission_given') ?? '0.00'), '0', 2);
-                    $commDiff = bcsub($currentCommissionGiven, $commissionShare, 2);
-                    $sellerWallet->commission_given = (bccomp($commDiff, '0.00', 2) < 0) ? '0.00' : $commDiff;
-                    $sellerWallet->save();
-                }
-
-                $adminWallet = AdminWallet::where('admin_id', 1)->lockForUpdate()->first();
-                if ($adminWallet) {
-                    $currentCommissionEarned = bcadd((string)($adminWallet->getRawOriginal('commission_earned') ?? '0.00'), '0', 2);
-                    $adminCommDiff = bcsub($currentCommissionEarned, $commissionShare, 2);
-                    $adminWallet->commission_earned = (bccomp($adminCommDiff, '0.00', 2) < 0) ? '0.00' : $adminCommDiff;
-                    $adminWallet->save();
-                }
+                // [AI] Reverse the recognized merchandise/tax partition through the shared accounting helper.
+                OrderManager::reverseRecognizedRefund($lockedOrder, $returnedMerchandiseValue, bcadd($moneyToRefund, $cashbackToRestore, 2));
             }
-
             // 2. Restore Cashback Points and Ledger Lot
             $exchangeRate = (float) (getWebConfig(name: 'loyalty_point_exchange_rate') ?: 1.0);
             $pointsToRestore = (float) bcdiv($cashbackToRestore, (string) $exchangeRate, 4);
@@ -1363,4 +1326,3 @@ class PaystackRefundService
         $this->finalizeManualPaymentConfirmation($refundRequest, $order, ['payment_method' => 'cashback']);
     }
 }
-

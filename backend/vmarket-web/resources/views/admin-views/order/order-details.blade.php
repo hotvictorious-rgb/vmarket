@@ -1548,7 +1548,7 @@
                                 @if($vStatus === 'eligible')
                                     <div class="mt-2">
                                         <button type="button" class="btn btn-primary btn-sm w-100" data-bs-toggle="modal" data-bs-target="#settleVendorModal">
-                                            <i class="fi fi-sr-bank me-1"></i> {{ translate('Disburse_Vendor_Share') }} (90%)
+                                            <i class="fi fi-sr-bank me-1"></i> {{ translate('Release_Vendor_Wallet_Earnings') }} (90%)
                                         </button>
                                     </div>
                                 @endif
@@ -1564,20 +1564,20 @@
                                         @csrf
                                         <input type="hidden" name="order_id" value="{{ $order->id }}">
                                         <div class="modal-header">
-                                            <h5 class="modal-title" id="settleVendorModalLabel">{{ translate('Disburse_Vendor_Share') }} (Order #{{ $order->id }})</h5>
+                                            <h5 class="modal-title" id="settleVendorModalLabel">{{ translate('Release_Vendor_Wallet_Earnings') }} (Order #{{ $order->id }})</h5>
                                             <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                                         </div>
                                         <div class="modal-body">
                                             <p class="fs-12 text-muted mb-3">
-                                                {{ translate('Confirm_that_you_have_manually_transferred_the_vendor_payable_amount_to_the_merchant_bank_account._This_action_records_the_transaction_and_marks_the_order_as_settled.') }}
+                                                {{ translate('Release_the_vendor_share_to_their_withdrawable_wallet._The_bank_payment_is_recorded_separately_when_the_withdrawal_is_approved.') }}
                                             </p>
                                             <div class="mb-3">
                                                 <label class="form-label fw-semibold">{{ translate('Payment_Method') }}</label>
-                                                <input type="text" name="payment_method" class="form-control" value="Bank Transfer" required>
+                                                <input type="text" name="payment_method" class="form-control" value="wallet_release" readonly required>
                                             </div>
                                             <div class="mb-3">
-                                                <label class="form-label fw-semibold">{{ translate('Bank_Transfer_Reference') }} / Session ID</label>
-                                                <input type="text" name="payment_reference" class="form-control" placeholder="e.g. NIP-20260921-998811" required>
+                                                <label class="form-label fw-semibold">{{ translate('Audit_Reference') }}</label>
+                                                <input type="text" name="payment_reference" class="form-control" placeholder="e.g. RELEASE-ORDER-123" required>
                                             </div>
                                             <div class="mb-3">
                                                 <label class="form-label fw-semibold">{{ translate('Audit_Notes') }} ({{ translate('optional') }})</label>
@@ -1586,7 +1586,7 @@
                                         </div>
                                         <div class="modal-footer">
                                             <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">{{ translate('Cancel') }}</button>
-                                            <button type="submit" class="btn btn-primary">{{ translate('Confirm_Disbursement') }}</button>
+                                            <button type="submit" class="btn btn-primary">{{ translate('Confirm_Wallet_Release') }}</button>
                                         </div>
                                     </form>
                                 </div>

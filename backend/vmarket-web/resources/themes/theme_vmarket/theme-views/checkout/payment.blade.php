@@ -79,6 +79,10 @@
                                                                    data-form=".checkout-payment-{{ $payment_gateway->key_name }}">
                                                             <input type="text" hidden name="payment_platform"
                                                                    value="web">
+                                                            <label class="d-flex gap-2 mb-3">
+                                                                <input type="checkbox" name="use_cashback" value="1">
+                                                                Apply available Victorious Points (final amount shown before payment)
+                                                            </label>
                                                             @if ($payment_gateway->mode == 'live' && isset($payment_gateway->live_values['callback_url']))
                                                                 <input type="text" hidden name="callback"
                                                                        value="{{ $payment_gateway->live_values['callback_url'] }}">

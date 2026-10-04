@@ -24,10 +24,11 @@ class Kernel extends ConsoleKernel
      */
     protected function schedule(Schedule $schedule)
     {
-        $schedule->command('products:check-price-expiry')->dailyAt('00:01');
-        $schedule->command('products:check-marketplace-freshness')->dailyAt('00:05');
-        $schedule->command('cashback:mature')->dailyAt('00:10');
-        $schedule->command('orders:process-settlement-eligibility')->hourly();
+        // [AI] Single schedule authority; no duplicate entries in routes/console.php.
+        $schedule->command('products:check-price-expiry')->dailyAt('00:01')->withoutOverlapping();
+        $schedule->command('products:check-marketplace-freshness')->hourly()->withoutOverlapping();
+        $schedule->command('cashback:mature')->hourly()->withoutOverlapping();
+        $schedule->command('orders:process-settlement-eligibility')->hourly()->withoutOverlapping();
     }
 
     /**

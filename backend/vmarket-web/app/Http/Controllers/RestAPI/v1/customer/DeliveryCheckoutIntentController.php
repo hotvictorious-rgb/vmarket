@@ -16,6 +16,7 @@ use App\Services\DeliveryPaymentInitializationService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\Str;
 
@@ -95,6 +96,10 @@ class DeliveryCheckoutIntentController extends Controller
                 'status'         => $intent->status,
                 'expires_at'     => $intent->expires_at,
                 'fingerprint'    => $intent->cart_fingerprint,
+                // [AI] Customer app and storefront confirm the same frozen backend totals.
+                'quote'          => ['cashback_amount' => $intent->checkout_snapshot['cashback']['cashback_amount'] ?? '0.00'] + array_intersect_key($intent->checkout_snapshot ?? [], array_flip([
+                    'currency', 'merchandise_subtotal', 'tax_total', 'shipping_total', 'gross_amount', 'total_amount', 'cashback', 'vendors',
+                ])),
             ], 200);
 
         } catch (IdempotencyConflictException $e) {
@@ -210,22 +215,24 @@ class DeliveryCheckoutIntentController extends Controller
             ], 401);
         }
 
-        $intent = CheckoutIntent::where('order_group_id', $orderGroupId)
-            ->where('customer_id', $customer->id)
-            ->first();
+        // [AI] Use the settlement lock order; expiry cleanup cannot overwrite a converted agreement.
+        $intent = DB::transaction(function () use ($orderGroupId, $customer) {
+            $intent = CheckoutIntent::where('order_group_id', $orderGroupId)
+                ->where('customer_id', $customer->id)->lockForUpdate()->first();
+            if ($intent && $intent->status === 'pending' && $intent->isExpired()) {
+                $intent->update(['status' => 'expired', 'active_cart_token' => null]);
+                \App\Models\CashbackRedemption::where('checkout_intent_id', $intent->id)->where('status', 'reserved')
+                    ->update(['status' => 'released', 'released_at' => now()]);
+                PaymentRequest::where('order_group_id', $intent->order_group_id)->where('is_paid', 0)
+                    ->where('attempt_status', 'pending')->update(['attempt_status' => 'expired', 'active_order_group_id' => null]);
+            }
+            return $intent;
+        });
 
         if (!$intent) {
             return response()->json([
                 'errors' => ['Checkout agreement not found.'],
             ], 404);
-        }
-
-        // Expire pending intent if TTL elapsed
-        if ($intent->status === 'pending' && $intent->expires_at && $intent->expires_at->isPast()) {
-            $intent->update([
-                'status' => 'expired',
-                'active_cart_token' => null,
-            ]);
         }
 
         // Locate latest payment attempt for this order group
@@ -237,8 +244,13 @@ class DeliveryCheckoutIntentController extends Controller
         $authorizationUrl = null;
 
         if ($paymentRequest) {
-            if ((int)$paymentRequest->is_paid === 1) {
+            if ((int)$paymentRequest->is_paid === 1 && $paymentRequest->attempt_status === 'successful'
+                && $intent->status === 'converted_to_orders') {
                 $paymentStatus = 'paid';
+            } elseif ($paymentRequest->attempt_status === 'reconciliation_required' || (int)$paymentRequest->is_paid === 1) {
+                $paymentStatus = 'reconciliation_required';
+            } elseif (in_array($paymentRequest->attempt_status, ['expired', 'failed', 'superseded'], true)) {
+                $paymentStatus = $paymentRequest->attempt_status;
             } else {
                 $paymentStatus = 'pending';
                 $additionalData = json_decode($paymentRequest->additional_data ?? '{}', true);
@@ -250,6 +262,10 @@ class DeliveryCheckoutIntentController extends Controller
         $orders = Order::where('order_group_id', $intent->order_group_id)
             ->where('customer_id', $customer->id)
             ->get(['id', 'order_status', 'payment_status', 'order_amount', 'created_at']);
+        // [AI] Captured flags alone do not establish a fulfilled checkout.
+        if ($paymentStatus === 'paid' && $orders->isEmpty()) {
+            $paymentStatus = 'reconciliation_required';
+        }
 
         return response()->json([
             'order_group_id'     => $intent->order_group_id,
@@ -258,6 +274,7 @@ class DeliveryCheckoutIntentController extends Controller
             'authorization_url'  => $authorizationUrl,
             'total_amount'       => $intent->total_amount,
             'currency'           => $intent->currency,
+            'payment_attempt_status' => $paymentRequest?->attempt_status,
             'orders'             => $orders,
         ], 200);
     }

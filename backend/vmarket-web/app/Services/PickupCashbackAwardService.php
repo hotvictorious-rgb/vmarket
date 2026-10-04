@@ -2,23 +2,15 @@
 
 namespace App\Services;
 
-use App\Models\CashbackRedemption;
 use App\Models\Order;
 use App\Models\PickupReservation;
-use App\Models\User;
-use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
-use Illuminate\Support\Str;
 
 /**
  * [AI] Service PickupCashbackAwardService
  *
- * Awards the 5% (config-driven) Victorious Cashback on in-shop pickup payments.
- * This is an earning event, not a spending event:
- *   - status='captured' is written directly (no 'reserved' phase).
- *   - The customer's loyalty_point balance is incremented (not decremented).
- *   - A loyalty_point_transactions row is written for the immutable audit trail.
- *   - A cashback_redemptions row is written linking to the pickup_reservation_id.
+ * [AI] Returns an indicative reward preview after pickup payment, with no ledger/balance mutation.
+ * CustomerCashbackLedger alone issues rewards after physical receipt and owns the return-window maturity.
  *
  * MUST be called inside an existing DB::transaction() — the caller (PickupOrderSettlementService)
  * owns the transaction boundary. This service does NOT open its own transaction.
@@ -30,7 +22,7 @@ use Illuminate\Support\Str;
  * Mathematical Invariant (Zero Drift):
  *   cashbackNaira = bcmul(totalAmount, bcdiv(cashbackRatePercent, '100', 6), 2)  [BCMath, Δ = ₦0.00]
  *   points        = bcdiv(cashbackNaira, exchangeRate, 4)
- *   user.loyalty_point += points  [atomic increment under lockForUpdate()]
+ * [AI] The result is an estimate; no balance is credited at payment.
  *
  * [AI] Clients: PickupOrderSettlementService (internal only; not exposed as HTTP endpoint)
  */
@@ -55,7 +47,7 @@ class PickupCashbackAwardService
     {
         // [AI] Guard: loyalty must be enabled in admin config (defaults to enabled for VMarket)
         $loyaltyStatus = (int) (getWebConfig(name: 'loyalty_point_status') ?? 1);
-        if ($loyaltyStatus !== 1) {
+        if ($loyaltyStatus !== 1 || (int)(getWebConfig(name: 'loyalty_point_for_each_order') ?? 1) !== 1) {
             Log::info("[AI] PickupCashbackAward: Loyalty is disabled in admin config. No cashback awarded for Reservation #{$reservation->id}.");
             return [
                 'awarded' => false,
@@ -69,10 +61,10 @@ class PickupCashbackAwardService
 
         // [AI] Config-driven cashback rate (5% default; admin can change in panel, reflects immediately)
         $exchangeRate = (float) (getWebConfig(name: 'loyalty_point_exchange_rate') ?: 1.0);
-        $cashbackRatePercent = (float) (getWebConfig(name: 'loyalty_point_earn_rate_percent') ?: 5.0);
+        $cashbackRatePercent = \App\Models\CustomerCashbackLedger::configuredEarnRate();
 
         if ($cashbackRatePercent <= 0) {
-            $cashbackRatePercent = 5.0;
+            $cashbackRatePercent = 0.0;
         }
         if ($exchangeRate <= 0) {
             $exchangeRate = 1.0;
@@ -80,7 +72,15 @@ class PickupCashbackAwardService
 
         // [AI] BCMath Zero-Drift Calculation: Rewards apply ONLY to NEW MONEY paid!
         // Subtract any redeemed cashback applied to this pickup order
-        $totalAmount = bcadd((string) $reservation->total_amount, '0', 2);
+        // [AI] Estimate only eligible merchandise, excluding tax; receipt remains authoritative.
+        $totalAmount = '0.00';
+        foreach ($order->details as $detail) {
+            $line = bcsub(bcmul((string)$detail->getRawOriginal('price'), (string)$detail->qty, 2), (string)$detail->getRawOriginal('discount'), 2);
+            $totalAmount = bcadd($totalAmount, $line, 2);
+        }
+        if (bccomp($totalAmount, '0', 2) <= 0) {
+            $totalAmount = bcsub((string)$reservation->total_amount, (string)($order->getRawOriginal('total_tax_amount') ?? '0'), 2);
+        }
         $redeemedCashback = '0.00';
         if ($order->discount_type === 'cashback' && !empty($order->discount_amount)) {
             $redeemedCashback = bcadd((string) $order->discount_amount, '0', 2);
@@ -120,33 +120,18 @@ class PickupCashbackAwardService
         // points = cashbackNaira ÷ exchangeRate  (BCMath, 4 decimal places)
         $points = bcdiv($cashbackNaira, (string) $exchangeRate, 4);
 
-        // [AI] 1. Insert cashback_redemptions record in 'pending' status.
-        // Per V1 Rulebook §19/§20: Cashback is NOT immediately spendable upon reservation payment.
-        // It matures into customer availability strictly after physical handover and the 24-hour return window.
-        // Authoritative ledger credit is managed by InShopHandoverController upon verified customer pickup.
-        $redemption = CashbackRedemption::create([
-            'customer_id'          => $customerId,
-            'checkout_intent_id'   => null,
-            'pickup_reservation_id'=> $reservation->id,
-            'order_group_id'       => 'pickup-' . $reservation->reservation_code,
-            'points'               => $points,
-            'cashback_amount'      => $cashbackNaira,
-            'status'               => 'pending',
-            'captured_at'          => null,
-            'released_at'          => null,
-        ]);
-
-        Log::info("[AI] PickupCashbackAward: Scheduled {$points} pts (₦{$cashbackNaira}) pending cashback for customer #{$customerId} " .
-            "on Reservation #{$reservation->id} (Order #{$order->id}). Matures after physical handover + 24-hour return window.");
+        // [AI] Preview only: cashback_redemptions records spending, never reward issuance.
+        // CustomerCashbackLedger creates the sole earning lot after physical receipt.
 
         return [
             'awarded'               => false,
             'status'                => 'pending_handover',
+            'is_estimate'           => true,
             'points'                => $points,
             'cashback_amount'       => $cashbackNaira,
             'cashback_rate_percent' => (string) $cashbackRatePercent,
             'exchange_rate'         => (string) $exchangeRate,
-            'cashback_redemption_id'=> $redemption->id,
+            'cashback_redemption_id'=> null,
         ];
     }
 }

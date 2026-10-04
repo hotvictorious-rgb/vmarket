@@ -76,17 +76,8 @@ class OrderManager
      */
     public static function recognizeDeliveryFeeUponCustomerReceipt(Order $order): void
     {
-        $shippingCost = bcadd((string)($order->shipping_cost ?? '0.00'), '0', 2);
-        if (bccomp($shippingCost, '0.00', 2) <= 0) {
-            return;
-        }
-
-        $adminWallet = AdminWallet::where('admin_id', 1)->lockForUpdate()->first();
-        if ($adminWallet) {
-            $adminWallet->pending_amount = max(0.00, (float)bcsub((string)$adminWallet->pending_amount, $shippingCost, 2));
-            $adminWallet->delivery_charge_earned = (float)bcadd((string)$adminWallet->delivery_charge_earned, $shippingCost, 2);
-            $adminWallet->save();
-        }
+        // [AI] Fee recognition is atomic with the per-order release; this obsolete standalone entry point is disabled.
+        throw new \LogicException('Use canonical per-order accounting release to recognize delivery revenue.');
     }
 
     public static function generateUniqueOrderID(): string
@@ -186,6 +177,41 @@ class OrderManager
         // Third-party vendor disbursement must strictly execute via VendorSettlementService::executeManualSettlement().
         if (self::isThirdPartyMarketplaceOrder($order)) {
             return; // [AI] Block: do NOT disburse vendor earnings automatically
+        }
+
+        // [AI] New in-house online captures recognize owned-inventory revenue, tax and delivery without a vendor split.
+        if ($order->seller_is === 'admin' && !in_array($order->payment_method, ['cash_on_delivery', 'offline_payment'], true)) {
+            DB::transaction(function () use ($order) {
+                $locked = Order::whereKey($order->id)->lockForUpdate()->firstOrFail();
+                $tx = OrderTransaction::where('order_id', $locked->id)->lockForUpdate()->first();
+                if (!$tx || $tx->status === 'disburse') return;
+                if ($tx->getRawOriginal('escrow_remaining') === null) {
+                    throw new \RuntimeException('Historical in-house escrow requires reconciliation.');
+                }
+                $remaining = (string)$tx->getRawOriginal('escrow_remaining');
+                // [AI] Refunded items no longer contribute tax; original hold snapshots must not be re-recognized.
+                $tax = '0.00';
+                foreach ($locked->details()->lockForUpdate()->get() as $detail) {
+                    if ((int)$detail->refund_request !== 4) $tax = bcadd($tax, (string)$detail->getRawOriginal('tax'), 2);
+                }
+                $delivery = $locked->is_delivery_fee_refunded ? '0.00' : (string)$locked->getRawOriginal('shipping_cost');
+                $merchandise = bcsub(bcsub($remaining, $tax, 2), $delivery, 2);
+                $wallet = AdminWallet::where('admin_id', 1)->lockForUpdate()->firstOrFail();
+                if (bccomp($merchandise, '0', 2) < 0 || bccomp((string)$wallet->getRawOriginal('pending_amount'), $remaining, 2) < 0) {
+                    throw new \RuntimeException('In-house escrow backing does not balance.');
+                }
+                $wallet->pending_amount = bcsub((string)$wallet->getRawOriginal('pending_amount'), $remaining, 2);
+                $wallet->inhouse_earning = bcadd((string)$wallet->getRawOriginal('inhouse_earning'), $merchandise, 2);
+                $wallet->total_tax_collected = bcadd((string)$wallet->getRawOriginal('total_tax_collected'), $tax, 2);
+                $wallet->delivery_charge_earned = bcadd((string)$wallet->getRawOriginal('delivery_charge_earned'), $delivery, 2);
+                $wallet->save(); $tx->tax = $tax; $tx->delivery_charge = $delivery;
+                $tx->seller_amount = '0.00'; $tx->admin_commission = '0.00';
+                $tx->recognized_merchandise_remaining = $merchandise;
+                $tx->recognized_commission_remaining = '0.00';
+                $tx->recognized_tax_remaining = $tax;
+                $tx->escrow_remaining = '0.00'; $tx->status = 'disburse'; $tx->save();
+            });
+            return;
         }
 
         $order_summary = OrderManager::getOrderTotalAndSubTotalAmountSummary($order);
@@ -412,101 +438,129 @@ class OrderManager
      * [AI] Authoritative manual settlement execution method for Commit 7 post-receipt lifecycle.
      * Called only by VendorSettlementService when Super Admin disburses an eligible third-party order.
      */
-    public static function disburseSettledVendorOrder(Order $order, string $adminReference, int $adminId): void
+    public static function disburseSettledVendorOrder(Order $order, string $adminReference, int $adminId): ?string
     {
-        if ($order->seller_is !== 'seller') {
-            throw new \InvalidArgumentException("In-house VMarket orders do not undergo vendor settlement.");
-        }
-
-        if (in_array($order->vendor_settlement_status, ['refunded', 'legacy_hold'], true)) {
-            throw new \RuntimeException("Cannot disburse vendor earnings for order in status '{$order->vendor_settlement_status}'.");
-        }
-
-        DB::transaction(function () use ($order, $adminReference, $adminId) {
-            $lockedOrder = Order::where('id', $order->id)->lockForUpdate()->first();
-            if (!$lockedOrder || $lockedOrder->vendor_settlement_status === 'settled') {
-                return;
+        return DB::transaction(function () use ($order, $adminReference, $adminId) {
+            $locked = Order::whereKey($order->id)->lockForUpdate()->firstOrFail();
+            if ($locked->vendor_settlement_status === 'settled') return null;
+            // [AI] Release wallet entitlement; bank payment occurs only through withdrawal approval.
+            if ($locked->seller_is !== 'seller' || $locked->vendor_settlement_status !== 'eligible'
+                || $locked->payment_status !== 'paid' || $locked->order_status !== 'delivered'
+                || !$locked->received_at || !$locked->refund_window_expires_at
+                || !now()->greaterThan($locked->refund_window_expires_at) || $locked->hasUnresolvedRefund()) {
+                throw new \RuntimeException('Order is not eligible for wallet release.');
             }
-
-            if (in_array($lockedOrder->vendor_settlement_status, ['refunded', 'legacy_hold'], true)) {
-                throw new \RuntimeException("Cannot disburse vendor earnings for order in status '{$lockedOrder->vendor_settlement_status}'.");
+            $tx = OrderTransaction::where('order_id', $locked->id)->where('status', 'hold')->lockForUpdate()->first();
+            if (!$tx || $tx->getRawOriginal('escrow_remaining') === null) {
+                throw new \RuntimeException('Order escrow missing or historical; verified reconciliation required.');
             }
-
-            // Calculate active vendor subtotal: exclude refunded items (refund_request == 4) and subtract product discounts
-            $activeVendorSubtotal = '0.00';
-            $lockedOrder->load('details');
-            if ($lockedOrder->details && $lockedOrder->details->count() > 0) {
-                foreach ($lockedOrder->details as $detail) {
-                    if ((int)$detail->refund_request === 4) {
-                        continue;
-                    }
-                    $qty = (string)($detail->qty ?? '1');
-                    $price = (string)($detail->price ?? '0.00');
-                    $discount = (string)($detail->discount ?? '0.00');
-                    $itemNet = bcsub(bcmul($qty, $price, 2), $discount, 2);
-                    if (bccomp($itemNet, '0.00', 2) > 0) {
-                        $activeVendorSubtotal = bcadd($activeVendorSubtotal, $itemNet, 2);
-                    }
-                }
+            $merchandise = '0.00'; $tax = '0.00';
+            foreach ($locked->details()->lockForUpdate()->get() as $detail) {
+                if ((int)$detail->refund_request === 4) continue;
+                $net = bcsub(bcmul((string)$detail->getRawOriginal('price'), (string)$detail->qty, 2), (string)$detail->getRawOriginal('discount'), 2);
+                $merchandise = bcadd($merchandise, $net, 2);
+                $tax = bcadd($tax, (string)$detail->getRawOriginal('tax'), 2);
             }
-            $subtotal = $activeVendorSubtotal;
-            if (bccomp($subtotal, '0.00', 2) <= 0 && (!$lockedOrder->details || $lockedOrder->details->count() === 0)) {
-                $subtotal = bcsub((string)($lockedOrder->order_amount ?? '0.00'), (string)($lockedOrder->shipping_cost ?? '0.00'), 2);
+            $delivery = $locked->is_delivery_fee_refunded ? '0.00' : (string)$locked->getRawOriginal('shipping_cost');
+            $remaining = (string)$tx->getRawOriginal('escrow_remaining');
+            $fundedMerchandise = bcsub(bcsub($remaining, $tax, 2), $delivery, 2);
+            if (bccomp($fundedMerchandise, '0', 2) < 0 || bccomp($fundedMerchandise, $merchandise, 2) > 0) {
+                throw new \RuntimeException('Order escrow components do not balance; reconciliation required.');
             }
-            if (bccomp($subtotal, '0.00', 2) < 0) {
-                $subtotal = '0.00';
+            $merchandise = $fundedMerchandise;
+            $commission = bcmul($merchandise, '0.10', 2); $vendor = bcsub($merchandise, $commission, 2);
+            $admin = AdminWallet::where('admin_id', 1)->lockForUpdate()->firstOrFail();
+            if (bccomp((string)$admin->getRawOriginal('pending_amount'), $remaining, 2) < 0) {
+                throw new \RuntimeException('Platform escrow backing insufficient.');
             }
-            $rawCommission = bcdiv(bcmul($subtotal, '10', 4), '100', 4);
-            $commission = bcadd($rawCommission, '0', 2);
-            $vendorAmount = bcsub($subtotal, $commission, 2);
-
-            // Update transaction status to disburse
-            $transaction = OrderTransaction::where('order_id', $lockedOrder->id)
-                ->where('status', 'hold')
-                ->lockForUpdate()
-                ->first();
-
-            if ($transaction) {
-                $transaction->status = 'disburse';
-                $transaction->save();
-            }
-
-            // Decrement AdminWallet pending_amount
-            $adminWallet = AdminWallet::where('admin_id', 1)->lockForUpdate()->first();
-            if ($adminWallet) {
-                $orderAmountStr = bcadd((string)($lockedOrder->order_amount ?? '0.00'), '0', 2);
-                $adminWallet->pending_amount = max(0.00, (float)bcsub((string)$adminWallet->pending_amount, $orderAmountStr, 2));
-                $adminWallet->save();
-            }
-
-            // Increment SellerWallet total_earning
-            if (!SellerWallet::where('seller_id', $lockedOrder->seller_id)->exists()) {
-                DB::table('seller_wallets')->insert([
-                    'seller_id' => $lockedOrder->seller_id,
-                    'withdrawn' => 0,
-                    'commission_given' => 0,
-                    'total_earning' => 0,
-                    'pending_withdraw' => 0,
-                    'delivery_charge_earned' => 0,
-                    'collected_cash' => 0,
-                    'created_at' => now(),
-                    'updated_at' => now(),
-                ]);
-            }
-            $sellerWallet = SellerWallet::where('seller_id', $lockedOrder->seller_id)->lockForUpdate()->first();
-            if ($sellerWallet) {
-                $sellerWallet->total_earning = (float)bcadd((string)$sellerWallet->total_earning, $vendorAmount, 2);
-                $sellerWallet->commission_given = (float)bcadd((string)$sellerWallet->commission_given, $commission, 2);
-                $sellerWallet->save();
-            }
-
-            // Update Order record
-            $lockedOrder->vendor_settlement_status = 'settled';
-            $lockedOrder->settled_at = now();
-            $lockedOrder->settlement_reference = $adminReference;
-            $lockedOrder->settled_by_id = $adminId;
-            $lockedOrder->save();
+            $admin->pending_amount = bcsub((string)$admin->getRawOriginal('pending_amount'), $remaining, 2);
+            $admin->commission_earned = bcadd((string)$admin->getRawOriginal('commission_earned'), $commission, 2);
+            $admin->total_tax_collected = bcadd((string)$admin->getRawOriginal('total_tax_collected'), $tax, 2);
+            $admin->delivery_charge_earned = bcadd((string)$admin->getRawOriginal('delivery_charge_earned'), $delivery, 2);
+            $admin->save();
+            SellerWallet::firstOrCreate(['seller_id' => $locked->seller_id], ['total_earning' => 0, 'withdrawn' => 0,
+                'commission_given' => 0, 'pending_withdraw' => 0, 'delivery_charge_earned' => 0, 'collected_cash' => 0]);
+            $wallet = SellerWallet::where('seller_id', $locked->seller_id)->lockForUpdate()->firstOrFail();
+            $wallet->total_earning = bcadd((string)$wallet->getRawOriginal('total_earning'), $vendor, 2);
+            $wallet->commission_given = bcadd((string)$wallet->getRawOriginal('commission_given'), $commission, 2);
+            $wallet->save();
+            $tx->seller_amount = $vendor; $tx->admin_commission = $commission; $tx->tax = $tax;
+            $tx->delivery_charge = $delivery; $tx->escrow_remaining = '0.00'; $tx->status = 'disburse'; $tx->save();
+            $tx->recognized_merchandise_remaining = $merchandise;
+            $tx->recognized_commission_remaining = $commission;
+            $tx->recognized_tax_remaining = $tax;
+            $tx->save();
+            $locked->vendor_settlement_status = 'settled'; $locked->settled_at = now();
+            $locked->settlement_reference = $adminReference; $locked->settled_by_id = $adminId; $locked->save();
+            return $vendor;
         });
+    }
+
+    // [AI] Refund finalizers call inside their order-locked transaction. Never consume another order's hold.
+    public static function releaseRefundEscrow(Order $order, string $funding): void
+    {
+        $tx = OrderTransaction::where('order_id', $order->id)->where('status', 'hold')->lockForUpdate()->first();
+        if (!$tx || $tx->getRawOriginal('escrow_remaining') === null) {
+            throw new \RuntimeException('Refund escrow requires verified historical reconciliation.');
+        }
+        $remaining = (string)$tx->getRawOriginal('escrow_remaining');
+        $admin = AdminWallet::where('admin_id', 1)->lockForUpdate()->firstOrFail();
+        if (bccomp($funding, '0', 2) < 0 || bccomp($remaining, $funding, 2) < 0
+            || bccomp((string)$admin->getRawOriginal('pending_amount'), $funding, 2) < 0) {
+            throw new \RuntimeException('Refund exceeds order escrow backing.');
+        }
+        $tx->escrow_remaining = bcsub($remaining, $funding, 2); $tx->save();
+        $admin->pending_amount = bcsub((string)$admin->getRawOriginal('pending_amount'), $funding, 2); $admin->save();
+    }
+
+    // [AI] Manual/provider finalizers reverse the same components recognized on release, including owned inventory.
+    public static function reverseRecognizedRefund(Order $order, string $merchandise, string $funding): void
+    {
+        $tx = OrderTransaction::where('order_id', $order->id)->where('status', 'disburse')->lockForUpdate()->first();
+        if (!$tx || $tx->getRawOriginal('recognized_merchandise_remaining') === null) {
+            throw new \RuntimeException('Recognized refund requires verified order accounting.');
+        }
+        $tax = bcsub($funding, $merchandise, 2);
+        if (bccomp($tax, '0', 2) < 0) throw new \RuntimeException('Refund funding is less than merchandise value.');
+        $remainingMerchandise = (string)$tx->getRawOriginal('recognized_merchandise_remaining');
+        $remainingCommission = (string)$tx->getRawOriginal('recognized_commission_remaining');
+        $remainingTax = (string)$tx->getRawOriginal('recognized_tax_remaining');
+        if (bccomp($merchandise, '0', 2) < 0 || bccomp($merchandise, $remainingMerchandise, 2) > 0 || bccomp($tax, $remainingTax, 2) > 0) {
+            throw new \RuntimeException('Refund exceeds this order\'s recognized merchandise or tax.');
+        }
+        $admin = AdminWallet::where('admin_id', 1)->lockForUpdate()->firstOrFail();
+        if (bccomp((string)$admin->getRawOriginal('total_tax_collected'), $tax, 2) < 0) {
+            throw new \RuntimeException('Returned tax exceeds recognized tax; reconciliation required.');
+        }
+        $admin->total_tax_collected = bcsub((string)$admin->getRawOriginal('total_tax_collected'), $tax, 2);
+        if ($order->seller_is === 'admin') {
+            if (bccomp((string)$admin->getRawOriginal('inhouse_earning'), $merchandise, 2) < 0) {
+                throw new \RuntimeException('Returned owned-inventory revenue is not backed by accounting.');
+            }
+            $admin->inhouse_earning = bcsub((string)$admin->getRawOriginal('inhouse_earning'), $merchandise, 2);
+        } else {
+            // [AI] Allocate from this order's remaining commission; the final item receives the rounding residual.
+            $commission = bccomp($merchandise, $remainingMerchandise, 2) === 0 ? $remainingCommission
+                : (bccomp($remainingMerchandise, '0', 2) > 0 ? bcdiv(bcmul($remainingCommission, $merchandise, 4), $remainingMerchandise, 2) : '0.00');
+            $vendor = bcsub($merchandise, $commission, 2);
+            $wallet = SellerWallet::where('seller_id', $order->seller_id)->lockForUpdate()->firstOrFail();
+            $available = (string)$wallet->getRawOriginal('total_earning');
+            $recovered = bccomp($available, $vendor, 2) >= 0 ? $vendor : $available;
+            $wallet->total_earning = bcsub($available, $recovered, 2);
+            $wallet->collected_cash = bcadd((string)$wallet->getRawOriginal('collected_cash'), bcsub($vendor, $recovered, 2), 2);
+            if (bccomp((string)$wallet->getRawOriginal('commission_given'), $commission, 2) < 0
+                || bccomp((string)$admin->getRawOriginal('commission_earned'), $commission, 2) < 0) {
+                throw new \RuntimeException('Returned commission exceeds recognized commission.');
+            }
+            $wallet->commission_given = bcsub((string)$wallet->getRawOriginal('commission_given'), $commission, 2);
+            $wallet->save();
+            $admin->commission_earned = bcsub((string)$admin->getRawOriginal('commission_earned'), $commission, 2);
+        }
+        $admin->save();
+        $tx->recognized_merchandise_remaining = bcsub($remainingMerchandise, $merchandise, 2);
+        $tx->recognized_commission_remaining = $order->seller_is === 'admin' ? '0.00' : bcsub($remainingCommission, $commission, 2);
+        $tx->recognized_tax_remaining = bcsub($remainingTax, $tax, 2);
+        $tx->save();
     }
 
     public static function getOrderAddressId(string|null $type = 'shipping_address', int|null $id = null): int|null
@@ -1599,14 +1653,29 @@ class OrderManager
 
     public static function getAddOrderTransactionsOnGenerateOrder($order, $ordersData): void
     {
+        DB::transaction(function () use ($order, $ordersData) {
+            // [AI] Serialize capture posting per order even for callers outside canonical payment settlement.
+            $order = Order::whereKey($order['id'])->lockForUpdate()->firstOrFail();
+            if (OrderTransaction::where('order_id', $order->id)->exists()) return;
         if ($ordersData['payment_method'] != 'cash_on_delivery' && $ordersData['payment_method'] != 'offline_payment') {
             $orderSummary = OrderManager::getOrderTotalAndSubTotalAmountSummary($order);
-            $orderAmount = ($order['order_type'] ?? '') === 'pickup'
-                ? bcadd((string)$order['order_amount'], '0', 2)
-                : bcadd((string)($orderSummary['subtotal'] + $orderSummary['total_tax'] - $orderSummary['total_discount_on_product'] - $order['discount']), '0', 2);
-
-            $adminCommission = bcadd((string)($ordersData['admin_commission'] ?? '0.00'), '0', 2);
-            $sellerAmount = bcsub($orderAmount, $adminCommission, 2);
+            // [AI] Funding is cash plus reward liability; commission excludes tax and logistics.
+            $merchandise = '0.00'; $tax = '0.00';
+            foreach ($order->details as $detail) {
+                $merchandise = bcadd($merchandise, bcsub(bcmul((string)$detail->getRawOriginal('price'), (string)$detail->qty, 2), (string)$detail->getRawOriginal('discount'), 2), 2);
+                $tax = bcadd($tax, (string)$detail->getRawOriginal('tax'), 2);
+            }
+            if ($order->discount_type !== 'cashback') {
+                $merchandise = bcsub($merchandise, (string)($order->getRawOriginal('discount_amount') ?? '0'), 2);
+            }
+            $orderAmount = $merchandise;
+            $adminCommission = $order['seller_is'] === 'seller' ? bcmul($merchandise, '0.10', 2) : '0.00';
+            $sellerAmount = bcsub($merchandise, $adminCommission, 2);
+            $funding = bcadd(bcadd($merchandise, $tax, 2), (string)$order->getRawOriginal('shipping_cost'), 2);
+            $rewardFunding = $order->discount_type === 'cashback' ? (string)$order->getRawOriginal('discount_amount') : '0';
+            if (bccomp($funding, bcadd((string)$order->getRawOriginal('order_amount'), $rewardFunding, 2), 2) !== 0) {
+                throw new \RuntimeException('Capture funding does not match order components.');
+            }
 
             $shop = Shop::when($order['seller_is'] == 'admin', function ($query) {
                 return $query->where(['author_type' => 'admin']);
@@ -1622,12 +1691,13 @@ class OrderManager
                 'seller_is' => $order['seller_is'],
                 'order_id' => $order['id'],
                 'order_amount' => $orderAmount,
+                'escrow_remaining' => $funding,
                 'seller_amount' => $sellerAmount,
                 'admin_commission' => $adminCommission,
                 'received_by' => 'admin',
                 'status' => 'hold',
                 'delivery_charge' => $order['shipping_cost'] - $order['extra_discount'],
-                'tax' => $orderSummary['total_tax'],
+                'tax' => $tax,
                 'delivered_by' => 'admin',
                 'payment_method' => $ordersData['payment_method'],
                 'created_at' => now(),
@@ -1635,8 +1705,11 @@ class OrderManager
             ]);
 
             OrderManager::getCheckOrCreateAdminWallet();
-            AdminWallet::where(['admin_id' => 1])->increment('pending_amount', $order['order_amount']);
+            $wallet = AdminWallet::where('admin_id', 1)->lockForUpdate()->firstOrFail();
+            $wallet->pending_amount = bcadd((string)$wallet->getRawOriginal('pending_amount'), $funding, 2);
+            $wallet->save();
         }
+        });
     }
 
     public static function getGenerateOrderNotificationInfo(string $vendorType, int $vendorId, object|array $order, mixed $customer): array

@@ -96,6 +96,11 @@ class CustomerCashbackLedger extends Model
         if ($existing) {
             return $existing; // Idempotent discovery: never create a duplicate row
         }
+        // [AI] Admin switches govern new earning; existing issued lots retain their original promise.
+        if ((int)(getWebConfig(name: 'loyalty_point_status') ?? 1) !== 1
+            || (int)(getWebConfig(name: 'loyalty_point_for_each_order') ?? 1) !== 1) {
+            return null;
+        }
 
         // Calculate merchandise net amount using exact BCMath string arithmetic.
         // getRawOriginal() bypasses float casts on Order.order_amount, Order.shipping_cost, Order.total_tax_amount
@@ -165,12 +170,7 @@ class CustomerCashbackLedger extends Model
         }
 
         // [AI] Configurable Cashback Reward calculated strictly on new money via BCMath string arithmetic
-        $configRate = getWebConfig(name: 'loyalty_point_earn_rate_percent');
-        if (is_null($configRate) || $configRate === '') {
-            $configRate = getWebConfig(name: 'cashback_earn_rate_percent');
-        }
-        $rawRate = (!is_null($configRate) && $configRate !== '') ? (string)$configRate : '5.00';
-        $cashbackRate = bcadd($rawRate, '0', 2);
+        $cashbackRate = self::configuredEarnRate();
         $rateMultiplier = bcdiv($cashbackRate, '100', 4);
         $cashbackAmount = bcmul($netNewMoney, $rateMultiplier, 2);
 
@@ -192,6 +192,26 @@ class CustomerCashbackLedger extends Model
             'expires_at' => $expiresAt,
             'description' => "{$cashbackRate}% Victorious Cashback Reward for Order #{$order->id} (Earned on ₦{$netNewMoney} new money paid)",
         ]);
+    }
+
+    /** [AI] V1 runtime bound also covers previously stored configurations; issued lots remain unchanged. */
+    public static function configuredEarnRate(): string
+    {
+        $configRate = getWebConfig(name: 'loyalty_point_earn_rate_percent');
+        if (is_null($configRate) || $configRate === '') {
+            $configRate = getWebConfig(name: 'cashback_earn_rate_percent');
+        }
+        $rawRate = (!is_null($configRate) && $configRate !== '') ? (string)$configRate : '5.00';
+        if (!preg_match('/^-?\d+(\.\d+)?$/', $rawRate)) {
+            \Illuminate\Support\Facades\Log::warning('[AI] Invalid cashback rate; applying V1 default to new issuance.');
+            return '5.00';
+        }
+        $rate = bcadd($rawRate, '0', 2);
+        if (bccomp($rate, '5.00', 2) > 0) {
+            \Illuminate\Support\Facades\Log::warning('[AI] Cashback rate exceeds V1 reward allocation; limiting new issuance to 5%.');
+            return '5.00';
+        }
+        return bccomp($rate, '0.00', 2) < 0 ? '0.00' : $rate;
     }
 
     /**

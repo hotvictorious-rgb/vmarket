@@ -56,13 +56,24 @@ class CustomerUpdateSettingsRequest extends FormRequest
 
     public function rules(): array
     {
+        // [AI] A supplied blank cannot erase the rate and bypass the V1 immutable-value contract.
+        $configuredExchangeRate = \App\Models\BusinessSetting::where('type', 'loyalty_point_exchange_rate')->value('value');
+        $exchangePresenceRule = $configuredExchangeRate !== null && $configuredExchangeRate !== '' ? ['sometimes', 'required'] : ['nullable'];
         $rules = [
             'add_fund_bonus' => 'nullable|numeric|max:100|min:0',
-            'loyalty_point_exchange_rate' => 'nullable|numeric|min:1',
+            'loyalty_point_exchange_rate' => [...$exchangePresenceRule, 'bail', 'numeric', 'regex:/^\d+(\.\d{1,4})?$/', 'min:1', function ($attribute, $value, $fail) {
+                // [AI] V1 cannot revalue historical point lots; changing this requires a ledger migration.
+                $configured = \App\Models\BusinessSetting::where('type', 'loyalty_point_exchange_rate')->value('value');
+                // [AI] A missing stored value has always meant one NGN per point; setup cannot revalue that default either.
+                $configured = $configured !== null && $configured !== '' ? $configured : '1';
+                if (is_numeric($value) && bccomp((string)$configured, (string)$value, 4) !== 0) {
+                    $fail('The configured reward exchange rate is fixed for V1. A ledger migration is required to change it.');
+                }
+            }],
             'ref_earning_exchange_rate' => 'nullable|numeric|min:0',
             'ref_earning_min_order_amount' => 'nullable|numeric|min:0',
             'loyalty_point_max_order_redemption_percentage' => 'nullable|numeric|min:1|max:100',
-            'loyalty_point_earn_rate_percent' => 'nullable|numeric|min:0.01|max:100',
+            'loyalty_point_earn_rate_percent' => 'nullable|numeric|regex:/^\d+(\.\d{1,2})?$/|min:0|max:5',
             'loyalty_point_validity_months' => 'nullable|numeric|min:1|max:120',
             'maximum_add_fund_amount' => 'nullable|numeric|min:0',
             'minimum_add_fund_amount' => 'nullable|numeric|min:1',

@@ -787,7 +787,7 @@ class OrderController extends BaseController
     {
         $request->validate([
             'order_id' => 'required|integer',
-            'payment_method' => 'required|string|max:50',
+            'payment_method' => 'required|in:wallet_release',
             'payment_reference' => 'required|string|max:100',
             'notes' => 'nullable|string|max:500',
         ]);
@@ -832,4 +832,3 @@ class OrderController extends BaseController
     }
 
 }
-

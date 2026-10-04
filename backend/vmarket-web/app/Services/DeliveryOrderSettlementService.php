@@ -517,6 +517,9 @@ class DeliveryOrderSettlementService
 
             $groupTax = isset($vendor['tax']) ? bcadd((string)$vendor['tax'], '0', 2) : '0.00';
             $groupMerchandise = isset($vendor['merchandise']) ? bcadd((string)$vendor['merchandise'], '0', 2) : bcsub($subtotal, $groupTax, 2);
+            // [AI] Customer Web/App capture uses merchandise-only vendor and platform shares.
+            $adminCommission = bcmul($groupMerchandise, '0.10', 2);
+            $sellerAmount = bcsub($groupMerchandise, $adminCommission, 2);
             $allocatedCashback = isset($vendor['allocated_cashback']) ? bcadd((string)$vendor['allocated_cashback'], '0', 2) : '0.00';
             $hasCashbackDiscount = bccomp($allocatedCashback, '0.00', 2) > 0;
 

@@ -153,12 +153,12 @@
                                            <i class="fi fi-sr-eye d-flex"></i>
                                        </span>
                                     </a>
-                                    @if($refund['status'] != 'refunded')
+                                    @if(($refund['change_by'] ?? null) != 'admin' && in_array($refund['status'], ['pending', 'approved', 'rejected']))
                                         @if($refund['status'] != 'rejected')
                                             <button class="btn btn-outline-danger icon-btn"
                                                     data-toggle="modal"
                                                     data-target="#rejectModal-{{$refund['id']}}">
-                                                <span data-toggle="tooltip" data-placement="top" title="Reject">
+                                                <span data-toggle="tooltip" data-placement="top" title="Recommend rejection">
                                                     <i class="fi fi-rr-cross fs-12 d-flex"></i>
                                                 </span>
                                             </button>
@@ -167,7 +167,7 @@
                                             <button class="btn btn-outline-success icon-btn"
                                                     data-toggle="modal"
                                                     data-target="#approveModal-{{$refund['id']}}">
-                                                <span data-toggle="tooltip" data-placement="top" title="Approve">
+                                                <span data-toggle="tooltip" data-placement="top" title="Recommend approval">
                                                     <i class="fi fi-sr-check d-flex"></i>
                                                 </span>
                                             </button>

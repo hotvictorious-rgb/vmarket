@@ -27,7 +27,7 @@ class DeliveryManWithdrawRequest extends FormRequest
     public function rules():array
     {
         return [
-            'approved' => 'required',
+            'approved' => 'required|integer|in:1,2',
             'note' => 'required',
         ];
     }

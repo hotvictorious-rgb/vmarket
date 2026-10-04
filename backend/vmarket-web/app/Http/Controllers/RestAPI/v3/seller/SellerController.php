@@ -526,7 +526,11 @@ class SellerController extends Controller
         }
 
         $seller = $request->seller;
-        $amountInUsd = Convert::usd($request['amount']);
+        // [AI] V1 payouts are NGN. Store and restore the same exact amount across Vendor Web/App.
+        if (!preg_match('/^\d+(?:\.\d{1,2})?$/', (string)$request['amount'])) {
+            return response()->json(['message' => translate('Invalid_withdraw_request')], 422);
+        }
+        $amountInUsd = bcadd((string)$request['amount'], '0', 2);
 
         if ($request['amount'] <= 1) {
             return response()->json(['message' => translate('Invalid_withdraw_request')], 403);
@@ -536,7 +540,7 @@ class SellerController extends Controller
             DB::beginTransaction();
             // [AI] Vendor Wallet Race Condition Guard: Lock wallet row before checking balance
             $wallet = SellerWallet::where('seller_id', $seller['id'])->lockForUpdate()->first();
-            if (!$wallet || $wallet->total_earning < $amountInUsd) {
+            if (!$wallet || bccomp((string)$wallet->getRawOriginal('total_earning'), $amountInUsd, 2) < 0 || bccomp((string)$wallet->getRawOriginal('collected_cash'), '0', 2) > 0) {
                 DB::rollBack();
                 return response()->json(['message' => translate('Insufficient_wallet_balance_for_withdraw_request')], 403);
             }
@@ -552,8 +556,8 @@ class SellerController extends Controller
                 'updated_at' => now()
             ]);
 
-            $wallet->total_earning -= BackEndHelper::currency_to_usd($request['amount']);
-            $wallet->pending_withdraw += BackEndHelper::currency_to_usd($request['amount']);
+            $wallet->total_earning = bcsub((string)$wallet->getRawOriginal('total_earning'), $amountInUsd, 2);
+            $wallet->pending_withdraw = bcadd((string)$wallet->getRawOriginal('pending_withdraw'), $amountInUsd, 2);
             $wallet->save();
             DB::commit();
 
@@ -591,9 +595,12 @@ class SellerController extends Controller
             }
 
             // [AI] Fix: Restore the exact amount recorded on the withdraw_request row
-            $restoreAmount = BackEndHelper::currency_to_usd($withdraw_request['amount']);
-            $wallet->total_earning += $restoreAmount;
-            $wallet->pending_withdraw -= $restoreAmount;
+            $restoreAmount = (string)$withdraw_request->getRawOriginal('amount');
+            if (bccomp((string)$wallet->getRawOriginal('pending_withdraw'), $restoreAmount, 2) < 0) {
+                throw new \RuntimeException('Withdrawal reservation is insufficient.');
+            }
+            $wallet->total_earning = bcadd((string)$wallet->getRawOriginal('total_earning'), $restoreAmount, 2);
+            $wallet->pending_withdraw = bcsub((string)$wallet->getRawOriginal('pending_withdraw'), $restoreAmount, 2);
             $wallet->save();
             $withdraw_request->delete();
             DB::commit();

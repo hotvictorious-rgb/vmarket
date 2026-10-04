@@ -41,7 +41,7 @@ class MatureCustomerCashbackCommand extends Command
         $this->info('Starting customer cashback reward ledger maturation and expiration process...');
 
         $now = Carbon::now();
-        $exchangeRate = (float) (getWebConfig(name: 'loyalty_point_exchange_rate') ?: 1.0);
+        $exchangeRate = (string) (getWebConfig(name: 'loyalty_point_exchange_rate') ?: '1');
 
         // =========================================================================
         // PART 1: MATURATION (24-hour Return Window Elasped: pending -> available)
@@ -70,9 +70,21 @@ class MatureCustomerCashbackCommand extends Command
 
             foreach ($eligibleLedgers as $ledger) {
                 DB::transaction(function () use ($ledger, $exchangeRate, $now, &$maturedCount) {
-                    // Lock user first to guarantee unified lock ordering (User -> Ledger)
+                    // [AI] Serialize receipt/refund accounting before user and reward lot locks.
+                    $order = \App\Models\Order::where('id', $ledger->order_id)->lockForUpdate()->first();
+                    if (!$order || !$order->received_at || !$order->refund_window_expires_at
+                        || Carbon::parse($order->refund_window_expires_at)->isFuture()
+                        || $order->hasUnresolvedRefund()) {
+                        return;
+                    }
                     $customer = DB::table('users')->where('id', $ledger->customer_id)->lockForUpdate()->first();
                     if (!$customer) {
+                        return;
+                    }
+                    // [AI] Re-read the amount and eligibility under lock, never credit the earlier query's snapshot.
+                    $ledger = CustomerCashbackLedger::where('id', $ledger->id)->where('status', 'pending')
+                        ->whereNotNull('available_at')->where('available_at', '<=', $now)->lockForUpdate()->first();
+                    if (!$ledger) {
                         return;
                     }
 
@@ -97,10 +109,10 @@ class MatureCustomerCashbackCommand extends Command
                         ->update($updateData);
 
                     if ($updated) {
-                        $points = (float) bcdiv((string) $ledger->cashback_amount, (string) $exchangeRate, 4);
-                        if ($points > 0) {
+                        $points = bcdiv((string) $ledger->getRawOriginal('cashback_amount'), $exchangeRate, 4);
+                        if (bccomp($points, '0', 4) > 0) {
                             DB::table('users')->where('id', $ledger->customer_id)->increment('loyalty_point', $points);
-                            $freshBalance = (float) DB::table('users')->where('id', $ledger->customer_id)->value('loyalty_point');
+                            $freshBalance = DB::table('users')->where('id', $ledger->customer_id)->value('loyalty_point');
 
                             DB::table('loyalty_point_transactions')->insert([
                                 'user_id' => $ledger->customer_id,
@@ -158,28 +170,32 @@ class MatureCustomerCashbackCommand extends Command
                     return;
                 }
 
-                $points = (float) bcdiv((string) $lockedLedger->cashback_amount, (string) $exchangeRate, 4);
-                $currentPoints = (float) ($customer->loyalty_point ?? 0.0);
+                $points = bcdiv((string) $lockedLedger->getRawOriginal('cashback_amount'), $exchangeRate, 4);
+                $currentPoints = (string) ($customer->loyalty_point ?? '0');
 
                 // Active in-flight checkouts holding reserved points
-                $activeReservedPoints = (float) (DB::table('cashback_redemptions')
+                $activeReservedPoints = (string) (DB::table('cashback_redemptions')
                     ->where('customer_id', $lockedLedger->customer_id)
                     ->where('status', 'reserved')
-                    ->sum('points') ?: 0.0);
-                if ($activeReservedPoints <= 0.0) {
-                    $activeReservedPoints = (float) (DB::table('cashback_redemptions')
+                    ->sum('points') ?: '0');
+                if (bccomp($activeReservedPoints, '0', 4) <= 0) {
+                    $activeReservedAmount = (string) (DB::table('cashback_redemptions')
                         ->where('customer_id', $lockedLedger->customer_id)
                         ->where('status', 'reserved')
-                        ->sum('cashback_amount') ?: 0.0);
+                        ->sum('cashback_amount') ?: '0');
+                    $activeReservedPoints = bcdiv($activeReservedAmount, $exchangeRate, 4);
                 }
 
-                $unreservedPoints = max(0.0, $currentPoints - $activeReservedPoints);
+                $unreservedPoints = bcsub($currentPoints, $activeReservedPoints, 4);
+                if (bccomp($unreservedPoints, '0', 4) < 0) {
+                    $unreservedPoints = '0.0000';
+                }
 
                 // If this lot is needed to back active in-flight checkouts, DO NOT expire it yet!
                 // It remains available to back the in-flight checkout. If the checkout fails/cancels,
                 // the reservation is released and the lot will be expired in the next cycle.
                 // If the checkout succeeds, the lot is consumed via markRedeemed().
-                if ($points > $unreservedPoints) {
+                if (bccomp($points, $unreservedPoints, 4) > 0) {
                     return;
                 }
 
@@ -189,9 +205,9 @@ class MatureCustomerCashbackCommand extends Command
                     'description' => $lockedLedger->description . ' (Expired after validity period)',
                 ]);
 
-                if ($updated && $points > 0) {
+                if ($updated && bccomp($points, '0', 4) > 0) {
                     DB::table('users')->where('id', $lockedLedger->customer_id)->decrement('loyalty_point', $points);
-                    $freshBalance = (float) DB::table('users')->where('id', $lockedLedger->customer_id)->value('loyalty_point');
+                    $freshBalance = DB::table('users')->where('id', $lockedLedger->customer_id)->value('loyalty_point');
 
                     DB::table('loyalty_point_transactions')->insert([
                         'user_id' => $lockedLedger->customer_id,

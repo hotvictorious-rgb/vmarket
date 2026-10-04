@@ -192,9 +192,10 @@ class DashboardController extends BaseController
             $status = \Illuminate\Support\Facades\DB::transaction(function () use ($vendorId, $request, $withdrawMethod) {
                 // [AI] Pessimistic lock on vendor wallet to prevent concurrent overdraw
                 $wallet = \App\Models\SellerWallet::where('seller_id', $vendorId)->lockForUpdate()->first();
-                $convertedAmount = currencyConverter($request['amount']);
+                // [AI] V1 wallet and payout amounts are NGN, irrespective of display currency.
+                $convertedAmount = bcadd((string)$request['amount'], '0', 2);
 
-                if (!$wallet || ($wallet->total_earning ?? 0) < $convertedAmount || $request['amount'] <= 1) {
+                if (!$wallet || bccomp((string)$wallet->getRawOriginal('total_earning'), $convertedAmount, 2) < 0 || bccomp((string)$wallet->getRawOriginal('collected_cash'), '0', 2) > 0 || $request['amount'] <= 1) {
                     return false;
                 }
 
@@ -205,8 +206,8 @@ class DashboardController extends BaseController
                     vendorId: $vendorId
                 ));
 
-                $totalEarning = $wallet->total_earning - $convertedAmount;
-                $pendingWithdraw = $wallet->pending_withdraw + $convertedAmount;
+                $totalEarning = bcsub((string)$wallet->getRawOriginal('total_earning'), $convertedAmount, 2);
+                $pendingWithdraw = bcadd((string)$wallet->getRawOriginal('pending_withdraw'), $convertedAmount, 2);
 
                 $this->vendorWalletRepo->update(
                     id: $wallet->id,
