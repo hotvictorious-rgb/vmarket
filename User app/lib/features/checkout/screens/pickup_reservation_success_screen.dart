@@ -88,8 +88,7 @@ class PickupReservationSuccessScreen extends StatelessWidget {
 
             // Multi-reservation cards loop
             ...reservations.asMap().entries.map((entry) {
-              final int index = entry.key;
-              final PickupReservationModel item = entry.value;
+                            final PickupReservationModel item = entry.value;
               final double amount = double.tryParse(item.totalAmount ?? '0') ?? 0.0;
 
               return Container(
@@ -218,7 +217,7 @@ class PickupReservationSuccessScreen extends StatelessWidget {
                                   const SizedBox(width: 6),
                                   Expanded(
                                     child: Text(
-                                      '${getTranslated('earn_cashback_at_store', context) ?? 'Earn {percent}% Victorious Cashback when you pay at the store'}'
+                                      (getTranslated('earn_cashback_at_store', context) ?? 'Earn {percent}% Victorious Cashback when you pay at the store')
                                           .replaceAll('{percent}', item.cashbackToEarn!.percent!.toStringAsFixed(0))
                                           .replaceAll('{amount}', item.cashbackToEarn!.estimatedNaira ?? '0'),
                                       style: titilliumSemiBold.copyWith(

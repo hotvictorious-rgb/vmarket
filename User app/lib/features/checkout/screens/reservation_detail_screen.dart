@@ -362,7 +362,7 @@ class ReservationDetailScreen extends StatelessWidget {
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
                               Text(
-                                '${getTranslated('earn_cashback_at_store', context) ?? 'Earn {percent}% Victorious Cashback when you pay at the store'}'
+                                (getTranslated('earn_cashback_at_store', context) ?? 'Earn {percent}% Victorious Cashback when you pay at the store')
                                     .replaceAll('{percent}', reservation.cashbackToEarn!.percent!.toStringAsFixed(0)),
                                 style: titilliumSemiBold.copyWith(
                                   fontSize: Dimensions.fontSizeDefault,
@@ -371,7 +371,7 @@ class ReservationDetailScreen extends StatelessWidget {
                               ),
                               const SizedBox(height: 4),
                               Text(
-                                '${getTranslated('est_cashback', context) ?? 'Est. cashback: ₦{amount}'}'
+                                (getTranslated('est_cashback', context) ?? 'Est. cashback: ₦{amount}')
                                     .replaceAll('{amount}', reservation.cashbackToEarn!.estimatedNaira ?? '0'),
                                 style: titilliumRegular.copyWith(
                                   fontSize: Dimensions.fontSizeSmall,
@@ -405,7 +405,7 @@ class ReservationDetailScreen extends StatelessWidget {
                 ],
               ),
               child: CustomButton(
-                buttonText: '${getTranslated('pay_at_store_cta', context) ?? 'Pay ₦{amount} at Store'}'
+                buttonText: (getTranslated('pay_at_store_cta', context) ?? 'Pay ₦{amount} at Store')
                     .replaceAll('{amount}', PriceConverter.convertPrice(context, amount)),
                 onTap: () {
                   Navigator.push(

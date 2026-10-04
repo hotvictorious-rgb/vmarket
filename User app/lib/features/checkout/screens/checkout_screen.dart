@@ -315,7 +315,9 @@ class CheckoutScreenState extends State<CheckoutScreen> {
                                           .submitPickupReservation(
                                               cartIds: cartIds,
                                               checkedOnly: false);
+                                      if (!mounted || !context.mounted) return;
                                       setState(() => _isSubmitting = false);
+                                      if (!context.mounted) return;
 
                                       if (response.response != null &&
                                           (response.response?.statusCode ==

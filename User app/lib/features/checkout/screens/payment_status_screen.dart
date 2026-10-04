@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'package:flutter_sixvalley_ecommerce/features/checkout/domain/models/pickup_payment_status_client.dart';
 import 'package:flutter_sixvalley_ecommerce/features/checkout/domain/models/pickup_payment_state.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_sixvalley_ecommerce/common/basewidget/custom_app_bar_widget.dart';
@@ -33,6 +34,7 @@ class PaymentStatusScreen extends StatefulWidget {
 }
 
 class _PaymentStatusScreenState extends State<PaymentStatusScreen> {
+  final http.Client _pickupHttpClient = http.Client();
   PaymentStatus _status = PaymentStatus.checking;
   Timer? _pollTimer;
   int _pollAttempts = 0;
@@ -50,6 +52,7 @@ class _PaymentStatusScreenState extends State<PaymentStatusScreen> {
   @override
   void dispose() {
     _pollTimer?.cancel();
+    _pickupHttpClient.close();
     super.dispose();
   }
 
@@ -86,16 +89,30 @@ class _PaymentStatusScreenState extends State<PaymentStatusScreen> {
       }
 
       if (widget.isPickup && widget.reservationCode != null) {
-        final response = await http.get(Uri.parse('4{AppConstants.baseUrl}4{AppConstants.pickupReservationsUri}/4{widget.reservationCode}/status'), headers: {'Authorization': 'Bearer 4token'});
-        if (response.statusCode == 200) {
-          final data = Map<String, dynamic>.from(json.decode(response.body));
+        {
+          final data = await fetchPickupPaymentStatus(_pickupHttpClient, AppConstants.baseUrl, AppConstants.pickupReservationsUri, widget.reservationCode!, token);
           _authorizationUrl = data['authorization_url']?.toString();
           if (pickupPaymentCompleted(data)) {
-            _pollTimer?.cancel(); await _clearResolvedPickup();
+            _pollTimer?.cancel();
+            await _clearResolvedPickup();
             if (!mounted) return;
-            setState(() { _status = PaymentStatus.success; _orderData = data; });
-          } else if (data['payment_status'] == 'expired' || data['payment_status'] == 'failed') {
-            _pollTimer?.cancel(); await _clearResolvedPickup();
+            setState(() {
+              _status = PaymentStatus.success;
+              _orderData = data;
+            });
+          } else if (data['payment_status'] == 'expired' ||
+              data['payment_status'] == 'failed' ||
+              data['payment_status'] == 'refunded') {
+            _pollTimer?.cancel();
+            await _clearResolvedPickup();
+            if (mounted) setState(() => _status = PaymentStatus.failed);
+          } else if (data['payment_status'] == 'unpaid' &&
+              data['payment_request_id'] == null) {
+            // [AI] M12: Authoritative no-attempt outcome.
+            // When payment request was rejected before creating an attempt (e.g. 409 expired/changed quote),
+            // clear the pending pickup identity so user can request a fresh quote without being trapped.
+            _pollTimer?.cancel();
+            await _clearResolvedPickup();
             if (mounted) setState(() => _status = PaymentStatus.failed);
           }
         }

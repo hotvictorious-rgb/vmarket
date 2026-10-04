@@ -165,7 +165,7 @@ class _ShippingDetailsWidgetState extends State<ShippingDetailsWidget> {
 
                                     Expanded(
                                       child: Text(
-                                        '${locationProvider.addressList![shippingProvider.addressIndex!].address ?? ''}',
+                                        locationProvider.addressList![shippingProvider.addressIndex!].address ?? '',
                                         style: textMedium.copyWith(fontSize: Dimensions.fontSizeDefault, color: Theme.of(context).textTheme.bodyLarge?.color, overflow: TextOverflow.ellipsis), maxLines: 1,
                                       ),
                                     ),

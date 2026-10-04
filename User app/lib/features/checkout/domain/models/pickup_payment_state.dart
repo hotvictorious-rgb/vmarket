@@ -21,5 +21,29 @@ class PickupPaymentState {
 }
 
 bool pickupPaymentCompleted(Map<String, dynamic> status) =>
-  status['payment_status'] == 'paid' && status['order_id'] != null &&
+  (status['status'] == null || status['status'] == true || status['status'] == 'success') &&
+  status['payment_status'] == 'paid' &&
+  int.tryParse(status['order_id']?.toString() ?? '') != null &&
   RegExp(r'^\d{6}$').hasMatch(status['pickup_verification_code']?.toString() ?? '');
+
+bool pickupPaymentMayRetry(Map<String, dynamic> status) =>
+  (status['status'] == null || status['status'] == true || status['status'] == 'success') &&
+  (status['payment_status'] == 'expired' || status['payment_status'] == 'failed' ||
+    (status['payment_status'] == 'unpaid' && status.containsKey('payment_request_id') && status['payment_request_id'] == null));
+
+bool validPickupQuote(dynamic data) {
+  if (data is! Map || data['status'] != true || data['quote_token'] is! String ||
+      (data['quote_token'] as String).isEmpty || data['quote'] is! Map) {
+    return false;
+  }
+  final quote = data['quote'] as Map;
+  if (quote['currency'] != 'NGN' || quote['expires_at'] is! String) {
+    return false;
+  }
+  for (final key in ['merchandise_subtotal', 'tax_total', 'shipping_total', 'cashback_amount', 'total_amount']) {
+    if (quote[key] is! String || !RegExp(r'^\d+\.\d{2}$').hasMatch(quote[key])) {
+      return false;
+    }
+  }
+  return true;
+}

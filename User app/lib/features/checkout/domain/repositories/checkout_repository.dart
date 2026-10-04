@@ -97,8 +97,9 @@ class CheckoutRepository implements CheckoutRepositoryInterface{
 
   @override
   Future<ApiResponseModel> quotePickupReservation({required String reservationCode, bool useCashback = false}) async {
-    try { return ApiResponseModel.withSuccess(await dioClient!.post('4{AppConstants.pickupReservationsUri}/4reservationCode/quote', data: {'use_cashback': useCashback})); }
-    catch (e) { return ApiResponseModel.withError(ApiErrorHandler.getMessage(e)); }
+    try {
+      return ApiResponseModel.withSuccess(await dioClient!.post('${AppConstants.pickupReservationsUri}/${Uri.encodeComponent(reservationCode)}/quote', data: {'use_cashback': useCashback}));
+    } catch (e) { return ApiResponseModel.withError(ApiErrorHandler.getMessage(e)); }
   }
   @override
   Future<ApiResponseModel> payPickupReservation({
@@ -110,7 +111,7 @@ class CheckoutRepository implements CheckoutRepositoryInterface{
   }) async {
     try {
       final response = await dioClient!.post(
-        '${AppConstants.pickupReservationsUri}/$reservationCode/pay',
+        '${AppConstants.pickupReservationsUri}/${Uri.encodeComponent(reservationCode)}/pay',
         data: {
           'use_cashback': useCashback ? 1 : 0,
           'payment_gateway': paymentGateway,

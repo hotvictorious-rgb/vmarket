@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_sixvalley_ecommerce/features/checkout/domain/models/pickup_payment_state.dart';
 import 'package:provider/provider.dart';
 import 'package:flutter_sixvalley_ecommerce/features/checkout/controllers/checkout_controller.dart';
 import 'package:flutter_sixvalley_ecommerce/features/checkout/domain/models/pickup_reservation_model.dart';
@@ -25,7 +26,7 @@ class _PickupPaymentScreenState extends State<PickupPaymentScreen> {
     if (!mounted) return;
     setState(() => _busy = false);
     final data = response.response?.data;
-    if (response.response?.statusCode != 200 || data is! Map || data['quote'] is! Map || data['quote_token'] == null) {
+    if (response.response?.statusCode != 200 || !validPickupQuote(data)) {
       setState(() => _error = response.error?.toString() ?? 'Unable to prepare the quote. Please try again.'); return;
     }
     final quote = data['quote'] as Map;

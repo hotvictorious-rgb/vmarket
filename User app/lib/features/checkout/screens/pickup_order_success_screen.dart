@@ -225,7 +225,7 @@ class PickupOrderSuccessScreen extends StatelessWidget {
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           Text(
-                            '${getTranslated('cashback_earned_badge', context) ?? '🎉 You earned ₦{amount} Victorious Cashback'}'
+                            (getTranslated('cashback_earned_badge', context) ?? '🎉 You earned ₦{amount} Victorious Cashback')
                                 .replaceAll('{amount}', PriceConverter.convertPrice(context, cashbackEarned!)),
                             style: titilliumBold.copyWith(
                               fontSize: Dimensions.fontSizeDefault,

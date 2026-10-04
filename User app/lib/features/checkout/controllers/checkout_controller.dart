@@ -314,6 +314,15 @@ class CheckoutController with ChangeNotifier {
     return PickupPaymentState.decode(storage.getString(PickupPaymentState.storageKey), storage.getString(AppConstants.userLoginToken));
   }
 
+  Future<void> clearPendingPickupPayment({String? reservationCode}) async {
+    final storage = di.sl<StorageService>();
+    final pending = pendingPickupPayment;
+    if (pending != null && (reservationCode == null || pending.reservationCode == reservationCode)) {
+      await storage.remove(PickupPaymentState.storageKey);
+      notifyListeners();
+    }
+  }
+
   Future<ApiResponseModel> quotePickupReservation({required String reservationCode, bool useCashback = false}) =>
     checkoutServiceInterface.quotePickupReservation(reservationCode: reservationCode, useCashback: useCashback).then((value) => value as ApiResponseModel);
 
