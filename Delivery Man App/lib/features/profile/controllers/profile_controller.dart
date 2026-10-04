@@ -74,10 +74,10 @@ class ProfileController extends GetxController implements GetxService {
     update();
   }
 
-  Future <Response> resetPassword (String? phone, String password ,String confirmPassword) async {
+  Future <Response> resetPassword(String? phone, String password, String confirmPassword, {required String otp}) async {
     _isLoading = true;
     update();
-    Response _response = await profileServiceInterface.resetPassword(phone, password, confirmPassword);
+    Response _response = await profileServiceInterface.resetPassword(phone, password, confirmPassword, otp: otp);
     _isLoading = false;
     update();
     return _response;

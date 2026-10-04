@@ -13,8 +13,9 @@ import 'package:sixvalley_delivery_boy/features/auth/screens/login_screen.dart';
 
 class ResetPasswordWidget extends StatefulWidget {
   final String? mobileNumber;
+  final String otp;
 
-  const ResetPasswordWidget({Key? key,required this.mobileNumber}) : super(key: key);
+  const ResetPasswordWidget({Key? key,required this.mobileNumber, required this.otp}) : super(key: key);
 
   @override
   _ResetPasswordWidgetState createState() => _ResetPasswordWidgetState();
@@ -55,7 +56,7 @@ class _ResetPasswordWidgetState extends State<ResetPasswordWidget> {
         showCustomSnackBarWidget('enter_valid_password'.tr);
       } else {
         Get.find<ProfileController>().resetPassword(widget.mobileNumber,
-            _password, _confirmPassword).then((value) {
+            _password, _confirmPassword, otp: widget.otp).then((value) {
           if(value.statusCode == 200) {
             Get.to(const LoginScreen());
           }

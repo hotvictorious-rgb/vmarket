@@ -31,10 +31,11 @@ class ProfileRepository implements ProfileRepositoryInterface{
 
 
   @override
-  Future<Response> resetPassword(String? phone, String password ,String confirmPassword) async {
+  Future<Response> resetPassword(String? phone, String password, String confirmPassword, {required String otp}) async {
     Response _response = await apiClient.postData(AppConstants.resetPassword,
         {
-          'phone': phone,
+          'identity': phone?.trim(),
+          'otp': otp,
           'password' : password,
           'confirm_password': confirmPassword
         });

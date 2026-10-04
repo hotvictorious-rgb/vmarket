@@ -89,9 +89,10 @@ class VerificationScreen extends StatelessWidget {
                 child: CustomButtonWidget(
                   btnTxt:  'verify'.tr,
                   onTap: () {
-                    authController.verifyOtp( authController.verificationCode, mobileNumber).then((value) {
+                    final verifiedOtp = authController.verificationCode;
+                    authController.verifyOtp(verifiedOtp, mobileNumber).then((value) {
                       if(value.statusCode == 200) {
-                        Get.to(ResetPasswordWidget(mobileNumber: mobileNumber));
+                        Get.to(ResetPasswordWidget(mobileNumber: mobileNumber, otp: verifiedOtp));
                       }else {
                         showCustomSnackBarWidget('input_valid_otp'.tr);
                       }

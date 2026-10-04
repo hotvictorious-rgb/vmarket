@@ -6,7 +6,7 @@ abstract class ProfileServiceInterface {
   Future<ResponseModel> updateProfile(dynamic updateUserModel,String pass,File? file, String token);
   Future<dynamic> getProfileInfo();
   Future<dynamic> profileStatusOnnOff( int status);
-  Future<dynamic> resetPassword(String? phone, String password ,String confirmPassword);
+  Future<dynamic> resetPassword(String? phone, String password, String confirmPassword, {required String otp});
   Future<dynamic> updateBankInfo({String? bankName, String? branch, String? accountNumber, String? holderName});
 
 }

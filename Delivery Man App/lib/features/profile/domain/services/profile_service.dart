@@ -38,8 +38,8 @@ class ProfileService implements ProfileServiceInterface{
   }
 
   @override
-  Future<Response> resetPassword(String? phone, String password, String confirmPassword) async{
-    Response _response = await profileRepoInterface.resetPassword(phone, password, confirmPassword);
+  Future<Response> resetPassword(String? phone, String password, String confirmPassword, {required String otp}) async{
+    Response _response = await profileRepoInterface.resetPassword(phone, password, confirmPassword, otp: otp);
     if (_response.statusCode == 200) {
       showCustomSnackBarWidget('password_reset_successfully'.tr, isError: false);
 
