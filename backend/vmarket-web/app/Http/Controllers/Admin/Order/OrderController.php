@@ -376,15 +376,10 @@ class OrderController extends BaseController
             $editOrderSummary = [];
             $orderEditPaymentHistory = [];
 
-            if ($order['order_type'] == 'default_type') {
-                $orderCount = $this->orderRepo->getListWhereCount(filters: ['customer_id' => $order['customer_id']]);
-                return view('admin-views.order.order-details', compact('order', 'linkedOrders',
-                    'deliveryMen', 'totalDelivered', 'companyName', 'companyWebLogo', 'physicalProduct',
-                    'countryRestrictStatus', 'zipRestrictStatus', 'countries', 'zipCodes', 'orderCount', 'previousOrder', 'nextOrder', 'allProductsList', 'isOrderEditable', 'orderProductsSession', 'editOrderSummary', 'orderEditPaymentHistory'));
-            } else {
-                $orderCount = $this->orderRepo->getListWhereCount(filters: ['customer_id' => $order['customer_id'], 'order_type' => 'POS']);
-                return view('admin-views.pos.order.order-details', compact('order', 'companyName', 'companyWebLogo', 'orderCount', 'previousOrder', 'nextOrder', 'allProductsList', 'isOrderEditable', 'orderProductsSession', 'editOrderSummary'));
-            }
+            $orderCount = $this->orderRepo->getListWhereCount(filters: ['customer_id' => $order['customer_id']]);
+            return view('admin-views.order.order-details', compact('order', 'linkedOrders',
+                'deliveryMen', 'totalDelivered', 'companyName', 'companyWebLogo', 'physicalProduct',
+                'countryRestrictStatus', 'zipRestrictStatus', 'countries', 'zipCodes', 'orderCount', 'previousOrder', 'nextOrder', 'allProductsList', 'isOrderEditable', 'orderProductsSession', 'editOrderSummary', 'orderEditPaymentHistory'));
         } else {
             ToastMagic::error(translate('Order_not_found'));
             return redirect()->route('admin.orders.list', ['status' => 'all']);

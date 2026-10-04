@@ -14,11 +14,7 @@
         <div class="bg-info bg-opacity-10 fs-12 px-12 py-10 text-dark rounded d-flex gap-2 align-items-center mb-3 mb-sm-20">
             <i class="fi fi-sr-lightbulb-on text-info"></i>
             <span>
-                {{ translate('Your_current_version_is') }} {{ SOFTWARE_VERSION }}. {{ translate('To_check_our_new_version') }}
-                <a class="text-decoration-underline fw-semibold" target="_blank"
-                   href="{{ 'https://codecanyon.net/item/victorious-multivendor-ecommerce-complete-ecommerce-mobile-app-web-and-admin-panel/31448597' }}">
-                    {{ translate('Click_Here') }}
-                </a>
+                {{ translate('Your_current_version_is') }} {{ SOFTWARE_VERSION }} (Victorious MARKET V1 Production Release).
             </span>
         </div>
 
