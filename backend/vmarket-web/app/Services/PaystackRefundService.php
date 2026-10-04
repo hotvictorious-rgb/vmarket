@@ -49,7 +49,7 @@ class PaystackRefundService
     public static function resolvePaystackReferenceForOrder(Order $order): ?string
     {
         // 1. Check PaymentRequest via order_group_id
-        if (!empty($order->order_group_id)) {
+        if (!empty($order->order_group_id) && $order->order_group_id !== 'def-order-group') {
             $pr = \App\Models\PaymentRequest::where('order_group_id', $order->order_group_id)
                 ->where('is_paid', 1)
                 ->where('attempt_status', 'successful')
@@ -71,9 +71,9 @@ class PaystackRefundService
             }
         }
 
-        // 3. Fallback to order's transaction_ref (legacy orders)
+        // 3. Fallback to order's transaction_ref (legacy orders or un-grouped direct orders)
         // [AI] Canonical orders must never fall back to their internal accounting reference.
-        return empty($order->order_group_id) && !$reservation && !empty($order->transaction_ref)
+        return (empty($order->order_group_id) || $order->order_group_id === 'def-order-group') && !$reservation && !empty($order->transaction_ref)
             ? $order->transaction_ref : null;
     }
 
