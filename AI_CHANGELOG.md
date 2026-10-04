@@ -5336,3 +5336,6 @@ ecord packages, created VoiceNoteBottomSheet and AudioPlayerWidget, and integrat
 - Registered scheduler, canonical gateway linkage, durable unmatched-capture reconciliation and payment recovery; clients confirm frozen backend quotes and use authoritative status/OTP.
 - Reviewer combined real-code regressions: 30 tests /243 assertions passed; 50 PHP syntax checks passed. Focused customer tests and vendor analysis passed. See .ai/reviews/customer/V1-MONEY-REPAIR-2026-10-04.md and runner log.
 - Code/migration deployment, MySQL contention, live gateway/device checks and historical bank reconciliation remain operational requirements. No live transfers, wallet reset or deployment performed.
+
+### [2026-10-04 13:09 UTC] V1 second-pass money audit [ai-governance]
+Read-only review at7ea05351 found additional reachable money defects in generic order updates, alternate rider payout approval, pickup reward funding/replacement, refund preview and penny allocation. No product fixes/deployment performed. Money audit remains open; prior focused tests do not certify all paths. See .ai/reviews/customer/V1-MONEY-SECOND-PASS-2026-10-04.md for sources, scenarios and operational limits. Specialist execution stopped when workspace credits ran out; runtime reproductions for new scenarios remain required.
