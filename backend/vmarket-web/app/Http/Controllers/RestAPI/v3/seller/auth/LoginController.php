@@ -34,7 +34,7 @@ class LoginController extends Controller
 
         if (isset($seller) && $seller['status'] == 'approved' && auth('seller')->attempt($data)) {
             $token = Str::random(50);
-            Seller::where(['id' => auth('seller')->id()])->update(['auth_token' => $token]);
+            Seller::where(['id' => auth('seller')->id()])->update(['auth_token' => hash('sha256', $token)]);
             if (SellerWallet::where('seller_id', $seller['id'])->first() == false) {
                 DB::table('seller_wallets')->insert([
                     'seller_id' => $seller['id'],
@@ -78,7 +78,7 @@ class LoginController extends Controller
                 }
 
                 $token = Str::random(50);
-                $employee->auth_token = $token;
+                $employee->auth_token = hash('sha256', $token);
                 $employee->save();
 
                 return response()->json(['token' => $token, 'is_vendor_employee' => true], 200);

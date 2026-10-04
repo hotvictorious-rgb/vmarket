@@ -50,6 +50,16 @@ class SellerController extends Controller
     {
     }
 
+    public function logout(Request $request): JsonResponse
+    {
+        if ($request->has('seller') && $request->seller) {
+            Seller::where('id', $request->seller->id)->update(['auth_token' => null]);
+        } elseif ($request->has('employee') && $request->employee) {
+            \App\Models\VendorEmployee::where('id', $request->employee->id)->update(['auth_token' => null]);
+        }
+        return response()->json(['message' => translate('Successfully logged out')], 200);
+    }
+
     public function shop_info(Request $request): JsonResponse
     {
         $seller = $request->seller;
@@ -399,7 +409,7 @@ class SellerController extends Controller
 
         if ($request['password'] != null) {
             Seller::where(['id' => $seller['id']])->update([
-                'auth_token' => Str::random('50')
+                'auth_token' => hash('sha256', Str::random(50))
             ]);
         }
 

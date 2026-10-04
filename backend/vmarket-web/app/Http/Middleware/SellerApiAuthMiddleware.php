@@ -21,7 +21,9 @@ class SellerApiAuthMiddleware
     {
         $token = explode(' ', $request->header('authorization'));
         if (count($token) > 1 && strlen($token[1]) > 30) {
-            $seller = Seller::where(['auth_token' => $token['1']])->first();
+            $rawToken = $token[1];
+            $hashedToken = hash('sha256', $rawToken);
+            $seller = Seller::where('auth_token', $hashedToken)->orWhere('auth_token', $rawToken)->first();
             if (isset($seller)) {
                 if ($seller->status !== 'approved') {
                     return response()->json([
@@ -33,7 +35,10 @@ class SellerApiAuthMiddleware
             }
 
                 // Check if token belongs to an active Vendor Employee
-            $employee = \App\Models\VendorEmployee::with('seller', 'role', 'shop')->where(['auth_token' => $token['1']])->first();
+            $employee = \App\Models\VendorEmployee::with('seller', 'role', 'shop')
+                ->where('auth_token', $hashedToken)
+                ->orWhere('auth_token', $rawToken)
+                ->first();
             if (isset($employee)) {
                 if (!$employee->status) {
                     return response()->json([

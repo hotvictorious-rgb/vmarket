@@ -27,6 +27,7 @@ Route::group(['prefix' => 'v2', 'middleware' => ['api_lang']], function () {
         Route::group(['middleware' => ['delivery_man_auth', 'actch:deliveryman_app']], function () {
             Route::controller(DeliveryManController::class)->group(function () {
                 Route::put('language-change', 'language_change');
+                Route::post('logout', 'logout');
                 Route::put('is-online', 'is_online');
                 Route::get('info', 'info');
                 Route::post('distance-api', 'distance_api');

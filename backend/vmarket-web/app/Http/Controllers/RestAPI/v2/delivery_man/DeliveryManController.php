@@ -38,7 +38,14 @@ class DeliveryManController extends Controller
         private Order $order,
     )
     {
+    }
 
+    public function logout(Request $request): JsonResponse
+    {
+        if ($request->has('delivery_man') && $request->delivery_man) {
+            DeliveryMan::where('id', $request->delivery_man->id)->update(['auth_token' => null]);
+        }
+        return response()->json(['message' => translate('Successfully logged out')], 200);
     }
 
     public function info(Request $request):JsonResponse

@@ -48,6 +48,7 @@ Route::group(['prefix' => 'v3/seller', 'middleware' => ['api_lang']], function (
     Route::group(['middleware' => ['seller_api_auth']], function () {
         Route::controller(SellerController::class)->group(function () {
             Route::put('language-change', 'language_change');
+            Route::post('logout', 'logout');
             Route::get('seller-info', 'getSellerInfo');
             Route::get('get-earning-statitics', 'getEarningStatics');
             Route::get('order-statistics', 'order_statistics');

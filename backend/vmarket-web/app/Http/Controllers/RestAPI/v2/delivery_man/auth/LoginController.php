@@ -44,7 +44,7 @@ class LoginController extends Controller
 
         if (isset($d_man) && $d_man['is_active'] == 1 && Hash::check($request->password, $d_man->password)) {
             $token = Str::random(50);
-            $d_man->auth_token = $token;
+            $d_man->auth_token = hash('sha256', $token);
             $d_man->save();
             return response()->json(['token' => $token], 200);
         } else {
