@@ -147,6 +147,22 @@ class FakeCustomerJourneyService implements CheckoutServiceInterface {
   }
 
   @override
+  Future<dynamic> quotePickupReservation({required String reservationCode, bool useCashback = false}) async {
+    return ApiResponseModel.withSuccess(
+      FakeResponse(
+        data: {
+          'status': true,
+          'quote': {
+            'quote_token': 'journey_quote_token',
+            'net_payable': 12000.0,
+          },
+        },
+        statusCode: 200,
+      ),
+    );
+  }
+
+  @override
   Future digitalPaymentPlaceOrder(String? orderNote, String? customerId, String? addressId, String? billingAddressId, String? paymentMethod, bool? isCheckCreateAccount, String? password, {bool useCashback = false}) async => throw UnimplementedError();
   @override
   Future getReferralAmount(String? amount) async => throw UnimplementedError();
