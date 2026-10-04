@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:sixvalley_vendor_app/features/refund/domain/models/refund_recommendation_state.dart';
 import 'package:provider/provider.dart';
 import 'package:sixvalley_vendor_app/features/refund/domain/models/refund_details_model.dart';
 import 'package:sixvalley_vendor_app/features/refund/domain/models/refund_model.dart';
@@ -26,16 +27,22 @@ class _ApprovedAndRejectWidgetState extends State<ApprovedAndRejectWidget> {
   bool reject = false;
   final TextEditingController noteController = TextEditingController();
   @override
+  void dispose() {
+    noteController.dispose();
+    super.dispose();
+  }
+  @override
   Widget build(BuildContext context) {
     return Consumer<RefundController>(
         builder: (context,refundReq,_) {
           final requests = refundReq.refundDetailsModel?.refundRequest;
           final currentStatus = requests != null && requests.isNotEmpty
               ? requests.first.status : widget.refundModel?.status;
-          final adminDecision = requests != null && requests.isNotEmpty && requests.first.changeBy == 'admin';
-          if (adminDecision || (currentStatus != 'pending' && currentStatus != 'approved' && currentStatus != 'rejected')) {
-            return const Padding(padding: EdgeInsets.all(16),
-              child: Text('Refund decisions and payment completion are handled by the administrator.'));
+          final actor = requests != null && requests.isNotEmpty ? requests.first.changeBy : null;
+          final adminDecision = actor == 'admin';
+          if (adminDecision || currentStatus != 'pending') {
+            return Padding(padding: const EdgeInsets.all(16),
+              child: Text(refundRecommendationMessage(currentStatus, actor)));
           }
           if(refundReq.refundDetailsModel != null){
             List<RefundStatus>? status =[];
