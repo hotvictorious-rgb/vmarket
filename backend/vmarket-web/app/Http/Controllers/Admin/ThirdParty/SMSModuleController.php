@@ -126,7 +126,7 @@ class SMSModuleController extends BaseController
                 $errorMessage = translate(ucfirst(strtolower($firebaseResponse['errors'])));
             }
         } else {
-            $response = SMSModule::sendCentralizedSMS($phoneNumber, rand(100000, 999999));
+            $response = SMSModule::sendCentralizedSMS($phoneNumber, random_int(100000, 999999));
             $status = $response == 'success' ? $response : 'error';
         }
 

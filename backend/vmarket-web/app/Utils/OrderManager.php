@@ -82,7 +82,7 @@ class OrderManager
 
     public static function generateUniqueOrderID(): string
     {
-        return rand(1000, 9999) . '-' . Str::random(5) . '-' . time();
+        return random_int(1000, 9999) . '-' . Str::random(5) . '-' . time();
     }
 
     public static function getOrderSummaryBeforePlaceOrder($cart, $coupon_discount): array

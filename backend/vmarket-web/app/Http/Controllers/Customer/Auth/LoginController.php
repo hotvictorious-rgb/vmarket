@@ -58,8 +58,8 @@ class LoginController extends Controller
         $remember = (bool)$request['remember'];
 
         //login attempt check start
-        $max_login_hit = getWebConfig(name: 'maximum_login_hit') ?? 5;
-        $temp_block_time = getWebConfig(name: 'temporary_login_block_time') ?? 5; //seconds
+        $max_login_hit = (int)getWebConfig(name: 'maximum_login_hit') > 0 ? (int)getWebConfig(name: 'maximum_login_hit') : 5;
+        $temp_block_time = (int)getWebConfig(name: 'temporary_login_block_time') > 0 ? (int)getWebConfig(name: 'temporary_login_block_time') : 600; //seconds
         if (!isset($user)) {
             if ($request->ajax()) {
                 return response()->json([

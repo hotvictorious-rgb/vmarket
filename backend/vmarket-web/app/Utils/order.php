@@ -26,7 +26,7 @@ if (!function_exists('getOrderSummary')) {
 if (!function_exists('getUniqueId')) {
     function getUniqueId(): string
     {
-        return rand(1000, 9999) . '-' . Str::random(5) . '-' . time();
+        return random_int(1000, 9999) . '-' . Str::random(5) . '-' . time();
     }
 }
 

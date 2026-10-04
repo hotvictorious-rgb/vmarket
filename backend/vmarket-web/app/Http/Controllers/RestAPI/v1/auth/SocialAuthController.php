@@ -417,7 +417,7 @@ class SocialAuthController extends Controller
             'l_name' => '',
             'email' => $request['email'],
             'phone' => $request['phone'],
-            'password' => bcrypt(rand(11111111, 99999999)),
+            'password' => bcrypt(random_int(10000000, 99999999)),
             'temporary_token' => $temporaryToken,
             'is_email_verified' => $isEmailVerified,
             'email_verified_at' => $emailVerifiedAt,

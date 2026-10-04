@@ -522,7 +522,7 @@ class CustomerAuthController extends Controller
                 } else {
                     session()->put('tempCustomerInfo', [
                         'phone' => $identity,
-                        'password' => bcrypt(rand(11111111, 99999999)),
+                        'password' => bcrypt(random_int(10000000, 99999999)),
                         'referral_code' => Helpers::generate_referer_code(),
                     ]);
                     return redirect()->route('customer.auth.login.update-info', ['identity' => base64_encode($identity)]);
@@ -616,7 +616,7 @@ class CustomerAuthController extends Controller
             $timeDifferance = 0;
         }
 
-        $newTokenGenerate = (env('APP_MODE') == 'live') ? rand(100000, 999999) : 123456;
+        $newTokenGenerate = (env('APP_MODE') == 'live') ? random_int(100000, 999999) : 123456;
         if ($timeDifferance == 0) {
             if ($token) {
                 $token->token = $newTokenGenerate;
@@ -728,7 +728,7 @@ class CustomerAuthController extends Controller
         } else {
             $user = $this->customerRepo->updateOrCreate(params: ['phone' => $responseData['phoneNumber']], data: [
                 'phone' => $responseData['phoneNumber'],
-                'password' => bcrypt(rand(11111111, 99999999)),
+                'password' => bcrypt(random_int(10000000, 99999999)),
                 'referral_code' => Helpers::generate_referer_code(),
             ]);
             return redirect()->route('customer.auth.login.update-info', ['identity' => base64_encode($responseData['phoneNumber'])]);
