@@ -1,3 +1,8 @@
+### [2026-10-04 19:16 UTC] V1 money repair current verification — NOT APPROVED [backend, user-app, vendor-app] [AI]
+- Reviewed current source `55eb8e7d` on `v1`; isolated production-service/controller money suite passed 48 tests/465 assertions. Customer delivery/refund subset passed7, vendor recommendation widgets passed7, payout upload JS passed4 checks, 64 changed PHP files passed syntax, JS syntax/diff checks passed. SQLite/fake gateway evidence does not certify production contention or bank funding.
+- Current customer checkout analyzer: 0errors/6warnings/8infos, exit1. Confirmed new pickup quote/status URL and bearer interpolation corruption (U+0002), and source-traced recovery dead end for rejected-before-attempt payment followed by unpaid status. Pickup widget/recovery tests remain missing; M07 is not closed.
+- All implementation agents stopped on workspace credit exhaustion. Reviewer preserved implementation and recorded remaining work in `.ai/reviews/customer/V1-MONEY-SECOND-PASS-REPAIR-2026-10-04.md`; no production deployment, gateway/bank transfer, historical balance reset or reviewer-authored product fix occurred. Concurrent shared-checkout commits were produced by another task. Unrelated `.rnd` modification preserved.
+
 ### [2026-10-04 20:10 UTC] VM-SEC-004 CLOSED: Token hashing at rest, IDOR mutation guards, and E2E marketplace proof [backend] [AI]
 * **1. Implementation & Security Hardening:**
   - Upgraded bearer token persistence for Sellers, Vendor Employees, and Delivery Riders to store SHA-256 hashes at rest (`hash('sha256', $token)`), returning raw tokens to mobile clients with backwards-compatible migration fallback.

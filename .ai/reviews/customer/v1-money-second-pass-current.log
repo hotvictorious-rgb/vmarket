@@ -1,0 +1,10 @@
+PHPUnit 11.5.53 by Sebastian Bergmann and contributors.
+
+Runtime:       PHP 8.2.12
+Configuration: C:\Users\USER\Downloads\vmarket\.ai\reviews\customer\v1-money-second-pass.phpunit.xml
+
+................................................                  48 / 48 (100%)
+
+Time: 01:09.541, Memory: 94.00 MB
+
+OK (48 tests, 465 assertions)

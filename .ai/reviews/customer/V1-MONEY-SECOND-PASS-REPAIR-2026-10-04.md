@@ -1,6 +1,6 @@
 # V1 second-pass money repairs [AI]
 
-Scope: branch `v1`, starting source `576337b4`. User requested all findings repaired in line with business rules. This report supersedes the open code findings in `V1-MONEY-SECOND-PASS-2026-10-04.md`; it does not certify production deployment, bank balances or MySQL concurrency. Final verification and source commits are recorded below when complete.
+Scope: branch `v1`, starting source `576337b4`, latest reviewed source `55eb8e7d`. User requested all findings repaired in line with business rules. Backend repairs address the earlier findings, but M07 client completion remains blocked by new confirmed defects below. This report does not certify production deployment, bank balances or MySQL concurrency. Several shared-checkout commits were created concurrently by another task; this reviewer did not create or push those commits.
 
 ## Business rules preserved
 
@@ -31,4 +31,30 @@ Local SQLite tests execute production services/controllers with fake provider I/
 
 ## Verification
 
-Pending final combined run and reviewed client changes. No universal production-ready or all-paths certification is asserted.
+At source `55eb8e7d`, current isolated combined PHPUnit suite: **48 tests, 465 assertions, zero failures/errors**, 69.541 seconds. Raw runner output: `v1-money-second-pass-current.log`. Tests force SQLite in memory before framework provider boot and fake external gateway I/O. No configured application database was used.
+
+Current customer checkout/refund subset: **7 tests passed** (`checkout_quote_confirmation_test.dart`, `checkout_intent_pay_test.dart`, `refund_display_status_test.dart`). Vendor refund recommendation widgets: **7 tests passed**. Actual rider payout JavaScript upload regression: **4 checks passed**. JavaScript syntax checks pass for pickup payment and both payout adapters. PHP syntax checks pass for **64 changed non-Blade PHP files** across the reviewed commit range. `git diff --check` passed.
+
+Customer `dart analyze lib/features/checkout`: **0 errors, 6 warnings, 8 infos**, exit1. Warnings include unused imports/locals; two infos flag async context use at checkout_screen.dart328/341. This does not meet a zero-warning CI gate. Passing delivery/refund tests do not exercise the new pickup recovery HTTP path.
+
+## Current open findings — do not approve M07 or close audit
+
+### M11 — High: corrupt customer pickup quote/status interpolation
+
+`User app/lib/features/checkout/domain/repositories/checkout_repository.dart:100` embeds control character U+0002 followed by `4` where Dart `$` interpolation is required. The quote URL therefore contains literal malformed placeholder text rather than the pickup endpoint/reservation code.
+
+`User app/lib/features/checkout/screens/payment_status_screen.dart:89` has the same corruption in all three URL segments and in its Authorization bearer value. Exact byte inspection confirmed U+0002. These strings remain syntactically valid Dart, so a zero-error analyzer result does not establish request correctness. The actual quote endpoint cannot be reached with that route, and the recovery request cannot authenticate or construct its intended absolute URL.
+
+Required repair: restore ordinary interpolation in both paths and add actual repository HTTP request assertions plus pickup recovery widget tests. Cover paid/failed/cancel/restart, secure identity written before initialization, canceled quote making zero pay calls and no redirect treated as payment proof. No pickup-specific widget test file exists in the current checkout; existing delivery tests are insufficient.
+
+### M12 — Medium: known no-attempt result traps a durable pickup identity
+
+CheckoutController saves pending pickup identity before the pay request (correct for ambiguous transport). If that request is rejected before creating an attempt, for example expired/changed quote409, backend status returns payment_status=unpaid with null payment_request_id. PaymentStatusScreen handles paid, failed and expired, but not this authoritative no-attempt outcome. The saved identity survives, and PickupPaymentScreen sends every later review into status instead of requesting a fresh quote. This is a source-traced recovery dead end, not an executed widget reproduction.
+
+Required repair: distinguish proven no-attempt from ambiguous/pending/captured state. Clear or renew only an owner-matching identity after authoritative no-attempt evidence, allowing a fresh quote; retain identity for pending/unknown/reconciliation. Test pay409-before-attempt followed by unpaid status and successful fresh quote. Handle refunded terminal state explicitly too.
+
+### Work interruption and remaining gate
+
+All three implementation agents stopped with the tool error **Your workspace is out of credits**. Their completed changes were reviewed and the current available suites ran, but client completion and new pickup widget tests were not finished. Reviewer charter `.ai/agents/REVIEWER_AI.md` explicitly says "You never write implementation code"; implementation fixes cannot be substituted silently by this reviewer. Review status is **NOT APPROVED**, not all fixed. Resume implementation after workspace credits are restored, then rerun the combined backend/client gate against the final source SHA.
+
+Additional before-release checks remain the historical reconciliation/migration, real MySQL contention, signed provider test-mode events, live browser/device recovery and deployed scheduler evidence described above. No universal production-ready or all-paths certification is asserted.
