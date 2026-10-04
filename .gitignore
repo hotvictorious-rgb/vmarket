@@ -42,6 +42,7 @@ backend/**/database/database_*.sqlite
 backend/**/node_modules/
 backend/**/public/storage
 backend/**/storage/*.key
+backend/vmarket-web/storage/debugbar/
 backend/**/bootstrap/cache/*
 *.jks
 *.patch
