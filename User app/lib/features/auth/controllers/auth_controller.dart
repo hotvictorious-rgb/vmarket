@@ -1,3 +1,4 @@
+import 'package:flutter_sixvalley_ecommerce/features/auth/domain/models/firebase_reset_credential.dart';
 import 'dart:convert';
 import 'dart:developer';
 import 'package:firebase_auth/firebase_auth.dart';
@@ -504,7 +505,7 @@ class AuthController with ChangeNotifier {
 
         bool callRoute = fromPage != FromPage.verification;
 
-        await callFirebaseStoretiken(phoneNumber, vId);
+
 
         _verificationID = vId;
 
@@ -676,9 +677,15 @@ class AuthController with ChangeNotifier {
       }
 
       if (isForgetPassword) {
+        final credential = FirebaseResetCredential.fromResponse(map);
+        if (credential == null) {
+          _isPhoneNumberVerificationButtonLoading = false; notifyListeners();
+          showCustomSnackBarWidget('Unable to verify password reset. Please request a new code.', Get.context!, snackBarType: SnackBarType.error);
+          return;
+        }
         RouterHelper.getResetPasswordRoute(
-          mobileNumber: phoneNumber,
-          otp: otp,
+          mobileNumber: credential.identity,
+          otp: credential.token,
           action: RouteAction.push,
         );
       } else {

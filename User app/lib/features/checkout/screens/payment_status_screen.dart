@@ -40,6 +40,7 @@ class _PaymentStatusScreenState extends State<PaymentStatusScreen> {
   int _pollAttempts = 0;
   static const int _maxPollAttempts = 10; // 30 seconds (3s intervals)
   Map<String, dynamic>? _orderData;
+  bool _refunded = false;
   bool _requestInFlight = false;
   String? _authorizationUrl;
 
@@ -100,20 +101,9 @@ class _PaymentStatusScreenState extends State<PaymentStatusScreen> {
               _status = PaymentStatus.success;
               _orderData = data;
             });
-          } else if (data['payment_status'] == 'expired' ||
-              data['payment_status'] == 'failed' ||
-              data['payment_status'] == 'refunded') {
-            _pollTimer?.cancel();
-            await _clearResolvedPickup();
-            if (mounted) setState(() => _status = PaymentStatus.failed);
-          } else if (data['payment_status'] == 'unpaid' &&
-              data['payment_request_id'] == null) {
-            // [AI] M12: Authoritative no-attempt outcome.
-            // When payment request was rejected before creating an attempt (e.g. 409 expired/changed quote),
-            // clear the pending pickup identity so user can request a fresh quote without being trapped.
-            _pollTimer?.cancel();
-            await _clearResolvedPickup();
-            if (mounted) setState(() => _status = PaymentStatus.failed);
+          } else if (pickupPaymentMayRetry(data) || data['payment_status'] == 'refunded') {
+            _pollTimer?.cancel(); await _clearResolvedPickup();
+            if (mounted) setState(() { _refunded = data['payment_status'] == 'refunded'; _status = PaymentStatus.failed; });
           }
         }
       } else if (widget.orderGroupId != null) {
@@ -274,6 +264,7 @@ class _PaymentStatusScreenState extends State<PaymentStatusScreen> {
   }
 
   Widget _buildStatusTitle() {
+    if (_refunded) return Text('Refund completed', style: titilliumBold);
     String title;
     switch (_status) {
       case PaymentStatus.checking:
@@ -304,6 +295,7 @@ class _PaymentStatusScreenState extends State<PaymentStatusScreen> {
   }
 
   Widget _buildStatusMessage() {
+    if (_refunded) return const Text('This pickup order has been refunded. No further payment is needed.');
     String message;
     switch (_status) {
       case PaymentStatus.checking:
@@ -336,6 +328,7 @@ class _PaymentStatusScreenState extends State<PaymentStatusScreen> {
   }
 
   Widget _buildActionButtons() {
+    if (_refunded) return TextButton(onPressed: () => Navigator.of(context).pushAndRemoveUntil(MaterialPageRoute(builder: (_) => const DashBoardScreen(pageIndex: 0)), (route) => false), child: const Text('Back to home'));
     switch (_status) {
       case PaymentStatus.checking:
         return const SizedBox.shrink(); // No buttons while checking

@@ -67,7 +67,7 @@ class FakePickupCheckoutService implements CheckoutServiceInterface {
         statusCode: 200,
         data: {
           'status': true,
-          'quote_token': 'QT-TOKEN-$quoteCallCount',
+          'quote_token': 'AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA',
           'quote': {
             'currency': 'NGN',
             'merchandise_subtotal': '15000.00',

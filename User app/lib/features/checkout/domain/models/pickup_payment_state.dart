@@ -21,19 +21,19 @@ class PickupPaymentState {
 }
 
 bool pickupPaymentCompleted(Map<String, dynamic> status) =>
-  (status['status'] == null || status['status'] == true || status['status'] == 'success') &&
+  status['status'] == true &&
   status['payment_status'] == 'paid' &&
-  int.tryParse(status['order_id']?.toString() ?? '') != null &&
+  (int.tryParse(status['order_id']?.toString() ?? '') ?? 0) > 0 &&
   RegExp(r'^\d{6}$').hasMatch(status['pickup_verification_code']?.toString() ?? '');
 
 bool pickupPaymentMayRetry(Map<String, dynamic> status) =>
-  (status['status'] == null || status['status'] == true || status['status'] == 'success') &&
+  status['status'] == true &&
   (status['payment_status'] == 'expired' || status['payment_status'] == 'failed' ||
     (status['payment_status'] == 'unpaid' && status.containsKey('payment_request_id') && status['payment_request_id'] == null));
 
 bool validPickupQuote(dynamic data) {
   if (data is! Map || data['status'] != true || data['quote_token'] is! String ||
-      (data['quote_token'] as String).isEmpty || data['quote'] is! Map) {
+      !RegExp(r'^[A-Za-z0-9]{64}$').hasMatch(data['quote_token']) || data['quote'] is! Map) {
     return false;
   }
   final quote = data['quote'] as Map;

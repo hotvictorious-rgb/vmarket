@@ -6,6 +6,15 @@ import 'package:flutter_sixvalley_ecommerce/features/checkout/domain/models/pick
 import 'package:flutter_sixvalley_ecommerce/features/checkout/domain/models/pickup_payment_state.dart';
 
 void main() {
+  test('refunded HTTP status is terminal and cannot confirm pickup or retry payment', () async {
+    final client = MockClient((_) async => http.Response(jsonEncode({'status': true, 'payment_status': 'refunded', 'order_id': 99}), 200));
+    final result = await fetchPickupPaymentStatus(client, 'https://example.test', '/pickup', 'R-one', 'owner');
+    expect(result['payment_status'], 'refunded');
+    expect(pickupPaymentCompleted(result), false); expect(pickupPaymentMayRetry(result), false);
+    expect(pickupPaymentCompleted({'payment_status': 'paid', 'order_id': 99, 'pickup_verification_code': '123456'}), false);
+    expect(pickupPaymentCompleted({'status': true, 'payment_status': 'paid', 'order_id': 0, 'pickup_verification_code': '123456'}), false);
+    client.close();
+  });
   test('authenticated pickup HTTP status encodes path and supports unpaid/no-attempt recovery', () async {
     final client = MockClient((request) async {
       expect(request.method, 'GET');

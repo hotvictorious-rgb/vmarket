@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -15,7 +16,7 @@ import 'support/memory_storage.dart';
 class PickupService implements CheckoutServiceInterface {
   int payCalls = 0;
   bool durableAtCall = false;
-  @override Future<dynamic> quotePickupReservation({required String reservationCode, bool useCashback = false}) async => ApiResponseModel.withSuccess(Response(requestOptions: RequestOptions(path: '/quote'), statusCode: 200, data: {'status': true, 'quote_token': 'frozen-proof', 'quote': {'currency': 'NGN', 'merchandise_subtotal': '101.01', 'tax_total': '7.57', 'shipping_total': '0.00', 'cashback_amount': '20.00', 'total_amount': '88.58', 'expires_at': '2026-10-05'}}));
+  @override Future<dynamic> quotePickupReservation({required String reservationCode, bool useCashback = false}) async => ApiResponseModel.withSuccess(Response(requestOptions: RequestOptions(path: '/quote'), statusCode: 200, data: {'status': true, 'quote_token': 'AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA', 'quote': {'currency': 'NGN', 'merchandise_subtotal': '101.01', 'tax_total': '7.57', 'shipping_total': '0.00', 'cashback_amount': '20.00', 'total_amount': '88.58', 'expires_at': '2026-10-05'}}));
   @override Future<dynamic> payPickupReservation({String? quoteToken, required String reservationCode, bool useCashback = false, String paymentGateway = 'paystack', int ttlMinutes = 30}) async {
     payCalls++;
     final storage = di.sl<StorageService>();
@@ -38,8 +39,22 @@ void main() {
     await tester.tap(find.text('Cancel')); await tester.pumpAndSettle();
     expect(service.payCalls, 0); expect(controller.pendingPickupPayment, isNull);
   });
+
+  testWidgets('confirming pickup quote persists identity before exactly one payment call', (tester) async {
+    final deferred = DeferredPickupService();
+    final checkout = CheckoutController(checkoutServiceInterface: deferred);
+    await tester.pumpWidget(ChangeNotifierProvider.value(value: checkout, child: MaterialApp(home: PickupPaymentScreen(reservation: PickupReservationModel(reservationCode: 'R-one')))));
+    await tester.tap(find.text('Review payment')); await tester.pumpAndSettle();
+    expect(deferred.payCalls, 0);
+    await tester.tap(find.text('Confirm payment')); await tester.pump();
+    expect(deferred.payCalls, 1); expect(deferred.durableAtCall, true);
+    expect(checkout.pendingPickupPayment?.quoteToken, 'AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA');
+    await tester.pumpWidget(const SizedBox());
+    deferred.completion.complete(ApiResponseModel.withError('Uncertain network result'));
+    await tester.pump();
+  });
   test('initialization failure retains durable owner-scoped recovery identity before network call', () async {
-    await controller.payPickupReservation(quoteToken: 'frozen-proof', reservationCode: 'R-one', useCashback: true);
+    await controller.payPickupReservation(quoteToken: 'AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA', reservationCode: 'R-one', useCashback: true);
     expect(service.durableAtCall, true); expect(service.payCalls, 1);
     final restarted = CheckoutController(checkoutServiceInterface: service);
     expect(restarted.pendingPickupPayment?.reservationCode, 'R-one');
@@ -73,4 +88,14 @@ void main() {
 class MalformedPickupService extends PickupService {
   @override Future<dynamic> quotePickupReservation({required String reservationCode, bool useCashback = false}) async =>
     ApiResponseModel.withSuccess(Response(requestOptions: RequestOptions(path: '/quote'), statusCode: 200, data: {'status': true, 'quote_token': '', 'quote': {'total_amount': 12.5}}));
+}
+
+class DeferredPickupService extends PickupService {
+  final completion = Completer<ApiResponseModel>();
+  @override Future<dynamic> payPickupReservation({String? quoteToken, required String reservationCode, bool useCashback = false, String paymentGateway = 'paystack', int ttlMinutes = 30}) async {
+    payCalls++;
+    final state = PickupPaymentState.decode(di.sl<StorageService>().getString(PickupPaymentState.storageKey), 'owner');
+    durableAtCall = state?.quoteToken == quoteToken && state?.reservationCode == reservationCode;
+    return completion.future;
+  }
 }
