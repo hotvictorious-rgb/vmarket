@@ -42,13 +42,14 @@ class CustomRoleController extends BaseController
     public function index(Request|null $request, ?string $type = null): View
     {
         $employeeRolePermission = GlobalConstant::EMPLOYEE_ROLE_MODULE_PERMISSION;
+        $granularPermissions = GlobalConstant::EMPLOYEE_ROLE_GRANULAR_PERMISSIONS;
         $roles = $this->adminRoleRepo->getEmployeeRoleList(
             orderBy: ['id' => 'desc'],
             searchValue: $request['searchValue'],
             filters: ['admin_role_id' => $request['role']],
             dataLimit: 'all'
         );
-        return view('admin-views.custom-role.create', compact('roles', 'employeeRolePermission'));
+        return view('admin-views.custom-role.create', compact('roles', 'employeeRolePermission', 'granularPermissions'));
     }
 
     public function add(CustomRoleRequest $request): RedirectResponse
@@ -78,8 +79,9 @@ class CustomRoleController extends BaseController
     public function getUpdateView($id): View
     {
         $employeeRolePermission = GlobalConstant::EMPLOYEE_ROLE_MODULE_PERMISSION;
+        $granularPermissions = GlobalConstant::EMPLOYEE_ROLE_GRANULAR_PERMISSIONS;
         $role = $this->adminRoleRepo->getFirstWhere(params: ['id' => $id]);
-        return view('admin-views.custom-role.edit', compact('role', 'employeeRolePermission'));
+        return view('admin-views.custom-role.edit', compact('role', 'employeeRolePermission', 'granularPermissions'));
     }
 
     public function update(CustomRoleRequest $request): RedirectResponse

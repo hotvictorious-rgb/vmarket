@@ -417,6 +417,31 @@ class OrderController extends BaseController
         OrderStatusHistoryService     $orderStatusHistoryService,
     ): JsonResponse
     {
+        if (!in_array($request->input('order_status'), ['pending', 'confirmed', 'processing', 'out_for_delivery', 'delivered', 'canceled', 'returned', 'failed'], true)) {
+            return response()->json(['status' => 0, 'message' => 'Invalid order status.'], 422);
+        }
+        return \Illuminate\Support\Facades\DB::transaction(function () use ($request, $deliveryManTransactionService, $deliveryManWalletService, $orderStatusHistoryService) {
+        $locked = \App\Models\Order::whereKey($request->id)->lockForUpdate()->firstOrFail();
+        // [AI] Completion evidence and earned rider fees cannot be reset by generic status commands.
+        if ($locked->received_at || in_array($locked->order_status, ['delivered', 'canceled', 'returned', 'failed'], true)
+            || in_array($locked->vendor_settlement_status, ['settled', 'refunded'], true)) {
+            return response()->json(['status' => 0, 'message' => 'Terminal order status is immutable; use the refund workflow.'], 409);
+        }
+
+        // [AI] Strict state machine adjacency validation
+        $validTransitions = [
+            'pending' => ['pending', 'confirmed', 'canceled', 'failed'],
+            'confirmed' => ['confirmed', 'processing', 'canceled', 'failed'],
+            'processing' => ['processing', 'out_for_delivery', 'canceled', 'failed'],
+            'out_for_delivery' => ['out_for_delivery', 'delivered', 'returned', 'failed'],
+        ];
+
+        if (isset($validTransitions[$locked->order_status]) && !in_array($request->order_status, $validTransitions[$locked->order_status], true)) {
+            return response()->json([
+                'status' => 0,
+                'message' => "Invalid order status transition from {$locked->order_status} to {$request->order_status}."
+            ], 422);
+        }
         $order = $this->orderRepo->getFirstWhere(params: ['id' => $request['id']], relations: ['customer', 'seller.shop', 'deliveryMan']);
 
         if (!$order['is_guest'] && !isset($order['customer'])) {
@@ -519,6 +544,7 @@ class OrderController extends BaseController
             'status' => 1,
             'message' => translate('status_change_successfully'),
         ]);
+        });
     }
 
     public function updateAddress(Request $request): RedirectResponse
@@ -532,6 +558,8 @@ class OrderController extends BaseController
             'country' => $request['country'],
             'city' => $request['city'],
             'zip' => $request['zip'],
+            'lga_id' => $request['lga_id'] ?? null,
+            'state_id' => $request['state_id'] ?? null,
             'address' => $request['address'],
             'latitude' => $request['latitude'],
             'longitude' => $request['longitude'],
@@ -547,6 +575,9 @@ class OrderController extends BaseController
         $updateData = [];
         if ($request['address_type'] == 'shipping') {
             $updateData['shipping_address_data'] = json_encode($shippingAddressData);
+            if ($request->filled('lga_id')) {
+                $updateData['destination_lga_id'] = (int)$request['lga_id'];
+            }
         } elseif ($request['address_type'] == 'billing') {
             $updateData['billing_address_data'] = json_encode($billingAddressData);
         }
@@ -621,6 +652,7 @@ class OrderController extends BaseController
     {
         $userId = 0;
         $status = $this->orderRepo->updateAmountDate(request: $request, userId: $userId, userType: 'admin');
+        if (!$status) return response()->json(['status' => false, 'message' => 'Invalid or unauthorized order scheduling update.'], 403);
         $order = $this->orderRepo->getFirstWhere(params: ['id' => $request['order_id']], relations: ['customer', 'deliveryMan']);
 
         $fieldName = $request['field_name'];
@@ -648,77 +680,28 @@ class OrderController extends BaseController
 
     public function updatePaymentStatus(Request $request): JsonResponse
     {
-        // [AI] Phase A7 — Paystack Server-to-Server Payment Guard (Spec Sections 32, 57)
-        // Digital payment methods (paystack, card, etc.) must NEVER be manually overridden to 'paid'
-        // by admin staff without verified Paystack webhook confirmation.
-        // Only: (a) offline/cash payments, or (b) the Super Admin under documented exception may override.
-        // Invariant: 'paystack' is the sole configured gateway (GlobalConstant::DEFAULT_PAYMENT_GATEWAYS).
-
-        $order = $this->orderRepo->getFirstWhere(params: ['id' => $request['id']]);
-
-        if ($order['is_guest'] == '0' && !isset($order['customer'])) {
-            return response()->json([
-                'status' => 0,
-                'message' => translate('account_has_been_deleted_you_can_not_change_the_status'),
-            ]);
+        abort_unless(auth('admin')->user()?->hasExactModuleAccess('payments.manage'), 403);
+        if (!in_array($request->input('payment_status'), ['paid', 'unpaid'], true)) {
+            return response()->json(['status' => 0, 'message' => 'Invalid payment status.'], 422);
         }
-
-        if ($order['payment_method'] == 'offline_payment' && $order['payment_status'] == 'unpaid') {
-            return response()->json([
-                'status' => 0,
-                'message' => translate('Please confirm the offline payment information before editing this order.'),
-            ]);
-        }
-
-        // Digital payment guard: block arbitrary 'paid' override without Paystack verification
-        $digitalGateways = \App\Enums\GlobalConstant::DEFAULT_PAYMENT_GATEWAYS ?? ['paystack'];
-        $isDigitalPayment = in_array($order['payment_method'], $digitalGateways, true)
-            || (!in_array($order['payment_method'], ['offline_payment', 'cash_on_delivery'], true));
-
-        if ($isDigitalPayment && $request['payment_status'] === 'paid') {
-            // Only Super Admin (admin_role_id == 1 or id == 1) may override with documented reason
-            $admin = auth('admin')->user();
-            $isSuperAdmin = $admin && ($admin->id == 1 || $admin->admin_role_id == 1);
-
-            if (!$isSuperAdmin) {
-                \App\Services\AdminAuditService::log(
-                    action: 'payment_status.override_blocked',
-                    resourceType: \App\Models\Order::class,
-                    resourceId: $order['id'],
-                    beforeState: ['payment_status' => $order['payment_status'], 'payment_method' => $order['payment_method']],
-                    afterState: ['attempted_status' => $request['payment_status']],
-                    reason: 'Unauthorized attempt to manually mark digital order as paid — blocked by Paystack guard'
-                );
-                return response()->json([
-                    'status' => 0,
-                    'message' => translate('Digital payment orders cannot have their payment status manually overridden. Payment status is set automatically upon Paystack gateway verification.'),
-                ], 403);
+        return \Illuminate\Support\Facades\DB::transaction(function () use ($request) {
+            $order = \App\Models\Order::whereKey($request->id)->lockForUpdate()->firstOrFail();
+            // [AI] No admin reason, including a superadmin reason, is provider funding evidence.
+            if (!in_array($order->payment_method, ['cash_on_delivery', 'offline_payment'], true)
+                || $order->payment_status === 'paid') {
+                return response()->json(['status' => 0, 'message' => 'Verified digital funding and paid order statuses are immutable.'], 403);
             }
-
-            // Super Admin override — requires explicit reason; log immutably
-            if (!$request->filled('reason')) {
-                return response()->json([
-                    'status' => 0,
-                    'message' => translate('A documented reason is required for Super Admin payment status override on a digital payment order.'),
-                ], 422);
+            // [AI] Offline payment confirmation belongs to its dedicated evidence-reviewed endpoint.
+            if ($order->payment_method !== 'cash_on_delivery' || $order->order_status !== 'delivered') {
+                return response()->json(['status' => 0, 'message' => 'This status endpoint cannot confirm funding for this order.'], 403);
             }
-
-            \App\Services\AdminAuditService::log(
-                action: 'payment_status.super_admin_override',
-                resourceType: \App\Models\Order::class,
-                resourceId: $order['id'],
-                beforeState: ['payment_status' => $order['payment_status'], 'payment_method' => $order['payment_method']],
-                afterState: ['payment_status' => $request['payment_status']],
-                reason: $request->input('reason')
-            );
-        }
-
-        $this->orderRepo->update(id: $request['id'], data: ['payment_status' => $request['payment_status']]);
-
-        return response()->json([
-            'status' => 1,
-            'message' => translate('status_change_successfully')
-        ]);
+            $before = ['payment_status' => $order->payment_status];
+            $order->payment_status = $request->payment_status;
+            $order->save();
+            \App\Services\AdminAuditService::log('order.payment_status', \App\Models\Order::class,
+                $order->id, $before, ['payment_status' => $order->payment_status], $request->reason);
+            return response()->json(['status' => 1, 'message' => translate('status_change_successfully')]);
+        });
     }
 
     public function filterInHouseOrder(): RedirectResponse

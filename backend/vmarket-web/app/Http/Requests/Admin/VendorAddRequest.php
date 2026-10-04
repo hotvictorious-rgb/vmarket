@@ -41,6 +41,7 @@ class VendorAddRequest extends FormRequest
             'password' => 'required|min:8|regex:/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*\W)(?!.*\s).{8,}$/|same:confirm_password',
             'shop_name' => 'required',
             'shop_address' => 'required',
+            'lga_id' => 'nullable|integer|exists:lgas,id',
             'logo' => getRulesStringForImageValidation(
                 rules: ['required'],
                 skipMimes: ['.svg','.gif'],

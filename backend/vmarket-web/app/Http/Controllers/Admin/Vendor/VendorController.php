@@ -101,7 +101,8 @@ class VendorController extends BaseController
 
     public function getAddView(Request $request): View
     {
-        return view('admin-views.vendor.add-new-vendor');
+        $countries = \App\Models\Country::where('is_active', true)->get();
+        return view('admin-views.vendor.add-new-vendor', compact('countries'));
     }
 
     public function add(VendorAddRequest $request): JsonResponse

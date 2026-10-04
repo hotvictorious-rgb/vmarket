@@ -52,18 +52,25 @@
                                 </div>
                             </div>
                         </div>
+                        @php
+                            $cashbackLedgerBalance = \App\Models\CustomerCashbackLedger::where('customer_id', $customer->id)
+                                ->where('status', 'confirmed')
+                                ->sum('cashback_amount');
+                        @endphp
                         <div class="col-sm-6 col-xl-3">
-                            <div class="bg-FFF9F0 p-3 rounded-10 h-100">
-                                <h2 class="text-warning mb-2 fw-bold">
-                                    {{setCurrencySymbol(amount: usdToDefaultCurrency(amount: $customer['wallet_balance'])) }}
-                                </h2>
-                                <p class="fs-12 mb-0">{{ translate('Wallet Balance') }}</p>
-                            </div>
+                            <a href="{{ route('admin.cashback.index', ['searchValue' => $customer->phone ?? $customer->email]) }}" class="d-block text-decoration-none">
+                                <div class="bg-FFF9F0 p-3 rounded-10 h-100">
+                                    <h2 class="text-warning mb-2 fw-bold">
+                                        {{ setCurrencySymbol(amount: $cashbackLedgerBalance) }}
+                                    </h2>
+                                    <p class="fs-12 mb-0 text-dark">{{ translate('Victorious_Points_(Cashback)') }}</p>
+                                </div>
+                            </a>
                         </div>
                         <div class="col-sm-6 col-xl-3">
                             <div class="bg-F0FFF3 p-3 rounded-10 h-100">
-                                <h2 class="text-warning mb-2 fw-bold">{{$customer['loyalty_point']}}</h2>
-                                <p class="fs-12 mb-0">{{ translate('Loyalty point') }}</p>
+                                <h2 class="text-success mb-2 fw-bold">{{ $customer['loyalty_point'] ?? 0 }}</h2>
+                                <p class="fs-12 mb-0">{{ translate('Loyalty_Points') }}</p>
                             </div>
                         </div>
                     </div>

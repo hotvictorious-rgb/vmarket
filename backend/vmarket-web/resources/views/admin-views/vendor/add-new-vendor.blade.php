@@ -213,6 +213,36 @@
                                     </div>
                                 </div>
                             </div>
+
+                            {{-- [AI] Phase A10 — Canonical Geography Cascade (Country -> State -> LGA) --}}
+                            @php($countriesList = $countries ?? \App\Models\Country::where('is_active', true)->get())
+                            <div class="col-lg-4">
+                                <div class="form-group mb-0">
+                                    <label class="form-label mb-2">{{ translate('Country') }}</label>
+                                    <select class="form-control js-select2-custom" id="vendor_country_id" name="country_id">
+                                        <option value="" disabled selected>{{ translate('Select_Country') }}</option>
+                                        @foreach($countriesList as $c)
+                                            <option value="{{ $c->id }}" {{ old('country_id') == $c->id ? 'selected' : '' }}>{{ $c->name }}</option>
+                                        @endforeach
+                                    </select>
+                                </div>
+                            </div>
+                            <div class="col-lg-4">
+                                <div class="form-group mb-0">
+                                    <label class="form-label mb-2">{{ translate('State') }}</label>
+                                    <select class="form-control js-select2-custom" id="vendor_state_id" name="state_id">
+                                        <option value="" disabled selected>{{ translate('Select_State') }}</option>
+                                    </select>
+                                </div>
+                            </div>
+                            <div class="col-lg-4">
+                                <div class="form-group mb-0">
+                                    <label class="form-label mb-2">{{ translate('LGA (Fulfillment Origin)') }}</label>
+                                    <select class="form-control js-select2-custom" id="vendor_lga_id" name="lga_id">
+                                        <option value="" disabled selected>{{ translate('Select_LGA') }}</option>
+                                    </select>
+                                </div>
+                            </div>
                         </div>
                     </div>
                     <div class="row g-4">
@@ -421,4 +451,35 @@
     <script src="{{ dynamicAsset(path: 'public/assets/back-end/js/file-upload/pdf.min.js') }}"></script>
     <script src="{{ dynamicAsset(path: 'public/assets/back-end/js/file-upload/pdf-worker.min.js') }}"></script>
     <script src="{{ dynamicAsset(path: 'public/assets/back-end/js/file-upload/multiple-document-upload.js') }}"></script>
+    <script>
+        $(document).on('change', '#vendor_country_id', function () {
+            let countryId = $(this).val();
+            let stateSelect = $('#vendor_state_id');
+            let lgaSelect = $('#vendor_lga_id');
+            stateSelect.empty().append('<option value="" disabled selected>{{ translate("Select_State") }}</option>');
+            lgaSelect.empty().append('<option value="" disabled selected>{{ translate("Select_LGA") }}</option>');
+
+            if (countryId) {
+                $.get("{{ route('admin.delivery-lanes.get-states-ajax') }}", { country_id: countryId }, function (data) {
+                    $.each(data, function (index, state) {
+                        stateSelect.append('<option value="' + state.id + '">' + state.name + '</option>');
+                    });
+                });
+            }
+        });
+
+        $(document).on('change', '#vendor_state_id', function () {
+            let stateId = $(this).val();
+            let lgaSelect = $('#vendor_lga_id');
+            lgaSelect.empty().append('<option value="" disabled selected>{{ translate("Select_LGA") }}</option>');
+
+            if (stateId) {
+                $.get("{{ route('admin.delivery-lanes.get-lgas-ajax') }}", { state_id: stateId }, function (data) {
+                    $.each(data, function (index, lga) {
+                        lgaSelect.append('<option value="' + lga.id + '">' + lga.name + '</option>');
+                    });
+                });
+            }
+        });
+    </script>
 @endpush

@@ -56,6 +56,30 @@
                         @endforeach
                     </div>
 
+                    @if(isset($granularPermissions) && count($granularPermissions) > 0)
+                        <div class="d-flex gap-4 flex-wrap mb-3 mt-4 pt-3 border-top">
+                            <label for="granular" class="form-label mb-0 fw-bold">{{ translate('Granular_Operations_&_Compliance_Permissions').':'}}</label>
+                        </div>
+
+                        <div class="row gy-2 mb-4">
+                            @foreach($granularPermissions as $granularKey => $granularLabel)
+                                <div class="col-sm-6 col-lg-3">
+                                    <div class="form-group d-flex gap-2">
+                                        <input type="checkbox" name="modules[]" value="{{ $granularKey }}"
+                                               class="form-check-input checkbox--input module-permission"
+                                               id="{{ str_replace('.', '-', $granularKey) }}-permission"
+                                            {{ in_array($granularKey, (array)json_decode($role['module_access'])) ? 'checked' : '' }}>
+                                        <label class=""
+                                               style="{{ session('direction') === "rtl" ? 'margin-right: 1.25rem;' : '' }};"
+                                               for="{{ str_replace('.', '-', $granularKey) }}-permission">
+                                            {{ translate($granularLabel) }}
+                                        </label>
+                                    </div>
+                                </div>
+                            @endforeach
+                        </div>
+                    @endif
+
                     <div class="d-flex justify-content-end gap-3">
                         <button type="reset" class="btn btn-secondary">{{ translate('reset') }}</button>
                         <button type="submit" class="btn btn-primary">{{ translate('update') }}</button>

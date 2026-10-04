@@ -69,6 +69,69 @@
                 </div>
             </div>
 
+            {{-- [AI] Phase A10 — Victorious Marketplace Command Center --}}
+            <div class="card mb-3 remove-card-shadow">
+                <div class="card-body">
+                    <div class="d-flex align-items-center justify-content-between mb-3">
+                        <h4 class="d-flex align-items-center text-capitalize gap-10 mb-0">
+                            <i class="fi fi-sr-shield-check text-primary fs-20"></i>
+                            <span class="fw-bold fs-16">{{ translate('Marketplace_Command_Center') }}</span>
+                        </h4>
+                        <span class="badge badge-soft-info">{{ translate('Operational_Oversight') }}</span>
+                    </div>
+
+                    <div class="row g-2">
+                        <div class="col-12 col-md-4">
+                            <a class="d-flex gap-3 align-items-center justify-content-between p-20 bg-section rounded border"
+                               href="{{ route('admin.orders.pickup-list', ['status' => 'pending_inspection']) }}">
+                                <div class="d-flex gap-3 align-items-center">
+                                    <i class="fi fi-sr-shop text-warning fs-24"></i>
+                                    <div>
+                                        <h5 class="mb-0">{{ translate('Pending_In-Shop_Inspections') }}</h5>
+                                        <small class="text-muted">{{ translate('Pickup_Reservations_Awaiting_Verification') }}</small>
+                                    </div>
+                                </div>
+                                <span class="h3 mb-0 text-warning font-weight-bold">
+                                    {{ $data['pending_inspection_count'] ?? 0 }}
+                                </span>
+                            </a>
+                        </div>
+
+                        <div class="col-12 col-md-4">
+                            <a class="d-flex gap-3 align-items-center justify-content-between p-20 bg-section rounded border"
+                               href="{{ route('admin.audit-logs.index', ['searchValue' => 'payment_status.override_blocked']) }}">
+                                <div class="d-flex gap-3 align-items-center">
+                                    <i class="fi fi-sr-shield-exclamation text-danger fs-24"></i>
+                                    <div>
+                                        <h5 class="mb-0">{{ translate('Blocked_Payment_Overrides') }}</h5>
+                                        <small class="text-muted">{{ translate('Digital_Order_Tampering_Shield_Today') }}</small>
+                                    </div>
+                                </div>
+                                <span class="h3 mb-0 text-danger font-weight-bold">
+                                    {{ $data['blocked_payment_overrides_today'] ?? 0 }}
+                                </span>
+                            </a>
+                        </div>
+
+                        <div class="col-12 col-md-4">
+                            <a class="d-flex gap-3 align-items-center justify-content-between p-20 bg-section rounded border"
+                               href="{{ route('admin.products.stock-limit-list', ['type' => 'in_house']) }}">
+                                <div class="d-flex gap-3 align-items-center">
+                                    <i class="fi fi-sr-box-alt text-info fs-24"></i>
+                                    <div>
+                                        <h5 class="mb-0">{{ translate('Low_Stock_In-House_Alerts') }}</h5>
+                                        <small class="text-muted">{{ translate('Products_At_Or_Below_Reorder_Qty') }}</small>
+                                    </div>
+                                </div>
+                                <span class="h3 mb-0 text-info font-weight-bold">
+                                    {{ $data['low_stock_inhouse_count'] ?? 0 }}
+                                </span>
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
             <div class="row g-3">
                 <div class="col-lg-8" id="order-statistics-div">
                     @include('admin-views.system.partials.order-statistics')

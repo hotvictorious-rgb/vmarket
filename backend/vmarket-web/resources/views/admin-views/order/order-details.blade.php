@@ -967,17 +967,28 @@
                             <label
                                 class="form-label fw-bold mb-2">{{translate('change_order_status')}}</label>
                             <div class="select-wrapper">
+                                @php
+                                    $terminalStatuses = ['delivered', 'canceled', 'returned', 'failed'];
+                                    $isTerminalStatus = in_array($order->order_status, $terminalStatuses, true);
+                                    $validTransitionsMap = [
+                                        'pending' => ['pending', 'confirmed', 'canceled', 'failed'],
+                                        'confirmed' => ['confirmed', 'processing', 'canceled', 'failed'],
+                                        'processing' => ['processing', 'out_for_delivery', 'canceled', 'failed'],
+                                        'out_for_delivery' => ['out_for_delivery', 'delivered', 'returned', 'failed'],
+                                    ];
+                                    $allowedNext = $validTransitionsMap[$order->order_status] ?? [];
+                                @endphp
                                 <select name="order_status" id="order_status"
-                                        class="status form-select" data-id="{{$order['id']}}">
+                                        class="status form-select" data-id="{{$order['id']}}" {{ $isTerminalStatus ? 'disabled' : '' }}>
 
                                     <option
-                                        value="pending" {{$order->order_status == 'pending'?'selected':''}} > {{translate('pending')}}</option>
+                                        value="pending" {{$order->order_status == 'pending'?'selected':''}} {{ !in_array('pending', $allowedNext, true) ? 'disabled' : '' }}> {{translate('pending')}}</option>
                                     <option
-                                        value="confirmed" {{$order->order_status == 'confirmed'?'selected':''}} > {{translate('confirmed')}}</option>
+                                        value="confirmed" {{$order->order_status == 'confirmed'?'selected':''}} {{ !in_array('confirmed', $allowedNext, true) ? 'disabled' : '' }}> {{translate('confirmed')}}</option>
                                     <option
-                                        value="processing" {{$order->order_status == 'processing'?'selected':''}} >{{translate('packaging')}} </option>
+                                        value="processing" {{$order->order_status == 'processing'?'selected':''}} {{ !in_array('processing', $allowedNext, true) ? 'disabled' : '' }}>{{translate('packaging')}} </option>
                                     <option class="text-capitalize"
-                                            value="out_for_delivery" {{$order->order_status == 'out_for_delivery'?'selected':''}} >{{translate('out_for_delivery')}} </option>
+                                            value="out_for_delivery" {{$order->order_status == 'out_for_delivery'?'selected':''}} {{ !in_array('out_for_delivery', $allowedNext, true) ? 'disabled' : '' }}>{{translate('out_for_delivery')}} </option>
                                     @php($isMarketplace = \App\Utils\OrderManager::isVictoriousMarketplaceOrder($order))
                                     @if($isMarketplace)
                                         <option
@@ -986,15 +997,20 @@
                                         </option>
                                     @else
                                         <option
-                                            value="delivered" {{$order->order_status == 'delivered'?'selected':''}} >{{translate('delivered')}} </option>
+                                            value="delivered" {{$order->order_status == 'delivered'?'selected':''}} {{ !in_array('delivered', $allowedNext, true) ? 'disabled' : '' }}>{{translate('delivered')}} </option>
                                     @endif
                                     <option
-                                        value="returned" {{$order->order_status == 'returned'?'selected':''}} > {{translate('returned')}}</option>
+                                        value="returned" {{$order->order_status == 'returned'?'selected':''}} {{ !in_array('returned', $allowedNext, true) ? 'disabled' : '' }}> {{translate('returned')}}</option>
                                     <option
-                                        value="failed" {{$order->order_status == 'failed'?'selected':''}} >{{translate('failed_to_Deliver')}} </option>
+                                        value="failed" {{$order->order_status == 'failed'?'selected':''}} {{ !in_array('failed', $allowedNext, true) ? 'disabled' : '' }}>{{translate('failed_to_Deliver')}} </option>
                                     <option
-                                        value="canceled" {{$order->order_status == 'canceled'?'selected':''}} >{{translate('canceled')}} </option>
+                                        value="canceled" {{$order->order_status == 'canceled'?'selected':''}} {{ !in_array('canceled', $allowedNext, true) ? 'disabled' : '' }}>{{translate('canceled')}} </option>
                                 </select>
+                                @if($isTerminalStatus)
+                                    <small class="text-muted d-block mt-1">
+                                        <i class="fi fi-sr-lock"></i> {{ translate('Terminal_status_is_immutable') }}
+                                    </small>
+                                @endif
                             </div>
                         </div>
                         <div

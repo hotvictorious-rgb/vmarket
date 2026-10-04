@@ -1250,7 +1250,6 @@ enum GlobalConstant
 
     const EMPLOYEE_ROLE_MODULE_PERMISSION = [
         'dashboard' => 'dashboard',
-        'pos_management' => 'pos_management',
         'order_management' => 'order_management',
         'product_management' => 'product_management',
         'promotion_management' => 'promotion_management',

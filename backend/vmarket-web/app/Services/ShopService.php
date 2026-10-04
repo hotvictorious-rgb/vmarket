@@ -81,6 +81,7 @@ class ShopService
             'slug' => Str::slug($request['shop_name'], '-') . '-' . Str::random(6),
             'address' => $request['shop_address'],
             'contact' => $request['phone'],
+            'lga_id' => $request['lga_id'] ?? null,
             'image' => $this->upload(dir: 'shop/', format: 'webp', image: $request->file('logo')),
             'image_storage_type' => $request->has('logo') ? $storage : null,
             'banner' => $this->upload(dir: 'shop/banner/', format: 'webp', image: $request->file('banner')),

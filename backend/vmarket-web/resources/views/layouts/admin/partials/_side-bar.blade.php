@@ -743,6 +743,15 @@
                                 </span>
                             </a>
                         </li>
+                        <li>
+                            <a class="nav-link {{ Request::is('admin/cashback*') ? 'active' : '' }}"
+                               href="{{ route('admin.cashback.index') }}"
+                               title="{{ translate('victorious_Points_Ledger') }}">
+                                <span class="text-truncate">
+                                    {{ translate('Victorious_Points_Ledger') }}
+                                </span>
+                            </a>
+                        </li>
                     </ul>
                 </li>
 
@@ -1159,6 +1168,17 @@
                     <small class="nav-subtitle" title="">
                         {{ translate('System_Settings') }}
                     </small>
+                </li>
+
+                <li>
+                    <a class="nav-link {{ Request::is('admin/audit-logs*') ? 'active' : '' }}"
+                       href="{{ route('admin.audit-logs.index') }}"
+                       title="{{ translate('admin_audit_logs') }}">
+                        <i class="fi fi-sr-shield-check"></i>
+                        <span class="aside-mini-hidden-element text-truncate flex-grow-1">
+                            {{ translate('Audit_Logs') }}
+                        </span>
+                    </a>
                 </li>
 
                 <li>
