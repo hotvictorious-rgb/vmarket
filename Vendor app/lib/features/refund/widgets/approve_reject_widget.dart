@@ -29,6 +29,14 @@ class _ApprovedAndRejectWidgetState extends State<ApprovedAndRejectWidget> {
   Widget build(BuildContext context) {
     return Consumer<RefundController>(
         builder: (context,refundReq,_) {
+          final requests = refundReq.refundDetailsModel?.refundRequest;
+          final currentStatus = requests != null && requests.isNotEmpty
+              ? requests.first.status : widget.refundModel?.status;
+          final adminDecision = requests != null && requests.isNotEmpty && requests.first.changeBy == 'admin';
+          if (adminDecision || (currentStatus != 'pending' && currentStatus != 'approved' && currentStatus != 'rejected')) {
+            return const Padding(padding: EdgeInsets.all(16),
+              child: Text('Refund decisions and payment completion are handled by the administrator.'));
+          }
           if(refundReq.refundDetailsModel != null){
             List<RefundStatus>? status =[];
 
@@ -60,7 +68,7 @@ class _ApprovedAndRejectWidgetState extends State<ApprovedAndRejectWidget> {
                   child: CustomButtonWidget(
                     buttonHeight: 50,
                     borderRadius: Dimensions.paddingSizeSmall,
-                    btnTxt: getTranslated('reject', context),
+                    btnTxt: 'Recommend rejection',
                     fontColor: Colors.red,
                     backgroundColor: Theme.of(context).colorScheme.error.withValues(alpha: 0.125),
                     onTap: (){
@@ -70,7 +78,7 @@ class _ApprovedAndRejectWidgetState extends State<ApprovedAndRejectWidget> {
                        //  Navigator.pop(context);
                         showDialog(context: context, builder: (BuildContext context){
                           return ConfirmationDialogWidget(icon:  Images.cross,
-                              description: getTranslated('are_you_sure_want_to_reject', context),
+                              description: 'Send a rejection recommendation? The administrator reviews the dispute and controls refund payment.',
                               note: noteController,
                               refund: true,
                               onYesPressed: () {
@@ -103,7 +111,7 @@ class _ApprovedAndRejectWidgetState extends State<ApprovedAndRejectWidget> {
                     child: CustomButtonWidget(
                       buttonHeight: 50,
                       borderRadius: Dimensions.paddingSizeSmall,
-                      btnTxt: getTranslated('approve', context),
+                      btnTxt: 'Recommend approval',
                       backgroundColor: Theme.of(context).primaryColor,
                       onTap: (){
                         if(widget.refundModel!.customer == null){
@@ -113,7 +121,7 @@ class _ApprovedAndRejectWidgetState extends State<ApprovedAndRejectWidget> {
                           showDialog(context: context,barrierDismissible: false, builder: (BuildContext context){
                             return ConfirmationDialogWidget(
                               icon:  Images.okIcon,
-                              description: getTranslated('are_you_sure_want_to_approve', context),
+                              description: 'Send an approval recommendation? The administrator controls refund payment.',
                               note: noteController,
                               refund: true,
                               onYesPressed: () {
