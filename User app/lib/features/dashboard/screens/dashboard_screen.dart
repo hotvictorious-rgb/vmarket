@@ -17,6 +17,8 @@ import 'package:flutter_sixvalley_ecommerce/features/more/screens/more_screen_vi
 import 'package:flutter_sixvalley_ecommerce/features/order/controllers/order_controller.dart';
 import 'package:flutter_sixvalley_ecommerce/features/order/screens/order_screen.dart';
 import 'package:provider/provider.dart';
+import 'package:flutter_sixvalley_ecommerce/features/checkout/controllers/checkout_controller.dart';
+import 'package:flutter_sixvalley_ecommerce/features/checkout/screens/payment_status_screen.dart';
 
 class DashBoardScreen extends StatefulWidget {
   final int? pageIndex;
@@ -102,10 +104,39 @@ class DashBoardScreenState extends State<DashBoardScreen> {
         },
         child: Scaffold(
             // [AI] Use IndexedStack to preserve bottom navigation tabs in memory for instant tab switching
-            body: IndexedStack(
-              index: _pageIndex,
-              children: _screens.map((screen) => screen.screen).toList(),
-            ),
+            body: Stack(children: [
+              IndexedStack(
+                index: _pageIndex,
+                children: _screens.map((screen) => screen.screen).toList(),
+              ),
+              if (Provider.of<CheckoutController>(context)
+                      .pendingDeliveryPayment
+                      ?.orderGroupId !=
+                  null && Provider.of<CheckoutController>(context).pendingDeliveryPayment?.initializationStarted == true)
+                SafeArea(
+                    child: Align(
+                        alignment: Alignment.topCenter,
+                        child: Material(
+                          color: Theme.of(context).colorScheme.primaryContainer,
+                          child: ListTile(
+                              title: const Text(
+                                  'A delivery payment needs verification'),
+                              trailing: TextButton(
+                                  child: const Text('Check payment'),
+                                  onPressed: () async {
+                                    final group =
+                                        Provider.of<CheckoutController>(context,
+                                                listen: false)
+                                            .pendingDeliveryPayment
+                                            ?.orderGroupId;
+                                    await Navigator.of(context).push(
+                                        MaterialPageRoute(
+                                            builder: (_) => PaymentStatusScreen(
+                                                orderGroupId: group)));
+                                    if (mounted) setState(() {});
+                                  })),
+                        ))),
+            ]),
             bottomNavigationBar: Container(
                 height: 68,
                 decoration: BoxDecoration(
@@ -155,4 +186,3 @@ class DashBoardScreenState extends State<DashBoardScreen> {
     return list;
   }
 }
-

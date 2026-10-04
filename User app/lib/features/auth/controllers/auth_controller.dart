@@ -31,7 +31,7 @@ import 'package:sign_in_with_apple/sign_in_with_apple.dart';
 
 class AuthController with ChangeNotifier {
   final AuthServiceInterface authServiceInterface;
-  AuthController( {required this.authServiceInterface});
+  AuthController({required this.authServiceInterface});
 
   bool _isLoading = false;
   bool? _isRemember = false;
@@ -51,12 +51,12 @@ class AuthController with ChangeNotifier {
   String? _loginErrorMessage = '';
   String? get loginErrorMessage => _loginErrorMessage;
 
-  set setIsLoading(bool value)=> _isLoading = value;
-  set setIsPhoneVerificationButttonLoading(bool value) => _isPhoneNumberVerificationButtonLoading = value;
+  set setIsLoading(bool value) => _isLoading = value;
+  set setIsPhoneVerificationButttonLoading(bool value) =>
+      _isPhoneNumberVerificationButtonLoading = value;
 
   bool _resendButtonLoading = false;
   bool get resendButtonLoading => _resendButtonLoading;
-
 
   bool _sendToEmail = false;
   bool get sendToEmail => _sendToEmail;
@@ -69,16 +69,15 @@ class AuthController with ChangeNotifier {
   set setForgetPasswordLoading(bool value) => _isForgotPasswordLoading = value;
 
   String countryDialCode = '+880';
-  void setCountryCode( String countryCode, {bool notify = true}){
-    countryDialCode  = countryCode;
-    if(notify){
+  void setCountryCode(String countryCode, {bool notify = true}) {
+    countryDialCode = countryCode;
+    if (notify) {
       notifyListeners();
     }
   }
 
   String? _verificationID = '';
   String? get verificationID => _verificationID;
-
 
   bool get isLoading => _isLoading;
   bool? get isRemember => _isRemember;
@@ -88,65 +87,93 @@ class AuthController with ChangeNotifier {
     notifyListeners();
   }
 
-  Future<void> socialLogin(SocialLoginModel socialLogin, Function callback, String? fromPage, VoidCallback? onLoginSuccess) async {
+  Future<void> socialLogin(SocialLoginModel socialLogin, Function callback,
+      String? fromPage, VoidCallback? onLoginSuccess) async {
     _isLoading = true;
     notifyListeners();
 
-    ApiResponseModel apiResponse = await authServiceInterface.socialLogin(socialLogin.toJson());
-    if (apiResponse.response != null && apiResponse.response?.statusCode == 200) {
-      final CustomerVerification? customerVerification = Provider.of<SplashController>(Get.context!, listen: false).configModel!.customerVerification;
+    ApiResponseModel apiResponse =
+        await authServiceInterface.socialLogin(socialLogin.toJson());
+    if (apiResponse.response != null &&
+        apiResponse.response?.statusCode == 200) {
+      final CustomerVerification? customerVerification =
+          Provider.of<SplashController>(Get.context!, listen: false)
+              .configModel!
+              .customerVerification;
 
       _isLoading = false;
       Map map = apiResponse.response!.data;
 
-
-      String? message = '', token = '', temporaryToken= '', email = '', phone = '';
+      String? message = '',
+          token = '',
+          temporaryToken = '',
+          email = '',
+          phone = '';
       ProfileModel? profileModel;
       bool isPhoneVerified = false;
       bool isMailVerified = false;
 
-
-      try{
+      try {
         message = map['error_message'];
         token = map['token'];
         temporaryToken = map['temp_token'];
-        if(map["user"] != null) {
+        if (map["user"] != null) {
           email = map["user"]["email"];
           phone = map["user"]["phone"];
           isPhoneVerified = map["user"]["is_phone_verified"] ?? false;
           isMailVerified = map["user"]["is_email_verified"] ?? false;
         }
-      }catch(e){
+      } catch (e) {
         message = null;
         token = null;
         temporaryToken = null;
       }
 
-      if(token != null && token.isNotEmpty) {
+      if (token != null && token.isNotEmpty) {
         await authServiceInterface.saveUserToken(token);
         authServiceInterface.updateDeviceToken().catchError((e) {
           log('Error updating device token: $e');
         });
-        setCurrentLanguage(Provider.of<LocalizationController>(Get.context!, listen: false).getCurrentLanguage() ?? 'en');
-        callback(true, token, null, null, message, socialLogin.medium, null, socialLogin.email, socialLogin.name, fromPage, onLoginSuccess);
+        setCurrentLanguage(
+            Provider.of<LocalizationController>(Get.context!, listen: false)
+                    .getCurrentLanguage() ??
+                'en');
+        callback(true, token, null, null, message, socialLogin.medium, null,
+            socialLogin.email, socialLogin.name, fromPage, onLoginSuccess);
       }
 
-      if(temporaryToken != null && temporaryToken.isNotEmpty) {
-        callback(true, null, temporaryToken, null, message, socialLogin.medium, null, socialLogin.email, socialLogin.name, fromPage, onLoginSuccess);
+      if (temporaryToken != null && temporaryToken.isNotEmpty) {
+        callback(
+            true,
+            null,
+            temporaryToken,
+            null,
+            message,
+            socialLogin.medium,
+            null,
+            socialLogin.email,
+            socialLogin.name,
+            fromPage,
+            onLoginSuccess);
       }
 
-      if(phone != null && phone.isNotEmpty && !isPhoneVerified && (customerVerification?.phone == 1 || customerVerification?.firebase == 1)) {
-        callback(true, null, null, null, message, socialLogin.medium, phone, socialLogin.email, socialLogin.name, fromPage, onLoginSuccess);
+      if (phone != null &&
+          phone.isNotEmpty &&
+          !isPhoneVerified &&
+          (customerVerification?.phone == 1 ||
+              customerVerification?.firebase == 1)) {
+        callback(true, null, null, null, message, socialLogin.medium, phone,
+            socialLogin.email, socialLogin.name, fromPage, onLoginSuccess);
       }
-
     } else {
-     ApiChecker.checkApi(apiResponse);
+      ApiChecker.checkApi(apiResponse);
     }
     _isLoading = false;
     notifyListeners();
   }
 
-  Future<String> onConfigurationAppleEmail(AuthorizationCredentialAppleID credential) async {
+  Future<String> onConfigurationAppleEmail(
+      AuthorizationCredentialAppleID credential) async {
     final email = credential.email;
 
     if (email != null && email.isNotEmpty && email != 'null') {
@@ -157,75 +184,75 @@ class AuthController with ChangeNotifier {
     return authServiceInterface.getAppleLoginEmail();
   }
 
-
-  Future registration(RegisterModel register, Function callback, ConfigModel config, String? fromPage, VoidCallback? onLoginSuccess) async {
+  Future registration(
+      RegisterModel register,
+      Function callback,
+      ConfigModel config,
+      String? fromPage,
+      VoidCallback? onLoginSuccess) async {
     _isLoading = true;
     notifyListeners();
-    ApiResponseModel apiResponse = await authServiceInterface.registration(register.toJson());
+    ApiResponseModel apiResponse =
+        await authServiceInterface.registration(register.toJson());
 
     _isLoading = false;
-    if (apiResponse.response != null && apiResponse.response!.statusCode == 200) {
+    if (apiResponse.response != null &&
+        apiResponse.response!.statusCode == 200) {
       Map map = apiResponse.response!.data;
       String? tempToken = '', token = '', message = '';
 
       if (map.containsKey('temporary_token')) {
         tempToken = map["temporary_token"];
-      } else if(map.containsKey('token')) {
+      } else if (map.containsKey('token')) {
         token = map["token"];
       }
       message = map["message"];
 
-
-      if(token != null && token.isNotEmpty) {
+      if (token != null && token.isNotEmpty) {
         await authServiceInterface.saveUserToken(token);
         authServiceInterface.updateDeviceToken().catchError((e) {
           log('Error updating device token: $e');
         });
         navigateToHome(fromPage, onLoginSuccess);
-
       } else if (tempToken != null && tempToken.isNotEmpty) {
         String type;
-        if(config.customerVerification?.firebase == 1){
+        if (config.customerVerification?.firebase == 1) {
           type = 'phone';
-        }else if(config.customerVerification?.phone == 1){
+        } else if (config.customerVerification?.phone == 1) {
           type = 'phone';
-        }else{
+        } else {
           type = 'email';
-
         }
         sendVerificationCode(
-          config,
-          SignUpModel(email: register.email, phone: register.phone),
-          type: type, fromPage: FromPage.login
-        );
+            config, SignUpModel(email: register.email, phone: register.phone),
+            type: type, fromPage: FromPage.login);
       }
       notifyListeners();
-    }else{
+    } else {
       ApiChecker.checkApi(apiResponse);
     }
     notifyListeners();
   }
 
-
   Future logOut() async {
     ApiResponseModel apiResponse = await authServiceInterface.logout();
-    if (apiResponse.response != null && apiResponse.response!.statusCode == 200) {
-
-    }
+    if (apiResponse.response != null &&
+        apiResponse.response!.statusCode == 200) {}
   }
 
   Future<void> setCurrentLanguage(String currentLanguage) async {
-    ApiResponseModel apiResponse = await authServiceInterface.setLanguageCode(currentLanguage);
-    if (apiResponse.response != null && apiResponse.response!.statusCode == 200) {
-
-    }else{
+    ApiResponseModel apiResponse =
+        await authServiceInterface.setLanguageCode(currentLanguage);
+    if (apiResponse.response != null &&
+        apiResponse.response!.statusCode == 200) {
+    } else {
       ApiChecker.checkApi(apiResponse);
     }
   }
 
-
-
-  Future<ResponseModel> login (String? userInput, String? password, String? type, FromPage? fromPage, {String? toNavigateScreen, VoidCallback? onLoginSuccess}) async {
+  Future<ResponseModel> login(
+      String? userInput, String? password, String? type, FromPage? fromPage,
+      {String? toNavigateScreen, VoidCallback? onLoginSuccess}) async {
     _isLoading = true;
     _loginErrorMessage = '';
     notifyListeners();
@@ -233,13 +260,16 @@ class AuthController with ChangeNotifier {
     String? type0 = type;
     String? userInputData = userInput;
 
-    ApiResponseModel apiResponse = await authServiceInterface.login(userInput, password, type0);
-
+    ApiResponseModel apiResponse =
+        await authServiceInterface.login(userInput, password, type0);
 
     ResponseModel responseModel;
     _isLoading = false;
-    if (apiResponse.response != null && apiResponse.response!.statusCode == 200) {
-      final ConfigModel config = Provider.of<SplashController>(Get.context!, listen: false).configModel!;
+    if (apiResponse.response != null &&
+        apiResponse.response!.statusCode == 200) {
+      final ConfigModel config =
+          Provider.of<SplashController>(Get.context!, listen: false)
+              .configModel!;
       clearGuestId();
       Map map = apiResponse.response!.data;
 
@@ -247,7 +277,7 @@ class AuthController with ChangeNotifier {
       bool isPhoneVerified = false;
       bool isMailVerified = false;
 
-      try{
+      try {
         message = map["message"];
         token = map["token"];
         temporaryToken = map["temporary_token"];
@@ -255,35 +285,49 @@ class AuthController with ChangeNotifier {
         phone = map["phone"];
         isPhoneVerified = map["is_phone_verified"] ?? false;
         isMailVerified = map["is_email_verified"] ?? false;
-      }catch(e){
+      } catch (e) {
         message = null;
         token = null;
         temporaryToken = null;
       }
 
-      if(isPhoneVerified && !isMailVerified && config.customerVerification?.phone == 0 && config.customerVerification?.email == 1 && email != null) {
+      if (isPhoneVerified &&
+          !isMailVerified &&
+          config.customerVerification?.phone == 0 &&
+          config.customerVerification?.email == 1 &&
+          email != null) {
         type0 = 'email';
         userInputData = email;
       }
 
-      if(!isPhoneVerified && isMailVerified && config.customerVerification?.phone == 1 && config.customerVerification?.email == 0 && phone != null) {
+      if (!isPhoneVerified &&
+          isMailVerified &&
+          config.customerVerification?.phone == 1 &&
+          config.customerVerification?.email == 0 &&
+          phone != null) {
         type0 = 'phone';
         userInputData = phone;
       }
 
-
-      if(!isPhoneVerified && !isMailVerified && config.customerVerification?.phone == 0 && config.customerVerification?.email == 1 && email != null) {
+      if (!isPhoneVerified &&
+          !isMailVerified &&
+          config.customerVerification?.phone == 0 &&
+          config.customerVerification?.email == 1 &&
+          email != null) {
         type0 = 'email';
         userInputData = email;
       }
 
-      if(!isPhoneVerified && !isMailVerified && config.customerVerification?.phone == 1 && config.customerVerification?.email == 0 && phone != null) {
+      if (!isPhoneVerified &&
+          !isMailVerified &&
+          config.customerVerification?.phone == 1 &&
+          config.customerVerification?.email == 0 &&
+          phone != null) {
         type0 = 'phone';
         userInputData = phone;
       }
 
-
-      if(token != null && token.isNotEmpty) {
+      if (token != null && token.isNotEmpty) {
         await authServiceInterface.saveUserToken(token);
         // Non-blocking asynchronous device token sync to prevent network timeouts from hanging the login screen
         authServiceInterface.updateDeviceToken().catchError((e) {
@@ -291,10 +335,13 @@ class AuthController with ChangeNotifier {
         });
       } else if (temporaryToken != null) {
         await sendVerificationCode(
-          Provider.of<SplashController>(Get.context!, listen: false).configModel!,
-          SignUpModel(email: userInputData, phone: userInputData), type: type0, fromPage: fromPage,
-          toNavigateScreen: toNavigateScreen, onLoginSuccess: onLoginSuccess
-        );
+            Provider.of<SplashController>(Get.context!, listen: false)
+                .configModel!,
+            SignUpModel(email: userInputData, phone: userInputData),
+            type: type0,
+            fromPage: fromPage,
+            toNavigateScreen: toNavigateScreen,
+            onLoginSuccess: onLoginSuccess);
       }
 
       responseModel = ResponseModel('verification', token != null);
@@ -311,28 +358,32 @@ class AuthController with ChangeNotifier {
     return responseModel;
   }
 
-
   Future<void> updateToken(BuildContext context) async {
-    ApiResponseModel apiResponse = await authServiceInterface.updateDeviceToken();
-    if (apiResponse.response != null && apiResponse.response!.statusCode == 200) {
+    ApiResponseModel apiResponse =
+        await authServiceInterface.updateDeviceToken();
+    if (apiResponse.response != null &&
+        apiResponse.response!.statusCode == 200) {
     } else {
       ApiChecker.checkApi(apiResponse);
     }
   }
 
-
-  Future<ApiResponseModel> sendOtpToEmail(String email, String temporaryToken, {bool resendOtp = false}) async {
+  Future<ApiResponseModel> sendOtpToEmail(String email, String temporaryToken,
+      {bool resendOtp = false}) async {
     _isPhoneNumberVerificationButtonLoading = true;
     notifyListeners();
     ApiResponseModel apiResponse;
-    if(resendOtp){
-      apiResponse = await authServiceInterface.resendEmailOtp(email,temporaryToken);
-    }else{
-      apiResponse = await authServiceInterface.sendOtpToEmail(email,temporaryToken);
+    if (resendOtp) {
+      apiResponse =
+          await authServiceInterface.resendEmailOtp(email, temporaryToken);
+    } else {
+      apiResponse =
+          await authServiceInterface.sendOtpToEmail(email, temporaryToken);
     }
     _isPhoneNumberVerificationButtonLoading = false;
     notifyListeners();
-    if (apiResponse.response != null && apiResponse.response!.statusCode == 200) {
+    if (apiResponse.response != null &&
+        apiResponse.response!.statusCode == 200) {
       resendTime = (apiResponse.response!.data["resend_time"]);
     } else {
       ApiChecker.checkApi(apiResponse);
@@ -341,53 +392,66 @@ class AuthController with ChangeNotifier {
     return apiResponse;
   }
 
-  Future<void> sendVerificationCode(ConfigModel config, SignUpModel signUpModel, {String? type, FromPage? fromPage, bool isResend = false, String? toNavigateScreen, VoidCallback? onLoginSuccess}) async {
+  Future<void> sendVerificationCode(ConfigModel config, SignUpModel signUpModel,
+      {String? type,
+      FromPage? fromPage,
+      bool isResend = false,
+      String? toNavigateScreen,
+      VoidCallback? onLoginSuccess}) async {
     _resendButtonLoading = true;
     _isPhoneNumberVerificationButtonLoading = false;
     notifyListeners();
-    if(config.customerVerification!.status == 1) {
-      if(type == 'email' && config.customerVerification?.email == 1){
-        await checkEmail(signUpModel.email!, fromPage, toNavigateScreen: toNavigateScreen, onLoginSuccess: onLoginSuccess);
-      }else if(type == 'phone' && config.customerVerification?.firebase == 1){
-        await firebaseVerifyPhoneNumber(signUpModel.phone!, fromPage!, isResend: isResend, toNavigateScreen: toNavigateScreen, onLoginSuccess: onLoginSuccess);
-      }else if(type == 'phone' &&  config.customerVerification?.phone == 1){
-        await checkPhone(signUpModel.phone!, fromPage, toNavigateScreen: toNavigateScreen, onLoginSuccess: onLoginSuccess);
+    if (config.customerVerification!.status == 1) {
+      if (type == 'email' && config.customerVerification?.email == 1) {
+        await checkEmail(signUpModel.email!, fromPage,
+            toNavigateScreen: toNavigateScreen, onLoginSuccess: onLoginSuccess);
+      } else if (type == 'phone' &&
+          config.customerVerification?.firebase == 1) {
+        await firebaseVerifyPhoneNumber(signUpModel.phone!, fromPage!,
+            isResend: isResend,
+            toNavigateScreen: toNavigateScreen,
+            onLoginSuccess: onLoginSuccess);
+      } else if (type == 'phone' && config.customerVerification?.phone == 1) {
+        await checkPhone(signUpModel.phone!, fromPage,
+            toNavigateScreen: toNavigateScreen, onLoginSuccess: onLoginSuccess);
       }
     }
     _resendButtonLoading = false;
     notifyListeners();
   }
 
-  Future<ResponseModel> checkEmail(String email, FromPage? fromPage, {String? toNavigateScreen, VoidCallback? onLoginSuccess}) async {
+  Future<ResponseModel> checkEmail(String email, FromPage? fromPage,
+      {String? toNavigateScreen, VoidCallback? onLoginSuccess}) async {
     _isPhoneNumberVerificationButtonLoading = true;
     _resendButtonLoading = true;
 
     _verificationMsg = '';
     notifyListeners();
-    ApiResponseModel apiResponse = await  authServiceInterface.checkEmail(email);
+    ApiResponseModel apiResponse = await authServiceInterface.checkEmail(email);
 
     ResponseModel responseModel;
 
-
-    if (apiResponse.response != null && apiResponse.response!.statusCode == 200) {
+    if (apiResponse.response != null &&
+        apiResponse.response!.statusCode == 200) {
       responseModel = ResponseModel(apiResponse.response!.data["token"], true);
 
       bool callRoute = fromPage != FromPage.verification;
 
-      if(fromPage != null && (fromPage == FromPage.profile || fromPage == FromPage.login)) {
-        if(callRoute){
+      if (fromPage != null &&
+          (fromPage == FromPage.profile || fromPage == FromPage.login)) {
+        if (callRoute) {
           RouterHelper.getVerificationRoute(
-            userInput: email,
-            fromPage: fromPage,
-            action: RouteAction.push,
-            toNavigateScreen: toNavigateScreen,
-            onLoginSuccess: onLoginSuccess
-          );
+              userInput: email,
+              fromPage: fromPage,
+              action: RouteAction.push,
+              toNavigateScreen: toNavigateScreen,
+              onLoginSuccess: onLoginSuccess);
         }
       }
     } else {
       _verificationMsg = ApiChecker.getError(apiResponse).errors![0].message;
-      showCustomSnackBarWidget(_verificationMsg, Get.context!, snackBarType: SnackBarType.error);
+      showCustomSnackBarWidget(_verificationMsg, Get.context!,
+          snackBarType: SnackBarType.error);
       responseModel = ResponseModel(_verificationMsg, false);
     }
     _isPhoneNumberVerificationButtonLoading = false;
@@ -397,8 +461,12 @@ class AuthController with ChangeNotifier {
     return responseModel;
   }
 
-  Future<void> firebaseVerifyPhoneNumber(String phoneNumber, FromPage fromPage, {bool isForgetPassword = false, bool isResend = false, String? toNavigateScreen, VoidCallback? onLoginSuccess}) async {
-    if(!isResend) {
+  Future<void> firebaseVerifyPhoneNumber(String phoneNumber, FromPage fromPage,
+      {bool isForgetPassword = false,
+      bool isResend = false,
+      String? toNavigateScreen,
+      VoidCallback? onLoginSuccess}) async {
+    if (!isResend) {
       _isPhoneNumberVerificationButtonLoading = true;
     }
     _resendButtonLoading = true;
@@ -416,12 +484,18 @@ class AuthController with ChangeNotifier {
 
         // Navigator.of(Get.context!).pop();
 
-        if(e.code == 'invalid-phone-number') {
-          showCustomSnackBarWidget(getTranslated('please_submit_a_valid_phone_number', Get.context!), Get.context!, snackBarType: SnackBarType.warning);
-        }else{
-          showCustomSnackBarWidget(getTranslated('${e.message}'.replaceAll('_', ' ').toCapitalized(),  Get.context!), Get.context!, snackBarType: SnackBarType.warning);
+        if (e.code == 'invalid-phone-number') {
+          showCustomSnackBarWidget(
+              getTranslated('please_submit_a_valid_phone_number', Get.context!),
+              Get.context!,
+              snackBarType: SnackBarType.warning);
+        } else {
+          showCustomSnackBarWidget(
+              getTranslated('${e.message}'.replaceAll('_', ' ').toCapitalized(),
+                  Get.context!),
+              Get.context!,
+              snackBarType: SnackBarType.warning);
         }
-
       },
       codeSent: (String vId, int? resendToken) async {
         _isPhoneNumberVerificationButtonLoading = false;
@@ -430,38 +504,36 @@ class AuthController with ChangeNotifier {
 
         bool callRoute = fromPage != FromPage.verification;
 
-
         await callFirebaseStoretiken(phoneNumber, vId);
 
         _verificationID = vId;
 
-
-        if(fromPage == FromPage.verification) {
-          showCustomSnackBarWidget(getTranslated('resend_code_successful', Get.context!), Get.context!, snackBarType: SnackBarType.success);
+        if (fromPage == FromPage.verification) {
+          showCustomSnackBarWidget(
+              getTranslated('resend_code_successful', Get.context!),
+              Get.context!,
+              snackBarType: SnackBarType.success);
         }
 
-        if(callRoute) {
+        if (callRoute) {
           RouterHelper.getVerificationRoute(
-            userInput: phoneNumber,
-            fromPage: fromPage,
-            session: vId,
-            action: RouteAction.push,
-            toNavigateScreen: toNavigateScreen,
-            onLoginSuccess: onLoginSuccess
-          );
+              userInput: phoneNumber,
+              fromPage: fromPage,
+              session: vId,
+              action: RouteAction.push,
+              toNavigateScreen: toNavigateScreen,
+              onLoginSuccess: onLoginSuccess);
         }
       },
-
       codeAutoRetrievalTimeout: (String verificationId) {
         _resendButtonLoading = false;
         _isPhoneNumberVerificationButtonLoading = false;
 
-        showCustomSnackBarWidget('Timed out waiting for SMS.', Get.context!, snackBarType: SnackBarType.error);
+        showCustomSnackBarWidget('Timed out waiting for SMS.', Get.context!,
+            snackBarType: SnackBarType.error);
         notifyListeners();
       },
-
     );
-
 
     //await Future.delayed(Duration(seconds: 10));
 
@@ -469,18 +541,13 @@ class AuthController with ChangeNotifier {
     notifyListeners();
   }
 
-
-
-
-
-
-
-
-  Future<void> callFirebaseStoretiken (String phoneNumber, String vID) async {
-    await authServiceInterface.firebaseAuthTokenStore(userInput: phoneNumber, token: vID);
+  Future<void> callFirebaseStoretiken(String phoneNumber, String vID) async {
+    await authServiceInterface.firebaseAuthTokenStore(
+        userInput: phoneNumber, token: vID);
   }
 
-  Future<ResponseModel> checkPhoneForOtp(String phone, FromPage fromPage, {String? toNavigateScreen, VoidCallback? onLoginSuccess}) async {
+  Future<ResponseModel> checkPhoneForOtp(String phone, FromPage fromPage,
+      {String? toNavigateScreen, VoidCallback? onLoginSuccess}) async {
     _isPhoneNumberVerificationButtonLoading = true;
     _verificationMsg = '';
     notifyListeners();
@@ -488,32 +555,36 @@ class AuthController with ChangeNotifier {
     _isPhoneNumberVerificationButtonLoading = false;
     notifyListeners();
     ResponseModel responseModel;
-    if (apiResponse.response != null && apiResponse.response!.statusCode == 200) {
+    if (apiResponse.response != null &&
+        apiResponse.response!.statusCode == 200) {
       responseModel = ResponseModel(apiResponse.response!.data["token"], true);
 
       bool callRoute = fromPage != FromPage.verification;
 
-      if(callRoute && apiResponse.response!.data["token"] != 'inactive'){
+      if (callRoute && apiResponse.response!.data["token"] != 'inactive') {
         RouterHelper.getVerificationRoute(
-          userInput: phone,
-          fromPage: fromPage,
-          action: RouteAction.push,
-          toNavigateScreen: toNavigateScreen,
-          onLoginSuccess: onLoginSuccess
-        );
-      } else{
-        showCustomSnackBarWidget(apiResponse.response!.data["message"], Get.context!, snackBarType: SnackBarType.error);
+            userInput: phone,
+            fromPage: fromPage,
+            action: RouteAction.push,
+            toNavigateScreen: toNavigateScreen,
+            onLoginSuccess: onLoginSuccess);
+      } else {
+        showCustomSnackBarWidget(
+            apiResponse.response!.data["message"], Get.context!,
+            snackBarType: SnackBarType.error);
       }
     } else {
       _verificationMsg = ApiChecker.getError(apiResponse).errors![0].message;
-      showCustomSnackBarWidget(_verificationMsg, Get.context!, snackBarType: SnackBarType.error);
+      showCustomSnackBarWidget(_verificationMsg, Get.context!,
+          snackBarType: SnackBarType.error);
       responseModel = ResponseModel(_verificationMsg, false);
     }
     notifyListeners();
     return responseModel;
   }
 
-  Future<ResponseModel> checkPhone(String phone, FromPage? fromPage, {String? toNavigateScreen, VoidCallback? onLoginSuccess}) async {
+  Future<ResponseModel> checkPhone(String phone, FromPage? fromPage,
+      {String? toNavigateScreen, VoidCallback? onLoginSuccess}) async {
     _isPhoneNumberVerificationButtonLoading = true;
     _verificationMsg = '';
     notifyListeners();
@@ -521,24 +592,24 @@ class AuthController with ChangeNotifier {
     _isPhoneNumberVerificationButtonLoading = false;
     notifyListeners();
     ResponseModel responseModel;
-    if (apiResponse.response != null && apiResponse.response!.statusCode == 200) {
+    if (apiResponse.response != null &&
+        apiResponse.response!.statusCode == 200) {
       responseModel = ResponseModel(apiResponse.response!.data["token"], true);
 
       bool callRoute = fromPage != FromPage.verification;
 
-      if(callRoute){
+      if (callRoute) {
         RouterHelper.getVerificationRoute(
-          userInput: phone,
-          fromPage: fromPage!,
-          action: RouteAction.push,
-          toNavigateScreen: toNavigateScreen,
-          onLoginSuccess: onLoginSuccess
-        );
+            userInput: phone,
+            fromPage: fromPage!,
+            action: RouteAction.push,
+            toNavigateScreen: toNavigateScreen,
+            onLoginSuccess: onLoginSuccess);
       }
     } else {
-
       _verificationMsg = ApiChecker.getError(apiResponse).errors![0].message;
-      showCustomSnackBarWidget(_verificationMsg, Get.context!, snackBarType: SnackBarType.error);
+      showCustomSnackBarWidget(_verificationMsg, Get.context!,
+          snackBarType: SnackBarType.error);
       responseModel = ResponseModel(_verificationMsg, false);
     }
     notifyListeners();
@@ -549,21 +620,24 @@ class AuthController with ChangeNotifier {
     _isPhoneNumberVerificationButtonLoading = true;
     _verificationMsg = '';
     notifyListeners();
-    ApiResponseModel apiResponse = await authServiceInterface.verifyEmail(email, _verificationCode, '');
+    ApiResponseModel apiResponse =
+        await authServiceInterface.verifyEmail(email, _verificationCode, '');
 
     notifyListeners();
     ResponseModel responseModel;
-    if (apiResponse.response != null && apiResponse.response!.statusCode == 200) {
+    if (apiResponse.response != null &&
+        apiResponse.response!.statusCode == 200) {
       String token = apiResponse.response!.data["token"];
       await authServiceInterface.saveUserToken(token);
       await authServiceInterface.updateDeviceToken();
       // final ProfileProvider profileProvider = Provider.of<ProfileProvider>(Get.context!, listen: false);
       // profileProvider.getUserInfo(true);
-      responseModel = ResponseModel(apiResponse.response!.data["message"], true);
+      responseModel =
+          ResponseModel(apiResponse.response!.data["message"], true);
     } else {
-
       _verificationMsg = ApiChecker.getError(apiResponse).errors![0].message;
-      showCustomSnackBarWidget(_verificationMsg, Get.context!, snackBarType: SnackBarType.error);
+      showCustomSnackBarWidget(_verificationMsg, Get.context!,
+          snackBarType: SnackBarType.error);
       responseModel = ResponseModel(_verificationMsg, false);
     }
     _isPhoneNumberVerificationButtonLoading = false;
@@ -571,54 +645,59 @@ class AuthController with ChangeNotifier {
     return responseModel;
   }
 
-  Future<void> firebaseOtpLogin({required String phoneNumber, required String session, required String otp, bool isForgetPassword = false, String? toNavigateScreen, VoidCallback? onLoginSuccess}) async {
+  Future<void> firebaseOtpLogin(
+      {required String phoneNumber,
+      required String session,
+      required String otp,
+      bool isForgetPassword = false,
+      String? toNavigateScreen,
+      VoidCallback? onLoginSuccess}) async {
     _isPhoneNumberVerificationButtonLoading = true;
     notifyListeners();
-    ApiResponseModel apiResponse = await authServiceInterface.firebaseAuthVerify(
-      session: session, phoneNumber: phoneNumber,
-      otp: otp, isForgetPassword: isForgetPassword,
+    ApiResponseModel apiResponse =
+        await authServiceInterface.firebaseAuthVerify(
+      session: session,
+      phoneNumber: phoneNumber,
+      otp: otp,
+      isForgetPassword: isForgetPassword,
     );
 
-    if (apiResponse.response != null && apiResponse.response!.statusCode == 200) {
+    if (apiResponse.response != null &&
+        apiResponse.response!.statusCode == 200) {
       Map map = apiResponse.response!.data;
       String? token;
       String? tempToken;
 
-
-      try{
+      try {
         token = map["token"];
         tempToken = map["temp_token"];
-      }catch(error){
+      } catch (error) {
         log('$error');
       }
 
-
-
-      if(isForgetPassword) {
+      if (isForgetPassword) {
         RouterHelper.getResetPasswordRoute(
           mobileNumber: phoneNumber,
           otp: otp,
           action: RouteAction.push,
         );
-      }else{
+      } else {
         String countryCode = CountryCodeHelper.getCountryCode(phoneNumber)!;
-        if(_isActiveRememberMe) {
-          saveUserEmailAndPassword(
-            UserLogData(
+        if (_isActiveRememberMe) {
+          saveUserEmailAndPassword(UserLogData(
               countryCode: countryCode,
-              phoneNumber: CountryCodeHelper.extractPhoneNumber(countryCode, phoneNumber),
+              phoneNumber: CountryCodeHelper.extractPhoneNumber(
+                  countryCode, phoneNumber),
               email: null,
-              password: null
-            )
-          );
+              password: null));
         }
-        if(token != null) {
+        if (token != null) {
           await authServiceInterface.saveUserToken(token);
           authServiceInterface.updateDeviceToken().catchError((e) {
             log('Error updating device token: $e');
           });
           navigateToHome(toNavigateScreen, onLoginSuccess);
-        } else if(tempToken != null) {
+        } else if (tempToken != null) {
           RouterHelper.getOtpRegistrationRoute(
             tempToken: tempToken,
             userInput: phoneNumber,
@@ -636,28 +715,29 @@ class AuthController with ChangeNotifier {
     notifyListeners();
   }
 
-
-
-
-  Future<ResponseModel> registerWithOtp (String name, {String? email, required String phone}) async {
+  Future<ResponseModel> registerWithOtp(String name,
+      {String? email, required String phone}) async {
     _isPhoneNumberVerificationButtonLoading = true;
     _loginErrorMessage = '';
     notifyListeners();
-    ApiResponseModel apiResponse = await authServiceInterface.registerWithOtp(name, email: email, phone: phone);
+    ApiResponseModel apiResponse = await authServiceInterface
+        .registerWithOtp(name, email: email, phone: phone);
     ResponseModel responseModel;
-    if (apiResponse.response != null && apiResponse.response!.statusCode == 200) {
+    if (apiResponse.response != null &&
+        apiResponse.response!.statusCode == 200) {
       String? token;
       Map map = apiResponse.response!.data;
-      if(map.containsKey('token')){
+      if (map.containsKey('token')) {
         token = map["token"];
       }
-      if(token != null){
+      if (token != null) {
         await authServiceInterface.saveUserToken(token);
       }
-      responseModel = ResponseModel( 'verification', token != null);
+      responseModel = ResponseModel('verification', token != null);
     } else {
       _loginErrorMessage = ApiChecker.getError(apiResponse).errors![0].message;
-      showCustomSnackBarWidget(_verificationMsg, Get.context!, snackBarType: SnackBarType.error);
+      showCustomSnackBarWidget(_verificationMsg, Get.context!,
+          snackBarType: SnackBarType.error);
       responseModel = ResponseModel(_loginErrorMessage, false);
     }
     _isPhoneNumberVerificationButtonLoading = false;
@@ -665,38 +745,39 @@ class AuthController with ChangeNotifier {
     return responseModel;
   }
 
-
   Future<(ResponseModel?, String?)> verifyPhoneForOtp(String phone) async {
     _isPhoneNumberVerificationButtonLoading = true;
     String phoneNumber = phone;
-    if(phone.contains('++')) {
-      phoneNumber =  phone.replaceAll('++', '+');
+    if (phone.contains('++')) {
+      phoneNumber = phone.replaceAll('++', '+');
     }
     _verificationMsg = '';
     notifyListeners();
-    ApiResponseModel apiResponse =  await authServiceInterface.verifyOtp(phoneNumber, _verificationCode);
+    ApiResponseModel apiResponse =
+        await authServiceInterface.verifyOtp(phoneNumber, _verificationCode);
     notifyListeners();
     ResponseModel? responseModel;
     String? token;
     String? tempToken;
-    if (apiResponse.response != null && apiResponse.response!.statusCode == 200) {
-
+    if (apiResponse.response != null &&
+        apiResponse.response!.statusCode == 200) {
       Map map = apiResponse.response!.data;
-      if(map.containsKey('temporary_token')) {
+      if (map.containsKey('temporary_token')) {
         tempToken = map["temporary_token"];
-      }else if(map.containsKey('token')){
+      } else if (map.containsKey('token')) {
         token = map["token"];
       }
 
-      if(token != null){
+      if (token != null) {
         await authServiceInterface.saveUserToken(token);
         responseModel = ResponseModel('verification', true);
-      }else if(tempToken != null){
-        responseModel = ResponseModel( 'verification', true);
+      } else if (tempToken != null) {
+        responseModel = ResponseModel('verification', true);
       }
     } else {
       _verificationMsg = ApiChecker.getError(apiResponse).errors![0].message;
-      showCustomSnackBarWidget(_verificationMsg, Get.context!, snackBarType: SnackBarType.warning);
+      showCustomSnackBarWidget(_verificationMsg, Get.context!,
+          snackBarType: SnackBarType.warning);
       responseModel = ResponseModel(_verificationMsg, false);
     }
     _isPhoneNumberVerificationButtonLoading = false;
@@ -704,60 +785,67 @@ class AuthController with ChangeNotifier {
     return (responseModel, tempToken);
   }
 
-  Future<(ResponseModel, String?)> registerWithSocialMedia (String name, {required String email, String? phone, String? tempToken}) async {
+  Future<(ResponseModel, String?)> registerWithSocialMedia(String name,
+      {required String email, String? phone, String? tempToken}) async {
     _isPhoneNumberVerificationButtonLoading = true;
     _loginErrorMessage = '';
     notifyListeners();
-    ApiResponseModel apiResponse  = await authServiceInterface.registerWithSocialMedia(name, email: email, phone: phone, tempToken: tempToken);
+    ApiResponseModel apiResponse =
+        await authServiceInterface.registerWithSocialMedia(name,
+            email: email, phone: phone, tempToken: tempToken);
     ResponseModel responseModel;
     String? token;
-    String? tempToken;
+    String? responseTempToken;
 
-    if (apiResponse.response != null && apiResponse.response!.statusCode == 200) {
-
+    if (apiResponse.response != null &&
+        apiResponse.response!.statusCode == 200) {
       Map map = apiResponse.response!.data;
-      if(map.containsKey('token')){
+      if (map.containsKey('token')) {
         token = map["token"];
       }
-      if(map.containsKey('temp_token')){
-        tempToken = map["temp_token"];
+      if (map.containsKey('temp_token')) {
+        responseTempToken = map["temp_token"];
       }
 
-      if(token != null){
+      if (token != null) {
         authServiceInterface.saveUserToken(token);
         responseModel = ResponseModel('verification', true);
-      }else if(tempToken != null){
+      } else if (responseTempToken != null) {
         responseModel = ResponseModel('verification', true);
-      }else{
+      } else {
         responseModel = ResponseModel('', false);
       }
     } else {
       _loginErrorMessage = ApiChecker.getError(apiResponse).errors![0].message;
-      showCustomSnackBarWidget(_loginErrorMessage, Get.context!, snackBarType: SnackBarType.warning);
+      showCustomSnackBarWidget(_loginErrorMessage, Get.context!,
+          snackBarType: SnackBarType.warning);
       responseModel = ResponseModel(_loginErrorMessage, false);
     }
     _isPhoneNumberVerificationButtonLoading = false;
     notifyListeners();
-    return (responseModel, tempToken);
+    return (responseModel, responseTempToken);
   }
-
 
   int resendTime = 0;
 
-  Future<ResponseModel> sendOtpToPhone(String phone, String temporaryToken,{bool fromResend = false}) async {
+  Future<ResponseModel> sendOtpToPhone(String phone, String temporaryToken,
+      {bool fromResend = false}) async {
     _isPhoneNumberVerificationButtonLoading = true;
     notifyListeners();
     ApiResponseModel apiResponse;
-    if(fromResend) {
-      apiResponse = await authServiceInterface.resendPhoneOtp(phone, temporaryToken);
-    }else{
-      apiResponse = await authServiceInterface.sendOtpToPhone(phone, temporaryToken);
+    if (fromResend) {
+      apiResponse =
+          await authServiceInterface.resendPhoneOtp(phone, temporaryToken);
+    } else {
+      apiResponse =
+          await authServiceInterface.sendOtpToPhone(phone, temporaryToken);
     }
     _isPhoneNumberVerificationButtonLoading = false;
     notifyListeners();
     ResponseModel responseModel;
-    if (apiResponse.response != null && apiResponse.response?.statusCode == 200) {
-      responseModel = ResponseModel(apiResponse.response!.data["token"],true);
+    if (apiResponse.response != null &&
+        apiResponse.response?.statusCode == 200) {
+      responseModel = ResponseModel(apiResponse.response!.data["token"], true);
       // resendTime = (apiResponse.response!.data["resend_time"]);
     } else {
       String? errorMessage;
@@ -767,7 +855,7 @@ class AuthController with ChangeNotifier {
         ErrorResponse errorResponse = apiResponse.error;
         errorMessage = errorResponse.errors![0].message;
       }
-      responseModel = ResponseModel( errorMessage,false);
+      responseModel = ResponseModel(errorMessage, false);
     }
     notifyListeners();
     return responseModel;
@@ -777,19 +865,22 @@ class AuthController with ChangeNotifier {
     _isPhoneNumberVerificationButtonLoading = true;
     _verificationMsg = '';
     notifyListeners();
-    ApiResponseModel apiResponse = await authServiceInterface.verifyProfileInfo(userInput:  userInput, token:  _verificationCode, type: type);
+    ApiResponseModel apiResponse = await authServiceInterface.verifyProfileInfo(
+        userInput: userInput, token: _verificationCode, type: type);
     ResponseModel? responseModel;
-    if (apiResponse.response != null && apiResponse.response!.statusCode == 200) {
-
-
-      final ProfileController profileProvider = Provider.of<ProfileController>(Get.context!, listen: false);
+    if (apiResponse.response != null &&
+        apiResponse.response!.statusCode == 200) {
+      final ProfileController profileProvider =
+          Provider.of<ProfileController>(Get.context!, listen: false);
       profileProvider.getUserInfo(Get.context!);
-      showCustomSnackBarWidget(apiResponse.response!.data['message'], Get.context!, snackBarType: SnackBarType.success);
+      showCustomSnackBarWidget(
+          apiResponse.response!.data['message'], Get.context!,
+          snackBarType: SnackBarType.success);
       responseModel = ResponseModel('verification', true);
-
     } else {
       _verificationMsg = ApiChecker.getError(apiResponse).errors![0].message;
-      showCustomSnackBarWidget(_verificationMsg, Get.context!, snackBarType: SnackBarType.warning);
+      showCustomSnackBarWidget(_verificationMsg, Get.context!,
+          snackBarType: SnackBarType.warning);
       responseModel = ResponseModel(_verificationMsg, false);
     }
     _isPhoneNumberVerificationButtonLoading = false;
@@ -797,28 +888,31 @@ class AuthController with ChangeNotifier {
     return (responseModel);
   }
 
-
   Future<ResponseModel> verifyPhone(String phone, String token) async {
     _isPhoneNumberVerificationButtonLoading = true;
     String phoneNumber = phone;
-    if(phone.contains('++')) {
-      phoneNumber =  phone.replaceAll('++', '+');
+    if (phone.contains('++')) {
+      phoneNumber = phone.replaceAll('++', '+');
     }
     _verificationMsg = '';
     notifyListeners();
 
-    ApiResponseModel apiResponse = await authServiceInterface.verifyPhone(phoneNumber, token, _verificationCode);
+    ApiResponseModel apiResponse = await authServiceInterface.verifyPhone(
+        phoneNumber, token, _verificationCode);
     _isPhoneNumberVerificationButtonLoading = false;
     notifyListeners();
     ResponseModel responseModel;
-    if (apiResponse.response != null && apiResponse.response!.statusCode == 200) {
-      responseModel = ResponseModel( apiResponse.response!.data["message"], true);
+    if (apiResponse.response != null &&
+        apiResponse.response!.statusCode == 200) {
+      responseModel =
+          ResponseModel(apiResponse.response!.data["message"], true);
       String token = apiResponse.response!.data["token"];
       await authServiceInterface.saveUserToken(token);
       await authServiceInterface.updateDeviceToken();
     } else {
       _verificationMsg = ApiChecker.getError(apiResponse).errors![0].message;
-      showCustomSnackBarWidget(_verificationMsg, Get.context!, snackBarType: SnackBarType.error);
+      showCustomSnackBarWidget(_verificationMsg, Get.context!,
+          snackBarType: SnackBarType.error);
       responseModel = ResponseModel(_verificationMsg, false);
     }
 
@@ -827,15 +921,16 @@ class AuthController with ChangeNotifier {
     return responseModel;
   }
 
-
   Future<ApiResponseModel> verifyOtpForResetPassword(String phone) async {
     _isPhoneNumberVerificationButtonLoading = true;
     notifyListeners();
 
-    ApiResponseModel apiResponse = await authServiceInterface.verifyOtp(phone, _verificationCode);
+    ApiResponseModel apiResponse =
+        await authServiceInterface.verifyOtp(phone, _verificationCode);
     _isPhoneNumberVerificationButtonLoading = false;
     notifyListeners();
-    if (apiResponse.response != null && apiResponse.response!.statusCode == 200) {
+    if (apiResponse.response != null &&
+        apiResponse.response!.statusCode == 200) {
     } else {
       _isPhoneNumberVerificationButtonLoading = false;
       ApiChecker.checkApi(apiResponse);
@@ -844,15 +939,20 @@ class AuthController with ChangeNotifier {
     return apiResponse;
   }
 
-
-  Future<ApiResponseModel> resetPassword(String identity, String otp, String password, String confirmPassword) async {
+  Future<ApiResponseModel> resetPassword(String identity, String otp,
+      String password, String confirmPassword) async {
     _isPhoneNumberVerificationButtonLoading = true;
     notifyListeners();
-    ApiResponseModel apiResponse = await authServiceInterface.resetPassword(identity,otp,password,confirmPassword);
+    ApiResponseModel apiResponse = await authServiceInterface.resetPassword(
+        identity, otp, password, confirmPassword);
     _isPhoneNumberVerificationButtonLoading = false;
     notifyListeners();
-    if (apiResponse.response != null && apiResponse.response!.statusCode == 200) {
-      showCustomSnackBarWidget(getTranslated('password_reset_successfully', Get.context!), Get.context!, snackBarType: SnackBarType.success);
+    if (apiResponse.response != null &&
+        apiResponse.response!.statusCode == 200) {
+      showCustomSnackBarWidget(
+          getTranslated('password_reset_successfully', Get.context!),
+          Get.context!,
+          snackBarType: SnackBarType.success);
       RouterHelper.getLoginRoute(action: RouteAction.pushNamedAndRemoveUntil);
     } else {
       _isPhoneNumberVerificationButtonLoading = false;
@@ -862,10 +962,10 @@ class AuthController with ChangeNotifier {
     return apiResponse;
   }
 
-
   // for phone verification
   bool _isPhoneNumberVerificationButtonLoading = false;
-  bool get isPhoneNumberVerificationButtonLoading => _isPhoneNumberVerificationButtonLoading;
+  bool get isPhoneNumberVerificationButtonLoading =>
+      _isPhoneNumberVerificationButtonLoading;
   String _email = '';
   String _phone = '';
 
@@ -876,11 +976,11 @@ class AuthController with ChangeNotifier {
     _email = email;
     notifyListeners();
   }
+
   void updatePhone(String phone) {
     _phone = phone;
     notifyListeners();
   }
-
 
   String _verificationCode = '';
   String get verificationCode => _verificationCode;
@@ -897,8 +997,6 @@ class AuthController with ChangeNotifier {
     notifyListeners();
   }
 
-
-
   String getUserToken() {
     return authServiceInterface.getUserToken();
   }
@@ -906,7 +1004,6 @@ class AuthController with ChangeNotifier {
   String? getGuestToken() {
     return authServiceInterface.getGuestIdToken();
   }
-
 
   bool isLoggedIn() {
     return authServiceInterface.isLoggedIn();
@@ -916,7 +1013,7 @@ class AuthController with ChangeNotifier {
     return authServiceInterface.isGuestIdExist();
   }
 
-  Future<bool> clearSharedData()  {
+  Future<bool> clearSharedData() {
     return authServiceInterface.clearSharedData();
   }
 
@@ -924,17 +1021,18 @@ class AuthController with ChangeNotifier {
     return await authServiceInterface.clearGuestId();
   }
 
-
   void saveUserEmailAndPassword(UserLogData userLogData) {
-    authServiceInterface.saveUserEmailAndPassword(jsonEncode(userLogData.toJson()));
+    authServiceInterface
+        .saveUserEmailAndPassword(jsonEncode(userLogData.toJson()));
     _isActiveRememberMe = false;
   }
 
   UserLogData? getUserData() {
     UserLogData? userData;
-    try{
-      userData = UserLogData.fromJson(jsonDecode(authServiceInterface.getUserEmail()));
-    }catch(error) {
+    try {
+      userData =
+          UserLogData.fromJson(jsonDecode(authServiceInterface.getUserEmail()));
+    } catch (error) {
       debugPrint('error ===> $error');
     }
 
@@ -945,14 +1043,17 @@ class AuthController with ChangeNotifier {
     return authServiceInterface.clearUserEmailAndPassword();
   }
 
-
   String getUserPassword() {
     return authServiceInterface.getUserPassword();
   }
 
-  Future<ResponseModel?> forgetPassword({required ConfigModel config, required String phoneOrEmail, required String type, bool isResend = false}) async {
+  Future<ResponseModel?> forgetPassword(
+      {required ConfigModel config,
+      required String phoneOrEmail,
+      required String type,
+      bool isResend = false}) async {
     ResponseModel? responseModel;
-    if(isResend){
+    if (isResend) {
       _resendButtonLoading = true;
     } else {
       _isForgotPasswordLoading = true;
@@ -961,13 +1062,15 @@ class AuthController with ChangeNotifier {
     isSentToMail(false);
     notifyListeners();
 
-    if(type == 'phone' && config.customerVerification?.firebase == 1 ) {
-      await firebaseVerifyPhoneNumber(phoneOrEmail, isResend ? FromPage.verification : FromPage.forgetPassword, isForgetPassword: true);
-    }else{
+    if (type == 'phone' && config.customerVerification?.firebase == 1) {
+      await firebaseVerifyPhoneNumber(phoneOrEmail,
+          isResend ? FromPage.verification : FromPage.forgetPassword,
+          isForgetPassword: true);
+    } else {
       responseModel = await _forgetPassword(phoneOrEmail, type);
     }
 
-    if(isResend){
+    if (isResend) {
       _resendButtonLoading = false;
     } else {
       _isForgotPasswordLoading = false;
@@ -982,15 +1085,18 @@ class AuthController with ChangeNotifier {
     _resendButtonLoading = true;
     notifyListeners();
 
-    ApiResponseModel apiResponse = await authServiceInterface.forgetPassword(email, type);
+    ApiResponseModel apiResponse =
+        await authServiceInterface.forgetPassword(email, type);
     ResponseModel responseModel;
 
-    if (apiResponse.response != null && apiResponse.response!.statusCode == 200) {
-      responseModel = ResponseModel(apiResponse.response!.data["message"], true);
+    if (apiResponse.response != null &&
+        apiResponse.response!.statusCode == 200) {
+      responseModel =
+          ResponseModel(apiResponse.response!.data["message"], true);
       isSentToMail(apiResponse.response!.data["type"] == 'sent_to_mail');
-
     } else {
-      responseModel = ResponseModel(ApiChecker.getError(apiResponse).errors![0].message, false);
+      responseModel = ResponseModel(
+          ApiChecker.getError(apiResponse).errors![0].message, false);
       ApiChecker.checkApi(apiResponse);
     }
     _resendButtonLoading = false;
@@ -1000,61 +1106,67 @@ class AuthController with ChangeNotifier {
     return responseModel;
   }
 
-
-  void isSentToMail(bool value){
+  void isSentToMail(bool value) {
     _sendToEmail = value;
     notifyListeners();
   }
 
-
   Future<ResponseModel> verifyToken(String email) async {
     _isPhoneNumberVerificationButtonLoading = true;
     notifyListeners();
-    ApiResponseModel apiResponse = await authServiceInterface.verifyToken(email, _verificationCode);
+    ApiResponseModel apiResponse =
+        await authServiceInterface.verifyToken(email, _verificationCode);
 
     _isPhoneNumberVerificationButtonLoading = false;
     notifyListeners();
     ResponseModel responseModel;
-    if (apiResponse.response != null && apiResponse.response!.statusCode == 200) {
-      responseModel = ResponseModel(apiResponse.response!.data["message"], true);
+    if (apiResponse.response != null &&
+        apiResponse.response!.statusCode == 200) {
+      responseModel =
+          ResponseModel(apiResponse.response!.data["message"], true);
     } else {
-      responseModel = ResponseModel(ApiChecker.getError(apiResponse).errors![0].message, false);
+      responseModel = ResponseModel(
+          ApiChecker.getError(apiResponse).errors![0].message, false);
     }
     return responseModel;
   }
 
-
-  Future<(ResponseModel?, String?)> existingAccountCheck ({required String email, required int userResponse, required String medium}) async{
+  Future<(ResponseModel?, String?)> existingAccountCheck(
+      {required String email,
+      required int userResponse,
+      required String medium}) async {
     _isPhoneNumberVerificationButtonLoading = true;
     notifyListeners();
-    ApiResponseModel apiResponse = await authServiceInterface.existingAccountCheck(email: email, userResponse: userResponse, medium: medium);
+    ApiResponseModel apiResponse =
+        await authServiceInterface.existingAccountCheck(
+            email: email, userResponse: userResponse, medium: medium);
     ResponseModel responseModel;
     String? token;
     String? tempToken;
-    if (apiResponse.response != null && apiResponse.response!.statusCode == 200) {
-
-
+    if (apiResponse.response != null &&
+        apiResponse.response!.statusCode == 200) {
       Map map = apiResponse.response!.data;
 
-      if(map.containsKey('token')){
+      if (map.containsKey('token')) {
         token = map["token"];
       }
 
-      if(map.containsKey('temp_token')){
+      if (map.containsKey('temp_token')) {
         tempToken = map["temp_token"];
       }
 
-      if(token != null){
+      if (token != null) {
         await authServiceInterface.saveUserToken(token);
         responseModel = ResponseModel('token', true);
-      } else if(tempToken != null){
+      } else if (tempToken != null) {
         responseModel = ResponseModel('tempToken', true);
-      } else{
+      } else {
         responseModel = ResponseModel('', true);
       }
     } else {
       _loginErrorMessage = ApiChecker.getError(apiResponse).errors![0].message;
-      showCustomSnackBarWidget(_loginErrorMessage, Get.context!, snackBarType: SnackBarType.warning);
+      showCustomSnackBarWidget(_loginErrorMessage, Get.context!,
+          snackBarType: SnackBarType.warning);
       responseModel = ResponseModel(_loginErrorMessage, false);
     }
     _isPhoneNumberVerificationButtonLoading = false;
@@ -1064,11 +1176,14 @@ class AuthController with ChangeNotifier {
 
   Future<void> getGuestIdUrl() async {
     ApiResponseModel apiResponse = await authServiceInterface.getGuestId();
-    if (apiResponse.response != null && apiResponse.response!.statusCode == 200) {
-      authServiceInterface.saveGuestId(apiResponse.response!.data['guest_id'].toString());
-      authServiceInterface.saveGuestCartId(apiResponse.response!.data['guest_id'].toString());
+    if (apiResponse.response != null &&
+        apiResponse.response!.statusCode == 200) {
+      authServiceInterface
+          .saveGuestId(apiResponse.response!.data['guest_id'].toString());
+      authServiceInterface
+          .saveGuestCartId(apiResponse.response!.data['guest_id'].toString());
     } else {
-      ApiChecker.checkApi( apiResponse);
+      ApiChecker.checkApi(apiResponse);
     }
     notifyListeners();
   }
@@ -1078,26 +1193,26 @@ class AuthController with ChangeNotifier {
     notifyListeners();
   }
 
-  void toggleIsNumberLogin ({bool? value, bool isUpdate = true}) {
-    if(value == null) {
+  void toggleIsNumberLogin({bool? value, bool isUpdate = true}) {
+    if (value == null) {
       _isNumberLogin = !_isNumberLogin;
-    }else {
+    } else {
       _isNumberLogin = value;
     }
 
-    if(isUpdate){
+    if (isUpdate) {
       notifyListeners();
     }
   }
 
-  void toggleIsNumberLoginScreenText ({bool? value, bool isUpdate = true}) {
-    if(value == null) {
+  void toggleIsNumberLoginScreenText({bool? value, bool isUpdate = true}) {
+    if (value == null) {
       _isNumberLoginScreenText = !_isNumberLoginScreenText;
-    }else {
+    } else {
       _isNumberLoginScreenText = value;
     }
 
-    if(isUpdate){
+    if (isUpdate) {
       notifyListeners();
     }
   }
@@ -1107,11 +1222,9 @@ class AuthController with ChangeNotifier {
     notifyListeners();
   }
 
-
   void clearVerificationMessage() {
     _verificationMsg = '';
   }
-
 
   void removeGoogleLogIn() {
     final GoogleSignIn googleSignIn = GoogleSignIn.instance;
@@ -1123,13 +1236,13 @@ class AuthController with ChangeNotifier {
     return authServiceInterface.getGuestCartId();
   }
 
-
   void navigateToHome(String? fromPage, VoidCallback? onLoginSuccess) {
-    if(fromPage != null) {
-      if(fromPage.startsWith('/dashboard')) {
+    if (fromPage != null) {
+      if (fromPage.startsWith('/dashboard')) {
         final uri = Uri.parse(fromPage);
         final pageParam = uri.queryParameters['page'];
-        RouterHelper.getDashboardRoute(action: RouteAction.pushReplacement, page : pageParam ?? 'home');
+        RouterHelper.getDashboardRoute(
+            action: RouteAction.pushReplacement, page: pageParam ?? 'home');
       } else if (onLoginSuccess != null) {
         GoRouter.of(Get.context!).pop();
         onLoginSuccess();
@@ -1141,6 +1254,4 @@ class AuthController with ChangeNotifier {
       RouterHelper.getDashboardRoute(action: RouteAction.pushReplacement);
     }
   }
-
-
 }

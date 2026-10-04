@@ -10,11 +10,17 @@ import 'package:flutter_sixvalley_ecommerce/helper/route_healper.dart';
 import 'package:flutter_sixvalley_ecommerce/localization/language_constrants.dart';
 import 'package:flutter_sixvalley_ecommerce/main.dart';
 import 'dart:async';
+import 'dart:convert';
+import 'dart:math';
+import 'package:flutter_sixvalley_ecommerce/di_container.dart' as di;
+import 'package:flutter_sixvalley_ecommerce/services/storage_service.dart';
+import 'package:flutter_sixvalley_ecommerce/utill/app_constants.dart';
+import 'package:flutter_sixvalley_ecommerce/features/checkout/domain/models/delivery_payment_state.dart';
+import 'package:flutter_sixvalley_ecommerce/features/checkout/screens/digital_payment_order_place_screen.dart';
+import 'package:flutter_sixvalley_ecommerce/features/checkout/screens/payment_status_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_sixvalley_ecommerce/common/basewidget/show_custom_snakbar_widget.dart';
 import 'package:provider/provider.dart';
-
-
 
 class CheckoutController with ChangeNotifier {
   final CheckoutServiceInterface checkoutServiceInterface;
@@ -55,7 +61,7 @@ class CheckoutController with ChangeNotifier {
   ReferralAmount? get referralAmount => _referralAmount;
 
   String selectedPaymentName = '';
-  void setSelectedPayment(String payment){
+  void setSelectedPayment(String payment) {
     selectedPaymentName = payment;
     notifyListeners();
   }
@@ -63,18 +69,13 @@ class CheckoutController with ChangeNotifier {
   bool _isAcceptTerms = false;
   bool get isAcceptTerms => _isAcceptTerms;
 
-
   final TextEditingController orderNoteController = TextEditingController();
   final TextEditingController passwordController = TextEditingController();
-  final TextEditingController confirmPasswordController = TextEditingController();
+  final TextEditingController confirmPasswordController =
+      TextEditingController();
   List<String> inputValueList = [];
 
-
-
-
-
   String? extractId(String idsString) {
-
     String cleaned = idsString.replaceAll(RegExp(r'[\[\]\s]'), '');
     return cleaned.isNotEmpty ? cleaned : null;
   }
@@ -87,19 +88,17 @@ class CheckoutController with ChangeNotifier {
     return ids.isNotEmpty ? ids.first : null;
   }
 
-
-
   void setAddressIndex(int index) {
     _addressIndex = index;
     notifyListeners();
   }
+
   void setBillingAddressIndex(int index) {
     _billingAddressIndex = index;
     notifyListeners();
   }
 
-
-  void resetPaymentMethod(){
+  void resetPaymentMethod() {
     _paymentMethodIndex = -1;
     selectedDigitalPaymentMethodName = '';
   }
@@ -121,20 +120,25 @@ class CheckoutController with ChangeNotifier {
     }
   }
 
-  void initDefaultPaymentMethod(SplashController splashController, {bool isUpdate = true}) {
+  void initDefaultPaymentMethod(SplashController splashController,
+      {bool isUpdate = true}) {
     final config = splashController.configModel;
     if (config == null) return;
 
     // [AI] Victorious MARKET V1: Explicit Paystack selection.
     // Paystack is the exclusive digital gateway for marketplace delivery checkout.
-    if ((config.digitalPayment ?? false) && (config.paymentMethods != null && config.paymentMethods!.isNotEmpty)) {
-      int paystackIndex = config.paymentMethods!.indexWhere((m) => (m.keyName ?? '').toLowerCase() == 'paystack');
+    if ((config.digitalPayment ?? false) &&
+        (config.paymentMethods != null && config.paymentMethods!.isNotEmpty)) {
+      int paystackIndex = config.paymentMethods!
+          .indexWhere((m) => (m.keyName ?? '').toLowerCase() == 'paystack');
       if (paystackIndex != -1) {
         _paymentMethodIndex = paystackIndex;
-        selectedDigitalPaymentMethodName = config.paymentMethods![paystackIndex].keyName ?? 'paystack';
+        selectedDigitalPaymentMethodName =
+            config.paymentMethods![paystackIndex].keyName ?? 'paystack';
       } else {
         _paymentMethodIndex = 0;
-        selectedDigitalPaymentMethodName = config.paymentMethods![0].keyName ?? 'paystack';
+        selectedDigitalPaymentMethodName =
+            config.paymentMethods![0].keyName ?? 'paystack';
       }
     } else {
       _paymentMethodIndex = -1;
@@ -146,13 +150,12 @@ class CheckoutController with ChangeNotifier {
     }
   }
 
-
-  void shippingAddressNull(){
+  void shippingAddressNull() {
     _addressIndex = null;
     notifyListeners();
   }
 
-  void billingAddressNull(){
+  void billingAddressNull() {
     _billingAddressIndex = null;
     notifyListeners();
   }
@@ -161,21 +164,19 @@ class CheckoutController with ChangeNotifier {
     _shippingIndex = index;
     notifyListeners();
   }
+
   void setSelectedBillingAddress(int index) {
     _billingAddressIndex = index;
     notifyListeners();
   }
 
-
-String selectedDigitalPaymentMethodName = '';
+  String selectedDigitalPaymentMethodName = '';
 
   void setDigitalPaymentMethodName(int index, String name) {
     _paymentMethodIndex = index;
     selectedDigitalPaymentMethodName = name;
-                notifyListeners();
+    notifyListeners();
   }
-
-
 
   List<TextEditingController> inputFieldControllerList = [];
 
@@ -190,7 +191,8 @@ String selectedDigitalPaymentMethodName = '';
     _isLoading = true;
     notifyListeners();
 
-    ApiResponseModel apiResponse = await checkoutServiceInterface.digitalPaymentPlaceOrder(
+    ApiResponseModel apiResponse =
+        await checkoutServiceInterface.digitalPaymentPlaceOrder(
       orderNote,
       customerId,
       addressId,
@@ -201,7 +203,8 @@ String selectedDigitalPaymentMethodName = '';
       useCashback: useCashback,
     );
 
-    if (apiResponse.response != null && apiResponse.response?.statusCode == 200) {
+    if (apiResponse.response != null &&
+        apiResponse.response?.statusCode == 200) {
       _addressIndex = null;
       _billingAddressIndex = null;
       sameAsBilling = false;
@@ -212,16 +215,23 @@ String selectedDigitalPaymentMethodName = '';
         fromWallet: false,
         action: RouteAction.pushReplacement,
       );
-
-    } else if(apiResponse.error == 'Already registered ') {
+    } else if (apiResponse.error == 'Already registered ') {
       _isLoading = false;
-      showCustomSnackBarWidget(getTranslated(apiResponse.error, Get.context!), Get.context!, snackBarType: SnackBarType.warning);
-    } else if(apiResponse.response != null && apiResponse.response!.statusCode == 403) {
+      showCustomSnackBarWidget(
+          getTranslated(apiResponse.error, Get.context!), Get.context!,
+          snackBarType: SnackBarType.warning);
+    } else if (apiResponse.response != null &&
+        apiResponse.response!.statusCode == 403) {
       _isLoading = false;
-      showCustomSnackBarWidget(getTranslated(apiResponse.error, Get.context!), Get.context!, snackBarType: SnackBarType.error);
+      showCustomSnackBarWidget(
+          getTranslated(apiResponse.error, Get.context!), Get.context!,
+          snackBarType: SnackBarType.error);
     } else {
       _isLoading = false;
-      showCustomSnackBarWidget(getTranslated('payment_method_not_properly_configured', Get.context!), Get.context!, snackBarType: SnackBarType.error);
+      showCustomSnackBarWidget(
+          getTranslated('payment_method_not_properly_configured', Get.context!),
+          Get.context!,
+          snackBarType: SnackBarType.error);
     }
     notifyListeners();
     return apiResponse;
@@ -230,12 +240,12 @@ String selectedDigitalPaymentMethodName = '';
   bool sameAsBilling = false;
   void setSameAsBilling({bool isUpdate = true}) {
     sameAsBilling = !sameAsBilling;
-    if(isUpdate) {
+    if (isUpdate) {
       notifyListeners();
     }
   }
 
-  void clearData(){
+  void clearData() {
     orderNoteController.clear();
     passwordController.clear();
     confirmPasswordController.clear();
@@ -243,45 +253,41 @@ String selectedDigitalPaymentMethodName = '';
     _cashChangesAmount = null;
   }
 
-
   void setIsCheckCreateAccount(bool isCheck, {bool update = true}) {
     _isCheckCreateAccount = isCheck;
-    if(update) {
+    if (update) {
       notifyListeners();
     }
   }
 
-
-
-  void toggleChangeAmountShow(){
+  void toggleChangeAmountShow() {
     _changeAmountShow = !_changeAmountShow;
     notifyListeners();
   }
 
-  void onChangeCashChangesAmount(double? amount)=> _cashChangesAmount = amount;
-
+  void onChangeCashChangesAmount(double? amount) => _cashChangesAmount = amount;
 
   Future<ApiResponseModel> getReferralAmount(String? amount) async {
-    ApiResponseModel apiResponse = await checkoutServiceInterface.getReferralAmount(amount);
-    if (apiResponse.response != null && apiResponse.response!.statusCode == 200) {
+    ApiResponseModel apiResponse =
+        await checkoutServiceInterface.getReferralAmount(amount);
+    if (apiResponse.response != null &&
+        apiResponse.response!.statusCode == 200) {
       _referralAmount = ReferralAmount.fromJson(apiResponse.response.data);
     } else {
-      ApiChecker.checkApi( apiResponse);
+      ApiChecker.checkApi(apiResponse);
     }
     notifyListeners();
     return apiResponse;
   }
 
-
   void toggleTermsCheck({bool isUpdate = true}) {
     _isAcceptTerms = !_isAcceptTerms;
-    if(isUpdate) {
+    if (isUpdate) {
       notifyListeners();
     }
   }
 
-
-  void updatePaymentSelection(){
+  void updatePaymentSelection() {
     notifyListeners();
   }
 
@@ -292,8 +298,10 @@ String selectedDigitalPaymentMethodName = '';
     _isLoading = true;
     notifyListeners();
 
-    final String idempotencyKey = 'prc_${DateTime.now().millisecondsSinceEpoch}_${(1000 + (DateTime.now().microsecond % 9000))}';
-    ApiResponseModel apiResponse = await checkoutServiceInterface.createPickupReservation(
+    final String idempotencyKey =
+        'prc_${DateTime.now().millisecondsSinceEpoch}_${(1000 + (DateTime.now().microsecond % 9000))}';
+    ApiResponseModel apiResponse =
+        await checkoutServiceInterface.createPickupReservation(
       idempotencyKey: idempotencyKey,
       cartIds: cartIds,
       checkedOnly: checkedOnly,
@@ -311,7 +319,8 @@ String selectedDigitalPaymentMethodName = '';
     _isLoading = true;
     notifyListeners();
 
-    ApiResponseModel apiResponse = await checkoutServiceInterface.payPickupReservation(
+    ApiResponseModel apiResponse =
+        await checkoutServiceInterface.payPickupReservation(
       reservationCode: reservationCode,
       useCashback: useCashback,
       paymentGateway: 'paystack',
@@ -325,7 +334,8 @@ String selectedDigitalPaymentMethodName = '';
 
   // [AI] Authoritative Fulfillment & Delivery Intent Methods
   FulfillmentAvailabilityModel? _fulfillmentAvailability;
-  FulfillmentAvailabilityModel? get fulfillmentAvailability => _fulfillmentAvailability;
+  FulfillmentAvailabilityModel? get fulfillmentAvailability =>
+      _fulfillmentAvailability;
   bool _isCheckingFulfillment = false;
   bool get isCheckingFulfillment => _isCheckingFulfillment;
 
@@ -337,15 +347,18 @@ String selectedDigitalPaymentMethodName = '';
     _isCheckingFulfillment = true;
     notifyListeners();
 
-    ApiResponseModel apiResponse = await checkoutServiceInterface.checkFulfillmentAvailability(
+    ApiResponseModel apiResponse =
+        await checkoutServiceInterface.checkFulfillmentAvailability(
       shopId: shopId,
       shippingAddressId: shippingAddressId,
       cartItems: cartItems,
     );
 
     _isCheckingFulfillment = false;
-    if (apiResponse.response != null && apiResponse.response!.statusCode == 200) {
-      _fulfillmentAvailability = FulfillmentAvailabilityModel.fromJson(apiResponse.response!.data);
+    if (apiResponse.response != null &&
+        apiResponse.response!.statusCode == 200) {
+      _fulfillmentAvailability =
+          FulfillmentAvailabilityModel.fromJson(apiResponse.response!.data);
     } else {
       _fulfillmentAvailability = null;
     }
@@ -355,6 +368,13 @@ String selectedDigitalPaymentMethodName = '';
 
   String? _currentIntentOrderGroupId;
   String? get currentIntentOrderGroupId => _currentIntentOrderGroupId;
+
+  DeliveryPaymentState? get pendingDeliveryPayment {
+    final storage = di.sl<StorageService>();
+    return DeliveryPaymentState.decode(
+        storage.getString(DeliveryPaymentState.storageKey),
+        storage.getString(AppConstants.userLoginToken));
+  }
 
   Future<void> placeDeliveryOrder({
     required int addressId,
@@ -373,50 +393,119 @@ String selectedDigitalPaymentMethodName = '';
       cartItemIds: cartItemIds,
     );
 
-    if (intentResponse.response == null || intentResponse.response?.statusCode != 200) {
+    if (intentResponse.response == null ||
+        intentResponse.response?.statusCode != 200) {
       _isLoading = false;
       notifyListeners();
       showCustomSnackBarWidget(
-        getTranslated(intentResponse.error ?? 'Failed to create checkout intent', Get.context!),
+        getTranslated(
+            intentResponse.error ?? 'Failed to create checkout intent',
+            Get.context!),
         Get.context!,
         snackBarType: SnackBarType.error,
       );
       return;
     }
 
-    final orderGroupId = intentResponse.response!.data['order_group_id']?.toString();
+    final orderGroupId =
+        intentResponse.response!.data['order_group_id']?.toString();
     if (orderGroupId == null) {
       _isLoading = false;
       notifyListeners();
-      showCustomSnackBarWidget('Invalid response: Missing order_group_id', Get.context!, snackBarType: SnackBarType.error);
+      showCustomSnackBarWidget(
+          'Invalid response: Missing order_group_id', Get.context!,
+          snackBarType: SnackBarType.error);
       return;
     }
 
     _currentIntentOrderGroupId = orderGroupId;
 
-    // Phase 2: Initialize Paystack payment
-    final payResponse = await initializeIntentPayment(orderGroupId: orderGroupId);
+    final quote = intentResponse.response!.data['quote'];
+    if (Get.context == null) return;
+    if (quote is! Map) {
+      showCustomSnackBarWidget(
+          'The final quote is unavailable. Please try again.', Get.context!,
+          snackBarType: SnackBarType.error);
+      return;
+    }
+    final confirmed = await showDialog<bool>(
+        context: Get.context!,
+        builder: (context) => AlertDialog(
+              title: const Text('Confirm final checkout amount'),
+              content: SingleChildScrollView(
+                  child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                    Text(
+                        'Merchandise: ${quote['currency']} ${quote['merchandise_subtotal']}'),
+                    Text('Tax: ${quote['currency']} ${quote['tax_total']}'),
+                    Text(
+                        'Delivery: ${quote['currency']} ${quote['shipping_total']}'),
+                    Text(
+                        'Victorious Points: ${quote['currency']} ${quote['cashback_amount']}'),
+                    const Divider(),
+                    Text(
+                        'Pay now: ${quote['currency']} ${quote['total_amount']}'),
+                    for (final vendor in (quote['vendors'] as List? ?? [])) ...[
+                      const Divider(),
+                      Text(vendor['shop_name']?.toString() ?? 'Store'),
+                      Text('Merchandise: ${quote['currency']} ${vendor['merchandise']}'),
+                      Text('Tax: ${quote['currency']} ${vendor['tax']}'),
+                      Text('Delivery: ${quote['currency']} ${vendor['shipping_cost']}'),
+                      Text('Victorious Points: ${quote['currency']} ${vendor['allocated_cashback'] ?? '0.00'}'),
+                    ],
+                  ])),
+              actions: [
+                TextButton(
+                    onPressed: () => Navigator.pop(context, false),
+                    child: const Text('Back')),
+                FilledButton(
+                    onPressed: () => Navigator.pop(context, true),
+                    child: const Text('Confirm and pay'))
+              ],
+            ));
+    if (confirmed != true) return;
 
-    if (payResponse.response != null && payResponse.response!.statusCode == 200) {
+    // Phase 2: Initialize Paystack payment
+    final payResponse =
+        await initializeIntentPayment(orderGroupId: orderGroupId);
+
+    if (payResponse.response != null &&
+        payResponse.response!.statusCode == 200) {
       _addressIndex = null;
       _billingAddressIndex = null;
       sameAsBilling = false;
       _isLoading = false;
 
       final data = payResponse.response!.data;
+      final pending = pendingDeliveryPayment;
+      if (pending != null) {
+        await di.sl<StorageService>().setString(
+            DeliveryPaymentState.storageKey,
+            DeliveryPaymentState(
+                    ownerToken: pending.ownerToken,
+                    requestSignature: pending.requestSignature,
+                    idempotencyKey: pending.idempotencyKey,
+                    orderGroupId: orderGroupId,
+                    paymentRequestId: data['payment_request_id']?.toString(), initializationStarted: true)
+                .encode());
+      }
       if (data['authorization_url'] != null) {
-        RouterHelper.getDigitalPaymentScreenRoute(
-          url: data['authorization_url'],
-          fromWallet: false,
-          action: RouteAction.pushReplacement,
-        );
+        Navigator.of(Get.context!).pushReplacement(MaterialPageRoute(
+            builder: (_) => DigitalPaymentScreen(
+                url: data['authorization_url'], orderGroupId: orderGroupId)));
       } else {
-        showCustomSnackBarWidget('Payment initialized but no authorization URL returned', Get.context!, snackBarType: SnackBarType.error);
+        Navigator.of(Get.context!).push(MaterialPageRoute(
+            builder: (_) => PaymentStatusScreen(orderGroupId: orderGroupId)));
       }
     } else {
       _isLoading = false;
+      Navigator.of(Get.context!).push(MaterialPageRoute(
+          builder: (_) => PaymentStatusScreen(orderGroupId: orderGroupId)));
       showCustomSnackBarWidget(
-        getTranslated(payResponse.error ?? 'Payment initialization failed', Get.context!),
+        getTranslated(
+            payResponse.error ?? 'Payment initialization failed', Get.context!),
         Get.context!,
         snackBarType: SnackBarType.error,
       );
@@ -433,14 +522,67 @@ String selectedDigitalPaymentMethodName = '';
     _isLoading = true;
     notifyListeners();
 
-    final String idempotencyKey = 'dci_${DateTime.now().millisecondsSinceEpoch}_${(1000 + (DateTime.now().microsecond % 9000))}';
-    ApiResponseModel apiResponse = await checkoutServiceInterface.createDeliveryCheckoutIntent(
+    final storage = di.sl<StorageService>();
+    final owner = storage.getString(AppConstants.userLoginToken) ?? '';
+    final signature =
+        jsonEncode([addressId, billingAddressId, useCashback, cartItemIds]);
+    final pending = pendingDeliveryPayment;
+    // Do not replace an unresolved payment just because the cart/address changed.
+    if (pending?.orderGroupId != null &&
+        pending!.initializationStarted && pending.requestSignature != signature) {
+      _isLoading = false;
+      notifyListeners();
+      Navigator.of(Get.context!).push(MaterialPageRoute(
+          builder: (_) =>
+              PaymentStatusScreen(orderGroupId: pending.orderGroupId)));
+      return ApiResponseModel.withError(
+          'Check your existing payment before starting another checkout.');
+    }
+    final reuse = pending?.requestSignature == signature;
+    var idempotencyKey = (reuse ? pending?.idempotencyKey : null) ??
+        'dci_${DateTime.now().microsecondsSinceEpoch}_${Random.secure().nextInt(1 << 32)}';
+    await storage.setString(
+        DeliveryPaymentState.storageKey,
+        DeliveryPaymentState(
+                ownerToken: owner,
+                requestSignature: signature,
+                idempotencyKey: idempotencyKey,
+                orderGroupId: reuse ? pending?.orderGroupId : null,
+                initializationStarted: reuse && (pending?.initializationStarted ?? false))
+            .encode());
+    ApiResponseModel apiResponse =
+        await checkoutServiceInterface.createDeliveryCheckoutIntent(
       addressId: addressId,
       idempotencyKey: idempotencyKey,
       billingAddressId: billingAddressId,
       useCashback: useCashback,
       cartItemIds: cartItemIds,
     );
+
+    // A changed cart can keep the same selected IDs. Only an uninitiated quote
+    // may be replaced after the backend reports a conflict or expiration.
+    if (!(pending?.initializationStarted ?? false) &&
+        (apiResponse.response?.statusCode == 409 ||
+         (apiResponse.response?.statusCode == 200 && apiResponse.response!.data['status'] == 'expired'))) {
+      idempotencyKey = 'dci_${DateTime.now().microsecondsSinceEpoch}_${Random.secure().nextInt(1 << 32)}';
+      await storage.setString(DeliveryPaymentState.storageKey, DeliveryPaymentState(ownerToken: owner,
+        requestSignature: signature, idempotencyKey: idempotencyKey).encode());
+      apiResponse = await checkoutServiceInterface.createDeliveryCheckoutIntent(
+        addressId: addressId, idempotencyKey: idempotencyKey, billingAddressId: billingAddressId,
+        useCashback: useCashback, cartItemIds: cartItemIds);
+    }
+
+    if (apiResponse.response?.statusCode == 200) {
+      final group = apiResponse.response!.data['order_group_id']?.toString();
+      await storage.setString(
+          DeliveryPaymentState.storageKey,
+          DeliveryPaymentState(
+                  ownerToken: owner,
+                  requestSignature: signature,
+                  idempotencyKey: idempotencyKey,
+                  orderGroupId: group, initializationStarted: reuse && (pending?.initializationStarted ?? false))
+              .encode());
+    }
 
     _isLoading = false;
     notifyListeners();
@@ -453,7 +595,16 @@ String selectedDigitalPaymentMethodName = '';
     _isLoading = true;
     notifyListeners();
 
-    ApiResponseModel apiResponse = await checkoutServiceInterface.initializeIntentPayment(
+    final pending = pendingDeliveryPayment;
+    if (pending != null && pending.orderGroupId == orderGroupId) {
+      await di.sl<StorageService>().setString(DeliveryPaymentState.storageKey,
+        DeliveryPaymentState(ownerToken: pending.ownerToken, requestSignature: pending.requestSignature,
+          idempotencyKey: pending.idempotencyKey, orderGroupId: pending.orderGroupId,
+          paymentRequestId: pending.paymentRequestId, initializationStarted: true).encode());
+    }
+
+    ApiResponseModel apiResponse =
+        await checkoutServiceInterface.initializeIntentPayment(
       orderGroupId: orderGroupId,
     );
 
@@ -462,4 +613,3 @@ String selectedDigitalPaymentMethodName = '';
     return apiResponse;
   }
 }
-

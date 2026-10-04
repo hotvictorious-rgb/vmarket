@@ -11,6 +11,8 @@ import 'package:flutter_sixvalley_ecommerce/di_container.dart' as di;
 import 'package:flutter_sixvalley_ecommerce/services/storage_service.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
+import 'package:flutter_sixvalley_ecommerce/features/checkout/domain/models/delivery_payment_state.dart';
+import 'package:flutter_sixvalley_ecommerce/features/checkout/screens/digital_payment_order_place_screen.dart';
 
 /// Payment Status Screen — Recovery screen for app close/crash during payment
 class PaymentStatusScreen extends StatefulWidget {
@@ -35,6 +37,8 @@ class _PaymentStatusScreenState extends State<PaymentStatusScreen> {
   int _pollAttempts = 0;
   static const int _maxPollAttempts = 10; // 30 seconds (3s intervals)
   Map<String, dynamic>? _orderData;
+  bool _requestInFlight = false;
+  String? _authorizationUrl;
 
   @override
   void initState() {
@@ -49,6 +53,7 @@ class _PaymentStatusScreenState extends State<PaymentStatusScreen> {
   }
 
   void _startPolling() {
+    _pollTimer?.cancel();
     _pollTimer = Timer.periodic(const Duration(seconds: 3), (timer) {
       if (_pollAttempts >= _maxPollAttempts) {
         timer.cancel();
@@ -66,20 +71,24 @@ class _PaymentStatusScreenState extends State<PaymentStatusScreen> {
   }
 
   Future<void> _checkPaymentStatus() async {
+    if (_requestInFlight || !mounted) return;
+    _requestInFlight = true;
     try {
       // [AI] VMarket security: auth token ONLY from flutter_secure_storage via StorageService.
-      final token = di.sl<StorageService>().getString(AppConstants.userLoginToken);
+      final token =
+          di.sl<StorageService>().getString(AppConstants.userLoginToken);
 
       if (token == null || token.isEmpty) {
         _pollTimer?.cancel();
-        setState(() => _status = PaymentStatus.failed);
+        if (mounted) setState(() => _status = PaymentStatus.pending);
         return;
       }
 
       if (widget.isPickup && widget.reservationCode != null) {
         // Check pickup reservation status
         final response = await http.get(
-          Uri.parse('${AppConstants.baseUrl}/api/v1/customer/pickup-reservations/${widget.reservationCode}'),
+          Uri.parse(
+              '${AppConstants.baseUrl}/api/v1/customer/pickup-reservations/${widget.reservationCode}'),
           headers: {
             'Content-Type': 'application/json',
             'Authorization': 'Bearer $token',
@@ -97,7 +106,8 @@ class _PaymentStatusScreenState extends State<PaymentStatusScreen> {
               String? pickupVerificationCode;
               try {
                 final orderResponse = await http.get(
-                  Uri.parse('${AppConstants.baseUrl}${AppConstants.getOrderFromOrderId}${reservation['order_id']}'),
+                  Uri.parse(
+                      '${AppConstants.baseUrl}${AppConstants.getOrderFromOrderId}${reservation['order_id']}'),
                   headers: {
                     'Content-Type': 'application/json',
                     'Authorization': 'Bearer $token',
@@ -105,22 +115,23 @@ class _PaymentStatusScreenState extends State<PaymentStatusScreen> {
                 );
                 if (orderResponse.statusCode == 200) {
                   final orderData = json.decode(orderResponse.body);
-                  pickupVerificationCode = (orderData['verification_code'] != null && orderData['verification_code'].toString().isNotEmpty)
-                      ? orderData['verification_code'].toString()
-                      : (orderData['pickup_verification_code']?.toString());
+                  pickupVerificationCode =
+                      pickupHandoverCode(Map<String, dynamic>.from(orderData));
                 }
               } catch (e) {
                 debugPrint('Pickup order OTP fetch error: $e');
               }
 
+              if (pickupVerificationCode == null || !mounted) return;
               _pollTimer?.cancel();
               setState(() {
                 _status = PaymentStatus.success;
                 _orderData = {
                   'order_id': reservation['order_id'],
-                  'pickup_verification_code': pickupVerificationCode ?? 'XXXXXX',
+                  'pickup_verification_code': pickupVerificationCode,
                   'cashback_earned': reservation['cashback_earned'],
-                  'shop_name': reservation['shop']?['name'] ?? 'Victorious Store',
+                  'shop_name':
+                      reservation['shop']?['name'] ?? 'Victorious Store',
                   'shop_address': reservation['shop']?['address'],
                 };
               });
@@ -131,7 +142,8 @@ class _PaymentStatusScreenState extends State<PaymentStatusScreen> {
         // [AI] FAPI-001: direct intent status (backend-fulfilled REQ-USERAPP-20260924-002).
         // Replaces fragile order/list scan. IDOR enforced server-side (auth customer scope).
         final response = await http.get(
-          Uri.parse('${AppConstants.baseUrl}${AppConstants.checkoutIntentStatusUri}${widget.orderGroupId}/status'),
+          Uri.parse(
+              '${AppConstants.baseUrl}${AppConstants.checkoutIntentStatusUri}${widget.orderGroupId}/status'),
           headers: {
             'Content-Type': 'application/json',
             'Authorization': 'Bearer $token',
@@ -140,27 +152,45 @@ class _PaymentStatusScreenState extends State<PaymentStatusScreen> {
 
         if (response.statusCode == 200) {
           final data = json.decode(response.body);
-          final paymentStatus = data['payment_status']?.toString();
           final orders = data['orders'] as List?;
-          if (paymentStatus == 'paid' && orders != null && orders.isNotEmpty) {
+          _authorizationUrl = data['authorization_url']?.toString();
+          if (deliveryPaymentCompleted(Map<String, dynamic>.from(data))) {
             // Order placed - payment successful
             _pollTimer?.cancel();
+            await _clearResolvedDelivery();
+            if (!mounted) return;
             setState(() {
               _status = PaymentStatus.success;
               _orderData = {
-                'order_id': orders.first['id'],
+                'order_id': orders!.first['id'],
               };
             });
+          } else if (data['intent_status'] == 'expired' &&
+              data['payment_status'] == 'unpaid') {
+            _pollTimer?.cancel();
+            await _clearResolvedDelivery();
+            if (mounted) setState(() => _status = PaymentStatus.failed);
           }
         } else if (response.statusCode == 404) {
-          // Intent expired or unknown — stop polling, surface failure with retry.
           _pollTimer?.cancel();
-          setState(() => _status = PaymentStatus.failed);
+          if (mounted) setState(() => _status = PaymentStatus.pending);
         }
       }
     } catch (e) {
       // Continue polling on error
       debugPrint('Payment status check error: $e');
+    } finally {
+      _requestInFlight = false;
+    }
+  }
+
+  Future<void> _clearResolvedDelivery() async {
+    if (!mounted) return;
+    final storage = di.sl<StorageService>();
+    final pending = DeliveryPaymentState.decode(storage.getString(DeliveryPaymentState.storageKey),
+      storage.getString(AppConstants.userLoginToken));
+    if (pending?.orderGroupId == widget.orderGroupId) {
+      await storage.remove(DeliveryPaymentState.storageKey);
     }
   }
 
@@ -169,7 +199,9 @@ class _PaymentStatusScreenState extends State<PaymentStatusScreen> {
     return PopScope(
       canPop: _status == PaymentStatus.failed,
       onPopInvokedWithResult: (didPop, result) {
-        if (!didPop && (_status == PaymentStatus.success || _status == PaymentStatus.pending)) {
+        if (!didPop &&
+            (_status == PaymentStatus.success ||
+                _status == PaymentStatus.pending)) {
           // Prevent back navigation during success/pending
           return;
         }
@@ -260,16 +292,19 @@ class _PaymentStatusScreenState extends State<PaymentStatusScreen> {
     String title;
     switch (_status) {
       case PaymentStatus.checking:
-        title = getTranslated('payment_status_checking', context) ?? 'Checking Payment Status';
+        title = getTranslated('payment_status_checking', context) ??
+            'Checking Payment Status';
         break;
       case PaymentStatus.success:
         title = getTranslated('payment_done', context) ?? 'Payment Successful';
         break;
       case PaymentStatus.pending:
-        title = getTranslated('payment_status_pending', context) ?? 'Payment Pending';
+        title = getTranslated('payment_status_pending', context) ??
+            'Payment Pending';
         break;
       case PaymentStatus.failed:
-        title = getTranslated('payment_failed', context) ?? 'Payment Not Completed';
+        title =
+            getTranslated('payment_failed', context) ?? 'Payment Not Completed';
         break;
     }
 
@@ -328,7 +363,8 @@ class _PaymentStatusScreenState extends State<PaymentStatusScreen> {
                 MaterialPageRoute(
                   builder: (_) => PickupOrderSuccessScreen(
                     orderId: _orderData!['order_id'],
-                    pickupVerificationCode: _orderData!['pickup_verification_code'] ?? 'XXXXXX',
+                    pickupVerificationCode:
+                        _orderData!['pickup_verification_code'],
                     cashbackEarned: _orderData!['cashback_earned']?.toDouble(),
                     shopName: _orderData!['shop_name'],
                     shopAddress: _orderData!['shop_address'],
@@ -356,7 +392,8 @@ class _PaymentStatusScreenState extends State<PaymentStatusScreen> {
           return ElevatedButton(
             onPressed: () {
               Navigator.of(context).pushAndRemoveUntil(
-                MaterialPageRoute(builder: (_) => const DashBoardScreen(pageIndex: 0)),
+                MaterialPageRoute(
+                    builder: (_) => const DashBoardScreen(pageIndex: 0)),
                 (route) => false,
               );
             },
@@ -368,7 +405,8 @@ class _PaymentStatusScreenState extends State<PaymentStatusScreen> {
               ),
             ),
             child: Text(
-              getTranslated('continue_shopping', context) ?? 'Continue Shopping',
+              getTranslated('continue_shopping', context) ??
+                  'Continue Shopping',
               style: titilliumSemiBold.copyWith(
                 fontSize: Dimensions.fontSizeDefault,
                 color: Colors.white,
@@ -380,6 +418,12 @@ class _PaymentStatusScreenState extends State<PaymentStatusScreen> {
       case PaymentStatus.pending:
         return Column(
           children: [
+            if (!widget.isPickup && _authorizationUrl != null && widget.orderGroupId != null)
+              ElevatedButton(
+                onPressed: () => Navigator.of(context).pushReplacement(MaterialPageRoute(builder: (_) =>
+                  DigitalPaymentScreen(url: _authorizationUrl!, orderGroupId: widget.orderGroupId))),
+                child: const Text('Continue existing payment'),
+              ),
             ElevatedButton.icon(
               onPressed: () {
                 setState(() {
@@ -389,10 +433,12 @@ class _PaymentStatusScreenState extends State<PaymentStatusScreen> {
                 _startPolling();
               },
               icon: const Icon(Icons.refresh),
-              label: Text(getTranslated('check_again', context) ?? 'Check Again'),
+              label:
+                  Text(getTranslated('check_again', context) ?? 'Check Again'),
               style: ElevatedButton.styleFrom(
                 backgroundColor: Theme.of(context).primaryColor,
-                padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 16),
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 32, vertical: 16),
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(8),
                 ),
@@ -402,7 +448,8 @@ class _PaymentStatusScreenState extends State<PaymentStatusScreen> {
             TextButton(
               onPressed: () {
                 Navigator.of(context).pushAndRemoveUntil(
-                  MaterialPageRoute(builder: (_) => const DashBoardScreen(pageIndex: 0)),
+                  MaterialPageRoute(
+                      builder: (_) => const DashBoardScreen(pageIndex: 0)),
                   (route) => false,
                 );
               },

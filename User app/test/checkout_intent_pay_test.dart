@@ -1,4 +1,8 @@
 import 'package:flutter_test/flutter_test.dart';
+import 'package:flutter_sixvalley_ecommerce/di_container.dart' as di;
+import 'package:flutter_sixvalley_ecommerce/services/storage_service.dart';
+import 'package:flutter_sixvalley_ecommerce/utill/app_constants.dart';
+import 'support/memory_storage.dart';
 import 'package:flutter_sixvalley_ecommerce/data/model/api_response.dart';
 import 'package:flutter_sixvalley_ecommerce/features/checkout/controllers/checkout_controller.dart';
 import 'package:flutter_sixvalley_ecommerce/features/checkout/domain/models/pickup_reservation_model.dart';
@@ -152,7 +156,11 @@ void main() {
   late FakeCheckoutService fakeService;
   late CheckoutController checkoutController;
 
-  setUp(() {
+  setUp(() async {
+    await di.sl.reset();
+    final storage = MemoryStorage();
+    storage.values[AppConstants.userLoginToken] = 'test-customer';
+    di.sl.registerSingleton<StorageService>(storage);
     fakeService = FakeCheckoutService();
     checkoutController = CheckoutController(checkoutServiceInterface: fakeService);
   });
