@@ -122,7 +122,7 @@ class VerificationScreen extends StatelessWidget {
 
                             if(phoneVerification) {
                               if(firebaseVerification) {
-                                authProvider.firebaseOtpVerification(phoneNumber: mobileNumber, session: session ?? '', otp: authProvider.verificationCode);
+                                authProvider.firebaseOtpVerification(phoneNumber: mobileNumber, session: session ?? '', otp: authProvider.verificationCode, isForgetPassword: true);
                               } else {
                                 Provider.of<AuthController>(context, listen: false).verifyOtp(mobileNumber).then((value) {
                                   if(value.isSuccess) {

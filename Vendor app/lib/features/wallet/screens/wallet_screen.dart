@@ -81,7 +81,7 @@ class _WalletScreenState extends State<WalletScreen> {
                 child: Column(children: [
                   Consumer<ProfileController>(
                     builder: (context, seller, child) {
-                      return seller.userInfoModel == null ? const SizedBox() : Column(children: [
+                      return seller.userInfoModel?.wallet == null ? const Text('Wallet information is unavailable for this account.') : Column(children: [
 
                         seller.userInfoModel == null ? const SizedBox() : const WithdrawBalanceWidget(),
 

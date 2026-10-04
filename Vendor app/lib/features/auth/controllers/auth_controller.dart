@@ -4,6 +4,7 @@ import 'dart:developer';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'package:sixvalley_vendor_app/features/auth/domain/models/firebase_reset_credential.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:provider/provider.dart';
 import 'package:sixvalley_vendor_app/common/basewidgets/custom_snackbar_widget.dart';
@@ -265,8 +266,6 @@ class AuthController with ChangeNotifier {
         context: Get.context!
       );
 
-      double value = 0;
-
       if (isProfile && image != null) {
         _sellerProfileImage = image;
       } else if(shopLogo && image != null) {
@@ -422,7 +421,7 @@ class AuthController with ChangeNotifier {
         bool callRoute = !isResend;
 
 
-        await callFirebaseStoretiken(phoneNumber, vId);
+
 
         _verificationID = vId;
 
@@ -477,11 +476,17 @@ class AuthController with ChangeNotifier {
     );
 
     if(apiResponse.response != null && apiResponse.response!.statusCode == 200) {
+      final credential = FirebaseResetCredential.fromResponse(apiResponse.response!.data);
+      if (credential == null) {
+        _isPhoneNumberVerificationButtonLoading = false; notifyListeners();
+        showCustomSnackBarWidget('Unable to verify password reset. Please request a new code.', Get.context!, sanckBarType: SnackBarType.error);
+        return;
+      }
       Navigator.pushAndRemoveUntil(Get.context!, MaterialPageRoute(
         builder: (_) => ResetPasswordWidget(
-          mobileNumber: phoneNumber,
-          otp: otp,
-          token: session,
+          mobileNumber: credential.identity,
+          otp: credential.token,
+          token: credential.token,
         )), (route) => false
       );
     } else {

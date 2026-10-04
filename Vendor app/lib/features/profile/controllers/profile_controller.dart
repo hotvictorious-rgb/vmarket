@@ -117,7 +117,7 @@ class ProfileController with ChangeNotifier {
   }
 
   void updateWalletAmount(String balance) {
-    if( _userInfoModel!.wallet!.totalEarning != null){
+    if (_userInfoModel?.wallet?.totalEarning != null){
       _userInfoModel!.wallet!.totalEarning = (_userInfoModel?.wallet?.totalEarning ?? 0) + double.parse(balance);
       if(_userInfoModel?.wallet?.pendingWithdraw != null) {
         _userInfoModel!.wallet!.pendingWithdraw = (_userInfoModel?.wallet?.pendingWithdraw ?? 0) - double.parse(balance);

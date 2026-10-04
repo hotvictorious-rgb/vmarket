@@ -243,7 +243,8 @@ class AuthRepository implements AuthRepositoryInterface{
         data: {
           'sessionInfo' : session,
           'phoneNumber' : phoneNumber,
-          'code' : otp
+          'code' : otp,
+          'is_reset_token': isForgetPassword ? 1 : 0,
         },
       );
       return ApiResponse.withSuccess(response);
