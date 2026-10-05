@@ -39,8 +39,8 @@ class _ResetPasswordWidgetState extends State<ResetPasswordWidget> {
 
 
   void resetPassword() async {
-      String _password = _passwordController!.text.trim();
-      String _confirmPassword = _confirmPasswordController!.text.trim();
+      String _password = _passwordController!.text;
+      String _confirmPassword = _confirmPasswordController!.text;
 
       if (_password.isEmpty) {
      showCustomSnackBarWidget('password_is_required'.tr);

@@ -232,7 +232,7 @@ class _LoginScreenState extends State<LoginScreen> {
                 onTap: () async {
                   String countryCode =  Get.find<AuthController>().countryCode.replaceAll('+', '');
                   String phone = _emailController!.text.trim();
-                  String _password = _passwordController!.text.trim();
+                  String _password = _passwordController!.text;
                   if (phone.isEmpty) {
                     showCustomSnackBarWidget('enter_phone_number'.tr);
                   }else if (_password.isEmpty) {
