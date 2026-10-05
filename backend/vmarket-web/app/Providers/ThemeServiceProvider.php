@@ -14,7 +14,7 @@ class ThemeServiceProvider extends ServiceProvider
      */
     public function register(): void
     {
-        $theme = env('WEB_THEME') == null ? 'theme_vmarket' : env('WEB_THEME');
+        $theme = theme_root_path();
         $path = base_path('resources/themes/' . $theme);
         if (!is_dir($path)) {
             $path = base_path('resources/themes/theme_vmarket');

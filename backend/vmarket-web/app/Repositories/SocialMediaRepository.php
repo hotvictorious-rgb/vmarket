@@ -18,7 +18,9 @@ class SocialMediaRepository implements SocialMediaRepositoryInterface
 
     public function add(array $data): string|object
     {
-        return $this->socialMedia->create($data);
+        $result = $this->socialMedia->create($data);
+        cacheRemoveByType('social_media');
+        return $result;
     }
 
     public function getFirstWhere(array $params, array $relations = []): ?Model
@@ -56,12 +58,15 @@ class SocialMediaRepository implements SocialMediaRepositoryInterface
 
     public function update(string $id, array $data): bool
     {
-        return $this->socialMedia->where('id', $id)->update($data);
+        $result = $this->socialMedia->where('id', $id)->update($data);
+        cacheRemoveByType('social_media');
+        return (bool)$result;
     }
 
     public function updateWhere(array $params, array $data): bool
     {
         $this->socialMedia->where($params)->update($data);
+        cacheRemoveByType('social_media');
         return true;
     }
 
@@ -69,6 +74,7 @@ class SocialMediaRepository implements SocialMediaRepositoryInterface
     public function delete(array $params): bool
     {
         $this->socialMedia->where($params)->delete();
+        cacheRemoveByType('social_media');
         return true;
     }
 }

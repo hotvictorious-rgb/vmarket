@@ -229,13 +229,13 @@ Route::group(['prefix' => 'v3/seller', 'middleware' => ['api_lang']], function (
             Route::post('reject', [\App\Http\Controllers\Vendor\Order\PickupReservationController::class, 'reject']);
         });
 
-    });
-
-    Route::controller(ProductController::class)->group(function () {
-        Route::group(['prefix' => 'products'], function () {
-            Route::get('{seller_id}/all-products', 'getVendorAllProducts');
-            Route::get('{seller_id}/edit-order-all-products', 'editOrderVendorAllProducts');
+        Route::controller(ProductController::class)->group(function () {
+            Route::group(['prefix' => 'products'], function () {
+                Route::get('{seller_id}/all-products', 'getVendorAllProducts');
+                Route::get('{seller_id}/edit-order-all-products', 'editOrderVendorAllProducts');
+            });
         });
+
     });
 });
 

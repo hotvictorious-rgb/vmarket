@@ -18,7 +18,9 @@ class SettingRepository implements SettingRepositoryInterface
 
     public function add(array $data): string|object
     {
-        return $this->setting->create($data);
+        $result = $this->setting->create($data);
+        cacheRemoveByType('payment_settings');
+        return $result;
     }
 
     public function getFirstWhere(array $params, array $relations = []): ?Model
@@ -99,23 +101,29 @@ class SettingRepository implements SettingRepositoryInterface
 
     public function update(string $id, array $data): bool
     {
-        return $this->setting->where('id', $id)->update($data);
+        $result = $this->setting->where('id', $id)->update($data);
+        cacheRemoveByType('payment_settings');
+        return (bool)$result;
     }
 
     public function updateWhere(array $params, array $data): bool
     {
-        return $this->setting->where($params)->update($data);
+        $result = $this->setting->where($params)->update($data);
+        cacheRemoveByType('payment_settings');
+        return (bool)$result;
     }
 
     public function updateOrInsert(array $params, array $data): bool
     {
         $this->setting->updateOrInsert($params, $data);
+        cacheRemoveByType('payment_settings');
         return true;
     }
 
     public function delete(array $params): bool
     {
         $this->setting->where($params)->delete();
+        cacheRemoveByType('payment_settings');
         return true;
     }
 }

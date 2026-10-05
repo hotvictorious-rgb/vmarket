@@ -98,6 +98,16 @@ class Seller extends Authenticatable
         'remember_token',
         'password',
         'feed_token',
+        'bank_name',
+        'branch',
+        'account_no',
+        'holder_name',
+        'nin',
+        'nin_document',
+        'cac_number',
+        'cac_document',
+        'cm_firebase_token',
+        'verification_notes',
     ];
 
     /**

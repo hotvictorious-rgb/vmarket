@@ -290,7 +290,12 @@ class DeliveryManController extends Controller
             DB::commit();
         } catch (\Exception $e) {
             DB::rollBack();
-            return response()->json(['message' => 'Failed to update order status', 'error' => $e->getMessage()], 500);
+            \Illuminate\Support\Facades\Log::error('Rider order_status_update error: ' . $e->getMessage(), [
+                'order_id' => $request['order_id'] ?? null,
+                'status' => $request['status'] ?? null,
+                'delivery_man_id' => $deliveryMan['id'] ?? null,
+            ]);
+            return response()->json(['message' => translate('Failed to update order status. Please try again.')], 500);
         }
 
         if ($request['status'] == 'out_for_delivery') {

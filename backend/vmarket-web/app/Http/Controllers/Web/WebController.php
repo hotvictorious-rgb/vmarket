@@ -933,13 +933,11 @@ class WebController extends Controller
         $builder->build($width = 100, $height = 40, $font = null);
         $phrase = $builder->getPhrase();
 
-        if (Session::has('default_captcha_code')) {
-            Session::forget('default_captcha_code');
-        }
-        Session::put('default_captcha_code', $phrase);
-        header("Cache-Control: no-cache, must-revalidate");
-        header("Content-Type:image/jpeg");
+        Session::put('default_captcha_value_contact', $phrase);
+        ob_start();
         $builder->output();
+        $image = ob_get_clean();
+        return response($image)->header('Content-Type', 'image/jpeg')->header('Cache-Control', 'no-store');
     }
 
     public function order_note(Request $request): JsonResponse
@@ -1330,6 +1328,7 @@ class WebController extends Controller
     {
         // 1. Admin-enabled delivery coverage via DeliveryLane
         $lanes = \App\Models\DeliveryLane::where('is_enabled', true)
+            ->whereHas('destinationLga', fn($q) => $q->active()->whereHas('state', fn($s) => $s->where('is_active', true)))
             ->with(['destinationLga.state', 'destinationState', 'originLga'])
             ->get();
 
@@ -1338,7 +1337,7 @@ class WebController extends Controller
 
         foreach ($lanes as $lane) {
             $destLga = $lane->destinationLga;
-            $destState = $lane->destinationState ?? $destLga?->state;
+            $destState = $destLga?->state;
             if ($destLga && $destState) {
                 if (!isset($deliveryStates[$destState->id])) {
                     $deliveryStates[$destState->id] = [
@@ -1354,9 +1353,9 @@ class WebController extends Controller
                         'name' => $destLga->name,
                         'state_id' => $destState->id,
                         'state_name' => $destState->name,
-                        'delivery_fee' => (float)$lane->delivery_fee,
-                        'delivery_fee_formatted' => webCurrencyConverter($lane->delivery_fee),
-                        'estimated_time' => $lane->estimated_delivery_time ?: '2-6 hours',
+                        'delivery_fee' => null,
+                        'delivery_fee_formatted' => null,
+                        'estimated_time' => null,
                     ];
                     $deliveryLgas[$destLga->id] = $lgaItem;
                     $deliveryStates[$destState->id]['lgas'][] = $lgaItem;
@@ -1367,6 +1366,10 @@ class WebController extends Controller
         // 2. In-Shop Pickup coverage via verified merchant shops
         $pickupShops = \App\Models\Shop::where('pickup_enabled', true)
             ->where('temporary_close', 0)
+            ->whereHas('lga', fn($q) => $q->active()->whereHas('state', fn($s) => $s->where('is_active', true)))
+            ->where(function ($q) {
+                $q->where('author_type', 'admin')->orWhereHas('seller', fn($s) => $s->where('status', 'approved')->where('marketplace_status', 'approved'));
+            })
             ->with(['lga.state', 'state', 'seller'])
             ->get()
             ->map(function ($shop) {
@@ -1375,11 +1378,11 @@ class WebController extends Controller
                     'name' => $shop->name,
                     'slug' => $shop->slug,
                     'address' => $shop->address,
-                    'city' => $shop->lga?->name ?? 'Uyo',
-                    'state' => $shop->state?->name ?? 'Akwa Ibom',
+                    'city' => $shop->lga->name,
+                    'state' => $shop->lga->state->name,
                     'lga_id' => $shop->lga_id,
                     'image' => getStorageImages(path: $shop->image_full_url, type: 'shop'),
-                    'preparation_time' => $shop->pickup_preparation_time_minutes ? $shop->pickup_preparation_time_minutes . ' mins' : '30 mins',
+                    'preparation_time' => $shop->pickup_preparation_time_minutes ? $shop->pickup_preparation_time_minutes . ' mins' : null,
                 ];
             });
 
@@ -1389,8 +1392,8 @@ class WebController extends Controller
             'delivery_lgas' => array_values($deliveryLgas),
             'pickup_shops' => $pickupShops,
             'current' => [
-                'city' => session('customer_city', 'Uyo'),
-                'state' => session('customer_state', 'Akwa Ibom'),
+                'city' => session('customer_city'),
+                'state' => session('customer_state'),
                 'lga_id' => session('customer_lga_id'),
                 'state_id' => session('customer_state_id'),
                 'fulfillment_mode' => session('fulfillment_mode', 'delivery'),
@@ -1418,27 +1421,19 @@ class WebController extends Controller
         $state = $request->state ? trim($request->state) : null;
         $fulfillmentMode = in_array($request->fulfillment_mode, ['delivery', 'pickup']) ? $request->fulfillment_mode : 'delivery';
 
-        // Authoritative resolution from canonical geography models
-        if ($lgaId) {
-            $lga = \App\Models\Lga::with('state')->find($lgaId);
-            if ($lga) {
-                $city = $lga->name;
-                $state = $lga->state?->name ?? $state;
-                $stateId = $lga->state_id ?? $stateId;
-            }
-        } elseif ($city) {
-            $matchingLga = \App\Models\Lga::where('name', $city)->with('state')->first()
-                ?: \App\Models\Lga::where('name', 'like', "%{$city}%")->with('state')->first();
-            if ($matchingLga) {
-                $lgaId = $matchingLga->id;
-                $city = $matchingLga->name;
-                $state = $matchingLga->state?->name ?? 'Akwa Ibom';
-                $stateId = $matchingLga->state_id;
-            }
+        $query = \App\Models\Lga::active()->with('state')->whereHas('state', fn($q) => $q->where('is_active', true));
+        if ($lgaId) $query->whereKey($lgaId);
+        else $query->where('name', $city ?? '');
+        if ($stateId) $query->where('state_id', $stateId);
+        $matches = $query->limit(2)->get();
+        $lga = $matches->count() === 1 ? $matches->first() : null;
+        if (!$lga || ($state && strcasecmp($state, $lga->state->name) !== 0)
+            || ($city && strcasecmp($city, $lga->name) !== 0)
+            || ($request->filled('lga_name') && strcasecmp(trim($request->lga_name), $lga->name) !== 0)) {
+            throw \Illuminate\Validation\ValidationException::withMessages(['lga_id' => 'Select an active LGA in its matching state.']);
         }
-
-        $city = $city ?: 'Uyo';
-        $state = $state ?: 'Akwa Ibom';
+        $lgaId = $lga->id; $stateId = $lga->state_id;
+        $city = $lga->name; $state = $lga->state->name;
 
         // Check authoritative DeliveryLane if mode is delivery
         $activeLane = null;
@@ -1462,9 +1457,9 @@ class WebController extends Controller
             'state_id' => $stateId,
             'fulfillment_mode' => $fulfillmentMode,
             'is_covered' => $activeLane ? true : false,
-            'delivery_fee' => $activeLane ? (float)$activeLane->delivery_fee : null,
-            'delivery_fee_formatted' => $activeLane ? webCurrencyConverter($activeLane->delivery_fee) : null,
-            'estimated_time' => $activeLane?->estimated_delivery_time ?: '2-6 hours',
+            'delivery_fee' => null,
+            'delivery_fee_formatted' => null,
+            'estimated_time' => null,
             'message' => translate('Location preference updated to') . ' ' . $city . ', ' . $state,
         ]);
     }

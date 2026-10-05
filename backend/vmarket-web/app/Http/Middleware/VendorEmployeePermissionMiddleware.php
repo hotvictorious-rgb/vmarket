@@ -73,7 +73,22 @@ class VendorEmployeePermissionMiddleware
                 }
             }
 
-            // 3. Module permission check (explicit or deduced from route prefix)
+            // 3. Owner-Only Enclaves (Strictly denied to all vendor employees)
+            if (
+                $request->is('*vendor/employee*') || $request->is('*seller/employee*') ||
+                $request->is('*vendor/business-settings*') || $request->is('*seller/business-settings*') ||
+                $request->is('*vendor/withdraw*') || $request->is('*seller/withdraw*') ||
+                $request->is('*vendor/wallet*') || $request->is('*seller/wallet*') ||
+                $request->is('*vendor/bank*') || $request->is('*seller/bank*') ||
+                $request->is('*vendor/payout*') || $request->is('*seller/payout*') ||
+                $request->is('*vendor/kyc*') || $request->is('*seller/kyc*') ||
+                $request->is('*vendor/shop/update*') || $request->is('*seller/shop-info-update*')
+            ) {
+                ToastMagic::error(translate('Access Denied: Only shop owners can access this administrative function.'));
+                return redirect()->route('vendor.dashboard.index');
+            }
+
+            // 4. Module permission check (explicit or deduced from route prefix)
             if (!$module) {
                 if ($request->is('*vendor/orders*') || $request->is('*seller/orders*')) {
                     $module = 'order';
@@ -87,8 +102,21 @@ class VendorEmployeePermissionMiddleware
                     $module = 'pickup';
                 } elseif ($request->is('*vendor/messages*') || $request->is('*seller/messages*')) {
                     $module = 'message';
+                } elseif ($request->is('*vendor/report*') || $request->is('*seller/report*')) {
+                    $module = 'report';
+                } elseif ($request->is('*vendor/coupon*') || $request->is('*seller/coupon*')) {
+                    $module = 'coupon';
+                } elseif ($request->is('*vendor/clearance-sale*') || $request->is('*seller/clearance-sale*')) {
+                    $module = 'clearance_sale';
+                } elseif ($request->is('*vendor/delivery-man*') || $request->is('*seller/delivery-man*')) {
+                    $module = 'delivery_man';
                 }
             }
+
+            // 5. Allow safe utility routes (dashboard, logout, profile view)
+            $isSafeUtilityRoute = $request->is('*vendor/dashboard*') || 
+                                  $request->is('*vendor/auth/logout*') || 
+                                  $request->is('*vendor/profile*');
 
             if ($module) {
                 $variants = [$module, $module . 's', rtrim($module, 's'), $module . '_management'];
@@ -104,6 +132,10 @@ class VendorEmployeePermissionMiddleware
                     ToastMagic::error(translate('Access Denied: You do not have permission to access the ' . $module . ' module.'));
                     return redirect()->route('vendor.dashboard.index');
                 }
+            } elseif (!$isSafeUtilityRoute) {
+                // [AI] Default-Deny: Unmapped or unknown routes are rejected for employees
+                ToastMagic::error(translate('Access Denied: Your employee role is not authorized to access this area.'));
+                return redirect()->route('vendor.dashboard.index');
             }
         }
 

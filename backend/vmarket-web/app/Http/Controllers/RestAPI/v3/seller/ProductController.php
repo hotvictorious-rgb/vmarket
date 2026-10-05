@@ -145,6 +145,11 @@ class ProductController extends Controller
 
     public function getVendorAllProducts($seller_id, Request $request): JsonResponse
     {
+        $seller = $request->seller;
+        if (!$seller || (int) $seller['id'] !== (int) $seller_id) {
+            return response()->json(['message' => translate('unauthorized_access')], 403);
+        }
+
         $brandIds = json_decode($request['brand_ids'] ?? '', true);
         $categoryIds = json_decode($request['category_ids'] ?? '', true);
         $publishingHouseIds = json_decode($request['publishing_house_ids'] ?? '', true);
@@ -390,6 +395,11 @@ class ProductController extends Controller
 
     public function editOrderVendorAllProducts($seller_id, Request $request): JsonResponse
     {
+        $seller = $request->seller;
+        if (!$seller || (int) $seller['id'] !== (int) $seller_id) {
+            return response()->json(['message' => translate('unauthorized_access')], 403);
+        }
+
         $brandIds = json_decode($request['brand_ids'] ?? '', true);
         $categoryIds = json_decode($request['category_ids'] ?? '', true);
         $publishingHouseIds = json_decode($request['publishing_house_ids'] ?? '', true);
@@ -1040,7 +1050,17 @@ class ProductController extends Controller
 
     public function edit(Request $request, $id)
     {
-        $product = Product::withoutGlobalScopes()->with('translations', 'tags', 'digitalVariation', 'seoInfo')->withCount('reviews')->find($id);
+        $seller = $request->seller;
+        $product = Product::withoutGlobalScopes()
+            ->where(['added_by' => 'seller', 'user_id' => $seller->id])
+            ->with('translations', 'tags', 'digitalVariation', 'seoInfo')
+            ->withCount('reviews')
+            ->find($id);
+
+        if (!$product) {
+            return response()->json(['message' => translate('unauthorized_access')], 403);
+        }
+
         $product = Helpers::product_data_formatting($product);
 
         return response()->json($product, 200);
@@ -1166,7 +1186,9 @@ class ProductController extends Controller
             'video_url' => $request['video_url'] ?? '',
         ];
 
-        $needsApproval = $productService->shouldRequireUpdateApproval(
+        $unitPrice = $productArray['unit_price'] ?? 0;
+        $purchasePrice = $productArray['purchase_price'] ?? 0;
+        $needsApproval = $this->productService->shouldRequireUpdateApproval(
             oldProduct: $product,
             newData: array_merge($productArray, ['purchase_price' => $purchasePrice, 'unit_price' => $unitPrice]),
             updateBy: 'seller'
@@ -1478,7 +1500,14 @@ class ProductController extends Controller
         if ($request['limit'] > 270) {
             return response()->json(['code' => 403, 'message' => 'You can not generate more than 270 barcode']);
         }
-        $product = Product::withCount('reviews')->where('id', $request->id)->first();
+        $seller = $request->seller;
+        $product = Product::withCount('reviews')
+            ->where('id', $request->id)
+            ->where(['added_by' => 'seller', 'user_id' => $seller['id']])
+            ->first();
+        if (!$product) {
+            return response()->json(['message' => translate('unauthorized_access')], 403);
+        }
         $quantity = $request->quantity ?? 30;
 
         if (isset($product->code)) {
@@ -1588,7 +1617,11 @@ class ProductController extends Controller
 
     public function review_list(Request $request, $product_id):JsonResponse
     {
-        $product = Product::withCount('reviews')->find($product_id);
+        $seller = $request->seller;
+        $product = Product::withCount('reviews')->where(['id' => $product_id, 'added_by' => 'seller', 'user_id' => $seller['id']])->first();
+        if (!$product) {
+            return response()->json(['message' => translate('unauthorized_access')], 403);
+        }
         $average_rating = count($product->rating) > 0 ? number_format($product->rating[0]->average, 2, '.', ' ') : 0;
         $reviews = Review::with([
             'customer' => function ($query) {
@@ -1641,7 +1674,11 @@ class ProductController extends Controller
 
     public function deleteImage(Request $request):JsonResponse
     {
-        $product = Product::withCount('reviews')->find($request['id']);
+        $seller = $request->seller;
+        $product = Product::withCount('reviews')->where(['id' => $request['id'], 'added_by' => 'seller', 'user_id' => $seller['id']])->first();
+        if (!$product) {
+            return response()->json(['message' => translate('unauthorized_access')], 403);
+        }
         $array = [];
         if (count(json_decode($product['images'])) < 2) {
             return response()->json(['message' => translate('you_can_not_delete_all_images')], 403);
@@ -1677,7 +1714,7 @@ class ProductController extends Controller
                 $this->deleteFile('/product/' . $request['name']);
             }
         }
-        Product::withCount('reviews')->where('id', $request['id'])->update([
+        Product::withCount('reviews')->where(['id' => $request['id'], 'added_by' => 'seller', 'user_id' => $seller['id']])->update([
             'images' => json_encode($array),
             'color_image' => json_encode($color_image_arr),
         ]);

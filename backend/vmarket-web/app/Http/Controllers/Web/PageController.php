@@ -11,6 +11,7 @@ use App\Http\Requests\Request;
 use Brian2694\Toastr\Facades\Toastr;
 use Illuminate\Contracts\View\View;
 use Illuminate\Http\RedirectResponse;
+use App\Utils\Helpers;
 
 class PageController extends Controller
 {
@@ -26,13 +27,14 @@ class PageController extends Controller
     public function getPageView(Request $request): View|RedirectResponse
     {
         $filter = ['slug' => $request['slug']];
-        if (!($request->has('source') && $request->source == 'admin')) {
+        $canPreview = $request->input('source') === 'admin'
+            && auth('admin')->check() && Helpers::module_permission_check('business_settings');
+        if (!$canPreview) {
             $filter += ['status' => 1];
         }
         $businessPage = $this->businessPageRepo->getFirstWhere(params: $filter, relations: ['banner']);
         if (!$businessPage) {
-            Toastr::error(translate('Page_not_found'));
-            return redirect()->route('home');
+            abort(404);
         }
         $robotsMetaContentData = $this->robotsMetaContentRepo->getFirstWhere(params: ['page_name' => $request['slug']]);
         if (!$robotsMetaContentData) {

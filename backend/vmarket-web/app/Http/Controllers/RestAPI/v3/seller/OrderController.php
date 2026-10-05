@@ -239,14 +239,31 @@ class OrderController extends Controller
             return response()->json(['success' => 0, 'message' => translate('Customer self-pickup orders cannot be assigned to delivery riders.')], 403);
         }
 
-        if ($order['delivery_man_id'] != $request['delivery_man_id']) {
-            $order->deliveryman_assigned_at = Carbon::now();
+        $deliveryMan = \App\Models\DeliveryMan::where('id', $request['delivery_man_id'])
+            ->where('is_active', 1)
+            ->where(function ($query) use ($seller) {
+                $query->where('seller_id', $seller['id'])
+                    ->orWhere('seller_id', 0);
+            })
+            ->first();
+
+        if (!$deliveryMan) {
+            return response()->json([
+                'success' => 0,
+                'message' => translate('Selected delivery rider is invalid, inactive, or not authorized for your shop.')
+            ], 403);
         }
-        $order->delivery_man_id = $request['delivery_man_id'];
-        $order->delivery_type = 'self_delivery';
-        $order->delivery_service_name = null;
-        $order->third_party_delivery_tracking_id = null;
-        $order->save();
+
+        DB::transaction(function () use ($order, $request) {
+            if ($order['delivery_man_id'] != $request['delivery_man_id']) {
+                $order->deliveryman_assigned_at = Carbon::now();
+            }
+            $order->delivery_man_id = $request['delivery_man_id'];
+            $order->delivery_type = 'self_delivery';
+            $order->delivery_service_name = null;
+            $order->third_party_delivery_tracking_id = null;
+            $order->save();
+        });
         OrderStatusEvent::dispatch('new_order_assigned_message', 'delivery_man', $order);
         return response()->json(['success' => 1, 'message' => translate('order_deliveryman_assigned_successfully')], 200);
     }
@@ -586,31 +603,59 @@ class OrderController extends Controller
                 }
             }
 
-            if ($request['delivery_type'] == 'third_party_delivery') {
-                Order::where('id', $request['order_id'])->update([
-                    'delivery_man_id' => null,
-                    'deliveryman_charge' => 0,
-                    'expected_delivery_date' => null,
-                    'delivery_type' => 'third_party_delivery',
-                    'delivery_service_name' => $request['delivery_service_name'] ?? '',
-                    'third_party_delivery_tracking_id' => $request['third_party_delivery_tracking_id'] ?? '',
-                ]);
-            } elseif ($request->has('delivery_man_id') && !empty($request['delivery_man_id']) && ($order['delivery_man_id'] != $request['delivery_man_id'])) {
-                Order::where('id', $request['order_id'])->update([
-                    'delivery_man_id' => $request['delivery_man_id'],
-                    'delivery_type' => 'self_delivery',
-                    'delivery_service_name' => null,
-                    'third_party_delivery_tracking_id' => null,
-                ]);
-                OrderStatusEvent::dispatch('new_order_assigned_message', 'delivery_man', $order);
-            }
-
             // [AI] Rate Authority Guard: Rider compensation is strictly platform-managed and cannot be altered by vendors
             if ($request->has('deliveryman_charge') && !is_null($request['deliveryman_charge']) && ($order['deliveryman_charge'] != $request['deliveryman_charge'])) {
                 return response()->json([
                     'success' => 0,
                     'message' => translate('Rider compensation is strictly controlled by platform delivery lane authority and cannot be modified by merchants.')
                 ], 403);
+            }
+
+            if ($request->has('delivery_man_id') && !empty($request['delivery_man_id'])) {
+                $isSelfPickup = ($order->order_type === 'pickup')
+                    || ($order->delivery_type === 'self_pickup')
+                    || ($order->shipping && stripos($order->shipping->title, 'pickup') !== false);
+                if ($isSelfPickup) {
+                    return response()->json(['success' => 0, 'message' => translate('Customer self-pickup orders cannot be assigned to delivery riders.')], 403);
+                }
+
+                $deliveryMan = \App\Models\DeliveryMan::where('id', $request['delivery_man_id'])
+                    ->where('is_active', 1)
+                    ->where(function ($query) use ($seller) {
+                        $query->where('seller_id', $seller['id'])
+                            ->orWhere('seller_id', 0);
+                    })
+                    ->first();
+
+                if (!$deliveryMan) {
+                    return response()->json([
+                        'success' => 0,
+                        'message' => translate('Selected delivery rider is invalid, inactive, or not authorized for your shop.')
+                    ], 403);
+                }
+            }
+
+            if ($request['delivery_type'] == 'third_party_delivery') {
+                DB::transaction(function () use ($request) {
+                    Order::where('id', $request['order_id'])->update([
+                        'delivery_man_id' => null,
+                        'deliveryman_charge' => 0,
+                        'expected_delivery_date' => null,
+                        'delivery_type' => 'third_party_delivery',
+                        'delivery_service_name' => $request['delivery_service_name'] ?? '',
+                        'third_party_delivery_tracking_id' => $request['third_party_delivery_tracking_id'] ?? '',
+                    ]);
+                });
+            } elseif ($request->has('delivery_man_id') && !empty($request['delivery_man_id']) && ($order['delivery_man_id'] != $request['delivery_man_id'])) {
+                DB::transaction(function () use ($request) {
+                    Order::where('id', $request['order_id'])->update([
+                        'delivery_man_id' => $request['delivery_man_id'],
+                        'delivery_type' => 'self_delivery',
+                        'delivery_service_name' => null,
+                        'third_party_delivery_tracking_id' => null,
+                    ]);
+                });
+                OrderStatusEvent::dispatch('new_order_assigned_message', 'delivery_man', $order);
             }
 
             $orderInfo = Order::with('deliveryMan')->find($request['order_id']);

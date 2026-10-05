@@ -1,11 +1,9 @@
 @if((!isset($productDetailsMeta) || !$productDetailsMeta) && !isset($blogData))
     @if(isset($robotsMetaContentData) && $robotsMetaContentData?->meta_title)
-        <title>{{ $robotsMetaContentData?->meta_title }}</title>
         <meta name="title" content="{{ $robotsMetaContentData?->meta_title }}">
         <meta property="og:title" content="{{ $robotsMetaContentData?->meta_title }}">
         <meta name="twitter:title" content="{{ $robotsMetaContentData?->meta_title }}">
     @elseif(isset($robotsMetaContentData) && $robotsMetaContentData?->title)
-        <title>{{ $robotsMetaContentData?->title }}</title>
         <meta name="title" content="{{ $robotsMetaContentData?->title }}">
         <meta property="og:title" content="{{ $robotsMetaContentData?->title }}">
         <meta name="twitter:title" content="{{ $robotsMetaContentData?->title }}">

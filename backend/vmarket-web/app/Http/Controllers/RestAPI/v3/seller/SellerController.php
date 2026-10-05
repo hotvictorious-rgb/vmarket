@@ -185,6 +185,16 @@ class SellerController extends Controller
     public function shopProductReviewReply(Request $request): JsonResponse
     {
         $seller = $request->seller;
+        $targetReview = Review::where('id', $request['review_id'])
+            ->whereHas('product', function ($query) use ($seller) {
+                $query->where(['added_by' => 'seller', 'user_id' => $seller['id']]);
+            })
+            ->first();
+
+        if (!$targetReview) {
+            return response()->json(['message' => translate('Review not found or unauthorized')], 403);
+        }
+
         $review = ReviewReply::where(['review_id' => $request['review_id'], 'added_by' => 'seller', 'added_by_id' => $seller['id']])->first();
         if (!$review) {
             ReviewReply::insert([
@@ -211,9 +221,19 @@ class SellerController extends Controller
 
     public function shop_product_reviews_status(Request $request):JsonResponse
     {
-        $reviews = Review::find($request->id);
-        $reviews->status = $request->status;
-        $reviews->save();
+        $seller = $request->seller;
+        $review = Review::where('id', $request->id)
+            ->whereHas('product', function ($query) use ($seller) {
+                $query->where(['added_by' => 'seller', 'user_id' => $seller['id']]);
+            })
+            ->first();
+
+        if (!$review) {
+            return response()->json(['message' => translate('Review not found or unauthorized')], 403);
+        }
+
+        $review->status = (int) $request->status;
+        $review->save();
         return response()->json(['message' => translate('status updated successfully!!')], 200);
     }
 

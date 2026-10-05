@@ -113,6 +113,11 @@ class SellerController extends Controller
                     $seller->shop->address = 'Delivers from ' . ($seller->shop->deliveryCity->name ?? 'Uyo Hub');
                     $seller->shop->contact = null;
                 }
+                $seller->makeHidden([
+                    'auth_token', 'phone', 'email', 'bank_name', 'branch', 'account_no', 
+                    'holder_name', 'nin', 'nin_document', 'cac_number', 'cac_document', 
+                    'cm_firebase_token', 'verification_notes', 'sales_commission_percentage', 'gst'
+                ]);
                 unset($seller['phone'], $seller['email']);
                 $seller['temporary_close'] = (int)$seller?->shop?->temporary_close ?? 0;
                 $seller->product?->map(function ($product) {

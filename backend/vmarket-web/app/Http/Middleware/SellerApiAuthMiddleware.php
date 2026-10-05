@@ -133,7 +133,25 @@ class SellerApiAuthMiddleware
                     }
                 }
 
-                // 3. Module Permission Enforcement:
+                // 3. Owner-Only Enclaves (Strictly denied to all vendor employees via API)
+                if (
+                    $request->is('*seller/employee*') ||
+                    $request->is('*seller/business-settings*') ||
+                    $request->is('*seller/withdraw*') ||
+                    $request->is('*seller/wallet*') ||
+                    $request->is('*seller/bank*') ||
+                    $request->is('*seller/payout*') ||
+                    $request->is('*seller/kyc*') ||
+                    $request->is('*seller/shop-info-update*') ||
+                    $request->is('*seller/shop/update*') ||
+                    $request->is('*seller/auth/change-password*')
+                ) {
+                    return response()->json([
+                        'auth-001' => translate('Access Denied: Only the shop owner can access this administrative function.')
+                    ], 403);
+                }
+
+                // 4. Module Permission Enforcement:
                 $module = null;
                 if ($request->is('*seller/products*') || $request->is('*seller/product*')) {
                     $module = 'product';
@@ -143,11 +161,26 @@ class SellerApiAuthMiddleware
                     $module = 'pos';
                 } elseif ($request->is('*seller/refund*')) {
                     $module = 'refund';
-                } elseif ($request->is('*seller/pickup*')) {
+                } elseif ($request->is('*seller/pickup*') || $request->is('*seller/pickup-reservations*')) {
                     $module = 'pickup';
                 } elseif ($request->is('*seller/messages*') || $request->is('*seller/chat*')) {
                     $module = 'message';
+                } elseif ($request->is('*seller/report*') || $request->is('*seller/reports*')) {
+                    $module = 'report';
+                } elseif ($request->is('*seller/coupon*') || $request->is('*seller/coupons*')) {
+                    $module = 'coupon';
+                } elseif ($request->is('*seller/clearance-sale*')) {
+                    $module = 'clearance_sale';
+                } elseif ($request->is('*seller/delivery-man*')) {
+                    $module = 'delivery_man';
                 }
+
+                // 5. Allow safe utility routes (seller profile info, logout, languages)
+                $isSafeUtilityRoute = $request->is('*seller/seller-info*') || 
+                                      $request->is('*seller/profile*') || 
+                                      $request->is('*seller/auth/logout*') || 
+                                      $request->is('*seller/languages*') ||
+                                      $request->is('*seller/notifications*');
 
                 if ($module) {
                     $variants = [$module, $module . 's', rtrim($module, 's'), $module . '_management'];
@@ -163,6 +196,11 @@ class SellerApiAuthMiddleware
                             'auth-001' => translate("Access Denied: Your employee role does not have permission to access the {$module} module.")
                         ], 403);
                     }
+                } elseif (!$isSafeUtilityRoute) {
+                    // [AI] Default-Deny: Unmapped endpoints are rejected for employees
+                    return response()->json([
+                        'auth-001' => translate('Access Denied: Your employee role is not authorized to access this API resource.')
+                    ], 403);
                 }
 
                 $request['seller'] = $employee->seller;

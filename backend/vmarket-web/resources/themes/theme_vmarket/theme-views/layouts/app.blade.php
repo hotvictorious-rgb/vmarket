@@ -6,16 +6,18 @@
     <meta name="csrf-token" content="{{ csrf_token() }}">
     <meta name="_token" content="{{ csrf_token() }}">
     
-    <title>@yield('title', getWebConfig(name: 'company_name') . ' | ' . translate('Leading Omnichannel Marketplace in Akwa Ibom'))</title>
+    @php
+        $pageMetaTitle = data_get($robotsMetaContentData ?? null, 'meta_title') ?: data_get($robotsMetaContentData ?? null, 'title');
+        $favicon = !empty($web_config['fav_icon']['status']) ? $web_config['fav_icon']['path'] : theme_asset('assets/img/vm_icon.jpg');
+        $primaryColor = preg_match('/^#[a-fA-F0-9]{6}$/', $web_config['primary_color'] ?? '') ? $web_config['primary_color'] : '#5E17EB';
+        $secondaryColor = preg_match('/^#[a-fA-F0-9]{6}$/', $web_config['secondary_color'] ?? '') ? $web_config['secondary_color'] : '#FFD700';
+    @endphp
+    <title>@if($pageMetaTitle){{ $pageMetaTitle }}@else @yield('title', getWebConfig(name: 'company_name')) @endif</title>
+    @include('theme-views.partials._robotsMetaContentData')
     
     <!-- Favicon -->
-    <link rel="icon" type="image/jpeg" href="{{ theme_asset('assets/img/vm_icon.jpg') }}">
-    <link rel="apple-touch-icon" href="{{ theme_asset('assets/img/vm_icon.jpg') }}">
-    
-    <!-- Preconnect Fonts -->
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="icon" href="{{ $favicon }}">
+    <link rel="apple-touch-icon" href="{{ $favicon }}">
     
     <!-- Bootstrap & Utility Icons CSS -->
     <link rel="stylesheet" href="{{ theme_asset('assets/css/bootstrap-icons.min.css') }}">
@@ -24,6 +26,7 @@
     
     <!-- VMarket Master Theme CSS (Loaded after Bootstrap to enforce bespoke design language) -->
     <link rel="stylesheet" href="{{ theme_asset('assets/css/vmarket.css') }}">
+    <style>:root { --vm-primary: {{ $primaryColor }}; --vm-gold: {{ $secondaryColor }}; }</style>
     <!-- [AI] VM-STORE-004: intl-tel-input CSS so any initialized country picker renders styled, never as a raw list -->
     <link rel="stylesheet" href="{{ theme_asset('assets/plugins/intl-tel-input/css/intlTelInput.min.css') }}">
     
@@ -95,4 +98,3 @@
     @stack('script')
 </body>
 </html>
-

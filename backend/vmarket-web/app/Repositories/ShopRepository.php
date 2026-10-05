@@ -64,12 +64,16 @@ class ShopRepository implements ShopRepositoryInterface
     public function updateWhere(array $params, array $data): bool
     {
         $this->shop->where($params)->update($data);
+        cacheRemoveByType('shops');
+        cacheRemoveByType('in_house_shop');
         return true;
     }
 
     public function delete(array $params): bool
     {
         $this->shop->where($params)->delete();
+        cacheRemoveByType('shops');
+        cacheRemoveByType('in_house_shop');
         return true;
     }
 

@@ -265,8 +265,12 @@ class HomeController extends Controller
             $activeLgaId = $defaultLga?->id ?? 69;
         }
 
-        $featuredProductsList = Cache::remember('home_featured_products_vmarket_lga_' . $activeLgaId, CACHE_FOR_3_HOURS, function () use ($activeLgaId) {
-            return Product::active()
+        $homeCacheKeys = ['home_featured_products_vmarket_lga_' . $activeLgaId, 'home_latest_products_vmarket_lga_' . $activeLgaId];
+        Cache::put('cache_storefront_lga_home_keys', array_values(array_unique(array_merge(
+            Cache::get('cache_storefront_lga_home_keys', []), $homeCacheKeys
+        ))), CACHE_FOR_3_HOURS);
+        $featuredProductsList = Cache::remember($homeCacheKeys[0], CACHE_FOR_3_HOURS, function () use ($activeLgaId) {
+            return Product::marketplaceEligible()
                 ->where('featured', 1)
                 ->availableInLga($activeLgaId)
                 ->with(['seller.shop', 'rating'])
@@ -274,14 +278,22 @@ class HomeController extends Controller
                 ->get();
         });
 
-        $latestProductsList = Cache::remember('home_latest_products_vmarket_lga_' . $activeLgaId, CACHE_FOR_3_HOURS, function () use ($activeLgaId) {
-            return Product::active()
+        $latestProductsList = Cache::remember($homeCacheKeys[1], CACHE_FOR_3_HOURS, function () use ($activeLgaId) {
+            return Product::marketplaceEligible()
                 ->availableInLga($activeLgaId)
                 ->with(['seller.shop', 'rating'])
                 ->latest('id')
                 ->take(12)
                 ->get();
         });
+
+        // Cached discovery candidates never authorize current visibility or price.
+        $featuredProductsList = Product::marketplaceEligible()->where('featured', 1)
+            ->availableInLga($activeLgaId)->whereIn('id', $featuredProductsList->pluck('id'))
+            ->with(['seller.shop', 'rating'])->get();
+        $latestProductsList = Product::marketplaceEligible()->availableInLga($activeLgaId)
+            ->whereIn('id', $latestProductsList->pluck('id'))->with(['seller.shop', 'rating'])
+            ->latest('id')->get();
 
         $topVendorsList = ProductManager::getPriorityWiseTopVendorQuery(query: $this->cacheHomePageTopVendorsList());
         $brands = $this->cachePriorityWiseBrandList();
@@ -293,6 +305,11 @@ class HomeController extends Controller
             ->toArray();
 
         $nearbyShops = \App\Models\Shop::where('temporary_close', 0)
+            ->where(function ($query) {
+                $query->where('author_type', 'admin')->orWhereHas('seller', function ($seller) {
+                    $seller->where('status', 'approved')->where('marketplace_status', 'approved');
+                });
+            })
             ->where(function ($q) use ($deliveryOriginLgaIds, $activeLgaId) {
                 if (!empty($deliveryOriginLgaIds)) {
                     $q->whereIn('lga_id', $deliveryOriginLgaIds);
@@ -305,16 +322,6 @@ class HomeController extends Controller
             ->with(['seller'])
             ->take(8)
             ->get();
-
-        // Fallback to active shops if query returns fewer than 4
-        if ($nearbyShops->count() < 4) {
-            $fallbackShops = \App\Models\Shop::where('temporary_close', 0)
-                ->whereNotIn('id', $nearbyShops->pluck('id'))
-                ->with(['seller'])
-                ->take(4 - $nearbyShops->count())
-                ->get();
-            $nearbyShops = $nearbyShops->concat($fallbackShops);
-        }
 
         return view(VIEW_FILE_NAMES['home'], [
             'categories' => $categories,
@@ -332,4 +339,3 @@ class HomeController extends Controller
         ]);
     }
 }
-

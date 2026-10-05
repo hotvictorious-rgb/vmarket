@@ -18,7 +18,9 @@ class CurrencyRepository implements CurrencyRepositoryInterface
 
     public function add(array $data): string|object
     {
-        return $this->currency->create($data);
+        $result = $this->currency->create($data);
+        cacheRemoveByType('currencies');
+        return $result;
     }
 
     public function getFirstWhere(array $params, array $relations = []): ?Model
@@ -61,18 +63,22 @@ class CurrencyRepository implements CurrencyRepositoryInterface
 
     public function update(string $id, array $data): bool
     {
-        return $this->currency->where('id', $id)->update($data);
+        $result = $this->currency->where('id', $id)->update($data);
+        cacheRemoveByType('currencies');
+        return (bool)$result;
     }
 
     public function updateWhere(array $params, array $data): bool
     {
         $this->currency->where($params)->update($data);
+        cacheRemoveByType('currencies');
         return true;
     }
 
     public function delete(array $params): bool
     {
         $this->currency->where($params)->delete();
+        cacheRemoveByType('currencies');
         return true;
     }
 }

@@ -18,8 +18,9 @@ class LoginSetupRepository implements LoginSetupRepositoryInterface
 
     public function add(array $data): string|object
     {
+        $result = $this->loginSetup->create($data);
         cacheRemoveByType(type: 'login_setups');
-        return $this->loginSetup->create($data);
+        return $result;
     }
 
     public function getFirstWhere(array $params, array $relations = []): ?Model
@@ -91,24 +92,25 @@ class LoginSetupRepository implements LoginSetupRepositoryInterface
 
     public function update(string $id, array $data): bool
     {
+        $result = $this->loginSetup->where('id', $id)->update($data);
         cacheRemoveByType(type: 'login_setups');
-        return $this->loginSetup->where('id', $id)->update($data);
+        return (bool)$result;
     }
 
     public function updateWhere(array $params, array $data): bool
     {
-        cacheRemoveByType(type: 'login_setups');
         $this->loginSetup->where($params)->update($data);
+        cacheRemoveByType(type: 'login_setups');
         return true;
     }
 
     public function updateOrInsert(string $key, mixed $value): bool
     {
-        cacheRemoveByType(type: 'login_setups');
         $this->loginSetup->updateOrInsert(['key' => $key], [
             'value' => $value,
             'updated_at' => now()
         ]);
+        cacheRemoveByType(type: 'login_setups');
 
         return true;
     }
@@ -120,8 +122,8 @@ class LoginSetupRepository implements LoginSetupRepositoryInterface
 
     public function delete(array $params): bool
     {
-        cacheRemoveByType(type: 'login_setups');
         $this->loginSetup->where($params)->delete();
+        cacheRemoveByType(type: 'login_setups');
         return true;
     }
 }

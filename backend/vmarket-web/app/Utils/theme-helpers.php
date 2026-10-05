@@ -19,7 +19,9 @@ if (!function_exists('theme_asset')) {
 if (!function_exists('theme_root_path')) {
     function theme_root_path(): string
     {
-        return env('WEB_THEME') == null ? 'theme_vmarket' : env('WEB_THEME');
+        $theme = env('WEB_THEME') ?: 'theme_vmarket';
+        return preg_match('/^[A-Za-z0-9_-]+$/', $theme) && is_dir(base_path('resources/themes/' . $theme))
+            ? $theme : 'theme_vmarket';
     }
 }
 

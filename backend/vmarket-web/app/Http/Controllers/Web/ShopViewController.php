@@ -65,25 +65,7 @@ class ShopViewController extends Controller
     {
         $themeName = theme_root_path();
         $shop = Shop::where('slug', $slug)->with(['seller', 'deliveryHub', 'deliveryCity', 'deliveryState'])->first();
-
-        if (!$shop) {
-            Toastr::error(translate('Shop_does_not_exist'));
-            return redirect()->route('home');
-        }
-
-        if (getWebConfig(name: 'business_mode') == 'single' && $shop['author_type'] != 'admin') {
-            Toastr::error(translate('access_denied!!'));
-            return redirect()->route('home');
-        }
-
-        // [AI] Strict Anti-Scam Guard: Only Super Admin Approved Vendors can have a public online storefront
-        if ($shop['author_type'] != 'admin') {
-            $seller = $shop->seller;
-            if ($seller && $seller->marketplace_status !== 'approved') {
-                Toastr::warning(translate('This_merchant_operates_exclusively_as_a_private_in-store_POS_counter_and_is_not_authorized_to_accept_online_orders.'));
-                return redirect()->route('home');
-            }
-        }
+        self::checkShopExistence($shop);
 
         return match ($themeName) {
             'default' => self::default_theme($request, $shop),
@@ -443,22 +425,11 @@ class ShopViewController extends Controller
     public function checkShopExistence($shop): bool|Redirector|RedirectResponse
     {
         $businessMode = getWebConfig(name: 'business_mode');
-
-        if (!$shop) {
-            Toastr::error(translate('Shop_does_not_exist'));
-            return back();
-        }
-
-        if ($shop['author_type'] != 'admin' && $businessMode == 'single') {
-            Toastr::error(translate('access_denied!!'));
-            return back();
-        }
-
-        if ($shop['author_type'] != 'admin') {
-            if (!Seller::approved()->find($shop['seller_id'])) {
-                Toastr::warning(translate('not_found'));
-                return redirect('/');
-            }
+        abort_unless($shop instanceof Shop, 404);
+        if ($shop->author_type !== 'admin') {
+            abort_if($businessMode === 'single', 404);
+            $seller = $shop->seller;
+            abort_unless($seller && $seller->status === 'approved' && $seller->marketplace_status === 'approved', 404);
         }
         return true;
     }
@@ -570,9 +541,10 @@ class ShopViewController extends Controller
         $singlePageProductCount = $request['per_page_product'] ?? 25;
         if ($request->has('shop_id')) {
             $shopID = $request['shop_id'];
-            self::checkShopExistence($shopID);
-            $productAddedBy = $shopID == 0 ? 'admin' : 'seller';
-            $productUserID = $shopID == 0 ? $shopID : Shop::where('id', $shopID)->first()->seller_id;
+            $shop = $shopID == 0 ? Shop::where('author_type', 'admin')->first() : Shop::with('seller')->find($shopID);
+            self::checkShopExistence($shop);
+            $productAddedBy = $shop->author_type === 'admin' ? 'admin' : 'seller';
+            $productUserID = $shop->author_type === 'admin' ? 0 : $shop->seller_id;
             $productListData = ProductManager::getProductListData($request, $productUserID, $productAddedBy);
         } else {
             $productListData = ProductManager::getProductListData($request);
