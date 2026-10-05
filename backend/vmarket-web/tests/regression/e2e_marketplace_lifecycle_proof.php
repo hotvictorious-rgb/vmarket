@@ -1,7 +1,15 @@
 <?php
 
-require 'c:/Users/USER/Downloads/vmarket/backend/vmarket-web/vendor/autoload.php';
-$app = require 'c:/Users/USER/Downloads/vmarket/backend/vmarket-web/bootstrap/app.php';
+// [AI] Quarantined before autoload, .env, providers, database or notifications.
+// This historical fixture runner destructively reuses fixed order IDs and wallets.
+// A database-name prefix alone cannot prove disposal, matching connection or I/O isolation.
+// No environment variable or CLI flag enables this unsafe body. Use the isolated
+// PHPUnit money regressions until a separately reviewed disposable runner replaces it.
+fwrite(STDERR, "QUARANTINED: legacy lifecycle proof cannot execute. No application bootstrap or database access occurred. Use isolated PHPUnit money regressions.\n");
+exit(78);
+
+require dirname(__DIR__, 2) . '/vendor/autoload.php';
+$app = require dirname(__DIR__, 2) . '/bootstrap/app.php';
 $app->instance('request', \Illuminate\Http\Request::create('/'));
 $kernel = $app->make(Illuminate\Contracts\Http\Kernel::class);
 $kernel->bootstrap();
@@ -721,7 +729,21 @@ assertProof("3.5 Invariant: Rider 101 Fee = ₦500.00", $s3_riderAPayout === 500
 assertProof("3.5 Invariant: Rider 102 Fee = ₦500.00", $s3_riderBPayout === 500.00);
 assertProof("3.5 MATHEMATICAL CONSERVATION PROOF (Delta = 0.00): Customer Inflow == Total Disbursed", $s3_delta < 0.0001);
 
+// -----------------------------------------------------------------------------
+// TEARDOWN: Clean up ephemeral test orders and restore baseline accounting state
+// -----------------------------------------------------------------------------
+$allTestIds = [4001, 4002, 4003, 4004];
+DB::table('orders')->whereIn('id', $allTestIds)->delete();
+DB::table('order_details')->whereIn('order_id', $allTestIds)->delete();
+DB::table('order_transactions')->whereIn('order_id', $allTestIds)->delete();
+DB::table('transactions')->whereIn('order_id', $allTestIds)->delete();
+DB::table('customer_cashback_ledgers')->whereIn('order_id', $allTestIds)->delete();
+$adminWallet->update(['pending_amount' => 0.00]);
+$productA->update(['current_stock' => 50]);
+$productB->update(['current_stock' => 50]);
+
 echo "\n================================================================================\n";
-echo "ALL END-TO-END MULTI-ACTOR SCENARIOS PASSED WITH ZERO DRIFT (Delta = 0.000000)\n";
+echo $failCount === 0 ? "Executed fixture assertions passed; no production reconciliation certification.\n" : "Fixture assertions failed.\n";
 echo "Total Assertions: " . ($passCount + $failCount) . " | Passed: $passCount | Failed: $failCount\n";
 echo "================================================================================\n";
+exit($failCount === 0 ? 0 : 1);

@@ -61,7 +61,7 @@ return new class extends Migration
                 $table->string('recipient_phone', 50)->nullable()->after('recipient_name');
             }
             if (!Schema::hasColumn('orders', 'driver_transit_code')) {
-                $table->string('driver_transit_code', 50)->nullable()->index()->after('pickup_verification_code');
+                $table->string('driver_transit_code', 50)->nullable()->index()->after('recipient_phone');
             }
             if (!Schema::hasColumn('orders', 'driver_phone')) {
                 $table->string('driver_phone', 50)->nullable()->after('driver_transit_code');
