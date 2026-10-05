@@ -44,35 +44,50 @@
                                             $verify_status = OrderManager::verifyCartListMinimumOrderAmount($request, $group_key);
                                         @endphp
 
-                                        <div class="bg-light py-2 px-2 px-sm-3 mb-3 rounded">
-                                            <div class="d-flex align-items-center justify-content-between gap-3 flex-wrap flex-lg-nowrap">
+                                        @php
+                                            $cartShipping = \App\Models\CartShipping::where('cart_group_id', $group_key)->first();
+                                            $activeMethodId = $cartShipping?->shipping_method_id ?? 2;
+                                            $currentShippingFee = $cartShipping?->shipping_cost ?? 600.00;
+
+                                            if ($cartItem->seller_is == 'admin') {
+                                                $originLgaId = (int) (\App\Models\Shop::where('seller_id', 0)->first()?->lga_id ?: 69);
+                                                $shopName = getInHouseShopConfig(key: 'name');
+                                            } else {
+                                                $originLgaId = (int) (\App\Models\Shop::where('seller_id', $cartItem->seller_id)->first()?->lga_id ?: 69);
+                                                $shopName = get_shop_name($cartItem['seller_id']);
+                                            }
+                                            $destLgaId = (int) session('customer_lga_id', 69);
+                                            $doorstepLaneFee = \App\Models\DeliveryLane::getDeliveryFee($originLgaId, $destLgaId) ?? 600.00;
+                                        @endphp
+
+                                        <div class="py-3 px-3 mb-3 rounded" style="background: #F8FAFC; border: 1px solid #E2E8F0;">
+                                            <div class="d-flex align-items-center justify-content-between gap-3 flex-wrap">
                                                 <div class="d-flex align-items-center flex-grow-1">
                                                     @if($cartItem->seller_is == 'admin')
                                                         <div class="d-flex gap-2 align-items-center flex-wrap">
-                                                            <input type="checkbox"
-                                                                   class="shop-head-check shop-head-check-desktop">
+                                                            <input type="checkbox" class="shop-head-check shop-head-check-desktop">
                                                             <a href="{{ route('vendor-shop',['slug' => getInHouseShopConfig(key: 'slug')]) }}" class="text-decoration-none">
-                                                                <h5 class="fs-14 line-clamp-1 m-0 fw-bold" style="color: #1B1035;">
-                                                                    👑 {{ getInHouseShopConfig(key:'name') }}
+                                                                <h5 class="fs-15 line-clamp-1 m-0 fw-bold" style="color: #1B1035;">
+                                                                    👑 {{ $shopName }}
                                                                 </h5>
                                                             </a>
-                                                            <span class="badge" style="background: rgba(212,175,55,0.15); color: #B8860B; font-weight: 700; font-size: 11px; padding: 3px 8px; border: 1px solid rgba(212,175,55,0.4); border-radius: 6px;">
-                                                                {{ translate('Official Flagship • Platform Store') }}
+                                                            <span class="badge" style="background: rgba(212,175,55,0.15); color: #B8860B; font-weight: 700; font-size: 11px; padding: 4px 10px; border: 1px solid rgba(212,175,55,0.4); border-radius: 6px;">
+                                                                {{ translate('Official Flagship • Platform Managed') }}
                                                             </span>
                                                         </div>
                                                     @else
                                                         <div class="d-flex gap-2 align-items-center flex-wrap">
                                                             <input type="checkbox" class="shop-head-check shop-head-check-desktop">
                                                             <a href="{{ route('vendor-shop', ['slug' => $cartItem->seller->shop['slug'] ?? '']) }}" class="text-decoration-none">
-                                                                @if(get_shop_name($cartItem['seller_id']))
-                                                                    <h5 class="fs-14 line-clamp-1 m-0 fw-bold" style="color: #1B1035;">
-                                                                        🏪 {{ get_shop_name($cartItem['seller_id']) }}
+                                                                @if($shopName)
+                                                                    <h5 class="fs-15 line-clamp-1 m-0 fw-bold" style="color: #1B1035;">
+                                                                        🏪 {{ $shopName }}
                                                                     </h5>
                                                                 @else
                                                                     <h5 class="text-danger fs-14 m-0">{{ translate('vendor_not_available') }}</h5>
                                                                 @endif
                                                             </a>
-                                                            <span class="badge" style="background: rgba(46,27,78,0.08); color: #2E1B4E; font-weight: 700; font-size: 11px; padding: 3px 8px; border: 1px solid rgba(46,27,78,0.2); border-radius: 6px;">
+                                                            <span class="badge" style="background: rgba(46,27,78,0.08); color: #2E1B4E; font-weight: 700; font-size: 11px; padding: 4px 10px; border: 1px solid rgba(46,27,78,0.2); border-radius: 6px;">
                                                                 {{ translate('Verified Regional Merchant') }}
                                                             </span>
                                                         </div>
@@ -83,12 +98,104 @@
                                                             data-bs-toggle="tooltip"
                                                             data-bs-placement="right"
                                                             data-bs-custom-class="custom-tooltip"
-                                                            data-bs-title="{{ translate('minimum_Order_Amount') }} {{ webCurrencyConverter($verify_status['minimum_order_amount']) }} {{ translate('for') }} @if($cartItem->seller_is=='admin') {{getInHouseShopConfig(key:'name')}} @else {{ get_shop_name($cartItem['seller_id']) }} @endif">
-                                                        <i class="bi bi-info-circle"></i>
-                                                    </span>
+                                                            data-bs-title="{{ translate('minimum_Order_Amount') }} {{ webCurrencyConverter($verify_status['minimum_order_amount']) }} {{ translate('for') }} {{ $shopName }}">
+                                                            <i class="bi bi-info-circle"></i>
+                                                        </span>
                                                     @endif
                                                 </div>
-                                                {{-- VM-CUST-003: delivery fees handled downstream during fulfillment/checkout. No shipping dropdown here. --}}
+                                            </div>
+
+                                            {{-- Interactive Fulfillment / Shipping Method Selector --}}
+                                            <div class="mt-3 pt-3 border-top" style="border-color: #E2E8F0 !important;">
+                                                <div class="d-flex align-items-center justify-content-between flex-wrap gap-2 mb-2">
+                                                    <div class="d-flex align-items-center gap-2 flex-wrap">
+                                                        <span class="fs-12 fw-bold text-uppercase" style="color: #475569; letter-spacing: 0.5px;">
+                                                            <i class="bi bi-truck me-1 text-primary"></i> {{ translate('Select Shipping Method') }}:
+                                                        </span>
+                                                        <span class="badge bg-white text-dark border py-1 px-2 fs-11">
+                                                            📍 {{ translate('Destination') }}: <strong class="text-primary">{{ session('customer_city', 'Uyo') }}</strong>
+                                                        </span>
+                                                        <a href="javascript:" data-bs-toggle="modal" data-bs-target="#locationModal" class="btn btn-outline-secondary btn-xs py-0 px-2 fs-11" style="height: 22px; line-height: 20px;">
+                                                            {{ translate('Change') }}
+                                                        </a>
+                                                    </div>
+                                                    <div class="fs-12">
+                                                        <span class="text-muted">{{ translate('Current Shipping Fee') }}:</span>
+                                                        <strong class="fs-13 fw-bold {{ $activeMethodId == 9 ? 'text-success' : 'text-primary' }}">
+                                                            {{ $activeMethodId == 9 ? translate('FREE (₦0.00)') : webCurrencyConverter($doorstepLaneFee) }}
+                                                        </strong>
+                                                    </div>
+                                                </div>
+
+                                                <div class="row g-2">
+                                                    {{-- Doorstep Delivery Option --}}
+                                                    <div class="col-sm-6">
+                                                        <div class="cursor-pointer p-2 rounded border transition-all set-shipping-id"
+                                                             data-id="2"
+                                                             data-cart-group="{{ $group_key }}"
+                                                             style="{{ $activeMethodId == 2 ? 'background: #FAF5FF; border-color: #7C3AED !important; box-shadow: 0 0 0 1px #7C3AED;' : 'background: #FFFFFF; border-color: #CBD5E1;' }}">
+                                                            <div class="d-flex align-items-center justify-content-between">
+                                                                <div class="d-flex align-items-center gap-2">
+                                                                    <div class="rounded-circle d-flex align-items-center justify-content-center"
+                                                                         style="width: 20px; height: 20px; border: 2px solid {{ $activeMethodId == 2 ? '#7C3AED' : '#94A3B8' }};">
+                                                                        @if($activeMethodId == 2)
+                                                                            <div class="rounded-circle" style="width: 10px; height: 10px; background: #7C3AED;"></div>
+                                                                        @endif
+                                                                    </div>
+                                                                    <div>
+                                                                        <div class="fw-bold fs-13" style="color: #1E293B;">
+                                                                            🚚 {{ translate('Doorstep Delivery') }}
+                                                                        </div>
+                                                                        <div class="fs-11 text-muted">
+                                                                            {{ translate('Express Courier') }} • 1-2 {{ translate('hours') }}
+                                                                        </div>
+                                                                    </div>
+                                                                </div>
+                                                                <div class="text-end">
+                                                                    <span class="badge" style="background: rgba(124,58,237,0.1); color: #7C3AED; font-weight: 700; font-size: 11px;">
+                                                                        {{ webCurrencyConverter($doorstepLaneFee) }}
+                                                                    </span>
+                                                                </div>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+
+                                                    {{-- In-Store Pickup Option --}}
+                                                    <div class="col-sm-6">
+                                                        <div class="cursor-pointer p-2 rounded border transition-all set-shipping-id"
+                                                             data-id="9"
+                                                             data-cart-group="{{ $group_key }}"
+                                                             style="{{ $activeMethodId == 9 ? 'background: #FFFBEB; border-color: #D97706 !important; box-shadow: 0 0 0 1px #D97706;' : 'background: #FFFFFF; border-color: #CBD5E1;' }}">
+                                                            <div class="d-flex align-items-center justify-content-between">
+                                                                <div class="d-flex align-items-center gap-2">
+                                                                    <div class="rounded-circle d-flex align-items-center justify-content-center"
+                                                                         style="width: 20px; height: 20px; border: 2px solid {{ $activeMethodId == 9 ? '#D97706' : '#94A3B8' }};">
+                                                                        @if($activeMethodId == 9)
+                                                                            <div class="rounded-circle" style="width: 10px; height: 10px; background: #D97706;"></div>
+                                                                        @endif
+                                                                    </div>
+                                                                    <div>
+                                                                        <div class="fw-bold fs-13" style="color: #1E293B;">
+                                                                            🏬 {{ translate('In-Store Pickup') }}
+                                                                        </div>
+                                                                        <div class="fs-11 text-muted">
+                                                                            @if($cartItem->seller_is == 'admin')
+                                                                                {{ translate('Uyo Flagship Counter') }}
+                                                                            @else
+                                                                                {{ translate('Merchant Physical Counter') }}
+                                                                            @endif
+                                                                        </div>
+                                                                    </div>
+                                                                </div>
+                                                                <div class="text-end">
+                                                                    <span class="badge" style="background: rgba(16,185,129,0.12); color: #059669; font-weight: 700; font-size: 11px;">
+                                                                        {{ translate('FREE (₦0.00)') }}
+                                                                    </span>
+                                                                </div>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                </div>
                                             </div>
                                         </div>
                                     @endif
@@ -441,15 +548,19 @@
                             </div>
                         @endforeach
 
-                        {{-- VM-CUST-003: inhouse legacy shipping selector removed. Fees via fulfillment downstream. --}}
-
                         @if( $cart->count() == 0)
                             <div class="d-flex justify-content-center align-items-center">
-                                <div class="d-flex flex-column justify-content-center align-items-center gap-2 py-5 w-100">
-                                    <img width="80" class="mb-3" src="{{ theme_asset('assets/img/empty-state/empty-cart.svg') }}" alt="">
-                                    <h5 class="text-center text-muted">
-                                        {{ translate('your_cart_is_empty,_and_it_looks_like_you_haven’t_added_anything_yet.') }}
-                                    </h5>
+                                <div class="d-flex flex-column justify-content-center align-items-center gap-3 py-5 w-100 text-center">
+                                    <div class="rounded-circle d-flex align-items-center justify-content-center" style="width: 90px; height: 90px; background: rgba(46,27,78,0.06);">
+                                        <i class="bi bi-bag-x fs-40" style="color: #2E1B4E;"></i>
+                                    </div>
+                                    <div>
+                                        <h4 class="fw-bold m-0" style="color: #1B1035;">{{ translate('Your Cart is Empty') }}</h4>
+                                        <p class="text-muted fs-14 mt-1 mb-0">{{ translate('You haven’t added any items to your shopping cart yet.') }}</p>
+                                    </div>
+                                    <a href="{{ route('products') }}" class="btn btn-primary px-4 py-2 mt-2 fw-semibold" style="background: linear-gradient(135deg, #2E1B4E 0%, #4A2E7A 100%); border: none; border-radius: 8px;">
+                                        <i class="bi bi-shop me-1"></i> {{ translate('Explore Products') }}
+                                    </a>
                                 </div>
                             </div>
                         @endif

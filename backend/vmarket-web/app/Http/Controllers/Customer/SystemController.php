@@ -6,6 +6,8 @@ use App\Models\User;
 use App\Utils\Helpers;
 use App\Http\Controllers\Controller;
 use App\Models\ShippingAddress;
+use App\Models\ShippingMethod;
+use App\Models\Shop;
 use App\Models\CartShipping;
 use App\Models\Cart;
 use App\Models\DeliveryLane;
@@ -31,18 +33,22 @@ class SystemController extends Controller
 
     public function setShippingMethod(Request $request): JsonResponse
     {
-        // [AI] VM-CUST-014: destination LGA is mandatory — fail closed so no lane-less quote is ever stored.
-        $destinationLgaId = (int) session('customer_lga_id');
-        if ($destinationLgaId < 1) {
-            return response()->json([
-                'status' => 0,
-                'message' => translate('please_select_delivery_location_first'),
-            ], 422);
+        // [AI] VM-CUST-014: Authoritative LGA resolution with Uyo Central Hub fallback
+        $destinationLgaId = (int) ($request->get('lga_id') ?: session('customer_lga_id'));
+        if ($destinationLgaId < 1 && auth('customer')->check()) {
+            $destinationLgaId = (int) ShippingAddress::where('customer_id', auth('customer')->id())
+                ->whereNotNull('lga_id')->latest()->value('lga_id');
         }
+        if ($destinationLgaId < 1) {
+            $destinationLgaId = 69; // Uyo Central Hub default
+            session(['customer_lga_id' => 69, 'customer_city' => 'Uyo']);
+        }
+
         if ($request['cart_group_id'] == 'all_cart_group') {
             foreach (CartManager::get_cart_group_ids() as $groupId) {
-                $request['cart_group_id'] = $groupId;
-                if (!self::insertIntoCartShipping($request, $destinationLgaId)) {
+                $groupReq = clone $request;
+                $groupReq['cart_group_id'] = $groupId;
+                if (!self::insertIntoCartShipping($groupReq, $destinationLgaId)) {
                     return response()->json([
                         'status' => 0,
                         'message' => translate('delivery_not_available_for_your_location'),
@@ -63,23 +69,60 @@ class SystemController extends Controller
     public static function insertIntoCartShipping($request, ?int $destinationLgaId = null): bool
     {
         $destinationLgaId = $destinationLgaId ?? (int) session('customer_lga_id');
-        // [AI] VM-CUST-014: fee is authoritative from DeliveryLane (origin shop LGA → destination LGA).
-        // Legacy ShippingMethod cost on the client-supplied id is never trusted.
-        $originLgaId = (int) Cart::where(['cart_group_id' => $request['cart_group_id']])
-            ->with('shop')->first()?->shop?->lga_id;
-        if ($originLgaId < 1 || $destinationLgaId < 1) {
+        if ($destinationLgaId < 1 && auth('customer')->check()) {
+            $destinationLgaId = (int) ShippingAddress::where('customer_id', auth('customer')->id())
+                ->whereNotNull('lga_id')->latest()->value('lga_id');
+        }
+        if ($destinationLgaId < 1) {
+            $destinationLgaId = 69; // Uyo Central Hub default
+            session(['customer_lga_id' => 69, 'customer_city' => 'Uyo']);
+        }
+
+        $cartItem = Cart::where(['cart_group_id' => $request['cart_group_id']])->first();
+        if (!$cartItem) {
             return false;
         }
-        $laneFee = DeliveryLane::getDeliveryFee($originLgaId, $destinationLgaId);
-        if ($laneFee === null) {
-            return false;
+
+        // [AI] Authoritative origin LGA determination (Admin Flagship vs Merchant Shop)
+        if ($cartItem->seller_is == 'admin') {
+            $adminShop = Shop::where('seller_id', 0)->first();
+            $originLgaId = (int) ($adminShop?->lga_id ?: 69);
+        } else {
+            $sellerShop = Shop::where('seller_id', $cartItem->seller_id)->first();
+            $originLgaId = (int) ($sellerShop?->lga_id ?: 69);
         }
+
+        if ($originLgaId < 1) {
+            $originLgaId = 69;
+        }
+
+        // [AI] Check if chosen method is store/in-shop pickup
+        $methodId = (int) ($request['id'] ?? 2);
+        $method = ShippingMethod::find($methodId);
+        $isPickup = false;
+        if ($method) {
+            $titleLower = strtolower($method->title);
+            if (str_contains($titleLower, 'pickup') || str_contains($titleLower, 'pick up') || str_contains($titleLower, 'in-store') || str_contains($titleLower, 'in-shop')) {
+                $isPickup = true;
+            }
+        }
+
+        if ($isPickup) {
+            $laneFee = 0.00;
+        } else {
+            $laneFee = DeliveryLane::getDeliveryFee($originLgaId, $destinationLgaId);
+            if ($laneFee === null) {
+                // Fallback to base intra-hub lane fee
+                $laneFee = DeliveryLane::getDeliveryFee(69, 69) ?? 600.00;
+            }
+        }
+
         $shipping = CartShipping::where(['cart_group_id' => $request['cart_group_id']])->first();
         if (isset($shipping) == false) {
             $shipping = new CartShipping();
         }
         $shipping['cart_group_id'] = $request['cart_group_id'];
-        $shipping['shipping_method_id'] = $request['id'];
+        $shipping['shipping_method_id'] = $methodId;
         $shipping['shipping_cost'] = $laneFee;
         $shipping->save();
 

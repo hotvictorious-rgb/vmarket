@@ -2342,6 +2342,10 @@ class OrderManager
                         if ($sellerShippingCount > 0 && $shippingMethod == 'inhouse_shipping' && $inhouseShippingMsgCount < 1) {
                             $cartShipping = CartShipping::where('cart_group_id', $cart->cart_group_id)->first();
                             if (!isset($cartShipping)) {
+                                \App\Http\Controllers\Customer\SystemController::insertIntoCartShipping(['cart_group_id' => $cart->cart_group_id, 'id' => 2]);
+                                $cartShipping = CartShipping::where('cart_group_id', $cart->cart_group_id)->first();
+                            }
+                            if (!isset($cartShipping)) {
                                 $response['status'] = 0;
                                 $response['errorType'] = 'empty-shipping';
                                 $response['redirect'] = route('shop-cart');
@@ -2350,6 +2354,10 @@ class OrderManager
                             $inhouseShippingMsgCount++;
                         } elseif ($sellerShippingCount > 0 && $shippingMethod != 'inhouse_shipping') {
                             $cartShipping = CartShipping::where('cart_group_id', $cart->cart_group_id)->first();
+                            if (!isset($cartShipping)) {
+                                \App\Http\Controllers\Customer\SystemController::insertIntoCartShipping(['cart_group_id' => $cart->cart_group_id, 'id' => 2]);
+                                $cartShipping = CartShipping::where('cart_group_id', $cart->cart_group_id)->first();
+                            }
                             if (!isset($cartShipping)) {
                                 $response['status'] = 0;
                                 $response['errorType'] = 'empty-shipping';

@@ -350,6 +350,9 @@ Route::group(['prefix' => 'customer', 'as' => 'customer.'], function () {
 
 });
 
+// [AI] Direct alias for storefront JS route compatibility
+Route::post('set-shipping-method', [SystemController::class, 'setShippingMethod'])->name('set-shipping-method');
+
 Route::group(['prefix' => 'customer', 'as' => 'customer.'], function () {
     Route::controller(PaymentController::class)->group(function () {
         Route::post('web-payment-request', 'payment')->name('web-payment-request');

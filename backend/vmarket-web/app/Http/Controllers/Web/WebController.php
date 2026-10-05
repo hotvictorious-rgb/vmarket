@@ -533,6 +533,12 @@ class WebController extends Controller
     public function shop_cart(Request $request): View|RedirectResponse
     {
         ProductManager::updateProductPriceInCartList(request: $request);
+        foreach (CartManager::get_cart_group_ids() as $groupId) {
+            $shipping = CartShipping::where('cart_group_id', $groupId)->first();
+            if (!$shipping) {
+                \App\Http\Controllers\Customer\SystemController::insertIntoCartShipping(['cart_group_id' => $groupId, 'id' => 2]);
+            }
+        }
         $topRatedShops = [];
         $newSellers = [];
         $currentDate = date('Y-m-d H:i:s');

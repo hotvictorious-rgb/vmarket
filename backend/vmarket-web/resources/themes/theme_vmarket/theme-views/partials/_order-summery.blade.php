@@ -4,21 +4,24 @@
 <div class="col-lg-4">
     <div class="card text-dark sticky-top-80">
         <div class="card-body px-sm-4 d-flex flex-column gap-3">
-            @php($systemTaxConfig = getTaxModuleSystemTypesConfig())
-            @php($current_url = request()->segment(count(request()->segments())))
-            @php($product_price_total = 0)
-            @php($totalTax = \App\Utils\CartManager::getCartListTaxAmount())
-            @php($total_discount_on_product = 0)
-            @php($cart = CartManager::getCartListQuery(type: 'checked'))
-            @php($cartAll = CartManager::getCartListQuery())
-            @php($cart_group_ids = CartManager::get_cart_group_ids())
-            {{-- VM-CUST-003: canonical summary — no legacy shipping/coupon/referral. Delivery fees via fulfillment downstream. --}}
-            @if ($cart->count() > 0)
-                @foreach ($cart as $key => $cartItem)
-                    @php($product_price_total += $cartItem['price'] * $cartItem['quantity'])
-                    @php($total_discount_on_product += $cartItem['discount'] * $cartItem['quantity'])
-                @endforeach
-            @endif
+            @php
+                $systemTaxConfig = getTaxModuleSystemTypesConfig();
+                $current_url = request()->segment(count(request()->segments()));
+                $product_price_total = 0;
+                $totalTax = \App\Utils\CartManager::getCartListTaxAmount();
+                $total_discount_on_product = 0;
+                $cart = CartManager::getCartListQuery(type: 'checked');
+                $cartAll = CartManager::getCartListQuery();
+                $cart_group_ids = CartManager::get_cart_group_ids();
+                $checkedGroupIds = CartManager::get_cart_group_ids(type: 'checked');
+                $shippingTotal = (float)(\App\Models\CartShipping::whereIn('cart_group_id', $checkedGroupIds)->sum('shipping_cost') ?? 0);
+                if ($cart->count() > 0) {
+                    foreach ($cart as $key => $cartItem) {
+                        $product_price_total += $cartItem['price'] * $cartItem['quantity'];
+                        $total_discount_on_product += $cartItem['discount'] * $cartItem['quantity'];
+                    }
+                }
+            @endphp
 
             @if ($cartAll->count() > 0 && $cart->count() == 0)
                 <span>{{ translate('Please_checked_items_before_proceeding_to_checkout') }}</span>
@@ -26,43 +29,69 @@
                 <span>{{ translate('empty_cart') }}</span>
             @endif
 
-            <h4 class="text-capitalize mb-0">{{ translate('order_summary') }}</h4>
-            {{-- VM-CUST-003: legacy coupon input removed. Victorious Points only. --}}
-            <div class="d-flex flex-wrap justify-content-between align-items-center gap-2 fs-16">
-                <div class="opacity-75 text-capitalize">{{ translate('item_price') }}</div>
-                <div class="fw-semibold">{{ webCurrencyConverter($product_price_total) }}</div>
-            </div>
-            <div class="d-flex flex-wrap justify-content-between align-items-center gap-2 fs-16">
-                <div class="opacity-75 text-capitalize">{{ translate('product_discount') }}</div>
-                <div class="fw-semibold">{{ webCurrencyConverter($total_discount_on_product) }}</div>
+            <h4 class="text-capitalize mb-0 fw-bold" style="color: #1B1035;">{{ translate('order_summary') }}</h4>
+
+            <div class="d-flex flex-wrap justify-content-between align-items-center gap-2 fs-15">
+                <div class="text-muted text-capitalize">{{ translate('item_price') }}</div>
+                <div class="fw-semibold text-dark">{{ webCurrencyConverter($product_price_total) }}</div>
             </div>
 
-            <div class="d-flex flex-wrap justify-content-between align-items-center gap-2 fs-16">
-                <div class="opacity-75 text-capitalize">{{ translate('sub_total') }}</div>
-                <div class="fw-semibold">{{ webCurrencyConverter($product_price_total - $total_discount_on_product) }}</div>
-            </div>
-
-            @php($totalAmount = $product_price_total + $totalTax['item_tax'] - $total_discount_on_product)
-
-            @if($systemTaxConfig['SystemTaxVat']['is_active'] && !$systemTaxConfig['is_included'])
-                <div class="d-flex flex-wrap justify-content-between align-items-center gap-2 fs-16">
-                    <div class="opacity-75 text-capitalize">{{ translate('estimated_tax') }}</div>
-                    <div class="fw-semibold">{{ webCurrencyConverter(amount: $totalTax['item_tax']) }}</div>
+            @if($total_discount_on_product > 0)
+                <div class="d-flex flex-wrap justify-content-between align-items-center gap-2 fs-15">
+                    <div class="text-success text-capitalize">{{ translate('product_discount') }}</div>
+                    <div class="fw-semibold text-success">-{{ webCurrencyConverter($total_discount_on_product) }}</div>
                 </div>
             @endif
 
-            <hr class="m-0" />
-
-            <div class="d-flex flex-wrap justify-content-between align-items-center gap-2 fs-16">
-                <h5>
-                    {{ translate('sub_total') }}
-                    @if($systemTaxConfig['SystemTaxVat']['is_active'] && $systemTaxConfig['is_included'])
-                        <span class="fs-12 fw-semibold">({{ translate('Tax_:_Inc.') }})</span>
-                    @endif
-                </h5>
-                <h4 class="text-primary">{{ webCurrencyConverter($totalAmount) }}</h4>
+            <div class="d-flex flex-wrap justify-content-between align-items-center gap-2 fs-15">
+                <div class="text-muted text-capitalize">{{ translate('items_subtotal') }}</div>
+                <div class="fw-semibold text-dark">{{ webCurrencyConverter($product_price_total - $total_discount_on_product) }}</div>
             </div>
-            <div class="fs-12 text-muted">The final quote includes delivery and any eligible Victorious Points. Review it before confirming payment.</div>
+
+            @php
+                $checkedGroupIds = CartManager::get_cart_group_ids(type: 'checked');
+                $shippingTotal = \App\Models\CartShipping::whereIn('cart_group_id', $checkedGroupIds)->sum('shipping_cost');
+                $taxAmount = ($systemTaxConfig['SystemTaxVat']['is_active'] && !$systemTaxConfig['is_included']) ? ($totalTax['item_tax'] ?? 0) : 0;
+                $grandTotal = ($product_price_total - $total_discount_on_product) + $shippingTotal + $taxAmount;
+            @endphp
+
+            <div class="d-flex flex-wrap justify-content-between align-items-center gap-2 fs-15">
+                <div class="text-muted text-capitalize d-flex align-items-center gap-1">
+                    <i class="bi bi-truck text-primary"></i> {{ translate('Shipping / Delivery') }}
+                </div>
+                <div class="fw-semibold {{ $shippingTotal == 0 ? 'text-success' : 'text-dark' }}">
+                    {{ $shippingTotal > 0 ? webCurrencyConverter($shippingTotal) : translate('FREE') }}
+                </div>
+            </div>
+
+            @if($systemTaxConfig['SystemTaxVat']['is_active'] && !$systemTaxConfig['is_included'])
+                <div class="d-flex flex-wrap justify-content-between align-items-center gap-2 fs-15">
+                    <div class="text-muted text-capitalize">{{ translate('estimated_tax') }}</div>
+                    <div class="fw-semibold text-dark">{{ webCurrencyConverter(amount: $totalTax['item_tax']) }}</div>
+                </div>
+            @endif
+
+            <hr class="my-2" style="border-color: #E2E8F0;" />
+
+            <div class="d-flex flex-wrap justify-content-between align-items-center gap-2 fs-16 py-1">
+                <div>
+                    <h5 class="m-0 fw-bold" style="color: #1B1035;">{{ translate('total') }}</h5>
+                    @if($systemTaxConfig['SystemTaxVat']['is_active'] && $systemTaxConfig['is_included'])
+                        <span class="fs-11 text-muted">({{ translate('Tax Included') }})</span>
+                    @endif
+                </div>
+                <h4 class="fw-bold m-0" style="color: #2E1B4E;">{{ webCurrencyConverter($grandTotal) }}</h4>
+            </div>
+
+            <div class="p-2 rounded border" style="background: rgba(46,27,78,0.03); border-color: rgba(46,27,78,0.1) !important;">
+                <div class="d-flex align-items-center gap-2 fs-12 text-muted">
+                    <i class="bi bi-shield-lock-fill fs-18" style="color: #B8860B;"></i>
+                    <div>
+                        <strong class="text-dark d-block">100% Escrow Protected</strong>
+                        <span class="fs-11">Funds released strictly upon verified delivery or counter handover.</span>
+                    </div>
+                </div>
+            </div>
 
             <div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mt-3">
                 @if (str_contains(request()->url(), 'checkout-payment'))

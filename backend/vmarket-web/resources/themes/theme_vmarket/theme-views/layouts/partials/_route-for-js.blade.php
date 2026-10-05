@@ -9,7 +9,8 @@
 <span id="update_quantity_url" data-url="{{route('cart.updateQuantity.guest')}}"></span>
 <span id="get-place-holder-image" data-src="{{ theme_asset('assets/img/image-place-holder.png') }}"></span>
 <span id="authentication-status" data-auth="{{ auth('customer')->check() ? 'true' : 'false' }}"></span>
-<span id="set-shipping-url" data-url="{{url('/')}}/customer/set-shipping-method"></span>
+<span id="set-shipping-url" data-url="{{ route('set-shipping-method') }}"></span>
+<span id="route-customer-set-shipping-method" data-url="{{ route('set-shipping-method') }}"></span>
 <span id="order_again_url" data-action="{{ route('cart.order-again') }}"></span>
 <span id="route-product-restock-request" data-url="{{ route('cart.product-restock-request') }}"></span>
 <span id="route-get-session-recaptcha-code"
