@@ -159,7 +159,7 @@ class ForgotPasswordController extends BaseController
                 }
 
                 if (($firebaseOTPVerification['status']??false)) {
-                    $this->passwordResetRepo->add($this->passwordResetService->getAddData(identity: $request['identity'], token: $token, userType: 'seller'));
+                    $this->passwordResetRepo->add($this->passwordResetService->getAddData(identity: $request['identity'], token: $token, userType: 'seller', purpose: 'firebase_pending'));
                 } else {
                     app(\App\Services\PasswordResetCredentialService::class)->issue('seller',$vendor,$request['identity'],(string)$token);
                 }

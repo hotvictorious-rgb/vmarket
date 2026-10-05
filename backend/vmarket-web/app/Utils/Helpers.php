@@ -601,7 +601,7 @@ class Helpers
         if (count($token) > 1 && strlen($token[1]) > 30) {
             $rawToken = $token[1];
             $hashedToken = hash('sha256', $rawToken);
-            $seller = Seller::where('auth_token', $hashedToken)->orWhere('auth_token', $rawToken)->first();
+            $seller = Seller::where('auth_token', $hashedToken)->first();
             if (isset($seller)) {
                 $data = $seller;
                 $success = 1;
@@ -621,7 +621,7 @@ class Helpers
         if (count($token) > 1 && strlen($token[1]) > 30) {
             $rawToken = $token[1];
             $hashedToken = hash('sha256', $rawToken);
-            return Seller::where('auth_token', $hashedToken)->orWhere('auth_token', $rawToken)->first();
+            return Seller::where('auth_token', $hashedToken)->first();
         }
         return null;
     }
