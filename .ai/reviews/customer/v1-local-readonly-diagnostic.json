@@ -1,0 +1,149 @@
+{
+    "scope": "configured local DB; not production certification",
+    "read_only_transaction": true,
+    "connection_identity": {
+        "app_env": "local",
+        "driver": "mysql",
+        "host": "127.0.0.1",
+        "database": "vmarket",
+        "cached_config_present": false,
+        "database_url_present": false
+    },
+    "captured_at_utc": "2026-10-05T04:09:32+00:00",
+    "diagnostic_exit": 0,
+    "reconciliation": {
+        "read_only": true,
+        "currency": "NGN",
+        "known_hold_total": "0.00",
+        "platform_pending": "0.00",
+        "issue_count": 0,
+        "issues": [],
+        "external_evidence_required": "Verify historical rows and discrepancies against gateway/refund/bank statements; no adjustment is automatic."
+    },
+    "migrations": {
+        "applied": 421,
+        "pending": []
+    },
+    "legacy_entrypoint_exit": 78,
+    "legacy_entrypoint_stderr": "QUARANTINED: legacy lifecycle proof cannot execute. No application bootstrap or database access occurred. Use isolated PHPUnit money regressions.",
+    "fixture_order_rows": [],
+    "fixture_vendor_release_rows": [],
+    "financial_fingerprints_before": {
+        "admin_wallets": {
+            "rows": 1,
+            "sha256": "8f31c171a722c50e466c44c0de332fa43e5e7bcbc9cf7c92e56f283afeaccce2"
+        },
+        "seller_wallets": {
+            "rows": 3,
+            "sha256": "752da74e3dc2b561088f8ca6114d31b4d2f05856765527f94267e7d5a857338a"
+        },
+        "deliveryman_wallets": {
+            "rows": 2,
+            "sha256": "4a6d86782506f0b3c4cd9e7ec9b348dce28083cfb584396670619097ba335be9"
+        },
+        "orders": {
+            "rows": 2,
+            "sha256": "ff76854451343a91775466db5a7031fd01e316fe3a16239efd63b0a43c9bcb27"
+        },
+        "order_details": {
+            "rows": 2,
+            "sha256": "00b0bbf21b4d9feba86332b364656288c04c386063266508ced32a15050604c0"
+        },
+        "order_transactions": {
+            "rows": 0,
+            "sha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
+        },
+        "transactions": {
+            "rows": 0,
+            "sha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
+        },
+        "withdraw_requests": {
+            "rows": 0,
+            "sha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
+        },
+        "refund_requests": {
+            "rows": 0,
+            "sha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
+        },
+        "refund_transactions": {
+            "rows": 0,
+            "sha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
+        },
+        "customer_cashback_ledgers": {
+            "rows": 0,
+            "sha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
+        },
+        "cashback_redemptions": {
+            "rows": 0,
+            "sha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
+        },
+        "payment_requests": {
+            "rows": 0,
+            "sha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
+        },
+        "payment_reconciliations": {
+            "rows": 0,
+            "sha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
+        }
+    },
+    "financial_fingerprints_after": {
+        "admin_wallets": {
+            "rows": 1,
+            "sha256": "8f31c171a722c50e466c44c0de332fa43e5e7bcbc9cf7c92e56f283afeaccce2"
+        },
+        "seller_wallets": {
+            "rows": 3,
+            "sha256": "752da74e3dc2b561088f8ca6114d31b4d2f05856765527f94267e7d5a857338a"
+        },
+        "deliveryman_wallets": {
+            "rows": 2,
+            "sha256": "4a6d86782506f0b3c4cd9e7ec9b348dce28083cfb584396670619097ba335be9"
+        },
+        "orders": {
+            "rows": 2,
+            "sha256": "ff76854451343a91775466db5a7031fd01e316fe3a16239efd63b0a43c9bcb27"
+        },
+        "order_details": {
+            "rows": 2,
+            "sha256": "00b0bbf21b4d9feba86332b364656288c04c386063266508ced32a15050604c0"
+        },
+        "order_transactions": {
+            "rows": 0,
+            "sha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
+        },
+        "transactions": {
+            "rows": 0,
+            "sha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
+        },
+        "withdraw_requests": {
+            "rows": 0,
+            "sha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
+        },
+        "refund_requests": {
+            "rows": 0,
+            "sha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
+        },
+        "refund_transactions": {
+            "rows": 0,
+            "sha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
+        },
+        "customer_cashback_ledgers": {
+            "rows": 0,
+            "sha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
+        },
+        "cashback_redemptions": {
+            "rows": 0,
+            "sha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
+        },
+        "payment_requests": {
+            "rows": 0,
+            "sha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
+        },
+        "payment_reconciliations": {
+            "rows": 0,
+            "sha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
+        }
+    },
+    "same_snapshot_unchanged": true,
+    "limitation": "Fingerprints compare one read-only transaction snapshot; they do not certify absence of independent concurrent writes."
+}
