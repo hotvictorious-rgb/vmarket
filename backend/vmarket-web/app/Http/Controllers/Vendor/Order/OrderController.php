@@ -383,10 +383,10 @@ class OrderController extends BaseController
         $previousOrder = $this->orderRepo->getPreviousFirstOrderWhere(id: $id, params: ['seller_id' => $vendorId, 'seller_is' => 'seller']);
         $nextOrder = $this->orderRepo->getNextFirstOrderWhere(id: $id, params: ['seller_id' => $vendorId, 'seller_is' => 'seller']);
         $allProductsList = $this->productRepo->getListWhere(filters: ['added_by' => 'in_house'], dataLimit: 'all');
-        $isOrderEditable = false;
+        $isOrderEditable = ['status' => false, 'message' => translate('Order_is_not_editable')];
         $orderProductsSession = [];
         $editOrderSummary = [];
-        $orderEditPaymentHistory = [];
+        $orderEditPaymentHistory = collect([]);
 
         if ($order['order_type'] == 'default_type') {
             $orderCount = $this->orderRepo->getListWhereCount(filters: ['customer_id' => $order['customer_id']]);

@@ -371,10 +371,10 @@ class OrderController extends BaseController
             $nextOrder = $this->orderRepo->getNextFirstOrderWhere(id: $id);
 
             $allProductsList = $this->productRepo->getListWhere(filters: ['added_by' => 'in_house'], dataLimit: 'all');
-            $isOrderEditable = false;
+            $isOrderEditable = ['status' => false, 'message' => translate('Order_is_not_editable')];
             $orderProductsSession = [];
             $editOrderSummary = [];
-            $orderEditPaymentHistory = [];
+            $orderEditPaymentHistory = collect([]);
 
             $orderCount = $this->orderRepo->getListWhereCount(filters: ['customer_id' => $order['customer_id']]);
             return view('admin-views.order.order-details', compact('order', 'linkedOrders',

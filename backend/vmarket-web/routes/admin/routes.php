@@ -611,6 +611,12 @@ Route::group(['prefix' => 'admin', 'as' => 'admin.', 'middleware' => ['admin', '
         });
     });
 
+    Route::group(['prefix' => 'messages', 'as' => 'messages.', 'middleware' => ['module:support_section']], function () {
+        Route::controller(ContactController::class)->group(function () {
+            Route::get('index/{type?}', 'index')->name('index');
+        });
+    });
+
     Route::group(['prefix' => 'delivery-man', 'as' => 'delivery-man.', 'middleware' => ['module:user_section']], function () {
         Route::controller(DeliveryManController::class)->group(function () {
             Route::get('list', 'index')->name('list');

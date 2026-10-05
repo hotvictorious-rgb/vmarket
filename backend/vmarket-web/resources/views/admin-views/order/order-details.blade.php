@@ -118,7 +118,9 @@
                                         </div>
                                     @endif
 
-                                    @if($isOrderEditable['status'] === true)
+                                    @php($orderEditableStatus = is_array($isOrderEditable) ? ($isOrderEditable['status'] ?? false) : (bool)$isOrderEditable)
+                                    @php($orderEditableMessage = is_array($isOrderEditable) ? ($isOrderEditable['message'] ?? translate('Order_is_not_editable')) : translate('Order_is_not_editable'))
+                                    @if($orderEditableStatus === true)
                                         <button type="button" class="btn btn-outline-primary btn-sm"
                                                data-bs-toggle="modal"
                                                data-bs-target="#confirm-edit-order-modal">
@@ -127,7 +129,7 @@
                                     @else
                                         <button type="button" class="btn btn-outline-primary btn-sm opacity-50"
                                                data-bs-toggle="tooltip" data-bs-placement="top"
-                                               data-bs-title="{{ $isOrderEditable['message'] }}" disabled>
+                                               data-bs-title="{{ $orderEditableMessage }}" disabled>
                                             <i class="fi fi-sr-pencil"></i> {{ translate('Edit_Products') }}
                                         </button>
                                     @endif
@@ -244,7 +246,7 @@
 
                                                     <div class="media align-items-center gap-10">
                                                         <a target="_blank"
-                                                           href="{{ route('admin.products.view', ['addedBy' => $productDetails['added_by'] == 'seller' ? 'vendor' : 'in-house', 'id' => $productDetails['id']]) }}">
+                                                           href="{{ route('admin.products.view', ['addedBy' => ($productDetails['added_by'] ?? 'in-house') == 'seller' ? 'vendor' : 'in-house', 'id' => $productDetails['id'] ?? 1]) }}">
                                                             <img class="avatar avatar-60 rounded img-fit"
                                                                  src="{{ getStorageImages(path:$detail?->productAllStatus?->thumbnail_full_url, type: 'backend-product') }}"
                                                                  alt="{{translate('image_Description')}}">
@@ -252,7 +254,7 @@
                                                         <div>
                                                             <a target="_blank"
                                                                class="text-dark fs-12 fw-bold"
-                                                               href="{{ route('admin.products.view', ['addedBy' => $productDetails['added_by'] == 'seller' ? 'vendor' : 'in-house', 'id' => $productDetails['id']]) }}"
+                                                               href="{{ route('admin.products.view', ['addedBy' => ($productDetails['added_by'] ?? 'in-house') == 'seller' ? 'vendor' : 'in-house', 'id' => $productDetails['id'] ?? 1]) }}"
                                                                @if(!$isProductUnavailable && strlen($productDetails['name']) > 30)
                                                                    data-bs-toggle="tooltip"
                                                                title="{{ $productDetails['name'] }}"
@@ -732,7 +734,7 @@
 
                     <?php
                     $hasUnpaidDue = $order['edit_due_amount'] > 0 && $order?->latestEditHistory && $order?->latestEditHistory?->order_due_payment_status === 'unpaid';
-                    $filteredEditPaymentHistory = $orderEditPaymentHistory->filter(function ($item) {
+                    $filteredEditPaymentHistory = collect($orderEditPaymentHistory ?? [])->filter(function ($item) {
                         return $item->order_due_payment_status === 'paid'
                             || $item->order_return_payment_status === 'returned';
                     });
@@ -967,7 +969,7 @@
                             <label
                                 class="form-label fw-bold mb-2">{{translate('change_order_status')}}</label>
                             <div class="select-wrapper">
-                                @php
+                                <?php
                                     $terminalStatuses = ['delivered', 'canceled', 'returned', 'failed'];
                                     $isTerminalStatus = in_array($order->order_status, $terminalStatuses, true);
                                     $validTransitionsMap = [
@@ -977,7 +979,7 @@
                                         'out_for_delivery' => ['out_for_delivery', 'delivered', 'returned', 'failed'],
                                     ];
                                     $allowedNext = $validTransitionsMap[$order->order_status] ?? [];
-                                @endphp
+                                ?>
                                 <select name="order_status" id="order_status"
                                         class="status form-select" data-id="{{$order['id']}}" {{ $isTerminalStatus ? 'disabled' : '' }}>
 
@@ -1942,6 +1944,7 @@
 
 
                                     @if ($order['order_status']!='returned' && $order['order_status']!='failed' && $order['order_status']!='canceled')
+                                        @if ($order['order_type'] == 'default_type')
                                             <li class="nav-item ">
                                                 <div
                                                     class="nav-link {{ ($order['order_status']=='confirmed') || ($order['order_status']=='processing') || ($order['order_status']=='processed') || ($order['order_status']=='out_for_delivery') || ($order['order_status']=='delivered')?'active-status' : ''}}">
@@ -2107,6 +2110,7 @@
                                                     </div>
                                                 </div>
                                             </li>
+                                        @endif
                                     @elseif(in_array($order['order_status'], ['returned', 'canceled']))
                                         <li class="nav-item">
                                             <div class="nav-link active-status">

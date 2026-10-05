@@ -689,7 +689,7 @@
                     @endif
                     <?php
                     $hasUnpaidDue = $order['edit_due_amount'] > 0 && $order?->latestEditHistory && $order?->latestEditHistory?->order_due_payment_status === 'unpaid';
-                    $filteredEditPaymentHistory = $orderEditPaymentHistory->filter(function ($item) {
+                    $filteredEditPaymentHistory = collect($orderEditPaymentHistory ?? [])->filter(function ($item) {
                         return $item->order_due_payment_status === 'paid'
                             || $item->order_return_payment_status === 'returned';
                     });
@@ -1376,6 +1376,7 @@
 
 
                                 @if ($order['order_status']!='returned' && $order['order_status']!='failed' && $order['order_status']!='canceled')
+                                    @if ($order['order_type'] == 'default_type')
                                         <li class="nav-item ">
                                             <div
                                                 class="nav-link {{($order['order_status']=='confirmed') || ($order['order_status']=='processing') || ($order['order_status']=='processed') || ($order['order_status']=='out_for_delivery') || ($order['order_status']=='delivered')?'active-status' : ''}}">
@@ -1541,6 +1542,7 @@
                                                 </div>
                                             </div>
                                         </li>
+                                    @endif
                                 @elseif(in_array($order['order_status'], ['returned', 'canceled']))
                                     <li class="nav-item">
                                         <div class="nav-link active-status">
