@@ -28,14 +28,14 @@
                 <a class="nav-link {{ Request::is('admin/dashboard') ? 'active' : '' }}"
                    title="{{ translate('dashboard') }}" href="{{ route('admin.dashboard.index') }}">
                     <i class="fi fi-sr-home"></i>
-                    <span class="aside-mini-hidden-element text-truncate">
+                    <span class="aside-mini-hidden-element text-truncate flex-grow-1">
                         {{ translate('dashboard') }}
                     </span>
                 </a>
             </li>
             @if(Helpers::module_permission_check('order_management'))
                 <li class="nav-item nav-item_title {{ Request::is('admin/orders*')?((Request::is('admin/orders/details/*') && request()->has('vendor-order-list')) ? '' : 'scroll-here'):''}}">
-                    <small class="nav-subtitle" title="">{{ translate('order_management') }}</small>
+                    <small class="nav-subtitle" title="{{ translate('order_management') }}">{{ translate('order_management') }}</small>
                 </li>
                 <li class="{{ Request::is('admin/orders*') ? 'sub-menu-opened' : ''}}">
                     <a class="nav-link nav-link-toggle {{ Request::is('admin/orders*')?((Request::is('admin/orders/details/*') && request()->has('vendor-order-list')) ? '' : 'active'):''}}"
@@ -248,7 +248,7 @@
             @endif
             @if(Helpers::module_permission_check('product_management'))
                 <li class="nav-item nav-item_title {{ (Request::is('admin/brand*') || Request::is('admin/category*') || Request::is('admin/sub*') || Request::is('admin/attribute*') || Request::is('admin/products*')) ? 'scroll-here' : '' }}">
-                    <small class="nav-subtitle" title="">{{ translate('product_management') }}</small>
+                    <small class="nav-subtitle" title="{{ translate('product_management') }}">{{ translate('product_management') }}</small>
                 </li>
                 <li class="{{ (Request::is('admin/category*') || Request::is('admin/sub-category*') || Request::is('admin/sub-sub-category*'))  ? 'sub-menu-opened' : '' }}">
                     <a class="nav-link nav-link-toggle {{ (Request::is('admin/category*') || Request::is('admin/sub-category*') || Request::is('admin/sub-sub-category*')) ? 'active' : '' }}"
@@ -299,8 +299,7 @@
                     <a class="nav-link {{ Request::is('admin/brand/list') ? 'active' : '' }}"
                        href="{{ route('admin.brand.list') }}" title="{{ translate('brand_setup') }}">
                         <i class="fi fi-sr-brand"></i>
-                        <span
-                            class="aside-mini-hidden-element flex-grow-1 d-flex justify-content-between align-items-center text-truncate max-w-180">
+                        <span class="aside-mini-hidden-element text-truncate flex-grow-1">
                             {{ translate('Brand_Setup') }}
                         </span>
                     </a>
@@ -310,8 +309,7 @@
                     <a class="nav-link {{ Request::is('admin/attribute*') ? 'active' : '' }}"
                        href="{{ route('admin.attribute.view') }}" title="{{ translate('product_Attribute_Setup') }}">
                         <i class="fi fi-sr-sitemap"></i>
-                        <span
-                            class="aside-mini-hidden-element flex-grow-1 d-flex justify-content-between align-items-center text-truncate max-w-180">
+                        <span class="aside-mini-hidden-element text-truncate flex-grow-1">
                             {{ translate('product_Attribute_Setup') }}
                         </span>
                     </a>
@@ -437,7 +435,7 @@
                     <a class="nav-link {{ Request::is('admin/products/product-gallery') ? 'active' : '' }}"
                        href="{{ route('admin.products.product-gallery') }}" title="{{ translate('Product_Gallery') }}">
                         <i class="fi fi-sr-boxes"></i>
-                        <span class="aside-mini-hidden-element text-truncate">
+                        <span class="aside-mini-hidden-element text-truncate flex-grow-1">
                             {{ translate('Product_Gallery') }}
                         </span>
                     </a>
@@ -446,7 +444,7 @@
                     <a class="nav-link {{ Request::is('admin/products/product-feeds*') ? 'active' : '' }}"
                        href="{{ route('admin.products.product-feeds') }}" title="{{ translate('Product_Feeds_&_Catalogs') }}">
                         <i class="fi fi-sr-share"></i>
-                        <span class="aside-mini-hidden-element text-truncate">
+                        <span class="aside-mini-hidden-element text-truncate flex-grow-1">
                             {{ translate('Product_Feeds_&_Catalogs') }}
                         </span>
                     </a>
@@ -454,8 +452,8 @@
             @endif
 
             @if(Helpers::module_permission_check('promotion_management'))
-                <li class="nav-item nav-item_title {{ (Request::is('admin/banner*') || (Request::is('admin/coupon*')) || (Request::is('admin/notification*')) || (Request::is('admin/deal*'))) ? 'scroll-here' : '' }}">
-                    <small class="nav-subtitle" title="">{{ translate('promotion_management') }}</small>
+                <li class="nav-item nav-item_title {{ (Request::is('admin/banner*') || (Request::is('admin/coupon*')) || (Request::is('admin/notification*')) || (Request::is('admin/deal*')) || (Request::is('admin/business-settings/announcement*'))) ? 'scroll-here' : '' }}">
+                    <small class="nav-subtitle" title="{{ translate('promotion_management') }}">{{ translate('promotion_management') }}</small>
                 </li>
                 <li>
                     <a class="nav-link {{ Request::is('admin/banner*') ? 'active' : '' }}"
@@ -557,12 +555,12 @@
                     </ul>
                 </li>
 
-                <li class="{{ Request::is('admin/business-settings/announcement*') ? 'sub-menu-opened' : '' }}">
-                    <a class="nav-link nav-link-toggle {{ Request::is('admin/business-settings/announcement*') ? 'active' : '' }}"
+                <li>
+                    <a class="nav-link {{ Request::is('admin/business-settings/announcement*') ? 'active' : '' }}"
                        href="{{ route('admin.business-settings.announcement') }}"
                        title="{{ translate('announcement') }}">
                         <i class="fi fi-sr-megaphone-sound-waves"></i>
-                        <span class="aside-mini-hidden-element text-truncate max-w-180"> {{ translate('announcement') }} </span>
+                        <span class="aside-mini-hidden-element text-truncate flex-grow-1"> {{ translate('announcement') }} </span>
                     </a>
                 </li>
             @endif
@@ -579,8 +577,8 @@
             @if($getEnabledThemeRoutes > 0)
                 @if (count(config('get_theme_routes')) > 0)
                     <li class="nav-item nav-item_title {{ (Request::is('admin/banner*') || (Request::is('admin/coupon*')) || (Request::is('admin/notification*')) || (Request::is('admin/deal*'))) ? 'scroll-here' : '' }}">
-                        <small class="nav-subtitle" title="">
-                            {{ config('get_theme_routes')['name'] }} {{ translate('Menu') }}
+                        <small class="nav-subtitle" title="{{ config('get_theme_routes')['name'] ?? '' }} {{ translate('Menu') }}">
+                            {{ config('get_theme_routes')['name'] ?? '' }} {{ translate('Menu') }}
                         </small>
                     </li>
                     @foreach (config('get_theme_routes')['route_list'] as $route)
@@ -615,15 +613,15 @@
             @endif
 
             @if(Helpers::module_permission_check('support_section'))
-                <li class="nav-item nav-item_title {{ (Request::is('admin/support-ticket*') || Request::is('admin/contact*')) ? 'scroll-here' : '' }}">
-                    <small class="nav-subtitle" title="">{{ translate('help_&_support') }}</small>
+                <li class="nav-item nav-item_title {{ (Request::is('admin/support-ticket*') || Request::is('admin/contact*') || Request::is('admin/messages*')) ? 'scroll-here' : '' }}">
+                    <small class="nav-subtitle" title="{{ translate('help_&_support') }}">{{ translate('help_&_support') }}</small>
                 </li>
                 <li>
                     <a class="nav-link {{ Request::is('admin/messages*') ? 'active' : '' }}"
                        title="{{ translate('inbox') }}"
                        href="{{ route('admin.messages.index', ['type' => 'customer']) }}">
                         <i class="fi fi-sr-envelope"></i>
-                        <span class="aside-mini-hidden-element text-truncate">
+                        <span class="aside-mini-hidden-element text-truncate flex-grow-1">
                             {{ translate('inbox') }}
                         </span>
                     </a>
@@ -633,7 +631,7 @@
                     <a class="nav-link {{ Request::is('admin/contact*') ? 'active' : '' }}"
                        href="{{ route('admin.contact.list') }}" title="{{ translate('messages') }}">
                         <i class="fi fi-sr-comment-alt-dots"></i>
-                        <span class="aside-mini-hidden-element text-truncate">
+                        <span class="aside-mini-hidden-element text-truncate flex-grow-1">
                             <span class="position-relative">
                                 {{ translate('messages') }}
                                 @php($message=\App\Models\Contact::where('seen',0)->count())
@@ -649,7 +647,7 @@
                     <a class="nav-link {{ Request::is('admin/support-ticket*') ? 'active' : '' }}"
                        href="{{ route('admin.support-ticket.view') }}" title="{{ translate('support_Ticket') }}">
                         <i class="fi fi-sr-headphones"></i>
-                        <span class="aside-mini-hidden-element text-truncate">
+                        <span class="aside-mini-hidden-element text-truncate flex-grow-1">
                             <span class="position-relative">
                                 {{ translate('support_Ticket') }}
                                 @if(\App\Models\SupportTicket::where('status','open')->count()>0)
@@ -663,35 +661,8 @@
             @endif
 
             @if(Helpers::module_permission_check('report'))
-                <li class="nav-item nav-item_title
-                {{ (Request::is('admin/report/earning') ||
-                    Request::is('admin/report/inhouse-product-sale') ||
-                    Request::is('admin/report/vendor-report') ||
-                    Request::is('admin/report/earning') ||
-                    Request::is('admin/transaction/list') ||
-                    Request::is('admin/refund-section/refund-list') ||
-                    Request::is('admin/stock/product-in-wishlist') ||
-                    Request::is('admin/reviews*') ||
-                    Request::is('admin/stock/product-stock') ||
-                    Request::is('admin/transaction/wallet-bonus') ||
-                    Request::is('admin/report/order')) ? 'scroll-here' : ''
-                    }}
-
-                @if(getCheckAddonPublishedStatus(moduleName: 'TaxModule'))
-                    @foreach(include(base_path("Modules/TaxModule/Addon/tax_report_routes.php")) as $route)
-                        {{ strstr(Request::url(), $route['path']) ? 'scroll-here' : '' }}
-
-                        @if(isset($route['sub_routes']))
-                            @foreach($route['sub_routes'] as $subRoute)
-                                {{ strstr(Request::url(), $subRoute['path']) ? 'scroll-here' : '' }}
-                            @endforeach
-                        @endif
-                    @endforeach
-                @endif
-                ">
-                    <small class="nav-subtitle" title="">
-                        {{ translate('reports_&_Analysis') }}
-                    </small>
+                <li class="nav-item nav-item_title {{ (Request::is('admin/report*') || Request::is('admin/transaction*') || Request::is('admin/refund-section/refund-list*') || Request::is('admin/stock*') || Request::is('admin/reviews*') || Request::is('admin/cashback*')) ? 'scroll-here' : '' }}">
+                    <small class="nav-subtitle" title="{{ translate('reports_&_Analysis') }}">{{ translate('reports_&_Analysis') }}</small>
                 </li>
 
                 <li class="{{ (Request::is('admin/report/admin-earning') || Request::is('admin/report/vendor-earning') || Request::is('admin/report/inhouse-product-sale') || Request::is('admin/report/vendor-report') || Request::is('admin/report/earning') || Request::is('admin/transaction/order-transaction-list') || Request::is('admin/transaction/expense-transaction-list') || Request::is('admin/report/transaction/refund-transaction-list') || Request::is('admin/transaction/wallet-bonus')) ? 'sub-menu-opened' : '' }}">
@@ -759,7 +730,7 @@
                     <a class="nav-link {{ (Request::is('admin/report/all-product') || Request::is('admin/stock/product-in-wishlist') || Request::is('admin/stock/product-stock')) ? 'active' : '' }}"
                        href="{{ route('admin.report.all-product') }}" title="{{ translate('product_Report') }}">
                         <i class="fi fi-sr-stats"></i>
-                        <span class="aside-mini-hidden-element text-truncate">
+                        <span class="aside-mini-hidden-element text-truncate flex-grow-1">
                             <span class="position-relative">
                                 {{ translate('product_Report') }}
                             </span>
@@ -771,7 +742,7 @@
                     <a class="nav-link {{ Request::is('admin/report/order') ? 'active' : '' }}"
                        href="{{ route('admin.report.order') }}" title="{{ translate('order_Report') }}">
                         <i class="fi fi-sr-rectangle-list"></i>
-                        <span class="aside-mini-hidden-element text-truncate">
+                        <span class="aside-mini-hidden-element text-truncate flex-grow-1">
                             {{ translate('order_Report') }}
                         </span>
                     </a>
@@ -791,7 +762,7 @@
                             "
                                href="{{ $route['url'] }}" title="{{ translate($route['name']) }}">
                                 <i class="fi fi-sr-rectangle-list"></i>
-                                <span class="aside-mini-hidden-element text-truncate">
+                                <span class="aside-mini-hidden-element text-truncate flex-grow-1">
                                      {{ translate($route['name']) }}
                                 </span>
                             </a>
@@ -803,8 +774,8 @@
 
 
             @if(Helpers::module_permission_check('user_section'))
-                <li class="nav-item nav-item_title {{ (Request::is('admin/customer/list') || Request::is('admin/customer/view*') || Request::is('admin/customer/subscriber-list')||Request::is('admin/vendors/add') || Request::is('admin/vendors/list') || Request::is('admin/delivery-man*')) ? 'scroll-here' : '' }}">
-                    <small class="nav-subtitle" title="">{{ translate('user_management') }}</small>
+                <li class="nav-item nav-item_title {{ (Request::is('admin/customer*') || Request::is('admin/vendors*') || Request::is('admin/delivery-man*') || Request::is('admin/employee*') || Request::is('admin/custom-role*')) ? 'scroll-here' : '' }}">
+                    <small class="nav-subtitle" title="{{ translate('user_management') }}">{{ translate('user_management') }}</small>
                 </li>
 
                 <li class="{{ (Request::is('admin/customer/wallet*') || Request::is('admin/customer/list') || Request::is('admin/customer/view*') || Request::is('admin/reviews*') || Request::is('admin/customer/loyalty/report')) ? 'sub-menu-opened' : '' }}">
@@ -887,10 +858,10 @@
                             <a class="nav-link {{ Request::is('admin/vendors/marketplace-applications*') ? 'active' : '' }}"
                                href="{{ route('admin.vendors.marketplace-applications') }}"
                                title="{{ translate('Marketplace_Applications') }}">
-                                <span class="text-truncate">{{ translate('Marketplace_Applications') }}</span>
+                                <span class="flex-grow-1 text-truncate">{{ translate('Marketplace_Applications') }}</span>
                                 @php($pendingApps = \App\Models\Seller::where('marketplace_status', 'pending_approval')->count())
                                 @if($pendingApps > 0)
-                                    <span class="badge fw-bold badge-warning badge-sm text-bg-warning ms-1">{{ $pendingApps }}</span>
+                                    <span class="badge fw-bold badge-warning badge-sm text-bg-warning">{{ $pendingApps }}</span>
                                 @endif
                             </a>
                         </li>
@@ -935,22 +906,22 @@
                         <li class="nav-item">
                             <a class="nav-link {{ Request::is('admin/dispatch-portal*') ? 'active' : '' }}"
                                href="{{ route('admin.dispatch-portal.index') }}"
-                               title="{{ translate('Dispatch Portal') }}">
-                                <span class="text-truncate font-weight-bold text-primary"><i class="tio-flight-takeoff mr-1"></i> {{ translate('Dispatch Portal') }}</span>
+                               title="{{ translate('Dispatch_Portal') }}">
+                                <span class="text-truncate">{{ translate('Dispatch_Portal') }}</span>
                             </a>
                         </li>
                         <li class="nav-item">
                             <a class="nav-link {{ Request::is('admin/delivery-hubs*') ? 'active' : '' }}"
                                href="{{ route('admin.delivery-hubs.index') }}"
-                               title="{{ translate('Hubs & Landmarks') }}">
-                                <span class="text-truncate"><i class="tio-map mr-1"></i> {{ translate('Hubs & Landmarks') }}</span>
+                               title="{{ translate('Hubs_&_Landmarks') }}">
+                                <span class="text-truncate">{{ translate('Hubs_&_Landmarks') }}</span>
                             </a>
                         </li>
                         <li class="nav-item">
                             <a class="nav-link {{ Request::is('admin/delivery-lanes*') ? 'active' : '' }}"
                                href="{{ route('admin.delivery-lanes.index') }}"
-                               title="{{ translate('Delivery Lanes') }}">
-                                <span class="text-truncate font-weight-bold text-success"><i class="tio-directions mr-1"></i> {{ translate('Delivery Lanes') }}</span>
+                               title="{{ translate('Delivery_Lanes') }}">
+                                <span class="text-truncate">{{ translate('Delivery_Lanes') }}</span>
                             </a>
                         </li>
                         <li class="nav-item">
@@ -1007,10 +978,8 @@
             @endif
 
             @if(Helpers::module_permission_check('business_settings'))
-                <li class="nav-item nav-item_title">
-                    <small class="nav-subtitle" title="">
-                        {{ translate('Business_Settings') }}
-                    </small>
+                <li class="nav-item nav-item_title {{ (Request::is('admin/business-settings*') || Request::is('admin/product-settings*') || Request::is('admin/customer/customer-settings*') || Request::is('admin/addon*') || Request::is('admin/social-media-chat*') || Request::is('admin/pages*')) ? 'scroll-here' : '' }}">
+                    <small class="nav-subtitle" title="{{ translate('Business_Settings') }}">{{ translate('Business_Settings') }}</small>
                 </li>
 
                 <li>
@@ -1164,10 +1133,8 @@
             @endif
 
             @if(Helpers::module_permission_check('system_settings'))
-                <li class="nav-item nav-item_title">
-                    <small class="nav-subtitle" title="">
-                        {{ translate('System_Settings') }}
-                    </small>
+                <li class="nav-item nav-item_title {{ (Request::is('admin/audit-logs*') || Request::is('admin/system-setup*')) ? 'scroll-here' : '' }}">
+                    <small class="nav-subtitle" title="{{ translate('System_Settings') }}">{{ translate('System_Settings') }}</small>
                 </li>
 
                 <li>
@@ -1242,10 +1209,8 @@
             @endif
 
             @if(Helpers::module_permission_check('3rd_party_setup'))
-                <li class="nav-item nav-item_title">
-                    <small class="nav-subtitle" title="">
-                        {{ translate('3rd_Party_Setup') }}
-                    </small>
+                <li class="nav-item nav-item_title {{ Request::is('admin/third-party*') ? 'scroll-here' : '' }}">
+                    <small class="nav-subtitle" title="{{ translate('3rd_Party_Setup') }}">{{ translate('3rd_Party_Setup') }}</small>
                 </li>
 
                 <li>
