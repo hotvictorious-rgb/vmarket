@@ -66,6 +66,14 @@ class FakeOrderDetailsService implements OrderDetailsServiceInterface {
   Future getOrderInvoice(String orderID) async => throw UnimplementedError();
   @override
   Future trackOrder(String orderId, String phoneNumber) async => throw UnimplementedError();
+  @override
+  Future downloadDigitalProduct(int orderDetailsId) async => throw UnimplementedError();
+  @override
+  Future resendVerificationCode(int orderId) async => throw UnimplementedError();
+  @override
+  Future verifyOrder(int orderId, String verificationCode) async => throw UnimplementedError();
+  @override
+  Future getOrderProductList(String orderID) async => throw UnimplementedError();
 }
 
 class FakeResponse {

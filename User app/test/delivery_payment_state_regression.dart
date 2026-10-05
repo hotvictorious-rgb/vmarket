@@ -1,4 +1,4 @@
-import 'package:flutter_sixvalley_ecommerce/features/checkout/domain/models/delivery_payment_state.dart';
+import '../lib/features/checkout/domain/models/delivery_payment_state.dart';
 
 void check(bool passed, String message) {
   if (!passed) throw StateError(message);
