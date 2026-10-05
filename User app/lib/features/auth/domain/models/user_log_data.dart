@@ -17,7 +17,8 @@ class UserLogData {
     final Map<String, dynamic> data = <String, dynamic>{};
     data['country_code'] = countryCode;
     data['phone_number'] = phoneNumber;
-    data['password'] = password;
+    // [AI] Credential Safety: Raw passwords must never be persisted in local storage
+    data['password'] = null;
     data['email'] = email;
     return data;
   }

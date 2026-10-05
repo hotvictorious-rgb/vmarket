@@ -516,7 +516,7 @@ class _LoginScreenState extends State<LoginScreen> {
                                                             email: isNumber
                                                                 ? null
                                                                 : userInput,
-                                                            password: password,
+                                                            password: null,
                                                           ));
                                                         } else {
                                                           // authProvider.clearUserLogData();
