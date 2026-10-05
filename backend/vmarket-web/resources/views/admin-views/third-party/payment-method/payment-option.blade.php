@@ -199,9 +199,11 @@
                            href="{{ route('admin.third-party.payment-method.index') }}" target="_blank">
                             {{ translate('go_to_3rd_party_payment_methods') }}
                         </a>
+                        @if(Route::has('admin.third-party.offline-payment-method.index'))
                         <a class="btn btn--primary min-w-120 font-weight-bold minimum-one-offline-payment-method" href="{{ route('admin.third-party.offline-payment-method.index') }}" target="_blank">
                             {{ translate('Go_to_Offline_Payment_Methods') }}
                         </a>
+                        @endif
                     </div>
                 </div>
             </div>

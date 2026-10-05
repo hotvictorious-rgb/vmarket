@@ -1,4 +1,4 @@
-<form action="{{ route('admin.products.list', ['type' => request('type')]) }}" method="GET">
+<form action="{{ route('admin.products.list', ['type' => request('type') ?? $type ?? 'in-house']) }}" method="GET">
     <div class="offcanvas offcanvas-end" tabindex="-1" id="offcanvasProductFilter"
         aria-labelledby="offcanvasProductFilterLabel" style="--bs-offcanvas-width: 500px;">
         <div class="offcanvas-header bg-body">
@@ -27,7 +27,7 @@
         </div>
         <div class="offcanvas-footer shadow-popup">
             <div class="d-flex justify-content-center gap-3 bg-white px-3 py-2">
-                <a class="btn btn-secondary w-100" href="{{ route('admin.products.list', ['type' => request('type')]) }}">
+                <a class="btn btn-secondary w-100" href="{{ route('admin.products.list', ['type' => request('type') ?? $type ?? 'in-house']) }}">
                     {{ translate('Clear_Filter') }}
                 </a>
                 <button type="submit" class="btn btn-primary w-100">

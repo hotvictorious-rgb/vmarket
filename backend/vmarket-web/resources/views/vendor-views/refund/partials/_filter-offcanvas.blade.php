@@ -1,4 +1,4 @@
-<form action="{{ route('vendor.refund.index',['status' => request('status')])}}" method="GET">
+<form action="{{ route('vendor.refund.index',['status' => request('status') ?? $status ?? 'pending'])}}" method="GET">
     <div class="offcanvas-sidebar" id="PendingRefundRequestFilter">
         <div class="offcanvas-overlay" data-dismiss="offcanvas"></div>
         <div class="offcanvas-content bg-white shadow d-flex flex-column">
@@ -43,7 +43,7 @@
 
             <div class="offcanvas-footer offcanvas-footer-sticky shadow-popup">
                 <div class="d-flex justify-content-center gap-3 bg-white px-3 py-2">
-                    <a href="{{ route('vendor.refund.index',['status' => request('status')])}}" class="btn btn-secondary w-100">
+                    <a href="{{ route('vendor.refund.index',['status' => request('status') ?? $status ?? 'pending'])}}" class="btn btn-secondary w-100">
                         {{ translate('Clear_Filter') }}
                     </a>
                     <button type="submit" class="btn btn--primary w-100">

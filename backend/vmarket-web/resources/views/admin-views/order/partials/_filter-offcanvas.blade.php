@@ -1,5 +1,5 @@
 
-<form action="{{ route('admin.orders.list', ['status' => request('status')]) }}" id="form-data" method="GET">
+<form action="{{ route('admin.orders.list', ['status' => request('status') ?? $status ?? 'all']) }}" id="form-data" method="GET">
     <div class="offcanvas offcanvas-end" tabindex="-1" id="offcanvasOrderFilter" aria-labelledby="offcanvasOrderFilterLabel" style="--bs-offcanvas-width: 500px;">
         <div class="offcanvas-header bg-body">
             <h3 class="mb-0">{{ translate('Filter') }}</h3>
@@ -297,7 +297,7 @@
         <div class="offcanvas-footer shadow-popup">
             <div class="d-flex justify-content-center gap-3 bg-white px-4 py-3">
                 <a class="btn btn-secondary w-100"
-                   href="{{ route('admin.orders.list', ['status' => request('status'), 'delivery_man_id' => request('delivery_man_id')]) }}">
+                   href="{{ route('admin.orders.list', ['status' => request('status') ?? $status ?? 'all', 'delivery_man_id' => request('delivery_man_id')]) }}">
                     {{ translate('Clear_Filter') }}
                 </a>
                 <button type="submit" class="btn btn-primary w-100">

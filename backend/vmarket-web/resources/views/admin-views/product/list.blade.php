@@ -43,7 +43,7 @@
                                 <div class="dropdown">
                                     <a type="button" class="btn btn-outline-primary"
                                        href="{{ route('admin.products.export-excel', [
-                                                'type' => request('type'),
+                                                'type' => request('type') ?? $type ?? 'in_house',
                                                 'request_status' => request('request_status'),
                                                 'searchValue' => request('searchValue'),
                                                 'seller_id' => request('seller_id'),

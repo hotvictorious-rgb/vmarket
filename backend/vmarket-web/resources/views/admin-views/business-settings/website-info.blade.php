@@ -491,7 +491,7 @@
                                                 <div class="col-xl-4 col-md-6">
                                                     <div class="form-check d-flex gap-3">
                                                         <input class="form-check-input checkbox--input" type="checkbox" name="cash_on_delivery"
-                                                            id="cash_on_delivery" value="1" {{ $cashOnDelivery['status'] == 1 ? 'checked' : '' }}>
+                                                            id="cash_on_delivery" value="1" {{ ($cashOnDelivery['status'] ?? 0) == 1 ? 'checked' : '' }}>
                                                         <div class="flex-grow-1">
                                                             <label for="cash_on_delivery"
                                                                 class="form-label text-dark fw-semibold mb-1 user-select-none">
@@ -506,7 +506,7 @@
                                                 <div class="col-xl-4 col-md-6">
                                                     <div class="form-check d-flex gap-3">
                                                         <input class="form-check-input checkbox--input" type="checkbox" name="digital_payment"
-                                                            id="digital_payment" value="1"  {{ $digitalPayment['status'] ? 'checked' : '' }}>
+                                                            id="digital_payment" value="1"  {{ ($digitalPayment['status'] ?? 0) ? 'checked' : '' }}>
                                                         <div class="flex-grow-1">
                                                             <label for="digital_payment"
                                                                 class="form-label text-dark fw-semibold mb-1 user-select-none d-flex gap-1 align-items-center">
@@ -523,7 +523,7 @@
                                                 <div class="col-xl-4 col-md-6">
                                                     <div class="form-check d-flex gap-3">
                                                         <input class="form-check-input checkbox--input" type="checkbox" name="offline_payment"
-                                                            id="offline_payment" value="1" {{ $offlinePayment['status'] == 1 ? 'checked' : '' }}>
+                                                            id="offline_payment" value="1" {{ ($offlinePayment['status'] ?? 0) == 1 ? 'checked' : '' }}>
                                                         <div class="flex-grow-1">
                                                             <label for="offline_payment"
                                                                 class="form-label text-dark fw-semibold mb-1 user-select-none">
@@ -531,7 +531,7 @@
                                                             </label>
                                                             <p class="fs-12 mb-0">
                                                                 {{ translate('enabling_offline_payment_will_make_it_available_as_a_payment_option_for_customers_during_the_checkout_process') }}.
-                                                                <a href="{{ route('admin.third-party.offline-payment-method.index') }}" target="_blank"
+                                                                <a href="{{ Route::has('admin.third-party.offline-payment-method.index') ? route('admin.third-party.offline-payment-method.index') : 'javascript:' }}" target="_blank"
                                                                     class="text-decoration-underline fw-semibold">{{ translate('Offline_payment_methods') }}</a>
                                                             </p>
                                                         </div>

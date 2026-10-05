@@ -1,4 +1,4 @@
-<form action="{{ route('admin.refund-section.refund.list',['status' => request('status')])}}" method="GET">
+<form action="{{ route('admin.refund-section.refund.list',['status' => request('status') ?? $status ?? 'pending'])}}" method="GET">
     <div class="offcanvas offcanvas-end" tabindex="-1" id="PendingRefundRequestFilter"
         aria-labelledby="PendingRefundRequestFilterLabel" style="--bs-offcanvas-width: 500px;">
         <div class="offcanvas-header bg-body">
@@ -40,7 +40,7 @@
         </div>
         <div class="offcanvas-footer shadow-popup">
             <div class="d-flex justify-content-center gap-3 bg-white px-3 py-2">
-                <a href="{{ route('admin.refund-section.refund.list',['status' => request('status')])}}" class="btn btn-secondary w-100">{{ translate('Clear_Filter') }}</a>
+                <a href="{{ route('admin.refund-section.refund.list',['status' => request('status') ?? $status ?? 'pending'])}}" class="btn btn-secondary w-100">{{ translate('Clear_Filter') }}</a>
                 <button type="submit" class="btn btn-primary w-100">{{ translate('Apply') }}</button>
             </div>
         </div>

@@ -6,11 +6,13 @@
                 {{ translate('digital_payment_methods') }}
             </a>
         </li>
+        @if(Route::has('admin.third-party.offline-payment-method.index'))
         <li class="{{ Request::is('admin/third-party/offline-payment-method/*') ?'active':'' }}">
             <a class="text-capitalize"
                href="{{ route('admin.third-party.offline-payment-method.index') }}">
                 {{ translate('offline_payment_methods') }}
             </a>
         </li>
+        @endif
     </ul>
 </div>

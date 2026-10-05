@@ -116,6 +116,8 @@ class BusinessSettingsController extends BaseController
             'maintenanceSystemSetup' => $maintenanceSystemSetup,
             'selectedMaintenanceMessage' => $selectedMaintenanceMessage,
             'digitalPayment' => getWebConfig(name: 'digital_payment'),
+            'cashOnDelivery' => getWebConfig(name: 'cash_on_delivery') ?? ['status' => 0],
+            'offlinePayment' => getWebConfig(name: 'offline_payment') ?? ['status' => 0],
             'cookieSetting' => getWebConfig(name: 'cookie_setting'),
             'systemCurrency' => $systemCurrency,
             'checkMinimumOneDigitalPayment' => $this->checkMinimumOneDigitalPayment()

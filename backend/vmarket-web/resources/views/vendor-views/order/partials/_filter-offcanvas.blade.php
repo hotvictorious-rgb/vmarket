@@ -1,4 +1,4 @@
-<form action="{{route('vendor.orders.list', ['status'=>request('status')])}}" id="form-data" method="GET">
+<form action="{{route('vendor.orders.list', ['status'=>request('status') ?? $status ?? 'all'])}}" id="form-data" method="GET">
     <div class="offcanvas-sidebar" id="offcanvasOrderFilter">
         <div class="offcanvas-overlay" data-dismiss="offcanvas"></div>
 
@@ -259,7 +259,7 @@
             </div>
 
             <div class="offcanvas-footer offcanvas-footer-sticky p-3 border-top bg-white d-flex gap-3">
-                <a href="{{ route('vendor.orders.list', ['status' => request('status')]) }}"
+                <a href="{{ route('vendor.orders.list', ['status' => request('status') ?? $status ?? 'all']) }}"
                 class="btn btn-secondary w-100">{{ translate('Clear_Filter') }}
                 </a>
                 <button type="submit" class="btn btn--primary w-100">
