@@ -1,5 +1,7 @@
 # V1 second-pass money repairs [AI]
 
+**Current follow-up (2026-10-05): M11/M12 and the pickup client gate below are repaired and locally verified.** The earlier NOT APPROVED findings and interruption record are preserved as historical evidence. The scoped security/money follow-up is recorded in `V1-SECURITY-REPAIR-2026-10-04.md`; production rollout checks remain pending.
+
 Scope: branch `v1`, starting source `576337b4`, latest reviewed source `55eb8e7d`. User requested all findings repaired in line with business rules. Backend repairs address the earlier findings, but M07 client completion remains blocked by new confirmed defects below. This report does not certify production deployment, bank balances or MySQL concurrency. Several shared-checkout commits were created concurrently by another task; this reviewer did not create or push those commits.
 
 ## Business rules preserved
@@ -58,3 +60,9 @@ Required repair: distinguish proven no-attempt from ambiguous/pending/captured s
 All three implementation agents stopped with the tool error **Your workspace is out of credits**. Their completed changes were reviewed and the current available suites ran, but client completion and new pickup widget tests were not finished. Reviewer charter `.ai/agents/REVIEWER_AI.md` explicitly says "You never write implementation code"; implementation fixes cannot be substituted silently by this reviewer. Review status is **NOT APPROVED**, not all fixed. Resume implementation after workspace credits are restored, then rerun the combined backend/client gate against the final source SHA.
 
 Additional before-release checks remain the historical reconciliation/migration, real MySQL contention, signed provider test-mode events, live browser/device recovery and deployed scheduler evidence described above. No universal production-ready or all-paths certification is asserted.
+
+## 2026-10-05 follow-up — pickup client repairs verified
+
+M11 malformed quote/status URL and Authorization interpolation is repaired. Actual repository/HTTP tests exercise the requests. M12 now distinguishes authoritative unpaid/no-attempt evidence from pending/unknown capture state: only owner-matching no-attempt evidence clears the durable identity and permits a fresh quote; refunded is handled as terminal. Quote cancellation creates no payment, identity is retained before initialization, and strict server status controls payment/OTP presentation.
+
+Customer reset/pickup combined runner passed23 tests, storefront actual production pickup adapter passed1. Targeted customer auth/entire checkout analysis exited0 with no issues. The final combined actual backend security/money suite passed74 tests754 assertions with zero errors/failures (`v1-security-repair-additive-final-2026-10-05.log`) at source0406bb09, retaining the48 money cases. The implementation-agent credit interruption was resolved by the later continuation. These results close the local M07/M11/M12 gate; historical reconciliation, staging migrations, application-level MySQL contention, provider callbacks, scheduler and physical recovery checks remain separate release requirements.
