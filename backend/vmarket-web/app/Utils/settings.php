@@ -136,7 +136,7 @@ if (!function_exists('storageLink')) {
         } else {
             if (fileCheck(disk: 'public', path: $path . '/' . $data) && !empty($data)) {
                 $resultPath = asset('storage/app/public/' . $path . '/' . $data);
-                if (DOMAIN_POINTED_DIRECTORY == 'public') {
+                if (defined('DOMAIN_POINTED_DIRECTORY') && DOMAIN_POINTED_DIRECTORY == 'public') {
                     $resultPath = asset('storage/' . $path . '/' . $data);
                 }
 
@@ -166,7 +166,7 @@ if (!function_exists('storageLinkForGallery')) {
             }
         } else {
             if (fileCheck(disk: 'public', path: $path)) {
-                if (DOMAIN_POINTED_DIRECTORY == 'public') {
+                if (defined('DOMAIN_POINTED_DIRECTORY') && DOMAIN_POINTED_DIRECTORY == 'public') {
                     $result = str_replace('storage/app/public', 'storage', 'storage/app/public/' . $path);
                 } else {
                     $result = 'storage/app/public/' . $path;
@@ -372,6 +372,7 @@ if (!function_exists('cacheRemoveByType')) {
             Cache::forget(CACHE_BANNER_TABLE);
         } else if ($type == 'currencies') {
             Cache::forget(CACHE_FOR_CURRENCY_TABLE);
+            Cache::forget('global_storefront_currencies_list');
         } else if ($type == 'categories') {
             Cache::forget(CACHE_MAIN_CATEGORIES_LIST);
             Cache::forget(FIND_WHAT_YOU_NEED_CATEGORIES_LIST);
@@ -387,9 +388,21 @@ if (!function_exists('cacheRemoveByType')) {
             Cache::forget(CACHE_HELP_TOPICS_TABLE);
         } else if ($type == 'login_setups') {
             Cache::forget(CACHE_LOGIN_SETUP_TABLE);
+            Cache::forget('global_storefront_login_options');
+            Cache::forget('global_storefront_social_login_options');
+        } else if ($type == 'social_media') {
+            Cache::forget('global_storefront_social_media_list');
+        } else if ($type == 'payment_settings') {
+            Cache::forget('global_storefront_payment_gateways_0');
+            Cache::forget('global_storefront_payment_gateways_1');
         } else if ($type == 'tags') {
             Cache::forget(CACHE_TAGS_TABLE);
         } else if ($type == 'products' || $type == 'brands') {
+            cacheGroupRemoveByType('cache_storefront_lga_home_keys');
+            foreach (['home_featured_products_list_default', 'home_new_arrival_products_list_default',
+                'home_deal_of_the_day_default', 'global_storefront_discount_products_count'] as $key) {
+                Cache::forget($key);
+            }
             cacheRemoveByType(type: 'categories');
             cacheRemoveByType(type: 'flash_deals');
             cacheRemoveByType(type: 'shops');
@@ -421,6 +434,8 @@ if (!function_exists('cacheRemoveByType')) {
         } else if ($type == 'shipping_types') {
             Cache::forget(CACHE_FOR_IN_HOUSE_SHIPPING_TYPE);
         } else if ($type == 'sellers' || $type == 'shops') {
+            Cache::forget('global_storefront_top_shops');
+            cacheGroupRemoveByType('cache_storefront_lga_home_keys');
             Cache::forget(CACHE_FOR_IN_HOUSE_ALL_PRODUCTS);
             Cache::forget(CACHE_FOR_HOME_PAGE_TOP_VENDORS_LIST);
             Cache::forget(CACHE_FOR_HOME_PAGE_MORE_VENDORS_LIST);
@@ -481,4 +496,3 @@ if (!function_exists('isMarketplaceAutoUnlistEnabled')) {
         return $setting === null ? true : (bool)$setting;
     }
 }
-

@@ -1,7 +1,8 @@
 @php
     $companyName = getWebConfig(name: 'company_name') ?? 'Victorious MARKET';
-    $companyEmail = getWebConfig(name: 'company_email') ?? 'support@victoriousmarket.com.ng';
-    $companyPhone = getWebConfig(name: 'company_phone') ?? '+234 800 000 0000';
+    $companyEmail = getWebConfig(name: 'company_email');
+    $companyPhone = getWebConfig(name: 'company_phone');
+    $footerLogo = !empty($web_config['footer_logo']['status']) ? $web_config['footer_logo']['path'] : (!empty($web_config['web_logo']['status']) ? $web_config['web_logo']['path'] : theme_asset('assets/img/vm_icon.jpg'));
     $copyrightText = getWebConfig(name: 'company_copyright_text') ?? 'All rights reserved.';
 @endphp
 
@@ -10,12 +11,19 @@
         <div class="vm-footer-grid">
             <!-- Brand Column -->
             <div>
-                <a href="{{ route('home') }}" class="vm-brand" style="margin-bottom: 16px;">
+                @php
+                    $footerNameParts = explode(' ', trim($companyName), 2);
+                    $footerFirstWord = $footerNameParts[0] ?? 'Victorious';
+                    $footerSecondWord = $footerNameParts[1] ?? 'MARKET';
+                @endphp
+                <a href="{{ route('home') }}" class="vm-brand" style="margin-bottom: 16px;" title="{{ $companyName }}">
                     <div class="vm-brand-pill">
-                        <img src="{{ theme_asset('assets/img/vm_icon.jpg') }}" alt="VM" class="vm-brand-icon-sq">
+                        <img src="{{ $footerLogo }}" alt="{{ $companyName }}" class="vm-brand-icon-sq" loading="lazy">
                         <span class="vm-brand-wordmark">
-                            <span class="vm-word-victorious">Victorious</span>
-                            <span class="vm-word-market">MARKET</span>
+                            <span class="vm-word-victorious">{{ $footerFirstWord }}</span>
+                            @if(!empty($footerSecondWord))
+                                <span class="vm-word-market">{{ $footerSecondWord }}</span>
+                            @endif
                         </span>
                     </div>
                 </a>
@@ -23,7 +31,12 @@
                     {{ translate('Nigeria’s omnichannel marketplace and delivery logistics ecosystem. Connecting verified merchants across Akwa Ibom with guaranteed in-shop inspection and swift door-to-door delivery.') }}
                 </p>
                 <div style="display: flex; gap: 10px; font-size: 13px;">
-                    <span>📍 {{ translate('Uyo, Akwa Ibom State, Nigeria') }}</span>
+                    @if($companyPhone)
+                        <a href="tel:{{ $companyPhone }}">{{ $companyPhone }}</a>
+                    @endif
+                    @if($companyEmail)
+                        <a href="mailto:{{ $companyEmail }}">{{ $companyEmail }}</a>
+                    @endif
                 </div>
             </div>
 
@@ -34,7 +47,9 @@
                     <a href="{{ route('products') }}">{{ translate('All Catalog Products') }}</a>
                     <a href="{{ route('categories') }}">{{ translate('Product Categories') }}</a>
                     <a href="{{ route('vendors') }}">{{ translate('Verified Merchants') }}</a>
-                    <a href="{{ route('brands') }}">{{ translate('Official Brands') }}</a>
+                    @if((int)($web_config['brand_setting'] ?? 0) === 1)
+                        <a href="{{ route('brands') }}">{{ translate('Official Brands') }}</a>
+                    @endif
                 </div>
             </div>
 
@@ -44,8 +59,11 @@
                 <div class="vm-footer-links">
                     <a href="{{ route('contacts') }}">{{ translate('Contact & Help Center') }}</a>
                     <a href="{{ route('helpTopic') }}">{{ translate('Frequently Asked Questions') }}</a>
-                    <a href="{{ route('business-page.view', ['terms-and-conditions']) }}">{{ translate('Terms & Conditions') }}</a>
-                    <a href="{{ route('business-page.view', ['privacy-policy']) }}">{{ translate('Privacy Policy') }}</a>
+                    @foreach(($web_config['business_pages'] ?? []) as $businessPageLink)
+                        @if((int)($businessPageLink['status'] ?? 0) === 1)
+                            <a href="{{ route('business-page.view', [$businessPageLink['slug']]) }}">{{ $businessPageLink['title'] }}</a>
+                        @endif
+                    @endforeach
                 </div>
             </div>
 

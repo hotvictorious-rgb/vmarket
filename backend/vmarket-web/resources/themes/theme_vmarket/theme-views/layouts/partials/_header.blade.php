@@ -1,19 +1,29 @@
 @php
     $companyName = getWebConfig(name: 'company_name') ?? 'Victorious MARKET';
-    $companyWebLogo = getWebConfig(name: 'company_web_logo');
+    $companyWebLogo = !empty($web_config['web_logo']['status']) ? $web_config['web_logo']['path'] : theme_asset('assets/img/vm_icon.jpg');
+    $companyMobileLogo = !empty($web_config['mob_logo']['status']) ? $web_config['mob_logo']['path'] : $companyWebLogo;
     $cartCount = \App\Utils\CartManager::get_cart()->count();
     $customer = auth('customer')->user();
+    $announcement = is_array($web_config['announcement'] ?? null) ? $web_config['announcement'] : [];
+    $announcementColor = preg_match('/^#[a-fA-F0-9]{6}$/', $announcement['color'] ?? '') ? $announcement['color'] : '#5E17EB';
+    $announcementTextColor = preg_match('/^#[a-fA-F0-9]{6}$/', $announcement['text_color'] ?? '') ? $announcement['text_color'] : '#FFFFFF';
 @endphp
 
 <!-- Top Bar -->
-<div class="vm-top-bar">
+<div class="vm-top-bar" @if((int)($announcement['status'] ?? 0) === 1) style="background: {{ $announcementColor }}; color: {{ $announcementTextColor }};" @endif>
     <div class="vm-container vm-top-bar-inner">
         <div>
-            <span>👑 {{ translate('Welcome to Victorious MARKET — Seamless Shopping, Swift Logistics') }}</span>
+            @if((int)($announcement['status'] ?? 0) === 1)
+                <span>{{ $announcement['announcement'] ?? '' }}</span>
+            @else
+                <span>👑 {{ translate('Welcome to') }} {{ $companyName }}</span>
+            @endif
         </div>
         <div style="display: flex; gap: 16px; align-items: center;">
-            <a href="{{ route('vendor.auth.registration.index') }}">{{ translate('Become a Vendor') }}</a>
-            <span>•</span>
+            @if((int)($web_config['seller_registration'] ?? 0) === 1)
+                <a href="{{ route('vendor.auth.registration.index') }}">{{ translate('Become a Vendor') }}</a>
+                <span>•</span>
+            @endif
             <a href="{{ route('contacts') }}">{{ translate('Help & Support') }}</a>
             {{-- [AI] Single auth entry: header action buttons below are the one Sign In + one Register. Top-bar duplicates removed. --}}
         </div>
@@ -23,19 +33,29 @@
 <!-- Main Sticky Header -->
 <header class="vm-header">
     <div class="vm-container vm-header-inner">
+        @php
+            $companyNameParts = explode(' ', trim($companyName), 2);
+            $firstWord = $companyNameParts[0] ?? 'Victorious';
+            $secondWord = $companyNameParts[1] ?? 'MARKET';
+        @endphp
         <!-- Brand Wordmark & Logo -->
-        <a href="{{ route('home') }}" class="vm-brand">
+        <a href="{{ route('home') }}" class="vm-brand" title="{{ $companyName }}">
             <div class="vm-brand-pill">
-                <img src="{{ theme_asset('assets/img/vm_icon.jpg') }}" alt="VM" class="vm-brand-icon-sq">
+                <picture>
+                    <source media="(max-width: 767px)" srcset="{{ $companyMobileLogo }}">
+                    <img src="{{ $companyWebLogo }}" alt="{{ $companyName }}" class="vm-brand-icon-sq">
+                </picture>
                 <span class="vm-brand-wordmark">
-                    <span class="vm-word-victorious">Victorious</span>
-                    <span class="vm-word-market">MARKET</span>
+                    <span class="vm-word-victorious">{{ $firstWord }}</span>
+                    @if(!empty($secondWord))
+                        <span class="vm-word-market">{{ $secondWord }}</span>
+                    @endif
                 </span>
             </div>
         </a>
 
         @php
-            $headerCity = session('customer_city', 'Uyo');
+            $headerCity = session('customer_lga_id') ? session('customer_city', translate('Choose your location')) : translate('Choose your location');
             $headerMode = session('fulfillment_mode', 'delivery');
         @endphp
 
