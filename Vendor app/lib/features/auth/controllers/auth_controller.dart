@@ -450,11 +450,6 @@ class AuthController with ChangeNotifier {
   }
 
 
-  Future<void> callFirebaseStoretiken (String phoneNumber, String vID) async {
-     await authServiceInterface.firebaseAuthTokenStore(userInput: phoneNumber, token: vID);
-  }
-
-
   Future<ApiResponse> checkVendorExistPhone(String  phone) async {
     notifyListeners();
     ApiResponse responseModel = await authServiceInterface.checkVendorExistPhone(phoneNumber: phone);

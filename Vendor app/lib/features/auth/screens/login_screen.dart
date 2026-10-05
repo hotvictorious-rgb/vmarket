@@ -139,7 +139,7 @@ class LoginScreenState extends State<LoginScreen> {
                     btnTxt: getTranslated('login', context),
                     onTap: () async {
                       String email = _emailController!.text.trim();
-                      String password = _passwordController!.text.trim();
+                      String password = _passwordController!.text;
                       if (email.isEmpty) {
                         showCustomSnackBarWidget(getTranslated('enter_email_address', context), context,  sanckBarType: SnackBarType.warning);
                       }else if (EmailChecker.isNotValid(email)) {

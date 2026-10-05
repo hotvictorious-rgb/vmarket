@@ -134,17 +134,17 @@ class _RegistrationScreenState extends State<RegistrationScreen> with TickerProv
                       }
                       else if(authController.phoneController.text.trim().length<8){
                         showCustomSnackBarWidget(getTranslated('phone_number_is_not_valid', context), context,  sanckBarType: SnackBarType.warning);
-                      }else if(authController.passwordController.text.trim().isEmpty){
+                      }else if(authController.passwordController.text.isEmpty){
                         showCustomSnackBarWidget(getTranslated('password_is_required', context), context,  sanckBarType: SnackBarType.warning);
                       }
-                      else if(authController.passwordController.text.trim().length<8){
+                      else if(authController.passwordController.text.length<8){
                         showCustomSnackBarWidget(getTranslated('password_minimum_length_is_6', context), context,  sanckBarType: SnackBarType.warning);
                       }
-                      else if(authController.confirmPasswordController.text.trim().isEmpty){
+                      else if(authController.confirmPasswordController.text.isEmpty){
                         showCustomSnackBarWidget(getTranslated('confirm_password_is_required', context), context,  sanckBarType: SnackBarType.warning);
-                      }else if(authController.passwordController.text.trim() != authController.confirmPasswordController.text.trim()){
+                      }else if(authController.passwordController.text != authController.confirmPasswordController.text){
                         showCustomSnackBarWidget(getTranslated('password_is_mismatch', context), context,  sanckBarType: SnackBarType.warning);
-                      } else if (authController.passwordController.text.trim().isNotEmpty && !authController.isPasswordValid()) {
+                      } else if (authController.passwordController.text.isNotEmpty && !authController.isPasswordValid()) {
                         showCustomSnackBarWidget(getTranslated('enter_valid_password', context), context, sanckBarType: SnackBarType.warning);
                       } else{
                         _tabController!.animateTo((_tabController!.index + 1) % 2);
@@ -207,8 +207,8 @@ class _RegistrationScreenState extends State<RegistrationScreen> with TickerProv
                                 lName: authController.lastNameController.text.trim(),
                                 phone: "${authController.countryDialCode}${authController.phoneController.text.trim()}",
                                 email: authController.emailController.text.trim(),
-                                password: authController.passwordController.text.trim(),
-                                confirmPassword: authController.confirmPasswordController.text.trim(),
+                                password: authController.passwordController.text,
+                                confirmPassword: authController.confirmPasswordController.text,
                                 shopName: authController.shopNameController.text.trim(),
                                 shopAddress: authController.shopAddressController.text.trim(),
                                 businessTin: authController.tinNumberController.text.trim(),
