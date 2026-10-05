@@ -77,6 +77,7 @@ class SqliteDumpLoader
         }
 
         $pdo->exec('PRAGMA foreign_keys = OFF');
+        $pdo->beginTransaction();
 
         foreach (array_unique($tables) as $table) {
             $pdo->exec('DROP TABLE IF EXISTS "' . str_replace('"', '""', $table) . '"');
@@ -90,6 +91,7 @@ class SqliteDumpLoader
             try {
                 $pdo->exec($converted);
             } catch (\Throwable $e) {
+                $pdo->rollBack();
                 throw new RuntimeException(
                     'Test schema load failed: ' . $e->getMessage()
                         . "\nStatement head: " . substr($converted, 0, 400),
@@ -98,6 +100,7 @@ class SqliteDumpLoader
                 );
             }
         }
+        $pdo->commit();
     }
 
     /**
