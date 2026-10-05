@@ -46,6 +46,7 @@ return Application::configure(basePath: dirname(__DIR__))
             \Illuminate\Routing\Middleware\SubstituteBindings::class,
             \App\Http\Middleware\Localization::class,
             \App\Http\Middleware\DetectMobile::class,
+            GuestMiddleware::class,
         ]);
         $middleware->group('api', [
             'throttle:3000,1',

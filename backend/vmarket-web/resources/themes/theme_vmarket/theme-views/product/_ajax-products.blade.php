@@ -23,7 +23,12 @@
                 @endif
             </a>
             <div class="vm-product-info">
-                @if($shop)
+                @if($product->added_by == 'admin')
+                    <div class="vm-product-shop" style="color: #92400e; font-weight: 700;">
+                        <span>👑</span>
+                        <span>{{ translate('Official Flagship') }}</span>
+                    </div>
+                @elseif($shop)
                     <a href="{{ route('vendor-shop', $shop->slug) }}" class="vm-product-shop">
                         <span>🏪</span>
                         <span>{{ Str::limit($shop->name, 18) }}</span>

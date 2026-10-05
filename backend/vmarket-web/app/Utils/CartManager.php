@@ -389,7 +389,15 @@ class CartManager
         $variations = [];
 
         $user = Helpers::getCustomerInformation($request);
-        $guestId = session('guest_id') ?? ($request->guest_id ?? 0);
+        $guestId = session('guest_id') ?? ($request->guest_id ?? null);
+        if ($user == 'offline' && (empty($guestId) || $guestId == 0)) {
+            $guestUser = \App\Models\GuestUser::create([
+                'ip_address' => request()->ip(),
+                'created_at' => now(),
+            ]);
+            $guestId = $guestUser->id;
+            session()->put('guest_id', $guestId);
+        }
 
         if (!$product->isMarketplacePurchasable()) {
             return ['status' => 0, 'message' => translate('out_of_stock!')];
@@ -538,10 +546,16 @@ class CartManager
             $cart['free_delivery_order_amount'] = OrderManager::getFreeDeliveryOrderAmountArray($cart['cart_group_id']);
         }
 
+        $cartCount = Cart::where(['customer_id' => $customerId, 'is_guest' => $isGuest])->count();
+
         return [
             'status' => 1,
             'in_cart_key' => $cart['id'],
             'cart' => $cart,
+            'cart_count' => $cartCount,
+            'product_name' => $product->name,
+            'product_price' => webCurrencyConverter($price),
+            'product_image' => storageLink('product/thumbnail', $product->thumbnail, 'public')['path'],
             'message' => translate('successfully_added') . '!',
             'product_variant_type' => 'single_variant',
         ];

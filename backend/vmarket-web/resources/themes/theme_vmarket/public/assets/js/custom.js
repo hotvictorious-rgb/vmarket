@@ -584,11 +584,96 @@ function quickViewDefaultFunctionality() {
 }
 quickViewDefaultFunctionality();
 
+function showVmarketCartToast(response) {
+    $('#vm-cart-notification-banner').remove();
+    let title = response.product_name || 'Product';
+    let price = response.product_price ? `(${response.product_price})` : '';
+    let image = response.product_image || '';
+    let cartUrl = $('#get-cart-url').data('url') || '/shop-cart';
+    let checkoutUrl = $('#route-checkout-details').data('url') || '/checkout-details';
+
+    let html = `
+    <div id="vm-cart-notification-banner" class="vm-cart-toast-banner" style="
+        position: fixed;
+        bottom: 24px;
+        left: 50%;
+        transform: translateX(-50%) translateY(20px);
+        background: #1B1035;
+        color: #FFFFFF;
+        box-shadow: 0 16px 40px rgba(27,16,53,0.4);
+        border: 1.5px solid rgba(212,175,55,0.5);
+        border-radius: 14px;
+        padding: 12px 18px;
+        display: flex;
+        align-items: center;
+        gap: 14px;
+        z-index: 999999;
+        font-family: inherit;
+        opacity: 0;
+        transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+        max-width: 94vw;
+        width: 520px;
+    ">
+        ${image ? `<img src="${image}" alt="" style="width: 44px; height: 44px; border-radius: 8px; object-fit: cover; border: 1px solid rgba(255,255,255,0.2); flex-shrink: 0;">` : `
+        <div style="width: 40px; height: 40px; border-radius: 50%; background: #2E1B4E; display: flex; align-items: center; justify-content: center; flex-shrink: 0;">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#D4AF37" stroke-width="2.5"><polyline points="20 6 9 17 4 12"></polyline></svg>
+        </div>`}
+        <div style="flex: 1; min-width: 0;">
+            <div style="display: flex; align-items: center; gap: 6px; font-size: 13.5px; font-weight: 700; color: #D4AF37;">
+                <span>✓ Added to Cart!</span>
+            </div>
+            <div style="font-size: 13px; color: #FFFFFF; font-weight: 500; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; margin-top: 2px;">
+                ${title} <span style="font-weight: 700; color: #FFD700;">${price}</span>
+            </div>
+        </div>
+        <div style="display: flex; align-items: center; gap: 8px; flex-shrink: 0;">
+            <a href="${cartUrl}" style="background: #2E1B4E; color: #FFFFFF; border: 1px solid rgba(212,175,55,0.6); padding: 7px 13px; border-radius: 8px; font-size: 12.5px; font-weight: 700; text-decoration: none; display: inline-flex; align-items: center; gap: 4px; transition: 0.2s;">
+                🛒 Cart
+            </a>
+            <a href="${checkoutUrl}" style="background: #D4AF37; color: #1B1035; font-weight: 800; padding: 7px 13px; border-radius: 8px; font-size: 12.5px; text-decoration: none; display: inline-flex; align-items: center; gap: 4px;">
+                Checkout
+            </a>
+            <button type="button" onclick="$('#vm-cart-notification-banner').remove()" style="background: transparent; border: none; color: rgba(255,255,255,0.7); cursor: pointer; padding: 4px; font-size: 16px; margin-left: 2px;">✕</button>
+        </div>
+    </div>
+    `;
+
+    $('body').append(html);
+    setTimeout(function() {
+        $('#vm-cart-notification-banner').css({
+            'opacity': '1',
+            'transform': 'translateX(-50%) translateY(0)'
+        });
+    }, 20);
+
+    setTimeout(function() {
+        $('#vm-cart-notification-banner').css({
+            'opacity': '0',
+            'transform': 'translateX(-50%) translateY(20px)'
+        });
+        setTimeout(function() {
+            $('#vm-cart-notification-banner').remove();
+        }, 300);
+    }, 6000);
+}
+
 function addToCartOnclick() {
-    $(".product-add-to-cart-button").on("click", function () {
-        let parentElement = $(this).closest('.product-cart-option-container');
-        let productCartForm = parentElement.find('.addToCartDynamicForm');
-        addToCart(productCartForm ?? $(".add-to-cart-details-form"));
+    $(".product-add-to-cart-button").off("click").on("click", function () {
+        let btn = $(this);
+        let form = btn.closest('form');
+        if (!form.length && btn.data("form")) {
+            form = $(btn.data("form"));
+        }
+        if (!form.length) {
+            let container = btn.closest('.product-cart-option-container');
+            if (container.length) {
+                form = container.find('.addToCartDynamicForm');
+            }
+        }
+        if (!form.length || !form.find('input[name="id"]').length) {
+            form = $(".add-to-cart-details-form");
+        }
+        addToCart(form);
     });
 }
 
@@ -597,9 +682,21 @@ function buyNow() {
         $('.product-details-sticky-section').removeClass('active');
         let redirectStatus = $(this).data("auth");
         let url = $(this).data("route");
-        let parentElement = $(this).closest('.product-cart-option-container');
-        let productCartForm = parentElement.find('.addToCartDynamicForm');
-        addToCart(productCartForm ?? $(".add-to-cart-details-form"), redirectStatus, url);
+        let btn = $(this);
+        let form = btn.closest('form');
+        if (!form.length && btn.data("form")) {
+            form = $(btn.data("form"));
+        }
+        if (!form.length) {
+            let container = btn.closest('.product-cart-option-container');
+            if (container.length) {
+                form = container.find('.addToCartDynamicForm');
+            }
+        }
+        if (!form.length || !form.find('input[name="id"]').length) {
+            form = $(".add-to-cart-details-form");
+        }
+        addToCart(form, redirectStatus, url);
         if (redirectStatus === false) {
             $("#quickViewModal").modal("hide");
             $("#loginModal").modal("show");
@@ -651,11 +748,14 @@ function addToCart(formSelector, redirectToCheckout = false, url = null) {
 
                 if (response.status === 1) {
                     updateNavCart();
-                    toastr.success(response.message, {
-                        CloseButton: true,
-                        ProgressBar: true,
-                        timeOut: 3000,
-                    });
+
+                    if (typeof response.cart_count !== 'undefined') {
+                        $('#vmHeaderCartBadge').text(response.cart_count).show();
+                        $('#vmMobileNavCartBadge').text(response.cart_count).show();
+                        $('.vm-action-badge').text(response.cart_count).show();
+                    }
+
+                    showVmarketCartToast(response);
 
                     let actionAddToCartBtn = $(".product-add-to-cart-button");
                     if (response.in_cart_key) {
@@ -678,7 +778,7 @@ function addToCart(formSelector, redirectToCheckout = false, url = null) {
                     toastr.warning(response.message, {
                         CloseButton: true,
                         ProgressBar: true,
-                        timeOut: 2000,
+                        timeOut: 3000,
                     });
                     return false;
                 }

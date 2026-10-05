@@ -48,25 +48,33 @@
                                             <div class="d-flex align-items-center justify-content-between gap-3 flex-wrap flex-lg-nowrap">
                                                 <div class="d-flex align-items-center flex-grow-1">
                                                     @if($cartItem->seller_is == 'admin')
-                                                        <div class="d-flex gap-2 align-items-center">
+                                                        <div class="d-flex gap-2 align-items-center flex-wrap">
                                                             <input type="checkbox"
                                                                    class="shop-head-check shop-head-check-desktop">
-                                                            <a href="{{ route('vendor-shop',['slug' => getInHouseShopConfig(key: 'slug')]) }}">
-                                                                <h5 class="fs-14 line-clamp-1">
-                                                                    {{ getInHouseShopConfig(key:'name') }}
+                                                            <a href="{{ route('vendor-shop',['slug' => getInHouseShopConfig(key: 'slug')]) }}" class="text-decoration-none">
+                                                                <h5 class="fs-14 line-clamp-1 m-0 fw-bold" style="color: #1B1035;">
+                                                                    👑 {{ getInHouseShopConfig(key:'name') }}
                                                                 </h5>
                                                             </a>
+                                                            <span class="badge" style="background: rgba(212,175,55,0.15); color: #B8860B; font-weight: 700; font-size: 11px; padding: 3px 8px; border: 1px solid rgba(212,175,55,0.4); border-radius: 6px;">
+                                                                {{ translate('Official Flagship • Platform Store') }}
+                                                            </span>
                                                         </div>
                                                     @else
-                                                        <div class="d-flex gap-2 align-items-center">
+                                                        <div class="d-flex gap-2 align-items-center flex-wrap">
                                                             <input type="checkbox" class="shop-head-check shop-head-check-desktop">
-                                                            <a href="{{ route('vendor-shop', ['slug' => $cartItem->seller->shop['slug']]) }}">
+                                                            <a href="{{ route('vendor-shop', ['slug' => $cartItem->seller->shop['slug'] ?? '']) }}" class="text-decoration-none">
                                                                 @if(get_shop_name($cartItem['seller_id']))
-                                                                    <h5>{{ get_shop_name($cartItem['seller_id']) }}</h5>
+                                                                    <h5 class="fs-14 line-clamp-1 m-0 fw-bold" style="color: #1B1035;">
+                                                                        🏪 {{ get_shop_name($cartItem['seller_id']) }}
+                                                                    </h5>
                                                                 @else
-                                                                    <h5 class="text-danger fs-14">{{ translate('vendor_not_available') }}</h5>
+                                                                    <h5 class="text-danger fs-14 m-0">{{ translate('vendor_not_available') }}</h5>
                                                                 @endif
                                                             </a>
+                                                            <span class="badge" style="background: rgba(46,27,78,0.08); color: #2E1B4E; font-weight: 700; font-size: 11px; padding: 3px 8px; border: 1px solid rgba(46,27,78,0.2); border-radius: 6px;">
+                                                                {{ translate('Verified Regional Merchant') }}
+                                                            </span>
                                                         </div>
                                                     @endif
                                                     @if ($verify_status['minimum_order_amount'] > $verify_status['amount'])

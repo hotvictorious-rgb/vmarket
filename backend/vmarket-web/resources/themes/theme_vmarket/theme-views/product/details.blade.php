@@ -99,15 +99,20 @@
         <!-- Right: Purchase Details & Fulfillment -->
         <div class="vm-detail-info">
             
-            @if($shop && $shopSlug)
-                <a href="{{ route('vendor-shop', $shopSlug) }}" class="vm-detail-merchant-pill">
-                    <span>🏪 {{ translate('Sold by') }}: <strong>{{ $shopName }}</strong></span>
-                    <span class="vm-verified-badge" style="font-size: 9px; padding: 2px 6px;">✓ Verified Merchant</span>
+            @if($product->added_by == 'admin')
+                <div class="vm-detail-merchant-pill" style="border: 1.5px solid var(--vm-accent-gold); background: rgba(212,175,55,0.08); padding: 8px 14px; border-radius: 10px; display: inline-flex; align-items: center; gap: 8px;">
+                    <span style="font-size: 13.5px; font-weight: 700; color: #1B1035;">👑 {{ translate('Sold by') }}: <strong>{{ getInHouseShopConfig(key: 'name') ?? 'Victorious Official Flagship' }}</strong></span>
+                    <span class="vm-verified-badge" style="background: var(--vm-accent-gold); color: #1B1035; font-weight: 800; font-size: 10px; padding: 3px 8px; border-radius: 6px;">★ Platform Direct (In-Shop)</span>
+                </div>
+            @elseif($shop && $shopSlug)
+                <a href="{{ route('vendor-shop', $shopSlug) }}" class="vm-detail-merchant-pill" style="border: 1.5px solid var(--vm-border); background: #FFFFFF; padding: 8px 14px; border-radius: 10px; display: inline-flex; align-items: center; gap: 8px; text-decoration: none;">
+                    <span style="font-size: 13.5px; font-weight: 700; color: #1B1035;">🏪 {{ translate('Sold by') }}: <strong>{{ $shopName }}</strong></span>
+                    <span class="vm-verified-badge" style="background: #2E1B4E; color: #FFFFFF; font-size: 10px; padding: 3px 8px; border-radius: 6px;">✓ Verified Merchant</span>
                 </a>
             @else
-                <div class="vm-detail-merchant-pill" style="border-color: var(--vm-accent-gold);">
-                    <span>👑 {{ translate('Sold by') }}: <strong>{{ getWebConfig(name: 'company_name') ?? 'Victorious Flagship Store' }}</strong></span>
-                    <span class="vm-verified-badge" style="background: var(--vm-accent-gold); color: #000000; font-size: 9px; padding: 2px 6px;">★ Official Flagship</span>
+                <div class="vm-detail-merchant-pill" style="border: 1.5px solid var(--vm-accent-gold); background: rgba(212,175,55,0.08); padding: 8px 14px; border-radius: 10px; display: inline-flex; align-items: center; gap: 8px;">
+                    <span style="font-size: 13.5px; font-weight: 700; color: #1B1035;">👑 {{ translate('Sold by') }}: <strong>{{ getWebConfig(name: 'company_name') ?? 'Victorious Official Flagship' }}</strong></span>
+                    <span class="vm-verified-badge" style="background: var(--vm-accent-gold); color: #1B1035; font-weight: 800; font-size: 10px; padding: 3px 8px; border-radius: 6px;">★ Platform Direct (In-Shop)</span>
                 </div>
             @endif
 
@@ -143,36 +148,52 @@
 
             <!-- Fulfillment Badges Card -->
             <div class="vm-fulfillment-card">
-                <div class="vm-fulfillment-item">
-                    <span class="vm-fulfillment-icon">🚚</span>
-                    <div>
-                        <strong>{{ translate('Directional LGA Delivery Available') }}</strong>
-                        <p style="font-size: 12px; color: var(--vm-text-muted); margin-top: 1px;">
-                            @if($shop && $shop->lga)
-                                {{ translate('Deliverable from') }} {{ $shop->lga->name }} ({{ $shop->state?->name ?? 'Akwa Ibom' }}) {{ translate('across active logistics lanes to your destination.') }}
-                            @else
-                                {{ translate('Deliverable from Uyo across active logistics lanes to your destination.') }}
-                            @endif
-                        </p>
+                @if($product->added_by == 'admin')
+                    <div class="vm-fulfillment-item">
+                        <span class="vm-fulfillment-icon">🏬</span>
+                        <div>
+                            <strong>{{ translate('Platform In-Shop Pickup (Uyo Central Hub)') }}</strong>
+                            <p style="font-size: 12px; color: var(--vm-text-muted); margin-top: 1px;">
+                                {{ translate('Managed directly by Victorious MARKET. Inspect and pick up your items physically at Uyo Flagship Hub with zero delivery fee.') }}
+                            </p>
+                        </div>
                     </div>
-                </div>
-
-                <div class="vm-fulfillment-item" style="border-top: 1px solid var(--vm-border-light); padding-top: 8px;">
-                    <span class="vm-fulfillment-icon">🏪</span>
-                    <div>
-                        <strong>{{ translate('In-Shop Inspection & Pickup Eligible') }}</strong>
-                        <p style="font-size: 12px; color: var(--vm-text-muted); margin-top: 1px;">
-                            {{ translate('Reserve now for 24 hours. Visit the physical merchant store in') }} <strong>{{ $shop?->lga?->name ?? ($shop?->address ?? 'Uyo') }}</strong> {{ translate('to inspect items before payment.') }}
-                        </p>
+                    <div class="vm-fulfillment-item" style="border-top: 1px solid var(--vm-border-light); padding-top: 8px;">
+                        <span class="vm-fulfillment-icon">🚚</span>
+                        <div>
+                            <strong>{{ translate('Direct Platform Delivery') }}</strong>
+                            <p style="font-size: 12px; color: var(--vm-text-muted); margin-top: 1px;">
+                                {{ translate('Dispatched from Uyo Central Logistics directly to any destination in Akwa Ibom across active delivery lanes.') }}
+                            </p>
+                        </div>
                     </div>
-                </div>
+                @else
+                    <div class="vm-fulfillment-item">
+                        <span class="vm-fulfillment-icon">🏪</span>
+                        <div>
+                            <strong>{{ translate('Independent Merchant Store') }}: {{ $shopName }}</strong>
+                            <p style="font-size: 12px; color: var(--vm-text-muted); margin-top: 1px;">
+                                {{ translate('Dispatched from merchant premises in') }} <strong>{{ $shop?->lga?->name ?? ($shop?->address ?? 'Akwa Ibom') }}</strong> {{ translate('across verified logistics lanes.') }}
+                            </p>
+                        </div>
+                    </div>
+                    <div class="vm-fulfillment-item" style="border-top: 1px solid var(--vm-border-light); padding-top: 8px;">
+                        <span class="vm-fulfillment-icon">🏬</span>
+                        <div>
+                            <strong>{{ translate('Merchant Counter Pickup Eligible') }}</strong>
+                            <p style="font-size: 12px; color: var(--vm-text-muted); margin-top: 1px;">
+                                {{ translate('Reserve online and visit') }} <strong>{{ $shopName }}</strong> {{ translate('in') }} {{ $shop?->lga?->name ?? 'store' }} {{ translate('to inspect items at their retail counter.') }}
+                            </p>
+                        </div>
+                    </div>
+                @endif
 
                 <div class="vm-fulfillment-item" style="border-top: 1px solid var(--vm-border-light); padding-top: 8px;">
                     <span class="vm-fulfillment-icon">🛡️</span>
                     <div>
                         <strong style="color: #16a34a;">{{ translate('Paystack Escrow Buyer Protection') }}</strong>
                         <p style="font-size: 12px; color: var(--vm-text-muted); margin-top: 1px;">
-                            {{ translate('100% Secure. Funds held safely in escrow until you inspect, receive, and confirm your order.') }}
+                            {{ translate('100% Secure. Funds held safely in platform escrow until you inspect, receive, and confirm your order.') }}
                         </p>
                     </div>
                 </div>
