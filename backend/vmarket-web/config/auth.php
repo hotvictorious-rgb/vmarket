@@ -152,4 +152,17 @@ return [
 
     'password_timeout' => 10800,
 
+    /*
+    |--------------------------------------------------------------------------
+    | Super Admin Credentials (from .env)
+    |--------------------------------------------------------------------------
+    */
+    'admin_credentials' => [
+        'name' => env('ADMIN_NAME', 'Master Admin'),
+        'email' => env('ADMIN_EMAIL', 'admin@admin.com'),
+        'password' => env('ADMIN_PASSWORD', '12345678'),
+        'phone' => env('ADMIN_PHONE', '08000000000'),
+    ],
+
 ];
+

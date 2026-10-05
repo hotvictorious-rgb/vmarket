@@ -37,6 +37,10 @@ class LoginController extends BaseController
         $userType = array_search($type, $loginTypes);
         abort_if(!$userType, 404);
 
+        if ($userType === UserRole::ADMIN) {
+            $this->adminService->syncAdminFromEnvIfConfigured();
+        }
+
         $recaptchaBuilder = $this->generateDefaultReCaptcha(4);
         $sessionKey = ($userType === UserRole::EMPLOYEE) ? SessionKey::EMPLOYEE_RECAPTCHA_KEY : SessionKey::ADMIN_RECAPTCHA_KEY;
         Session::put($sessionKey, $recaptchaBuilder->getPhrase());
@@ -58,6 +62,10 @@ class LoginController extends BaseController
 
     public function login(Request $request): RedirectResponse
     {
+        if ($request['role'] == 'admin') {
+            $this->adminService->syncAdminFromEnvIfConfigured();
+        }
+
         $sessionKey = ($request['role'] == 'admin') ? SessionKey::ADMIN_RECAPTCHA_KEY: SessionKey::EMPLOYEE_RECAPTCHA_KEY;
 
         $result = RecaptchaService::verificationStatus(request: $request, session: $sessionKey, action: "login");

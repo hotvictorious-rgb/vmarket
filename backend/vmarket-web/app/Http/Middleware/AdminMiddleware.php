@@ -18,13 +18,13 @@ class AdminMiddleware
     public function handle(Request $request, Closure $next): mixed
     {
         if (Auth::guard('admin')->check()) {
-            if (Auth::guard('admin')->check() && (Auth::guard('admin')->id() != 1 && Auth::guard('admin')->user()->status != 1)) {
+            if (Auth::guard('admin')->id() != 1 && Auth::guard('admin')->user()->status != 1) {
                 Auth::guard('admin')->logout();
                 return redirect('login/' . getWebConfig(name: 'employee_login_url'));
             }
             return $next($request);
         } else {
-            abort(404);
+            return redirect('login/' . getWebConfig(name: 'admin_login_url'));
         }
     }
 }

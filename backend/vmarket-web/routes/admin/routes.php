@@ -115,7 +115,7 @@ Route::group(['prefix' => 'login'], function () {
 });
 
 Route::group(['prefix' => 'admin', 'as' => 'admin.', 'middleware' => ['admin', 'actch:admin_panel']], function () {
-
+    Route::get('/', fn() => redirect()->route('admin.dashboard.index'));
     
     Route::get('component', function () {
         return view('layouts.admin.component');

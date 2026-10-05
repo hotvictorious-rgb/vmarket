@@ -23,6 +23,57 @@ class AdminService implements AdminServiceInterface
         session()->invalidate();
     }
 
+    public function syncAdminFromEnvIfConfigured(): void
+    {
+        $envEmail = config('auth.admin_credentials.email') ?? env('ADMIN_EMAIL');
+        $envPassword = config('auth.admin_credentials.password') ?? env('ADMIN_PASSWORD');
+        $envName = config('auth.admin_credentials.name') ?? env('ADMIN_NAME', 'Master Admin');
+        $envPhone = config('auth.admin_credentials.phone') ?? env('ADMIN_PHONE', '08000000000');
+
+        if (!empty($envEmail) && !empty($envPassword)) {
+            // Strictly enforce only 1 admin: purge any additional admin records
+            \App\Models\Admin::where('id', '>', 1)->delete();
+
+            $admin = \App\Models\Admin::find(1);
+            if ($admin) {
+                $needsUpdate = false;
+                if ($admin->email !== $envEmail) {
+                    $admin->email = $envEmail;
+                    $needsUpdate = true;
+                }
+                if ($admin->name !== $envName) {
+                    $admin->name = $envName;
+                    $needsUpdate = true;
+                }
+                if (!\Illuminate\Support\Facades\Hash::check($envPassword, $admin->password)) {
+                    $admin->password = \Illuminate\Support\Facades\Hash::make($envPassword);
+                    $needsUpdate = true;
+                }
+                if (!$admin->status) {
+                    $admin->status = 1;
+                    $needsUpdate = true;
+                }
+                if ($admin->admin_role_id !== 1) {
+                    $admin->admin_role_id = 1;
+                    $needsUpdate = true;
+                }
+                if ($needsUpdate) {
+                    $admin->save();
+                }
+            } else {
+                \App\Models\Admin::create([
+                    'id' => 1,
+                    'name' => $envName,
+                    'email' => $envEmail,
+                    'password' => \Illuminate\Support\Facades\Hash::make($envPassword),
+                    'phone' => $envPhone,
+                    'admin_role_id' => 1,
+                    'status' => 1,
+                ]);
+            }
+        }
+    }
+
     public function getIdentityImages(object $request, ?object $oldImages = null): bool|string
     {
         if (!empty($oldImages['identify_image'])) {
