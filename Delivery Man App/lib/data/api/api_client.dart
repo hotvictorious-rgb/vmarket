@@ -106,10 +106,21 @@ class ApiClient extends GetxService {
     }
   }
 
+  Map<String, String>? get _sanitizedHeaders {
+    if (_mainHeaders == null) return null;
+    final map = Map<String, String>.from(_mainHeaders!);
+    if (map.containsKey('Authorization')) {
+      map['Authorization'] = 'Bearer [REDACTED]';
+    }
+    return map;
+  }
+
   Future<Response> putData(String uri, dynamic body, {Map<String, String>? headers}) async {
     try {
-      debugPrint('====> API Call: $uri\nHeader: $_mainHeaders');
-      debugPrint('====> API Body: $body');
+      if (foundation.kDebugMode) {
+        debugPrint('====> API Call: $uri\nHeader: $_sanitizedHeaders');
+        debugPrint('====> API Body: $body');
+      }
       http.Response _response = await http.put(
         Uri.parse(appBaseUrl+uri),
         body: jsonEncode(body),
@@ -123,7 +134,9 @@ class ApiClient extends GetxService {
 
   Future<Response> deleteData(String uri, {Map<String, String>? headers}) async {
     try {
-      debugPrint('====> API Call: $uri\nHeader: $_mainHeaders');
+      if (foundation.kDebugMode) {
+        debugPrint('====> API Call: $uri\nHeader: $_sanitizedHeaders');
+      }
       http.Response _response = await http.delete(
         Uri.parse(appBaseUrl+uri),
         headers: headers ?? _mainHeaders,
@@ -156,7 +169,9 @@ class ApiClient extends GetxService {
     }else if(_response.statusCode != 200 && _response.body == null) {
       _response = const Response(statusCode: 0, statusText: noInternetMessage);
     }
-    log('====> API Response: [${_response.statusCode}] $uri\n${_response.body}');
+    if (foundation.kDebugMode) {
+      log('====> API Response: [${_response.statusCode}] $uri\n${_response.body}');
+    }
     return _response;
   }
 }
