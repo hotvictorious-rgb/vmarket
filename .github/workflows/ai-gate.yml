@@ -2,9 +2,9 @@ name: Victorious MARKET AI Engineering Gate
 
 on:
   push:
-    branches: [ "main", "master", "v1", "feature/*", "hotfix/*", "ai*/*" ]
+    branches: [ "main", "master", "v1", "V1", "feature/*", "hotfix/*", "ai*/*" ]
   pull_request:
-    branches: [ "main", "master", "v1" ]
+    branches: [ "main", "master", "v1", "V1" ]
 
 jobs:
   governance-gate:
@@ -28,6 +28,22 @@ jobs:
 
       - name: Validate Documentation Parity
         run: powershell -ExecutionPolicy Bypass -NoProfile -File scripts/release/validate-docs.ps1
+
+      - name: Validate Backend PHP Syntax
+        shell: powershell
+        run: |
+          $errors = 0
+          Get-ChildItem -Path backend/vmarket-web -Filter *.php -Recurse | ForEach-Object {
+              $out = & php -l $_.FullName 2>&1
+              if ($LASTEXITCODE -ne 0) {
+                  Write-Error "Syntax error in $($_.FullName): $out"
+                  $errors++
+              }
+          }
+          if ($errors -gt 0) {
+              throw "$errors PHP syntax errors detected."
+          }
+          Write-Host "All backend PHP files validated with 0 syntax errors."
 
       - name: Generate Status & Metrics
         run: powershell -ExecutionPolicy Bypass -NoProfile -File scripts/release/generate-status.ps1
