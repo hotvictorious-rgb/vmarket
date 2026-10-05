@@ -33,7 +33,7 @@ class PricingService
         // 1. Check if Category has specific markup configured
         if ($categoryId) {
             $category = Category::find($categoryId);
-            if ($category && isset($category->markup_percentage) && (float)$category->markup_percentage > 0) {
+            if ($category && isset($category->markup_percentage) && $category->markup_percentage !== null) {
                 $markupRate = (float) $category->markup_percentage;
                 $markupType = $category->markup_type ?? 'percentage';
             }
@@ -41,9 +41,11 @@ class PricingService
 
         // 2. Fallback to global platform default markup
         if ($markupRate === null) {
-            $markupRate = (float) (getWebConfig(name: 'default_platform_markup_percentage') ?? 10.0);
+            $defaultMarkup = getWebConfig(name: 'default_platform_markup_percentage');
+            $markupRate = ($defaultMarkup !== null) ? (float) $defaultMarkup : 0.0;
             $markupType = 'percentage';
         }
+
 
         // 3. Compute markup spread
         if ($markupType === 'flat_amount') {
