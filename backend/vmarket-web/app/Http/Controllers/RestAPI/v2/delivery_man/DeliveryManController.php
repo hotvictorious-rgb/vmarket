@@ -622,7 +622,7 @@ class DeliveryManController extends Controller
         $delivery_man->address = $request['address'];
         $delivery_man->image = $imageName;
         if (!empty($request->password)) {
-            $delivery_man->password = bcrypt(str_replace(' ', '', $request['password']));
+            $delivery_man->password = bcrypt($request['password']);
         }
 
         if ($delivery_man->save()) {

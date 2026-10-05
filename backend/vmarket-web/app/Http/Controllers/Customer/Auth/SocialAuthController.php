@@ -51,6 +51,11 @@ class SocialAuthController extends Controller
 
         $user = $this->customerRepo->getFirstWhere(params: ['email' => $userSocialData->getEmail()]);
 
+        if ($user && !$user->is_active) {
+            Toastr::error(translate('customer_not_found_or_account_has_been_suspended'));
+            return redirect()->route('home');
+        }
+
         if (!$user || $user['login_medium'] != $service) {
             $name = explode(' ', $userSocialData['name']);
             if (count($name) > 1) {
@@ -69,7 +74,7 @@ class SocialAuthController extends Controller
                 'l_name' => $lastName,
                 'email' => $userSocialData->getEmail(),
                 'phone' => '',
-                'password' => bcrypt($userSocialData->id),
+                'password' => bcrypt(Str::random(64)),
                 'is_active' => 1,
                 'login_medium' => $service,
                 'social_id' => $userSocialData->id,
@@ -97,6 +102,9 @@ class SocialAuthController extends Controller
 
     public function actionCustomerLoginProcess($request, $user, $email): JsonResponse|RedirectResponse
     {
+        if (!$user || !$user->is_active) {
+            return redirect()->route('home');
+        }
         // Need Verification Or Not
         $phoneVerification = getLoginConfig(key: 'phone_verification');
         $emailVerification = getLoginConfig(key: 'email_verification');

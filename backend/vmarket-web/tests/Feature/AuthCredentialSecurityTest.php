@@ -62,13 +62,45 @@ class AuthCredentialSecurityTest extends GatewayMoneyTestCase
         $this->assertTrue(Hash::check('Old Password123',$u->fresh()->password));
     }
 
+    public function test_seller_helpers_accept_only_raw_bearer_against_stored_hash():void {
+        $token=str_repeat('h',50);$id=$this->fixture('sellers',['email'=>'helper@example.test','phone'=>'08099999999','status'=>'approved','auth_token'=>hash('sha256',$token)]);
+        foreach([$token,hash('sha256',$token)] as $bearer){
+            $request=\Illuminate\Http\Request::create('/');$request->headers->set('Authorization','Bearer '.$bearer);
+            $model=\App\Utils\Helpers::getSellerByToken($request);$legacy=\App\Utils\Helpers::get_seller_by_token($request);
+            if($bearer===$token){$this->assertSame($id,$model->id);$this->assertSame(1,$legacy['success']);}
+            else{$this->assertNull($model);$this->assertSame(0,$legacy['success']);}
+        }
+        DB::table('sellers')->where('id',$id)->update(['auth_token'=>$token]);
+        $request=\Illuminate\Http\Request::create('/');$request->headers->set('Authorization','Bearer '.$token);
+        $this->assertNull(\App\Utils\Helpers::getSellerByToken($request));$this->assertSame(0,\App\Utils\Helpers::get_seller_by_token($request)['success']);
+    }
+    public function test_native_web_resend_delivers_the_exact_random_reset_credential():void {
+        $u=$this->user();$sent=null;
+        $this->mock(\App\Services\Web\CustomerAuthService::class,function($mock)use(&$sent,$u){
+            $mock->shouldReceive('sendCustomerPhoneVerificationToken')->once()->withArgs(function($phone,$token)use(&$sent,$u){$sent=(string)$token;return $phone===$u->phone && preg_match('/^[0-9]{6}$/D',$sent); })->andReturn(['status'=>'success']);
+        });
+        $this->withSession(['default_recaptcha_id_customer_auth'=>'captcha'])->post('/customer/auth/resend-otp-reset-password',['identity'=>base64_encode($u->phone),'default_captcha_value'=>'captcha'])->assertRedirect();
+        $this->assertNotNull($sent);$this->assertSame(hash('sha256',$sent),DB::table('password_resets')->where('account_id',$u->id)->value('token'));
+        $this->withSession(['forgot_password_identity'=>$u->phone])->post('/customer/auth/otp-verification',['identity'=>$u->phone,'otp'=>$sent])->assertRedirect(route('customer.auth.reset-password',['identity'=>base64_encode($u->phone),'token'=>$sent]));
+        $this->get('/customer/auth/reset-password?'.http_build_query(['identity'=>base64_encode($u->phone),'token'=>$sent]))->assertOk();
+        $this->post('/customer/auth/reset-password',['identity'=>base64_encode($u->phone),'reset_token'=>$sent,'password'=>'ResentPassword123!','confirm_password'=>'ResentPassword123!'])->assertRedirect('/');
+        $this->assertTrue(Hash::check('ResentPassword123!',$u->fresh()->password));Http::assertNothingSent();
+    }
+    public function test_precreation_invitation_cannot_authorize_reset_and_bound_tokens_are_hashed():void {
+        $service=app(\App\Services\PasswordResetService::class);$identity='08012345678';$proof=str_repeat('i',120);
+        $data=$service->getAddData($identity,$proof,'customer');$this->assertSame('registration_invite',$data['purpose']);$this->assertNull($data['account_id']);DB::table('password_resets')->insert($data);
+        $u=$this->user();$this->assertFalse(app(PasswordResetCredentialService::class)->consume('customer',$identity,$proof,'NewPassword123'));
+        $bound=$service->getAddData($identity,$proof,'customer');$this->assertSame('password_reset',$bound['purpose']);$this->assertSame($u->id,$bound['account_id']);$this->assertSame(hash('sha256',$proof),$bound['token']);
+    }
     public function test_employee_info_never_exposes_owner_digest_and_logout_revokes_only_actual_principal():void {
         $ownerToken=str_repeat('o',50);$employeeToken=str_repeat('e',50);
-        $sid=$this->fixture('sellers',['email'=>'owner@example.test','phone'=>'08011111111','status'=>'approved','password'=>Hash::make('Owner123'),'auth_token'=>hash('sha256',$ownerToken)]);
+        $sid=$this->fixture('sellers',['email'=>'owner@example.test','phone'=>'08011111111','status'=>'approved','password'=>Hash::make('Owner123'),'auth_token'=>hash('sha256',$ownerToken),'bank_name'=>'Owner Bank','account_no'=>'0123456789','holder_name'=>'Owner']);
         $rid=$this->fixture('vendor_roles',['seller_id'=>$sid,'name'=>'Staff','module_access'=>'[]','status'=>1]);
         $eid=$this->fixture('vendor_employees',['seller_id'=>$sid,'vendor_role_id'=>$rid,'name'=>'Employee','email'=>'employee@example.test','password'=>Hash::make('Staff123'),'status'=>1,'auth_token'=>hash('sha256',$employeeToken)]);
         $out=$this->withHeader('Authorization','Bearer '.$employeeToken)->getJson('/api/v3/seller/seller-info');$out->assertOk();
         $this->assertStringNotContainsString(hash('sha256',$ownerToken),$out->getContent());$this->assertArrayNotHasKey('auth_token',$out->json());$this->assertArrayNotHasKey('remember_token',$out->json());
+        foreach(['bank_name','branch','account_no','holder_name','nin','cac_number','kyc_status','sales_commission_percentage','gst'] as $key)$this->assertArrayNotHasKey($key,$out->json());
+        $owner=$this->withHeader('Authorization','Bearer '.$ownerToken)->getJson('/api/v3/seller/seller-info');$owner->assertOk();$this->assertSame('Owner Bank',$owner->json('bank_name'));$this->assertSame('0123456789',$owner->json('account_no'));$this->assertArrayHasKey('image_full_url',$owner->json());$this->assertArrayNotHasKey('auth_token',$owner->json());
         $this->withHeader('Authorization','Bearer '.hash('sha256',$ownerToken))->getJson('/api/v3/seller/seller-info')->assertStatus(401);
         $this->withHeader('Authorization','Bearer '.$employeeToken)->postJson('/api/v3/seller/logout')->assertOk();
         $this->assertNull(DB::table('vendor_employees')->where('id',$eid)->value('auth_token'));$this->assertSame(hash('sha256',$ownerToken),DB::table('sellers')->where('id',$sid)->value('auth_token'));
@@ -108,6 +140,32 @@ class AuthCredentialSecurityTest extends GatewayMoneyTestCase
         DB::table('password_resets')->where('user_type','customer')->update(['purpose'=>'password_reset','account_id'=>$u->id+1]);
         $this->putJson('/api/v1/auth/reset-password',$payload)->assertStatus(403);
         $this->assertTrue(Hash::check('Old Password123',$u->fresh()->password));
+    }
+    public function test_authenticated_rider_profile_password_preserves_spaces():void {
+        $token=str_repeat('p',50);$id=$this->fixture('delivery_men',['phone'=>'08012345678','email'=>'rider@example.test','password'=>Hash::make('OldPassword123!'),'is_active'=>1,'auth_token'=>hash('sha256',$token)]);
+        $this->withHeader('Authorization','Bearer '.$token)->putJson('/api/v2/delivery-man/update-info',['f_name'=>'Rider','l_name'=>'Test','address'=>'Test','password'=>' New Password123! ','confirm_password'=>' New Password123! '])->assertOk();
+        $hash=DB::table('delivery_men')->where('id',$id)->value('password');$this->assertTrue(Hash::check(' New Password123! ',$hash));$this->assertFalse(Hash::check('NewPassword123!',$hash));
+    }
+    public function test_oauth_web_and_api_creation_never_use_public_provider_identity_as_password():void {
+        $id='public-provider-id';$email='social@example.test';
+        Http::fake(['www.googleapis.com/*'=>Http::response(['id'=>$id,'email'=>$email,'name'=>'Social Customer'],200)]);
+        $this->postJson('/api/v1/auth/social-login',['token'=>'verified-provider-token','email'=>$email,'unique_id'=>$id,'medium'=>'google'])->assertOk();
+        $u=\App\Models\User::where('email',$email)->firstOrFail();$this->assertFalse(Hash::check($id,$u->password));$this->assertFalse(Hash::check($email,$u->password));
+        $social=new \Laravel\Socialite\Two\User();$social->setRaw(['name'=>'Web Social'])->map(['id'=>$id,'email'=>'websocial@example.test','name'=>'Web Social']);
+        $driver=\Mockery::mock();$driver->shouldReceive('stateless')->andReturnSelf();$driver->shouldReceive('user')->andReturn($social);
+        \Laravel\Socialite\Facades\Socialite::shouldReceive('driver')->with('google')->andReturn($driver);
+        $this->get('/customer/auth/login/google/callback')->assertRedirect();$new=session('social_login_new_customer');$this->assertIsArray($new);$this->assertFalse(Hash::check($id,$new['password']));
+        $u->is_active=0;$u->save();$this->postJson('/api/v1/auth/social-login',['token'=>'verified-provider-token','email'=>$email,'unique_id'=>$id,'medium'=>'google'])->assertStatus(403);
+        $this->assertSame(0,DB::table('oauth_access_tokens')->where('user_id',$u->id)->count());
+        $social->map(['id'=>$id,'email'=>$email,'name'=>'Blocked Social']);$this->withSession(['social_login_new_customer'=>null])->get('/customer/auth/login/google/callback')->assertRedirect(route('home'));$this->assertNull(session('social_login_new_customer'));
+    }
+    public function test_migration_rotates_only_demonstrably_public_oauth_passwords_and_revokes_sessions():void {
+        $migration=require base_path('database/migrations/2026_10_04_000002_bind_password_reset_credentials.php');$migration->down();
+        $vulnerable=$this->fixture('users',['email'=>'old-social@example.test','phone'=>'08011111111','social_id'=>'public-old-id','login_medium'=>'google','password'=>Hash::make('public-old-id'),'is_active'=>1,'wallet_balance'=>'123.45']);
+        $safe=$this->fixture('users',['email'=>'safe-social@example.test','phone'=>'08022222222','social_id'=>'public-safe-id','login_medium'=>'google','password'=>Hash::make('UserChosen123!'),'is_active'=>1]);
+        $this->fixture('oauth_access_tokens',['id'=>'social-access','user_id'=>$vulnerable,'client_id'=>1,'name'=>'Test','scopes'=>'[]','revoked'=>0]);
+        $migration->up();$bad=\App\Models\User::find($vulnerable);$good=\App\Models\User::find($safe);
+        $this->assertFalse(Hash::check('public-old-id',$bad->password));$this->assertTrue(Hash::check('UserChosen123!',$good->password));$this->assertSame(1,(int)$bad->credential_version);$this->assertSame(0,(int)$good->credential_version);$this->assertEquals(1,DB::table('oauth_access_tokens')->where('id','social-access')->value('revoked'));$this->assertSame('123.45',bcadd((string)$bad->wallet_balance,'0',2));
     }
     public function test_rider_bearer_digest_is_not_a_credential_and_logout_revokes_raw_token():void {
         $token=str_repeat('r',50);$id=$this->fixture('delivery_men',['phone'=>'08012345678','email'=>'rider@example.test','password'=>Hash::make('Rider123!'),'is_active'=>1,'auth_token'=>hash('sha256',$token)]);

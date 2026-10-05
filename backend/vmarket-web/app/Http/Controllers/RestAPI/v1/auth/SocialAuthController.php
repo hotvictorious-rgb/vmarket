@@ -48,11 +48,9 @@ class SocialAuthController extends Controller
 
         try {
             if ($request['medium'] == 'google') {
-                $res = $client->request('GET', 'https://www.googleapis.com/oauth2/v1/userinfo?access_token=' . $token);
-                $data = json_decode($res->getBody()->getContents(), true);
+                $data = Http::get('https://www.googleapis.com/oauth2/v1/userinfo', ['access_token' => $token])->throw()->json();
             } elseif ($request['medium'] == 'facebook') {
-                $res = $client->request('GET', 'https://graph.facebook.com/' . $unique_id . '?access_token=' . $token . '&&fields=name,email');
-                $data = json_decode($res->getBody()->getContents(), true);
+                $data = Http::get('https://graph.facebook.com/' . $unique_id, ['access_token' => $token, 'fields' => 'name,email'])->throw()->json();
             } elseif ($request['medium'] == 'apple') {
                 $apple_login = BusinessSetting::where(['type' => 'apple_login'])->first();
                 if ($apple_login) {
@@ -89,6 +87,11 @@ class SocialAuthController extends Controller
             return response()->json(['error' => translate('wrong_credential')]);
         }
 
+        $existingAccount = User::where('email', $data['email'] ?? '')->first();
+        if ($existingAccount && !$existingAccount->is_active) {
+            return response()->json(['message' => translate('customer_not_found_or_account_has_been_suspended')], 403);
+        }
+
         if ($request['medium'] == 'apple' && isset($data['email'])) {
             $fast_name = strstr($data['email'], '@', true);
             $user = User::where('email', $data['email'])->first();
@@ -97,7 +100,7 @@ class SocialAuthController extends Controller
                     'f_name' => $fast_name,
                     'email' => $data['email'],
                     'phone' => '',
-                    'password' => bcrypt($data['email']),
+                    'password' => bcrypt(Str::random(64)),
                     'is_active' => 1,
                     'login_medium' => $request['medium'],
                     'social_id' => $data['sub'],
@@ -145,7 +148,7 @@ class SocialAuthController extends Controller
                     'l_name' => $last_name,
                     'email' => $email,
                     'phone' => '',
-                    'password' => bcrypt($data['id']),
+                    'password' => bcrypt(Str::random(64)),
                     'is_active' => 1,
                     'login_medium' => $request['medium'],
                     'social_id' => $data['id'],
@@ -183,7 +186,7 @@ class SocialAuthController extends Controller
     public static function login_process_passport($user, $email, $password):?string
     {
         $token = null;
-        if (isset($user)) {
+        if (isset($user) && $user->is_active) {
             auth()->login($user);
             $token = auth()->user()->createToken('LaravelAuthApp')->accessToken;
         }

@@ -247,8 +247,13 @@ class SellerController extends Controller
         $dto = $data->only(['id','f_name','l_name','email','phone','image','status','country_code','shop','wallet',
             'product_count','orders_count','minimum_order_amount','free_delivery_over_amount','free_delivery_status',
             'free_delivery_features_status','free_delivery_responsibility','minimum_order_amount_by_seller',
-            'is_employee','employee_shop_id','branch_id','employee_name','employee_role','pos_status']);
-        if ($data['is_employee']) unset($dto['wallet']);
+            'is_employee','employee_shop_id','branch_id','employee_name','employee_role','pos_status','image_full_url']);
+        if ($data['is_employee']) {
+            unset($dto['wallet']);
+        } else {
+            $dto += $data->only(['bank_name','branch','account_no','holder_name','nin','cac_number','kyc_status',
+                'sales_commission_percentage','gst']);
+        }
         return response()->json($dto, 200);
     }
 
