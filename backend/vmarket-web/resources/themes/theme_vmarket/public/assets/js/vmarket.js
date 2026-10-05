@@ -205,7 +205,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const qtyPlus = document.getElementById('vmQtyPlus');
     const qtyMinus = document.getElementById('vmQtyMinus');
 
-    if (qtyInput && qtyPlus && qtyMinus && !qtyPlus.classList.contains('btn-number')) {
+    if (qtyInput && qtyPlus && qtyMinus) {
         qtyPlus.addEventListener('click', () => {
             let current = parseInt(qtyInput.value) || 1;
             const max = parseInt(qtyInput.getAttribute('max')) || 9999;

@@ -102,20 +102,25 @@
             @if($shop && $shopSlug)
                 <a href="{{ route('vendor-shop', $shopSlug) }}" class="vm-detail-merchant-pill">
                     <span>🏪 {{ translate('Sold by') }}: <strong>{{ $shopName }}</strong></span>
-                    <span class="vm-verified-badge" style="font-size: 9px; padding: 1px 5px;">✓ Verified</span>
+                    <span class="vm-verified-badge" style="font-size: 9px; padding: 2px 6px;">✓ Verified Merchant</span>
                 </a>
+            @else
+                <div class="vm-detail-merchant-pill" style="border-color: var(--vm-accent-gold);">
+                    <span>👑 {{ translate('Sold by') }}: <strong>{{ getWebConfig(name: 'company_name') ?? 'Victorious Flagship Store' }}</strong></span>
+                    <span class="vm-verified-badge" style="background: var(--vm-accent-gold); color: #000000; font-size: 9px; padding: 2px 6px;">★ Official Flagship</span>
+                </div>
             @endif
 
             <h1 class="vm-detail-title">{{ $product->name }}</h1>
 
             <!-- Ratings & SKU -->
             <div style="display: flex; gap: 16px; align-items: center; font-size: 13px; color: var(--vm-text-muted);">
-                <span>⭐ {{ number_format($product->reviews->avg('rating') ?? 5.0, 1) }} ({{ $product->reviews->count() }} {{ translate('reviews') }})</span>
+                <span>⭐ {{ number_format($product->reviews->avg('rating') ?? 5.0, 1) }} ({{ $product->reviews->count() ?? 1 }} {{ translate('reviews') }})</span>
                 <span>•</span>
                 <span>{{ translate('SKU') }}: {{ $product->code ?? ('VM-' . $product->id) }}</span>
                 <span>•</span>
                 @if($inStock)
-                    <span style="color: var(--vm-success); font-weight: 700;">● {{ translate('In Stock') }}</span>
+                    <span style="color: var(--vm-success); font-weight: 700;">● {{ translate('In Stock') }} ({{ $product->current_stock }} {{ translate('units') }})</span>
                 @else
                     <span style="color: var(--vm-danger); font-weight: 700;">● {{ translate('Out of Stock') }}</span>
                 @endif
@@ -144,9 +149,9 @@
                         <strong>{{ translate('Directional LGA Delivery Available') }}</strong>
                         <p style="font-size: 12px; color: var(--vm-text-muted); margin-top: 1px;">
                             @if($shop && $shop->lga)
-                                {{ translate('Deliverable from') }} {{ $shop->lga->name }} ({{ $shop->state?->name }}) {{ translate('across active logistics lanes. Enter your destination LGA at checkout to verify route eligibility.') }}
+                                {{ translate('Deliverable from') }} {{ $shop->lga->name }} ({{ $shop->state?->name ?? 'Akwa Ibom' }}) {{ translate('across active logistics lanes to your destination.') }}
                             @else
-                                {{ translate('Deliverable across active logistics lanes. Enter your destination LGA at checkout to verify route eligibility.') }}
+                                {{ translate('Deliverable from Uyo across active logistics lanes to your destination.') }}
                             @endif
                         </p>
                     </div>
@@ -157,7 +162,17 @@
                     <div>
                         <strong>{{ translate('In-Shop Inspection & Pickup Eligible') }}</strong>
                         <p style="font-size: 12px; color: var(--vm-text-muted); margin-top: 1px;">
-                            {{ translate('Reserve now for 24 hours. Visit the physical merchant store in') }} {{ $shop?->deliveryCity?->name ?? 'Uyo' }} {{ translate('to inspect items before payment.') }}
+                            {{ translate('Reserve now for 24 hours. Visit the physical merchant store in') }} <strong>{{ $shop?->lga?->name ?? ($shop?->address ?? 'Uyo') }}</strong> {{ translate('to inspect items before payment.') }}
+                        </p>
+                    </div>
+                </div>
+
+                <div class="vm-fulfillment-item" style="border-top: 1px solid var(--vm-border-light); padding-top: 8px;">
+                    <span class="vm-fulfillment-icon">🛡️</span>
+                    <div>
+                        <strong style="color: #16a34a;">{{ translate('Paystack Escrow Buyer Protection') }}</strong>
+                        <p style="font-size: 12px; color: var(--vm-text-muted); margin-top: 1px;">
+                            {{ translate('100% Secure. Funds held safely in escrow until you inspect, receive, and confirm your order.') }}
                         </p>
                     </div>
                 </div>

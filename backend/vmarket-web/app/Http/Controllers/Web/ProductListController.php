@@ -24,6 +24,7 @@ use Illuminate\Pagination\LengthAwarePaginator;
 use Illuminate\Pagination\Paginator;
 use Illuminate\Routing\Redirector;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Cache;
 use Throwable;
 
 class ProductListController extends Controller
@@ -242,14 +243,18 @@ class ProductListController extends Controller
             redirect()->back();
         }
 
-        $categories = CategoryManager::getCategoriesWithCountingAndPriorityWiseSorting();
-        $activeBrands = BrandManager::getActiveBrandWithCountingAndPriorityWiseSorting();
+        $categories = Cache::remember('theme_vmarket_categories_cache', 300, function () {
+            return CategoryManager::getCategoriesWithCountingAndPriorityWiseSorting();
+        });
+        $activeBrands = Cache::remember('theme_vmarket_active_brands_cache', 300, function () {
+            return BrandManager::getActiveBrandWithCountingAndPriorityWiseSorting();
+        });
         $singlePageProductCount = 20;
 
         $data = self::getProductListRequestData(request: $request);
         $productListData = ProductManager::getProductListData(request: $request);
-        $ratings = self::getProductsRatingOneToFiveAsArray(productQuery: $productListData);
         $products = $productListData->paginate(20)->appends($data);
+        $ratings = self::getProductsRatingOneToFiveAsArray($products);
         $getProductIds = $products->pluck('id')->toArray();
 
         $category = $request['category_ids'] ? Category::whereIn('id', $request['category_ids'])->get() : [];
@@ -329,16 +334,21 @@ class ProductListController extends Controller
         $rating_4 = 0;
         $rating_5 = 0;
 
-        foreach ($productQuery as $rating) {
-            if (isset($rating->rating[0]['average']) && ($rating->rating[0]['average'] > 0 && $rating->rating[0]['average'] < 2)) {
+        $items = ($productQuery instanceof \Illuminate\Contracts\Pagination\LengthAwarePaginator || $productQuery instanceof \Illuminate\Contracts\Pagination\Paginator)
+            ? $productQuery->items()
+            : ($productQuery instanceof \Illuminate\Database\Eloquent\Builder ? (clone $productQuery)->limit(50)->get() : (is_iterable($productQuery) ? $productQuery : []));
+
+        foreach ($items as $rating) {
+            $average = isset($rating->rating[0]['average']) ? (float)$rating->rating[0]['average'] : 0;
+            if ($average >= 1 && $average < 2) {
                 $rating_1 += 1;
-            } elseif (isset($rating->rating[0]['average']) && ($rating->rating[0]['average'] >= 2 && $rating->rating[0]['average'] < 3)) {
+            } elseif ($average >= 2 && $average < 3) {
                 $rating_2 += 1;
-            } elseif (isset($rating->rating[0]['average']) && ($rating->rating[0]['average'] >= 3 && $rating->rating[0]['average'] < 4)) {
+            } elseif ($average >= 3 && $average < 4) {
                 $rating_3 += 1;
-            } elseif (isset($rating->rating[0]['average']) && ($rating->rating[0]['average'] >= 4 && $rating->rating[0]['average'] < 5)) {
+            } elseif ($average >= 4 && $average < 5) {
                 $rating_4 += 1;
-            } elseif (isset($rating->rating[0]['average']) && ($rating->rating[0]['average'] == 5)) {
+            } elseif ($average == 5) {
                 $rating_5 += 1;
             }
         }

@@ -153,7 +153,9 @@
                     <span class="vm-nav-caret">▾</span>
                 </a>
                 @php
-                    $navCategories = \App\Models\Category::where('position', 0)->where('home_status', 1)->orderBy('priority', 'asc')->take(12)->get();
+                    $navCategories = \Illuminate\Support\Facades\Cache::remember('theme_vmarket_nav_categories_v1', 600, function () {
+                        return \App\Models\Category::where('position', 0)->where('home_status', 1)->orderBy('priority', 'asc')->take(12)->get();
+                    });
                 @endphp
                 @if($navCategories->count() > 0)
                     <div class="vm-nav-dropdown-menu">
