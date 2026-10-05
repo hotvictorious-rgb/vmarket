@@ -15,7 +15,6 @@ import 'package:flutter_sixvalley_ecommerce/helper/number_checker_helper.dart';
 import 'package:flutter_sixvalley_ecommerce/helper/route_healper.dart';
 import 'package:flutter_sixvalley_ecommerce/localization/controllers/localization_controller.dart';
 import 'package:flutter_sixvalley_ecommerce/localization/language_constrants.dart';
-import 'package:flutter_sixvalley_ecommerce/main.dart';
 import 'package:flutter_sixvalley_ecommerce/utill/custom_themes.dart';
 import 'package:flutter_sixvalley_ecommerce/utill/dimensions.dart';
 import 'package:flutter_sixvalley_ecommerce/utill/images.dart';
@@ -441,8 +440,7 @@ class _LoginScreenState extends State<LoginScreen> {
                                                     'sign_in', context),
                                                 onTap: () async {
                                                   String password =
-                                                      _passwordController!.text
-                                                          .trim();
+                                                      _passwordController!.text;
 
                                                   if (_emailPhoneController!
                                                       .text.isEmpty) {

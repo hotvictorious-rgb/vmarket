@@ -2,7 +2,6 @@ import 'package:flutter_sixvalley_ecommerce/features/auth/domain/models/firebase
 import 'dart:convert';
 import 'dart:developer';
 import 'package:firebase_auth/firebase_auth.dart';
-import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_sixvalley_ecommerce/features/auth/domain/models/register_model.dart';
 import 'package:flutter_sixvalley_ecommerce/data/model/api_response.dart';
@@ -14,7 +13,6 @@ import 'package:flutter_sixvalley_ecommerce/features/auth/domain/models/user_log
 import 'package:flutter_sixvalley_ecommerce/features/auth/domain/services/auth_service_interface.dart';
 import 'package:flutter_sixvalley_ecommerce/features/auth/enums/from_page.dart';
 import 'package:flutter_sixvalley_ecommerce/features/profile/controllers/profile_contrroller.dart';
-import 'package:flutter_sixvalley_ecommerce/features/profile/domain/models/profile_model.dart';
 import 'package:flutter_sixvalley_ecommerce/features/splash/controllers/splash_controller.dart';
 import 'package:flutter_sixvalley_ecommerce/features/splash/domain/models/config_model.dart';
 import 'package:flutter_sixvalley_ecommerce/helper/api_checker.dart';
@@ -108,21 +106,16 @@ class AuthController with ChangeNotifier {
       String? message = '',
           token = '',
           temporaryToken = '',
-          email = '',
           phone = '';
-      ProfileModel? profileModel;
       bool isPhoneVerified = false;
-      bool isMailVerified = false;
 
       try {
         message = map['error_message'];
         token = map['token'];
         temporaryToken = map['temp_token'];
         if (map["user"] != null) {
-          email = map["user"]["email"];
           phone = map["user"]["phone"];
           isPhoneVerified = map["user"]["is_phone_verified"] ?? false;
-          isMailVerified = map["user"]["is_email_verified"] ?? false;
         }
       } catch (e) {
         message = null;
@@ -200,14 +193,13 @@ class AuthController with ChangeNotifier {
     if (apiResponse.response != null &&
         apiResponse.response!.statusCode == 200) {
       Map map = apiResponse.response!.data;
-      String? tempToken = '', token = '', message = '';
+      String? tempToken = '', token = '';
 
       if (map.containsKey('temporary_token')) {
         tempToken = map["temporary_token"];
       } else if (map.containsKey('token')) {
         token = map["token"];
       }
-      message = map["message"];
 
       if (token != null && token.isNotEmpty) {
         await authServiceInterface.saveUserToken(token);
@@ -274,12 +266,11 @@ class AuthController with ChangeNotifier {
       clearGuestId();
       Map map = apiResponse.response!.data;
 
-      String? temporaryToken = '', token = '', message = '', email, phone;
+      String? temporaryToken = '', token = '', email, phone;
       bool isPhoneVerified = false;
       bool isMailVerified = false;
 
       try {
-        message = map["message"];
         token = map["token"];
         temporaryToken = map["temporary_token"];
         email = map["email"];
@@ -287,7 +278,6 @@ class AuthController with ChangeNotifier {
         isPhoneVerified = map["is_phone_verified"] ?? false;
         isMailVerified = map["is_email_verified"] ?? false;
       } catch (e) {
-        message = null;
         token = null;
         temporaryToken = null;
       }
@@ -473,8 +463,6 @@ class AuthController with ChangeNotifier {
     _resendButtonLoading = true;
     notifyListeners();
 
-    String? vID;
-
     await FirebaseAuth.instance.verifyPhoneNumber(
       phoneNumber: phoneNumber,
       verificationCompleted: (PhoneAuthCredential credential) {},
@@ -540,11 +528,6 @@ class AuthController with ChangeNotifier {
 
     _resendButtonLoading = false;
     notifyListeners();
-  }
-
-  Future<void> callFirebaseStoretiken(String phoneNumber, String vID) async {
-    await authServiceInterface.firebaseAuthTokenStore(
-        userInput: phoneNumber, token: vID);
   }
 
   Future<ResponseModel> checkPhoneForOtp(String phone, FromPage fromPage,

@@ -211,7 +211,7 @@ class SignUpWidgetState extends State<SignUpWidget> {
                                   controller: _confirmPasswordController,
                                   focusNode: _confirmPasswordFocus,
                                   inputAction: TextInputAction.done,
-                                  validator: (value)=> ValidateCheck.validateConfirmPassword(value, _passwordController.text.trim()),
+                                  validator: (value)=> ValidateCheck.validateConfirmPassword(value, _passwordController.text),
                                   prefixIcon: Images.pass))),
 
 
@@ -243,7 +243,7 @@ class SignUpWidgetState extends State<SignUpWidget> {
                             String lastName = _lastNameController.text.trim();
                             String email = _emailController.text.trim();
                             String phoneNumber = authProvider.countryDialCode +_phoneController.text.trim();
-                            String password = _passwordController.text.trim();
+                            String password = _passwordController.text;
 
                             if (signUpFormKey.currentState?.validate() ?? false) {
                               register.fName = firstName;
