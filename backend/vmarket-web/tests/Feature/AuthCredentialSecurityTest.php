@@ -164,8 +164,15 @@ class AuthCredentialSecurityTest extends GatewayMoneyTestCase
         $vulnerable=$this->fixture('users',['email'=>'old-social@example.test','phone'=>'08011111111','social_id'=>'public-old-id','login_medium'=>'google','password'=>Hash::make('public-old-id'),'is_active'=>1,'wallet_balance'=>'123.45']);
         $safe=$this->fixture('users',['email'=>'safe-social@example.test','phone'=>'08022222222','social_id'=>'public-safe-id','login_medium'=>'google','password'=>Hash::make('UserChosen123!'),'is_active'=>1]);
         $this->fixture('oauth_access_tokens',['id'=>'social-access','user_id'=>$vulnerable,'client_id'=>1,'name'=>'Test','scopes'=>'[]','revoked'=>0]);
-        $migration->up();$bad=\App\Models\User::find($vulnerable);$good=\App\Models\User::find($safe);
+        $migration->up();
+        $rotation=require base_path('database/migrations/2026_10_05_000001_rotate_public_oauth_passwords.php');$rotation->up();$bad=\App\Models\User::find($vulnerable);$good=\App\Models\User::find($safe);
         $this->assertFalse(Hash::check('public-old-id',$bad->password));$this->assertTrue(Hash::check('UserChosen123!',$good->password));$this->assertSame(1,(int)$bad->credential_version);$this->assertSame(0,(int)$good->credential_version);$this->assertEquals(1,DB::table('oauth_access_tokens')->where('id','social-access')->value('revoked'));$this->assertSame('123.45',bcadd((string)$bad->wallet_balance,'0',2));
+        // [AI] An installation that already applied the binding migration still receives this independent rotation.
+        $installed=$this->fixture('users',['email'=>'installed-social@example.test','phone'=>'08033333333','social_id'=>'installed-public-id','login_medium'=>'google','password'=>Hash::make('installed-public-id'),'is_active'=>1]);
+        $this->fixture('oauth_access_tokens',['id'=>'installed-access','user_id'=>$installed,'client_id'=>1,'name'=>'Test','scopes'=>'[]','revoked'=>0]);
+        $rotation->up();$existing=\App\Models\User::find($installed);$this->assertFalse(Hash::check('installed-public-id',$existing->password));$this->assertSame(1,(int)$existing->credential_version);$this->assertEquals(1,DB::table('oauth_access_tokens')->where('id','installed-access')->value('revoked'));
+        $this->assertSame(1,(int)$bad->fresh()->credential_version);$this->assertTrue(Hash::check('UserChosen123!',$good->fresh()->password));$rotation->down();$this->assertFalse(Hash::check('installed-public-id',$existing->fresh()->password));
+
     }
     public function test_rider_bearer_digest_is_not_a_credential_and_logout_revokes_raw_token():void {
         $token=str_repeat('r',50);$id=$this->fixture('delivery_men',['phone'=>'08012345678','email'=>'rider@example.test','password'=>Hash::make('Rider123!'),'is_active'=>1,'auth_token'=>hash('sha256',$token)]);
