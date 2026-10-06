@@ -574,20 +574,27 @@ p:last-child {
   left: calc(-1 * var(--aside-size));
   transform: translateX(100%);
   z-index: 1049;
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
+  max-height: 100vh;
 }
 .aside-header {
   background-color: var(--bs-white);
   padding: 10px 16px;
   border-bottom: 1px solid var(--bs-border-color);
+  flex-shrink: 0;
 }
 .aside-body {
   padding-inline: 10px;
   overflow-y: auto;
-  height: 100%;
+  flex: 1 1 auto;
+  height: calc(100vh - 52px);
+  max-height: calc(100vh - 52px);
   scrollbar-width: thin;
 }
 .aside-nav {
-  padding: 10px 0;
+  padding: 10px 0 80px 0;
 }
 .aside-nav .nav-link {
   color: var(--bs-white);

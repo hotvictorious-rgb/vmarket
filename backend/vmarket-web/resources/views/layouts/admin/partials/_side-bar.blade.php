@@ -4,6 +4,27 @@
     $eCommerceLogo = getWebConfig(name: 'company_web_logo');
 @endphp
 
+<style>
+    .aside {
+        display: flex !important;
+        flex-direction: column !important;
+        height: 100vh !important;
+        max-height: 100vh !important;
+    }
+    .aside-header {
+        flex-shrink: 0 !important;
+    }
+    .aside-body {
+        flex: 1 1 auto !important;
+        height: calc(100vh - 52px) !important;
+        max-height: calc(100vh - 52px) !important;
+        overflow-y: auto !important;
+    }
+    .aside-nav {
+        padding-bottom: 80px !important;
+    }
+</style>
+
 <aside class="js-aside aside d-none d-lg-block">
     <div class="aside-header d-flex align-items-center gap-2 justify-content-between">
         <a class="navbar-logo" href="{{ route('admin.dashboard.index') }}">
@@ -1059,6 +1080,8 @@
                 @endif
             @endif
 
+            {{-- Bottom scroll clearance spacer --}}
+            <li class="py-3 my-2 d-none d-lg-block" style="height: 60px; pointer-events: none;" aria-hidden="true"></li>
         </ul>
     </div>
 </aside>
