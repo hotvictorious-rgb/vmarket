@@ -770,7 +770,8 @@ class ProductController extends BaseController
 
         $this->deleteFile(filePath: '/product/' . $request['image']);
 
-        if (count(json_decode($product['images'])) < 2) {
+        $productImages = json_decode($product['images'], true) ?: [];
+        if (count($productImages) < 2) {
             ToastMagic::warning(translate('you_can_not_delete_all_images'));
             return back();
         }
@@ -868,11 +869,16 @@ class ProductController extends BaseController
             }], dataLimit: getWebConfig(name: WebConfigKey::PAGINATION_LIMIT));
 
         $products->map(function ($product) {
-            if ($product->product_type == 'physical' && count(json_decode($product->choice_options)) > 0 || count(json_decode($product->colors)) > 0) {
+            $choiceOptions = json_decode($product->choice_options, true) ?: [];
+            $colors = json_decode($product->colors, true) ?: [];
+            if ($product->product_type == 'physical' && (count($choiceOptions) > 0 || count($colors) > 0)) {
                 $colorName = [];
-                $colorsCollection = collect(json_decode($product->colors));
+                $colorsCollection = collect($colors);
                 $colorsCollection->map(function ($color) use (&$colorName) {
-                    $colorName[] = $this->colorRepo->getFirstWhere(['code' => $color])->name;
+                    $colorRecord = $this->colorRepo->getFirstWhere(['code' => $color]);
+                    if ($colorRecord) {
+                        $colorName[] = $colorRecord->name;
+                    }
                 });
                 $product['colorsName'] = $colorName;
             }

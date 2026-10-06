@@ -132,13 +132,14 @@
                                                             {{isset($product->category) ? $product->category->default_name : translate('category_not_found') }}
                                                         </td>
                                                     </tr>
-                                                    @if (!empty($product['variation']) && count(json_decode($product['variation'])) > 0)
+                                                    @php($variations = !empty($product['variation']) ? (json_decode($product['variation'], true) ?: []) : [])
+                                                    @if (count($variations) > 0)
                                                         <tr>
                                                             <td class="text-nowrap">{{ translate('Variation') }}</td>
                                                             <td class="px-2">:</td>
-                                                            <td class="text-dark fw-medium overflow-wrap-anywhere">{{count(json_decode($product['variation']))}}</td>
+                                                            <td class="text-dark fw-medium overflow-wrap-anywhere">{{ count($variations) }}</td>
                                                         </tr>
-                                                        @endif
+                                                    @endif
                                                 </tbody>
                                             </table>
                                         </div>
