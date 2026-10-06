@@ -225,7 +225,7 @@
             {{-- PILLAR 2: CATALOG & INVENTORY                                             --}}
             {{-- ======================================================================== --}}
             @if(Helpers::module_permission_check('product_management'))
-                <li class="nav-item nav-item_title {{ (Request::is('admin/products*') || Request::is('admin/category*') || Request::is('admin/sub*') || Request::is('admin/brand*') || Request::is('admin/category-specifications*') || Request::is('admin/attribute*')) ? 'scroll-here' : '' }}">
+                <li class="nav-item nav-item_title {{ (Request::is('admin/products*') || Request::is('admin/category*') || Request::is('admin/sub*') || Request::is('admin/brand*') || Request::is('admin/attribute*')) ? 'scroll-here' : '' }}">
                     <small class="nav-subtitle" title="{{ translate('catalog_&_inventory') }}">{{ translate('catalog_&_inventory') }}</small>
                 </li>
 
@@ -354,9 +354,9 @@
                     </a>
                 </li>
 
-                {{-- Categories & Specifications Submenu --}}
-                <li class="{{ (Request::is('admin/category*') || Request::is('admin/sub-category*') || Request::is('admin/sub-sub-category*') || Request::is('admin/category-specifications*') || Request::is('admin/attribute*')) ? 'sub-menu-opened' : '' }}">
-                    <a class="nav-link nav-link-toggle {{ (Request::is('admin/category*') || Request::is('admin/sub-category*') || Request::is('admin/sub-sub-category*') || Request::is('admin/category-specifications*') || Request::is('admin/attribute*')) ? 'active' : '' }}"
+                {{-- Categories & Attributes Submenu --}}
+                <li class="{{ (Request::is('admin/category*') || Request::is('admin/sub-category*') || Request::is('admin/sub-sub-category*') || Request::is('admin/attribute*')) ? 'sub-menu-opened' : '' }}">
+                    <a class="nav-link nav-link-toggle {{ (Request::is('admin/category*') || Request::is('admin/sub-category*') || Request::is('admin/sub-sub-category*') || Request::is('admin/attribute*')) ? 'active' : '' }}"
                        href="javascript:" title="{{ translate('Categories_&_Attributes') }}">
                         <i class="fi fi-sr-apps"></i>
                         <span class="aside-mini-hidden-element flex-grow-1 d-flex justify-content-between align-items-center">
@@ -382,12 +382,6 @@
                             <a class="nav-link {{ Request::is('admin/sub-sub-category/*') ? 'active' : '' }}"
                                href="{{ route('admin.sub-sub-category.view') }}" title="{{ translate('sub_Sub_Categories') }}">
                                 <span class="text-truncate">{{ translate('sub_Sub_Categories') }}</span>
-                            </a>
-                        </li>
-                        <li class="nav-item">
-                            <a class="nav-link {{ Request::is('admin/category-specifications*') ? 'active' : '' }}"
-                               href="{{ route('admin.category-specifications.index') }}" title="{{ translate('Specifications_&_Questions') }}">
-                                <span class="text-truncate font-weight-bold text-primary">{{ translate('Specifications') }}</span>
                             </a>
                         </li>
                         <li class="nav-item">

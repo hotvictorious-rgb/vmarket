@@ -290,8 +290,6 @@
                                 </div>
                             </div>
                         </div>
-
-                        @include('shared-views.product.category-specifications-input', ['product' => $product])
                     </div>
                 </div>
             </div>
