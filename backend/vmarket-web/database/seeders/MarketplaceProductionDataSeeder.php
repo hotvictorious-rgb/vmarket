@@ -13,10 +13,7 @@ class MarketplaceProductionDataSeeder extends Seeder
 {
     public function run(): void
     {
-        // 1. Run Category Specification Seeder
-        $this->call(CategorySpecificationSeeder::class);
-
-        // 2. Seed Strategic Brands
+        // 1. Seed Strategic Brands
         $brands = [
             'Apple' => 'apple.png',
             'Samsung' => 'samsung.png',
