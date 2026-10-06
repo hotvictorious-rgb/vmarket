@@ -3,9 +3,9 @@
 namespace App\Http\Controllers\Admin\Delivery;
 
 use App\Http\Controllers\Controller;
-use App\Models\DeliveryHub;
 use App\Models\DeliveryMan;
 use App\Models\Lga;
+use App\Models\LogisticsCompany;
 use App\Models\Order;
 use App\Models\State;
 use App\Utils\Helpers;
@@ -15,132 +15,190 @@ use Illuminate\Contracts\View\View;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
 
 class DispatchPortalController extends Controller
 {
     /**
-     * Display the Corridor & Cluster Batch Dispatch Portal
+     * Display the Canonical LGA Delivery Lane & Dual-Fleet Dispatch Console
      */
     public function index(Request $request): View
     {
-        $selectedStateId = $request->get('state_id');
-        $selectedLgaId = $request->get('lga_id');
-        $selectedDeliveryType = $request->get('delivery_type');
+        $selectedOriginLgaId = $request->get('origin_lga_id');
+        $selectedDestLgaId = $request->get('destination_lga_id');
+        $selectedPackageTier = $request->get('package_tier');
+        $selectedAssignmentStatus = $request->get('assignment_status', 'all');
 
-        // 1. Fetch Active Orders eligible for Dispatch
-        $ordersQuery = Order::with(['seller.shop.deliveryHub', 'originHub', 'destinationHub', 'deliveryMan', 'customer'])
+        // 1. Query Active Dispatchable Orders
+        $ordersQuery = Order::with(['seller.shop', 'deliveryMan', 'customer', 'logisticsCompany'])
             ->whereIn('order_status', ['confirmed', 'processing', 'out_for_delivery'])
             ->where('order_type', 'default_type');
 
-        if ($selectedDeliveryType) {
-            $ordersQuery->where('delivery_type', $selectedDeliveryType);
+        // Filter by Assignment Status
+        if ($selectedAssignmentStatus === 'unassigned') {
+            $ordersQuery->whereNull('delivery_man_id')->whereNull('logistics_company_id');
+        } elseif ($selectedAssignmentStatus === 'assigned') {
+            $ordersQuery->where(function ($q) {
+                $q->whereNotNull('delivery_man_id')->orWhereNotNull('logistics_company_id');
+            });
         }
 
-        if ($selectedLgaId) {
-            $ordersQuery->whereHas('destinationHub', function ($q) use ($selectedLgaId) {
-                $q->where('lga_id', $selectedLgaId);
-            });
+        // Filter by Package Tier
+        if (!empty($selectedPackageTier) && in_array($selectedPackageTier, ['small', 'large'])) {
+            $ordersQuery->where('package_tier', $selectedPackageTier);
+        }
+
+        // Filter by LGA Lanes
+        if (!empty($selectedOriginLgaId)) {
+            $ordersQuery->where('origin_lga_id', $selectedOriginLgaId);
+        }
+
+        if (!empty($selectedDestLgaId)) {
+            $ordersQuery->where('destination_lga_id', $selectedDestLgaId);
         }
 
         $allOrders = $ordersQuery->latest()->get();
 
-        // 2. Cluster Orders by Corridor (Origin Hub -> Destination Hub)
+        // 2. Cluster Orders into Directional LGA Corridors (Origin LGA -> Destination LGA)
         $corridors = [];
-        foreach ($allOrders as $order) {
-            $originName = $order->originHub?->name ?? ($order->seller?->shop?->deliveryHub?->name ?? translate('Uyo Central Hub'));
-            $originId = $order->origin_hub_id ?? ($order->seller?->shop?->delivery_hub_id ?? 0);
-            
-            $destName = $order->destinationHub?->name ?? translate('General Area');
-            $destId = $order->destination_hub_id ?? 0;
-            $destType = $order->destinationHub?->type ?? 'landmark';
+        $totalOrdersCount = $allOrders->count();
+        $unassignedOrdersCount = 0;
+        $largeCargoCount = 0;
 
-            $corridorKey = $originId . '_' . $destId . '_' . $destType;
+        foreach ($allOrders as $order) {
+            $originId = $order->origin_lga_id ?? 0;
+            $originName = !empty($order->origin_lga_name) ? $order->origin_lga_name : ($order->seller?->shop?->name ?? translate('Uyo Central'));
+            
+            $destId = $order->destination_lga_id ?? 0;
+            $destName = !empty($order->destination_lga_name) ? $order->destination_lga_name : translate('Local Delivery Area');
+
+            $isInterLga = ($originId > 0 && $destId > 0 && $originId != $destId);
+            $corridorKey = $originId . '_' . $destId;
+
+            if ($order->package_tier === 'large') {
+                $largeCargoCount++;
+            }
+
+            $isUnassigned = (empty($order->delivery_man_id) && empty($order->logistics_company_id));
+            if ($isUnassigned) {
+                $unassignedOrdersCount++;
+            }
 
             if (!isset($corridors[$corridorKey])) {
                 $corridors[$corridorKey] = [
                     'key' => $corridorKey,
-                    'origin_name' => $originName,
                     'origin_id' => $originId,
-                    'dest_name' => $destName,
+                    'origin_name' => $originName,
                     'dest_id' => $destId,
-                    'dest_type' => $destType,
+                    'dest_name' => $destName,
+                    'is_inter_lga' => $isInterLga,
                     'orders' => [],
-                    'total_amount' => 0,
+                    'total_amount' => 0.0,
                     'unassigned_count' => 0,
+                    'large_count' => 0,
                 ];
             }
 
             $corridors[$corridorKey]['orders'][] = $order;
-            $corridors[$corridorKey]['total_amount'] += $order->order_amount;
-            if (!$order->delivery_man_id) {
+            $corridors[$corridorKey]['total_amount'] += (float)$order->order_amount;
+            if ($isUnassigned) {
                 $corridors[$corridorKey]['unassigned_count']++;
+            }
+            if ($order->package_tier === 'large') {
+                $corridors[$corridorKey]['large_count']++;
             }
         }
 
-        // 3. Fetch Delivery Men with Active Workload calculation
+        // 3. Fetch In-House Couriers with Live Load Capacity
         $deliveryMen = DeliveryMan::where('is_active', 1)
-            ->with(['deliveryHub'])
+            ->with(['logisticsCompany'])
             ->withCount(['orders' => function ($q) {
                 $q->whereIn('order_status', ['confirmed', 'processing', 'out_for_delivery']);
             }])
+            ->orderBy('f_name')
             ->get();
 
-        $states = State::active()->orderBy('name')->get();
-        $lgas = $selectedStateId
-            ? Lga::where('state_id', $selectedStateId)->active()->orderBy('name')->get()
-            : Lga::active()->orderBy('name')->get();
+        // 4. Fetch Accredited 3rd-Party Logistics Partners
+        $logisticsCompanies = LogisticsCompany::where('status', 'active')
+            ->withCount(['orders' => function ($q) {
+                $q->whereIn('order_status', ['confirmed', 'processing', 'out_for_delivery']);
+            }, 'deliveryMen'])
+            ->orderBy('name')
+            ->get();
 
-        return view('admin-views.delivery.dispatch-portal', compact('corridors', 'deliveryMen', 'states', 'lgas', 'selectedStateId', 'selectedLgaId', 'selectedDeliveryType'));
+        // 5. Active LGAs for Filter
+        $allLgas = Lga::active()->orderBy('name')->get();
+
+        return view('admin-views.delivery.dispatch-portal', compact(
+            'corridors', 'deliveryMen', 'logisticsCompanies', 'allLgas',
+            'selectedOriginLgaId', 'selectedDestLgaId', 'selectedPackageTier',
+            'selectedAssignmentStatus', 'totalOrdersCount', 'unassignedOrdersCount', 'largeCargoCount'
+        ));
     }
 
     /**
-     * Assign Batch of Selected Orders to a Delivery Rider with Capacity Validation
+     * Batch Assign Orders to either a Delivery Rider OR a Logistics Partner Company
      */
     public function assignBatch(Request $request): RedirectResponse
     {
         $request->validate([
             'order_ids' => 'required|array|min:1',
             'order_ids.*' => 'exists:orders,id',
-            'delivery_man_id' => 'required|exists:delivery_men,id',
+            'target_type' => 'required|in:rider,company',
         ]);
 
-        $customRiderFee = $request->filled('custom_rider_fee') ? (float) $request->custom_rider_fee : null;
+        $targetType = $request->target_type;
         $batchId = 'BATCH-' . strtoupper(Str::random(6)) . '-' . time();
         $selectedCount = count($request->order_ids);
         $assignedOrders = [];
-        $deliveryMan = null;
+        $targetEntity = null;
 
         try {
-            DB::transaction(function () use ($request, $customRiderFee, $batchId, $selectedCount, &$assignedOrders, &$deliveryMan) {
-                // Lock rider and enforce active status
-                $deliveryMan = DeliveryMan::where('id', $request->delivery_man_id)
-                    ->lockForUpdate()
-                    ->firstOrFail();
+            DB::transaction(function () use ($request, $targetType, $batchId, $selectedCount, &$assignedOrders, &$targetEntity) {
+                // 1. Lock and Validate Target Dispatch Principal
+                if ($targetType === 'company') {
+                    if (!$request->filled('logistics_company_id')) {
+                        throw new \Exception(translate('Please select a 3rd-Party Logistics Company.'));
+                    }
+                    $company = LogisticsCompany::where('id', $request->logistics_company_id)
+                        ->lockForUpdate()
+                        ->firstOrFail();
 
-                if (isset($deliveryMan->is_active) && !$deliveryMan->is_active) {
-                    throw new \Exception(translate("Selected rider {$deliveryMan->f_name} is currently inactive and cannot be assigned orders."));
+                    if ($company->status !== 'active') {
+                        throw new \Exception(translate("Logistics company '{$company->name}' is currently {$company->status} and cannot receive dispatches."));
+                    }
+                    $targetEntity = $company;
+
+                } else {
+                    // Rider Assignment
+                    if (!$request->filled('delivery_man_id')) {
+                        throw new \Exception(translate('Please select a Delivery Rider.'));
+                    }
+                    $rider = DeliveryMan::where('id', $request->delivery_man_id)
+                        ->lockForUpdate()
+                        ->firstOrFail();
+
+                    if (!$rider->is_active) {
+                        throw new \Exception(translate("Selected rider {$rider->f_name} is currently inactive and cannot be assigned orders."));
+                    }
+
+                    // Check live workload capacity
+                    $currentLoad = Order::where('delivery_man_id', $rider->id)
+                        ->whereIn('order_status', ['confirmed', 'processing', 'out_for_delivery'])
+                        ->lockForUpdate()
+                        ->count();
+
+                    $maxCapacity = $rider->max_active_orders_limit ?? 6;
+                    if (($currentLoad + $selectedCount) > $maxCapacity) {
+                        $availableSlots = max(0, $maxCapacity - $currentLoad);
+                        throw new \Exception(translate("Capacity limit exceeded for {$rider->f_name}. Available slots: {$availableSlots}, selected: {$selectedCount}. Max capacity is {$maxCapacity}."));
+                    }
+                    $targetEntity = $rider;
                 }
 
-                if (isset($deliveryMan->application_status) && $deliveryMan->application_status !== 'approved') {
-                    throw new \Exception(translate("Selected rider {$deliveryMan->f_name} does not have an approved application."));
-                }
-
-                // Lock and count active orders for capacity
-                $currentLoad = Order::where('delivery_man_id', $deliveryMan->id)
-                    ->whereIn('order_status', ['confirmed', 'processing', 'out_for_delivery'])
-                    ->lockForUpdate()
-                    ->count();
-
-                $maxCapacity = $deliveryMan->max_active_orders_limit ?? 4;
-                if (($currentLoad + $selectedCount) > $maxCapacity) {
-                    $availableSlots = max(0, $maxCapacity - $currentLoad);
-                    throw new \Exception(translate("Capacity limit exceeded for {$deliveryMan->f_name}. Available slots: {$availableSlots}, selected: {$selectedCount}. Max capacity is {$maxCapacity}."));
-                }
-
-                // Lock selected orders
-                $orders = Order::with(['originHub', 'destinationHub'])
-                    ->whereIn('id', $request->order_ids)
+                // 2. Lock Selected Orders
+                $orders = Order::whereIn('id', $request->order_ids)
                     ->lockForUpdate()
                     ->get();
 
@@ -148,44 +206,42 @@ class DispatchPortalController extends Controller
                     throw new \Exception(translate('One or more selected orders could not be found.'));
                 }
 
+                // 3. Vehicle compatibility check for riders
+                if ($targetType === 'rider' && in_array($targetEntity->vehicle_type, ['bicycle', 'motorcycle'])) {
+                    $hasLargePackage = $orders->contains(function ($ord) {
+                        return $ord->package_tier === 'large';
+                    });
+                    if ($hasLargePackage && $targetEntity->vehicle_type === 'bicycle') {
+                        throw new \Exception(translate("This batch contains bulky cargo (Package Tier: LARGE). A bicycle rider cannot fulfill this batch. Please select a Van/Car rider or a Logistics Partner."));
+                    }
+                }
+
+                // 4. Update Orders
                 foreach ($orders as $order) {
-                    // 1. Must be delivery type (not pickup)
                     if ($order->order_type === 'in_house_pickup' || $order->order_type === 'pickup') {
-                        throw new \Exception(translate("Order #{$order->id} is an in-store pickup order and cannot be assigned to a delivery rider."));
+                        throw new \Exception(translate("Order #{$order->id} is an in-shop pickup order and cannot be assigned to delivery dispatch."));
                     }
 
-                    // 2. Must be paid
-                    if ($order->payment_status !== 'paid') {
-                        throw new \Exception(translate("Order #{$order->id} is unpaid. Only paid orders can be dispatched."));
+                    if (!in_array($order->order_status, ['confirmed', 'processing', 'out_for_delivery'])) {
+                        throw new \Exception(translate("Order #{$order->id} has status '{$order->order_status}' and cannot be dispatched."));
                     }
 
-                    // 3. Must be in assignable status
-                    if (!in_array($order->order_status, ['confirmed', 'processing'])) {
-                        throw new \Exception(translate("Order #{$order->id} has status '{$order->order_status}'. Only confirmed or processing orders can be dispatched."));
-                    }
-
-                    // Ensure Pickup OTP exists (6 digits, CSPRNG)
+                    // Ensure Cryptographic 6-Digit OTPs Exist
                     if (empty($order->pickup_verification_code)) {
                         $order->pickup_verification_code = (string) random_int(100000, 999999);
                     }
-                    // Ensure Delivery OTP exists (6 digits, CSPRNG)
                     if (empty($order->verification_code)) {
                         $order->verification_code = (string) random_int(100000, 999999);
                     }
 
-                    // Standard Rider Payout Fee (capped at order shipping_cost if authority exists)
-                    if ($customRiderFee !== null) {
-                        $order->deliveryman_charge = min($customRiderFee, (float)($order->shipping_cost > 0 ? $order->shipping_cost : $customRiderFee));
-                    } elseif ($order->destinationHub && $order->destinationHub->rider_delivery_fee > 0) {
-                        $order->deliveryman_charge = min((float)$order->destinationHub->rider_delivery_fee, (float)($order->shipping_cost > 0 ? $order->shipping_cost : $order->destinationHub->rider_delivery_fee));
+                    if ($targetType === 'company') {
+                        $order->logistics_company_id = $targetEntity->id;
+                        $order->delivery_man_id = null; // Company dispatcher allocates from their own fleet
                     } else {
-                        $isInterstate = ($order->destinationHub && $order->destinationHub->type == 'motor_park')
-                            || ($order->originHub && $order->destinationHub && $order->originHub->lga_id != $order->destinationHub->lga_id);
-                        $defaultFee = $isInterstate ? 1000.00 : 500.00;
-                        $order->deliveryman_charge = min((float)$defaultFee, (float)($order->shipping_cost > 0 ? $order->shipping_cost : $defaultFee));
+                        $order->delivery_man_id = $targetEntity->id;
+                        $order->logistics_company_id = $targetEntity->logistics_company_id ?? null;
                     }
 
-                    $order->delivery_man_id = $deliveryMan->id;
                     $order->deliveryman_assigned_at = Carbon::now();
                     $order->batch_dispatch_id = $batchId;
                     $order->save();
@@ -198,8 +254,8 @@ class DispatchPortalController extends Controller
             return back();
         }
 
-        // Send Push Notifications outside transaction
-        if ($deliveryMan && !empty($deliveryMan->fcm_token)) {
+        // Send Push Notifications for Rider if applicable
+        if ($targetType === 'rider' && !empty($targetEntity->fcm_token)) {
             foreach ($assignedOrders as $order) {
                 try {
                     $data = [
@@ -209,19 +265,85 @@ class DispatchPortalController extends Controller
                         'image' => '',
                         'type' => 'order',
                     ];
-                    Helpers::send_push_notif_to_device($deliveryMan->fcm_token, $data);
+                    Helpers::send_push_notif_to_device($targetEntity->fcm_token, $data);
                 } catch (\Exception $e) {
-                    // Fail-safe notification catch
+                    // Notification fail-safe
                 }
             }
         }
 
-        ToastMagic::success(translate("Successfully assigned {$selectedCount} order(s) to {$deliveryMan->f_name} {$deliveryMan->l_name} (Batch: {$batchId})"));
+        $targetName = ($targetType === 'company') ? $targetEntity->name : ($targetEntity->f_name . ' ' . $targetEntity->l_name);
+        ToastMagic::success(translate("Successfully dispatched {$selectedCount} order(s) to {$targetName} (Batch: {$batchId})"));
         return back();
     }
 
     /**
-     * Print Corridor Batch Dispatch Manifest (Rider Trip Sheet)
+     * Fast 1-Click Inline Single Order Dispatch (AJAX)
+     */
+    public function assignSingle(Request $request): JsonResponse
+    {
+        $request->validate([
+            'order_id' => 'required|exists:orders,id',
+            'target_type' => 'required|in:rider,company,unassign',
+        ]);
+
+        $orderId = $request->order_id;
+        $targetType = $request->target_type;
+
+        try {
+            DB::transaction(function () use ($request, $orderId, $targetType) {
+                $order = Order::where('id', $orderId)->lockForUpdate()->firstOrFail();
+
+                if (empty($order->pickup_verification_code)) {
+                    $order->pickup_verification_code = (string) random_int(100000, 999999);
+                }
+                if (empty($order->verification_code)) {
+                    $order->verification_code = (string) random_int(100000, 999999);
+                }
+
+                if ($targetType === 'unassign') {
+                    $order->delivery_man_id = null;
+                    $order->logistics_company_id = null;
+                    $order->save();
+                    return;
+                }
+
+                if ($targetType === 'company') {
+                    $companyId = $request->target_id;
+                    $company = LogisticsCompany::where('id', $companyId)->firstOrFail();
+                    if ($company->status !== 'active') {
+                        throw new \Exception(translate('Selected company is not active.'));
+                    }
+                    $order->logistics_company_id = $company->id;
+                    $order->delivery_man_id = null;
+                } else {
+                    $riderId = $request->target_id;
+                    $rider = DeliveryMan::where('id', $riderId)->firstOrFail();
+                    if (!$rider->is_active) {
+                        throw new \Exception(translate('Selected rider is inactive.'));
+                    }
+                    $order->delivery_man_id = $rider->id;
+                    $order->logistics_company_id = $rider->logistics_company_id ?? null;
+                }
+
+                $order->deliveryman_assigned_at = now();
+                $order->save();
+            });
+
+            return response()->json([
+                'status' => true,
+                'message' => translate('Order dispatch updated successfully'),
+            ]);
+        } catch (\Throwable $e) {
+            return response()->json([
+                'status' => false,
+                'message' => $e->getMessage(),
+            ], 422);
+        }
+    }
+
+    /**
+     * Print Canonical Route Dispatch Manifest (Rider Trip Sheet)
      */
     public function printBatchManifest(Request $request): View|RedirectResponse
     {
@@ -235,7 +357,7 @@ class DispatchPortalController extends Controller
             return back();
         }
 
-        $orders = Order::with(['seller.shop.deliveryHub', 'originHub', 'destinationHub.lga.state', 'deliveryMan', 'customer', 'details'])
+        $orders = Order::with(['seller.shop', 'deliveryMan', 'customer', 'details', 'logisticsCompany'])
             ->whereIn('id', $orderIds)
             ->get();
 
@@ -246,25 +368,26 @@ class DispatchPortalController extends Controller
 
         $firstOrder = $orders->first();
         $batchId = $firstOrder->batch_dispatch_id ?? ('MANIFEST-' . strtoupper(Str::random(6)));
-        $originName = $firstOrder->originHub?->name ?? ($firstOrder->seller?->shop?->deliveryHub?->name ?? 'Plaza / Central Sorting Hub');
-        $destName = $firstOrder->destinationHub?->name ?? 'General Landmark Corridor';
-        $destCity = $firstOrder->destinationHub?->lga?->state?->name ?? 'Akwa Ibom';
+        $originName = !empty($firstOrder->origin_lga_name) ? $firstOrder->origin_lga_name : ($firstOrder->seller?->shop?->name ?? 'Origin');
+        $destName = !empty($firstOrder->destination_lga_name) ? $firstOrder->destination_lga_name : 'Destination Corridor';
+        $destCity = $firstOrder->destination_state_name ?? 'Akwa Ibom';
         $deliveryMan = $firstOrder->deliveryMan;
+        $logisticsCompany = $firstOrder->logisticsCompany;
 
         $companyName = getWebConfig(name: 'company_name') ?? 'Victorious MARKET';
         $companyPhone = getWebConfig(name: 'company_phone');
 
         return view('admin-views.delivery.batch-manifest', compact(
-            'orders', 'batchId', 'originName', 'destName', 'destCity', 'deliveryMan', 'companyName', 'companyPhone'
+            'orders', 'batchId', 'originName', 'destName', 'destCity', 'deliveryMan', 'logisticsCompany', 'companyName', 'companyPhone'
         ));
     }
 
     /**
-     * Print Official Parcel Shipping Waybill Label (4x6 / Thermal Sticker)
+     * Print Official Parcel Shipping Waybill Label (Thermal Sticker)
      */
     public function printWaybill(string|int $id): View|RedirectResponse
     {
-        $order = Order::with(['seller.shop.deliveryHub', 'originHub', 'destinationHub.lga.state', 'deliveryMan', 'customer', 'details'])
+        $order = Order::with(['seller.shop', 'deliveryMan', 'customer', 'details', 'logisticsCompany'])
             ->find($id);
 
         if (!$order) {

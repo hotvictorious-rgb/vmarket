@@ -680,6 +680,7 @@ Route::group(['prefix' => 'admin', 'as' => 'admin.', 'middleware' => ['admin', '
         Route::controller(DispatchPortalController::class)->group(function () {
             Route::get('/', 'index')->name('index');
             Route::post('assign-batch', 'assignBatch')->name('assign-batch');
+            Route::post('assign-single', 'assignSingle')->name('assign-single');
             Route::get('print-manifest', 'printBatchManifest')->name('print-manifest');
             Route::get('print-waybill/{id}', 'printWaybill')->name('print-waybill');
         });
