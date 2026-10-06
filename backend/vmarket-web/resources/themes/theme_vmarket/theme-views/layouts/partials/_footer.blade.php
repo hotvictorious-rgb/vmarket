@@ -3,7 +3,7 @@
     $companyEmail = getWebConfig(name: 'company_email');
     $companyPhone = getWebConfig(name: 'company_phone');
     $footerLogo = !empty($web_config['footer_logo']['status']) ? $web_config['footer_logo']['path'] : (!empty($web_config['web_logo']['status']) ? $web_config['web_logo']['path'] : theme_asset('assets/img/vm_icon.jpg'));
-    $copyrightText = getWebConfig(name: 'company_copyright_text') ?? 'All rights reserved.';
+    $copyrightText = getWebConfig(name: 'company_copyright_text');
 @endphp
 
 <footer class="vm-footer">
@@ -98,7 +98,7 @@
 
         <div class="vm-footer-bottom">
             <div>
-                © {{ date('Y') }} {{ $companyName }}. {{ $copyrightText }}
+                {{ $copyrightText ?: ('© ' . date('Y') . ' ' . $companyName . '. ' . translate('All rights reserved.')) }}
             </div>
             <div style="display: flex; gap: 16px;">
                 <span>🔒 {{ translate('SSL 256-Bit Encrypted') }}</span>
