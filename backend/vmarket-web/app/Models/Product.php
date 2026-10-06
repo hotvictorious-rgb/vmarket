@@ -125,6 +125,7 @@ class Product extends Model
         'marketplace_confirmed_at',
         'availability_confirmed_at',
         'availability_expires_at',
+        'package_size',
     ];
 
     /**

@@ -79,6 +79,7 @@ use App\Http\Controllers\Admin\Settings\DeliveryRestrictionController;
 use App\Http\Controllers\Admin\Delivery\DeliveryHubController;
 use App\Http\Controllers\Admin\Delivery\DeliveryLaneController;
 use App\Http\Controllers\Admin\Delivery\DispatchPortalController;
+use App\Http\Controllers\Admin\Delivery\LogisticsCompanyController;
 use App\Http\Controllers\Admin\Settings\EnvironmentSettingsController;
 use App\Http\Controllers\Admin\Settings\SocialMediaSettingsController;
 use App\Http\Controllers\Admin\SystemSetup\SystemLoginSetupController;
@@ -680,6 +681,20 @@ Route::group(['prefix' => 'admin', 'as' => 'admin.', 'middleware' => ['admin', '
             Route::post('assign-batch', 'assignBatch')->name('assign-batch');
             Route::get('print-manifest', 'printBatchManifest')->name('print-manifest');
             Route::get('print-waybill/{id}', 'printWaybill')->name('print-waybill');
+        });
+    });
+
+    Route::group(['prefix' => 'logistics-companies', 'as' => 'logistics-companies.', 'middleware' => ['module:order_management']], function () {
+        Route::controller(LogisticsCompanyController::class)->group(function () {
+            Route::get('/', 'index')->name('index');
+            Route::get('create', 'create')->name('create');
+            Route::post('store', 'store')->name('store');
+            Route::get('show/{id}', 'show')->name('show');
+            Route::get('edit/{id}', 'edit')->name('edit');
+            Route::post('update/{id}', 'update')->name('update');
+            Route::post('status-update', 'statusUpdate')->name('status-update');
+            Route::get('withdraw-requests', 'withdrawRequests')->name('withdraw-requests');
+            Route::post('withdraw-status', 'withdrawStatus')->name('withdraw-status');
         });
     });
 

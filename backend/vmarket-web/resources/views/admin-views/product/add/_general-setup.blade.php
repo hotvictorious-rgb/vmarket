@@ -201,6 +201,28 @@
                                 </div>
                             </div>
                         </div>
+                        <div class="col-md-6 col-lg-4 show-for-physical-product">
+                            <div class="form-group">
+                                <label class="form-label d-flex align-items-center gap-2">
+                                    {{ translate('Package_Size_Tier') }}
+                                    <span class="input-required-icon">*</span>
+                                    <span class="tooltip-icon cursor-pointer" data-bs-toggle="tooltip"
+                                          data-bs-title="{{ translate('Small = standard parcel carried by motorcycle/keke (<8kg). Large = bulky cargo requiring car, van, or pickup truck (>8kg).') }}">
+                                        <i class="fi fi-sr-info"></i>
+                                    </span>
+                                </label>
+                                <div class="select-wrapper">
+                                    <select class="form-select" name="package_size" id="package_size">
+                                        <option value="small" {{ old('package_size', 'small') == 'small' ? 'selected' : '' }}>
+                                            🏍️ {{ translate('Small (Motorbike / Standard Parcel < 8kg)') }}
+                                        </option>
+                                        <option value="large" {{ old('package_size') == 'large' ? 'selected' : '' }}>
+                                            🚐 {{ translate('Large (Van / Bulky Cargo > 8kg)') }}
+                                        </option>
+                                    </select>
+                                </div>
+                            </div>
+                        </div>
                         <div class="col-md-8">
                             <div class="form-group">
                                 <label class="form-label d-flex align-items-center gap-2">

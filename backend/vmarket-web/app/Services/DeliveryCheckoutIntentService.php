@@ -209,6 +209,21 @@ class DeliveryCheckoutIntentService
                 ? $shippingAddressEntity->canonicalState->name
                 : null;
 
+            // 2-Tier Package Sizing: Check if any physical product in this vendor sub-group is 'large'
+            $hasLargeBulkyItem = false;
+            foreach ($sortedItems as $item) {
+                if ($item->product && $item->product->package_size === 'large') {
+                    $hasLargeBulkyItem = true;
+                    break;
+                }
+            }
+            $packageTier = $hasLargeBulkyItem ? 'large' : 'small';
+            $bulkySurcharge = '0.00';
+            if ($hasLargeBulkyItem) {
+                $configuredSurcharge = getWebConfig(name: 'bulky_cargo_surcharge') ?? 2500;
+                $bulkySurcharge = $this->toDecimalString((float)$configuredSurcharge);
+            }
+
             // Authoritative delivery fee from DeliveryLane if canonical LGAs are present
             $laneFee = null;
             $laneEstimatedTime = null;
@@ -231,6 +246,11 @@ class DeliveryCheckoutIntentService
                     : $this->toDecimalString($first->shipping_cost ?? '0.00');
             }
 
+            // If large package tier, add authoritative bulky cargo surcharge
+            if ($hasLargeBulkyItem && bccomp($bulkySurcharge, '0.00', 2) > 0) {
+                $shippingCost = bcadd($shippingCost, $bulkySurcharge, 2);
+            }
+
             // Group total = items subtotal + shipping cost
             $groupTotal = bcadd($groupItemsSubtotal, $shippingCost, 2);
 
@@ -248,6 +268,8 @@ class DeliveryCheckoutIntentService
                 'estimated_delivery_time' => $laneEstimatedTime,
                 'cart_group_id' => $cartGroupId,
                 'shipping_method_id' => $shippingMethodId,
+                'package_tier' => $packageTier,
+                'bulky_surcharge' => $bulkySurcharge,
                 'shipping_cost' => $shippingCost,
                 'merchandise' => $groupMerchandiseTotal,
                 'tax' => $groupTaxTotal,

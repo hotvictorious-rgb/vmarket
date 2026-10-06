@@ -123,6 +123,10 @@ class Order extends Model
         'delivery_man_id',
         'deliveryman_assigned_at',
         'deliveryman_charge',
+        'delivery_commission_amount',
+        'bulky_surcharge_amount',
+        'package_tier',
+        'logistics_company_id',
         'expected_delivery_date',
         'order_note',
         'billing_address',
@@ -323,6 +327,11 @@ class Order extends Model
     public function deliveryMan(): BelongsTo
     {
         return $this->belongsTo(DeliveryMan::class, 'delivery_man_id');
+    }
+
+    public function logisticsCompany(): BelongsTo
+    {
+        return $this->belongsTo(LogisticsCompany::class, 'logistics_company_id');
     }
 
     /* delivery_man_review -> deliveryManReview */

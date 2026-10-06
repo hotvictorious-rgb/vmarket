@@ -591,6 +591,7 @@ class ProductService
             'marketplace_listing_status' => 'unlisted',
             'marketplace_availability' => 'in_stock',
             'marketplace_confirmed_at' => null,
+            'package_size' => ($request['product_type'] == 'physical') ? ($request['package_size'] ?? 'small') : 'small',
         ];
     }
 
@@ -693,6 +694,10 @@ class ProductService
                 'request_status' => 1,
                 'status' => 1,
             ];
+        }
+
+        if ($request->has('package_size')) {
+            $dataArray['package_size'] = $request['package_size'];
         }
 
         return $dataArray;

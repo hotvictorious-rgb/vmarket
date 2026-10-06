@@ -12,6 +12,8 @@ use App\Models\DeliveryMan;
 use App\Models\DeliverymanNotification;
 use App\Models\DeliveryManTransaction;
 use App\Models\DeliverymanWallet;
+use App\Models\LogisticsCompanyWallet;
+use App\Models\LogisticsCompanyTransaction;
 use App\Models\EmergencyContact;
 use App\Models\Order;
 use App\Models\OrderDeliveryVerification;
@@ -245,34 +247,94 @@ class DeliveryManController extends Controller
             }
 
             if (isset($deliveryMan['id']) && $request['status'] == 'delivered') {
-                $charge = $order->deliveryman_charge ?? 0;
-                $deliveryManWallet = DeliverymanWallet::where('delivery_man_id', $deliveryMan['id'])
-                    ->lockForUpdate()
-                    ->first();
+                $grossDeliveryFee = (float)($order->shipping_cost > 0 ? $order->shipping_cost : ($order->deliveryman_charge ?? 0));
+                $commissionRate = (float)(getWebConfig(name: 'delivery_commission_percentage') ?? 15);
+                $commissionAmount = (float)($order->delivery_commission_amount > 0
+                    ? $order->delivery_commission_amount
+                    : round(($grossDeliveryFee * $commissionRate) / 100, 2));
+                $netPartnerAmount = round(max(0, $grossDeliveryFee - $commissionAmount), 2);
 
-                if (empty($deliveryManWallet)) {
-                    $deliveryManWallet = DeliverymanWallet::create([
-                        'delivery_man_id' => $deliveryMan['id'],
-                        'current_balance' => $charge,
-                        'cash_in_hand' => 0,
-                        'pending_withdraw' => 0,
-                        'total_withdraw' => 0,
-                    ]);
-                } else {
-                    $deliveryManWallet->increment('current_balance', $charge);
+                // Zero-drift invariant check
+                if ($grossDeliveryFee > 0 && abs($grossDeliveryFee - ($commissionAmount + $netPartnerAmount)) > 0.01) {
+                    $commissionAmount = round($grossDeliveryFee - $netPartnerAmount, 2);
                 }
 
-                if ($charge > 0) {
-                    DeliveryManTransaction::create([
+                // Check if rider belongs to a 3rd-Party Logistics Company
+                if (!empty($deliveryMan->logistics_company_id)) {
+                    $companyId = (int) $deliveryMan->logistics_company_id;
+                    $companyWallet = LogisticsCompanyWallet::where('logistics_company_id', $companyId)
+                        ->lockForUpdate()
+                        ->first();
+
+                    if (empty($companyWallet)) {
+                        $companyWallet = LogisticsCompanyWallet::create([
+                            'logistics_company_id' => $companyId,
+                            'total_earned' => 0.00,
+                            'withdrawn' => 0.00,
+                            'pending_withdraw' => 0.00,
+                            'current_balance' => 0.00,
+                        ]);
+                    }
+
+                    $balBefore = (float) $companyWallet->current_balance;
+                    $balAfter = round($balBefore + $netPartnerAmount, 2);
+
+                    $companyWallet->current_balance = $balAfter;
+                    $companyWallet->total_earned = round((float)$companyWallet->total_earned + $netPartnerAmount, 2);
+                    $companyWallet->save();
+
+                    LogisticsCompanyTransaction::create([
+                        'logistics_company_id' => $companyId,
+                        'order_id' => $order->id,
                         'delivery_man_id' => $deliveryMan['id'],
-                        'user_id' => 0,
-                        'user_type' => 'admin',
-                        'credit' => $charge,
-                        'transaction_id' => \Ramsey\Uuid\Uuid::uuid4(),
-                        'transaction_type' => 'deliveryman_charge',
-                        'created_at' => now(),
-                        'updated_at' => now(),
+                        'gross_delivery_fee' => $grossDeliveryFee,
+                        'admin_commission_rate' => $commissionRate,
+                        'admin_commission_amount' => $commissionAmount,
+                        'net_partner_amount' => $netPartnerAmount,
+                        'transaction_type' => 'delivery_credit',
+                        'balance_before' => $balBefore,
+                        'balance_after' => $balAfter,
+                        'transaction_note' => "Order #{$order->id} completed doorstep delivery. Gross: ₦{$grossDeliveryFee}, Admin Fee (15%): ₦{$commissionAmount}, Net Payout: ₦{$netPartnerAmount}",
                     ]);
+
+                    // Attribute logistics company to order if not previously set
+                    if (empty($order->logistics_company_id)) {
+                        Order::where('id', $order->id)->update([
+                            'logistics_company_id' => $companyId,
+                            'delivery_commission_amount' => $commissionAmount,
+                        ]);
+                    }
+                } else {
+                    // Independent In-House Rider Settlement
+                    $charge = $order->deliveryman_charge ?? $netPartnerAmount;
+                    $deliveryManWallet = DeliverymanWallet::where('delivery_man_id', $deliveryMan['id'])
+                        ->lockForUpdate()
+                        ->first();
+
+                    if (empty($deliveryManWallet)) {
+                        $deliveryManWallet = DeliverymanWallet::create([
+                            'delivery_man_id' => $deliveryMan['id'],
+                            'current_balance' => $charge,
+                            'cash_in_hand' => 0,
+                            'pending_withdraw' => 0,
+                            'total_withdraw' => 0,
+                        ]);
+                    } else {
+                        $deliveryManWallet->increment('current_balance', $charge);
+                    }
+
+                    if ($charge > 0) {
+                        DeliveryManTransaction::create([
+                            'delivery_man_id' => $deliveryMan['id'],
+                            'user_id' => 0,
+                            'user_type' => 'admin',
+                            'credit' => $charge,
+                            'transaction_id' => \Ramsey\Uuid\Uuid::uuid4(),
+                            'transaction_type' => 'deliveryman_charge',
+                            'created_at' => now(),
+                            'updated_at' => now(),
+                        ]);
+                    }
                 }
             }
 

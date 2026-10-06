@@ -53,6 +53,7 @@ class RouteServiceProvider extends ServiceProvider
         $this->mapBetaAdminRoutes();
         $this->mapBetaVendorRoutes();
         $this->mapBetaWebRoutes();
+        $this->mapLogisticsRoutes();
     }
 
     /**
@@ -111,6 +112,13 @@ class RouteServiceProvider extends ServiceProvider
         Route::middleware(['web', 'logUserBrowsingNavigation'])
             ->namespace($this->namespace)
             ->group(base_path('routes/web/routes.php'));
+    }
+
+    protected function mapLogisticsRoutes(): void
+    {
+        Route::middleware('web')
+            ->namespace($this->namespace)
+            ->group(base_path('routes/logistics/routes.php'));
     }
 
     /**

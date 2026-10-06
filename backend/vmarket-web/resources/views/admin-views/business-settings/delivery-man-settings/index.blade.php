@@ -59,6 +59,99 @@
         <form action="{{ route('admin.business-settings.delivery-man-settings.update') }}" method="post"
               enctype="multipart/form-data" id="add_fund">
             @csrf
+            <div class="card mb-3 mb-sm-20">
+                <div class="card-body">
+                    <div class="mb-3 mb-sm-20">
+                        <h3 class="d-flex align-items-center gap-2">
+                            <i class="fi fi-sr-money-bill-wave text-primary"></i>
+                            {{ translate('Delivery_Commission_&_Platform_Economics') }}
+                        </h3>
+                        <p class="mb-0 fs-12">
+                            {{ translate('Configure_marketplace_commission_cut_from_delivery_fees_and_2-tier_package_bulky_cargo_surcharges.') }}
+                        </p>
+                    </div>
+
+                    <div class="p-12 p-sm-20 bg-section rounded">
+                        <div class="row g-4">
+                            <div class="col-md-6 col-lg-4">
+                                <div class="form-group mb-0">
+                                    <label class="form-label d-flex align-items-center gap-2">
+                                        {{ translate('Platform_Delivery_Commission') }} (%)
+                                        <span class="tooltip-icon cursor-pointer" data-bs-toggle="tooltip"
+                                              data-bs-title="{{ translate('Percentage_retained_by_Victorious_Market_from_each_completed_delivery_fee._Remaining_funds_are_credited_to_the_logistics_partner_or_rider_wallet.') }}">
+                                            <i class="fi fi-sr-info"></i>
+                                        </span>
+                                    </label>
+                                    <div class="input-group">
+                                        <input type="number" min="0" max="100" step="0.5"
+                                               name="delivery_commission_percentage"
+                                               class="form-control"
+                                               value="{{ getWebConfig(name: 'delivery_commission_percentage') ?? 15 }}"
+                                               placeholder="15" required>
+                                        <div class="input-group-append">
+                                            <span class="input-group-text">%</span>
+                                        </div>
+                                    </div>
+                                    <small class="text-muted fs-11 mt-1 d-block">
+                                        {{ translate('e.g._15%_of_₦2,000_delivery_fee_=_₦300_Admin_Revenue,_₦1,700_Partner_Earnings') }}
+                                    </small>
+                                </div>
+                            </div>
+
+                            <div class="col-md-6 col-lg-4">
+                                <div class="form-group mb-0">
+                                    <label class="form-label d-flex align-items-center gap-2">
+                                        {{ translate('Bulky_Cargo_Surcharge_(Large_Package)') }} (₦)
+                                        <span class="tooltip-icon cursor-pointer" data-bs-toggle="tooltip"
+                                              data-bs-title="{{ translate('Automatic_additional_surcharge_added_to_base_lane_fee_when_an_order_contains_large/bulky_items_(refrigerators,_generators,_heavy_goods_requiring_van/truck).') }}">
+                                            <i class="fi fi-sr-info"></i>
+                                        </span>
+                                    </label>
+                                    <div class="input-group">
+                                        <div class="input-group-prepend">
+                                            <span class="input-group-text">₦</span>
+                                        </div>
+                                        <input type="number" min="0" step="50"
+                                               name="bulky_cargo_surcharge"
+                                               class="form-control"
+                                               value="{{ getWebConfig(name: 'bulky_cargo_surcharge') ?? 2500 }}"
+                                               placeholder="2500" required>
+                                    </div>
+                                    <small class="text-muted fs-11 mt-1 d-block">
+                                        {{ translate('Added_automatically_on_top_of_standard_motorbike_lane_fee') }}
+                                    </small>
+                                </div>
+                            </div>
+
+                            <div class="col-md-6 col-lg-4">
+                                <div class="form-group mb-0">
+                                    <label class="form-label d-flex align-items-center gap-2">
+                                        {{ translate('3rd-Party_Logistics_Module') }}
+                                        <span class="tooltip-icon cursor-pointer" data-bs-toggle="tooltip"
+                                              data-bs-title="{{ translate('Allow_external_registered_logistics_companies_to_operate_fleets_and_accept_orders_on_Victorious_Market.') }}">
+                                            <i class="fi fi-sr-info"></i>
+                                        </span>
+                                    </label>
+                                    <div class="select-wrapper">
+                                        <select name="enable_logistics_company_module" class="form-select">
+                                            <option value="1" {{ (getWebConfig(name: 'enable_logistics_company_module') ?? 1) == 1 ? 'selected' : '' }}>
+                                                {{ translate('Enabled_(Active)') }}
+                                            </option>
+                                            <option value="0" {{ (getWebConfig(name: 'enable_logistics_company_module') ?? 1) == 0 ? 'selected' : '' }}>
+                                                {{ translate('Disabled') }}
+                                            </option>
+                                        </select>
+                                    </div>
+                                    <small class="text-muted fs-11 mt-1 d-block">
+                                        {{ translate('Controls_access_to_dedicated_logistics_portal') }}
+                                    </small>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
             <div class="card">
                 <div class="card-body">
                     <div class="mb-3 mb-sm-20">

@@ -194,6 +194,26 @@
                                 </select>
                             </div>
                         </div>
+                        <div class="col-md-6 col-lg-4 physical_product_show">
+                            <div class="form-group mb-0">
+                                <label class="title-color d-flex align-items-center gap-2">
+                                    {{ translate('Package_Size_Tier') }}
+                                    <span class="input-required-icon">*</span>
+                                    <span class="tooltip-icon cursor-pointer" data-bs-toggle="tooltip"
+                                          data-bs-title="{{ translate('Small = standard parcel carried by motorcycle/keke (<8kg). Large = bulky cargo requiring car, van, or pickup truck (>8kg).') }}">
+                                        <i class="fi fi-sr-info"></i>
+                                    </span>
+                                </label>
+                                <select class="form-control" name="package_size" id="package_size">
+                                    <option value="small" {{ ($product->package_size ?? 'small') == 'small' ? 'selected' : '' }}>
+                                        🏍️ {{ translate('Small (Motorbike / Standard Parcel < 8kg)') }}
+                                    </option>
+                                    <option value="large" {{ ($product->package_size ?? 'small') == 'large' ? 'selected' : '' }}>
+                                        🚐 {{ translate('Large (Van / Bulky Cargo > 8kg)') }}
+                                    </option>
+                                </select>
+                            </div>
+                        </div>
                         <div class="col-md-6 col-lg-4">
                             <div class="form-group mb-0">
                                 <label class="title-color">{{ translate('NAFDAC_Number') }}</label>

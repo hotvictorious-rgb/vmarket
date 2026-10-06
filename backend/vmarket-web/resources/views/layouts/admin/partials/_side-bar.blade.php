@@ -446,6 +446,36 @@
                     </a>
                 </li>
 
+                {{-- 3rd-Party Logistics Partners --}}
+                <li class="{{ (Request::is('admin/logistics-companies*')) ? 'sub-menu-opened' : '' }}">
+                    <a class="nav-link nav-link-toggle text-capitalize {{ (Request::is('admin/logistics-companies*')) ? 'active' : '' }}"
+                       href="javascript:" title="{{ translate('Logistics_Partners') }}">
+                        <i class="fi fi-sr-building"></i>
+                        <span class="aside-mini-hidden-element flex-grow-1 d-flex justify-content-between align-items-center">
+                            <span class="text-truncate max-w-180">{{ translate('Logistics_Partners') }}</span>
+                            <i class="fi fi-sr-angle-down"></i>
+                        </span>
+                    </a>
+                    <ul class="aside-submenu navbar-nav">
+                        <li class="nav-item px-3 py-2 fw-semibold text-dark bg-section2 aside-mini-show-element">{{ translate('Logistics_Partners') }}</li>
+                        <li class="{{ Request::is('admin/logistics-companies') ? 'active' : '' }}">
+                            <a class="nav-link" href="{{ route('admin.logistics-companies.index') }}">
+                                <span>{{ translate('Partner_List') }}</span>
+                            </a>
+                        </li>
+                        <li class="{{ Request::is('admin/logistics-companies/create') ? 'active' : '' }}">
+                            <a class="nav-link" href="{{ route('admin.logistics-companies.create') }}">
+                                <span>{{ translate('Add_New_Partner') }}</span>
+                            </a>
+                        </li>
+                        <li class="{{ Request::is('admin/logistics-companies/withdraw-requests*') ? 'active' : '' }}">
+                            <a class="nav-link" href="{{ route('admin.logistics-companies.withdraw-requests') }}">
+                                <span>{{ translate('Withdrawal_Requests') }}</span>
+                            </a>
+                        </li>
+                    </ul>
+                </li>
+
                 {{-- Delivery Riders Submenu --}}
                 <li class="{{ (Request::is('admin/delivery-man/list') || Request::is('admin/delivery-man/add') || Request::is('admin/delivery-man/update*') || Request::is('admin/delivery-man/order-history-log*') || Request::is('admin/delivery-man/order-wise-earning*') || Request::is('admin/delivery-man/emergency-contact*')) ? 'sub-menu-opened' : '' }}">
                     <a class="nav-link nav-link-toggle text-capitalize {{ (Request::is('admin/delivery-man/list') || Request::is('admin/delivery-man/add') || Request::is('admin/delivery-man/update*') || Request::is('admin/delivery-man/emergency-contact*')) ? 'active' : '' }}"

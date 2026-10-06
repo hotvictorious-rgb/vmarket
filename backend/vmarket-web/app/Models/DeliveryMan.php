@@ -4,6 +4,7 @@ namespace App\Models;
 
 use App\Traits\StorageTrait;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\HasOne;
 use Illuminate\Support\Facades\DB;
@@ -35,10 +36,12 @@ class DeliveryMan extends Model
 
     protected $fillable = [
         'seller_id',
+        'logistics_company_id',
         'country_id',
         'state_id',
         'lga_id',
         'delivery_hub_id',
+        'vehicle_type',
         'f_name',
         'l_name',
         'address',
@@ -96,6 +99,11 @@ class DeliveryMan extends Model
     public function lga(): \Illuminate\Database\Eloquent\Relations\BelongsTo
     {
         return $this->belongsTo(Lga::class, 'lga_id');
+    }
+
+    public function logisticsCompany(): BelongsTo
+    {
+        return $this->belongsTo(LogisticsCompany::class, 'logistics_company_id');
     }
 
     public function deliveryHub(): \Illuminate\Database\Eloquent\Relations\BelongsTo

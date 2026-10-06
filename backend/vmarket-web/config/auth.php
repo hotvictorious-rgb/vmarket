@@ -60,6 +60,11 @@ return [
             'driver' => 'session',
             'provider' => 'users',
         ],
+
+        'logistics' => [
+            'driver' => 'session',
+            'provider' => 'logistics_companies',
+        ],
     ],
 
     /*
@@ -93,6 +98,11 @@ return [
         'sellers' => [
             'driver' => 'eloquent',
             'model' => \App\Models\Seller::class,
+        ],
+
+        'logistics_companies' => [
+            'driver' => 'eloquent',
+            'model' => \App\Models\LogisticsCompany::class,
         ],
 
         // 'users' => [
