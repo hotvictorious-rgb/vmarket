@@ -69,3 +69,50 @@ class LgaModel {
     return data;
   }
 }
+
+class AddressSuggestionModel {
+  String? name;
+  String? street;
+  String? city;
+  String? state;
+  String? country;
+  double? latitude;
+  double? longitude;
+  String? formattedAddress;
+
+  AddressSuggestionModel({
+    this.name,
+    this.street,
+    this.city,
+    this.state,
+    this.country,
+    this.latitude,
+    this.longitude,
+    this.formattedAddress,
+  });
+
+  AddressSuggestionModel.fromJson(Map<String, dynamic> json) {
+    name = json['name'];
+    street = json['street'];
+    city = json['city'];
+    state = json['state'];
+    country = json['country'];
+    latitude = json['latitude'] is num ? (json['latitude'] as num).toDouble() : double.tryParse(json['latitude']?.toString() ?? '0');
+    longitude = json['longitude'] is num ? (json['longitude'] as num).toDouble() : double.tryParse(json['longitude']?.toString() ?? '0');
+    formattedAddress = json['formatted_address'];
+  }
+
+  Map<String, dynamic> toJson() {
+    final Map<String, dynamic> data = <String, dynamic>{};
+    data['name'] = name;
+    data['street'] = street;
+    data['city'] = city;
+    data['state'] = state;
+    data['country'] = country;
+    data['latitude'] = latitude;
+    data['longitude'] = longitude;
+    data['formatted_address'] = formattedAddress;
+    return data;
+  }
+}
+

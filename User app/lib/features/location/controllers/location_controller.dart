@@ -266,5 +266,19 @@ class LocationController with ChangeNotifier {
     notifyListeners();
   }
 
-
+  void setCoordinates(double latitude, double longitude) {
+    _position = Position(
+      latitude: latitude,
+      longitude: longitude,
+      timestamp: DateTime.now(),
+      heading: 1,
+      accuracy: 1,
+      altitude: 1,
+      speedAccuracy: 1,
+      speed: 1,
+      altitudeAccuracy: 1,
+      headingAccuracy: 1,
+    );
+    notifyListeners();
+  }
 }

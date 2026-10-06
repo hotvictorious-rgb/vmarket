@@ -318,5 +318,35 @@ class AddressController with ChangeNotifier {
     }
     notifyListeners();
   }
+
+  // [AI] Zero-Key Hierarchical LGA-Scoped Street Suggestions
+  List<AddressSuggestionModel> _addressSuggestions = [];
+  List<AddressSuggestionModel> get addressSuggestions => _addressSuggestions;
+
+  bool _isSearchingAddress = false;
+  bool get isSearchingAddress => _isSearchingAddress;
+
+  void clearAddressSuggestions() {
+    _addressSuggestions = [];
+    _isSearchingAddress = false;
+    notifyListeners();
+  }
+
+  Future<void> searchAddressSuggestions(String query) async {
+    final clean = query.trim();
+    if (_selectedLga?.id == null || clean.length < 2) {
+      _addressSuggestions = [];
+      _isSearchingAddress = false;
+      notifyListeners();
+      return;
+    }
+
+    _isSearchingAddress = true;
+    notifyListeners();
+
+    _addressSuggestions = await addressServiceInterface.autocompleteAddress(_selectedLga!.id!, clean);
+    _isSearchingAddress = false;
+    notifyListeners();
+  }
 }
 

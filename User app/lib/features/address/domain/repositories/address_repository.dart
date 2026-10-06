@@ -153,6 +153,18 @@ class AddressRepository implements AddressRepoInterface<ApiResponseModel>{
       return ApiResponseModel.withError(ApiErrorHandler.getMessage(e));
     }
   }
+
+  @override
+  Future<ApiResponseModel> autocompleteAddress(int lgaId, String query) async {
+    try {
+      final response = await dioClient!.get(
+        '${AppConstants.geographyAddressAutocompleteUri}?lga_id=$lgaId&q=${Uri.encodeComponent(query)}',
+      );
+      return ApiResponseModel.withSuccess(response);
+    } catch (e) {
+      return ApiResponseModel.withError(ApiErrorHandler.getMessage(e));
+    }
+  }
 }
 
 

@@ -135,6 +135,7 @@ import 'package:flutter_sixvalley_ecommerce/common/enums/local_caches_type_enum.
   static const String geographyCountriesUri = '/api/v1/geography/countries';
   static const String geographyStatesUri = '/api/v1/geography/states/';
   static const String geographyLgasUri = '/api/v1/geography/lgas/';
+  static const String geographyAddressAutocompleteUri = '/api/v1/geography/autocomplete-address';
   static const String fulfillmentAvailabilityUri = '/api/v1/fulfillment/availability';
   static const String fulfillmentDeliveryFeeUri = '/api/v1/fulfillment/delivery-fee';
   static const String checkoutIntentUri = '/api/v1/checkout/intent';

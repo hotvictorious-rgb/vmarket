@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'package:country_code_picker/country_code_picker.dart';
 import 'package:dropdown_button2/dropdown_button2.dart';
 import 'package:flutter/material.dart';
@@ -61,6 +62,13 @@ class _AddNewAddressScreenState extends State<AddNewAddressScreen> {
   late LatLng _defaut;
 
   final GlobalKey<FormState> _addressFormKey = GlobalKey();
+  Timer? _addressDebounce;
+
+  @override
+  void dispose() {
+    _addressDebounce?.cancel();
+    super.dispose();
+  }
 
   @override
   void initState() {
@@ -334,19 +342,6 @@ class _AddNewAddressScreenState extends State<AddNewAddressScreen> {
                           ),
 
 
-                          CustomTextFieldWidget(labelText: getTranslated('delivery_address', context) ?? 'Delivery Address & Landmark',
-                            hintText: 'e.g. 14 Admiralty Way, near Lekki Phase 1 Gate',
-                            inputType: TextInputType.streetAddress,
-                            inputAction: TextInputAction.next,
-                            focusNode: _addressNode,
-                            prefixIcon: Images.address,
-                            required: true,
-                            nextFocus: _cityNode,
-                            controller: locationController.locationController,
-                            validator: (value)=> ValidateCheck.validateEmptyText(value, "address_is_required"),
-                          ),
-                          const SizedBox(height: Dimensions.paddingSizeDefaultAddress),
-
                           ...[
                             Text(getTranslated('country', context)!, style: textRegular.copyWith(
                               color: Theme.of(context).hintColor,
@@ -516,6 +511,139 @@ class _AddNewAddressScreenState extends State<AddNewAddressScreen> {
                               menuItemStyleData: const MenuItemStyleData(padding: EdgeInsets.symmetric(horizontal: 16)),
                             ),
                           ),
+                          const SizedBox(height: Dimensions.paddingSizeDefaultAddress),
+
+                          // [AI] Delivery Address & Street Landmark (Scoped strictly to Selected LGA)
+                          CustomTextFieldWidget(
+                            labelText: getTranslated('delivery_address', context) ?? 'Delivery Address & Landmark *',
+                            hintText: addressController.selectedLga != null
+                                ? 'Type street in ${addressController.selectedLga!.name ?? "LGA"} (e.g. Aka Road, Plaza)'
+                                : 'e.g. 14 Admiralty Way, near Lekki Gate',
+                            inputType: TextInputType.streetAddress,
+                            inputAction: TextInputAction.next,
+                            focusNode: _addressNode,
+                            prefixIcon: Images.address,
+                            required: true,
+                            nextFocus: _cityNode,
+                            controller: locationController.locationController,
+                            onChanged: (value) {
+                              _addressDebounce?.cancel();
+                              _addressDebounce = Timer(const Duration(milliseconds: 350), () {
+                                if (mounted) {
+                                  addressController.searchAddressSuggestions(value);
+                                }
+                              });
+                            },
+                            validator: (value)=> ValidateCheck.validateEmptyText(value, "address_is_required"),
+                          ),
+
+                          // [AI] Street Suggestions Progress & Dropdown Scoped to Chosen LGA
+                          if (addressController.isSearchingAddress)
+                            Padding(
+                              padding: const EdgeInsets.only(top: 8, bottom: 4),
+                              child: Row(
+                                children: [
+                                  SizedBox(
+                                    width: 14,
+                                    height: 14,
+                                    child: CircularProgressIndicator(
+                                      strokeWidth: 2,
+                                      valueColor: AlwaysStoppedAnimation<Color>(Theme.of(context).primaryColor),
+                                    ),
+                                  ),
+                                  const SizedBox(width: 8),
+                                  Text(
+                                    'Searching verified streets in ${addressController.selectedLga?.name ?? "selected LGA"}...',
+                                    style: textRegular.copyWith(
+                                      fontSize: Dimensions.fontSizeSmall,
+                                      color: Theme.of(context).hintColor,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+
+                          if (addressController.addressSuggestions.isNotEmpty)
+                            Container(
+                              margin: const EdgeInsets.only(top: 6, bottom: 8),
+                              decoration: BoxDecoration(
+                                color: Theme.of(context).cardColor,
+                                borderRadius: BorderRadius.circular(8),
+                                border: Border.all(color: Theme.of(context).primaryColor.withValues(alpha: 0.25)),
+                                boxShadow: [
+                                  BoxShadow(
+                                    color: Colors.black.withValues(alpha: 0.05),
+                                    blurRadius: 6,
+                                    offset: const Offset(0, 3),
+                                  )
+                                ],
+                              ),
+                              child: ListView.separated(
+                                shrinkWrap: true,
+                                physics: const NeverScrollableScrollPhysics(),
+                                itemCount: addressController.addressSuggestions.length,
+                                separatorBuilder: (_, __) => Divider(
+                                  height: 1,
+                                  color: Theme.of(context).dividerColor.withValues(alpha: 0.3),
+                                ),
+                                itemBuilder: (context, index) {
+                                  final item = addressController.addressSuggestions[index];
+                                  return InkWell(
+                                    onTap: () {
+                                      locationController.locationController.text =
+                                          item.formattedAddress ?? (item.street ?? item.name ?? '');
+                                      if (item.latitude != null && item.longitude != null && item.latitude != 0) {
+                                        locationController.setCoordinates(item.latitude!, item.longitude!);
+                                      }
+                                      addressController.clearAddressSuggestions();
+                                    },
+                                    child: Padding(
+                                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                                      child: Row(
+                                        children: [
+                                          Icon(
+                                            Icons.location_on,
+                                            size: 18,
+                                            color: Theme.of(context).primaryColor,
+                                          ),
+                                          const SizedBox(width: 10),
+                                          Expanded(
+                                            child: Column(
+                                              crossAxisAlignment: CrossAxisAlignment.start,
+                                              children: [
+                                                Text(
+                                                  item.name ?? '',
+                                                  style: textMedium.copyWith(
+                                                    fontSize: Dimensions.fontSizeDefault,
+                                                    color: Theme.of(context).textTheme.bodyLarge?.color,
+                                                  ),
+                                                ),
+                                                if (item.formattedAddress != null)
+                                                  Text(
+                                                    item.formattedAddress!,
+                                                    style: textRegular.copyWith(
+                                                      fontSize: Dimensions.fontSizeExtraSmall,
+                                                      color: Theme.of(context).hintColor,
+                                                    ),
+                                                    maxLines: 1,
+                                                    overflow: TextOverflow.ellipsis,
+                                                  ),
+                                              ],
+                                            ),
+                                          ),
+                                          Icon(
+                                            Icons.north_west,
+                                            size: 14,
+                                            color: Theme.of(context).hintColor.withValues(alpha: 0.5),
+                                          ),
+                                        ],
+                                      ),
+                                    ),
+                                  );
+                                },
+                              ),
+                            ),
+
                           const SizedBox(height: Dimensions.paddingSizeDefaultAddress),
 
                           Provider.of<SplashController>(context, listen: false).configModel!.deliveryZipCodeAreaRestriction == 0 ?

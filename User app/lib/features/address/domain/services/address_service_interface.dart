@@ -26,4 +26,5 @@ abstract class AddressServiceInterface{
   Future<List<CountryModel>> getCountries();
   Future<List<StateModel>> getStates(int countryId);
   Future<List<LgaModel>> getLgas(int stateId);
+  Future<List<AddressSuggestionModel>> autocompleteAddress(int lgaId, String query);
 }

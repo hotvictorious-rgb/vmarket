@@ -118,4 +118,20 @@ import 'package:flutter_sixvalley_ecommerce/features/address/domain/services/add
     }
     return list;
   }
+
+  @override
+  Future<List<AddressSuggestionModel>> autocompleteAddress(int lgaId, String query) async {
+    ApiResponseModel apiResponse = await addressRepoInterface.autocompleteAddress(lgaId, query);
+    List<AddressSuggestionModel> list = [];
+    if (apiResponse.response != null && apiResponse.response!.statusCode == 200) {
+      final rawData = apiResponse.response!.data;
+      final items = (rawData is Map && rawData['data'] is List)
+          ? rawData['data']
+          : (rawData is List ? rawData : []);
+      for (var item in items) {
+        list.add(AddressSuggestionModel.fromJson(item));
+      }
+    }
+    return list;
+  }
 }

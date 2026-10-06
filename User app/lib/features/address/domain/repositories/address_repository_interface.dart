@@ -19,4 +19,5 @@ abstract class AddressRepoInterface<T> implements RepositoryInterface<AddressMod
   Future<dynamic> getCountries();
   Future<dynamic> getStates(int countryId);
   Future<dynamic> getLgas(int stateId);
+  Future<dynamic> autocompleteAddress(int lgaId, String query);
 }
