@@ -32,6 +32,7 @@ class OrderModel {
   ShippingAddress? shippingAddress;
   bool? isGuest;
   bool? isShippingFree;
+  String? packageTier;
 
   OrderModel(
       {this.id,
@@ -64,10 +65,12 @@ class OrderModel {
         this.shippingAddress,
         this.isGuest,
         this.isShippingFree,
+        this.packageTier,
       });
 
   OrderModel.fromJson(Map<String, dynamic> json) {
     id = json['id'];
+    packageTier = json['package_tier'] ?? 'small';
     customerId = json['customer_id'];
     customerType = json['customer_type'];
     paymentStatus = json['payment_status'];

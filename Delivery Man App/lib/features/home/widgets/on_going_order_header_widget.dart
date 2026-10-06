@@ -29,6 +29,25 @@ class OngoingOrderHeaderWidget extends StatelessWidget {
           Text('${'order'.tr} # ${orderModel!.id}',
               style: rubikMedium.copyWith(fontSize: Dimensions.fontSizeExtraLarge, color: Get.isDarkMode ? Theme.of(context).hintColor : Colors.black)),
 
+          if (orderModel?.packageTier == 'large')
+            Container(
+              margin: const EdgeInsets.only(left: 8),
+              padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+              decoration: BoxDecoration(
+                color: Colors.red.withOpacity(0.12),
+                borderRadius: BorderRadius.circular(4),
+                border: Border.all(color: Colors.red.shade300, width: 0.5),
+              ),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  const Icon(Icons.local_shipping, size: 12, color: Colors.red),
+                  const SizedBox(width: 3),
+                  Text('LARGE', style: robotoBold.copyWith(fontSize: 10, color: Colors.red)),
+                ],
+              ),
+            ),
+
           const Expanded(child: SizedBox()),
 
           Padding(
