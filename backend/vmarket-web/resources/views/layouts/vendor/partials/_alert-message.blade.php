@@ -1,5 +1,7 @@
 <div class="alert--container active">
-    <a href="{{route((is_null(auth('seller')->id())? 'admin':'vendor').'.messages.index', ['type' => 'customer'])}}">
+    @php($messagesRoute = (is_null(auth('seller')->id()) ? 'admin' : 'vendor').'.messages.index')
+    @if(\Illuminate\Support\Facades\Route::has($messagesRoute))
+    <a href="{{route($messagesRoute, ['type' => 'customer'])}}">
         <div class="alert alert--message-2 alert-dismissible fade show "  id="chatting-new-notification-check" role="alert">
             <img width="28" src="{{ dynamicAsset(path: 'public/assets/back-end/img/icons/chatting-notification.svg') }}" alt="">
             <div class="w-0">
@@ -13,6 +15,7 @@
             </button>
         </div>
     </a>
+    @endif
 
     @if(env('APP_MODE') == 'demo')
         <div class="alert alert--message-2 alert-dismissible fade show" id="demo-reset-warning">

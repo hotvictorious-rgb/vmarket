@@ -71,7 +71,7 @@
     <span id="message-drag-and-drop" data-text="{{ translate('Or_drag_and_drop') }}"></span>
 
     <span id="route-admin-products-sku-combination" data-url="{{ route('admin.products.sku-combination') }}"></span>
-    <span id="route-admin-products-digital-variation-combination" data-url="{{ route('admin.products.digital-variation-combination') }}"></span>
+    <span id="route-admin-products-digital-variation-combination" data-url="{{ \Illuminate\Support\Facades\Route::has('admin.products.digital-variation-combination') ? route('admin.products.digital-variation-combination') : '' }}"></span>
     <span id="image-path-of-product-upload-icon" data-path="{{ dynamicAsset(path: 'public/assets/back-end/img/icons/product-upload-icon.svg') }}"></span>
 @endsection
 

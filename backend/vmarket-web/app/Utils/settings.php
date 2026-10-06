@@ -222,8 +222,12 @@ if (!function_exists('getLoginConfig')) {
     }
 }
 
-// [AI] Directive 57326: getActiveAIProviderConfigCache() stub removed — it always returned null
-// and was only referenced from deleted product Blade views that rendered AI-config cards.
+if (!function_exists('getActiveAIProviderConfigCache')) {
+    function getActiveAIProviderConfigCache(): ?object
+    {
+        return null;
+    }
+}
 
 if (!function_exists('getCustomerFromQuery')) {
     function getCustomerFromQuery()

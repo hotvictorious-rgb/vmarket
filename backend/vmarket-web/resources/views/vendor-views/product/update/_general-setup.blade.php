@@ -1,3 +1,6 @@
+@php($digitalProductSetting = $digitalProductSetting ?? getWebConfig(name: 'digital_product'))
+@php($digitalProductAuthors = $digitalProductAuthors ?? \App\Models\Author::all())
+@php($publishingHouseList = $publishingHouseList ?? \App\Models\PublishingHouse::all())
 <div class="general_wrapper mt-3">
     <div class="outline-wrapper">
         <div class="card rest-part bg-animate">
@@ -108,6 +111,7 @@
                             </div>
                         @endif
 
+                        @if(!empty($digitalProductSetting))
                         <div class="col-md-6 col-lg-4 digital-product-sections-show">
                             <div class="form-group mb-0">
                                 <label class="title-color">
@@ -143,8 +147,7 @@
                                         translate('For_Ready_After_Sale_deliveries,_customers_pay_first_then_vendor_uploads_the_digital_products_that_become_available_to_customers_for_download') }}">
                                     <img src="{{ dynamicAsset(path: 'public/assets/back-end/img/info-circle.svg') }}" alt="">
                                 </span>
-                                <select name="digital_product_type" id="digital_product_type" class="form-control"
-                                        required>
+                                <select name="digital_product_type" id="digital_product_type" class="form-control">
                                     <option value="{{ old('category_id') }}"
                                             {{ !$product['digital_product_type'] ? 'selected' : ''}} disabled>
                                         ---{{ translate('select') }}---
@@ -156,6 +159,7 @@
                                 </select>
                             </div>
                         </div>
+                        @endif
 
                         <div class="col-md-6 col-lg-4">
                             <div class="form-group mb-0">

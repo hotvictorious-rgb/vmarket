@@ -1,3 +1,6 @@
+@php($digitalProductSetting = $digitalProductSetting ?? getWebConfig(name: 'digital_product'))
+@php($digitalProductAuthors = $digitalProductAuthors ?? \App\Models\Author::all())
+@php($publishingHouseList = $publishingHouseList ?? \App\Models\PublishingHouse::all())
 <div class="general_wrapper mt-3">
     <div class="outline-wrapper">
         <div class="card rest-part bg-animate">
@@ -107,6 +110,7 @@
                             </div>
                         @endif
 
+                        @if(!empty($digitalProductSetting))
                         <div class="col-md-6 col-lg-4 show-for-digital-product">
                             <div class="form-group">
                                 <label class="form-label">
@@ -149,14 +153,14 @@
                                             </span>
                                 </label>
                                 <div class="select-wrapper">
-                                    <select name="digital_product_type" id="digital-product-type-input" class="form-select"
-                                            required>
+                                    <select name="digital_product_type" id="digital-product-type-input" class="form-select">
                                         <option value="ready_after_sell">{{ translate("ready_After_Sell") }}</option>
                                         <option value="ready_product">{{ translate("ready_Product") }}</option>
                                     </select>
                                 </div>
                             </div>
                         </div>
+                        @endif
 
                         <div class="col-md-6 col-lg-4">
                             <div class="form-group">

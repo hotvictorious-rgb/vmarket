@@ -181,11 +181,14 @@ class ProductController extends BaseController
         $categories = $this->categoryRepo->getListWhere(filters: ['position' => 0], relations: ['childes.childes'], dataLimit: 'all');
         $brands = $this->brandRepo->getListWhere(filters: ['status' => 1], dataLimit: 'all');
         $brandSetting = getWebConfig(name: 'product_brand');
+        $digitalProductSetting = getWebConfig(name: 'digital_product');
+        $digitalProductAuthors = \App\Models\Author::all();
+        $publishingHouseList = \App\Models\PublishingHouse::all();
         $colors = $this->colorRepo->getList(orderBy: ['name' => 'desc'], dataLimit: 'all');
         $attributes = $this->attributeRepo->getList(orderBy: ['name' => 'desc'], dataLimit: 'all');
         $languages = getWebConfig(name: 'pnc_language') ?? null;
         $defaultLanguage = $languages[0];
-        return view('vendor-views.product.add-new', compact('languages', 'categories', 'brands', 'brandSetting', 'colors', 'attributes', 'languages', 'defaultLanguage', 'productWiseTax', 'taxVats'));
+        return view('vendor-views.product.add-new', compact('languages', 'categories', 'brands', 'brandSetting', 'digitalProductSetting', 'digitalProductAuthors', 'publishingHouseList', 'colors', 'attributes', 'defaultLanguage', 'productWiseTax', 'taxVats'));
     }
 
     public function add(ProductAddRequest $request, ProductService $service): JsonResponse|RedirectResponse
@@ -228,12 +231,15 @@ class ProductController extends BaseController
         $categories = $this->categoryRepo->getListWhere(filters: ['position' => 0], relations: ['childes.childes'], dataLimit: 'all');
         $brands = $this->brandRepo->getListWhere(filters: ['status' => 1], dataLimit: 'all');
         $brandSetting = getWebConfig(name: 'product_brand');
+        $digitalProductSetting = getWebConfig(name: 'digital_product');
+        $digitalProductAuthors = \App\Models\Author::all();
+        $publishingHouseList = \App\Models\PublishingHouse::all();
         $colors = $this->colorRepo->getList(orderBy: ['name' => 'desc'], dataLimit: 'all');
         $attributes = $this->attributeRepo->getList(orderBy: ['name' => 'desc'], dataLimit: 'all');
         $languages = getWebConfig(name: 'pnc_language') ?? null;
         $defaultLanguage = $languages[0];
         $taxVatIds = $product?->taxVats?->pluck('tax_id')->toArray() ?? [];
-        return view('vendor-views.product.edit', compact('product', 'categories', 'brands', 'brandSetting', 'colors', 'attributes', 'languages', 'defaultLanguage', 'productWiseTax', 'taxVats', 'taxVatIds'));
+        return view('vendor-views.product.edit', compact('product', 'categories', 'brands', 'brandSetting', 'digitalProductSetting', 'digitalProductAuthors', 'publishingHouseList', 'colors', 'attributes', 'languages', 'defaultLanguage', 'productWiseTax', 'taxVats', 'taxVatIds'));
     }
 
     public function update(ProductUpdateRequest $request, ProductService $service, string|int $id): JsonResponse|RedirectResponse

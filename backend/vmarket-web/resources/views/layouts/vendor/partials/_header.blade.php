@@ -149,6 +149,7 @@
                         </div>
                     </li>
 
+                    @if(\Illuminate\Support\Facades\Route::has('vendor.messages.index'))
                     <li class="nav-item">
                         <div class="hs-unfold">
                             <a
@@ -162,9 +163,9 @@
                                 data-custom-class="header-icon-title"
                             >
                                 <i class="fi fi-sr-comment-alt-dots fs-18"></i>
-                                @php($message=\App\Models\Chatting::where(['seen_by_seller'=>0, 'seller_id'=>auth('seller')->id()])->count())
+                                @php($message = class_exists(\App\Models\Chatting::class) ? \App\Models\Chatting::where(['seen_by_seller'=>0, 'seller_id'=>auth('seller')->id()])->count() : 0)
                                 @if($message!=0)
-                                    <span class="btn-status btn-sm-status btn-status-danger">{{ $message }}</span>
+                                     <span class="btn-status btn-sm-status btn-status-danger">{{ $message }}</span>
                                 @endif
                             </a>
                             <div id="messageDropdown"
@@ -173,7 +174,7 @@
                                    href="{{route('vendor.messages.index', ['type' => 'customer'])}}">
                                     <span class="text-truncate pr-2"
                                           title="Settings">{{translate('customer')}}</span>
-                                    @php($messageCustomer=\App\Models\Chatting::where(['seen_by_seller'=>0, 'seller_id'=>auth('seller')->id()])->whereNotNull(['user_id'])->count())
+                                    @php($messageCustomer = class_exists(\App\Models\Chatting::class) ? \App\Models\Chatting::where(['seen_by_seller'=>0, 'seller_id'=>auth('seller')->id()])->whereNotNull(['user_id'])->count() : 0)
                                     @if($messageCustomer > 0)
                                         <span
                                             class="btn-status btn-sm-status-custom btn-status-danger">{{$messageCustomer}}</span>
@@ -184,7 +185,7 @@
                                    href="{{route('vendor.messages.index', ['type' => 'delivery-man'])}}">
                                     <span class="text-truncate pr-2"
                                           title="Settings">{{translate('delivery_man')}}</span>
-                                    @php($messageDeliveryMan =\App\Models\Chatting::where(['seen_by_seller'=>0, 'seller_id'=>auth('seller')->id()])->whereNotNull(['delivery_man_id'])->count())
+                                    @php($messageDeliveryMan = class_exists(\App\Models\Chatting::class) ? \App\Models\Chatting::where(['seen_by_seller'=>0, 'seller_id'=>auth('seller')->id()])->whereNotNull(['delivery_man_id'])->count() : 0)
                                     @if($messageDeliveryMan > 0)
                                         <span
                                             class="btn-status btn-sm-status-custom btn-status-danger">{{ $messageDeliveryMan }}</span>
@@ -193,6 +194,7 @@
                             </div>
                         </div>
                     </li>
+                    @endif
 
                     <li class="nav-item">
                         <div class="hs-unfold">
@@ -340,6 +342,7 @@
                         {{translate('view_website')}}
                     </a>
                 </div>
+                @if(\Illuminate\Support\Facades\Route::has('vendor.messages.index'))
                 <div class="bg-white p-1 rounded mt-2">
                     <a class="p-2  title-color"
                        href="{{route('vendor.messages.index', ['type' => 'customer'])}}"
@@ -357,12 +360,13 @@
                             </defs>
                         </svg>
                         {{translate('message')}}
-                        @php($message=\App\Models\Chatting::where(['seen_by_seller'=>1,'seller_id'=>auth('seller')->id()])->count())
+                        @php($message = class_exists(\App\Models\Chatting::class) ? \App\Models\Chatting::where(['seen_by_seller'=>1,'seller_id'=>auth('seller')->id()])->count() : 0)
                         @if($message!=0)
                             <span>({{ $message }})</span>
                         @endif
                     </a>
                 </div>
+                @endif
                 <div class="bg-white p-1 rounded mt-2">
                     <a class="p-2 title-color"
                        href="{{route('vendor.orders.list',['pending'])}}" title="{{translate('Shopping Cart')}}"

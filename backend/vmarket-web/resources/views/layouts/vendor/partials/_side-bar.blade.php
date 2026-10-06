@@ -373,6 +373,7 @@
                             <small class="nav-subtitle">{{ translate('help_&_support') }}</small>
                             <small class="tio-more-horizontal nav-subtitle-replacer"></small>
                         </li>
+                        @if(\Illuminate\Support\Facades\Route::has('vendor.messages.index'))
                         <li class="navbar-vertical-aside-has-menu {{ Request::is('vendor/messages*')?'active' : ''}}">
                             <a class="nav-link"
                                href="{{ route('vendor.messages.index', ['type' => 'customer']) }}" title="{{ translate('inbox') }}">
@@ -382,6 +383,7 @@
                                     </span>
                             </a>
                         </li>
+                        @endif
                         <li class="nav-item {{(Request::is('vendor/transaction/order-list')) ? 'scroll-here' : ''}}">
                             <small class="nav-subtitle">{{ translate('reports_&_analytics') }}</small>
                             <small class="tio-more-horizontal nav-subtitle-replacer"></small>

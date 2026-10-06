@@ -1,3 +1,6 @@
+@php($digitalProductSetting = $digitalProductSetting ?? getWebConfig(name: 'digital_product'))
+@php($digitalProductAuthors = $digitalProductAuthors ?? \App\Models\Author::all())
+@php($publishingHouseList = $publishingHouseList ?? \App\Models\PublishingHouse::all())
 <div class="general_wrapper mt-3">
     <div class="outline-wrapper">
         <div class="card rest-part bg-animate">
@@ -113,6 +116,7 @@
                             </div>
                         @endif
 
+                        @if(!empty($digitalProductSetting))
                         <div class="col-md-6 col-lg-4 show-for-digital-product">
                             <div class="form-group">
                                 <label class="form-label">
@@ -170,6 +174,7 @@
                                 </div>
                             </div>
                         </div>
+                        @endif
 
                         <div class="col-md-6 col-lg-4">
                             <div class="form-group">
