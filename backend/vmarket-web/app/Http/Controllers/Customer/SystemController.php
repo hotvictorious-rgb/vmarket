@@ -182,12 +182,14 @@ class SystemController extends Controller
                 'address_type' => $shipping['address_type'],
                 'address' => $shipping['address'],
                 'city' => $shipping['city'],
-                'zip' => $shipping['zip'],
-                'country' => $shipping['country'],
+                'zip' => $shipping['zip'] ?? '100001',
+                'country' => $shipping['country'] ?? 'Nigeria',
+                'state_id' => $shipping['state_id'] ?? null,
+                'lga_id' => $shipping['lga_id'] ?? null,
                 'phone' => $shipping['phone'],
                 'email' => auth('customer')->check() ? null : $shipping['email'],
-                'latitude' => $shipping['latitude'],
-                'longitude' => $shipping['longitude'],
+                'latitude' => $shipping['latitude'] ?? 0.0,
+                'longitude' => $shipping['longitude'] ?? 0.0,
                 'is_billing' => 0,
                 'created_at' => now(),
                 'updated_at' => now(),
@@ -196,7 +198,7 @@ class SystemController extends Controller
         }
         else if (isset($shipping['shipping_method_id']) && $shipping['shipping_method_id'] == 0) {
 
-            if ($shipping['contact_person_name'] == null || $shipping['address'] == null || $shipping['city'] == null || $shipping['zip'] == null || $shipping['country'] == null || ($is_guest && $shipping['email'] == null)) {
+            if ($shipping['contact_person_name'] == null || $shipping['address'] == null || $shipping['country'] == null || ($is_guest && $shipping['email'] == null)) {
                 return response()->json([
                     'errors' => translate('Fill_all_required_fields_of_shipping/billing_address')
                 ], 403);
@@ -206,7 +208,7 @@ class SystemController extends Controller
                     'errors' => translate('Delivery_unavailable_in_this_country')
                 ], 403);
             }
-            elseif ($zip_restrict_status && !self::delivery_zipcode_exist_check($shipping['zip'])) {
+            elseif ($zip_restrict_status && !empty($shipping['zip']) && !self::delivery_zipcode_exist_check($shipping['zip'])) {
                 return response()->json([
                     'errors' => translate('Delivery_unavailable_in_this_zip_code_area')
                 ], 403);
@@ -219,12 +221,14 @@ class SystemController extends Controller
                 'address_type' => $shipping['address_type'],
                 'address' => $shipping['address'],
                 'city' => $shipping['city'],
-                'zip' => $shipping['zip'],
-                'country' => $shipping['country'],
+                'zip' => $shipping['zip'] ?? '100001',
+                'country' => $shipping['country'] ?? 'Nigeria',
+                'state_id' => $shipping['state_id'] ?? null,
+                'lga_id' => $shipping['lga_id'] ?? null,
                 'phone' => $shipping['phone'],
                 'email' => auth('customer')->check() ? null : $shipping['email'],
-                'latitude' => $shipping['latitude'],
-                'longitude' => $shipping['longitude'],
+                'latitude' => $shipping['latitude'] ?? 0.0,
+                'longitude' => $shipping['longitude'] ?? 0.0,
                 'is_billing' => 0,
                 'created_at' => now(),
                 'updated_at' => now(),

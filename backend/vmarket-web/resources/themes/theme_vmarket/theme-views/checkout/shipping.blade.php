@@ -275,20 +275,29 @@
                                                         </div>
                                                         <div class="col-sm-6">
                                                             <div class="form-group mb-4">
-                                                                <label for="city">{{ translate('city') }} <span class="text-danger">*</span></label>
-                                                                <input type="text" name="city" id="city"
-                                                                       placeholder="{{ translate('ex') }}: {{translate('dhaka')}}"
-                                                                       class="form-control" {{$shipping_addresses->count()==0?'required':''}}>
+                                                                <label for="shipping-state">{{ translate('state_or_region') ?? 'State / Region' }} <span class="text-danger">*</span></label>
+                                                                <select name="state_id" id="shipping-state" class="form-select" required>
+                                                                    <option value="">{{ translate('loading_states') ?? 'Loading states...' }}</option>
+                                                                </select>
+                                                            </div>
+                                                        </div>
+                                                        <div class="col-sm-6">
+                                                            <div class="form-group mb-4">
+                                                                <label for="shipping-lga">{{ translate('lga') ?? 'LGA (Local Government Area)' }} <span class="text-danger">*</span></label>
+                                                                <select name="lga_id" id="shipping-lga" class="form-select" required>
+                                                                    <option value="">{{ translate('select_state_first') ?? 'Select State first' }}</option>
+                                                                </select>
+                                                                <input type="hidden" name="city" id="city" value="{{$shipping_addresses->count() > 0 ? $shipping_addresses[0]['city'] : ''}}">
                                                             </div>
                                                         </div>
                                                         <div class="col-sm-6">
                                                             <div class="form-group mb-4">
                                                                 <label for="zip"
-                                                                       class="text-capitalize">{{ translate('zip_code') }} <span class="text-danger">*</span></label>
+                                                                       class="text-capitalize">{{ translate('zip_code') }} <span class="text-muted fs-12">({{ translate('optional') ?? 'Optional' }})</span></label>
                                                                 @if($zip_restrict_status == 1)
                                                                     <select name="zip" id="zip"
                                                                             class="form-control select2 select_picker"
-                                                                            data-live-search="true" required>
+                                                                            data-live-search="true">
                                                                         @forelse($zip_codes as $code)
                                                                             <option
                                                                                 value="{{ $code->zipcode }}">{{ $code->zipcode }}</option>
@@ -300,57 +309,25 @@
                                                                 @else
                                                                     <input type="text" class="form-control" id="zip"
                                                                            name="zip"
-                                                                           placeholder="{{ translate('ex') }}: {{translate('1216')}}" {{$shipping_addresses->count()==0?'required':''}}>
+                                                                           placeholder="{{ translate('ex') }}: 100001">
                                                                 @endif
                                                             </div>
                                                         </div>
-                                                        <div class="col-sm-12">
+                                                        <div class="col-sm-12 position-relative">
                                                             <div class="form-group mb-4">
                                                                 <div class="d-flex gap-2 align-items-center justify-content-between mb-2">
-                                                                    <label for="address" class="mb-0">{{ translate('address') }} <span class="text-danger">*</span></label>
-                                                                    @if(getWebConfig('map_api_status') == 1)
-                                                                        <a href="javascript:" type="button" data-bs-toggle="modal"
-                                                                        data-bs-target="#shippingMapModal"
-                                                                        class="btn-link text-primary text-capitalize">{{ translate('Set_Precise_Location') }}
-                                                                            <i class="fi fi-sr-land-layer-location d-flex"></i>
-                                                                        </a>
-                                                                        <div class="modal fade" id="shippingMapModal" tabindex="-1"
-                                                                            aria-hidden="true">
-                                                                            <div class="modal-dialog modal-lg modal-dialog-centered">
-                                                                                <div class="modal-content">
-                                                                                    <div class="modal-body">
-                                                                                        <div class="product-quickview">
-                                                                                            <button type="button" class="btn-close outside"
-                                                                                                    data-bs-dismiss="modal"
-                                                                                                    aria-label="Close"></button>
-                                                                                            <input id="pac-input"
-                                                                                                class="controls rounded __inline-46"
-                                                                                                title="{{translate('search_your_location_here')}}"
-                                                                                                type="text"
-                                                                                                placeholder="{{translate('search_here')}}"/>
-                                                                                            <div class="dark-support rounded w-100 __h-14rem"
-                                                                                                id="location_map_canvas"></div>
-                                                                                            <input type="hidden" id="latitude"
-                                                                                                name="latitude" class="form-control d-inline"
-                                                                                                placeholder="{{ translate('ex') }} : {{ translate('-94.22213') }}"
-                                                                                                value="{{$default_location?$default_location['lat']:0}}"
-                                                                                                required readonly>
-                                                                                            <input type="hidden"
-                                                                                                name="longitude" class="form-control"
-                                                                                                placeholder="{{ translate('ex') }} : {{ translate('103.344322') }}"
-                                                                                                id="longitude"
-                                                                                                value="{{$default_location?$default_location['lng']:0}}"
-                                                                                                required>
-                                                                                        </div>
-                                                                                    </div>
-                                                                                </div>
-                                                                            </div>
-                                                                        </div>
-                                                                    @endif
+                                                                    <label for="address" class="mb-0 fw-semibold">{{ translate('delivery_address') ?? 'Delivery Address & Street Landmark' }} <span class="text-danger">*</span></label>
+                                                                    <small class="text-success"><i class="bi bi-shield-check me-1"></i>{{ translate('scoped_to_selected_lga') ?? 'Scoped to selected LGA' }}</small>
                                                                 </div>
-                                                                <input type="text" name="address" id="address"
-                                                                       class="form-control"
-                                                                       placeholder="{{ translate('your_address') }}" {{$shipping_addresses->count()==0?'required':''}}>
+                                                                <div class="input-group">
+                                                                    <span class="input-group-text bg-light"><i class="bi bi-geo-alt-fill text-primary"></i></span>
+                                                                    <input type="text" name="address" id="address"
+                                                                           class="form-control" autocomplete="off"
+                                                                           placeholder="{{ translate('type_street_or_landmark') ?? 'e.g. 14 Aka Road, opposite Plaza' }}" {{$shipping_addresses->count()==0?'required':''}}>
+                                                                </div>
+                                                                <div id="address-suggestions-box" class="list-group position-absolute w-100 shadow-lg rounded-3 d-none mt-1" style="z-index: 1050; max-height: 240px; overflow-y: auto;"></div>
+                                                                <input type="hidden" id="latitude" name="latitude" value="{{$default_location?$default_location['lat']:0}}">
+                                                                <input type="hidden" id="longitude" name="longitude" value="{{$default_location?$default_location['lng']:0}}">
                                                             </div>
                                                         </div>
 
@@ -832,5 +809,98 @@
                 }
             });
         }
+
+        // [AI] Zero-Key Hierarchical LGA-Scoped Street Autocomplete
+        $(document).ready(function() {
+            // 1. Fetch Nigerian States on initial page load
+            $.get("{{ route('geography.states') }}", function(res) {
+                if (res && res.status && res.data) {
+                    var $state = $('#shipping-state');
+                    $state.empty().append('<option value="">{{ translate("select_state") ?? "Select State (e.g. Akwa Ibom, Lagos)" }}</option>');
+                    res.data.forEach(function(s) {
+                        var selected = (s.name.toLowerCase() === 'akwa ibom') ? 'selected' : '';
+                        $state.append('<option value="' + s.id + '" ' + selected + '>' + s.name + '</option>');
+                    });
+                    if ($state.val()) {
+                        $state.trigger('change');
+                    }
+                }
+            });
+
+            // 2. Cascade State change to fetch LGAs
+            $('#shipping-state').on('change', function() {
+                var stateId = $(this).val();
+                var $lga = $('#shipping-lga');
+                $lga.empty().append('<option value="">{{ translate("loading_lgas") ?? "Loading LGAs..." }}</option>');
+                $('#address-suggestions-box').addClass('d-none').empty();
+
+                if (!stateId) {
+                    $lga.html('<option value="">{{ translate("select_state_first") ?? "Select State first" }}</option>');
+                    return;
+                }
+
+                $.get("{{ url('geography/lgas') }}/" + stateId, function(res) {
+                    if (res && res.status && res.data) {
+                        $lga.empty().append('<option value="">{{ translate("select_lga") ?? "Select LGA (e.g. Uyo, Ikeja)" }}</option>');
+                        res.data.forEach(function(l) {
+                            $lga.append('<option value="' + l.id + '">' + l.name + '</option>');
+                        });
+                    }
+                });
+            });
+
+            // Update city name whenever LGA is selected
+            $('#shipping-lga').on('change', function() {
+                var lgaName = $(this).find('option:selected').text();
+                if (lgaName && lgaName.indexOf('Select') === -1) {
+                    $('#city').val(lgaName);
+                }
+            });
+
+            // 3. Debounced Street Autocomplete strictly scoped to selected LGA
+            var addrTimer = null;
+            $('#address').on('input', function() {
+                clearTimeout(addrTimer);
+                var q = $(this).val().trim();
+                var lgaId = $('#shipping-lga').val();
+                var $box = $('#address-suggestions-box');
+
+                if (!lgaId || q.length < 2) {
+                    $box.addClass('d-none').empty();
+                    return;
+                }
+
+                addrTimer = setTimeout(function() {
+                    $.get("{{ route('geography.autocomplete-address') }}", { lga_id: lgaId, q: q }, function(res) {
+                        if (res && res.status && res.data && res.data.length > 0) {
+                            $box.empty().removeClass('d-none');
+                            res.data.forEach(function(item) {
+                                var $item = $('<a href="javascript:void(0)" class="list-group-item list-group-item-action d-flex align-items-center gap-2 py-2 border-0 border-bottom"></a>');
+                                $item.html('<i class="bi bi-geo-alt-fill text-primary fs-14"></i> <div class="text-start"><strong class="fs-13 text-dark">' + item.name + '</strong><br><small class="text-muted fs-11">' + item.formatted_address + '</small></div>');
+                                $item.on('click', function(e) {
+                                    e.preventDefault();
+                                    $('#address').val(item.formatted_address || item.name);
+                                    if (item.latitude && item.longitude) {
+                                        $('#latitude').val(item.latitude);
+                                        $('#longitude').val(item.longitude);
+                                    }
+                                    $box.addClass('d-none').empty();
+                                });
+                                $box.append($item);
+                            });
+                        } else {
+                            $box.addClass('d-none').empty();
+                        }
+                    });
+                }, 300);
+            });
+
+            // Close suggestions box if clicking outside
+            $(document).on('click', function(e) {
+                if (!$(e.target).closest('#address, #address-suggestions-box').length) {
+                    $('#address-suggestions-box').addClass('d-none');
+                }
+            });
+        });
     </script>
 @endpush

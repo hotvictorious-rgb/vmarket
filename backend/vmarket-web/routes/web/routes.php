@@ -19,6 +19,7 @@ use App\Http\Controllers\Web\ProductListController;
 use App\Http\Controllers\Web\ReviewController;
 use App\Http\Controllers\Web\Shop\ShopFollowerController;
 use App\Http\Controllers\Web\ShopViewController;
+use App\Http\Controllers\RestAPI\v1\GeographyController;
 use App\Http\Controllers\Web\UserProfileController;
 use App\Http\Controllers\Web\WebController;
 use App\Http\Middleware\VerifyCsrfToken;
@@ -352,6 +353,15 @@ Route::group(['prefix' => 'customer', 'as' => 'customer.'], function () {
 
 // [AI] Direct alias for storefront JS route compatibility
 Route::post('set-shipping-method', [SystemController::class, 'setShippingMethod'])->name('set-shipping-method');
+
+// [AI] Canonical Geography Web Endpoints for Storefront Checkout (Country -> State -> LGA -> Address Autocomplete)
+Route::group(['prefix' => 'geography', 'as' => 'geography.'], function () {
+    Route::get('countries', [GeographyController::class, 'getCountries'])->name('countries');
+    Route::get('states/{country_id?}', [GeographyController::class, 'getStates'])->name('states');
+    Route::get('lgas/{state_id?}', [GeographyController::class, 'getLgas'])->name('lgas');
+    Route::get('autocomplete-address', [GeographyController::class, 'autocompleteAddress'])->name('autocomplete-address');
+    Route::post('calculate-lane-fee', [GeographyController::class, 'calculateLaneFee'])->name('calculate-lane-fee');
+});
 
 Route::group(['prefix' => 'customer', 'as' => 'customer.'], function () {
     Route::controller(PaymentController::class)->group(function () {

@@ -7,6 +7,7 @@ use App\Models\Country;
 use App\Models\DeliveryLane;
 use App\Models\Lga;
 use App\Models\State;
+use App\Services\AddressAutocompleteService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Validator;
@@ -153,6 +154,47 @@ class GeographyController extends Controller
                 'is_enabled' => (bool) $lane->is_enabled,
                 'lane_id' => $lane->id,
             ]
+        ], 200);
+    }
+
+    /**
+     * [AI] Zero-key hierarchical address autocomplete scoped strictly to the selected Nigerian LGA.
+     *
+     * @param Request $request
+     * @param AddressAutocompleteService $autocompleteService
+     * @return JsonResponse
+     */
+    public function autocompleteAddress(Request $request, AddressAutocompleteService $autocompleteService): JsonResponse
+    {
+        $validator = Validator::make($request->all(), [
+            'lga_id' => 'required|integer|exists:lgas,id',
+            'q' => 'required|string|min:2|max:150',
+            'limit' => 'nullable|integer|min:1|max:20',
+        ]);
+
+        if ($validator->fails()) {
+            return response()->json([
+                'status' => false,
+                'message' => 'Validation failed.',
+                'errors' => collect($validator->errors()->all())->map(fn($msg) => [
+                    'code' => 'VALIDATION_ERROR',
+                    'message' => $msg,
+                ])->values()->all(),
+            ], 422);
+        }
+
+        $lgaId = (int) $request->input('lga_id');
+        $query = (string) $request->input('q');
+        $limit = (int) ($request->input('limit') ?? 8);
+
+        $suggestions = $autocompleteService->getSuggestions($lgaId, $query, $limit);
+
+        return response()->json([
+            'status' => true,
+            'message' => 'Address suggestions retrieved successfully.',
+            'lga_id' => $lgaId,
+            'query' => $query,
+            'data' => $suggestions,
         ], 200);
     }
 }

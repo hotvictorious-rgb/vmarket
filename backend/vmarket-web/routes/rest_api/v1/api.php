@@ -242,6 +242,7 @@ Route::group(['prefix' => 'v1', 'middleware' => ['api_lang']], function () {
                 Route::get('countries', 'getCountries');
                 Route::get('states/{country_id?}', 'getStates');
                 Route::get('lgas/{state_id?}', 'getLgas');
+                Route::get('autocomplete-address', 'autocompleteAddress');
                 Route::post('calculate-lane-fee', 'calculateLaneFee');
             });
         });
@@ -252,6 +253,7 @@ Route::group(['prefix' => 'v1', 'middleware' => ['api_lang']], function () {
                 Route::get('countries', 'getCountries');
                 Route::get('states/{country_id?}', 'getStates');
                 Route::get('lgas/{state_id?}', 'getLgas');
+                Route::get('autocomplete-address', 'autocompleteAddress');
                 Route::post('calculate-lane-fee', 'calculateLaneFee');
             });
         });
