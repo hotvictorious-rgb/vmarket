@@ -346,7 +346,7 @@ class WebController extends Controller
         $defaultLocation = getWebConfig(name: 'default_location');
 
         $user = Helpers::getCustomerInformation($request);
-        $shippingAddresses = ShippingAddress::where([
+        $shippingAddresses = ShippingAddress::with(['canonicalCountry', 'canonicalState', 'canonicalLga'])->where([
             'customer_id' => $user == 'offline' ? session('guest_id') : auth('customer')->id(),
             'is_guest' => $user == 'offline' ? 1 : '0',
         ])->get();

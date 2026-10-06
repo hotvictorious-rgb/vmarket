@@ -30,6 +30,8 @@
                                 @php
                                     $cartItems = \App\Utils\CartManager::getCartListQuery(type: 'checked');
                                     $uniqueShops = [];
+                                    $originLgaId = null;
+                                    $originLgaName = null;
                                     foreach ($cartItems as $item) {
                                         $sellerId = $item['seller_id'];
                                         $sellerIs = $item['seller_is'];
@@ -38,17 +40,30 @@
                                                 'name' => getWebConfig(name: 'company_name') ?? 'Victorious Central Store',
                                                 'address' => getWebConfig(name: 'shop_address') ?? 'Victorious Central Hub, Nigeria',
                                             ];
+                                            $adminShop = \App\Models\Shop::with('lga')->where('seller_id', 0)->first();
+                                            if ($adminShop && $adminShop->lga_id) {
+                                                $originLgaId = $adminShop->lga_id;
+                                                $originLgaName = $adminShop->lga?->name ?? 'Central Store';
+                                            }
                                         } else {
-                                            $shop = \App\Models\Shop::where('seller_id', $sellerId)->first();
+                                            $shop = \App\Models\Shop::with('lga')->where('seller_id', $sellerId)->first();
                                             if ($shop && !isset($uniqueShops['seller_' . $sellerId])) {
                                                 $uniqueShops['seller_' . $sellerId] = [
                                                     'name' => $shop->name ?? 'Vendor Store',
                                                     'address' => $shop->address ?? 'Store Location',
                                                 ];
+                                                if (!$originLgaId && $shop->lga_id) {
+                                                    $originLgaId = $shop->lga_id;
+                                                    $originLgaName = $shop->lga?->name ?? 'Vendor Store';
+                                                }
                                             }
                                         }
                                     }
                                 @endphp
+
+                                <div id="fulfillment-origin-meta"
+                                     data-origin-lga-id="{{ $originLgaId ?? 0 }}"
+                                     data-origin-lga-name="{{ $originLgaName ?? 'Store' }}"></div>
 
                                 <div class="fulfillment-selector d-flex p-1 bg-light rounded-3 mb-4" style="border: 1.5px solid rgba(114, 50, 187, 0.15);">
                                     <button type="button" class="btn w-50 py-2 fw-bold text-capitalize rounded-3 active btn-primary text-white" id="fulfillment-tab-delivery" onclick="switchFulfillment('delivery')">
@@ -173,9 +188,18 @@
                                                                                                     </dd>
 
                                                                                                     <dt>{{ translate('address') }}</dt>
-                                                                                                    <dd>{{$address['address']}}
-                                                                                                        , {{$address['city']}}
-                                                                                                        , {{$address['zip']}}</dd>
+                                                                                                    <dd>
+                                                                                                        {{$address['address']}}
+                                                                                                        @if(!empty($address->canonicalLga?->name) || !empty($address['city']))
+                                                                                                            , <strong>{{ $address->canonicalLga?->name ?? $address['city'] }}</strong>
+                                                                                                        @endif
+                                                                                                        @if(!empty($address->canonicalState?->name) || !empty($address['state']))
+                                                                                                            , {{ $address->canonicalState?->name ?? $address['state'] }}
+                                                                                                        @endif
+                                                                                                        @if(!empty($address['zip']))
+                                                                                                            ({{ $address['zip'] }})
+                                                                                                        @endif
+                                                                                                    </dd>
                                                                                                     <span
                                                                                                         class="shipping-contact-address d-none">{{ $address['address'] }}</span>
                                                                                                     <span
@@ -288,6 +312,7 @@
                                                                     <option value="">{{ translate('select_state_first') ?? 'Select State first' }}</option>
                                                                 </select>
                                                                 <input type="hidden" name="city" id="city" value="{{$shipping_addresses->count() > 0 ? $shipping_addresses[0]['city'] : ''}}">
+                                                                <div id="lane-verification-status-box" class="mt-2 d-none"></div>
                                                             </div>
                                                         </div>
                                                         <div class="col-sm-6">
@@ -386,7 +411,7 @@
                             @endif
 
                             @if($billing_input_by_customer)
-                                <div class="card card-body mt-3 {{ $billing_input_by_customer ? '':'d-none' }}">
+                                <div class="card card-body mt-3 {{ $billing_input_by_customer ? '':'d-none' }}" id="billing-address-container">
                                     <div class="bg-light rounded p-3">
                                         <div class="d-flex flex-wrap justify-content-between gap-3">
                                             <h6 class="text-capitalize">{{ translate('billing_address') }}</h6>
@@ -765,16 +790,30 @@
         function switchFulfillment(type) {
             if (type === 'pickup') {
                 $('#address-form').addClass('d-none');
+                $('#billing-address-container').addClass('d-none');
                 $('#in-shop-pickup-container').removeClass('d-none');
                 $('#fulfillment-tab-delivery').removeClass('active btn-primary text-white').addClass('text-dark');
                 $('#fulfillment-tab-pickup').addClass('active btn-primary text-white').removeClass('text-dark');
                 $('#proceed-to-next-action').addClass('d-none');
+
+                // Dynamically update Order Summary for In-Shop Pickup
+                $('#summary-shipping-cost').html('<span class="badge bg-success font-size-12"><i class="bi bi-check-circle me-1"></i>&#8358;0.00 (' + ("{{ translate('in_shop_pickup') ?? 'In-Shop Pickup' }}") + ')</span>');
+                $('#summary-grand-total').html('&#8358;0.00 <small class="fs-12 text-muted fw-normal">(' + ("{{ translate('pay_at_counter') ?? 'Pay at Counter' }}") + ')</small>');
+                $('#summary-pickup-due-notice').removeClass('d-none');
             } else {
                 $('#address-form').removeClass('d-none');
+                $('#billing-address-container').removeClass('d-none');
                 $('#in-shop-pickup-container').addClass('d-none');
                 $('#fulfillment-tab-delivery').addClass('active btn-primary text-white').removeClass('text-dark');
                 $('#fulfillment-tab-pickup').removeClass('active btn-primary text-white').addClass('text-dark');
                 $('#proceed-to-next-action').removeClass('d-none');
+
+                // Restore Order Summary for Doorstep Delivery
+                var origShipping = $('#summary-shipping-cost').data('original-html');
+                if (origShipping) $('#summary-shipping-cost').html(origShipping);
+                var origTotal = $('#summary-grand-total').data('original-html');
+                if (origTotal) $('#summary-grand-total').html(origTotal);
+                $('#summary-pickup-due-notice').addClass('d-none');
             }
         }
 
@@ -810,7 +849,7 @@
             });
         }
 
-        // [AI] Zero-Key Hierarchical LGA-Scoped Street Autocomplete
+        // [AI] Zero-Key Hierarchical LGA-Scoped Street Autocomplete & Directional Delivery Lane Verification
         $(document).ready(function() {
             // 1. Fetch Nigerian States on initial page load
             $.get("{{ route('geography.states') }}", function(res) {
@@ -833,6 +872,7 @@
                 var $lga = $('#shipping-lga');
                 $lga.empty().append('<option value="">{{ translate("loading_lgas") ?? "Loading LGAs..." }}</option>');
                 $('#address-suggestions-box').addClass('d-none').empty();
+                $('#lane-verification-status-box').addClass('d-none').empty();
 
                 if (!stateId) {
                     $lga.html('<option value="">{{ translate("select_state_first") ?? "Select State first" }}</option>');
@@ -849,15 +889,74 @@
                 });
             });
 
-            // Update city name whenever LGA is selected
+            // 3. Update city name & perform live directional delivery lane check
             $('#shipping-lga').on('change', function() {
+                var lgaId = $(this).val();
                 var lgaName = $(this).find('option:selected').text();
                 if (lgaName && lgaName.indexOf('Select') === -1) {
                     $('#city').val(lgaName);
                 }
+
+                var originLgaId = $('#fulfillment-origin-meta').data('origin-lga-id');
+                var originLgaName = $('#fulfillment-origin-meta').data('origin-lga-name') || 'Store';
+                var $laneBox = $('#lane-verification-status-box');
+
+                if (!lgaId || !originLgaId) {
+                    $laneBox.addClass('d-none').empty();
+                    return;
+                }
+
+                $laneBox.removeClass('d-none').html('<div class="spinner-border spinner-border-sm text-primary me-2"></div><span class="fs-12 text-muted">Checking verified delivery lane...</span>');
+
+                $.post("{{ route('geography.calculate-lane-fee') }}", {
+                    _token: "{{ csrf_token() }}",
+                    origin_lga_id: originLgaId,
+                    destination_lga_id: lgaId
+                }, function(res) {
+                    if (res && res.status && res.data) {
+                        var fee = res.data.fee;
+                        var eta = res.data.estimated_days || '24-48 hrs';
+                        $laneBox.html(
+                            '<div class="alert alert-success d-flex align-items-center gap-2 p-2 mb-0 rounded-3" style="background-color: rgba(16, 185, 129, 0.08); border-color: rgba(16, 185, 129, 0.25); color: #065F46;">' +
+                                '<i class="bi bi-shield-check fs-18"></i>' +
+                                '<div class="fs-13">' +
+                                    '<strong>{{ translate("verified_delivery_lane") ?? "Verified Delivery Lane" }}:</strong> ' + originLgaName + ' &rarr; ' + lgaName + '<br>' +
+                                    '<span class="fs-12">Lane Shipping Fee: <strong>&#8358;' + Number(fee).toLocaleString() + '</strong> &bull; ETA: ' + eta + '</span>' +
+                                '</div>' +
+                            '</div>'
+                        );
+                        $('#proceed-to-next-action').prop('disabled', false).removeClass('disabled');
+                    } else {
+                        $laneBox.html(
+                            '<div class="alert alert-danger d-flex align-items-center gap-2 p-2 mb-0 rounded-3">' +
+                                '<i class="bi bi-exclamation-triangle-fill fs-18 text-danger"></i>' +
+                                '<div class="fs-13">' +
+                                    '<strong>Doorstep Delivery Unavailable to ' + lgaName + '</strong><br>' +
+                                    '<span class="fs-12">No active delivery lane between ' + originLgaName + ' and this LGA. Please select In-Shop Pickup or another address.</span>' +
+                                '</div>' +
+                            '</div>'
+                        );
+                        $('#proceed-to-next-action').prop('disabled', true).addClass('disabled');
+                    }
+                }).fail(function(xhr) {
+                    var errMessage = 'No active delivery lane between ' + originLgaName + ' and ' + lgaName + '. Please select In-Shop Pickup or another address.';
+                    if (xhr.responseJSON && xhr.responseJSON.message) {
+                        errMessage = xhr.responseJSON.message;
+                    }
+                    $laneBox.html(
+                        '<div class="alert alert-danger d-flex align-items-center gap-2 p-2 mb-0 rounded-3">' +
+                            '<i class="bi bi-exclamation-triangle-fill fs-18 text-danger"></i>' +
+                            '<div class="fs-13">' +
+                                '<strong>Doorstep Delivery Unavailable to ' + lgaName + '</strong><br>' +
+                                '<span class="fs-12">' + errMessage + '</span>' +
+                            '</div>' +
+                        '</div>'
+                    );
+                    $('#proceed-to-next-action').prop('disabled', true).addClass('disabled');
+                });
             });
 
-            // 3. Debounced Street Autocomplete strictly scoped to selected LGA
+            // 4. Debounced Street Autocomplete strictly scoped to selected LGA
             var addrTimer = null;
             $('#address').on('input', function() {
                 clearTimeout(addrTimer);

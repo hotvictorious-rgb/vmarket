@@ -59,7 +59,9 @@
                 <div class="text-muted text-capitalize d-flex align-items-center gap-1">
                     <i class="bi bi-truck text-primary"></i> {{ translate('Shipping / Delivery') }}
                 </div>
-                <div class="fw-semibold {{ $shippingTotal == 0 ? 'text-success' : 'text-dark' }}">
+                <div class="fw-semibold {{ $shippingTotal == 0 ? 'text-success' : 'text-dark' }}"
+                     id="summary-shipping-cost"
+                     data-original-html="{{ $shippingTotal > 0 ? webCurrencyConverter($shippingTotal) : translate('FREE') }}">
                     {{ $shippingTotal > 0 ? webCurrencyConverter($shippingTotal) : translate('FREE') }}
                 </div>
             </div>
@@ -80,7 +82,16 @@
                         <span class="fs-11 text-muted">({{ translate('Tax Included') }})</span>
                     @endif
                 </div>
-                <h4 class="fw-bold m-0" style="color: #2E1B4E;">{{ webCurrencyConverter($grandTotal) }}</h4>
+                <h4 class="fw-bold m-0" style="color: #2E1B4E;"
+                    id="summary-grand-total"
+                    data-original-html="{{ webCurrencyConverter($grandTotal) }}">{{ webCurrencyConverter($grandTotal) }}</h4>
+            </div>
+
+            <div id="summary-pickup-due-notice" class="alert alert-info py-2 px-3 mb-0 rounded-3 d-none" style="background-color: rgba(16, 185, 129, 0.08); border-color: rgba(16, 185, 129, 0.25); color: #065F46;">
+                <div class="d-flex justify-content-between align-items-center">
+                    <span class="fs-12"><strong>{{ translate('due_at_store_inspection') ?? 'Due at Store Inspection' }}:</strong></span>
+                    <strong class="fs-13">{{ webCurrencyConverter($product_price_total - $total_discount_on_product + $taxAmount) }}</strong>
+                </div>
             </div>
 
             <div class="p-2 rounded border" style="background: rgba(46,27,78,0.03); border-color: rgba(46,27,78,0.1) !important;">
