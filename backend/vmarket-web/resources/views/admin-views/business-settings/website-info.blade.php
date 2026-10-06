@@ -640,7 +640,7 @@
 @endsection
 
 @push('script')
-    @if(getWebConfig('map_api_status') == 1)
+    @if((int)getWebConfig('map_api_status') === 1 && !empty(getWebConfig('map_api_key')))
         <script src="https://maps.googleapis.com/maps/api/js?key={{ getWebConfig('map_api_key') }}&callback=googleMapInitialize&loading=async&libraries=places&v=3.56"
             defer>
         </script>

@@ -1389,8 +1389,10 @@
     <script src="{{ dynamicAsset(path: 'public/assets/back-end/js/admin/order.js') }}"></script>
 @endpush
 @push('script_2')
-    <script
-        src="https://maps.googleapis.com/maps/api/js?key={{getWebConfig('map_api_key')}}&callback=map_callback_fucntion&libraries=places&v=3.49"
-        defer></script>
+    @if((int)getWebConfig('map_api_status') === 1 && !empty(getWebConfig('map_api_key')))
+        <script
+            src="https://maps.googleapis.com/maps/api/js?key={{getWebConfig('map_api_key')}}&callback=map_callback_fucntion&libraries=places&v=3.49"
+            defer></script>
+    @endif
     <script src="{{dynamicAsset(path: 'public/assets/back-end/js/vendor/order.js')}}"></script>
 @endpush
