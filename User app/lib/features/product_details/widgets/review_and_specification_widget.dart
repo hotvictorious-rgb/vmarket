@@ -44,7 +44,7 @@ class ReviewAndSpecificationSectionWidget extends StatelessWidget {
                           : Colors.transparent,
                     ),
                     child: Text(
-                      '${getTranslated('details', context) ?? 'Details'}',
+                      getTranslated('details', context) ?? 'Details',
                       style: textMedium.copyWith(
                         color: Provider.of<ThemeController>(context, listen: false).darkTheme
                             ? Theme.of(context).hintColor
