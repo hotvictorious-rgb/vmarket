@@ -252,19 +252,60 @@ class _ShippingDetailsWidgetState extends State<ShippingDetailsWidget> {
                           ],
                           SizedBox(height: Dimensions.paddingSizeDefault),
                         ]),
-                      ) : SizedBox(
-                        height: 80,
+                      ) : Padding(
+                        padding: const EdgeInsets.symmetric(vertical: Dimensions.paddingSizeDefault, horizontal: Dimensions.paddingSizeSmall),
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.center,
                           children: [
-                            Row(children: []),
-
-                            CustomAssetImageWidget(Images.deliveryTo, height: 30, width: 30, color: Theme.of(context).hintColor),
-                            SizedBox(height: Dimensions.paddingSizeSmall),
-
+                            CustomAssetImageWidget(Images.deliveryTo, height: 36, width: 36, color: Theme.of(context).primaryColor),
+                            const SizedBox(height: Dimensions.paddingSizeSmall),
                             Text(
-                              '${getTranslated('please_set_your_delivery_info', context)}',
-                              style: textMedium.copyWith(fontSize: Dimensions.fontSizeLarge, color: Theme.of(context).hintColor,),
+                              getTranslated('no_shipping_address_selected', context) ?? 'No Delivery Address Selected',
+                              style: titilliumBold.copyWith(fontSize: Dimensions.fontSizeDefault, color: Theme.of(context).textTheme.bodyLarge?.color),
+                            ),
+                            const SizedBox(height: 4),
+                            Text(
+                              getTranslated('select_address_for_doorstep_delivery', context) ?? 'Select your destination LGA and street to calculate lane shipping fees.',
+                              textAlign: TextAlign.center,
+                              style: textRegular.copyWith(fontSize: Dimensions.fontSizeSmall, color: Theme.of(context).hintColor),
+                            ),
+                            const SizedBox(height: Dimensions.paddingSizeDefault),
+                            InkWell(
+                              onTap: () {
+                                if (locationProvider.addressList != null && locationProvider.addressList!.isNotEmpty) {
+                                  RouterHelper.getSavedAddressListRoute(fromGuest: isGuestMode);
+                                } else {
+                                  RouterHelper.getAddNewAddressRoute(isBilling: false);
+                                }
+                              },
+                              borderRadius: BorderRadius.circular(10),
+                              child: Container(
+                                padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+                                decoration: BoxDecoration(
+                                  color: Theme.of(context).primaryColor,
+                                  borderRadius: BorderRadius.circular(10),
+                                  boxShadow: [
+                                    BoxShadow(
+                                      color: Theme.of(context).primaryColor.withValues(alpha: 0.25),
+                                      blurRadius: 8,
+                                      offset: const Offset(0, 3),
+                                    )
+                                  ],
+                                ),
+                                child: Row(
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: [
+                                    const Icon(Icons.add_location_alt_outlined, color: Colors.white, size: 18),
+                                    const SizedBox(width: 8),
+                                    Text(
+                                      (locationProvider.addressList != null && locationProvider.addressList!.isNotEmpty)
+                                          ? (getTranslated('select_delivery_address', context) ?? 'Select Delivery Address')
+                                          : (getTranslated('add_delivery_address', context) ?? 'Add Delivery Address'),
+                                      style: titilliumSemiBold.copyWith(color: Colors.white, fontSize: Dimensions.fontSizeDefault),
+                                    ),
+                                  ],
+                                ),
+                              ),
                             ),
                           ],
                         ),
