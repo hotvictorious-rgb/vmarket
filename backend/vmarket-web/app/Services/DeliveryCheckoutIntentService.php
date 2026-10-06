@@ -198,10 +198,17 @@ class DeliveryCheckoutIntentService
                 $shop = Shop::where('seller_id', 0)->orWhere('author_type', 'admin')->first();
             }
 
-            $originLgaId = $shop ? $shop->lga_id : null;
+            $originStateId = $shop && $shop->state_id ? (int) $shop->state_id : 1;
+            $originLgaId = $shop && $shop->lga_id ? (int) $shop->lga_id : null;
             $originLgaName = $shop && $shop->lga ? $shop->lga->name : null;
             $originStateName = $shop && $shop->state ? $shop->state->name : null;
 
+            $destinationStateId = $shippingAddressEntity && $shippingAddressEntity->state_id
+                ? (int) $shippingAddressEntity->state_id
+                : $originStateId;
+            $destinationLgaId = $shippingAddressEntity && $shippingAddressEntity->lga_id
+                ? (int) $shippingAddressEntity->lga_id
+                : null;
             $destinationLgaName = $shippingAddressEntity && $shippingAddressEntity->canonicalLga
                 ? $shippingAddressEntity->canonicalLga->name
                 : null;
@@ -224,27 +231,17 @@ class DeliveryCheckoutIntentService
                 $bulkySurcharge = $this->toDecimalString((float)$configuredSurcharge);
             }
 
-            // Authoritative delivery fee from DeliveryLane if canonical LGAs are present
-            $laneFee = null;
-            $laneEstimatedTime = null;
-            if ($originLgaId && $destinationLgaId) {
-                $lane = DeliveryLane::findLane($originLgaId, $destinationLgaId);
-                if ($lane) {
-                    $laneFee = (string) $lane->delivery_fee;
-                    $laneEstimatedTime = $lane->estimated_delivery_time;
-                    $shippingCost = $this->toDecimalString($laneFee);
-                } else {
-                    $origStr = $originLgaName ?: "LGA #{$originLgaId}";
-                    $destStr = $destinationLgaName ?: "LGA #{$destinationLgaId}";
-                    $shopStr = $shop ? $shop->name : "Vendor #{$sellerId}";
-                    throw new InvalidCartException("Delivery is currently unavailable from {$origStr} to {$destStr} for '{$shopStr}'. No active delivery route exists.");
-                }
-            } else {
-                // Fallback to legacy cart shipping cost during migration if address or shop lacks canonical LGA
-                $shippingCost = $cartShipping
-                    ? $this->toDecimalString($cartShipping->shipping_cost ?? '0.00')
-                    : $this->toDecimalString($first->shipping_cost ?? '0.00');
-            }
+            // Hierarchical Route Resolution: Intra-State (LGA-to-LGA) vs Inter-State (State-to-State)
+            $resolvedRoute = DeliveryLane::resolveLane(
+                $originStateId,
+                $originLgaId,
+                $destinationStateId,
+                $destinationLgaId
+            );
+
+            $laneFee = (string) $resolvedRoute['fee'];
+            $laneEstimatedTime = $resolvedRoute['eta'];
+            $shippingCost = $this->toDecimalString($laneFee);
 
             // If large package tier, add authoritative bulky cargo surcharge
             if ($hasLargeBulkyItem && bccomp($bulkySurcharge, '0.00', 2) > 0) {

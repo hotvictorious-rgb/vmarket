@@ -262,17 +262,19 @@
                     <div class="col-12">
                         <div class="corridor-card">
                             {{-- Corridor Header --}}
-                            <div class="corridor-header {{ $corridor['is_inter_lga'] ? 'corridor-header-inter' : '' }} d-flex justify-content-between align-items-center flex-wrap gap-2">
+                            <div class="corridor-header {{ !empty($corridor['is_inter_state']) ? 'corridor-header-inter' : ($corridor['is_inter_lga'] ? 'corridor-header-inter' : '') }} d-flex justify-content-between align-items-center flex-wrap gap-2">
                                 <div class="d-flex align-items-center gap-2">
                                     <input type="checkbox" class="corridor-select-all" data-target=".corridor-{{ $cKey }}">
                                     <h5 class="mb-0 text-white font-weight-bold d-flex align-items-center gap-2">
                                         <span><i class="tio-poi"></i> {{ $corridor['origin_name'] }}</span>
                                         <i class="tio-arrow-forward mx-1 opacity-75"></i>
                                         <span><i class="tio-map-marker-outlined"></i> {{ $corridor['dest_name'] }}</span>
-                                        @if($corridor['is_inter_lga'])
-                                            <span class="badge badge-warning text-dark ml-2 fs-11">{{ translate('Inter-LGA Corridor') }}</span>
+                                        @if(!empty($corridor['is_inter_state']))
+                                            <span class="badge badge-warning text-dark ml-2 fs-11">🚚 {{ translate('National Interstate Route') }}</span>
+                                        @elseif($corridor['is_inter_lga'])
+                                            <span class="badge badge-warning text-dark ml-2 fs-11">🛵 {{ translate('Inter-LGA Corridor') }}</span>
                                         @else
-                                            <span class="badge badge-info ml-2 fs-11">{{ translate('Local / Intra-LGA') }}</span>
+                                            <span class="badge badge-info ml-2 fs-11">🚲 {{ translate('Local Intra-LGA') }}</span>
                                         @endif
                                         @if($corridor['large_count'] > 0)
                                             <span class="badge badge-package-large ml-1 fs-11">🚐 {{ $corridor['large_count'] }} {{ translate('Bulky Cargo') }}</span>

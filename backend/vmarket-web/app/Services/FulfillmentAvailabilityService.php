@@ -44,21 +44,22 @@ class FulfillmentAvailabilityService
             ];
         }
 
-        // 2. Find directional delivery lane
-        $lane = DeliveryLane::findLane(
-            $shop->lga_id,
-            $address->lga_id
-        );
+        // 2. Resolve hierarchical delivery lane (Intra-State LGA-to-LGA or Inter-State State-to-State)
+        $originStateId = $shop->state_id ? (int) $shop->state_id : 1;
+        $originLgaId = $shop->lga_id ? (int) $shop->lga_id : null;
+        $destStateId = $address->state_id ? (int) $address->state_id : $originStateId;
+        $destLgaId = $address->lga_id ? (int) $address->lga_id : null;
 
-        if (!$lane) {
-            return [
-                'available' => false,
-                'reason' => 'no_delivery_lane',
-                'message' => 'No active delivery route between these LGAs',
-                'fee' => null,
-                'estimated_time' => null,
-            ];
-        }
+        $resolved = DeliveryLane::resolveLane($originStateId, $originLgaId, $destStateId, $destLgaId);
+
+        return [
+            'available' => true,
+            'reason' => null,
+            'message' => 'Delivery available',
+            'fee' => $resolved['fee'],
+            'estimated_time' => $resolved['eta'],
+            'lane_type' => $resolved['lane_type'],
+        ];
 
         // 3. Optional: Check cart constraints (e.g., weight, fragile, oversize)
         $cartConstraints = $this->checkCartConstraints($cartItems);

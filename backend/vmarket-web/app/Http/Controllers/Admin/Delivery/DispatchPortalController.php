@@ -66,15 +66,25 @@ class DispatchPortalController extends Controller
         $unassignedOrdersCount = 0;
         $largeCargoCount = 0;
 
-        foreach ($allOrders as $order) {
-            $originId = $order->origin_lga_id ?? 0;
-            $originName = !empty($order->origin_lga_name) ? $order->origin_lga_name : ($order->seller?->shop?->name ?? translate('Uyo Central'));
-            
-            $destId = $order->destination_lga_id ?? 0;
-            $destName = !empty($order->destination_lga_name) ? $order->destination_lga_name : translate('Local Delivery Area');
+            $originState = $order->origin_state_name ?? 'Akwa Ibom';
+            $destState = $order->destination_state_name ?? 'Akwa Ibom';
+            $isInterState = (strcasecmp(trim($originState), trim($destState)) !== 0);
 
-            $isInterLga = ($originId > 0 && $destId > 0 && $originId != $destId);
-            $corridorKey = $originId . '_' . $destId;
+            if ($isInterState) {
+                $originId = 0;
+                $originName = $originState;
+                $destId = 0;
+                $destName = $destState . ' (National Waybill)';
+                $isInterLga = false;
+                $corridorKey = 'INTER_' . Str::slug($originState) . '_' . Str::slug($destState);
+            } else {
+                $originId = $order->origin_lga_id ?? 0;
+                $originName = !empty($order->origin_lga_name) ? $order->origin_lga_name : ($order->seller?->shop?->name ?? translate('Uyo Central'));
+                $destId = $order->destination_lga_id ?? 0;
+                $destName = !empty($order->destination_lga_name) ? $order->destination_lga_name : translate('Local Delivery Area');
+                $isInterLga = ($originId > 0 && $destId > 0 && $originId != $destId);
+                $corridorKey = 'INTRA_' . $originId . '_' . $destId;
+            }
 
             if ($order->package_tier === 'large') {
                 $largeCargoCount++;
@@ -93,6 +103,7 @@ class DispatchPortalController extends Controller
                     'dest_id' => $destId,
                     'dest_name' => $destName,
                     'is_inter_lga' => $isInterLga,
+                    'is_inter_state' => $isInterState,
                     'orders' => [],
                     'total_amount' => 0.0,
                     'unassigned_count' => 0,
