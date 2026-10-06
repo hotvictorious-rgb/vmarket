@@ -409,7 +409,7 @@
             {{-- PILLAR 3: LOGISTICS & FULFILLMENT (Canonical VMarket Infrastructure)       --}}
             {{-- ======================================================================== --}}
             @if(Helpers::module_permission_check('order_management') || Helpers::module_permission_check('user_section'))
-                <li class="nav-item nav-item_title {{ (Request::is('admin/delivery-lanes*') || Request::is('admin/delivery-hubs*') || Request::is('admin/dispatch-portal*') || (Request::is('admin/delivery-man*') && !Request::is('admin/delivery-man/withdraw*'))) ? 'scroll-here' : '' }}">
+                <li class="nav-item nav-item_title {{ (Request::is('admin/delivery-lanes*') || Request::is('admin/dispatch-portal*') || (Request::is('admin/delivery-man*') && !Request::is('admin/delivery-man/withdraw*'))) ? 'scroll-here' : '' }}">
                     <small class="nav-subtitle" title="{{ translate('logistics_&_fulfillment') }}">{{ translate('logistics_&_fulfillment') }}</small>
                 </li>
 
@@ -431,17 +431,6 @@
                         <i class="fi fi-sr-route"></i>
                         <span class="aside-mini-hidden-element text-truncate flex-grow-1">
                             {{ translate('Delivery_Lanes') }}
-                        </span>
-                    </a>
-                </li>
-
-                {{-- Logistics Hubs & Transfer Landmarks --}}
-                <li>
-                    <a class="nav-link {{ Request::is('admin/delivery-hubs*') ? 'active' : '' }}"
-                       href="{{ route('admin.delivery-hubs.index') }}" title="{{ translate('Hubs_&_Landmarks') }}">
-                        <i class="fi fi-sr-map-marker-home"></i>
-                        <span class="aside-mini-hidden-element text-truncate flex-grow-1">
-                            {{ translate('Hubs_&_Landmarks') }}
                         </span>
                     </a>
                 </li>
