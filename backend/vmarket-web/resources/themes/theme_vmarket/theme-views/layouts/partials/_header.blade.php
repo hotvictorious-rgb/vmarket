@@ -2,7 +2,7 @@
     $companyName = getWebConfig(name: 'company_name') ?? 'Victorious MARKET';
     $companyWebLogo = !empty($web_config['web_logo']['status']) ? $web_config['web_logo']['path'] : theme_asset('assets/img/vm_icon.jpg');
     $companyMobileLogo = !empty($web_config['mob_logo']['status']) ? $web_config['mob_logo']['path'] : $companyWebLogo;
-    $cartCount = \App\Utils\CartManager::get_cart()->count();
+    $cartCount = \App\Utils\CartManager::get_cart_count();
     $customer = auth('customer')->user();
     $announcement = is_array($web_config['announcement'] ?? null) ? $web_config['announcement'] : [];
     $announcementColor = preg_match('/^#[a-fA-F0-9]{6}$/', $announcement['color'] ?? '') ? $announcement['color'] : '#5E17EB';

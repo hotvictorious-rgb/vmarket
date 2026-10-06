@@ -163,6 +163,26 @@ class CartManager
         return self::getCartListQuery($request, $type);
     }
 
+    public static function get_cart_count($request = null): int
+    {
+        $user = Helpers::getCustomerInformation(!is_null($request) ? $request : request());
+        if ($user == 'offline') {
+            $guestId = session('guest_id') ?? (request('guest_id') ?? null);
+            if (!$guestId) {
+                return 0;
+            }
+            return (int) Cart::where(['customer_id' => $guestId, 'is_guest' => 1])
+                ->whereHas('product', function ($query) {
+                    $query->marketplaceEligible();
+                })->sum('quantity');
+        }
+
+        return (int) Cart::where(['customer_id' => $user['id'], 'is_guest' => 0])
+            ->whereHas('product', function ($query) {
+                $query->marketplaceEligible();
+            })->sum('quantity');
+    }
+
     public static function get_cart_group_ids($request = null, $type = null)
     {
         $user = Helpers::getCustomerInformation(!is_null($request) ? $request : request());

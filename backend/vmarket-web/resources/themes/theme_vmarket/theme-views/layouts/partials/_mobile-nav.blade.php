@@ -1,5 +1,5 @@
 @php
-    $cartCount = \App\Utils\CartManager::get_cart()->count();
+    $cartCount = \App\Utils\CartManager::get_cart_count();
     $customer = auth('customer')->user();
 @endphp
 

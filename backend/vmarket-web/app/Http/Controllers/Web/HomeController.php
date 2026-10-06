@@ -227,49 +227,55 @@ class HomeController extends Controller
 
     public function theme_vmarket(): View
     {
-        $categories = Category::with(['childes' => function ($q) {
-            $q->orderBy('priority', 'asc');
-        }])
-            ->where('position', 0)
-            ->where('home_status', 1)
-            ->orderBy('priority', 'asc')
-            ->get();
+        $categories = Cache::remember('theme_vmarket_home_categories', 3600, function () {
+            return Category::with(['childes' => function ($q) {
+                $q->orderBy('priority', 'asc');
+            }])
+                ->where('position', 0)
+                ->where('home_status', 1)
+                ->orderBy('priority', 'asc')
+                ->get();
+        });
 
-        $bannerTypeMainBanner = Banner::where(['published' => 1, 'banner_type' => 'Main Banner'])
-            ->where(function ($q) {
-                $q->where('theme', 'theme_vmarket')->orWhere('theme', 'default');
-            })
-            ->orderBy('id', 'desc')
-            ->get();
+        $bannerTypeMainBanner = Cache::remember('theme_vmarket_banners_main', 3600, function () {
+            return Banner::where(['published' => 1, 'banner_type' => 'Main Banner'])
+                ->where(function ($q) {
+                    $q->where('theme', 'theme_vmarket')->orWhere('theme', 'default');
+                })
+                ->orderBy('id', 'desc')
+                ->get();
+        });
 
-        $bannerTypeFooterBanner = Banner::where(['published' => 1, 'banner_type' => 'Footer Banner'])
-            ->where(function ($q) {
-                $q->where('theme', 'theme_vmarket')->orWhere('theme', 'default');
-            })
-            ->orderBy('id', 'desc')
-            ->get();
+        $bannerTypeFooterBanner = Cache::remember('theme_vmarket_banners_footer', 3600, function () {
+            return Banner::where(['published' => 1, 'banner_type' => 'Footer Banner'])
+                ->where(function ($q) {
+                    $q->where('theme', 'theme_vmarket')->orWhere('theme', 'default');
+                })
+                ->orderBy('id', 'desc')
+                ->get();
+        });
 
-        $bannerTypePopupBanner = Banner::where(['published' => 1, 'banner_type' => 'Popup Banner'])
-            ->where(function ($q) {
-                $q->where('theme', 'theme_vmarket')->orWhere('theme', 'default');
-            })
-            ->latest('id')
-            ->first();
+        $bannerTypePopupBanner = Cache::remember('theme_vmarket_banners_popup', 3600, function () {
+            return Banner::where(['published' => 1, 'banner_type' => 'Popup Banner'])
+                ->where(function ($q) {
+                    $q->where('theme', 'theme_vmarket')->orWhere('theme', 'default');
+                })
+                ->latest('id')
+                ->first();
+        });
 
         $activeCity = session('customer_city', 'Uyo');
         $activeState = session('customer_state', 'Akwa Ibom');
         $fulfillmentMode = session('fulfillment_mode', 'delivery');
         $activeLgaId = session('customer_lga_id');
         if (empty($activeLgaId)) {
-            $defaultLga = \App\Models\Lga::where('name', $activeCity)->first();
-            $activeLgaId = $defaultLga?->id ?? 69;
+            $activeLgaId = Cache::remember('lga_id_' . $activeCity, 86400, function () use ($activeCity) {
+                return \App\Models\Lga::where('name', $activeCity)->value('id') ?? 69;
+            });
         }
 
         $homeCacheKeys = ['home_featured_products_vmarket_lga_' . $activeLgaId, 'home_latest_products_vmarket_lga_' . $activeLgaId];
-        Cache::put('cache_storefront_lga_home_keys', array_values(array_unique(array_merge(
-            Cache::get('cache_storefront_lga_home_keys', []), $homeCacheKeys
-        ))), CACHE_FOR_3_HOURS);
-        $featuredProductsList = Cache::remember($homeCacheKeys[0], CACHE_FOR_3_HOURS, function () use ($activeLgaId) {
+        $featuredProductsList = Cache::remember($homeCacheKeys[0], 900, function () use ($activeLgaId) {
             return Product::marketplaceEligible()
                 ->where('featured', 1)
                 ->availableInLga($activeLgaId)
@@ -278,7 +284,7 @@ class HomeController extends Controller
                 ->get();
         });
 
-        $latestProductsList = Cache::remember($homeCacheKeys[1], CACHE_FOR_3_HOURS, function () use ($activeLgaId) {
+        $latestProductsList = Cache::remember($homeCacheKeys[1], 900, function () use ($activeLgaId) {
             return Product::marketplaceEligible()
                 ->availableInLga($activeLgaId)
                 ->with(['seller.shop', 'rating'])
@@ -287,41 +293,35 @@ class HomeController extends Controller
                 ->get();
         });
 
-        // Cached discovery candidates never authorize current visibility or price.
-        $featuredProductsList = Product::marketplaceEligible()->where('featured', 1)
-            ->availableInLga($activeLgaId)->whereIn('id', $featuredProductsList->pluck('id'))
-            ->with(['seller.shop', 'rating'])->get();
-        $latestProductsList = Product::marketplaceEligible()->availableInLga($activeLgaId)
-            ->whereIn('id', $latestProductsList->pluck('id'))->with(['seller.shop', 'rating'])
-            ->latest('id')->get();
-
         $topVendorsList = ProductManager::getPriorityWiseTopVendorQuery(query: $this->cacheHomePageTopVendorsList());
         $brands = $this->cachePriorityWiseBrandList();
 
         // [AI] Verified Shops available for customer LGA (Delivery or Pickup)
-        $deliveryOriginLgaIds = \App\Models\DeliveryLane::where('destination_lga_id', $activeLgaId)
-            ->where('is_enabled', true)
-            ->pluck('origin_lga_id')
-            ->toArray();
+        $nearbyShops = Cache::remember('theme_vmarket_nearby_shops_lga_' . $activeLgaId, 1800, function () use ($activeLgaId) {
+            $deliveryOriginLgaIds = \App\Models\DeliveryLane::where('destination_lga_id', $activeLgaId)
+                ->where('is_enabled', true)
+                ->pluck('origin_lga_id')
+                ->toArray();
 
-        $nearbyShops = \App\Models\Shop::where('temporary_close', 0)
-            ->where(function ($query) {
-                $query->where('author_type', 'admin')->orWhereHas('seller', function ($seller) {
-                    $seller->where('status', 'approved')->where('marketplace_status', 'approved');
-                });
-            })
-            ->where(function ($q) use ($deliveryOriginLgaIds, $activeLgaId) {
-                if (!empty($deliveryOriginLgaIds)) {
-                    $q->whereIn('lga_id', $deliveryOriginLgaIds);
-                }
-                $q->orWhere(function ($pickupQ) use ($activeLgaId) {
-                    $pickupQ->where('lga_id', $activeLgaId)
-                            ->where('pickup_enabled', 1);
-                });
-            })
-            ->with(['seller'])
-            ->take(8)
-            ->get();
+            return \App\Models\Shop::where('temporary_close', 0)
+                ->where(function ($query) {
+                    $query->where('author_type', 'admin')->orWhereHas('seller', function ($seller) {
+                        $seller->where('status', 'approved')->where('marketplace_status', 'approved');
+                    });
+                })
+                ->where(function ($q) use ($deliveryOriginLgaIds, $activeLgaId) {
+                    if (!empty($deliveryOriginLgaIds)) {
+                        $q->whereIn('lga_id', $deliveryOriginLgaIds);
+                    }
+                    $q->orWhere(function ($pickupQ) use ($activeLgaId) {
+                        $pickupQ->where('lga_id', $activeLgaId)
+                                ->where('pickup_enabled', 1);
+                    });
+                })
+                ->with(['seller'])
+                ->take(8)
+                ->get();
+        });
 
         return view(VIEW_FILE_NAMES['home'], [
             'categories' => $categories,

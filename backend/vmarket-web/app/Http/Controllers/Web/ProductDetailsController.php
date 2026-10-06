@@ -138,113 +138,17 @@ class ProductDetailsController extends Controller
 
     public function getThemeVmarket(string $slug): View|RedirectResponse
     {
-        $product = $this->productRepo->getWebFirstWhereActive(
-            params: ['slug' => $slug, 'customer_id' => Auth::guard('customer')->user()->id ?? 0],
-            relations: ['seoInfo', 'reviews' => 'reviews', 'seller.shop' => 'seller.shop', 'wishList' => 'wishList', 'compareList' => 'compareList', 'clearanceSale' => 'clearanceSale'],
-            withCount: ['orderDetails' => 'orderDetails', 'wishList' => 'wishList']
-        );
+        $product = Product::marketplaceEligible()
+            ->where('slug', $slug)
+            ->with(['seller.shop.lga', 'category', 'brand', 'reviews'])
+            ->first();
 
-        if ($product ) {
-            $initialProductConfig = ProductManager::getInitialProductQuantity($product);
-            $productDetailsMeta = $product?->seoInfo;
-            $currentDate = date('Y-m-d H:i:s');
-
-            $countOrder = $product['order_details_count'];
-            $countWishlist = $product['wish_list_count'];
-            $wishlistStatus = $this->wishlistRepo->getCount(params: ['product_id' => $product->id, 'customer_id' => auth('customer')->id()]);
-            $compareList = $this->compareRepo->getCount(params: ['product_id' => $product->id, 'customer_id' => auth('customer')->id()]);
-
-            $relatedProducts = $this->productRepo->getWebListWithScope(
-                scope: 'marketplaceEligible',
-                filters: ['category_ids' => $product['category_ids'], 'customer_id' => Auth::guard('customer')->user()->id ?? 0],
-                whereNotIn: ['id' => [$product['id']]],
-                relations: ['reviews' => 'reviews', 'flashDealProducts.flashDeal' => 'flashDealProducts.flashDeal', 'wishList' => 'wishList', 'compareList' => 'compareList'],
-                withCount: ['reviews' => 'reviews'],
-                dataLimit: 12,
-                offset: 1
-            );
-            $relatedProducts?->map(function ($product) use ($currentDate) {
-                $flash_deal_status = 0;
-                $flash_deal_end_date = 0;
-                if (count($product->flashDealProducts) > 0) {
-                    $flash_deal = $product->flashDealProducts[0]->flashDeal;
-                    if ($flash_deal) {
-                        $start_date = date('Y-m-d H:i:s', strtotime($flash_deal->start_date));
-                        $end_date = date('Y-m-d H:i:s', strtotime($flash_deal->end_date));
-                        $flash_deal_status = $flash_deal->status == 1 && (($currentDate >= $start_date) && ($currentDate <= $end_date)) ? 1 : 0;
-                        $flash_deal_end_date = $flash_deal->end_date;
-                    }
-                }
-                $product['flash_deal_status'] = $flash_deal_status;
-                $product['flash_deal_end_date'] = $flash_deal_end_date;
-                return $product;
-            });
-
-            $dealOfTheDay = $this->dealOfTheDayRepo->getFirstWhere(['product_id' => $product['id'], 'status' => 1]);
-            $currentDate = date('Y-m-d');
-
-            $overallRating = getOverallRating($product['reviews']);
-            $rating = getRating($product->reviews);
-            $productReviews = $this->reviewRepo->getListWhere(
-                orderBy: ['id' => 'desc'],
-                filters: ['product_id' => $product['id']],
-                relations: ['reply'],
-                dataLimit: 2, offset: 1
-            );
-
-            // [AI] Marketplace Stock Privacy: Never expose exact warehouse current_stock or fake 999
-            $firstVariationQuantity = ($product['marketplace_availability'] ?? 'in_stock') === 'in_stock' ? 1 : 0;
-
-            $decimalPointSettings = getWebConfig('decimal_point_settings');
-            $moreProductFromSeller = $this->productRepo->getWebListWithScope(
-                orderBy: ['id' => 'desc'],
-                scope: 'marketplaceEligible',
-                filters: ['added_by' => $product['added_by'] == 'admin' ? 'in_house' : $product['added_by'], 'seller_id' => $product['user_id']],
-                whereNotIn: ['id' => [$product['id']]],
-                dataLimit: 5,
-                offset: 1
-            );
-
-            if ($product['added_by'] == 'seller') {
-                $productsForReview = $this->productRepo->getWebListWithScope(
-                    scope: 'active',
-                    filters: ['added_by' => $product['added_by'], 'seller_id' => $product['user_id']],
-                    withCount: ['reviews' => 'reviews']
-                );
-            } else {
-                $productsForReview = $this->productRepo->getWebListWithScope(
-                    scope: 'active',
-                    filters: ['added_by' => 'in_house', 'seller_id' => $product['user_id']],
-                    withCount: ['reviews' => 'reviews']
-                );
-            }
-
-            $totalReviews = 0;
-            foreach ($productsForReview as $item) {
-                $totalReviews += $item->reviews_count;
-            }
-
-            $productIds = Product::active()->where(['added_by' => $product['added_by']])
-                ->where('user_id', $product['user_id'])->pluck('id')->toArray();
-            $vendorReviewData = Review::active()->whereIn('product_id', $productIds);
-            $ratingCount = $vendorReviewData->count();
-            $avgRating = $vendorReviewData->avg('rating');
-
-            $vendorRattingStatusPositive = 0;
-            foreach ($vendorReviewData->pluck('rating') as $singleRating) {
-                ($singleRating >= 4 ? ($vendorRattingStatusPositive++) : '');
-            }
-
-            $positiveReview = $ratingCount != 0 ? ($vendorRattingStatusPositive * 100) / $ratingCount : 0;
-
-            return view(VIEW_FILE_NAMES['products_details'], compact('product', 'wishlistStatus','initialProductConfig', 'countWishlist',
-                'countOrder', 'relatedProducts', 'dealOfTheDay', 'currentDate', 'overallRating', 'decimalPointSettings', 'moreProductFromSeller', 'productsForReview', 'totalReviews', 'rating', 'productReviews',
-                'avgRating', 'compareList', 'positiveReview', 'firstVariationQuantity', 'productDetailsMeta'));
+        if (!$product) {
+            Toastr::error(translate('not_found'));
+            return back();
         }
 
-        Toastr::error(translate('not_found'));
-        return back();
-
+        return view(VIEW_FILE_NAMES['products_details'], compact('product'));
     }
 
     public function getThemeFashion($slug): View|RedirectResponse
