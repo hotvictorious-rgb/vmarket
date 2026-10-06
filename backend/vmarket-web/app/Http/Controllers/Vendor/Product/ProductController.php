@@ -227,7 +227,7 @@ class ProductController extends BaseController
             return redirect()->route('vendor.products.list', ['type' => 'all']);
         }
 
-        $product['colors'] = json_decode($product['colors']);
+        $product['colors'] = !empty($product['colors']) ? (json_decode($product['colors']) ?: []) : [];
         $categories = $this->categoryRepo->getListWhere(filters: ['position' => 0], relations: ['childes.childes'], dataLimit: 'all');
         $brands = $this->brandRepo->getListWhere(filters: ['status' => 1], dataLimit: 'all');
         $brandSetting = getWebConfig(name: 'product_brand');

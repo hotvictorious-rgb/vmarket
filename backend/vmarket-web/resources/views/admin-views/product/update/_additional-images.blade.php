@@ -30,7 +30,7 @@
                         </div>
                     </div>
 
-                    @if (count($product->colors) == 0)
+                    @if (count($product->colors ?? []) == 0)
                         @foreach ($product->images_full_url as $key => $photo)
                             @php($unique_id = rand(1111, 9999))
                             <div class="upload-file m-0 position-relative">

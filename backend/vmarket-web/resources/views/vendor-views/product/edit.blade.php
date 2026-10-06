@@ -107,8 +107,8 @@
     <script>
         "use strict";
 
-        let colors = {{ count($product->colors) }};
-        let imageCount = {{15-count(json_decode($product->images)) }};
+        let colors = {{ count($product->colors ?? []) }};
+        let imageCount = {{ 15 - count(json_decode($product->images, true) ?: []) }};
         let thumbnail = '{{productImagePath('thumbnail').'/'.$product->thumbnail ?? dynamicAsset(path: 'public/assets/back-end/img/400x400/img2.jpg') }}';
         $(function () {
             if (imageCount > 0) {

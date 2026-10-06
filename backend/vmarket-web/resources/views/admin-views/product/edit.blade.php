@@ -789,7 +789,7 @@
                                                         </div>
                                                     </div>
                                                 </div>
-                                                @if(count($product->colors) == 0)
+                                                @if(count($product->colors ?? []) == 0)
                                                     @foreach ($product->images_full_url as $key => $photo)
                                                         @php($unique_id = rand(1111,9999))
 
@@ -1155,8 +1155,8 @@
     <script>
         "use strict";
 
-        let colors = {{ count($product->colors) }};
-        let imageCount = {{15-count(json_decode($product->images)) }};
+        let colors = {{ count($product->colors ?? []) }};
+        let imageCount = {{ 15 - count(json_decode($product->images, true) ?: []) }};
         let thumbnail = '{{ productImagePath('thumbnail').'/'.$product->thumbnail ?? dynamicAsset(path: 'public/assets/back-end/img/400x400/img2.jpg') }}';
         $(function () {
             if (imageCount > 0) {
