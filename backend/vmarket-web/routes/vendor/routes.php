@@ -17,7 +17,6 @@ use App\Http\Controllers\Vendor\DeliveryMan\EmergencyContactController;
 use App\Http\Controllers\Vendor\NotificationController;
 
 use App\Http\Controllers\Vendor\Product\ProductController;
-use App\Http\Controllers\Admin\Product\CategorySpecificationController;
 use App\Http\Controllers\Vendor\ProfileController;
 use App\Http\Controllers\Vendor\Promotion\ClearanceSaleController;
 use App\Http\Controllers\Vendor\RefundController;
@@ -109,7 +108,6 @@ Route::group(['middleware' => ['maintenance_mode', 'actch:admin_panel']], functi
                     Route::get('request-restock-list', 'getRequestRestockListView')->name('request-restock-list');
                     Route::get('export-restock', 'exportRestockList')->name('restock-export');
                     Route::delete('delete-restock/{id}', 'deleteRestock')->name('restock-delete');
-                    Route::get('get-category-specifications/{category_id}', [CategorySpecificationController::class, 'getByCategoryAjax'])->name('get-category-specifications');
 
                     Route::post('load-more-brands', 'loadMoreBrands')->name('load-more-brands');
                     Route::get('feeds', [\App\Http\Controllers\ProductFeedExportController::class, 'vendorIndex'])->name('feeds');
