@@ -377,8 +377,9 @@ class OrderController extends BaseController
             $orderEditPaymentHistory = collect([]);
 
             $orderCount = $this->orderRepo->getListWhereCount(filters: ['customer_id' => $order['customer_id']]);
+            $logisticsCompanies = \App\Models\LogisticsCompany::where('status', 'active')->orderBy('name')->get();
             return view('admin-views.order.order-details', compact('order', 'linkedOrders',
-                'deliveryMen', 'totalDelivered', 'companyName', 'companyWebLogo', 'physicalProduct',
+                'deliveryMen', 'logisticsCompanies', 'totalDelivered', 'companyName', 'companyWebLogo', 'physicalProduct',
                 'countryRestrictStatus', 'zipRestrictStatus', 'countries', 'zipCodes', 'orderCount', 'previousOrder', 'nextOrder', 'allProductsList', 'isOrderEditable', 'orderProductsSession', 'editOrderSummary', 'orderEditPaymentHistory'));
         } else {
             ToastMagic::error(translate('Order_not_found'));
@@ -616,9 +617,11 @@ class OrderController extends BaseController
         }
 
         $orderData = $this->orderRepo->getFirstWhere(params: ['id' => $order_id]);
+        $deliveryMan = \App\Models\DeliveryMan::find($delivery_man_id);
         $order = [
             'seller_is' => $orderData->seller_is,
             'delivery_man_id' => $delivery_man_id,
+            'logistics_company_id' => $deliveryMan ? $deliveryMan->logistics_company_id : null,
             'delivery_type' => 'self_delivery',
             'delivery_service_name' => null,
             'third_party_delivery_tracking_id' => null,
@@ -641,6 +644,33 @@ class OrderController extends BaseController
         /** end */
 
         return response()->json(['status' => true], 200);
+    }
+
+    public function assignLogisticsCompany(Request $request): JsonResponse
+    {
+        $orderId = $request->input('order_id');
+        $companyId = $request->input('logistics_company_id');
+
+        $updateData = [
+            'logistics_company_id' => $companyId > 0 ? $companyId : null,
+        ];
+
+        if ($companyId > 0) {
+            $order = \App\Models\Order::find($orderId);
+            if ($order && $order->delivery_man_id) {
+                $rider = \App\Models\DeliveryMan::find($order->delivery_man_id);
+                if (!$rider || $rider->logistics_company_id != $companyId) {
+                    $updateData['delivery_man_id'] = null;
+                }
+            }
+        }
+
+        $this->orderRepo->update(id: $orderId, data: $updateData);
+
+        return response()->json([
+            'status' => true,
+            'message' => translate('Logistics company updated successfully')
+        ], 200);
     }
 
     public function updateAmountDate(Request $request): JsonResponse

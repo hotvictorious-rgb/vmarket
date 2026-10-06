@@ -214,6 +214,7 @@ Route::group(['prefix' => 'admin', 'as' => 'admin.', 'middleware' => ['admin', '
             Route::post('address-update', 'updateAddress')->name('address-update'); // update address from order details
             Route::post('update-deliver-info', 'updateDeliverInfo')->name('update-deliver-info');
             Route::get('add-delivery-man/{order_id}/{d_man_id}', 'addDeliveryMan')->name('add-delivery-man');
+            Route::post('assign-logistics-company', 'assignLogisticsCompany')->name('assign-logistics-company');
             Route::post('amount-date-update', 'updateAmountDate')->name('amount-date-update');
             Route::get('customers', 'getCustomers')->name('customers');
             Route::post('payment-status', 'updatePaymentStatus')->name('payment-status');

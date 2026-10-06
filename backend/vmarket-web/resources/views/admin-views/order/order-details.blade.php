@@ -1159,6 +1159,35 @@
                                 </li>
 
                                 @if(!$disableDeliveryType)
+                                    <li class="choose_delivery_man mb-3">
+                                        <label class="form-label fw-bold mb-2">
+                                            {{translate('Partner Logistics Company')}}
+                                        </label>
+                                        <select class="custom-select"
+                                                name="logistics_company_id"
+                                                id="assignLogisticsCompanySelect"
+                                                data-order-id="{{$order['id']}}"
+                                                {{ $order->order_status == 'delivered' ? 'disabled' : '' }}
+                                        >
+                                            <option value="0">-- {{ translate('Direct In-House Dispatch') }} --</option>
+                                            @foreach($logisticsCompanies ?? [] as $company)
+                                                <option value="{{$company->id}}" {{$order->logistics_company_id == $company->id ? 'selected' : ''}}>
+                                                    {{$company->name}} ({{$company->operating_state_code ?? 'Fleet'}} - {{$company->operating_lga_name ?? 'All LGAs'}})
+                                                </option>
+                                            @endforeach
+                                        </select>
+                                        @if ($order->logisticsCompany)
+                                            <div class="p-2 bg-section rounded mt-2 border border-primary">
+                                                <div class="d-flex justify-content-between align-items-center">
+                                                    <span class="badge badge-soft-primary">{{ translate('Partner Fleet') }}</span>
+                                                    <a href="{{ route('admin.logistics-companies.show', [$order->logisticsCompany->id]) }}" class="fs-12 text-primary" target="_blank">{{ translate('View Company') }}</a>
+                                                </div>
+                                                <div class="fw-bold fs-13 text-dark mt-1">{{ $order->logisticsCompany->name }}</div>
+                                                <div class="fs-12 text-muted">{{ $order->logisticsCompany->company_phone }} | {{ $order->logisticsCompany->company_email }}</div>
+                                            </div>
+                                        @endif
+                                    </li>
+
                                     <li class="choose_delivery_man">
                                         <label class="form-label fw-bold mb-2">
                                             {{translate('delivery_man')}}
@@ -1168,13 +1197,13 @@
                                                 id="addDeliveryMan"
                                                 data-order-id="{{$order['id']}}"
                                                 data-placeholder="{{ translate('Select Deliveryman') }}"
-                                            {{ $order->order_status == 'delivered' ? 'disabled' : '' }}
+                                                {{ $order->order_status == 'delivered' ? 'disabled' : '' }}
                                         >
                                             <option value="" readonly>--{{ translate('Select Deliveryman') }}--</option>
                                             @foreach($deliveryMen as $deliveryMan)
                                                 <option
                                                     value="{{$deliveryMan['id']}}" {{$order['delivery_man_id']==$deliveryMan['id']?'selected':''}}>
-                                                    {{$deliveryMan['f_name'].' '.$deliveryMan['l_name'].' ('.(isset($deliveryMan['country_code']) ? $deliveryMan['country_code'] : '').$deliveryMan['phone'].' )'}}
+                                                    {{$deliveryMan['f_name'].' '.$deliveryMan['l_name']}} [{{ !empty($deliveryMan->logisticsCompany) ? $deliveryMan->logisticsCompany->name : 'In-House' }}] ({{(isset($deliveryMan['country_code']) ? $deliveryMan['country_code'] : '').$deliveryMan['phone']}})
                                                 </option>
                                             @endforeach
                                         </select>
@@ -2342,7 +2371,29 @@
                     ? "{{ translate('See_Less') }}"
                     : "{{ translate('See_More') }}";
             });
+        $('#assignLogisticsCompanySelect').on('change', function () {
+            let companyId = $(this).val();
+            let orderId = $(this).data('order-id');
+            $.ajax({
+                type: "POST",
+                url: "{{ route('admin.orders.assign-logistics-company') }}",
+                data: {
+                    _token: '{{ csrf_token() }}',
+                    order_id: orderId,
+                    logistics_company_id: companyId
+                },
+                success: function (data) {
+                    if (data.status) {
+                        toastMagic.success(data.message);
+                        location.reload();
+                    } else {
+                        toastMagic.error('Failed to assign logistics company');
+                    }
+                },
+                error: function () {
+                    toastMagic.error('An error occurred');
+                }
+            });
         });
-
     </script>
 @endpush
