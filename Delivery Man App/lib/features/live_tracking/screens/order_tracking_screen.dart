@@ -10,6 +10,7 @@ import 'package:sixvalley_delivery_boy/features/order/controllers/order_controll
 import 'package:sixvalley_delivery_boy/features/order/domain/models/order_model.dart';
 import 'package:sixvalley_delivery_boy/features/splash/controllers/splash_controller.dart';
 import 'package:sixvalley_delivery_boy/features/splash/domain/models/config_model.dart';
+import 'package:sixvalley_delivery_boy/helper/navigation_helper.dart';
 import 'package:sixvalley_delivery_boy/utill/dimensions.dart';
 import 'package:sixvalley_delivery_boy/utill/styles.dart';
 
@@ -95,7 +96,65 @@ class _OrderLiveTrackingScreenState extends State<OrderLiveTrackingScreen> {
                         color: Theme.of(context).cardColor,
                         boxShadow: [BoxShadow(color: Theme.of(context).primaryColor.withValues(alpha:.125),
                             blurRadius: 5, spreadRadius: 1, offset: const Offset(0,2))]),
-                        child:  Icon(Icons.arrow_back_ios_new, color: Theme.of(context).hintColor))))]),
+                        child:  Icon(Icons.arrow_back_ios_new, color: Theme.of(context).hintColor)))),
+
+                  // [AI] Floating Direct Turn-by-Turn Google Maps Launch Button
+                  Positioned(
+                    top: 50,
+                    right: 20,
+                    child: InkWell(
+                      onTap: () {
+                        final lat = double.tryParse(widget.orderModel?.shippingAddress?.latitude ?? '');
+                        final lng = double.tryParse(widget.orderModel?.shippingAddress?.longitude ?? '');
+                        final fullAddress = [
+                          widget.orderModel?.shippingAddress?.address,
+                          widget.orderModel?.shippingAddress?.city,
+                          widget.orderModel?.shippingAddress?.state,
+                        ].where((s) => s != null && s.isNotEmpty).join(', ');
+
+                        NavigationHelper.openGoogleMaps(
+                          latitude: lat,
+                          longitude: lng,
+                          address: fullAddress,
+                          customerName: widget.orderModel?.shippingAddress?.contactPersonName,
+                        );
+                      },
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 9),
+                        decoration: BoxDecoration(
+                          gradient: const LinearGradient(
+                            colors: [Color(0xFF5E17EB), Color(0xFF7C3AED)],
+                            begin: Alignment.topLeft,
+                            end: Alignment.bottomRight,
+                          ),
+                          borderRadius: BorderRadius.circular(30),
+                          boxShadow: [
+                            BoxShadow(
+                              color: const Color(0xFF5E17EB).withValues(alpha: 0.35),
+                              blurRadius: 8,
+                              offset: const Offset(0, 3),
+                            ),
+                          ],
+                        ),
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            const Icon(Icons.navigation_rounded, color: Colors.white, size: 16),
+                            const SizedBox(width: 6),
+                            Text(
+                              'Google Maps',
+                              style: rubikMedium.copyWith(
+                                color: Colors.white,
+                                fontSize: 13,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                  ),
+                ]),
 
 
               persistentHeader:  Container(padding:  EdgeInsets.symmetric(horizontal: Dimensions.paddingSizeDefault,

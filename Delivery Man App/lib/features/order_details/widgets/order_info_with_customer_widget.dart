@@ -16,6 +16,8 @@ import 'package:get/get.dart';
 
 
 
+import 'package:sixvalley_delivery_boy/helper/navigation_helper.dart';
+
 class OrderInfoWithDeliveryInfoWidget extends StatelessWidget {
   final OrderModel? orderModel;
   final bool fromMap;
@@ -45,17 +47,94 @@ class OrderInfoWithDeliveryInfoWidget extends StatelessWidget {
                 child: TrackingStepperWidget(status: orderModel!.orderStatus)),
               fromMap? const SizedBox():
 
+              // [AI] Direct Native Google Maps Turn-by-Turn GPS Navigation
+              Padding(
+                padding: EdgeInsets.symmetric(vertical: Dimensions.paddingSizeSmall),
+                child: Column(
+                  children: [
+                    InkWell(
+                      onTap: () {
+                        final lat = double.tryParse(orderModel?.shippingAddress?.latitude ?? '');
+                        final lng = double.tryParse(orderModel?.shippingAddress?.longitude ?? '');
+                        final fullAddress = [
+                          orderModel?.shippingAddress?.address,
+                          orderModel?.shippingAddress?.city,
+                          orderModel?.shippingAddress?.state,
+                        ].where((s) => s != null && s.isNotEmpty).join(', ');
 
-              GestureDetector(onTap: () => Get.to(()=> OrderLiveTrackingScreen(orderModel: orderModel)),
-                child: Padding(padding:  EdgeInsets.symmetric(vertical: Dimensions.paddingSizeDefault),
-                  child: Container(decoration: BoxDecoration(
-                      color: Get.isDarkMode? Theme.of(context).cardColor :
-                      Theme.of(context).primaryColor.withValues(alpha:.125),
-                      borderRadius: BorderRadius.circular(Dimensions.paddingSizeLarge)),
-                      padding:  EdgeInsets.symmetric(horizontal: Dimensions.paddingSizeExtraLarge,
-                          vertical: Dimensions.paddingSizeSmall),
-                      child: Text('view_on_map'.tr,style: rubikRegular.copyWith(color: Get.isDarkMode ?
-                      Theme.of(context).hintColor : ColorHelper.darken(Theme.of(context).primaryColor, 0.1)))))),
+                        NavigationHelper.openGoogleMaps(
+                          latitude: lat,
+                          longitude: lng,
+                          address: fullAddress,
+                          customerName: orderModel?.shippingAddress?.contactPersonName,
+                        );
+                      },
+                      child: Container(
+                        width: double.infinity,
+                        decoration: BoxDecoration(
+                          gradient: const LinearGradient(
+                            colors: [Color(0xFF5E17EB), Color(0xFF7C3AED)],
+                            begin: Alignment.topLeft,
+                            end: Alignment.bottomRight,
+                          ),
+                          borderRadius: BorderRadius.circular(Dimensions.paddingSizeDefault),
+                          boxShadow: [
+                            BoxShadow(
+                              color: const Color(0xFF5E17EB).withValues(alpha: 0.3),
+                              blurRadius: 8,
+                              offset: const Offset(0, 3),
+                            ),
+                          ],
+                        ),
+                        padding: EdgeInsets.symmetric(
+                          horizontal: Dimensions.paddingSizeDefault,
+                          vertical: Dimensions.paddingSizeSmall + 2,
+                        ),
+                        child: Row(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            const Icon(Icons.navigation_rounded, color: Colors.white, size: 20),
+                            const SizedBox(width: 8),
+                            Text(
+                              'Start Google Maps Navigation',
+                              style: rubikMedium.copyWith(
+                                color: Colors.white,
+                                fontSize: Dimensions.fontSizeDefault,
+                                fontWeight: FontWeight.w600,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                    const SizedBox(height: 8),
+                    GestureDetector(
+                      onTap: () => Get.to(()=> OrderLiveTrackingScreen(orderModel: orderModel)),
+                      child: Container(
+                        decoration: BoxDecoration(
+                          color: Get.isDarkMode
+                              ? Theme.of(context).cardColor
+                              : Theme.of(context).primaryColor.withValues(alpha: .08),
+                          borderRadius: BorderRadius.circular(Dimensions.paddingSizeLarge),
+                        ),
+                        padding: EdgeInsets.symmetric(
+                          horizontal: Dimensions.paddingSizeExtraLarge,
+                          vertical: Dimensions.paddingSizeExtraSmall + 2,
+                        ),
+                        child: Text(
+                          'view_on_map'.tr,
+                          style: rubikRegular.copyWith(
+                            fontSize: Dimensions.fontSizeSmall,
+                            color: Get.isDarkMode
+                                ? Theme.of(context).hintColor
+                                : ColorHelper.darken(Theme.of(context).primaryColor, 0.1),
+                          ),
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
 
               ReceiverWidget(orderModel: orderModel),
               (orderModel?.orderStatus == 'processing' || orderModel?.orderStatus == 'out_for_delivery') ?
