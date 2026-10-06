@@ -2,6 +2,7 @@
     $companyName = getWebConfig(name: 'company_name') ?? 'Victorious MARKET';
     $companyEmail = getWebConfig(name: 'company_email');
     $companyPhone = getWebConfig(name: 'company_phone');
+    $companyAddress = getWebConfig(name: 'shop_address') ?: getWebConfig(name: 'company_address');
     $footerLogo = !empty($web_config['footer_logo']['status']) ? $web_config['footer_logo']['path'] : (!empty($web_config['web_logo']['status']) ? $web_config['web_logo']['path'] : theme_asset('assets/img/vm_icon.jpg'));
     $copyrightText = getWebConfig(name: 'company_copyright_text');
 @endphp
@@ -30,12 +31,22 @@
                 <p style="font-size: 13.5px; line-height: 1.6; margin-bottom: 16px;">
                     {{ translate('Nigeria’s omnichannel marketplace and delivery logistics ecosystem. Connecting verified merchants across Akwa Ibom with guaranteed in-shop inspection and swift door-to-door delivery.') }}
                 </p>
-                <div style="display: flex; gap: 10px; font-size: 13px;">
+                @if($companyAddress)
+                    <div style="font-size: 13.5px; line-height: 1.5; color: #CBD5E1; margin-bottom: 14px; display: flex; align-items: flex-start; gap: 8px;">
+                        <span style="font-size: 16px; line-height: 1.2;">🏢</span>
+                        <span><strong style="color: #FFFFFF;">{{ translate('Head Office') }}:</strong> {{ $companyAddress }}</span>
+                    </div>
+                @endif
+                <div style="display: flex; flex-wrap: wrap; gap: 14px; font-size: 13px;">
                     @if($companyPhone)
-                        <a href="tel:{{ $companyPhone }}">{{ $companyPhone }}</a>
+                        <a href="tel:{{ $companyPhone }}" style="color: #94A3B8; display: inline-flex; align-items: center; gap: 6px;">
+                            <span>📞</span> {{ $companyPhone }}
+                        </a>
                     @endif
                     @if($companyEmail)
-                        <a href="mailto:{{ $companyEmail }}">{{ $companyEmail }}</a>
+                        <a href="mailto:{{ $companyEmail }}" style="color: #94A3B8; display: inline-flex; align-items: center; gap: 6px;">
+                            <span>✉️</span> {{ $companyEmail }}
+                        </a>
                     @endif
                 </div>
             </div>
