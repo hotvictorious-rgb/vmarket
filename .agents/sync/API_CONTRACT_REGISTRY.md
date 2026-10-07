@@ -591,7 +591,85 @@ Admin routes are defined in `routes/admin/routes.php` and enforce zero-trust ser
 
 ---
 
-## 10. Authoritative Exclusion & Decommission Catalog
+## 10. Server-Driven UI (SDUI) & Dynamic App Structure (SSOT)
+
+To eliminate dependency on App Store / Play Store binary updates for routine UI, layout, feature toggles, and business changes, the platform implements a native Server-Driven UI (SDUI) architecture across all three client mobile apps (`User app`, `Vendor app`, `Delivery Man App`).
+
+### Payload Specification in `GET /api/v1/config`
+
+The backend returns the authoritative layout and feature matrix under `server_structure`:
+
+```json
+{
+  "server_structure": {
+    "layout_version": 1,
+    "updated_at": "2026-10-07T05:08:00+01:00",
+    "customer_app": {
+      "home_sections": [
+        { "id": "location_bar", "title": "Your Location", "is_enabled": true, "sort_order": 1 },
+        { "id": "announcements", "title": "Announcements", "is_enabled": true, "sort_order": 2 },
+        { "id": "search_bar", "title": "Search", "is_enabled": true, "sort_order": 3 },
+        { "id": "hero_banners", "title": "Hero Banners", "is_enabled": true, "sort_order": 4 },
+        { "id": "categories", "title": "Categories", "is_enabled": true, "sort_order": 5 },
+        { "id": "find_what_you_need", "title": "Find What You Need", "is_enabled": true, "sort_order": 6 },
+        { "id": "order_again", "title": "Order Again", "is_enabled": true, "sort_order": 7 },
+        { "id": "nearby_shops", "title": "Local Stores in Your Area", "is_enabled": true, "sort_order": 8 },
+        { "id": "footer_banner_slider", "title": "Footer Banner Slider", "is_enabled": true, "sort_order": 9 },
+        { "id": "featured_products", "title": "Featured Products", "is_enabled": true, "sort_order": 10 },
+        { "id": "top_side_bar_banner", "title": "Promotional Banners", "is_enabled": true, "sort_order": 11 },
+        { "id": "recommended_products", "title": "Recommended For You", "is_enabled": true, "sort_order": 12 },
+        { "id": "latest_products", "title": "Latest Arrivals", "is_enabled": true, "sort_order": 13 },
+        { "id": "footer_banner_list", "title": "Secondary Banner", "is_enabled": true, "sort_order": 14 },
+        { "id": "just_for_you", "title": "Just For You", "is_enabled": true, "sort_order": 15 },
+        { "id": "more_stores", "title": "More Stores", "is_enabled": true, "sort_order": 16 },
+        { "id": "home_category_products", "title": "Category Showcases", "is_enabled": true, "sort_order": 17 },
+        { "id": "main_section_banner", "title": "Main Section Banner", "is_enabled": true, "sort_order": 18 }
+      ],
+      "navigation_tabs": [
+        { "id": "home", "title": "Home", "is_enabled": true, "sort_order": 1 },
+        { "id": "cart", "title": "Cart", "is_enabled": true, "sort_order": 2 },
+        { "id": "orders", "title": "Orders", "is_enabled": true, "sort_order": 3 },
+        { "id": "account", "title": "Account", "is_enabled": true, "sort_order": 4 }
+      ],
+      "features": {
+        "in_shop_pickup": true,
+        "doorstep_delivery": true,
+        "call_to_order": true,
+        "cashback_rewards": true,
+        "location_switcher": true,
+        "zonal_pricing_display": true,
+        "dynamic_lane_eta": true
+      }
+    },
+    "vendor_app": {
+      "features": {
+        "pos_module": true,
+        "pickup_inspection_validation": true,
+        "order_status_edit": false,
+        "delivery_man_chat": true,
+        "bank_withdrawals": true
+      }
+    },
+    "delivery_app": {
+      "features": {
+        "otp_verification_required": true,
+        "cash_collection_tracking": true,
+        "live_route_tracking": false,
+        "proof_of_delivery_image": true
+      }
+    }
+  }
+}
+```
+
+### Invalidation & Graceful Fallback Rules
+1. **Dynamic Reordering**: Clients dynamically sort and render sections based on `sort_order` and filter by `is_enabled == true`.
+2. **Offline / Network Fault Tolerance**: If the client is offline or the server fails to return `server_structure`, the client MUST seamlessly fall back to its internal canonical default layout. It must never render a blank screen or crash.
+3. **Instant Cache Flush**: Whenever Admin updates settings in the Admin Panel, the server automatically flushes `vmarket_api_v1_config_response`. Subsequent client requests and pull-to-refresh events immediately pull the new structure.
+
+---
+
+## 11. Authoritative Exclusion & Decommission Catalog
 
 The following endpoints and legacy concepts are **STRICTLY EXCLUDED, DEPRECATED, OR DELETED**.  
 Frontend developers and AI agents must NEVER call, re-implement, or re-introduce these patterns:
