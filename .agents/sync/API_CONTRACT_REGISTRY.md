@@ -89,11 +89,41 @@ All shipping calculations, merchant origin matching, and customer addresses bind
   }
   ```
 
+### `POST /api/v1/geography/calculate-lane-fee`
+- **Purpose**: Calculate authoritative shipping fee, zonal tier, lead time, and cargo surcharge between any origin LGA and destination LGA across Nigeria. Supports bidirectional overrides and 3-tier zonal distance fallbacks.
+- **Auth**: Public / `apiGuestCheck`
+- **Request Body**:
+  ```json
+  {
+    "origin_lga_id": 48,           // Required: integer (e.g. Uyo)
+    "destination_lga_id": 49,      // Required: integer (e.g. Eket)
+    "package_tier": "small"        // Optional: "small" (standard) or "large" (bulky cargo)
+  }
+  ```
+- **Response `200 OK`**:
+  ```json
+  {
+    "status": true,
+    "message": "Delivery lane fee calculated successfully.",
+    "data": {
+      "origin_lga_id": 48,
+      "destination_lga_id": 49,
+      "fee": 2500.0,
+      "estimated_days": "24 Hours",
+      "is_enabled": true,
+      "lane_id": 14,
+      "lane_type": "intra_state",
+      "zone_tier": 2,
+      "is_custom_override": false
+    }
+  }
+  ```
+
 ---
 
 ## 2. Fulfillment Availability & Fee Engine (SSOT)
 
-Replaces legacy flat shipping methods. The backend dynamically evaluates origin merchant LGA and destination address LGA against directional `DeliveryLane` records and merchant pickup configurations.
+Replaces legacy flat shipping methods. The backend dynamically evaluates origin merchant LGA and destination address LGA against directional `DeliveryLane` records, 3-tier zonal rates (Tier 1 municipal, Tier 2 regional, Tier 3 interstate), package cargo tier (`small` vs `large`), and merchant pickup configurations.
 
 ### `POST /api/v1/fulfillment/availability`
 - **Purpose**: Authoritative check for delivery and in-shop pickup feasibility. If `shop_id` is omitted, the backend automatically resolves the vendor shop from `cart_items`, `product_id`, or active session cart.
@@ -130,8 +160,13 @@ Replaces legacy flat shipping methods. The backend dynamically evaluates origin 
       "fulfillment_options": {
         "delivery": {
           "available": true,
-          "fee": 1500.0,
-          "estimated_time": "24-48 hours",
+          "fee": 2500.0,
+          "base_delivery_fee": 2500.0,
+          "bulky_surcharge_amount": 0.0,
+          "package_tier": "small",
+          "zone_tier": 2,
+          "zone_tier_label": "Zone Tier 2 (Intra-State)",
+          "estimated_time": "24 Hours",
           "origin_lga": {
             "id": 48,
             "name": "Uyo",
@@ -156,13 +191,14 @@ Replaces legacy flat shipping methods. The backend dynamically evaluates origin 
   ```
 
 ### `POST /api/v1/fulfillment/delivery-fee`
-- **Purpose**: Calculate authoritative shipping fee for a specific shop/product and address.
+- **Purpose**: Calculate authoritative shipping fee for a specific shop/product and address with package tier awareness.
 - **Auth**: `apiGuestCheck`
 - **Request Body**:
   ```json
   {
-    "shop_id": 1,              // Or "product_id": 105
-    "shipping_address_id": 12
+    "shop_id": 1,                  // Or "product_id": 105
+    "shipping_address_id": 12,
+    "package_tier": "small"        // Optional: "small" or "large"
   }
   ```
 - **Response `200 OK`**:
@@ -170,10 +206,14 @@ Replaces legacy flat shipping methods. The backend dynamically evaluates origin 
   {
     "success": true,
     "data": {
-      "fee": "1500.00",
+      "fee": "2500.00",
+      "bulky_surcharge_amount": "0.00",
+      "package_tier": "small",
+      "zone_tier": 2,
       "available": true,
       "origin_lga": "Uyo",
-      "destination_lga": "Eket"
+      "destination_lga": "Eket",
+      "estimated_days": "24 Hours"
     }
   }
   ```
