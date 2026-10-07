@@ -62,6 +62,7 @@ class LogisticsCompany extends Authenticatable
         'bank_name',
         'account_number',
         'account_name',
+        'commission_percentage',
         'status',
         'is_active',
     ];
@@ -69,7 +70,18 @@ class LogisticsCompany extends Authenticatable
     protected $casts = [
         'operating_lgas' => 'array',
         'is_active' => 'boolean',
+        'commission_percentage' => 'float',
     ];
+
+    /**
+     * Return the negotiated commission rate for this company, or fallback to the global marketplace default.
+     */
+    public function getEffectiveCommissionRate(): float
+    {
+        return $this->commission_percentage !== null
+            ? (float) $this->commission_percentage
+            : (float) (getWebConfig(name: 'delivery_commission_percentage') ?? 15);
+    }
 
     public function state(): BelongsTo
     {

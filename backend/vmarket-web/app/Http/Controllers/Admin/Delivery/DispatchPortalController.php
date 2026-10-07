@@ -66,6 +66,7 @@ class DispatchPortalController extends Controller
         $unassignedOrdersCount = 0;
         $largeCargoCount = 0;
 
+        foreach ($allOrders as $order) {
             $originState = $order->origin_state_name ?? 'Akwa Ibom';
             $destState = $order->destination_state_name ?? 'Akwa Ibom';
             $isInterState = (strcasecmp(trim($originState), trim($destState)) !== 0);
@@ -248,9 +249,15 @@ class DispatchPortalController extends Controller
                     if ($targetType === 'company') {
                         $order->logistics_company_id = $targetEntity->id;
                         $order->delivery_man_id = null; // Company dispatcher allocates from their own fleet
+                        $companyRate = $targetEntity->getEffectiveCommissionRate();
+                        $order->delivery_commission_amount = round(((float)$order->shipping_cost * $companyRate) / 100, 2);
                     } else {
                         $order->delivery_man_id = $targetEntity->id;
                         $order->logistics_company_id = $targetEntity->logistics_company_id ?? null;
+                        if (!empty($targetEntity->logistics_company)) {
+                            $companyRate = $targetEntity->logistics_company->getEffectiveCommissionRate();
+                            $order->delivery_commission_amount = round(((float)$order->shipping_cost * $companyRate) / 100, 2);
+                        }
                     }
 
                     $order->deliveryman_assigned_at = Carbon::now();

@@ -84,6 +84,7 @@ class LogisticsCompanyController extends Controller
             'bank_name' => 'nullable|string|max:100',
             'account_number' => 'nullable|string|max:50',
             'account_name' => 'nullable|string|max:100',
+            'commission_percentage' => 'nullable|numeric|min:0|max:100',
             'logo' => 'nullable|image|mimes:jpeg,jpg,png,webp|max:2048',
         ]);
 
@@ -109,6 +110,7 @@ class LogisticsCompanyController extends Controller
                 'bank_name' => $request->bank_name,
                 'account_number' => $request->account_number,
                 'account_name' => $request->account_name,
+                'commission_percentage' => $request->filled('commission_percentage') ? (float)$request->commission_percentage : null,
                 'logo' => $logoName,
                 'status' => 'active',
                 'is_active' => 1,
@@ -187,6 +189,7 @@ class LogisticsCompanyController extends Controller
             'bank_name' => 'nullable|string|max:100',
             'account_number' => 'nullable|string|max:50',
             'account_name' => 'nullable|string|max:100',
+            'commission_percentage' => 'nullable|numeric|min:0|max:100',
             'status' => 'required|in:active,pending,suspended,rejected',
             'logo' => 'nullable|image|mimes:jpeg,jpg,png,webp|max:2048',
         ]);
@@ -211,6 +214,7 @@ class LogisticsCompanyController extends Controller
         $company->bank_name = $request->bank_name;
         $company->account_number = $request->account_number;
         $company->account_name = $request->account_name;
+        $company->commission_percentage = $request->filled('commission_percentage') ? (float)$request->commission_percentage : null;
         $company->status = $request->status;
         $company->is_active = ($request->status === 'active') ? 1 : 0;
         $company->save();

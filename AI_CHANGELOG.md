@@ -1,3 +1,11 @@
+### [2026-10-07 13:35 UTC] Dual-Fleet Negotiated Commission Rates & Platform Delivery Accounting [backend, ai-governance] [AI]
+- Added database migration `2026_10_07_000003_add_commission_percentage_to_logistics_companies.php` adding nullable `commission_percentage` to `logistics_companies` table.
+- Updated `LogisticsCompany` model with `commission_percentage` fillable attribute, float casting, and `getEffectiveCommissionRate()` helper with graceful fallback to global admin setting (`delivery_commission_percentage` ?? 15%).
+- Updated Super Admin Logistics Partner Management views (`create.blade.php`, `edit.blade.php`, `show.blade.php`, and `index.blade.php`) and controller (`LogisticsCompanyController.php`), allowing Super Admin to configure custom negotiated commission rates per company with visual indicator badges.
+- Updated `DispatchPortalController@assignBatch` to dynamically calculate `orders.delivery_commission_amount` based on the assigned logistics partner's negotiated contract rate.
+- Updated `DeliveryManController@order_status_update` to compute commission and partner payout according to company's negotiated rate, and record immutable `Transaction` platform delivery commission audit records.
+- Fixed `DispatchPortalController@index` missing loop statement, passing syntax linting (`php -l`) across all modified backend files with 0 errors.
+
 ### [2026-10-07 13:20 UTC] Delivery Commission Audit, In-House Rider Settlement Fix & Dual-Fleet Economics [backend, ai-governance] [AI]
 - Audited platform delivery commission architecture: confirmed global configuration in Super Admin (`admin/business-settings/delivery-man-settings`) governing `delivery_commission_percentage` (default: 15%), `bulky_cargo_surcharge` (default: ₦2,500.00), and `enable_logistics_company_module`.
 - Resolved in-house rider zero payout bug in `DeliveryManController@order_status_update`: corrected `$order->deliveryman_charge ?? $netPartnerAmount` where MySQL `0.00` default falsely short-circuited in PHP, ensuring riders receive their 85% net delivery earnings when `deliveryman_charge` is 0 or unset.

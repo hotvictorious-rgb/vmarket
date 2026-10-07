@@ -119,6 +119,21 @@
                     </div>
                     <div class="col-md-6">
                         <div class="form-group mb-0">
+                            <label class="form-label d-flex align-items-center gap-2">
+                                {{ translate('Negotiated_Commission_Rate') }} (%)
+                                <span class="tooltip-icon cursor-pointer" data-bs-toggle="tooltip"
+                                      data-bs-title="{{ translate('Leave_blank_to_use_the_default_global_marketplace_rate') }} ({{ getWebConfig(name: 'delivery_commission_percentage') ?? 15 }}%).">
+                                    <i class="fi fi-sr-info"></i>
+                                </span>
+                            </label>
+                            <input type="number" min="0" max="100" step="0.5" name="commission_percentage" class="form-control" value="{{ old('commission_percentage') }}" placeholder="{{ translate('Default:') }} {{ getWebConfig(name: 'delivery_commission_percentage') ?? 15 }}%">
+                            <small class="text-muted fs-11 mt-1 d-block">
+                                {{ translate('Custom_rate_for_this_partner._Leave_blank_for_global_default.') }}
+                            </small>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="form-group mb-0">
                             <label class="form-label">{{ translate('Company_Logo') }}</label>
                             <input type="file" name="logo" class="form-control" accept="image/*">
                         </div>

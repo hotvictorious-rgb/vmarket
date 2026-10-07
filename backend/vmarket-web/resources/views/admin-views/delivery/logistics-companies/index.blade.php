@@ -86,6 +86,11 @@
                                         </a>
                                         <div class="fs-12 text-muted">{{ $company->company_email }}</div>
                                         <div class="fs-12 text-muted">{{ $company->company_phone }}</div>
+                                        <div class="mt-1">
+                                            <span class="badge badge-soft-{{ $company->commission_percentage !== null ? 'info' : 'secondary' }} fs-11">
+                                                {{ $company->commission_percentage !== null ? $company->commission_percentage . '% cut' : (getWebConfig(name: 'delivery_commission_percentage') ?? 15) . '% (global default)' }}
+                                            </span>
+                                        </div>
                                     </div>
                                 </div>
                             </td>

@@ -92,6 +92,12 @@
                         <div><strong>{{ translate('CAC_Number:') }}</strong> {{ $company->cac_number ?? translate('Unverified') }}</div>
                         <div><strong>{{ translate('Base_LGA:') }}</strong> {{ $company->lga->name ?? translate('Not_set') }}, {{ $company->state->name ?? 'Nigeria' }}</div>
                         <div><strong>{{ translate('Office_Address:') }}</strong> {{ $company->address ?? translate('N/A') }}</div>
+                        <div>
+                            <strong>{{ translate('Commission_Rate:') }}</strong>
+                            <span class="badge badge-soft-info fs-12">
+                                {{ $company->commission_percentage !== null ? $company->commission_percentage . '% (' . translate('Custom_Negotiated') . ')' : (getWebConfig(name: 'delivery_commission_percentage') ?? 15) . '% (' . translate('Global_Default') . ')' }}
+                            </span>
+                        </div>
                     </div>
                 </div>
             </div>

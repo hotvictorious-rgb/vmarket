@@ -248,7 +248,18 @@ class DeliveryManController extends Controller
 
             if (isset($deliveryMan['id']) && $request['status'] == 'delivered') {
                 $grossDeliveryFee = (float)($order->shipping_cost > 0 ? $order->shipping_cost : ($order->deliveryman_charge ?? 0));
-                $commissionRate = (float)(getWebConfig(name: 'delivery_commission_percentage') ?? 15);
+
+                // Determine if rider belongs to an accredited 3rd-Party Logistics Company with a custom negotiated commission
+                $company = null;
+                $effectiveCompanyId = $deliveryMan->logistics_company_id ?? $order->logistics_company_id;
+                if (!empty($effectiveCompanyId)) {
+                    $company = LogisticsCompany::find($effectiveCompanyId);
+                }
+
+                $commissionRate = $company
+                    ? $company->getEffectiveCommissionRate()
+                    : (float)(getWebConfig(name: 'delivery_commission_percentage') ?? 15);
+
                 $commissionAmount = (float)($order->delivery_commission_amount > 0
                     ? $order->delivery_commission_amount
                     : round(($grossDeliveryFee * $commissionRate) / 100, 2));
@@ -294,7 +305,7 @@ class DeliveryManController extends Controller
                         'transaction_type' => 'delivery_credit',
                         'balance_before' => $balBefore,
                         'balance_after' => $balAfter,
-                        'transaction_note' => "Order #{$order->id} completed doorstep delivery. Gross: ₦{$grossDeliveryFee}, Admin Fee (15%): ₦{$commissionAmount}, Net Payout: ₦{$netPartnerAmount}",
+                        'transaction_note' => "Order #{$order->id} completed doorstep delivery. Gross: ₦{$grossDeliveryFee}, Admin Commission ({$commissionRate}%): ₦{$commissionAmount}, Net Partner Payout: ₦{$netPartnerAmount}",
                     ]);
 
                     // Attribute logistics company to order if not previously set
@@ -338,6 +349,23 @@ class DeliveryManController extends Controller
                             'updated_at' => now(),
                         ]);
                     }
+                }
+
+                // Record Platform Delivery Commission audit transaction
+                if ($commissionAmount > 0) {
+                    \App\Models\Transaction::create([
+                        'order_id' => $order->id,
+                        'payment_for' => 'delivery_commission',
+                        'payer_id' => $deliveryMan['id'],
+                        'payment_receiver_id' => 1,
+                        'paid_by' => !empty($deliveryMan->logistics_company_id) ? 'logistics_company' : 'delivery_man',
+                        'paid_to' => 'admin',
+                        'payment_status' => 'received',
+                        'amount' => $commissionAmount,
+                        'transaction_type' => 'delivery_commission',
+                        'created_at' => now(),
+                        'updated_at' => now(),
+                    ]);
                 }
             }
 
