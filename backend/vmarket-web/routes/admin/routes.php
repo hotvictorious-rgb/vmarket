@@ -653,6 +653,7 @@ Route::group(['prefix' => 'admin', 'as' => 'admin.', 'middleware' => ['admin', '
             Route::delete('delete/{id}', 'delete')->name('delete');
             Route::post('status', 'status')->name('status');
             Route::post('update-default-rates', 'updateDefaultRates')->name('update-default-rates');
+            Route::post('update-zonal-rates', 'updateZonalRates')->name('update-zonal-rates');
             Route::get('get-states-ajax', 'getStatesAjax')->name('get-states-ajax');
             Route::get('get-lgas-ajax', 'getLgasAjax')->name('get-lgas-ajax');
         });

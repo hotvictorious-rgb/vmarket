@@ -296,26 +296,47 @@ class Product extends Model
             $lgaId = $defaultLga?->id ?? 69;
         }
 
-        // 1. All origin LGA IDs that have an active delivery lane to this destination LGA
-        $deliveryOriginLgaIds = \App\Models\DeliveryLane::where('destination_lga_id', $lgaId)
-            ->where('is_enabled', true)
-            ->pluck('origin_lga_id')
-            ->toArray();
+        $fulfillmentMode = session('fulfillment_mode', 'delivery');
 
-        // 2. Eligible shops: either origin LGA has enabled delivery lane to $lgaId, OR shop is in $lgaId with pickup enabled
-        $eligibleShopsQuery = \App\Models\Shop::where('temporary_close', 0)
-            ->where(function ($q) use ($deliveryOriginLgaIds, $lgaId) {
-                if (!empty($deliveryOriginLgaIds)) {
-                    $q->whereIn('lga_id', $deliveryOriginLgaIds);
+        // Mode: In-Shop Pickup (Strictly requires shop located in selected LGA with pickup enabled)
+        if ($fulfillmentMode === 'pickup') {
+            $pickupShopsQuery = \App\Models\Shop::where('temporary_close', 0)
+                ->where('lga_id', $lgaId)
+                ->where('pickup_enabled', 1);
+
+            $eligibleSellerIds = (clone $pickupShopsQuery)->where('seller_id', '>', 0)->pluck('seller_id')->toArray();
+            $adminShopEligible = (clone $pickupShopsQuery)->where('author_type', 'admin')->exists();
+
+            return $query->where(function ($q) use ($eligibleSellerIds, $adminShopEligible) {
+                $hasConditions = false;
+                if (!empty($eligibleSellerIds)) {
+                    $q->where(function ($sellerQ) use ($eligibleSellerIds) {
+                        $sellerQ->where('added_by', 'seller')
+                                ->whereIn('user_id', $eligibleSellerIds);
+                    });
+                    $hasConditions = true;
                 }
-                $q->orWhere(function ($pickupQ) use ($lgaId) {
-                    $pickupQ->where('lga_id', $lgaId)
-                            ->where('pickup_enabled', 1);
-                });
-            });
+                if ($adminShopEligible) {
+                    if ($hasConditions) {
+                        $q->orWhere('added_by', 'admin');
+                    } else {
+                        $q->where('added_by', 'admin');
+                    }
+                    $hasConditions = true;
+                }
 
-        $eligibleSellerIds = (clone $eligibleShopsQuery)->where('seller_id', '>', 0)->pluck('seller_id')->toArray();
-        $adminShopEligible = (clone $eligibleShopsQuery)->where('author_type', 'admin')->exists();
+                if (!$hasConditions) {
+                    $q->whereRaw('1 = 0');
+                }
+            });
+        }
+
+        // Mode: Delivery
+        // Under 3-Tier Zonal Distance Pricing (Tier 1 Intra-LGA, Tier 2 Inter-LGA, Tier 3 Inter-State),
+        // 100% of open shops are serviceable nationwide with zero product or checkout blockage.
+        $openShopsQuery = \App\Models\Shop::where('temporary_close', 0);
+        $eligibleSellerIds = (clone $openShopsQuery)->where('seller_id', '>', 0)->pluck('seller_id')->toArray();
+        $adminShopEligible = (clone $openShopsQuery)->where('author_type', 'admin')->exists();
 
         return $query->where(function ($q) use ($eligibleSellerIds, $adminShopEligible) {
             $hasConditions = false;
@@ -336,7 +357,6 @@ class Product extends Model
             }
 
             if (!$hasConditions) {
-                // No shops can fulfill in this LGA
                 $q->whereRaw('1 = 0');
             }
         });

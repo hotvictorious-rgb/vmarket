@@ -1319,41 +1319,35 @@ class WebController extends Controller
      */
     public function getDeliveryCoverage(Request $request): JsonResponse
     {
-        // 1. Admin-enabled delivery coverage via DeliveryLane
-        $lanes = \App\Models\DeliveryLane::where('is_enabled', true)
-            ->whereHas('destinationLga', fn($q) => $q->active()->whereHas('state', fn($s) => $s->where('is_active', true)))
-            ->with(['destinationLga.state', 'destinationState', 'originLga'])
+        // 1. Nationwide Delivery Coverage under 3-Tier Zonal Distance Routing
+        $activeStates = \App\Models\State::where('is_active', true)
+            ->with(['lgas' => fn($q) => $q->where('is_active', true)->orderBy('name')])
+            ->orderBy('name')
             ->get();
 
         $deliveryLgas = [];
         $deliveryStates = [];
 
-        foreach ($lanes as $lane) {
-            $destLga = $lane->destinationLga;
-            $destState = $destLga?->state;
-            if ($destLga && $destState) {
-                if (!isset($deliveryStates[$destState->id])) {
-                    $deliveryStates[$destState->id] = [
-                        'id' => $destState->id,
-                        'name' => $destState->name,
-                        'lgas' => [],
-                    ];
-                }
-
-                if (!isset($deliveryLgas[$destLga->id])) {
-                    $lgaItem = [
-                        'id' => $destLga->id,
-                        'name' => $destLga->name,
-                        'state_id' => $destState->id,
-                        'state_name' => $destState->name,
-                        'delivery_fee' => null,
-                        'delivery_fee_formatted' => null,
-                        'estimated_time' => null,
-                    ];
-                    $deliveryLgas[$destLga->id] = $lgaItem;
-                    $deliveryStates[$destState->id]['lgas'][] = $lgaItem;
-                }
+        foreach ($activeStates as $state) {
+            $stateItem = [
+                'id' => $state->id,
+                'name' => $state->name,
+                'lgas' => [],
+            ];
+            foreach ($state->lgas as $lga) {
+                $lgaItem = [
+                    'id' => $lga->id,
+                    'name' => $lga->name,
+                    'state_id' => $state->id,
+                    'state_name' => $state->name,
+                    'delivery_fee' => null,
+                    'delivery_fee_formatted' => null,
+                    'estimated_time' => null,
+                ];
+                $deliveryLgas[$lga->id] = $lgaItem;
+                $stateItem['lgas'][] = $lgaItem;
             }
+            $deliveryStates[$state->id] = $stateItem;
         }
 
         // 2. In-Shop Pickup coverage via verified merchant shops
@@ -1428,14 +1422,6 @@ class WebController extends Controller
         $lgaId = $lga->id; $stateId = $lga->state_id;
         $city = $lga->name; $state = $lga->state->name;
 
-        // Check authoritative DeliveryLane if mode is delivery
-        $activeLane = null;
-        if ($lgaId) {
-            $activeLane = \App\Models\DeliveryLane::where('destination_lga_id', $lgaId)
-                ->where('is_enabled', true)
-                ->first();
-        }
-
         Session::put('customer_city', $city);
         Session::put('customer_state', $state);
         Session::put('customer_lga_id', $lgaId);
@@ -1449,7 +1435,7 @@ class WebController extends Controller
             'lga_id' => $lgaId,
             'state_id' => $stateId,
             'fulfillment_mode' => $fulfillmentMode,
-            'is_covered' => $activeLane ? true : false,
+            'is_covered' => true,
             'delivery_fee' => null,
             'delivery_fee_formatted' => null,
             'estimated_time' => null,

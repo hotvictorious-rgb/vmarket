@@ -9,9 +9,11 @@ use Illuminate\Database\Eloquent\Builder;
 /**
  * Class DeliveryLane
  *
- * Hierarchical Hybrid Delivery Routing Engine:
- * - Intra-State: Directional Origin LGA -> Destination LGA (Local intra-city / inter-LGA courier)
- * - Inter-State: Directional Origin State -> Destination State (National freight / transit corridor)
+ * Hierarchical Zonal & Bidirectional Delivery Routing Engine:
+ * - Tier 1: Intra-LGA (Same LGA - Municipal delivery)
+ * - Tier 2: Inter-LGA (Same State, Different LGA - Regional transit)
+ * - Tier 3: Inter-State (Different States - National freight)
+ * - Bidirectional Custom Overrides: Setting Route A ⟷ B automatically applies to B ⟷ A.
  *
  * @property int $id
  * @property int $origin_country_id
@@ -22,6 +24,7 @@ use Illuminate\Database\Eloquent\Builder;
  * @property int|null $destination_lga_id
  * @property string $lane_type  // 'intra_state' or 'inter_state'
  * @property bool $is_enabled
+ * @property bool $is_bidirectional
  * @property float $delivery_fee
  * @property string|null $estimated_delivery_time
  *
@@ -40,12 +43,14 @@ class DeliveryLane extends Model
         'destination_lga_id',
         'lane_type',
         'is_enabled',
+        'is_bidirectional',
         'delivery_fee',
         'estimated_delivery_time',
     ];
 
     protected $casts = [
         'is_enabled' => 'boolean',
+        'is_bidirectional' => 'boolean',
         'delivery_fee' => 'decimal:2',
     ];
 
@@ -102,22 +107,14 @@ class DeliveryLane extends Model
         return $query->where('lane_type', 'inter_state');
     }
 
-    public function scopeForOriginAndDestination(Builder $query, int $originLgaId, int $destinationLgaId): Builder
-    {
-        return $query->where('origin_lga_id', $originLgaId)
-                     ->where('destination_lga_id', $destinationLgaId);
-    }
-
     // ==========================================
-    // Authoritative Hierarchical Resolver
+    // Authoritative Hierarchical & Bidirectional Resolver
     // ==========================================
 
     /**
-     * Resolve delivery route, fee, and ETA using the 2-Tier Hierarchical Matrix:
-     * 1. Intra-State: If Origin State == Destination State, evaluate LGA-to-LGA lane.
-     *    Fallback: State Default Intra-State Fee.
-     * 2. Inter-State: If Origin State != Destination State, evaluate State-to-State lane.
-     *    Fallback: National Default Inter-State Fee.
+     * Resolve delivery route, fee, and ETA using:
+     * 1. Bidirectional Custom Route Overrides (if admin created a custom rate for A ⟷ B)
+     * 2. Automatic 3-Tier Zonal Distance Fallbacks (Intra-LGA, Inter-LGA, Inter-State)
      */
     public static function resolveLane(
         int $originStateId,
@@ -125,44 +122,87 @@ class DeliveryLane extends Model
         int $destStateId,
         ?int $destLgaId
     ): array {
-        // TIER 1: Intra-State (Same State)
+        // CASE A: INTRA-STATE (Same State)
         if ($originStateId === $destStateId) {
+            $isSameLga = ($originLgaId && $destLgaId && $originLgaId === $destLgaId);
+
+            // 1. Check for Custom LGA-to-LGA Bidirectional Override
             if ($originLgaId && $destLgaId) {
-                $lgaLane = static::enabled()
-                    ->where('origin_state_id', $originStateId)
-                    ->where('destination_state_id', $destStateId)
-                    ->where('origin_lga_id', $originLgaId)
-                    ->where('destination_lga_id', $destLgaId)
+                $customLane = static::enabled()
+                    ->where(function ($q) use ($originLgaId, $destLgaId) {
+                        // Direct direction A -> B
+                        $q->where(function ($sub) use ($originLgaId, $destLgaId) {
+                            $sub->where('origin_lga_id', $originLgaId)
+                                ->where('destination_lga_id', $destLgaId);
+                        })
+                        // Or Reverse direction B -> A (if bidirectional)
+                        ->orWhere(function ($sub) use ($originLgaId, $destLgaId) {
+                            $sub->where('origin_lga_id', $destLgaId)
+                                ->where('destination_lga_id', $originLgaId)
+                                ->where('is_bidirectional', true);
+                        });
+                    })
                     ->first();
 
-                if ($lgaLane) {
+                if ($customLane) {
                     return [
-                        'lane' => $lgaLane,
-                        'fee' => (float) $lgaLane->delivery_fee,
-                        'eta' => $lgaLane->estimated_delivery_time ?? '24-48 hours',
-                        'lane_type' => 'intra_state',
+                        'lane' => $customLane,
+                        'fee' => (float) $customLane->delivery_fee,
+                        'eta' => $customLane->estimated_delivery_time ?? ($isSameLga ? '2-4 hours' : 'Same day / 24 hours'),
+                        'lane_type' => $isSameLga ? 'intra_lga_custom' : 'inter_lga_custom',
+                        'zone_tier' => $isSameLga ? 1 : 2,
                         'is_interstate' => false,
-                        'is_fallback' => false,
+                        'is_custom_override' => true,
                     ];
                 }
             }
 
-            // Fallback: Default Intra-State Fee
-            $defaultIntraFee = (float) (getWebConfig(name: 'default_intrastate_delivery_fee') ?? 2000.00);
-            return [
-                'lane' => null,
-                'fee' => $defaultIntraFee,
-                'eta' => '24-48 hours',
-                'lane_type' => 'intra_state_fallback',
-                'is_interstate' => false,
-                'is_fallback' => true,
-            ];
+            // 2. No custom override: Apply Zonal Tier Rate
+            if ($isSameLga) {
+                // TIER 1: Intra-LGA (Municipal same-city bike delivery)
+                $fee = (float) (getWebConfig(name: 'zone_intra_lga_fee') ?? 1000.00);
+                $eta = (string) (getWebConfig(name: 'zone_intra_lga_eta') ?? '2-4 hours');
+                return [
+                    'lane' => null,
+                    'fee' => $fee,
+                    'eta' => $eta,
+                    'lane_type' => 'zone_intra_lga',
+                    'zone_tier' => 1,
+                    'is_interstate' => false,
+                    'is_custom_override' => false,
+                ];
+            } else {
+                // TIER 2: Inter-LGA (Regional courier across LGAs within the same state)
+                $fee = (float) (getWebConfig(name: 'zone_inter_lga_fee') ?? 2500.00);
+                $eta = (string) (getWebConfig(name: 'zone_inter_lga_eta') ?? 'Same day / 24 hours');
+                return [
+                    'lane' => null,
+                    'fee' => $fee,
+                    'eta' => $eta,
+                    'lane_type' => 'zone_inter_lga',
+                    'zone_tier' => 2,
+                    'is_interstate' => false,
+                    'is_custom_override' => false,
+                ];
+            }
         }
 
-        // TIER 2: Inter-State (Different States)
-        $stateLane = static::enabled()
-            ->where('origin_state_id', $originStateId)
-            ->where('destination_state_id', $destStateId)
+        // CASE B: INTER-STATE (Different States)
+        // 1. Check for Custom State-to-State Bidirectional Corridor
+        $customStateLane = static::enabled()
+            ->where(function ($q) use ($originStateId, $destStateId) {
+                // Direct StateA -> StateB
+                $q->where(function ($sub) use ($originStateId, $destStateId) {
+                    $sub->where('origin_state_id', $originStateId)
+                        ->where('destination_state_id', $destStateId);
+                })
+                // Or Reverse StateB -> StateA (if bidirectional)
+                ->orWhere(function ($sub) use ($originStateId, $destStateId) {
+                    $sub->where('origin_state_id', $destStateId)
+                        ->where('destination_state_id', $originStateId)
+                        ->where('is_bidirectional', true);
+                });
+            })
             ->where(function ($q) {
                 $q->whereNull('origin_lga_id')->orWhere('origin_lga_id', 0);
             })
@@ -171,26 +211,29 @@ class DeliveryLane extends Model
             })
             ->first();
 
-        if ($stateLane) {
+        if ($customStateLane) {
             return [
-                'lane' => $stateLane,
-                'fee' => (float) $stateLane->delivery_fee,
-                'eta' => $stateLane->estimated_delivery_time ?? '2-4 business days',
-                'lane_type' => 'inter_state',
+                'lane' => $customStateLane,
+                'fee' => (float) $customStateLane->delivery_fee,
+                'eta' => $customStateLane->estimated_delivery_time ?? '2-4 business days',
+                'lane_type' => 'inter_state_custom',
+                'zone_tier' => 3,
                 'is_interstate' => true,
-                'is_fallback' => false,
+                'is_custom_override' => true,
             ];
         }
 
-        // Fallback: Default National Inter-State Fee
-        $defaultInterFee = (float) (getWebConfig(name: 'default_interstate_delivery_fee') ?? 5000.00);
+        // 2. TIER 3: Inter-State Zonal Default (National Freight Transit)
+        $fee = (float) (getWebConfig(name: 'zone_inter_state_fee') ?? 4500.00);
+        $eta = (string) (getWebConfig(name: 'zone_inter_state_eta') ?? '2-4 business days');
         return [
             'lane' => null,
-            'fee' => $defaultInterFee,
-            'eta' => '3-5 business days',
-            'lane_type' => 'inter_state_fallback',
+            'fee' => $fee,
+            'eta' => $eta,
+            'lane_type' => 'zone_inter_state',
+            'zone_tier' => 3,
             'is_interstate' => true,
-            'is_fallback' => true,
+            'is_custom_override' => false,
         ];
     }
 
@@ -199,31 +242,52 @@ class DeliveryLane extends Model
     // ==========================================
 
     /**
-     * Find enabled delivery lane between two LGAs
+     * Find enabled delivery lane between two LGAs (bidirectional aware)
      */
     public static function findLane(int $originLgaId, int $destinationLgaId): ?self
     {
         return static::enabled()
-            ->forOriginAndDestination($originLgaId, $destinationLgaId)
+            ->where(function ($q) use ($originLgaId, $destinationLgaId) {
+                $q->where(function ($sub) use ($originLgaId, $destinationLgaId) {
+                    $sub->where('origin_lga_id', $originLgaId)
+                        ->where('destination_lga_id', $destinationLgaId);
+                })->orWhere(function ($sub) use ($originLgaId, $destinationLgaId) {
+                    $sub->where('origin_lga_id', $destinationLgaId)
+                        ->where('destination_lga_id', $originLgaId)
+                        ->where('is_bidirectional', true);
+                });
+            })
             ->first();
     }
 
     /**
-     * Check if a delivery lane is available and enabled
+     * Check if a delivery lane is available and enabled.
+     * Under the 3-Tier Zonal Distance Pricing model, 100% of Nigerian LGAs are serviceable nationwide.
      */
     public static function isLaneAvailable(int $originLgaId, int $destinationLgaId): bool
     {
-        return static::enabled()
-            ->forOriginAndDestination($originLgaId, $destinationLgaId)
-            ->exists();
+        return true;
     }
 
     /**
-     * Get authoritative delivery fee for an LGA pair
+     * Get authoritative delivery fee for an LGA pair.
+     * Resolves custom bidirectional overrides first, then falls back to Tier 1, 2, or 3 zonal rates.
      */
     public static function getDeliveryFee(int $originLgaId, int $destinationLgaId): ?float
     {
         $lane = static::findLane($originLgaId, $destinationLgaId);
-        return $lane ? (float) $lane->delivery_fee : null;
+        if ($lane) {
+            return (float) $lane->delivery_fee;
+        }
+
+        $originLga = Lga::find($originLgaId);
+        $destLga = Lga::find($destinationLgaId);
+
+        if ($originLga && $destLga) {
+            $resolved = static::resolveLane($originLga->state_id, $originLgaId, $destLga->state_id, $destinationLgaId);
+            return (float) $resolved['fee'];
+        }
+
+        return (float) (getWebConfig(name: 'zone_intra_lga_fee') ?? 1000.00);
     }
 }

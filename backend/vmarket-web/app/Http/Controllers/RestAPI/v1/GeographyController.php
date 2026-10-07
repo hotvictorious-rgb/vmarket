@@ -128,19 +128,33 @@ class GeographyController extends Controller
         $originLgaId = (int) $request->origin_lga_id;
         $destinationLgaId = (int) $request->destination_lga_id;
 
-        $lane = DeliveryLane::findLane($originLgaId, $destinationLgaId);
+        $originLga = \App\Models\Lga::find($originLgaId);
+        $destinationLga = \App\Models\Lga::find($destinationLgaId);
 
-        if (!$lane || !$lane->is_enabled) {
+        if (!$originLga || !$destinationLga) {
             return response()->json([
                 'status' => false,
                 'message' => 'Delivery is not serviceable for this directional route.',
                 'errors' => [
                     [
                         'code' => 'LANE_NOT_SERVICEABLE',
-                        'message' => 'No active delivery lane exists between the selected LGAs.'
+                        'message' => 'Selected LGA was not found in the canonical database.'
                     ]
                 ]
             ], 422);
+        }
+
+        $resolved = DeliveryLane::resolveLane(
+            $originLga->state_id,
+            $originLgaId,
+            $destinationLga->state_id,
+            $destinationLgaId
+        );
+
+        $fee = (float) $resolved['fee'];
+        if ($request->input('package_tier') === 'large') {
+            $surcharge = (float) (getWebConfig(name: 'zone_bulky_cargo_surcharge') ?? 2500.00);
+            $fee += $surcharge;
         }
 
         return response()->json([
@@ -149,10 +163,13 @@ class GeographyController extends Controller
             'data' => [
                 'origin_lga_id' => $originLgaId,
                 'destination_lga_id' => $destinationLgaId,
-                'fee' => (float) $lane->delivery_fee,
-                'estimated_days' => $lane->estimated_delivery_time ?? '2-3 business days',
-                'is_enabled' => (bool) $lane->is_enabled,
-                'lane_id' => $lane->id,
+                'fee' => $fee,
+                'estimated_days' => $resolved['eta'],
+                'is_enabled' => true,
+                'lane_id' => $resolved['lane']?->id ?? null,
+                'lane_type' => $resolved['lane_type'],
+                'zone_tier' => $resolved['zone_tier'],
+                'is_custom_override' => $resolved['is_custom_override'],
             ]
         ], 200);
     }

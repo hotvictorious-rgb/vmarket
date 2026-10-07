@@ -53,11 +53,25 @@ class DeliveryLaneController extends Controller
         $countries = Country::where('is_active', true)->get();
         $states = State::where('is_active', true)->orderBy('name')->get();
 
-        $defaultIntraFee = (float) (BusinessSetting::where('type', 'default_intrastate_delivery_fee')->value('value') ?? 2000.00);
-        $defaultInterFee = (float) (BusinessSetting::where('type', 'default_interstate_delivery_fee')->value('value') ?? 5000.00);
+        $zoneIntraLgaFee = (float) (BusinessSetting::where('type', 'zone_intra_lga_fee')->value('value') ?? 1000.00);
+        $zoneIntraLgaEta = (string) (BusinessSetting::where('type', 'zone_intra_lga_eta')->value('value') ?? '2-4 hours');
+        $zoneInterLgaFee = (float) (BusinessSetting::where('type', 'zone_inter_lga_fee')->value('value') ?? 2500.00);
+        $zoneInterLgaEta = (string) (BusinessSetting::where('type', 'zone_inter_lga_eta')->value('value') ?? 'Same day / 24 hours');
+        $zoneInterStateFee = (float) (BusinessSetting::where('type', 'zone_inter_state_fee')->value('value') ?? 4500.00);
+        $zoneInterStateEta = (string) (BusinessSetting::where('type', 'zone_inter_state_eta')->value('value') ?? '2-4 business days');
+        $zoneBulkyCargoSurcharge = (float) (BusinessSetting::where('type', 'zone_bulky_cargo_surcharge')->value('value') ?? 2500.00);
+
+        // Backward compatibility
+        $defaultIntraFee = $zoneInterLgaFee;
+        $defaultInterFee = $zoneInterStateFee;
 
         return view('admin-views.delivery.delivery-lane', compact(
-            'lanes', 'countries', 'states', 'laneType', 'searchValue', 'defaultIntraFee', 'defaultInterFee'
+            'lanes', 'countries', 'states', 'laneType', 'searchValue',
+            'zoneIntraLgaFee', 'zoneIntraLgaEta',
+            'zoneInterLgaFee', 'zoneInterLgaEta',
+            'zoneInterStateFee', 'zoneInterStateEta',
+            'zoneBulkyCargoSurcharge',
+            'defaultIntraFee', 'defaultInterFee'
         ));
     }
 
@@ -72,6 +86,7 @@ class DeliveryLaneController extends Controller
         }
 
         $laneType = $request->input('lane_type', 'intra_state');
+        $isBidirectional = $request->boolean('is_bidirectional', true);
 
         if ($laneType === 'inter_state') {
             $request->validate([
@@ -83,11 +98,20 @@ class DeliveryLaneController extends Controller
                 'estimated_delivery_time' => 'required|string|max:100',
             ]);
 
-            // Check for duplicate State-to-State lane
-            $exists = DeliveryLane::where('origin_state_id', $request->origin_state_id)
-                ->where('destination_state_id', $request->destination_state_id)
-                ->where('lane_type', 'inter_state')
-                ->exists();
+            // Check for duplicate State-to-State lane (accounting for bidirectional matches)
+            $exists = DeliveryLane::where(function ($q) use ($request, $isBidirectional) {
+                $q->where(function ($sub) use ($request) {
+                    $sub->where('origin_state_id', $request->origin_state_id)
+                        ->where('destination_state_id', $request->destination_state_id);
+                });
+                if ($isBidirectional) {
+                    $q->orWhere(function ($sub) use ($request) {
+                        $sub->where('origin_state_id', $request->destination_state_id)
+                            ->where('destination_state_id', $request->origin_state_id)
+                            ->where('is_bidirectional', true);
+                    });
+                }
+            })->where('lane_type', 'inter_state')->exists();
 
             if ($exists) {
                 ToastMagic::error(translate('Interstate delivery lane already exists between selected States'));
@@ -104,6 +128,7 @@ class DeliveryLaneController extends Controller
                 'lane_type' => 'inter_state',
                 'delivery_fee' => $request->delivery_fee,
                 'estimated_delivery_time' => $request->estimated_delivery_time,
+                'is_bidirectional' => $isBidirectional,
                 'is_enabled' => true,
             ]);
         } else {
@@ -118,11 +143,20 @@ class DeliveryLaneController extends Controller
                 'estimated_delivery_time' => 'required|string|max:100',
             ]);
 
-            // Check for duplicate LGA-to-LGA lane
-            $exists = DeliveryLane::where('origin_lga_id', $request->origin_lga_id)
-                ->where('destination_lga_id', $request->destination_lga_id)
-                ->where('lane_type', 'intra_state')
-                ->exists();
+            // Check for duplicate LGA-to-LGA lane (accounting for bidirectional matches)
+            $exists = DeliveryLane::where(function ($q) use ($request, $isBidirectional) {
+                $q->where(function ($sub) use ($request) {
+                    $sub->where('origin_lga_id', $request->origin_lga_id)
+                        ->where('destination_lga_id', $request->destination_lga_id);
+                });
+                if ($isBidirectional) {
+                    $q->orWhere(function ($sub) use ($request) {
+                        $sub->where('origin_lga_id', $request->destination_lga_id)
+                            ->where('destination_lga_id', $request->origin_lga_id)
+                            ->where('is_bidirectional', true);
+                    });
+                }
+            })->where('lane_type', 'intra_state')->exists();
 
             if ($exists) {
                 ToastMagic::error(translate('Delivery lane already exists between selected LGAs'));
@@ -139,6 +173,7 @@ class DeliveryLaneController extends Controller
                 'lane_type' => 'intra_state',
                 'delivery_fee' => $request->delivery_fee,
                 'estimated_delivery_time' => $request->estimated_delivery_time,
+                'is_bidirectional' => $isBidirectional,
                 'is_enabled' => true,
             ]);
         }
@@ -148,7 +183,7 @@ class DeliveryLaneController extends Controller
             resourceType: DeliveryLane::class,
             resourceId: $lane->id,
             afterState: $lane->toArray(),
-            reason: $request->input('reason', "New directional {$lane->lane_type} delivery lane created")
+            reason: $request->input('reason', "New " . ($lane->is_bidirectional ? 'bidirectional' : 'directional') . " {$lane->lane_type} delivery lane created")
         );
 
         ToastMagic::success(translate('Delivery lane added successfully'));
@@ -156,7 +191,7 @@ class DeliveryLaneController extends Controller
     }
 
     /**
-     * Update Delivery Lane Fee / ETA
+     * Update Delivery Lane Fee / ETA / Bidirectional Flag
      */
     public function update(Request $request, $id): RedirectResponse
     {
@@ -168,6 +203,7 @@ class DeliveryLaneController extends Controller
         $request->validate([
             'delivery_fee' => 'required|numeric|min:0',
             'estimated_delivery_time' => 'required|string|max:100',
+            'is_bidirectional' => 'nullable|boolean',
         ]);
 
         $lane = DeliveryLane::findOrFail($id);
@@ -176,6 +212,7 @@ class DeliveryLaneController extends Controller
         $lane->update([
             'delivery_fee' => $request->delivery_fee,
             'estimated_delivery_time' => $request->estimated_delivery_time,
+            'is_bidirectional' => $request->has('is_bidirectional') ? $request->boolean('is_bidirectional') : $lane->is_bidirectional,
         ]);
 
         \App\Services\AdminAuditService::log(
@@ -184,7 +221,7 @@ class DeliveryLaneController extends Controller
             resourceId: $lane->id,
             beforeState: $beforeState,
             afterState: $lane->fresh()->toArray(),
-            reason: $request->input('reason', 'Delivery fee / ETA updated')
+            reason: $request->input('reason', 'Delivery fee / ETA / bidirectional terms updated')
         );
 
         ToastMagic::success(translate('Delivery lane updated successfully'));
@@ -192,10 +229,70 @@ class DeliveryLaneController extends Controller
     }
 
     /**
-     * Update National Default Fallback Rates
+     * Update 3-Tier Zonal Distance Baseline Rates & Bulky Cargo Surcharge
+     */
+    public function updateZonalRates(Request $request): RedirectResponse
+    {
+        if (!\App\Utils\Helpers::module_permission_check('delivery.lane.manage') && !\App\Utils\Helpers::module_permission_check('order_management')) {
+            ToastMagic::error(translate('Access Denied: Permission required.'));
+            return back();
+        }
+
+        $request->validate([
+            'zone_intra_lga_fee' => 'required|numeric|min:0',
+            'zone_intra_lga_eta' => 'required|string|max:100',
+            'zone_inter_lga_fee' => 'required|numeric|min:0',
+            'zone_inter_lga_eta' => 'required|string|max:100',
+            'zone_inter_state_fee' => 'required|numeric|min:0',
+            'zone_inter_state_eta' => 'required|string|max:100',
+            'zone_bulky_cargo_surcharge' => 'required|numeric|min:0',
+        ]);
+
+        $settings = [
+            'zone_intra_lga_fee' => (string) $request->zone_intra_lga_fee,
+            'zone_intra_lga_eta' => (string) $request->zone_intra_lga_eta,
+            'zone_inter_lga_fee' => (string) $request->zone_inter_lga_fee,
+            'zone_inter_lga_eta' => (string) $request->zone_inter_lga_eta,
+            'zone_inter_state_fee' => (string) $request->zone_inter_state_fee,
+            'zone_inter_state_eta' => (string) $request->zone_inter_state_eta,
+            'zone_bulky_cargo_surcharge' => (string) $request->zone_bulky_cargo_surcharge,
+            // Synchronize legacy keys
+            'default_intrastate_delivery_fee' => (string) $request->zone_inter_lga_fee,
+            'default_interstate_delivery_fee' => (string) $request->zone_inter_state_fee,
+        ];
+
+        foreach ($settings as $type => $value) {
+            BusinessSetting::updateOrInsert(
+                ['type' => $type],
+                ['value' => $value, 'updated_at' => now()]
+            );
+        }
+
+        if (function_exists('clearWebConfigCacheKeys')) {
+            clearWebConfigCacheKeys();
+        }
+
+        \App\Services\AdminAuditService::log(
+            action: 'delivery_lane.zonal_rates_updated',
+            resourceType: DeliveryLane::class,
+            resourceId: 0,
+            afterState: $settings,
+            reason: '3-Tier Zonal Distance Baseline Pricing and Bulky Surcharge updated'
+        );
+
+        ToastMagic::success(translate('3-Tier Zonal Distance Baseline Rates updated successfully'));
+        return back();
+    }
+
+    /**
+     * Update National Default Fallback Rates (Legacy alias for updateZonalRates)
      */
     public function updateDefaultRates(Request $request): RedirectResponse
     {
+        if ($request->has('zone_intra_lga_fee')) {
+            return $this->updateZonalRates($request);
+        }
+
         if (!\App\Utils\Helpers::module_permission_check('delivery.lane.manage') && !\App\Utils\Helpers::module_permission_check('order_management')) {
             ToastMagic::error(translate('Access Denied: Permission required.'));
             return back();
@@ -215,6 +312,20 @@ class DeliveryLaneController extends Controller
             ['type' => 'default_interstate_delivery_fee'],
             ['value' => (string) $request->default_interstate_delivery_fee, 'updated_at' => now()]
         );
+
+        // Also sync zonal
+        BusinessSetting::updateOrInsert(
+            ['type' => 'zone_inter_lga_fee'],
+            ['value' => (string) $request->default_intrastate_delivery_fee, 'updated_at' => now()]
+        );
+        BusinessSetting::updateOrInsert(
+            ['type' => 'zone_inter_state_fee'],
+            ['value' => (string) $request->default_interstate_delivery_fee, 'updated_at' => now()]
+        );
+
+        if (function_exists('clearWebConfigCacheKeys')) {
+            clearWebConfigCacheKeys();
+        }
 
         ToastMagic::success(translate('Default fallback delivery rates updated successfully'));
         return back();

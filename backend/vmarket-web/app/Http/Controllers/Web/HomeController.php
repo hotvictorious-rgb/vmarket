@@ -296,12 +296,10 @@ class HomeController extends Controller
         $topVendorsList = ProductManager::getPriorityWiseTopVendorQuery(query: $this->cacheHomePageTopVendorsList());
         $brands = $this->cachePriorityWiseBrandList();
 
-        // [AI] Verified Shops available for customer LGA (Delivery or Pickup)
+        // [AI] Verified Shops available for customer LGA (Tier 1 Same LGA -> Tier 2 Same State -> Nationwide)
         $nearbyShops = Cache::remember('theme_vmarket_nearby_shops_lga_' . $activeLgaId, 1800, function () use ($activeLgaId) {
-            $deliveryOriginLgaIds = \App\Models\DeliveryLane::where('destination_lga_id', $activeLgaId)
-                ->where('is_enabled', true)
-                ->pluck('origin_lga_id')
-                ->toArray();
+            $customerLga = \App\Models\Lga::find($activeLgaId);
+            $stateId = (int) ($customerLga?->state_id ?? 0);
 
             return \App\Models\Shop::where('temporary_close', 0)
                 ->where(function ($query) {
@@ -309,14 +307,8 @@ class HomeController extends Controller
                         $seller->where('status', 'approved')->where('marketplace_status', 'approved');
                     });
                 })
-                ->where(function ($q) use ($deliveryOriginLgaIds, $activeLgaId) {
-                    if (!empty($deliveryOriginLgaIds)) {
-                        $q->whereIn('lga_id', $deliveryOriginLgaIds);
-                    }
-                    $q->orWhere(function ($pickupQ) use ($activeLgaId) {
-                        $pickupQ->where('lga_id', $activeLgaId)
-                                ->where('pickup_enabled', 1);
-                    });
+                ->when($stateId > 0, function ($q) use ($activeLgaId, $stateId) {
+                    $q->orderByRaw("CASE WHEN lga_id = {$activeLgaId} THEN 0 WHEN state_id = {$stateId} THEN 1 ELSE 2 END");
                 })
                 ->with(['seller'])
                 ->take(8)
