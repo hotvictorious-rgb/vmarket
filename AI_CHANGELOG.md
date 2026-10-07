@@ -1,3 +1,7 @@
+### [2026-10-07 13:02 UTC] Notification Message Database Seeding & Comprehensive README Blueprint [backend, ai-governance] [AI]
+- Created and executed `NotificationMessagesSeeder.php` seeding all 70 notification message templates across Customer, Vendor, Delivery Rider, and Logistics Company actors with active status (`status = 1`) and human-readable, variable-interpolated default text (`{userName}`, `{shopName}`, `{orderId}`, `{amount}`, `{reservationCode}`, `{companyName}`).
+- Rewrote `README.md` in depth with complete institutional architecture, 90/5/5 financial invariant formulation, dual fulfillment flowcharts, return maturation buffer, multi-actor notification matrix, canonical geography cascade, monorepo directory layout, and local development/testing guide.
+
 ### [2026-10-07 12:52 UTC] In-Shop Pickup Inspection Hold Settings & Unified Multi-Actor Push Notification System [backend, ai-governance] [AI]
 - Added configurable `pickup_inspection_window_hours` in Super Admin Order Settings (`order-settings/index.blade.php` and `OrderSettingsController.php`), persisting dynamic holding TTL for in-shop customer inspections with automated web config cache invalidation.
 - Wired dynamic hold hours into `PickupReservationService.php` (`Carbon::now()->addHours($holdHours)`), replacing static 24h fallback with admin-governed configuration.
