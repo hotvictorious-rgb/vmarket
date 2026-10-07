@@ -64,6 +64,47 @@
                 </div>
             </div>
 
+            {{-- [AI] Proof of Delivery & Chain-of-Custody for Logistics Fleet --}}
+            @if(isset($order->verificationImages) && count($order->verificationImages) > 0)
+                <div class="card border-0 shadow-sm rounded-12 mb-4">
+                    <div class="card-header bg-white border-0 py-3 d-flex align-items-center justify-content-between">
+                        <h5 class="fw-bold mb-0">📸 {{ translate('Proof_of_Delivery_&_Counter_Verification') }}</h5>
+                        <span class="badge badge-soft-success">🛡️ {{ translate('Immutable_Handover_Record') }}</span>
+                    </div>
+                    <div class="card-body">
+                        <div class="row g-3">
+                            @foreach($order->verificationImages as $proof)
+                                <div class="col-md-6">
+                                    <div class="p-3 bg-light rounded-8 border">
+                                        <div class="d-flex justify-content-between align-items-center mb-2">
+                                            <span class="badge {{ $proof->handover_type === 'rider_shop_pickup' ? 'badge-soft-info' : 'badge-soft-success' }} fs-11">
+                                                @if($proof->handover_type === 'rider_shop_pickup')
+                                                    🏍️ {{ translate('Rider_Counter_Collection') }}
+                                                @elseif($proof->handover_type === 'customer_doorstep')
+                                                    🏠 {{ translate('Customer_Doorstep_Delivery') }}
+                                                @else
+                                                    {{ translate('Handover_Proof') }}
+                                                @endif
+                                            </span>
+                                            <small class="text-muted fs-11">{{ date('d M Y, h:i A', strtotime($proof->created_at)) }}</small>
+                                        </div>
+                                        <a href="{{ $proof->image_full_url['path'] ?? '' }}" target="_blank">
+                                            <img src="{{ $proof->image_full_url['path'] ?? '' }}"
+                                                 class="rounded img-fluid w-100 shadow-sm"
+                                                 style="max-height: 160px; object-fit: cover;"
+                                                 alt="Proof of Delivery">
+                                        </a>
+                                        <div class="fs-12 text-muted mt-2">
+                                            <strong>{{ translate('Verified_By:') }}</strong> <span class="text-dark fw-semibold text-capitalize">{{ $proof->verified_by_type ?? 'User' }}</span>
+                                        </div>
+                                    </div>
+                                </div>
+                            @endforeach
+                        </div>
+                    </div>
+                </div>
+            @endif
+
             {{-- Parcels / Items List --}}
             <div class="card border-0 shadow-sm rounded-12">
                 <div class="card-header bg-white border-0 py-3">

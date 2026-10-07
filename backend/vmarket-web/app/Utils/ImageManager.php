@@ -25,8 +25,13 @@ class ImageManager
                 try {
                     $imageWebp = Image::make($image);
                     
-                    // If image exceeds 2MB, automatically downscale it to max 1200px
-                    if (method_exists($image, 'getSize') && $image->getSize() > 2 * 1024 * 1024) {
+                    // Auto-orient based on phone camera EXIF orientation tag
+                    if (method_exists($imageWebp, 'orientate')) {
+                        $imageWebp->orientate();
+                    }
+
+                    // If image dimensions exceed 1200px or size exceeds 1MB, downscale maintaining aspect ratio
+                    if ($imageWebp->width() > 1200 || $imageWebp->height() > 1200 || (method_exists($image, 'getSize') && $image->getSize() > 1024 * 1024)) {
                         $imageWebp->resize(1200, 1200, function ($constraint) {
                             $constraint->aspectRatio();
                             $constraint->upsize();
@@ -38,7 +43,7 @@ class ImageManager
                         $format = ($originalExtension === 'png') ? 'png' : 'jpg';
                     }
 
-                    $imageEncoded = $imageWebp->encode($format, 85);
+                    $imageEncoded = $imageWebp->encode($format, 80);
                     $imageName = Carbon::now()->toDateString() . "-" . uniqid() . "." . $format;
                     Storage::disk($storage)->put($dir . $imageName, (string)$imageEncoded);
                     $imageWebp->destroy();
@@ -53,6 +58,45 @@ class ImageManager
             $imageName = 'def.webp';
         }
         return $imageName;
+    }
+
+    /**
+     * [AI] Ultra-optimized upload for verification & handover proof snapshots.
+     * Ensures images are scaled to max 1000px, EXIF-orientated, stripped of metadata,
+     * and compressed to ~70-120KB WebP (or JPG) so hosting storage never overflows.
+     */
+    public static function uploadOptimizedVerificationImage(string $dir, $image): string
+    {
+        $storage = config('filesystems.disks.default') ?? 'public';
+        if ($image != null) {
+            if (!Storage::disk($storage)->exists($dir)) {
+                Storage::disk($storage)->makeDirectory($dir);
+            }
+
+            try {
+                $img = Image::make($image);
+
+                if (method_exists($img, 'orientate')) {
+                    $img->orientate();
+                }
+
+                $img->resize(1000, 1000, function ($constraint) {
+                    $constraint->aspectRatio();
+                    $constraint->upsize();
+                });
+
+                $format = (function_exists('imagetypes') && (imagetypes() & IMG_WEBP)) ? 'webp' : 'jpg';
+                $encoded = $img->encode($format, 75);
+
+                $imageName = Carbon::now()->toDateString() . "-" . uniqid() . "." . $format;
+                Storage::disk($storage)->put($dir . $imageName, (string)$encoded);
+                $img->destroy();
+                return $imageName;
+            } catch (\Throwable $e) {
+                return self::upload($dir, 'webp', $image);
+            }
+        }
+        return 'def.webp';
     }
 
     public static function file_upload(string $dir, string $format, $file = null): string

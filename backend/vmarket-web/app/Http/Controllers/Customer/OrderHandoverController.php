@@ -20,6 +20,7 @@ use App\Models\Transaction;
 use App\Services\OrderStatusHistoryService;
 use App\Traits\PushNotificationTrait;
 use App\Traits\StorageTrait;
+use App\Utils\ImageManager;
 use App\Utils\OrderManager;
 use Brian2694\Toastr\Facades\Toastr;
 use Carbon\Carbon;
@@ -136,8 +137,8 @@ class OrderHandoverController extends Controller
         // Clear attempt lock on success
         Cache::forget($lockKey);
 
-        // Upload Proof Picture
-        $imageName = $this->upload(dir: 'delivery-man/verification-image/', format: 'webp', image: $request->file('image'));
+        // Upload Proof Picture with dynamic downscaling & WebP compression
+        $imageName = ImageManager::uploadOptimizedVerificationImage('delivery-man/verification-image/', $request->file('image'));
 
         DB::beginTransaction();
         try {
@@ -299,8 +300,8 @@ class OrderHandoverController extends Controller
         // Clear attempt lock on success
         Cache::forget($lockKey);
 
-        // Upload Proof Picture
-        $imageName = $this->upload(dir: 'delivery-man/verification-image/', format: 'webp', image: $request->file('image'));
+        // Upload Proof Picture with dynamic downscaling & WebP compression
+        $imageName = ImageManager::uploadOptimizedVerificationImage('delivery-man/verification-image/', $request->file('image'));
 
         DB::beginTransaction();
         try {

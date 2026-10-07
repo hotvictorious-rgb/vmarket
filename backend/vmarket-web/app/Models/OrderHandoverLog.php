@@ -52,4 +52,12 @@ class OrderHandoverLog extends Model
     {
         return $this->belongsTo(DeliveryMan::class, 'delivery_man_id');
     }
+
+    protected static function boot(): void
+    {
+        parent::boot();
+        static::deleting(function ($model) {
+            throw new \Exception('IMMUTABILITY VIOLATION: Order handover chain-of-custody audit logs are legally immutable and cannot be deleted.');
+        });
+    }
 }

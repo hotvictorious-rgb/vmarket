@@ -1369,6 +1369,62 @@
                         @endif
                     </div>
                 </div>
+
+                {{-- [AI] Proof of Delivery & Chain-of-Custody Card for Super Admin --}}
+                @if(isset($order->verificationImages) && count($order->verificationImages) > 0)
+                    <div class="card mb-3">
+                        <div class="card-header bg-white border-bottom py-3">
+                            <h4 class="d-flex align-items-center gap-2 fs-14 fw-bold mb-0">
+                                <i class="tio-camera text-primary"></i>
+                                <span>{{ translate('Proof_of_Delivery_&_Chain_of_Custody') }}</span>
+                                <span class="badge badge-soft-success ms-auto">🛡️ {{ translate('Immutable_Audit') }}</span>
+                            </h4>
+                        </div>
+                        <div class="card-body">
+                            <div class="d-flex flex-column gap-3">
+                                @foreach($order->verificationImages as $vIndex => $proof)
+                                    <div class="p-3 bg-section rounded border">
+                                        <div class="d-flex justify-content-between align-items-center mb-2">
+                                            <span class="badge {{ $proof->handover_type === 'rider_shop_pickup' ? 'badge-soft-info' : 'badge-soft-success' }} fw-bold text-uppercase fs-11">
+                                                @if($proof->handover_type === 'customer_inshop_pickup')
+                                                    🏬 {{ translate('In-Shop_Customer_Pickup') }}
+                                                @elseif($proof->handover_type === 'rider_shop_pickup')
+                                                    🏍️ {{ translate('Rider_Counter_Collection') }}
+                                                @elseif($proof->handover_type === 'customer_doorstep')
+                                                    🏠 {{ translate('Customer_Doorstep_Delivery') }}
+                                                @else
+                                                    {{ translate('Handover_Proof') }}
+                                                @endif
+                                            </span>
+                                            <span class="fs-11 text-muted">{{ date('d M Y, h:i A', strtotime($proof->created_at)) }}</span>
+                                        </div>
+
+                                        <div class="d-flex align-items-center gap-3">
+                                            <a href="{{ $proof->image_full_url['path'] ?? '' }}" target="_blank" title="{{ translate('Click_to_view_full_image') }}">
+                                                <img src="{{ $proof->image_full_url['path'] ?? '' }}"
+                                                     class="rounded border shadow-sm img-fluid"
+                                                     style="max-height: 110px; max-width: 140px; object-fit: cover;"
+                                                     alt="Handover Proof">
+                                            </a>
+                                            <div class="fs-12 text-muted">
+                                                <div><strong>{{ translate('Verified_By:') }}</strong> <span class="text-dark fw-semibold text-capitalize">{{ $proof->verified_by_type ?? 'User' }}</span></div>
+                                                @if($proof->pickup_otp_used)
+                                                    <div><strong>{{ translate('Code_Matched:') }}</strong> <span class="badge badge-soft-dark font-monospace fs-11">••••••</span></div>
+                                                @endif
+                                                <div class="mt-2">
+                                                    <a href="{{ $proof->image_full_url['path'] ?? '' }}" target="_blank" class="btn btn-outline-primary btn-xs py-1 px-2">
+                                                        <i class="tio-open-in-new mr-1"></i> {{ translate('Inspect_Full_Proof') }}
+                                                    </a>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                @endforeach
+                            </div>
+                        </div>
+                    </div>
+                @endif
+
                 @php($billing=$order['billing_address_data'])
 
                 <div class="card">

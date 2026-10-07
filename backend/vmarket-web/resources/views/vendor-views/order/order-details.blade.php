@@ -1039,12 +1039,24 @@
                                 </div>
                                 @php
                                     $riderProof = $order->verificationImages ? $order->verificationImages->where('handover_type', 'rider_shop_pickup')->last() : null;
+                                    $doorstepProof = $order->verificationImages ? $order->verificationImages->where('handover_type', 'customer_doorstep')->last() : null;
                                 @endphp
                                 @if($riderProof)
                                     <div class="mt-2 pt-2 border-top">
                                         <span class="d-block fs-11 text-muted mb-1 font-weight-bold">{{ translate('Rider Counter Photo Proof') }}:</span>
                                         <a href="{{ $riderProof->image_full_url['path'] ?? '' }}" target="_blank">
                                             <img src="{{ $riderProof->image_full_url['path'] ?? '' }}" class="rounded img-fluid" style="max-height: 120px; object-fit: cover;" alt="Rider Proof">
+                                        </a>
+                                    </div>
+                                @endif
+                                @if($doorstepProof)
+                                    <div class="mt-2 pt-2 border-top">
+                                        <div class="d-flex align-items-center justify-content-between mb-1">
+                                            <span class="fs-11 text-success font-weight-bold">✅ {{ translate('Customer Doorstep Delivery Proof') }}:</span>
+                                            <small class="text-muted fs-11">{{ date('d M Y, h:i A', strtotime($doorstepProof->created_at)) }}</small>
+                                        </div>
+                                        <a href="{{ $doorstepProof->image_full_url['path'] ?? '' }}" target="_blank">
+                                            <img src="{{ $doorstepProof->image_full_url['path'] ?? '' }}" class="rounded img-fluid" style="max-height: 120px; object-fit: cover;" alt="Doorstep Delivery Proof">
                                         </a>
                                     </div>
                                 @endif

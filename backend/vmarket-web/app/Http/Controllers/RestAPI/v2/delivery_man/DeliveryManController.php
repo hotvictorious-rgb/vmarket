@@ -82,7 +82,7 @@ class DeliveryManController extends Controller
     public function get_current_orders(Request $request)
     {
         $deliveryMan = $request['delivery_man'];
-        $orders = Order::with(['shippingAddress', 'customer', 'seller.shop', 'originHub.lga.state', 'destinationHub.lga.state'])
+        $orders = Order::with(['shippingAddress', 'customer', 'seller.shop', 'originHub.lga.state', 'destinationHub.lga.state', 'verificationImages'])
             ->whereIn('order_status', ['pending', 'processing', 'out_for_delivery', 'confirmed'])
             ->where(['delivery_man_id' => $deliveryMan['id']])
             ->orderBy('expected_delivery_date', 'asc')
@@ -219,7 +219,7 @@ class DeliveryManController extends Controller
 
             if ($request['status'] == 'out_for_delivery') {
                 $imageFile = $request->file('image') ?? $request->file('proof_image');
-                $imageName = ImageManager::upload('delivery-man/verification-image/', 'webp', $imageFile);
+                $imageName = ImageManager::uploadOptimizedVerificationImage('delivery-man/verification-image/', $imageFile);
 
                 OrderDeliveryVerification::create([
                     'order_id' => $order->id,
@@ -504,7 +504,7 @@ class DeliveryManController extends Controller
     {
         $deliveryMan = $request['delivery_man'];
 
-        $orders = Order::with(['shippingAddress', 'customer', 'seller.shop'])
+        $orders = Order::with(['shippingAddress', 'customer', 'seller.shop', 'verificationImages'])
             ->where(['delivery_man_id' => $deliveryMan->id])
             ->when(!empty($request->search), function ($query) use ($request, $deliveryMan) {
                 return $query->where('id', 'like', "%{$request['search']}%")
@@ -549,7 +549,7 @@ class DeliveryManController extends Controller
     {
         $deliveryMan = $request['delivery_man'];
         // [AI] Ownership Guard: Only return order assigned to this delivery rider
-        $order = Order::with(['shippingAddress', 'customer', 'seller.shop'])
+        $order = Order::with(['shippingAddress', 'customer', 'seller.shop', 'verificationImages'])
             ->where(['id' => $request['id'], 'delivery_man_id' => $deliveryMan['id']])
             ->first();
         if (!$order) {
@@ -912,7 +912,7 @@ class DeliveryManController extends Controller
             foreach ($request->file('image') as $key => $img) {
                 $data = [
                     'order_id' => $request->order_id,
-                    'image' => ImageManager::upload('delivery-man/verification-image/', 'webp', $img),
+                    'image' => ImageManager::uploadOptimizedVerificationImage('delivery-man/verification-image/', $img),
                     'created_at' => now(),
                     'updated_at' => now(),
                 ];
@@ -970,6 +970,34 @@ class DeliveryManController extends Controller
         $delivery_man->save();
 
         return response()->json(['message' => 'Successfully change'], 200);
+    }
+
+    /**
+     * [AI] Expose immutable proof photos (counter pickup and customer delivery) to the delivery rider
+     */
+    public function get_order_proofs(Request $request): JsonResponse
+    {
+        $validator = Validator::make($request->all(), [
+            'order_id' => 'required'
+        ]);
+        if ($validator->fails()) {
+            return response()->json(['errors' => Helpers::validationErrorProcessor($validator)], 403);
+        }
+
+        $deliveryMan = $request['delivery_man'];
+        $order = Order::with('verificationImages')
+            ->where(['id' => $request['order_id'], 'delivery_man_id' => $deliveryMan['id']])
+            ->first();
+
+        if (!$order) {
+            return response()->json(['message' => translate('order_not_found')], 404);
+        }
+
+        return response()->json([
+            'order_id' => $order->id,
+            'order_status' => $order->order_status,
+            'verification_images' => $order->verificationImages,
+        ], 200);
     }
 
     /**

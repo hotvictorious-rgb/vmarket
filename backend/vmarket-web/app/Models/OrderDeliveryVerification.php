@@ -65,5 +65,9 @@ class OrderDeliveryVerification extends Model
                 ]);
             }
         });
+
+        static::deleting(function ($model) {
+            throw new \Exception('IMMUTABILITY VIOLATION: Order delivery verification proofs are legally immutable and can never be deleted.');
+        });
     }
 }
