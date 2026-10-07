@@ -58,7 +58,7 @@ class _AddNewAddressScreenState extends State<AddNewAddressScreen> {
   CameraPosition? _cameraPosition;
   bool _updateAddress = true;
   Address? _address;
-  String zip = '',  country = 'IN';
+  String zip = '',  country = 'NG';
   late LatLng _defaut;
 
   final GlobalKey<FormState> _addressFormKey = GlobalKey();
@@ -75,7 +75,9 @@ class _AddNewAddressScreenState extends State<AddNewAddressScreen> {
     super.initState();
 
     config.DefaultLocation? dLocation = Provider.of<SplashController>(context, listen: false).configModel?.defaultLocation;
-    _defaut = LatLng(double.parse(dLocation?.lat ?? '0'), double.parse(dLocation?.lng ?? '0'));
+    final parsedLat = double.tryParse(dLocation?.lat ?? '') ?? 5.0377;
+    final parsedLng = double.tryParse(dLocation?.lng ?? '') ?? 7.9128;
+    _defaut = LatLng(parsedLat != 0 ? parsedLat : 5.0377, parsedLng != 0 ? parsedLng : 7.9128);
 
     if(widget.isBilling!){
       _address = Address.billing;

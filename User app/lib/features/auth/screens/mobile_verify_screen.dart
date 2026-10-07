@@ -23,13 +23,13 @@ class MobileVerificationScreenState extends State<MobileVerificationScreen> {
 
   TextEditingController? _numberController;
   final FocusNode _numberFocus = FocusNode();
-  String? _countryDialCode = '+880';
+  String? _countryDialCode = '+234';
 
   @override
   void initState() {
     super.initState();
     _numberController = TextEditingController();
-    _countryDialCode = CountryCode.fromCountryCode(Provider.of<SplashController>(context, listen: false).configModel?.countryCode??'BD').dialCode;
+    _countryDialCode = CountryCode.fromCountryCode(Provider.of<SplashController>(context, listen: false).configModel?.countryCode??'NG').dialCode;
   }
 
 
@@ -66,7 +66,7 @@ class MobileVerificationScreenState extends State<MobileVerificationScreen> {
                             _countryDialCode = countryCode.dialCode;
                           },
                           initialSelection: _countryDialCode,
-                          favorite: [_countryDialCode??'BD'],
+                          favorite: [_countryDialCode??'NG'],
                           showDropDownButton: true,
                           padding: EdgeInsets.zero,
                           showFlagMain: true,
@@ -87,7 +87,7 @@ class MobileVerificationScreenState extends State<MobileVerificationScreen> {
                     !authProvider.isPhoneNumberVerificationButtonLoading ?
                     CustomButton(buttonText: getTranslated('continue', context),
                       onTap: () async {
-                        String number = _countryDialCode??'BD${_numberController?.text.trim()}';
+                        String number = '${_countryDialCode ?? '+234'}${_numberController?.text.trim()}';
                         String numberChk = _numberController?.text.trim()??'';
 
                         if (numberChk.isEmpty) {

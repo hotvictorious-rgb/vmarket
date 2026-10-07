@@ -26,7 +26,7 @@ class LocalizationController extends ChangeNotifier {
     _locale = locale;
     _isLtr = _locale.languageCode != 'ar';
     dioClient!.updateHeader(null, locale.countryCode);
-    Provider.of<AuthController>(Get.context!, listen: false).setCurrentLanguage(locale.countryCode == 'US'?'en': _locale.countryCode!.toLowerCase());
+    Provider.of<AuthController>(Get.context!, listen: false).setCurrentLanguage((locale.countryCode == 'US' || locale.countryCode == 'NG') ? 'en': _locale.countryCode!.toLowerCase());
     for(int index=0; index<AppConstants.languages.length; index++) {
       if(AppConstants.languages[index].languageCode == locale.languageCode) {
         _languageIndex = index;
@@ -57,6 +57,6 @@ class LocalizationController extends ChangeNotifier {
 
 
   String? getCurrentLanguage() {
-    return storageService.getString(AppConstants.countryCode) ?? "US";
+    return storageService.getString(AppConstants.countryCode) ?? "NG";
   }
 }

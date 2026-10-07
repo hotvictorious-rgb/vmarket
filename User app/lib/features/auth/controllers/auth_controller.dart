@@ -67,7 +67,7 @@ class AuthController with ChangeNotifier {
   bool get isForgotPasswordLoading => _isForgotPasswordLoading;
   set setForgetPasswordLoading(bool value) => _isForgotPasswordLoading = value;
 
-  String countryDialCode = '+880';
+  String countryDialCode = '+234';
   void setCountryCode(String countryCode, {bool notify = true}) {
     countryDialCode = countryCode;
     if (notify) {
