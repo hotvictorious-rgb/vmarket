@@ -268,10 +268,85 @@ class ConfigController extends Controller
             'system_image_file_upload_max_size' => getFileUploadMaxSize(type: 'image'),
             'system_general_file_upload_max_size' => getFileUploadMaxSize(type: 'file'),
             'vendor_can_edit_order_status' => getWebConfig('vendor_can_edit_order') ?? 0,
+            'server_structure' => $this->getServerStructureConfig(),
         ];
         });
 
         return response()->json($responseConfig);
+    }
+
+    /**
+     * [AI] Authoritative Server-Driven UI (SDUI) and dynamic layout/feature structure across all 3 client mobile apps.
+     * Enables Admin to reorder home sections, toggle features, and update client UX on-the-fly without App Store releases.
+     */
+    private function getServerStructureConfig(): array
+    {
+        $saved = getWebConfig(name: 'server_structure');
+        if (is_string($saved)) {
+            $saved = json_decode($saved, true);
+        }
+        if (is_array($saved) && !empty($saved)) {
+            return $saved;
+        }
+
+        return [
+            'layout_version' => 1,
+            'updated_at' => now()->toIso8601String(),
+            'customer_app' => [
+                'home_sections' => [
+                    ['id' => 'location_bar', 'title' => 'Your Location', 'is_enabled' => true, 'sort_order' => 1],
+                    ['id' => 'announcements', 'title' => 'Announcements', 'is_enabled' => true, 'sort_order' => 2],
+                    ['id' => 'search_bar', 'title' => 'Search', 'is_enabled' => true, 'sort_order' => 3],
+                    ['id' => 'hero_banners', 'title' => 'Hero Banners', 'is_enabled' => true, 'sort_order' => 4],
+                    ['id' => 'categories', 'title' => 'Categories', 'is_enabled' => true, 'sort_order' => 5],
+                    ['id' => 'find_what_you_need', 'title' => 'Find What You Need', 'is_enabled' => true, 'sort_order' => 6],
+                    ['id' => 'order_again', 'title' => 'Order Again', 'is_enabled' => true, 'sort_order' => 7],
+                    ['id' => 'nearby_shops', 'title' => 'Local Stores in Your Area', 'is_enabled' => true, 'sort_order' => 8],
+                    ['id' => 'footer_banner_slider', 'title' => 'Footer Banner Slider', 'is_enabled' => true, 'sort_order' => 9],
+                    ['id' => 'featured_products', 'title' => 'Featured Products', 'is_enabled' => true, 'sort_order' => 10],
+                    ['id' => 'top_side_bar_banner', 'title' => 'Promotional Banners', 'is_enabled' => true, 'sort_order' => 11],
+                    ['id' => 'recommended_products', 'title' => 'Recommended For You', 'is_enabled' => true, 'sort_order' => 12],
+                    ['id' => 'latest_products', 'title' => 'Latest Arrivals', 'is_enabled' => true, 'sort_order' => 13],
+                    ['id' => 'footer_banner_list', 'title' => 'Secondary Banner', 'is_enabled' => true, 'sort_order' => 14],
+                    ['id' => 'just_for_you', 'title' => 'Just For You', 'is_enabled' => true, 'sort_order' => 15],
+                    ['id' => 'more_stores', 'title' => 'More Stores', 'is_enabled' => true, 'sort_order' => 16],
+                    ['id' => 'home_category_products', 'title' => 'Category Showcases', 'is_enabled' => true, 'sort_order' => 17],
+                    ['id' => 'main_section_banner', 'title' => 'Main Section Banner', 'is_enabled' => true, 'sort_order' => 18],
+                ],
+                'navigation_tabs' => [
+                    ['id' => 'home', 'title' => 'Home', 'is_enabled' => true, 'sort_order' => 1],
+                    ['id' => 'cart', 'title' => 'Cart', 'is_enabled' => true, 'sort_order' => 2],
+                    ['id' => 'orders', 'title' => 'Orders', 'is_enabled' => true, 'sort_order' => 3],
+                    ['id' => 'account', 'title' => 'Account', 'is_enabled' => true, 'sort_order' => 4],
+                ],
+                'features' => [
+                    'in_shop_pickup' => true,
+                    'doorstep_delivery' => true,
+                    'call_to_order' => true,
+                    'cashback_rewards' => true,
+                    'location_switcher' => true,
+                    'zonal_pricing_display' => true,
+                    'dynamic_lane_eta' => true,
+                ],
+            ],
+            'vendor_app' => [
+                'features' => [
+                    'pos_module' => (bool)(getWebConfig(name: 'seller_pos') ?? 1),
+                    'pickup_inspection_validation' => true,
+                    'order_status_edit' => (bool)(getWebConfig(name: 'vendor_can_edit_order') ?? 0),
+                    'delivery_man_chat' => true,
+                    'bank_withdrawals' => true,
+                ],
+            ],
+            'delivery_app' => [
+                'features' => [
+                    'otp_verification_required' => true,
+                    'cash_collection_tracking' => true,
+                    'live_route_tracking' => (bool)(getWebConfig(name: 'map_api_status') ?? 0),
+                    'proof_of_delivery_image' => (bool)(getWebConfig(name: 'upload_picture_on_delivery') ?? 1),
+                ],
+            ],
+        ];
     }
 
     public function getBusinessPagesList(Request $request)
