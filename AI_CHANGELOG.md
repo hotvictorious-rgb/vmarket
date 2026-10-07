@@ -1,3 +1,12 @@
+### [2026-10-07 12:52 UTC] In-Shop Pickup Inspection Hold Settings & Unified Multi-Actor Push Notification System [backend, ai-governance] [AI]
+- Added configurable `pickup_inspection_window_hours` in Super Admin Order Settings (`order-settings/index.blade.php` and `OrderSettingsController.php`), persisting dynamic holding TTL for in-shop customer inspections with automated web config cache invalidation.
+- Wired dynamic hold hours into `PickupReservationService.php` (`Carbon::now()->addHours($holdHours)`), replacing static 24h fallback with admin-governed configuration.
+- Expanded `PushNotificationService.php` and `PushNotificationTrait.php` with push and in-app notification triggers for all pickup lifecycle events (`pickup_reserved_message`, `new_pickup_reservation_message`, `pickup_inspected_accepted_message`, `pickup_completed_message`, `pickup_expired_message`, `pickup_reservation_expired_message`).
+- Wired cashback earning push notification (`cashback_earned_message`) and pickup handover completion notification in `InShopHandoverController.php`.
+- Implemented dedicated Logistics Company push notification tab and management in Super Admin Push Notification Center (`PushNotificationSettingsController.php`, `_push-notification-inline-menu.blade.php`, `index.blade.php`, and `_logistics-notification.blade.php`).
+- Implemented `sendLogisticsNotification()` with dual dispatch: in-portal notification record + email fail-safe fallback for logistics partners (`order_dispatched_to_company`, `waybill_routed_to_company`, `rider_delivery_completed`, `company_withdrawal_status`, `rider_failed_delivery_alert`).
+- Validated with PHP syntax linter (0 errors) and automated PHPUnit test suites (16/16 tests passing, 10/10 tests passing).
+
 ### [2026-10-05 19:15 UTC] Storefront Cart & Shipping Method Selector Redesign & Checkout Unblocking [backend, ai-governance] [AI]
 - Resolved checkout validation deadlock `OrderManager::checkValidationForCheckoutPages()` returning `empty-shipping` error by adding authoritative fallback & auto-initialization in `WebController@shop_cart`, `OrderManager`, and `SystemController@insertIntoCartShipping`.
 - Corrected origin LGA calculation in `Customer\SystemController::insertIntoCartShipping()` for Admin Flagship items (`seller_is == 'admin'`), accurately querying `Shop::where('seller_id', 0)->first()` with fallback to Uyo Hub (LGA 69).

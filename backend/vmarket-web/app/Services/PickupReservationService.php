@@ -8,6 +8,8 @@ use App\Models\PickupReservation;
 use App\Models\Product;
 use App\Models\Seller;
 use App\Models\Shop;
+use App\Models\User;
+use App\Traits\PushNotificationTrait;
 use Carbon\Carbon;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Support\Facades\DB;
@@ -34,6 +36,8 @@ use Illuminate\Support\Str;
  */
 class PickupReservationService
 {
+    use PushNotificationTrait;
+
     /**
      * Default TTL for pickup reservations: 24 hours.
      */
@@ -257,11 +261,18 @@ class PickupReservationService
                         'status' => 'expired',
                         'active_reservation_token' => null,
                     ]);
+                    $this->sendPickupReservationNotification('pickup_expired_message', $exp, 'customer');
+                    $this->sendPickupReservationNotification('pickup_reservation_expired_message', $exp, 'seller');
                 }
 
                 // Generate unique, collision-safe human-friendly reservation code: RES-XXXXXXXX
                 $reservationCode = $this->generateUniqueReservationCode();
                 $activeToken = Str::uuid()->toString();
+
+                $holdHours = (int) (getWebConfig('pickup_inspection_window_hours') ?? self::DEFAULT_EXPIRY_HOURS);
+                if ($holdHours <= 0) {
+                    $holdHours = self::DEFAULT_EXPIRY_HOURS;
+                }
 
                 return PickupReservation::create([
                     'reservation_code' => $reservationCode,
@@ -275,9 +286,14 @@ class PickupReservationService
                     'total_amount' => $groupTotal,
                     'currency' => 'NGN',
                     'reservation_items' => $reservationSnapshot,
-                    'expires_at' => Carbon::now()->addHours(self::DEFAULT_EXPIRY_HOURS),
+                    'expires_at' => Carbon::now()->addHours($holdHours),
                 ]);
             });
+
+            if ($reservation->wasRecentlyCreated) {
+                $this->sendPickupReservationNotification('pickup_reserved_message', $reservation, 'customer');
+                $this->sendPickupReservationNotification('new_pickup_reservation_message', $reservation, 'seller');
+            }
 
             $results[] = $reservation;
         }
@@ -449,10 +465,13 @@ class PickupReservationService
                 'inspected_at' => now(),
             ]);
 
+            $fresh = $reservation->fresh();
+            $this->sendPickupReservationNotification('pickup_inspected_accepted_message', $fresh, 'customer');
+
             return [
                 'status' => 'SUCCESS',
                 'message' => 'Physical inspection passed and reservation accepted. Customer may proceed to payment.',
-                'reservation' => $reservation->fresh(),
+                'reservation' => $fresh,
             ];
         });
     }

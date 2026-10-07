@@ -312,6 +312,34 @@
                 </div>
             </div>
 
+            <div class="card mb-3 mt-3">
+                <div class="card-body">
+                    <div class="mb-3 mb-sm-20">
+                        <h3>{{ translate('In-Shop_Pickup_&_Inspection_Setup') }}</h3>
+                        <p class="mb-0 fs-12">
+                            {{ translate('configure_in_store_counter_reservation_and_physical_inspection_time_window_before_stock_is_released') }}
+                        </p>
+                    </div>
+                    <div class="p-12 p-sm-20 bg-section rounded">
+                        <div class="row g-4">
+                            @php($inspectionWindowHours = (int)(getWebConfig('pickup_inspection_window_hours') ?? 24))
+                            <div class="col-xl-6 col-md-6">
+                                <div class="border rounded p-3 h-100 bg-white">
+                                    <label class="form-label font-weight-bold" for="pickup_inspection_window_hours">
+                                        <i class="tio-time mr-1 text-primary"></i> {{ translate('In-Shop_Inspection_Hold_Window') }} ({{ translate('Hours') }})
+                                    </label>
+                                    <input type="number" min="1" max="168" step="1" class="form-control" name="pickup_inspection_window_hours"
+                                           id="pickup_inspection_window_hours" value="{{ $inspectionWindowHours > 0 ? $inspectionWindowHours : 24 }}" required>
+                                    <span class="fs-11 text-muted mt-1 d-block">
+                                        {{ translate('Default: 24 hours. The duration a reserved item remains held at the vendor shop counter for physical customer inspection before reservation automatically expires.') }}
+                                    </span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
             <div class="d-flex justify-content-end trans3 mt-4">
                 <div
                     class="d-flex justify-content-sm-end justify-content-center gap-3 flex-grow-1 flex-grow-sm-0 bg-white action-btn-wrapper trans3">

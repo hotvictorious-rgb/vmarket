@@ -26,7 +26,13 @@ class PushNotificationService
             'your_referred_customer_has_been_place_order',
             'your_referred_customer_order_has_been_delivered',
             'order_edit_message',
-            'order_edit_return_amount_message'
+            'order_edit_return_amount_message',
+            'cashback_earned_message',
+            'pickup_reserved_message',
+            'pickup_inspected_accepted_message',
+            'pickup_completed_message',
+            'pickup_expired_message',
+            'order_waybill_generated_message',
         ];
 
         $vendor = [
@@ -45,6 +51,10 @@ class PushNotificationService
             'refund_request_status_changed_by_admin',
             'product_request_approved_message',
             'product_request_rejected_message',
+            'new_pickup_reservation_message',
+            'pickup_reservation_expired_message',
+            'low_stock_alert_message',
+            'delivery_partner_assigned_message',
         ];
 
         $delivery_man = [
@@ -57,14 +67,23 @@ class PushNotificationService
             'message_from_seller',
             'message_from_admin',
             'message_from_customer',
-            'cash_collect_by_admin_message',
-            'cash_collect_by_seller_message',
             'withdraw_request_status_message',
+            'waybill_assigned_message',
         ];
+
+        $logistics_company = [
+            'order_dispatched_to_company',
+            'waybill_routed_to_company',
+            'rider_delivery_completed',
+            'company_withdrawal_status',
+            'rider_failed_delivery_alert',
+        ];
+
         return match ($userType) {
             'customer' => $customer,
             'seller' => $vendor,
             'delivery_man' => $delivery_man,
+            'logistics_company' => $logistics_company,
         };
     }
 

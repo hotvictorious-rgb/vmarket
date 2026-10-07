@@ -19,6 +19,8 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
 
+use App\Traits\PushNotificationTrait;
+
 /**
  * [AI] Class InShopHandoverController
  * Implements the Staff-Attributed Handshake Protocol for:
@@ -27,6 +29,7 @@ use Illuminate\Support\Facades\DB;
  */
 class InShopHandoverController extends Controller
 {
+    use PushNotificationTrait;
     public function __construct(
         protected OrderRepositoryInterface $orderRepo,
         protected OrderStatusHistoryRepositoryInterface $orderStatusHistoryRepo,
@@ -221,8 +224,12 @@ class InShopHandoverController extends Controller
                 OrderManager::getWalletManageOnOrderStatusChange($order, 'delivered');
 
                 // Credit 5% Customer Cashback Reward Ledger
-                CustomerCashbackLedger::creditRewardForOrder($order);
+                $ledger = CustomerCashbackLedger::creditRewardForOrder($order);
+                if ($ledger && !empty($ledger->cashback_amount)) {
+                    $this->sendCashbackEarnedNotification($order, (string)$ledger->cashback_amount);
+                }
 
+                $this->sendOrderNotification('pickup_completed_message', 'customer', $order);
                 event(new OrderStatusEvent(key: 'delivered', type: 'customer', order: $order));
             } else {
                 // [AI] Vendor -> Rider Delivery Handshake:

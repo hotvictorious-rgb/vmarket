@@ -41,6 +41,14 @@
             </a>
         </li>
 
+        <li class="nav-item" role="presentation">
+            <a class="nav-link {{ Request::is('admin/push-notification/index') && request('type') == 'logistics' ? 'active' : '' }}"
+               href="{{ route('admin.push-notification.index', ['type' => 'logistics']) }}"
+               role="tab" aria-selected="true">
+                {{ translate('Logistics_Company') }}
+            </a>
+        </li>
+
     </ul>
     <div class="nav--tab__prev">
         <button class="btn btn-circle border-0 bg-white text-primary">

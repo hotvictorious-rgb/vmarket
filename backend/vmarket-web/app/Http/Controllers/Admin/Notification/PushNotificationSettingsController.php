@@ -43,8 +43,9 @@ class PushNotificationSettingsController extends BaseController
         $customerMessages = $this->getPushNotificationMessageData(userType: 'customer');
         $vendorMessages = $this->getPushNotificationMessageData(userType: 'seller');
         $deliveryManMessages = $this->getPushNotificationMessageData(userType: 'delivery_man');
+        $logisticsMessages = $this->getPushNotificationMessageData(userType: 'logistics_company');
         $language = $this->businessSettingRepo->getFirstWhere(params: ['type' => 'pnc_language']);
-        return view('admin-views.push-notification.index', compact('customerMessages', 'vendorMessages', 'deliveryManMessages', 'language'));
+        return view('admin-views.push-notification.index', compact('customerMessages', 'vendorMessages', 'deliveryManMessages', 'logisticsMessages', 'language'));
     }
 
     /**
@@ -107,7 +108,7 @@ class PushNotificationSettingsController extends BaseController
         }
 
         ToastMagic::success(translate('update_successfully'));
-        return redirect()->route('admin.push-notification.index');
+        return redirect()->route('admin.push-notification.index', ['type' => $request['type']]);
     }
 
     public function getFirebaseConfigurationView(): View

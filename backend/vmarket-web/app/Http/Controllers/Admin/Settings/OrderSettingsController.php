@@ -41,6 +41,7 @@ class OrderSettingsController extends BaseController
         $this->businessSettingRepo->updateOrInsert(type: 'pod_dispatch_fee_status', value: $request->get('pod_dispatch_fee_status', 0));
         $this->businessSettingRepo->updateOrInsert(type: 'pod_dispatch_fee_amount', value: currencyConverter(amount: (float)$request->get('pod_dispatch_fee_amount', 1000.00)) ?? 1000.00);
         $this->businessSettingRepo->updateOrInsert(type: 'pod_free_delivery_prepaid_only', value: $request->get('pod_free_delivery_prepaid_only', 0));
+        $this->businessSettingRepo->updateOrInsert(type: 'pickup_inspection_window_hours', value: (int)$request->get('pickup_inspection_window_hours', 24));
         clearWebConfigCacheKeys();
         ToastMagic::success(translate('successfully_updated'));
         return back();

@@ -81,6 +81,8 @@
                     @include("admin-views.push-notification.partials._vendor-notification")
                 @elseif(request('type') == 'deliveryman')
                     @include("admin-views.push-notification.partials._deliveryman-notification")
+                @elseif(request('type') == 'logistics')
+                    @include("admin-views.push-notification.partials._logistics-notification")
                 @endif
             </div>
         </div>

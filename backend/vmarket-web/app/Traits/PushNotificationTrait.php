@@ -189,7 +189,7 @@ trait PushNotificationTrait
     /**
      * push notification variable message format
      */
-    protected function textVariableDataFormat($value, $key = null, $userName = null, $shopName = null, $deliveryManName = null, $time = null, $orderId = null)
+    protected function textVariableDataFormat($value, $key = null, $userName = null, $shopName = null, $deliveryManName = null, $time = null, $orderId = null, $companyName = null, $batchId = null, $reservationCode = null, $amount = null)
     {
         $data = $value;
         if ($data) {
@@ -197,10 +197,173 @@ trait PushNotificationTrait
             $data = $userName ? str_replace("{userName}", $userName, $data) : $data;
             $data = $shopName ? str_replace("{shopName}", $shopName, $data) : $data;
             $data = $deliveryManName ? str_replace("{deliveryManName}", $deliveryManName, $data) : $data;
+            $data = $companyName ? str_replace("{companyName}", $companyName, $data) : $data;
+            $data = $batchId ? str_replace("{batchId}", $batchId, $data) : $data;
+            $data = $reservationCode ? str_replace("{reservationCode}", $reservationCode, $data) : $data;
+            $data = $amount ? str_replace("{amount}", $amount, $data) : $data;
             $data = $key == 'expected_delivery_date' ? ($order ? str_replace("{time}", $order->expected_delivery_date, $data) : $data) : ($time ? str_replace("{time}", $time, $data) : $data);
             $data = $orderId ? str_replace("{orderId}", $orderId, $data) : $data;
         }
         return $data;
+    }
+
+    /**
+     * send in-shop pickup reservation push and in-app notifications
+     */
+    protected function sendPickupReservationNotification(string $key, object $reservation, string $target = 'customer'): void
+    {
+        try {
+            $customer = $reservation->customer ?? \App\Models\User::find($reservation->customer_id);
+            $seller = $reservation->seller ?? \App\Models\Seller::find($reservation->seller_id);
+            $shop = $reservation->shop ?? \App\Models\Shop::find($reservation->shop_id);
+
+            $userName = $customer ? trim("{$customer->f_name} {$customer->l_name}") : 'Customer';
+            $shopName = $shop ? $shop->name : ($seller?->shop?->name ?? 'Shop');
+
+            if ($target === 'customer' && $customer) {
+                $lang = $customer->app_language ?? getDefaultLanguage();
+                $value = $this->pushNotificationMessage(key: $key, userType: 'customer', lang: $lang);
+                if ($value) {
+                    $formattedMessage = $this->textVariableDataFormat(
+                        value: $value,
+                        key: $key,
+                        userName: $userName,
+                        shopName: $shopName,
+                        time: now()->diffForHumans(),
+                        reservationCode: $reservation->reservation_code ?? ''
+                    );
+                    $postData = [
+                        'title' => translate(str_replace('_', ' ', $key)),
+                        'description' => $formattedMessage,
+                        'reservation_code' => $reservation->reservation_code ?? '',
+                        'reservation_id' => $reservation->id ?? '',
+                        'image' => '',
+                        'type' => 'pickup_reservation',
+                        'message_key' => $key,
+                    ];
+                    if (!empty($customer->cm_firebase_token)) {
+                        $this->sendPushNotificationToDevice($customer->cm_firebase_token, $postData);
+                    }
+                }
+            }
+
+            if ($target === 'seller' && $seller) {
+                $lang = $seller->app_language ?? getDefaultLanguage();
+                $value = $this->pushNotificationMessage(key: $key, userType: 'seller', lang: $lang);
+                if ($value) {
+                    $formattedMessage = $this->textVariableDataFormat(
+                        value: $value,
+                        key: $key,
+                        userName: $userName,
+                        shopName: $shopName,
+                        time: now()->diffForHumans(),
+                        reservationCode: $reservation->reservation_code ?? ''
+                    );
+                    $postData = [
+                        'title' => translate(str_replace('_', ' ', $key)),
+                        'description' => $formattedMessage,
+                        'reservation_code' => $reservation->reservation_code ?? '',
+                        'reservation_id' => $reservation->id ?? '',
+                        'image' => '',
+                        'type' => 'pickup_reservation',
+                        'message_key' => $key,
+                    ];
+                    if (!empty($seller->cm_firebase_token)) {
+                        $this->sendPushNotificationToDevice($seller->cm_firebase_token, $postData);
+                    }
+                }
+            }
+        } catch (\Throwable $e) {
+            // Fail-safe
+        }
+    }
+
+    /**
+     * send cashback earned push and in-app notification to customer
+     */
+    protected function sendCashbackEarnedNotification(object $order, string $cashbackAmount): void
+    {
+        try {
+            $customer = $order->customer ?? \App\Models\User::find($order->customer_id);
+            if ($customer && !empty($customer->cm_firebase_token)) {
+                $lang = $customer->app_language ?? getDefaultLanguage();
+                $value = $this->pushNotificationMessage(key: 'cashback_earned_message', userType: 'customer', lang: $lang);
+                if ($value) {
+                    $formattedMessage = $this->textVariableDataFormat(
+                        value: $value,
+                        key: 'cashback_earned_message',
+                        userName: trim("{$customer->f_name} {$customer->l_name}"),
+                        shopName: $order->seller?->shop?->name ?? 'Victorious Market',
+                        time: now()->diffForHumans(),
+                        orderId: $order->id,
+                        amount: currencyConverter($cashbackAmount)
+                    );
+                    $postData = [
+                        'title' => translate('Cashback_Reward_Earned'),
+                        'description' => $formattedMessage,
+                        'order_id' => $order->id,
+                        'image' => '',
+                        'type' => 'cashback',
+                        'message_key' => 'cashback_earned_message',
+                    ];
+                    $this->sendPushNotificationToDevice($customer->cm_firebase_token, $postData);
+                }
+            }
+        } catch (\Throwable $e) {
+            // Fail-safe
+        }
+    }
+
+    /**
+     * send logistics company in-portal and dispatch alert notification
+     */
+    protected function sendLogisticsNotification(string $key, object|array $company, array $data = []): void
+    {
+        try {
+            $lang = getDefaultLanguage();
+            $value = $this->pushNotificationMessage(key: $key, userType: 'logistics_company', lang: $lang);
+            if ($value) {
+                $contactName = is_object($company) ? ($company->contact_person_name ?? $company->name ?? '') : ($company['contact_person_name'] ?? $company['name'] ?? '');
+                $companyName = is_object($company) ? ($company->name ?? '') : ($company['name'] ?? '');
+                $companyId = is_object($company) ? ($company->id ?? null) : ($company['id'] ?? null);
+                $companyEmail = is_object($company) ? ($company->company_email ?? null) : ($company['company_email'] ?? null);
+
+                $formattedMessage = $this->textVariableDataFormat(
+                    value: $value,
+                    key: $key,
+                    userName: $contactName,
+                    companyName: $companyName,
+                    time: now()->diffForHumans(),
+                    orderId: $data['order_id'] ?? null,
+                    batchId: $data['batch_id'] ?? null
+                );
+
+                if ($companyId) {
+                    \App\Models\Notification::create([
+                        'sent_by' => 'admin',
+                        'sent_to' => 'logistics_' . $companyId,
+                        'title' => translate(str_replace('_', ' ', $key)),
+                        'description' => $formattedMessage,
+                        'notification_count' => 1,
+                        'image' => '',
+                        'status' => 1,
+                    ]);
+                }
+
+                if (!empty($companyEmail)) {
+                    try {
+                        \Illuminate\Support\Facades\Mail::raw($formattedMessage, function ($mail) use ($companyEmail, $key) {
+                            $mail->to($companyEmail)
+                                 ->subject(translate(str_replace('_', ' ', $key)) . ' - ' . getWebConfig('company_name'));
+                        });
+                    } catch (\Throwable $e) {
+                        // Email fail-safe
+                    }
+                }
+            }
+        } catch (\Throwable $e) {
+            // Fail-safe
+        }
     }
 
     /**
@@ -237,8 +400,6 @@ trait PushNotificationTrait
                 'message_from_customer' => 'message_from_customer',
                 'refund_request_status_changed_by_admin' => 'refund_request_status_changed_by_admin',
                 'withdraw_request_status_message' => 'withdraw_request_status_message',
-                'cash_collect_by_seller_message' => 'cash_collect_by_seller_message',
-                'cash_collect_by_admin_message' => 'cash_collect_by_admin_message',
                 'fund_added_by_admin_message' => 'fund_added_by_admin_message',
                 'delivery_man_charge' => 'delivery_man_charge',
                 'product_request_approved_message' => 'product_request_approved_message',
@@ -247,10 +408,27 @@ trait PushNotificationTrait
                 'customer_unblock_message' => 'customer_unblock_message',
                 'your_referred_customer_has_been_place_order' => 'your_referred_customer_has_been_place_order',
                 'your_referred_customer_order_has_been_delivered' => 'your_referred_customer_order_has_been_delivered',
+                'cashback_earned_message' => 'cashback_earned_message',
+                'pickup_reserved_message' => 'pickup_reserved_message',
+                'pickup_inspected_accepted_message' => 'pickup_inspected_accepted_message',
+                'pickup_completed_message' => 'pickup_completed_message',
+                'pickup_expired_message' => 'pickup_expired_message',
+                'order_waybill_generated_message' => 'order_waybill_generated_message',
+                'new_pickup_reservation_message' => 'new_pickup_reservation_message',
+                'pickup_reservation_expired_message' => 'pickup_reservation_expired_message',
+                'low_stock_alert_message' => 'low_stock_alert_message',
+                'delivery_partner_assigned_message' => 'delivery_partner_assigned_message',
+                'waybill_assigned_message' => 'waybill_assigned_message',
+                'order_dispatched_to_company' => 'order_dispatched_to_company',
+                'waybill_routed_to_company' => 'waybill_routed_to_company',
+                'rider_delivery_completed' => 'rider_delivery_completed',
+                'company_withdrawal_status' => 'company_withdrawal_status',
+                'rider_failed_delivery_alert' => 'rider_failed_delivery_alert',
             ];
+            $targetKey = $notificationKey[$key] ?? $key;
             $data = NotificationMessage::with(['translations' => function ($query) use ($lang) {
                 $query->where('locale', $lang);
-            }])->where(['key' => $notificationKey[$key], 'user_type' => $userType])->first() ?? ["status" => 0, "message" => "", "translations" => []];
+            }])->where(['key' => $targetKey, 'user_type' => $userType])->first() ?? ["status" => 0, "message" => "", "translations" => []];
             if ($data) {
                 if ($data['status'] == 0) {
                     return false;
