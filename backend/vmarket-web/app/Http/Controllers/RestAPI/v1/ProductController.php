@@ -404,13 +404,18 @@ class ProductController extends Controller
 
     public function get_product_reviews($slug)
     {
-        $product = Product::where('slug', $slug)->first();
+        $product = Product::where('slug', $slug)->orWhere('id', $slug)->first();
         if (!$product) {
             return response()->json([
                 'errors' => ['code' => 'product-001', 'message' => translate('product_not_found')]
             ], 404);
         }
-        $reviews = Review::with(['customer', 'reply'])->where(['product_id' => $product->id])->get();
+        $reviews = Review::active()
+            ->whereNull('delivery_man_id')
+            ->with(['customer', 'reply'])
+            ->where(['product_id' => $product->id])
+            ->latest()
+            ->get();
         foreach ($reviews as $item) {
             $item['attachment_full_url'] = $item->attachment_full_url;
         }

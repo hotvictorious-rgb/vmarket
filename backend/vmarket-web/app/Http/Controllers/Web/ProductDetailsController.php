@@ -140,7 +140,7 @@ class ProductDetailsController extends Controller
     {
         $product = Product::marketplaceEligible()
             ->where('slug', $slug)
-            ->with(['seller.shop.lga', 'category', 'brand', 'reviews'])
+            ->with(['seller.shop.lga', 'category', 'brand'])
             ->first();
 
         if (!$product) {
@@ -148,7 +148,20 @@ class ProductDetailsController extends Controller
             return back();
         }
 
-        return view(VIEW_FILE_NAMES['products_details'], compact('product'));
+        $allProductReviews = Review::active()
+            ->where('product_id', $product->id)
+            ->whereNull('delivery_man_id')
+            ->get();
+        $overallRating = getOverallRating($allProductReviews);
+        $rating = getRating($allProductReviews);
+        $productReviews = Review::active()
+            ->where('product_id', $product->id)
+            ->whereNull('delivery_man_id')
+            ->with(['customer', 'reply'])
+            ->latest()
+            ->paginate(10);
+
+        return view(VIEW_FILE_NAMES['products_details'], compact('product', 'productReviews', 'overallRating', 'rating'));
     }
 
     public function getThemeFashion($slug): View|RedirectResponse

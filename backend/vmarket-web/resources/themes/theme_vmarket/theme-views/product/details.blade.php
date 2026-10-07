@@ -120,7 +120,7 @@
 
             <!-- Ratings & SKU -->
             <div style="display: flex; gap: 16px; align-items: center; font-size: 13px; color: var(--vm-text-muted);">
-                <span>⭐ {{ number_format($product->reviews->avg('rating') ?? 5.0, 1) }} ({{ $product->reviews->count() ?? 1 }} {{ translate('reviews') }})</span>
+                <span>⭐ {{ number_format($overallRating[0] ?? 0, 1) }} ({{ $overallRating[1] ?? 0 }} {{ translate('reviews') }})</span>
                 <span>•</span>
                 <span>{{ translate('SKU') }}: {{ $product->code ?? ('VM-' . $product->id) }}</span>
                 <span>•</span>
@@ -235,13 +235,177 @@
     </div>
 
     <!-- Product Description & Specifications -->
-    <div style="background: var(--vm-surface); border: 1px solid var(--vm-border); border-radius: var(--vm-radius-lg); padding: 32px; margin-bottom: 48px;">
+    <div style="background: var(--vm-surface); border: 1px solid var(--vm-border); border-radius: var(--vm-radius-lg); padding: 32px; margin-bottom: 24px;">
         <h2 style="font-size: 18px; font-weight: 800; color: var(--vm-dark); margin-bottom: 16px; border-bottom: 2px solid var(--vm-primary-light); padding-bottom: 8px;">
             {{ translate('Product Details & Overview') }}
         </h2>
         <div style="font-size: 14.5px; line-height: 1.8; color: var(--vm-text);">
             {!! $product->details !!}
         </div>
+    </div>
+
+    <!-- Verified Customer Reviews Section -->
+    <div style="background: var(--vm-surface); border: 1px solid var(--vm-border); border-radius: var(--vm-radius-lg); padding: 32px; margin-bottom: 48px;" id="product-reviews-section">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px; border-bottom: 2px solid var(--vm-primary-light); padding-bottom: 12px; flex-wrap: wrap; gap: 12px;">
+            <div>
+                <h2 style="font-size: 20px; font-weight: 800; color: var(--vm-dark); margin: 0;">
+                    {{ translate('Customer Reviews & Ratings') }}
+                </h2>
+                <p style="font-size: 13px; color: var(--vm-text-muted); margin: 4px 0 0 0;">
+                    {{ translate('Real feedback from verified purchasers who ordered and received this product.') }}
+                </p>
+            </div>
+            <div style="display: inline-flex; align-items: center; gap: 8px; background: rgba(30,10,60,0.05); padding: 6px 14px; border-radius: 20px; font-size: 13px; font-weight: 600; color: var(--vm-primary);">
+                <span>🔒 {{ translate('Verified Orders Only') }}</span>
+            </div>
+        </div>
+
+        @php
+            $totalReviewsCount = $overallRating[1] ?? 0;
+            $avgRatingVal = (float)($overallRating[0] ?? 0);
+        @endphp
+
+        <!-- Ratings Summary Block -->
+        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 24px; background: var(--vm-bg); border: 1px solid var(--vm-border); border-radius: var(--vm-radius-md); padding: 24px; margin-bottom: 32px;">
+            <!-- Score Column -->
+            <div style="display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; border-right: 1px solid var(--vm-border); padding-right: 16px;">
+                <div style="font-size: 48px; font-weight: 900; color: var(--vm-dark); line-height: 1;">
+                    {{ number_format($avgRatingVal, 1) }}
+                </div>
+                <div style="margin: 8px 0; color: #D4AF37; font-size: 18px;">
+                    @for($i = 1; $i <= 5; $i++)
+                        @if($i <= round($avgRatingVal))
+                            ★
+                        @else
+                            ☆
+                        @endif
+                    @endfor
+                </div>
+                <div style="font-size: 13.5px; color: var(--vm-text-muted); font-weight: 600;">
+                    {{ $totalReviewsCount }} {{ translate('verified ratings') }}
+                </div>
+            </div>
+
+            <!-- Distribution Progress Bars -->
+            <div style="display: flex; flex-direction: column; justify-content: center; gap: 8px;">
+                @php
+                    $starCounts = [
+                        5 => $rating[0] ?? 0,
+                        4 => $rating[1] ?? 0,
+                        3 => $rating[2] ?? 0,
+                        2 => $rating[3] ?? 0,
+                        1 => $rating[4] ?? 0,
+                    ];
+                @endphp
+                @foreach([5, 4, 3, 2, 1] as $star)
+                    @php
+                        $cnt = $starCounts[$star] ?? 0;
+                        $pct = $totalReviewsCount > 0 ? round(($cnt / $totalReviewsCount) * 100) : 0;
+                    @endphp
+                    <div style="display: flex; align-items: center; gap: 10px; font-size: 12.5px;">
+                        <span style="width: 45px; font-weight: 600; color: var(--vm-text);">{{ $star }} ★</span>
+                        <div style="flex: 1; height: 8px; background: #E5E7EB; border-radius: 4px; overflow: hidden;">
+                            <div style="width: {{ $pct }}%; height: 100%; background: #D4AF37; border-radius: 4px;"></div>
+                        </div>
+                        <span style="width: 35px; text-align: right; color: var(--vm-text-muted); font-weight: 600;">{{ $cnt }}</span>
+                    </div>
+                @endforeach
+            </div>
+        </div>
+
+        <!-- Reviews List -->
+        @if(isset($productReviews) && $productReviews->count() > 0)
+            <div style="display: flex; flex-direction: column; gap: 20px;">
+                @foreach($productReviews as $review)
+                    @php
+                        $customer = $review->customer;
+                        $customerName = $customer ? ($customer->f_name . ' ' . $customer->l_name) : translate('Verified Customer');
+                        $avatarUrl = $customer?->image_full_url ? getStorageImages(path: $customer->image_full_url, type: 'avatar') : null;
+                    @endphp
+                    <div style="border: 1px solid var(--vm-border); border-radius: var(--vm-radius-md); padding: 20px; background: #FFFFFF;">
+                        <!-- Review Header -->
+                        <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 12px; flex-wrap: wrap; gap: 8px;">
+                            <div style="display: flex; align-items: center; gap: 12px;">
+                                <div style="width: 42px; height: 42px; border-radius: 50%; background: var(--vm-primary-light); color: var(--vm-primary); display: flex; align-items: center; justify-content: center; font-weight: 800; font-size: 16px; overflow: hidden;">
+                                    @if($avatarUrl)
+                                        <img src="{{ $avatarUrl }}" alt="{{ $customerName }}" style="width: 100%; height: 100%; object-fit: cover;">
+                                    @else
+                                        {{ strtoupper(substr($customerName, 0, 1)) }}
+                                    @endif
+                                </div>
+                                <div>
+                                    <div style="font-size: 14.5px; font-weight: 700; color: var(--vm-dark); display: flex; align-items: center; gap: 6px;">
+                                        <span>{{ $customerName }}</span>
+                                        <span style="font-size: 11px; background: rgba(22, 163, 74, 0.1); color: #16a34a; font-weight: 700; padding: 2px 7px; border-radius: 4px;">✓ {{ translate('Verified Purchase') }}</span>
+                                    </div>
+                                    <div style="font-size: 12px; color: var(--vm-text-muted);">
+                                        {{ $review->created_at ? $review->created_at->format('M d, Y') : '' }}
+                                    </div>
+                                </div>
+                            </div>
+                            <div style="color: #D4AF37; font-size: 16px;">
+                                @for($s = 1; $s <= 5; $s++)
+                                    @if($s <= $review->rating)
+                                        ★
+                                    @else
+                                        ☆
+                                    @endif
+                                @endfor
+                            </div>
+                        </div>
+
+                        <!-- Review Comment -->
+                        <div style="font-size: 14px; line-height: 1.6; color: var(--vm-text); margin-bottom: 12px;">
+                            {{ $review->comment }}
+                        </div>
+
+                        <!-- Photo Attachments (if any) -->
+                        @if(!empty($review->attachment_full_url) && count($review->attachment_full_url) > 0)
+                            <div style="display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 12px;">
+                                @foreach($review->attachment_full_url as $photo)
+                                    <a href="{{ $photo['path'] ?? '#' }}" target="_blank" style="display: block; width: 68px; height: 68px; border-radius: 6px; overflow: hidden; border: 1px solid var(--vm-border);">
+                                        <img src="{{ $photo['path'] ?? '' }}" alt="Review photo" style="width: 100%; height: 100%; object-fit: cover;">
+                                    </a>
+                                @endforeach
+                            </div>
+                        @endif
+
+                        <!-- Seller / Store Response (if any) -->
+                        @if($review->reply)
+                            <div style="background: var(--vm-bg); border-left: 3px solid var(--vm-primary); border-radius: 4px; padding: 12px 16px; margin-top: 12px;">
+                                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px;">
+                                    <strong style="font-size: 13px; color: var(--vm-primary);">
+                                        🏪 {{ translate('Store Response') }}
+                                    </strong>
+                                    <span style="font-size: 11.5px; color: var(--vm-text-muted);">
+                                        {{ $review->reply->created_at ? $review->reply->created_at->format('M d, Y') : '' }}
+                                    </span>
+                                </div>
+                                <div style="font-size: 13px; color: var(--vm-text); line-height: 1.5;">
+                                    {{ $review->reply->reply_text }}
+                                </div>
+                            </div>
+                        @endif
+                    </div>
+                @endforeach
+
+                <!-- Pagination -->
+                <div style="margin-top: 16px;">
+                    {{ $productReviews->fragment('product-reviews-section')->links() }}
+                </div>
+            </div>
+        @else
+            <!-- Empty State -->
+            <div style="text-align: center; padding: 40px 20px; background: var(--vm-bg); border-radius: var(--vm-radius-md); border: 1px dashed var(--vm-border);">
+                <div style="font-size: 36px; margin-bottom: 10px;">⭐</div>
+                <h3 style="font-size: 16px; font-weight: 700; color: var(--vm-dark); margin-bottom: 6px;">
+                    {{ translate('No reviews yet for this product') }}
+                </h3>
+                <p style="font-size: 13.5px; color: var(--vm-text-muted); max-width: 480px; margin: 0 auto;">
+                    {{ translate('Only verified shoppers who bought and received this item can write a review. Check back after verified orders are fulfilled!') }}
+                </p>
+            </div>
+        @endif
     </div>
 
 </div>
