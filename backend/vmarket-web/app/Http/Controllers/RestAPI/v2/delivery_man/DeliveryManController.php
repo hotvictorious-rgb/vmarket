@@ -305,8 +305,11 @@ class DeliveryManController extends Controller
                         ]);
                     }
                 } else {
-                    // Independent In-House Rider Settlement
-                    $charge = $order->deliveryman_charge ?? $netPartnerAmount;
+                    // Independent In-House Rider Settlement:
+                    // If order has an explicit positive override, honor it; otherwise credit full net partner earnings (85%).
+                    $charge = (!empty($order->deliveryman_charge) && (float)$order->deliveryman_charge > 0)
+                        ? (float)$order->deliveryman_charge
+                        : $netPartnerAmount;
                     $deliveryManWallet = DeliverymanWallet::where('delivery_man_id', $deliveryMan['id'])
                         ->lockForUpdate()
                         ->first();

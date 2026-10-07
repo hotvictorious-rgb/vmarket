@@ -1,3 +1,8 @@
+### [2026-10-07 13:20 UTC] Delivery Commission Audit, In-House Rider Settlement Fix & Dual-Fleet Economics [backend, ai-governance] [AI]
+- Audited platform delivery commission architecture: confirmed global configuration in Super Admin (`admin/business-settings/delivery-man-settings`) governing `delivery_commission_percentage` (default: 15%), `bulky_cargo_surcharge` (default: ₦2,500.00), and `enable_logistics_company_module`.
+- Resolved in-house rider zero payout bug in `DeliveryManController@order_status_update`: corrected `$order->deliveryman_charge ?? $netPartnerAmount` where MySQL `0.00` default falsely short-circuited in PHP, ensuring riders receive their 85% net delivery earnings when `deliveryman_charge` is 0 or unset.
+- Audited dual-fleet integration between independent in-house riders and accredited 3rd-party logistics companies across dispatch, wallet crediting, and cash on delivery reconciliation.
+
 ### [2026-10-07 13:02 UTC] Notification Message Database Seeding & Comprehensive README Blueprint [backend, ai-governance] [AI]
 - Created and executed `NotificationMessagesSeeder.php` seeding all 70 notification message templates across Customer, Vendor, Delivery Rider, and Logistics Company actors with active status (`status = 1`) and human-readable, variable-interpolated default text (`{userName}`, `{shopName}`, `{orderId}`, `{amount}`, `{reservationCode}`, `{companyName}`).
 - Rewrote `README.md` in depth with complete institutional architecture, 90/5/5 financial invariant formulation, dual fulfillment flowcharts, return maturation buffer, multi-actor notification matrix, canonical geography cascade, monorepo directory layout, and local development/testing guide.
