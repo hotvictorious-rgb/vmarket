@@ -28,6 +28,7 @@ import 'package:sixvalley_vendor_app/features/order_details/widgets/customer_con
 import 'package:sixvalley_vendor_app/features/order_details/widgets/delivery_man_information_widget.dart';
 import 'package:sixvalley_vendor_app/features/order_details/widgets/order_top_section_widget.dart';
 import 'package:sixvalley_vendor_app/features/order_details/widgets/payment_status_widget.dart';
+import 'package:sixvalley_vendor_app/features/order_details/widgets/order_handover_secret_codes_widget.dart';
 import 'package:sixvalley_vendor_app/features/order_details/widgets/shipping_and_biilling_widget.dart';
 import 'package:sixvalley_vendor_app/features/order_details/widgets/third_party_delivery_info_widget.dart';
 
@@ -471,6 +472,7 @@ class _OrderDetailsScreenState extends State<OrderDetailsScreen> {
                             ):const SizedBox(),
                           ]),
 
+                          OrderHandoverSecretCodesWidget(order: orderDetailsController.orderDetails![0].order),
 
                           PaymentStatusWidget(order: orderController, orderModel: orderDetailsController.orderDetails![0].order!, orderDetailsModel: orderDetailsController.orderDetails![0]),
 
