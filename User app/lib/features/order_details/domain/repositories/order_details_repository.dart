@@ -1,3 +1,5 @@
+import 'dart:io';
+import 'package:http/http.dart' as http;
 import 'package:flutter_sixvalley_ecommerce/data/datasource/remote/dio/dio_client.dart';
 import 'package:flutter_sixvalley_ecommerce/data/datasource/remote/exception/api_error_handler.dart';
 import 'package:flutter_sixvalley_ecommerce/data/model/api_response.dart';
@@ -102,6 +104,54 @@ class OrderDetailsRepository implements OrderDetailsRepositoryInterface{
     } catch (e) {
       return ApiResponseModel.withError(ApiErrorHandler.getMessage(e));
     }
+  }
+
+  @override
+  Future<http.StreamedResponse> confirmInShopPickup({
+    required int orderId,
+    required String pickupCode,
+    required dynamic verificationImage,
+  }) async {
+    http.MultipartRequest request = http.MultipartRequest(
+      'POST',
+      Uri.parse('${AppConstants.baseUrl}${AppConstants.confirmInShopPickupUri}'),
+    );
+    request.headers.addAll(<String, String>{
+      'Authorization': 'Bearer ${Provider.of<AuthController>(Get.context!, listen: false).getUserToken()}',
+      'Accept': 'application/json',
+    });
+    request.fields.addAll(<String, String>{
+      'order_id': orderId.toString(),
+      'pickup_code': pickupCode,
+    });
+    if (verificationImage is File) {
+      request.files.add(await http.MultipartFile.fromPath('verification_image', verificationImage.path));
+    }
+    return await request.send();
+  }
+
+  @override
+  Future<http.StreamedResponse> confirmDoorstepDelivery({
+    required int orderId,
+    required String deliveryCode,
+    required dynamic verificationImage,
+  }) async {
+    http.MultipartRequest request = http.MultipartRequest(
+      'POST',
+      Uri.parse('${AppConstants.baseUrl}${AppConstants.confirmDoorstepDeliveryUri}'),
+    );
+    request.headers.addAll(<String, String>{
+      'Authorization': 'Bearer ${Provider.of<AuthController>(Get.context!, listen: false).getUserToken()}',
+      'Accept': 'application/json',
+    });
+    request.fields.addAll(<String, String>{
+      'order_id': orderId.toString(),
+      'delivery_code': deliveryCode,
+    });
+    if (verificationImage is File) {
+      request.files.add(await http.MultipartFile.fromPath('verification_image', verificationImage.path));
+    }
+    return await request.send();
   }
 
 }

@@ -1,4 +1,6 @@
 import 'dart:io';
+import 'dart:convert';
+import 'package:http/http.dart' as http;
 import 'package:flutter_sixvalley_ecommerce/common/basewidget/show_custom_snakbar_widget.dart';
 import 'package:flutter_sixvalley_ecommerce/data/model/api_response.dart';
 import 'package:flutter_sixvalley_ecommerce/features/order/domain/models/order_model.dart';
@@ -217,4 +219,86 @@ class OrderDetailsController with ChangeNotifier {
   int _paymentMethodIndex = -1;
   int get paymentMethodIndex => _paymentMethodIndex;
 
+  bool _isHandoverSubmitting = false;
+  bool get isHandoverSubmitting => _isHandoverSubmitting;
+
+  Future<bool> confirmInShopPickup({
+    required int orderId,
+    required String pickupCode,
+    required File verificationImage,
+    required Function(bool isSuccess, String message) callback,
+  }) async {
+    _isHandoverSubmitting = true;
+    notifyListeners();
+    try {
+      http.StreamedResponse response = await orderDetailsServiceInterface.confirmInShopPickup(
+        orderId: orderId,
+        pickupCode: pickupCode,
+        verificationImage: verificationImage,
+      );
+      _isHandoverSubmitting = false;
+      if (response.statusCode == 200) {
+        callback(true, 'In-shop pickup verified successfully!');
+        getOrderDetails(orderId.toString());
+        getOrderFromOrderId(orderId.toString());
+        notifyListeners();
+        return true;
+      } else {
+        String errorMessage = 'Verification failed. Please check the pickup code.';
+        try {
+          final resStr = await response.stream.bytesToString();
+          final Map<String, dynamic> body = jsonDecode(resStr);
+          if (body['message'] != null) errorMessage = body['message'];
+        } catch (_) {}
+        callback(false, errorMessage);
+        notifyListeners();
+        return false;
+      }
+    } catch (e) {
+      _isHandoverSubmitting = false;
+      callback(false, e.toString());
+      notifyListeners();
+      return false;
+    }
+  }
+
+  Future<bool> confirmDoorstepDelivery({
+    required int orderId,
+    required String deliveryCode,
+    required File verificationImage,
+    required Function(bool isSuccess, String message) callback,
+  }) async {
+    _isHandoverSubmitting = true;
+    notifyListeners();
+    try {
+      http.StreamedResponse response = await orderDetailsServiceInterface.confirmDoorstepDelivery(
+        orderId: orderId,
+        deliveryCode: deliveryCode,
+        verificationImage: verificationImage,
+      );
+      _isHandoverSubmitting = false;
+      if (response.statusCode == 200) {
+        callback(true, 'Delivery confirmed successfully!');
+        getOrderDetails(orderId.toString());
+        getOrderFromOrderId(orderId.toString());
+        notifyListeners();
+        return true;
+      } else {
+        String errorMessage = 'Verification failed. Please check the delivery code.';
+        try {
+          final resStr = await response.stream.bytesToString();
+          final Map<String, dynamic> body = jsonDecode(resStr);
+          if (body['message'] != null) errorMessage = body['message'];
+        } catch (_) {}
+        callback(false, errorMessage);
+        notifyListeners();
+        return false;
+      }
+    } catch (e) {
+      _isHandoverSubmitting = false;
+      callback(false, e.toString());
+      notifyListeners();
+      return false;
+    }
+  }
 }

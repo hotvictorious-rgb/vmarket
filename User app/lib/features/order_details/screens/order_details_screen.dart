@@ -14,6 +14,8 @@ import 'package:flutter_sixvalley_ecommerce/features/order_details/widgets/order
 import 'package:flutter_sixvalley_ecommerce/features/order_details/widgets/seller_section_widget.dart';
 import 'package:flutter_sixvalley_ecommerce/features/order_details/widgets/shipping_and_billing_widget.dart';
 import 'package:flutter_sixvalley_ecommerce/features/order_details/widgets/shipping_info_widget.dart';
+import 'package:flutter_sixvalley_ecommerce/common/basewidget/custom_button_widget.dart';
+import 'package:flutter_sixvalley_ecommerce/features/order_details/widgets/handover_verification_sheet_widget.dart';
 import 'package:flutter_sixvalley_ecommerce/features/review/controllers/review_controller.dart';
 import 'package:flutter_sixvalley_ecommerce/features/splash/controllers/splash_controller.dart';
 import 'package:flutter_sixvalley_ecommerce/helper/color_helper.dart';
@@ -605,6 +607,71 @@ class _OrderDetailsScreenState extends State<OrderDetailsScreen> {
                             orderProvider.orderDetails![0].verificationImages != null &&orderProvider.orderDetails![0].verificationImages!.isNotEmpty)
                           const SizedBox(height: Dimensions.paddingSizeSmall),
 
+                          // [AI] Pure Receiver-Driven Handover Verification Card for Customer
+                          if (orderProvider.orders != null &&
+                              (orderProvider.orders!.orderStatus == 'out_for_delivery' ||
+                               (orderProvider.orders!.orderType == 'in_shop_pickup' &&
+                                (orderProvider.orders!.orderStatus == 'confirmed' || orderProvider.orders!.orderStatus == 'processing'))))
+                            Container(
+                              margin: const EdgeInsets.symmetric(horizontal: Dimensions.paddingSizeDefault, vertical: Dimensions.paddingSizeSmall),
+                              padding: const EdgeInsets.all(Dimensions.paddingSizeDefault),
+                              decoration: BoxDecoration(
+                                color: Theme.of(context).primaryColor.withValues(alpha: 0.06),
+                                borderRadius: BorderRadius.circular(14),
+                                border: Border.all(color: Theme.of(context).primaryColor.withValues(alpha: 0.3)),
+                              ),
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.stretch,
+                                children: [
+                                  Row(
+                                    children: [
+                                      Icon(Icons.shield_rounded, color: Theme.of(context).primaryColor, size: 24),
+                                      const SizedBox(width: 8),
+                                      Expanded(
+                                        child: Text(
+                                          orderProvider.orders!.orderType == 'in_shop_pickup'
+                                              ? 'In-Store Pickup Handshake'
+                                              : 'Doorstep Delivery Handshake',
+                                          style: robotoBold.copyWith(
+                                            color: Theme.of(context).primaryColor,
+                                            fontSize: Dimensions.fontSizeLarge,
+                                          ),
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                  const SizedBox(height: 6),
+                                  Text(
+                                    orderProvider.orders!.orderType == 'in_shop_pickup'
+                                        ? 'At the store counter? Snap a photo of your parcel and enter the 6-digit code shown by the merchant to confirm pickup & earn instant 5% cashback.'
+                                        : 'Rider arrived? Snap a photo of the received parcel and enter the secret code shown on the rider\'s screen to complete delivery.',
+                                    style: textRegular.copyWith(
+                                      color: Theme.of(context).hintColor,
+                                      fontSize: Dimensions.fontSizeSmall,
+                                    ),
+                                  ),
+                                  const SizedBox(height: Dimensions.paddingSizeDefault),
+                                  CustomButton(
+                                    buttonText: orderProvider.orders!.orderType == 'in_shop_pickup'
+                                        ? '📸 Snap & Confirm Pickup'
+                                        : '📸 Snap & Confirm Delivery',
+                                    onTap: () {
+                                      showModalBottomSheet(
+                                        context: context,
+                                        isScrollControlled: true,
+                                        shape: const RoundedRectangleBorder(
+                                          borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+                                        ),
+                                        builder: (_) => HandoverVerificationSheetWidget(
+                                          orderId: orderProvider.orders!.id!,
+                                          isPickup: orderProvider.orders!.orderType == 'in_shop_pickup',
+                                        ),
+                                      );
+                                    },
+                                  ),
+                                ],
+                              ),
+                            ),
 
                           CancelAndSupportWidget(orderModel: orderProvider.orders, showSupport: true),
                         ]),

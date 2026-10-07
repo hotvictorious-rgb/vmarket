@@ -32,4 +32,22 @@ class OrderDetailsService implements OrderDetailsServiceInterface{
     return await orderDetailsRepositoryInterface.getTrackOrderDetailsId(orderId);
   }
 
+  @override
+  Future confirmInShopPickup({required int orderId, required String pickupCode, required dynamic verificationImage}) async {
+    return await orderDetailsRepositoryInterface.confirmInShopPickup(
+      orderId: orderId,
+      pickupCode: pickupCode,
+      verificationImage: verificationImage,
+    );
+  }
+
+  @override
+  Future confirmDoorstepDelivery({required int orderId, required String deliveryCode, required dynamic verificationImage}) async {
+    return await orderDetailsRepositoryInterface.confirmDoorstepDelivery(
+      orderId: orderId,
+      deliveryCode: deliveryCode,
+      verificationImage: verificationImage,
+    );
+  }
+
 }

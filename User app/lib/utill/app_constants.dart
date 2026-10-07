@@ -143,6 +143,11 @@ import 'package:flutter_sixvalley_ecommerce/common/enums/local_caches_type_enum.
   static const String checkoutIntentStatusUri = '/api/v1/checkout/intent/'; // + {orderGroupId}/status (FAPI-001)
   static const String cartTotalsUri = '/api/v1/cart/totals'; // (FAPI-006: backend-computed totals)
 
+  // [AI] Pure Receiver-Driven Handover Protocol Endpoints
+  static const String confirmInShopPickupUri = '/api/v1/customer/order/confirm-inshop-pickup';
+  static const String confirmDoorstepDeliveryUri = '/api/v1/customer/order/confirm-doorstep-delivery';
+  static const String checkHandoverStatusUri = '/api/v1/customer/order/check-handover-status/';
+
 
   //address
   static const String updateAddressUri = '/api/v1/customer/address/update';
