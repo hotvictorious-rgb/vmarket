@@ -75,11 +75,10 @@ class UserProfileController extends Controller
         })->where('customer_id', auth('customer')->id())->count();
         $total_order = $this->order->where('customer_id', auth('customer')->id())->count();
         $total_loyalty_point = auth('customer')->user()->loyalty_point;
-        $totalWalletBalance = auth('customer')->user()->wallet_balance;
         $addresses = ShippingAddress::where('customer_id', auth('customer')->id())->latest()->get();
         $customer_detail = User::where('id', auth('customer')->id())->first();
 
-        return view(VIEW_FILE_NAMES['user_profile'], compact('customer_detail', 'addresses', 'wishlists', 'total_order', 'total_loyalty_point', 'totalWalletBalance'));
+        return view(VIEW_FILE_NAMES['user_profile'], compact('customer_detail', 'addresses', 'wishlists', 'total_order', 'total_loyalty_point'));
     }
 
     public function user_account(Request $request)
@@ -149,6 +148,15 @@ class UserProfileController extends Controller
 
     public function account_address(): View|RedirectResponse
     {
+        if (!auth('customer')->check()) {
+            return redirect()->route('home');
+        }
+
+        // [AI] In theme_vmarket, address management is unified within user-profile (#my-addresses)
+        if (theme_root_path() != 'default') {
+            return redirect()->to(route('user-profile') . '#my-addresses');
+        }
+
         $country_restrict_status = getWebConfig(name: 'delivery_country_restriction');
         $zip_restrict_status = getWebConfig(name: 'delivery_zip_code_area_restriction');
 
@@ -162,12 +170,8 @@ class UserProfileController extends Controller
             $countriesCode[] = $country['code'];
         }
 
-        if (auth('customer')->check()) {
-            $shippingAddresses = ShippingAddress::where('customer_id', auth('customer')->id())->latest()->get();
-            return view('web-views.users-profile.account-address', compact('shippingAddresses', 'country_restrict_status', 'zip_restrict_status', 'countries', 'zip_codes', 'countriesName', 'countriesCode'));
-        } else {
-            return redirect()->route('home');
-        }
+        $shippingAddresses = ShippingAddress::where('customer_id', auth('customer')->id())->latest()->get();
+        return view('web-views.users-profile.account-address', compact('shippingAddresses', 'country_restrict_status', 'zip_restrict_status', 'countries', 'zip_codes', 'countriesName', 'countriesCode'));
     }
 
     public function address_store(Request $request): RedirectResponse
@@ -218,11 +222,25 @@ class UserProfileController extends Controller
             'country' => $request['country'],
             'phone' => $request['phone'],
             'is_billing' => $request['is_billing'],
-            'latitude' => $request['latitude'],
-            'longitude' => $request['longitude'],
+            'latitude' => $request['latitude'] ?? 0,
+            'longitude' => $request['longitude'] ?? 0,
             'created_at' => now(),
             'updated_at' => now(),
         ];
+        if ($request->filled('state_id')) {
+            $address['state_id'] = $request['state_id'];
+            $stateModel = \App\Models\DeliveryState::find($request['state_id']);
+            if ($stateModel) {
+                $address['state'] = $stateModel->name;
+            }
+        }
+        if ($request->filled('lga_id')) {
+            $address['lga_id'] = $request['lga_id'];
+            $lgaModel = \App\Models\DeliveryLga::find($request['lga_id']);
+            if ($lgaModel && empty($request['city'])) {
+                $address['city'] = $lgaModel->name;
+            }
+        }
         DB::table('shipping_addresses')->insert($address);
 
         Toastr::success(translate('address_added_successfully!'));
@@ -305,11 +323,24 @@ class UserProfileController extends Controller
             'country' => $request->country,
             'phone' => $request->phone,
             'is_billing' => $request->is_billing,
-            'latitude' => $request->latitude,
-            'longitude' => $request->longitude,
-            'created_at' => now(),
+            'latitude' => $request->latitude ?? 0,
+            'longitude' => $request->longitude ?? 0,
             'updated_at' => now(),
         ];
+        if ($request->filled('state_id')) {
+            $updateAddress['state_id'] = $request['state_id'];
+            $stateModel = \App\Models\DeliveryState::find($request['state_id']);
+            if ($stateModel) {
+                $updateAddress['state'] = $stateModel->name;
+            }
+        }
+        if ($request->filled('lga_id')) {
+            $updateAddress['lga_id'] = $request['lga_id'];
+            $lgaModel = \App\Models\DeliveryLga::find($request['lga_id']);
+            if ($lgaModel && empty($request['city'])) {
+                $updateAddress['city'] = $lgaModel->name;
+            }
+        }
         if (auth('customer')->check()) {
             // [AI] Ownership Guard: Only update address belonging to the logged-in customer
             $affected = ShippingAddress::where('id', $request->id)

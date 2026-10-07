@@ -42,8 +42,13 @@
                     <i class="bi bi-x-lg text-primary"></i>
                 </div>
                 <ul class="list-unstyled profile-menu gap-1 mt-3">
-                    <li><a href="{{ route('pickup-reservations.index') }}">{{ translate('pickup_reservations') }}</a></li>
-                    <li class="{{Request::is('user-profile') || Request::is('user-account') ||Request::is('account-address-*') ? 'active' :''}}">
+                    <li class="{{Request::is('pickup-reservations*') ? 'active' : ''}}">
+                        <a href="{{ route('pickup-reservations.index') }}">
+                            <i class="bi bi-shop fs-16 text-primary"></i>
+                            <span class="text-capitalize">{{ translate('pickup_reservations') }}</span>
+                        </a>
+                    </li>
+                    <li class="{{Request::is('user-profile') || Request::is('user-account') ? 'active' :''}}">
                         <a href="{{ route('user-profile') }}">
                             <img width="20" src="{{ theme_asset('assets/img/icons/profile-icon.png') }}"
                                  class="dark-support" alt="">
@@ -55,6 +60,21 @@
                             <img width="20" src="{{ theme_asset('assets/img/icons/profile-icon2.png') }}"
                                  class="dark-support" alt="">
                             <span>{{translate('Orders')}}</span>
+                        </a>
+                    </li>
+                    <li class="{{Request::is('account-address*') ? 'active' :''}}">
+                        <a href="{{ route('user-profile') }}#my-addresses">
+                            <i class="bi bi-geo-alt fs-16 text-primary"></i>
+                            <span class="text-capitalize">{{translate('my_addresses')}}</span>
+                        </a>
+                    </li>
+                    <li>
+                        <a href="{{ route('user-profile') }}" class="d-flex align-items-center justify-content-between">
+                            <div class="d-flex align-items-center gap-2">
+                                <i class="bi bi-gem fs-16 text-warning"></i>
+                                <span class="text-capitalize">{{translate('victorious_cashback') ?? 'Victorious Cashback'}}</span>
+                            </div>
+                            <span class="badge bg-warning text-dark px-2 py-0 rounded-pill fs-10 fw-bold">5%</span>
                         </a>
                     </li>
                     <li class="{{Request::is('user-restock-requests*') ? 'active' :''}}">

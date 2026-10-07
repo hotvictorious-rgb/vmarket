@@ -38,7 +38,39 @@
                                         </div>
                                     </div>
                                 </div>
-
+                                <div class="card border flex-grow-1" style="background: linear-gradient(135deg, rgba(75, 0, 130, 0.05) 0%, rgba(212, 175, 55, 0.12) 100%); border-color: rgba(212, 175, 55, 0.4) !important;">
+                                    <div class="card-body grid-center">
+                                        <div class="text-center">
+                                            <div class="d-flex align-items-center justify-content-center gap-1 mb-1">
+                                                <span class="badge px-2 py-0 rounded-pill fs-11 fw-bold" style="background: linear-gradient(135deg, #7C3AED 0%, #D4AF37 100%); color: #fff;">
+                                                    <i class="bi bi-star-fill me-1" style="color: #FFD700;"></i>5% REWARDS
+                                                </span>
+                                            </div>
+                                            <h3 class="mb-1 text-primary fw-bold">{{ number_format($total_loyalty_point ?? 0) }} <span class="fs-14 fw-normal text-muted">PTS</span></h3>
+                                            <div class="d-flex align-items-center justify-content-center gap-1 text-muted fs-12">
+                                                <i class="bi bi-gem text-warning"></i>
+                                                <span class="fw-semibold text-dark">{{ translate('victorious_cashback') ?? 'Victorious Cashback' }}</span>
+                                            </div>
+                                            @php
+                                                $pointExchangeRate = (float)(getWebConfig(name: 'loyalty_point_exchange_rate') ?? 1);
+                                                $cashbackNairaValue = ($total_loyalty_point ?? 0) * ($pointExchangeRate > 0 ? $pointExchangeRate : 1);
+                                            @endphp
+                                            <div class="fs-11 text-muted mt-1">
+                                                ≈ {{ webCurrencyConverter(amount: $cashbackNairaValue) }} {{ translate('reward_value') ?? 'Reward Value' }}
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="p-3 mt-3 rounded-3 d-flex align-items-center justify-content-between flex-wrap gap-2" style="background: rgba(75, 0, 130, 0.04); border: 1px dashed rgba(75, 0, 130, 0.25);">
+                                <div class="d-flex align-items-center gap-2">
+                                    <span class="badge rounded-circle p-2" style="background: #4B0082; color: #FFD700;"><i class="bi bi-gift-fill fs-14"></i></span>
+                                    <div>
+                                        <div class="fw-bold text-dark fs-13">{{ translate('5%_victorious_cashback_guarantee') ?? '5% Victorious Cashback Guarantee' }}</div>
+                                        <div class="text-muted fs-12">{{ translate('earn_5%_cashback_rewards_on_every_completed_delivery_or_in_shop_pickup') ?? 'Earn 5% cashback rewards on every completed home delivery or in-shop pickup reservation across Victorious Market.' }}</div>
+                                    </div>
+                                </div>
+                                <a href="{{ route('products') }}" class="btn btn-sm btn-outline-primary rounded-pill px-3 fs-12">{{ translate('shop_&_earn') ?? 'Shop & Earn' }}</a>
                             </div>
                             <div class="mt-30 bg-light rounded p-3">
                                 <div class="d-flex align-items-center flex-wrap justify-content-between gap-3">
@@ -113,7 +145,7 @@
                         </div>
                     </div>
 
-                    <div class="card">
+                    <div class="card" id="my-addresses">
                         <div class="card-body">
                             <div class="d-flex flex-wrap align-items-center justify-content-between gap-3">
                                 <h5 class="text-capitalize">{{translate('my_addresses')}}</h5>

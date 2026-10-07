@@ -65,15 +65,24 @@
                                                             selected>{{translate('select_country')}}</option>
                                                     @foreach($countries as $country)
                                                         <option
-                                                            value="{{ $country['name'] }}">{{ $country['name'] }}</option>
+                                                            value="{{ $country['name'] }}" {{ $country['name'] == 'Nigeria' ? 'selected' : '' }}>{{ $country['name'] }}</option>
                                                     @endforeach
                                                 </select>
                                             </div>
 
                                             <div class="form-group mb-3">
-                                                <label for="city">{{translate('city')}}</label>
-                                                <input class="form-control" type="text" id="address-city" name="city"
-                                                       required placeholder="{{ translate('Ex') }}: {{ translate('Dhaka') }}">
+                                                <label for="address-state">{{translate('state_or_region') ?? 'State / Region'}} <span class="text-danger">*</span></label>
+                                                <select name="state_id" id="address-state" class="form-select" required>
+                                                    <option value="">{{translate('loading_states') ?? 'Loading states...'}}</option>
+                                                </select>
+                                            </div>
+
+                                            <div class="form-group mb-3">
+                                                <label for="address-lga">{{translate('lga') ?? 'LGA (Local Government Area)'}} <span class="text-danger">*</span></label>
+                                                <select name="lga_id" id="address-lga" class="form-select" required>
+                                                    <option value="">{{translate('select_state_first') ?? 'Select State first'}}</option>
+                                                </select>
+                                                <input type="hidden" name="city" id="address-city" value="">
                                             </div>
 
                                             <div class="form-group">
@@ -88,7 +97,7 @@
                                                     </select>
                                                 @else
                                                     <input class="form-control" type="text" id="zip" name="zip"
-                                                           required placeholder="{{ translate('Ex') }}: {{ '1216' }}">
+                                                           required placeholder="{{ translate('Ex') }}: 520211" value="520211">
                                                 @endif
                                             </div>
                                         </div>
@@ -129,7 +138,7 @@
                                             <div class="form-group">
                                                 <label for="address">{{translate('address')}}</label>
                                                 <textarea name="address" id="address" rows="5" class="form-control"
-                                                          placeholder="{{translate('ex').': 1216-Dhaka' }}"
+                                                          placeholder="{{translate('ex').': 14 Ikot Ekpene Road, Uyo' }}"
                                                           required></textarea>
                                             </div>
                                         </div>
@@ -174,4 +183,50 @@
             src="https://maps.googleapis.com/maps/api/js?key={{getWebConfig('map_api_key')}}&callback=callBackFunction&loading=async&libraries=places&v=3.56" defer>
         </script>
     @endif
+    <script>
+        $(document).ready(function() {
+            var $state = $('#address-state');
+            var $lga = $('#address-lga');
+
+            // 1. Fetch Nigerian states
+            $.get("{{ url('geography/states') }}", function(res) {
+                if (res && res.status && res.data) {
+                    $state.empty().append('<option value="">{{ translate("select_state") ?? "Select State" }}</option>');
+                    res.data.forEach(function(s) {
+                        var selected = (s.name.toLowerCase() === 'akwa ibom') ? 'selected' : '';
+                        $state.append('<option value="' + s.id + '" ' + selected + '>' + s.name + '</option>');
+                    });
+                    if ($state.val()) {
+                        $state.trigger('change');
+                    }
+                }
+            });
+
+            // 2. Cascade state change to fetch LGAs
+            $state.on('change', function() {
+                var stateId = $(this).val();
+                $lga.empty().append('<option value="">{{ translate("loading_lgas") ?? "Loading LGAs..." }}</option>');
+                if (!stateId) {
+                    $lga.html('<option value="">{{ translate("select_state_first") ?? "Select State first" }}</option>');
+                    return;
+                }
+                $.get("{{ url('geography/lgas') }}/" + stateId, function(res) {
+                    if (res && res.status && res.data) {
+                        $lga.empty().append('<option value="">{{ translate("select_lga") ?? "Select LGA (e.g. Uyo, Eket)" }}</option>');
+                        res.data.forEach(function(l) {
+                            $lga.append('<option value="' + l.id + '">' + l.name + '</option>');
+                        });
+                    }
+                });
+            });
+
+            // 3. Set city name when LGA is chosen
+            $lga.on('change', function() {
+                var lgaName = $(this).find('option:selected').text();
+                if (lgaName && lgaName.indexOf('Select') === -1) {
+                    $('#address-city').val(lgaName);
+                }
+            });
+        });
+    </script>
 @endpush
