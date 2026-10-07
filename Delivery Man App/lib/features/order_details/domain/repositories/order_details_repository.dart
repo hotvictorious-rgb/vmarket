@@ -83,6 +83,11 @@ class OrderDetailsRepository implements OrderDetailsRepositoryInterface{
   }
 
   @override
+  Future<Response> getOrderDeliveryCode({int? orderId}) async {
+    return await apiClient.getData('${AppConstants.orderDeliveryCodeUri}?order_id=$orderId');
+  }
+
+  @override
   Future add(value) {
     // TODO: implement add
     throw UnimplementedError();

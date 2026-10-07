@@ -254,12 +254,26 @@ class OrderDetailsController extends GetxController implements GetxService {
     update();
   }
 
-  TextEditingController searchOrderController = TextEditingController();
+  String? _deliveryCode;
+  String? get deliveryCode => _deliveryCode;
+  bool _isLoadingCode = false;
+  bool get isLoadingCode => _isLoadingCode;
 
+  Future<String?> getOrderDeliveryCode(int? orderId) async {
+    _isLoadingCode = true;
+    update();
+    Response? response = await orderDetailsServiceInterface.getOrderDeliveryCode(orderId: orderId);
+    if (response != null && response.statusCode == 200 && response.body != null) {
+      _deliveryCode = response.body['delivery_code']?.toString() ?? response.body['verification_code']?.toString();
+    } else if (response != null) {
+      ApiChecker.checkApi(response);
+    }
+    _isLoadingCode = false;
+    update();
+    return _deliveryCode;
+  }
 
   void emptyIdentityImage() {
     identityImages = [];
   }
-
-
 }

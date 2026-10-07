@@ -33,6 +33,8 @@ class AppConstants {
   static const String deliveryVerificationImage = '/api/v2/delivery-man/order-delivery-verification';
   static const String otpVerificationForOrder = '/api/v2/delivery-man/verify-order-delivery-otp';
   static const String resendVerificationCode = '/api/v2/delivery-man/resend-verification-code';
+  static const String orderDeliveryCodeUri = '/api/v2/delivery-man/order-delivery-code';
+  static const String orderProofsUri = '/api/v2/delivery-man/order-proofs';
   static const String setCurrentLanguageUri = '/api/v2/delivery-man/language-change';
   static const String singleOrderHistoryUri = '/api/v2/delivery-man/order-item';
   static const String businessPagesUri = '/api/v1/business-pages?type=';

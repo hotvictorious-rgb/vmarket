@@ -9,4 +9,5 @@ abstract class OrderDetailsServiceInterface {
   Future<Response?> uploadOrderVerificationImage( String orderId, List<MultipartBody>? verificationImage);
   Future<dynamic> verifyOrderDeliveryOtp({int? orderId, String? verificationCode});
   Future<dynamic> resendOtpForOrderVerification({int? orderId});
+  Future<Response?> getOrderDeliveryCode({int? orderId});
 }

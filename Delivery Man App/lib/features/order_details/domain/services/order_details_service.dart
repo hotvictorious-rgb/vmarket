@@ -80,4 +80,9 @@ class OrderDetailsService implements OrderDetailsServiceInterface{
      return orderDetailsRepositoryInterface.verifyOrderDeliveryOtp(orderId: orderId, verificationCode: verificationCode);
   }
 
+  @override
+  Future<Response?> getOrderDeliveryCode({int? orderId}) {
+    return orderDetailsRepositoryInterface.getOrderDeliveryCode(orderId: orderId);
+  }
+
 }
