@@ -59,11 +59,31 @@
                                             }
                                         }
                                     }
+
+                                    $hasBulkyItem = false;
+                                    foreach ($cartItems as $cItem) {
+                                        $p = $cItem->product ?? \App\Models\Product::find($cItem['product_id'] ?? 0);
+                                        if ($p && $p->package_size === 'large') {
+                                            $hasBulkyItem = true;
+                                            break;
+                                        }
+                                    }
                                 @endphp
 
                                 <div id="fulfillment-origin-meta"
                                      data-origin-lga-id="{{ $originLgaId ?? 0 }}"
-                                     data-origin-lga-name="{{ $originLgaName ?? 'Store' }}"></div>
+                                     data-origin-lga-name="{{ $originLgaName ?? 'Store' }}"
+                                     data-has-bulky="{{ $hasBulkyItem ? 'large' : 'small' }}"></div>
+
+                                @if($hasBulkyItem)
+                                    <div class="alert alert-warning py-2 px-3 mb-3 d-flex align-items-center gap-2 rounded-3 border-warning bg-warning bg-opacity-10 text-dark">
+                                        <i class="bi bi-box-seam-fill text-warning fs-18"></i>
+                                        <div class="fs-13">
+                                            <strong>{{ translate('Bulky Cargo Handling') }}:</strong>
+                                            {{ translate('Your order contains heavy or oversized items requiring dedicated cargo van/truck transport. Bulky handling rates are dynamically computed.') }}
+                                        </div>
+                                    </div>
+                                @endif
 
                                 <div class="fulfillment-selector d-flex p-1 bg-light rounded-3 mb-4" style="border: 1.5px solid rgba(114, 50, 187, 0.15);">
                                     <button type="button" class="btn w-50 py-2 fw-bold text-capitalize rounded-3 active btn-primary text-white" id="fulfillment-tab-delivery" onclick="switchFulfillment('delivery')">
@@ -899,6 +919,7 @@
 
                 var originLgaId = $('#fulfillment-origin-meta').data('origin-lga-id');
                 var originLgaName = $('#fulfillment-origin-meta').data('origin-lga-name') || 'Store';
+                var packageTier = $('#fulfillment-origin-meta').data('has-bulky') || 'small';
                 var $laneBox = $('#lane-verification-status-box');
 
                 if (!lgaId || !originLgaId) {
@@ -906,22 +927,30 @@
                     return;
                 }
 
-                $laneBox.removeClass('d-none').html('<div class="spinner-border spinner-border-sm text-primary me-2"></div><span class="fs-12 text-muted">Checking verified delivery lane...</span>');
+                $laneBox.removeClass('d-none').html('<div class="spinner-border spinner-border-sm text-primary me-2"></div><span class="fs-12 text-muted">Calculating live zonal delivery rate & ETA...</span>');
 
                 $.post("{{ route('geography.calculate-lane-fee') }}", {
                     _token: "{{ csrf_token() }}",
                     origin_lga_id: originLgaId,
-                    destination_lga_id: lgaId
+                    destination_lga_id: lgaId,
+                    package_tier: packageTier
                 }, function(res) {
                     if (res && res.status && res.data) {
                         var fee = res.data.fee;
                         var eta = res.data.estimated_days || '24-48 hrs';
+                        var tierBadge = 'Tier 2 (Intra-State)';
+                        if (res.data.zone_tier === 1) tierBadge = 'Tier 1 (Municipal / Express)';
+                        else if (res.data.zone_tier === 3) tierBadge = 'Tier 3 (Interstate)';
+
+                        var bulkyNotice = packageTier === 'large' ? ' <span class="badge bg-warning text-dark ms-1"><i class="bi bi-box-seam me-1"></i>Bulky Cargo</span>' : '';
+                        var customBadge = res.data.is_custom_override ? ' <span class="badge bg-info ms-1">Custom Route</span>' : '';
+
                         $laneBox.html(
-                            '<div class="alert alert-success d-flex align-items-center gap-2 p-2 mb-0 rounded-3" style="background-color: rgba(16, 185, 129, 0.08); border-color: rgba(16, 185, 129, 0.25); color: #065F46;">' +
-                                '<i class="bi bi-shield-check fs-18"></i>' +
+                            '<div class="alert alert-success d-flex align-items-center gap-2 p-3 mb-0 rounded-3" style="background-color: rgba(16, 185, 129, 0.08); border-color: rgba(16, 185, 129, 0.25); color: #065F46;">' +
+                                '<i class="bi bi-shield-check fs-20 flex-shrink-0"></i>' +
                                 '<div class="fs-13">' +
-                                    '<strong>{{ translate("verified_delivery_lane") ?? "Verified Delivery Lane" }}:</strong> ' + originLgaName + ' &rarr; ' + lgaName + '<br>' +
-                                    '<span class="fs-12">Lane Shipping Fee: <strong>&#8358;' + Number(fee).toLocaleString() + '</strong> &bull; ETA: ' + eta + '</span>' +
+                                    '<strong>{{ translate("verified_delivery_lane") ?? "Verified Delivery Lane" }}:</strong> ' + originLgaName + ' &rarr; ' + lgaName + ' <span class="badge bg-success ms-1">' + tierBadge + '</span>' + customBadge + bulkyNotice + '<br>' +
+                                    '<span class="fs-12">Delivery Fee: <strong>&#8358;' + Number(fee).toLocaleString() + '</strong> &bull; Estimated Transit: <strong>' + eta + '</strong></span>' +
                                 '</div>' +
                             '</div>'
                         );

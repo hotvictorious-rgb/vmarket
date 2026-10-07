@@ -40,6 +40,26 @@
                                                 {{ translate('Edited') }}
                                             </span>
                                         @endif
+
+                                        @if($order->order_type == 'pickup')
+                                            <span class="badge badge-soft-info text-info border border-info font-weight-bold">
+                                                <i class="tio-shop mr-1"></i> {{ translate('In-Shop Pickup') }}
+                                            </span>
+                                        @else
+                                            <span class="badge badge-soft-success text-success border border-success font-weight-bold">
+                                                <i class="tio-truck mr-1"></i> {{ translate('Doorstep Delivery') }}
+                                            </span>
+                                        @endif
+
+                                        @if($order->package_tier == 'large' || ($order->bulky_surcharge_amount ?? 0) > 0)
+                                            <span class="badge badge-soft-warning text-warning border border-warning font-weight-bold" title="{{ translate('Bulky or heavy cargo requiring van/truck logistics') }}">
+                                                <i class="tio-warning mr-1"></i> {{ translate('Bulky Cargo') }}
+                                            </span>
+                                        @else
+                                            <span class="badge badge-soft-secondary text-secondary border border-secondary font-weight-bold">
+                                                <i class="tio-package mr-1"></i> {{ translate('Standard Parcel') }}
+                                            </span>
+                                        @endif
                                     </span>
                                 </h4>
                                 <div class="fs-12">
@@ -445,6 +465,13 @@
                                                     <br>
                                                     ({{ translate('expense_bearer_').($order['free_delivery_bearer'] == 'seller' ? 'vendor' : $order['free_delivery_bearer']) }}
                                                     )
+                                                @endif
+                                                @if(($order['bulky_surcharge_amount'] ?? 0) > 0)
+                                                    <div class="fs-11 text-warning mt-1 fw-semibold">
+                                                        <i class="tio-warning-outlined mr-1"></i>
+                                                        {{ translate('Includes Bulky Cargo Surcharge') }}:
+                                                        {{ setCurrencySymbol(amount: usdToDefaultCurrency(amount: $order['bulky_surcharge_amount'])) }}
+                                                    </div>
                                                 @endif
                                             </td>
                                             <td class="text-end text-dark">
@@ -1124,6 +1151,64 @@
                                 </div>
                             </div>
                         @elseif($physicalProduct || $shippingAddress)
+                            @php
+                                $destLga = $shippingAddress->city ?? null;
+                                $destState = $shippingAddress->state ?? $shippingAddress->country ?? null;
+                                $shopModel = $order->seller?->shop;
+                                $originLga = $shopModel?->lga?->name ?? $shopModel?->city ?? null;
+                                $originState = $shopModel?->state?->name ?? 'Akwa Ibom';
+                                
+                                $zoneTierLabel = translate('Zone Tier 2 (Intra-State)');
+                                $zoneLeadTime = '24 Hours';
+                                $zoneBadgeClass = 'badge-soft-primary text-primary';
+                                if ($originLga && $destLga && strcasecmp(trim($originLga), trim($destLga)) === 0) {
+                                    $zoneTierLabel = translate('Zone Tier 1 (Intra-LGA / Municipal)');
+                                    $zoneLeadTime = '2–4 Hours';
+                                    $zoneBadgeClass = 'badge-soft-success text-success';
+                                } elseif ($originState && $destState && strcasecmp(trim($originState), trim($destState)) !== 0 && stripos($destState, 'Akwa Ibom') === false) {
+                                    $zoneTierLabel = translate('Zone Tier 3 (Inter-State / National)');
+                                    $zoneLeadTime = '2–4 Days';
+                                    $zoneBadgeClass = 'badge-soft-info text-info';
+                                }
+                            @endphp
+
+                            <div class="border rounded p-3 bg-section mb-3">
+                                <div class="d-flex align-items-center justify-content-between mb-2 pb-2 border-bottom">
+                                    <span class="fw-bold fs-13 d-flex align-items-center gap-2 text-dark">
+                                        <i class="tio-map text-primary"></i> {{ translate('Zonal Routing & Classification') }}
+                                    </span>
+                                    <span class="badge {{ $zoneBadgeClass }} fw-bold">
+                                        {{ $zoneTierLabel }}
+                                    </span>
+                                </div>
+                                <div class="d-flex flex-column gap-2 fs-12">
+                                    <div class="d-flex justify-content-between">
+                                        <span class="text-muted">{{ translate('Origin (Merchant)') }}:</span>
+                                        <span class="fw-semibold text-dark">{{ $shopModel?->name ?? translate('Shop') }} ({{ $originLga ? $originLga . ', ' : '' }}{{ $originState }})</span>
+                                    </div>
+                                    <div class="d-flex justify-content-between">
+                                        <span class="text-muted">{{ translate('Destination') }}:</span>
+                                        <span class="fw-semibold text-dark">{{ $destLga ? $destLga . ', ' : '' }}{{ $destState ?? translate('Doorstep') }}</span>
+                                    </div>
+                                    <div class="d-flex justify-content-between">
+                                        <span class="text-muted">{{ translate('Estimated Lead Time') }}:</span>
+                                        <span class="fw-semibold text-primary"><i class="tio-time mr-1"></i>{{ $zoneLeadTime }}</span>
+                                    </div>
+                                    <div class="d-flex justify-content-between align-items-center pt-2 border-top">
+                                        <span class="text-muted">{{ translate('Package Tier') }}:</span>
+                                        @if($order->package_tier == 'large' || ($order->bulky_surcharge_amount ?? 0) > 0)
+                                            <span class="badge badge-soft-warning text-warning fw-bold">
+                                                <i class="tio-warning mr-1"></i>{{ translate('Bulky Cargo (Van / Truck Required)') }}
+                                            </span>
+                                        @else
+                                            <span class="badge badge-soft-secondary text-secondary fw-bold">
+                                                <i class="tio-package mr-1"></i>{{ translate('Standard Parcel (Motorcycle Dispatch)') }}
+                                            </span>
+                                        @endif
+                                    </div>
+                                </div>
+                            </div>
+
                             <ul class="list-unstyled list-unstyled-py-4 d-flex flex-column gap-4 mb-0 pe-0">
                                 <li class="">
                                     @if ($order->shipping)
