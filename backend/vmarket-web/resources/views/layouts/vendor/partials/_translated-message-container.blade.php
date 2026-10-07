@@ -12,7 +12,7 @@
 <span id="get-customer-list-route" data-action="{{route('vendor.customer.list')}}"></span>
 <span id="get-search-product-route" data-action="{{route('vendor.products.search-product')}}"></span>
 <span id="get-orders-list-route" data-action="{{route('vendor.orders.list', ['status' => 'all'])}}"></span>
-<span class="system-default-country-code" data-value="{{ getWebConfig(name: 'country_code') ?? 'us' }}"></span>
+<span class="system-default-country-code" data-value="{{ getWebConfig(name: 'country_code') ?? 'ng' }}"></span>
 <span id="message-select-word" data-text="{{ translate('select') }}"></span>
 <span id="message-yes-word" data-text="{{ translate('yes') }}"></span>
 <span id="message-no-word" data-text="{{ translate('no') }}"></span>

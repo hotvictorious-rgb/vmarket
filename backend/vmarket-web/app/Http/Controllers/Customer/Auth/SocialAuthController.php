@@ -37,7 +37,12 @@ class SocialAuthController extends Controller
 
     public function redirectToProvider($service)
     {
-        return Socialite::driver($service)->redirect();
+        try {
+            return Socialite::driver($service)->redirect();
+        } catch (\Exception $e) {
+            Toastr::error(translate('Social_login_service_is_currently_unavailable_Please_use_standard_login_or_contact_support'));
+            return redirect()->back();
+        }
     }
 
     public function handleProviderCallback(Request $request, $service)

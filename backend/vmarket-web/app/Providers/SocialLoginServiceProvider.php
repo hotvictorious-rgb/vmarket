@@ -32,8 +32,8 @@ class SocialLoginServiceProvider extends ServiceProvider
                 foreach ($socialLoginServices as $socialLoginService) {
                     if ($socialLoginService['status'] == true && $socialLoginService['login_medium'] == 'google') {
                         $google_config = array(
-                            'client_id' => $socialLoginService['client_id'],
-                            'client_secret' => $socialLoginService['client_secret'],
+                            'client_id' => !empty($socialLoginService['client_id']) ? $socialLoginService['client_id'] : env('GOOGLE_CLIENT_ID'),
+                            'client_secret' => !empty($socialLoginService['client_secret']) ? $socialLoginService['client_secret'] : env('GOOGLE_CLIENT_SECRET'),
                             'redirect' => url('customer/auth/login/google/callback'),
                         );
                         Config::set('services.google', $google_config);

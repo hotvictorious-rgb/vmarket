@@ -66,7 +66,6 @@ function updateCartCommon(minimum_order_qty, key, e, quantity, ex_quantity) {
         } else {
             toastr.error($('.minimum_order_quantity_msg').data('text') + ' ' + minimum_order_qty);
             $(".cartQuantity" + key).val(minimum_order_qty);
-            location.reload();
             return false;
         }
     }
@@ -160,8 +159,20 @@ function setShippingIdFunction(){
             beforeSend: function () {
                 $('#loading').addClass('d-grid');
             },
-            success: function () {
-                location.reload();
+            success: function (response) {
+                if (response && response.data && $('#cart-summary').length) {
+                    $('#cart-summary').empty().html(response.data);
+                    updateNavCart();
+                    initTooltip();
+                    proceedToNextAction();
+                    setShippingIdFunction();
+                    updateCartQuantityListCartData();
+                    updateCartQuantityListMobileCartData();
+                    renderCouponCodeApply();
+                    multipleCheckBoxFunctionsInit();
+                } else {
+                    location.reload();
+                }
             },
             error: function (xhr) {
                 if (window.toastr && xhr.responseJSON && xhr.responseJSON.message) {

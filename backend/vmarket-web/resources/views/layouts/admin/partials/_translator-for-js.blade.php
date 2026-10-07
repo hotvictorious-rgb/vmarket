@@ -85,7 +85,7 @@
       data-message-for-one-product="{{ translate('this_product_is_low_on_stock') }}">
         </span>
 
-<span class="system-default-country-code" data-value="{{ getWebConfig(name: 'country_code') ?? 'us' }}"></span>
+<span class="system-default-country-code" data-value="{{ getWebConfig(name: 'country_code') ?? 'ng' }}"></span>
 <span id="get-confirm-and-cancel-button-text-for-delete-all-products"
       data-sure ="{{ translate('are_you_sure') . '?' }}"
       data-text="{{ translate('want_to_clear_all_stock_clearance_products?') . '!' }}"

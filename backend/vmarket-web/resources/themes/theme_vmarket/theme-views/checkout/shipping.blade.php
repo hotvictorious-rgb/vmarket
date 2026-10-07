@@ -276,7 +276,7 @@
                                                                 <label for="phone">{{ translate('phone') }} <span class="text-danger">*</span></label>
                                                                 <input type="tel" id="phoneNumber" name="phone"
                                                                        class="form-control"
-                                                                       placeholder="{{ translate('ex') }}: {{translate('+8801000000000')}}" {{$shipping_addresses->count()==0?'required':''}}>
+                                                                       placeholder="{{ translate('ex') }}: {{translate('+2348012345678')}}" {{$shipping_addresses->count()==0?'required':''}}>
                                                             </div>
                                                         </div>
                                                         @if(!auth('customer')->check())
@@ -309,7 +309,7 @@
                                                                         class="form-control select_picker select2">
                                                                     @forelse($countries as $country)
                                                                         <option
-                                                                            value="{{ $country['name'] }}">{{ $country['name'] }}</option>
+                                                                            value="{{ $country['name'] }}" {{ strcasecmp($country['name'], 'Nigeria') === 0 ? 'selected' : '' }}>{{ $country['name'] }}</option>
                                                                     @empty
                                                                         <option
                                                                             value="">{{ translate('no_country_to_deliver') }}</option>
@@ -589,7 +589,7 @@
                                                                 </label>
                                                                 <input type="tel" name="billing_phone"
                                                                        id="billing-phone" class="form-control"
-                                                                       placeholder="{{ translate('ex') }}: {{translate('+88 01000000000')}}" {{$billing_addresses->count()==0?'required':''}}>
+                                                                       placeholder="{{ translate('ex') }}: {{translate('+234 8012345678')}}" {{$billing_addresses->count()==0?'required':''}}>
                                                             </div>
                                                         </div>
                                                         @if(!auth('customer')->check())
@@ -632,7 +632,7 @@
                                                                         class="form-control select_picker select2">
                                                                     @forelse($countries as $country)
                                                                         <option
-                                                                            value="{{ $country['name'] }}">{{ $country['name'] }}</option>
+                                                                            value="{{ $country['name'] }}" {{ strcasecmp($country['name'], 'Nigeria') === 0 ? 'selected' : '' }}>{{ $country['name'] }}</option>
                                                                     @empty
                                                                         <option
                                                                             value="">{{ translate('no_country_to_deliver') }}</option>

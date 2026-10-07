@@ -38,11 +38,19 @@ class ReviewController extends Controller
         ]);
 
         $customerId = auth('customer')->id();
+        if (!$customerId) {
+            Toastr::error(translate('Please_log_in_to_submit_a_product_review'));
+            return redirect()->route('customer.auth.login');
+        }
 
-        // [AI] Ownership & Purchase Guard: Ensure order belongs to customer and contains the product
-        $order = $this->orderRepo->getFirstWhere(params: ['id' => $request['order_id'], 'customer_id' => $customerId]);
+        // [AI] Verified Buyer Gate: Customer must have purchased and received this product in a delivered order
+        $order = $this->orderRepo->getFirstWhere(params: [
+            'id' => $request['order_id'],
+            'customer_id' => $customerId,
+            'order_status' => 'delivered'
+        ]);
         if (!$order) {
-            Toastr::error(translate('invalid_order'));
+            Toastr::error(translate('Only_customers_who_have_purchased_and_received_this_product_can_leave_a_review'));
             return redirect()->back();
         }
 

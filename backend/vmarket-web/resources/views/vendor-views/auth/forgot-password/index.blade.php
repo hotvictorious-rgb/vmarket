@@ -251,7 +251,7 @@
         </div>
     </div>
 
-    <span class="system-default-country-code" data-value="{{ getWebConfig(name: 'country_code') ?? 'us' }}"></span>
+    <span class="system-default-country-code" data-value="{{ getWebConfig(name: 'country_code') ?? 'ng' }}"></span>
     <span id="message-please-check-recaptcha" data-text="{{ translate('please_check_the_recaptcha') }}"></span>
     <span id="message-copied_success" data-text="{{ translate('copied_successfully') }}"></span>
     <span id="route-get-session-recaptcha-code" data-route="{{ route('get-session-recaptcha-code') }}"

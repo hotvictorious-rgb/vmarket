@@ -510,10 +510,16 @@ class ProductController extends Controller
 
         $customerId = $request->user()->id;
 
-        // [AI] Ownership & Purchase Guard: Ensure order belongs to customer and contains the product
-        $order = Order::where(['id' => $request['order_id'], 'customer_id' => $customerId])->first();
+        // [AI] Verified Buyer Gate: Customer must have purchased and received this product in a delivered order
+        $order = Order::where([
+            'id' => $request['order_id'],
+            'customer_id' => $customerId,
+            'order_status' => 'delivered'
+        ])->first();
         if (!$order) {
-            return response()->json(['message' => translate('invalid_order')], 403);
+            return response()->json([
+                'message' => translate('Only_customers_who_have_purchased_and_received_this_product_can_leave_a_review')
+            ], 403);
         }
 
         $orderDetail = OrderDetail::where(['order_id' => $request['order_id'], 'product_id' => $request['product_id']])->first();

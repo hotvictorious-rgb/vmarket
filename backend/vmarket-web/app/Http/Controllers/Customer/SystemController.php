@@ -63,7 +63,15 @@ class SystemController extends Controller
                 ], 422);
             }
         }
-        return response()->json(['status' => 1]);
+        $cartHtml = '';
+        if (defined('VIEW_FILE_NAMES') && isset(VIEW_FILE_NAMES['products_cart_details_partials']) && view()->exists(VIEW_FILE_NAMES['products_cart_details_partials'])) {
+            $cartHtml = view(VIEW_FILE_NAMES['products_cart_details_partials'], ['request' => $request])->render();
+        }
+        return response()->json([
+            'status' => 1,
+            'message' => translate('Shipping_method_updated_successfully'),
+            'data' => $cartHtml,
+        ]);
     }
 
     public static function insertIntoCartShipping($request, ?int $destinationLgaId = null): bool

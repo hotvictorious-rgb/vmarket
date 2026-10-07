@@ -123,27 +123,37 @@ $(".search-bar-input-mobile").keyup(function () {
 });
 
 // [AI] VMarket V1: theme_vmarket header uses .vm-search-input / .vm-mobile-search-input.
-// Native form submit remains primary; live results are progressive enhancement only.
+// Live instant search results with debouncing and scoped dropdown.
+let vmSearchDebounceTimer = null;
 $(document).on("keyup", ".vm-search-input, .vm-mobile-search-input", function () {
-    const name = $(this).val();
-    const base_url = $('meta[name="base-url"]').attr("content");
-    if (!base_url) {
-        return;
+    const self = this;
+    const name = $(self).val().trim();
+    const base_url = $('meta[name="base-url"]').attr("content") || window.location.origin;
+    const $container = $(self).closest('form').find('.search-result-box');
+
+    clearTimeout(vmSearchDebounceTimer);
+    if (name.length > 0) {
+        vmSearchDebounceTimer = setTimeout(function () {
+            const cleanUrl = base_url.replace(/\/+$/, '') + "/searched-products";
+            $.get({
+                url: cleanUrl,
+                dataType: "json",
+                data: { name: name },
+                success: function (data) {
+                    if ($container.length && data.result) {
+                        $container.show().empty().html(data.result);
+                    }
+                },
+            });
+        }, 250);
+    } else {
+        $container.hide().empty();
     }
-    if (name && name.length > 0) {
-        $.get({
-            url: base_url + "/searched-products",
-            dataType: "json",
-            data: { name },
-            success: function (data) {
-                if ($(".search-result-box").length) {
-                    $(".search-card").css("display", "block");
-                    $(".search-result-box").show().empty().html(data.result);
-                }
-            },
-        });
-    } else if ($(".search-result-box").length) {
-        $(".search-result-box").empty();
+});
+
+$(document).on("click", function (e) {
+    if (!$(e.target).closest(".vm-search-form, .vm-mobile-search-form").length) {
+        $(".search-result-box").hide().empty();
     }
 });
 

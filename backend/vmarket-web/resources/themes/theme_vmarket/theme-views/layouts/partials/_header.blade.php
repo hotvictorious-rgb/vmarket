@@ -78,8 +78,8 @@
             </div>
         </button>
 
-        <!-- Global Search Bar -->
-        <form action="{{ route('products') }}" method="GET" class="vm-search-form">
+        <!-- Global Search Bar with Live Instant Results -->
+        <form action="{{ route('products') }}" method="GET" class="vm-search-form" style="position: relative;">
             <div class="vm-search-input-wrap">
                 <input type="text" name="name" class="vm-search-input" placeholder="{{ translate('Search for products, categories, or items...') }}" value="{{ request('name') }}" autocomplete="off" required>
                 <button type="submit" class="vm-search-btn">
@@ -87,6 +87,7 @@
                     <span>{{ translate('Search') }}</span>
                 </button>
             </div>
+            <div class="search-result-box vm-search-dropdown-container" style="display: none; position: absolute; top: calc(100% + 4px); left: 0; right: 0; z-index: 1050;"></div>
         </form>
 
         <!-- Actions -->
@@ -127,11 +128,12 @@
             </span>
         </button>
 
-        <form action="{{ route('products') }}" method="GET" class="vm-mobile-search-form">
+        <form action="{{ route('products') }}" method="GET" class="vm-mobile-search-form" style="position: relative;">
             <input type="text" name="name" class="vm-mobile-search-input" placeholder="{{ translate('Search products, stores, categories...') }}" value="{{ request('name') }}" autocomplete="off" required>
             <button type="submit" class="vm-mobile-search-btn" aria-label="{{ translate('Search') }}">
                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
             </button>
+            <div class="search-result-box vm-mobile-search-dropdown-container" style="display: none; position: absolute; top: calc(100% + 4px); left: 0; right: 0; z-index: 1050;"></div>
         </form>
     </div>
 </header>

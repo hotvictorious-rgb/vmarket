@@ -61,9 +61,9 @@ class ReviewController extends Controller
         }
 
         $user = Helpers::getCustomerInformation($request);
-        $order = $this->orderRepo->getFirstWhere(params: ['id' => $request['order_id'], 'customer_id' => $user['id'], 'payment_status' => 'paid']);
-        if (!isset($order->delivery_man_id)) {
-            return response()->json(['message' => translate('Invalid_review')], 403);
+        $order = $this->orderRepo->getFirstWhere(params: ['id' => $request['order_id'], 'customer_id' => $user['id'], 'order_status' => 'delivered']);
+        if (!isset($order) || !isset($order->delivery_man_id)) {
+            return response()->json(['message' => translate('Invalid_review_order_must_be_delivered')], 403);
         }
 
         $review = $this->reviewRepo->getFirstWhere(params: [

@@ -48,7 +48,19 @@ class SocialAuthController extends Controller
 
         try {
             if ($request['medium'] == 'google') {
-                $data = Http::get('https://www.googleapis.com/oauth2/v1/userinfo', ['access_token' => $token])->throw()->json();
+                // [AI] Robust Google Verification: Support both access_token and id_token (tokeninfo)
+                $googleUserinfo = Http::get('https://www.googleapis.com/oauth2/v1/userinfo', ['access_token' => $token]);
+                if ($googleUserinfo->successful()) {
+                    $data = $googleUserinfo->json();
+                } else {
+                    $googleTokeninfo = Http::get('https://oauth2.googleapis.com/tokeninfo', ['id_token' => $token]);
+                    if ($googleTokeninfo->successful()) {
+                        $data = $googleTokeninfo->json();
+                        $data['id'] = $data['sub'] ?? ($data['id'] ?? $unique_id);
+                    } else {
+                        throw new Exception('Invalid Google OAuth token');
+                    }
+                }
             } elseif ($request['medium'] == 'facebook') {
                 $data = Http::get('https://graph.facebook.com/' . $unique_id, ['access_token' => $token, 'fields' => 'name,email'])->throw()->json();
             } elseif ($request['medium'] == 'apple') {

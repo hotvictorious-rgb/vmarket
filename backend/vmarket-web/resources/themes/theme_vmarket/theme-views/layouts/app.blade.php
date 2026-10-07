@@ -61,6 +61,7 @@
     @include('theme-views.layouts.partials.modal._initial')
 
     <!-- Translations & Route References for Client-Side JS -->
+    <span class="system-default-country-code" data-value="{{ strtolower(getWebConfig(name: 'country_code') ?? 'ng') }}"></span>
     @include('theme-views.layouts.partials._translate-text-for-js')
     @include('theme-views.layouts.partials._route-for-js')
     @include('theme-views.layouts.main-script')
