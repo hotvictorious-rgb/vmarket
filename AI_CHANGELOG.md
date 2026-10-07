@@ -1,3 +1,21 @@
+### [2026-10-07 14:35 UTC] Universal Custody Handshake Protocol Implementation & Zero Failover Enforcement [backend, ai-governance] [AI]
+- Implemented the strict Universal Custody Handshake Standard across the platform: "The receiver must always be the one entering the codes with a photo proof first. Delivery rider cannot confirm delivery for the customer (zero failover)."
+- Added migration `2026_10_07_000004_add_handover_details_to_order_delivery_verifications.php` extending `order_delivery_verifications` with `handover_type`, `verified_by_type`, `verified_by_id`, and `pickup_otp_used`.
+- Created `OrderHandoverController.php` with:
+  1. `confirmInShopPickup`: Customer takes photo proof on counter + enters 6-digit pickup code shown by merchant -> marks order `delivered` + credits 5% instant cashback to customer wallet.
+  2. `confirmDoorstepDelivery`: Customer takes photo proof of received parcel + enters 6-digit delivery code shown on rider phone -> marks order `delivered` + executes rider 85% wallet credit & 15% platform commission accounting.
+  3. `checkHandoverStatus`: Lightweight real-time polling endpoint for merchants to watch receiver verification.
+- Inverted Merchant Order Details view (`vendor-views/order/order-details.blade.php`): replaced legacy OTP input forms with prominent Secret Code Display Cards for both In-Store Customer Pickup and Rider Parcel Dispatch, with live 3.5s AJAX polling that auto-refreshes to display verified badges and counter photo proofs.
+- Hardened Delivery Rider API (`DeliveryManController.php`):
+  1. Collection (`out_for_delivery`): strictly requires parcel counter photo upload + secret collection code.
+  2. Doorstep (`delivered`): strictly blocks rider submission with HTTP 403 ("Delivery must be confirmed by customer"), eliminating rider bypass / failover.
+  3. Added `get_order_delivery_code` endpoint (`api/v2/delivery-man/order-delivery-code`) so rider displays code to customer.
+- Updated Customer Storefront UI (`theme_vmarket`):
+  1. `_order-details-head.blade.php`: added In-Store Counter Pickup and Doorstep Delivery callout banners with "Snap & Confirm" camera capture modals and verified counter snapshot display.
+  2. `tracking.blade.php`: removed premature delivery code exposure to customer, displaying active dispatch status badge.
+  3. Wired web, vendor, and rest_api routes for seamless multi-actor interoperability.
+- Validated with PHP syntax linter (`php -l`) across all modified files with 0 errors.
+
 ### [2026-10-07 13:35 UTC] Dual-Fleet Negotiated Commission Rates & Platform Delivery Accounting [backend, ai-governance] [AI]
 - Added database migration `2026_10_07_000003_add_commission_percentage_to_logistics_companies.php` adding nullable `commission_percentage` to `logistics_companies` table.
 - Updated `LogisticsCompany` model with `commission_percentage` fillable attribute, float casting, and `getEffectiveCommissionRate()` helper with graceful fallback to global admin setting (`delivery_commission_percentage` ?? 15%).

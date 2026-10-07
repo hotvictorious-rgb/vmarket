@@ -55,6 +55,7 @@ Route::group(['prefix' => 'v2', 'middleware' => ['api_lang']], function () {
                 Route::get('notifications', 'get_all_notification');
                 Route::post('resend-verification-code', 'resend_verification_code');
                 Route::post('order-delivery-verification', 'order_delivery_verification');
+                Route::get('order-delivery-code', 'get_order_delivery_code');
             });
 
             // [AI] OTP brute-force protection: 5 attempts per minute per IP

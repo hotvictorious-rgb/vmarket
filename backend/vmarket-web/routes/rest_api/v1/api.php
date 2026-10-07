@@ -348,6 +348,13 @@ Route::group(['prefix' => 'v1', 'middleware' => ['api_lang']], function () {
                 Route::get('list', 'get_order_list');
             });
 
+            /* [AI] Pure Receiver-Driven Handover Protocol (REST API) */
+            Route::controller(\App\Http\Controllers\Customer\OrderHandoverController::class)->group(function () {
+                Route::post('confirm-inshop-pickup', 'confirmInShopPickup');
+                Route::post('confirm-doorstep-delivery', 'confirmDoorstepDelivery');
+                Route::get('check-handover-status/{order_id}', 'checkHandoverStatus');
+            });
+
             Route::controller(ProductController::class)->group(function () {
                 Route::post('deliveryman-reviews/submit', 'submit_deliveryman_review')->middleware('auth:api');
             });

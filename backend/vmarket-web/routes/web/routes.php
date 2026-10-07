@@ -118,7 +118,15 @@ Route::group(['middleware' => ['maintenance_mode', 'guestCheck']], function () {
             Route::get('pickup-reservations/{code}/status', 'status')->name('pickup-reservations.status');
             Route::post('pickup-reservations/{code}/pay', 'pay')->name('pickup-reservations.pay');
         });
+
+        /* [AI] Pure Receiver-Driven Handover Protocol */
+        Route::controller(\App\Http\Controllers\Customer\OrderHandoverController::class)->group(function () {
+            Route::post('customer/order/confirm-inshop-pickup', 'confirmInShopPickup')->name('customer.order.confirm-inshop-pickup');
+            Route::post('customer/order/confirm-doorstep-delivery', 'confirmDoorstepDelivery')->name('customer.order.confirm-doorstep-delivery');
+        });
     });
+
+    Route::get('customer/order/check-handover-status/{order_id}', [\App\Http\Controllers\Customer\OrderHandoverController::class, 'checkHandoverStatus'])->name('customer.order.check-handover-status');
 
     Route::controller(WebController::class)->group(function () {
         Route::get('checkout-details', 'checkout_details')->name('checkout-details');

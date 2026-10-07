@@ -232,9 +232,14 @@ use function App\Utils\order_status_history;
                                         @endif
                                     </h6>
 
-                                    @if ($order_verification_status && $orderDetails->order_type == "default_type")
-                                        <h5 class="small">{{translate('verification_code')}}
-                                            : {{ $orderDetails['verification_code'] }}</h5>
+                                    @if($orderDetails['order_status'] === 'out_for_delivery')
+                                        <span class="badge bg-warning bg-opacity-10 text-dark border border-warning px-2 py-1 fs-12 mt-1">
+                                            <i class="fi fi-rr-biking me-1"></i> {{ translate('Rider will present 6-digit Delivery Code at your doorstep') }}
+                                        </span>
+                                    @elseif($orderDetails['order_status'] === 'delivered')
+                                        <span class="badge bg-success bg-opacity-10 text-success border border-success-1 px-2 py-1 fs-12 mt-1">
+                                            <i class="fi fi-rr-checkbox me-1"></i> {{ translate('Handover Completed & Verified') }}
+                                        </span>
                                     @endif
                                 </div>
                                 <p class="fs-14">{{date('D, d M, Y ',strtotime($orderDetails['created_at']))}}</p>

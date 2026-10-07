@@ -191,31 +191,23 @@ class DeliveryManController extends Controller
                 return response()->json(['success' => 0, 'message' => translate('Order is not in a collectible state')], 422);
             }
 
+            // [AI] Universal Handshake Rule: Rider must snap photo of package on merchant counter first
+            if (!$request->hasFile('image') && !$request->hasFile('proof_image')) {
+                return response()->json(['success' => 0, 'message' => translate('A photo proof of the package on the counter is required before pickup.')], 422);
+            }
+
             if (!isset($request['pickup_verification_code']) || !hash_equals((string)$order->pickup_verification_code, (string)$request['pickup_verification_code'])) {
                 return response()->json(['success' => 0, 'message' => translate('invalid_pickup_otp')], 403);
             }
         }
 
         if ($request['status'] == 'delivered') {
-            if ($order->order_status !== 'out_for_delivery') {
-                return response()->json(['success' => 0, 'message' => translate('Order must be out for delivery before customer receipt can be verified.')], 422);
-            }
-
-            // [AI] V1 Invariant: Customer receipt verification OTP is MANDATORY for all marketplace deliveries.
-            // Admin configuration toggle getWebConfig('order_verification') MUST NEVER disable verification for marketplace orders.
-            $isMarketplace = \App\Utils\OrderManager::isVictoriousMarketplaceOrder($order);
-            $order_verification = $isMarketplace ? 1 : getWebConfig(name: 'order_verification');
-
-            if ($order_verification == 1) {
-                if (isset($request['verification_code']) && hash_equals((string)$order->verification_code, (string)$request['verification_code'])) {
-                    $order->verification_status = 1;
-                    $order->save();
-                } elseif ($order->verification_status != 1) {
-                    return response()->json(['success' => 0, 'message' => translate('order_is_not_verified_by_customer_delivery_otp')], 403);
-                }
-            } else {
-                return response()->json(['success' => 0, 'message' => translate('order_is_not_verified_by_customer_delivery_otp')], 403);
-            }
+            // [AI] Universal Custody Handshake Standard: ZERO FAILOVER / NO RIDER BYPASS
+            // The receiver (customer) must always be the one entering the code with photo proof.
+            return response()->json([
+                'success' => 0,
+                'message' => translate('Delivery must be confirmed by the customer. Please present the 6-digit delivery code shown on your screen to the customer so they can snap a photo and confirm receipt on their device.'),
+            ], 403);
         }
 
         DB::beginTransaction();
@@ -226,15 +218,22 @@ class DeliveryManController extends Controller
             ];
 
             if ($request['status'] == 'out_for_delivery') {
+                $imageFile = $request->file('image') ?? $request->file('proof_image');
+                $imageName = ImageManager::upload('delivery-man/verification-image/', 'webp', $imageFile);
+
+                OrderDeliveryVerification::create([
+                    'order_id' => $order->id,
+                    'image' => $imageName,
+                    'handover_type' => 'rider_shop_pickup',
+                    'verified_by_type' => 'delivery_man',
+                    'verified_by_id' => $deliveryMan['id'],
+                    'pickup_otp_used' => $request['pickup_verification_code'],
+                ]);
+
                 $updatePayload['rider_picked_up_at'] = $order->rider_picked_up_at ?? $now;
                 $updatePayload['rider_picked_up_by'] = $deliveryMan['id'];
-            }
-
-            if ($request['status'] == 'delivered') {
-                $receivedAt = $order->received_at ?? $now;
-                $expiresAt = $order->refund_window_expires_at ?? (clone $receivedAt)->addHours(24);
-                $updatePayload['received_at'] = $receivedAt;
-                $updatePayload['refund_window_expires_at'] = $expiresAt;
+                $updatePayload['handed_over_at'] = $now;
+                $updatePayload['handed_over_by_name'] = $deliveryMan['f_name'] . ' ' . $deliveryMan['l_name'];
             }
 
             $affected = Order::where(['id' => $request['order_id'], 'delivery_man_id' => $deliveryMan['id']])
@@ -862,39 +861,42 @@ class DeliveryManController extends Controller
 
     }
 
-    /** Dellivery man order verification */
+    /** Delivery man order verification - strictly requires customer to confirm on their own device */
     public function verify_order_delivery_otp(Request $request):JsonResponse
+    {
+        return response()->json([
+            'message' => translate('Delivery must be confirmed by the customer. Please present the 6-digit delivery code shown on your screen to the customer so they can snap a photo and confirm receipt on their device.'),
+        ], 403);
+    }
+
+    /**
+     * [AI] Universal Handshake: Retrieve 6-digit delivery code for rider to display to customer at doorstep
+     */
+    public function get_order_delivery_code(Request $request): JsonResponse
     {
         $validator = Validator::make($request->all(), [
             'order_id' => 'required',
-            'verification_code' => 'required',
         ]);
-
         if ($validator->fails()) {
             return response()->json(['errors' => Helpers::validationErrorProcessor($validator)], 403);
         }
 
         $deliveryMan = $request['delivery_man'];
-        $order = $this->order->where(['id' => $request['order_id'], 'delivery_man_id' => $deliveryMan['id']])->first();
+        $order = Order::where(['id' => $request['order_id'], 'delivery_man_id' => $deliveryMan['id']])->first();
 
         if (!$order) {
             return response()->json(['message' => translate('order_not_found_or_not_assigned_to_you')], 404);
         }
 
-        $isSelfPickup = ($order->order_type === 'pickup')
-            || ($order->delivery_type === 'self_pickup')
-            || ($order->shipping && stripos($order->shipping->title, 'pickup') !== false);
-        if ($isSelfPickup) {
-            return response()->json(['message' => translate('Customer self-pickup orders cannot be processed by delivery riders.')], 403);
+        if ($order->order_status !== 'out_for_delivery') {
+            return response()->json(['message' => translate('Order is not currently out for delivery.')], 400);
         }
 
-        if (hash_equals((string)$order->verification_code, (string)$request['verification_code'])) {
-            $order->verification_status = 1;
-            $order->save();
-            return response()->json(['message' => translate('otp_verified_successfully')], 200);
-        } else {
-            return response()->json(["message" => translate("invalid_otp")], 403);
-        }
+        return response()->json([
+            'order_id' => $order->id,
+            'verification_code' => $order->verification_code,
+            'instructions' => translate('Present this 6-digit code to the customer. The customer must snap a photo of the parcel and confirm receipt on their device.'),
+        ], 200);
     }
 
     /**Order Delivery verification */

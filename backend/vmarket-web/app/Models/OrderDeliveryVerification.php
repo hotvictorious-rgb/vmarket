@@ -34,6 +34,10 @@ class OrderDeliveryVerification extends Model
     protected $fillable = [
         'order_id',
         'image',
+        'handover_type',
+        'verified_by_type',
+        'verified_by_id',
+        'pickup_otp_used',
     ];
     public function getImageFullUrlAttribute():array|null
     {

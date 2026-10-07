@@ -912,30 +912,39 @@
                                         <i class="tio-shop"></i> {{ translate('In-Store Customer Pickup') }}
                                     </h5>
                                     @if($order->order_status === 'delivered')
-                                        <div class="alert alert-soft-success mb-0 py-2">
-                                            <i class="tio-checkmark-circle"></i> {{ translate('Order handover completed via verified 6-digit Customer Pickup OTP.') }}
+                                        <div class="alert alert-soft-success mb-2 py-2">
+                                            <i class="tio-checkmark-circle"></i> {{ translate('Order handover completed via verified Customer Handshake.') }}
                                         </div>
+                                        @php
+                                            $pickupProof = $order->verificationImages ? $order->verificationImages->where('handover_type', 'customer_inshop_pickup')->last() : null;
+                                        @endphp
+                                        @if($pickupProof)
+                                            <div class="p-2 border rounded bg-white mt-2">
+                                                <span class="d-block fz-12 text-muted mb-1 font-weight-bold">{{ translate('Customer Photo Proof at Counter') }}:</span>
+                                                <a href="{{ $pickupProof->image_full_url['path'] ?? '' }}" target="_blank">
+                                                    <img src="{{ $pickupProof->image_full_url['path'] ?? '' }}" class="rounded img-fluid" style="max-height: 140px; object-fit: cover;" alt="Pickup Proof">
+                                                </a>
+                                                <small class="d-block text-muted fz-11 mt-1">{{ date('d M Y, h:i A', strtotime($pickupProof->created_at)) }}</small>
+                                            </div>
+                                        @endif
                                     @elseif($order->payment_status !== 'paid')
                                         <div class="alert alert-soft-warning mb-0 py-2">
                                             <i class="tio-info"></i> {{ translate('Payment Pending: Customer must complete online payment via Victorious MARKET before physical item handover.') }}
                                         </div>
                                     @else
-                                        <div class="alert alert-soft-info mb-3 py-2">
-                                            <i class="tio-shield"></i> {{ translate('Customer payment confirmed. Verify the customer 6-digit Secret Pickup OTP to finalize handover.') }}
-                                        </div>
-                                        <form action="{{ route('vendor.orders.verify-pickup-otp') }}" method="POST">
-                                            @csrf
-                                            <input type="hidden" name="order_id" value="{{ $order->id }}">
-                                            <div class="form-group mb-2">
-                                                <label class="font-weight-bold title-color fz-12">{{ translate('Enter Customer 6-Digit Pickup OTP') }}</label>
-                                                <div class="input-group">
-                                                    <input type="text" name="pickup_otp" class="form-control text-center font-weight-bold" maxlength="6" pattern="[0-9]{6}" placeholder="000000" required style="letter-spacing: 4px; font-size: 1.1rem;">
-                                                    <div class="input-group-append">
-                                                        <button type="submit" class="btn btn--primary">{{ translate('Verify & Handover') }}</button>
-                                                    </div>
-                                                </div>
+                                        <div class="card bg-soft-primary border border-primary p-3 text-center my-2">
+                                            <span class="text-muted text-uppercase fz-12 font-weight-bold">{{ translate('Present This Secret Pickup Code to Customer') }}</span>
+                                            <div class="display-4 font-weight-bold text-primary my-2" style="letter-spacing: 6px; font-family: monospace;">
+                                                {{ $order->pickup_verification_code ?? $order->verification_code }}
                                             </div>
-                                        </form>
+                                            <p class="fz-12 text-muted mb-2">
+                                                <i class="tio-camera"></i> {{ translate('The customer must take a photo of the item on your counter and enter this 6-digit code on their phone to complete pickup.') }}
+                                            </p>
+                                            <div class="p-2 rounded bg-white border d-flex align-items-center justify-content-center gap-2" id="customer-pickup-live-status">
+                                                <span class="spinner-border spinner-border-sm text-primary" role="status"></span>
+                                                <span class="fz-12 font-weight-bold text-primary">{{ translate('Waiting for customer to snap photo & enter code...') }}</span>
+                                            </div>
+                                        </div>
                                     @endif
                                 </div>
                             </div>
@@ -1006,50 +1015,54 @@
                             <span>🛡️</span>
                             <span>{{ translate('Staff-Attributed_Handover_Protocol') }}</span>
                         </h5>
-                        @if($order->handed_over_at)
+                        @if($order->handed_over_at || in_array($order->order_status, ['out_for_delivery', 'delivered']))
                             <span class="badge badge-soft-success fs-12">✅ {{ translate('Custody_Transferred') }}</span>
                         @else
                             <span class="badge badge-soft-warning fs-12">⏳ {{ translate('Awaiting_Rider_Pickup') }}</span>
                         @endif
                     </div>
                     <div class="card-body p-3">
-                        @if($order->handed_over_at)
+                        @if($order->handed_over_at || in_array($order->order_status, ['out_for_delivery', 'delivered']))
                             <div class="bg-light p-3 rounded border">
                                 <div class="d-flex align-items-center gap-2 mb-2">
                                     <i class="tio-checkmark-circle text-success fs-20"></i>
                                     <span class="fw-bold text-dark fs-13">{{ translate('Package_Released_to_Rider') }}</span>
                                 </div>
                                 <div class="fs-12 text-muted mb-1">
-                                    <strong>{{ translate('Handed_Over_By') }}:</strong> <span class="text-dark fw-semibold">{{ $order->handed_over_by_name }}</span>
+                                    <strong>{{ translate('Handed_Over_By') }}:</strong> <span class="text-dark fw-semibold">{{ $order->handed_over_by_name ?? 'Merchant Staff' }}</span>
                                 </div>
                                 <div class="fs-12 text-muted mb-1">
                                     <strong>{{ translate('Rider_in_Custody') }}:</strong> <span class="text-dark fw-semibold">{{ $order->deliveryMan ? ($order->deliveryMan->f_name . ' ' . $order->deliveryMan->l_name) : translate('Assigned_Rider') }}</span>
                                 </div>
                                 <div class="fs-12 text-muted">
-                                    <strong>{{ translate('Handover_Timestamp') }}:</strong> <span class="text-dark fw-semibold">{{ date('d M Y, h:i A', strtotime($order->handed_over_at)) }}</span>
+                                    <strong>{{ translate('Handover_Timestamp') }}:</strong> <span class="text-dark fw-semibold">{{ date('d M Y, h:i A', strtotime($order->handed_over_at ?? $order->rider_picked_up_at ?? $order->updated_at)) }}</span>
                                 </div>
+                                @php
+                                    $riderProof = $order->verificationImages ? $order->verificationImages->where('handover_type', 'rider_shop_pickup')->last() : null;
+                                @endphp
+                                @if($riderProof)
+                                    <div class="mt-2 pt-2 border-top">
+                                        <span class="d-block fs-11 text-muted mb-1 font-weight-bold">{{ translate('Rider Counter Photo Proof') }}:</span>
+                                        <a href="{{ $riderProof->image_full_url['path'] ?? '' }}" target="_blank">
+                                            <img src="{{ $riderProof->image_full_url['path'] ?? '' }}" class="rounded img-fluid" style="max-height: 120px; object-fit: cover;" alt="Rider Proof">
+                                        </a>
+                                    </div>
+                                @endif
                             </div>
                         @else
-                            <div class="alert alert-soft-info p-2 fs-12 mb-3">
-                                <i class="tio-info-outined mr-1"></i>
-                                {{ translate('Ask_the_delivery_rider_for_their_6-digit_Secret_Pickup_OTP_before_giving_them_the_package.') }}
+                            <div class="card bg-soft-info border border-info p-3 text-center mb-3">
+                                <span class="text-muted text-uppercase fs-12 font-weight-bold">{{ translate('Present This Dispatch Code to Rider') }}</span>
+                                <div class="display-4 font-weight-bold text-info my-2" style="letter-spacing: 6px; font-family: monospace;">
+                                    {{ $order->pickup_verification_code ?? $order->verification_code }}
+                                </div>
+                                <p class="fs-12 text-muted mb-2">
+                                    <i class="tio-camera"></i> {{ translate('The delivery rider must take a photo of the parcel on your counter and enter this 6-digit code in their Rider App to take custody.') }}
+                                </p>
+                                <div class="p-2 rounded bg-white border d-flex align-items-center justify-content-center gap-2" id="rider-handover-live-status">
+                                    <span class="spinner-border spinner-border-sm text-info" role="status"></span>
+                                    <span class="fs-12 font-weight-bold text-info">{{ translate('Waiting for rider to snap photo & enter code in app...') }}</span>
+                                </div>
                             </div>
-                            <form action="{{ route('vendor.orders.verify-pickup-otp') }}" method="POST">
-                                @csrf
-                                <input type="hidden" name="order_id" value="{{ $order->id }}">
-                                <div class="form-group mb-2">
-                                    <label class="form-label fs-12 fw-bold text-dark">{{ translate('Rider_6-Digit_Pickup_OTP') }} <span class="text-danger">*</span></label>
-                                    <input type="text" name="pickup_otp" class="form-control text-center font-weight-bold fs-16 letter-spacing-2" placeholder="• • • • • •" maxlength="6" pattern="[0-9]{6}" required>
-                                </div>
-                                <div class="d-flex justify-content-between align-items-center mb-3">
-                                    <small class="text-muted fs-11">
-                                        {{ translate('Logged-in_Staff') }}: <strong>{{ auth('seller')->user()->name ?? (auth('seller')->user()->f_name . ' ' . auth('seller')->user()->l_name) }}</strong>
-                                    </small>
-                                </div>
-                                <button type="submit" class="btn btn-primary btn-block btn-sm py-2">
-                                    🤝 {{ translate('Verify_OTP_&_Transfer_Custody') }}
-                                </button>
-                            </form>
                         @endif
                     </div>
                 </div>
@@ -1708,6 +1721,38 @@
                     ? "{{ translate('See_Less') }}"
                     : "{{ translate('See_More') }}";
             });
+        });
+
+        // [AI] Universal Custody Handshake Real-Time Polling
+        document.addEventListener('DOMContentLoaded', function () {
+            const isSelfPickup = {{ $isSelfPickup ? 'true' : 'false' }};
+            const orderStatus = "{{ $order->order_status }}";
+            const hasHandedOver = {{ ($order->handed_over_at || in_array($order->order_status, ['out_for_delivery', 'delivered'])) ? 'true' : 'false' }};
+
+            if ((isSelfPickup && orderStatus !== 'delivered') || (!isSelfPickup && !hasHandedOver)) {
+                const checkUrl = "{{ route('vendor.orders.check-handover-status', ['order_id' => $order->id]) }}";
+                let pollInterval = setInterval(function () {
+                    fetch(checkUrl, {
+                        headers: {
+                            'X-Requested-With': 'XMLHttpRequest',
+                            'Accept': 'application/json'
+                        }
+                    })
+                    .then(response => response.json())
+                    .then(data => {
+                        if (data && data.status) {
+                            if (isSelfPickup && data.is_delivered) {
+                                clearInterval(pollInterval);
+                                location.reload();
+                            } else if (!isSelfPickup && (data.is_out_for_delivery || data.is_delivered)) {
+                                clearInterval(pollInterval);
+                                location.reload();
+                            }
+                        }
+                    })
+                    .catch(err => console.debug('Handover poll check:', err));
+                }, 3500);
+            }
         });
     </script>
 @endpush
