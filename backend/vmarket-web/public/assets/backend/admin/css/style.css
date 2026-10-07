@@ -1153,6 +1153,7 @@ code.hljs {
 /* Remove spinner for Firefox */
 .remove-spin {
   -moz-appearance: textfield;
+  appearance: textfield;
 }
 
 .bottom-sticky-buttons {
