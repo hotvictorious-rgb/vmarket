@@ -1,3 +1,19 @@
+### [2026-10-07 16:35 UTC] Flutter Mobile Apps Ecosystem Alignment & Receiver-Driven Handshake Synchronization [user-app, vendor-app, delivery-man, ai-governance] [AI]
+- Delivery Rider Mobile App (`Delivery Man App/`):
+  1. Converted `VerifyDeliverySheetWidget` from a legacy rider-input sheet into a **Secret Delivery Code Presentation Sheet**: displays the 6-digit Secret Delivery Code on rider screen to show to customer, with 3-second live background polling and auto-transition to `OrderDeliveredScreen` once confirmed.
+  2. Registered `orderDeliveryCodeUri` and `orderProofsUri` in `AppConstants`.
+  3. Added `getOrderDeliveryCode` across repository, service, and controller with GetX state management.
+  4. Validated with `dart analyze lib/features/order_details` (0 issues).
+- Customer Mobile App (`User app/`):
+  1. Created `HandoverVerificationSheetWidget` (`features/order_details/widgets/`): provides camera photo capture (downscaled/optimized to 1000px, 75% quality) + 6-digit secret PIN entry.
+  2. Added `confirmInShopPickup` and `confirmDoorstepDelivery` across `OrderDetailsRepository`, `OrderDetailsService`, and `OrderDetailsController`.
+  3. Integrated prominent "In-Store Pickup Handshake" and "Doorstep Delivery Handshake" callout cards on `OrderDetailsScreen` with direct bottom sheet triggers.
+  4. Validated with `dart analyze lib/features/order_details` (0 errors).
+- Vendor Mobile App (`Vendor app/`):
+  1. Created `OrderHandoverSecretCodesWidget`: displays dedicated Purple & Gold Secret Pickup PIN card for in-store customers and Secret Dispatch Code card for delivery riders, with custody verification badges.
+  2. Integrated secret code cards into vendor `OrderDetailsScreen` above payment status.
+  3. Validated with `dart analyze lib/features/order_details` (0 errors).
+
 ### [2026-10-07 15:45 UTC] Production Image Optimization Engine, Immutable Proof Security & 5-Actor Delivery Visibility [backend, ai-governance] [AI]
 - Implemented high-efficiency image optimization in `ImageManager::uploadOptimizedVerificationImage()`: downscales mobile verification uploads to max 1000x1000px, executes `orientate()` to preserve Android/iOS camera orientation, strips EXIF bloat, and compresses to WebP/JPEG at 75% quality (~80–120 KB per photo vs 10MB raw uploads, saving ~98.5% hosting disk space).
 - Enforced legal immutability & anti-deletion protection in `OrderDeliveryVerification` and `OrderHandoverLog` models via Eloquent `static::deleting` hooks that throw an explicit exception on any deletion attempt by any user or administrator.
