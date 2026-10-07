@@ -11,7 +11,6 @@ import 'package:flutter_sixvalley_ecommerce/features/cart/controllers/cart_contr
 import 'package:flutter_sixvalley_ecommerce/features/category/controllers/category_controller.dart';
 import 'package:flutter_sixvalley_ecommerce/features/category/widgets/category_list_widget.dart';
 import 'package:flutter_sixvalley_ecommerce/features/home/shimmers/order_again_shimmer.dart';
-import 'package:flutter_sixvalley_ecommerce/features/home/shimmers/top_store_shimmer.dart';
 import 'package:flutter_sixvalley_ecommerce/features/home/widgets/announcement_widget.dart';
 import 'package:flutter_sixvalley_ecommerce/features/home/widgets/aster_theme/find_what_you_need_shimmer.dart';
 import 'package:flutter_sixvalley_ecommerce/features/home/widgets/aster_theme/find_what_you_need_widget.dart';
@@ -36,13 +35,12 @@ import 'package:flutter_sixvalley_ecommerce/features/product/widgets/recommended
 import 'package:flutter_sixvalley_ecommerce/features/profile/controllers/profile_contrroller.dart';
 import 'package:flutter_sixvalley_ecommerce/features/shop/controllers/shop_controller.dart';
 import 'package:flutter_sixvalley_ecommerce/features/shop/widgets/more_store_list_view.dart';
-import 'package:flutter_sixvalley_ecommerce/features/home/widgets/top_seller_widget.dart';
 import 'package:flutter_sixvalley_ecommerce/features/splash/controllers/splash_controller.dart';
+import 'package:flutter_sixvalley_ecommerce/features/splash/domain/models/config_model.dart';
 import 'package:flutter_sixvalley_ecommerce/helper/responsive_helper.dart';
 import 'package:flutter_sixvalley_ecommerce/helper/route_healper.dart';
 import 'package:flutter_sixvalley_ecommerce/localization/language_constrants.dart';
 import 'package:flutter_sixvalley_ecommerce/main.dart';
-import 'package:flutter_sixvalley_ecommerce/theme/controllers/theme_controller.dart';
 import 'package:flutter_sixvalley_ecommerce/utill/custom_themes.dart';
 import 'package:flutter_sixvalley_ecommerce/utill/dimensions.dart';
 
@@ -250,13 +248,17 @@ class _AsterThemeHomeScreenState extends State<AsterThemeHomeScreen>
                         mainAxisAlignment: MainAxisAlignment.end,
                         crossAxisAlignment: CrossAxisAlignment.center,
                         children: [
-                          if (Provider.of<SplashController>(context,
-                                          listen: false)
+                          if ((Provider.of<SplashController>(context, listen: false)
+                                          .configModel
+                                          ?.serverStructure
+                                          ?.customerApp
+                                          ?.features?['call_to_order'] ??
+                                      true) &&
+                              Provider.of<SplashController>(context, listen: false)
                                       .configModel
                                       ?.companyPhone !=
                                   null &&
-                              Provider.of<SplashController>(context,
-                                      listen: false)
+                              Provider.of<SplashController>(context, listen: false)
                                   .configModel!
                                   .companyPhone!
                                   .isNotEmpty)
@@ -268,8 +270,9 @@ class _AsterThemeHomeScreenState extends State<AsterThemeHomeScreen>
                                             listen: false)
                                         .configModel!
                                         .companyPhone);
-                                if (await canLaunchUrl(launchUri))
+                                if (await canLaunchUrl(launchUri)) {
                                   await launchUrl(launchUri);
+                                }
                               },
                               child: Column(
                                 mainAxisSize: MainAxisSize.min,
@@ -342,55 +345,138 @@ class _AsterThemeHomeScreenState extends State<AsterThemeHomeScreen>
                   ],
                 )),
 
-            // [AI] Omnichannel "Your Location" Bar (LGA Switcher & Fulfillment Mode Indicator)
-            const SliverToBoxAdapter(child: YourLocationBarWidget()),
+            // [AI] Server-Driven UI (SDUI) Dynamic Slivers
+            ..._buildServerDrivenSlivers(context),
 
-            SliverToBoxAdapter(
-                child: Provider.of<SplashController>(context, listen: false)
-                            .configModel!
-                            .announcement!
-                            .status ==
-                        '1'
-                    ? Consumer<SplashController>(
-                        builder: (context, announcement, _) {
-                          return (announcement.configModel!.announcement!
-                                          .announcement !=
-                                      null &&
-                                  announcement.onOff)
-                              ? AnnouncementWidget(
-                                  announcement:
-                                      announcement.configModel!.announcement)
-                              : const SizedBox();
-                        },
-                      )
-                    : const SizedBox()),
-
-            // Search Button
             SliverPersistentHeader(
                 pinned: true,
                 delegate: SliverDelegate(
-                  child: InkWell(
-                    onTap: () =>
-                        RouterHelper.getSearchRoute(action: RouteAction.push),
-                    child: const Hero(
-                        tag: 'search',
-                        child: Material(child: SearchHomePageWidget())),
+                  child: Align(
+                    alignment: Alignment.topLeft,
+                    child: Container(
+                        color: Theme.of(context).scaffoldBackgroundColor,
+                        child: const ProductPopupFilterWidget()),
                   ),
                 )),
 
-            SliverToBoxAdapter(child: const BannersWidget()),
-            // SliverToBoxAdapter(child: SizedBox(height: Dimensions.paddingSizeDefault)),
+            HomeProductListWidget(scrollController: _scrollController),
+          ]),
+        ),
+      ),
+    );
+  }
 
-            SliverToBoxAdapter(
-                child: const CategoryListWidget(isHomePage: true)),
-            SliverToBoxAdapter(
-                child: SizedBox(height: Dimensions.paddingSizeDefault)),
+  /// [AI] Authoritative Server-Driven UI (SDUI) dynamic section builder.
+  /// If the server specifies custom section ordering or toggles sections on/off,
+  /// the app renders the exact sequence sent by the backend.
+  /// If no server configuration exists, it falls back to the canonical default order.
+  List<Widget> _buildServerDrivenSlivers(BuildContext context) {
+    final splash = Provider.of<SplashController>(context, listen: false);
+    final rawSections =
+        splash.configModel?.serverStructure?.customerApp?.homeSections;
 
+    const List<String> defaultOrder = [
+      'location_bar',
+      'announcements',
+      'search_bar',
+      'hero_banners',
+      'categories',
+      'find_what_you_need',
+      'order_again',
+      'nearby_shops',
+      'footer_banner_slider',
+      'featured_products',
+      'top_side_bar_banner',
+      'recommended_products',
+      'latest_products',
+      'footer_banner_list',
+      'just_for_you',
+      'more_stores',
+      'home_category_products',
+      'main_section_banner',
+    ];
 
+    List<String> activeSectionIds;
+    if (rawSections != null && rawSections.isNotEmpty) {
+      final sorted = List<HomeSectionItem>.from(rawSections)
+        ..sort((a, b) => (a.sortOrder ?? 0).compareTo(b.sortOrder ?? 0));
+      activeSectionIds = sorted
+          .where((s) => s.isEnabled == true)
+          .map((s) => s.id ?? '')
+          .where((id) => id.isNotEmpty)
+          .toList();
+    } else {
+      activeSectionIds = defaultOrder;
+    }
 
-            SliverToBoxAdapter(
-              child: Consumer<ProductController>(
-                  builder: (context, productController, _) {
+    final List<Widget> slivers = [];
+    for (final sectionId in activeSectionIds) {
+      final widgets = _buildSectionSlivers(context, sectionId);
+      slivers.addAll(widgets);
+    }
+    return slivers;
+  }
+
+  List<Widget> _buildSectionSlivers(BuildContext context, String sectionId) {
+    switch (sectionId) {
+      case 'location_bar':
+        return const [SliverToBoxAdapter(child: YourLocationBarWidget())];
+
+      case 'announcements':
+        return [
+          SliverToBoxAdapter(
+            child: Provider.of<SplashController>(context, listen: false)
+                        .configModel
+                        ?.announcement
+                        ?.status ==
+                    '1'
+                ? Consumer<SplashController>(
+                    builder: (context, announcement, _) {
+                      return (announcement.configModel?.announcement?.announcement !=
+                                  null &&
+                              announcement.onOff)
+                          ? AnnouncementWidget(
+                              announcement:
+                                  announcement.configModel!.announcement)
+                          : const SizedBox();
+                    },
+                  )
+                : const SizedBox(),
+          )
+        ];
+
+      case 'search_bar':
+        return [
+          SliverPersistentHeader(
+            pinned: true,
+            delegate: SliverDelegate(
+              child: InkWell(
+                onTap: () =>
+                    RouterHelper.getSearchRoute(action: RouteAction.push),
+                child: const Hero(
+                    tag: 'search',
+                    child: Material(child: SearchHomePageWidget())),
+              ),
+            ),
+          )
+        ];
+
+      case 'hero_banners':
+        return const [SliverToBoxAdapter(child: BannersWidget())];
+
+      case 'categories':
+        return const [
+          SliverToBoxAdapter(
+              child: CategoryListWidget(isHomePage: true)),
+          SliverToBoxAdapter(
+              child: SizedBox(height: Dimensions.paddingSizeDefault)),
+        ];
+
+      case 'find_what_you_need':
+        return [
+          SliverToBoxAdapter(
+            child: Consumer<ProductController>(
+              builder: (context, productController, _) {
                 if (productController.findWhatYouNeedModel != null &&
                     productController.findWhatYouNeedModel!.findWhatYouNeed !=
                         null &&
@@ -411,213 +497,231 @@ class _AsterThemeHomeScreenState extends State<AsterThemeHomeScreen>
                 } else {
                   return const SizedBox.shrink();
                 }
-              }),
+              },
             ),
+          )
+        ];
 
-            SliverToBoxAdapter(
-              child: (Provider.of<AuthController>(context, listen: false)
-                      .isLoggedIn())
-                  ? Consumer<OrderController>(
-                      builder: (context, orderProvider, _) {
-                      return orderProvider.deliveredOrderModel != null
-                          ? (orderProvider.deliveredOrderModel!.orders !=
-                                      null &&
-                                  orderProvider
-                                      .deliveredOrderModel!.orders!.isNotEmpty)
-                              ? const Padding(
-                                  padding: EdgeInsets.symmetric(
-                                      horizontal:
-                                          Dimensions.paddingSizeDefault),
-                                  child: OrderAgainView(),
-                                )
-                              : Consumer<BannerController>(
-                                  builder: (context, bannerProvider, child) {
-                                  return bannerProvider.sideBarBanner != null
-                                      ? Padding(
-                                          padding: const EdgeInsets.symmetric(
-                                              horizontal: Dimensions
-                                                  .paddingSizeDefault),
-                                          child: SingleBannersWidget(
-                                              bannerModel:
-                                                  bannerProvider.sideBarBanner,
-                                              height: MediaQuery.of(context)
-                                                      .size
-                                                      .width *
-                                                  1.2),
-                                        )
-                                      : const SizedBox();
-                                })
-                          : const OrderAgainShimmerShimmer();
-                    })
-                  : Consumer<BannerController>(
-                      builder: (context, bannerProvider, child) {
-                      return bannerProvider.sideBarBanner != null
-                          ? Padding(
-                              padding: const EdgeInsets.symmetric(
-                                  horizontal: Dimensions.paddingSizeDefault),
-                              child: SingleBannersWidget(
-                                  bannerModel: bannerProvider.sideBarBanner,
-                                  height:
-                                      MediaQuery.of(context).size.width * 1.2),
-                            )
-                          : const SizedBox();
-                    }),
-            ),
-            SliverToBoxAdapter(
-                child: SizedBox(height: Dimensions.paddingSizeDefault)),
+      case 'order_again':
+        return [
+          SliverToBoxAdapter(
+            child: (Provider.of<AuthController>(context, listen: false)
+                    .isLoggedIn())
+                ? Consumer<OrderController>(
+                    builder: (context, orderProvider, _) {
+                    return orderProvider.deliveredOrderModel != null
+                        ? (orderProvider.deliveredOrderModel!.orders !=
+                                    null &&
+                                orderProvider
+                                    .deliveredOrderModel!.orders!.isNotEmpty)
+                            ? const Padding(
+                                padding: EdgeInsets.symmetric(
+                                    horizontal:
+                                        Dimensions.paddingSizeDefault),
+                                child: OrderAgainView(),
+                              )
+                            : Consumer<BannerController>(
+                                builder: (context, bannerProvider, child) {
+                                return bannerProvider.sideBarBanner != null
+                                    ? Padding(
+                                        padding: const EdgeInsets.symmetric(
+                                            horizontal: Dimensions
+                                                .paddingSizeDefault),
+                                        child: SingleBannersWidget(
+                                            bannerModel:
+                                                bannerProvider.sideBarBanner,
+                                            height: MediaQuery.of(context)
+                                                    .size
+                                                    .width *
+                                                1.2),
+                                      )
+                                    : const SizedBox();
+                              })
+                        : const OrderAgainShimmerShimmer();
+                  })
+                : Consumer<BannerController>(
+                    builder: (context, bannerProvider, child) {
+                    return bannerProvider.sideBarBanner != null
+                        ? Padding(
+                            padding: const EdgeInsets.symmetric(
+                                horizontal: Dimensions.paddingSizeDefault),
+                            child: SingleBannersWidget(
+                                bannerModel: bannerProvider.sideBarBanner,
+                                height:
+                                    MediaQuery.of(context).size.width * 1.2),
+                          )
+                        : const SizedBox();
+                  }),
+          ),
+          const SliverToBoxAdapter(
+              child: SizedBox(height: Dimensions.paddingSizeDefault)),
+        ];
 
-            if (!singleVendor)
-              const SliverToBoxAdapter(
-                child: LocalStoresGridWidget(),
-              ),
+      case 'nearby_shops':
+        if (singleVendor) return [];
+        return const [
+          SliverToBoxAdapter(child: LocalStoresGridWidget()),
+          SliverToBoxAdapter(
+              child: SizedBox(height: Dimensions.paddingSizeDefault)),
+        ];
 
+      case 'footer_banner_slider':
+        return const [
+          SliverToBoxAdapter(child: FooterBannerSliderWidget()),
+          SliverToBoxAdapter(
+              child: SizedBox(height: Dimensions.paddingSizeDefault)),
+        ];
 
+      case 'featured_products':
+        return const [
+          SliverToBoxAdapter(child: FeaturedProductWidget()),
+          SliverToBoxAdapter(
+              child: SizedBox(height: Dimensions.paddingSizeDefault)),
+        ];
 
+      case 'top_side_bar_banner':
+        return [
+          SliverToBoxAdapter(
+            child: Consumer<BannerController>(
+                builder: (context, bannerProvider, child) {
+              return bannerProvider.topSideBarBannerBottom != null
+                  ? Padding(
+                      padding: const EdgeInsets.only(
+                          bottom: Dimensions.paddingSizeDefault,
+                          left: Dimensions.bannerPadding,
+                          right: Dimensions.bannerPadding),
+                      child: SingleBannersWidget(
+                          bannerModel: bannerProvider.topSideBarBannerBottom,
+                          height: MediaQuery.of(context).size.width * 1.2))
+                  : const SizedBox();
+            }),
+          ),
+          const SliverToBoxAdapter(
+              child: SizedBox(height: Dimensions.paddingSizeDefault)),
+        ];
 
+      case 'recommended_products':
+        return [
+          SliverToBoxAdapter(
+              child: Padding(
+                  padding: const EdgeInsets.only(
+                      bottom: Dimensions.paddingSizeDefault),
+                  child: RecommendedProductWidget(fromAsterTheme: true)))
+        ];
 
-            SliverToBoxAdapter(
-              child: const FooterBannerSliderWidget(),
-            ),
-            SliverToBoxAdapter(
-                child: SizedBox(height: Dimensions.paddingSizeDefault)),
+      case 'latest_products':
+        return const [
+          SliverToBoxAdapter(child: LatestProductListWidget()),
+          SliverToBoxAdapter(
+              child: SizedBox(height: Dimensions.paddingSizeDefault)),
+        ];
 
-            SliverToBoxAdapter(
-              child: const FeaturedProductWidget(),
-            ),
-            SliverToBoxAdapter(
-                child: SizedBox(height: Dimensions.paddingSizeDefault)),
+      case 'footer_banner_list':
+        return [
+          SliverToBoxAdapter(
+            child: Consumer<BannerController>(
+                builder: (context, bannerProvider, child) {
+              return bannerProvider.footerBannerList != null &&
+                      bannerProvider.footerBannerList!.isNotEmpty
+                  ? Padding(
+                      padding: const EdgeInsets.only(
+                          bottom: Dimensions.paddingSizeDefault,
+                          left: Dimensions.paddingSizeDefault,
+                          right: Dimensions.paddingSizeDefault),
+                      child: SingleBannersWidget(
+                          bannerModel: bannerProvider.footerBannerList![0],
+                          height: MediaQuery.of(context).size.width * 0.5))
+                  : const SizedBox();
+            }),
+          ),
+          const SliverToBoxAdapter(
+              child: SizedBox(height: Dimensions.paddingSizeDefault)),
+        ];
 
-            SliverToBoxAdapter(
-              child: Consumer<BannerController>(
-                  builder: (context, bannerProvider, child) {
-                return bannerProvider.topSideBarBannerBottom != null
-                    ? Padding(
-                        padding: const EdgeInsets.only(
-                            bottom: Dimensions.paddingSizeDefault,
-                            left: Dimensions.bannerPadding,
-                            right: Dimensions.bannerPadding),
-                        child: SingleBannersWidget(
-                            bannerModel: bannerProvider.topSideBarBannerBottom,
-                            height: MediaQuery.of(context).size.width * 1.2))
-                    : const SizedBox();
-              }),
-            ),
-            SliverToBoxAdapter(
-                child: SizedBox(height: Dimensions.paddingSizeDefault)),
-
-            SliverToBoxAdapter(
-                child: Padding(
-                    padding:
-                        EdgeInsets.only(bottom: Dimensions.paddingSizeDefault),
-                    child: RecommendedProductWidget(fromAsterTheme: true))),
-
-            SliverToBoxAdapter(child: const LatestProductListWidget()),
-            SliverToBoxAdapter(
-                child: const SizedBox(height: Dimensions.paddingSizeDefault)),
-
-            SliverToBoxAdapter(
-              child: Consumer<BannerController>(
-                  builder: (context, bannerProvider, child) {
-                return bannerProvider.footerBannerList != null &&
-                        bannerProvider.footerBannerList!.isNotEmpty
-                    ? Padding(
-                        padding: const EdgeInsets.only(
-                            bottom: Dimensions.paddingSizeDefault,
-                            left: Dimensions.paddingSizeDefault,
-                            right: Dimensions.paddingSizeDefault),
-                        child: SingleBannersWidget(
-                            bannerModel: bannerProvider.footerBannerList![0],
-                            height: MediaQuery.of(context).size.width * 0.5))
-                    : const SizedBox();
-              }),
-            ),
-            SliverToBoxAdapter(
-                child: const SizedBox(height: Dimensions.paddingSizeDefault)),
-
-            SliverToBoxAdapter(
-              child: Selector<ProductController, ProductModel?>(
-                selector: (ctx, productController) =>
-                    productController.justForYouProductModel,
-                builder: (context, justForYouProductModel, _) {
-                  return (justForYouProductModel?.products?.isNotEmpty ?? false)
-                      ? Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            TitleRowWidget(
-                              title: getTranslated('just_for_you', context),
-                              onTap: () {
-                                RouterHelper.getViewAllProductScreenRoute(
-                                    productType: ProductType.justForYou,
-                                    action: RouteAction.push);
-                              },
-                            ),
-                            const SizedBox(height: Dimensions.paddingSizeSmall),
-                            JustForYouView(
-                                productList: justForYouProductModel?.products),
-                          ],
-                        )
-                      : const SizedBox();
-                },
-              ),
-            ),
-            SliverToBoxAdapter(
-                child: const SizedBox(height: Dimensions.paddingSizeDefault)),
-
-            SliverToBoxAdapter(
-              child: Consumer<ShopController>(
-                  builder: (context, moreStoreProvider, _) {
-                return moreStoreProvider.moreStoreList.isNotEmpty
-                    ? Column(children: [
-                        TitleRowWidget(
-                          title: getTranslated('more_store', context),
-                          onTap: () => Navigator.push(
-                              context,
-                              MaterialPageRoute(
-                                  builder: (_) => MoreStoreViewListView(
-                                      title: getTranslated(
-                                          'more_store', context)))),
-                        ),
-                        const SizedBox(height: Dimensions.paddingSizeSmall),
-                        const MoreStoreView(isHome: true),
-                        const SizedBox(height: Dimensions.paddingSizeDefault),
-                      ])
-                    : const SizedBox();
-              }),
-            ),
-            SliverToBoxAdapter(
-                child: const SizedBox(height: Dimensions.paddingSizeDefault)),
-
-            const HomeCategoryProductWidget(isHomePage: true),
-            SliverToBoxAdapter(
-                child: const SizedBox(height: Dimensions.paddingSizeDefault)),
-
-            SliverToBoxAdapter(
-              child: Consumer<BannerController>(
-                  builder: (context, footerBannerProvider, child) {
-                return footerBannerProvider.mainSectionBanner != null
-                    ? SingleBannersWidget(
-                        bannerModel: footerBannerProvider.mainSectionBanner,
-                        height: MediaQuery.of(context).size.width / 4,
+      case 'just_for_you':
+        return [
+          SliverToBoxAdapter(
+            child: Selector<ProductController, ProductModel?>(
+              selector: (ctx, productController) =>
+                  productController.justForYouProductModel,
+              builder: (context, justForYouProductModel, _) {
+                return (justForYouProductModel?.products?.isNotEmpty ?? false)
+                    ? Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          TitleRowWidget(
+                            title: getTranslated('just_for_you', context),
+                            onTap: () {
+                              RouterHelper.getViewAllProductScreenRoute(
+                                  productType: ProductType.justForYou,
+                                  action: RouteAction.push);
+                            },
+                          ),
+                          const SizedBox(height: Dimensions.paddingSizeSmall),
+                          JustForYouView(
+                              productList:
+                                  justForYouProductModel?.products),
+                        ],
                       )
                     : const SizedBox();
-              }),
+              },
             ),
+          ),
+          const SliverToBoxAdapter(
+              child: SizedBox(height: Dimensions.paddingSizeDefault)),
+        ];
 
-            SliverPersistentHeader(
-                pinned: true,
-                delegate: SliverDelegate(
-                  child: Align(
-                    alignment: Alignment.topLeft,
-                    child: Container(
-                        color: Theme.of(context).scaffoldBackgroundColor,
-                        child: const ProductPopupFilterWidget()),
-                  ),
-                )),
+      case 'more_stores':
+        return [
+          SliverToBoxAdapter(
+            child: Consumer<ShopController>(
+                builder: (context, moreStoreProvider, _) {
+              return moreStoreProvider.moreStoreList.isNotEmpty
+                  ? Column(children: [
+                      TitleRowWidget(
+                        title: getTranslated('more_store', context),
+                        onTap: () => Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                                builder: (_) => MoreStoreViewListView(
+                                    title: getTranslated(
+                                        'more_store', context)))),
+                      ),
+                      const SizedBox(height: Dimensions.paddingSizeSmall),
+                      const MoreStoreView(isHome: true),
+                      const SizedBox(height: Dimensions.paddingSizeDefault),
+                    ])
+                  : const SizedBox();
+            }),
+          ),
+          const SliverToBoxAdapter(
+              child: SizedBox(height: Dimensions.paddingSizeDefault)),
+        ];
 
-            HomeProductListWidget(scrollController: _scrollController),
-          ]),
-        ),
-      ),
-    );
+      case 'home_category_products':
+        return const [
+          HomeCategoryProductWidget(isHomePage: true),
+          SliverToBoxAdapter(
+              child: SizedBox(height: Dimensions.paddingSizeDefault)),
+        ];
+
+      case 'main_section_banner':
+        return [
+          SliverToBoxAdapter(
+            child: Consumer<BannerController>(
+                builder: (context, footerBannerProvider, child) {
+              return footerBannerProvider.mainSectionBanner != null
+                  ? SingleBannersWidget(
+                      bannerModel: footerBannerProvider.mainSectionBanner,
+                      height: MediaQuery.of(context).size.width / 4,
+                    )
+                  : const SizedBox();
+            }),
+          )
+        ];
+
+      default:
+        return [];
+    }
   }
 }

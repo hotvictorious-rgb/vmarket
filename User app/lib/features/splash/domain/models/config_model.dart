@@ -89,6 +89,9 @@ class ConfigModel {
   double? loyaltyPointEarnRatePercent;           // % of order total awarded as points on payment
   List<String>? cashbackEligibleChannels;        // e.g. ["delivery", "pickup"]
 
+  // [AI] Server-Driven UI (SDUI) & Dynamic App Structure
+  ServerStructureModel? serverStructure;
+
 
 
   ConfigModel(
@@ -176,6 +179,7 @@ class ConfigModel {
         this.loyaltyPointMaxOrderRedemptionPercentage,
         this.loyaltyPointEarnRatePercent,
         this.cashbackEligibleChannels,
+        this.serverStructure,
       });
 
 
@@ -370,6 +374,10 @@ class ConfigModel {
     } else {
       cashbackEligibleChannels = ['delivery', 'pickup']; // safe default until backend responds
     }
+
+    serverStructure = json['server_structure'] != null
+        ? ServerStructureModel.fromJson(json['server_structure'])
+        : null;
   }
 
 }
@@ -1115,5 +1123,147 @@ class InHouseShop {
     'offer_banner_full_url': offerBannerFullUrl?.toJson(),
     'bottom_banner_full_url': bottomBannerFullUrl?.toJson(),
     'tin_certificate_full_url': tinCertificateFullUrl?.toJson(),
+  };
+}
+
+class ServerStructureModel {
+  int? layoutVersion;
+  String? updatedAt;
+  CustomerAppStructure? customerApp;
+  VendorAppStructure? vendorApp;
+  DeliveryAppStructure? deliveryApp;
+
+  ServerStructureModel({
+    this.layoutVersion,
+    this.updatedAt,
+    this.customerApp,
+    this.vendorApp,
+    this.deliveryApp,
+  });
+
+  ServerStructureModel.fromJson(Map<String, dynamic> json) {
+    layoutVersion = json['layout_version'];
+    updatedAt = json['updated_at'];
+    customerApp = json['customer_app'] != null
+        ? CustomerAppStructure.fromJson(json['customer_app'])
+        : null;
+    vendorApp = json['vendor_app'] != null
+        ? VendorAppStructure.fromJson(json['vendor_app'])
+        : null;
+    deliveryApp = json['delivery_app'] != null
+        ? DeliveryAppStructure.fromJson(json['delivery_app'])
+        : null;
+  }
+
+  Map<String, dynamic> toJson() => {
+    'layout_version': layoutVersion,
+    'updated_at': updatedAt,
+    'customer_app': customerApp?.toJson(),
+    'vendor_app': vendorApp?.toJson(),
+    'delivery_app': deliveryApp?.toJson(),
+  };
+}
+
+class CustomerAppStructure {
+  List<HomeSectionItem>? homeSections;
+  List<NavTabItem>? navigationTabs;
+  Map<String, dynamic>? features;
+
+  CustomerAppStructure({this.homeSections, this.navigationTabs, this.features});
+
+  CustomerAppStructure.fromJson(Map<String, dynamic> json) {
+    if (json['home_sections'] != null) {
+      homeSections = <HomeSectionItem>[];
+      json['home_sections'].forEach((v) {
+        homeSections!.add(HomeSectionItem.fromJson(v));
+      });
+    }
+    if (json['navigation_tabs'] != null) {
+      navigationTabs = <NavTabItem>[];
+      json['navigation_tabs'].forEach((v) {
+        navigationTabs!.add(NavTabItem.fromJson(v));
+      });
+    }
+    features = json['features'] != null ? Map<String, dynamic>.from(json['features']) : null;
+  }
+
+  Map<String, dynamic> toJson() => {
+    'home_sections': homeSections?.map((v) => v.toJson()).toList(),
+    'navigation_tabs': navigationTabs?.map((v) => v.toJson()).toList(),
+    'features': features,
+  };
+}
+
+class HomeSectionItem {
+  String? id;
+  String? title;
+  bool? isEnabled;
+  int? sortOrder;
+
+  HomeSectionItem({this.id, this.title, this.isEnabled, this.sortOrder});
+
+  HomeSectionItem.fromJson(Map<String, dynamic> json) {
+    id = json['id'];
+    title = json['title'];
+    isEnabled = json['is_enabled'] ?? true;
+    sortOrder = json['sort_order'] ?? 0;
+  }
+
+  Map<String, dynamic> toJson() => {
+    'id': id,
+    'title': title,
+    'is_enabled': isEnabled,
+    'sort_order': sortOrder,
+  };
+}
+
+class NavTabItem {
+  String? id;
+  String? title;
+  bool? isEnabled;
+  int? sortOrder;
+
+  NavTabItem({this.id, this.title, this.isEnabled, this.sortOrder});
+
+  NavTabItem.fromJson(Map<String, dynamic> json) {
+    id = json['id'];
+    title = json['title'];
+    isEnabled = json['is_enabled'] ?? true;
+    sortOrder = json['sort_order'] ?? 0;
+  }
+
+  Map<String, dynamic> toJson() => {
+    'id': id,
+    'title': title,
+    'is_enabled': isEnabled,
+    'sort_order': sortOrder,
+  };
+}
+
+class VendorAppStructure {
+  Map<String, dynamic>? features;
+
+  VendorAppStructure({this.features});
+
+  VendorAppStructure.fromJson(Map<String, dynamic> json) {
+    features = json['features'] != null ? Map<String, dynamic>.from(json['features']) : null;
+  }
+
+  Map<String, dynamic> toJson() => {
+    'features': features,
+  };
+}
+
+class DeliveryAppStructure {
+  Map<String, dynamic>? features;
+
+  DeliveryAppStructure({this.features});
+
+  DeliveryAppStructure.fromJson(Map<String, dynamic> json) {
+    features = json['features'] != null ? Map<String, dynamic>.from(json['features']) : null;
+  }
+
+  Map<String, dynamic> toJson() => {
+    'features': features,
   };
 }
