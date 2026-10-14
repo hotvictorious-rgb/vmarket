@@ -1,3 +1,26 @@
+### [2026-10-14 06:15 UTC] Third-Round Audit Remediation: Concurrency Isolation, Controlled Lock Handling & Non-Destructive Migration [backend, ai-governance] [AI]
+- Handover Concurrency & Graceful Lock Contention (`backend/vmarket-web/app/Http/Controllers/Customer/OrderHandoverController.php`):
+  1. Handled race conditions and database lock contention gracefully in `confirmInShopPickup` and `confirmDoorstepDelivery`.
+  2. If a competing request locks the order, queries the order out-of-transaction: if already delivered, returns controlled HTTP 422 (`"This order has already been confirmed as delivered."`).
+  3. If database or row lock is currently held (`database is locked` / `Lock wait timeout`), returns controlled HTTP 409 (`"Order is currently being processed by another transaction. Please refresh."`).
+  4. Eliminated unhandled HTTP 500 infrastructure errors for concurrent callers, guaranteeing an orderly customer and rider experience.
+- Cashback Migration Strict Integrity Gate (`backend/vmarket-web/`):
+  1. `database/migrations/2026_10_13_000001_add_unique_order_id_to_customer_cashback_ledgers_table.php`: Eradicated automatic database mutation. If duplicate `order_id` records exist, the migration now throws a loud `RuntimeException` reporting the duplicate order IDs and blocking deployment rather than rewriting ledger history automatically.
+  2. Created dedicated artisan console command `app/Console/Commands/AuditCashbackDuplicatesCommand.php` (`cashback:audit-duplicates`) allowing operators to inspect duplicate records tabularly, perform `--dry-run` checks, and execute operator-supervised transactional reconciliations with immutable audit logs.
+- Disposable Test Database Isolation (`backend/vmarket-web/scripts/`):
+  1. `test_simultaneous_concurrency.php`: Enforced strict `APP_ENV=production` guard preventing execution in production.
+  2. Spawns isolated disposable temporary SQLite database (`storage/framework/testing/concurrency_test_*.sqlite`), dynamically binding the worker connection without polluting the active shared database.
+  3. Guaranteed cleanup: registers automatic database disconnection, garbage collection, and file unlinking upon completion.
+  4. Hardened strict pass criteria: mandates exactly one HTTP 200 success, exactly one controlled non-500 rejection (HTTP 422/409), zero HTTP 500 errors, and zero balance drift ($\Delta = ₦0.00$).
+- Deterministic Deployment Runbook (`DEPLOYMENT_RUNBOOK.md`):
+  1. Pinned `update_shop.sh` to strictly require target commit SHA as mandatory argument `$1`.
+  2. Removed stale hardcoded commit SHA fallbacks, aborting execution with usage guidance if argument is omitted.
+  3. Updated clone workflow to check out the exact certified commit SHA directly (`git checkout "$TARGET_COMMIT_SHA"`), ensuring immutable release reproduction.
+- Verification & Mathematical Invariants:
+  1. Isolated Simultaneous Multi-Process Concurrency Proof: Worker A HTTP 200, Worker B HTTP 409, 0 HTTP 500 errors, financial drift $\Delta = ₦0.00$.
+  2. Full Regression Suite (all 9 suites): 83 tests, 741 assertions, 0 errors, 0 failures ($\Delta = 0.00$).
+  3. Ticket & Documentation Governance: `validate-tickets.ps1` (47/47 OK) and `validate-docs.ps1` (All OK).
+
 ### [2026-10-14 04:55 UTC] VMarket V1 Final Audit Remediation: Cashback Migration Hardening, Post-Commit Side Effects, Decimal Precision & Real Simultaneous Concurrency Proof [backend, ai-governance] [AI]
 - Cashback Migration Hardening (`backend/vmarket-web/database/migrations/2026_10_13_000001_add_unique_order_id_to_customer_cashback_ledgers_table.php`):
   1. Removed silent `try ... catch` exception suppression from unique index creation. The migration now fails loudly on any database index error.

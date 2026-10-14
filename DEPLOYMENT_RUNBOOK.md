@@ -131,8 +131,13 @@ LIVE_DIR="/home1/victori6/public_html/shop.victoriousmarket.com.ng"
 BACKUP_DIR="/home1/victori6"
 REPO_URL="https://github.com/hotvictorious-rgb/vmarket.git"
 RELEASE_BRANCH="v1"
-# Target release commit SHA: pass as argument $1 or default to certified V1 release commit SHA
-TARGET_COMMIT_SHA="${1:-fdda2c1715dc52c29aa9ffecee9900989ae1765d}"
+# Target release commit SHA: strictly mandatory as argument $1 (no stale fallback permitted)
+TARGET_COMMIT_SHA="$1"
+if [ -z "$TARGET_COMMIT_SHA" ]; then
+    echo "❌ ERROR: Target commit SHA must be specified as argument \$1."
+    echo "Usage: ./update_shop.sh <approved-commit-sha>"
+    exit 1
+fi
 TEMP_DIR="/tmp/vmarket_update_$(date +%s)"
 BACKUP_ARCHIVE="$BACKUP_DIR/shop_backup_$(date +%Y%m%d_%H%M%S).tar.gz"
 
@@ -150,13 +155,14 @@ echo "=== [2/7] Creating Server Snapshot ==="
 tar -czf "$BACKUP_ARCHIVE" --exclude="$LIVE_DIR/vendor" --exclude="$LIVE_DIR/storage" -C "/home1/victori6/public_html" "shop.victoriousmarket.com.ng"
 echo "Backup created: $BACKUP_ARCHIVE"
 
-echo "=== [3/7] Cloning Certified Release Branch ($RELEASE_BRANCH) ==="
-git clone --depth 50 -b "$RELEASE_BRANCH" "$REPO_URL" "$TEMP_DIR"
+echo "=== [3/7] Fetching Certified Release Commit ($TARGET_COMMIT_SHA) ==="
+git clone "$REPO_URL" "$TEMP_DIR"
 
 cd "$TEMP_DIR"
+git checkout "$TARGET_COMMIT_SHA"
 CLONED_SHA=$(git rev-parse HEAD)
-echo "Cloned Commit SHA: $CLONED_SHA"
-echo "Expected Release SHA: $TARGET_COMMIT_SHA"
+echo "Checked out Commit SHA: $CLONED_SHA"
+echo "Expected Release SHA:   $TARGET_COMMIT_SHA"
 
 if [ "$CLONED_SHA" != "$TARGET_COMMIT_SHA" ]; then
     echo "❌ ERROR: Target commit SHA mismatch!"
