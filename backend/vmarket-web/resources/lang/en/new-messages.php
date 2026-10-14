@@ -239,4 +239,8 @@ return [
 	"Repeat_password" => "Repeat password",
 	"Register_Account" => "Register Account",
 	"Already_have_an_account?" => "Already have an account ",
+	"Victorious" => "Victorious",
+	"Escrow_&_OTP_Lock" => "Escrow & OTP Lock",
+	"100%_Secure._Funds_held_in_platform_escrow_and_disbursed_only_after_physical_inspection_or_handover_OTP_release." => "100% Secure. Funds held in platform escrow and disbursed only after physical inspection or handover OTP release.",
+	"Total_Payable" => "Total Payable",
 ];

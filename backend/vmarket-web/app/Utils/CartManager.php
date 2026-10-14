@@ -18,6 +18,23 @@ class CartManager
 {
     use VatTaxManagement;
 
+    // [AI] Request-level in-memory memoization to eradicate N+1 duplicate queries
+    public static array $memoizedGroupIds = [];
+    public static array $memoizedShippingTypes = [];
+    public static ?Collection $memoizedCartList = null;
+    public static ?string $memoizedUserKey = null;
+    public static bool $shippingCostUpdated = false;
+
+    public static function clearCartManagerMemoryCache(): void
+    {
+        self::$memoizedGroupIds = [];
+        self::$memoizedShippingTypes = [];
+        self::$memoizedCartList = null;
+        self::$memoizedUserKey = null;
+        self::$shippingCostUpdated = false;
+        \App\Utils\OrderManager::$memoizedFreeDelivery = [];
+    }
+
     public static function cartListSessionToDatabase($request = null): void
     {
         $user = Helpers::getCustomerInformation($request);
@@ -49,48 +66,68 @@ class CartManager
 
     public static function getCartListQuery($groupId = null, $type = null): Collection|array
     {
-        ProductManager::updateProductPriceInCartList(request: request()->all());
-        self::updateOrderSummaryShippingCost($groupId, $type);
+        $user = Helpers::getCustomerInformation(request());
+        $userKey = $user == 'offline'
+            ? ('guest_' . (session('guest_id') ?? (request('guest_id') ?? 0)))
+            : ('user_' . ($user['id'] ?? 0));
 
-        $cartItems = Cart::with(['product' => function ($query) {
-                return $query->marketplacePurchasable()->with(['category' => function ($query) {
-                    return $query->with(['taxVats' => function ($query) {
-                        return $query->with(['tax'])->wherehas('tax', function ($query) {
-                            return $query->where('is_active', 1);
-                        });
-                    }]);
-                }, 'clearanceSale' => function ($query) {
-                    return $query->active();
-                }, 'taxVats' => function ($query) {
-                    return $query->with(['tax'])->wherehas('tax', function ($query) {
-                        return $query->where('is_active', 1);
-                    });
-                }]);
-            }])
-            ->whereHas('product', function ($query) {
-                return $query->marketplaceEligible();
-            })
-            ->when($groupId == null, function ($query) {
-                return $query->whereIn('cart_group_id', CartManager::get_cart_group_ids());
-            })
-            ->when($groupId, function ($query) use ($groupId) {
-                return $query->where('cart_group_id', $groupId);
-            })
-            ->when($type == 'checked', function ($query) {
-                return $query->where(['is_checked' => 1]);
-            })
-            ->get();
+        if (self::$memoizedCartList === null || self::$memoizedUserKey !== $userKey) {
+            ProductManager::updateProductPriceInCartList(request: request()->all());
+            self::updateOrderSummaryShippingCost();
 
-        foreach ($cartItems as $item) {
-            $item->discount = getProductPriceByType(
-                product: $item->product,
-                type: 'discounted_amount',
-                result: 'value',
-                price: $item->price
-            );
+            $cartItems = Cart::with([
+                    'seller.shop',
+                    'shop',
+                    'allProducts.seller.shop',
+                    'product' => function ($query) {
+                        return $query->marketplacePurchasable()->with([
+                            'translations',
+                            'category' => function ($query) {
+                                return $query->with(['taxVats' => function ($query) {
+                                    return $query->with(['tax'])->wherehas('tax', function ($query) {
+                                        return $query->where('is_active', 1);
+                                    });
+                                }]);
+                            },
+                            'clearanceSale' => function ($query) {
+                                return $query->active();
+                            },
+                            'taxVats' => function ($query) {
+                                return $query->with(['tax'])->wherehas('tax', function ($query) {
+                                    return $query->where('is_active', 1);
+                                });
+                            }
+                        ]);
+                    }
+                ])
+                ->whereHas('product', function ($query) {
+                    return $query->marketplaceEligible();
+                })
+                ->whereIn('cart_group_id', CartManager::get_cart_group_ids())
+                ->get();
+
+            foreach ($cartItems as $item) {
+                $item->discount = getProductPriceByType(
+                    product: $item->product,
+                    type: 'discounted_amount',
+                    result: 'value',
+                    price: $item->price
+                );
+            }
+
+            self::$memoizedCartList = $cartItems;
+            self::$memoizedUserKey = $userKey;
         }
 
-        return $cartItems;
+        $collection = self::$memoizedCartList;
+        if ($groupId !== null) {
+            $collection = $collection->where('cart_group_id', $groupId);
+        }
+        if ($type === 'checked') {
+            $collection = $collection->where('is_checked', 1);
+        }
+
+        return $collection->values();
     }
 
     public static function getCartListQueryAPI($request = null, $groupId = null, $type = null): Collection|array
@@ -186,11 +223,17 @@ class CartManager
     public static function get_cart_group_ids($request = null, $type = null)
     {
         $user = Helpers::getCustomerInformation(!is_null($request) ? $request : request());
+        $userKey = $user == 'offline' ? ('guest_' . (session('guest_id') ?? ($request['guest_id'] ?? (request('guest_id') ?? 0)))) : ('user_' . ($user['id'] ?? 0));
+        $cacheKey = ($type ?? 'all') . '_' . $userKey;
 
-        return Cart::whereHas('product', function ($query) {
+        if (isset(self::$memoizedGroupIds[$cacheKey])) {
+            return self::$memoizedGroupIds[$cacheKey];
+        }
+
+        $result = Cart::whereHas('product', function ($query) {
                 return $query->marketplaceEligible();
             })->when($user == 'offline', function ($query) use ($request) {
-                return $query->where(['customer_id' => session('guest_id') ?? (request('guest_id') ?? 0), 'is_guest' => 1]);
+                return $query->where(['customer_id' => session('guest_id') ?? ($request['guest_id'] ?? (request('guest_id') ?? 0)), 'is_guest' => 1]);
             })->when($user != 'offline', function ($query) use ($user) {
                 return $query->where(['customer_id' => $user['id'], 'is_guest' => '0']);
             })
@@ -200,26 +243,16 @@ class CartManager
             ->groupBy('cart_group_id')
             ->pluck('cart_group_id')
             ->toArray();
+
+        self::$memoizedGroupIds[$cacheKey] = $result;
+        return $result;
     }
 
     public static function get_shipping_cost($groupId = null, $type = null)
     {
         self::updateOrderSummaryShippingCost($groupId, $type);
-        $cartShippingCost = Cart::where(['product_type' => 'physical'])
-            ->whereHas('product', function ($query) {
-                return $query->active();
-            })->when(($groupId == null && $type != 'checked'), function ($query) {
-                return $query->whereIn('cart_group_id', CartManager::get_cart_group_ids());
-            })
-            ->when(($groupId == null && $type == 'checked'), function ($query) {
-                return $query->whereIn('cart_group_id', CartManager::get_cart_group_ids(type: 'checked'));
-            })
-            ->when($groupId != null, function ($query) use ($groupId) {
-                return $query->where(['cart_group_id' => $groupId]);
-            })
-            ->when($type == 'checked', function ($query) {
-                return $query->where(['is_checked' => 1]);
-            })->sum('shipping_cost');
+        $cartItems = self::getCartListQuery($groupId, $type);
+        $cartShippingCost = $cartItems->where('product_type', 'physical')->sum('shipping_cost');
 
         $orderWiseShippingCostData = CartShipping::whereHas('cart', function ($query) use ($type) {
                 return $query->where(['product_type' => 'physical'])->whereHas('product', function ($query) {
@@ -248,38 +281,36 @@ class CartManager
 
     public static function updateOrderSummaryShippingCost($groupId = null, $type = null): void
     {
+        if (self::$shippingCostUpdated) {
+            return;
+        }
+
         $user = Helpers::getCustomerInformation(request());
 
         $cartItems = Cart::where(['product_type' => 'physical'])
             ->with(['product'])
             ->whereHas('product', function ($query) {
                 return $query->active();
-            })->when(($groupId == null && $type != 'checked'), function ($query) {
-                return $query->whereIn('cart_group_id', CartManager::get_cart_group_ids());
-            })
-            ->when(($groupId == null && $type == 'checked'), function ($query) {
-                return $query->whereIn('cart_group_id', CartManager::get_cart_group_ids(type: 'checked'));
-            })
-            ->when($groupId != null, function ($query) use ($groupId) {
-                return $query->where(['cart_group_id' => $groupId]);
             })
             ->when($user == 'offline', function ($query) {
-                return $query->where(['customer_id' => request('guest_id'), 'is_guest' => 1]);
+                return $query->where(['customer_id' => session('guest_id') ?? (request('guest_id') ?? 0), 'is_guest' => 1]);
             })
             ->when($user != 'offline', function ($query) use ($user) {
                 return $query->where(['customer_id' => $user['id'], 'is_guest' => '0']);
             })
-            ->when($type == 'checked', function ($query) {
-                return $query->where(['is_checked' => 1]);
-            })->get();
+            ->get();
 
         self::updateProductShippingCost($cartItems);
+        self::$shippingCostUpdated = true;
     }
 
     public static function updateProductShippingCost($cartList): void
     {
         $shippingMethod = getWebConfig(name: 'shipping_method');
-        $adminShipping = ShippingType::where('seller_id', 0)->first();
+        if (!isset(self::$memoizedShippingTypes['admin_0'])) {
+            self::$memoizedShippingTypes['admin_0'] = ShippingType::where('seller_id', 0)->first();
+        }
+        $adminShipping = self::$memoizedShippingTypes['admin_0'];
         $cartListGroup = $cartList?->groupBy('cart_group_id');
 
         foreach($cartListGroup as $cartGroupItems) {
@@ -290,7 +321,11 @@ class CartManager
                 if ($cartGroupItems?->first()?->seller_is == 'admin') {
                     $shippingType = isset($adminShipping) ? $adminShipping->shipping_type : 'order_wise';
                 } else {
-                    $sellerShipping = ShippingType::where('seller_id', $cartGroupItems?->first()?->seller_id)->first();
+                    $sellerId = $cartGroupItems?->first()?->seller_id ?? 0;
+                    if (!isset(self::$memoizedShippingTypes['seller_' . $sellerId])) {
+                        self::$memoizedShippingTypes['seller_' . $sellerId] = ShippingType::where('seller_id', $sellerId)->first();
+                    }
+                    $sellerShipping = self::$memoizedShippingTypes['seller_' . $sellerId];
                     $shippingType = isset($sellerShipping) ? $sellerShipping->shipping_type : 'order_wise';
                 }
             }
@@ -300,15 +335,20 @@ class CartManager
                     CartShipping::where('cart_group_id', $cartItem?->cart_group_id)->delete();
 
                     if ($cartItem?->product) {
-                        Cart::where(['id' =>  $cartItem->id])->update([
-                            'shipping_cost' => $cartItem['product_type'] == 'physical' ? CartManager::get_shipping_cost_for_product_category_wise($cartItem->product, $cartItem['quantity']) : 0,
-                            'shipping_type' => $shippingType,
-                        ]);
+                        $newCost = $cartItem['product_type'] == 'physical' ? CartManager::get_shipping_cost_for_product_category_wise($cartItem->product, $cartItem['quantity']) : 0;
+                        if ((float)$cartItem->shipping_cost != (float)$newCost || $cartItem->shipping_type !== $shippingType) {
+                            Cart::where(['id' =>  $cartItem->id])->update([
+                                'shipping_cost' => $newCost,
+                                'shipping_type' => $shippingType,
+                            ]);
+                        }
                     }
                 }
 
                 if ($shippingType == 'order_wise') {
-                    Cart::where(['id' =>  $cartItem->id])->update(['shipping_cost' => 0, 'shipping_type' => $shippingType]);
+                    if ((float)$cartItem->shipping_cost != 0 || $cartItem->shipping_type !== $shippingType) {
+                        Cart::where(['id' =>  $cartItem->id])->update(['shipping_cost' => 0, 'shipping_type' => $shippingType]);
+                    }
                 }
             }
         }
@@ -701,14 +741,24 @@ class CartManager
         $cost = 0;
 
         if ($shippingMethod == 'inhouse_shipping') {
-            $adminShipping = ShippingType::where('seller_id', 0)->first();
+            if (!isset(self::$memoizedShippingTypes['admin_0'])) {
+                self::$memoizedShippingTypes['admin_0'] = ShippingType::where('seller_id', 0)->first();
+            }
+            $adminShipping = self::$memoizedShippingTypes['admin_0'];
             $shippingType = isset($adminShipping) ? $adminShipping->shipping_type : 'order_wise';
         } else {
             if ($product['added_by'] == 'admin') {
-                $adminShipping = ShippingType::where('seller_id', 0)->first();
+                if (!isset(self::$memoizedShippingTypes['admin_0'])) {
+                    self::$memoizedShippingTypes['admin_0'] = ShippingType::where('seller_id', 0)->first();
+                }
+                $adminShipping = self::$memoizedShippingTypes['admin_0'];
                 $shippingType = isset($adminShipping) ? $adminShipping->shipping_type : 'order_wise';
             } else {
-                $sellerShipping = ShippingType::where('seller_id', $product['user_id'])->first();
+                $sellerId = $product['user_id'] ?? 0;
+                if (!isset(self::$memoizedShippingTypes['seller_' . $sellerId])) {
+                    self::$memoizedShippingTypes['seller_' . $sellerId] = ShippingType::where('seller_id', $sellerId)->first();
+                }
+                $sellerShipping = self::$memoizedShippingTypes['seller_' . $sellerId];
                 $shippingType = isset($sellerShipping) ? $sellerShipping->shipping_type : 'order_wise';
             }
         }

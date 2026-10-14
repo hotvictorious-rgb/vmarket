@@ -116,10 +116,12 @@ class Cart extends Model
 
         static::saved(function ($model) {
             cacheRemoveByType(type: 'carts');
+            \App\Utils\CartManager::clearCartManagerMemoryCache();
         });
 
         static::deleted(function ($model) {
             cacheRemoveByType(type: 'carts');
+            \App\Utils\CartManager::clearCartManagerMemoryCache();
         });
     }
 }

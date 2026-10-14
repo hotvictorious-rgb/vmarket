@@ -4637,3 +4637,270 @@ button, input, select, textarea {
     }
 }
 
+
+
+/* ==========================================================================
+   VICTORIOUS MARKET LUXURY COMMERCE & CHECKOUT ARCHITECTURE (V1 MODERNIST)
+   ========================================================================== */
+
+/* Modern Connected Step Progress Tracker */
+.vm-checkout-steps-container {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    margin-bottom: 2rem;
+}
+
+.vm-checkout-steps {
+    display: flex;
+    align-items: center;
+    gap: 0;
+    list-style: none;
+    padding: 6px 12px;
+    margin: 0;
+    background: #FFFFFF;
+    border: 1px solid rgba(94, 23, 235, 0.10);
+    border-radius: 999px;
+    box-shadow: 0 4px 18px rgba(27, 16, 53, 0.04);
+}
+
+.vm-step-item {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 8px 16px;
+    border-radius: 999px;
+    font-size: 13px;
+    font-weight: 600;
+    color: #64748B;
+    text-decoration: none;
+    transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.vm-step-item .vm-step-num {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 24px;
+    height: 24px;
+    border-radius: 50%;
+    background: #F1F5F9;
+    color: #64748B;
+    font-size: 11px;
+    font-weight: 700;
+    transition: all 0.25s ease;
+}
+
+.vm-step-item.is-active {
+    background: linear-gradient(135deg, #5E17EB 0%, #4A148C 100%);
+    color: #FFFFFF !important;
+    box-shadow: 0 4px 14px rgba(94, 23, 235, 0.35);
+}
+
+.vm-step-item.is-active .vm-step-num {
+    background: #FFD700;
+    color: #1B1035;
+}
+
+.vm-step-item.is-done {
+    color: #059669;
+}
+
+.vm-step-item.is-done .vm-step-num {
+    background: #ECFDF5;
+    color: #059669;
+    border: 1px solid rgba(16, 185, 129, 0.3);
+}
+
+.vm-step-separator {
+    color: #CBD5E1;
+    font-size: 12px;
+    padding: 0 4px;
+}
+
+/* Sticky Desktop Order Summary */
+.sticky-top-80 {
+    position: sticky;
+    top: 88px;
+    z-index: 10;
+}
+
+.vm-summary-card {
+    background: #FFFFFF;
+    border: 1px solid rgba(94, 23, 235, 0.12);
+    border-radius: 20px;
+    padding: 24px;
+    box-shadow: 0 10px 30px rgba(27, 16, 53, 0.05);
+    transition: box-shadow 0.2s ease;
+}
+
+.vm-summary-card:hover {
+    box-shadow: 0 14px 36px rgba(94, 23, 235, 0.08);
+}
+
+.vm-escrow-card {
+    background: linear-gradient(135deg, rgba(94, 23, 235, 0.04) 0%, rgba(255, 215, 0, 0.05) 100%);
+    border: 1px solid rgba(94, 23, 235, 0.15);
+    border-radius: 14px;
+    padding: 14px;
+    margin: 18px 0;
+    display: flex;
+    gap: 12px;
+    align-items: flex-start;
+}
+
+.vm-escrow-card i {
+    color: #5E17EB;
+    font-size: 22px;
+    flex-shrink: 0;
+}
+
+/* Mobile Sticky Bottom Bar (< 992px) */
+.vm-mobile-bottom-bar {
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    z-index: 1040;
+    background: rgba(255, 255, 255, 0.94);
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
+    border-top: 1px solid rgba(94, 23, 235, 0.12);
+    box-shadow: 0 -8px 25px rgba(27, 16, 53, 0.08);
+    padding: 12px 16px;
+    display: none;
+}
+
+@media (max-width: 991.98px) {
+    .vm-mobile-bottom-bar {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 12px;
+    }
+    
+    /* Give page bottom padding so content doesn't get covered by sticky bar */
+    .main-content {
+        padding-bottom: 90px !important;
+    }
+    
+    .vm-step-item span.d-none-sm {
+        display: none;
+    }
+    
+    .vm-step-item {
+        padding: 6px 10px;
+        font-size: 11.5px;
+    }
+}
+
+.vm-mobile-total-box {
+    display: flex;
+    flex-direction: column;
+}
+
+.vm-mobile-total-label {
+    font-size: 11px;
+    color: #64748B;
+    font-weight: 500;
+}
+
+.vm-mobile-total-price {
+    font-size: 18px;
+    font-weight: 800;
+    color: #5E17EB;
+    line-height: 1.15;
+}
+
+.vm-mobile-cta-btn {
+    background: linear-gradient(135deg, #5E17EB 0%, #1B1035 100%);
+    color: #FFFFFF !important;
+    border: none;
+    border-radius: 12px;
+    padding: 12px 20px;
+    font-size: 14px;
+    font-weight: 700;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    box-shadow: 0 4px 14px rgba(94, 23, 235, 0.35);
+    text-decoration: none;
+    white-space: nowrap;
+}
+
+.vm-mobile-cta-btn:active {
+    transform: scale(0.98);
+}
+
+/* Luxury Address Card */
+.vm-address-card {
+    background: #FFFFFF;
+    border: 1.5px solid #E2E8F0;
+    border-radius: 14px;
+    padding: 16px;
+    transition: all 0.2s ease;
+    cursor: pointer;
+    position: relative;
+}
+
+.vm-address-card:hover {
+    border-color: rgba(94, 23, 235, 0.4);
+    box-shadow: 0 6px 20px rgba(94, 23, 235, 0.06);
+}
+
+.vm-address-card.is-selected {
+    border-color: #5E17EB;
+    background: #FAF8FF;
+    box-shadow: 0 0 0 3px rgba(94, 23, 235, 0.12);
+}
+
+.vm-address-tag {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    background: #EDE9FE;
+    color: #5E17EB;
+    font-size: 11px;
+    font-weight: 700;
+    padding: 2px 8px;
+    border-radius: 6px;
+    text-transform: uppercase;
+}
+
+/* Directional LGA Transit Chip */
+.vm-lga-route-chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    background: #EFF6FF;
+    border: 1px solid #BFDBFE;
+    color: #1D4ED8;
+    padding: 4px 10px;
+    border-radius: 8px;
+    font-size: 12px;
+    font-weight: 600;
+}
+
+/* Payment Gateway Selector Cards */
+.vm-gateway-card {
+    background: #FFFFFF;
+    border: 1.5px solid #E2E8F0;
+    border-radius: 14px;
+    padding: 16px 20px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.vm-gateway-card:hover {
+    border-color: rgba(94, 23, 235, 0.4);
+    background: #FBF9FF;
+}
+
+.vm-gateway-card.is-selected {
+    border-color: #5E17EB;
+    background: #FAF8FF;
+    box-shadow: 0 0 0 3px rgba(94, 23, 235, 0.12);
+}

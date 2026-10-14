@@ -10,17 +10,23 @@
                 <div class="col-lg-8 mb-3 mb-lg-0">
                     <div class="card h-100">
                         <div class="card-body  px-sm-4">
-                            <div class="d-flex justify-content-center mb-30">
-                                <ul class="cart-step-list">
-                                    <li class="done cursor-pointer get-view-by-onclick"
-                                        data-link="{{route('shop-cart')}}"><span><i
-                                                class="bi bi-check2"></i></span> {{ translate('cart') }}</li>
-                                    <li class="current cursor-pointer get-view-by-onclick text-capitalize"
-                                        data-link="{{ route('checkout-details') }}"><span><i
-                                                class="bi bi-check2"></i></span> {{ translate('shipping_details') }}
-                                    </li>
-                                    <li><span><i class="bi bi-check2"></i></span> {{ translate('payment') }}</li>
-                                </ul>
+                            <div class="vm-checkout-steps-container">
+                                <div class="vm-checkout-steps">
+                                    <a href="{{ route('shop-cart') }}" class="vm-step-item is-done">
+                                        <span class="vm-step-num"><i class="bi bi-check2"></i></span>
+                                        <span class="d-none-sm">{{ translate('1. Cart Review') }}</span>
+                                    </a>
+                                    <span class="vm-step-separator"><i class="bi bi-chevron-right"></i></span>
+                                    <div class="vm-step-item is-active">
+                                        <span class="vm-step-num">2</span>
+                                        <span>{{ translate('2. Shipping & Inspection') }}</span>
+                                    </div>
+                                    <span class="vm-step-separator"><i class="bi bi-chevron-right"></i></span>
+                                    <div class="vm-step-item">
+                                        <span class="vm-step-num">3</span>
+                                        <span class="d-none-sm">{{ translate('3. Escrow Payment') }}</span>
+                                    </div>
+                                </div>
                             </div>
                             <input type="hidden" id="physical-product" name="physical_product"
                                    value="{{ $physical_product_view ? 'yes':'no'}}">

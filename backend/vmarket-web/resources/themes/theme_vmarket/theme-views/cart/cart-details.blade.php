@@ -10,18 +10,23 @@
 
 <div class="container py-3">
     {{-- 3-Step Checkout Flow Tracker --}}
-    <div class="d-flex justify-content-center mb-4">
-        <ul class="cart-step-list">
-            <li class="current cursor-pointer get-view-by-onclick" data-link="{{ route('shop-cart') }}">
-                <span><i class="bi bi-cart3"></i></span> {{ translate('1. Cart Review') }}
-            </li>
-            <li class="cursor-pointer text-capitalize" data-link="{{ route('checkout-details') }}">
-                <span><i class="bi bi-geo-alt"></i></span> {{ translate('2. Shipping & Inspection') }}
-            </li>
-            <li>
-                <span><i class="bi bi-shield-check"></i></span> {{ translate('3. Escrow Payment') }}
-            </li>
-        </ul>
+    <div class="vm-checkout-steps-container">
+        <div class="vm-checkout-steps">
+            <div class="vm-step-item is-active">
+                <span class="vm-step-num">1</span>
+                <span>{{ translate('1. Cart Review') }}</span>
+            </div>
+            <span class="vm-step-separator"><i class="bi bi-chevron-right"></i></span>
+            <a href="{{ route('checkout-details') }}" class="vm-step-item">
+                <span class="vm-step-num">2</span>
+                <span class="d-none-sm">{{ translate('2. Shipping & Inspection') }}</span>
+            </a>
+            <span class="vm-step-separator"><i class="bi bi-chevron-right"></i></span>
+            <div class="vm-step-item">
+                <span class="vm-step-num">3</span>
+                <span class="d-none-sm">{{ translate('3. Escrow Payment') }}</span>
+            </div>
+        </div>
     </div>
 
     @if($cart->count() == 0)
@@ -388,7 +393,9 @@
                             </div>
 
                             {{-- Free Delivery Threshold Banner (if configured) --}}
-                            @php($free_delivery_status = OrderManager::getFreeDeliveryOrderAmountArray($group[0]->cart_group_id))
+                            @php
+                                $free_delivery_status = OrderManager::getFreeDeliveryOrderAmountArray($group[0]->cart_group_id);
+                            @endphp
                             @if ($free_delivery_status['status'])
                                 <div class="px-4 py-3 bg-light border-top">
                                     <div class="d-flex align-items-center justify-content-between mb-2 fs-12">
@@ -432,6 +439,31 @@
         </form>
     @endif
 </div>
+
+
+    {{-- Mobile Sticky Bottom Bar (< 992px) --}}
+    @if($cart->count() > 0)
+        @php
+            $mobileCheckedItems = \App\Utils\CartManager::getCartListQuery(type: 'checked');
+            $mobileGrandTotal = 0;
+            foreach ($mobileCheckedItems as $mItem) {
+                $mobileGrandTotal += ($mItem['price'] - $mItem['discount']) * $mItem['quantity'];
+            }
+        @endphp
+        <div class="vm-mobile-bottom-bar">
+            <div class="vm-mobile-total-box">
+                <span class="vm-mobile-total-label">{{ translate('Total Payable') }} ({{ $mobileCheckedItems->count() }} {{ translate('items') }}):</span>
+                <span class="vm-mobile-total-price" id="mobile-summary-total">{{ webCurrencyConverter($mobileGrandTotal) }}</span>
+            </div>
+            <button type="button"
+                    class="vm-mobile-cta-btn {{ $mobileCheckedItems->count() <= 0 ? 'custom-disabled' : '' }}"
+                    id="mobile-proceed-action"
+                    onclick="$('#proceed-to-next-action').click()">
+                <span>{{ translate('Proceed to Checkout') }}</span>
+                <i class="bi bi-arrow-right"></i>
+            </button>
+        </div>
+    @endif
 
 @push('script')
     <script src="{{ theme_asset('assets/js/cart.js') }}"></script>

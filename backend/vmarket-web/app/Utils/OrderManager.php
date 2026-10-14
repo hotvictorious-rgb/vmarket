@@ -43,6 +43,9 @@ class OrderManager
     use CustomerTrait;
     use VatTaxManagement;
 
+    // [AI] Request-level in-memory cache for free delivery calculations to eradicate duplicate N+1 queries
+    public static array $memoizedFreeDelivery = [];
+
     /**
      * [AI] Marketplace Order Predicates (V1 Governance Standard)
      * Note: Customer cashback is credited upon verified customer receipt:
@@ -2125,6 +2128,10 @@ class OrderManager
         $freeDeliveryOverAmountSeller = (float)getWebConfig(name: 'free_delivery_over_amount_seller');
 
         if ($freeDeliveryData['status'] && $cart_group_id) {
+            if (isset(self::$memoizedFreeDelivery[$cart_group_id])) {
+                return self::$memoizedFreeDelivery[$cart_group_id];
+            }
+
             $getCartList = Cart::whereHas('product', function ($query) {
                 return $query->active();
             })->where(['product_type' => 'physical', 'cart_group_id' => $cart_group_id, 'is_checked' => 1])->first();
@@ -2157,6 +2164,8 @@ class OrderManager
             } else {
                 $freeDeliveryData['status'] = 0;
             }
+
+            self::$memoizedFreeDelivery[$cart_group_id] = $freeDeliveryData;
         }
 
         return $freeDeliveryData;

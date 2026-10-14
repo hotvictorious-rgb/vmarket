@@ -104,11 +104,13 @@
 
         {{-- Escrow Trust Reassurance Card --}}
         <div class="vm-escrow-card">
-            <i class="bi bi-shield-lock-fill fs-20" style="color: #D4AF37;"></i>
+            <i class="bi bi-shield-lock-fill" style="color: #FFD700;"></i>
             <div>
-                <strong class="text-dark d-block fs-12 mb-1">{{ translate('100% Escrow Protected') }}</strong>
+                <strong class="text-dark d-block fs-12 mb-1">
+                    <span style="color: #5E17EB;">{{ translate('Victorious') }}</span> {{ translate('Escrow & OTP Lock') }}
+                </strong>
                 <span class="fs-11 text-muted line-height-1">
-                    {{ translate('Your funds are held securely by Paystack Escrow and released only after verified delivery or in-store inspection.') }}
+                    {{ translate('100% Secure. Funds held in platform escrow and disbursed only after physical inspection or handover OTP release.') }}
                 </span>
             </div>
         </div>
