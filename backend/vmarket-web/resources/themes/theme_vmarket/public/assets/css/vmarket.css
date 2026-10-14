@@ -767,6 +767,7 @@ button, input, select, textarea {
     line-height: 1.35;
     display: -webkit-box;
     -webkit-line-clamp: 2;
+    line-clamp: 2;
     -webkit-box-orient: vertical;
     overflow: hidden;
     min-height: 36px;
@@ -2200,6 +2201,7 @@ button, input, select, textarea {
         line-height: 1.15 !important;
         display: -webkit-box !important;
         -webkit-line-clamp: 2 !important;
+        line-clamp: 2 !important;
         -webkit-box-orient: vertical !important;
         overflow: hidden !important;
     }
@@ -2210,6 +2212,7 @@ button, input, select, textarea {
         margin-bottom: 5px !important;
         display: -webkit-box !important;
         -webkit-line-clamp: 1 !important;
+        line-clamp: 1 !important;
         -webkit-box-orient: vertical !important;
         overflow: hidden !important;
         opacity: 0.85 !important;
@@ -4368,6 +4371,7 @@ button, input, select, textarea {
     line-height: 1.35;
     display: -webkit-box;
     -webkit-line-clamp: 2;
+    line-clamp: 2;
     -webkit-box-orient: vertical;
     overflow: hidden;
 }
@@ -4904,3 +4908,466 @@ button, input, select, textarea {
     background: #FAF8FF;
     box-shadow: 0 0 0 3px rgba(94, 23, 235, 0.12);
 }
+
+/* ==========================================================================
+   VICTORIOUS MARKET: FLY-OUT SHOPPING BAG DRAWER (OFF-CANVAS CART)
+   ========================================================================== */
+
+/* Body Lock when Drawer is Open */
+body.vm-cart-drawer-open {
+    overflow: hidden !important;
+    touch-action: none;
+}
+
+/* Backdrop Overlay */
+.vm-cart-drawer-backdrop {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(15, 23, 42, 0.55);
+    backdrop-filter: blur(4px);
+    -webkit-backdrop-filter: blur(4px);
+    z-index: 99998;
+    opacity: 0;
+    visibility: hidden;
+    transition: opacity 0.3s cubic-bezier(0.16, 1, 0.3, 1), visibility 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.vm-cart-drawer-backdrop.is-open,
+.vm-cart-drawer-backdrop.open {
+    opacity: 1;
+    visibility: visible;
+}
+
+/* Drawer Shell Container */
+.vm-cart-drawer {
+    position: fixed;
+    top: 0;
+    right: 0;
+    bottom: 0;
+    width: 440px;
+    max-width: 100vw;
+    background: #FFFFFF;
+    z-index: 99999;
+    display: flex;
+    flex-direction: column;
+    box-shadow: -10px 0 35px rgba(27, 16, 53, 0.18);
+    transform: translateX(100%);
+    transition: transform 0.35s cubic-bezier(0.16, 1, 0.3, 1);
+    will-change: transform;
+}
+
+.vm-cart-drawer.is-open,
+.vm-cart-drawer.open {
+    transform: translateX(0);
+}
+
+/* Drawer Header */
+.vm-cart-drawer-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 16px 20px;
+    border-bottom: 1px solid #F1F5F9;
+    background: #FFFFFF;
+    flex-shrink: 0;
+}
+
+.vm-cart-drawer-title-wrap {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.vm-cart-drawer-icon-wrap {
+    width: 40px;
+    height: 40px;
+    border-radius: 12px;
+    background: rgba(94, 23, 235, 0.08);
+    color: #5E17EB;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+}
+
+.vm-cart-drawer-title {
+    font-size: 16px;
+    font-weight: 700;
+    color: #1B1035;
+    margin: 0;
+    line-height: 1.2;
+}
+
+.vm-cart-drawer-subtitle {
+    font-size: 11.5px;
+    color: #64748B;
+    font-weight: 500;
+    margin-top: 3px;
+    display: block;
+}
+
+.vm-drawer-escrow-badge {
+    color: #059669;
+    font-weight: 600;
+}
+
+.vm-cart-drawer-close-btn {
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    border: 1px solid #E2E8F0;
+    background: #F8FAFC;
+    color: #64748B;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.vm-cart-drawer-close-btn:hover {
+    background: #F1F5F9;
+    color: #1B1035;
+    border-color: #CBD5E1;
+    transform: scale(1.05);
+}
+
+/* Drawer Trust Strip */
+.vm-cart-drawer-trust-banner {
+    background: linear-gradient(90deg, rgba(94, 23, 235, 0.06) 0%, rgba(255, 215, 0, 0.1) 100%);
+    border-bottom: 1px solid rgba(94, 23, 235, 0.08);
+    padding: 7px 18px;
+    font-size: 11px;
+    font-weight: 600;
+    color: #372865;
+    flex-shrink: 0;
+}
+
+/* Drawer Body & Items */
+.vm-cart-drawer-content {
+    flex: 1;
+    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+    min-height: 0;
+}
+
+.vm-cart-drawer-items-list {
+    flex: 1;
+    overflow-y: auto;
+    padding: 14px 18px;
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+}
+
+.vm-drawer-merchant-group {
+    background: #FFFFFF;
+    border: 1px solid #F1F5F9;
+    border-radius: 14px;
+    padding: 12px 14px;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.02);
+}
+
+.vm-drawer-merchant-header {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding-bottom: 8px;
+    border-bottom: 1px dashed #E2E8F0;
+    margin-bottom: 10px;
+}
+
+.vm-drawer-merchant-icon {
+    font-size: 14px;
+}
+
+.vm-drawer-merchant-name {
+    font-size: 12.5px;
+    font-weight: 700;
+    color: #1B1035;
+    transition: color 0.15s;
+}
+
+.vm-drawer-merchant-name:hover {
+    color: #5E17EB;
+}
+
+.vm-drawer-merchant-verified {
+    color: #5E17EB;
+    font-size: 13px;
+}
+
+.vm-drawer-items-sublist {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.vm-drawer-item-row {
+    display: flex;
+    gap: 12px;
+    padding: 6px 0;
+    border-bottom: 1px solid #F8FAFC;
+    transition: opacity 0.25s ease, transform 0.25s ease;
+}
+
+.vm-drawer-item-row:last-child {
+    border-bottom: none;
+    padding-bottom: 0;
+}
+
+.vm-drawer-item-row.is-removing {
+    opacity: 0;
+    transform: translateX(20px);
+}
+
+.vm-drawer-item-thumb {
+    width: 60px;
+    height: 60px;
+    border-radius: 10px;
+    border: 1px solid #E2E8F0;
+    overflow: hidden;
+    flex-shrink: 0;
+    background: #F8FAFC;
+}
+
+.vm-drawer-item-thumb img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+.vm-drawer-item-details {
+    flex: 1;
+    min-width: 0;
+}
+
+.vm-drawer-item-title {
+    font-size: 13px;
+    font-weight: 600;
+    color: #1B1035;
+    text-decoration: none;
+    line-height: 1.35;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+    transition: color 0.15s;
+}
+
+.vm-drawer-item-title:hover {
+    color: #5E17EB;
+}
+
+.vm-drawer-item-del-btn {
+    background: transparent;
+    border: none;
+    color: #94A3B8;
+    padding: 2px 4px;
+    font-size: 13.5px;
+    cursor: pointer;
+    transition: all 0.15s ease;
+    border-radius: 6px;
+    line-height: 1;
+}
+
+.vm-drawer-item-del-btn:hover {
+    color: #EF4444;
+    background: #FEF2F2;
+}
+
+.vm-drawer-item-variant {
+    display: inline-block;
+    font-size: 10.5px;
+    font-weight: 600;
+    color: #64748B;
+    background: #F1F5F9;
+    padding: 2px 6px;
+    border-radius: 4px;
+    margin-top: 3px;
+}
+
+/* Drawer Stepper */
+.vm-drawer-stepper {
+    display: inline-flex;
+    align-items: center;
+    border: 1.5px solid #E2E8F0;
+    border-radius: 8px;
+    background: #FFFFFF;
+    overflow: hidden;
+    height: 28px;
+}
+
+.vm-drawer-step-btn {
+    width: 26px;
+    height: 100%;
+    border: none;
+    background: transparent;
+    color: #475569;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: background 0.15s, color 0.15s;
+    font-size: 13px;
+}
+
+.vm-drawer-step-btn:hover:not(:disabled) {
+    background: #F1F5F9;
+    color: #1B1035;
+}
+
+.vm-drawer-step-btn:disabled {
+    opacity: 0.35;
+    cursor: not-allowed;
+}
+
+.vm-drawer-qty-val {
+    width: 28px;
+    text-align: center;
+    font-size: 12px;
+    font-weight: 700;
+    color: #1B1035;
+    user-select: none;
+}
+
+.vm-drawer-item-price {
+    font-size: 13.5px;
+    font-weight: 700;
+    color: #1B1035;
+}
+
+.vm-drawer-item-old-price {
+    font-size: 11px;
+    color: #94A3B8;
+    margin-top: 1px;
+    display: block;
+}
+
+/* Drawer Footer */
+.vm-cart-drawer-footer {
+    padding: 16px 20px;
+    background: #FFFFFF;
+    border-top: 1px solid #E2E8F0;
+    box-shadow: 0 -4px 16px rgba(0, 0, 0, 0.04);
+    flex-shrink: 0;
+}
+
+.vm-drawer-pricing-lines {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    margin-bottom: 12px;
+}
+
+.vm-drawer-line {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-size: 12.5px;
+    color: #64748B;
+}
+
+.vm-drawer-total-box {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 10px 14px;
+    background: #F8FAFC;
+    border: 1px solid #E2E8F0;
+    border-radius: 12px;
+    margin-bottom: 12px;
+}
+
+.vm-drawer-total-label span {
+    font-size: 13px;
+    font-weight: 700;
+    color: #1B1035;
+}
+
+.vm-drawer-total-amount {
+    font-size: 18px;
+    font-weight: 800;
+    color: #5E17EB;
+    letter-spacing: -0.3px;
+}
+
+.vm-drawer-checkout-btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    width: 100%;
+    height: 46px;
+    border-radius: 12px;
+    background: linear-gradient(135deg, #5E17EB 0%, #4D10C7 100%);
+    color: #FFFFFF !important;
+    font-size: 14.5px;
+    font-weight: 700;
+    text-decoration: none !important;
+    border: none;
+    cursor: pointer;
+    box-shadow: 0 4px 14px rgba(94, 23, 235, 0.35);
+    transition: all 0.25s ease;
+}
+
+.vm-drawer-checkout-btn:hover {
+    box-shadow: 0 6px 20px rgba(94, 23, 235, 0.45);
+    transform: translateY(-1px);
+    color: #FFFFFF !important;
+}
+
+.vm-drawer-full-cart-link {
+    font-size: 12px;
+    font-weight: 600;
+    color: #5E17EB;
+    text-decoration: none;
+    transition: color 0.15s;
+}
+
+.vm-drawer-full-cart-link:hover {
+    color: #4D10C7;
+    text-decoration: underline;
+}
+
+/* Empty State inside Drawer */
+.vm-cart-drawer-empty {
+    padding: 48px 24px;
+    text-align: center;
+    margin: auto 0;
+}
+
+.vm-cart-drawer-empty-icon {
+    width: 76px;
+    height: 76px;
+    border-radius: 50%;
+    background: rgba(94, 23, 235, 0.08);
+    color: #5E17EB;
+    font-size: 34px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin: 0 auto 16px;
+}
+
+/* Mobile Responsiveness for Cart Drawer */
+@media (max-width: 575px) {
+    .vm-cart-drawer {
+        width: 100vw;
+    }
+    .vm-cart-drawer-header {
+        padding: 14px 16px;
+    }
+    .vm-cart-drawer-items-list {
+        padding: 12px 14px;
+    }
+    .vm-cart-drawer-footer {
+        padding: 14px 16px;
+    }
+}
+

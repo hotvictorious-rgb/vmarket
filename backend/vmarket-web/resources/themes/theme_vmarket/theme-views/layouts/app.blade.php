@@ -48,6 +48,9 @@
     <!-- Mobile Bottom Navigation Bar -->
     @include('theme-views.layouts.partials._mobile-nav')
 
+    <!-- Fly-Out Shopping Bag Drawer -->
+    @include('theme-views.layouts.partials._cart-drawer')
+
     <!-- Omnichannel Location & Fulfillment Switcher Modal -->
     @include('theme-views.layouts.partials._location_modal')
 

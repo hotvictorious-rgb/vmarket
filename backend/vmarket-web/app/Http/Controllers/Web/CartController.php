@@ -201,7 +201,12 @@ class CartController extends Controller
 
     public function updateNavCart(): JsonResponse
     {
-        return response()->json(['data' => view(VIEW_FILE_NAMES['products_cart_partials'])->render(), 'mobile_nav' => view(VIEW_FILE_NAMES['products_mobile_nav_partials'])->render()]);
+        $cartCount = CartManager::get_cart_count();
+        return response()->json([
+            'data' => view(VIEW_FILE_NAMES['products_cart_partials'])->render(),
+            'cart_count' => $cartCount,
+            'mobile_nav' => view(VIEW_FILE_NAMES['products_mobile_nav_partials'])->render()
+        ]);
     }
 
     /**

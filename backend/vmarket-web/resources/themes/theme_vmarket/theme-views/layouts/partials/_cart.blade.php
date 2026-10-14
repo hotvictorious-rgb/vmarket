@@ -2,162 +2,191 @@
     use App\Models\Product;
     use App\Utils\CartManager;
     use App\Utils\Helpers;
-    use App\Utils\ProductManager;
-@endphp
-<div class="dropdown">
-    <a href="{{route('shop-cart')}}" class="position-relative" data-bs-toggle="dropdown" data-bs-auto-close="outside"
-       aria-expanded="false">
-        @php($cart=CartManager::getCartListQuery())
-        <i class="bi bi-bag fs-18"></i>
-        <span class="count">{{$cart->count()}}</span>
-    </a>
-    <ul class="dropdown-menu dropdown-menu-end scrollY-60 bs-dropdown-min-width--22-5rem">
-        @if($cart->count() > 0)
-            @php($sub_total=0)
-            @php($total_tax=0)
-            @foreach($cart as  $cartItem)
-                @php($product=Product::find($cartItem['product_id']))
-                <li>
-                    <div class="media gap-3">
-                        <div class="avatar avatar-xxl position-relative overflow-hidden rounded">
-                            <img loading="lazy" alt="Product"
-                                 src="{{ getStorageImages(path: $cartItem?->product?->thumbnail_full_url, type: 'product') }}"
-                                 class="img-fit dark-support rounded img-fluid overflow-hidden {{ $product && $product->status == 0?'blur-section':'' }}">
-                            @if ($product && $product->status == 0)
-                                <span class="temporary-closed position-absolute text-center p-2">
-                                    <span class="text-capitalize">{{ translate('not_available') }}</span>
-                                </span>
-                            @endif
-                        </div>
-                        <div class="media-body">
-                            <h6 class="mb-1 {{ $product && $product->status == 0 ? 'blur-section':'' }}">
-                                <a href="{{ $product && $product->status == 1 ? route('product',$cartItem['slug']) : 'javascript:'}}">{{Str::limit($cartItem['name'],30)}}</a>
-                            </h6>
-                            @if(!empty($cartItem['variant']))
-                                <div>
-                                    <span class="fs-12">{{translate('variant')}} : {{ $cartItem['variant'] }}</span>
-                                </div>
-                            @endif
-                            <div class="d-flex gap-3 justify-content-between align-items-end">
-                                <div class="d-flex flex-column gap-1 {{ $product && $product->status == 0?'blur-section':'' }}">
-                                    <div class="fs-12"><span
-                                            class="cart_quantity_{{ $cartItem['id'] }}">{{$cartItem['quantity']}}</span>
-                                        {{'×'.webCurrencyConverter(($cartItem['price']-$cartItem['discount']))}}
-                                    </div>
-                                    <div class="product__price d-flex flex-wrap gap-2">
-                                        @if($cartItem['discount'] >0)
-                                            <del class="product__old-price quantity_price_of_{{ $cartItem['id'] }}">{{webCurrencyConverter($cartItem['price']*$cartItem['quantity'])}}</del>
-                                        @endif
-                                        <ins class="product__new-price discount_price_of_{{ $cartItem['id'] }}">{{webCurrencyConverter(($cartItem['price']-$cartItem['discount'])*(int)$cartItem['quantity'])}}</ins>
-                                    </div>
-                                </div>
-                                <div class="quantity">
-                                    @if ($product && $product->status == 1)
-                                            <?php
-                                            $getProductCurrentStock = $product->current_stock;
-                                            if(!empty($product->variation)) {
-                                                foreach(json_decode($product->variation, true) as $productVariantSingle) {
-                                                    if($productVariantSingle['type'] == $cartItem->variant) {
-                                                        $getProductCurrentStock = $productVariantSingle['qty'];
-                                                    }
-                                                }
-                                            }
-                                            ?>
-                                        <span
-                                            class="quantity__minus cart-quantity-update cart_quantity__minus{{ $cartItem['id'] }}"
-                                            data-cart-id="{{ $cartItem['id'] }}"
-                                            data-product-id="{{ $cartItem['product_id'] }}"
-                                            data-value=-1
-                                            data-event="minus"
-                                            data-prevent="true">
+    use function App\Utils\get_shop_name;
 
-                                            @if($getProductCurrentStock < $cartItem['quantity'] || $cartItem['quantity'] == ($product ? $product->minimum_order_qty : 1))
-                                                <i class="bi bi-trash3-fill text-danger fs-10"></i>
+    $cart = CartManager::getCartListQuery();
+    $cartGrouped = $cart->groupBy('cart_group_id');
+    $subTotal = 0;
+    $totalDiscount = 0;
+    foreach ($cart as $item) {
+        $subTotal += ($item['price'] - $item['discount']) * $item['quantity'];
+        $totalDiscount += $item['discount'] * $item['quantity'];
+    }
+@endphp
+
+@if($cart->count() > 0)
+    <div class="vm-cart-drawer-items-list">
+        @foreach($cartGrouped as $groupId => $groupItems)
+            @php
+                $firstItem = $groupItems[0];
+                if ($firstItem->seller_is == 'admin') {
+                    $shopName = getInHouseShopConfig(key: 'name');
+                    $shopSlug = getInHouseShopConfig(key: 'slug');
+                } else {
+                    $shopName = $firstItem->seller?->shop?->name ?: get_shop_name($firstItem['seller_id']);
+                    $shopSlug = $firstItem->seller?->shop?->slug ?? '';
+                }
+            @endphp
+            <div class="vm-drawer-merchant-group">
+                <div class="vm-drawer-merchant-header">
+                    <span class="vm-drawer-merchant-icon">🏪</span>
+                    <a href="{{ $shopSlug ? route('vendor-shop', ['slug' => $shopSlug]) : 'javascript:' }}" class="vm-drawer-merchant-name text-decoration-none">
+                        {{ $shopName }}
+                    </a>
+                    <span class="vm-drawer-merchant-verified" title="{{ translate('Verified Merchant • Akwa Ibom') }}">
+                        <i class="bi bi-patch-check-fill"></i>
+                    </span>
+                </div>
+
+                <div class="vm-drawer-items-sublist">
+                    @foreach($groupItems as $cartItem)
+                        @php
+                            $product = $cartItem->product ?: $cartItem->allProducts;
+                            $itemPrice = $cartItem['price'];
+                            $itemDiscount = $cartItem['discount'];
+                            $itemFinalPrice = ($itemPrice - $itemDiscount) * $cartItem['quantity'];
+                            $currentStock = $product?->current_stock ?? 100;
+                            if (!empty($product?->variation)) {
+                                $variations = is_array($product->variation) ? $product->variation : json_decode($product->variation, true);
+                                if (!empty($variations)) {
+                                    foreach ($variations as $var) {
+                                        if (isset($var['type']) && $var['type'] == $cartItem->variant) {
+                                            $currentStock = $var['qty'] ?? $currentStock;
+                                        }
+                                    }
+                                }
+                            }
+                        @endphp
+                        <div class="vm-drawer-item-row" id="drawer-cart-item-{{ $cartItem['id'] }}">
+                            <div class="vm-drawer-item-thumb">
+                                <img src="{{ getStorageImages(path: $product?->thumbnail_full_url ?? $cartItem['thumbnail_full_url'], type: 'product') }}"
+                                     alt="{{ $cartItem['name'] }}"
+                                     class="img-fluid rounded">
+                            </div>
+                            <div class="vm-drawer-item-details">
+                                <div class="d-flex justify-content-between align-items-start gap-2">
+                                    <a href="{{ route('product', $cartItem['slug']) }}" class="vm-drawer-item-title">
+                                        {{ Str::limit($cartItem['name'], 46) }}
+                                    </a>
+                                    <button type="button"
+                                            class="vm-drawer-item-del-btn"
+                                            onclick="removeDrawerCartItem({{ $cartItem['id'] }})"
+                                            title="{{ translate('Remove Item') }}">
+                                        <i class="bi bi-trash3"></i>
+                                    </button>
+                                </div>
+
+                                @if(!empty($cartItem['variant']))
+                                    <span class="vm-drawer-item-variant">{{ translate('Variant') }}: {{ $cartItem['variant'] }}</span>
+                                @endif
+
+                                <div class="d-flex justify-content-between align-items-center mt-2 pt-1">
+                                    {{-- Live Stepper --}}
+                                    <div class="vm-drawer-stepper">
+                                        <button type="button"
+                                                class="vm-drawer-step-btn"
+                                                onclick="updateDrawerQuantity({{ $cartItem['id'] }}, {{ $cartItem['quantity'] - 1 }})"
+                                                title="{{ $cartItem['quantity'] <= ($product?->minimum_order_qty ?? 1) ? translate('Remove') : translate('Decrease') }}">
+                                            @if($cartItem['quantity'] <= ($product?->minimum_order_qty ?? 1))
+                                                <i class="bi bi-trash3 text-danger fs-11"></i>
                                             @else
                                                 <i class="bi bi-dash"></i>
                                             @endif
-
-                                        </span>
-                                        <input type="text"
-                                               class="quantity__qty cart-quantity-update-input cart_quantity_of_{{ $cartItem['id'] }}"
-                                               data-min="{{ $product?->minimum_order_qty ?? 1 }}"
-                                               value="{{$cartItem['quantity']}}"
-                                               data-cart-id="{{ $cartItem['id'] }}"
-                                               data-product-id="{{ $cartItem['product_id'] }}"
-                                               data-value=0
-                                               data-current-stock="{{ $getProductCurrentStock }}"
-                                               data-prevent="true">
-                                        <span class="quantity__plus cart-quantity-update"
-                                              data-cart-id="{{ $cartItem['id'] }}"
-                                              data-product-id="{{ $cartItem['product_id'] }}"
-                                              data-value=1
-                                              data-event="plus"
-                                              data-prevent="true">
+                                        </button>
+                                        <span class="vm-drawer-qty-val">{{ $cartItem['quantity'] }}</span>
+                                        <button type="button"
+                                                class="vm-drawer-step-btn"
+                                                onclick="updateDrawerQuantity({{ $cartItem['id'] }}, {{ $cartItem['quantity'] + 1 }})"
+                                                {{ $cartItem['quantity'] >= $currentStock ? 'disabled' : '' }}
+                                                title="{{ translate('Increase') }}">
                                             <i class="bi bi-plus"></i>
-                                        </span>
-                                    @else
-                                        <span
-                                            class="quantity__minus cart-quantity-update cart_quantity__minus{{ $cartItem['id'] }}"
-                                            data-cart-id="{{ $cartItem['id'] }}"
-                                            data-product-id="{{ $cartItem['product_id'] }}"
-                                            data-value="-{{$cartItem['quantity']}}"
-                                            data-event="minus" data-prevent="true">
-                                            <i class="bi bi-trash3-fill text-danger fs-10"></i>
-                                        </span>
-                                        <input type="text"
-                                               class="quantity__qty cart-quantity-update-input cart_quantity_of_{{ $cartItem['id'] }}"
-                                               data-min="{{ $product?->minimum_order_qty ?? 1 }}" value="0"
-                                               data-cart-id="{{ $cartItem['id'] }}"
-                                               data-product-id="{{ $cartItem['product_id'] }}"
-                                               data-value=0
-                                               data-current-stock="{{ $getProductCurrentStock ?? 0 }}"
-                                               data-prevent="true">
-                                    @endif
+                                        </button>
+                                    </div>
+
+                                    {{-- Item Price --}}
+                                    <div class="vm-drawer-item-price-wrap text-end">
+                                        <div class="vm-drawer-item-price">{{ webCurrencyConverter($itemFinalPrice) }}</div>
+                                        @if($itemDiscount > 0)
+                                            <del class="vm-drawer-item-old-price">{{ webCurrencyConverter($itemPrice * $cartItem['quantity']) }}</del>
+                                        @endif
+                                    </div>
                                 </div>
                             </div>
                         </div>
-                    </div>
-                </li>
-                @php($sub_total+=($cartItem['price']-$cartItem['discount'])*(int)$cartItem['quantity'])
-                @php($total_tax+=$cartItem['tax']*(int)$cartItem['quantity'])
-            @endforeach
-            <li>
-                <div class="flex-between-gap-3 pt-2 pb-4">
-                    <h6>{{translate('total')}}</h6>
-                    <h3 class="text-primary cart_total_amount">{{webCurrencyConverter($sub_total)}}</h3>
-                </div>
-                <div class="d-flex gap-3">
-                    @if($web_config['guest_checkout_status'] || auth('customer')->check())
-                        <a href="{{route('shop-cart')}}"
-                           class="btn btn-outline-primary btn-block">{{translate('view_cart')}}</a>
-                        <a href="{{route('checkout-details')}}"
-                           class="btn btn-primary btn-block">{{translate('go_to_checkout')}}</a>
-                    @else
-                        <button class="btn btn-outline-primary btn-block" data-bs-toggle="modal"
-                                data-bs-target="#loginModal">{{translate('view_cart')}}</button>
-                        <button class="btn btn-primary btn-block" data-bs-toggle="modal"
-                                data-bs-target="#loginModal">{{translate('go_to_checkout')}}</button>
-                    @endif
-                </div>
-            </li>
-        @else
-            <div class="widget-cart-item">
-                <div class="p-2 pt-0">
-                    <div class="d-flex justify-content-end w-100">
-                        <button type="button" class="btn-link text-dark opacity-25 fs-18 close-cart-btn">
-                            <i class="bi bi-x-circle-fill"></i>
-                        </button>
-                    </div>
-                    <div class="d-flex flex-column align-items-center text-center">
-                        <img width="60" class="svg mb-3" src="{{ theme_asset('assets/img/empty-state/empty-cart-new.svg') }}" alt="">
-                        <h5 class="text-center mb-2">
-                            {{ translate('your_cart_is_empty!') }}
-                        </h5>
-                        <p class="fs-12 mb-30">{{ translate('explore_thousands_of_quality_products,_exclusive_deals,_and_fast_delivery_options_tailored_just_for_you.') }}</p>
-                        <button type="button" class="btn btn-primary fw-semibold text-capitalize mb-2 close-cart-btn">{{ translate('ok,_got_it') }}</button>
-                    </div>
+                    @endforeach
                 </div>
             </div>
-        @endif
-    </ul>
-</div>
+        @endforeach
+    </div>
+
+    {{-- Sticky Bottom Action & Pricing Area --}}
+    <div class="vm-cart-drawer-footer">
+        <div class="vm-drawer-pricing-lines">
+            <div class="vm-drawer-line">
+                <span>{{ translate('Merchandise Subtotal') }}</span>
+                <strong class="text-dark">{{ webCurrencyConverter($subTotal) }}</strong>
+            </div>
+            @if($totalDiscount > 0)
+                <div class="vm-drawer-line text-success">
+                    <span>{{ translate('Store Discounts') }}</span>
+                    <strong>-{{ webCurrencyConverter($totalDiscount) }}</strong>
+                </div>
+            @endif
+            <div class="vm-drawer-line">
+                <span class="d-flex align-items-center gap-1">
+                    <i class="bi bi-shop text-primary"></i> {{ translate('Fulfillment Choice') }}
+                </span>
+                <span class="badge bg-light text-success border border-success-subtle fs-11 fw-semibold">
+                    {{ translate('In-Store Pickup Available (FREE ₦0.00)') }}
+                </span>
+            </div>
+        </div>
+
+        <div class="vm-drawer-total-box">
+            <div class="vm-drawer-total-label">
+                <span>{{ translate('Total Payable') }}</span>
+                <small class="text-muted d-block fs-11">{{ translate('Delivery / Pickup chosen at next step') }}</small>
+            </div>
+            <div class="vm-drawer-total-amount">
+                {{ webCurrencyConverter($subTotal) }}
+            </div>
+        </div>
+
+        <div class="vm-drawer-actions">
+            @if($web_config['guest_checkout_status'] || auth('customer')->check())
+                <a href="{{ route('checkout-details') }}" class="vm-drawer-checkout-btn">
+                    <span>{{ translate('Proceed to Checkout') }}</span>
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="5" y1="12" x2="19" y2="12"></line><polyline points="12 5 19 12 12 19"></polyline></svg>
+                </a>
+            @else
+                <button type="button" class="vm-drawer-checkout-btn" data-bs-toggle="modal" data-bs-target="#loginModal">
+                    <span>{{ translate('Proceed to Checkout') }}</span>
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="5" y1="12" x2="19" y2="12"></line><polyline points="12 5 19 12 12 19"></polyline></svg>
+                </button>
+            @endif
+
+            <div class="d-flex justify-content-between align-items-center mt-2 px-1">
+                <a href="{{ route('shop-cart') }}" class="vm-drawer-full-cart-link">
+                    <i class="bi bi-cart3 me-1"></i> {{ translate('View Full Cart Review') }}
+                </a>
+                <button type="button" class="btn btn-link text-muted p-0 fs-12 text-decoration-none vm-cart-drawer-continue-shopping">
+                    {{ translate('Continue Shopping') }} →
+                </button>
+            </div>
+        </div>
+    </div>
+@else
+    {{-- Empty Shopping Bag State --}}
+    <div class="vm-cart-drawer-empty">
+        <div class="vm-cart-drawer-empty-icon">
+            <i class="bi bi-bag-x"></i>
+        </div>
+        <h5 class="fw-bold text-dark mb-2">{{ translate('Your Shopping Bag is Empty') }}</h5>
+        <p class="text-muted fs-13 mb-4" style="max-width: 320px; margin: 0 auto;">
+            {{ translate('Explore verified merchants across Akwa Ibom with guaranteed physical in-shop counter inspection and swift directional logistics.') }}
+        </p>
+        <a href="{{ route('products') }}" class="vm-drawer-checkout-btn vm-cart-drawer-continue-shopping" style="max-width: 240px; margin: 0 auto; text-decoration: none;">
+            <i class="bi bi-shop me-2"></i> {{ translate('Explore Catalog') }}
+        </a>
+    </div>
+@endif

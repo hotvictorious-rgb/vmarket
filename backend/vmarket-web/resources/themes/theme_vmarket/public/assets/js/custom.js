@@ -767,6 +767,11 @@ function addToCart(formSelector, redirectToCheckout = false, url = null) {
 
                     showVmarketCartToast(response);
 
+                    // [AI] Auto-open Fly-Out Cart Drawer on add-to-cart for instant visual confirmation
+                    if (typeof window.openCartDrawer === 'function' && redirectToCheckout !== true && redirectToCheckout?.toString() !== 'true') {
+                        window.openCartDrawer();
+                    }
+
                     let actionAddToCartBtn = $(".product-add-to-cart-button");
                     if (response.in_cart_key) {
                         $('.product-exist-in-cart-list[name="key"]').val(response.in_cart_key);
@@ -820,6 +825,23 @@ function updateNavCart() {
         function (response) {
             $("#cart_items").html(response.data);
             $("#mobile_app_bar").html(response.mobile_nav);
+            // [AI] Live update Fly-Out Cart Drawer content and badge counters
+            if ($("#vmCartDrawerContent").length && response.data) {
+                $("#vmCartDrawerContent").html(response.data);
+            }
+            if (typeof response.cart_count !== 'undefined') {
+                const count = parseInt(response.cart_count) || 0;
+                if (count > 0) {
+                    $('#vmHeaderCartBadge').text(count).show();
+                    $('#vmMobileNavCartBadge').text(count).show();
+                    $('.vm-action-badge').text(count).show();
+                } else {
+                    $('#vmHeaderCartBadge').hide();
+                    $('#vmMobileNavCartBadge').hide();
+                    $('.vm-action-badge').hide();
+                }
+                $('.vm-drawer-cart-count').text(count);
+            }
             updateCart();
         }
     );
@@ -934,6 +956,78 @@ function removeFromCart(key) {
         }
     }
 }
+
+// [AI] Fly-Out Cart Drawer 1-click removal with smooth animation
+window.removeDrawerCartItem = function (cartId) {
+    let row = $(`#drawer-cart-item-${cartId}`);
+    if (row.length) {
+        row.addClass('is-removing');
+        row.css({ opacity: '0.35', 'pointer-events': 'none', filter: 'grayscale(0.8)' });
+    }
+    let url = $("#remove_from_cart_url").data("url");
+    $.post(
+        url,
+        {
+            _token: $('meta[name="_token"]').attr("content"),
+            key: cartId,
+        },
+        function (response) {
+            toastr.info(response.message || "Item removed from bag");
+            updateNavCart();
+            let segment_array = window.location.pathname.split("/");
+            let segment = segment_array[segment_array.length - 1];
+            if (segment === "checkout-payment" || segment === "checkout-details" || segment === "shop-cart") {
+                location.reload();
+            }
+        }
+    ).fail(function () {
+        if (row.length) {
+            row.removeClass('is-removing');
+            row.css({ opacity: '1', 'pointer-events': 'auto', filter: 'none' });
+        }
+        toastr.error("Could not remove item. Please try again.");
+    });
+};
+
+// [AI] Fly-Out Cart Drawer real-time AJAX steppers (+/-)
+window.updateDrawerQuantity = function (cartId, quantity) {
+    if (parseInt(quantity) <= 0) {
+        return window.removeDrawerCartItem(cartId);
+    }
+    let row = $(`#drawer-cart-item-${cartId}`);
+    if (row.length) {
+        row.find('.vm-drawer-stepper').css('opacity', '0.5');
+    }
+    let updateUrl = $("#update_quantity_url").data("url");
+    $.post(
+        updateUrl,
+        {
+            _token: $('meta[name="_token"]').attr("content"),
+            key: cartId,
+            quantity: quantity,
+        },
+        function (response) {
+            if (response.status === 0) {
+                toastr.warning(response.message || "Requested quantity unavailable");
+                if (row.length) {
+                    row.find('.vm-drawer-stepper').css('opacity', '1');
+                }
+            } else {
+                updateNavCart();
+                let segment_array = window.location.pathname.split("/");
+                let segment = segment_array[segment_array.length - 1];
+                if (segment === "shop-cart" || segment === "checkout-payment" || segment === "checkout-details") {
+                    location.reload();
+                }
+            }
+        }
+    ).fail(function () {
+        if (row.length) {
+            row.find('.vm-drawer-stepper').css('opacity', '1');
+        }
+        toastr.error("Network error updating bag. Please try again.");
+    });
+};
 
 function updateCart() {
     $(".cart-quantity-update").on("click", function () {

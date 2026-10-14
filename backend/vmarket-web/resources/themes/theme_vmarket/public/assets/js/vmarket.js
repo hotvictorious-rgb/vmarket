@@ -528,5 +528,77 @@ document.addEventListener('DOMContentLoaded', () => {
         const a = e.target && e.target.closest ? e.target.closest('a[href]') : null;
         if (a) vmPrefetch(a.href);
     }, { passive: true });
+
+    // ==========================================================================
+    // 9. [AI] Victorious MARKET Fly-Out Cart Drawer Controller
+    // ==========================================================================
+    window.openCartDrawer = function() {
+        const drawer = document.getElementById('vmCartDrawer');
+        const backdrop = document.getElementById('vmCartDrawerBackdrop');
+        if (drawer) {
+            drawer.classList.add('open');
+            drawer.classList.add('is-open');
+            drawer.setAttribute('aria-hidden', 'false');
+        }
+        if (backdrop) {
+            backdrop.classList.add('open');
+            backdrop.classList.add('is-open');
+            backdrop.setAttribute('aria-hidden', 'false');
+        }
+        document.body.classList.add('vm-cart-drawer-open');
+    };
+
+    window.closeCartDrawer = function() {
+        const drawer = document.getElementById('vmCartDrawer');
+        const backdrop = document.getElementById('vmCartDrawerBackdrop');
+        if (drawer) {
+            drawer.classList.remove('open');
+            drawer.classList.remove('is-open');
+            drawer.setAttribute('aria-hidden', 'true');
+        }
+        if (backdrop) {
+            backdrop.classList.remove('open');
+            backdrop.classList.remove('is-open');
+            backdrop.setAttribute('aria-hidden', 'true');
+        }
+        document.body.classList.remove('vm-cart-drawer-open');
+    };
+
+    // Event delegation for cart drawer interactions
+    document.addEventListener('click', function(e) {
+        // Trigger button clicked (.vm-cart-drawer-trigger)
+        const trigger = e.target.closest('.vm-cart-drawer-trigger');
+        if (trigger) {
+            e.preventDefault();
+            e.stopPropagation();
+            window.openCartDrawer();
+            return;
+        }
+
+        // Close button or continue shopping button clicked
+        if (e.target.closest('#vmCartDrawerCloseBtn') || e.target.closest('.vm-cart-drawer-continue-shopping')) {
+            e.preventDefault();
+            window.closeCartDrawer();
+            return;
+        }
+
+        // Backdrop clicked
+        if (e.target && e.target.id === 'vmCartDrawerBackdrop') {
+            e.preventDefault();
+            window.closeCartDrawer();
+            return;
+        }
+    });
+
+    // ESC key closes cart drawer
+    document.addEventListener('keydown', function(e) {
+        if (e.key === 'Escape') {
+            const drawer = document.getElementById('vmCartDrawer');
+            if (drawer && (drawer.classList.contains('open') || drawer.classList.contains('is-open'))) {
+                window.closeCartDrawer();
+            }
+        }
+    });
 });
+
 
