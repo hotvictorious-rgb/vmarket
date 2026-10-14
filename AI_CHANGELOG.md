@@ -1,3 +1,35 @@
+### [2026-10-14 03:55 UTC] Resolve V1 Deep Audit Findings: Handover Concurrency, Cashback Uniqueness, CI & Release Gates [backend, user-app, delivery-man, ai-governance] [AI]
+- Handover Concurrency & Lock Hardening (`backend/vmarket-web/app/Http/Controllers/Customer/OrderHandoverController.php`):
+  1. Wrapped both `confirmInShopPickup` and `confirmDoorstepDelivery` inside atomic database transactions (`DB::beginTransaction()`).
+  2. Enforced pessimistic row-level locking on the `Order` record (`->lockForUpdate()`) and re-evaluated terminal states (`delivered`, `canceled`, `returned`, `failed`, and `out_for_delivery`) strictly under the acquired row lock, eliminating simultaneous double-execution race conditions.
+  3. Added pessimistic row-level locks on `LogisticsCompanyWallet` and `DeliverymanWallet`.
+  4. Migrated logistics wallet and rider commission arithmetic from PHP native floats to arbitrary-precision BCMath string functions (`bcadd`, `bcsub`, `bccomp`, `bcdiv`), maintaining zero mathematical drift ($\Delta = 0.00$).
+  5. Implemented strict per-order idempotency keys for `LogisticsCompanyTransaction` and `DeliveryManTransaction` (`"order-{$order->id}-charge"`) to guarantee exactly-once wallet crediting even under concurrent replay.
+- Cashback Uniqueness & Duplicate Recovery (`backend/vmarket-web/`):
+  1. `database/migrations/2026_09_18_000001_create_customer_cashback_ledgers_table.php` & `2026_10_13_000001_add_unique_order_id_to_customer_cashback_ledgers_table.php`: Enforced database-level unique constraint on `customer_cashback_ledgers.order_id` (`$table->unsignedBigInteger('order_id')->nullable()->unique()`).
+  2. `CustomerCashbackLedger::creditRewardForOrder()`: Wrapped reward lot creation in `try ... catch (\Illuminate\Database\QueryException $e)` to catch database duplicate key collisions under simultaneous requests and return the existing authoritative row.
+  3. `PaystackRefundService.php`: Updated refund restoration lots to record `order_id = null` and `redeemed_order_id = $order->id`, ensuring restored spent cashback lots do not collide with earned reward lots.
+- Flutter Apps CI/CD Compilation & Test Mock Parity:
+  1. `Delivery Man App/lib/features/live_tracking/screens/order_tracking_screen.dart`: Added `hide Colors` to `config_model.dart` import to eliminate ambiguous name collision with `flutter/material.dart`, and replaced runtime alpha computation with constant `Color(0x595E17EB)` hex.
+  2. `User app/test/address_lga_test.dart`: Implemented `autocompleteAddress` on `MockAddressService` satisfying `AddressServiceInterface` contract.
+  3. `User app/test/order_track_cashback_test.dart`: Implemented `confirmInShopPickup` and `confirmDoorstepDelivery` on `FakeOrderDetailsService` satisfying `OrderDetailsServiceInterface` contract.
+- Release Workflow & AI Governance Parity:
+  1. `.github/workflows/build_android.yml`: Hardened `publish-release` job by removing `if: always()` and requiring all 3 builds (`build-customer`, `build-vendor`, `build-delivery`) to succeed and all 6 APK/AAB artifacts to exist before publishing.
+  2. `.ai/tickets/`: Formatted `V1-FIREBASE-CSP-BROWSER-2026-10-05.md`, `V1-PICKUP-BROWSER-RECOVERY-2026-10-05.md`, and `VM-V1-LOCAL-RELEASE-VERIFY-2026-10-05.md` with complete mandatory governance metadata headers; `scripts/release/validate-tickets.ps1` validated with 47/47 passing (0 errors).
+  3. `DEPLOYMENT_RUNBOOK.md`: Pinned production update clone command to `-b v1` with explicit commit SHA verification.
+  4. `AI_ENGINEERING_RULES.md` & `README.md`: Aligned framework references to Laravel 12 (PHP 8.2+).
+- Automated Regression Verification:
+  1. `tests/Feature/HandoverAndCashbackConcurrencyTest.php`: 3/3 passed (100%), 18 assertions.
+  2. `tests/regression/V1FinancePathsTest.php`: 16/16 passed (100%), 111 assertions.
+  3. `tests/regression/V1SecondPassFinanceTest.php`: 10/10 passed (100%), 131 assertions.
+  4. `tests/Feature/DeliveryFlowLifecycleTest.php`: 1/1 passed (100%), 31 assertions.
+  5. `tests/Feature/PaystackEndToEndScenariosTest.php`: 12/12 passed (100%), 87 assertions.
+  6. `tests/Unit/DeliveryLaneRoutingInvariantTest.php`: 8/8 passed (100%), 24 assertions.
+  7. `tests/Feature/AuthCredentialSecurityTest.php`: 20/20 passed (100%), 238 assertions.
+  8. `tests/regression/V1PaystackWebhookHttpReleaseTest.php`: 4/4 passed (100%), 31 assertions.
+  9. `tests/regression/V1QueryAndSellerHistorySecurityTest.php`: 6/6 passed (100%), 51 assertions.
+  - Total: 80 tests, 723 assertions, 0 errors, 0 failures ($\Delta = 0.00$).
+
 ### [2026-10-14 03:24 UTC] Harden API Boot & Config Serialization for PHP 8.2+ Compatibility [backend, ai-governance] [AI]
 - `backend/vmarket-web/app/Http/Controllers/RestAPI/v1/ConfigController.php`: Applied strict null-safe checks to `getWebConfig('offline_payment')`, `getWebConfig('colors')`, `getWebConfig('digital_payment')`, `getWebConfig('cash_on_delivery')`, and `getWebConfig('firebase_otp_verification')` to prevent PHP 8.2+ `ErrorException: Trying to access array offset on value of type null`. Verified `GET /api/v1/config` returns HTTP 200 OK with brand colors (`#5E17EB` / `#FFD700`).
 - `backend/vmarket-web/app/Utils/Helpers.php`: Added null-check guard around `$currency` lookup in `currency_load()` to prevent `Attempt to read property "code" on null` when database seeds have not yet been queried.
