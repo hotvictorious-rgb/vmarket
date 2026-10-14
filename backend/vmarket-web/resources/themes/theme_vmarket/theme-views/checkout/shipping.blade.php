@@ -85,7 +85,7 @@
                                     </div>
                                 @endif
 
-                                <div class="fulfillment-selector d-flex p-1 bg-light rounded-3 mb-4" style="border: 1.5px solid rgba(114, 50, 187, 0.15);">
+                                <div class="fulfillment-selector d-flex p-1 bg-light rounded-3 mb-4" style="border: 1.5px solid rgba(94, 23, 235, 0.15);">
                                     <button type="button" class="btn w-50 py-2 fw-bold text-capitalize rounded-3 active btn-primary text-white" id="fulfillment-tab-delivery" onclick="switchFulfillment('delivery')">
                                         <i class="bi bi-truck me-1"></i> {{ translate('doorstep_delivery') ?? 'Doorstep Delivery' }}
                                     </button>
@@ -115,7 +115,7 @@
                                                 </div>
 
                                                 {{-- [AI] Direction Guidance Box with Message Support button (STRICTLY NO PHONE NUMBER) --}}
-                                                <div class="p-2 rounded-3 d-flex align-items-center justify-content-between flex-wrap gap-2" style="background: rgba(114, 50, 187, 0.05); border: 1px dashed rgba(114, 50, 187, 0.25);">
+                                                <div class="p-2 rounded-3 d-flex align-items-center justify-content-between flex-wrap gap-2" style="background: rgba(94, 23, 235, 0.05); border: 1px dashed rgba(94, 23, 235, 0.25);">
                                                     <div class="d-flex align-items-center gap-2 fs-12 text-dark">
                                                         <i class="bi bi-compass text-primary fs-15"></i>
                                                         <span>{{ translate('need_help_finding_this_store') ?? 'Need help finding this store? Message Customer Support for step-by-step guidance.' }}</span>
