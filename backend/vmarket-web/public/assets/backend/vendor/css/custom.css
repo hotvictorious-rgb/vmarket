@@ -115,3 +115,154 @@
 .space-need.multi_image_picker .spartan_item_wrapper:last-child {
     margin-inline-end: 0px !important;
 }
+/**
+ * Victorious MARKET Official Vendor Theme
+ * Brand Tokens: Royal Electric Purple (#5E17EB) & Royal Gold (#FFD700)
+ * Modern, High-Performance UI Layer for Vendor Web Portal
+ */
+
+:root {
+  --vm-primary: #5E17EB;
+  --vm-primary-hover: #4A0DC7;
+  --vm-primary-light: #7B3FEF;
+  --vm-primary-soft: rgba(94, 23, 235, 0.08);
+  --vm-primary-border: rgba(94, 23, 235, 0.18);
+
+  --vm-gold: #FFD700;
+  --vm-gold-hover: #E6C200;
+  --vm-gold-soft: rgba(255, 215, 0, 0.12);
+  --vm-gold-border: rgba(255, 215, 0, 0.35);
+
+  --vm-bg-main: #F7F8FC;
+  --vm-card-bg: #FFFFFF;
+  --vm-card-border: #EAE8F5;
+  --vm-text-dark: #1A1333;
+  --vm-text-muted: #6C7280;
+
+  --vm-radius-sm: 8px;
+  --vm-radius-md: 12px;
+  --vm-radius-lg: 16px;
+
+  --vm-shadow-card: 0 4px 20px rgba(94, 23, 235, 0.04), 0 1px 3px rgba(0, 0, 0, 0.02);
+  --vm-shadow-card-hover: 0 8px 30px rgba(94, 23, 235, 0.08), 0 2px 6px rgba(0, 0, 0, 0.04);
+  --vm-shadow-button: 0 4px 12px rgba(94, 23, 235, 0.25);
+}
+
+/* Base Primary Button Enhancement */
+.btn--primary,
+.btn-primary {
+  background-color: var(--vm-primary) !important;
+  border-color: var(--vm-primary) !important;
+  color: #FFFFFF !important;
+  font-weight: 600 !important;
+  border-radius: var(--vm-radius-sm) !important;
+  transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1) !important;
+  box-shadow: 0 2px 8px rgba(94, 23, 235, 0.18) !important;
+}
+
+.btn--primary:hover,
+.btn-primary:hover,
+.btn--primary:focus,
+.btn-primary:focus {
+  background-color: var(--vm-primary-hover) !important;
+  border-color: var(--vm-primary-hover) !important;
+  transform: translateY(-1px) !important;
+  box-shadow: var(--vm-shadow-button) !important;
+}
+
+/* Secondary & Gold Accents */
+.badge-gold,
+.btn-gold {
+  background-color: var(--vm-gold) !important;
+  border-color: var(--vm-gold-hover) !important;
+  color: #1A1333 !important;
+  font-weight: 700 !important;
+}
+
+/* Card Modernization */
+.card {
+  border-radius: var(--vm-radius-md) !important;
+  border: 1px solid var(--vm-card-border) !important;
+  background-color: var(--vm-card-bg) !important;
+  box-shadow: var(--vm-shadow-card) !important;
+  transition: box-shadow 0.25s ease, border-color 0.25s ease !important;
+}
+
+.card:hover {
+  box-shadow: var(--vm-shadow-card-hover) !important;
+}
+
+/* Handover Terminal Hero Badge */
+.handover-terminal-card {
+  background: linear-gradient(135deg, rgba(94, 23, 235, 0.03) 0%, rgba(255, 215, 0, 0.05) 100%) !important;
+  border: 1.5px solid var(--vm-primary-border) !important;
+  border-radius: var(--vm-radius-lg) !important;
+  position: relative;
+  overflow: hidden;
+}
+
+.handover-terminal-card::before {
+  content: ";
+ position: absolute;
+ top: 0;
+ left: 0;
+ right: 0;
+ height: 4px;
+ background: linear-gradient(90deg, var(--vm-primary) 0%, var(--vm-gold) 100%);
+}
+
+.handover-code-display {
+ font-family: 'SF Mono', 'Courier New', monospace !important;
+ letter-spacing: 8px !important;
+ font-size: 2.25rem !important;
+ font-weight: 800 !important;
+ color: var(--vm-primary) !important;
+ background: #FFFFFF !important;
+ padding: 12px 24px !important;
+ border-radius: var(--vm-radius-md) !important;
+ border: 2px dashed var(--vm-primary-border) !important;
+ display: inline-block !important;
+ box-shadow: 0 4px 14px rgba(94, 23, 235, 0.06) !important;
+}
+
+/* Order Stats Pill Enhancement */
+.order-stats {
+ border-radius: var(--vm-radius-md) !important;
+ border: 1px solid var(--vm-card-border) !important;
+ transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1) !important;
+}
+
+.order-stats:hover {
+ transform: translateY(-2px) !important;
+ box-shadow: var(--vm-shadow-card-hover) !important;
+}
+
+/* Soft Badges */
+.badge-soft-primary {
+ background-color: var(--vm-primary-soft) !important;
+ color: var(--vm-primary) !important;
+ border: 1px solid var(--vm-primary-border) !important;
+ font-weight: 600 !important;
+ padding: 5px 10px !important;
+ border-radius: var(--vm-radius-sm) !important;
+}
+
+.badge-soft-gold {
+ background-color: var(--vm-gold-soft) !important;
+ color: #946C00 !important;
+ border: 1px solid var(--vm-gold-border) !important;
+ font-weight: 700 !important;
+ padding: 5px 10px !important;
+ border-radius: var(--vm-radius-sm) !important;
+}
+
+/* Sidebar Active & Hover Accent */
+.navbar-vertical .nav-item .nav-link.active,
+.navbar-vertical .nav-item .nav-link:hover {
+ color: var(--vm-primary) !important;
+}
+
+.navbar-vertical .nav-item.active > .nav-link {
+ border-left: 3px solid var(--vm-primary) !important;
+ background: var(--vm-primary-soft) !important;
+}
