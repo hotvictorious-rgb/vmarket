@@ -1,3 +1,7 @@
+### [2026-10-14 03:24 UTC] Harden API Boot & Config Serialization for PHP 8.2+ Compatibility [backend, ai-governance] [AI]
+- `backend/vmarket-web/app/Http/Controllers/RestAPI/v1/ConfigController.php`: Applied strict null-safe checks to `getWebConfig('offline_payment')`, `getWebConfig('colors')`, `getWebConfig('digital_payment')`, `getWebConfig('cash_on_delivery')`, and `getWebConfig('firebase_otp_verification')` to prevent PHP 8.2+ `ErrorException: Trying to access array offset on value of type null`. Verified `GET /api/v1/config` returns HTTP 200 OK with brand colors (`#5E17EB` / `#FFD700`).
+- `backend/vmarket-web/app/Utils/Helpers.php`: Added null-check guard around `$currency` lookup in `currency_load()` to prevent `Attempt to read property "code" on null` when database seeds have not yet been queried.
+
 ### [2026-10-14 03:15 UTC] Fix Employee Logout Route Scoping and Align SQLite Paystack Test Fixtures [backend, ai-governance] [AI]
 - `backend/vmarket-web/app/Http/Middleware/SellerApiAuthMiddleware.php`: Added `$request->is('*seller/logout*')` to `$isSafeUtilityRoute` whitelist so vendor employees can access `/api/v3/seller/logout` without triggering default-deny 403 permission rejections.
 - `backend/vmarket-web/tests/Feature/PaystackEndToEndScenariosTest.php`: Extended SQLite dynamic orders test schema with `package_tier`, `bulky_surcharge_amount`, and `delivery_commission_amount` columns in `setUp()` matching authoritative delivery settlement service fields.

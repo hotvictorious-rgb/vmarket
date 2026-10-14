@@ -417,10 +417,15 @@ class Helpers
             if (!$currency) {
                 $currency = Currency::find(1);
             }
-            session()->put('system_default_currency_info', $currency);
-            session()->put('currency_code', $currency->code);
-            session()->put('currency_symbol', $currency->symbol);
-            session()->put('currency_exchange_rate', $currency->exchange_rate);
+            if (!$currency) {
+                $currency = Currency::first();
+            }
+            if ($currency) {
+                session()->put('system_default_currency_info', $currency);
+                session()->put('currency_code', $currency->code);
+                session()->put('currency_symbol', $currency->symbol);
+                session()->put('currency_exchange_rate', $currency->exchange_rate);
+            }
             session()->forget('usd');
             session()->forget('default');
             $usd = exchangeRate(USD);

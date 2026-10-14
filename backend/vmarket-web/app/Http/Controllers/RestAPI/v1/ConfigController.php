@@ -60,7 +60,8 @@ class ConfigController extends Controller
         }
 
         $offlinePayment = null;
-        $offlinePaymentStatus = getWebConfig(name: 'offline_payment')['status'] == 1 ?? 0;
+        $offlinePaymentConfig = getWebConfig(name: 'offline_payment');
+        $offlinePaymentStatus = is_array($offlinePaymentConfig) && !empty($offlinePaymentConfig['status']);
         if ($offlinePaymentStatus) {
             $offlinePayment = [
                 'name' => 'offline_payment',
@@ -116,7 +117,7 @@ class ConfigController extends Controller
             'status' => (int)($emailVerification == 1 || $phoneVerification == 1) ? 1 : 0,
             'phone' => (int)$phoneVerification,
             'email' => (int)$emailVerification,
-            'firebase' => (int)($firebaseOTPVerification && $firebaseOTPVerification['status'] && $firebaseOTPVerification['web_api_key']),
+            'firebase' => (int)(is_array($firebaseOTPVerification) && !empty($firebaseOTPVerification['status']) && !empty($firebaseOTPVerification['web_api_key'])),
         ];
 
         $maintenanceMode = [
@@ -138,17 +139,20 @@ class ConfigController extends Controller
         }
 
         $systemColors = getWebConfig('colors');
+        $digitalPayment = getWebConfig(name: 'digital_payment');
+        $cashOnDelivery = getWebConfig(name: 'cash_on_delivery');
+
         return [
-            'primary_color' => $systemColors['primary'],
-            'secondary_color' => $systemColors['secondary'],
-            'primary_color_light' => $systemColors['primary_light'] ?? '',
+            'primary_color' => is_array($systemColors) ? ($systemColors['primary'] ?? '#5E17EB') : '#5E17EB',
+            'secondary_color' => is_array($systemColors) ? ($systemColors['secondary'] ?? '#FFD700') : '#FFD700',
+            'primary_color_light' => is_array($systemColors) ? ($systemColors['primary_light'] ?? '') : '',
             'brand_setting' => (string)getWebConfig(name: 'product_brand'),
             'digital_product_setting' => (string)getWebConfig(name: 'digital_product'),
             'system_default_currency' => (int)getWebConfig(name: 'system_default_currency'),
-            'digital_payment' => (boolean)getWebConfig(name: 'digital_payment')['status'] ?? 0,
-            'cash_on_delivery' => (boolean)getWebConfig(name: 'cash_on_delivery')['status'] ?? 0,
-            'seller_registration' => (string)getWebConfig(name: 'seller_registration') ?? 0,
-            'pos_active' => (string)getWebConfig(name: 'seller_pos') ?? 0,
+            'digital_payment' => (boolean)(is_array($digitalPayment) ? ($digitalPayment['status'] ?? 0) : 0),
+            'cash_on_delivery' => (boolean)(is_array($cashOnDelivery) ? ($cashOnDelivery['status'] ?? 0) : 0),
+            'seller_registration' => (string)(getWebConfig(name: 'seller_registration') ?? '0'),
+            'pos_active' => (string)(getWebConfig(name: 'seller_pos') ?? '0'),
             'company_name' => getWebConfig(name: 'company_name') ?? '',
             'company_phone' => getWebConfig(name: 'company_phone') ?? '',
             'company_email' => getWebConfig(name: 'company_email') ?? '',
@@ -254,7 +258,7 @@ class ConfigController extends Controller
             'customer_verification' => $customerVerification,
             'otp_resend_time' => getWebConfig(name: 'otp_resend_time') ?? 60,
             'vendor_forgot_password_method' => getWebConfig(name: 'vendor_forgot_password_method') ?? 'phone',
-            'vendor_forgot_password_sms_method' => $firebaseOTPVerification['status'] == 1 ? 'firebase' : 'sms',
+            'vendor_forgot_password_sms_method' => (is_array($firebaseOTPVerification) && !empty($firebaseOTPVerification['status']) && $firebaseOTPVerification['status'] == 1) ? 'firebase' : 'sms',
             'deliveryman_forgot_password_method' => getWebConfig(name: 'deliveryman_forgot_password_method') ?? 'phone',
             'blog_page' => Route::has('app.blog.index') && getWebConfig(name: 'blog_feature_active_status') ? route('app.blog.index') : '',
             'in_house_shop' => getInHouseShopConfig(),
