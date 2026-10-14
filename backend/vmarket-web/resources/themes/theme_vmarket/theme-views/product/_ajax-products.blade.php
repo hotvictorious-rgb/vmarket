@@ -25,7 +25,7 @@
             <div class="vm-product-info">
                 @if($product->added_by == 'admin')
                     <div class="vm-product-shop" style="color: #92400e; font-weight: 700;">
-                        <span>👑</span>
+                        <i class="bi bi-patch-check-fill" style="color: var(--vm-gold);"></i>
                         <span>{{ translate('Official Flagship') }}</span>
                     </div>
                 @elseif($shop)

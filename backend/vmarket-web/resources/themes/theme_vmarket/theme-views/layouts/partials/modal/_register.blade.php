@@ -5,10 +5,10 @@
         <style>
             #registerModal .vm-auth-modal{border-radius:24px!important;overflow:hidden;border:1px solid rgba(255,215,0,.25)!important;box-shadow:0 30px 60px -12px rgba(26,14,42,.45)!important;max-height:calc(100vh - 3rem)!important}
             #registerModal .vm-auth-modal .modal-body{overflow-y:auto!important;-webkit-overflow-scrolling:touch}
-            #registerModal .vm-auth-crown{margin:-1rem -1rem 0;padding:28px 24px 22px;background:linear-gradient(135deg,#2A0A5E 0%,#5E17EB 55%,#8B3DFF 100%);color:#fff;text-align:center;position:relative;overflow:hidden;border-radius:24px 24px 0 0}
-            #registerModal .vm-auth-crown-badge{display:inline-block;font-size:11px;font-weight:800;letter-spacing:1.5px;text-transform:uppercase;color:#1A0E2A;background:linear-gradient(135deg,#FFD700,#FFB800);padding:5px 14px;border-radius:999px}
-            #registerModal .vm-auth-crown h3{margin:12px 0 4px;font-weight:800;font-size:22px;color:#fff}
-            #registerModal .vm-auth-crown p{margin:0;font-size:13px;opacity:.85;color:#fff}
+            #registerModal .vm-auth-header{margin:-1rem -1rem 0;padding:28px 24px 22px;background:linear-gradient(135deg,#2A0A5E 0%,#5E17EB 55%,#8B3DFF 100%);color:#fff;text-align:center;position:relative;overflow:hidden;border-radius:24px 24px 0 0}
+            #registerModal .vm-auth-brand-badge{display:inline-block;font-size:11px;font-weight:800;letter-spacing:1.5px;text-transform:uppercase;color:#1A0E2A;background:linear-gradient(135deg,#FFD700,#FFB800);padding:5px 14px;border-radius:999px}
+            #registerModal .vm-auth-header h3{margin:12px 0 4px;font-weight:800;font-size:22px;color:#fff}
+            #registerModal .vm-auth-header p{margin:0;font-size:13px;opacity:.85;color:#fff}
             #registerModal .vm-auth-logo-ring{width:64px;height:64px;margin:-32px auto 8px;border-radius:18px;background:#fff;display:flex;align-items:center;justify-content:center;box-shadow:0 8px 24px rgba(26,14,42,.25);border:2px solid rgba(255,215,0,.6);position:relative;z-index:2}
             #registerModal .vm-auth-logo-ring img{max-width:44px;max-height:44px}
             #registerModal .vm-auth-modal .form-control{border-radius:12px!important;padding:12px 14px!important;font-size:16px!important;pointer-events:auto!important}
@@ -16,8 +16,8 @@
             #registerModal .vm-auth-trust{display:flex;justify-content:center;gap:16px;margin-top:16px;padding-top:14px;border-top:1px dashed rgba(94,23,235,.2);font-size:11.5px;color:#94A3B8;flex-wrap:wrap}
         </style>
         <div class="modal-content vm-auth-modal">
-            <div class="vm-auth-crown">
-                <span class="vm-auth-crown-badge">👑 Victorious MARKET</span>
+            <div class="vm-auth-header">
+                <span class="vm-auth-brand-badge">Victorious MARKET</span>
                 <h3>{{ translate('Join the Marketplace') }}</h3>
                 <p>{{ translate('Seamless Shopping, Swift Logistics') }}</p>
             </div>
@@ -171,7 +171,7 @@
                 <div class="vm-auth-trust">
                     <span>🔒 {{ translate('Secure Registration') }}</span>
                     <span>⚡ {{ translate('Swift Logistics') }}</span>
-                    <span>👑 {{ translate('Verified Merchants') }}</span>
+                    <span>🛡️ {{ translate('Verified Merchants') }}</span>
                 </div>
 
                 @if ($web_config['social_login_text'])

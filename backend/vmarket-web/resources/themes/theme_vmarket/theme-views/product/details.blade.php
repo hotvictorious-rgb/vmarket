@@ -101,7 +101,7 @@
             
             @if($product->added_by == 'admin')
                 <div class="vm-detail-merchant-pill" style="border: 1.5px solid var(--vm-accent-gold); background: rgba(212,175,55,0.08); padding: 8px 14px; border-radius: 10px; display: inline-flex; align-items: center; gap: 8px;">
-                    <span style="font-size: 13.5px; font-weight: 700; color: #1B1035;">👑 {{ translate('Sold by') }}: <strong>{{ getInHouseShopConfig(key: 'name') ?? 'Victorious Official Flagship' }}</strong></span>
+                    <span style="font-size: 13.5px; font-weight: 700; color: #1B1035;">⭐ {{ translate('Sold by') }}: <strong>{{ getInHouseShopConfig(key: 'name') ?? 'Victorious Official Flagship' }}</strong></span>
                     <span class="vm-verified-badge" style="background: var(--vm-accent-gold); color: #1B1035; font-weight: 800; font-size: 10px; padding: 3px 8px; border-radius: 6px;">★ Platform Direct (In-Shop)</span>
                 </div>
             @elseif($shop && $shopSlug)
@@ -111,7 +111,7 @@
                 </a>
             @else
                 <div class="vm-detail-merchant-pill" style="border: 1.5px solid var(--vm-accent-gold); background: rgba(212,175,55,0.08); padding: 8px 14px; border-radius: 10px; display: inline-flex; align-items: center; gap: 8px;">
-                    <span style="font-size: 13.5px; font-weight: 700; color: #1B1035;">👑 {{ translate('Sold by') }}: <strong>{{ getWebConfig(name: 'company_name') ?? 'Victorious Official Flagship' }}</strong></span>
+                    <span style="font-size: 13.5px; font-weight: 700; color: #1B1035;">⭐ {{ translate('Sold by') }}: <strong>{{ getWebConfig(name: 'company_name') ?? 'Victorious Official Flagship' }}</strong></span>
                     <span class="vm-verified-badge" style="background: var(--vm-accent-gold); color: #1B1035; font-weight: 800; font-size: 10px; padding: 3px 8px; border-radius: 6px;">★ Platform Direct (In-Shop)</span>
                 </div>
             @endif

@@ -16,7 +16,7 @@
             @if((int)($announcement['status'] ?? 0) === 1)
                 <span>{{ $announcement['announcement'] ?? '' }}</span>
             @else
-                <span>👑 {{ translate('Welcome to') }} {{ $companyName }}</span>
+                <span>{{ translate('Welcome to') }} {{ $companyName }}</span>
             @endif
         </div>
         <div style="display: flex; gap: 16px; align-items: center;">

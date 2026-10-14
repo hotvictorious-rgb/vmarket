@@ -94,7 +94,7 @@
                                     @if($firstItem->seller_is == 'admin')
                                         <a href="{{ route('vendor-shop', ['slug' => $shopSlug]) }}" class="text-decoration-none">
                                             <h5 class="vm-merchant-name">
-                                                <span>👑</span> {{ $shopName }}
+                                                <i class="bi bi-shield-fill-check" style="color: var(--vm-primary);"></i> {{ $shopName }}
                                             </h5>
                                         </a>
                                         <span class="vm-merchant-badge vm-merchant-badge-flagship">

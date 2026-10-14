@@ -194,7 +194,7 @@
                                 $activeLayout = $layoutStyles[$idx % 3];
 
                                 $badgePills = [
-                                    ['icon' => '👑', 'label' => translate('Verified Marketplace')],
+                                    ['icon' => '✨', 'label' => translate('Verified Marketplace')],
                                     ['icon' => '⚡', 'label' => translate('Direct LGA Delivery • Akwa Ibom')],
                                     ['icon' => '🛡️', 'label' => translate('Paystack Escrow Protected')],
                                     ['icon' => '🏪', 'label' => translate('Physical In-Shop Inspection')],
@@ -615,7 +615,7 @@
                         <div class="vm-product-info">
                             @if($product->added_by == 'admin')
                                 <div class="vm-product-shop" style="color: #92400e; font-weight: 700;">
-                                    <span>👑</span>
+                                    <i class="bi bi-patch-check-fill" style="color: var(--vm-gold);"></i>
                                     <span>{{ translate('Official Flagship') }}</span>
                                 </div>
                             @elseif($shop)
@@ -703,7 +703,7 @@
                         <div class="vm-product-info">
                             @if($product->added_by == 'admin')
                                 <div class="vm-product-shop" style="color: #92400e; font-weight: 700;">
-                                    <span>👑</span>
+                                    <i class="bi bi-patch-check-fill" style="color: var(--vm-gold);"></i>
                                     <span>{{ translate('Official Flagship') }}</span>
                                 </div>
                             @elseif($shop)
@@ -748,7 +748,7 @@
                             ['icon' => '🛡️', 'label' => translate('Paystack Escrow Protected')],
                             ['icon' => '⚡', 'label' => translate('Akwa Ibom 31 LGA Express Logistics')],
                             ['icon' => '🏪', 'label' => translate('Physical In-Shop Inspection Guarantee')],
-                            ['icon' => '👑', 'label' => translate('Verified Direct-From-Source Vendors')],
+                            ['icon' => '✨', 'label' => translate('Verified Direct-From-Source Vendors')],
                         ];
                         $badge = $footerBadges[$idx % 4];
                     @endphp

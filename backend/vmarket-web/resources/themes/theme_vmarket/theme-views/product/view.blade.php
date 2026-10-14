@@ -131,7 +131,7 @@
                             </a>
                         @else
                             <span style="display: inline-flex; align-items: center; gap: 4px; color: var(--vm-primary); font-weight: 700;">
-                                <span>👑</span>
+                                <i class="bi bi-patch-check-fill" style="color: var(--vm-gold);"></i>
                                 <span>{{ translate('Official Store') }}</span>
                             </span>
                         @endif
