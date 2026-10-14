@@ -1,3 +1,12 @@
+### [2026-10-14 03:15 UTC] Fix Employee Logout Route Scoping and Align SQLite Paystack Test Fixtures [backend, ai-governance] [AI]
+- `backend/vmarket-web/app/Http/Middleware/SellerApiAuthMiddleware.php`: Added `$request->is('*seller/logout*')` to `$isSafeUtilityRoute` whitelist so vendor employees can access `/api/v3/seller/logout` without triggering default-deny 403 permission rejections.
+- `backend/vmarket-web/tests/Feature/PaystackEndToEndScenariosTest.php`: Extended SQLite dynamic orders test schema with `package_tier`, `bulky_surcharge_amount`, and `delivery_commission_amount` columns in `setUp()` matching authoritative delivery settlement service fields.
+- Automated Test Verification:
+  1. `tests/Feature/PaystackEndToEndScenariosTest.php`: 12/12 tests passed (100%), 87 assertions.
+  2. `tests/Feature/AuthCredentialSecurityTest.php`: 20/20 tests passed (100%), 238 assertions.
+  3. `tests/regression/V1FinancePathsTest.php`: 16/16 tests passed (100%), 111 assertions.
+  4. `tests/regression/V1SecondPassFinanceTest.php`: 10/10 tests passed (100%), 131 assertions.
+
 ### [2026-10-07 16:35 UTC] Flutter Mobile Apps Ecosystem Alignment & Receiver-Driven Handshake Synchronization [user-app, vendor-app, delivery-man, ai-governance] [AI]
 - Delivery Rider Mobile App (`Delivery Man App/`):
   1. Converted `VerifyDeliverySheetWidget` from a legacy rider-input sheet into a **Secret Delivery Code Presentation Sheet**: displays the 6-digit Secret Delivery Code on rider screen to show to customer, with 3-second live background polling and auto-transition to `OrderDeliveredScreen` once confirmed.

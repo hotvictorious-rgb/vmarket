@@ -178,6 +178,7 @@ class SellerApiAuthMiddleware
                 // 5. Allow safe utility routes (seller profile info, logout, languages)
                 $isSafeUtilityRoute = $request->is('*seller/seller-info*') || 
                                       $request->is('*seller/profile*') || 
+                                      $request->is('*seller/logout*') || 
                                       $request->is('*seller/auth/logout*') || 
                                       $request->is('*seller/languages*') ||
                                       $request->is('*seller/notifications*');

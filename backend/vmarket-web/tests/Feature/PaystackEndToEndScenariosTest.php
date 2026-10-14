@@ -81,6 +81,7 @@ class PaystackEndToEndScenariosTest extends GatewayMoneyTestCase
             'origin_state_name', 'destination_lga_id', 'destination_lga_name', 'destination_state_name',
             'authoritative_delivery_fee', 'pickup_verification_code', 'received_at', 'refund_window_expires_at',
             'vendor_settlement_status', 'init_order_amount', 'estimated_delivery_time', 'delivered_by',
+            'package_tier', 'bulky_surcharge_amount', 'delivery_commission_amount',
         ] as $col) {
             if (!Schema::hasColumn('orders', $col)) {
                 Schema::table('orders', fn ($t) => $t->string($col)->nullable());
