@@ -20,6 +20,7 @@ $code = (string) ($options['code'] ?? '998877');
 
 if (!empty($options['db-path'])) {
     config(['database.connections.sqlite.database' => $options['db-path']]);
+    config(['database.default' => 'sqlite']);
     \Illuminate\Support\Facades\DB::purge('sqlite');
     \Illuminate\Support\Facades\DB::reconnect('sqlite');
 }

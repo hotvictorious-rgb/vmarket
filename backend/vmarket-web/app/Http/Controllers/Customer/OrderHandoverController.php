@@ -235,7 +235,33 @@ class OrderHandoverController extends Controller
             return back();
         } catch (\Throwable $e) {
             DB::rollBack();
-            Log::error('In-shop pickup verification error: ' . $e->getMessage(), ['order_id' => $request->order_id]);
+            Log::warning('In-shop pickup verification contention/error: ' . $e->getMessage(), ['order_id' => $request->order_id]);
+
+            // [AI] Graceful Concurrency Resolution: Check if concurrent request already completed handover
+            $freshOrder = Order::find($request->order_id);
+            if ($freshOrder && in_array($freshOrder->order_status, ['delivered'], true)) {
+                $alreadyMsg = translate('This order has already been confirmed as delivered.');
+                return $request->expectsJson()
+                    ? response()->json([
+                        'status' => false,
+                        'message' => $alreadyMsg,
+                        'order_status' => 'delivered',
+                    ], 422)
+                    : back()->withErrors(['message' => $alreadyMsg]);
+            }
+
+            // Controlled concurrency lock response instead of unhandled 500
+            $isLockError = str_contains($e->getMessage(), 'database is locked')
+                || str_contains($e->getMessage(), 'Lock wait timeout')
+                || str_contains($e->getMessage(), 'Deadlock');
+
+            if ($isLockError) {
+                $busyMsg = translate('Order is currently being processed by another transaction. Please refresh.');
+                return $request->expectsJson()
+                    ? response()->json(['status' => false, 'message' => $busyMsg], 409)
+                    : back()->withErrors(['message' => $busyMsg]);
+            }
+
             $errMsg = translate('Failed to finalize pickup: ') . $e->getMessage();
             Toastr::error($errMsg);
             ToastMagic::error($errMsg);
@@ -538,7 +564,33 @@ class OrderHandoverController extends Controller
             return back();
         } catch (\Throwable $e) {
             DB::rollBack();
-            Log::error('Doorstep delivery verification error: ' . $e->getMessage(), ['order_id' => $order->id]);
+            Log::warning('Doorstep delivery verification contention/error: ' . $e->getMessage(), ['order_id' => $request->order_id]);
+
+            // [AI] Graceful Concurrency Resolution: Check if concurrent request already completed handover
+            $freshOrder = Order::find($request->order_id);
+            if ($freshOrder && in_array($freshOrder->order_status, ['delivered'], true)) {
+                $alreadyMsg = translate('This order has already been confirmed as delivered.');
+                return $request->expectsJson()
+                    ? response()->json([
+                        'status' => false,
+                        'message' => $alreadyMsg,
+                        'order_status' => 'delivered',
+                    ], 422)
+                    : back()->withErrors(['message' => $alreadyMsg]);
+            }
+
+            // Controlled concurrency lock response instead of unhandled 500
+            $isLockError = str_contains($e->getMessage(), 'database is locked')
+                || str_contains($e->getMessage(), 'Lock wait timeout')
+                || str_contains($e->getMessage(), 'Deadlock');
+
+            if ($isLockError) {
+                $busyMsg = translate('Order is currently being processed by another transaction. Please refresh.');
+                return $request->expectsJson()
+                    ? response()->json(['status' => false, 'message' => $busyMsg], 409)
+                    : back()->withErrors(['message' => $busyMsg]);
+            }
+
             $errMsg = translate('Failed to finalize delivery: ') . $e->getMessage();
             Toastr::error($errMsg);
             ToastMagic::error($errMsg);

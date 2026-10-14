@@ -16,39 +16,26 @@ return new class extends Migration
             return;
         }
 
-        // [AI] Step 1: Reconcile any existing duplicate order_id records before creating unique index
-        // Identify any order_id that appears more than once with non-null values
-        $duplicateOrderIds = \Illuminate\Support\Facades\DB::table('customer_cashback_ledgers')
-            ->select('order_id')
+        // [AI] Step 1: Strict Financial Integrity Check for Existing Duplicates.
+        // In strict accordance with financial audit standards, this migration NEVER silently
+        // mutates or reclassifies historical ledger rows. If unresolved duplicate order_ids exist,
+        // the migration MUST fail loudly and block deployment until an operator audits the entries.
+        $duplicates = \Illuminate\Support\Facades\DB::table('customer_cashback_ledgers')
+            ->select('order_id', \Illuminate\Support\Facades\DB::raw('COUNT(*) as duplicate_count'))
             ->whereNotNull('order_id')
             ->groupBy('order_id')
             ->havingRaw('COUNT(*) > 1')
-            ->pluck('order_id');
+            ->get();
 
-        foreach ($duplicateOrderIds as $orderId) {
-            // Retain the earliest authoritative row (lowest id) as the valid reward lot
-            $earliestId = \Illuminate\Support\Facades\DB::table('customer_cashback_ledgers')
-                ->where('order_id', $orderId)
-                ->orderBy('id', 'asc')
-                ->value('id');
-
-            // Reconcile secondary/duplicate rows without deleting financial history:
-            // Disassociate order_id (set to null) and document reconciliation audit trail
-            $duplicates = \Illuminate\Support\Facades\DB::table('customer_cashback_ledgers')
-                ->where('order_id', $orderId)
-                ->where('id', '!=', $earliestId)
-                ->get();
-
-            foreach ($duplicates as $duplicate) {
-                \Illuminate\Support\Facades\DB::table('customer_cashback_ledgers')
-                    ->where('id', $duplicate->id)
-                    ->update([
-                        'order_id' => null,
-                        'redeemed_order_id' => $duplicate->redeemed_order_id ?? $orderId,
-                        'description' => trim(($duplicate->description ?? '') . " [RECONCILED_DUPLICATE_ORDER_{$orderId}]"),
-                        'updated_at' => now(),
-                    ]);
-            }
+        if ($duplicates->isNotEmpty()) {
+            $details = $duplicates->map(fn($d) => "Order #{$d->order_id} ({$d->duplicate_count} records)")->implode(', ');
+            throw new \RuntimeException(
+                "CRITICAL FINANCIAL INTEGRITY GATE: Migration aborted. The 'customer_cashback_ledgers' table contains " .
+                "unreconciled duplicate reward rows for orders: [{$details}]. " .
+                "Automatic rewriting of financial history is strictly prohibited. " .
+                "Operators must run 'php artisan cashback:audit-duplicates' to inspect, verify, and resolve duplicates " .
+                "before the database UNIQUE constraint can be applied."
+            );
         }
 
         // [AI] Step 2: Check if unique index already exists on this connection
