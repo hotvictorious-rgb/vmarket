@@ -87,9 +87,12 @@ cp -u "$REPO/composer.lock" "$LIVE/"
 
 # Overlay new public assets without deleting existing icons/fonts
 cp -ru "$REPO/public/assets" "$LIVE/public/"
+# Ensure theme assets are published directly to public/themes to guarantee instant styling regardless of symlink restrictions
+mkdir -p "$LIVE/public/themes/theme_vmarket/public"
+cp -ru "$REPO/resources/themes/theme_vmarket/public/assets" "$LIVE/public/themes/theme_vmarket/public/"
 ```
 
-### Phase 4: Install Dependencies & Run Database Migrations
+### Phase 4: Install Dependencies, Migrations & Storage Link
 ```bash
 cd /home1/victori6/public_html/shop.victoriousmarket.com.ng
 
@@ -98,6 +101,9 @@ php composer.phar install --no-dev --optimize-autoloader
 
 # Run additive migrations safely
 php artisan migrate --force
+
+# Ensure public/storage and public/themes symlinks are established
+php artisan storage:link
 ```
 
 ### Phase 5: Rebuild Production Caches
@@ -186,11 +192,15 @@ cp -ru "$SOURCE_DIR/Modules" "$LIVE_DIR/"
 cp -u "$SOURCE_DIR/composer.json" "$LIVE_DIR/"
 cp -u "$SOURCE_DIR/composer.lock" "$LIVE_DIR/"
 cp -ru "$SOURCE_DIR/public/assets" "$LIVE_DIR/public/"
+# Ensure theme assets are published directly to public/themes to guarantee instant styling regardless of symlink restrictions
+mkdir -p "$LIVE_DIR/public/themes/theme_vmarket/public"
+cp -ru "$SOURCE_DIR/resources/themes/theme_vmarket/public/assets" "$LIVE_DIR/public/themes/theme_vmarket/public/"
 
 echo "=== [5/7] Updating Dependencies & Migrations ==="
 cd "$LIVE_DIR"
 php composer.phar install --no-dev --optimize-autoloader
 php artisan migrate --force
+php artisan storage:link
 
 echo "=== [6/7] Optimizing Framework Caches ==="
 php artisan optimize:clear
