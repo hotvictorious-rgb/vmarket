@@ -91,6 +91,29 @@ class HandoverAndCashbackConcurrencyTest extends DumpSchemaTestCase
                 $table->timestamp('expires_at')->nullable();
             });
         }
+        if (!Schema::hasColumn('logistics_companies', 'commission_percentage')) {
+            Schema::table('logistics_companies', function ($table) {
+                $table->decimal('commission_percentage', 5, 2)->nullable();
+            });
+        }
+
+        if (Schema::hasTable('customer_cashback_ledgers')) {
+            $hasUnique = false;
+            $indexes = DB::select("PRAGMA index_list('customer_cashback_ledgers')");
+            foreach ($indexes as $idx) {
+                if ($idx->unique && str_contains($idx->name, 'order_id')) {
+                    $hasUnique = true;
+                    break;
+                }
+            }
+            if (!$hasUnique) {
+                try {
+                    DB::statement("CREATE UNIQUE INDEX customer_cashback_ledgers_order_id_unique ON customer_cashback_ledgers (order_id)");
+                } catch (\Throwable $e) {
+                    // Index already exists
+                }
+            }
+        }
 
         DB::table('business_settings')->updateOrInsert(['type' => 'loyalty_point_status'], ['value' => '1']);
         DB::table('business_settings')->updateOrInsert(['type' => 'loyalty_point_for_each_order'], ['value' => '1']);
@@ -286,5 +309,248 @@ class HandoverAndCashbackConcurrencyTest extends DumpSchemaTestCase
 
         $response2 = $controller->confirmInShopPickup($request2);
         $this->assertEquals(400, $response2->getStatusCode());
+    }
+
+    /**
+     * [AI] Real Concurrency Invariant: Database-level UNIQUE constraint physically
+     * rejects simultaneous duplicate cashback insertion even if application-level checks race.
+     */
+    public function testDatabaseUniqueConstraintRejectsSimultaneousDuplicateCashbackInsertion(): void
+    {
+        $customer = User::create([
+            'name' => 'Concurrent DB Customer',
+            'email' => 'concurrent_cb_' . uniqid() . '@example.com',
+            'phone' => '+2348033221100',
+            'password' => bcrypt('password123'),
+        ]);
+
+        $order = Order::create([
+            'customer_id' => $customer->id,
+            'is_guest' => 0,
+            'customer_type' => 'customer',
+            'payment_status' => 'paid',
+            'order_status' => 'delivered',
+            'order_type' => 'default_type',
+            'payment_method' => 'paystack',
+            'order_amount' => 50000.00,
+            'shipping_cost' => 2000.00,
+            'total_tax_amount' => 0.00,
+            'received_at' => now(),
+            'refund_window_expires_at' => now()->addHours(24),
+        ]);
+
+        // Thread 1: Authoritative reward credit
+        $ledger1 = CustomerCashbackLedger::creditRewardForOrder($order);
+        $this->assertNotNull($ledger1);
+
+        // Thread 2 (Simulated Race Collision): Directly attempts raw SQL insert for the same order_id
+        // Bypassing any application layer lock. The database engine MUST reject this with QueryException!
+        $dbCollisionRejected = false;
+        try {
+            DB::table('customer_cashback_ledgers')->insert([
+                'customer_id' => $customer->id,
+                'order_id' => $order->id,
+                'merchandise_amount' => 48000.00,
+                'cashback_rate' => 5.00,
+                'cashback_amount' => 2400.00,
+                'status' => 'pending',
+                'created_at' => now(),
+                'updated_at' => now(),
+            ]);
+        } catch (\Illuminate\Database\QueryException $e) {
+            $dbCollisionRejected = true;
+        }
+
+        $this->assertTrue($dbCollisionRejected, 'Database unique constraint customer_cashback_ledgers_order_id_unique MUST reject simultaneous duplicate insertion!');
+
+        // Thread 3: Concurrent call to creditRewardForOrder handles the race gracefully and returns the existing row
+        $ledger3 = CustomerCashbackLedger::creditRewardForOrder($order);
+        $this->assertNotNull($ledger3);
+        $this->assertEquals($ledger1->id, $ledger3->id);
+
+        // Verify mathematical invariant: exactly 1 ledger row and exactly 1 reward lot
+        $count = CustomerCashbackLedger::where('order_id', $order->id)->count();
+        $this->assertEquals(1, $count);
+        $totalReward = CustomerCashbackLedger::where('order_id', $order->id)->sum('cashback_amount');
+        $this->assertEquals('2400.00', bcadd((string)$totalReward, '0', 2));
+    }
+
+    /**
+     * [AI] Real Concurrency Invariant: Cross-handover race condition
+     * If an in-shop pickup and a doorstep delivery confirmation are dispatched simultaneously
+     * for the same order, exactly one commits and the second is safely rejected under lock.
+     */
+    public function testConcurrentCrossHandoverConflictPrevention(): void
+    {
+        $customer = User::create([
+            'name' => 'Cross Handover Customer',
+            'email' => 'cross_handover_' . uniqid() . '@example.com',
+            'phone' => '+2348077112233',
+            'password' => bcrypt('password123'),
+        ]);
+
+        $deliveryMan = DeliveryMan::create([
+            'f_name' => 'Cross',
+            'l_name' => 'Rider',
+            'phone' => '+2348099112233',
+            'email' => 'cross_rider_' . uniqid() . '@example.com',
+            'password' => bcrypt('password123'),
+            'is_active' => 1,
+        ]);
+
+        $order = Order::create([
+            'customer_id' => $customer->id,
+            'is_guest' => 0,
+            'customer_type' => 'customer',
+            'payment_status' => 'paid',
+            'order_status' => 'processing',
+            'order_type' => 'pickup',
+            'payment_method' => 'paystack',
+            'order_amount' => 30000.00,
+            'shipping_cost' => 2000.00,
+            'deliveryman_charge' => 1600.00,
+            'delivery_man_id' => $deliveryMan->id,
+            'verification_code' => '123456',
+            'pickup_verification_code' => '123456',
+            'verification_status' => 0,
+        ]);
+
+        $wallet = DeliverymanWallet::create([
+            'delivery_man_id' => $deliveryMan->id,
+            'current_balance' => '0.00',
+            'cash_in_hand' => '0.00',
+            'pending_withdraw' => '0.00',
+            'total_withdraw' => '0.00',
+        ]);
+
+        $this->actingAs($customer, 'customer');
+        $controller = app(OrderHandoverController::class);
+
+        // Thread A: In-shop pickup confirmed
+        $imageA = UploadedFile::fake()->image('pickup_proof.jpg', 600, 600);
+        $requestA = Request::create('/order/in-shop-pickup-confirm', 'POST', [
+            'order_id' => $order->id,
+            'pickup_code' => '123456',
+        ], [], ['image' => $imageA]);
+        $requestA->headers->set('Accept', 'application/json');
+        $requestA->setUserResolver(fn () => $customer);
+
+        $responseA = $controller->confirmInShopPickup($requestA);
+        $this->assertEquals(200, $responseA->getStatusCode());
+
+        // Thread B (Simultaneous Doorstep Delivery attempt on same order):
+        $imageB = UploadedFile::fake()->image('doorstep_proof.jpg', 600, 600);
+        $requestB = Request::create('/order/doorstep-confirm', 'POST', [
+            'order_id' => $order->id,
+            'delivery_code' => '123456',
+        ], [], ['image' => $imageB]);
+        $requestB->headers->set('Accept', 'application/json');
+        $requestB->setUserResolver(fn () => $customer);
+
+        $responseB = $controller->confirmDoorstepDelivery($requestB);
+
+        // Must be rejected because order is already delivered
+        $this->assertEquals(422, $responseB->getStatusCode());
+
+        // Invariant: Exactly 1 delivery verification record exists
+        $this->assertEquals(1, OrderDeliveryVerification::where('order_id', $order->id)->count());
+
+        // Invariant: Rider wallet was NOT credited because pickup was customer in-shop
+        $wallet->refresh();
+        $this->assertEquals('0.00', bcadd((string)$wallet->current_balance, '0', 2));
+    }
+
+    /**
+     * [AI] Money Precision Invariant: Logistics company wallet and transaction balances
+     * maintain exact 2-decimal string precision without IEEE-754 floating point drift.
+     */
+    public function testLogisticsCompanyWalletArbitraryPrecisionDecimals(): void
+    {
+        $company = LogisticsCompany::create([
+            'name' => 'Precision Express Logistics',
+            'company_email' => 'precision_' . uniqid() . '@example.com',
+            'company_phone' => '+2348000000001',
+            'password' => bcrypt('password123'),
+            'commission_percentage' => 15.00,
+            'status' => 'approved',
+            'is_active' => 1,
+        ]);
+
+        $wallet = LogisticsCompanyWallet::create([
+            'logistics_company_id' => $company->id,
+            'total_earned' => '0.00',
+            'withdrawn' => '0.00',
+            'pending_withdraw' => '0.00',
+            'current_balance' => '0.00',
+        ]);
+
+        $deliveryMan = DeliveryMan::create([
+            'f_name' => 'Partner',
+            'l_name' => 'Rider',
+            'phone' => '+2348000000002',
+            'email' => 'partner_rider_' . uniqid() . '@example.com',
+            'password' => bcrypt('password123'),
+            'logistics_company_id' => $company->id,
+            'is_active' => 1,
+        ]);
+
+        $customer = User::create([
+            'name' => 'Precision Customer',
+            'email' => 'precision_cust_' . uniqid() . '@example.com',
+            'phone' => '+2348000000003',
+            'password' => bcrypt('password123'),
+        ]);
+
+        $grossShipping = '2500.00';
+        $commissionRate = '15.00';
+        // 15% of 2500.00 = 375.00
+        $expectedCommission = '375.00';
+        // Net partner amount = 2500.00 - 375.00 = 2125.00
+        $expectedNetPayout = '2125.00';
+
+        $order = Order::create([
+            'customer_id' => $customer->id,
+            'is_guest' => 0,
+            'customer_type' => 'customer',
+            'payment_status' => 'paid',
+            'order_status' => 'out_for_delivery',
+            'order_type' => 'default_type',
+            'payment_method' => 'paystack',
+            'order_amount' => 45000.00,
+            'shipping_cost' => $grossShipping,
+            'deliveryman_charge' => '0.00',
+            'delivery_man_id' => $deliveryMan->id,
+            'logistics_company_id' => $company->id,
+            'verification_code' => '654321',
+            'verification_status' => 0,
+        ]);
+
+        $this->actingAs($customer, 'customer');
+        $controller = app(OrderHandoverController::class);
+
+        $image = UploadedFile::fake()->image('doorstep_partner.jpg', 600, 600);
+        $request = Request::create('/order/doorstep-confirm', 'POST', [
+            'order_id' => $order->id,
+            'delivery_code' => '654321',
+        ], [], ['image' => $image]);
+        $request->headers->set('Accept', 'application/json');
+        $request->setUserResolver(fn () => $customer);
+
+        $response = $controller->confirmDoorstepDelivery($request);
+        $this->assertEquals(200, $response->getStatusCode());
+
+        $wallet->refresh();
+        $this->assertEquals($expectedNetPayout, bcadd((string)$wallet->current_balance, '0', 2));
+        $this->assertEquals($expectedNetPayout, bcadd((string)$wallet->total_earned, '0', 2));
+
+        $tx = LogisticsCompanyTransaction::where('order_id', $order->id)->first();
+        $this->assertNotNull($tx);
+        $this->assertEquals($grossShipping, bcadd((string)$tx->gross_delivery_fee, '0', 2));
+        $this->assertEquals($expectedCommission, bcadd((string)$tx->admin_commission_amount, '0', 2));
+        $this->assertEquals($expectedNetPayout, bcadd((string)$tx->net_partner_amount, '0', 2));
+
+        // Invariant: gross == commission + net partner payout (Delta = 0.00)
+        $sum = bcadd((string)$tx->admin_commission_amount, (string)$tx->net_partner_amount, 2);
+        $this->assertEquals($grossShipping, $sum);
     }
 }

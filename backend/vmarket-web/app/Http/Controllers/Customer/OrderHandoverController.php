@@ -205,14 +205,20 @@ class OrderHandoverController extends Controller
 
             // Credit 5% Customer Cashback Reward Ledger
             $ledger = CustomerCashbackLedger::creditRewardForOrder($order);
-            if ($ledger && !empty($ledger->cashback_amount)) {
-                $this->sendCashbackEarnedNotification($order, (string)$ledger->cashback_amount);
-            }
-
-            $this->sendOrderNotification('pickup_completed_message', 'customer', $order);
-            event(new OrderStatusEvent(key: 'delivered', type: 'customer', order: $order));
 
             DB::commit();
+
+            // [AI] Post-commit side effects: only execute after transaction successfully persists
+            try {
+                if ($ledger && !empty($ledger->cashback_amount)) {
+                    $this->sendCashbackEarnedNotification($order, (string)$ledger->cashback_amount);
+                }
+
+                $this->sendOrderNotification('pickup_completed_message', 'customer', $order);
+                event(new OrderStatusEvent(key: 'delivered', type: 'customer', order: $order));
+            } catch (\Throwable $e) {
+                \Illuminate\Support\Facades\Log::warning("Post-commit in-shop pickup notification failed for order #{$order->id}: " . $e->getMessage());
+            }
 
             $successMsg = translate('In-shop pickup confirmed successfully! Your items are now claimed.');
             if ($request->expectsJson()) {
@@ -411,21 +417,21 @@ class OrderHandoverController extends Controller
                     if (!$alreadyCreditedCompany && bccomp($netPartnerAmount, '0.00', 2) > 0) {
                         $balBefore = bcadd((string)$companyWallet->current_balance, '0', 2);
                         $balAfter = bcadd($balBefore, $netPartnerAmount, 2);
-                        $companyWallet->current_balance = (float)$balAfter;
-                        $companyWallet->total_earned = (float)bcadd((string)$companyWallet->total_earned, $netPartnerAmount, 2);
+                        $companyWallet->current_balance = $balAfter;
+                        $companyWallet->total_earned = bcadd((string)$companyWallet->total_earned, $netPartnerAmount, 2);
                         $companyWallet->save();
 
                         LogisticsCompanyTransaction::create([
                             'logistics_company_id' => $companyId,
                             'order_id' => $order->id,
                             'delivery_man_id' => $deliveryMan->id,
-                            'gross_delivery_fee' => (float)$grossDeliveryFee,
-                            'admin_commission_rate' => (float)$commissionRate,
-                            'admin_commission_amount' => (float)$commissionAmount,
-                            'net_partner_amount' => (float)$netPartnerAmount,
+                            'gross_delivery_fee' => $grossDeliveryFee,
+                            'admin_commission_rate' => $commissionRate,
+                            'admin_commission_amount' => $commissionAmount,
+                            'net_partner_amount' => $netPartnerAmount,
                             'transaction_type' => 'delivery_credit',
-                            'balance_before' => (float)$balBefore,
-                            'balance_after' => (float)$balAfter,
+                            'balance_before' => $balBefore,
+                            'balance_after' => $balAfter,
                             'transaction_note' => "Order #{$order->id} confirmed by customer with photo proof. Gross: ₦{$grossDeliveryFee}, Admin Fee ({$commissionRate}%): ₦{$commissionAmount}, Net Payout: ₦{$netPartnerAmount}",
                         ]);
                     }
@@ -442,10 +448,10 @@ class OrderHandoverController extends Controller
                     if (!$deliveryManWallet) {
                         $deliveryManWallet = DeliverymanWallet::create([
                             'delivery_man_id' => $deliveryMan->id,
-                            'current_balance' => 0.00,
-                            'cash_in_hand' => 0,
-                            'pending_withdraw' => 0,
-                            'total_withdraw' => 0,
+                            'current_balance' => '0.00',
+                            'cash_in_hand' => '0.00',
+                            'pending_withdraw' => '0.00',
+                            'total_withdraw' => '0.00',
                         ]);
                         $deliveryManWallet = DeliverymanWallet::where('id', $deliveryManWallet->id)->lockForUpdate()->first();
                     }
@@ -456,14 +462,14 @@ class OrderHandoverController extends Controller
                         ->exists();
 
                     if (!$alreadyCreditedRider && bccomp($charge, '0.00', 2) > 0) {
-                        $deliveryManWallet->current_balance = (float)bcadd((string)$deliveryManWallet->current_balance, $charge, 2);
+                        $deliveryManWallet->current_balance = bcadd((string)$deliveryManWallet->current_balance, $charge, 2);
                         $deliveryManWallet->save();
 
                         DeliveryManTransaction::create([
                             'delivery_man_id' => $deliveryMan->id,
                             'user_id' => 0,
                             'user_type' => 'admin',
-                            'credit' => (float)$charge,
+                            'credit' => $charge,
                             'transaction_id' => $riderTxId,
                             'transaction_type' => 'deliveryman_charge',
                             'created_at' => now(),
@@ -487,7 +493,7 @@ class OrderHandoverController extends Controller
                             'paid_by' => !empty($deliveryMan->logistics_company_id) ? 'logistics_company' : 'delivery_man',
                             'paid_to' => 'admin',
                             'payment_status' => 'received',
-                            'amount' => (float)$commissionAmount,
+                            'amount' => $commissionAmount,
                             'transaction_type' => 'delivery_commission',
                             'created_at' => now(),
                             'updated_at' => now(),
@@ -501,10 +507,21 @@ class OrderHandoverController extends Controller
                 OrderManager::getWalletManageOnOrderStatusChange($order, 'customer');
             }
 
-            $this->sendOrderNotification('order_delivered_message', 'customer', $order);
-            event(new OrderStatusEvent(key: 'delivered', type: 'customer', order: $order));
+            // Credit 5% Customer Cashback Reward Ledger
+            $ledger = CustomerCashbackLedger::creditRewardForOrder($order);
 
             DB::commit();
+
+            // [AI] Post-commit side effects: only execute after transaction successfully persists
+            try {
+                if ($ledger && !empty($ledger->cashback_amount)) {
+                    $this->sendCashbackEarnedNotification($order, (string)$ledger->cashback_amount);
+                }
+                $this->sendOrderNotification('order_delivered_message', 'customer', $order);
+                event(new OrderStatusEvent(key: 'delivered', type: 'customer', order: $order));
+            } catch (\Throwable $e) {
+                \Illuminate\Support\Facades\Log::warning("Post-commit doorstep delivery notification failed for order #{$order->id}: " . $e->getMessage());
+            }
 
             $successMsg = translate('Doorstep delivery confirmed successfully! Thank you for shopping on Victorious MARKET.');
             if ($request->expectsJson()) {

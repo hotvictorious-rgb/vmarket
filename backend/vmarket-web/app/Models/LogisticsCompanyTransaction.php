@@ -40,12 +40,12 @@ class LogisticsCompanyTransaction extends Model
     ];
 
     protected $casts = [
-        'gross_delivery_fee' => 'float',
-        'admin_commission_rate' => 'float',
-        'admin_commission_amount' => 'float',
-        'net_partner_amount' => 'float',
-        'balance_before' => 'float',
-        'balance_after' => 'float',
+        'gross_delivery_fee' => 'decimal:2',
+        'admin_commission_rate' => 'decimal:2',
+        'admin_commission_amount' => 'decimal:2',
+        'net_partner_amount' => 'decimal:2',
+        'balance_before' => 'decimal:2',
+        'balance_after' => 'decimal:2',
     ];
 
     public function company(): BelongsTo

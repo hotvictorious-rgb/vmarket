@@ -176,7 +176,9 @@ class InShopHandoverController extends Controller
             $staffName = ($request['vendor_employee']->name ?? 'Staff') . ' (Staff)';
         }
 
-        DB::transaction(function () use ($order, $sellerId, $staffName, $branchId, $request, $isCustomerPickup) {
+        $createdLedger = null;
+
+        DB::transaction(function () use ($order, $sellerId, $staffName, $branchId, $request, $isCustomerPickup, &$createdLedger) {
             if ($isCustomerPickup) {
                 $now = now();
                 $handedOverAt = $order->handed_over_at ?? $now;
@@ -224,13 +226,7 @@ class InShopHandoverController extends Controller
                 OrderManager::getWalletManageOnOrderStatusChange($order, 'delivered');
 
                 // Credit 5% Customer Cashback Reward Ledger
-                $ledger = CustomerCashbackLedger::creditRewardForOrder($order);
-                if ($ledger && !empty($ledger->cashback_amount)) {
-                    $this->sendCashbackEarnedNotification($order, (string)$ledger->cashback_amount);
-                }
-
-                $this->sendOrderNotification('pickup_completed_message', 'customer', $order);
-                event(new OrderStatusEvent(key: 'delivered', type: 'customer', order: $order));
+                $createdLedger = CustomerCashbackLedger::creditRewardForOrder($order);
             } else {
                 // [AI] Vendor -> Rider Delivery Handshake:
                 // Order ready -> rider arrives with pickup OTP -> order becomes OUT_FOR_DELIVERY.
@@ -270,10 +266,23 @@ class InShopHandoverController extends Controller
                 );
                 $this->orderStatusHistoryRepo->add($historyData);
                 OrderManager::removeOldStatusHistory(orderId: $order->id, orderStatus: 'out_for_delivery');
-
-                event(new OrderStatusEvent(key: 'out_for_delivery', type: 'customer', order: $order));
             }
         });
+
+        // [AI] Post-commit side effects: only execute after database transaction successfully persists
+        try {
+            if ($isCustomerPickup) {
+                if ($createdLedger && !empty($createdLedger->cashback_amount)) {
+                    $this->sendCashbackEarnedNotification($order, (string)$createdLedger->cashback_amount);
+                }
+                $this->sendOrderNotification('pickup_completed_message', 'customer', $order);
+                event(new OrderStatusEvent(key: 'delivered', type: 'customer', order: $order));
+            } else {
+                event(new OrderStatusEvent(key: 'out_for_delivery', type: 'customer', order: $order));
+            }
+        } catch (\Throwable $e) {
+            \Illuminate\Support\Facades\Log::warning("Post-commit vendor handover notification failed for order #{$order->id}: " . $e->getMessage());
+        }
 
         $finalStatus = $isCustomerPickup ? 'delivered' : 'out_for_delivery';
         $actionLabel = $isCustomerPickup

@@ -28,10 +28,10 @@ class LogisticsCompanyWallet extends Model
     ];
 
     protected $casts = [
-        'total_earned' => 'float',
-        'withdrawn' => 'float',
-        'pending_withdraw' => 'float',
-        'current_balance' => 'float',
+        'total_earned' => 'decimal:2',
+        'withdrawn' => 'decimal:2',
+        'pending_withdraw' => 'decimal:2',
+        'current_balance' => 'decimal:2',
     ];
 
     public function company(): BelongsTo
