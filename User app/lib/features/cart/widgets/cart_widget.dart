@@ -23,6 +23,7 @@ class CartWidget extends StatelessWidget {
   final bool fromCheckout;
   final Color highLightColor;
   final bool isValidate;
+
   const CartWidget({
     super.key,
     this.cartModel,
@@ -35,7 +36,8 @@ class CartWidget extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     bool minOrderQty = (cartModel?.productInfo?.minimumOrderQty ?? 0) > 1 &&
-      (cartModel?.quantity == null || (cartModel?.quantity ?? 0)  < (cartModel?.productInfo?.minimumOrderQty ?? 1));
+        (cartModel?.quantity == null || (cartModel?.quantity ?? 0) < (cartModel?.productInfo?.minimumOrderQty ?? 1));
+
     return Consumer<CartController>(builder: (context, cartProvider, _) {
       return Padding(
         padding: const EdgeInsets.fromLTRB(
@@ -51,13 +53,13 @@ class CartWidget extends StatelessWidget {
             boxShadow: [
               BoxShadow(
                 color: Colors.black.withValues(alpha: 0.04),
-                blurRadius: 8,
+                blurRadius: 10,
                 offset: const Offset(0, 3),
               ),
             ],
           ),
           child: Slidable(
-            key: const ValueKey(0),
+            key: ValueKey(cartModel?.id ?? index),
             endActionPane: ActionPane(
               extentRatio: .25,
               motion: const ScrollMotion(),
@@ -66,7 +68,7 @@ class CartWidget extends StatelessWidget {
                   onPressed: (value) {
                     cartProvider.removeFromCartAPI(cartModel?.id, index);
                   },
-                  backgroundColor: Theme.of(context).colorScheme.error.withValues(alpha: 0.08),
+                  backgroundColor: Theme.of(context).colorScheme.error.withValues(alpha: 0.1),
                   foregroundColor: Theme.of(context).colorScheme.error,
                   icon: CupertinoIcons.delete_solid,
                   label: getTranslated('delete', context),
@@ -75,7 +77,7 @@ class CartWidget extends StatelessWidget {
               ],
             ),
             child: AnimatedContainer(
-              duration: const Duration(milliseconds: 500),
+              duration: const Duration(milliseconds: 300),
               decoration: BoxDecoration(
                 color: (highLightColor != Theme.of(context).cardColor && minOrderQty) ? highLightColor : Theme.of(context).cardColor,
                 borderRadius: BorderRadius.circular(16),
@@ -86,88 +88,192 @@ class CartWidget extends StatelessWidget {
                   width: 1,
                 ),
               ),
-              child: Row(
-                crossAxisAlignment: CrossAxisAlignment.center,
-                children: [
-                  // Checkbox
-                  Padding(
-                    padding: EdgeInsets.only(
-                      top: 0,
-                      left: Provider.of<LocalizationController>(context, listen: false).isLtr
-                        ? Dimensions.paddingSizeSmall
-                        : Dimensions.paddingSizeExtraSmall,
-                      right: Provider.of<LocalizationController>(context, listen: false).isLtr
-                        ? Dimensions.paddingSizeExtraSmall
-                        : Dimensions.paddingSizeSmall,
-                    ),
-                    child: SizedBox(
-                      height: Dimensions.paddingSizeLarge,
-                      width: Dimensions.paddingSizeLarge,
-                      child: CustomCheckbox(
-                        key: UniqueKey(),
-                        visualDensity: VisualDensity.compact,
-                        fillColor:  WidgetStateProperty.resolveWith<Color>((states) {
-                          if (states.contains(WidgetState.selected)) {
-                            return Theme.of(context).primaryColor;
-                          }
-                          if (states.contains(WidgetState.disabled)) {
-                            return Theme.of(context).cardColor;
-                          }
-                          return Theme.of(context).cardColor;
-                        }),
-                        side: WidgetStateBorderSide.resolveWith(
-                            (states) => BorderSide(
-                            width: 2,
-                            color: (cartModel?.isChecked ?? false) ? Theme.of(context).primaryColor : Theme.of(context).hintColor.withValues(alpha: 0.50),
+              child: Padding(
+                padding: const EdgeInsets.all(Dimensions.paddingSizeSmall),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    // Top Section: Checkbox + Product Image + Details
+                    Row(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        // Checkbox
+                        SizedBox(
+                          height: 24,
+                          width: 24,
+                          child: CustomCheckbox(
+                            key: UniqueKey(),
+                            visualDensity: VisualDensity.compact,
+                            fillColor: WidgetStateProperty.resolveWith<Color>((states) {
+                              if (states.contains(WidgetState.selected)) {
+                                return const Color(0xFF5E17EB);
+                              }
+                              return Theme.of(context).cardColor;
+                            }),
+                            side: WidgetStateBorderSide.resolveWith(
+                              (states) => BorderSide(
+                                width: 2,
+                                color: (cartModel?.isChecked ?? false)
+                                    ? const Color(0xFF5E17EB)
+                                    : Theme.of(context).hintColor.withValues(alpha: 0.40),
+                              ),
+                            ),
+                            checkColor: Colors.white,
+                            value: cartModel!.isChecked ?? false,
+                            onChanged: (bool? value) async {
+                              showDialog(
+                                context: context,
+                                builder: (ctx) => const CustomLoaderWidget(),
+                              );
+                              await cartProvider.addRemoveCartSelectedItem(
+                                [cartModel!.id!],
+                                cartModel!.isChecked! ? false : true,
+                              );
+                              Navigator.of(Get.context!).pop();
+                            },
                           ),
                         ),
-                        checkColor: Colors.white,
-                        value: cartModel!.isChecked!,
-                        onChanged: (bool? value) async {
-                          showDialog(
-                            context: context,
-                            builder: (ctx) => const CustomLoaderWidget(),
-                          );
-                          await cartProvider.addRemoveCartSelectedItem(
-                            [cartModel!.id!],
-                            cartModel!.isChecked! ? false : true,
-                          );
-                          Navigator.of(Get.context!).pop();
-                        },
-                      ),
-                    ),
-                  ),
+                        const SizedBox(width: Dimensions.paddingSizeSmall),
 
-                  // Product details and quantity controls
-                  Expanded(child: IntrinsicHeight(child: Row(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    mainAxisAlignment: MainAxisAlignment.start,
-                    children: [
-                      Flexible(child: Column(mainAxisSize: MainAxisSize.min, children: [
-                        Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                          Padding(
-                            padding: const EdgeInsets.symmetric(vertical: Dimensions.paddingSizeSmall),
-                            child: _CartProductImageWidget(cartModel: cartModel),
+                        // Thumbnail
+                        _CartProductImageWidget(cartModel: cartModel),
+                        const SizedBox(width: Dimensions.paddingSizeSmall),
+
+                        // Details (Title, Variant, Reassurance tag)
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              InkWell(
+                                onTap: () {
+                                  RouterHelper.getProductDetailsRoute(
+                                    action: RouteAction.push,
+                                    productId: cartModel?.productId,
+                                    slug: cartModel?.slug,
+                                  );
+                                },
+                                child: Text(
+                                  cartModel?.name ?? '',
+                                  maxLines: 2,
+                                  overflow: TextOverflow.ellipsis,
+                                  style: textBold.copyWith(
+                                    fontSize: Dimensions.fontSizeDefault,
+                                    color: const Color(0xFF1B1035),
+                                    height: 1.3,
+                                  ),
+                                ),
+                              ),
+
+                              if (cartModel?.variant != null && cartModel!.variant!.isNotEmpty)
+                                Padding(
+                                  padding: const EdgeInsets.only(top: 4),
+                                  child: Container(
+                                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                                    decoration: BoxDecoration(
+                                      color: const Color(0xFFF1F5F9),
+                                      borderRadius: BorderRadius.circular(6),
+                                    ),
+                                    child: Text(
+                                      cartModel!.variant!,
+                                      maxLines: 1,
+                                      overflow: TextOverflow.ellipsis,
+                                      style: textRegular.copyWith(
+                                        fontSize: Dimensions.fontSizeExtraSmall,
+                                        color: const Color(0xFF475569),
+                                      ),
+                                    ),
+                                  ),
+                                ),
+
+                              const SizedBox(height: 4),
+                              Row(
+                                children: [
+                                  const Icon(Icons.verified_outlined, size: 12, color: Color(0xFF059669)),
+                                  const SizedBox(width: 4),
+                                  Text(
+                                    'Physical In-Shop Inspection',
+                                    style: textRegular.copyWith(
+                                      fontSize: 10,
+                                      color: const Color(0xFF059669),
+                                      fontWeight: FontWeight.w600,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ],
                           ),
-                          Expanded(child: Padding(
-                            padding: const EdgeInsets.symmetric(
-                              horizontal: Dimensions.paddingSizeSmall,
-                              vertical: Dimensions.paddingSizeSmall,
+                        ),
+                      ],
+                    ),
+
+                    const SizedBox(height: Dimensions.paddingSizeSmall),
+                    const Divider(height: 1, color: Color(0xFFF1F5F9)),
+                    const SizedBox(height: Dimensions.paddingSizeSmall),
+
+                    // Bottom Row: Price Breakdown on Left, Horizontal Stepper on Right
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      crossAxisAlignment: CrossAxisAlignment.center,
+                      children: [
+                        // Price section
+                        Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            if ((cartModel?.discount ?? 0) > 0)
+                              Text(
+                                PriceConverter.convertPrice(context, cartModel!.price),
+                                style: titleRegular.copyWith(
+                                  color: Theme.of(context).hintColor,
+                                  decoration: TextDecoration.lineThrough,
+                                  fontSize: Dimensions.fontSizeExtraSmall,
+                                ),
+                              ),
+                            Text(
+                              PriceConverter.convertPrice(
+                                context,
+                                cartModel!.price,
+                                discount: cartModel!.discount,
+                                discountType: 'amount',
+                              ),
+                              style: textBold.copyWith(
+                                color: const Color(0xFF1B1035),
+                                fontSize: Dimensions.fontSizeLarge,
+                              ),
                             ),
-                            child: _CartProductDetailsWidget(cartModel: cartModel),
-                          )),
-                        ]),
+                          ],
+                        ),
 
-                        MinOrderQuantityWidget(minOrderQty: cartModel?.productInfo?.minimumOrderQty ?? 1, currentQty: cartModel?.quantity),
-                        const SizedBox(height: Dimensions.paddingSizeSmall),
+                        // Horizontal Quantity Controls
+                        _HorizontalCartQuantityControlsWidget(cartModel: cartModel, index: index),
+                      ],
+                    ),
 
-                      ])),
-                      const SizedBox(width: Dimensions.paddingSizeDefault),
+                    // Warnings (Min Order Qty & Stock)
+                    if (minOrderQty)
+                      Padding(
+                        padding: const EdgeInsets.only(top: Dimensions.paddingSizeExtraSmall),
+                        child: MinOrderQuantityWidget(
+                          minOrderQty: cartModel?.productInfo?.minimumOrderQty ?? 1,
+                          currentQty: cartModel?.quantity,
+                        ),
+                      ),
 
-                      _CartQuantityControlsWidget(cartModel: cartModel, index: index),
-                    ],
-                  ))),
-                ],
+                    if ((cartModel?.productInfo?.isOutOfStock == true ||
+                            (cartModel?.productInfo?.totalCurrentStock != null &&
+                                cartModel!.quantity! > cartModel!.productInfo!.totalCurrentStock!)) &&
+                        cartModel?.productType == "physical")
+                      Padding(
+                        padding: const EdgeInsets.only(top: 4),
+                        child: Text(
+                          "${getTranslated("out_of_stock", context)}",
+                          style: textBold.copyWith(
+                            fontSize: Dimensions.fontSizeSmall,
+                            color: Theme.of(context).colorScheme.error,
+                          ),
+                        ),
+                      ),
+                  ],
+                ),
               ),
             ),
           ),
@@ -177,12 +283,11 @@ class CartWidget extends StatelessWidget {
   }
 }
 
-
-
-class _CartQuantityControlsWidget extends StatelessWidget {
+class _HorizontalCartQuantityControlsWidget extends StatelessWidget {
   final CartModel? cartModel;
   final int index;
-  const _CartQuantityControlsWidget({
+
+  const _HorizontalCartQuantityControlsWidget({
     required this.cartModel,
     required this.index,
   });
@@ -191,227 +296,73 @@ class _CartQuantityControlsWidget extends StatelessWidget {
   Widget build(BuildContext context) {
     return Container(
       decoration: BoxDecoration(
-        color: const Color(0xFF5E17EB).withValues(alpha: 0.06),
-        borderRadius: BorderRadius.circular(14),
-        border: Border.all(color: const Color(0xFF5E17EB).withValues(alpha: 0.12)),
+        color: const Color(0xFFF8FAFC),
+        borderRadius: BorderRadius.circular(10),
+        border: Border.all(color: const Color(0xFFE2E8F0), width: 1.5),
       ),
-      margin: const EdgeInsets.symmetric(vertical: Dimensions.paddingSizeSmall, horizontal: Dimensions.paddingSizeExtraSmall),
-      child: Padding(
-        padding: const EdgeInsets.symmetric(vertical: 4, horizontal: 2),
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-          children: [
-            cartModel?.increment ?? false ? Padding(
-              padding: const EdgeInsets.all(4),
-              child: SizedBox(
-                width: 14, height: 14,
-                child: CircularProgressIndicator(
-                  color: Theme.of(context).primaryColor,
-                  strokeWidth: 2,
-                ),
-              ),
-            ) : CartQuantityButton(
-              index: index,
-              isIncrement: true,
-              quantity: cartModel!.quantity,
-              maxQty: cartModel!.productInfo?.totalCurrentStock,
-              cartModel: cartModel,
-              minimumOrderQuantity: cartModel!.productInfo!.minimumOrderQty,
-            ),
-
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 2),
-              child: Container(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 8,
-                  vertical: 3,
-                ),
-                decoration: BoxDecoration(
-                  color: Theme.of(context).cardColor,
-                  borderRadius: BorderRadius.circular(8),
-                  boxShadow: [
-                    BoxShadow(
-                      color: Colors.black.withValues(alpha: 0.04),
-                      blurRadius: 3,
+      padding: const EdgeInsets.symmetric(horizontal: 2, vertical: 2),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          // Decrement Button
+          cartModel?.decrement ?? false
+              ? const Padding(
+                  padding: EdgeInsets.all(6),
+                  child: SizedBox(
+                    width: 14,
+                    height: 14,
+                    child: CircularProgressIndicator(
+                      color: Color(0xFF5E17EB),
+                      strokeWidth: 2,
                     ),
-                  ],
+                  ),
+                )
+              : CartQuantityButton(
+                  isIncrement: false,
+                  index: index,
+                  quantity: cartModel!.quantity,
+                  maxQty: cartModel!.productInfo?.totalCurrentStock,
+                  cartModel: cartModel,
+                  minimumOrderQuantity: cartModel!.productInfo?.minimumOrderQty ?? 1,
                 ),
-                child: Text(
-                  cartModel!.quantity.toString(),
-                  style: textBold.copyWith(color: const Color(0xFF4A148C), fontSize: 13),
-                ),
-              ),
-            ),
 
-            cartModel?.decrement ?? false ? Padding(
-              padding: const EdgeInsets.all(4.0),
-              child: SizedBox(
-                width: 14,
-                height: 14,
-                child: CircularProgressIndicator(
-                  color: Theme.of(context).primaryColor,
-                  strokeWidth: 2,
-                ),
-              ),
-            ) : CartQuantityButton(
-              isIncrement: false,
-              index: index,
-              quantity: cartModel!.quantity,
-              maxQty: cartModel!.productInfo?.totalCurrentStock,
-              cartModel: cartModel,
-              minimumOrderQuantity: cartModel!.productInfo!.minimumOrderQty,
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-}
-
-
-class _CartProductDetailsWidget extends StatelessWidget {
-  final CartModel? cartModel;
-  const _CartProductDetailsWidget({required this.cartModel});
-
-  @override
-  Widget build(BuildContext context) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      mainAxisAlignment: MainAxisAlignment.center,
-      children: [
-        Row(children: [
-          Expanded(
-            child: InkWell(
-              onTap: () {
-                RouterHelper.getProductDetailsRoute(action: RouteAction.push, productId: cartModel?.productId, slug: cartModel?.slug);
-              },
-              child: Text(
-                cartModel!.name!,
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
-                style: textMedium.copyWith(
-                  fontSize: Dimensions.fontSizeDefault,
-                  color: (cartModel!.shop != null &&  cartModel?.shop?.vacationStatus != null && cartModel?.shop?.temporaryClose != null && (cartModel!.shop!.temporaryClose! || cartModel!.shop!.vacationStatus!))
-                    ? Theme.of(context).hintColor
-                    : Theme.of(context).textTheme.titleMedium?.color,
-                ),
-              ),
-            ),
-          ),
-          const SizedBox(width: Dimensions.paddingSizeSmall),
-        ]),
-        // const SizedBox(height: Dimensions.paddingSizeSmall),
-
-        Row(
-          children: [
-            // Price with discount
-            cartModel!.discount! > 0 ? Text(
-              PriceConverter.convertPrice(context, cartModel!.price),
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
-              style: titleRegular.copyWith(
-                color: Theme.of(context).textTheme.titleMedium?.color,
-                decoration: TextDecoration.lineThrough,
-                fontSize: Dimensions.fontSizeSmall,
-              ),
-            ) : const SizedBox(),
-
-            if(cartModel!.discount! > 0)
-              SizedBox(width: Dimensions.paddingSizeSmall),
-
-            // Discounted price
-            Text(
-              PriceConverter.convertPrice(
-                context,
-                cartModel!.price,
-                discount: cartModel!.discount,
-                discountType: 'amount',
-              ),
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
+          // Quantity Number Display
+          Container(
+            constraints: const BoxConstraints(minWidth: 32),
+            padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 4),
+            alignment: Alignment.center,
+            child: Text(
+              cartModel!.quantity.toString(),
               style: textBold.copyWith(
-                color: (cartModel!.shop != null && cartModel?.shop?.vacationStatus != null && cartModel?.shop?.temporaryClose != null && (cartModel!.shop!.temporaryClose! || cartModel!.shop!.vacationStatus!))
-                  ? Theme.of(context).hintColor
-                  : Theme.of(context).textTheme.bodyMedium?.color,
-                fontSize: Dimensions.fontSizeDefault,
+                color: const Color(0xFF1B1035),
+                fontSize: 13.5,
               ),
-            ),
-          ],
-        ),
-
-
-
-        // Variation
-        (cartModel!.variant != null && cartModel!.variant!.isNotEmpty)
-            ? Padding(
-          padding: const EdgeInsets.only(top: 0),
-          child: Row(children: [
-            Flexible(child: Text(
-              cartModel?.variant ?? '',
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
-              style: textRegular.copyWith(
-                fontSize: Dimensions.fontSizeDefault,
-                color: Theme.of(context).textTheme.titleMedium?.color,
-              ),
-            )),
-          ]),
-        ) : const SizedBox(),
-        const SizedBox(width: Dimensions.paddingSizeSmall),
-
-
-        /// Todo: remove vat tax
-        // Tax info
-        // cartModel!.taxModel == 'exclude'
-        //     ? Padding(
-        //   padding: const EdgeInsets.only(top: Dimensions.paddingSizeExtraSmall),
-        //   child: Text(
-        //     '(${getTranslated('tax', context)} : ${PriceConverter.convertPrice(context, cartModel?.tax)})',
-        //     style: textRegular.copyWith(
-        //       color: Theme.of(context).textTheme.titleMedium?.color,
-        //       fontSize: Dimensions.fontSizeDefault,
-        //     ),
-        //   ),
-        // )
-        //     : Padding(
-        //   padding: const EdgeInsets.only(top: Dimensions.paddingSizeExtraSmall),
-        //   child: Text(
-        //     '(${getTranslated('tax', context)} ${cartModel!.taxModel})',
-        //     style: textRegular.copyWith(
-        //       color: Theme.of(context).textTheme.titleMedium?.color,
-        //       fontSize: Dimensions.fontSizeDefault,
-        //     ),
-        //   ),
-        // ),
-
-
-        // [AI] VMarket V1: legacy per-item shipping_cost is NOT displayed in cart.
-        // Authoritative delivery fee is resolved at checkout via DeliveryLanes.
-        // Fee notice only — no client-side fee rendering.
-        Row(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-          children: [
-            Text(
-              getTranslated('delivery_fee_at_checkout', context) ?? 'Delivery fee calculated at checkout',
-              style: textRegular.copyWith(
-                fontSize: Dimensions.fontSizeSmall,
-                color: Theme.of(context).hintColor,
-              ),
-            ),
-          ],
-        ),
-
-        // Out of stock warning
-        if ((cartModel?.productInfo?.isOutOfStock == true || (cartModel?.productInfo?.totalCurrentStock != null && cartModel!.quantity! > cartModel!.productInfo!.totalCurrentStock!)) && cartModel?.productType == "physical")
-          Text(
-            "${getTranslated("out_of_stock", context)}",
-            style: textRegular.copyWith(
-              fontSize: Dimensions.fontSizeDefault,
-              color: Theme.of(context).colorScheme.error,
             ),
           ),
 
-      ],
+          // Increment Button
+          cartModel?.increment ?? false
+              ? const Padding(
+                  padding: EdgeInsets.all(6),
+                  child: SizedBox(
+                    width: 14,
+                    height: 14,
+                    child: CircularProgressIndicator(
+                      color: Color(0xFF5E17EB),
+                      strokeWidth: 2,
+                    ),
+                  ),
+                )
+              : CartQuantityButton(
+                  isIncrement: true,
+                  index: index,
+                  quantity: cartModel!.quantity,
+                  maxQty: cartModel!.productInfo?.totalCurrentStock,
+                  cartModel: cartModel,
+                  minimumOrderQuantity: cartModel!.productInfo?.minimumOrderQty ?? 1,
+                ),
+        ],
+      ),
     );
   }
 }
@@ -424,43 +375,47 @@ class _CartProductImageWidget extends StatelessWidget {
   Widget build(BuildContext context) {
     return InkWell(
       onTap: () {
-        RouterHelper.getProductDetailsRoute(action: RouteAction.push, productId: cartModel?.productId, slug: cartModel?.slug);
+        RouterHelper.getProductDetailsRoute(
+          action: RouteAction.push,
+          productId: cartModel?.productId,
+          slug: cartModel?.slug,
+        );
       },
       child: Stack(
         children: [
           Container(
             decoration: BoxDecoration(
-              borderRadius: BorderRadius.circular(Dimensions.paddingSizeExtraSmall),
+              borderRadius: BorderRadius.circular(12),
               border: Border.all(
-                color: Theme.of(context).primaryColor.withValues(alpha: 0.10),
-                width: 0.5,
+                color: const Color(0xFFE2E8F0),
+                width: 1,
               ),
             ),
             child: ClipRRect(
-              borderRadius: BorderRadius.circular(Dimensions.paddingSizeExtraSmall),
+              borderRadius: BorderRadius.circular(12),
               child: CustomImageWidget(
                 image: '${cartModel?.productInfo?.thumbnailFullUrl?.path}',
-                height: 60,
-                width: 60,
+                height: 64,
+                width: 64,
               ),
             ),
           ),
-          if (cartModel!.isProductAvailable! == 0)
+          if (cartModel?.isProductAvailable == 0)
             Container(
               decoration: BoxDecoration(
-                borderRadius: BorderRadius.circular(Dimensions.paddingSizeExtraSmall),
-                color: Colors.black.withValues(alpha: 0.5),
+                borderRadius: BorderRadius.circular(12),
+                color: Colors.black.withValues(alpha: 0.55),
               ),
-              height: 70,
-              width: 70,
+              height: 64,
+              width: 64,
               child: Center(
                 child: Text(
                   "${getTranslated("not_available", context)}",
                   textAlign: TextAlign.center,
-                  style: textMedium.copyWith(color: Colors.white),
+                  style: textMedium.copyWith(color: Colors.white, fontSize: 10),
                 ),
               ),
-            )
+            ),
         ],
       ),
     );

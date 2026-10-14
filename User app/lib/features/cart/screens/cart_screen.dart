@@ -515,98 +515,151 @@ class CartScreenState extends State<CartScreen> with AutomaticKeepAliveClientMix
                                     return AnimatedContainer(
                                       key: sellerKeys[index],
                                       duration: duration,
+                                      margin: const EdgeInsets.symmetric(
+                                        horizontal: Dimensions.paddingSizeDefault,
+                                        vertical: Dimensions.paddingSizeExtraSmall,
+                                      ),
                                       decoration: BoxDecoration(
-                                        color : showColor ? _currentColor :
-                                        index.floor().isOdd ? Theme.of(context).cardColor : Theme.of(context).cardColor,
-                                        boxShadow :  Provider.of<ThemeController>(context,listen: false).darkTheme ? null :
-                                        [BoxShadow(color: Colors.grey.withValues(alpha:0.3), spreadRadius: 1, blurRadius: 5)],
-
-                                        border: Border.all(color: validated && isNotValidated ?  Theme.of(context).colorScheme.error : Colors.transparent, width: 1),
+                                        color: showColor ? _currentColor : Theme.of(context).cardColor,
+                                        borderRadius: BorderRadius.circular(16),
+                                        boxShadow: Provider.of<ThemeController>(context, listen: false).darkTheme
+                                            ? null
+                                            : [
+                                                BoxShadow(
+                                                  color: Colors.black.withValues(alpha: 0.04),
+                                                  blurRadius: 10,
+                                                  offset: const Offset(0, 3),
+                                                ),
+                                              ],
+                                        border: Border.all(
+                                          color: validated && isNotValidated
+                                              ? Theme.of(context).colorScheme.error
+                                              : const Color(0xFF5E17EB).withValues(alpha: 0.08),
+                                          width: 1,
+                                        ),
                                       ),
 
-                                      child: Padding(padding: const EdgeInsets.only(bottom: Dimensions.paddingSizeSmall),
-                                        child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                                          sellerGroupList[index].shopInfo!.isNotEmpty ?
-
-                                          ColoredBox(
-                                            color: Colors.transparent,
-                                            child: Padding(padding: const EdgeInsets.only(top: Dimensions.paddingSizeSmall),
-                                              child: Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
-                                                Expanded(
-                                                  child: Padding(padding: const EdgeInsets.only(left: Dimensions.paddingSizeSmall),
-                                                    child: Column(
+                                      child: Padding(
+                                        padding: const EdgeInsets.only(bottom: Dimensions.paddingSizeSmall),
+                                        child: Column(
+                                          crossAxisAlignment: CrossAxisAlignment.start,
+                                          children: [
+                                            sellerGroupList[index].shopInfo!.isNotEmpty
+                                                ? Container(
+                                                    padding: const EdgeInsets.symmetric(
+                                                      horizontal: Dimensions.paddingSizeSmall,
+                                                      vertical: Dimensions.paddingSizeSmall,
+                                                    ),
+                                                    decoration: BoxDecoration(
+                                                      color: const Color(0xFFF8FAFC),
+                                                      borderRadius: const BorderRadius.vertical(top: Radius.circular(16)),
+                                                      border: Border(
+                                                        bottom: BorderSide(
+                                                          color: const Color(0xFFE2E8F0),
+                                                          width: 1,
+                                                        ),
+                                                      ),
+                                                    ),
+                                                    child: Row(
+                                                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
                                                       children: [
-                                                        Row(children: [
-                                                          SizedBox(
-                                                            height: 24, width: 30,
-                                                            child: Checkbox(
-                                                              visualDensity: VisualDensity.compact,
-                                                              side: WidgetStateBorderSide.resolveWith(
-                                                                (states) => BorderSide(width: 2, color: Theme.of(context).hintColor.withValues(alpha: 0.50))),
-                                                              checkColor: Colors.white,
-                                                              value: sellerGroupList[index].isGroupChecked,
-                                                              onChanged: (bool? value)  async {
-                                                                List<int> ids = [];
-                                                                for (CartModel cart in cartProductList[index]) {
-                                                                  ids.add(cart.id!);
-                                                                }
+                                                        Expanded(
+                                                          child: Row(
+                                                            children: [
+                                                              SizedBox(
+                                                                height: 24,
+                                                                width: 24,
+                                                                child: Checkbox(
+                                                                  visualDensity: VisualDensity.compact,
+                                                                  side: WidgetStateBorderSide.resolveWith(
+                                                                    (states) => BorderSide(
+                                                                      width: 2,
+                                                                      color: const Color(0xFF5E17EB),
+                                                                    ),
+                                                                  ),
+                                                                  activeColor: const Color(0xFF5E17EB),
+                                                                  checkColor: Colors.white,
+                                                                  value: sellerGroupList[index].isGroupChecked,
+                                                                  onChanged: (bool? value) async {
+                                                                    List<int> ids = [];
+                                                                    for (CartModel cart in cartProductList[index]) {
+                                                                      ids.add(cart.id!);
+                                                                    }
 
-                                                                showDialog(context: context, builder: (ctx)  => const CustomLoaderWidget());
-                                                                await cart.addRemoveCartSelectedItem(ids, sellerGroupList[index].isGroupChecked! ? false : true);
+                                                                    showDialog(
+                                                                      context: context,
+                                                                      builder: (ctx) => const CustomLoaderWidget(),
+                                                                    );
+                                                                    await cart.addRemoveCartSelectedItem(
+                                                                      ids,
+                                                                      sellerGroupList[index].isGroupChecked! ? false : true,
+                                                                    );
 
-                                                                WidgetsBinding.instance.addPostFrameCallback((_) {
-                                                                  Navigator.of(Get.context!).pop();
-                                                                });
-
-                                                              },
-                                                            ),
-                                                          ),
-
-                                                          Flexible(child: InkWell(
-                                                            onTap: () => _storeScreenRouteCall(sellerGroupList[index]),
-                                                            child: Text(sellerGroupList[index].shopInfo!, maxLines: 1, overflow: TextOverflow.ellipsis,
-                                                              textAlign: TextAlign.start, style: textBold.copyWith(fontWeight: FontWeight.w500, fontSize: Dimensions.fontSizeLarge,
-                                                                color: Provider.of<ThemeController>(context, listen: false).darkTheme?
-                                                                Theme.of(context).hintColor : Theme.of(context).textTheme.bodyLarge?.color)
-                                                            )),
-                                                          ),
-
-
-
-                                                          Padding(padding: const EdgeInsets.symmetric(horizontal: Dimensions.paddingSizeExtraSmall),
-                                                            child: Text('(${cartProductList[index].length})',
-                                                              style: textBold.copyWith(color: Provider.of<ThemeController>(context, listen: false).darkTheme?
-                                                              Theme.of(context).hintColor : Theme.of(context).primaryColor, fontSize: Dimensions.fontSizeLarge))
-                                                          ),
-
-                                                          if(shopClose)
-                                                            JustTheTooltip(
-                                                              backgroundColor: Colors.black87,
-                                                              controller: tooltipController,
-                                                              preferredDirection: AxisDirection.down,
-                                                              tailLength: 10,
-                                                              tailBaseWidth: 20,
-                                                              content: Container(width: 150,
-                                                                  padding: const EdgeInsets.all(Dimensions.paddingSizeSmall),
-                                                                  child: Text(getTranslated('store_is_closed', context)!,
-                                                                      style: textRegular.copyWith(color: Colors.white, fontSize: Dimensions.fontSizeDefault))),
-                                                              child: InkWell(onTap: ()=>  tooltipController.showTooltip(),
-                                                                child: Padding(padding: const EdgeInsets.symmetric(horizontal: Dimensions.paddingSizeExtraSmall),
-                                                                  child: SizedBox(width: 30, child: Image.asset(Images.warning, color: Theme.of(context).colorScheme.error,)),
+                                                                    WidgetsBinding.instance.addPostFrameCallback((_) {
+                                                                      Navigator.of(Get.context!).pop();
+                                                                    });
+                                                                  },
                                                                 ),
                                                               ),
-                                                            )
-                                                        ]),
-                                                      ],
-                                                    )
-                                                  )
-                                                ),
+                                                              const SizedBox(width: 8),
 
-                                                const SizedBox(),
-                                              ],
-                                              ),
-                                            ),
-                                          ) : const SizedBox(),
+                                                              Icon(
+                                                                sellerGroupList[index].sellerIs == 'admin'
+                                                                    ? Icons.workspace_premium_rounded
+                                                                    : Icons.storefront_rounded,
+                                                                color: const Color(0xFF5E17EB),
+                                                                size: 18,
+                                                              ),
+                                                              const SizedBox(width: 6),
+
+                                                              Flexible(
+                                                                child: InkWell(
+                                                                  onTap: () => _storeScreenRouteCall(sellerGroupList[index]),
+                                                                  child: Text(
+                                                                    sellerGroupList[index].shopInfo!,
+                                                                    maxLines: 1,
+                                                                    overflow: TextOverflow.ellipsis,
+                                                                    style: textBold.copyWith(
+                                                                      fontWeight: FontWeight.w700,
+                                                                      fontSize: 14,
+                                                                      color: const Color(0xFF1B1035),
+                                                                    ),
+                                                                  ),
+                                                                ),
+                                                              ),
+                                                              const SizedBox(width: 6),
+
+                                                              Container(
+                                                                padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                                                                decoration: BoxDecoration(
+                                                                  color: const Color(0xFF5E17EB).withValues(alpha: 0.08),
+                                                                  borderRadius: BorderRadius.circular(6),
+                                                                ),
+                                                                child: Text(
+                                                                  '${cartProductList[index].length}',
+                                                                  style: textBold.copyWith(
+                                                                    color: const Color(0xFF5E17EB),
+                                                                    fontSize: 11,
+                                                                  ),
+                                                                ),
+                                                              ),
+
+                                                              if (shopClose)
+                                                                Padding(
+                                                                  padding: const EdgeInsets.only(left: 6),
+                                                                  child: Image.asset(
+                                                                    Images.warning,
+                                                                    color: Theme.of(context).colorScheme.error,
+                                                                    width: 18,
+                                                                  ),
+                                                                ),
+                                                            ],
+                                                          ),
+                                                        ),
+                                                      ],
+                                                    ),
+                                                  )
+                                                : const SizedBox(),
 
 
 
