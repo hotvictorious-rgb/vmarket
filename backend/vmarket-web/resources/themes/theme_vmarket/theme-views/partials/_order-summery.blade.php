@@ -9,15 +9,17 @@
             $product_price_total = 0;
             $totalTax = \App\Utils\CartManager::getCartListTaxAmount();
             $total_discount_on_product = 0;
-            $cart = CartManager::getCartListQuery(type: 'checked');
-            $cartAll = CartManager::getCartListQuery();
-            $cart_group_ids = CartManager::get_cart_group_ids();
-            $checkedGroupIds = CartManager::get_cart_group_ids(type: 'checked');
+            $cartAll = $cartAll ?? CartManager::getCartListQuery();
+            $cart = $cartAll->where('is_checked', 1);
+            $cart_group_ids = $cartAll->pluck('cart_group_id')->unique()->toArray();
+            $checkedGroupIds = $cart->pluck('cart_group_id')->unique()->toArray();
             $cartShippings = \App\Models\CartShipping::whereIn('cart_group_id', $checkedGroupIds)->get();
             $shippingTotal = 0.0;
             $hasPickup = false;
+            $shippingMethodIds = $cartShippings->pluck('shipping_method_id')->unique()->filter()->toArray();
+            $shippingMethods = !empty($shippingMethodIds) ? \App\Models\ShippingMethod::whereIn('id', $shippingMethodIds)->get()->keyBy('id') : collect();
             foreach ($cartShippings as $cs) {
-                $m = \App\Models\ShippingMethod::find($cs->shipping_method_id);
+                $m = $shippingMethods->get($cs->shipping_method_id);
                 $isCsPickup = in_array((int)$cs->shipping_method_id, [3, 9]);
                 if ($m && (str_contains(strtolower($m->title), 'pickup') || str_contains(strtolower($m->title), 'pick up') || str_contains(strtolower($m->title), 'in-store') || (float)$m->cost == 0)) {
                     $isCsPickup = true;

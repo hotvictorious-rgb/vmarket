@@ -5,7 +5,9 @@
     use App\Utils\CartManager;
     use function App\Utils\get_shop_name;
     // [AI] VM-CUST-003: Canonical cart — delivery fees resolved downstream via FulfillmentAvailabilityService + DeliveryLane.
-    $cart = CartManager::getCartListQuery()->groupBy('cart_group_id');
+    $cartAll = CartManager::getCartListQuery();
+    $cart = $cartAll->groupBy('cart_group_id');
+    $adminShopLgaId = (int) (\App\Models\Shop::where('seller_id', 0)->value('lga_id') ?: 69);
 @endphp
 
 <div class="container py-3">
@@ -70,13 +72,13 @@
                             $currentShippingFee = $isPickupSelected ? 0.00 : ($cartShipping?->shipping_cost ?? 600.00);
 
                             if ($firstItem->seller_is == 'admin') {
-                                $originLgaId = (int) (\App\Models\Shop::where('seller_id', 0)->first()?->lga_id ?: 69);
+                                $originLgaId = $adminShopLgaId;
                                 $shopName = getInHouseShopConfig(key: 'name');
                                 $shopSlug = getInHouseShopConfig(key: 'slug');
                             } else {
-                                $originLgaId = (int) (\App\Models\Shop::where('seller_id', $firstItem->seller_id)->first()?->lga_id ?: 69);
-                                $shopName = get_shop_name($firstItem['seller_id']);
-                                $shopSlug = $firstItem->seller->shop['slug'] ?? '';
+                                $originLgaId = (int) ($firstItem->seller?->shop?->lga_id ?: 69);
+                                $shopName = $firstItem->seller?->shop?->name ?: get_shop_name($firstItem['seller_id']);
+                                $shopSlug = $firstItem->seller?->shop?->slug ?? '';
                             }
                             $destLgaId = (int) session('customer_lga_id', 69);
                             $doorstepLaneFee = \App\Models\DeliveryLane::getDeliveryFee($originLgaId, $destLgaId) ?? 600.00;
@@ -434,7 +436,7 @@
                 </div>
 
                 {{-- Right Column: Order Summary Card --}}
-                @include('theme-views.partials._order-summery')
+                @include('theme-views.partials._order-summery', ['cartAll' => $cartAll])
             </div>
         </form>
     @endif
@@ -444,7 +446,7 @@
     {{-- Mobile Sticky Bottom Bar (< 992px) --}}
     @if($cart->count() > 0)
         @php
-            $mobileCheckedItems = \App\Utils\CartManager::getCartListQuery(type: 'checked');
+            $mobileCheckedItems = $cartAll->where('is_checked', 1);
             $mobileGrandTotal = 0;
             foreach ($mobileCheckedItems as $mItem) {
                 $mobileGrandTotal += ($mItem['price'] - $mItem['discount']) * $mItem['quantity'];
