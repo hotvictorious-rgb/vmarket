@@ -532,36 +532,45 @@ document.addEventListener('DOMContentLoaded', () => {
     // ==========================================================================
     // 9. [AI] Victorious MARKET Fly-Out Cart Drawer Controller
     // ==========================================================================
-    window.openCartDrawer = function() {
+    window.openCartDrawer = function(triggerElement) {
         const drawer = document.getElementById('vmCartDrawer');
         const backdrop = document.getElementById('vmCartDrawerBackdrop');
-        if (drawer) {
-            drawer.classList.add('open');
-            drawer.classList.add('is-open');
-            drawer.setAttribute('aria-hidden', 'false');
-        }
+        if (!drawer) return;
+
+        window._vmLastFocusedElement = triggerElement || document.activeElement;
+
+        drawer.classList.add('open', 'is-open');
+        drawer.setAttribute('aria-hidden', 'false');
+
         if (backdrop) {
-            backdrop.classList.add('open');
-            backdrop.classList.add('is-open');
+            backdrop.classList.add('open', 'is-open');
             backdrop.setAttribute('aria-hidden', 'false');
         }
         document.body.classList.add('vm-cart-drawer-open');
+
+        const closeBtn = document.getElementById('vmCartDrawerCloseBtn');
+        if (closeBtn) {
+            setTimeout(() => closeBtn.focus(), 60);
+        }
     };
 
     window.closeCartDrawer = function() {
         const drawer = document.getElementById('vmCartDrawer');
         const backdrop = document.getElementById('vmCartDrawerBackdrop');
-        if (drawer) {
-            drawer.classList.remove('open');
-            drawer.classList.remove('is-open');
-            drawer.setAttribute('aria-hidden', 'true');
-        }
+        if (!drawer) return;
+
+        drawer.classList.remove('open', 'is-open');
+        drawer.setAttribute('aria-hidden', 'true');
+
         if (backdrop) {
-            backdrop.classList.remove('open');
-            backdrop.classList.remove('is-open');
+            backdrop.classList.remove('open', 'is-open');
             backdrop.setAttribute('aria-hidden', 'true');
         }
         document.body.classList.remove('vm-cart-drawer-open');
+
+        if (window._vmLastFocusedElement && typeof window._vmLastFocusedElement.focus === 'function') {
+            window._vmLastFocusedElement.focus();
+        }
     };
 
     // Event delegation for cart drawer interactions

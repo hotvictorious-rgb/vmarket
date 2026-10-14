@@ -4742,9 +4742,9 @@ body.vm-cart-drawer-open {
 
 .vm-cart-drawer-backdrop.is-open,
 .vm-cart-drawer-backdrop.open {
-    opacity: 1;
-    visibility: visible;
-    pointer-events: auto;
+    opacity: 1 !important;
+    visibility: visible !important;
+    pointer-events: auto !important;
 }
 
 /* Drawer Shell Container */
@@ -4769,9 +4769,9 @@ body.vm-cart-drawer-open {
 
 .vm-cart-drawer.is-open,
 .vm-cart-drawer.open {
-    transform: translateX(0);
-    visibility: visible;
-    pointer-events: auto;
+    transform: translateX(0) !important;
+    visibility: visible !important;
+    pointer-events: auto !important;
 }
 
 /* Ensure cart button and its descendants are directly clickable */

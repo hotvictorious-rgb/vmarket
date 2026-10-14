@@ -3,9 +3,9 @@
 @endphp
 
 {{-- [AI] Victorious MARKET Fly-Out Cart Drawer --}}
-<div id="vmCartDrawerBackdrop" class="vm-cart-drawer-backdrop" aria-hidden="true" style="position: fixed; inset: 0; z-index: 99998; opacity: 0; visibility: hidden; pointer-events: none;"></div>
+<div id="vmCartDrawerBackdrop" class="vm-cart-drawer-backdrop" aria-hidden="true"></div>
 
-<aside id="vmCartDrawer" class="vm-cart-drawer" role="dialog" aria-modal="true" aria-labelledby="vmCartDrawerTitle" style="position: fixed; top: 0; right: 0; bottom: 0; width: 440px; max-width: 100vw; background: #FFFFFF; z-index: 99999; transform: translateX(100%); visibility: hidden; pointer-events: none; box-shadow: -10px 0 35px rgba(27, 16, 53, 0.18); display: flex; flex-direction: column;">
+<aside id="vmCartDrawer" class="vm-cart-drawer" role="dialog" aria-modal="true" aria-hidden="true" aria-labelledby="vmCartDrawerTitle">
     {{-- Drawer Header --}}
     <div class="vm-cart-drawer-header">
         <div class="vm-cart-drawer-title-wrap">
@@ -47,36 +47,63 @@
 
 <script>
     (function() {
-        window.openCartDrawer = function() {
+        if (window._vmCartDrawerInitialized) return;
+        window._vmCartDrawerInitialized = true;
+
+        window._vmLastFocusedElement = null;
+
+        window.openCartDrawer = function(triggerElement) {
             var drawer = document.getElementById('vmCartDrawer');
             var backdrop = document.getElementById('vmCartDrawerBackdrop');
-            if (drawer) {
-                drawer.classList.add('open', 'is-open');
-                drawer.setAttribute('aria-hidden', 'false');
-            }
+            if (!drawer) return;
+
+            window._vmLastFocusedElement = triggerElement || document.activeElement;
+
+            drawer.classList.add('open', 'is-open');
+            drawer.setAttribute('aria-hidden', 'false');
+
             if (backdrop) {
                 backdrop.classList.add('open', 'is-open');
                 backdrop.setAttribute('aria-hidden', 'false');
             }
             document.body.classList.add('vm-cart-drawer-open');
+
+            // Accessibility: Focus into close button
+            var closeBtn = document.getElementById('vmCartDrawerCloseBtn');
+            if (closeBtn) {
+                setTimeout(function() { closeBtn.focus(); }, 60);
+            }
         };
 
         window.closeCartDrawer = function() {
             var drawer = document.getElementById('vmCartDrawer');
             var backdrop = document.getElementById('vmCartDrawerBackdrop');
-            if (drawer) {
-                drawer.classList.remove('open', 'is-open');
-                drawer.setAttribute('aria-hidden', 'true');
-            }
+            if (!drawer) return;
+
+            drawer.classList.remove('open', 'is-open');
+            drawer.setAttribute('aria-hidden', 'true');
+
             if (backdrop) {
                 backdrop.classList.remove('open', 'is-open');
                 backdrop.setAttribute('aria-hidden', 'true');
             }
             document.body.classList.remove('vm-cart-drawer-open');
+
+            // Accessibility: Restore focus to opener
+            if (window._vmLastFocusedElement && typeof window._vmLastFocusedElement.focus === 'function') {
+                window._vmLastFocusedElement.focus();
+            }
         };
 
-        // Wire close button & backdrop immediately
+        // Delegated click handling for triggers, close button, and backdrop
         document.addEventListener('click', function(e) {
+            var trigger = e.target.closest('.vm-cart-drawer-trigger, #vmHeaderCartBtn, #vmMobileNavCartBtn');
+            if (trigger) {
+                e.preventDefault();
+                window.openCartDrawer(trigger);
+                return;
+            }
+
             if (e.target.closest('#vmCartDrawerCloseBtn') || e.target.closest('.vm-cart-drawer-continue-shopping')) {
                 e.preventDefault();
                 window.closeCartDrawer();
@@ -86,9 +113,29 @@
             }
         });
 
+        // Keyboard accessibility: Escape to close and Tab containment
         document.addEventListener('keydown', function(e) {
+            var drawer = document.getElementById('vmCartDrawer');
+            if (!drawer || (!drawer.classList.contains('is-open') && !drawer.classList.contains('open'))) return;
+
             if (e.key === 'Escape') {
                 window.closeCartDrawer();
+                return;
+            }
+
+            if (e.key === 'Tab') {
+                var focusables = drawer.querySelectorAll('button:not([disabled]), [href], input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])');
+                if (focusables.length === 0) return;
+                var first = focusables[0];
+                var last = focusables[focusables.length - 1];
+
+                if (e.shiftKey && document.activeElement === first) {
+                    e.preventDefault();
+                    last.focus();
+                } else if (!e.shiftKey && document.activeElement === last) {
+                    e.preventDefault();
+                    first.focus();
+                }
             }
         });
     })();
