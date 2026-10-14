@@ -1,3 +1,18 @@
+### [2026-10-14 20:15 UTC] Storefront Cart Fulfillment Synchronization & Quantity Display Alignment [backend, ai-governance] [AI]
+- Fulfillment Selection & In-Store Pickup Fee Zeroing (`backend/vmarket-web/app/Http/Controllers/Customer/SystemController.php`):
+  1. Updated `insertIntoCartShipping` to recognize both canonical pickup method IDs (ID 3 and ID 9) and evaluate zero-cost methods (`$method->cost == 0` or title containing 'pickup', 'pick up', 'in-store', 'in-shop').
+  2. Fixed shipping fee persistence: guaranteed that selecting In-Store Counter Pickup stores strictly `0.00` in `CartShipping` rather than falling back to the LGA doorstep lane fee.
+- Order Summary Calculation Precision (`backend/vmarket-web/resources/themes/theme_vmarket/theme-views/partials/_order-summery.blade.php`):
+  1. Updated `shippingTotal` aggregation to dynamically evaluate cart shipping records: when an in-store counter pickup method is selected, its shipping contribution is strictly `0.00`.
+  2. Bound the "Due at Store Counter" badge conditionally to `$hasPickup`, eliminating discrepancies between the merchant card header (`Selected Fee: FREE (₦0.00)`) and the Order Summary (`Shipping / Pickup FREE (₦0.00)`, $\Delta = ₦0.00$).
+- Cart Details View & Stepper Accessibility (`backend/vmarket-web/resources/themes/theme_vmarket/theme-views/cart/cart-details.blade.php`):
+  1. Synchronized `$isPickupSelected` variable with `in_array((int)$activeMethodId, [3, 9])` across both the header selector and item guarantee badge.
+  2. Added prominent textual quantity display (`Unit: ₦XX,XXX.XX • Qty: X`) alongside the interactive stepper, ensuring clear quantity visibility across desktop, tablet, and mobile views.
+  3. Added unique ID (`cartQuantityMobile...`) and ARIA accessibility labels to mobile stepper buttons and inputs, preventing duplicate or missing DOM target bindings.
+- Verification & Test Execution:
+  1. Executed `scratch/test_shipping_ajax.php`: verified in-store pickup stores `shipping_cost = 0.00`, displays "Due at Store Counter" notice, and doorstep delivery restores lane fee with 100% PASS.
+  2. Verified HTTP 200 response on `http://127.0.0.1:8000/shop-cart` and cleared framework view caches via `php artisan optimize:clear`.
+
 ### [2026-10-14 19:55 UTC] Omnichannel Shopping Cart Redesign & Seamless AJAX Engine [backend, user-app, ai-governance] [AI]
 - Storefront Shopping Cart Redesign (`backend/vmarket-web/resources/themes/theme_vmarket/`):
   1. `theme-views/cart/cart-details.blade.php`: Completely redesigned with unified, responsive card layout. Replaced legacy separate desktop table and mobile list with a cohesive `.vm-merchant-card` architecture. Added 3-step checkout pill tracker (Cart Review → Shipping/Inspection → Escrow Payment), merchant badges (Flagship vs Verified Regional Merchant), and interactive selectable fulfillment cards (🚚 Doorstep Express Delivery with LGA lane fee vs 🏬 In-Store Counter Inspection & Pickup FREE ₦0.00).
