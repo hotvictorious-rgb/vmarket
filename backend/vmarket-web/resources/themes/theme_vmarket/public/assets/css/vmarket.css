@@ -4720,7 +4720,6 @@ button, input, select, textarea {
 /* Body Lock when Drawer is Open */
 body.vm-cart-drawer-open {
     overflow: hidden !important;
-    touch-action: none;
 }
 
 /* Backdrop Overlay */
@@ -4765,6 +4764,8 @@ body.vm-cart-drawer-open {
     pointer-events: none;
     transition: transform 0.35s cubic-bezier(0.16, 1, 0.3, 1), visibility 0.35s;
     will-change: transform;
+    touch-action: pan-y;
+    overscroll-behavior: contain;
 }
 
 .vm-cart-drawer.is-open,
@@ -4868,16 +4869,20 @@ button.vm-cart-drawer-trigger,
 
 /* Drawer Body & Items */
 .vm-cart-drawer-content {
-    flex: 1;
-    overflow-y: auto;
+    flex: 1 1 0%;
+    min-height: 0;
+    overflow: hidden;
     display: flex;
     flex-direction: column;
-    min-height: 0;
 }
 
 .vm-cart-drawer-items-list {
-    flex: 1;
-    overflow-y: auto;
+    flex: 1 1 0%;
+    min-height: 0;
+    overflow-y: auto !important;
+    overscroll-behavior: contain;
+    -webkit-overflow-scrolling: touch;
+    touch-action: pan-y;
     padding: 14px 18px;
     display: flex;
     flex-direction: column;

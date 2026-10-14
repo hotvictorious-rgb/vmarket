@@ -608,6 +608,103 @@ document.addEventListener('DOMContentLoaded', () => {
             }
         }
     });
+
+    // Instant Optimistic Stepper Quantity & Item Removal Controllers
+    window.updateDrawerQuantity = function(cartId, targetQty) {
+        if (targetQty < 1) {
+            window.removeDrawerCartItem(cartId);
+            return;
+        }
+
+        const row = document.getElementById('drawer-cart-item-' + cartId);
+        const qtyDisplay = row ? row.querySelector('.vm-drawer-qty-val') : null;
+        const prevQty = qtyDisplay ? parseInt(qtyDisplay.textContent.trim(), 10) : 1;
+
+        if (qtyDisplay) {
+            qtyDisplay.textContent = targetQty;
+        }
+        if (row) {
+            row.style.opacity = '0.65';
+            row.style.pointerEvents = 'none';
+        }
+
+        const isAuth = document.getElementById('authentication-status') ? document.getElementById('authentication-status').getAttribute('data-auth') === 'true' : false;
+        const updateUrlEl = isAuth ? document.getElementById('update-quantity-basic-url') : document.getElementById('update_quantity_url');
+        const updateUrl = (updateUrlEl && updateUrlEl.getAttribute('data-url')) || (document.getElementById('update-quantity-basic-url') && document.getElementById('update-quantity-basic-url').getAttribute('data-url')) || '/cart/updateQuantity';
+        const token = (document.querySelector('meta[name="_token"]') && document.querySelector('meta[name="_token"]').getAttribute('content')) || (document.querySelector('meta[name="csrf-token"]') && document.querySelector('meta[name="csrf-token"]').getAttribute('content'));
+
+        $.ajax({
+            url: updateUrl,
+            type: 'POST',
+            data: {
+                _token: token,
+                key: cartId,
+                quantity: targetQty
+            },
+            success: function(response) {
+                if (row) {
+                    row.style.opacity = '1';
+                    row.style.pointerEvents = 'auto';
+                }
+                if (response && response.status === 0) {
+                    if (qtyDisplay) qtyDisplay.textContent = prevQty;
+                    if (typeof toastr !== 'undefined' && response.message) {
+                        toastr.warning(response.message);
+                    }
+                } else {
+                    if (typeof updateNavCart === 'function') {
+                        updateNavCart();
+                    }
+                }
+            },
+            error: function(xhr) {
+                if (row) {
+                    row.style.opacity = '1';
+                    row.style.pointerEvents = 'auto';
+                }
+                if (qtyDisplay) qtyDisplay.textContent = prevQty;
+                const msg = xhr.responseJSON && xhr.responseJSON.message ? xhr.responseJSON.message : 'Unable to update quantity';
+                if (typeof toastr !== 'undefined') {
+                    toastr.error(msg);
+                }
+            }
+        });
+    };
+
+    window.removeDrawerCartItem = function(cartId) {
+        const row = document.getElementById('drawer-cart-item-' + cartId);
+        if (row) {
+            row.classList.add('is-removing');
+        }
+
+        const removeUrlEl = document.getElementById('remove_from_cart_url');
+        const removeUrl = (removeUrlEl && removeUrlEl.getAttribute('data-url')) || '/cart/remove';
+        const token = (document.querySelector('meta[name="_token"]') && document.querySelector('meta[name="_token"]').getAttribute('content')) || (document.querySelector('meta[name="csrf-token"]') && document.querySelector('meta[name="csrf-token"]').getAttribute('content'));
+
+        $.ajax({
+            url: removeUrl,
+            type: 'POST',
+            data: {
+                _token: token,
+                key: cartId
+            },
+            success: function(response) {
+                if (typeof updateNavCart === 'function') {
+                    updateNavCart();
+                }
+                if (response && response.message && typeof toastr !== 'undefined') {
+                    toastr.info(response.message);
+                }
+            },
+            error: function(xhr) {
+                if (row) row.classList.remove('is-removing');
+                const msg = xhr.responseJSON && xhr.responseJSON.message ? xhr.responseJSON.message : 'Unable to remove item';
+                if (typeof toastr !== 'undefined') {
+                    toastr.error(msg);
+                }
+            }
+        });
+    };
 });
 
 
