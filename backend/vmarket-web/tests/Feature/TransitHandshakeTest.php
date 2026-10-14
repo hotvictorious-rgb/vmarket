@@ -265,4 +265,26 @@ class TransitHandshakeTest extends DumpSchemaTestCase
         $this->assertSame('pending_inspection', $reservation->status);
         $this->assertNull($reservation->held_until);
     }
+
+    public function test_customer_can_present_code_and_pass_inspection_without_ever_saying_im_coming(): void
+    {
+        Carbon::setTestNow(Carbon::parse('2026-10-14 12:00:00'));
+
+        [$seller, $shop, $customer, $reservation] = $this->createTestContext();
+
+        // Customer NEVER called customerSignalEnRoute! Status remains pending_inspection.
+        $this->assertSame('pending_inspection', $reservation->status);
+
+        // Vendor verifies code directly at the store counter
+        $verifyResult = $this->service->verifyReservationForVendor($reservation->reservation_code, $seller->id, $shop->id);
+        $this->assertSame('VERIFIED', $verifyResult['status']);
+
+        // Vendor accepts physical inspection directly without any en-route step
+        $acceptResult = $this->service->acceptInspection($reservation->reservation_code, $seller->id, $shop->id);
+        $this->assertSame('SUCCESS', $acceptResult['status']);
+
+        $reservation->refresh();
+        $this->assertSame('inspected_accepted', $reservation->status);
+        $this->assertNotNull($reservation->inspected_at);
+    }
 }

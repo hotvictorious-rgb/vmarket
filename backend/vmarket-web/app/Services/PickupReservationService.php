@@ -453,7 +453,7 @@ class PickupReservationService
                 ];
             }
 
-            if ($reservation->status !== 'pending_inspection') {
+            if (!in_array($reservation->status, ['pending_inspection', 'en_route', 'en_route_timeout', 'held_confirmed'], true)) {
                 return [
                     'status' => 'INVALID_TRANSITION',
                     'message' => "Cannot accept reservation in state '{$reservation->status}'.",
@@ -532,7 +532,7 @@ class PickupReservationService
                 ];
             }
 
-            if ($reservation->status !== 'pending_inspection') {
+            if (!in_array($reservation->status, ['pending_inspection', 'en_route', 'en_route_timeout', 'held_confirmed'], true)) {
                 return [
                     'status' => 'INVALID_TRANSITION',
                     'message' => "Cannot reject reservation in state '{$reservation->status}'.",
