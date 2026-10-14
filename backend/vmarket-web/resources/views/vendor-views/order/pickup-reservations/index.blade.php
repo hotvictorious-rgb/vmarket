@@ -163,6 +163,18 @@
                                     <span class="badge badge-soft-warning font-weight-bold px-2 py-1">
                                         <i class="tio-time mr-1"></i> {{ translate('awaiting_Inspection') }}
                                     </span>
+                                @elseif($reservation->status === 'en_route')
+                                    <span class="badge badge-soft-primary font-weight-bold px-2 py-1">
+                                        <i class="tio-navigation mr-1"></i> {{ translate('Customer_En_Route') }}
+                                    </span>
+                                @elseif($reservation->status === 'en_route_timeout')
+                                    <span class="badge badge-soft-warning font-weight-bold px-2 py-1">
+                                        <i class="tio-time mr-1"></i> {{ translate('SLA_Timeout_Awaiting_Resend') }}
+                                    </span>
+                                @elseif($reservation->status === 'held_confirmed')
+                                    <span class="badge badge-soft-success font-weight-bold px-2 py-1">
+                                        <i class="tio-lock mr-1"></i> {{ translate('Item_Held_Under_Counter') }}
+                                    </span>
                                 @elseif($reservation->status === 'inspected_accepted')
                                     <span class="badge badge-soft-info font-weight-bold px-2 py-1">
                                         <i class="tio-checkmark-circle mr-1"></i> {{ translate('passed_Inspection_Awaiting_Payment') }}
@@ -184,7 +196,11 @@
                                 @endif
                             </td>
                             <td>
-                                @if($reservation->status === 'pending_inspection' || $reservation->status === 'inspected_accepted')
+                                @if($reservation->status === 'held_confirmed' && $reservation->held_until)
+                                    <span class="text-success font-size-sm font-weight-bold">
+                                        <i class="tio-stopwatch mr-1"></i> {{ $reservation->held_until->diffForHumans(null, true) }}
+                                    </span>
+                                @elseif(in_array($reservation->status, ['pending_inspection', 'en_route', 'inspected_accepted'], true))
                                     @if($reservation->expires_at && $reservation->expires_at->isPast())
                                         <span class="text-danger font-size-sm font-weight-bold">{{ translate('Expired') }}</span>
                                     @elseif($reservation->expires_at)
@@ -199,6 +215,28 @@
                             <td class="text-center">
                                 <div class="d-flex justify-content-center gap-2">
                                     @if($reservation->status === 'pending_inspection')
+                                        <button type="button" class="btn btn-sm btn--primary inspect-btn"
+                                                data-code="{{ $reservation->reservation_code }}"
+                                                title="{{ translate('accept_Inspection') }}">
+                                            <i class="tio-checkmark-circle"></i> {{ translate('Accept') }}
+                                        </button>
+                                        <button type="button" class="btn btn-sm btn-outline-danger reject-btn"
+                                                data-code="{{ $reservation->reservation_code }}"
+                                                title="{{ translate('reject_Inspection') }}">
+                                            <i class="tio-clear"></i> {{ translate('Reject') }}
+                                        </button>
+                                    @elseif(in_array($reservation->status, ['en_route', 'en_route_timeout'], true))
+                                        <button type="button" class="btn btn-sm btn-success confirm-hold-btn"
+                                                data-code="{{ $reservation->reservation_code }}"
+                                                title="{{ translate('confirm_Physical_Hold') }}">
+                                            <i class="tio-checkmark-circle"></i> {{ translate('Set_Aside') }}
+                                        </button>
+                                        <button type="button" class="btn btn-sm btn-outline-danger out-of-stock-btn"
+                                                data-code="{{ $reservation->reservation_code }}"
+                                                title="{{ translate('report_Out_Of_Stock') }}">
+                                            <i class="tio-clear"></i> {{ translate('Out_of_Stock') }}
+                                        </button>
+                                    @elseif($reservation->status === 'held_confirmed')
                                         <button type="button" class="btn btn-sm btn--primary inspect-btn"
                                                 data-code="{{ $reservation->reservation_code }}"
                                                 title="{{ translate('accept_Inspection') }}">
@@ -323,7 +361,89 @@
         const verifyUrl = "{{ route('vendor.pickup-reservations.verify') }}";
         const acceptUrl = "{{ route('vendor.pickup-reservations.accept') }}";
         const rejectUrl = "{{ route('vendor.pickup-reservations.reject') }}";
+        const confirmHoldUrl = "{{ route('vendor.pickup-reservations.confirm-hold') }}";
+        const outOfStockUrl = "{{ route('vendor.pickup-reservations.out-of-stock') }}";
         const csrfToken = "{{ csrf_token() }}";
+
+        // Confirm Physical Hold click
+        document.querySelectorAll('.confirm-hold-btn').forEach(btn => {
+            btn.addEventListener('click', function () {
+                const code = this.getAttribute('data-code');
+                Swal.fire({
+                    title: "{{ translate('confirm_Physical_Hold') }}?",
+                    text: "{{ translate('have_you_pulled_this_item_from_display_and_locked_it_under_the_counter_for_the_customer?') }}",
+                    icon: 'question',
+                    showCancelButton: true,
+                    confirmButtonColor: '#00897B',
+                    cancelButtonColor: '#757575',
+                    confirmButtonText: "{{ translate('yes_set_aside') }}",
+                    cancelButtonText: "{{ translate('cancel') }}"
+                }).then((result) => {
+                    if (result.isConfirmed) {
+                        fetch(confirmHoldUrl, {
+                            method: 'POST',
+                            headers: {
+                                'Content-Type': 'application/json',
+                                'X-CSRF-TOKEN': csrfToken,
+                                'Accept': 'application/json'
+                            },
+                            body: JSON.stringify({ reservation_code: code })
+                        })
+                        .then(res => res.json())
+                        .then(data => {
+                            if (data.status) {
+                                toastr.success(data.message);
+                                location.reload();
+                            } else {
+                                toastr.error(data.message);
+                            }
+                        })
+                        .catch(() => toastr.error("{{ translate('failed_to_confirm_hold') }}"));
+                    }
+                });
+            });
+        });
+
+        // Report Out of Stock click
+        document.querySelectorAll('.out-of-stock-btn').forEach(btn => {
+            btn.addEventListener('click', function () {
+                const code = this.getAttribute('data-code');
+                Swal.fire({
+                    title: "{{ translate('item_Out_of_Stock') }}?",
+                    text: "{{ translate('this_will_immediately_alert_the_customer_and_cancel_their_trip_so_they_do_not_waste_transport_fare.') }}",
+                    icon: 'warning',
+                    input: 'text',
+                    inputPlaceholder: "{{ translate('reason_e.g._sold_out_to_walk-in_customer') }}",
+                    showCancelButton: true,
+                    confirmButtonColor: '#E53935',
+                    cancelButtonColor: '#757575',
+                    confirmButtonText: "{{ translate('yes_report_out_of_stock') }}",
+                    cancelButtonText: "{{ translate('cancel') }}"
+                }).then((result) => {
+                    if (result.isConfirmed) {
+                        fetch(outOfStockUrl, {
+                            method: 'POST',
+                            headers: {
+                                'Content-Type': 'application/json',
+                                'X-CSRF-TOKEN': csrfToken,
+                                'Accept': 'application/json'
+                            },
+                            body: JSON.stringify({ reservation_code: code, reason: result.value || 'Item sold out or unavailable.' })
+                        })
+                        .then(res => res.json())
+                        .then(data => {
+                            if (data.status) {
+                                toastr.info(data.message);
+                                location.reload();
+                            } else {
+                                toastr.error(data.message);
+                            }
+                        })
+                        .catch(() => toastr.error("{{ translate('failed_to_report_out_of_stock') }}"));
+                    }
+                });
+            });
+        });
 
         // Verification modal button
         document.getElementById('btn_verify_code')?.addEventListener('click', function () {
