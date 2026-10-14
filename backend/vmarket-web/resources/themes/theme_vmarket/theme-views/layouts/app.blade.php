@@ -27,7 +27,7 @@
     <!-- VMarket Master Theme CSS (Loaded after Bootstrap to enforce bespoke design language) -->
     @php
         $vmarketCssPath = base_path('resources/themes/theme_vmarket/public/assets/css/vmarket.css');
-        $vmarketCssVersion = file_exists($vmarketCssPath) ? filemtime($vmarketCssPath) : time();
+        $vmarketCssVersion = file_exists($vmarketCssPath) ? filemtime($vmarketCssPath) : config('app.asset_version', '1.0');
     @endphp
     <link rel="stylesheet" href="{{ theme_asset('assets/css/vmarket.css') }}?v={{ $vmarketCssVersion }}">
     <style>:root { --vm-primary: {{ $primaryColor }}; --vm-gold: {{ $secondaryColor }}; }</style>
@@ -35,6 +35,7 @@
     <link rel="stylesheet" href="{{ theme_asset('assets/plugins/intl-tel-input/css/intlTelInput.min.css') }}">
     
     @stack('css_or_js')
+    @stack('styles')
 </head>
 <body>
 
@@ -52,8 +53,19 @@
     <!-- Mobile Bottom Navigation Bar -->
     @include('theme-views.layouts.partials._mobile-nav')
 
-    <!-- Fly-Out Shopping Bag Drawer (Suppressed on full Cart Review page to eliminate duplicate cart) -->
-    @if(!Request::is('shop-cart*'))
+    <!-- Fly-Out Shopping Bag Drawer (Suppressed on all Cart Review and Checkout pages) -->
+    @php
+        $currentRouteName = request()->route()?->getName();
+        $isCartOrCheckout = in_array($currentRouteName, [
+            'shop-cart',
+            'checkout-details',
+            'checkout-shipping',
+            'checkout-payment',
+            'checkout-review',
+            'checkout-complete',
+        ], true) || Request::is('shop-cart*', 'checkout*');
+    @endphp
+    @if(!$isCartOrCheckout)
         @include('theme-views.layouts.partials._cart-drawer')
     @endif
 
@@ -83,28 +95,53 @@
 
     <script>
         function route_alert(route, message) {
+            function getSafeDestination(value) {
+                try {
+                    const target = new URL(value, window.location.origin);
+                    if (target.origin !== window.location.origin) {
+                        return null;
+                    }
+                    if (!['http:', 'https:'].includes(target.protocol)) {
+                        return null;
+                    }
+                    return target.href;
+                } catch (e) {
+                    return null;
+                }
+            }
+
+            const destination = getSafeDestination(route);
+            if (!destination) {
+                console.error('Invalid confirmation destination.');
+                return;
+            }
+
+            const text = String(message ?? '');
+
             if (typeof Swal !== 'undefined') {
                 Swal.fire({
-                    title: "{{ translate('Are you sure?') }}",
-                    text: message,
+                    title: @json(translate('Are you sure?')),
+                    text: text,
+                    icon: 'warning',
                     type: 'warning',
                     showCancelButton: true,
                     cancelButtonColor: '#6B7280',
                     confirmButtonColor: '#5E17EB',
-                    cancelButtonText: "{{ translate('No') }}",
-                    confirmButtonText: "{{ translate('Yes') }}",
+                    cancelButtonText: @json(translate('No')),
+                    confirmButtonText: @json(translate('Yes')),
                     reverseButtons: true
-                }).then((result) => {
-                    if (result.value) {
-                        location.href = route;
+                }).then(function (result) {
+                    if (result && (result.isConfirmed || result.value)) {
+                        window.location.assign(destination);
                     }
                 });
-            } else if (confirm(message)) {
-                location.href = route;
+            } else if (window.confirm(text)) {
+                window.location.assign(destination);
             }
         }
     </script>
     
     @stack('script')
+    @stack('scripts')
 </body>
 </html>

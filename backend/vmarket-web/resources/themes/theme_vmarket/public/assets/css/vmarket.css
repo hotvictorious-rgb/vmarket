@@ -54,11 +54,41 @@
     --vm-transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
-/* Reset & Base */
+/* Reset & Base Foundation (Accessible & Framework-Compatible) */
 *, *::before, *::after {
     box-sizing: border-box;
+}
+
+html {
+    -webkit-text-size-adjust: 100%;
+}
+
+body, h1, h2, h3, h4, h5, h6, p, ul, ol, figure {
     margin: 0;
+}
+
+ul, ol {
     padding: 0;
+}
+
+button, input, select, textarea {
+    font: inherit;
+}
+
+/* Accessible Focus Ring for Keyboard Users (P0 Audit Fix) */
+:where(button, input, select, textarea, a, [tabindex]):focus-visible {
+    outline: 2.5px solid var(--vm-primary);
+    outline-offset: 2.5px;
+}
+
+/* Reduced Motion Respect */
+@media (prefers-reduced-motion: reduce) {
+    *, *::before, *::after {
+        animation-duration: 0.01ms !important;
+        animation-iteration-count: 1 !important;
+        transition-duration: 0.01ms !important;
+        scroll-behavior: auto !important;
+    }
 }
 
 body {
@@ -540,37 +570,7 @@ button, input, select, textarea {
     border-radius: 2px;
 }
 
-/* Hero Banner Section */
-.vm-hero-section {
-    padding: 16px 0 24px;
-}
-
-.vm-hero-slider {
-    position: relative;
-    border-radius: var(--vm-radius-lg);
-    overflow: hidden;
-    background: var(--vm-dark-surface);
-    box-shadow: var(--vm-shadow-md);
-    aspect-ratio: 16 / 6;
-}
-
-@media (max-width: 768px) {
-    .vm-hero-slider {
-        aspect-ratio: 16 / 9;
-    }
-}
-
-.vm-hero-slide {
-    display: block;
-    width: 100%;
-    height: 100%;
-}
-
-.vm-hero-slide img {
-    width: 100%;
-    height: 100%;
-    object-fit: cover;
-}
+/* Category Grid & Showcase Sections */
 
 /* Section Header */
 .vm-section-header {
@@ -4521,103 +4521,21 @@ button, input, select, textarea {
     color: #EF4444;
 }
 
-/* Order Summary Box */
-.vm-summary-card {
-    background: #FFFFFF;
-    border: 1px solid #E2E8F0;
-    border-radius: 16px;
-    padding: 24px;
-    box-shadow: 0 4px 16px rgba(15, 23, 42, 0.04);
-}
-
-.vm-summary-title {
-    font-size: 18px;
-    font-weight: 800;
-    color: #1B1035;
-    margin: 0 0 16px 0;
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-}
-
-.vm-summary-line {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    padding: 8px 0;
-    font-size: 14px;
-    color: #64748B;
-}
-
-.vm-summary-line-value {
-    font-weight: 600;
-    color: #1E293B;
-}
-
-.vm-summary-total-line {
-    border-top: 2px dashed #E2E8F0;
-    margin-top: 12px;
-    padding-top: 14px;
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-}
-
-.vm-summary-total-label {
-    font-size: 16px;
-    font-weight: 700;
-    color: #1B1035;
-}
-
-.vm-summary-total-amount {
-    font-size: 22px;
-    font-weight: 800;
-    color: #5E17EB;
-}
-
-.vm-escrow-card {
-    background: #FAF5FF;
-    border: 1px solid rgba(94, 23, 235, 0.15);
-    border-radius: 12px;
-    padding: 12px;
-    margin: 16px 0;
-    display: flex;
-    gap: 10px;
-    align-items: flex-start;
-}
-
-.vm-checkout-cta-btn {
-    background: linear-gradient(135deg, #1B1035 0%, #4A2E7A 100%);
-    color: #FFFFFF !important;
-    border: none;
-    border-radius: 12px;
-    font-weight: 700;
-    font-size: 15px;
-    padding: 14px 20px;
-    width: 100%;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    gap: 8px;
-    box-shadow: 0 4px 14px rgba(46, 27, 78, 0.25);
-    transition: all 0.2s ease;
-    cursor: pointer;
-    text-decoration: none;
-}
-
-.vm-checkout-cta-btn:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 6px 20px rgba(46, 27, 78, 0.35);
-    color: #FFFFFF;
-}
-
-/* Responsive Breakpoints for Mobile & Tablet */
+/* Responsive Breakpoints for Mobile & Tablet Cart */
 @media (max-width: 767.98px) {
     .vm-cart-item {
+        display: grid;
         grid-template-columns: 24px 64px 1fr;
         grid-template-rows: auto auto;
         gap: 12px 10px;
         padding: 14px 16px;
+    }
+    
+    .vm-cart-thumb {
+        width: 64px !important;
+        height: 64px !important;
+        min-width: 64px !important;
+        max-width: 64px !important;
     }
     
     .vm-cart-info {
@@ -4643,124 +4561,6 @@ button, input, select, textarea {
         width: 44px;
         height: 36px;
     }
-}
-
-
-
-/* ==========================================================================
-   VICTORIOUS MARKET LUXURY COMMERCE & CHECKOUT ARCHITECTURE (V1 MODERNIST)
-   ========================================================================== */
-
-/* Modern Connected Step Progress Tracker */
-.vm-checkout-steps-container {
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    margin-bottom: 2rem;
-}
-
-.vm-checkout-steps {
-    display: flex;
-    align-items: center;
-    gap: 0;
-    list-style: none;
-    padding: 6px 12px;
-    margin: 0;
-    background: #FFFFFF;
-    border: 1px solid rgba(94, 23, 235, 0.10);
-    border-radius: 999px;
-    box-shadow: 0 4px 18px rgba(27, 16, 53, 0.04);
-}
-
-.vm-step-item {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    padding: 8px 16px;
-    border-radius: 999px;
-    font-size: 13px;
-    font-weight: 600;
-    color: #64748B;
-    text-decoration: none;
-    transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
-}
-
-.vm-step-item .vm-step-num {
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    width: 24px;
-    height: 24px;
-    border-radius: 50%;
-    background: #F1F5F9;
-    color: #64748B;
-    font-size: 11px;
-    font-weight: 700;
-    transition: all 0.25s ease;
-}
-
-.vm-step-item.is-active {
-    background: linear-gradient(135deg, #5E17EB 0%, #4A148C 100%);
-    color: #FFFFFF !important;
-    box-shadow: 0 4px 14px rgba(94, 23, 235, 0.35);
-}
-
-.vm-step-item.is-active .vm-step-num {
-    background: #FFD700;
-    color: #1B1035;
-}
-
-.vm-step-item.is-done {
-    color: #059669;
-}
-
-.vm-step-item.is-done .vm-step-num {
-    background: #ECFDF5;
-    color: #059669;
-    border: 1px solid rgba(16, 185, 129, 0.3);
-}
-
-.vm-step-separator {
-    color: #CBD5E1;
-    font-size: 12px;
-    padding: 0 4px;
-}
-
-/* Sticky Desktop Order Summary */
-.sticky-top-80 {
-    position: sticky;
-    top: 88px;
-    z-index: 10;
-}
-
-.vm-summary-card {
-    background: #FFFFFF;
-    border: 1px solid rgba(94, 23, 235, 0.12);
-    border-radius: 20px;
-    padding: 24px;
-    box-shadow: 0 10px 30px rgba(27, 16, 53, 0.05);
-    transition: box-shadow 0.2s ease;
-}
-
-.vm-summary-card:hover {
-    box-shadow: 0 14px 36px rgba(94, 23, 235, 0.08);
-}
-
-.vm-escrow-card {
-    background: linear-gradient(135deg, rgba(94, 23, 235, 0.04) 0%, rgba(255, 215, 0, 0.05) 100%);
-    border: 1px solid rgba(94, 23, 235, 0.15);
-    border-radius: 14px;
-    padding: 14px;
-    margin: 18px 0;
-    display: flex;
-    gap: 12px;
-    align-items: flex-start;
-}
-
-.vm-escrow-card i {
-    color: #5E17EB;
-    font-size: 22px;
-    flex-shrink: 0;
 }
 
 /* Mobile Sticky Bottom Bar (< 992px) */
@@ -5869,6 +5669,13 @@ button.vm-cart-drawer-trigger,
     padding: 12px 14px;
     margin-top: 14px;
     margin-bottom: 16px;
+}
+
+.vm-escrow-card i {
+    color: #5E17EB;
+    font-size: 20px;
+    flex-shrink: 0;
+    margin-top: 2px;
 }
 
 .vm-checkout-cta-btn {
