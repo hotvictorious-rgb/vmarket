@@ -66,6 +66,20 @@ class FakeOrderDetailsService implements OrderDetailsServiceInterface {
   Future getOrderInvoice(String orderID) async => throw UnimplementedError();
   @override
   Future trackOrder(String orderId, String phoneNumber) async => throw UnimplementedError();
+
+  @override
+  Future confirmInShopPickup({required int orderId, required String pickupCode, required dynamic verificationImage}) async {
+    return ApiResponseModel.withSuccess(
+      FakeResponse(data: {'status': true, 'message': 'Pickup confirmed'}, statusCode: 200),
+    );
+  }
+
+  @override
+  Future confirmDoorstepDelivery({required int orderId, required String deliveryCode, required dynamic verificationImage}) async {
+    return ApiResponseModel.withSuccess(
+      FakeResponse(data: {'status': true, 'message': 'Delivery confirmed'}, statusCode: 200),
+    );
+  }
 }
 
 class FakeResponse {

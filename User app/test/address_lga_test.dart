@@ -139,6 +139,22 @@ class MockAddressService implements AddressServiceInterface {
     }
     return ApiResponseModel.withSuccess(null);
   }
+
+  @override
+  Future<List<AddressSuggestionModel>> autocompleteAddress(int lgaId, String query) async {
+    return [
+      AddressSuggestionModel(
+        name: '15 Ikot Ekpene Road',
+        street: 'Ikot Ekpene Road',
+        city: 'Uyo',
+        state: 'Akwa Ibom',
+        country: 'Nigeria',
+        latitude: 5.0377,
+        longitude: 7.9128,
+        formattedAddress: '15 Ikot Ekpene Road, Uyo, Akwa Ibom',
+      ),
+    ];
+  }
 }
 
 void main() {
