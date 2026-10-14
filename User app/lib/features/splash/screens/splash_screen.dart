@@ -266,9 +266,9 @@ class SplashWidget extends StatelessWidget {
           begin: Alignment.topCenter,
           end: Alignment.bottomCenter,
           colors: [
-            Color(0xFF1B1035),
-            Color(0xFF260D4D),
-            Color(0xFF16082B),
+            Color(0xFF5E17EB), // Victorious MARKET Signature Brand Purple
+            Color(0xFF3E0B9B),
+            Color(0xFF1B0545),
           ],
         ),
       ),
@@ -281,78 +281,82 @@ class SplashWidget extends StatelessWidget {
             children: [
               const SizedBox(height: 20),
 
-              // [AI] Screen 1 Center Branding: Gold Crown Logo + Victorious MARKET Wordmark + Tagline
+              // [AI] Screen 1 Center Branding: VM Logo + VMarket Wordmark + Tagline
               Column(
                 mainAxisSize: MainAxisSize.min,
                 children: [
                   BouncyWidget(
                     duration: const Duration(milliseconds: 2000),
-                    lift: 30,
+                    lift: 25,
                     ratio: 0.5,
                     pause: 0.25,
-                    child: SizedBox(
-                      width: 125,
-                      height: 125,
-                      child: Image.asset(Images.logo, fit: BoxFit.contain),
-                    ),
-                  ),
-                  const SizedBox(height: 18),
-                  ShaderMask(
-                    blendMode: BlendMode.srcIn,
-                    shaderCallback: (bounds) => const LinearGradient(
-                      colors: [Color(0xFFFFD700), Color(0xFFFFB300)],
-                      begin: Alignment.topLeft,
-                      end: Alignment.bottomRight,
-                    ).createShader(bounds),
-                    child: const Text(
-                      'Victorious',
-                      textAlign: TextAlign.center,
-                      style: TextStyle(
-                        fontFamily: 'Ubuntu',
-                        fontWeight: FontWeight.w900,
-                        fontSize: 34,
-                        letterSpacing: 0.8,
-                        height: 1.1,
-                        color: Color(0xFFFFD700),
-                        shadows: [
-                          Shadow(
-                            color: Colors.black45,
-                            offset: Offset(0, 2),
-                            blurRadius: 8,
+                    child: Container(
+                      width: 120,
+                      height: 120,
+                      decoration: BoxDecoration(
+                        shape: BoxShape.circle,
+                        boxShadow: [
+                          BoxShadow(
+                            color: const Color(0xFFFACC15).withOpacity(0.25),
+                            blurRadius: 30,
+                            spreadRadius: 2,
                           ),
                         ],
                       ),
+                      child: Image.asset(Images.logo, fit: BoxFit.contain),
                     ),
                   ),
-                  const SizedBox(height: 2),
-                  const Text(
-                    'MARKET',
-                    textAlign: TextAlign.center,
-                    style: TextStyle(
-                      fontFamily: 'Ubuntu',
-                      fontWeight: FontWeight.w900,
-                      fontSize: 26,
-                      letterSpacing: 6.5,
-                      height: 1.0,
-                      color: Colors.white,
-                      shadows: [
-                        Shadow(
-                          color: Colors.black38,
-                          offset: Offset(0, 2),
-                          blurRadius: 6,
+                  const SizedBox(height: 22),
+                  // VMarket Wordmark: Gold 'V' + Crisp White 'Market'
+                  Row(
+                    mainAxisSize: MainAxisSize.min,
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    crossAxisAlignment: CrossAxisAlignment.center,
+                    children: [
+                      Text(
+                        'V',
+                        style: TextStyle(
+                          fontFamily: 'Ubuntu',
+                          fontWeight: FontWeight.w900,
+                          fontSize: 40,
+                          color: const Color(0xFFFACC15),
+                          shadows: [
+                            Shadow(
+                              color: Colors.black.withOpacity(0.35),
+                              offset: const Offset(0, 2),
+                              blurRadius: 8,
+                            ),
+                          ],
                         ),
-                      ],
-                    ),
+                      ),
+                      Text(
+                        'Market',
+                        style: TextStyle(
+                          fontFamily: 'Ubuntu',
+                          fontWeight: FontWeight.w900,
+                          fontSize: 40,
+                          letterSpacing: 0.5,
+                          color: Colors.white,
+                          shadows: [
+                            Shadow(
+                              color: Colors.black.withOpacity(0.35),
+                              offset: const Offset(0, 2),
+                              blurRadius: 8,
+                            ),
+                          ],
+                        ),
+                      ),
+                    ],
                   ),
-                  const SizedBox(height: 16),
+                  const SizedBox(height: 14),
                   Text(
                     'Your Trusted Online Market\nFor Quality Products.',
                     textAlign: TextAlign.center,
                     style: TextStyle(
-                      fontSize: Dimensions.fontSizeLarge,
+                      fontSize: 15,
                       fontWeight: FontWeight.w500,
                       height: 1.4,
-                      color: Colors.white.withOpacity(0.85),
+                      color: Colors.white.withOpacity(0.9),
                     ),
                   ),
                 ],
