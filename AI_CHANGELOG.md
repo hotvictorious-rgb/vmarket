@@ -1,4 +1,20 @@
+### [2026-10-14 19:55 UTC] Omnichannel Shopping Cart Redesign & Seamless AJAX Engine [backend, user-app, ai-governance] [AI]
+- Storefront Shopping Cart Redesign (`backend/vmarket-web/resources/themes/theme_vmarket/`):
+  1. `theme-views/cart/cart-details.blade.php`: Completely redesigned with unified, responsive card layout. Replaced legacy separate desktop table and mobile list with a cohesive `.vm-merchant-card` architecture. Added 3-step checkout pill tracker (Cart Review → Shipping/Inspection → Escrow Payment), merchant badges (Flagship vs Verified Regional Merchant), and interactive selectable fulfillment cards (🚚 Doorstep Express Delivery with LGA lane fee vs 🏬 In-Store Counter Inspection & Pickup FREE ₦0.00).
+  2. `theme-views/partials/_order-summery.blade.php`: Upgraded to `.vm-summary-card` with clean itemized lines, live shipping fee calculation, dynamic In-Store Inspection payment notice, Escrow Trust reassurance badge ("100% Escrow Protected"), and high-impact gradient CTA button.
+  3. `public/assets/css/vmarket.css`: Added dedicated cart design tokens, responsive breakpoints (<768px), horizontal steppers, tactile buttons, subtle hover states, and smooth slide-out transitions (`.is-removing`, `.is-updating`).
+  4. `public/assets/js/cart.js` & `cart-list-page.js`: Upgraded AJAX interaction engine. Eliminated intrusive full-page `#loading` blocking overlay in favor of smooth inline loading feedback and 220ms CSS exit animations on item removal. Re-bound quantity steppers, checkbox selectors, and fulfillment switches seamlessly without screen flicker.
+- Customer App (Flutter) Cart Screen & Widget Polish (`User app/lib/features/cart/`):
+  1. `widgets/cart_widget.dart`: Redesigned `CartWidget` layout to use an ergonomic horizontal stepper (`[-] [ qty ] [+]`) positioned at the bottom right alongside the item price, eliminating text truncation on mobile screens. Added 1-tap delete icon when at minimum order quantity, variant chip, and "Physical In-Shop Inspection" reassurance badge.
+  2. `screens/cart_screen.dart`: Upgraded merchant group container with modern rounded card geometry (`BorderRadius.circular(16)`), soft header background, verified merchant icon, item count chip, and select-all shop checkbox.
+- Deployment Runbook & Asset Publication (`DEPLOYMENT_RUNBOOK.md`):
+  1. Explicitly documented the publication of theme assets to `public/themes/theme_vmarket/public/assets` to guarantee instant styling on live cPanel hosting regardless of symlink restrictions.
+- Verification & Test Execution:
+  1. Comprehensive 33-test regression suite executed with 100% PASS (0 failures, 0 errors, Δ = ₦0.00).
+  2. Authenticated cart component validation passed across all 11 UI gates (Merchant Card, Horizontal Stepper, Fulfillment Selector, Order Summary, Escrow Badge, Doorstep/Pickup options, Web/Mobile quantity inputs, and Proceed to Checkout CTA).
+
 ### [2026-10-14 06:15 UTC] Third-Round Audit Remediation: Concurrency Isolation, Controlled Lock Handling & Non-Destructive Migration [backend, ai-governance] [AI]
+
 - Handover Concurrency & Graceful Lock Contention (`backend/vmarket-web/app/Http/Controllers/Customer/OrderHandoverController.php`):
   1. Handled race conditions and database lock contention gracefully in `confirmInShopPickup` and `confirmDoorstepDelivery`.
   2. If a competing request locks the order, queries the order out-of-transaction: if already delivered, returns controlled HTTP 422 (`"This order has already been confirmed as delivered."`).
