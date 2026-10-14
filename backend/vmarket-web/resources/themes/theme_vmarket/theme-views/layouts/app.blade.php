@@ -25,7 +25,11 @@
     <link rel="stylesheet" href="{{ theme_asset('assets/css/toastr.css') }}">
     
     <!-- VMarket Master Theme CSS (Loaded after Bootstrap to enforce bespoke design language) -->
-    <link rel="stylesheet" href="{{ theme_asset('assets/css/vmarket.css') }}">
+    @php
+        $vmarketCssPath = base_path('resources/themes/theme_vmarket/public/assets/css/vmarket.css');
+        $vmarketCssVersion = file_exists($vmarketCssPath) ? filemtime($vmarketCssPath) : time();
+    @endphp
+    <link rel="stylesheet" href="{{ theme_asset('assets/css/vmarket.css') }}?v={{ $vmarketCssVersion }}">
     <style>:root { --vm-primary: {{ $primaryColor }}; --vm-gold: {{ $secondaryColor }}; }</style>
     <!-- [AI] VM-STORE-004: intl-tel-input CSS so any initialized country picker renders styled, never as a raw list -->
     <link rel="stylesheet" href="{{ theme_asset('assets/plugins/intl-tel-input/css/intlTelInput.min.css') }}">
@@ -48,8 +52,10 @@
     <!-- Mobile Bottom Navigation Bar -->
     @include('theme-views.layouts.partials._mobile-nav')
 
-    <!-- Fly-Out Shopping Bag Drawer -->
-    @include('theme-views.layouts.partials._cart-drawer')
+    <!-- Fly-Out Shopping Bag Drawer (Suppressed on full Cart Review page to eliminate duplicate cart) -->
+    @if(!Request::is('shop-cart*'))
+        @include('theme-views.layouts.partials._cart-drawer')
+    @endif
 
     <!-- Omnichannel Location & Fulfillment Switcher Modal -->
     @include('theme-views.layouts.partials._location_modal')

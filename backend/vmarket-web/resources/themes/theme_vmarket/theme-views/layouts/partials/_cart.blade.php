@@ -58,10 +58,11 @@
                             }
                         @endphp
                         <div class="vm-drawer-item-row" id="drawer-cart-item-{{ $cartItem['id'] }}">
-                            <div class="vm-drawer-item-thumb">
+                            <div class="vm-drawer-item-thumb" style="width: 60px; height: 60px; min-width: 60px; max-width: 60px; flex-shrink: 0; border-radius: 10px; overflow: hidden; background: #F8FAFC; border: 1px solid #E2E8F0; display: flex; align-items: center; justify-content: center;">
                                 <img src="{{ getStorageImages(path: $product?->thumbnail_full_url ?? $cartItem['thumbnail_full_url'], type: 'product') }}"
                                      alt="{{ $cartItem['name'] }}"
-                                     class="img-fluid rounded">
+                                     style="width: 100%; height: 100%; object-fit: cover;"
+                                     class="rounded">
                             </div>
                             <div class="vm-drawer-item-details">
                                 <div class="d-flex justify-content-between align-items-start gap-2">

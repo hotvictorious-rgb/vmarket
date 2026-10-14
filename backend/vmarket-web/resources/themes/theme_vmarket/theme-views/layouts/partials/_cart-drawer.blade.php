@@ -3,9 +3,9 @@
 @endphp
 
 {{-- [AI] Victorious MARKET Fly-Out Cart Drawer --}}
-<div id="vmCartDrawerBackdrop" class="vm-cart-drawer-backdrop" aria-hidden="true"></div>
+<div id="vmCartDrawerBackdrop" class="vm-cart-drawer-backdrop" aria-hidden="true" style="position: fixed; inset: 0; z-index: 99998; opacity: 0; visibility: hidden; pointer-events: none;"></div>
 
-<aside id="vmCartDrawer" class="vm-cart-drawer" role="dialog" aria-modal="true" aria-labelledby="vmCartDrawerTitle">
+<aside id="vmCartDrawer" class="vm-cart-drawer" role="dialog" aria-modal="true" aria-labelledby="vmCartDrawerTitle" style="position: fixed; top: 0; right: 0; bottom: 0; width: 440px; max-width: 100vw; background: #FFFFFF; z-index: 99999; transform: translateX(100%); visibility: hidden; pointer-events: none; box-shadow: -10px 0 35px rgba(27, 16, 53, 0.18); display: flex; flex-direction: column;">
     {{-- Drawer Header --}}
     <div class="vm-cart-drawer-header">
         <div class="vm-cart-drawer-title-wrap">

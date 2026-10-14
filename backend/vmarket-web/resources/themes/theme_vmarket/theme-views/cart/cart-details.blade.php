@@ -225,9 +225,10 @@
                                         </div>
 
                                         {{-- Product Thumbnail --}}
-                                        <div class="vm-cart-thumb">
+                                        <div class="vm-cart-thumb" style="width: 76px; height: 76px; min-width: 76px; max-width: 76px; flex-shrink: 0; border-radius: 12px; overflow: hidden; background: #F8FAFC; border: 1px solid #E2E8F0; position: relative; display: flex; align-items: center; justify-content: center;">
                                             <img alt="{{ $cartItem['name'] }}"
                                                  src="{{ getStorageImages(path: $cartItem->product->thumbnail_full_url ?? null, type: 'product') }}"
+                                                 style="width: 100%; height: 100%; object-fit: cover;"
                                                  class="{{ !$isAvailable ? 'opacity-50' : '' }}">
                                             @if(!$isAvailable)
                                                 <span class="position-absolute top-50 start-50 translate-middle badge bg-dark text-white fs-10 px-1 py-1">
