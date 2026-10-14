@@ -115,42 +115,12 @@ class SplashScreenState extends State<SplashScreen> {
               }
             }
 
-            else if(Provider.of<SplashController>(Get.context!, listen: false).showIntro()!){
-              RouterHelper.getOnboardingRoute(
-                action: RouteAction.pushReplacement,
-                indicatorColor: Provider.of<ThemeController>(Get.context!, listen: false).darkTheme ?
-                  Theme.of(Get.context!).colorScheme.onTertiary : Theme.of(Get.context!).hintColor,
-                selectedIndicatorColor: Theme.of(Get.context!).primaryColor,
-              );
-            }
-            else{
-              if(Provider.of<AuthController>(Get.context!, listen: false).getGuestToken() != null &&
-                  Provider.of<AuthController>(Get.context!, listen: false).getGuestToken() != '1') {
-                // Navigator.of(Get.context!).pushReplacement(
-                //   PageRouteBuilder(
-                //     pageBuilder: (context, animation, secondaryAnimation) => const DashBoardScreen(),
-                //     transitionDuration: Duration.zero, // Removes transition duration
-                //     reverseTransitionDuration: Duration.zero, // Removes reverse transition
-                //     transitionsBuilder: (context, animation, secondaryAnimation, child) => child,
-                //   ),
-                // );
-
-                RouterHelper.getDashboardRoute(action: RouteAction.pushReplacement);
-
-
-              }else{
-                Provider.of<AuthController>(Get.context!, listen: false).getGuestIdUrl();
-                RouterHelper.getDashboardRoute(action: RouteAction.pushReplacement);
-
-                // Navigator.of(Get.context!).pushReplacement(
-                //   PageRouteBuilder(
-                //     pageBuilder: (context, animation, secondaryAnimation) => const DashBoardScreen(),
-                //     transitionDuration: Duration.zero, // Removes transition duration
-                //     reverseTransitionDuration: Duration.zero, // Removes reverse transition
-                //     transitionsBuilder: (context, animation, secondaryAnimation, child) => child,
-                //   ),
-                // );
-
+            else {
+              // [AI] Screen 1: Present Interactive Splash Screen with Get Started & Log In
+              if (mounted) {
+                setState(() {
+                  _showActionButtons = true;
+                });
               }
             }
           });
@@ -198,21 +168,12 @@ class SplashScreenState extends State<SplashScreen> {
             }
           }
 
-          else if(Provider.of<SplashController>(Get.context!, listen: false).showIntro()! &&  !configModel!.hasLocaldb!){
-            RouterHelper.getOnboardingRoute(
-              action: RouteAction.pushReplacement,
-              indicatorColor: Provider.of<ThemeController>(Get.context!, listen: false).darkTheme ?
-                Theme.of(Get.context!).colorScheme.onTertiary : Theme.of(Get.context!).hintColor,
-              selectedIndicatorColor: Theme.of(Get.context!).primaryColor,
-            );
-          }
-          else if(!configModel!.hasLocaldb! || (configModel.hasLocaldb! && configModel.localMaintenanceMode! && !(config?.maintenanceModeData?.maintenanceStatus == 1 && config?.maintenanceModeData?.selectedMaintenanceSystem?.customerApp == 1))){
-            if(Provider.of<AuthController>(Get.context!, listen: false).getGuestToken() != null &&
-                Provider.of<AuthController>(Get.context!, listen: false).getGuestToken() != '1'){
-              RouterHelper.getDashboardRoute(action: RouteAction.pushReplacement);
-            }else{
-              Provider.of<AuthController>(Get.context!, listen: false).getGuestIdUrl();
-              RouterHelper.getDashboardRoute(action: RouteAction.pushNamedAndRemoveUntil);
+          else {
+            // [AI] Screen 1: Present Interactive Splash Screen with Get Started & Log In
+            if (mounted) {
+              setState(() {
+                _showActionButtons = true;
+              });
             }
           }
         // });
@@ -246,92 +207,247 @@ class SplashScreenState extends State<SplashScreen> {
     return 0;
   }
 
+  bool _showActionButtons = false;
+
+  void _onGetStarted() {
+    if (Provider.of<SplashController>(context, listen: false).showIntro()!) {
+      RouterHelper.getOnboardingRoute(
+        action: RouteAction.pushReplacement,
+        indicatorColor: Provider.of<ThemeController>(context, listen: false).darkTheme
+            ? Theme.of(context).colorScheme.onTertiary
+            : Theme.of(context).hintColor,
+        selectedIndicatorColor: Theme.of(context).primaryColor,
+      );
+    } else {
+      if (Provider.of<AuthController>(context, listen: false).getGuestToken() == null ||
+          Provider.of<AuthController>(context, listen: false).getGuestToken() == '1') {
+        Provider.of<AuthController>(context, listen: false).getGuestIdUrl();
+      }
+      RouterHelper.getDashboardRoute(action: RouteAction.pushReplacement);
+    }
+  }
+
+  void _onLogin() {
+    RouterHelper.getLoginRoute(action: RouteAction.push);
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       key: _globalKey,
-      body: Provider.of<SplashController>(context).hasConnection ?
-      SplashWidget() : const NoInternetOrDataScreenWidget(isNoInternet: true, child: SplashScreen()),
+      body: Provider.of<SplashController>(context).hasConnection
+          ? SplashWidget(
+              showActionButtons: _showActionButtons,
+              onGetStarted: _onGetStarted,
+              onLogin: _onLogin,
+            )
+          : const NoInternetOrDataScreenWidget(isNoInternet: true, child: SplashScreen()),
     );
   }
 }
 
 class SplashWidget extends StatelessWidget {
-  const SplashWidget({super.key});
+  final bool showActionButtons;
+  final VoidCallback? onGetStarted;
+  final VoidCallback? onLogin;
+
+  const SplashWidget({
+    super.key,
+    this.showActionButtons = false,
+    this.onGetStarted,
+    this.onLogin,
+  });
 
   @override
   Widget build(BuildContext context) {
-    return ColoredBox(
-      color: Theme.of(context).primaryColor,
-      child: Column(mainAxisSize: MainAxisSize.max,
-        mainAxisAlignment: MainAxisAlignment.center,
-        crossAxisAlignment: CrossAxisAlignment.center,
-        children: [
-        Row(children: []),
-        BouncyWidget(
-          duration: const Duration(milliseconds: 2000), lift: 50, ratio: 0.5, pause: 0.25,
-          child: SizedBox(width: 150, child: Image.asset(Images.logo, width: 150.0))
+    return Container(
+      decoration: const BoxDecoration(
+        gradient: LinearGradient(
+          begin: Alignment.topCenter,
+          end: Alignment.bottomCenter,
+          colors: [
+            Color(0xFF1B1035),
+            Color(0xFF260D4D),
+            Color(0xFF16082B),
+          ],
         ),
-        const SizedBox(height: 14),
-        // [AI] Signature Victorious MARKET Brand Wordmark (Gold + White)
-        Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.center,
-          children: [
-            ShaderMask(
-              blendMode: BlendMode.srcIn,
-              shaderCallback: (bounds) => const LinearGradient(
-                colors: [Color(0xFFFFD700), Color(0xFFFFB300)],
-                begin: Alignment.topLeft,
-                end: Alignment.bottomRight,
-              ).createShader(bounds),
-              child: Text(
-                'Victorious',
-                textAlign: TextAlign.center,
-                style: TextStyle(
-                  fontFamily: 'Ubuntu',
-                  fontWeight: FontWeight.w900,
-                  fontSize: 32,
-                  letterSpacing: 0.8,
-                  height: 1.1,
-                  color: const Color(0xFFFFD700),
-                  shadows: [
-                    Shadow(
-                      color: Colors.black.withValues(alpha: 0.35),
-                      offset: const Offset(0, 2),
-                      blurRadius: 8,
+      ),
+      child: SafeArea(
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 24.0, vertical: 20.0),
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            crossAxisAlignment: CrossAxisAlignment.center,
+            children: [
+              const SizedBox(height: 20),
+
+              // [AI] Screen 1 Center Branding: Gold Crown Logo + Victorious MARKET Wordmark + Tagline
+              Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  BouncyWidget(
+                    duration: const Duration(milliseconds: 2000),
+                    lift: 30,
+                    ratio: 0.5,
+                    pause: 0.25,
+                    child: SizedBox(
+                      width: 125,
+                      height: 125,
+                      child: Image.asset(Images.logo, fit: BoxFit.contain),
                     ),
-                  ],
-                ),
-              ),
-            ),
-            const SizedBox(height: 2),
-            Text(
-              'MARKET',
-              textAlign: TextAlign.center,
-              style: TextStyle(
-                fontFamily: 'Ubuntu',
-                fontWeight: FontWeight.w900,
-                fontSize: 27,
-                letterSpacing: 6.5,
-                height: 1.0,
-                color: Colors.white, // Crisp White #FFFFFF
-                shadows: [
-                  Shadow(
-                    color: Colors.black.withValues(alpha: 0.3),
-                    offset: const Offset(0, 2),
-                    blurRadius: 6,
+                  ),
+                  const SizedBox(height: 18),
+                  ShaderMask(
+                    blendMode: BlendMode.srcIn,
+                    shaderCallback: (bounds) => const LinearGradient(
+                      colors: [Color(0xFFFFD700), Color(0xFFFFB300)],
+                      begin: Alignment.topLeft,
+                      end: Alignment.bottomRight,
+                    ).createShader(bounds),
+                    child: const Text(
+                      'Victorious',
+                      textAlign: TextAlign.center,
+                      style: TextStyle(
+                        fontFamily: 'Ubuntu',
+                        fontWeight: FontWeight.w900,
+                        fontSize: 34,
+                        letterSpacing: 0.8,
+                        height: 1.1,
+                        color: Color(0xFFFFD700),
+                        shadows: [
+                          Shadow(
+                            color: Colors.black45,
+                            offset: Offset(0, 2),
+                            blurRadius: 8,
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 2),
+                  const Text(
+                    'MARKET',
+                    textAlign: TextAlign.center,
+                    style: TextStyle(
+                      fontFamily: 'Ubuntu',
+                      fontWeight: FontWeight.w900,
+                      fontSize: 26,
+                      letterSpacing: 6.5,
+                      height: 1.0,
+                      color: Colors.white,
+                      shadows: [
+                        Shadow(
+                          color: Colors.black38,
+                          offset: Offset(0, 2),
+                          blurRadius: 6,
+                        ),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(height: 16),
+                  Text(
+                    'Your Trusted Online Market\nFor Quality Products.',
+                    textAlign: TextAlign.center,
+                    style: TextStyle(
+                      fontSize: Dimensions.fontSizeLarge,
+                      fontWeight: FontWeight.w500,
+                      height: 1.4,
+                      color: Colors.white.withOpacity(0.85),
+                    ),
                   ),
                 ],
               ),
-            ),
-          ],
+
+              // [AI] Screen 1 Action Bottom Stack: Get Started, Log In, and FAST • SAFE • RELIABLE
+              Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  if (showActionButtons) ...[
+                    // Primary CTA: Gold "Get Started"
+                    SizedBox(
+                      width: double.infinity,
+                      height: 52,
+                      child: ElevatedButton(
+                        onPressed: onGetStarted,
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: const Color(0xFFFACC15),
+                          foregroundColor: const Color(0xFF1B1035),
+                          elevation: 4,
+                          shadowColor: const Color(0xFFFACC15).withOpacity(0.4),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(14),
+                          ),
+                        ),
+                        child: const Text(
+                          'Get Started',
+                          style: TextStyle(
+                            fontSize: 16,
+                            fontWeight: FontWeight.w800,
+                            letterSpacing: 0.3,
+                          ),
+                        ),
+                      ),
+                    ),
+                    const SizedBox(height: 12),
+
+                    // Secondary CTA: Translucent Outline "Log In"
+                    SizedBox(
+                      width: double.infinity,
+                      height: 52,
+                      child: OutlinedButton(
+                        onPressed: onLogin,
+                        style: OutlinedButton.styleFrom(
+                          backgroundColor: Colors.white.withOpacity(0.06),
+                          foregroundColor: Colors.white,
+                          side: BorderSide(
+                            color: Colors.white.withOpacity(0.25),
+                            width: 1.2,
+                          ),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(14),
+                          ),
+                        ),
+                        child: const Text(
+                          'Log In',
+                          style: TextStyle(
+                            fontSize: 15.5,
+                            fontWeight: FontWeight.w700,
+                            color: Colors.white,
+                          ),
+                        ),
+                      ),
+                    ),
+                    const SizedBox(height: 24),
+                  ] else ...[
+                    const SizedBox(
+                      width: 28,
+                      height: 28,
+                      child: CircularProgressIndicator(
+                        strokeWidth: 2.5,
+                        valueColor: AlwaysStoppedAnimation<Color>(Color(0xFFFACC15)),
+                      ),
+                    ),
+                    const SizedBox(height: 28),
+                  ],
+
+                  // Micro Trust Strip
+                  Text(
+                    'FAST  •  SAFE  •  RELIABLE',
+                    textAlign: TextAlign.center,
+                    style: TextStyle(
+                      fontSize: 11,
+                      fontWeight: FontWeight.w700,
+                      letterSpacing: 3.0,
+                      color: Colors.white.withOpacity(0.55),
+                    ),
+                  ),
+                  const SizedBox(height: 10),
+                ],
+              ),
+            ],
+          ),
         ),
-        Padding(
-          padding: const EdgeInsets.only(top: Dimensions.paddingSizeSmall),
-          child: Text(AppConstants.slogan,style: textRegular.copyWith(fontSize: Dimensions.fontSizeDefault, color: Colors.white.withValues(alpha: 0.9)))
-        )
-      ]),
+      ),
     );
   }
 }
