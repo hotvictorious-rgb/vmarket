@@ -11,7 +11,7 @@ return new class extends Migration
      *
      * [AI] Victorious MARKET Customer Cashback Reward Ledger
      * 5% Reward on eligible physical merchandise value (excludes shipping fees).
-     * Non-withdrawable purchase reward ledger: pending -> available (after 7-day return window) -> redeemed.
+     * Non-withdrawable purchase reward ledger: pending -> available (after 24-hour return window) -> redeemed.
      */
     public function up(): void
     {
@@ -19,7 +19,7 @@ return new class extends Migration
             Schema::create('customer_cashback_ledgers', function (Blueprint $table) {
                 $table->id();
                 $table->unsignedBigInteger('customer_id')->index();
-                $table->unsignedBigInteger('order_id')->index();
+                $table->unsignedBigInteger('order_id')->nullable()->unique();
                 $table->decimal('merchandise_amount', 14, 4)->default(0.0000);
                 $table->decimal('cashback_rate', 5, 2)->default(5.00);
                 $table->decimal('cashback_amount', 14, 4)->default(0.0000);

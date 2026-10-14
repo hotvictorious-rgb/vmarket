@@ -870,7 +870,8 @@ class PaystackRefundService
                     $validityMonths = (int) (getWebConfig(name: 'loyalty_point_validity_months') ?: 6);
                     CustomerCashbackLedger::create([
                         'customer_id' => $order->customer_id,
-                        'order_id' => $order->id,
+                        'order_id' => null,
+                        'redeemed_order_id' => $order->id,
                         'merchandise_amount' => '0.00',
                         'cashback_rate' => '0.00',
                         'cashback_amount' => $cashbackToRestore,
@@ -1193,7 +1194,8 @@ class PaystackRefundService
                 $validityMonths = (int) (getWebConfig(name: 'loyalty_point_validity_months') ?: 6);
                 CustomerCashbackLedger::create([
                     'customer_id' => $lockedOrder->customer_id,
-                    'order_id' => $lockedOrder->id,
+                    'order_id' => null,
+                    'redeemed_order_id' => $lockedOrder->id,
                     'merchandise_amount' => '0.00',
                     'cashback_rate' => '0.00',
                     'cashback_amount' => $cashbackToRestore,

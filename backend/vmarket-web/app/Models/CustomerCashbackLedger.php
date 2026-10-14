@@ -181,17 +181,26 @@ class CustomerCashbackLedger extends Model
         }
         $expiresAt = $order->refund_window_expires_at ? \Carbon\Carbon::parse($order->refund_window_expires_at)->addMonths($validityMonths) : null;
 
-        return self::create([
-            'customer_id' => $order->customer_id,
-            'order_id' => $order->id,
-            'merchandise_amount' => $netNewMoney,
-            'cashback_rate' => $cashbackRate,
-            'cashback_amount' => $cashbackAmount,
-            'status' => 'pending',
-            'available_at' => $order->refund_window_expires_at,
-            'expires_at' => $expiresAt,
-            'description' => "{$cashbackRate}% Victorious Cashback Reward for Order #{$order->id} (Earned on ₦{$netNewMoney} new money paid)",
-        ]);
+        try {
+            return self::create([
+                'customer_id' => $order->customer_id,
+                'order_id' => $order->id,
+                'merchandise_amount' => $netNewMoney,
+                'cashback_rate' => $cashbackRate,
+                'cashback_amount' => $cashbackAmount,
+                'status' => 'pending',
+                'available_at' => $order->refund_window_expires_at,
+                'expires_at' => $expiresAt,
+                'description' => "{$cashbackRate}% Victorious Cashback Reward for Order #{$order->id} (Earned on ₦{$netNewMoney} new money paid)",
+            ]);
+        } catch (\Illuminate\Database\QueryException $e) {
+            // [AI] Concurrency recovery: If another thread inserted the row concurrently, return the existing row
+            $existing = self::where('order_id', $order->id)->first();
+            if ($existing) {
+                return $existing;
+            }
+            throw $e;
+        }
     }
 
     /** [AI] V1 runtime bound also covers previously stored configurations; issued lots remain unchanged. */
