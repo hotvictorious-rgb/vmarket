@@ -9,7 +9,7 @@ import 'package:sixvalley_delivery_boy/features/live_tracking/widgets/expendale_
 import 'package:sixvalley_delivery_boy/features/order/controllers/order_controller.dart';
 import 'package:sixvalley_delivery_boy/features/order/domain/models/order_model.dart';
 import 'package:sixvalley_delivery_boy/features/splash/controllers/splash_controller.dart';
-import 'package:sixvalley_delivery_boy/features/splash/domain/models/config_model.dart';
+import 'package:sixvalley_delivery_boy/features/splash/domain/models/config_model.dart' hide Colors;
 import 'package:sixvalley_delivery_boy/helper/navigation_helper.dart';
 import 'package:sixvalley_delivery_boy/utill/dimensions.dart';
 import 'package:sixvalley_delivery_boy/utill/styles.dart';
@@ -128,11 +128,11 @@ class _OrderLiveTrackingScreenState extends State<OrderLiveTrackingScreen> {
                             end: Alignment.bottomRight,
                           ),
                           borderRadius: BorderRadius.circular(30),
-                          boxShadow: [
+                          boxShadow: const [
                             BoxShadow(
-                              color: const Color(0xFF5E17EB).withValues(alpha: 0.35),
+                              color: Color(0x595E17EB),
                               blurRadius: 8,
-                              offset: const Offset(0, 3),
+                              offset: Offset(0, 3),
                             ),
                           ],
                         ),
