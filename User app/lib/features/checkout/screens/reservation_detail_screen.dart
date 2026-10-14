@@ -21,8 +21,14 @@ class ReservationDetailScreen extends StatelessWidget {
     switch (reservation.status) {
       case 'pending_inspection':
         return const Color(0xFFF59E0B); // Amber
-      case 'inspected_accepted':
+      case 'en_route':
+        return const Color(0xFF3B82F6); // Blue
+      case 'en_route_timeout':
+        return const Color(0xFF8B5CF6); // Purple
+      case 'held_confirmed':
         return const Color(0xFF10B981); // Green
+      case 'inspected_accepted':
+        return const Color(0xFF059669); // Dark Green
       case 'inspected_rejected':
         return const Color(0xFFEF4444); // Red
       case 'expired':
@@ -38,6 +44,12 @@ class ReservationDetailScreen extends StatelessWidget {
     switch (reservation.status) {
       case 'pending_inspection':
         return getTranslated('pending_inspection_label', context) ?? 'Awaiting Store Inspection';
+      case 'en_route':
+        return 'En Route — Awaiting Confirmation';
+      case 'en_route_timeout':
+        return 'Vendor Busy — Tap to Resend';
+      case 'held_confirmed':
+        return 'Item Held at Counter — Travel Now';
       case 'inspected_accepted':
         return getTranslated('inspected_accepted_label', context) ?? 'Accepted — Pay Now';
       case 'inspected_rejected':
@@ -426,6 +438,12 @@ class ReservationDetailScreen extends StatelessWidget {
     switch (reservation.status) {
       case 'pending_inspection':
         return Icons.access_time_filled;
+      case 'en_route':
+        return Icons.directions_car;
+      case 'en_route_timeout':
+        return Icons.schedule;
+      case 'held_confirmed':
+        return Icons.lock;
       case 'inspected_accepted':
         return Icons.check_circle;
       case 'inspected_rejected':
@@ -577,6 +595,99 @@ class ReservationDetailScreen extends StatelessWidget {
   }
 
   Widget _buildExpiryCountdown(BuildContext context) {
+    if (reservation.status == 'held_confirmed') {
+      DateTime? holdExpiry;
+      if (reservation.heldUntil != null && reservation.heldUntil!.trim().isNotEmpty) {
+        holdExpiry = DateTime.tryParse(reservation.heldUntil!);
+      }
+      final now = DateTime.now();
+      final difference = holdExpiry != null ? holdExpiry.difference(now) : const Duration(minutes: 90);
+      final isExpired = difference.isNegative;
+      final minutes = difference.inMinutes;
+
+      return Container(
+        margin: const EdgeInsets.only(top: 10),
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+        decoration: BoxDecoration(
+          color: const Color(0xFF10B981).withValues(alpha: 0.12),
+          borderRadius: BorderRadius.circular(8),
+          border: Border.all(
+            color: const Color(0xFF10B981).withValues(alpha: 0.3),
+          ),
+        ),
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            const Icon(Icons.lock_clock, size: 16, color: Color(0xFF059669)),
+            const SizedBox(width: 6),
+            Text(
+              isExpired ? 'Counter lock window ended' : 'Physical hold active: ${minutes}m left to arrive',
+              style: titilliumSemiBold.copyWith(
+                fontSize: Dimensions.fontSizeSmall,
+                color: const Color(0xFF059669),
+              ),
+            ),
+          ],
+        ),
+      );
+    }
+
+    if (reservation.status == 'en_route') {
+      return Container(
+        margin: const EdgeInsets.only(top: 10),
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+        decoration: BoxDecoration(
+          color: const Color(0xFF3B82F6).withValues(alpha: 0.12),
+          borderRadius: BorderRadius.circular(8),
+          border: Border.all(
+            color: const Color(0xFF3B82F6).withValues(alpha: 0.3),
+          ),
+        ),
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            const Icon(Icons.directions_car, size: 16, color: Color(0xFF2563EB)),
+            const SizedBox(width: 6),
+            Text(
+              'En route: Waiting for store response (15m SLA)',
+              style: titilliumSemiBold.copyWith(
+                fontSize: Dimensions.fontSizeSmall,
+                color: const Color(0xFF2563EB),
+              ),
+            ),
+          ],
+        ),
+      );
+    }
+
+    if (reservation.status == 'en_route_timeout') {
+      return Container(
+        margin: const EdgeInsets.only(top: 10),
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+        decoration: BoxDecoration(
+          color: const Color(0xFFF59E0B).withValues(alpha: 0.12),
+          borderRadius: BorderRadius.circular(8),
+          border: Border.all(
+            color: const Color(0xFFF59E0B).withValues(alpha: 0.3),
+          ),
+        ),
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            const Icon(Icons.schedule, size: 16, color: Color(0xFFD97706)),
+            const SizedBox(width: 6),
+            Text(
+              'SLA timeout: You can resend arrival ping or walk in',
+              style: titilliumSemiBold.copyWith(
+                fontSize: Dimensions.fontSizeSmall,
+                color: const Color(0xFFD97706),
+              ),
+            ),
+          ],
+        ),
+      );
+    }
+
     if (reservation.status != 'pending_inspection' && reservation.status != 'inspected_accepted') {
       return const SizedBox.shrink();
     }

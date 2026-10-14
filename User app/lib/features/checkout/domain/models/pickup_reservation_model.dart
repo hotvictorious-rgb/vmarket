@@ -36,6 +36,9 @@ class PickupReservationModel {
   String? currency;
   String? expiresAt;
   String? createdAt;
+  String? heldUntil;
+  String? enRouteSlaExpiresAt;
+  String? rejectionReason;
   int? orderId;
   PickupShopSnapshot? shop;
   List<PickupItemSnapshot>? items;
@@ -54,6 +57,9 @@ class PickupReservationModel {
     this.currency,
     this.expiresAt,
     this.createdAt,
+    this.heldUntil,
+    this.enRouteSlaExpiresAt,
+    this.rejectionReason,
     this.orderId,
     this.shop,
     this.items,
@@ -72,6 +78,9 @@ class PickupReservationModel {
     currency = json['currency'];
     expiresAt = json['expires_at'];
     createdAt = json['created_at'];
+    heldUntil = json['held_until'];
+    enRouteSlaExpiresAt = json['en_route_sla_expires_at'];
+    rejectionReason = json['rejection_reason'];
     orderId = json['order_id'];
 
     // [AI] Priority 1: New enriched API response shape — shop_snapshot top-level key

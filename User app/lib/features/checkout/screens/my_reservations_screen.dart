@@ -71,6 +71,9 @@ class _MyReservationsScreenState extends State<MyReservationsScreen> with Single
             _activeReservations = allReservations
                 .where((r) =>
                     r.status == 'pending_inspection' ||
+                    r.status == 'en_route' ||
+                    r.status == 'en_route_timeout' ||
+                    r.status == 'held_confirmed' ||
                     r.status == 'inspected_accepted')
                 .toList();
             _historyReservations = allReservations
@@ -281,8 +284,14 @@ class _ReservationCard extends StatelessWidget {
     switch (reservation.status) {
       case 'pending_inspection':
         return const Color(0xFFF59E0B); // Amber
-      case 'inspected_accepted':
+      case 'en_route':
+        return const Color(0xFF3B82F6); // Blue
+      case 'en_route_timeout':
+        return const Color(0xFF8B5CF6); // Purple
+      case 'held_confirmed':
         return const Color(0xFF10B981); // Green
+      case 'inspected_accepted':
+        return const Color(0xFF059669); // Dark Green
       case 'inspected_rejected':
         return const Color(0xFFEF4444); // Red
       case 'expired':
@@ -298,6 +307,12 @@ class _ReservationCard extends StatelessWidget {
     switch (reservation.status) {
       case 'pending_inspection':
         return getTranslated('pending_inspection_label', context) ?? 'Awaiting Inspection';
+      case 'en_route':
+        return 'En Route to Store';
+      case 'en_route_timeout':
+        return 'Vendor Awaiting Resend';
+      case 'held_confirmed':
+        return 'Item Held at Counter';
       case 'inspected_accepted':
         return getTranslated('inspected_accepted_label', context) ?? 'Ready to Pay';
       case 'inspected_rejected':
