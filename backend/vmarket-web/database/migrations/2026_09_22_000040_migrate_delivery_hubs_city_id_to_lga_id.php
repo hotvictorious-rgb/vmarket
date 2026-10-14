@@ -36,6 +36,10 @@ return new class extends Migration
         // lga_id stays NULL; admin re-assigns via the updated hub UI
         DB::table('delivery_hubs')->update(['lga_id' => null]);
 
+        if (DB::getDriverName() === 'sqlite') {
+            DB::statement("DROP INDEX IF EXISTS delivery_hubs_city_id_index");
+        }
+
         Schema::table('delivery_hubs', function (Blueprint $table) {
             // Drop the old city_id column
             if (Schema::hasColumn('delivery_hubs', 'city_id')) {

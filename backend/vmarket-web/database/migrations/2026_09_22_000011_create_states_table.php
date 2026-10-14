@@ -16,17 +16,19 @@ return new class extends Migration
 {
     public function up(): void
     {
-        Schema::create('states', function (Blueprint $table) {
-            $table->id();
-            $table->foreignId('country_id')->constrained('countries')->onDelete('cascade');
-            $table->string('name', 100);
-            $table->string('code', 10)->nullable()->comment('State code if available');
-            $table->boolean('is_active')->default(true);
-            $table->timestamps();
+        if (!Schema::hasTable('states')) {
+            Schema::create('states', function (Blueprint $table) {
+                $table->id();
+                $table->foreignId('country_id')->constrained('countries')->onDelete('cascade');
+                $table->string('name', 100);
+                $table->string('code', 10)->nullable()->comment('State code if available');
+                $table->boolean('is_active')->default(true);
+                $table->timestamps();
 
-            $table->unique(['country_id', 'name']);
-            $table->index(['country_id', 'is_active']);
-        });
+                $table->unique(['country_id', 'name']);
+                $table->index(['country_id', 'is_active']);
+            });
+        }
     }
 
     public function down(): void

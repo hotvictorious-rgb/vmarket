@@ -12,7 +12,8 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('payment_reconciliations', function (Blueprint $table) {
+        if (!Schema::hasTable('payment_reconciliations')) {
+            Schema::create('payment_reconciliations', function (Blueprint $table) {
             $table->id();
             $table->string('case_number', 64)->unique('uq_prec_case_number');
             $table->string('gateway_reference', 191)->unique('uq_prec_gateway_ref');
@@ -56,6 +57,7 @@ return new class extends Migration
             $table->index('order_group_id', 'idx_prec_order_group_id');
             $table->index('pickup_reservation_id', 'idx_prec_pickup_res_id');
         });
+        }
     }
 
     public function down(): void

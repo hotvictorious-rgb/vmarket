@@ -23,12 +23,28 @@ return new class extends Migration
     {
         Schema::table('shops', function (Blueprint $table) {
             // Add canonical geography (nullable during migration)
-            $table->foreignId('country_id')->nullable()->after('id')->constrained('countries');
-            $table->foreignId('state_id')->nullable()->after('country_id')->constrained('states');
-            $table->foreignId('lga_id')->nullable()->after('state_id')->constrained('lgas');
+            if (!Schema::hasColumn('shops', 'country_id')) {
+                $table->foreignId('country_id')->nullable()->after('id')->constrained('countries');
+            }
+            if (!Schema::hasColumn('shops', 'state_id')) {
+                $table->foreignId('state_id')->nullable()->after('country_id')->constrained('states');
+            }
+            if (!Schema::hasColumn('shops', 'lga_id')) {
+                $table->foreignId('lga_id')->nullable()->after('state_id')->constrained('lgas');
+            }
 
             // Index for origin LGA lookups (delivery lane routing)
-            $table->index(['country_id', 'state_id', 'lga_id'], 'idx_shop_canonical_geography');
+            $isSqlite = DB::getDriverName() === 'sqlite';
+            $hasIdx = false;
+            if ($isSqlite) {
+                $indexes = DB::select("PRAGMA index_list('shops')");
+                foreach ($indexes as $idx) {
+                    if (($idx->name ?? '') === 'idx_shop_canonical_geography') $hasIdx = true;
+                }
+            }
+            if (!$hasIdx && !$isSqlite) {
+                $table->index(['country_id', 'state_id', 'lga_id'], 'idx_shop_canonical_geography');
+            }
 
             // DO NOT DROP legacy fields:
             // - delivery_state_id

@@ -12,7 +12,8 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('pickup_reservations', function (Blueprint $table) {
+        if (!Schema::hasTable('pickup_reservations')) {
+            Schema::create('pickup_reservations', function (Blueprint $table) {
             $table->id();
             $table->string('reservation_code', 32)->unique('uq_pr_reservation_code');
             $table->string('idempotency_key', 64)->unique('uq_pr_idempotency_key');
@@ -50,6 +51,7 @@ return new class extends Migration
             $table->index('order_id', 'idx_pr_order_id');
             $table->index('expires_at', 'idx_pr_expires_at');
         });
+        }
     }
 
     public function down(): void

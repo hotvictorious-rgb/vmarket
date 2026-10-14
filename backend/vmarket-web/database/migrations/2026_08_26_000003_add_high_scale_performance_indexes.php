@@ -14,10 +14,19 @@ return new class extends Migration
      */
     public function up(): void
     {
-        // Universal Native MySQL index checker (does not depend on doctrine/dbal or Schema::hasIndex)
+        // Universal Native index checker (supports both SQLite and MySQL)
         $hasIndex = function (string $table, string $indexName): bool {
             try {
                 if (!Schema::hasTable($table)) {
+                    return false;
+                }
+                if (DB::getDriverName() === 'sqlite') {
+                    $results = DB::select("PRAGMA index_list('{$table}')");
+                    foreach ($results as $r) {
+                        if (($r->name ?? '') === $indexName) {
+                            return true;
+                        }
+                    }
                     return false;
                 }
                 $results = DB::select("SHOW INDEX FROM `{$table}` WHERE Key_name = ?", [$indexName]);

@@ -20,17 +20,19 @@ return new class extends Migration
 {
     public function up(): void
     {
-        Schema::create('lgas', function (Blueprint $table) {
-            $table->id();
-            $table->foreignId('state_id')->constrained('states')->onDelete('cascade');
-            $table->string('name', 100);
-            $table->string('code', 20)->nullable()->comment('LGA code if available');
-            $table->boolean('is_active')->default(true);
-            $table->timestamps();
+        if (!Schema::hasTable('lgas')) {
+            Schema::create('lgas', function (Blueprint $table) {
+                $table->id();
+                $table->foreignId('state_id')->constrained('states')->onDelete('cascade');
+                $table->string('name', 100);
+                $table->string('code', 20)->nullable()->comment('LGA code if available');
+                $table->boolean('is_active')->default(true);
+                $table->timestamps();
 
-            $table->unique(['state_id', 'name']);
-            $table->index(['state_id', 'is_active']);
-        });
+                $table->unique(['state_id', 'name']);
+                $table->index(['state_id', 'is_active']);
+            });
+        }
     }
 
     public function down(): void

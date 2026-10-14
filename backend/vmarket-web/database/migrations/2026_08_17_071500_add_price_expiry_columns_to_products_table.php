@@ -13,7 +13,10 @@ return new class extends Migration
     {
         Schema::table('products', function (Blueprint $table) {
             if (!Schema::hasColumn('products', 'price_updated_at')) {
-                $table->timestamp('price_updated_at')->nullable()->useCurrent()->after('unit_price');
+                $col = $table->timestamp('price_updated_at')->nullable()->after('unit_price');
+                if (\Illuminate\Support\Facades\DB::getDriverName() !== 'sqlite') {
+                    $col->useCurrent();
+                }
             }
             if (!Schema::hasColumn('products', 'price_expiry_notified_at')) {
                 $table->timestamp('price_expiry_notified_at')->nullable()->after('price_updated_at');

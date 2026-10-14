@@ -48,21 +48,46 @@ return new class extends Migration
             if (!Schema::hasColumn('orders', 'is_delivery_fee_refunded')) {
                 $table->boolean('is_delivery_fee_refunded')->default(0)->after('settlement_reference');
             }
+        });
 
-            // Indexes for post-receipt window queries & settlement state filters
-            $table->index(['received_at', 'refund_window_expires_at'], 'orders_receipt_window_index');
-            $table->index(['vendor_settlement_status'], 'orders_vendor_settlement_status_index');
+        $hasIndex = function (string $table, string $indexName): bool {
+            try {
+                if (DB::getDriverName() === 'sqlite') {
+                    $results = DB::select("PRAGMA index_list('{$table}')");
+                    foreach ($results as $r) {
+                        if (($r->name ?? '') === $indexName) return true;
+                    }
+                    return false;
+                }
+                $results = DB::select("SHOW INDEX FROM `{$table}` WHERE Key_name = ?", [$indexName]);
+                return !empty($results);
+            } catch (\Throwable $e) {
+                return false;
+            }
+        };
+
+        Schema::table('orders', function (Blueprint $table) use ($hasIndex) {
+            if (!$hasIndex('orders', 'orders_receipt_window_index')) {
+                $table->index(['received_at', 'refund_window_expires_at'], 'orders_receipt_window_index');
+            }
+            if (!$hasIndex('orders', 'orders_vendor_settlement_status_index')) {
+                $table->index(['vendor_settlement_status'], 'orders_vendor_settlement_status_index');
+            }
         });
 
         // -------------------------------------------------------------
         // Legacy Order Backfill (Commit 7 Safeguard 1)
         // -------------------------------------------------------------
 
+        $isSqlite = DB::getDriverName() === 'sqlite';
+        $pickupDateAdd = $isSqlite ? "datetime(handed_over_at, '+24 hours')" : "DATE_ADD(handed_over_at, INTERVAL 24 HOUR)";
+        $deliveryDateAdd = $isSqlite ? "datetime(updated_at, '+24 hours')" : "DATE_ADD(updated_at, INTERVAL 24 HOUR)";
+
         // Step 1: Backfill received_at for pickup orders using authoritative handed_over_at
         DB::statement("
             UPDATE orders
             SET received_at = handed_over_at,
-                refund_window_expires_at = DATE_ADD(handed_over_at, INTERVAL 24 HOUR)
+                refund_window_expires_at = {$pickupDateAdd}
             WHERE order_type = 'pickup'
               AND order_status IN ('delivered', 'returned')
               AND handed_over_at IS NOT NULL
@@ -77,7 +102,7 @@ return new class extends Migration
         DB::statement("
             UPDATE orders
             SET received_at = updated_at,
-                refund_window_expires_at = DATE_ADD(updated_at, INTERVAL 24 HOUR)
+                refund_window_expires_at = {$deliveryDateAdd}
             WHERE order_type = 'delivery'
               AND order_status IN ('delivered', 'returned')
               AND received_at IS NULL

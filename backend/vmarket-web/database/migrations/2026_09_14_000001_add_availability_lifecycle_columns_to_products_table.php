@@ -40,18 +40,33 @@ return new class extends Migration
         // [AI] Backfill: Seed lifecycle columns from existing marketplace_confirmed_at
         // for listed in-stock seller products. Default window: 7 days.
         // This ensures zero-disruption — existing vendors keep their listings active.
-        DB::statement("
-            UPDATE products
-            SET
-                availability_confirmed_at = marketplace_confirmed_at,
-                availability_expires_at   = DATE_ADD(marketplace_confirmed_at, INTERVAL 7 DAY)
-            WHERE
-                added_by = 'seller'
-                AND marketplace_listing_status = 'listed'
-                AND marketplace_availability   = 'in_stock'
-                AND marketplace_confirmed_at   IS NOT NULL
-                AND availability_confirmed_at  IS NULL
-        ");
+        if (DB::connection()->getDriverName() === 'sqlite') {
+            DB::statement("
+                UPDATE products
+                SET
+                    availability_confirmed_at = marketplace_confirmed_at,
+                    availability_expires_at   = datetime(marketplace_confirmed_at, '+7 days')
+                WHERE
+                    added_by = 'seller'
+                    AND marketplace_listing_status = 'listed'
+                    AND marketplace_availability   = 'in_stock'
+                    AND marketplace_confirmed_at   IS NOT NULL
+                    AND availability_confirmed_at  IS NULL
+            ");
+        } else {
+            DB::statement("
+                UPDATE products
+                SET
+                    availability_confirmed_at = marketplace_confirmed_at,
+                    availability_expires_at   = DATE_ADD(marketplace_confirmed_at, INTERVAL 7 DAY)
+                WHERE
+                    added_by = 'seller'
+                    AND marketplace_listing_status = 'listed'
+                    AND marketplace_availability   = 'in_stock'
+                    AND marketplace_confirmed_at   IS NOT NULL
+                    AND availability_confirmed_at  IS NULL
+            ");
+        }
     }
 
     public function down(): void
