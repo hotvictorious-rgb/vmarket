@@ -42,6 +42,10 @@ class OrderSettingsController extends BaseController
         $this->businessSettingRepo->updateOrInsert(type: 'pod_dispatch_fee_amount', value: currencyConverter(amount: (float)$request->get('pod_dispatch_fee_amount', 1000.00)) ?? 1000.00);
         $this->businessSettingRepo->updateOrInsert(type: 'pod_free_delivery_prepaid_only', value: $request->get('pod_free_delivery_prepaid_only', 0));
         $this->businessSettingRepo->updateOrInsert(type: 'pickup_inspection_window_hours', value: (int)$request->get('pickup_inspection_window_hours', 24));
+        $this->businessSettingRepo->updateOrInsert(type: 'pickup_en_route_hold_minutes', value: max(15, min(240, (int)$request->get('pickup_en_route_hold_minutes', 90))));
+        $this->businessSettingRepo->updateOrInsert(type: 'pickup_vendor_response_sla_minutes', value: max(5, min(60, (int)$request->get('pickup_vendor_response_sla_minutes', 15))));
+        $this->businessSettingRepo->updateOrInsert(type: 'pickup_max_active_en_route_per_customer', value: max(1, min(5, (int)$request->get('pickup_max_active_en_route_per_customer', 1))));
+        $this->businessSettingRepo->updateOrInsert(type: 'pickup_en_route_resend_cooldown_minutes', value: max(1, min(30, (int)$request->get('pickup_en_route_resend_cooldown_minutes', 5))));
         clearWebConfigCacheKeys();
         ToastMagic::success(translate('successfully_updated'));
         return back();

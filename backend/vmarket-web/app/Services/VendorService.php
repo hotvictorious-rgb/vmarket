@@ -132,7 +132,7 @@ class VendorService
         // [AI] VM-VEND-005: entity fields; CAC doc stored via KYC document path when present.
         $cacDocument = null;
         if ($request->file('cac_document')) {
-            $cacDocument = $this->upload(dir: 'seller/kyc/', format: 'webp', image: $request->file('cac_document'));
+            $cacDocument = $this->fileUpload(dir: 'seller/kyc/', format: $request->file('cac_document')->getClientOriginalExtension(), file: $request->file('cac_document'));
         }
         return [
             'f_name' => $request['f_name'],

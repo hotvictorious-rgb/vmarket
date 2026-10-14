@@ -136,15 +136,17 @@ class VendorController extends BaseController
     public function updateStatus(Request $request): RedirectResponse
     {
         $vendor = $this->vendorRepo->getFirstWhere(params: ['id' => $request['id']]);
-        $this->vendorRepo->update(id: $request['id'], data: ['status' => $request['status']]);
+        $updateData = ['status' => $request['status']];
         if ($request['status'] == "approved") {
+            $updateData['marketplace_approved_at'] = now();
             ToastMagic::success(translate('Vendor_has_been_approved_successfully'));
         } else if ($request['status'] == "rejected") {
             ToastMagic::info(translate('Vendor_has_been_rejected_successfully'));
         } else if ($request['status'] == "suspended") {
-            $this->vendorRepo->update(id: $request['id'], data: ['auth_token' => Str::random(80)]);
+            $updateData['auth_token'] = Str::random(80);
             ToastMagic::info(translate('Vendor_has_been_suspended_successfully'));
         }
+        $this->vendorRepo->update(id: $request['id'], data: $updateData);
         if ($vendor['status'] == 'pending') {
             if ($request['status'] == "approved") {
                 $data = [
@@ -692,7 +694,13 @@ class VendorController extends BaseController
     public function updateKycStatus(Request $request, $id): RedirectResponse|JsonResponse
     {
         $status = $request->input('status', 'verified');
-        $this->vendorRepo->update(id: $id, data: ['kyc_status' => $status]);
+        $data = ['kyc_status' => $status];
+        if ($status === 'verified') {
+            $data['verified_by'] = auth('admin')->id();
+            $data['verified_at'] = now();
+            $data['payout_status'] = 'approved';
+        }
+        $this->vendorRepo->update(id: $id, data: $data);
 
         if ($request->ajax()) {
             return response()->json(['status' => true, 'message' => translate('KYC status updated successfully.')]);

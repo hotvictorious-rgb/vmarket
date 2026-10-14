@@ -77,7 +77,7 @@
                                      {{ translate('store_address') }}
                                      <span class="text-danger">*</span>
                                  </label>
-                                 <textarea class="form-control" name="shop_address" rows="4" placeholder="{{ translate('store_address') }}"
+                                 <textarea class="form-control" name="shop_address" rows="3" placeholder="{{ translate('e.g., Shop 12, Victorious Plaza, Ikot Ekpene Road, Uyo, Akwa Ibom State') }}"
                                      required></textarea>
                              </div>
 
@@ -114,6 +114,74 @@
                                          </div>
                                      </div>
                                  </div>
+                              </div>
+
+                              {{-- [AI] Nigerian Business Structure & Entity Selector (Optional on signup) --}}
+                              <div class="border p-3 p-xl-4 rounded mb-4">
+                                  <div class="d-flex justify-content-between align-items-center mb-3">
+                                      <h4 class="mb-0 text-capitalize">{{ translate('business_structure_&_kyc') }}</h4>
+                                      <span class="badge bg-light text-primary fs-12 px-2 py-1">{{ translate('optional_at_signup') }}</span>
+                                  </div>
+                                  <p class="text-muted fs-12 mb-3">
+                                      {{ translate('Choose your legal business structure. You can sign up immediately as an Individual or provide your registered business credentials now.') }}
+                                  </p>
+                                  <div class="row">
+                                      <div class="col-sm-6">
+                                          <div class="form-group mb-3">
+                                              <label class="mb-2 text-capitalize" for="business_type_select">
+                                                  {{ translate('business_type') }}
+                                              </label>
+                                              <select class="form-control" name="business_type" id="business_type_select">
+                                                  <option value="individual" selected>{{ translate('Individual / Sole Trader') }}</option>
+                                                  <option value="bn">{{ translate('Registered Business Name (BN)') }}</option>
+                                                  <option value="ltd">{{ translate('Limited Liability Company (LTD / PLC)') }}</option>
+                                                  <option value="other">{{ translate('Other / Cooperative') }}</option>
+                                              </select>
+                                          </div>
+                                      </div>
+
+                                      <div class="col-sm-6 individual-field">
+                                          <div class="form-group mb-3">
+                                              <label class="mb-2 text-capitalize" for="nin_input">
+                                                  {{ translate('national_identity_number_(NIN)') }}
+                                              </label>
+                                              <input class="form-control" type="text" name="nin" id="nin_input"
+                                                     maxlength="11"
+                                                     placeholder="{{ translate('11-digit NIN (can also verify later in dashboard)') }}">
+                                          </div>
+                                      </div>
+
+                                      <div class="col-sm-6 corporate-field d-none">
+                                          <div class="form-group mb-3">
+                                              <label class="mb-2 text-capitalize" for="legal_name_input">
+                                                  {{ translate('registered_business_name') }}
+                                              </label>
+                                              <input class="form-control" type="text" name="legal_name" id="legal_name_input"
+                                                     placeholder="{{ translate('e.g., Victorious Ventures Ltd') }}">
+                                          </div>
+                                      </div>
+
+                                      <div class="col-sm-6 corporate-field d-none">
+                                          <div class="form-group mb-3">
+                                              <label class="mb-2 text-capitalize" for="cac_number_input">
+                                                  {{ translate('CAC_registration_number') }}
+                                              </label>
+                                              <input class="form-control" type="text" name="cac_number" id="cac_number_input"
+                                                     placeholder="{{ translate('e.g., RC 1234567 or BN 9876543') }}">
+                                          </div>
+                                      </div>
+
+                                      <div class="col-12 corporate-field d-none">
+                                          <div class="form-group mb-2">
+                                              <label class="mb-2 text-capitalize" for="cac_document_input">
+                                                  {{ translate('CAC_certificate_document') }}
+                                              </label>
+                                              <input class="form-control" type="file" name="cac_document" id="cac_document_input"
+                                                     accept=".pdf,.doc,.docx,.jpg,.jpeg,.png,.webp">
+                                              <small class="text-muted fs-11">{{ translate('Upload CAC registration certificate (PDF, JPG, PNG up to 5MB)') }}</small>
+                                          </div>
+                                      </div>
+                                  </div>
                               </div>
 
                               {{-- [AI] VM-VEND-003: store banner + secondary banner blocks retired for vendors --}}

@@ -52,6 +52,13 @@ class PickupReservation extends Model
         'reservation_fingerprint',
         'active_reservation_token',
         'status',
+        'en_route_at',
+        'en_route_sla_expires_at',
+        'en_route_resend_count',
+        'last_en_route_ping_at',
+        'held_at',
+        'held_until',
+        'rejection_reason',
         'total_amount',
         'currency',
         'reservation_items',
@@ -68,6 +75,12 @@ class PickupReservation extends Model
         'order_id' => 'integer',
         'reservation_items' => 'array',
         'expires_at' => 'datetime',
+        'en_route_at' => 'datetime',
+        'en_route_sla_expires_at' => 'datetime',
+        'en_route_resend_count' => 'integer',
+        'last_en_route_ping_at' => 'datetime',
+        'held_at' => 'datetime',
+        'held_until' => 'datetime',
         'inspected_at' => 'datetime',
         'finalized_at' => 'datetime',
         'total_amount' => 'string',
@@ -108,9 +121,61 @@ class PickupReservation extends Model
     }
 
     /**
-     * [AI] Atomically checks and applies lazy expiry to this reservation if past expires_at.
+     * [AI] Whether customer is currently eligible to initiate or resend "I'm coming".
+     */
+    public function canCustomerSignalEnRoute(): bool
+    {
+        if ($this->isExpired()) {
+            return false;
+        }
+
+        return in_array($this->status, ['pending_inspection', 'en_route_timeout'], true);
+    }
+
+    /**
+     * [AI] Whether enough cooldown has elapsed since last ping to resend "I'm coming".
+     */
+    public function canResendEnRoute(int $cooldownMinutes = 5): bool
+    {
+        if (!$this->canCustomerSignalEnRoute()) {
+            return false;
+        }
+
+        if (!$this->last_en_route_ping_at) {
+            return true;
+        }
+
+        return abs(now()->diffInMinutes($this->last_en_route_ping_at)) >= $cooldownMinutes;
+    }
+
+    /**
+     * [AI] Seconds remaining for vendor to acknowledge "I'm coming".
+     */
+    public function getRemainingSlaSeconds(): int
+    {
+        if ($this->status !== 'en_route' || !$this->en_route_sla_expires_at) {
+            return 0;
+        }
+
+        return max(0, now()->diffInSeconds($this->en_route_sla_expires_at, false));
+    }
+
+    /**
+     * [AI] Minutes remaining for physical counter hold.
+     */
+    public function getRemainingHoldMinutes(): int
+    {
+        if ($this->status !== 'held_confirmed' || !$this->held_until) {
+            return 0;
+        }
+
+        return max(0, now()->diffInMinutes($this->held_until, false));
+    }
+
+    /**
+     * [AI] Atomically checks and applies lazy expiry or timeout to this reservation.
      *
-     * @return bool True if expired
+     * @return bool True if overall reservation has expired
      */
     public function checkAndApplyLazyExpiry(): bool
     {
@@ -118,14 +183,35 @@ class PickupReservation extends Model
             return true;
         }
 
-        if ($this->expires_at && now()->greaterThanOrEqualTo($this->expires_at)) {
-            if (in_array($this->status, ['pending_inspection', 'inspected_accepted'], true)) {
+        $now = now();
+
+        // 1. Overall reservation expiration (24h default)
+        if ($this->expires_at && $now->greaterThanOrEqualTo($this->expires_at)) {
+            if (in_array($this->status, ['pending_inspection', 'en_route', 'en_route_timeout', 'held_confirmed', 'inspected_accepted'], true)) {
                 $this->update([
                     'status' => 'expired',
                     'active_reservation_token' => null,
                 ]);
             }
             return true;
+        }
+
+        // 2. En-Route SLA timeout: Vendor didn't respond within 15 minutes
+        if ($this->status === 'en_route' && $this->en_route_sla_expires_at && $now->greaterThanOrEqualTo($this->en_route_sla_expires_at)) {
+            $this->update([
+                'status' => 'en_route_timeout',
+            ]);
+            return false;
+        }
+
+        // 3. Counter hold expiration: 90-minute counter hold elapsed without arrival
+        if ($this->status === 'held_confirmed' && $this->held_until && $now->greaterThanOrEqualTo($this->held_until)) {
+            // Revert back to soft reservation if overall 24h window hasn't expired
+            $this->update([
+                'status' => 'pending_inspection',
+                'held_until' => null,
+            ]);
+            return false;
         }
 
         return false;

@@ -336,12 +336,14 @@ Route::group(['middleware' => ['maintenance_mode', 'actch:admin_panel']], functi
             Route::post('orders/verify-pickup-otp', [\App\Http\Controllers\Vendor\Order\InShopHandoverController::class, 'verifyPickupOtp'])->name('orders.verify-pickup-otp')->middleware('throttle:10,1');
             Route::get('orders/check-handover-status/{order_id}', [\App\Http\Controllers\Customer\OrderHandoverController::class, 'checkHandoverStatus'])->name('orders.check-handover-status');
 
-            /* [AI] In-Shop Pickup Reservations (Commit 5) */
+            /* [AI] In-Shop Pickup Reservations (Commit 5 & Nigerian Transit Handshake) */
             Route::group(['prefix' => 'pickup-reservations', 'as' => 'pickup-reservations.'], function () {
                 Route::get('/', [\App\Http\Controllers\Vendor\Order\PickupReservationController::class, 'index'])->name('index');
                 Route::post('verify', [\App\Http\Controllers\Vendor\Order\PickupReservationController::class, 'verify'])->name('verify');
                 Route::post('accept', [\App\Http\Controllers\Vendor\Order\PickupReservationController::class, 'accept'])->name('accept');
                 Route::post('reject', [\App\Http\Controllers\Vendor\Order\PickupReservationController::class, 'reject'])->name('reject');
+                Route::post('confirm-hold', [\App\Http\Controllers\Vendor\Order\PickupReservationController::class, 'confirmHold'])->name('confirm-hold');
+                Route::post('out-of-stock', [\App\Http\Controllers\Vendor\Order\PickupReservationController::class, 'reportOutOfStock'])->name('out-of-stock');
             });
         });
     });

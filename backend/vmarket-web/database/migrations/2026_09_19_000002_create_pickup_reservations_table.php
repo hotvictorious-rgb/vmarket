@@ -23,6 +23,9 @@ return new class extends Migration
             $table->string('active_reservation_token', 64)->nullable();
             $table->enum('status', [
                 'pending_inspection',
+                'en_route',
+                'en_route_timeout',
+                'held_confirmed',
                 'inspected_accepted',
                 'inspected_rejected',
                 'order_placed',

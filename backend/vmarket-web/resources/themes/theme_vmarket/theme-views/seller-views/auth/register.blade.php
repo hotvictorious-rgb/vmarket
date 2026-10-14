@@ -187,8 +187,20 @@
                     $('.confirm-password-error').text('');
                 }
             }
-            $('#user_password, #confirm_password').on('keyup change', function () {
+            $('#password, #confirm_password').on('keyup change', function () {
                 checkPasswordMatch();
+            });
+
+            // [AI] Business Entity Structure Toggle
+            $('#business_type_select').on('change', function () {
+                const selected = $(this).val();
+                if (selected === 'individual') {
+                    $('.individual-field').removeClass('d-none');
+                    $('.corporate-field').addClass('d-none');
+                } else {
+                    $('.individual-field').addClass('d-none');
+                    $('.corporate-field').removeClass('d-none');
+                }
             });
         });
 

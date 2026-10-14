@@ -555,8 +555,301 @@ class PickupReservationService
     }
 
     /**
-     * Generates a collision-safe human-friendly reservation code (e.g. RES-9B4X2K1L).
+     * [AI] Customer signals they are actively en-route to the store ("I'm Coming").
+     * Initiates the 15-minute vendor response SLA and sets en_route status.
+     * Supports resending if previous attempt timed out (with configurable cooldown).
+     *
+     * @param int $customerId Authenticated customer ID
+     * @param string $reservationCode Unique human-friendly reservation code
+     * @return array Result payload with status, SLA seconds, and guidance
      */
+    public function customerSignalEnRoute(int $customerId, string $reservationCode): array
+    {
+        return DB::transaction(function () use ($customerId, $reservationCode) {
+            $reservation = PickupReservation::where('customer_id', $customerId)
+                ->where('reservation_code', $reservationCode)
+                ->lockForUpdate()
+                ->first();
+
+            if (!$reservation) {
+                return ['status' => 'NOT_FOUND', 'message' => 'Reservation not found or unauthorized.'];
+            }
+
+            if ($reservation->checkAndApplyLazyExpiry()) {
+                return ['status' => 'EXPIRED', 'message' => 'Cannot signal arrival for an expired reservation.'];
+            }
+
+            // 1. Anti-Hoarding: Check max active trips across the platform
+            $maxActive = (int) (getWebConfig('pickup_max_active_en_route_per_customer') ?? 1);
+            $activeTripsCount = PickupReservation::where('customer_id', $customerId)
+                ->where('id', '!=', $reservation->id)
+                ->whereIn('status', ['en_route', 'held_confirmed'])
+                ->count();
+
+            if ($activeTripsCount >= $maxActive) {
+                return [
+                    'status' => 'MAX_ACTIVE_TRIPS_EXCEEDED',
+                    'message' => 'You already have an active pickup trip in progress. Please complete or cancel it before starting another.',
+                ];
+            }
+
+            // 2. Shop Operating Hours and Pre-Closing Buffer Check
+            $shop = $reservation->shop;
+            if ($shop && $shop->pickup_opening_time && $shop->pickup_closing_time) {
+                $now = now();
+                $opening = now()->setTimeFromTimeString($shop->pickup_opening_time);
+                $closing = now()->setTimeFromTimeString($shop->pickup_closing_time);
+
+                if ($closing < $opening && $now >= $closing) {
+                    $closing->addDay();
+                }
+
+                if ($now < $opening || $now > $closing) {
+                    return [
+                        'status' => 'SHOP_CLOSED',
+                        'message' => "Shop is currently closed. Operating pickup hours: {$shop->pickup_opening_time} - {$shop->pickup_closing_time}.",
+                    ];
+                }
+
+                $holdMinutes = (int) (getWebConfig('pickup_en_route_hold_minutes') ?? 90);
+                $latestAllowedEnRoute = $closing->copy()->subMinutes($holdMinutes);
+                if ($now > $latestAllowedEnRoute) {
+                    return [
+                        'status' => 'SHOP_CLOSING_SOON',
+                        'message' => "Shop closes soon at {$shop->pickup_closing_time}. You cannot complete the transit hold before closing. Please visit tomorrow.",
+                    ];
+                }
+            }
+
+            // 3. Status and Cooldown Validation
+            $cooldownMinutes = (int) (getWebConfig('pickup_en_route_resend_cooldown_minutes') ?? 5);
+
+            if ($reservation->status === 'held_confirmed') {
+                return [
+                    'status' => 'ALREADY_HELD',
+                    'message' => 'Item is already set aside and locked under the counter for you.',
+                    'reservation' => $reservation,
+                    'remaining_hold_minutes' => $reservation->getRemainingHoldMinutes(),
+                ];
+            }
+
+            if ($reservation->status === 'en_route') {
+                return [
+                    'status' => 'ALREADY_EN_ROUTE',
+                    'message' => 'Your arrival signal is currently awaiting vendor confirmation.',
+                    'reservation' => $reservation,
+                    'remaining_sla_seconds' => $reservation->getRemainingSlaSeconds(),
+                ];
+            }
+
+            if (!in_array($reservation->status, ['pending_inspection', 'en_route_timeout'], true)) {
+                return [
+                    'status' => 'INVALID_STATE',
+                    'message' => "Cannot signal arrival for reservation in status '{$reservation->status}'.",
+                ];
+            }
+
+            if (!$reservation->canResendEnRoute($cooldownMinutes)) {
+                $elapsedMins = $reservation->last_en_route_ping_at ? abs(now()->diffInMinutes($reservation->last_en_route_ping_at)) : 0;
+                $waitMins = max(1, $cooldownMinutes - $elapsedMins);
+                return [
+                    'status' => 'COOLDOWN_ACTIVE',
+                    'message' => "Please wait {$waitMins} more minute(s) before resending your arrival notice.",
+                ];
+            }
+
+            // 4. Transition to en_route
+            $slaMinutes = (int) (getWebConfig('pickup_vendor_response_sla_minutes') ?? 15);
+            $reservation->update([
+                'status' => 'en_route',
+                'en_route_at' => $reservation->en_route_at ?? now(),
+                'en_route_sla_expires_at' => now()->addMinutes($slaMinutes),
+                'en_route_resend_count' => (int) $reservation->en_route_resend_count + 1,
+                'last_en_route_ping_at' => now(),
+            ]);
+
+            $fresh = $reservation->fresh(['shop', 'seller']);
+            $this->sendPickupReservationNotification('pickup_customer_en_route_message', $fresh, 'seller');
+
+            $snapshot = $fresh->reservation_items;
+            return [
+                'status' => 'SUCCESS',
+                'message' => "Arrival signaled! Vendor has {$slaMinutes} minutes to set item aside on the counter.",
+                'reservation' => $fresh,
+                'sla_minutes' => $slaMinutes,
+                'remaining_sla_seconds' => $fresh->getRemainingSlaSeconds(),
+                'shop_snapshot' => $snapshot['shop'] ?? null,
+            ];
+        });
+    }
+
+    /**
+     * [AI] Vendor confirms physical stock is in hand and set aside under counter.
+     * Transitions status from en_route / en_route_timeout to held_confirmed with dynamic hold timer.
+     *
+     * @param int $sellerId Authenticated vendor seller_id
+     * @param string $reservationCode Unique human-friendly reservation code
+     * @param int|null $shopId Authenticated vendor shop_id
+     * @return array Result payload
+     */
+    public function vendorConfirmPhysicalHold(int $sellerId, string $reservationCode, ?int $shopId = null): array
+    {
+        return DB::transaction(function () use ($sellerId, $reservationCode, $shopId) {
+            $reservation = PickupReservation::where('reservation_code', $reservationCode)
+                ->lockForUpdate()
+                ->first();
+
+            if (!$reservation) {
+                return ['status' => 'NOT_FOUND', 'message' => 'Reservation not found.'];
+            }
+
+            if ($reservation->checkAndApplyLazyExpiry()) {
+                return ['status' => 'EXPIRED', 'message' => 'Cannot confirm hold on an expired reservation.'];
+            }
+
+            // IDOR Protection: Must match authenticated vendor
+            if ((int) $reservation->seller_id !== (int) $sellerId) {
+                return ['status' => 'FORBIDDEN', 'message' => 'Unauthorized: Reservation belongs to another vendor.'];
+            }
+
+            if ($shopId !== null && (int) $reservation->shop_id !== (int) $shopId) {
+                return ['status' => 'FORBIDDEN', 'message' => 'Unauthorized: Reservation is for a different shop location.'];
+            }
+
+            if ($reservation->status === 'held_confirmed') {
+                return [
+                    'status' => 'ALREADY_HELD',
+                    'message' => 'Item is already locked under the counter for this customer.',
+                    'reservation' => $reservation,
+                    'remaining_hold_minutes' => $reservation->getRemainingHoldMinutes(),
+                ];
+            }
+
+            if (!in_array($reservation->status, ['en_route', 'en_route_timeout', 'pending_inspection'], true)) {
+                return [
+                    'status' => 'INVALID_STATE',
+                    'message' => "Cannot confirm physical hold for reservation in state '{$reservation->status}'.",
+                ];
+            }
+
+            $holdMinutes = (int) (getWebConfig('pickup_en_route_hold_minutes') ?? 90);
+            $reservation->update([
+                'status' => 'held_confirmed',
+                'held_at' => now(),
+                'held_until' => now()->addMinutes($holdMinutes),
+            ]);
+
+            $fresh = $reservation->fresh(['customer', 'shop']);
+            $this->sendPickupReservationNotification('pickup_item_held_confirmed_message', $fresh, 'customer');
+
+            return [
+                'status' => 'SUCCESS',
+                'message' => "Item successfully set aside and locked under counter for {$holdMinutes} minutes.",
+                'reservation' => $fresh,
+                'hold_minutes' => $holdMinutes,
+                'held_until' => $fresh->held_until->toIso8601String(),
+                'remaining_hold_minutes' => $fresh->getRemainingHoldMinutes(),
+            ];
+        });
+    }
+
+    /**
+     * [AI] Vendor reports item sold out / out of stock when customer signals arrival.
+     * Immediately aborts the trip and prevents customer from wasting transport fare.
+     *
+     * @param int $sellerId Authenticated vendor seller_id
+     * @param string $reservationCode Unique reservation code
+     * @param int|null $shopId Authenticated vendor shop_id
+     * @param string $reason Rejection / out of stock explanation
+     * @return array Result payload
+     */
+    public function vendorReportOutOfStock(int $sellerId, string $reservationCode, ?int $shopId = null, string $reason = ''): array
+    {
+        return DB::transaction(function () use ($sellerId, $reservationCode, $shopId, $reason) {
+            $reservation = PickupReservation::where('reservation_code', $reservationCode)
+                ->lockForUpdate()
+                ->first();
+
+            if (!$reservation) {
+                return ['status' => 'NOT_FOUND', 'message' => 'Reservation not found.'];
+            }
+
+            // IDOR Protection
+            if ((int) $reservation->seller_id !== (int) $sellerId) {
+                return ['status' => 'FORBIDDEN', 'message' => 'Unauthorized: Reservation belongs to another vendor.'];
+            }
+
+            if ($shopId !== null && (int) $reservation->shop_id !== (int) $shopId) {
+                return ['status' => 'FORBIDDEN', 'message' => 'Unauthorized: Reservation is for a different shop.'];
+            }
+
+            $rejectionReason = trim($reason) ?: 'Item sold out or unavailable in physical store.';
+
+            $reservation->update([
+                'status' => 'inspected_rejected',
+                'rejection_reason' => $rejectionReason,
+                'active_reservation_token' => null,
+                'inspected_at' => now(),
+            ]);
+
+            $fresh = $reservation->fresh(['customer']);
+            $this->sendPickupReservationNotification('pickup_out_of_stock_message', $fresh, 'customer');
+
+            return [
+                'status' => 'SUCCESS',
+                'message' => 'Item marked out of stock. Customer has been notified to cancel their trip.',
+                'reason' => $rejectionReason,
+                'reservation' => $fresh,
+            ];
+        });
+    }
+
+    /**
+     * [AI] Customer cancels active transit trip. Reverts status back to pending_inspection
+     * so the customer preserves their overall 24-hour reservation without tying up vendor stock.
+     *
+     * @param int $customerId Authenticated customer ID
+     * @param string $reservationCode Unique reservation code
+     * @return array Result payload
+     */
+    public function customerCancelEnRoute(int $customerId, string $reservationCode): array
+    {
+        return DB::transaction(function () use ($customerId, $reservationCode) {
+            $reservation = PickupReservation::where('customer_id', $customerId)
+                ->where('reservation_code', $reservationCode)
+                ->lockForUpdate()
+                ->first();
+
+            if (!$reservation) {
+                return ['status' => 'NOT_FOUND', 'message' => 'Reservation not found or unauthorized.'];
+            }
+
+            if (!in_array($reservation->status, ['en_route', 'en_route_timeout', 'held_confirmed'], true)) {
+                return [
+                    'status' => 'INVALID_STATE',
+                    'message' => "Cannot cancel transit for reservation in status '{$reservation->status}'.",
+                ];
+            }
+
+            $wasHeld = $reservation->status === 'held_confirmed';
+
+            $reservation->update([
+                'status' => 'pending_inspection',
+                'held_until' => null,
+            ]);
+
+            $fresh = $reservation->fresh(['seller', 'shop']);
+            if ($wasHeld) {
+                $this->sendPickupReservationNotification('pickup_transit_cancelled_message', $fresh, 'seller');
+            }
+
+            return [
+                'status' => 'SUCCESS',
+                'message' => 'Transit trip cancelled. Your 24-hour reservation remains active, and vendor stock has been unlocked.',
+                'reservation' => $fresh,
+            ];
+        });
+    }
     protected function generateUniqueReservationCode(): string
     {
         do {

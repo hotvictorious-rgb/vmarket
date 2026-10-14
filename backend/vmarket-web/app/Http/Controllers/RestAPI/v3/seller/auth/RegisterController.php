@@ -34,10 +34,19 @@ class RegisterController extends Controller
             $seller = new Seller();
             $seller->f_name = $request->f_name;
             $seller->l_name = $request->l_name;
+            $seller->business_type = $request->business_type ?? 'individual';
+            $seller->legal_name = $request->legal_name ?? null;
             $seller->phone = $request->phone;
             $seller->email = $request->email;
             $seller->image = $request->file('image') ? ImageManager::upload('seller/', 'webp', $request->file('image')) : null;
             $seller->password = bcrypt($request->password);
+            $seller->cac_number = !empty($request->cac_number) ? strtoupper(trim($request->cac_number)) : null;
+            $seller->cac_document = $request->file('cac_document') ? ImageManager::file_upload('seller/kyc/', $request->file('cac_document')->getClientOriginalExtension(), $request->file('cac_document')) : null;
+            $seller->cac_status = 'pending';
+            $seller->nin = !empty($request->nin) ? trim($request->nin) : null;
+            $seller->kyc_status = 'pending';
+            $seller->payout_status = 'pending';
+            $seller->marketplace_applied_at = now();
             $seller->status = $request->status == 'approved' ? 'approved' : "pending";
             $seller->save();
 

@@ -227,4 +227,74 @@ class PickupReservationController extends Controller
             default => response()->json(['status' => false, 'message' => $result['message'] ?? 'Failed to reject.'], 400),
         };
     }
+
+    /**
+     * [AI] Vendor confirms physical stock is in hand and locked under the counter.
+     * Transitions status to held_confirmed with dynamic hold timer.
+     */
+    public function confirmHold(Request $request): JsonResponse
+    {
+        $request->validate([
+            'reservation_code' => 'required|string|max:32',
+        ]);
+
+        [$sellerId, $shopId] = $this->resolveVendorContext($request);
+        if (!$sellerId) {
+            return response()->json(['status' => false, 'message' => 'Unauthorized vendor access.'], 403);
+        }
+
+        $result = $this->reservationService->vendorConfirmPhysicalHold(
+            $sellerId,
+            trim($request->reservation_code),
+            $shopId
+        );
+
+        return match ($result['status']) {
+            'SUCCESS', 'ALREADY_HELD' => response()->json([
+                'status' => true,
+                'message' => $result['message'],
+                'data' => $result,
+            ], 200),
+            'NOT_FOUND' => response()->json(['status' => false, 'message' => $result['message']], 404),
+            'FORBIDDEN' => response()->json(['status' => false, 'message' => $result['message']], 403),
+            'EXPIRED' => response()->json(['status' => false, 'message' => $result['message']], 410),
+            'INVALID_STATE' => response()->json(['status' => false, 'message' => $result['message']], 409),
+            default => response()->json(['status' => false, 'message' => $result['message'] ?? 'Failed to confirm hold.'], 400),
+        };
+    }
+
+    /**
+     * [AI] Vendor reports item is out of stock / sold out when customer signals arrival.
+     * Aborts customer trip immediately to prevent wasted transport fare.
+     */
+    public function reportOutOfStock(Request $request): JsonResponse
+    {
+        $request->validate([
+            'reservation_code' => 'required|string|max:32',
+            'reason' => 'nullable|string|max:255',
+        ]);
+
+        [$sellerId, $shopId] = $this->resolveVendorContext($request);
+        if (!$sellerId) {
+            return response()->json(['status' => false, 'message' => 'Unauthorized vendor access.'], 403);
+        }
+
+        $result = $this->reservationService->vendorReportOutOfStock(
+            $sellerId,
+            trim($request->reservation_code),
+            $shopId,
+            trim((string) ($request->reason ?? 'Item sold out or unavailable in store.'))
+        );
+
+        return match ($result['status']) {
+            'SUCCESS' => response()->json([
+                'status' => true,
+                'message' => $result['message'],
+                'data' => $result,
+            ], 200),
+            'NOT_FOUND' => response()->json(['status' => false, 'message' => $result['message']], 404),
+            'FORBIDDEN' => response()->json(['status' => false, 'message' => $result['message']], 403),
+            default => response()->json(['status' => false, 'message' => $result['message'] ?? 'Failed to report out of stock.'], 400),
+        };
+    }
 }

@@ -201,6 +201,72 @@ class PickupReservationController extends Controller
     }
 
     /**
+     * [AI] Customer signals active arrival / en-route to vendor store ("I'm Coming").
+     * Supports initial trip announcement and resend after 15m timeout.
+     */
+    public function signalEnRoute(Request $request, string $reservationCode): JsonResponse
+    {
+        $customerId = auth('customer')->id() ?? (int) ($request->user('customer')?->id ?? 0);
+        if (!$customerId && auth('api')->check()) {
+            $customerId = (int) auth('api')->id();
+        }
+
+        if (!$customerId) {
+            return response()->json(['status' => false, 'message' => 'Unauthenticated customer.'], 401);
+        }
+
+        $result = $this->reservationService->customerSignalEnRoute($customerId, trim($reservationCode));
+
+        $statusCode = match ($result['status']) {
+            'SUCCESS', 'ALREADY_HELD', 'ALREADY_EN_ROUTE' => 200,
+            'NOT_FOUND' => 404,
+            'EXPIRED' => 410,
+            'MAX_ACTIVE_TRIPS_EXCEEDED', 'COOLDOWN_ACTIVE' => 429,
+            'SHOP_CLOSED', 'SHOP_CLOSING_SOON' => 422,
+            'INVALID_STATE' => 409,
+            default => 400,
+        };
+
+        return response()->json([
+            'status' => in_array($result['status'], ['SUCCESS', 'ALREADY_HELD', 'ALREADY_EN_ROUTE'], true),
+            'action_status' => $result['status'],
+            'message' => $result['message'],
+            'data' => $result,
+        ], $statusCode);
+    }
+
+    /**
+     * [AI] Customer cancels active transit trip. Reverts back to soft reservation.
+     */
+    public function cancelEnRoute(Request $request, string $reservationCode): JsonResponse
+    {
+        $customerId = auth('customer')->id() ?? (int) ($request->user('customer')?->id ?? 0);
+        if (!$customerId && auth('api')->check()) {
+            $customerId = (int) auth('api')->id();
+        }
+
+        if (!$customerId) {
+            return response()->json(['status' => false, 'message' => 'Unauthenticated customer.'], 401);
+        }
+
+        $result = $this->reservationService->customerCancelEnRoute($customerId, trim($reservationCode));
+
+        $statusCode = match ($result['status']) {
+            'SUCCESS' => 200,
+            'NOT_FOUND' => 404,
+            'INVALID_STATE' => 409,
+            default => 400,
+        };
+
+        return response()->json([
+            'status' => $result['status'] === 'SUCCESS',
+            'action_status' => $result['status'],
+            'message' => $result['message'],
+            'data' => $result,
+        ], $statusCode);
+    }
+
+    /**
      * Initiates Paystack payment for an inspected and accepted pickup reservation.
      */
     public function pay(Request $request, string $reservationCode): JsonResponse

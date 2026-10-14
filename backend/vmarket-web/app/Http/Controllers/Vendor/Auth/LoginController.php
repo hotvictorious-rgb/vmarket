@@ -83,7 +83,13 @@ class LoginController extends Controller
         }
         $passwordCheck = Hash::check($request['password'], $vendor['password']);
         if ($passwordCheck && $vendor['status'] !== 'approved') {
-            ToastMagic::error(translate('Not_approve_yet') . '!');
+            if ($vendor['status'] === 'pending') {
+                ToastMagic::warning(translate('your_account_is_in_review_process') . '. ' . translate('please_wait_for_admin_approval') . '.');
+            } elseif ($vendor['status'] === 'suspended') {
+                ToastMagic::error(translate('your_account_has_been_suspended') . '. ' . translate('please_contact_support') . '.');
+            } else {
+                ToastMagic::error(translate('your_account_status_is') . ': ' . ucfirst($vendor['status']) . '.');
+            }
             return back();
         }
         if ($this->vendorService->isLoginSuccessful($request->email, $request->password, $request->remember)) {

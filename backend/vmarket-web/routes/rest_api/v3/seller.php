@@ -222,11 +222,13 @@ Route::group(['prefix' => 'v3/seller', 'middleware' => ['api_lang']], function (
             });
         });
 
-        /* [AI] In-Shop Pickup Reservations (Commit 5) */
+        /* [AI] In-Shop Pickup Reservations (Commit 5 & Nigerian Transit Handshake) */
         Route::group(['prefix' => 'pickup-reservations', 'as' => 'pickup-reservations.'], function () {
             Route::post('verify', [\App\Http\Controllers\Vendor\Order\PickupReservationController::class, 'verify']);
             Route::post('accept', [\App\Http\Controllers\Vendor\Order\PickupReservationController::class, 'accept']);
             Route::post('reject', [\App\Http\Controllers\Vendor\Order\PickupReservationController::class, 'reject']);
+            Route::post('confirm-hold', [\App\Http\Controllers\Vendor\Order\PickupReservationController::class, 'confirmHold']);
+            Route::post('out-of-stock', [\App\Http\Controllers\Vendor\Order\PickupReservationController::class, 'reportOutOfStock']);
         });
 
         Route::controller(ProductController::class)->group(function () {

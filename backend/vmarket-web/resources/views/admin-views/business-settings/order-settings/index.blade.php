@@ -323,15 +323,72 @@
                     <div class="p-12 p-sm-20 bg-section rounded">
                         <div class="row g-4">
                             @php($inspectionWindowHours = (int)(getWebConfig('pickup_inspection_window_hours') ?? 24))
+                            @php($enRouteHoldMinutes = (int)(getWebConfig('pickup_en_route_hold_minutes') ?? 90))
+                            @php($vendorSlaMinutes = (int)(getWebConfig('pickup_vendor_response_sla_minutes') ?? 15))
+                            @php($maxActiveTrips = (int)(getWebConfig('pickup_max_active_en_route_per_customer') ?? 1))
+                            @php($resendCooldownMinutes = (int)(getWebConfig('pickup_en_route_resend_cooldown_minutes') ?? 5))
+
                             <div class="col-xl-6 col-md-6">
                                 <div class="border rounded p-3 h-100 bg-white">
                                     <label class="form-label font-weight-bold" for="pickup_inspection_window_hours">
-                                        <i class="tio-time mr-1 text-primary"></i> {{ translate('In-Shop_Inspection_Hold_Window') }} ({{ translate('Hours') }})
+                                        <i class="tio-time mr-1 text-primary"></i> {{ translate('Soft_Reservation_Window') }} ({{ translate('Hours') }})
                                     </label>
                                     <input type="number" min="1" max="168" step="1" class="form-control" name="pickup_inspection_window_hours"
                                            id="pickup_inspection_window_hours" value="{{ $inspectionWindowHours > 0 ? $inspectionWindowHours : 24 }}" required>
                                     <span class="fs-11 text-muted mt-1 d-block">
-                                        {{ translate('Default: 24 hours. The duration a reserved item remains held at the vendor shop counter for physical customer inspection before reservation automatically expires.') }}
+                                        {{ translate('Default: 24 hours. The duration a pre-payment reservation remains valid before expiry (without locking physical stock).') }}
+                                    </span>
+                                </div>
+                            </div>
+
+                            <div class="col-xl-6 col-md-6">
+                                <div class="border rounded p-3 h-100 bg-white">
+                                    <label class="form-label font-weight-bold" for="pickup_en_route_hold_minutes">
+                                        <i class="tio-stopwatch mr-1 text-primary"></i> {{ translate('Active_Transit_Hold_Window') }} ({{ translate('Minutes') }})
+                                    </label>
+                                    <input type="number" min="15" max="240" step="5" class="form-control" name="pickup_en_route_hold_minutes"
+                                           id="pickup_en_route_hold_minutes" value="{{ $enRouteHoldMinutes > 0 ? $enRouteHoldMinutes : 90 }}" required>
+                                    <span class="fs-11 text-muted mt-1 d-block">
+                                        {{ translate('Default: 90 minutes. Duration vendor sets aside and locks physical stock under the counter after confirming customer is on their way.') }}
+                                    </span>
+                                </div>
+                            </div>
+
+                            <div class="col-xl-4 col-md-6">
+                                <div class="border rounded p-3 h-100 bg-white">
+                                    <label class="form-label font-weight-bold" for="pickup_vendor_response_sla_minutes">
+                                        <i class="tio-alarm-alert mr-1 text-primary"></i> {{ translate('Vendor_Confirmation_SLA') }} ({{ translate('Minutes') }})
+                                    </label>
+                                    <input type="number" min="5" max="60" step="1" class="form-control" name="pickup_vendor_response_sla_minutes"
+                                           id="pickup_vendor_response_sla_minutes" value="{{ $vendorSlaMinutes > 0 ? $vendorSlaMinutes : 15 }}" required>
+                                    <span class="fs-11 text-muted mt-1 d-block">
+                                        {{ translate('Default: 15 minutes. How long vendor has to verify physical stock before customer is advised not to travel yet.') }}
+                                    </span>
+                                </div>
+                            </div>
+
+                            <div class="col-xl-4 col-md-6">
+                                <div class="border rounded p-3 h-100 bg-white">
+                                    <label class="form-label font-weight-bold" for="pickup_en_route_resend_cooldown_minutes">
+                                        <i class="tio-refresh mr-1 text-primary"></i> {{ translate('Resend_Trip_Ping_Cooldown') }} ({{ translate('Minutes') }})
+                                    </label>
+                                    <input type="number" min="1" max="30" step="1" class="form-control" name="pickup_en_route_resend_cooldown_minutes"
+                                           id="pickup_en_route_resend_cooldown_minutes" value="{{ $resendCooldownMinutes > 0 ? $resendCooldownMinutes : 5 }}" required>
+                                    <span class="fs-11 text-muted mt-1 d-block">
+                                        {{ translate('Default: 5 minutes. Waiting time before a customer can re-ping a busy vendor if the 15-minute SLA expires.') }}
+                                    </span>
+                                </div>
+                            </div>
+
+                            <div class="col-xl-4 col-md-6">
+                                <div class="border rounded p-3 h-100 bg-white">
+                                    <label class="form-label font-weight-bold" for="pickup_max_active_en_route_per_customer">
+                                        <i class="tio-user-big mr-1 text-primary"></i> {{ translate('Max_Active_Transit_Trips') }} ({{ translate('Per Customer') }})
+                                    </label>
+                                    <input type="number" min="1" max="5" step="1" class="form-control" name="pickup_max_active_en_route_per_customer"
+                                           id="pickup_max_active_en_route_per_customer" value="{{ $maxActiveTrips > 0 ? $maxActiveTrips : 1 }}" required>
+                                    <span class="fs-11 text-muted mt-1 d-block">
+                                        {{ translate('Default: 1 trip. Anti-hoarding limit preventing customers from locking items at multiple shops simultaneously.') }}
                                     </span>
                                 </div>
                             </div>

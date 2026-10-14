@@ -52,7 +52,12 @@ class SellerRegistrationRequest extends FormRequest
             'tin_certificate' => 'nullable|mimes:pdf,doc,docx,jpg|max:' . $maxFileSize,
             'tax_identification_number' => 'nullable|string',
             'tin_expire_date' => 'nullable|date|after_or_equal:today',
-
+            // [AI] Optional business entity fields on registration; full audit completed via KYC flow
+            'business_type' => 'nullable|in:individual,bn,ltd,other',
+            'legal_name' => 'nullable|string|max:255',
+            'cac_number' => 'nullable|string|max:60',
+            'cac_document' => 'nullable|mimes:jpg,jpeg,png,webp,pdf|max:' . $maxFileSize,
+            'nin' => 'nullable|string|max:30',
         ];
     }
 
