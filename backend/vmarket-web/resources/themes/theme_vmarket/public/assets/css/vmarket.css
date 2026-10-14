@@ -447,6 +447,10 @@ button, input, select, textarea {
     font-weight: 600;
     font-size: 13px;
     position: relative;
+    background: transparent;
+    border: none;
+    cursor: pointer;
+    outline: none;
     transition: var(--vm-transition);
 }
 
@@ -4932,6 +4936,7 @@ body.vm-cart-drawer-open {
     z-index: 99998;
     opacity: 0;
     visibility: hidden;
+    pointer-events: none;
     transition: opacity 0.3s cubic-bezier(0.16, 1, 0.3, 1), visibility 0.3s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
@@ -4939,6 +4944,7 @@ body.vm-cart-drawer-open {
 .vm-cart-drawer-backdrop.open {
     opacity: 1;
     visibility: visible;
+    pointer-events: auto;
 }
 
 /* Drawer Shell Container */
@@ -4955,13 +4961,27 @@ body.vm-cart-drawer-open {
     flex-direction: column;
     box-shadow: -10px 0 35px rgba(27, 16, 53, 0.18);
     transform: translateX(100%);
-    transition: transform 0.35s cubic-bezier(0.16, 1, 0.3, 1);
+    visibility: hidden;
+    pointer-events: none;
+    transition: transform 0.35s cubic-bezier(0.16, 1, 0.3, 1), visibility 0.35s;
     will-change: transform;
 }
 
 .vm-cart-drawer.is-open,
 .vm-cart-drawer.open {
     transform: translateX(0);
+    visibility: visible;
+    pointer-events: auto;
+}
+
+/* Ensure cart button and its descendants are directly clickable */
+button.vm-cart-drawer-trigger,
+.vm-cart-drawer-trigger {
+    cursor: pointer !important;
+}
+
+.vm-cart-drawer-trigger * {
+    pointer-events: none;
 }
 
 /* Drawer Header */

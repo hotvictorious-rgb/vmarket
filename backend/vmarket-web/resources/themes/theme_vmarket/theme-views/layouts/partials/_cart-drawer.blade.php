@@ -44,3 +44,53 @@
         @include('theme-views.layouts.partials._cart')
     </div>
 </aside>
+
+<script>
+    (function() {
+        window.openCartDrawer = function() {
+            var drawer = document.getElementById('vmCartDrawer');
+            var backdrop = document.getElementById('vmCartDrawerBackdrop');
+            if (drawer) {
+                drawer.classList.add('open', 'is-open');
+                drawer.setAttribute('aria-hidden', 'false');
+            }
+            if (backdrop) {
+                backdrop.classList.add('open', 'is-open');
+                backdrop.setAttribute('aria-hidden', 'false');
+            }
+            document.body.classList.add('vm-cart-drawer-open');
+        };
+
+        window.closeCartDrawer = function() {
+            var drawer = document.getElementById('vmCartDrawer');
+            var backdrop = document.getElementById('vmCartDrawerBackdrop');
+            if (drawer) {
+                drawer.classList.remove('open', 'is-open');
+                drawer.setAttribute('aria-hidden', 'true');
+            }
+            if (backdrop) {
+                backdrop.classList.remove('open', 'is-open');
+                backdrop.setAttribute('aria-hidden', 'true');
+            }
+            document.body.classList.remove('vm-cart-drawer-open');
+        };
+
+        // Wire close button & backdrop immediately
+        document.addEventListener('click', function(e) {
+            if (e.target.closest('#vmCartDrawerCloseBtn') || e.target.closest('.vm-cart-drawer-continue-shopping')) {
+                e.preventDefault();
+                window.closeCartDrawer();
+            } else if (e.target && e.target.id === 'vmCartDrawerBackdrop') {
+                e.preventDefault();
+                window.closeCartDrawer();
+            }
+        });
+
+        document.addEventListener('keydown', function(e) {
+            if (e.key === 'Escape') {
+                window.closeCartDrawer();
+            }
+        });
+    })();
+</script>
+
