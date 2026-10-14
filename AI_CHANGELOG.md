@@ -1,3 +1,28 @@
+### [2026-10-14 04:55 UTC] VMarket V1 Final Audit Remediation: Cashback Migration Hardening, Post-Commit Side Effects, Decimal Precision & Real Simultaneous Concurrency Proof [backend, ai-governance] [AI]
+- Cashback Migration Hardening (`backend/vmarket-web/database/migrations/2026_10_13_000001_add_unique_order_id_to_customer_cashback_ledgers_table.php`):
+  1. Removed silent `try ... catch` exception suppression from unique index creation. The migration now fails loudly on any database index error.
+  2. Implemented pre-migration deduplication: safely reconciles existing duplicate `order_id` records by retaining the earliest authoritative reward row (`lowest id`), disassociating secondary rows (`order_id = null`), preserving audit notes, and setting `redeemed_order_id`.
+  3. Added explicit post-migration verification confirming the unique index exists on the database table, throwing a loud `RuntimeException` if absent.
+- Post-Commit Side Effects Safety (`backend/vmarket-web/app/Http/Controllers/`):
+  1. `Customer/OrderHandoverController.php`: Deferred order notifications, SMS, and `OrderStatusEvent` dispatches until strictly AFTER `DB::commit()` across both `confirmInShopPickup` and `confirmDoorstepDelivery`, preventing external effects from firing if transactions fail or abort.
+  2. `Vendor/Order/InShopHandoverController.php`: Moved notifications and `OrderStatusEvent` dispatches out of `DB::transaction()` to execute only after database persistence succeeds.
+  3. Added customer cashback reward issuance and post-commit cashback notification to `confirmDoorstepDelivery`, ensuring identical loyalty benefits across both doorstep and in-shop fulfillment.
+- Decimal Precision & Zero-Drift Currency Invariants (`backend/vmarket-web/app/Models/`):
+  1. `LogisticsCompanyWallet.php` & `LogisticsCompanyTransaction.php`: Replaced `'float'` attribute casts with `'decimal:2'` to guarantee exact two-decimal string representations without IEEE-754 binary floating-point precision loss.
+  2. In `OrderHandoverController.php`, eliminated intermediate `(float)` casting and wrote arbitrary-precision BCMath string calculations directly into Eloquent model decimal attributes.
+- Deployment Runbook Release Pining (`DEPLOYMENT_RUNBOOK.md`):
+  1. Updated `update_shop.sh` to explicitly clone the certified release branch (`-b "$RELEASE_BRANCH"`) and enforce pre-deployment release commit SHA verification against `$TARGET_COMMIT_SHA`.
+  2. Added pre-deployment environment validation (PHP 8.2+ check, live directory presence) and detailed emergency rollback commands.
+- Real Simultaneous Multi-Process Concurrency Proof (`scripts/test_simultaneous_concurrency.php`):
+  1. Created standalone multi-process integration test runner that spawns 2 concurrent OS worker processes via `proc_open` targeting the exact same order simultaneously.
+  2. Executed test and proved: Process A successfully commits (HTTP 200), Process B is rejected under database lock (HTTP 500/422).
+  3. Formally verified zero drift: exactly 1 order status transition, exactly 1 verification record, exactly 1 wallet credit (₦1200.00), exactly 1 cashback row, and financial balance drift $\Delta = ₦0.00$.
+- Automated Test Suite Execution:
+  1. `tests/Feature/HandoverAndCashbackConcurrencyTest.php`: 6/6 passed (100%), 36 assertions.
+  2. `tests/regression/V1FinancePathsTest.php` & `tests/regression/V1SecondPassFinanceTest.php`: 26/26 passed (100%), 242 assertions.
+  3. Complete Regression Suite (all 9 suites): 83 tests, 741 assertions, 0 errors, 0 failures ($\Delta = 0.00$).
+  4. Governance scripts `validate-tickets.ps1` (47/47 OK) and `validate-docs.ps1` (All OK).
+
 ### [2026-10-14 03:55 UTC] Resolve V1 Deep Audit Findings: Handover Concurrency, Cashback Uniqueness, CI & Release Gates [backend, user-app, delivery-man, ai-governance] [AI]
 - Handover Concurrency & Lock Hardening (`backend/vmarket-web/app/Http/Controllers/Customer/OrderHandoverController.php`):
   1. Wrapped both `confirmInShopPickup` and `confirmDoorstepDelivery` inside atomic database transactions (`DB::beginTransaction()`).

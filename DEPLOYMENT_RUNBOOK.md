@@ -130,16 +130,47 @@ set -e
 LIVE_DIR="/home1/victori6/public_html/shop.victoriousmarket.com.ng"
 BACKUP_DIR="/home1/victori6"
 REPO_URL="https://github.com/hotvictorious-rgb/vmarket.git"
+RELEASE_BRANCH="v1"
+# Target release commit SHA: pass as argument $1 or default to certified V1 release commit SHA
+TARGET_COMMIT_SHA="${1:-fdda2c1715dc52c29aa9ffecee9900989ae1765d}"
 TEMP_DIR="/tmp/vmarket_update_$(date +%s)"
+BACKUP_ARCHIVE="$BACKUP_DIR/shop_backup_$(date +%Y%m%d_%H%M%S).tar.gz"
 
-echo "=== [1/6] Creating Server Snapshot ==="
-tar -czf "$BACKUP_DIR/shop_backup_$(date +%Y%m%d_%H%M%S).tar.gz" --exclude="$LIVE_DIR/vendor" --exclude="$LIVE_DIR/storage" -C "/home1/victori6/public_html" "shop.victoriousmarket.com.ng"
+echo "=== [1/7] Pre-Deployment Environment Verification ==="
+PHP_VERSION=$(php -r "echo PHP_VERSION;")
+echo "PHP Version: $PHP_VERSION"
+php -r "if (version_compare(PHP_VERSION, '8.2.0', '<')) { fwrite(STDERR, 'ERROR: PHP 8.2 or higher required\n'); exit(1); }"
 
-echo "=== [2/6] Cloning Latest Code ==="
-git clone --depth 1 "$REPO_URL" "$TEMP_DIR"
+if [ ! -d "$LIVE_DIR" ]; then
+    echo "❌ ERROR: Live directory $LIVE_DIR does not exist."
+    exit 1
+fi
+
+echo "=== [2/7] Creating Server Snapshot ==="
+tar -czf "$BACKUP_ARCHIVE" --exclude="$LIVE_DIR/vendor" --exclude="$LIVE_DIR/storage" -C "/home1/victori6/public_html" "shop.victoriousmarket.com.ng"
+echo "Backup created: $BACKUP_ARCHIVE"
+
+echo "=== [3/7] Cloning Certified Release Branch ($RELEASE_BRANCH) ==="
+git clone --depth 50 -b "$RELEASE_BRANCH" "$REPO_URL" "$TEMP_DIR"
+
+cd "$TEMP_DIR"
+CLONED_SHA=$(git rev-parse HEAD)
+echo "Cloned Commit SHA: $CLONED_SHA"
+echo "Expected Release SHA: $TARGET_COMMIT_SHA"
+
+if [ "$CLONED_SHA" != "$TARGET_COMMIT_SHA" ]; then
+    echo "❌ ERROR: Target commit SHA mismatch!"
+    echo "Expected: $TARGET_COMMIT_SHA"
+    echo "Found:    $CLONED_SHA"
+    echo "Aborting deployment to prevent uncertified code release."
+    rm -rf "$TEMP_DIR"
+    exit 1
+fi
+echo "✅ Certified Commit SHA Verified: $CLONED_SHA"
+
 SOURCE_DIR="$TEMP_DIR/backend/vmarket-web"
 
-echo "=== [3/6] Executing Safe Overlay Sync ==="
+echo "=== [4/7] Executing Safe Overlay Sync ==="
 cp -ru "$SOURCE_DIR/app" "$LIVE_DIR/"
 cp -ru "$SOURCE_DIR/config" "$LIVE_DIR/"
 cp -ru "$SOURCE_DIR/database" "$LIVE_DIR/"
@@ -150,26 +181,31 @@ cp -u "$SOURCE_DIR/composer.json" "$LIVE_DIR/"
 cp -u "$SOURCE_DIR/composer.lock" "$LIVE_DIR/"
 cp -ru "$SOURCE_DIR/public/assets" "$LIVE_DIR/public/"
 
-echo "=== [4/6] Updating Dependencies & Migrations ==="
+echo "=== [5/7] Updating Dependencies & Migrations ==="
 cd "$LIVE_DIR"
 php composer.phar install --no-dev --optimize-autoloader
 php artisan migrate --force
 
-echo "=== [5/6] Optimizing Framework Caches ==="
+echo "=== [6/7] Optimizing Framework Caches ==="
 php artisan optimize:clear
 php artisan config:cache
 php artisan route:cache
 php artisan view:cache
 
-echo "=== [6/6] Cleaning Up ==="
+echo "=== [7/7] Cleaning Up Temp Clone ==="
 rm -rf "$TEMP_DIR"
 
-echo "✅ SUCCESS: Victorious MARKET live store updated and healthy!"
+echo "✅ SUCCESS: Victorious MARKET live store updated and healthy at commit $CLONED_SHA!"
 ```
 
-To run anytime:
+To run with certified default SHA:
 ```bash
 bash /home1/victori6/update_shop.sh
+```
+
+To run targeting a specific certified release commit SHA:
+```bash
+bash /home1/victori6/update_shop.sh <commit-sha>
 ```
 
 ---
