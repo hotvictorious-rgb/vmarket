@@ -219,6 +219,44 @@ class SellerController extends Controller
         return response()->json(['message' => translate('Review_reply_successfully')], 200);
     }
 
+    /**
+     * [AI] Vendor disputes a malicious, defamatory, or extortionist review via API v3.
+     */
+    public function shopProductReviewDispute(Request $request): JsonResponse
+    {
+        $request->validate([
+            'review_id' => 'required',
+            'reason' => 'required|string|min:5|max:1000',
+        ]);
+
+        $seller = $request->seller;
+        $targetReview = Review::where('id', $request['review_id'])
+            ->where(function ($query) use ($seller) {
+                $query->whereHas('product', function ($q) use ($seller) {
+                    $q->where(['added_by' => 'seller', 'user_id' => $seller['id']]);
+                })->orWhereHas('shop', function ($q) use ($seller) {
+                    $q->where('seller_id', $seller['id']);
+                });
+            })
+            ->first();
+
+        if (!$targetReview) {
+            return response()->json(['message' => translate('Review not found or unauthorized')], 403);
+        }
+
+        $targetReview->update([
+            'is_disputed' => true,
+            'dispute_reason' => trim($request['reason']),
+            'dispute_status' => 'pending',
+            'disputed_at' => Carbon::now(),
+        ]);
+
+        return response()->json([
+            'status' => true,
+            'message' => translate('Review dispute submitted successfully for admin moderation'),
+        ], 200);
+    }
+
     public function shop_product_reviews_status(Request $request):JsonResponse
     {
         $seller = $request->seller;

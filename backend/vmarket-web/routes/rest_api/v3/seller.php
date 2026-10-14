@@ -56,6 +56,7 @@ Route::group(['prefix' => 'v3/seller', 'middleware' => ['api_lang']], function (
             Route::get('seller-delivery-man', 'seller_delivery_man');
             Route::get('shop-product-reviews', 'shop_product_reviews');
             Route::post('shop-product-reviews-reply', 'shopProductReviewReply');
+            Route::post('shop-product-reviews-dispute', 'shopProductReviewDispute');
             Route::get('shop-product-reviews-status', 'shop_product_reviews_status');
             Route::put('seller-update', 'seller_info_update');
             Route::get('paystack/banks', 'get_nigerian_banks');

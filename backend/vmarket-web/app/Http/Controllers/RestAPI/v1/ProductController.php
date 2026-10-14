@@ -17,6 +17,7 @@ use App\Models\OrderDetail;
 use App\Models\Product;
 use App\Models\PublishingHouse;
 use App\Models\Review;
+use App\Models\ReviewHelpfulVote;
 use App\Models\Shop;
 use App\Models\StockClearanceProduct;
 use App\Models\Wishlist;
@@ -532,6 +533,11 @@ class ProductController extends Controller
             return response()->json(['message' => translate('product_not_found_in_order')], 403);
         }
 
+        $sentimentTags = is_array($request->sentiment_tags)
+            ? $request->sentiment_tags
+            : (is_string($request->sentiment_tags) ? json_decode($request->sentiment_tags, true) : null);
+        $verifiedLocation = Review::resolveVerifiedLocation($order);
+
         $image_array = [];
         if (!empty($request->file('fileUpload'))) {
             foreach ($request->file('fileUpload') as $image) {
@@ -544,9 +550,9 @@ class ProductController extends Controller
             }
         }
 
-
         $reviewData = Review::where([
             'delivery_man_id' => null,
+            'shop_id' => null,
             'customer_id' => $request->user()->id,
             'product_id' => $request['product_id'],
             'order_id' => $request['order_id'],
@@ -556,8 +562,10 @@ class ProductController extends Controller
                 'customer_id' => $request->user()->id,
                 'product_id' => $request['product_id'],
                 'comment' => $request['comment'],
+                'sentiment_tags' => $sentimentTags ?? $reviewData->sentiment_tags,
+                'verified_location' => $verifiedLocation,
                 'rating' => $request['rating'],
-                'attachment' => $image_array,
+                'attachment' => !empty($image_array) ? $image_array : $reviewData->attachment,
             ]);
         } else {
             $reviewArray = [
@@ -565,10 +573,12 @@ class ProductController extends Controller
                 'order_id' => $request['order_id'],
                 'product_id' => $request['product_id'],
                 'comment' => $request['comment'],
+                'sentiment_tags' => $sentimentTags,
+                'verified_location' => $verifiedLocation,
                 'rating' => $request['rating'],
                 'attachment' => $image_array,
+                'status' => 1,
             ];
-
 
             $oldReview = Review::where(['order_id' => $request['order_id']])->get();
             if (count($oldReview) > 0) {
@@ -620,9 +630,16 @@ class ProductController extends Controller
             }
         }
 
+        $sentimentTags = is_array($request->sentiment_tags)
+            ? $request->sentiment_tags
+            : (is_string($request->sentiment_tags) ? json_decode($request->sentiment_tags, true) : null);
+
         $review->order_id = $request->order_id;
         $review->comment = $request->comment;
         $review->rating = $request->rating;
+        if ($sentimentTags) {
+            $review->sentiment_tags = $sentimentTags;
+        }
         if ($request->has('fileUpload')) {
             $review->attachment = $image_array;
         }
@@ -633,7 +650,6 @@ class ProductController extends Controller
 
     public function submit_deliveryman_review(DeliveryManReviewSubmitRequest $request)
     {
-
         $order = Order::where([
             'id' => $request->order_id,
             'customer_id' => $request->user()->id,
@@ -642,6 +658,11 @@ class ProductController extends Controller
         if (!isset($order->delivery_man_id)) {
             return response()->json(['message' => translate('invalid_review')], 403);
         }
+
+        $sentimentTags = is_array($request->sentiment_tags)
+            ? $request->sentiment_tags
+            : (is_string($request->sentiment_tags) ? json_decode($request->sentiment_tags, true) : null);
+        $verifiedLocation = Review::resolveVerifiedLocation($order);
 
         Review::updateOrCreate(
             [
@@ -654,10 +675,132 @@ class ProductController extends Controller
                 'order_id' => $order->id,
                 'delivery_man_id' => $order->delivery_man_id,
                 'comment' => $request->comment,
+                'sentiment_tags' => $sentimentTags,
+                'verified_location' => $verifiedLocation,
                 'rating' => $request->rating,
+                'status' => 1,
             ]
         );
 
+        return response()->json(['message' => translate('delivery_man_review_submitted_successfully')], 200);
+    }
+
+    /**
+     * [AI] Submit review for in-shop counter pickup experience.
+     */
+    public function submit_shop_review(Request $request): JsonResponse
+    {
+        $validator = Validator::make($request->all(), [
+            'order_id' => 'required',
+            'rating' => 'required|integer|min:1|max:5',
+            'comment' => 'nullable|string|max:1000',
+        ]);
+
+        if ($validator->fails()) {
+            return response()->json(['errors' => Helpers::validationErrorProcessor($validator)], 403);
+        }
+
+        $customerId = $request->user()->id;
+        $order = Order::with(['seller.shop'])->where([
+            'id' => $request['order_id'],
+            'customer_id' => $customerId,
+        ])->where(function ($q) {
+            $q->where('order_status', 'delivered')->orWhere('payment_status', 'paid');
+        })->first();
+
+        if (!$order) {
+            return response()->json(['message' => translate('Only customers with delivered orders can review this store')], 403);
+        }
+
+        $shopId = $order->seller?->shop?->id ?? $request->shop_id;
+        if (!$shopId) {
+            return response()->json(['message' => translate('Shop not found for this order')], 404);
+        }
+
+        $sentimentTags = is_array($request->sentiment_tags)
+            ? $request->sentiment_tags
+            : (is_string($request->sentiment_tags) ? json_decode($request->sentiment_tags, true) : null);
+        $verifiedLocation = Review::resolveVerifiedLocation($order);
+
+        $oldReview = Review::where(['order_id' => $order->id, 'shop_id' => $shopId])->first();
+        if ($oldReview) {
+            $oldReview->update([
+                'rating' => $request->rating,
+                'comment' => $request->comment ?? $oldReview->comment,
+                'sentiment_tags' => $sentimentTags ?? $oldReview->sentiment_tags,
+                'verified_location' => $verifiedLocation,
+            ]);
+        } else {
+            Review::create([
+                'id' => $order->id . '9',
+                'customer_id' => $customerId,
+                'order_id' => $order->id,
+                'shop_id' => $shopId,
+                'rating' => $request->rating,
+                'comment' => $request->comment,
+                'sentiment_tags' => $sentimentTags,
+                'verified_location' => $verifiedLocation,
+                'status' => 1,
+            ]);
+        }
+
+        return response()->json(['status' => true, 'message' => translate('Store experience review submitted successfully')], 200);
+    }
+
+    /**
+     * [AI] Returns authentic Nigerian sentiment quick chips.
+     */
+    public function get_sentiment_chips(Request $request): JsonResponse
+    {
+        return response()->json([
+            'status' => true,
+            'data' => Review::getSentimentChips($request->type),
+        ], 200);
+    }
+
+    /**
+     * [AI] Cast helpful vote on a review with deduplication per user/IP.
+     */
+    public function vote_helpful(Request $request, $reviewId): JsonResponse
+    {
+        $review = Review::active()->where('id', $reviewId)->first();
+        if (!$review) {
+            return response()->json(['status' => false, 'message' => translate('Review not found')], 404);
+        }
+
+        $customerId = $request->user()?->id;
+        $ip = $request->ip();
+
+        $existing = ReviewHelpfulVote::where('review_id', $reviewId)
+            ->where(function ($q) use ($customerId, $ip) {
+                if ($customerId) {
+                    $q->where('customer_id', $customerId);
+                } else {
+                    $q->where('ip_address', $ip);
+                }
+            })->first();
+
+        if ($existing) {
+            return response()->json([
+                'status' => false,
+                'message' => translate('You have already marked this review as helpful'),
+                'helpful_count' => $review->helpful_count,
+            ], 200);
+        }
+
+        ReviewHelpfulVote::create([
+            'review_id' => $reviewId,
+            'customer_id' => $customerId,
+            'ip_address' => $ip,
+        ]);
+
+        $review->increment('helpful_count');
+
+        return response()->json([
+            'status' => true,
+            'message' => translate('Marked as helpful'),
+            'helpful_count' => $review->fresh()->helpful_count,
+        ], 200);
     }
 
     public function get_discounted_product(Request $request):JsonResponse

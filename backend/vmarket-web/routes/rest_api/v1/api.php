@@ -158,11 +158,17 @@ Route::group(['prefix' => 'v1', 'middleware' => ['api_lang']], function () {
 
     Route::group(['prefix' => 'products'], function () {
         Route::controller(ProductController::class)->group(function () {
+            Route::get('reviews/sentiment-chips', 'get_sentiment_chips');
             Route::get('reviews/{slug}', 'get_product_reviews');
             Route::get('rating/{product_id}', 'get_product_rating');
             Route::get('counter/{slug}', 'counter');
             Route::get('social-share-link/{product_id}', 'socialShareLink');
             Route::post('reviews/submit', 'submit_product_review')->middleware('auth:api');
+            Route::post('reviews/shop/submit', 'submit_shop_review')->middleware('auth:api');
+            Route::post('reviews/delivery-man/submit', 'submit_deliveryman_review')->middleware('auth:api');
+            Route::post('deliveryman-reviews/submit', 'submit_deliveryman_review')->middleware('auth:api');
+            Route::post('delivery-man/reviews/submit', 'submit_deliveryman_review')->middleware('auth:api');
+            Route::post('reviews/{id}/helpful', 'vote_helpful');
             Route::put('review/update', 'updateProductReview')->middleware('auth:api');
             Route::get('review/{product_id}/{order_id}', 'getProductReviewByOrder')->middleware('auth:api');
             Route::delete('review/delete-image', 'deleteReviewImage')->middleware('auth:api');

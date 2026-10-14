@@ -299,4 +299,37 @@ class ReviewController extends BaseController
         );
         return back();
     }
+
+    /**
+     * [AI] Admin resolves vendor review dispute (either upholds review as valid or quarantines defamatory review).
+     */
+    public function resolveDispute(Request $request): RedirectResponse|JsonResponse
+    {
+        $request->validate([
+            'id' => 'required',
+            'resolution' => 'required|in:upheld,quarantined',
+        ]);
+
+        $review = \App\Models\Review::withoutGlobalScope('active')->findOrFail($request['id']);
+        if ($request['resolution'] === 'quarantined') {
+            $review->update([
+                'status' => 0,
+                'dispute_status' => 'resolved_quarantined',
+            ]);
+        } else {
+            $review->update([
+                'status' => 1,
+                'dispute_status' => 'resolved_upheld',
+            ]);
+        }
+
+        if ($request->ajax()) {
+            return response()->json([
+                'status' => 1,
+                'message' => translate('review_dispute_resolved_successfully.')
+            ]);
+        }
+        ToastMagic::success(translate('review_dispute_resolved_successfully'));
+        return back();
+    }
 }

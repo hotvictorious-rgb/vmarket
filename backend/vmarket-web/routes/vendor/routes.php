@@ -150,6 +150,7 @@ Route::group(['middleware' => ['maintenance_mode', 'actch:admin_panel']], functi
                     Route::get(Review::UPDATE_STATUS[URI] . '/{id}/{status}', 'updateStatus')->name('update-status');
                     Route::get(Review::EXPORT[URI], 'exportList')->name('export');
                     Route::post(Review::REVIEW_REPLY[URI], 'addReviewReply')->name('add-review-reply');
+                    Route::post('dispute', 'disputeReview')->name('dispute');
                 });
             });
 

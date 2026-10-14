@@ -215,4 +215,48 @@ class ReviewController extends BaseController
         \Devrabiul\ToastMagic\Facades\ToastMagic::success(translate('review_reply_added_successfully'));
         return back();
     }
+
+    /**
+     * [AI] Vendor disputes a malicious, defamatory, or extortionist review.
+     */
+    public function disputeReview(Request $request): JsonResponse|RedirectResponse
+    {
+        $request->validate([
+            'review_id' => 'required',
+            'reason' => 'required|string|min:5|max:1000',
+        ]);
+
+        $vendorId = auth('seller')->id();
+        $review = \App\Models\Review::with(['product'])->find($request['review_id']);
+        if (!$review) {
+            \Devrabiul\ToastMagic\Facades\ToastMagic::error(translate('review_not_found'));
+            return back();
+        }
+
+        // Ownership verification: product belongs to seller or shop belongs to seller
+        $isProductOwner = $review->product && $review->product->added_by == 'seller' && $review->product->user_id == $vendorId;
+        $isShopOwner = $review->shop_id && \App\Models\Shop::where('id', $review->shop_id)->where('seller_id', $vendorId)->exists();
+
+        if (!$isProductOwner && !$isShopOwner) {
+            \Devrabiul\ToastMagic\Facades\ToastMagic::error(translate('unauthorized_access'));
+            return back();
+        }
+
+        $review->update([
+            'is_disputed' => true,
+            'dispute_reason' => trim($request['reason']),
+            'dispute_status' => 'pending',
+            'disputed_at' => now(),
+        ]);
+
+        if ($request->ajax()) {
+            return response()->json([
+                'status' => true,
+                'message' => translate('Review dispute submitted successfully for admin moderation'),
+            ]);
+        }
+
+        \Devrabiul\ToastMagic\Facades\ToastMagic::success(translate('Review dispute submitted successfully for admin moderation'));
+        return back();
+    }
 }

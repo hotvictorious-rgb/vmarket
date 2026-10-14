@@ -38,13 +38,21 @@ class Review extends Model
     protected $fillable = [
         'id',
         'product_id',
+        'shop_id',
         'customer_id',
         'delivery_man_id',
         'order_id',
         'comment',
+        'sentiment_tags',
         'attachment',
+        'verified_location',
         'rating',
         'status',
+        'helpful_count',
+        'is_disputed',
+        'dispute_reason',
+        'dispute_status',
+        'disputed_at',
         'is_saved',
     ];
 
@@ -56,8 +64,12 @@ class Review extends Model
     protected $casts = [
         'rating' => 'integer',
         'status' => 'integer',
+        'helpful_count' => 'integer',
+        'is_disputed' => 'boolean',
+        'disputed_at' => 'datetime',
         'is_saved' => 'boolean',
         'attachment' => 'array',
+        'sentiment_tags' => 'array',
     ];
 
     public function scopeActive($query): mixed
@@ -73,6 +85,11 @@ class Review extends Model
     public function product():BelongsTo
     {
         return $this->belongsTo(Product::class, 'product_id');
+    }
+
+    public function shop(): BelongsTo
+    {
+        return $this->belongsTo(Shop::class, 'shop_id');
     }
 
     public function customer(): BelongsTo
@@ -93,6 +110,95 @@ class Review extends Model
     public function reply(): BelongsTo
     {
         return $this->belongsTo(ReviewReply::class, 'id', 'review_id');
+    }
+
+    public function helpfulVotes()
+    {
+        return $this->hasMany(ReviewHelpfulVote::class, 'review_id');
+    }
+
+    /**
+     * [AI] Returns authentic Nigerian sentiment quick chips grouped by category or type.
+     */
+    public static function getSentimentChips(?string $type = null): array
+    {
+        $chips = [
+            'product' => [
+                'positive' => [
+                    '100% Original',
+                    'Tested & Trusted',
+                    'Neat Packaging',
+                    'Long Battery Life',
+                    'Exactly as Described',
+                    'Heavy / Premium Material',
+                ],
+                'negative' => [
+                    'Imitation / Fake',
+                    'Weak Battery',
+                    'Substandard Finish',
+                    'Damaged on Arrival',
+                    'Wrong Variant / Color',
+                ],
+            ],
+            'shop' => [
+                'positive' => [
+                    'Fast Counter Service',
+                    'Very Polite Attendant',
+                    'Shop Easy to Locate',
+                    'Allowed In-Store Testing',
+                    'Item Held As Promised',
+                ],
+                'negative' => [
+                    'Long Waiting Time',
+                    'Unfriendly Attendant',
+                    'Hard to Locate Store',
+                    'Item Not Ready at Counter',
+                ],
+            ],
+            'delivery' => [
+                'positive' => [
+                    'Very Fast Delivery',
+                    'Courteous Rider',
+                    'Clear Directions Call',
+                    'Careful Parcel Handling',
+                ],
+                'negative' => [
+                    'Late Delivery',
+                    'Rude Courier',
+                    'Demanded Extra Fuel / Tip',
+                    'Damaged Outer Box',
+                ],
+            ],
+        ];
+
+        if ($type && isset($chips[$type])) {
+            return $chips[$type];
+        }
+
+        return $chips;
+    }
+
+    /**
+     * [AI] Resolves a human-friendly verified location context string from an order.
+     */
+    public static function resolveVerifiedLocation(Order $order): string
+    {
+        if ($order->order_type === 'pickup') {
+            $shopName = $order->seller?->shop?->name ?? 'Physical Store';
+            return "Verified In-Shop Pickup • {$shopName}";
+        }
+
+        $address = $order->shippingAddress ?? null;
+        if ($address) {
+            $city = $address->city ?? '';
+            $state = $address->state?->name ?? '';
+            $loc = trim("{$city}, {$state}", ", ");
+            if (!empty($loc)) {
+                return "Verified Buyer • {$loc}";
+            }
+        }
+
+        return "Verified Buyer";
     }
 
     public function getAttachmentFullUrlAttribute(): array|null

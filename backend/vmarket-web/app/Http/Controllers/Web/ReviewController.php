@@ -102,6 +102,11 @@ class ReviewController extends Controller
             $reviewId = $request['order_id'] . (count($oldReview) < 10 ? '0' . (count($oldReview) + 1) : (count($oldReview) + 1));
         }
 
+        $sentimentTags = is_array($request['sentiment_tags'])
+            ? $request['sentiment_tags']
+            : (is_string($request['sentiment_tags']) ? explode(',', $request['sentiment_tags']) : null);
+        $verifiedLocation = Review::resolveVerifiedLocation($order);
+
         $dataArray = [
             'id' => $reviewId,
             'customer_id' => $customerId,
@@ -109,7 +114,10 @@ class ReviewController extends Controller
             'order_id' => $request['order_id'],
             'comment' => $request['comment'],
             'rating' => $request['rating'],
+            'sentiment_tags' => $sentimentTags,
+            'verified_location' => $verifiedLocation,
             'attachment' => $request->has('fileUpload') ? $imageArray : ($review->attachment ?? null),
+            'status' => 1,
             'updated_at' => now(),
             'created_at' => $review->created_at ?? now()
         ];
@@ -143,12 +151,20 @@ class ReviewController extends Controller
             'order_id' => $request['order_id'],
         ]);
 
+        $sentimentTags = is_array($request['sentiment_tags'])
+            ? $request['sentiment_tags']
+            : (is_string($request['sentiment_tags']) ? explode(',', $request['sentiment_tags']) : null);
+        $verifiedLocation = Review::resolveVerifiedLocation($order);
+
         $dataArray = [
             'customer_id' => auth('customer')->id(),
             'delivery_man_id' => $order['delivery_man_id'],
             'order_id' => $request['order_id'],
             'comment' => $request['comment'],
             'rating' => $request['rating'],
+            'sentiment_tags' => $sentimentTags,
+            'verified_location' => $verifiedLocation,
+            'status' => 1,
             'updated_at' => now(),
         ];
 
@@ -165,6 +181,108 @@ class ReviewController extends Controller
 
         Toastr::success(translate('successfully_added_review'));
         return back();
+    }
+
+    /**
+     * [AI] Submit in-shop counter pickup review from web storefront.
+     */
+    public function addShopReview(Request $request): RedirectResponse
+    {
+        $request->validate([
+            'order_id' => 'required',
+            'rating' => 'required|integer|min:1|max:5',
+        ]);
+
+        $customerId = auth('customer')->id();
+        $order = $this->orderRepo->getFirstWhere(params: [
+            'id' => $request['order_id'],
+            'customer_id' => $customerId,
+        ]);
+        if (!$order) {
+            Toastr::error(translate('order_not_found'));
+            return back();
+        }
+
+        $shopId = $order->seller?->shop?->id ?? $request['shop_id'];
+        if (!$shopId) {
+            Toastr::error(translate('Shop_not_found'));
+            return back();
+        }
+
+        $sentimentTags = is_array($request['sentiment_tags'])
+            ? $request['sentiment_tags']
+            : (is_string($request['sentiment_tags']) ? explode(',', $request['sentiment_tags']) : null);
+        $verifiedLocation = Review::resolveVerifiedLocation($order);
+
+        $oldReview = Review::where(['order_id' => $order->id, 'shop_id' => $shopId])->first();
+        if ($oldReview) {
+            $oldReview->update([
+                'rating' => $request['rating'],
+                'comment' => $request['comment'] ?? $oldReview->comment,
+                'sentiment_tags' => $sentimentTags ?? $oldReview->sentiment_tags,
+                'verified_location' => $verifiedLocation,
+            ]);
+        } else {
+            Review::create([
+                'id' => $order->id . '9',
+                'customer_id' => $customerId,
+                'order_id' => $order->id,
+                'shop_id' => $shopId,
+                'rating' => $request['rating'],
+                'comment' => $request['comment'],
+                'sentiment_tags' => $sentimentTags,
+                'verified_location' => $verifiedLocation,
+                'status' => 1,
+            ]);
+        }
+
+        Toastr::success(translate('successfully_added_store_review'));
+        return back();
+    }
+
+    /**
+     * [AI] Helpful vote handler for web storefront.
+     */
+    public function voteHelpful(Request $request, $reviewId): JsonResponse
+    {
+        $review = Review::active()->where('id', $reviewId)->first();
+        if (!$review) {
+            return response()->json(['status' => false, 'message' => translate('Review_not_found')], 404);
+        }
+
+        $customerId = auth('customer')->id();
+        $ip = $request->ip();
+
+        $existing = \App\Models\ReviewHelpfulVote::where('review_id', $reviewId)
+            ->where(function ($q) use ($customerId, $ip) {
+                if ($customerId) {
+                    $q->where('customer_id', $customerId);
+                } else {
+                    $q->where('ip_address', $ip);
+                }
+            })->first();
+
+        if ($existing) {
+            return response()->json([
+                'status' => false,
+                'message' => translate('You_have_already_marked_this_review_as_helpful'),
+                'helpful_count' => $review->helpful_count,
+            ], 200);
+        }
+
+        \App\Models\ReviewHelpfulVote::create([
+            'review_id' => $reviewId,
+            'customer_id' => $customerId,
+            'ip_address' => $ip,
+        ]);
+
+        $review->increment('helpful_count');
+
+        return response()->json([
+            'status' => true,
+            'message' => translate('Marked_as_helpful'),
+            'helpful_count' => $review->fresh()->helpful_count,
+        ], 200);
     }
 
     public function deleteReviewImage(Request $request): JsonResponse

@@ -474,6 +474,7 @@ Route::group(['prefix' => 'admin', 'as' => 'admin.', 'middleware' => ['admin', '
         Route::controller(ReviewController::class)->group(function () {
             Route::get('list', 'index')->name('list');
             Route::post('status', 'updateStatus')->name('status');
+            Route::post('resolve-dispute', 'resolveDispute')->name('resolve-dispute');
             Route::get('export', 'exportList')->name('export');
             Route::get('customer-list-search', 'getCustomerList')->name('customer-list-search');
             Route::any('search-product', 'search')->name('search-product');

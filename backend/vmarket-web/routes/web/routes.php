@@ -105,6 +105,8 @@ Route::group(['middleware' => ['maintenance_mode', 'guestCheck']], function () {
     Route::group(['middleware' => ['customer']], function () {
         Route::controller(ReviewController::class)->group(function () {
             Route::post('review', 'add')->name('review.store');
+            Route::post('shop-review', 'addShopReview')->name('shop-review.store');
+            Route::post('review/{id}/helpful', 'voteHelpful')->name('review.vote-helpful');
             Route::post('submit-deliveryman-review', 'addDeliveryManReview')->name('submit-deliveryman-review');
             Route::post('review-delete-image', 'deleteReviewImage')->name('delete-review-image');
         });
