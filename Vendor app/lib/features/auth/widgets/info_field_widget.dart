@@ -531,7 +531,7 @@ class _InfoFieldVIewWidgetState extends State<InfoFieldVIewWidget> {
                                 border: true,
                                 hintText: getTranslated('address_hint', context),
                                 focusNode: authProvider.shopAddressNode,
-                                textInputType: TextInputType.name,
+                                textInputType: TextInputType.streetAddress,
                                 controller: authProvider.shopAddressController,
                                 textInputAction: TextInputAction.done,
                               )

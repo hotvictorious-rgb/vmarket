@@ -302,12 +302,46 @@ class AuthController with ChangeNotifier {
       secondaryBanner = null;
       Provider.of<ShopController>(Get.context!, listen: false).clearShopModel();
       showCustomSnackBarWidget(getTranslated("you_are_successfully_registered", Get.context!), Get.context!, isError: false, sanckBarType: SnackBarType.success);
-    } else if (response.response?.data is String && jsonDecode(response.response?.data ?? '')["message"][0]["message"] != null) {
-      showCustomSnackBarWidget('${jsonDecode(response.response?.data ?? '')["message"][0]["message"]}', Get.context!, sanckBarType: SnackBarType.warning);
     } else {
-      log("---->log===> ${response.response?.statusCode}/${response.error}/${response.response?.statusMessage}/${response.response?.data}");
       _isLoading = false;
-      showCustomSnackBarWidget("The email has already been taken", Get.context!, sanckBarType: SnackBarType.warning);
+      String? errorMessage;
+      if (response.response?.data != null) {
+        dynamic data = response.response?.data;
+        if (data is String) {
+          try {
+            data = jsonDecode(data);
+          } catch (_) {}
+        }
+        if (data is Map) {
+          if (data['message'] != null) {
+            if (data['message'] is List && (data['message'] as List).isNotEmpty) {
+              final firstItem = data['message'][0];
+              if (firstItem is Map && firstItem['message'] != null) {
+                errorMessage = firstItem['message'].toString();
+              } else {
+                errorMessage = firstItem.toString();
+              }
+            } else {
+              errorMessage = data['message'].toString();
+            }
+          } else if (data['error'] != null) {
+            errorMessage = data['error'].toString();
+          }
+        }
+      }
+      if (errorMessage == null && response.error != null) {
+        if (response.error is String) {
+          errorMessage = response.error.toString();
+        } else {
+          try {
+            errorMessage = response.error.errors[0].message;
+          } catch (_) {
+            errorMessage = response.error.toString();
+          }
+        }
+      }
+      errorMessage ??= getTranslated('something_went_wrong', Get.context!);
+      showCustomSnackBarWidget(errorMessage, Get.context!, sanckBarType: SnackBarType.warning);
     }
     _isLoading = false;
     notifyListeners();

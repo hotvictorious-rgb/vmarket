@@ -174,10 +174,6 @@ class _RegistrationScreenState extends State<RegistrationScreen> with TickerProv
                               showCustomSnackBarWidget(getTranslated('first_name_is_required', context), context,  sanckBarType: SnackBarType.warning);
                             }else if(authController.lastNameController.text.trim().isEmpty){
                               showCustomSnackBarWidget(getTranslated('last_name_is_required', context), context,  sanckBarType: SnackBarType.warning);
-                            }else if(authController.firstNameController.text.trim().isEmpty){
-                              showCustomSnackBarWidget(getTranslated('first_name_is_required', context), context,  sanckBarType: SnackBarType.warning);
-                            }else if(authController.lastNameController.text.trim().isEmpty){
-                              showCustomSnackBarWidget(getTranslated('last_name_is_required', context), context,  sanckBarType: SnackBarType.warning);
                             }else if(authController.sellerProfileImage == null){
                               showCustomSnackBarWidget(getTranslated('profile_image_is_required', context), context,  sanckBarType: SnackBarType.warning);
                             }else if(authController.emailController.text.trim().isEmpty){
@@ -215,7 +211,7 @@ class _RegistrationScreenState extends State<RegistrationScreen> with TickerProv
                                 tinExpireDate: Provider.of<ShopController>(Get.context!, listen: false).tinExpireDate?.toString(),
                               );
                               authController.registration(Get.context!, registerModel, Provider.of<ShopController>(Get.context!, listen: false).tinCertificateFile).then((value){
-                                if(value.response!.statusCode == 200){
+                                if(value.response?.statusCode == 200){
                                   showCupertinoModalPopup( context: Get.context!,
                                     barrierDismissible: false,
                                     builder: (_) => const RegisterSuccessfulWidget());
