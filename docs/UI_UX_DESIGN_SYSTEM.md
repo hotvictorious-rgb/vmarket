@@ -4,7 +4,7 @@ This document serves as the permanent reference guide for the **Victorious MARKE
 
 ---
 
-## 👑 1. Brand Palette & Visual Tokens
+## 🎨 1. Brand Palette & Visual Tokens
 
 | Design Token | Hex Code | Purpose & Usage |
 | :--- | :--- | :--- |
@@ -68,7 +68,7 @@ This document serves as the permanent reference guide for the **Victorious MARKE
 
 ---
 
-### 👑 Screen 4: More / Account Hub (5th Navigation Tab)
+### 📱 Screen 4: More / Account Hub (5th Navigation Tab)
 * **User Profile Header:** Royal Purple gradient banner with avatar, user name, and verified badge.
 * **Digital Wallet Widget:** Live available balance (**₦45,000**), Top Up button, and Gold Loyalty Points counter.
 * **Quick Action Grid:** 2-column rounded cards for My Orders, Wishlist, Track Order, Chat with Delivery Rider, Address Book, Support Tickets, Currency, and Language.
