@@ -64,8 +64,9 @@ tar -czf /home1/victori6/shop_backup_$(date +%Y%m%d_%H%M%S).tar.gz --exclude="sh
 
 ### Phase 2: Pull Latest GitHub Code to Temp Workspace
 ```bash
-rm -rf /tmp/vmarket_check
-git clone --depth 1 https://github.com/hotvictorious-rgb/vmarket.git /tmp/vmarket_check
+# Pull exclusively from active release branch v1 (or explicit approved release commit SHA)
+git clone --depth 1 -b v1 https://github.com/hotvictorious-rgb/vmarket.git /tmp/vmarket_check
+cd /tmp/vmarket_check && git log -1 --oneline
 ```
 
 ### Phase 3: Perform Safe Overlay Sync

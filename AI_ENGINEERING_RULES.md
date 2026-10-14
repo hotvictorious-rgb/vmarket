@@ -23,7 +23,7 @@ Vmarket is **NOT** a collection of independent repositories or isolated apps. It
 ```
 
 The platform consists of:
-1. **Laravel 10 Backend & REST API** (`backend/vmarket-web`)
+1. **Laravel 12 Backend & REST API (PHP 8.2+)** (`backend/vmarket-web`)
 2. **Super Admin Web Portal** (Blade + AJAX)
 3. **Vendor Web Dashboard** (Blade + AJAX)
 4. **Customer Web Storefront** (Blade Views: Default & Aster Theme)

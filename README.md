@@ -214,7 +214,7 @@ The repository is structured as a unified monorepo containing the central Larave
 ```
 vmarket/
 ├── backend/
-│   └── vmarket-web/              # Laravel 10 Core Engine, API, & Admin Web Panels
+│   └── vmarket-web/              # Laravel 12 (PHP 8.2+) Core Engine, API, & Admin Web Panels
 │       ├── app/
 │       │   ├── Http/Controllers/ # REST API Controllers & Admin Presentation
 │       │   ├── Models/           # Eloquent Domain Models (Strict Fillable)
@@ -236,8 +236,8 @@ vmarket/
 │   └── test/                     # Customer Fulfillment & Address Cascade Tests
 ├── Vendor app/                   # Merchant Mobile Application (Flutter • Provider)
 │   ├── lib/
-│   │   └── features/             # Merchant POS, Product, & Inspection Features
-│   └── test/                     # Vendor Journey & Role Boundary Tests
+│   │   ├── features/             # Merchant POS, Product, & Inspection Features
+│   │   └── test/                 # Vendor Journey & Role Boundary Tests
 ├── Delivery Man App/             # Rider Mobile Application (Flutter • GetX)
 │   └── lib/                      # Live GPS Tracking, Route Navigation, & OTP Handover
 ├── .agents/                      # Canonical Architecture Rules & API Contract Registry
@@ -249,7 +249,7 @@ vmarket/
 
 | Client Surface | Primary Technology | Architecture / State | Security & Storage |
 | :--- | :--- | :--- | :--- |
-| **Core Backend & REST API** | Laravel 10 / PHP 8.2+ | MVC + Repository Pattern | BCMath, Row Locks, Policies, Sanctum/Passport |
+| **Core Backend & REST API** | Laravel 12 / PHP 8.2+ | MVC + Repository Pattern | BCMath, Row Locks, Policies, Sanctum/Passport |
 | **Super Admin Command Center** | Laravel Blade / Bootstrap 4 | Server-Side Presenter | Zero-Trust Server Gate Authorization |
 | **Public Storefront** | Laravel Blade / Theme Engine | Multi-Theme (Default, Aster, Fashion) | Server-Rendered, WebP, CacheManager |
 | **Customer Mobile App** | Flutter 3.x / Dart | **Provider** + Feature-First | `flutter_secure_storage`, GetIt |

@@ -1,8 +1,16 @@
-# V1 local release verification continuation [AI]
+# Ticket: VM-V1-LOCAL-RELEASE-VERIFY-2026-10-05
 
-Status: INTEGRATION_TESTING
-Blocked: no
-Branch: v1
+Ticket ID:            VM-V1-LOCAL-RELEASE-VERIFY-2026-10-05
+Title:                V1 local release verification continuation [AI]
+Type:                 VERIFICATION
+Status:               READY
+Blocked:              no
+Tier / area:          A (Release Verification)
+Assigned AI:          Backend AI
+Required reviewers:   Reviewer AI
+Branch / base commit: v1
+Acceptance criteria:  All local release verification tests pass with zero drift and zero syntax errors
+
 Baseline: f3565fcd1d97e8184841ea9d33bc8dd018965664
 Documents updated: this ticket; forthcoming local release verification report
 

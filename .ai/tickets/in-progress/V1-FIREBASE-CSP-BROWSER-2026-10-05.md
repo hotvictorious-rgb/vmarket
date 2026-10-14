@@ -1,4 +1,15 @@
-# Firebase production CSP browser verification
+# Ticket: V1-FIREBASE-CSP-BROWSER-2026-10-05
+
+Ticket ID:            V1-FIREBASE-CSP-BROWSER-2026-10-05
+Title:                Firebase production CSP browser verification
+Type:                 VERIFICATION
+Status:               IN_PROGRESS
+Blocked:              no
+Tier / area:          A (Security & CSP)
+Assigned AI:          Frontend AI
+Required reviewers:   Reviewer AI
+Branch / base commit: v1
+Acceptance criteria:  Browser CSP passes without connect-src violation on allowed origins and blocks untrusted origins
 
 Frontend verifier: `backend/vmarket-web/tests/regression/firebase_csp_browser.test.cjs`.
 

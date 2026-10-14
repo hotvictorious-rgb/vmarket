@@ -1,4 +1,15 @@
-# Reproducible local storefront browser recovery verification
+# Ticket: V1-PICKUP-BROWSER-RECOVERY-2026-10-05
+
+Ticket ID:            V1-PICKUP-BROWSER-RECOVERY-2026-10-05
+Title:                Reproducible local storefront browser recovery verification
+Type:                 VERIFICATION
+Status:               IN_PROGRESS
+Blocked:              no
+Tier / area:          B (Storefront Recovery)
+Assigned AI:          Frontend AI
+Required reviewers:   Reviewer AI
+Branch / base commit: v1
+Acceptance criteria:  Storefront pickup browser recovery tests pass without network or session errors
 
 Frontend-owned test: `backend/vmarket-web/tests/regression/pickup_browser_recovery.test.cjs`.
 
