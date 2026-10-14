@@ -587,10 +587,11 @@ class ProductService
             'mpn' => $request['mpn'] ?? null,
             'google_category_id' => $request['google_category_id'] ?? null,
             'nafdac_number' => $request['nafdac_number'] ?? null,
-            'expiry_date' => $request['expiry_date'] ?? null,
-            'marketplace_listing_status' => 'unlisted',
+            'marketplace_listing_status' => 'listed',
             'marketplace_availability' => 'in_stock',
-            'marketplace_confirmed_at' => null,
+            'marketplace_confirmed_at' => now(),
+            'availability_confirmed_at' => now(),
+            'availability_expires_at' => now()->copy()->addDays(function_exists('getMarketplaceConfirmationDays') ? getMarketplaceConfirmationDays() : 7),
             'package_size' => ($request['product_type'] == 'physical') ? ($request['package_size'] ?? 'small') : 'small',
         ];
     }

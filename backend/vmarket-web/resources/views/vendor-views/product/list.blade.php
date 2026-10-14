@@ -403,7 +403,7 @@
             btn.prop('disabled', true).text('...');
 
             $.ajax({
-                url: "{{ url('seller/products/confirm-marketplace-listing') }}/" + productId,
+                url: "{{ url('vendor/products/confirm-marketplace-listing') }}/" + productId,
                 type: 'POST',
                 data: {
                     _token: '{{ csrf_token() }}'
