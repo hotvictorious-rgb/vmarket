@@ -7,49 +7,62 @@ use Illuminate\Support\Str;
 if (!function_exists('translate')) {
     function translate($key = null): string|null
     {
-        $local = getDefaultLanguage();
-        if ($key) {
-            App::setLocale($local);
-            $key = getOrPutTranslateMessageValueByKey(local: $local, key: $key);
+        if ($key === null || $key === '') {
+            return $key;
         }
-        App::setLocale(getLanguageCode(country_code: $local));
-        return $key;
+
+        static $cachedLocale = null;
+        if ($cachedLocale === null) {
+            $cachedLocale = getDefaultLanguage();
+        }
+
+        return getOrPutTranslateMessageValueByKey(local: $cachedLocale, key: $key);
     }
 
     function getOrPutTranslateMessageValueByKey(string $local, string $key): array|string|null
     {
+        static $messagesCache = [];
+        static $newMessagesCache = [];
+        static $dirty = false;
+
         try {
-            $messagesPath = base_path('resources/lang/' . $local . '/messages.php');
-            $translatedMessagesArray = is_file($messagesPath) ? (include $messagesPath) : [];
-            $translatedMessagesArray = is_array($translatedMessagesArray) ? $translatedMessagesArray : [];
-
-            $newMessagesPath = base_path('resources/lang/' . $local . '/new-messages.php');
-            $newMessagesArray = is_file($newMessagesPath) ? (include $newMessagesPath) : [];
-            $newMessagesArray = is_array($newMessagesArray) ? $newMessagesArray : [];
-
-            $key = str_replace('"', '', $key);
-            $key = str_replace(' ', '_', $key);
-            $processedKey = ucfirst(str_replace('_', ' ', removeSpecialCharacters($key)));
-
-            if (!array_key_exists($key, $translatedMessagesArray) && !array_key_exists($key, $newMessagesArray)) {
-                $newMessagesArray[$key] = $processedKey;
-
-                $languageFileContents = "<?php\n\nreturn [\n";
-                foreach ($newMessagesArray as $languageKey => $value) {
-                    $languageFileContents .= "\t\"" . $languageKey . "\" => \"" . $value . "\",\n";
-                }
-                $languageFileContents .= "];\n";
-
-                $targetPath = base_path('resources/lang/' . $local . '/new-messages.php');
-                @file_put_contents($targetPath, $languageFileContents);
-                $message = $processedKey;
-            } elseif (array_key_exists($key, $translatedMessagesArray)) {
-                $message = __('messages.' . $key);
-            } elseif (array_key_exists($key, $newMessagesArray)) {
-                $message = __('new-messages.' . $key);
-            } else {
-                $message = __('messages.' . $key);
+            if (!isset($messagesCache[$local])) {
+                $messagesPath = base_path('resources/lang/' . $local . '/messages.php');
+                $loaded = is_file($messagesPath) ? (include $messagesPath) : [];
+                $messagesCache[$local] = is_array($loaded) ? $loaded : [];
             }
+
+            if (!isset($newMessagesCache[$local])) {
+                $newMessagesPath = base_path('resources/lang/' . $local . '/new-messages.php');
+                $loadedNew = is_file($newMessagesPath) ? (include $newMessagesPath) : [];
+                $newMessagesCache[$local] = is_array($loadedNew) ? $loadedNew : [];
+            }
+
+            $sanitizedKey = str_replace(['"', ' '], ['', '_'], $key);
+
+            if (isset($messagesCache[$local][$sanitizedKey])) {
+                $message = $messagesCache[$local][$sanitizedKey];
+                return $local == 'en' ? ucfirst($message) : $message;
+            }
+
+            if (isset($newMessagesCache[$local][$sanitizedKey])) {
+                $message = $newMessagesCache[$local][$sanitizedKey];
+                return $local == 'en' ? ucfirst($message) : $message;
+            }
+
+            $processedKey = ucfirst(str_replace('_', ' ', removeSpecialCharacters($sanitizedKey)));
+            $newMessagesCache[$local][$sanitizedKey] = $processedKey;
+
+            // Defer file write or write safely
+            $targetPath = base_path('resources/lang/' . $local . '/new-messages.php');
+            $languageFileContents = "<?php\n\nreturn [\n";
+            foreach ($newMessagesCache[$local] as $languageKey => $value) {
+                $languageFileContents .= "\t\"" . $languageKey . "\" => \"" . addslashes($value) . "\",\n";
+            }
+            $languageFileContents .= "];\n";
+            @file_put_contents($targetPath, $languageFileContents);
+
+            $message = $processedKey;
         } catch (\Throwable $exception) {
             $message = ucfirst(str_replace('_', ' ', removeSpecialCharacters(str_replace("\'", "'", $key))));
         }

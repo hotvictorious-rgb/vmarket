@@ -61,7 +61,8 @@
 
                             $cartShipping = \App\Models\CartShipping::where('cart_group_id', $group_key)->first();
                             $activeMethodId = $cartShipping?->shipping_method_id ?? 2;
-                            $currentShippingFee = $cartShipping?->shipping_cost ?? 600.00;
+                            $isPickupSelected = in_array((int)$activeMethodId, [3, 9]);
+                            $currentShippingFee = $isPickupSelected ? 0.00 : ($cartShipping?->shipping_cost ?? 600.00);
 
                             if ($firstItem->seller_is == 'admin') {
                                 $originLgaId = (int) (\App\Models\Shop::where('seller_id', 0)->first()?->lga_id ?: 69);
@@ -129,20 +130,20 @@
                                     </span>
                                     <span class="fs-12">
                                         <span class="text-muted">{{ translate('Selected Fee') }}:</span>
-                                        <strong class="fs-13 fw-bold {{ $activeMethodId == 9 ? 'text-success' : 'text-primary' }}">
-                                            {{ $activeMethodId == 9 ? translate('FREE (₦0.00)') : webCurrencyConverter($doorstepLaneFee) }}
+                                        <strong class="fs-13 fw-bold {{ $isPickupSelected ? 'text-success' : 'text-primary' }}">
+                                            {{ $isPickupSelected ? translate('FREE (₦0.00)') : webCurrencyConverter($doorstepLaneFee) }}
                                         </strong>
                                     </span>
                                 </div>
 
                                 <div class="vm-fulfillment-grid">
                                     {{-- Option 1: Doorstep Delivery --}}
-                                    <div class="vm-fulfillment-card set-shipping-id {{ $activeMethodId == 2 ? 'active-doorstep' : '' }}"
+                                    <div class="vm-fulfillment-card set-shipping-id {{ !$isPickupSelected ? 'active-doorstep' : '' }}"
                                          data-id="2"
                                          data-cart-group="{{ $group_key }}">
                                         <div class="d-flex align-items-center gap-2">
                                             <div class="vm-fulfillment-radio">
-                                                @if($activeMethodId == 2)
+                                                @if(!$isPickupSelected)
                                                     <div class="vm-fulfillment-radio-dot"></div>
                                                 @endif
                                             </div>
@@ -159,12 +160,12 @@
                                     </div>
 
                                     {{-- Option 2: In-Store Counter Inspection & Pickup --}}
-                                    <div class="vm-fulfillment-card set-shipping-id {{ $activeMethodId == 9 ? 'active-pickup' : '' }}"
-                                         data-id="9"
+                                    <div class="vm-fulfillment-card set-shipping-id {{ $isPickupSelected ? 'active-pickup' : '' }}"
+                                         data-id="3"
                                          data-cart-group="{{ $group_key }}">
                                         <div class="d-flex align-items-center gap-2">
                                             <div class="vm-fulfillment-radio">
-                                                @if($activeMethodId == 9)
+                                                @if($isPickupSelected)
                                                     <div class="vm-fulfillment-radio-dot"></div>
                                                 @endif
                                             </div>
@@ -244,11 +245,13 @@
 
                                             <div class="vm-cart-unit-price">
                                                 {{ translate('Unit') }}: <strong class="text-dark">{{ webCurrencyConverter($cartItem['price']) }}</strong>
+                                                <span class="mx-1 text-muted">•</span>
+                                                <span>{{ translate('Qty') }}: <strong class="text-primary">{{ $cartItem['quantity'] }}</strong></span>
                                             </div>
 
                                             <div class="vm-cart-guarantee-tag">
                                                 <i class="bi bi-shield-check"></i>
-                                                <span>{{ $activeMethodId == 9 ? translate('Physical Counter Inspection Guarantee') : translate('Directional LGA Dispatch Guarantee') }}</span>
+                                                <span>{{ $isPickupSelected ? translate('Physical Counter Inspection Guarantee') : translate('Directional LGA Dispatch Guarantee') }}</span>
                                             </div>
                                         </div>
 
@@ -341,12 +344,14 @@
 
                                                 <input type="text"
                                                        class="vm-stepper-input update-cart-quantity-list-cart-data-input update-cart-quantity-list-mobile-cart-data-input"
+                                                       id="cartQuantityMobile{{ $cartItem['id'] }}"
                                                        value="{{ $cartItem['quantity'] }}"
                                                        data-cart="{{ $cartItem['id'] }}"
                                                        data-value="0"
                                                        data-min-order="{{ $product->minimum_order_qty ?? 1 }}"
                                                        data-min="{{ $product->minimum_order_qty ?? 1 }}"
-                                                       data-current-stock="{{ $getProductCurrentStock }}">
+                                                       data-current-stock="{{ $getProductCurrentStock }}"
+                                                       aria-label="{{ translate('Quantity') }}">
 
                                                 <button type="button"
                                                         class="vm-stepper-btn update-cart-quantity-list-cart-data update-cart-quantity-list-mobile-cart-data"

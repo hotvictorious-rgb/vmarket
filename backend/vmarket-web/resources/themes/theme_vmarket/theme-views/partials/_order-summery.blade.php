@@ -13,7 +13,21 @@
             $cartAll = CartManager::getCartListQuery();
             $cart_group_ids = CartManager::get_cart_group_ids();
             $checkedGroupIds = CartManager::get_cart_group_ids(type: 'checked');
-            $shippingTotal = (float)(\App\Models\CartShipping::whereIn('cart_group_id', $checkedGroupIds)->sum('shipping_cost') ?? 0);
+            $cartShippings = \App\Models\CartShipping::whereIn('cart_group_id', $checkedGroupIds)->get();
+            $shippingTotal = 0.0;
+            $hasPickup = false;
+            foreach ($cartShippings as $cs) {
+                $m = \App\Models\ShippingMethod::find($cs->shipping_method_id);
+                $isCsPickup = in_array((int)$cs->shipping_method_id, [3, 9]);
+                if ($m && (str_contains(strtolower($m->title), 'pickup') || str_contains(strtolower($m->title), 'pick up') || str_contains(strtolower($m->title), 'in-store') || (float)$m->cost == 0)) {
+                    $isCsPickup = true;
+                }
+                if ($isCsPickup) {
+                    $hasPickup = true;
+                } else {
+                    $shippingTotal += (float)$cs->shipping_cost;
+                }
+            }
             if ($cart->count() > 0) {
                 foreach ($cart as $key => $cartItem) {
                     $product_price_total += $cartItem['price'] * $cartItem['quantity'];
@@ -81,7 +95,7 @@
             </div>
         </div>
 
-        <div id="summary-pickup-due-notice" class="alert alert-info py-2 px-3 mt-3 mb-0 rounded-3 d-none" style="background-color: rgba(16, 185, 129, 0.08); border-color: rgba(16, 185, 129, 0.25); color: #065F46;">
+        <div id="summary-pickup-due-notice" class="alert alert-info py-2 px-3 mt-3 mb-0 rounded-3 {{ $hasPickup ? '' : 'd-none' }}" style="background-color: rgba(16, 185, 129, 0.08); border-color: rgba(16, 185, 129, 0.25); color: #065F46;">
             <div class="d-flex justify-content-between align-items-center">
                 <span class="fs-12"><strong>{{ translate('Due at Store Counter') }}:</strong></span>
                 <strong class="fs-13">{{ webCurrencyConverter($product_price_total - $total_discount_on_product + $taxAmount) }}</strong>

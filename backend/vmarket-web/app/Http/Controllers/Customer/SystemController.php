@@ -104,13 +104,13 @@ class SystemController extends Controller
             $originLgaId = 69;
         }
 
-        // [AI] Check if chosen method is store/in-shop pickup
+        // [AI] Check if chosen method is store/in-shop pickup (ID 3, 9, zero cost, or title match)
         $methodId = (int) ($request['id'] ?? 2);
         $method = ShippingMethod::find($methodId);
-        $isPickup = false;
+        $isPickup = in_array($methodId, [3, 9]);
         if ($method) {
             $titleLower = strtolower($method->title);
-            if (str_contains($titleLower, 'pickup') || str_contains($titleLower, 'pick up') || str_contains($titleLower, 'in-store') || str_contains($titleLower, 'in-shop')) {
+            if (str_contains($titleLower, 'pickup') || str_contains($titleLower, 'pick up') || str_contains($titleLower, 'in-store') || str_contains($titleLower, 'in-shop') || (float)$method->cost == 0) {
                 $isPickup = true;
             }
         }
