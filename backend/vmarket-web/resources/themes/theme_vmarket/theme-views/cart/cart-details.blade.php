@@ -4,587 +4,430 @@
     use App\Utils\ProductManager;
     use App\Utils\CartManager;
     use function App\Utils\get_shop_name;
-    // VM-CUST-003: canonical cart — delivery fees resolved downstream via FulfillmentAvailabilityService + DeliveryLane. No legacy shipping here.
+    // [AI] VM-CUST-003: Canonical cart — delivery fees resolved downstream via FulfillmentAvailabilityService + DeliveryLane.
     $cart = CartManager::getCartListQuery()->groupBy('cart_group_id');
 @endphp
-<div class="container">
-    <h4 class="text-center mb-3 text-capitalize">{{ translate('cart_list') }}</h4>
-    <form action="javascript:">
-        <div class="row gy-3">
-            <div class="col-lg-8">
-                <div class="card h-100">
-                    <div class="card-body">
-                        <div class="d-flex justify-content-center mb-30">
-                            <ul class="cart-step-list">
-                                <li class="current cursor-pointer get-view-by-onclick"
-                                    data-link="{{route('shop-cart')}}">
-                                    <span><i class="bi bi-check2"></i></span> {{ translate('cart') }}</li>
-                                <li class="cursor-pointer text-capitalize" data-link="{{ route('checkout-details') }}">
-                                    <span><i class="bi bi-check2"></i></span> {{ translate('shopping_details') }}</li>
-                                <li><span><i class="bi bi-check2"></i></span> {{ translate('payment') }}</li>
-                            </ul>
-                        </div>
-                        @if(count($cart)==0)
-                            @php $physical_product = false; @endphp
-                        @endif
 
-                        @foreach($cart as $group_key=>$group)
-                            @php
-                                $physical_product = false;
-                                foreach ($group as $row) {
-                                    if ($row->product_type == 'physical' && $row->is_checked) {
-                                        $physical_product = true;
-                                    }
+<div class="container py-3">
+    {{-- 3-Step Checkout Flow Tracker --}}
+    <div class="d-flex justify-content-center mb-4">
+        <ul class="cart-step-list">
+            <li class="current cursor-pointer get-view-by-onclick" data-link="{{ route('shop-cart') }}">
+                <span><i class="bi bi-cart3"></i></span> {{ translate('1. Cart Review') }}
+            </li>
+            <li class="cursor-pointer text-capitalize" data-link="{{ route('checkout-details') }}">
+                <span><i class="bi bi-geo-alt"></i></span> {{ translate('2. Shipping & Inspection') }}
+            </li>
+            <li>
+                <span><i class="bi bi-shield-check"></i></span> {{ translate('3. Escrow Payment') }}
+            </li>
+        </ul>
+    </div>
+
+    @if($cart->count() == 0)
+        {{-- Empty Cart State --}}
+        <div class="vm-merchant-card py-5 px-4 text-center">
+            <div class="d-flex flex-column align-items-center justify-content-center gap-3">
+                <div class="rounded-circle d-flex align-items-center justify-content-center"
+                     style="width: 88px; height: 88px; background: rgba(94, 23, 235, 0.08); color: #5E17EB;">
+                    <i class="bi bi-bag-x" style="font-size: 40px;"></i>
+                </div>
+                <div>
+                    <h4 class="fw-bold m-0" style="color: #1B1035;">{{ translate('Your Shopping Cart is Empty') }}</h4>
+                    <p class="text-muted fs-14 mt-2 mb-0" style="max-width: 460px; margin: 0 auto;">
+                        {{ translate('Explore verified merchants across Akwa Ibom with guaranteed physical in-shop counter inspection and swift directional logistics.') }}
+                    </p>
+                </div>
+                <a href="{{ route('products') }}" class="vm-checkout-cta-btn mt-3" style="max-width: 240px;">
+                    <i class="bi bi-shop me-1"></i> {{ translate('Explore Catalog') }}
+                </a>
+            </div>
+        </div>
+    @else
+        <form action="javascript:" id="cart-form">
+            <div class="row gy-4">
+                {{-- Left Column: Merchant Groups & Cart Items --}}
+                <div class="col-lg-8">
+                    @foreach($cart as $group_key => $group)
+                        @php
+                            $physical_product = false;
+                            foreach ($group as $row) {
+                                if ($row->product_type == 'physical' && $row->is_checked) {
+                                    $physical_product = true;
                                 }
-                            @endphp
-                            <div class="cart_information">
-                                @foreach($group as $cart_key=>$cartItem)
-                                    @if($cart_key==0)
-                                        @php
-                                            $verify_status = OrderManager::verifyCartListMinimumOrderAmount($request, $group_key);
-                                        @endphp
+                            }
+                            $firstItem = $group[0];
+                            $verify_status = OrderManager::verifyCartListMinimumOrderAmount(request(), $group_key);
 
-                                        @php
-                                            $cartShipping = \App\Models\CartShipping::where('cart_group_id', $group_key)->first();
-                                            $activeMethodId = $cartShipping?->shipping_method_id ?? 2;
-                                            $currentShippingFee = $cartShipping?->shipping_cost ?? 600.00;
+                            $cartShipping = \App\Models\CartShipping::where('cart_group_id', $group_key)->first();
+                            $activeMethodId = $cartShipping?->shipping_method_id ?? 2;
+                            $currentShippingFee = $cartShipping?->shipping_cost ?? 600.00;
 
-                                            if ($cartItem->seller_is == 'admin') {
-                                                $originLgaId = (int) (\App\Models\Shop::where('seller_id', 0)->first()?->lga_id ?: 69);
-                                                $shopName = getInHouseShopConfig(key: 'name');
-                                            } else {
-                                                $originLgaId = (int) (\App\Models\Shop::where('seller_id', $cartItem->seller_id)->first()?->lga_id ?: 69);
-                                                $shopName = get_shop_name($cartItem['seller_id']);
-                                            }
-                                            $destLgaId = (int) session('customer_lga_id', 69);
-                                            $doorstepLaneFee = \App\Models\DeliveryLane::getDeliveryFee($originLgaId, $destLgaId) ?? 600.00;
-                                        @endphp
+                            if ($firstItem->seller_is == 'admin') {
+                                $originLgaId = (int) (\App\Models\Shop::where('seller_id', 0)->first()?->lga_id ?: 69);
+                                $shopName = getInHouseShopConfig(key: 'name');
+                                $shopSlug = getInHouseShopConfig(key: 'slug');
+                            } else {
+                                $originLgaId = (int) (\App\Models\Shop::where('seller_id', $firstItem->seller_id)->first()?->lga_id ?: 69);
+                                $shopName = get_shop_name($firstItem['seller_id']);
+                                $shopSlug = $firstItem->seller->shop['slug'] ?? '';
+                            }
+                            $destLgaId = (int) session('customer_lga_id', 69);
+                            $doorstepLaneFee = \App\Models\DeliveryLane::getDeliveryFee($originLgaId, $destLgaId) ?? 600.00;
+                        @endphp
 
-                                        <div class="py-3 px-3 mb-3 rounded" style="background: #F8FAFC; border: 1px solid #E2E8F0;">
-                                            <div class="d-flex align-items-center justify-content-between gap-3 flex-wrap">
-                                                <div class="d-flex align-items-center flex-grow-1">
-                                                    @if($cartItem->seller_is == 'admin')
-                                                        <div class="d-flex gap-2 align-items-center flex-wrap">
-                                                            <input type="checkbox" class="shop-head-check shop-head-check-desktop">
-                                                            <a href="{{ route('vendor-shop',['slug' => getInHouseShopConfig(key: 'slug')]) }}" class="text-decoration-none">
-                                                                <h5 class="fs-15 line-clamp-1 m-0 fw-bold" style="color: #1B1035;">
-                                                                    👑 {{ $shopName }}
-                                                                </h5>
-                                                            </a>
-                                                            <span class="badge" style="background: rgba(212,175,55,0.15); color: #B8860B; font-weight: 700; font-size: 11px; padding: 4px 10px; border: 1px solid rgba(212,175,55,0.4); border-radius: 6px;">
-                                                                {{ translate('Official Flagship • Platform Managed') }}
-                                                            </span>
-                                                        </div>
-                                                    @else
-                                                        <div class="d-flex gap-2 align-items-center flex-wrap">
-                                                            <input type="checkbox" class="shop-head-check shop-head-check-desktop">
-                                                            <a href="{{ route('vendor-shop', ['slug' => $cartItem->seller->shop['slug'] ?? '']) }}" class="text-decoration-none">
-                                                                @if($shopName)
-                                                                    <h5 class="fs-15 line-clamp-1 m-0 fw-bold" style="color: #1B1035;">
-                                                                        🏪 {{ $shopName }}
-                                                                    </h5>
-                                                                @else
-                                                                    <h5 class="text-danger fs-14 m-0">{{ translate('vendor_not_available') }}</h5>
-                                                                @endif
-                                                            </a>
-                                                            <span class="badge" style="background: rgba(46,27,78,0.08); color: #2E1B4E; font-weight: 700; font-size: 11px; padding: 4px 10px; border: 1px solid rgba(46,27,78,0.2); border-radius: 6px;">
-                                                                {{ translate('Verified Regional Merchant') }}
-                                                            </span>
-                                                        </div>
-                                                    @endif
-                                                    @if ($verify_status['minimum_order_amount'] > $verify_status['amount'])
-                                                        <span
-                                                            class="ps-2 text-danger pulse-button minimum-order-amount-message"
-                                                            data-bs-toggle="tooltip"
-                                                            data-bs-placement="right"
-                                                            data-bs-custom-class="custom-tooltip"
-                                                            data-bs-title="{{ translate('minimum_Order_Amount') }} {{ webCurrencyConverter($verify_status['minimum_order_amount']) }} {{ translate('for') }} {{ $shopName }}">
-                                                            <i class="bi bi-info-circle"></i>
-                                                        </span>
-                                                    @endif
-                                                </div>
-                                            </div>
-
-                                            {{-- Interactive Fulfillment / Shipping Method Selector --}}
-                                            <div class="mt-3 pt-3 border-top" style="border-color: #E2E8F0 !important;">
-                                                <div class="d-flex align-items-center justify-content-between flex-wrap gap-2 mb-2">
-                                                    <div class="d-flex align-items-center gap-2 flex-wrap">
-                                                        <span class="fs-12 fw-bold text-uppercase" style="color: #475569; letter-spacing: 0.5px;">
-                                                            <i class="bi bi-truck me-1 text-primary"></i> {{ translate('Select Shipping Method') }}:
-                                                        </span>
-                                                        <span class="badge bg-white text-dark border py-1 px-2 fs-11">
-                                                            📍 {{ translate('Destination') }}: <strong class="text-primary">{{ session('customer_city', 'Uyo') }}</strong>
-                                                        </span>
-                                                        <a href="javascript:" data-bs-toggle="modal" data-bs-target="#locationModal" class="btn btn-outline-secondary btn-xs py-0 px-2 fs-11" style="height: 22px; line-height: 20px;">
-                                                            {{ translate('Change') }}
-                                                        </a>
-                                                    </div>
-                                                    <div class="fs-12">
-                                                        <span class="text-muted">{{ translate('Current Shipping Fee') }}:</span>
-                                                        <strong class="fs-13 fw-bold {{ $activeMethodId == 9 ? 'text-success' : 'text-primary' }}">
-                                                            {{ $activeMethodId == 9 ? translate('FREE (₦0.00)') : webCurrencyConverter($doorstepLaneFee) }}
-                                                        </strong>
-                                                    </div>
-                                                </div>
-
-                                                <div class="row g-2">
-                                                    {{-- Doorstep Delivery Option --}}
-                                                    <div class="col-sm-6">
-                                                        <div class="cursor-pointer p-2 rounded border transition-all set-shipping-id"
-                                                             data-id="2"
-                                                             data-cart-group="{{ $group_key }}"
-                                                             style="{{ $activeMethodId == 2 ? 'background: #FAF5FF; border-color: #7C3AED !important; box-shadow: 0 0 0 1px #7C3AED;' : 'background: #FFFFFF; border-color: #CBD5E1;' }}">
-                                                            <div class="d-flex align-items-center justify-content-between">
-                                                                <div class="d-flex align-items-center gap-2">
-                                                                    <div class="rounded-circle d-flex align-items-center justify-content-center"
-                                                                         style="width: 20px; height: 20px; border: 2px solid {{ $activeMethodId == 2 ? '#7C3AED' : '#94A3B8' }};">
-                                                                        @if($activeMethodId == 2)
-                                                                            <div class="rounded-circle" style="width: 10px; height: 10px; background: #7C3AED;"></div>
-                                                                        @endif
-                                                                    </div>
-                                                                    <div>
-                                                                        <div class="fw-bold fs-13" style="color: #1E293B;">
-                                                                            🚚 {{ translate('Doorstep Delivery') }}
-                                                                        </div>
-                                                                        <div class="fs-11 text-muted">
-                                                                            {{ translate('Express Courier') }} • 1-2 {{ translate('hours') }}
-                                                                        </div>
-                                                                    </div>
-                                                                </div>
-                                                                <div class="text-end">
-                                                                    <span class="badge" style="background: rgba(124,58,237,0.1); color: #7C3AED; font-weight: 700; font-size: 11px;">
-                                                                        {{ webCurrencyConverter($doorstepLaneFee) }}
-                                                                    </span>
-                                                                </div>
-                                                            </div>
-                                                        </div>
-                                                    </div>
-
-                                                    {{-- In-Store Pickup Option --}}
-                                                    <div class="col-sm-6">
-                                                        <div class="cursor-pointer p-2 rounded border transition-all set-shipping-id"
-                                                             data-id="9"
-                                                             data-cart-group="{{ $group_key }}"
-                                                             style="{{ $activeMethodId == 9 ? 'background: #FFFBEB; border-color: #D97706 !important; box-shadow: 0 0 0 1px #D97706;' : 'background: #FFFFFF; border-color: #CBD5E1;' }}">
-                                                            <div class="d-flex align-items-center justify-content-between">
-                                                                <div class="d-flex align-items-center gap-2">
-                                                                    <div class="rounded-circle d-flex align-items-center justify-content-center"
-                                                                         style="width: 20px; height: 20px; border: 2px solid {{ $activeMethodId == 9 ? '#D97706' : '#94A3B8' }};">
-                                                                        @if($activeMethodId == 9)
-                                                                            <div class="rounded-circle" style="width: 10px; height: 10px; background: #D97706;"></div>
-                                                                        @endif
-                                                                    </div>
-                                                                    <div>
-                                                                        <div class="fw-bold fs-13" style="color: #1E293B;">
-                                                                            🏬 {{ translate('In-Store Pickup') }}
-                                                                        </div>
-                                                                        <div class="fs-11 text-muted">
-                                                                            @if($cartItem->seller_is == 'admin')
-                                                                                {{ translate('Uyo Flagship Counter') }}
-                                                                            @else
-                                                                                {{ translate('Merchant Physical Counter') }}
-                                                                            @endif
-                                                                        </div>
-                                                                    </div>
-                                                                </div>
-                                                                <div class="text-end">
-                                                                    <span class="badge" style="background: rgba(16,185,129,0.12); color: #059669; font-weight: 700; font-size: 11px;">
-                                                                        {{ translate('FREE (₦0.00)') }}
-                                                                    </span>
-                                                                </div>
-                                                            </div>
-                                                        </div>
-                                                    </div>
-                                                </div>
-                                            </div>
-                                        </div>
+                        <div class="vm-merchant-card cart_information" id="cart-group-{{ $group_key }}">
+                            {{-- Merchant Header --}}
+                            <div class="vm-merchant-header">
+                                <div class="vm-merchant-title-wrap">
+                                    <input type="checkbox"
+                                           class="shop-head-check shop-head-check-desktop shop-head-check-mobile vm-cart-check"
+                                           title="{{ translate('Select all items from this merchant') }}">
+                                    @if($firstItem->seller_is == 'admin')
+                                        <a href="{{ route('vendor-shop', ['slug' => $shopSlug]) }}" class="text-decoration-none">
+                                            <h5 class="vm-merchant-name">
+                                                <span>👑</span> {{ $shopName }}
+                                            </h5>
+                                        </a>
+                                        <span class="vm-merchant-badge vm-merchant-badge-flagship">
+                                            <i class="bi bi-shield-check"></i> {{ translate('Official Flagship • Platform Managed') }}
+                                        </span>
+                                    @else
+                                        <a href="{{ route('vendor-shop', ['slug' => $shopSlug]) }}" class="text-decoration-none">
+                                            <h5 class="vm-merchant-name">
+                                                <span>🏪</span> {{ $shopName ?: translate('Verified Merchant') }}
+                                            </h5>
+                                        </a>
+                                        <span class="vm-merchant-badge vm-merchant-badge-vendor">
+                                            <i class="bi bi-patch-check-fill"></i> {{ translate('Verified Merchant • Uyo Regional Hub') }}
+                                        </span>
                                     @endif
-                                @endforeach
 
-                                <div class="table-responsive d-none d-sm-block scrollbar-none">
-                                    @php
-                                        $physical_product = false;
-                                        foreach ($group as $row) {
-                                            if ($row->product_type == 'physical' && $row->is_checked) {
-                                                $physical_product = true;
-                                            }
-                                        }
-                                    @endphp
-                                    <table class="table align-middle table-borderless rounded-thead-table fs-13 text-nowrap">
-                                        <thead class="table-light">
-                                        <tr>
-                                            <th class="border-0">{{ translate('product_details') }}</th>
-                                            <th class="border-0 text-center">{{ translate('qty') }}</th>
-                                            <th class="border-0 text-center">{{ translate('price') }}</th>
-                                            <th class="border-0 text-center">{{ translate('discount') }}</th>
-                                            <th class="border-0 text-center">{{ translate('total') }}</th>
-                                        </tr>
-                                        </thead>
-                                        <tbody>
-                                        @foreach($group as $cart_key=>$cartItem)
-                                            @if($cartItem->allProducts)
-                                                @php($product = $cartItem->allProducts)
-                                                    @else
-                                                        @php($product = $cartItem)
-                                                            @endif
-
-                                                                <?php
-                                                                $getProductCurrentStock = $product->current_stock;
-                                                                if (!empty($product->variation)) {
-                                                                    foreach (json_decode($product->variation, true) as $productVariantSingle) {
-                                                                        if ($productVariantSingle['type'] == $cartItem->variant) {
-                                                                            $getProductCurrentStock = $productVariantSingle['qty'];
-                                                                        }
-                                                                    }
-                                                                }
-                                                                ?>
-
-                                                                <?php
-                                                                $checkProductStatus = $cartItem->allProducts?->status ?? 0;
-                                                                if($cartItem->seller_is == 'admin' && (checkVendorAbility(type: 'inhouse', status: 'temporary_close') || checkVendorAbility(type: 'inhouse', status: 'vacation_status'))) {
-                                                                    $checkProductStatus = 0;
-                                                                } else if ($cartItem->seller_is == 'seller' && (checkVendorAbility(type: 'vendor', status: 'temporary_close', vendor: $cartItem->allProducts->seller->shop) || checkVendorAbility(type: 'vendor', status: 'vacation_status', vendor: $cartItem->allProducts->seller->shop))) {
-                                                                    $checkProductStatus = 0;
-                                                                }
-                                                                ?>
-
-                                                            <tr>
-                                                                <td>
-                                                                    <div class="d-flex gap-3 align-items-center">
-                                                                        <input type="checkbox"
-                                                                               class="shop-item-check shop-item-check-desktop"
-                                                                               value="{{ $cartItem['id'] }}" {{ $cartItem['is_checked'] ? 'checked' : '' }}>
-                                                                        <div class="media align-items-center gap-3">
-                                                                            <div style="--size: 70px;" class="avatar avatar-xxl rounded border position-relative overflow-hidden">
-                                                                                <img alt="{{ translate('product') }}"
-                                                                                     src="{{ getStorageImages(path: $cartItem->product->thumbnail_full_url, type: 'product') }}"
-                                                                                     class="dark-support img-fit rounded img-fluid overflow-hidden {{ $cartItem->allProducts ? ($product->status == 0 ?'custom-cart-opacity-50':'') : 'custom-cart-opacity-50' }}">
-
-
-                                                                                @if($product->product_type == 'physical' && $getProductCurrentStock < $cartItem['quantity'] || $checkProductStatus == 0)
-                                                                                    <span class="temporary-closed position-absolute text-center p-2 fs-12">
-                                                                        <span class="text-capitalize">
-                                                                            {{ translate('not') }}
-                                                                            <br>
-                                                                            {{ translate('available') }}
-                                                                        </span>
-                                                                    </span>
-                                                                                @endif
-                                                                            </div>
-                                                                            <div class="media-body d-flex gap-1 flex-column">
-                                                                                <h6 class="text-capitalize line-clamp-1 fs-13">
-                                                                                    <a href="{{ $checkProductStatus ? route('product', $cartItem['slug']):'javascript:' }}">{{$cartItem['name']}}</a>
-                                                                                </h6>
-
-                                                                                @if(!empty($cartItem['variant']))
-                                                                                    <div class="text-wrap">
-                                                                        <span class="fs-12 text-dark d-block max-w-200px">
-                                                                            {{translate('variant')}} : {{ $cartItem['variant'] }}
-                                                                        </span>
-                                                                                    </div>
-                                                                                @endif
-                                                                                <div class="fs-12 text-capitalize text-dark">{{ translate('unit_price') }}
-                                                                                    : {{ webCurrencyConverter($cartItem['price']) }}</div>
-
-                                                                                @if($product->product_type == 'physical' && $getProductCurrentStock < $cartItem['quantity'] && $checkProductStatus != 0)
-                                                                                    <div class="d-flex text-danger fw-bold">
-                                                                                        <span>{{ translate('Out_Of_Stock') }}</span>
-                                                                                    </div>
-                                                                                @endif
-                                                                            </div>
-                                                                        </div>
-                                                                    </div>
-                                                                </td>
-                                                                <td class="text-center">
-                                                                    @if ($checkProductStatus == 1)
-                                                                        @php($isProductCountChangeable = ($product->product_type == 'physical' && $getProductCurrentStock >= $cartItem['quantity']))
-                                                                        <div class="quantity quantity--style-two border-primary-light d-inline-flex align-items-center min-h-35px rounded
-                                                        {{ $isProductCountChangeable ? 'justify-content-between min-w-90px' : 'justify-content-center aspect-1' }}">
-                                                            <span
-                                                                class="quantity__minus cart-qty-btn update-cart-quantity-list-cart-data"
-                                                                data-min-order="{{ $product->minimum_order_qty }}"
-                                                                data-prevent=true
-                                                                data-cart="{{ $cartItem['id'] }}" data-value="-1"
-                                                                @if($isProductCountChangeable)
-                                                                    data-action="{{ $cartItem['quantity'] == $product->minimum_order_qty ? 'delete':'minus' }}">
-                                                                @else
-                                                                    data-action="delete">
-                                                                @endif
-
-                                                                @if($getProductCurrentStock < $cartItem['quantity'] || ($cartItem['quantity'] == ($cartItem?->product?->minimum_order_qty ?? 1)))
-                                                                    <img width="17" height="17" src="{{ theme_asset(path: 'assets/img/icons/delete.svg') }}" alt="">
-                                                                @else
-                                                                    <i class="bi bi-dash fs-22"></i>
-                                                                @endif
-
-                                                            </span>
-
-                                                                            <input type="text"
-                                                                                   class="quantity__qty update-cart-quantity-list-cart-data-input {{ $isProductCountChangeable ? '' : 'd-none' }}"
-                                                                                   value="{{ $isProductCountChangeable ? $cartItem['quantity'] : ($cartItem?->product?->minimum_order_qty ?? 1) }}" name="quantity"
-                                                                                   id="cartQuantityWeb{{$cartItem['id']}}"
-                                                                                   data-min-order="{{ $product->minimum_order_qty }}"
-                                                                                   data-cart="{{ $cartItem['id'] }}" data-value="0"
-                                                                                   data-action=""
-                                                                                   data-current-stock="{{ $getProductCurrentStock }}"
-                                                                                   data-min="{{ $cartItem?->product?->minimum_order_qty ?? 1 }}">
-                                                                            <span
-                                                                                class="quantity__plus cart-qty-btn update-cart-quantity-list-cart-data  {{ $isProductCountChangeable ? '' : 'd-none' }}"
-                                                                            data-prevent=true
-                                                                            data-min-order="{{ $product->minimum_order_qty }}"
-                                                                            data-cart="{{ $cartItem['id'] }}" data-value="1"
-                                                                            data-action="">
-                                                                            <i class="bi bi-plus fs-22"></i>
-                                                                            </span>
-                                                                        </div>
-                                                                    @else
-                                                                        <div class="quantity quantity--style-two border-primary-light d-inline-flex align-items-center justify-content-center aspect-1 min-h-35px rounded">
-                                                            <span class="quantity__minus cartQuantity{{$cartItem['id']}} update-cart-quantity-list-cart-data"
-                                                                  data-min-order="{{ $product->minimum_order_qty }}"
-                                                                  data-prevent=true
-                                                                  data-cart="{{ $cartItem['id'] }}" data-value="-1"
-                                                                  data-action="delete"
-                                                                  data-min="{{$cartItem['quantity']}}">
-                                                                <img width="17" height="17" src="{{ theme_asset(path: 'assets/img/icons/delete.svg') }}" alt="">
-                                                            </span>
-                                                                            <input type="hidden"
-                                                                                   class="quantity__qty cartQuantity{{ $cartItem['id'] }}"
-                                                                                   value="{{$cartItem['quantity']}}" name="quantity[{{ $cartItem['id'] }}]"
-                                                                                   id="cartQuantityWeb{{$cartItem['id']}}"
-                                                                                   data-min="{{$cartItem['quantity']}}">
-                                                                        </div>
-                                                                    @endif
-                                                                </td>
-                                                                <td class="text-center">{{ webCurrencyConverter($cartItem['price']*$cartItem['quantity']) }}</td>
-                                                                <td class="text-center">{{ webCurrencyConverter($cartItem['discount']*$cartItem['quantity']) }}</td>
-                                                                <td class="text-center">{{ webCurrencyConverter(($cartItem['price']-$cartItem['discount'])*$cartItem['quantity']) }}</td>
-                                                            </tr>
-                                                            @endforeach
-                                        </tbody>
-                                    </table>
-
-                                    @php($free_delivery_status = OrderManager::getFreeDeliveryOrderAmountArray($group[0]->cart_group_id))
-
-                                    @if ($free_delivery_status['status'])
-                                        <div class="free-delivery-area bg-light px-3 py-2 rounded mb-3 max-w-100">
-                                            <div class="d-flex align-items-center gap-2 mb-2">
-                                                <div class="d-flex justify-content-center align-items-center p-2 rounded {{ $free_delivery_status['percentage'] == 100 ? 'bg-success' : 'bg-warning' }} text-absolute-white">
-
-                                                    <img
-                                                        src="{{ theme_asset(path: 'assets/img/icons/free-shipping.svg') }}"
-                                                        alt="{{ translate('image') }}" class="" width="20" height="20">
-                                                </div>
-                                                @if ($free_delivery_status['amount_need'] <= 0)
-                                                    <span class="text-dark text-capitalize">
-                                                        {{ translate('you_got_free_delivery') }}
-                                                    </span>
-                                                @else
-                                                    <div class="d-flex flex-wrap gap-1">
-                                                    <span class="need-for-free-delivery fw-bold text-primary">
-                                                        {{ webCurrencyConverter($free_delivery_status['amount_need']) }}
-                                                    </span>
-                                                        <span class="text-dark opacity-75 text-lowercase">
-                                                        {{ translate('add_more_for_free_delivery') }}
-                                                    </span>
-                                                    </div>
-                                                @endif
-                                            </div>
-                                            <div class="progress free-delivery-progress">
-                                                <div class="progress-bar {{ $free_delivery_status['percentage'] == 100 ? 'bg-success' : 'bg-warning' }}"
-                                                     role="progressbar"
-                                                     style="width: {{ $free_delivery_status['percentage'] . '%' }}"
-                                                     aria-valuenow="{{ $free_delivery_status['percentage'] }}"
-                                                     aria-valuemin="0" aria-valuemax="100">
-                                                </div>
-                                            </div>
-                                        </div>
+                                    @if ($verify_status['minimum_order_amount'] > $verify_status['amount'])
+                                        <span class="badge bg-danger-subtle text-danger fs-11"
+                                              data-bs-toggle="tooltip"
+                                              data-bs-title="{{ translate('minimum_Order_Amount') }} {{ webCurrencyConverter($verify_status['minimum_order_amount']) }} {{ translate('for') }} {{ $shopName }}">
+                                            <i class="bi bi-exclamation-circle me-1"></i> {{ translate('Min. Order') }}: {{ webCurrencyConverter($verify_status['minimum_order_amount']) }}
+                                        </span>
                                     @endif
                                 </div>
-                                <div class="d-flex flex-column d-sm-none">
-                                    @foreach($group as $cart_key=>$cartItem)
-                                        @if($cartItem->allProducts)
-                                            @php($product = $cartItem->allProducts)
-                                        @endif
 
-                                            <?php
-                                            $checkProductStatus = $cartItem->allProducts?->status ?? 0;
-                                            if($cartItem->seller_is == 'admin' && (checkVendorAbility(type: 'inhouse', status: 'temporary_close') || checkVendorAbility(type: 'inhouse', status: 'vacation_status'))) {
-                                                $checkProductStatus = 0;
-                                            } else if ($cartItem->seller_is == 'seller' && (checkVendorAbility(type: 'vendor', status: 'temporary_close', vendor: $cartItem->allProducts->seller->shop) || checkVendorAbility(type: 'vendor', status: 'vacation_status', vendor: $cartItem->allProducts->seller->shop))) {
-                                                $checkProductStatus = 0;
-                                            }
-                                            ?>
-
-                                        <div class="border-bottom d-flex align-items-center justify-content-between gap-2 py-2">
-                                            <div class="d-flex gap-2 align-items-center">
-                                                <input type="checkbox" class="shop-item-check shop-item-check-mobile" value="{{ $cartItem['id'] }}" {{ $cartItem['is_checked'] ? 'checked' : '' }}>
-                                                <div class="media align-items-center gap-2">
-                                                    <div
-                                                        class="avatar avatar-lg rounded border position-relative overflow-hidden">
-                                                        <img
-                                                            src="{{ getStorageImages(path: $cartItem?->product?->thumbnail_full_url, type: 'product') }}"
-                                                            class="dark-support img-fit rounded img-fluid overflow-hidden {{ $checkProductStatus == 0 ? 'custom-cart-opacity-50' : '' }}"
-                                                            alt="">
-                                                        @if ($checkProductStatus == 0)
-                                                            <span class="temporary-closed position-absolute text-center p-2 fs-12">
-                                                                <span>{{ translate('N/A') }}</span>
-                                                            </span>
-                                                        @endif
-                                                    </div>
-                                                    <div class="media-body d-flex gap-1 flex-column">
-                                                        <h6 class="text-capitalize line-clamp-1 fs-13">
-                                                            <a href="{{ $checkProductStatus ? route('product', $cartItem['slug']) : 'javascript:' }}">
-                                                                {{ $cartItem['name'] }}
-                                                            </a>
-                                                        </h6>
-                                                        @if(!empty($cartItem['variant']))
-                                                            <div>
-                                                                <span class="fs-12 text-dark d-block max-w-200px">
-                                                                    {{translate('variant')}} : {{ $cartItem['variant'] }}
-                                                                </span>
-                                                            </div>
-                                                        @endif
-                                                        <div class="fs-12 text-capitalize text-dark">{{ translate('unit_price') }}
-                                                            : {{ webCurrencyConverter($cartItem['price']*$cartItem['quantity']) }}</div>
-                                                        <div class="fs-12 text-dark">{{ translate('discount') }}
-                                                            : {{ webCurrencyConverter($cartItem['discount']*$cartItem['quantity']) }}</div>
-                                                        <div class="fs-12 text-dark">{{ translate('total') }}
-                                                            : {{ webCurrencyConverter(($cartItem['price']-$cartItem['discount'])*$cartItem['quantity']) }}</div>
-
-                                                        @if($product->product_type == 'physical' && $getProductCurrentStock < $cartItem['quantity'])
-                                                            <div class="d-flex text-danger fw-bold">
-                                                                <span>{{ translate('Out_Of_Stock') }}</span>
-                                                            </div>
-                                                        @endif
-                                                    </div>
-                                                </div>
-                                            </div>
-
-                                            <div class="quantity quantity--style-two flex-column d-inline-flex align-items-center rounded fs-12 {{ $checkProductStatus < 1 ? 'aspect-1' : '' }}">
-                                                @if ($checkProductStatus == 1)
-                                                    <span class="quantity__minus update-cart-quantity-list-cart-data"
-                                                          data-min-order="{{ $product->minimum_order_qty }}"
-                                                          data-prevent=true
-                                                          data-cart="{{ $cartItem['id'] }}" data-value="-1"
-                                                          data-action="{{ $cartItem['quantity'] == $product->minimum_order_qty ? 'delete':'minus' }}">
-
-                                                        @if($getProductCurrentStock < $cartItem['quantity'] || ($cartItem['quantity'] == ($cartItem?->product?->minimum_order_qty ?? 1)))
-                                                            <img width="17" height="17" src="{{ theme_asset(path: 'assets/img/icons/delete.svg') }}" alt="">
-                                                        @else
-                                                            <i class="bi bi-dash fs-22"></i>
-                                                        @endif
-                                                    </span>
-                                                    @if($product->product_type == 'physical' && $getProductCurrentStock >= $cartItem['quantity'])
-                                                        <input type="text"
-                                                               class="quantity__qty update-cart-quantity-list-mobile-cart-data-input"
-                                                               value="{{$cartItem['quantity']}}" name="quantity"
-                                                               id="cartQuantityMobile{{$cartItem['id']}}"
-                                                               data-min-order="{{ $product->minimum_order_qty }}"
-                                                               data-cart="{{ $cartItem['id'] }}" data-value="0"
-                                                               data-current-stock="{{ $getProductCurrentStock }}"
-                                                               data-action="">
-                                                        <span class="quantity__plus update-cart-quantity-list-mobile-cart-data"
-                                                              data-prevent=true
-                                                              data-min-order="{{ $product->minimum_order_qty }}"
-                                                              data-cart="{{ $cartItem['id'] }}" data-value="1"
-                                                              data-action="">
-                                                            <i class="bi bi-plus fs-22"></i>
-                                                        </span>
-                                                    @endif
-                                                @else
-                                                    <span class="quantity__minus update-cart-quantity-list-mobile-cart-data h-100"
-                                                          data-prevent=true
-                                                          data-min-order="{{ $product->minimum_order_qty }}"
-                                                          data-cart="{{ $cartItem['id'] }}" data-value="-1"
-                                                          data-action="{{ $cartItem['quantity'] == $product->minimum_order_qty ? 'delete':'minus' }}">
-                                                            <img width="17" height="17" src="{{ theme_asset(path: 'assets/img/icons/delete.svg') }}" alt="">
-                                                    </span>
-                                                    <input type="hidden"
-                                                           class="quantity__qty cartQuantity{{ $cartItem['id'] }}"
-                                                           data-min-order="{{ $product->minimum_order_qty ?? 1 }}"
-                                                           data-cart="{{ $cartItem['id'] }}" data-value="0" data-action=""
-                                                           value="{{$cartItem['quantity']}}" name="quantity"
-                                                           id="cartQuantityMobile{{$cartItem['id']}}"
-                                                           data-min="{{$cartItem['quantity']}}">
-                                                @endif
-                                            </div>
-                                        </div>
-                                    @endforeach
-
-                                    @php($free_delivery_status = OrderManager::getFreeDeliveryOrderAmountArray($group[0]->cart_group_id))
-
-                                    @if ($free_delivery_status['status'])
-                                        <div class="free-delivery-area bg-light px-3 py-2 rounded mb-3 max-w-100">
-                                            <div class="d-flex align-items-center gap-2 mb-2">
-                                                <div class="d-flex justify-content-center align-items-center p-2 rounded bg-warning text-absolute-white">
-                                                    <img
-                                                        src="{{ theme_asset(path: 'assets/img/icons/free-shipping.svg') }}"
-                                                        alt="" width="20" height="20" class="">
-                                                </div>
-                                                @if ($free_delivery_status['amount_need'] <= 0)
-                                                    <span class="text-dark text-capitalize">
-                                                        {{ translate('you_got_free_delivery') }}
-                                                    </span>
-                                                @else
-                                                    <div class="d-flex flex-wrap gap-1">
-                                                        <span class="need-for-free-delivery fw-bold text-primary">
-                                                            {{ webCurrencyConverter($free_delivery_status['amount_need']) }}
-                                                        </span>
-                                                        <span class="text-dark opacity-75 text-lowercase">
-                                                            {{ translate('add_more_for_free_delivery') }}
-                                                        </span>
-                                                    </div>
-                                                @endif
-                                            </div>
-                                            <div class="progress free-delivery-progress">
-                                                <div class="progress-bar" role="progressbar"
-                                                     style="width: {{ $free_delivery_status['percentage'] .'%'}}"
-                                                     aria-valuenow="{{ $free_delivery_status['percentage'] }}"
-                                                     aria-valuemin="0" aria-valuemax="100"></div>
-                                            </div>
-                                        </div>
-                                    @endif
-                                </div>
-                            </div>
-                        @endforeach
-
-                        @if( $cart->count() == 0)
-                            <div class="d-flex justify-content-center align-items-center">
-                                <div class="d-flex flex-column justify-content-center align-items-center gap-3 py-5 w-100 text-center">
-                                    <div class="rounded-circle d-flex align-items-center justify-content-center" style="width: 90px; height: 90px; background: rgba(46,27,78,0.06);">
-                                        <i class="bi bi-bag-x fs-40" style="color: #2E1B4E;"></i>
-                                    </div>
-                                    <div>
-                                        <h4 class="fw-bold m-0" style="color: #1B1035;">{{ translate('Your Cart is Empty') }}</h4>
-                                        <p class="text-muted fs-14 mt-1 mb-0">{{ translate('You haven’t added any items to your shopping cart yet.') }}</p>
-                                    </div>
-                                    <a href="{{ route('products') }}" class="btn btn-primary px-4 py-2 mt-2 fw-semibold" style="background: linear-gradient(135deg, #2E1B4E 0%, #4A2E7A 100%); border: none; border-radius: 8px;">
-                                        <i class="bi bi-shop me-1"></i> {{ translate('Explore Products') }}
+                                <div class="fs-12 text-muted d-flex align-items-center gap-1">
+                                    <i class="bi bi-geo-alt text-primary"></i>
+                                    <span>{{ session('customer_city', 'Uyo') }}</span>
+                                    <a href="javascript:" data-bs-toggle="modal" data-bs-target="#locationModal" class="text-primary fw-semibold text-decoration-none ms-1">
+                                        {{ translate('Change') }}
                                     </a>
                                 </div>
                             </div>
-                        @endif
 
-                        <form method="get">
-                            <div class="form-group mt-3">
-                                <div class="row">
-                                    <div class="col-12">
-                                        <label for="order_note"
-                                               class="form-label input-label">{{translate('order_note')}} <span
-                                                class="input-label-secondary">({{translate('optional')}})</span></label>
-                                        <textarea class="form-control w-100" rows="5" id="order_note"
-                                                  name="order_note">{{ session('order_note')}}</textarea>
+                            {{-- Fulfillment Selector (Doorstep vs In-Store Pickup) --}}
+                            <div class="vm-fulfillment-section">
+                                <div class="d-flex align-items-center justify-content-between flex-wrap gap-2 mb-2">
+                                    <span class="fs-12 fw-bold text-uppercase" style="color: #475569; letter-spacing: 0.5px;">
+                                        <i class="bi bi-truck me-1 text-primary"></i> {{ translate('Fulfillment Method for this Store') }}:
+                                    </span>
+                                    <span class="fs-12">
+                                        <span class="text-muted">{{ translate('Selected Fee') }}:</span>
+                                        <strong class="fs-13 fw-bold {{ $activeMethodId == 9 ? 'text-success' : 'text-primary' }}">
+                                            {{ $activeMethodId == 9 ? translate('FREE (₦0.00)') : webCurrencyConverter($doorstepLaneFee) }}
+                                        </strong>
+                                    </span>
+                                </div>
+
+                                <div class="vm-fulfillment-grid">
+                                    {{-- Option 1: Doorstep Delivery --}}
+                                    <div class="vm-fulfillment-card set-shipping-id {{ $activeMethodId == 2 ? 'active-doorstep' : '' }}"
+                                         data-id="2"
+                                         data-cart-group="{{ $group_key }}">
+                                        <div class="d-flex align-items-center gap-2">
+                                            <div class="vm-fulfillment-radio">
+                                                @if($activeMethodId == 2)
+                                                    <div class="vm-fulfillment-radio-dot"></div>
+                                                @endif
+                                            </div>
+                                            <div class="vm-fulfillment-info">
+                                                <h6 class="vm-fulfillment-title">🚚 {{ translate('Doorstep Delivery') }}</h6>
+                                                <div class="vm-fulfillment-subtitle">
+                                                    {{ translate('Express Courier') }} • 1-2 {{ translate('hours') }}
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <span class="vm-fulfillment-badge" style="background: rgba(94, 23, 235, 0.1); color: #5E17EB;">
+                                            {{ webCurrencyConverter($doorstepLaneFee) }}
+                                        </span>
+                                    </div>
+
+                                    {{-- Option 2: In-Store Counter Inspection & Pickup --}}
+                                    <div class="vm-fulfillment-card set-shipping-id {{ $activeMethodId == 9 ? 'active-pickup' : '' }}"
+                                         data-id="9"
+                                         data-cart-group="{{ $group_key }}">
+                                        <div class="d-flex align-items-center gap-2">
+                                            <div class="vm-fulfillment-radio">
+                                                @if($activeMethodId == 9)
+                                                    <div class="vm-fulfillment-radio-dot"></div>
+                                                @endif
+                                            </div>
+                                            <div class="vm-fulfillment-info">
+                                                <h6 class="vm-fulfillment-title">🏬 {{ translate('In-Store Counter Pickup') }}</h6>
+                                                <div class="vm-fulfillment-subtitle">
+                                                    {{ $firstItem->seller_is == 'admin' ? translate('Uyo Flagship Counter') : translate('Merchant Physical Counter') }} • {{ translate('Inspect before payment') }}
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <span class="vm-fulfillment-badge" style="background: rgba(16, 185, 129, 0.12); color: #059669;">
+                                            {{ translate('FREE (₦0.00)') }}
+                                        </span>
                                     </div>
                                 </div>
                             </div>
-                        </form>
+
+                            {{-- Item Rows List --}}
+                            <div class="vm-cart-items-wrapper">
+                                @foreach($group as $cart_key => $cartItem)
+                                    @php
+                                        $product = $cartItem->allProducts ?: $cartItem;
+                                        $getProductCurrentStock = $product->current_stock;
+                                        if (!empty($product->variation)) {
+                                            foreach (json_decode($product->variation, true) as $productVariantSingle) {
+                                                if ($productVariantSingle['type'] == $cartItem->variant) {
+                                                    $getProductCurrentStock = $productVariantSingle['qty'];
+                                                }
+                                            }
+                                        }
+
+                                        $checkProductStatus = $cartItem->allProducts?->status ?? 0;
+                                        if ($cartItem->seller_is == 'admin' && (checkVendorAbility(type: 'inhouse', status: 'temporary_close') || checkVendorAbility(type: 'inhouse', status: 'vacation_status'))) {
+                                            $checkProductStatus = 0;
+                                        } elseif ($cartItem->seller_is == 'seller' && (checkVendorAbility(type: 'vendor', status: 'temporary_close', vendor: $cartItem->allProducts->seller->shop ?? null) || checkVendorAbility(type: 'vendor', status: 'vacation_status', vendor: $cartItem->allProducts->seller->shop ?? null))) {
+                                            $checkProductStatus = 0;
+                                        }
+
+                                        $isAvailable = ($checkProductStatus == 1 && $product->product_type == 'physical' ? ($getProductCurrentStock >= $cartItem['quantity']) : true);
+                                    @endphp
+
+                                    <div class="vm-cart-item" id="cart-item-{{ $cartItem['id'] }}">
+                                        {{-- Checkbox --}}
+                                        <div>
+                                            <input type="checkbox"
+                                                   class="shop-item-check shop-item-check-desktop shop-item-check-mobile vm-cart-check"
+                                                   value="{{ $cartItem['id'] }}"
+                                                   {{ $cartItem['is_checked'] ? 'checked' : '' }}
+                                                   title="{{ translate('Select item') }}">
+                                        </div>
+
+                                        {{-- Product Thumbnail --}}
+                                        <div class="vm-cart-thumb">
+                                            <img alt="{{ $cartItem['name'] }}"
+                                                 src="{{ getStorageImages(path: $cartItem->product->thumbnail_full_url ?? null, type: 'product') }}"
+                                                 class="{{ !$isAvailable ? 'opacity-50' : '' }}">
+                                            @if(!$isAvailable)
+                                                <span class="position-absolute top-50 start-50 translate-middle badge bg-dark text-white fs-10 px-1 py-1">
+                                                    {{ translate('Out of Stock') }}
+                                                </span>
+                                            @endif
+                                        </div>
+
+                                        {{-- Product Details --}}
+                                        <div class="vm-cart-info">
+                                            <h6 class="vm-cart-title">
+                                                <a href="{{ $checkProductStatus ? route('product', $cartItem['slug']) : 'javascript:' }}">
+                                                    {{ $cartItem['name'] }}
+                                                </a>
+                                            </h6>
+
+                                            @if(!empty($cartItem['variant']))
+                                                <span class="vm-cart-variant-pill">
+                                                    <i class="bi bi-tag me-1"></i> {{ $cartItem['variant'] }}
+                                                </span>
+                                            @endif
+
+                                            <div class="vm-cart-unit-price">
+                                                {{ translate('Unit') }}: <strong class="text-dark">{{ webCurrencyConverter($cartItem['price']) }}</strong>
+                                            </div>
+
+                                            <div class="vm-cart-guarantee-tag">
+                                                <i class="bi bi-shield-check"></i>
+                                                <span>{{ $activeMethodId == 9 ? translate('Physical Counter Inspection Guarantee') : translate('Directional LGA Dispatch Guarantee') }}</span>
+                                            </div>
+                                        </div>
+
+                                        {{-- Quantity Stepper --}}
+                                        <div class="d-none d-md-block">
+                                            @if ($checkProductStatus == 1)
+                                                <div class="vm-stepper">
+                                                    <button type="button"
+                                                            class="vm-stepper-btn update-cart-quantity-list-cart-data update-cart-quantity-list-mobile-cart-data {{ ($cartItem['quantity'] <= ($product->minimum_order_qty ?? 1)) ? 'is-delete' : '' }}"
+                                                            data-cart="{{ $cartItem['id'] }}"
+                                                            data-value="-1"
+                                                            data-min-order="{{ $product->minimum_order_qty ?? 1 }}"
+                                                            data-action="{{ ($cartItem['quantity'] <= ($product->minimum_order_qty ?? 1)) ? 'delete' : 'minus' }}"
+                                                            data-prevent="true"
+                                                            title="{{ ($cartItem['quantity'] <= ($product->minimum_order_qty ?? 1)) ? translate('Remove from cart') : translate('Decrease quantity') }}">
+                                                        <i class="bi {{ ($cartItem['quantity'] <= ($product->minimum_order_qty ?? 1)) ? 'bi-trash3' : 'bi-dash' }}"></i>
+                                                    </button>
+
+                                                    <input type="text"
+                                                           class="vm-stepper-input update-cart-quantity-list-cart-data-input update-cart-quantity-list-mobile-cart-data-input"
+                                                           id="cartQuantityWeb{{ $cartItem['id'] }}"
+                                                           value="{{ $cartItem['quantity'] }}"
+                                                           data-cart="{{ $cartItem['id'] }}"
+                                                           data-value="0"
+                                                           data-min-order="{{ $product->minimum_order_qty ?? 1 }}"
+                                                           data-min="{{ $product->minimum_order_qty ?? 1 }}"
+                                                           data-current-stock="{{ $getProductCurrentStock }}"
+                                                           name="quantity">
+                                                    <input type="hidden" id="cartQuantityMobile{{ $cartItem['id'] }}" value="{{ $cartItem['quantity'] }}">
+
+                                                    <button type="button"
+                                                            class="vm-stepper-btn update-cart-quantity-list-cart-data update-cart-quantity-list-mobile-cart-data"
+                                                            data-cart="{{ $cartItem['id'] }}"
+                                                            data-value="1"
+                                                            data-min-order="{{ $product->minimum_order_qty ?? 1 }}"
+                                                            data-action="plus"
+                                                            data-prevent="true"
+                                                            title="{{ translate('Increase quantity') }}">
+                                                        <i class="bi bi-plus"></i>
+                                                    </button>
+                                                </div>
+                                            @else
+                                                <button type="button"
+                                                        class="vm-stepper-btn is-delete update-cart-quantity-list-cart-data"
+                                                        data-cart="{{ $cartItem['id'] }}"
+                                                        data-value="-1"
+                                                        data-action="delete"
+                                                        data-prevent="true">
+                                                    <i class="bi bi-trash3"></i>
+                                                </button>
+                                                <input type="hidden" id="cartQuantityWeb{{ $cartItem['id'] }}" value="{{ $cartItem['quantity'] }}">
+                                                <input type="hidden" id="cartQuantityMobile{{ $cartItem['id'] }}" value="{{ $cartItem['quantity'] }}">
+                                            @endif
+                                        </div>
+
+                                        {{-- Item Total & Discount --}}
+                                        <div class="vm-cart-total-col d-none d-md-block">
+                                            <div class="vm-cart-item-total">
+                                                {{ webCurrencyConverter(($cartItem['price'] - $cartItem['discount']) * $cartItem['quantity']) }}
+                                            </div>
+                                            @if($cartItem['discount'] > 0)
+                                                <span class="vm-cart-discount-pill">
+                                                    -{{ webCurrencyConverter($cartItem['discount'] * $cartItem['quantity']) }}
+                                                </span>
+                                            @endif
+                                        </div>
+
+                                        {{-- Delete Button (Desktop) --}}
+                                        <div class="d-none d-md-block">
+                                            <button type="button"
+                                                    class="vm-cart-del-btn"
+                                                    onclick="removeProductFromCartList({{ $cartItem['id'] }})"
+                                                    title="{{ translate('Remove from cart') }}">
+                                                <i class="bi bi-trash3 fs-15"></i>
+                                            </button>
+                                        </div>
+
+                                        {{-- Mobile Controls Row (< 768px) --}}
+                                        <div class="vm-cart-controls-mobile d-md-none">
+                                            <div class="vm-stepper">
+                                                <button type="button"
+                                                        class="vm-stepper-btn update-cart-quantity-list-cart-data update-cart-quantity-list-mobile-cart-data {{ ($cartItem['quantity'] <= ($product->minimum_order_qty ?? 1)) ? 'is-delete' : '' }}"
+                                                        data-cart="{{ $cartItem['id'] }}"
+                                                        data-value="-1"
+                                                        data-min-order="{{ $product->minimum_order_qty ?? 1 }}"
+                                                        data-action="{{ ($cartItem['quantity'] <= ($product->minimum_order_qty ?? 1)) ? 'delete' : 'minus' }}"
+                                                        data-prevent="true">
+                                                    <i class="bi {{ ($cartItem['quantity'] <= ($product->minimum_order_qty ?? 1)) ? 'bi-trash3' : 'bi-dash' }}"></i>
+                                                </button>
+
+                                                <input type="text"
+                                                       class="vm-stepper-input update-cart-quantity-list-cart-data-input update-cart-quantity-list-mobile-cart-data-input"
+                                                       value="{{ $cartItem['quantity'] }}"
+                                                       data-cart="{{ $cartItem['id'] }}"
+                                                       data-value="0"
+                                                       data-min-order="{{ $product->minimum_order_qty ?? 1 }}"
+                                                       data-min="{{ $product->minimum_order_qty ?? 1 }}"
+                                                       data-current-stock="{{ $getProductCurrentStock }}">
+
+                                                <button type="button"
+                                                        class="vm-stepper-btn update-cart-quantity-list-cart-data update-cart-quantity-list-mobile-cart-data"
+                                                        data-cart="{{ $cartItem['id'] }}"
+                                                        data-value="1"
+                                                        data-min-order="{{ $product->minimum_order_qty ?? 1 }}"
+                                                        data-action="plus"
+                                                        data-prevent="true">
+                                                    <i class="bi bi-plus"></i>
+                                                </button>
+                                            </div>
+
+                                            <div class="d-flex align-items-center gap-3">
+                                                <div class="text-end">
+                                                    <div class="vm-cart-item-total">
+                                                        {{ webCurrencyConverter(($cartItem['price'] - $cartItem['discount']) * $cartItem['quantity']) }}
+                                                    </div>
+                                                    @if($cartItem['discount'] > 0)
+                                                        <span class="vm-cart-discount-pill">
+                                                            -{{ webCurrencyConverter($cartItem['discount'] * $cartItem['quantity']) }}
+                                                        </span>
+                                                    @endif
+                                                </div>
+                                                <button type="button"
+                                                        class="vm-cart-del-btn"
+                                                        onclick="removeProductFromCartList({{ $cartItem['id'] }})"
+                                                        title="{{ translate('Remove') }}">
+                                                    <i class="bi bi-trash3 fs-15"></i>
+                                                </button>
+                                            </div>
+                                        </div>
+                                    </div>
+                                @endforeach
+                            </div>
+
+                            {{-- Free Delivery Threshold Banner (if configured) --}}
+                            @php($free_delivery_status = OrderManager::getFreeDeliveryOrderAmountArray($group[0]->cart_group_id))
+                            @if ($free_delivery_status['status'])
+                                <div class="px-4 py-3 bg-light border-top">
+                                    <div class="d-flex align-items-center justify-content-between mb-2 fs-12">
+                                        <div class="d-flex align-items-center gap-2">
+                                            <i class="bi bi-gift-fill text-warning fs-14"></i>
+                                            @if ($free_delivery_status['amount_need'] <= 0)
+                                                <span class="fw-bold text-success">{{ translate('You qualified for FREE Directional Delivery!') }}</span>
+                                            @else
+                                                <span>{{ translate('Add') }} <strong class="text-primary">{{ webCurrencyConverter($free_delivery_status['amount_need']) }}</strong> {{ translate('more for FREE delivery') }}</span>
+                                            @endif
+                                        </div>
+                                        <span class="fw-bold text-muted">{{ (int)$free_delivery_status['percentage'] }}%</span>
+                                    </div>
+                                    <div class="progress" style="height: 6px; border-radius: 999px;">
+                                        <div class="progress-bar {{ $free_delivery_status['percentage'] == 100 ? 'bg-success' : 'bg-primary' }}"
+                                             style="width: {{ $free_delivery_status['percentage'] }}%;"></div>
+                                    </div>
+                                </div>
+                            @endif
+                        </div>
+                    @endforeach
+
+                    {{-- Order Note Card --}}
+                    <div class="vm-merchant-card p-3 mb-0">
+                        <label for="order_note" class="form-label fw-bold fs-13 mb-2" style="color: #1B1035;">
+                            <i class="bi bi-chat-left-text me-1 text-primary"></i> {{ translate('Order Instructions / Notes') }}
+                            <span class="text-muted fw-normal fs-12">({{ translate('optional') }})</span>
+                        </label>
+                        <textarea class="form-control"
+                                  rows="2"
+                                  id="order_note"
+                                  name="order_note"
+                                  placeholder="{{ translate('e.g. Please call before arrival or inspect seal carefully at counter...') }}"
+                                  style="border-radius: 10px; font-size: 13.5px; border-color: #E2E8F0;">{{ session('order_note') }}</textarea>
                     </div>
                 </div>
+
+                {{-- Right Column: Order Summary Card --}}
+                @include('theme-views.partials._order-summery')
             </div>
-            @include('theme-views.partials._order-summery')
-        </div>
-    </form>
+        </form>
+    @endif
 </div>
+
 @push('script')
     <script src="{{ theme_asset('assets/js/cart.js') }}"></script>
 @endpush

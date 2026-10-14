@@ -19,8 +19,14 @@ if (!function_exists('translate')) {
     function getOrPutTranslateMessageValueByKey(string $local, string $key): array|string|null
     {
         try {
-            $translatedMessagesArray = include(base_path('resources/lang/' . $local . '/messages.php'));
-            $newMessagesArray = include(base_path('resources/lang/' . $local . '/new-messages.php'));
+            $messagesPath = base_path('resources/lang/' . $local . '/messages.php');
+            $translatedMessagesArray = is_file($messagesPath) ? (include $messagesPath) : [];
+            $translatedMessagesArray = is_array($translatedMessagesArray) ? $translatedMessagesArray : [];
+
+            $newMessagesPath = base_path('resources/lang/' . $local . '/new-messages.php');
+            $newMessagesArray = is_file($newMessagesPath) ? (include $newMessagesPath) : [];
+            $newMessagesArray = is_array($newMessagesArray) ? $newMessagesArray : [];
+
             $key = str_replace('"', '', $key);
             $key = str_replace(' ', '_', $key);
             $processedKey = ucfirst(str_replace('_', ' ', removeSpecialCharacters($key)));
@@ -35,7 +41,7 @@ if (!function_exists('translate')) {
                 $languageFileContents .= "];\n";
 
                 $targetPath = base_path('resources/lang/' . $local . '/new-messages.php');
-                file_put_contents($targetPath, $languageFileContents);
+                @file_put_contents($targetPath, $languageFileContents);
                 $message = $processedKey;
             } elseif (array_key_exists($key, $translatedMessagesArray)) {
                 $message = __('messages.' . $key);
@@ -44,7 +50,7 @@ if (!function_exists('translate')) {
             } else {
                 $message = __('messages.' . $key);
             }
-        } catch (Exception $exception) {
+        } catch (\Throwable $exception) {
             $message = ucfirst(str_replace('_', ' ', removeSpecialCharacters(str_replace("\'", "'", $key))));
         }
         return $local == 'en' ? ucfirst($message) : $message;

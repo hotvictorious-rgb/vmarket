@@ -45,6 +45,7 @@ if ($uri !== '/') {
         header('Content-Type: ' . $mime);
         header('Content-Length: ' . filesize($publicFile));
         header('Cache-Control: public, max-age=86400');
+        header('Connection: close');
         readfile($publicFile);
         exit;
     }

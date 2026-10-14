@@ -1,125 +1,135 @@
 "use strict";
 
-function proceedToNextAction(){
-    $('#proceed-to-next-action').on('click', function () {
+/**
+ * Victorious MARKET — Storefront Cart Page Checkbox & Flow Controller
+ * Unifies desktop/mobile checkbox selection with seamless AJAX sync.
+ */
+
+function proceedToNextAction() {
+    $('#proceed-to-next-action').off('click').on('click', function () {
         let orderNote = $('#order_note').val();
+        let $btn = $(this);
+        let origHtml = $btn.html();
+        $btn.prop('disabled', true).html('<span class="spinner-border spinner-border-sm me-2" role="status"></span> Processing...');
+
         $.post({
             url: $('#order_note_url').data('url'),
             data: {
                 _token: $('meta[name="_token"]').attr('content'),
                 order_note: orderNote,
-
-            },
-            beforeSend: function () {
-                $('#loading').addClass('d-grid');
             },
             success: function (response) {
-                if(response.status === 0) {
-                    response.message.map(function (message) {
-                        toastr.error(message)
-                    })
-                }else{
+                if (response.status === 0) {
+                    $btn.prop('disabled', false).html(origHtml);
+                    if (Array.isArray(response.message)) {
+                        response.message.forEach(function (msg) {
+                            toastr.error(msg);
+                        });
+                    } else if (response.message) {
+                        toastr.error(response.message);
+                    }
+                } else {
                     location.href = response.redirect ? response.redirect : $('#route-checkout-details').data('url');
                 }
             },
-            complete: function () {
-                $('#loading').removeClass('d-grid');
-            },
+            error: function () {
+                $btn.prop('disabled', false).html(origHtml);
+                toastr.error('Unable to proceed to checkout. Please try again.');
+            }
         });
     });
 }
-proceedToNextAction();
 
-
-function multipleCheckBoxFunctionsInit()
-{
-    $(document).ready(function() {
-        $('.cart_information').each(function() {
-            let allShopItemsInChecked = true;
-            $(this).find('.shop-item-check').each(function() {
+function multipleCheckBoxFunctionsInit() {
+    $('.cart_information').each(function () {
+        let allShopItemsChecked = true;
+        let $items = $(this).find('.shop-item-check');
+        if ($items.length === 0) {
+            allShopItemsChecked = false;
+        } else {
+            $items.each(function () {
                 if (!$(this).prop('checked')) {
-                    allShopItemsInChecked = false;
+                    allShopItemsChecked = false;
                     return false;
                 }
             });
-            $(this).find('.shop-head-check').prop('checked', allShopItemsInChecked);
-        });
+        }
+        $(this).find('.shop-head-check').prop('checked', allShopItemsChecked);
     });
 
-    $('.shop-head-check').on('change', function () {
-        $(this).parents('.cart_information').find('.shop-item-check').prop('checked', this.checked);
+    $('.shop-head-check').off('change').on('change', function () {
+        let isChecked = this.checked;
+        $(this).closest('.cart_information').find('.shop-item-check').prop('checked', isChecked);
+        collectCheckedItemsAndSync();
     });
 
-    $('.shop-item-check').on('change', function () {
-        var allChecked = true;
+    $('.shop-item-check').off('change').on('change', function () {
+        let $cartInfo = $(this).closest('.cart_information');
+        let allChecked = true;
 
-        $(this).parents('.cart_information').find('.shop-item-check').each(function () {
+        $cartInfo.find('.shop-item-check').each(function () {
             if (!$(this).prop('checked')) {
                 allChecked = false;
                 return false;
             }
         });
 
-        $(this).parents('.cart_information').find('.shop-head-check').prop('checked', allChecked);
+        $cartInfo.find('.shop-head-check').prop('checked', allChecked);
+        collectCheckedItemsAndSync();
     });
 
-    $('.shop-head-check-desktop').on('change', function () {
-        getCartSelectCartItemsCheckedValues('.cart_information input[type="checkbox"].shop-item-check-desktop')
-    })
-
-    $('.shop-head-check-mobile').on('change', function () {
-        getCartSelectCartItemsCheckedValues('.cart_information input[type="checkbox"].shop-item-check-mobile')
-    })
-
-    $('.shop-item-check-desktop').on('change', function () {
-        getCartSelectCartItemsCheckedValues('.cart_information input[type="checkbox"].shop-item-check-desktop')
-    })
-
-    $('.shop-item-check-mobile').on('change', function () {
-        getCartSelectCartItemsCheckedValues('.cart_information input[type="checkbox"].shop-item-check-mobile')
-    })
-
-    function getCartSelectCartItemsCheckedValues(elementSelector)
-    {
+    function collectCheckedItemsAndSync() {
         let checkedValues = [];
-        $(elementSelector).each(function() {
+        $('.cart_information input[type="checkbox"].shop-item-check').each(function () {
             if ($(this).prop('checked')) {
-                checkedValues.push($(this).val());
+                let val = $(this).val();
+                if (val && !checkedValues.includes(val)) {
+                    checkedValues.push(val);
+                }
             }
         });
-        getCartSelectCartItemsRequest(checkedValues)
+        sendCartItemSelectionRequest(checkedValues);
     }
 
-    function getCartSelectCartItemsRequest(checkedValues)
-    {
+    function sendCartItemSelectionRequest(checkedValues) {
+        let $summary = $('.vm-summary-card');
+        $summary.addClass('opacity-50');
+
         $.ajaxSetup({
-            headers: {'X-CSRF-TOKEN': $('meta[name="_token"]').attr('content')}
+            headers: { 'X-CSRF-TOKEN': $('meta[name="_token"]').attr('content') }
         });
+
         $.ajax({
             url: $('#get-cart-select-cart-items').data('route'),
             type: "POST",
             data: {
                 ids: checkedValues
             },
-            beforeSend: function () {
-                $('#loading').addClass('d-grid');
-            },
             success: function (response) {
-                $('#cart-summary').empty().html(response.htmlView);
-                toastr.success(response.message);
-                initTooltip();
+                if (response && response.htmlView) {
+                    $('#cart-summary').empty().html(response.htmlView);
+                    if (typeof updateNavCart === 'function') {
+                        updateNavCart();
+                    }
+                }
+                if (typeof initTooltip === 'function') initTooltip();
                 proceedToNextAction();
-                updateCartQuantityListCartData();
-                setShippingIdFunction();
-                updateCartQuantityListMobileCartData();
-                renderCouponCodeApply()
-                multipleCheckBoxFunctionsInit()
+                if (typeof updateCartQuantityListCartData === 'function') updateCartQuantityListCartData();
+                if (typeof setShippingIdFunction === 'function') setShippingIdFunction();
+                if (typeof updateCartQuantityListMobileCartData === 'function') updateCartQuantityListMobileCartData();
+                if (typeof renderCouponCodeApply === 'function') renderCouponCodeApply();
+                multipleCheckBoxFunctionsInit();
             },
-            complete: function () {
-                $('#loading').removeClass('d-grid');
+            error: function () {
+                $summary.removeClass('opacity-50');
+                toastr.error('Unable to update cart selection.');
             }
         });
     }
 }
 
-multipleCheckBoxFunctionsInit()
+// Initialize on page load
+$(document).ready(function () {
+    proceedToNextAction();
+    multipleCheckBoxFunctionsInit();
+});
