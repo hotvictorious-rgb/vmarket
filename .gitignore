@@ -39,6 +39,8 @@ backend/*/vendor/
 backend/**/.env
 backend/**/.env.ai
 backend/**/database/database_*.sqlite
+*.sqlite-shm
+*.sqlite-wal
 backend/**/node_modules/
 backend/**/public/storage
 backend/**/storage/*.key
