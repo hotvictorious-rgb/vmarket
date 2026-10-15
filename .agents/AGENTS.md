@@ -116,7 +116,7 @@ In this repository, multiple AI agents work concurrently across different platfo
 - **Preservation:** Never delete, strip, or replace existing developer comments or docstrings unless the corresponding code is completely removed.
 
 ## 7. Production Deployment & Server Sync SOP (Safe Overlay Protocol)
-- **GitHub is the Authoritative Single Source of Truth (SSOT):** All business logic, custom controllers, security patches, and features originate in this repository and are pushed to GitHub `master`. No manual code edits should exist on production.
+- **GitHub is the Authoritative Single Source of Truth (SSOT):** All business logic, custom controllers, security patches, and features originate in this repository and are pushed to GitHub (active release branch `v1` or pinned release commit SHA). No manual code edits should exist on production.
 - **Monorepo Destination Mapping:** The web application deployed on cPanel (`shop.victoriousmarket.com.ng`) maps **EXCLUSIVELY** to `backend/vmarket-web/`. The 3 Flutter mobile apps (`User app`, `Vendor app`, `Delivery Man App`) are built separately via Flutter/Dart pipelines and MUST NEVER be copied into the web root.
 - **Strict Prohibition of Destructive Deletion:** NEVER run `rsync --delete` or `git clean -fd` on the live cPanel server.
 - **The 4 Immutable Runtime Server Assets:** The following runtime paths on the live cPanel server MUST NEVER be deleted, overwritten, or wiped during deployment:
@@ -124,7 +124,7 @@ In this repository, multiple AI agents work concurrently across different platfo
   2. `storage/` (Customer uploads, order receipts, and framework cache)
   3. `vendor/` (Composer dependency packages)
   4. `public/assets/` (Storefront UI icons, SVGs, fonts, and stylesheets)
-- **Safe Overlay Execution:** When deploying to production, overlay code directly from `backend/vmarket-web/` (or run `git pull origin master`), preserving the 4 immutable runtime assets above, and execute `php artisan optimize:clear`.
+- **Safe Overlay Execution:** When deploying to production, overlay code directly from `backend/vmarket-web/` (or run `git pull origin v1`), preserving the 4 immutable runtime assets above, and execute `php artisan optimize:clear`.
 
 ## 8. Reference Baseline Guidelines (`reference/`)
 - The `reference/` directory contains extracted clean stock reference baselines for all 4 platforms:
@@ -146,7 +146,7 @@ Every controller and repository action that views, modifies, or deletes a privat
 Any read-modify-write operation involving financial balances (Customer Wallet, Vendor Balance, Delivery Man Cash-in-Hand, Platform Commissions) MUST execute inside an atomic database transaction (`DB::transaction()`) with a pessimistic row-level lock (`->lockForUpdate()`). Optimistic/unlocked wallet deductions are strictly prohibited.
 
 ### C. Universal 6-Digit OTP & Exact Identity Matching Standards
-- **Length Standard:** All OTP generators MUST use the **6-digit cryptographic format** (`rand(100000, 999999)`). Legacy 4-digit codes (`rand(1000, 9999)`) are forbidden.
+- **Length Standard:** All OTP generators MUST use the **6-digit cryptographic format** (`random_int(100000, 999999)`). Legacy 4-digit codes or non-cryptographic `rand()` are forbidden.
 - **Exact Identity Matching:** Identity lookups for authentication, password resets, and phone/email verification MUST strictly use exact equality (`where('identity', $identity)`), NEVER fuzzy SQL search (`where('identity', 'like', "%{$identity}%")`).
 - **Expiration & Attempt Bounds:** Every OTP verification endpoint MUST enforce a **15-minute expiration bound** (`addMinutes(15)->isPast()`) and a **5-attempt brute-force lockout** (`max_otp_hit = 5`).
 

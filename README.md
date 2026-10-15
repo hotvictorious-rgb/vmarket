@@ -264,7 +264,7 @@ vmarket/
 2. **Pessimistic Balance & Stock Locks:** Ledger deductions and stock decrements execute inside atomic database transactions (`DB::transaction()`) using pessimistic row-level locks (`->lockForUpdate()`).
 3. **Atomic Payment Row Locks:** Payment gateway callbacks and webhooks (Paystack, Flutterwave) enforce atomic row locks (`where('is_paid', 0)->update(...)`) with execution guards (`$affected > 0`) to prevent duplicate order generation or double-crediting.
 4. **Zero-Trust IDOR Authorization:** Every API endpoint validates authenticated principal ownership (`customer_id`, `seller_id`, or `admin_id`). Route parameters (`$id`) are never trusted alone.
-5. **Universal 6-Digit Cryptographic OTP:** Verification codes, withdrawal tokens, and password reset OTPs use 6-digit integers (`rand(100000, 999999)`) with 15-minute expiration bounds and 5-attempt rate-limiting locks.
+5. **Universal 6-Digit Cryptographic OTP:** Verification codes, withdrawal tokens, and password reset OTPs use 6-digit integers (`random_int(100000, 999999)`) with 15-minute expiration bounds and 5-attempt rate-limiting locks.
 6. **Token Hashing at Rest:** Bearer tokens for Sellers, Employees, and Delivery Riders are persisted as SHA-256 hashes (`hash('sha256', $token)`).
 
 ---

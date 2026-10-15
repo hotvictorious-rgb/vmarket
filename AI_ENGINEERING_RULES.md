@@ -142,7 +142,7 @@ All payment gateway controllers MUST enforce an **Atomic Row-Level Database Lock
 
 ## 10. Production Deployment Protocol (Safe Overlay SOP)
 
-1. **GitHub is the Single Source of Truth:** All code and custom logic originate in Git and deploy downwards to production. No manual code edits should exist on production.
+1. **GitHub is the Single Source of Truth:** All code and custom logic originate in Git (active release branch `v1` or pinned release commit SHA) and deploy downwards to production. No manual code edits should exist on production.
 2. **Web Scope:** Only `backend/vmarket-web/` maps to `shop.victoriousmarket.com.ng`. Mobile Flutter apps are built separately.
 3. **Non-Destructive Sync:** NEVER run `rsync --delete` or `git clean -fd` on production cPanel.
 4. **4 Protected Runtime Assets:** NEVER overwrite or delete `.env`, `storage/`, `vendor/`, or `public/assets/`.
@@ -154,7 +154,7 @@ All payment gateway controllers MUST enforce an **Atomic Row-Level Database Lock
 
 1. **Zero-Trust IDOR Authorization Scoping:** Never rely solely on incoming route `$id` or `$request['id']` parameters. Every query modifying, viewing, or deleting user-owned assets MUST be scoped to `auth('customer')->id()`, `auth('seller')->id()`, or `auth('admin')->id()`.
 2. **Pessimistic Financial Concurrency Locks:** Every read-modify-write on balances (Customer Wallet, Vendor Earnings, Rider Cash-in-Hand) MUST run inside `DB::transaction()` with `->lockForUpdate()`.
-3. **Universal 6-Digit OTP Standards:** All OTP generation must use `rand(100000, 999999)` with exact identity lookups (`=`), 15-minute expiration bounds, and a 5-attempt brute-force lockout.
+3. **Universal 6-Digit Cryptographic OTP Standards:** All OTP generation must use cryptographically secure `random_int(100000, 999999)` (never non-cryptographic `rand()`) with exact identity lookups (`=`), 15-minute expiration bounds, and a 5-attempt brute-force lockout.
 4. **Anti-Mass-Assignment Filtering:** Never pass `$request->all()` into model create or update methods. Use explicit whitelisting or Service transformers.
 
 ---
