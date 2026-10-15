@@ -29,6 +29,7 @@ import 'package:flutter_sixvalley_ecommerce/features/product/enums/product_type.
 import 'package:flutter_sixvalley_ecommerce/common/basewidget/custom_button_widget.dart';
 import 'package:flutter_sixvalley_ecommerce/features/cart/widgets/cart_page_shimmer_widget.dart';
 import 'package:flutter_sixvalley_ecommerce/features/cart/widgets/cart_widget.dart';
+import 'package:flutter_sixvalley_ecommerce/features/checkout/widgets/checkout_steps_progress_widget.dart';
 import 'package:just_the_tooltip/just_the_tooltip.dart';
 import 'package:provider/provider.dart';
 
@@ -458,6 +459,7 @@ class CartScreenState extends State<CartScreen> with AutomaticKeepAliveClientMix
                             },
                             child: ListView(
                               children: [
+                                const CheckoutStepsProgressWidget(currentStep: 1),
                                 _buildDeliveryLaneNoticeBanner(context),
                                 ListView.separated(
                                   shrinkWrap: true,

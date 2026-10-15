@@ -25,6 +25,8 @@ import 'package:flutter_sixvalley_ecommerce/common/basewidget/show_custom_snakba
 import 'package:flutter_sixvalley_ecommerce/common/basewidget/custom_textfield_widget.dart';
 import 'package:flutter_sixvalley_ecommerce/features/checkout/widgets/choose_payment_widget.dart';
 import 'package:flutter_sixvalley_ecommerce/features/checkout/widgets/shipping_details_widget.dart';
+import 'package:flutter_sixvalley_ecommerce/features/checkout/widgets/checkout_steps_progress_widget.dart';
+import 'package:flutter_sixvalley_ecommerce/features/checkout/widgets/victorious_escrow_seal_widget.dart';
 import 'package:provider/provider.dart';
 
 class CheckoutScreen extends StatefulWidget {
@@ -483,6 +485,7 @@ class CheckoutScreenState extends State<CheckoutScreen> {
                   physics: const BouncingScrollPhysics(),
                   padding: const EdgeInsets.all(0),
                   children: [
+                    const CheckoutStepsProgressWidget(currentStep: 2),
                     const SizedBox(height: Dimensions.paddingSizeSmall),
 
                     // [AI] Fulfillment Channel Segmented Selector (Doorstep Delivery vs In-Shop Pickup)
@@ -1247,6 +1250,7 @@ class CheckoutScreenState extends State<CheckoutScreen> {
                       ),
                     ),
 
+                    const VictoriousEscrowSealWidget(),
                     SizedBox(height: Dimensions.paddingSizeSmall),
                     Container(
                       decoration: BoxDecoration(
