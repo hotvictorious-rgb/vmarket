@@ -19,126 +19,28 @@ class ThemeService
 
     public function getUploadData(object $request): array
     {
-        $tempFolderPath = storage_path('app/temp/');
-        if (!File::exists($tempFolderPath)) {
-            File::makeDirectory($tempFolderPath);
-        }
-
-        $file = $request->file('theme_upload');
-        $filename = $file->getClientOriginalName();
-        $tempPath = $file->storeAs('temp', $filename);
-
-        $zip = new ZipArchive();
-        if ($zip->open(storage_path('app/' . $tempPath)) === TRUE) {
-
-            $genFolderName = explode('/', $zip->getNameIndex(0))[0];
-            if ($genFolderName === "__MACOSX") {
-                for ($i = 0; $i < $zip->numFiles; $i++) {
-                    if (!str_contains($zip->getNameIndex($i), "__MACOSX")) {
-                        $getThemeFolder = explode('/', $zip->getNameIndex($i))[0];
-                        break;
-                    }
-                }
-            }
-            $getThemeFolder = explode('.', $genFolderName)[0];
-
-            $zip->extractTo(storage_path('app/temp'));
-            $infoPath = storage_path('app/temp/' . $getThemeFolder . '/public/addon/info.php');
-
-            if (File::exists($infoPath)) {
-                $extractPath = base_path('resources/themes');
-                $zip->extractTo($extractPath);
-                $zip->close();
-
-                File::chmod($extractPath . '/' . $getThemeFolder . '/public/addon', 0777);
-                $status = 'success';
-                $message = translate('theme_upload_successfully');
-            } else {
-                File::cleanDirectory(storage_path('app/temp'));
-                $status = 'error';
-                $message = translate('invalid_theme');
-            }
-        } else {
-            $status = 'error';
-            $message = translate('theme_upload_fail');
-        }
-
-        if (File::exists(base_path('resources/themes/__MACOSX'))) {
-            File::deleteDirectory(base_path('resources/themes/__MACOSX'));
-        }
-
-        File::cleanDirectory(storage_path('app/temp'));
-
+        // [AI] Single authoritative theme: uploads permanently disabled
         return [
-            'status' => $status,
-            'message' => $message
+            'status' => 'error',
+            'message' => translate('theme_upload_is_permanently_disabled_victorious_market_uses_a_single_authoritative_theme')
         ];
     }
 
     public function getPublishData(object $request): array
     {
-        $themeInfo = include(base_path('resources/themes/' . $request['theme'] . '/public/addon/info.php'));
-        if ($request['theme'] != 'default' && (empty($themeInfo['purchase_code']) || empty($themeInfo['username']) || $themeInfo['is_active'] == '0')) {
-            $theme = $request['theme'];
-            return [
-                'flag' => 'inactive',
-                'view' => view('admin-views.system-setup.themes.theme-activate-modal-data', compact('themeInfo', 'theme'))->render(),
-            ];
-        }
-
-        $currentTheme = theme_root_path();
-        $currentThemeRoutes = include(base_path('resources/themes/' . $currentTheme . '/public/addon/theme_routes.php'));
-        $this->setEnvironmentValue('WEB_THEME', $request['theme']);
-
-        $reloadAction = 1;
-        $informationModal = '';
-        if (is_file(base_path('resources/themes/' . $request['theme'] . '/public/addon/theme_routes.php'))) {
-            $themeRoutes = include(base_path('resources/themes/' . $request['theme'] . '/public/addon/theme_routes.php'));
-            $reloadAction = 0;
-            $informationModal = view('admin-views.system-setup.themes.theme-information-modal-data', compact('currentTheme', 'themeInfo', 'themeRoutes', 'currentThemeRoutes'))->render();
-        }
-
-        Artisan::call('optimize:clear');
-        Artisan::call('view:clear');
-        cacheRemoveByType(type: 'banners');
-
+        // [AI] Single authoritative theme: switching permanently disabled
         return [
-            'reload_action' => $reloadAction,
-            'informationModal' => $informationModal,
+            'reload_action' => 0,
+            'informationModal' => '',
+            'status' => 'error',
+            'message' => translate('theme_switching_is_permanently_disabled_victorious_market_uses_a_single_authoritative_theme')
         ];
     }
 
     public function getActivationData(object $request): bool
     {
-        $activationStatus = 0;
-        $remove = ["http://", "https://", "www."];
-        $url = str_replace($remove, "", url('/'));
-        $fullData = include(base_path('resources/themes/' . $request['theme'] . '/public/addon/info.php'));
-
-        $post = [
-            base64_decode('dXNlcm5hbWU=') => $request['username'],
-            base64_decode('cHVyY2hhc2Vfa2V5') => $request['purchase_code'],
-            base64_decode('ZG9tYWlu') => $url,
-        ];
-
-        $response = Http::post(base64_decode('aHR0cHM6Ly9jaGVjay42YW10ZWNoLmNvbS9hcGkvdjEvZG9tYWluLXJlZ2lzdGVy'), $post)->json();
-        $status = base64_decode($response['active']) ?? 1;
-
-        if ((int)$status) {
-            $fullData['is_active'] = 1;
-            $fullData['username'] = $request['username'];
-            $fullData['purchase_code'] = $request['purchase_code'];
-            $str = "<?php return " . var_export($fullData, true) . ";";
-            file_put_contents(base_path('resources/themes/' . $request['theme'] . '/public/addon/info.php'), $str);
-            try {
-                if (DOMAIN_POINTED_DIRECTORY == 'public') {
-                    file_put_contents(base_path('public/themes/' . $request['theme'] . '/public/addon/info.php'), $str);
-                }
-            } catch (Throwable $th) {}
-            $activationStatus = 1;
-        }
-
-        return $activationStatus;
+        // [AI] Single authoritative theme: external phone-home activation permanently disabled
+        return false;
     }
 
     public function getNotifySellersData(object $request): array
@@ -156,47 +58,26 @@ class ThemeService
 
     public function deleteTheme(object $request): array
     {
-        if (theme_root_path() == $request['theme']) {
-            $status = 'error';
-            $message = translate("cannot_delete_the_active_theme");
-        } else {
-            $fullPath = base_path('resources/themes/' . $request['theme']);
-            if (File::deleteDirectory($fullPath)) {
-                $status = 'success';
-                $message = translate("theme_delete_successfully");
-            } else {
-                $status = 'error';
-                $message = translate("theme_delete_fail");
-            }
-        }
-
+        // [AI] Single authoritative theme: theme deletion permanently disabled
         return [
-            'status' => $status,
-            'message' => $message
+            'status' => 'error',
+            'message' => translate('theme_deletion_is_permanently_disabled_victorious_market_uses_a_single_authoritative_theme')
         ];
     }
 
     function getDirectories(): array
     {
-        $scan = scandir(base_path('resources/themes'));
-        $themesFolders = array_diff($scan, ['.', '..', '.DS_Store']);
-
-        $themes = [];
-        foreach ($themesFolders as $folder) {
-            if (file_exists(base_path('resources/themes/' . $folder . '/public/addon/info.php'))) {
-                $info = include(base_path('resources/themes/' . $folder . '/public/addon/info.php'));
-            } else {
-                $info = [];
-            }
-
-            $themeRoutes = [];
-            if (is_file(base_path('resources/themes/' . $folder . '/public/addon/theme_routes.php'))) {
-                $themeRoutes = include(base_path('resources/themes/' . $folder . '/public/addon/theme_routes.php'));
-            }
-            $info['comfortable_panel_version'] = $themeRoutes['comfortable_panel_version'] ?? '';
-            $themes[$folder] = $info;
-        }
-        return $themes;
+        // [AI] Single authoritative storefront theme: theme_vmarket
+        return [
+            'theme_vmarket' => [
+                'name' => 'Victorious MARKET Master Theme',
+                'software_id' => 'MzE0NDg1OTc=',
+                'version' => config('app.asset_version', '1.0.1'),
+                'is_active' => 1,
+                'image' => 'theme_vmarket.png',
+                'comfortable_panel_version' => defined('SOFTWARE_VERSION') ? SOFTWARE_VERSION : '16.1',
+            ]
+        ];
     }
 
 }

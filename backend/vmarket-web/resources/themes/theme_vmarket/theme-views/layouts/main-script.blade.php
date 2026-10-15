@@ -1,5 +1,6 @@
 @php
     use Illuminate\Support\Facades\Cookie;
+    $assetVersion = config('app.asset_version', '1.0.1');
 @endphp
 
 @php($recaptcha = getWebConfig(name: 'recaptcha'))
@@ -13,8 +14,8 @@ data-value="{{ (is_array($recaptcha ?? null) && !empty($recaptcha['status']) && 
 <script defer src="{{ theme_asset('assets/plugins/sweet_alert/sweetalert2.js') }}"></script>
 <script defer src="{{ theme_asset('assets/plugins/magnific-popup-1.1.0/jquery.magnific-popup.js') }}"></script>
 <script defer src="{{ theme_asset('assets/plugins/easyzoom/easyzoom.min.js') }}"></script>
-<script defer src="{{ theme_asset('assets/js/toastr.js') }}"></script>
-<script defer src="{{ theme_asset('assets/js/main.js') }}"></script>
+<script defer src="{{ theme_asset('assets/js/toastr.js') }}?v={{ $assetVersion }}"></script>
+<script defer src="{{ theme_asset('assets/js/main.js') }}?v={{ $assetVersion }}"></script>
 
 <script defer src="{{ dynamicAsset(path: 'public/assets/backend/libs/intl-tel-input/js/intlTelInput.js') }}"></script>
 <script defer src="{{ dynamicAsset(path: 'public/assets/backend/libs/intl-tel-input/js/utils.js') }}"></script>
@@ -212,4 +213,3 @@ data-value="{{ (is_array($recaptcha ?? null) && !empty($recaptcha['status']) && 
         });
     });
 </script>
-<script defer src="{{ theme_asset('assets/js/custom.js') }}"></script>

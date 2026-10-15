@@ -47,30 +47,36 @@ class ThemeController extends BaseController
 
     public function upload(ThemeSetupRequest $request, ThemeService $themeService): JsonResponse
     {
-        $data = $themeService->getUploadData(request: $request);
+        // [AI] Single authoritative theme architecture: ZIP uploads permanently disabled
         return response()->json([
-            'status' => $data['status'],
-            'message'=> $data['message']
-        ]);
+            'status' => 'error',
+            'message'=> translate('theme_upload_is_permanently_disabled_victorious_market_uses_a_single_authoritative_theme')
+        ], 403);
     }
 
     public function publish(Request $request, ThemeService $themeService): JsonResponse
     {
-        $data = $themeService->getPublishData(request: $request);
-        return response()->json($data);
+        // [AI] Single authoritative theme architecture: runtime theme switching permanently disabled
+        return response()->json([
+            'status' => 'error',
+            'message'=> translate('theme_switching_is_permanently_disabled_victorious_market_uses_a_single_authoritative_theme')
+        ], 403);
     }
 
     public function activation(Request $request, ThemeService $themeService): Redirector|RedirectResponse|Application
     {
-        $data = $themeService->getActivationData(request: $request);
-        $data ? ToastMagic::success(translate('activated_successfully')) : ToastMagic::error(translate('activation failed'));
+        // [AI] Single authoritative theme architecture: third-party theme activation permanently disabled
+        ToastMagic::error(translate('theme_activation_is_disabled_victorious_market_uses_a_single_authoritative_theme'));
         return back();
     }
 
     public function delete(Request $request, ThemeService $themeService): JsonResponse
     {
-        $data = $themeService->deleteTheme(request: $request);
-        return response()->json($data);
+        // [AI] Single authoritative theme architecture: theme deletion permanently disabled
+        return response()->json([
+            'status' => 'error',
+            'message'=> translate('theme_deletion_is_permanently_disabled_victorious_market_uses_a_single_authoritative_theme')
+        ], 403);
     }
 
 

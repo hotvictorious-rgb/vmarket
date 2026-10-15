@@ -11,6 +11,7 @@
         $favicon = !empty($web_config['fav_icon']['status']) ? $web_config['fav_icon']['path'] : theme_asset('assets/img/vm_icon.jpg');
         $primaryColor = preg_match('/^#[a-fA-F0-9]{6}$/', $web_config['primary_color'] ?? '') ? $web_config['primary_color'] : '#5E17EB';
         $secondaryColor = preg_match('/^#[a-fA-F0-9]{6}$/', $web_config['secondary_color'] ?? '') ? $web_config['secondary_color'] : '#FFD700';
+        $storefrontAssetVersion = config('app.asset_version', '1.0.1');
     @endphp
     <title>@if($pageMetaTitle){{ $pageMetaTitle }}@else @yield('title', getWebConfig(name: 'company_name')) @endif</title>
     @include('theme-views.partials._robotsMetaContentData')
@@ -20,19 +21,15 @@
     <link rel="apple-touch-icon" href="{{ $favicon }}">
     
     <!-- Bootstrap & Utility Icons CSS -->
-    <link rel="stylesheet" href="{{ theme_asset('assets/css/bootstrap-icons.min.css') }}">
-    <link rel="stylesheet" href="{{ theme_asset('assets/css/bootstrap.min.css') }}">
-    <link rel="stylesheet" href="{{ theme_asset('assets/css/toastr.css') }}">
+    <link rel="stylesheet" href="{{ theme_asset('assets/css/bootstrap-icons.min.css') }}?v={{ $storefrontAssetVersion }}">
+    <link rel="stylesheet" href="{{ theme_asset('assets/css/bootstrap.min.css') }}?v={{ $storefrontAssetVersion }}">
+    <link rel="stylesheet" href="{{ theme_asset('assets/css/toastr.css') }}?v={{ $storefrontAssetVersion }}">
     
     <!-- VMarket Master Theme CSS (Loaded after Bootstrap to enforce bespoke design language) -->
-    @php
-        $vmarketCssPath = base_path('resources/themes/theme_vmarket/public/assets/css/vmarket.css');
-        $vmarketCssVersion = file_exists($vmarketCssPath) ? filemtime($vmarketCssPath) : config('app.asset_version', '1.0');
-    @endphp
-    <link rel="stylesheet" href="{{ theme_asset('assets/css/vmarket.css') }}?v={{ $vmarketCssVersion }}">
+    <link rel="stylesheet" href="{{ theme_asset('assets/css/vmarket.css') }}?v={{ $storefrontAssetVersion }}">
     <style>:root { --vm-primary: {{ $primaryColor }}; --vm-gold: {{ $secondaryColor }}; }</style>
     <!-- [AI] VM-STORE-004: intl-tel-input CSS so any initialized country picker renders styled, never as a raw list -->
-    <link rel="stylesheet" href="{{ theme_asset('assets/plugins/intl-tel-input/css/intlTelInput.min.css') }}">
+    <link rel="stylesheet" href="{{ theme_asset('assets/plugins/intl-tel-input/css/intlTelInput.min.css') }}?v={{ $storefrontAssetVersion }}">
     
     @stack('css_or_js')
     @stack('styles')
@@ -88,8 +85,8 @@
     @include('theme-views.layouts.main-script')
 
     <!-- Core Interactive Scripts -->
-    <script src="{{ theme_asset('assets/js/custom.js') }}" defer></script>
-    <script src="{{ theme_asset('assets/js/vmarket.js') }}" defer></script>
+    <script src="{{ theme_asset('assets/js/custom.js') }}?v={{ $storefrontAssetVersion }}" defer></script>
+    <script src="{{ theme_asset('assets/js/vmarket.js') }}?v={{ $storefrontAssetVersion }}" defer></script>
 
     {!! Toastr::message() !!}
 

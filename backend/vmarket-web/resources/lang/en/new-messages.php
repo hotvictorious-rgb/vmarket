@@ -282,4 +282,7 @@ return [
 	"Unauthorized:_You_do_not_have_permission_to_view_handover_details_for_this_order." => "Unauthorized: You do not have permission to view handover details for this order.",
 	"Invalid_Secret_Pickup_Code._Attempts_remaining:_" => "Invalid Secret Pickup Code. Attempts remaining: ",
 	"Pickup_verification_code_is_not_configured_for_this_order." => "Pickup verification code is not configured for this order.",
+	"theme_upload_is_permanently_disabled_victorious_market_uses_a_single_authoritative_theme" => "Theme upload is permanently disabled victorious market uses a single authoritative theme",
+	"theme_switching_is_permanently_disabled_victorious_market_uses_a_single_authoritative_theme" => "Theme switching is permanently disabled victorious market uses a single authoritative theme",
+	"theme_deletion_is_permanently_disabled_victorious_market_uses_a_single_authoritative_theme" => "Theme deletion is permanently disabled victorious market uses a single authoritative theme",
 ];

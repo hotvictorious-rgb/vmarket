@@ -3,15 +3,11 @@
 if (!function_exists('theme_asset')) {
     function theme_asset($path = null): string
     {
-        $themeName = theme_root_path();
-        if ($themeName == 'default') {
-            return dynamicAsset(path: $path);
+        $themeName = 'theme_vmarket';
+        if (defined('DOMAIN_POINTED_DIRECTORY') && DOMAIN_POINTED_DIRECTORY == 'public') {
+            return dynamicAsset(path: 'public/themes/' . $themeName . '/public/' . $path);
         } else {
-            if (defined('DOMAIN_POINTED_DIRECTORY') && DOMAIN_POINTED_DIRECTORY == 'public') {
-                return dynamicAsset(path: 'public/themes/' . $themeName . '/public/' . $path);
-            } else {
-                return dynamicAsset(path: 'resources/themes/' . $themeName . '/public/' . $path);
-            }
+            return dynamicAsset(path: 'resources/themes/' . $themeName . '/public/' . $path);
         }
     }
 }
@@ -19,9 +15,7 @@ if (!function_exists('theme_asset')) {
 if (!function_exists('theme_root_path')) {
     function theme_root_path(): string
     {
-        $theme = env('WEB_THEME') ?: 'theme_vmarket';
-        return preg_match('/^[A-Za-z0-9_-]+$/', $theme) && is_dir(base_path('resources/themes/' . $theme))
-            ? $theme : 'theme_vmarket';
+        return 'theme_vmarket';
     }
 }
 

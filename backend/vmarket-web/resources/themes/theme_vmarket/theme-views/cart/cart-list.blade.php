@@ -11,5 +11,5 @@
 @endsection
 
 @push('script')
-    <script src="{{ theme_asset('assets/js/cart-list-page.js') }}"></script>
+    <script src="{{ theme_asset('assets/js/cart-list-page.js') }}?v={{ config('app.asset_version', '1.0.1') }}"></script>
 @endpush
