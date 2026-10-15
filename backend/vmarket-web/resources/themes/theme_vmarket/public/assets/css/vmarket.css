@@ -4754,6 +4754,9 @@ body.vm-cart-drawer-open {
     bottom: 0;
     width: 440px;
     max-width: 100vw;
+    height: 100%;
+    height: 100dvh;
+    max-height: 100dvh;
     background: #FFFFFF;
     z-index: 99999;
     display: flex;
@@ -4766,6 +4769,7 @@ body.vm-cart-drawer-open {
     will-change: transform;
     touch-action: pan-y;
     overscroll-behavior: contain;
+    overflow: hidden;
 }
 
 .vm-cart-drawer.is-open,
@@ -4867,23 +4871,36 @@ button.vm-cart-drawer-trigger,
     flex-shrink: 0;
 }
 
-/* Drawer Body & Items */
+/* Drawer Body & Items: Single Smooth Scroll Container */
 .vm-cart-drawer-content {
-    flex: 1 1 0%;
+    flex: 1 1 auto;
     min-height: 0;
-    overflow: hidden;
+    overflow-y: auto !important;
+    overflow-x: hidden;
+    overscroll-behavior: contain;
+    -webkit-overflow-scrolling: touch;
+    touch-action: pan-y;
     display: flex;
     flex-direction: column;
 }
 
+.vm-cart-drawer-content::-webkit-scrollbar {
+    width: 6px;
+}
+.vm-cart-drawer-content::-webkit-scrollbar-track {
+    background: #F8FAFC;
+}
+.vm-cart-drawer-content::-webkit-scrollbar-thumb {
+    background: #CBD5E1;
+    border-radius: 6px;
+}
+.vm-cart-drawer-content::-webkit-scrollbar-thumb:hover {
+    background: #94A3B8;
+}
+
 .vm-cart-drawer-items-list {
-    flex: 1 1 0%;
-    min-height: 0;
-    overflow-y: auto !important;
-    overscroll-behavior: contain;
-    -webkit-overflow-scrolling: touch;
-    touch-action: pan-y;
-    padding: 14px 18px;
+    flex: 1 0 auto;
+    padding: 14px 18px 24px;
     display: flex;
     flex-direction: column;
     gap: 14px;
@@ -5076,11 +5093,15 @@ button.vm-cart-drawer-trigger,
 
 /* Drawer Footer */
 .vm-cart-drawer-footer {
+    margin-top: auto;
+    position: sticky;
+    bottom: 0;
     padding: 16px 20px;
     background: #FFFFFF;
     border-top: 1px solid #E2E8F0;
-    box-shadow: 0 -4px 16px rgba(0, 0, 0, 0.04);
+    box-shadow: 0 -6px 20px rgba(27, 16, 53, 0.05);
     flex-shrink: 0;
+    z-index: 10;
 }
 
 .vm-drawer-pricing-lines {
@@ -5193,6 +5214,30 @@ button.vm-cart-drawer-trigger,
     }
     .vm-cart-drawer-footer {
         padding: 14px 16px;
+    }
+}
+
+/* Short Screen Responsiveness (Laptops/Tablets with toolbars): Ensure Deep Scrolling to Checkout */
+@media (max-height: 680px) {
+    .vm-cart-drawer-footer {
+        padding: 10px 16px;
+        position: relative;
+        box-shadow: none;
+    }
+    .vm-drawer-pricing-lines {
+        gap: 3px;
+        margin-bottom: 8px;
+    }
+    .vm-drawer-line {
+        font-size: 11.5px;
+    }
+    .vm-drawer-total-box {
+        padding: 8px 12px;
+        margin-bottom: 8px;
+    }
+    .vm-drawer-checkout-btn {
+        padding: 11px 16px;
+        font-size: 13.5px;
     }
 }
 

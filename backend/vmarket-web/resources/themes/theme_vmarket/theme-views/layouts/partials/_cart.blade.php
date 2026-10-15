@@ -57,7 +57,13 @@
                                 }
                             }
                         @endphp
-                        <div class="vm-drawer-item-row" id="drawer-cart-item-{{ $cartItem['id'] }}">
+                        <div class="vm-drawer-item-row"
+                             id="drawer-cart-item-{{ $cartItem['id'] }}"
+                             data-cart-id="{{ $cartItem['id'] }}"
+                             data-unit-price="{{ $itemPrice - $itemDiscount }}"
+                             data-original-price="{{ $itemPrice }}"
+                             data-max-stock="{{ $currentStock }}"
+                             data-min-order="{{ $product?->minimum_order_qty ?? 1 }}">
                             <div class="vm-drawer-item-thumb" style="width: 60px; height: 60px; min-width: 60px; max-width: 60px; flex-shrink: 0; border-radius: 10px; overflow: hidden; background: #F8FAFC; border: 1px solid #E2E8F0; display: flex; align-items: center; justify-content: center;">
                                 <img src="{{ getStorageImages(path: $product?->thumbnail_full_url ?? $cartItem['thumbnail_full_url'], type: 'product') }}"
                                      alt="{{ $cartItem['name'] }}"
@@ -85,19 +91,17 @@
                                     {{-- Live Stepper --}}
                                     <div class="vm-drawer-stepper">
                                         <button type="button"
-                                                class="vm-drawer-step-btn"
-                                                onclick="updateDrawerQuantity({{ $cartItem['id'] }}, {{ $cartItem['quantity'] - 1 }})"
+                                                class="vm-drawer-step-btn vm-drawer-step-minus"
+                                                onclick="stepDrawerQuantity({{ $cartItem['id'] }}, -1)"
+                                                data-cart-id="{{ $cartItem['id'] }}"
                                                 title="{{ $cartItem['quantity'] <= ($product?->minimum_order_qty ?? 1) ? translate('Remove') : translate('Decrease') }}">
-                                            @if($cartItem['quantity'] <= ($product?->minimum_order_qty ?? 1))
-                                                <i class="bi bi-trash3 text-danger fs-11"></i>
-                                            @else
-                                                <i class="bi bi-dash"></i>
-                                            @endif
+                                            <i class="bi {{ $cartItem['quantity'] <= ($product?->minimum_order_qty ?? 1) ? 'bi-trash3 text-danger fs-11' : 'bi-dash' }}"></i>
                                         </button>
-                                        <span class="vm-drawer-qty-val">{{ $cartItem['quantity'] }}</span>
+                                        <span class="vm-drawer-qty-val" id="drawer-qty-val-{{ $cartItem['id'] }}">{{ $cartItem['quantity'] }}</span>
                                         <button type="button"
-                                                class="vm-drawer-step-btn"
-                                                onclick="updateDrawerQuantity({{ $cartItem['id'] }}, {{ $cartItem['quantity'] + 1 }})"
+                                                class="vm-drawer-step-btn vm-drawer-step-plus"
+                                                onclick="stepDrawerQuantity({{ $cartItem['id'] }}, 1)"
+                                                data-cart-id="{{ $cartItem['id'] }}"
                                                 {{ $cartItem['quantity'] >= $currentStock ? 'disabled' : '' }}
                                                 title="{{ translate('Increase') }}">
                                             <i class="bi bi-plus"></i>
@@ -106,9 +110,9 @@
 
                                     {{-- Item Price --}}
                                     <div class="vm-drawer-item-price-wrap text-end">
-                                        <div class="vm-drawer-item-price">{{ webCurrencyConverter($itemFinalPrice) }}</div>
+                                        <div class="vm-drawer-item-price" id="drawer-item-price-{{ $cartItem['id'] }}">{{ webCurrencyConverter($itemFinalPrice) }}</div>
                                         @if($itemDiscount > 0)
-                                            <del class="vm-drawer-item-old-price">{{ webCurrencyConverter($itemPrice * $cartItem['quantity']) }}</del>
+                                            <del class="vm-drawer-item-old-price" id="drawer-item-old-price-{{ $cartItem['id'] }}">{{ webCurrencyConverter($itemPrice * $cartItem['quantity']) }}</del>
                                         @endif
                                     </div>
                                 </div>
@@ -125,12 +129,12 @@
         <div class="vm-drawer-pricing-lines">
             <div class="vm-drawer-line">
                 <span>{{ translate('Merchandise Subtotal') }}</span>
-                <strong class="text-dark">{{ webCurrencyConverter($subTotal) }}</strong>
+                <strong class="text-dark" id="vmDrawerSubtotal">{{ webCurrencyConverter($subTotal) }}</strong>
             </div>
             @if($totalDiscount > 0)
                 <div class="vm-drawer-line text-success">
                     <span>{{ translate('Store Discounts') }}</span>
-                    <strong>-{{ webCurrencyConverter($totalDiscount) }}</strong>
+                    <strong id="vmDrawerDiscounts">-{{ webCurrencyConverter($totalDiscount) }}</strong>
                 </div>
             @endif
             <div class="vm-drawer-line">
@@ -148,7 +152,7 @@
                 <span>{{ translate('Total Payable') }}</span>
                 <small class="text-muted d-block fs-11">{{ translate('Delivery / Pickup chosen at next step') }}</small>
             </div>
-            <div class="vm-drawer-total-amount">
+            <div class="vm-drawer-total-amount" id="vmDrawerTotalPayable">
                 {{ webCurrencyConverter($subTotal) }}
             </div>
         </div>
