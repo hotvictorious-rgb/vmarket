@@ -145,7 +145,7 @@ All payment gateway controllers MUST enforce an **Atomic Row-Level Database Lock
 1. **GitHub is the Single Source of Truth:** All code and custom logic originate in Git (active release branch `v1` or pinned release commit SHA) and deploy downwards to production. No manual code edits should exist on production.
 2. **Web Scope:** Only `backend/vmarket-web/` maps to `shop.victoriousmarket.com.ng`. Mobile Flutter apps are built separately.
 3. **Non-Destructive Sync:** NEVER run `rsync --delete` or `git clean -fd` on production cPanel.
-4. **4 Protected Runtime Assets:** NEVER overwrite or delete `.env`, `storage/`, `vendor/`, or `public/assets/`.
+4. **4 Protected Runtime Assets & Single Theme Asset Strategy:** NEVER overwrite or delete `.env`, `storage/`, `vendor/`, or `public/assets/`. Storefront theme assets reside in `resources/themes/theme_vmarket/public/assets/` and are symlinked via `public/themes` (or mirrored to `public/themes/theme_vmarket/public/assets/` during deployment). VMarket operates strictly on the single authoritative theme `theme_vmarket` with deterministic asset versioning via `config('app.asset_version')`. Runtime theme switching and ZIP uploads are permanently decommissioned.
 5. **Post-Sync Optimization:** Execute `php artisan optimize:clear` after any deployment.
 
 ---
