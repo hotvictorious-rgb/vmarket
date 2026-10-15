@@ -90,9 +90,9 @@ class MatureCustomerCashbackCommand extends Command
 
                     // Preserve existing snapshot expires_at from issuance; fallback to configured validity months if null
                     $rawValidityMonths = getWebConfig(name: 'loyalty_point_validity_months');
-                    $validityMonths = (!is_null($rawValidityMonths) && $rawValidityMonths !== '') ? (int)$rawValidityMonths : 6;
+                    $validityMonths = (!is_null($rawValidityMonths) && $rawValidityMonths !== '') ? (int)$rawValidityMonths : 12;
                     if ($validityMonths <= 0) {
-                        $validityMonths = 6;
+                        $validityMonths = 12;
                     }
                     $expiresAt = $ledger->expires_at ?? $now->copy()->addMonths($validityMonths);
 

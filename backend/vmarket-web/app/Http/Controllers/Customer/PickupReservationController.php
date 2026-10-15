@@ -315,9 +315,14 @@ class PickupReservationController extends Controller
                 'message' => $e->getMessage(),
             ], 502);
         } catch (\Throwable $e) {
+            \Illuminate\Support\Facades\Log::error('Pickup payment initialization unhandled error: ' . $e->getMessage(), [
+                'exception' => $e,
+                'customer_id' => $customerId,
+                'reservation_code' => $reservationCode,
+            ]);
             return response()->json([
                 'status' => false,
-                'message' => 'Payment initialization failed: ' . $e->getMessage(),
+                'message' => translate('Unable to initialize payment at this time. Please try again or contact support.'),
             ], 500);
         }
     }

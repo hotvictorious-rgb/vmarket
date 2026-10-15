@@ -279,4 +279,7 @@ return [
 	"File_size_is_too_large_Maximum_" => "File size is too large Maximum ",
 	"_you_will_get_a_mail_soon" => " you will get a mail soon",
 	"Your_Shopping_Bag_is_Empty" => "Your Shopping Bag is Empty",
+	"Unauthorized:_You_do_not_have_permission_to_view_handover_details_for_this_order." => "Unauthorized: You do not have permission to view handover details for this order.",
+	"Invalid_Secret_Pickup_Code._Attempts_remaining:_" => "Invalid Secret Pickup Code. Attempts remaining: ",
+	"Pickup_verification_code_is_not_configured_for_this_order." => "Pickup verification code is not configured for this order.",
 ];

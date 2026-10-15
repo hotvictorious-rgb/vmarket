@@ -707,7 +707,7 @@ class Helpers
 
     public static function seller_sales_commission($seller_is, $seller_id, $order_total): int|string
     {
-        $commissionAmount = 0;
+        $commissionAmount = '0.00';
         if ($seller_is == 'seller') {
             $seller = Seller::find($seller_id);
             if (isset($seller) && $seller['sales_commission_percentage'] !== null) {
@@ -715,7 +715,8 @@ class Helpers
             } else {
                 $commission = getWebConfig(name: 'sales_commission');
             }
-            $commissionAmount = number_format(($order_total / 100) * $commission, 2);
+            $rate = bcdiv((string) ($commission ?? '0'), '100', 4);
+            $commissionAmount = bcmul((string) $order_total, $rate, 2);
         }
         return $commissionAmount;
     }

@@ -175,9 +175,9 @@ class CustomerCashbackLedger extends Model
         $cashbackAmount = bcmul($netNewMoney, $rateMultiplier, 2);
 
         $rawMonths = getWebConfig(name: 'loyalty_point_validity_months');
-        $validityMonths = (!is_null($rawMonths) && $rawMonths !== '') ? (int)$rawMonths : 6;
+        $validityMonths = (!is_null($rawMonths) && $rawMonths !== '') ? (int)$rawMonths : 12;
         if ($validityMonths <= 0) {
-            $validityMonths = 6;
+            $validityMonths = 12;
         }
         $expiresAt = $order->refund_window_expires_at ? \Carbon\Carbon::parse($order->refund_window_expires_at)->addMonths($validityMonths) : null;
 

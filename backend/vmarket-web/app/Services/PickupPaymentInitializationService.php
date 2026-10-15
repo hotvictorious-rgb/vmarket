@@ -9,6 +9,7 @@ use App\Models\CashbackRedemption;
 use App\Models\Order;
 use App\Models\PaymentRequest;
 use App\Models\PickupReservation;
+use App\Models\Product;
 use App\Models\User;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\DB;
@@ -63,6 +64,20 @@ class PickupPaymentInitializationService
                 $cashback = $this->reserveCashbackForPickup($reservation, $customerId, $customer, $useCashback, 'pickup-'.$code, false)['cashback_amount'];
             }
             $snapshot = $reservation->reservation_items ?: [];
+
+            // [AI] Revalidate current inventory availability for quoted items
+            foreach ($snapshot['items'] ?? [] as $item) {
+                $productId = (int) ($item['product_id'] ?? 0);
+                $qty = (int) ($item['quantity'] ?? 1);
+                if ($productId > 0) {
+                    $product = Product::find($productId);
+                    if (!$product || ($product->product_type === 'physical' && $product->current_stock < $qty)) {
+                        $name = $product?->name ?? ($item['product_name'] ?? "Item #{$productId}");
+                        throw new InvalidPaymentStateException("Item '{$name}' is out of stock. Cannot quote payment.");
+                    }
+                }
+            }
+
             $expires = now()->addMinutes(5)->min($reservation->expires_at);
             $token = Str::random(64);
             $quote = ['currency' => 'NGN', 'merchandise_subtotal' => bcadd((string)($snapshot['subtotal'] ?? '0'), '0', 2),
@@ -360,6 +375,30 @@ class PickupPaymentInitializationService
                                 );
                             }
                         }
+                    }
+                }
+            }
+
+            // Step 4B: [AI] Final Pre-Payment Inventory Gate: Revalidate stock under row lock
+            // to guarantee the customer is never charged for an item that was depleted since reservation.
+            $items = $snapshot['items'] ?? (isset($snapshot[0]) ? $snapshot : []);
+            foreach ($items as $item) {
+                $productId = (int) ($item['product_id'] ?? 0);
+                $qty = (int) ($item['quantity'] ?? 1);
+                if ($productId <= 0) {
+                    continue;
+                }
+
+                $product = Product::where('id', $productId)->lockForUpdate()->first();
+                if (!$product) {
+                    $prodName = $item['product_name'] ?? "Product #{$productId}";
+                    throw new InvalidCartException("Item '{$prodName}' is no longer available.");
+                }
+
+                if ($product->product_type === 'physical') {
+                    if ($product->current_stock < $qty) {
+                        $prodName = $product->name ?? "Product #{$productId}";
+                        throw new InvalidCartException("Item '{$prodName}' has insufficient stock (only {$product->current_stock} remaining).");
                     }
                 }
             }

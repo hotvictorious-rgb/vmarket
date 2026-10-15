@@ -93,74 +93,118 @@ class OrderManager
         $coupon_code = session()->has('coupon_code') ? session('coupon_code') : 0;
         $coupon = Coupon::where(['code' => $coupon_code])->where('status', 1)->first();
 
-        $subTotal = 0;
-        $totalDiscountOnProduct = 0;
+        // [AI] Exact string arithmetic via BCMath (Zero Float Drift: Δ = ₦0.00)
+        $subTotal = '0.00';
+        $totalDiscountOnProduct = '0.00';
+        $couponDiscountStr = bcadd((string) $coupon_discount, '0', 2);
 
-        if ($coupon && ($coupon->seller_id == NULL || $coupon->seller_id == '0' || $coupon->seller_id == $cart[0]->seller_id)) {
-            $coupon_discount = $coupon->coupon_type == 'free_delivery' ? 0 : $coupon_discount;
+        if ($coupon && ($coupon->seller_id == NULL || $coupon->seller_id == '0' || (isset($cart[0]->seller_id) && $coupon->seller_id == $cart[0]->seller_id))) {
+            $couponDiscountStr = $coupon->coupon_type == 'free_delivery' ? '0.00' : $couponDiscountStr;
         } else {
-            $coupon_discount = 0;
+            $couponDiscountStr = '0.00';
         }
 
         foreach ($cart as $item) {
-            $subTotal += $item->price * $item->quantity;
-            $totalDiscountOnProduct += $item->discount * $item->quantity;
+            $price = (string) ($item->price ?? '0.00');
+            $qty = (string) ($item->quantity ?? '1');
+            $discount = (string) ($item->discount ?? '0.00');
+
+            $itemSubTotal = bcmul($price, $qty, 2);
+            $itemDiscount = bcmul($discount, $qty, 2);
+
+            $subTotal = bcadd($subTotal, $itemSubTotal, 2);
+            $totalDiscountOnProduct = bcadd($totalDiscountOnProduct, $itemDiscount, 2);
         }
 
-        $orderTotal = max(0, $subTotal - $totalDiscountOnProduct - $coupon_discount);
+        $grossDiscount = bcadd($totalDiscountOnProduct, $couponDiscountStr, 2);
+        $orderTotalStr = bcsub($subTotal, $grossDiscount, 2);
+        $orderTotal = (bccomp($orderTotalStr, '0.00', 2) < 0) ? 0.00 : (float) $orderTotalStr;
+
         return [
-            'order_total' => $orderTotal
+            'order_total' => $orderTotal,
+            'order_total_str' => (bccomp($orderTotalStr, '0.00', 2) < 0) ? '0.00' : $orderTotalStr,
+            'subtotal_str' => $subTotal,
+            'discount_str' => $totalDiscountOnProduct,
+            'coupon_discount_str' => $couponDiscountStr,
         ];
     }
 
+    /**
+     * [AI] Concurrency-Hardened Stock Restoration / Decrement:
+     * Executes inside an atomic database transaction with pessimistic row-level locks
+     * on both OrderDetails and Products to prevent race conditions and lost inventory updates.
+     */
     public static function getStockUpdateOnOrderStatusChange($order, $status): void
     {
-        if ($status == 'returned' || $status == 'failed' || $status == 'canceled') {
-            foreach ($order->details as $detail) {
-                if ($detail['is_stock_decreased'] == 1) {
-                    $product = Product::find($detail['product_id']);
-                    $type = $detail['variant'];
-                    $variationData = [];
-                    foreach (json_decode($product['variation'], true) as $var) {
-                        if ($type == $var['type']) {
-                            $var['qty'] += $detail['qty'];
-                        }
-                        $variationData[] = $var;
-                    }
-                    Product::where(['id' => $product['id']])->update([
-                        'variation' => json_encode($variationData),
-                        'current_stock' => $product['current_stock'] + $detail['qty'],
-                    ]);
-                    OrderDetail::where(['id' => $detail['id']])->update([
-                        'is_stock_decreased' => 0,
-                        'delivery_status' => $status
-                    ]);
-                }
+        DB::transaction(function () use ($order, $status) {
+            $orderId = is_array($order) ? ($order['id'] ?? null) : ($order->id ?? null);
+            if (!$orderId) {
+                return;
             }
-        } else {
-            foreach ($order->details as $detail) {
-                if ($detail['is_stock_decreased'] == 0) {
-                    $product = Product::find($detail['product_id']);
 
-                    $type = $detail['variant'];
-                    $variationData = [];
-                    foreach (json_decode($product['variation'], true) as $var) {
-                        if ($type == $var['type']) {
-                            $var['qty'] -= $detail['qty'];
-                        }
-                        $variationData[] = $var;
-                    }
-                    Product::where(['id' => $product['id']])->update([
-                        'variation' => json_encode($variationData),
-                        'current_stock' => $product['current_stock'] - $detail['qty'],
+            $isRestoring = in_array($status, ['returned', 'failed', 'canceled'], true);
+            $targetDecreasedState = $isRestoring ? 1 : 0;
+            $newDecreasedState = $isRestoring ? 0 : 1;
+
+            // Pessimistic lock on OrderDetail rows to serialize concurrent callers
+            $details = OrderDetail::where('order_id', $orderId)
+                ->where('is_stock_decreased', $targetDecreasedState)
+                ->lockForUpdate()
+                ->get();
+
+            foreach ($details as $detail) {
+                // Atomic conditional transition guard: only proceed if row still matches expected state
+                $affected = OrderDetail::where('id', $detail->id)
+                    ->where('is_stock_decreased', $targetDecreasedState)
+                    ->update([
+                        'is_stock_decreased' => $newDecreasedState,
+                        'delivery_status' => $status,
                     ]);
-                    OrderDetail::where(['id' => $detail['id']])->update([
-                        'is_stock_decreased' => 1,
-                        'delivery_status' => $status
-                    ]);
+
+                if ($affected === 0) {
+                    continue; // Lost race or already updated by concurrent thread
                 }
+
+                $qty = (int) $detail->qty;
+                if ($qty <= 0) {
+                    continue;
+                }
+
+                // Pessimistic row-level lock on Product
+                $product = Product::where('id', $detail->product_id)->lockForUpdate()->first();
+                if (!$product) {
+                    continue;
+                }
+
+                $rawVariations = is_array($product->variation)
+                    ? $product->variation
+                    : json_decode($product->variation ?? '[]', true);
+                if (!is_array($rawVariations)) {
+                    $rawVariations = [];
+                }
+
+                $variationData = [];
+                $variantType = $detail->variant;
+                foreach ($rawVariations as $var) {
+                    if ($variantType !== null && $variantType !== '' && isset($var['type']) && $variantType == $var['type']) {
+                        if ($isRestoring) {
+                            $var['qty'] = ($var['qty'] ?? 0) + $qty;
+                        } else {
+                            $var['qty'] = max(0, ($var['qty'] ?? 0) - $qty);
+                        }
+                    }
+                    $variationData[] = $var;
+                }
+
+                $currentStock = (int) $product->current_stock;
+                $newStock = $isRestoring ? ($currentStock + $qty) : max(0, $currentStock - $qty);
+
+                Product::where('id', $product->id)->update([
+                    'variation' => json_encode($variationData),
+                    'current_stock' => $newStock,
+                ]);
             }
-        }
+        });
     }
 
     public static function getWalletManageOnOrderStatusChange($order, $received_by): void
